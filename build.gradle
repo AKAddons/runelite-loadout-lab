@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://repo.runelite.net'
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = 'latest.release'
+def pluginMainClass = 'com.loadoutlab.LoadoutLabPluginTest'
+
+dependencies {
+	compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+	testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+	testImplementation 'org.mockito:mockito-core:5.11.0'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
+
+	testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
+}
+
+tasks.named('test', Test) {
+	useJUnitPlatform()
+}
+
+group = 'com.loadoutlab'
+version = '0.1.0'
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release.set(11)
+}
+
+tasks.register('run', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = pluginMainClass
+
+	jvmArgs "-ea",
+		"--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED",
+		"--add-opens=java.base/java.net=ALL-UNNAMED",
+		"--add-opens=java.base/java.io=ALL-UNNAMED"
+	args "--developer-mode", "--debug"
+}
+
+tasks.register('checkTokens', Exec) {
+	group = 'verification'
+	description = 'Plugin Hub 200k-token source-size gate.'
+	commandLine 'python3', 'scripts/check_tokens.py'
+}
+
+tasks.register('checkGlyphs', Exec) {
+	group = 'verification'
+	description = 'Flag macOS-Tahoe tofu-prone glyphs in UI/chat strings.'
+	commandLine 'python3', 'scripts/check_glyphs.py'
+}
+
+tasks.register('preSubmit') {
+	group = 'verification'
+	description = 'Pre-submission checks for a Plugin Hub update (test + checkTokens + checkGlyphs).'
+	dependsOn 'test', 'checkTokens', 'checkGlyphs'
+}
