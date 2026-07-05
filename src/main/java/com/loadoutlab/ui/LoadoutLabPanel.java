@@ -139,8 +139,9 @@ public class LoadoutLabPanel extends PluginPanel
 		f2pOnly.setOpaque(false);
 		f2pOnly.setForeground(new Color(200, 200, 200));
 		f2pOnly.setAlignmentX(LEFT_ALIGNMENT);
-		f2pOnly.setToolTipText("Only consider free-to-play gear (auto-enabled on non-members worlds)");
+		f2pOnly.setToolTipText("Only consider free-to-play gear");
 		f2pOnly.addActionListener(e -> recompute());
+		f2pOnly.setVisible(false); // only shown on non-members worlds
 		top.add(f2pOnly);
 
 		add(top, BorderLayout.NORTH);
@@ -176,14 +177,21 @@ public class LoadoutLabPanel extends PluginPanel
 		statusLabel.setText("Search a monster to begin.");
 	}
 
-	/** Set by the plugin on login: non-members world = filter on by default. */
-	public void setF2pDefault(boolean f2p)
+	/**
+	 * Set by the plugin on login. On a non-members world the filter appears
+	 * and defaults on; on a members world it is hidden and forced off - the
+	 * toggle only earns panel space where it can matter.
+	 */
+	public void setF2pWorld(boolean f2pWorld)
 	{
-		if (f2pOnly.isSelected() != f2p)
+		f2pOnly.setVisible(f2pWorld);
+		if (f2pOnly.isSelected() != f2pWorld)
 		{
-			f2pOnly.setSelected(f2p);
+			f2pOnly.setSelected(f2pWorld);
 			recompute();
 		}
+		revalidate();
+		repaint();
 	}
 
 	public boolean isF2pOnly()

@@ -117,7 +117,7 @@ public class LoadoutLabPlugin extends Plugin
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
 				panel = new LoadoutLabPanel(loaded, itemManager, this::computeForMonster);
-				panel.setF2pDefault(onF2pWorld());
+				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(drawIcon())
@@ -171,14 +171,14 @@ public class LoadoutLabPlugin extends Plugin
 			requirementProfile = null;
 			boostedLevels = null;
 
-			// Non-members world -> default the F2P filter on (world type is
-			// client state, so read it here and hand the EDT a plain boolean).
+			// Non-members world -> show the F2P filter, default on (world type
+			// is client state, so read it here and hand the EDT a boolean).
 			boolean f2p = onF2pWorld();
 			SwingUtilities.invokeLater(() ->
 			{
 				if (panel != null)
 				{
-					panel.setF2pDefault(f2p);
+					panel.setF2pWorld(f2p);
 				}
 			});
 		}
