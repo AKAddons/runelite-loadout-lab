@@ -19,6 +19,10 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok:1.18.30'
 	annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
+	// The vendored best-dps suites are JUnit 4; run them on the JUnit 5 platform via vintage.
+	testImplementation 'junit:junit:4.13.2'
+	testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.10.2'
+
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
 	testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
 	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
