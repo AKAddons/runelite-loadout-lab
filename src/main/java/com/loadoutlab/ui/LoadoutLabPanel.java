@@ -46,9 +46,15 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
 	private final JList<MonsterStats> monsterList = new JList<>(monsterModel);
+	private final JScrollPane monsterScroll;
+	private final JPanel selectedRow = new JPanel(new BorderLayout(4, 0));
+	private final JLabel selectedLabel = new JLabel();
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	private final Timer searchDebounce;
+
+	/** Guards against programmatic search-field changes re-opening the list. */
+	private boolean suppressSearchEvents;
 
 	private Map<CombatStyle, List<DpsResult>> currentResults;
 
@@ -82,9 +88,31 @@ public class LoadoutLabPanel extends PluginPanel
 				return this;
 			}
 		});
-		JScrollPane monsterScroll = new JScrollPane(monsterList);
+		monsterScroll = new JScrollPane(monsterList);
 		monsterScroll.setPreferredSize(new java.awt.Dimension(0, 130));
-		top.add(monsterScroll, BorderLayout.SOUTH);
+		monsterScroll.setVisible(false);
+
+		// Selected-monster row: replaces the dropdown once a pick is made;
+		// the small x clears it and returns to searching.
+		selectedRow.setOpaque(false);
+		selectedLabel.setForeground(new Color(140, 200, 140));
+		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 12f));
+		selectedRow.add(selectedLabel, BorderLayout.CENTER);
+		javax.swing.JButton clearSelection = new javax.swing.JButton("x");
+		clearSelection.setMargin(new java.awt.Insets(0, 6, 0, 6));
+		clearSelection.setToolTipText("Choose a different monster");
+		clearSelection.addActionListener(e -> clearSelection());
+		selectedRow.add(clearSelection, BorderLayout.EAST);
+		selectedRow.setVisible(false);
+
+		JPanel pickerStack = new JPanel();
+		pickerStack.setLayout(new BoxLayout(pickerStack, BoxLayout.Y_AXIS));
+		pickerStack.setOpaque(false);
+		selectedRow.setAlignmentX(LEFT_ALIGNMENT);
+		monsterScroll.setAlignmentX(LEFT_ALIGNMENT);
+		pickerStack.add(selectedRow);
+		pickerStack.add(monsterScroll);
+		top.add(pickerStack, BorderLayout.SOUTH);
 		add(top, BorderLayout.NORTH);
 
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.Y_AXIS));
@@ -101,19 +129,27 @@ public class LoadoutLabPanel extends PluginPanel
 		searchDebounce.setRepeats(false);
 		searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
 		{
-			public void insertUpdate(javax.swing.event.DocumentEvent e) { searchDebounce.restart(); }
-			public void removeUpdate(javax.swing.event.DocumentEvent e) { searchDebounce.restart(); }
-			public void changedUpdate(javax.swing.event.DocumentEvent e) { searchDebounce.restart(); }
+			public void insertUpdate(javax.swing.event.DocumentEvent e) { onSearchEdited(); }
+			public void removeUpdate(javax.swing.event.DocumentEvent e) { onSearchEdited(); }
+			public void changedUpdate(javax.swing.event.DocumentEvent e) { onSearchEdited(); }
 		});
 		monsterList.addListSelectionListener(e ->
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
 			{
-				compute(monsterList.getSelectedValue());
+				select(monsterList.getSelectedValue());
 			}
 		});
 
 		statusLabel.setText("Search a monster to begin.");
+	}
+
+	private void onSearchEdited()
+	{
+		if (!suppressSearchEvents)
+		{
+			searchDebounce.restart();
+		}
 	}
 
 	private void runSearch()
@@ -122,19 +158,55 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		if (query.length() < 2)
 		{
+			monsterScroll.setVisible(false);
+			revalidate();
 			return;
 		}
 		for (MonsterStats m : data.searchMonsters(query, SEARCH_LIMIT))
 		{
 			monsterModel.addElement(m);
 		}
+		// Typing reopens the picker; a previous selection stays shown until a
+		// new pick replaces it.
+		monsterScroll.setVisible(!monsterModel.isEmpty());
 		statusLabel.setText(monsterModel.isEmpty() ? "No monsters match." : " ");
+		revalidate();
+		repaint();
 	}
 
-	private void compute(MonsterStats monster)
+	/** A pick: collapse the dropdown, show the selection, clear the query. */
+	private void select(MonsterStats monster)
 	{
+		suppressSearchEvents = true;
+		try
+		{
+			searchField.setText("");
+		}
+		finally
+		{
+			suppressSearchEvents = false;
+		}
+		monsterModel.clear();
+		monsterScroll.setVisible(false);
+		selectedLabel.setText("vs " + monster.label());
+		selectedRow.setVisible(true);
+		revalidate();
+		repaint();
+
 		statusLabel.setText("Optimizing vs " + monster.getName() + "...");
 		computeHook.accept(monster, () -> statusLabel.setText(" "));
+	}
+
+	private void clearSelection()
+	{
+		selectedRow.setVisible(false);
+		selectedLabel.setText("");
+		resultsPanel.removeAll();
+		resultsPanel.revalidate();
+		resultsPanel.repaint();
+		statusLabel.setText("Search a monster to begin.");
+		revalidate();
+		searchField.requestFocusInWindow();
 	}
 
 	/** Render results (EDT). Called by the plugin once the optimizer returns. */
