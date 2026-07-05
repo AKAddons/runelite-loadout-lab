@@ -30,11 +30,18 @@ monster, get your strongest owned set per combat style with exact DPS.
 
 ## Decisions
 
-- **D1 (open): engine source.** Options under research: (a) port the OSRS Wiki
-  DPS calculator's formulas to Java (canonical math, license permitting);
-  (b) reuse/interop with an existing hub plugin's engine; (c) remote calls
-  (wiki/MCP) — likely rejected: network at query time kills the cache goal and
-  hub UX. Resolution criteria: license, coverage of gear nuances (#7), port size.
+- **D1 (RESOLVED 2026-07-05): fork best-dps's engine.** guccifurs/best-dps
+  (hub, BSD-2-Clause, current mechanics) ships a working owned-gear DPS calc +
+  beam-search optimizer (~1,200 lines, tested). We fork its `calc/` as the seed
+  - BSD-2 keeps our licensing free, unlike a weirdgloop port (GPL-3, ~6,100
+  lines). Data plan: vendor the wiki team's weirdgloop JSON (monsters +
+  equipment aliases) as gzipped resources exactly as best-dps does; player gear
+  bonuses come free from RuneLite `ItemManager.getItemStats`. Rationale + the
+  duplication analysis: best-dps covers ~90% of v0.1, so **Loadout Lab's
+  identity is being the plugin best-dps isn't** - persistent cross-session
+  ownership ledger (untradeables included), spec-weapon-in-set, full-inventory
+  trip planning, exhaustive-not-beam search where tractable. Attribution: keep
+  best-dps's BSD-2 license text with the derived code.
 - **D2 (made): local-first.** All computation client-side; data ships as
   resources; refreshed per release like goal-planner's data files.
 - **D3 (made): reuse goal-planner's operational lessons.** Hub gates

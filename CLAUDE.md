@@ -45,7 +45,8 @@ the `run` command.
   stores against in-memory fakes, Mockito for stateless collaborators.
 - Feature changes update README + CHANGELOG in the same change.
 - Player-facing text is written for players, not developers.
-- License note: if the DPS engine is derived from weirdgloop/osrs-dps-calc
-  (GPL-3.0), this plugin must be GPL-3.0 and keep upstream notices; if derived
-  from best-dps (BSD-2-Clause), attribution per its license. Decide at D1 and
-  record here.
+- License (D1 decided): the engine derives from guccifurs/best-dps
+  (BSD-2-Clause) - keep its license text with the derived code. Do NOT copy
+  code from weirdgloop/osrs-dps-calc (GPL-3.0) into this repo; its published
+  formulas/behavior may inform reimplementation, and its data JSON is vendored
+  as resources (wiki data, CC BY-NC-SA - keep the attribution notice).
