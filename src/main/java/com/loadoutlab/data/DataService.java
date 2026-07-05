@@ -63,6 +63,7 @@ public final class DataService
 				bool(row, "isTwoHanded", false),
 				bool(row, "isStandardGear", true),
 				bool(row, "tradeable", false),
+				bool(row, "members", true),
 				nullableInteger(row, "estimatedPrice"),
 				parseOffensive(row.getAsJsonObject("offensive")),
 				parseDefensive(row.getAsJsonObject("defensive")),

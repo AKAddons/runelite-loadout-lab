@@ -24,6 +24,25 @@ public final class LoadoutData
 		this.gearById = Collections.unmodifiableMap(gearById);
 	}
 
+	/**
+	 * A view of this dataset containing only free-to-play gear (monsters and
+	 * spells unchanged) - drives the non-members filter.
+	 */
+	public LoadoutData freeToPlayView()
+	{
+		java.util.List<GearItem> free = new java.util.ArrayList<>();
+		java.util.Map<Integer, GearItem> byId = new java.util.HashMap<>();
+		for (GearItem g : gearItems)
+		{
+			if (!g.isMembers())
+			{
+				free.add(g);
+				byId.put(g.getId(), g);
+			}
+		}
+		return new LoadoutData(free, monsters, spells, byId);
+	}
+
 	public List<MonsterStats> searchMonsters(String query, int limit)
 	{
 		String text = query == null ? "" : query.trim().toLowerCase();

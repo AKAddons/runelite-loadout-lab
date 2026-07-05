@@ -40,6 +40,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -74,6 +75,9 @@ public class LoadoutLabPlugin extends Plugin
 
 	@Inject
 	private Gson gson;
+
+	@Inject
+	private ItemManager itemManager;
 
 	private CollectionLedger ledger;
 	private LoadoutData data;
@@ -112,7 +116,8 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				panel = new LoadoutLabPanel(loaded, this::computeForMonster);
+				panel = new LoadoutLabPanel(loaded, itemManager, this::computeForMonster);
+				panel.setF2pDefault(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(drawIcon())
@@ -165,6 +170,17 @@ public class LoadoutLabPlugin extends Plugin
 			// New login = possibly a different account/levels: re-snapshot lazily.
 			requirementProfile = null;
 			boostedLevels = null;
+
+			// Non-members world -> default the F2P filter on (world type is
+			// client state, so read it here and hand the EDT a plain boolean).
+			boolean f2p = onF2pWorld();
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.setF2pDefault(f2p);
+				}
+			});
 		}
 	}
 
@@ -218,7 +234,7 @@ public class LoadoutLabPlugin extends Plugin
 	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
 	// ------------------------------------------------------------------
 
-	private void computeForMonster(MonsterStats monster, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -231,7 +247,7 @@ public class LoadoutLabPlugin extends Plugin
 			PlayerLevels levels = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
-			optimizerService.bestOwnedPerStyle(monster, levels, profile, owned, fingerprint,
+			optimizerService.bestPerStyle(monster, levels, profile, owned, fingerprint, f2pOnly,
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
@@ -274,6 +290,13 @@ public class LoadoutLabPlugin extends Plugin
 	private String worldScope()
 	{
 		return client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
+	}
+
+	/** True only when logged in to a non-members world - the F2P filter default. */
+	private boolean onF2pWorld()
+	{
+		return client.getGameState() == GameState.LOGGED_IN
+			&& !client.getWorldType().contains(WorldType.MEMBERS);
 	}
 
 	private static InventoryID containerFor(CollectionLedger.Source source)

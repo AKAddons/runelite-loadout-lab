@@ -23,17 +23,33 @@ import java.util.function.Consumer;
  * Runs BiS searches off the game threads and caches results.
  *
  * <p>Caching (founding requirement): results are keyed by
- * (collection fingerprint, monster id, style) - the fingerprint changes iff
- * ownership changes, so a cache hit is always current. LRU-bounded.
+ * (collection fingerprint, monster id, levels, f2p) - the fingerprint changes
+ * iff ownership changes, so a cache hit is always current. LRU-bounded.
+ *
+ * <p>Each query answers TWO questions per style: the best set you OWN, and
+ * the best set that exists in the game - so the panel can show how close
+ * your gear is to the ceiling.
  *
  * <p>Threading: optimize() is CPU work - it runs on a single daemon worker,
- * never the EDT or client thread. Callers receive results via a callback
- * that is NOT thread-marshalled here; UI callers wrap in
- * SwingUtilities.invokeLater.
+ * never the EDT or client thread. Callbacks are NOT thread-marshalled here;
+ * UI callers wrap in SwingUtilities.invokeLater.
  */
 public class OptimizerService
 {
 	private static final int CACHE_MAX = 64;
+
+	/** Per-style outcome: your best owned sets + the game-wide best set. */
+	public static final class StyleResult
+	{
+		public final List<DpsResult> owned;
+		public final DpsResult overallBest;
+
+		StyleResult(List<DpsResult> owned, DpsResult overallBest)
+		{
+			this.owned = owned;
+			this.overallBest = overallBest;
+		}
+	}
 
 	private final LoadoutData data;
 	private final LoadoutOptimizer optimizer = new LoadoutOptimizer();
@@ -44,12 +60,14 @@ public class OptimizerService
 		return t;
 	});
 
-	/** LRU cache: key -> per-style best results. Access-ordered. */
-	private final Map<String, Map<CombatStyle, List<DpsResult>>> cache =
-		new LinkedHashMap<String, Map<CombatStyle, List<DpsResult>>>(32, 0.75f, true)
+	/** Lazily-built free-to-play view of the dataset (gear filtered by the members flag). */
+	private volatile LoadoutData f2pData;
+
+	private final Map<String, Map<CombatStyle, StyleResult>> cache =
+		new LinkedHashMap<String, Map<CombatStyle, StyleResult>>(32, 0.75f, true)
 		{
 			@Override
-			protected boolean removeEldestEntry(Map.Entry<String, Map<CombatStyle, List<DpsResult>>> eldest)
+			protected boolean removeEldestEntry(Map.Entry<String, Map<CombatStyle, StyleResult>> eldest)
 			{
 				return size() > CACHE_MAX;
 			}
@@ -61,20 +79,22 @@ public class OptimizerService
 	}
 
 	/**
-	 * Compute the best OWNED set for each of melee/ranged/magic against a
-	 * monster. Cached; the callback runs on the worker thread on a miss and
-	 * synchronously on a hit.
+	 * Compute, per melee/ranged/magic: the best OWNED set and the game-wide
+	 * best set against a monster. Cached; the callback runs on the worker
+	 * thread on a miss and synchronously on a hit.
 	 */
-	public void bestOwnedPerStyle(
+	public void bestPerStyle(
 		MonsterStats monster,
 		PlayerLevels boostedLevels,
 		RequirementProfile requirements,
 		OwnedItems owned,
 		int collectionFingerprint,
-		Consumer<Map<CombatStyle, List<DpsResult>>> callback)
+		boolean f2pOnly,
+		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
-		final String key = collectionFingerprint + "|" + monster.getId() + "|" + levelKey(boostedLevels);
-		Map<CombatStyle, List<DpsResult>> cached;
+		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
+			+ "|" + levelKey(boostedLevels);
+		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
 			cached = cache.get(key);
@@ -86,23 +106,18 @@ public class OptimizerService
 		}
 		worker.execute(() ->
 		{
-			Map<CombatStyle, List<DpsResult>> results = new EnumMap<>(CombatStyle.class);
+			LoadoutData dataset = f2pOnly ? f2pView() : data;
+			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
-				OptimizationRequest request = new OptimizationRequest(
-					monster,
-					style,
-					boostedLevels,
-					PrayerBonuses.bestAvailable(boostedLevels),
-					null,                    // auto-pick the spell for magic
-					0,                       // no budget: owned only
-					CandidateMode.OWNED_ONLY,
-					true,                    // untradeables count - we KNOW you own them
-					false,                   // slayer-task toggle arrives in v0.2
-					owned,
-					requirements,
-					3);
-				results.put(style, optimizer.optimize(data, request));
+				List<DpsResult> ownedBest = optimizer.optimize(dataset, request(
+					monster, style, boostedLevels, requirements,
+					CandidateMode.OWNED_ONLY, owned, 3));
+				List<DpsResult> gameBest = optimizer.optimize(dataset, request(
+					monster, style, boostedLevels, requirements,
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1));
+				results.put(style, new StyleResult(
+					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0)));
 			}
 			synchronized (cache)
 			{
@@ -110,6 +125,41 @@ public class OptimizerService
 			}
 			callback.accept(results);
 		});
+	}
+
+	private OptimizationRequest request(
+		MonsterStats monster,
+		CombatStyle style,
+		PlayerLevels levels,
+		RequirementProfile requirements,
+		CandidateMode mode,
+		OwnedItems owned,
+		int limit)
+	{
+		return new OptimizationRequest(
+			monster,
+			style,
+			levels,
+			PrayerBonuses.bestAvailable(levels),
+			null,          // auto-pick the spell for magic
+			0,             // budget unused by these modes
+			mode,
+			true,          // untradeables count
+			false,         // slayer-task toggle arrives in v0.2
+			owned,
+			requirements,
+			limit);
+	}
+
+	private LoadoutData f2pView()
+	{
+		LoadoutData view = f2pData;
+		if (view == null)
+		{
+			view = data.freeToPlayView();
+			f2pData = view;
+		}
+		return view;
 	}
 
 	private static String levelKey(PlayerLevels l)

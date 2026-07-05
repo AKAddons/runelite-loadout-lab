@@ -342,6 +342,20 @@ public final class LoadoutOptimizer
 				|| weapon.contains("staff of light")
 				|| weapon.contains("staff of balance");
 		}
+		// Ancient Magicks can only be AUTOCAST from specific staves - the
+		// upstream engine let any staff barrage, recommending illegal
+		// weapon+spell pairs. (Harmonised nightmare staff notably autocasts
+		// the standard book only.)
+		if ("ancient".equalsIgnoreCase(spell.getSpellbook()))
+		{
+			return weapon.contains("ancient staff")
+				|| weapon.contains("ancient sceptre")
+				|| weapon.contains("kodai wand")
+				|| weapon.contains("master wand")
+				|| weapon.contains("blue moon spear")
+				|| weapon.contains("accursed sceptre")
+				|| (weapon.contains("nightmare staff") && !weapon.contains("harmonised"));
+		}
 		return true;
 	}
 

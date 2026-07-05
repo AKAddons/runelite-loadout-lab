@@ -14,6 +14,7 @@ public final class GearItem
 	private final boolean twoHanded;
 	private final boolean standardGear;
 	private final boolean tradeable;
+	private final boolean members;
 	private final Integer estimatedPrice;
 	private final StatBlock offensive;
 	private final StatBlock defensive;
@@ -30,6 +31,7 @@ public final class GearItem
 		boolean twoHanded,
 		boolean standardGear,
 		boolean tradeable,
+		boolean members,
 		Integer estimatedPrice,
 		StatBlock offensive,
 		StatBlock defensive,
@@ -45,6 +47,7 @@ public final class GearItem
 		this.twoHanded = twoHanded;
 		this.standardGear = standardGear;
 		this.tradeable = tradeable;
+		this.members = members;
 		this.estimatedPrice = estimatedPrice;
 		this.offensive = offensive == null ? StatBlock.ZERO : offensive;
 		this.defensive = defensive == null ? StatBlock.ZERO : defensive;
@@ -117,6 +120,11 @@ public final class GearItem
 	public boolean isImbuedSlayerHead()
 	{
 		return isSlayerHead() && normalizedLabel().contains("(i)");
+	}
+
+	public boolean isMembers()
+	{
+		return members;
 	}
 
 	public String label()
