@@ -13,3 +13,13 @@ knowledge of your bank, inventory, and equipment.
 ./gradlew run        # dev client with the plugin
 ./gradlew preSubmit  # test + hub token gate + glyph gate
 ```
+
+## Attribution
+
+- The DPS engine (`com.loadoutlab.engine`, `com.loadoutlab.data`) derives from
+  [guccifurs/best-dps](https://github.com/guccifurs/best-dps) (BSD-2-Clause,
+  Copyright (c) 2026, Noid). The original license text is kept at
+  [licenses/best-dps-LICENSE](licenses/best-dps-LICENSE).
+- The bundled monster/equipment data resources derive from the OSRS Wiki via
+  the [weirdgloop/osrs-dps-calc](https://github.com/weirdgloop/osrs-dps-calc)
+  data pipeline (wiki data, CC BY-NC-SA).
