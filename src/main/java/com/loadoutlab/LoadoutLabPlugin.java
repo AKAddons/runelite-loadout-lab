@@ -3,24 +3,47 @@ package com.loadoutlab;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
+import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.LoadoutData;
+import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.engine.OwnedItems;
+import com.loadoutlab.engine.PlayerLevels;
+import com.loadoutlab.engine.RequirementProfile;
+import com.loadoutlab.optimizer.OptimizerService;
+import com.loadoutlab.ui.LoadoutLabPanel;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.Quest;
+import net.runelite.api.QuestState;
+import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -28,15 +51,6 @@ import net.runelite.client.plugins.PluginDescriptor;
  * <p>Pick a monster; the plugin computes the strongest set you actually have,
  * per combat style, with exact DPS - from live knowledge of your bank,
  * inventory, and equipment, and a local DPS engine.
- *
- * <p>Architecture (see docs/ROADMAP.md):
- * <ul>
- *   <li>{@code engine/}     - pure DPS math + optimizer (derived from best-dps, BSD-2)</li>
- *   <li>{@code data/}       - monster stats + gear knowledge (gzipped resources)</li>
- *   <li>{@code collection/} - the persistent "what I own" ledger, per profile + world type</li>
- *   <li>{@code optimizer/}  - BiS search caching keyed on the ledger fingerprint</li>
- *   <li>{@code ui/}         - the panel</li>
- * </ul>
  */
 @Slf4j
 @PluginDescriptor(
@@ -50,19 +64,33 @@ public class LoadoutLabPlugin extends Plugin
 	private Client client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
 	private ConfigManager configManager;
 
 	@Inject
 	private Gson gson;
 
 	private CollectionLedger ledger;
+	private LoadoutData data;
+	private OptimizerService optimizerService;
+	private LoadoutLabPanel panel;
+	private NavigationButton navButton;
 
 	/**
-	 * Container-change coalescing (an event storm lesson: a bank deposit fires
-	 * one ItemContainerChanged PER SLOT). Events only mark which sources are
-	 * dirty; the per-tick drain does one scan per dirty source, max.
-	 * Client-thread only.
+	 * Requirement profile (levels + finished quests), snapshotted lazily on
+	 * first compute and reused: Quest.getState runs a client script PER QUEST
+	 * (~200 quests), so this must never run per-query or per-tick.
+	 * Invalidated on login.
 	 */
+	private RequirementProfile requirementProfile;
+	private PlayerLevels boostedLevels;
+
+	/** Container-change coalescing - events mark, the per-tick drain scans. */
 	private final EnumSet<CollectionLedger.Source> dirtySources =
 		EnumSet.noneOf(CollectionLedger.Source.class);
 
@@ -70,34 +98,73 @@ public class LoadoutLabPlugin extends Plugin
 	protected void startUp()
 	{
 		ledger = new CollectionLedger(configManager, gson);
-		// Scope + load happen on login (world type isn't known before);
-		// if we start mid-session, adopt the current state immediately.
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
+
+		// The dataset is ~3MB of gzipped JSON - parse off the startup path.
+		Thread loader = new Thread(() ->
+		{
+			LoadoutData loaded = new DataService().load();
+			SwingUtilities.invokeLater(() ->
+			{
+				data = loaded;
+				optimizerService = new OptimizerService(loaded);
+				panel = new LoadoutLabPanel(loaded, this::computeForMonster);
+				navButton = NavigationButton.builder()
+					.tooltip("Loadout Lab")
+					.icon(drawIcon())
+					.priority(7)
+					.panel(panel)
+					.build();
+				clientToolbar.addNavigation(navButton);
+			});
+		}, "loadout-lab-data-loader");
+		loader.setDaemon(true);
+		loader.start();
+
 		log.info("Loadout Lab started");
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		dirtySources.clear();
+		if (navButton != null)
+		{
+			clientToolbar.removeNavigation(navButton);
+			navButton = null;
+		}
+		if (optimizerService != null)
+		{
+			optimizerService.shutdown();
+			optimizerService = null;
+		}
+		panel = null;
+		data = null;
 		ledger = null;
+		requirementProfile = null;
+		boostedLevels = null;
+		dirtySources.clear();
 		log.info("Loadout Lab stopped");
 	}
+
+	// ------------------------------------------------------------------
+	// Owned-gear collection (see CollectionLedger)
+	// ------------------------------------------------------------------
 
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{
-			// (Re)point the ledger at this world's scope - a seasonal login
-			// must never write into the standard ledger.
 			ledger.loadScope(worldScope());
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
+			// New login = possibly a different account/levels: re-snapshot lazily.
+			requirementProfile = null;
+			boostedLevels = null;
 		}
 	}
 
@@ -128,12 +195,9 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		for (CollectionLedger.Source source : EnumSet.copyOf(dirtySources))
 		{
-			InventoryID container = containerFor(source);
-			ItemContainer c = client.getItemContainer(container);
+			ItemContainer c = client.getItemContainer(containerFor(source));
 			if (c == null)
 			{
-				// Container not available (e.g. bank closed before the drain) -
-				// keep the last-known snapshot; that persistence IS the feature.
 				dirtySources.remove(source);
 				continue;
 			}
@@ -150,11 +214,62 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-	/** The player's owned-items ledger (persistent across sessions). */
-	public CollectionLedger getLedger()
+	// ------------------------------------------------------------------
+	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
+	// ------------------------------------------------------------------
+
+	private void computeForMonster(MonsterStats monster, Runnable onDone)
 	{
-		return ledger;
+		clientThread.invokeLater(() ->
+		{
+			if (client.getGameState() == GameState.LOGGED_IN)
+			{
+				snapshotProfileIfNeeded();
+			}
+			RequirementProfile profile = requirementProfile != null
+				? requirementProfile : RequirementProfile.MAXED;
+			PlayerLevels levels = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
+			int fingerprint = ledger.fingerprint();
+			optimizerService.bestOwnedPerStyle(monster, levels, profile, owned, fingerprint,
+				results -> SwingUtilities.invokeLater(() ->
+				{
+					if (panel != null)
+					{
+						panel.showResults(monster, results);
+					}
+					onDone.run();
+				}));
+		});
 	}
+
+	/** Client-thread only. Quest scan is the expensive part - done once per login. */
+	private void snapshotProfileIfNeeded()
+	{
+		if (requirementProfile != null && boostedLevels != null)
+		{
+			return;
+		}
+		Map<Skill, Integer> real = new EnumMap<>(Skill.class);
+		Map<Skill, Integer> boosted = new EnumMap<>(Skill.class);
+		for (Skill skill : Skill.values())
+		{
+			real.put(skill, client.getRealSkillLevel(skill));
+			boosted.put(skill, client.getBoostedSkillLevel(skill));
+		}
+		Set<String> quests = new HashSet<>();
+		for (Quest quest : Quest.values())
+		{
+			if (quest.getState(client) == QuestState.FINISHED)
+			{
+				quests.add(quest.name());
+			}
+		}
+		requirementProfile = new RequirementProfile(real, quests);
+		boostedLevels = PlayerLevels.from(boosted);
+	}
+
+	// ------------------------------------------------------------------
 
 	private String worldScope()
 	{
@@ -169,6 +284,27 @@ public class LoadoutLabPlugin extends Plugin
 			case INVENTORY: return InventoryID.INVENTORY;
 			default: return InventoryID.BANK;
 		}
+	}
+
+	/** Sidebar icon drawn at runtime - no bundled art needed for v0.1. */
+	private static BufferedImage drawIcon()
+	{
+		BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = img.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		g.setColor(new Color(45, 45, 55));
+		g.fillRoundRect(0, 0, 16, 16, 4, 4);
+		g.setColor(new Color(140, 200, 140));
+		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+		g.drawString("LL", 2, 12);
+		g.dispose();
+		return img;
+	}
+
+	/** The player's owned-items ledger (persistent across sessions). */
+	public CollectionLedger getLedger()
+	{
+		return ledger;
 	}
 
 	@Provides
