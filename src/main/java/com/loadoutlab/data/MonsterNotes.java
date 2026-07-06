@@ -26,12 +26,12 @@ public final class MonsterNotes
 		switch (name)
 		{
 			case "dusk":
-				return "Gargoyle: bring a rock hammer to finish it. The granite"
-					+ " hammer auto-smashes, at a DPS cost. Mostly immune to Magic.";
+				return "Gargoyle: bring a rock hammer to finish it, or use the"
+					+ " granite hammer (auto-smashes). Mostly immune to Magic.";
 			case "gargoyle":
 			case "marble gargoyle":
-				return "Bring a rock hammer to finish it (the granite hammer"
-					+ " auto-smashes, at a DPS cost).";
+				return "Bring a rock hammer to finish it, or use the granite"
+					+ " hammer (auto-smashes).";
 			case "rockslug":
 			case "giant rockslug":
 				return "Bring a bag of salt to finish it.";

@@ -280,6 +280,17 @@ public final class DpsCalculator
 		{
 			roll = multiply(roll, 11, 10);
 		}
+		// Golembane (Aug 2025: granite hammer 30%, barronite mace 15%) -
+		// applied before the salve/slayer early returns because it stacks
+		// multiplicatively with them (helm first, per the wiki).
+		if (isGolem(request) && wearing(loadout, "granite hammer"))
+		{
+			roll = multiply(roll, 13, 10);
+		}
+		if (isGolem(request) && wearing(loadout, "barronite mace"))
+		{
+			roll = multiply(roll, 23, 20);
+		}
 		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
 			return multiply(roll, 6, 5);
@@ -324,6 +335,14 @@ public final class DpsCalculator
 		if (isWearingMeleeVoid(loadout))
 		{
 			maxHit = multiply(maxHit, 11, 10);
+		}
+		if (isGolem(request) && wearing(loadout, "granite hammer"))
+		{
+			maxHit = multiply(maxHit, 13, 10);
+		}
+		if (isGolem(request) && wearing(loadout, "barronite mace"))
+		{
+			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
@@ -594,6 +613,11 @@ public final class DpsCalculator
 	private static boolean isKalphite(OptimizationRequest request)
 	{
 		return request.getMonster().hasAttribute("kalphite");
+	}
+
+	private static boolean isGolem(OptimizationRequest request)
+	{
+		return request.getMonster().hasAttribute("golem");
 	}
 
 	private static boolean isSlayerTaskEligible(OptimizationRequest request)
