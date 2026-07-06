@@ -325,8 +325,9 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.show(exclusionsLabel, e.getX(), e.getY());
 	}
 
-	/** Right-click menu on a suggested item: exclude it and recompute. */
-	private void attachExclusionMenu(JLabel cell, GearItem item)
+	/** Right-click menu on a suggested item: exclude it and recompute. A
+	 * container weapon (blowpipe) also offers its loaded ammo. */
+	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
 	{
 		cell.addMouseListener(new java.awt.event.MouseAdapter()
 		{
@@ -349,17 +350,33 @@ public class LoadoutLabPanel extends PluginPanel
 					return;
 				}
 				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-				javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + item.label() + " from suggestions");
-				exclude.addActionListener(a ->
+				for (GearItem item : items)
 				{
-					exclusionToggle.toggle(item.getId());
-					refreshExclusionsLabel();
-					recompute();
-				});
-				menu.add(exclude);
+					javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + item.label() + " from suggestions");
+					exclude.addActionListener(a ->
+					{
+						exclusionToggle.toggle(item.getId());
+						refreshExclusionsLabel();
+						recompute();
+					});
+					menu.add(exclude);
+				}
 				menu.show(cell, e.getX(), e.getY());
 			}
 		});
+	}
+
+	/** The dart loaded in a blowpipe result, resolved for exclusion menus. */
+	private GearItem loadedDart(DpsResult result)
+	{
+		String type = result.getAttackType();
+		int idx = type.indexOf(" - ");
+		if (idx < 0 || !type.startsWith("ranged"))
+		{
+			return null;
+		}
+		Integer dartId = com.loadoutlab.engine.BlowpipeDarts.baseIdForTierName(type.substring(idx + 3));
+		return dartId == null ? null : data.getGear(dartId);
 	}
 
 	private void recompute()
@@ -536,7 +553,13 @@ public class LoadoutLabPanel extends PluginPanel
 		dart.setForeground(new Color(150, 170, 230));
 		dart.setFont(dart.getFont().deriveFont(11f));
 		dart.setAlignmentX(LEFT_ALIGNMENT);
-		dart.setToolTipText("The blowpipe's numbers include this dart's ranged strength");
+		dart.setToolTipText("The blowpipe's numbers include this dart's ranged"
+			+ " strength (right-click to exclude the darts)");
+		GearItem dartItem = loadedDart(result);
+		if (dartItem != null)
+		{
+			attachExclusionMenu(dart, List.of(dartItem));
+		}
 		card.add(dart);
 	}
 
@@ -623,7 +646,14 @@ public class LoadoutLabPanel extends PluginPanel
 				slot.setToolTipText(slotName(slotType) + ": " + item.label() + " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());
 				img.addTo(slot);
-				attachExclusionMenu(slot, item);
+				List<GearItem> menuItems = new java.util.ArrayList<>();
+				menuItems.add(item);
+				GearItem dart = slotType == GearSlot.WEAPON ? loadedDart(result) : null;
+				if (dart != null)
+				{
+					menuItems.add(dart);
+				}
+				attachExclusionMenu(slot, menuItems);
 			}
 			else
 			{
@@ -642,7 +672,7 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setToolTipText(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
 				spec.getDisplayName(), specExpected, spec.getEnergyCost()));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
-			attachExclusionMenu(specCell, specWeapon);
+			attachExclusionMenu(specCell, List.of(specWeapon));
 		}
 		else
 		{

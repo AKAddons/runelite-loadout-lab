@@ -50,6 +50,20 @@ public final class BlowpipeDarts
 		return tier < 0 ? null : TIER_NAMES[tier];
 	}
 
+	/** The representative (unpoisoned) dart id for a display tier name -
+	 * lets the panel offer "exclude the loaded darts" on the blowpipe. */
+	public static Integer baseIdForTierName(String tierName)
+	{
+		for (int tier = 0; tier < TIER_NAMES.length; tier++)
+		{
+			if (TIER_NAMES[tier].equals(tierName))
+			{
+				return TIERS[tier][1];
+			}
+		}
+		return null;
+	}
+
 	/** Excluding any variant of a dart tier protects the whole tier. */
 	private static boolean tierExcluded(OptimizationRequest request, int tier)
 	{
