@@ -52,6 +52,10 @@ public final class DataService
 			{
 				continue;
 			}
+			if (isLeaguesReward(string(row, "name"), string(row, "examine")))
+			{
+				continue;
+			}
 
 			result.add(new GearItem(
 				integer(row, "id", 0),
@@ -76,6 +80,21 @@ public final class DataService
 		}
 		result.sort(Comparator.comparing(GearItem::getName).thenComparingInt(GearItem::getId));
 		return result;
+	}
+
+	/**
+	 * Leagues-only rewards never enter the corpus - the optimizer suggests
+	 * main-game gear only. The stat-relevant offenders are the Leagues V
+	 * "Echo" set (wrongly flagged isStandardGear in the wiki data); the
+	 * Trailblazer outfits, banners, and trophies are zero-stat cosmetics.
+	 * The wiki examine text says "league" only on leagues rewards.
+	 */
+	private static boolean isLeaguesReward(String name, String examine)
+	{
+		String n = name == null ? "" : name.toLowerCase();
+		return n.startsWith("echo ")
+			|| n.contains("trailblazer")
+			|| (examine != null && examine.toLowerCase().contains("league"));
 	}
 
 	private Map<Integer, Map<String, Integer>> loadSkillRequirements()
@@ -160,6 +179,13 @@ public final class DataService
 			int maxHit = integer(row, "max_hit", 0);
 			String name = string(row, "name");
 			if (maxHit <= 0 && !"Magic Dart".equals(name))
+			{
+				continue;
+			}
+			// Effect-only spells (leagues echoes, boss mechanics - e.g.
+			// Flames of Cerberus) are flagged unselectable in the wiki data;
+			// a player can never cast them, so they never enter the corpus.
+			if (bool(row, "unselectable", false))
 			{
 				continue;
 			}

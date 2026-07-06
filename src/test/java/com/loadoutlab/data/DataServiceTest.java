@@ -26,6 +26,33 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void leaguesRewardsAreExcludedFromTheCorpus()
+	{
+		LoadoutData data = new DataService().load();
+		for (GearItem item : data.getGearItems())
+		{
+			String name = item.getName().toLowerCase();
+			Assert.assertFalse("leagues-only gear must not be suggestible: " + item.getName(),
+				name.startsWith("echo ") || name.contains("trailblazer"));
+		}
+		// Spot-check the stat-relevant offender: Echo venator bow (charged).
+		Assert.assertNull(data.getGear(30434));
+	}
+
+	@Test
+	public void effectOnlySpellsAreExcludedFromTheCorpus()
+	{
+		LoadoutData data = new DataService().load();
+		for (SpellStats spell : data.getSpells())
+		{
+			Assert.assertNotEquals("unselectable effect spells must not be castable",
+				"Flames of Cerberus", spell.getName());
+			Assert.assertNotEquals("unselectable effect spells must not be castable",
+				"King's Ice Barrage", spell.getName());
+		}
+	}
+
+	@Test
 	public void loadsEquipmentRequirements()
 	{
 		LoadoutData data = new DataService().load();
