@@ -75,8 +75,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private boolean suppressSearchEvents;
 
 	private MonsterStats selectedMonster;
-	/** Show/hide the game-best (BiS) sections; toggled from the card headers. */
-	private boolean gameBestVisible = true;
+	/** Per-style expanded game-best (BiS) sections - hidden by default,
+	 * each card's header toggles only its own section. */
+	private final java.util.Set<CombatStyle> gameBestExpanded = java.util.EnumSet.noneOf(CombatStyle.class);
 	private Map<CombatStyle, StyleResult> lastResults;
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager, ComputeHook computeHook)
@@ -377,21 +378,25 @@ public class LoadoutLabPanel extends PluginPanel
 		if (result.overallBest != null && result.overallBest.getDps() > 0)
 		{
 			card.add(Box.createVerticalStrut(6));
+			boolean expanded = gameBestExpanded.contains(style);
 			double pct = 100.0 * best.getDps() / result.overallBest.getDps();
 			JLabel ceiling = new JLabel(String.format("%s Game best: %.2f DPS - you are at %.0f%%",
-				gameBestVisible ? "v" : ">",
+				expanded ? "v" : ">",
 				result.overallBest.getDps(), Math.min(100.0, pct)));
 			ceiling.setForeground(new Color(160, 160, 160));
 			ceiling.setFont(ceiling.getFont().deriveFont(11f));
 			ceiling.setAlignmentX(LEFT_ALIGNMENT);
 			ceiling.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-			ceiling.setToolTipText(gameBestVisible ? "Click to hide the game-best set" : "Click to show the game-best set");
+			ceiling.setToolTipText(expanded ? "Click to hide the game-best set" : "Click to show the game-best set");
 			ceiling.addMouseListener(new java.awt.event.MouseAdapter()
 			{
 				@Override
 				public void mouseClicked(java.awt.event.MouseEvent e)
 				{
-					gameBestVisible = !gameBestVisible;
+					if (!gameBestExpanded.remove(style))
+					{
+						gameBestExpanded.add(style);
+					}
 					if (selectedMonster != null && lastResults != null)
 					{
 						showResults(selectedMonster, lastResults);
@@ -399,7 +404,7 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			});
 			card.add(ceiling);
-			if (gameBestVisible)
+			if (expanded)
 			{
 				addSpellLine(card, style, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
