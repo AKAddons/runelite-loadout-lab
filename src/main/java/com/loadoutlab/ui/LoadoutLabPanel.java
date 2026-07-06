@@ -507,12 +507,11 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setToolTipText("Spec: none");
 		}
 		icons.add(specCell);
-		// Full card width: the grid stretches and the 4 columns divide it
-		// evenly (a fixed-width grid left a dead right margin that read as
-		// a missing column). Height stays fixed at 3 rows.
+		// Stretch past the minimum so there is no dead right margin, but cap
+		// the width - unbounded stretch made cells balloon on wide layouts.
 		int height = 3 * cell + 4;
 		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
-		icons.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
 		return icons;
 	}
 
