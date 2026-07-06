@@ -352,7 +352,7 @@ public class LoadoutLabPanel extends PluginPanel
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
 			"Swapped into your best set for one special attack");
 		card.add(Box.createVerticalStrut(4));
-		card.add(iconGrid(best));
+		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		if (result.overallBest != null && result.overallBest.getDps() > 0)
@@ -369,7 +369,7 @@ public class LoadoutLabPanel extends PluginPanel
 			addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
 				"The strongest special attack that exists vs this monster");
 			card.add(Box.createVerticalStrut(4));
-			card.add(iconGrid(result.overallBest));
+			card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage));
 		}
 		return card;
 	}
@@ -417,13 +417,14 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/**
-	 * The set as a fixed equipment grid - every slot explicit, empty slots
-	 * shown as empty boxes. Fixed rows x cols means the preferred height is
-	 * always right (the old wrapping grid clipped its second row).
+	 * The set as a fixed 4x3 equipment grid - 11 explicit slots (empty =
+	 * empty box) plus the spec weapon as the 12th cell, amber-bordered.
+	 * Fixed rows x cols means the preferred height is always right (the
+	 * old wrapping grid clipped its second row).
 	 */
-	private JPanel iconGrid(DpsResult result)
+	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected)
 	{
-		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
+		JPanel icons = new JPanel(new java.awt.GridLayout(4, 3, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
 		int cell = ICON_SIZE + 4;
@@ -447,11 +448,24 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			icons.add(slot);
 		}
-		// 11 slots on a 3x4 grid: one filler cell keeps rows even.
-		JLabel filler = new JLabel();
-		filler.setPreferredSize(new Dimension(cell, cell));
-		icons.add(filler);
-		Dimension size = new Dimension(4 * cell + 6, 3 * cell + 4);
+		// Cell 12: the special-attack weapon to swap in.
+		JLabel specCell = new JLabel();
+		specCell.setPreferredSize(new Dimension(cell, cell));
+		specCell.setHorizontalAlignment(SwingConstants.CENTER);
+		if (spec != null && specWeapon != null && specExpected > 0)
+		{
+			specCell.setBorder(BorderFactory.createLineBorder(new Color(220, 180, 120)));
+			specCell.setToolTipText(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
+				spec.getDisplayName(), specExpected, spec.getEnergyCost()));
+			itemManager.getImage(specWeapon.getId()).addTo(specCell);
+		}
+		else
+		{
+			specCell.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50)));
+			specCell.setToolTipText("Spec: none");
+		}
+		icons.add(specCell);
+		Dimension size = new Dimension(3 * cell + 4, 4 * cell + 6);
 		icons.setPreferredSize(size);
 		icons.setMaximumSize(size);
 		return icons;
