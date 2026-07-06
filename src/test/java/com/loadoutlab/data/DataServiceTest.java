@@ -44,7 +44,7 @@ public class DataServiceTest
 	public void leaguesRewardsAreExcludedFromTheCorpus()
 	{
 		LoadoutData data = new DataService().load();
-		// Main-game 'Echo boots' (Amoxliatl recoil boots) must NOT be
+		// Main-game 'Echo boots' (Colosseum recoil boots) must NOT be
 		// caught by the leagues echo filter.
 		Assert.assertNotNull(data.getGear(28945));
 		for (GearItem item : data.getGearItems())
