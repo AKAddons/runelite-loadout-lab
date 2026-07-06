@@ -594,10 +594,10 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
-			// 20% accuracy, doubled by the purging staff. The damage bonus
-			// requires Mark of Darkness (not modeled - matches the official
-			// calculator's default).
-			roll = wearing(loadout, "purging staff") ? multiply(roll, 7, 5) : multiply(roll, 6, 5);
+			// Demonbane assumes Mark of Darkness (standard practice - it is
+			// a cheap self-buff and the purging staff quintuples its
+			// duration): 40% accuracy, 80% with the purging staff.
+			roll = wearing(loadout, "purging staff") ? multiply(roll, 9, 5) : multiply(roll, 7, 5);
 		}
 		return roll;
 	}
@@ -622,6 +622,12 @@ public final class DpsCalculator
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
 			maxHit += multiply(baseMaxHit, request.getMonster().getWeaknessSeverity(), 100);
+		}
+		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
+		{
+			// Mark of Darkness damage: +25%, +50% with the purging staff.
+			maxHit = wearing(loadout, "purging staff")
+				? multiply(maxHit, 3, 2) : multiply(maxHit, 5, 4);
 		}
 		return maxHit;
 	}

@@ -88,7 +88,7 @@ listed below.
    without it. Ahrim's 25% proc (+30% dmg) also missing.
 7. **Bolt procs** (ruby/diamond/dstone(e), Zaryte cbow multiplier, diary bonus) — materially changes high-defence ranged answers.
 8. **Elite void magic +2.5% damage** (only the accuracy part is modeled).
-9. **Tomes** (fire/water/earth), smoke battlestaff, chaos gauntlets, sunfire runes, Mark of Darkness + demonbane interplay.
+9. **Tomes** (fire/water/earth), smoke battlestaff, chaos gauntlets, sunfire runes. (~~Mark of Darkness + demonbane~~ MODELED 2026-07-06: demonbane assumes MoD active - 40%/80% accuracy and +25%/+50% damage with the Purging staff; harness vectors carry a markOfDarkness flag so the official engine verifies under the same assumption. Purging staff is now the magic pick vs demons - TD magic converges at +0.7%.)
 10. **Fang in ToA** (two-roll on defence too); ToA invocation / CoX-ToB party scaling generally.
 11. **Wilderness weapons** (craw's/webweaver +50%).
 12. Oddballs: colossal blade scaling, soulreaper stacks, dual macuahuitl / blood moon proc, atlatl melee-str scaling, burning claws burn, venator ricochet.

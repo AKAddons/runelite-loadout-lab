@@ -133,6 +133,10 @@ public class OfficialVectorExport
 				if (!result.getSpellName().isEmpty())
 				{
 					vector.put("spell", result.getSpellName());
+					if (result.getSpellName().contains("Demonbane"))
+					{
+						vector.put("markOfDarkness", true);
+					}
 				}
 				vectors.add(vector);
 
@@ -223,6 +227,10 @@ public class OfficialVectorExport
 			if (!result.getSpellName().isEmpty())
 			{
 				vector.put("spell", result.getSpellName());
+				if (result.getSpellName().contains("Demonbane"))
+				{
+					vector.put("markOfDarkness", true);
+				}
 			}
 			vectors.add(vector);
 

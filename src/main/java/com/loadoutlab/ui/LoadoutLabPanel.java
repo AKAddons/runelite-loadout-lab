@@ -494,7 +494,8 @@ public class LoadoutLabPanel extends PluginPanel
 			.map(s -> s.getSpellbook())
 			.findFirst().orElse("");
 		JLabel spell = new JLabel("Spell: " + result.getSpellName()
-			+ (book.isEmpty() ? "" : " (" + capitalize(book) + " spellbook)"));
+			+ (book.isEmpty() ? "" : " (" + capitalize(book) + " spellbook)")
+			+ (result.getSpellName().contains("Demonbane") ? " + Mark of Darkness" : ""));
 		spell.setForeground(new Color(150, 170, 230));
 		spell.setFont(spell.getFont().deriveFont(11f));
 		spell.setAlignmentX(LEFT_ALIGNMENT);

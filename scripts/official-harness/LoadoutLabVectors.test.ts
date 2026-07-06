@@ -67,6 +67,7 @@ describe('loadout lab vectors', () => {
             style,
             skills: v.skills || undefined,
             spell: v.spell ? findSpell(v.spell) : undefined,
+            buffs: v.markOfDarkness ? { markOfDarknessSpell: true } : undefined,
           });
           const r = calculatePlayerVsNpc(monster, player);
           if (!best || r.dps > best.dps) {
