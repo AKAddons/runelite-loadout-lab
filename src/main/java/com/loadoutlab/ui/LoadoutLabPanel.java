@@ -6,6 +6,7 @@ import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.SpecialAttack;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -265,7 +266,7 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.add(computing);
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
-		statusLabel.setText("Optimizing vs " + selectedMonster.getName() + "...");
+		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), () -> statusLabel.setText(" "));
 	}
 
@@ -340,19 +341,8 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
 		addSpellLine(card, style, best);
-		if (result.spec != null && result.specExpectedDamage > 0)
-		{
-			JLabel spec = new JLabel(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
-				result.spec.getDisplayName(), result.specExpectedDamage, result.spec.getEnergyCost()));
-			spec.setForeground(new Color(220, 180, 120));
-			spec.setFont(spec.getFont().deriveFont(11f));
-			spec.setAlignmentX(LEFT_ALIGNMENT);
-			String note = result.spec.getNote();
-			spec.setToolTipText(note.isEmpty()
-				? "Swapped into your best set for one special attack"
-				: note);
-			card.add(spec);
-		}
+		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
+			"Swapped into your best set for one special attack");
 		card.add(Box.createVerticalStrut(4));
 		card.add(iconGrid(best));
 
@@ -368,10 +358,32 @@ public class LoadoutLabPanel extends PluginPanel
 			ceiling.setAlignmentX(LEFT_ALIGNMENT);
 			card.add(ceiling);
 			addSpellLine(card, style, result.overallBest);
+			addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
+				"The strongest special attack that exists vs this monster");
 			card.add(Box.createVerticalStrut(4));
 			card.add(iconGrid(result.overallBest));
 		}
 		return card;
+	}
+
+	/** A spec line with the weapon's icon: "Spec: <name> - avg N dmg (C% energy)". */
+	private void addSpecLine(JPanel card, SpecialAttack spec,
+		GearItem weapon, double expectedDamage, String fallbackTooltip)
+	{
+		if (spec == null || weapon == null || expectedDamage <= 0)
+		{
+			return;
+		}
+		JLabel line = new JLabel(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
+			spec.getDisplayName(), expectedDamage, spec.getEnergyCost()));
+		line.setForeground(new Color(220, 180, 120));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setIconTextGap(6);
+		String note = spec.getNote();
+		line.setToolTipText(note.isEmpty() ? fallbackTooltip : note);
+		itemManager.getImage(weapon.getId()).addTo(line);
+		card.add(line);
 	}
 
 	/**

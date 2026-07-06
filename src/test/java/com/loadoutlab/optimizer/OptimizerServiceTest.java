@@ -47,6 +47,11 @@ public class OptimizerServiceTest
 			Assert.assertEquals("Dragon dagger", melee.spec.getDisplayName());
 			Assert.assertEquals(1215, melee.specWeapon.getId());
 			Assert.assertTrue(melee.specExpectedDamage > 0);
+			// The game-best section carries its own spec - the strongest
+			// special attack that exists, regardless of ownership.
+			Assert.assertNotNull(melee.gameSpec);
+			Assert.assertNotNull(melee.gameSpecWeapon);
+			Assert.assertTrue(melee.gameSpecExpectedDamage >= melee.specExpectedDamage);
 		}
 		finally
 		{

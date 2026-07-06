@@ -45,7 +45,7 @@ public class OptimizerService
 	private static final int CACHE_MAX = 64;
 
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
-	 * the strongest special-attack weapon you own for the style (if any). */
+	 * the strongest special-attack weapon for each - owned and game-wide. */
 	public static final class StyleResult
 	{
 		public final List<DpsResult> owned;
@@ -53,15 +53,21 @@ public class OptimizerService
 		public final SpecialAttack spec;
 		public final GearItem specWeapon;
 		public final double specExpectedDamage;
+		public final SpecialAttack gameSpec;
+		public final GearItem gameSpecWeapon;
+		public final double gameSpecExpectedDamage;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecialAttack spec, GearItem specWeapon, double specExpectedDamage)
+			SpecPick spec, SpecPick gameSpec)
 		{
 			this.owned = owned;
 			this.overallBest = overallBest;
-			this.spec = spec;
-			this.specWeapon = specWeapon;
-			this.specExpectedDamage = specExpectedDamage;
+			this.spec = spec == null ? null : spec.spec;
+			this.specWeapon = spec == null ? null : spec.weapon;
+			this.specExpectedDamage = spec == null ? 0 : spec.expectedDamage;
+			this.gameSpec = gameSpec == null ? null : gameSpec.spec;
+			this.gameSpecWeapon = gameSpec == null ? null : gameSpec.weapon;
+			this.gameSpecExpectedDamage = gameSpec == null ? 0 : gameSpec.expectedDamage;
 		}
 	}
 
@@ -135,15 +141,14 @@ public class OptimizerService
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
-				List<DpsResult> gameBest = optimizer.optimize(dataset, request(
+				OptimizationRequest gameRequest = request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1));
-				SpecPick spec = bestOwnedSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, effectiveOwned);
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1);
+				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
+				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, effectiveOwned);
+				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, boostedLevels, null);
 				results.put(style, new StyleResult(
-					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0),
-					spec == null ? null : spec.spec,
-					spec == null ? null : spec.weapon,
-					spec == null ? 0 : spec.expectedDamage));
+					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec));
 			}
 			synchronized (cache)
 			{
@@ -168,22 +173,23 @@ public class OptimizerService
 	}
 
 	/**
-	 * The strongest special-attack weapon the player OWNS for this style,
-	 * evaluated by swapping it into the best owned set (shield dropped for
-	 * two-handers, ammo re-picked for compatibility) and applying the
-	 * spec's verified roll modifiers. Requirement #7/#8: the spec weapon is
-	 * considered separately from the sustained-DPS set.
+	 * The strongest special-attack weapon for this style, evaluated by
+	 * swapping it into the base set (shield dropped for two-handers, ammo
+	 * re-picked for compatibility) and applying the spec's verified roll
+	 * modifiers. With an ownership ledger, only owned weapons/ammo count
+	 * (requirement #7/#8); with null, everything standard counts - the
+	 * game-best spec.
 	 */
-	private SpecPick bestOwnedSpec(
+	private SpecPick bestSpec(
 		LoadoutData dataset,
-		OptimizationRequest ownedRequest,
-		List<DpsResult> ownedBest,
+		OptimizationRequest request,
+		List<DpsResult> baseResults,
 		CombatStyle style,
 		MonsterStats monster,
 		PlayerLevels levels,
 		OwnedItems owned)
 	{
-		if (ownedBest == null || ownedBest.isEmpty())
+		if (baseResults == null || baseResults.isEmpty())
 		{
 			return null;
 		}
@@ -191,21 +197,22 @@ public class OptimizerService
 		SpecPick best = null;
 		for (GearItem item : dataset.getGearItems())
 		{
-			if (!owned.owns(item.getId()) || !item.isStandardGear())
+			if (!item.isStandardGear() || dataset.isVariant(item.getId())
+				|| (owned != null && !owned.owns(item.getId())))
 			{
 				continue;
 			}
 			SpecialAttack spec = SpecialAttack.match(item, style);
-			if (spec == null || !ownedRequest.getRequirementProfile().canEquip(item.getRequirements()))
+			if (spec == null || !request.getRequirementProfile().canEquip(item.getRequirements()))
 			{
 				continue;
 			}
-			Loadout loadout = specLoadout(dataset, ownedBest.get(0).getLoadout(), item, owned);
+			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned);
 			if (loadout == null)
 			{
 				continue;
 			}
-			DpsResult base = calculator.calculate(ownedRequest, loadout);
+			DpsResult base = calculator.calculate(request, loadout);
 			if (base == null || base.getMaxHit() <= 0)
 			{
 				continue;
@@ -219,11 +226,12 @@ public class OptimizerService
 		return best;
 	}
 
-	/** The best owned set with the spec weapon swapped in, or null if unusable. */
-	private Loadout specLoadout(LoadoutData dataset, Loadout ownedBest, GearItem weapon, OwnedItems owned)
+	/** The base set with the spec weapon swapped in, or null if unusable.
+	 * owned == null -> any standard ammo may be picked (game-best spec). */
+	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned)
 	{
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		gear.putAll(ownedBest.getGear());
+		gear.putAll(baseSet.getGear());
 		gear.put(GearSlot.WEAPON, weapon);
 		if (weapon.isTwoHanded())
 		{
@@ -234,7 +242,9 @@ public class OptimizerService
 			GearItem replacement = null;
 			for (GearItem ammo : dataset.getGearItems())
 			{
-				if (ammo.getSlot() == GearSlot.AMMO && owned.owns(ammo.getId())
+				if (ammo.getSlot() == GearSlot.AMMO
+					&& ammo.isStandardGear() && !dataset.isVariant(ammo.getId())
+					&& (owned == null || owned.owns(ammo.getId()))
 					&& RangedAmmo.compatible(ammo, weapon)
 					&& (replacement == null
 						|| ammo.getBonuses().getRangedStrength() > replacement.getBonuses().getRangedStrength()))
@@ -244,7 +254,7 @@ public class OptimizerService
 			}
 			if (replacement == null && !RangedAmmo.compatible(null, weapon))
 			{
-				return null; // needs ammo the player doesn't own
+				return null; // needs ammo that is not available
 			}
 			if (replacement != null)
 			{
