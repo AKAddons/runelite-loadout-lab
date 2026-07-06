@@ -229,7 +229,9 @@ public final class LoadoutOptimizer
 				}
 			}
 		}
-		return best == null ? calculator.calculate(request, loadout) : best;
+		// No legal spell for this staff/book: no result - a spell-less
+		// 'cast' has max hit 0 and produced garbage 0.04-dps rows.
+		return best;
 	}
 
 	private static DpsResult best(DpsResult first, DpsResult second)
@@ -508,6 +510,7 @@ public final class LoadoutOptimizer
 				|| weapon.contains("master wand")
 				|| weapon.contains("blue moon spear")
 				|| weapon.contains("accursed sceptre")
+				|| weapon.contains("purging staff")
 				|| (weapon.contains("nightmare staff") && !weapon.contains("harmonised"));
 		}
 		return true;
