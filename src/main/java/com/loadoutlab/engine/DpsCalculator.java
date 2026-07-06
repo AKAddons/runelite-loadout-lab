@@ -401,17 +401,19 @@ public final class DpsCalculator
 		{
 			roll = multiply(roll, 23, 20);
 		}
+		// Salve and the slayer helm are exclusive with EACH OTHER only -
+		// weapon bonuses below (arclight, dhl, golembane...) stack on top.
 		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
-			return multiply(roll, 6, 5);
+			roll = multiply(roll, 6, 5);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet"))
+		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
-			return multiply(roll, 7, 6);
+			roll = multiply(roll, 7, 6);
 		}
-		if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
 		{
-			return multiply(roll, 7, 6);
+			roll = multiply(roll, 7, 6);
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
@@ -431,7 +433,7 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter lance"))
 		{
-			return multiply(roll, 6, 5);
+			roll = multiply(roll, 6, 5);
 		}
 		if ("crush".equals(attackType))
 		{
@@ -456,15 +458,15 @@ public final class DpsCalculator
 		}
 		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
-			return multiply(maxHit, 6, 5);
+			maxHit = multiply(maxHit, 6, 5);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet"))
+		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
-			return multiply(maxHit, 7, 6);
+			maxHit = multiply(maxHit, 7, 6);
 		}
-		if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
 		{
-			return multiply(maxHit, 7, 6);
+			maxHit = multiply(maxHit, 7, 6);
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
@@ -493,7 +495,7 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter lance"))
 		{
-			return multiply(maxHit, 6, 5);
+			maxHit = multiply(maxHit, 6, 5);
 		}
 		if ("crush".equals(attackType))
 		{
@@ -506,15 +508,15 @@ public final class DpsCalculator
 	{
 		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
-			return multiply(roll, 6, 5);
+			roll = multiply(roll, 6, 5);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
+		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
-			return multiply(roll, 7, 6);
+			roll = multiply(roll, 7, 6);
 		}
-		if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
-			return multiply(roll, 23, 20);
+			roll = multiply(roll, 23, 20);
 		}
 		if (isCrystalBow(loadout))
 		{
@@ -522,7 +524,7 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
-			return multiply(roll, 13, 10);
+			roll = multiply(roll, 13, 10);
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
@@ -540,15 +542,15 @@ public final class DpsCalculator
 	{
 		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
-			return multiply(maxHit, 6, 5);
+			maxHit = multiply(maxHit, 6, 5);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
+		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
-			return multiply(maxHit, 7, 6);
+			maxHit = multiply(maxHit, 7, 6);
 		}
-		if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
-			return multiply(maxHit, 23, 20);
+			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (isCrystalBow(loadout))
 		{
@@ -556,7 +558,7 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
-			return multiply(maxHit, 5, 4);
+			maxHit = multiply(maxHit, 5, 4);
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
@@ -586,7 +588,7 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
-			return multiply(roll, 7, 4);
+			roll = multiply(roll, 7, 4);
 		}
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{

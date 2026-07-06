@@ -31,7 +31,7 @@ import org.junit.Test;
 public class OfficialVectorExport
 {
 	private static final String[][] SCENARIOS = {
-		// name | monster | version | style | weapon | ammo | forced spell (both optional)
+		// name | monster | version | style | weapon | ammo | forced spell | extra gear (slayer helm implies on-task)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
 		{"tentacle-goblin", "Goblin", "", "MELEE", "Abyssal tentacle", null},
 		{"fang-goblin", "Goblin", "", "MELEE", "Osmumten's fang", null},
@@ -42,6 +42,8 @@ public class OfficialVectorExport
 		{"eldermaul-dusk2", "Dusk", "Second form", "MELEE", "Elder maul", null},
 		{"tbow-zulrah", "Zulrah", "Serpentine", "RANGED", "Twisted bow", "Dragon arrow"},
 		{"tbow-hydra", "Alchemical Hydra", "", "RANGED", "Twisted bow", "Dragon arrow"},
+		{"tbowslayer-graardor", "General Graardor", "", "RANGED", "Twisted bow", "Dragon arrow", null, "Slayer helmet (i)"},
+		{"bofaslayer-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Slayer helmet (i)"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},
@@ -206,11 +208,19 @@ public class OfficialVectorExport
 				gear.put(GearSlot.AMMO, ammo);
 				gearNames.add(gearRef(ammo));
 			}
+			boolean onTask = false;
+			if (s.length > 7 && s[7] != null)
+			{
+				GearItem extra = byName(data, s[7]);
+				gear.put(extra.getSlot(), extra);
+				gearNames.add(gearRef(extra));
+				onTask = s[7].toLowerCase().contains("slayer helmet");
+			}
 
 			OptimizationRequest request = new OptimizationRequest(
 				monster, style, PlayerLevels.MAXED,
 				prayersFor(style), forcedSpell, 0,
-				CandidateMode.ALL_STANDARD, true, false,
+				CandidateMode.ALL_STANDARD, true, onTask,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 			DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 			if (result == null)
@@ -224,6 +234,10 @@ public class OfficialVectorExport
 			vector.put("monsterVersion", s[2] == null ? "" : s[2]);
 			vector.put("gear", gearNames);
 			vector.put("prayers", prayerNames(style));
+			if (onTask)
+			{
+				vector.put("onSlayerTask", true);
+			}
 			if (!result.getSpellName().isEmpty())
 			{
 				vector.put("spell", result.getSpellName());
