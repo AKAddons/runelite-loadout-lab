@@ -71,21 +71,22 @@ SIDEBAR_PALETTE = {
     "y": GOLD,
 }
 
-# Potion with legs: a gold-corked, HOLLOW green bottle - dark glass
-# interior with golden potion pooled at the bottom and one bubble
-# rising - standing on two chunky L's as its little boots. Bottle = the
-# Lab, LL legs = Loadout Lab, gold = the best-in-slot loot; gold star
-# sparkles beside the cork.
+# Potion with legs, OSRS-vial shaped: gold cork and lip, then a HOLLOW
+# pyramid body flaring from narrow shoulders to a wide base with
+# tapered bottom corners - dark glass interior, one gold bubble, golden
+# potion pooled in the base - standing on two chunky L's as its boots.
+# Bottle = the Lab, LL legs = Loadout Lab, gold = the BiS loot; gold
+# star sparkles beside the cork.
 SIDEBAR_GRID = [
     ".......yy....y..",
     ".......yy...yyy.",
     "......GGGG...y..",
-    ".......GG.......",
-    ".....GGGGGG.....",
-    "....G..y...G....",
+    "......G..G......",
+    ".....G.y..G.....",
     "....G......G....",
-    "....GyyyyyyG....",
-    "....GyyyyyyG....",
+    "...G........G...",
+    "...GyyyyyyyyG...",
+    "...GyyyyyyyyG...",
     "....GGGGGGGG....",
     ".....GG..GG.....",
     ".....GG..GG.....",
