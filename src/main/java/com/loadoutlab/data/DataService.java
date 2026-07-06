@@ -73,6 +73,10 @@ public final class DataService
 			{
 				continue;
 			}
+			if (isMinigameOnly(string(row, "name")))
+			{
+				continue;
+			}
 
 			result.add(new GearItem(
 				integer(row, "id", 0),
@@ -112,6 +116,27 @@ public final class DataService
 		return n.startsWith("echo ")
 			|| n.contains("trailblazer")
 			|| (examine != null && examine.toLowerCase().contains("league"));
+	}
+
+	/**
+	 * Items that only function inside a minigame never enter the corpus.
+	 * The Barbarian Assault arrows carry ranged strength 125 - stronger
+	 * than dragon arrows - but can only be fired at penance inside BA
+	 * (upstream best-dps flagged only two of the four non-standard).
+	 */
+	private static boolean isMinigameOnly(String name)
+	{
+		switch (name == null ? "" : name.toLowerCase())
+		{
+			case "bullet arrow":
+			case "field arrow":
+			case "blunt arrow":
+			case "barbed arrow":
+			case "castle wars bolts":
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	private Map<Integer, Map<String, Integer>> loadSkillRequirements()

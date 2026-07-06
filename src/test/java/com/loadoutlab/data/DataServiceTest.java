@@ -66,6 +66,17 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void minigameOnlyAmmoIsExcludedFromTheCorpus()
+	{
+		LoadoutData data = new DataService().load();
+		// Barbarian Assault arrows: ranged str 125, usable only inside BA.
+		Assert.assertNull(data.getGear(22227)); // Bullet arrow
+		Assert.assertNull(data.getGear(22228)); // Field arrow
+		Assert.assertNull(data.getGear(22229)); // Blunt arrow
+		Assert.assertNull(data.getGear(22230)); // Barbed arrow
+	}
+
+	@Test
 	public void ornamentVariantsCanonicalizeToTheBaseItem()
 	{
 		LoadoutData data = new DataService().load();
