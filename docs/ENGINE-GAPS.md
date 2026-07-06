@@ -38,8 +38,12 @@ listed below.
   demonbane and abyssal weapons. All TD scenarios within 3.4%.
 - **Bone staff vs Scurrius** (-9%, acc .608 vs .669): likely the
   NPC-defends-magic-with-Defence-level rule (#13).
-- **Twisted bow vs Zulrah** (max 62 vs 50): confirms #3 - the 140%/250%
-  caps are missing.
+- ~~Twisted bow vs Zulrah~~ RESOLVED 2026-07-06: #3 was misdiagnosed -
+  the tbow polynomial and caps were identical to the official engine all
+  along (tbow-hydra converges exactly). The 62-vs-50 was ZULRAH's
+  mechanic: hits above 50 reroll to 45-50 (Jagex-confirmed) - now
+  modeled; tbow-zulrah exact 0.0%. Similar per-monster hit transforms
+  NOT yet modeled: Fragment of Seren, Kraken ranged halving.
 - **Barronite mace accuracy** (+15%): we apply the wiki-stated 15% accuracy
   bonus; the official calc applies only the damage part. Wiki page
   explicitly says both - keeping ours, watch upstream.
@@ -50,7 +54,7 @@ listed below.
 
 1. **Dragon hunter wand**: engine uses 7/4 acc AND dmg; wiki: +50% acc, +20% dmg.
 2. **Silverlight/darklight**: engine applies 8/5 to accuracy AND damage; wiki: +60% damage only.
-3. **Twisted bow**: missing the 140%/250% damage/accuracy caps on the polynomial.
+3. ~~Twisted bow caps~~ NOT A BUG (see harness-verified deltas: identical to official; Zulrah's reroll was the difference).
 4. **Keris partisan of amascut** 1.15x looks invented; missing the 1/51 triple-hit proc (EV x1.0392).
 
 ## Missing features (priority order for v0.2)

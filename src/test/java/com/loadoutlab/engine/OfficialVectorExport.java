@@ -41,6 +41,7 @@ public class OfficialVectorExport
 		{"barronite-greygolem", "Grey golem", "", "MELEE", "Barronite mace", null},
 		{"eldermaul-dusk2", "Dusk", "Second form", "MELEE", "Elder maul", null},
 		{"tbow-zulrah", "Zulrah", "Serpentine", "RANGED", "Twisted bow", "Dragon arrow"},
+		{"tbow-hydra", "Alchemical Hydra", "", "RANGED", "Twisted bow", "Dragon arrow"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},

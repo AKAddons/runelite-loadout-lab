@@ -39,6 +39,25 @@ public final class DpsCalculator
 			factor *= TormentedDemonRules.damageFactor(
 				request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName());
 		}
+		// Zulrah rerolls any hit above 50 down to 45-50 (Jagex-confirmed);
+		// scale the expectation accordingly and cap the displayed max.
+		if (result != null && "Zulrah".equalsIgnoreCase(request.getMonster().getName())
+			&& result.getMaxHit() > 50)
+		{
+			int max = result.getMaxHit();
+			double cappedMean = 0;
+			for (int d = 0; d <= max; d++)
+			{
+				cappedMean += d <= 50 ? d : 47.5;
+			}
+			cappedMean /= (max + 1);
+			double capFactor = cappedMean / (max / 2.0);
+			result = new DpsResult(result.getLoadout(), result.getDps() * capFactor,
+				result.getAccuracy(), result.getExpectedHit() * capFactor,
+				50, result.getAttackSpeed(), result.getAttackType(),
+				result.getAttackRoll(), result.getDefenceRoll(),
+				result.getPurchaseCost(), result.getSpellName());
+		}
 		// Tormented demons: guaranteed hits in the official default phase -
 		// scale the expectation up to accuracy 1 (all hit models here are
 		// linear in accuracy).
