@@ -2,13 +2,19 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.engine.CandidateMode;
 import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.DpsCalculator;
 import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerBonuses;
 import com.loadoutlab.engine.LoadoutOptimizer;
+import com.loadoutlab.engine.RangedAmmo;
 import com.loadoutlab.engine.RequirementProfile;
+import com.loadoutlab.engine.SpecialAttack;
+import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import java.util.EnumMap;
@@ -38,16 +44,24 @@ public class OptimizerService
 {
 	private static final int CACHE_MAX = 64;
 
-	/** Per-style outcome: your best owned sets + the game-wide best set. */
+	/** Per-style outcome: your best owned sets, the game-wide best set, and
+	 * the strongest special-attack weapon you own for the style (if any). */
 	public static final class StyleResult
 	{
 		public final List<DpsResult> owned;
 		public final DpsResult overallBest;
+		public final SpecialAttack spec;
+		public final GearItem specWeapon;
+		public final double specExpectedDamage;
 
-		StyleResult(List<DpsResult> owned, DpsResult overallBest)
+		StyleResult(List<DpsResult> owned, DpsResult overallBest,
+			SpecialAttack spec, GearItem specWeapon, double specExpectedDamage)
 		{
 			this.owned = owned;
 			this.overallBest = overallBest;
+			this.spec = spec;
+			this.specWeapon = specWeapon;
+			this.specExpectedDamage = specExpectedDamage;
 		}
 	}
 
@@ -110,17 +124,22 @@ public class OptimizerService
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
-				List<DpsResult> ownedBest = optimizer.optimize(dataset, request(
+				OptimizationRequest ownedRequest = request(
 					monster, style, boostedLevels, requirements,
-					CandidateMode.OWNED_ONLY, owned, 3));
+					CandidateMode.OWNED_ONLY, owned, 3);
+				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
 				List<DpsResult> gameBest = optimizer.optimize(dataset, request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1));
+				SpecPick spec = bestOwnedSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, owned);
 				results.put(style, new StyleResult(
-					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0)));
+					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0),
+					spec == null ? null : spec.spec,
+					spec == null ? null : spec.weapon,
+					spec == null ? 0 : spec.expectedDamage));
 			}
 			synchronized (cache)
 			{
@@ -128,6 +147,111 @@ public class OptimizerService
 			}
 			callback.accept(results);
 		});
+	}
+
+	private static final class SpecPick
+	{
+		final SpecialAttack spec;
+		final GearItem weapon;
+		final double expectedDamage;
+
+		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage)
+		{
+			this.spec = spec;
+			this.weapon = weapon;
+			this.expectedDamage = expectedDamage;
+		}
+	}
+
+	/**
+	 * The strongest special-attack weapon the player OWNS for this style,
+	 * evaluated by swapping it into the best owned set (shield dropped for
+	 * two-handers, ammo re-picked for compatibility) and applying the
+	 * spec's verified roll modifiers. Requirement #7/#8: the spec weapon is
+	 * considered separately from the sustained-DPS set.
+	 */
+	private SpecPick bestOwnedSpec(
+		LoadoutData dataset,
+		OptimizationRequest ownedRequest,
+		List<DpsResult> ownedBest,
+		CombatStyle style,
+		MonsterStats monster,
+		PlayerLevels levels,
+		OwnedItems owned)
+	{
+		if (ownedBest == null || ownedBest.isEmpty())
+		{
+			return null;
+		}
+		DpsCalculator calculator = new DpsCalculator();
+		SpecPick best = null;
+		for (GearItem item : dataset.getGearItems())
+		{
+			if (!owned.owns(item.getId()) || !item.isStandardGear())
+			{
+				continue;
+			}
+			SpecialAttack spec = SpecialAttack.match(item, style);
+			if (spec == null || !ownedRequest.getRequirementProfile().canEquip(item.getRequirements()))
+			{
+				continue;
+			}
+			Loadout loadout = specLoadout(dataset, ownedBest.get(0).getLoadout(), item, owned);
+			if (loadout == null)
+			{
+				continue;
+			}
+			DpsResult base = calculator.calculate(ownedRequest, loadout);
+			if (base == null || base.getMaxHit() <= 0)
+			{
+				continue;
+			}
+			double expected = spec.expectedDamage(base, monster, levels);
+			if (best == null || expected > best.expectedDamage)
+			{
+				best = new SpecPick(spec, item, expected);
+			}
+		}
+		return best;
+	}
+
+	/** The best owned set with the spec weapon swapped in, or null if unusable. */
+	private Loadout specLoadout(LoadoutData dataset, Loadout ownedBest, GearItem weapon, OwnedItems owned)
+	{
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		gear.putAll(ownedBest.getGear());
+		gear.put(GearSlot.WEAPON, weapon);
+		if (weapon.isTwoHanded())
+		{
+			gear.remove(GearSlot.SHIELD);
+		}
+		if (!RangedAmmo.compatible(gear.get(GearSlot.AMMO), weapon))
+		{
+			GearItem replacement = null;
+			for (GearItem ammo : dataset.getGearItems())
+			{
+				if (ammo.getSlot() == GearSlot.AMMO && owned.owns(ammo.getId())
+					&& RangedAmmo.compatible(ammo, weapon)
+					&& (replacement == null
+						|| ammo.getBonuses().getRangedStrength() > replacement.getBonuses().getRangedStrength()))
+				{
+					replacement = ammo;
+				}
+			}
+			if (replacement == null && !RangedAmmo.compatible(null, weapon))
+			{
+				return null; // needs ammo the player doesn't own
+			}
+			if (replacement != null)
+			{
+				gear.put(GearSlot.AMMO, replacement);
+			}
+			else
+			{
+				gear.remove(GearSlot.AMMO);
+			}
+		}
+		return new Loadout(gear);
 	}
 
 	private OptimizationRequest request(

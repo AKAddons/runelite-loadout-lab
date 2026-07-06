@@ -322,6 +322,19 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
 		addSpellLine(card, style, best);
+		if (result.spec != null && result.specExpectedDamage > 0)
+		{
+			JLabel spec = new JLabel(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
+				result.spec.getDisplayName(), result.specExpectedDamage, result.spec.getEnergyCost()));
+			spec.setForeground(new Color(220, 180, 120));
+			spec.setFont(spec.getFont().deriveFont(11f));
+			spec.setAlignmentX(LEFT_ALIGNMENT);
+			String note = result.spec.getNote();
+			spec.setToolTipText(note.isEmpty()
+				? "Swapped into your best set for one special attack"
+				: note);
+			card.add(spec);
+		}
 		card.add(Box.createVerticalStrut(4));
 		card.add(iconGrid(best));
 

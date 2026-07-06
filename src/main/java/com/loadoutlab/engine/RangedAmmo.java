@@ -3,13 +3,13 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearItem;
 
-final class RangedAmmo
+public final class RangedAmmo
 {
 	private RangedAmmo()
 	{
 	}
 
-	static boolean compatible(GearItem ammo, GearItem weapon)
+	public static boolean compatible(GearItem ammo, GearItem weapon)
 	{
 		if (ammo == null)
 		{
