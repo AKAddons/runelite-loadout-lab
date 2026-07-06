@@ -91,7 +91,10 @@ public final class MonsterStats
 
 	public String label()
 	{
-		String suffix = version.isEmpty() ? "" : " (" + version + ")";
+		// Level-derived version labels ("Level 137") are redundant with -
+		// and after group-collapsing can contradict - the lvl suffix.
+		boolean levelVersion = version.regionMatches(true, 0, "level", 0, 5);
+		String suffix = version.isEmpty() || levelVersion ? "" : " (" + version + ")";
 		String level = combatLevel > 0 ? " - lvl " + combatLevel : "";
 		return name + suffix + level;
 	}
