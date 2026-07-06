@@ -88,7 +88,7 @@ public final class DataService
 				string(row, "category"),
 				integer(row, "speed", 0),
 				bool(row, "isTwoHanded", false),
-				bool(row, "isStandardGear", true),
+				bool(row, "isStandardGear", true) || isWronglyFlaggedUsable(string(row, "name")),
 				bool(row, "tradeable", false),
 				bool(row, "members", true),
 				nullableInteger(row, "estimatedPrice"),
@@ -103,6 +103,18 @@ public final class DataService
 		}
 		result.sort(Comparator.comparing(GearItem::getName).thenComparingInt(GearItem::getId));
 		return result;
+	}
+
+	/**
+	 * Upstream's curated isStandardGear flag marks these permanent main-game
+	 * upgrades as non-standard (audited 2026-07-05): the Avernic treads
+	 * upgrade combinations carry real ranged/magic strength, and the
+	 * Confliction gauntlets are a 7% magic damage glove. Force them usable.
+	 */
+	private static boolean isWronglyFlaggedUsable(String name)
+	{
+		String n = name == null ? "" : name.toLowerCase();
+		return n.startsWith("avernic treads") || n.equals("confliction gauntlets");
 	}
 
 	/**

@@ -162,7 +162,11 @@ public final class LoadoutOptimizer
 						{
 							continue;
 						}
-						next.add(new SearchState(gear, cost, score.getDps()));
+						// Tiny attack-roll nudge: vs guaranteed-hit monsters
+						// (tormented demons) accuracy gear ties on DPS, and a
+						// pure cost tie-break picked snakeskin boots over
+						// pegasians. Never outweighs a real DPS difference.
+						next.add(new SearchState(gear, cost, score.getDps() + score.getAttackRoll() * 1e-9));
 					}
 				}
 				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed().thenComparingInt(SearchState::getCost));
@@ -189,7 +193,9 @@ public final class LoadoutOptimizer
 			}
 		}
 
-		results.sort(Comparator.comparingDouble(DpsResult::getDps).reversed().thenComparingInt(DpsResult::getPurchaseCost));
+		results.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
+			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
+			.thenComparingInt(DpsResult::getPurchaseCost));
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
 	}
 

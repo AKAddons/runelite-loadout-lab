@@ -94,6 +94,28 @@ public class VampyreRulesTest
 	}
 
 	@Test
+	public void tormentedDemonRangedBisUsesRealStatGearDespiteGuaranteedHits()
+	{
+		// Vs guaranteed-hit monsters all accuracy gear ties on DPS; the
+		// attack-roll tie-break must still pick the strongest gear, and the
+		// Avernic treads combos (wrongly non-standard upstream) must be in.
+		MonsterStats td = data().searchMonsters("tormented demon", 1).get(0);
+		OptimizationRequest request = new OptimizationRequest(
+			td, CombatStyle.RANGED, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+		DpsResult best = new LoadoutOptimizer().optimize(data(), request).get(0);
+		GearItem feet = best.getLoadout().get(com.loadoutlab.data.GearSlot.FEET);
+		GearItem hands = best.getLoadout().get(com.loadoutlab.data.GearSlot.HANDS);
+		Assert.assertNotNull(feet);
+		Assert.assertTrue("expected avernic treads, got " + feet.getName(),
+			feet.getName().toLowerCase().startsWith("avernic treads"));
+		Assert.assertNotNull(hands);
+		Assert.assertEquals("Zaryte vambraces", hands.getName());
+	}
+
+	@Test
 	public void juvinatesHalveNonSilverDamageOnly()
 	{
 		MonsterStats juvinate = monster("vampyre juvinate");
