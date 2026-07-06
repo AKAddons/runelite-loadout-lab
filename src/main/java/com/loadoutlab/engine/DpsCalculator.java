@@ -135,7 +135,8 @@ public final class DpsCalculator
 		}
 
 		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getRanged());
-		int maxHit = RollMath.maxHitFromEffective(effectiveDamage, effectiveRangedStrength(loadout));
+		int maxHit = RollMath.maxHitFromEffective(effectiveDamage,
+			effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
@@ -149,7 +150,13 @@ public final class DpsCalculator
 		{
 			speed = Math.max(2, speed - 1);
 		}
-		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, rapid ? "ranged rapid" : "ranged accurate", attackRoll, defenceRoll);
+		String attackType = rapid ? "ranged rapid" : "ranged accurate";
+		String dartName = BlowpipeDarts.tierName(request, loadout.getWeapon());
+		if (dartName != null)
+		{
+			attackType += " - " + dartName;
+		}
+		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateMagic(OptimizationRequest request, Loadout loadout)

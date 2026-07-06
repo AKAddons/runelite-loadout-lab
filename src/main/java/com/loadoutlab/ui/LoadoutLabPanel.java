@@ -368,6 +368,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
 		addSpellLine(card, style, best);
+		addDartLine(card, best);
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
 			result.specDrainValue, best.getExpectedHit(),
 			"Swapped into your best set for one special attack");
@@ -408,6 +409,7 @@ public class LoadoutLabPanel extends PluginPanel
 			if (expanded)
 			{
 				addSpellLine(card, style, result.overallBest);
+				addDartLine(card, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
 					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
 					"The strongest special attack that exists vs this monster");
@@ -416,6 +418,23 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return card;
+	}
+
+	/** Blowpipes: name the loaded dart the numbers assume. */
+	private void addDartLine(JPanel card, DpsResult result)
+	{
+		String type = result.getAttackType();
+		int idx = type.indexOf(" - ");
+		if (idx < 0 || !type.startsWith("ranged"))
+		{
+			return;
+		}
+		JLabel dart = new JLabel("Loaded with: " + type.substring(idx + 3));
+		dart.setForeground(new Color(150, 170, 230));
+		dart.setFont(dart.getFont().deriveFont(11f));
+		dart.setAlignmentX(LEFT_ALIGNMENT);
+		dart.setToolTipText("The blowpipe's numbers include this dart's ranged strength");
+		card.add(dart);
 	}
 
 	/** A spec line with the weapon's icon: "Spec: <name> - avg N dmg (C% energy)". */
