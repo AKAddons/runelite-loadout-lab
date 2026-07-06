@@ -59,11 +59,110 @@ public class OfficialVectorExport
 		{"shadow-td", "Tormented Demon", "1", "MAGIC", "Tumeken's shadow", null},
 	};
 
+	/** Sweep battery: the official engine adjudicates OUR optimizer's own
+	 * full game-best picks per style for each of these monsters. */
+	private static final String[][] SWEEP_MONSTERS = {
+		{"Goblin", ""},
+		{"Zulrah", "Serpentine"},
+		{"Alchemical Hydra", ""},
+		{"Tormented Demon", "1"},
+		{"General Graardor", ""},
+		{"Kree'arra", ""},
+		{"Vorkath", "Post-quest"},
+		{"Cerberus", ""},
+		{"Scurrius", ""},
+		{"Dusk", "First form"},
+		{"Abyssal demon", "Standard"},
+		{"Corporeal Beast", ""},
+		{"Aberrant spectre", ""},
+		{"Kalphite Queen", "Airborne"},
+	};
+
+	@Test
+	public void sweep() throws Exception
+	{
+		String dir = System.getenv("LOADOUT_LAB_VECTORS");
+		Assume.assumeNotNull(dir);
+		Assume.assumeNotNull(System.getenv("LOADOUT_LAB_SWEEP"));
+
+		LoadoutData data = new DataService().load();
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		List<Map<String, Object>> vectors = new ArrayList<>();
+		List<Map<String, Object>> ours = new ArrayList<>();
+
+		for (String[] m : SWEEP_MONSTERS)
+		{
+			MonsterStats monster = data.searchMonsters(m[0], 10).stream()
+				.filter(x -> m[1].isEmpty() || m[1].equalsIgnoreCase(x.getVersion()))
+				.findFirst()
+				.orElse(data.searchMonsters(m[0], 1).stream().findFirst().orElse(null));
+			if (monster == null)
+			{
+				continue;
+			}
+			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+			{
+				OptimizationRequest request = new OptimizationRequest(
+					monster, style, PlayerLevels.MAXED,
+					prayersFor(style), null, 0,
+					CandidateMode.ALL_STANDARD, true, false,
+					OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+				List<DpsResult> results = optimizer.optimize(data, request);
+				if (results.isEmpty())
+				{
+					continue;
+				}
+				DpsResult result = results.get(0);
+				String name = (m[0] + "-" + style).toLowerCase().replace(" ", "").replace("'", "");
+
+				List<Object> gearNames = new ArrayList<>();
+				for (GearItem item : result.getLoadout().getGear().values())
+				{
+					if (item != null)
+					{
+						gearNames.add(gearRef(item));
+					}
+				}
+				Map<String, Object> vector = new LinkedHashMap<>();
+				vector.put("name", name);
+				vector.put("monster", m[0]);
+				vector.put("monsterVersion", m[1]);
+				vector.put("gear", gearNames);
+				vector.put("prayers", prayerNames(style));
+				if (!result.getSpellName().isEmpty())
+				{
+					vector.put("spell", result.getSpellName());
+				}
+				vectors.add(vector);
+
+				Map<String, Object> mine = new LinkedHashMap<>();
+				mine.put("name", name);
+				mine.put("dps", result.getDps());
+				mine.put("maxHit", result.getMaxHit());
+				mine.put("accuracy", result.getAccuracy());
+				mine.put("attackRoll", result.getAttackRoll());
+				mine.put("weapon", result.getLoadout().getWeapon().getName());
+				ours.add(mine);
+			}
+		}
+		try (FileWriter w = new FileWriter(dir + "/vectors.json"))
+		{
+			gson.toJson(vectors, w);
+		}
+		try (FileWriter w = new FileWriter(dir + "/ours.json"))
+		{
+			gson.toJson(ours, w);
+		}
+		System.out.println("sweep exported " + vectors.size() + " vectors");
+	}
+
 	@Test
 	public void export() throws Exception
 	{
 		String dir = System.getenv("LOADOUT_LAB_VECTORS");
 		Assume.assumeNotNull(dir);
+		Assume.assumeTrue(System.getenv("LOADOUT_LAB_SWEEP") == null);
 
 		LoadoutData data = new DataService().load();
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();

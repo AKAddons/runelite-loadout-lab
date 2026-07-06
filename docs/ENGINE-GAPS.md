@@ -36,8 +36,20 @@ listed below.
 - ~~Tormented demons~~ ADDED (TormentedDemonRules, matching the official
   default phase): guaranteed hits; 20% damage reduction bypassed by
   demonbane and abyssal weapons. All TD scenarios within 3.4%.
-- **Bone staff vs Scurrius** (-9%, acc .608 vs .669): likely the
-  NPC-defends-magic-with-Defence-level rule (#13).
+- ~~Bone staff vs Scurrius / systematic magic accuracy~~ FIXED 2026-07-06:
+  Mystic Vigour also grants x1.18 magic ACCURACY (applied with its own
+  floor after Augury) plus the +2 accurate stance - every magic sweep row
+  converged to 0.0%.
+- ~~Style immunities / NPC rules~~ ADDED 2026-07-06 (MonsterMechanics,
+  id lists vendored from the official calc): magic/ranged/melee immunity
+  lists (Zulrah meleeable with a polearm - both engines now agree at
+  6.390 dps exactly; Dusk ranged/magic immune), leafy gating, salamander-
+  only and pickaxe-only (CoX Guardians) monsters, Corporeal Beast halving
+  (full damage: stab spears/halberds/fang-stab/magic), Kraken ranged 1/7,
+  Tekton magic 1/5, Ice demon 1/3 without fire, Slagilith, zogres, and
+  the defends-magic-with-Defence-level list. Sweep mode
+  (verify_official.py --sweep) adjudicates the optimizer's own full-gear
+  picks across a 14-monster battery: all rows within 3.7%, mostly exact.
 - ~~Twisted bow vs Zulrah~~ RESOLVED 2026-07-06: #3 was misdiagnosed -
   the tbow polynomial and caps were identical to the official engine all
   along (tbow-hydra converges exactly). The 62-vs-50 was ZULRAH's
@@ -49,6 +61,9 @@ listed below.
   explicitly says both - keeping ours, watch upstream.
 - Residual ~2.6% on guaranteed-hit TD rows: EV rounding in the 0.8x
   reduction (they floor per-hitsplat with min 1; we scale the mean).
+- TD emberlight melee -3.7% (max 52 vs 54): demonbane add-factor rounding
+  order. Scythe rows: our maxHit reports the first hit, theirs the 3-hit
+  total - display-only, dps exact.
 
 ## Correctness bugs in the vendored engine
 

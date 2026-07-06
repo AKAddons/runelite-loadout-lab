@@ -16,7 +16,8 @@ public final class DpsCalculator
 	{
 		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon())
 			|| !FlyingRules.canReach(request.getMonster(), request.getStyle(), loadout.getWeapon())
-			|| !RatBoneRules.canUse(request.getMonster(), loadout.getWeapon()))
+			|| !RatBoneRules.canUse(request.getMonster(), loadout.getWeapon())
+			|| MonsterMechanics.isImmune(request.getMonster(), request.getStyle(), loadout, request.getSpell()))
 		{
 			return null;
 		}
@@ -38,6 +39,8 @@ public final class DpsCalculator
 		{
 			factor *= TormentedDemonRules.damageFactor(
 				request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName());
+			factor *= MonsterMechanics.damageFactor(request.getMonster(), request.getStyle(),
+				loadout, result.getAttackType(), request.getSpell());
 		}
 		// Zulrah rerolls any hit above 50 down to 45-50 (Jagex-confirmed);
 		// scale the expectation accordingly and cap the displayed max.
@@ -183,7 +186,10 @@ public final class DpsCalculator
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
 		PlayerLevels levels = effectiveRequest.getLevels();
 		PrayerBonuses prayers = effectiveRequest.getPrayers();
-		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 9;
+		// Two-step prayer floors (Augury then Mystic Vigour's 1.18 accuracy),
+		// +2 accurate stance, +9 - matches the official calc's effective level.
+		int effectiveAccuracy = (int) Math.floor(Math.floor(levels.getMagic() * prayers.getMagicAccuracy())
+			* prayers.getMagicAccuracySecondary()) + 2 + 9;
 		if (isWearingMagicVoid(loadout))
 		{
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
@@ -318,7 +324,11 @@ public final class DpsCalculator
 
 	private long npcDefenceRoll(MonsterStats monster, String attackType, GearItem weapon)
 	{
-		int level = "magic".equals(attackType) ? monster.getMagic() : monster.getDefence();
+		// Most NPCs defend magic with their Magic level; a curated list
+		// (vendored from the official calc) uses Defence level instead.
+		int level = "magic".equals(attackType)
+			&& !MonsterMechanics.magicDefenceUsesDefenceLevel(monster)
+			? monster.getMagic() : monster.getDefence();
 		int bonus;
 		if ("ranged".equals(attackType))
 		{

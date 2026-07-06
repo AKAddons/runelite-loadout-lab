@@ -38,14 +38,19 @@ def run(cmd, cwd, env=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--calc-dir", default=os.path.expanduser("~/Development/osrs-dps-calc"))
+    parser.add_argument("--sweep", action="store_true",
+                        help="adjudicate the optimizer's own game-best picks across a monster battery")
     args = parser.parse_args()
 
     work = tempfile.mkdtemp(prefix="loadout-lab-verify-")
     print("workdir:", work)
 
     print("1/3 exporting vectors from the Loadout Lab engine...")
+    export_env = {"LOADOUT_LAB_VECTORS": work}
+    if args.sweep:
+        export_env["LOADOUT_LAB_SWEEP"] = "1"
     run(["./gradlew", "cleanTest", "test", "--tests", "*OfficialVectorExport"],
-        cwd=REPO, env={"LOADOUT_LAB_VECTORS": work})
+        cwd=REPO, env=export_env)
 
     print("2/3 running the official calculator on the same vectors...")
     run(["corepack", "yarn", "jest", "src/tests/harness/LoadoutLabVectors.test.ts"],
@@ -71,9 +76,10 @@ def main():
                   "ERROR: " + theirs["error"][:60] if theirs else "missing"))
             continue
         delta = (mine["dps"] - theirs["dps"]) / theirs["dps"] * 100 if theirs["dps"] else 0.0
-        print("%-24s %10.3f %10.3f %6.1f%% | %6d %6d | %7.3f %7.3f" % (
+        print("%-24s %10.3f %10.3f %6.1f%% | %6d %6d | %7.3f %7.3f %s" % (
             name, mine["dps"], theirs["dps"], delta,
-            mine["maxHit"], theirs["maxHit"], mine["accuracy"], theirs["accuracy"]))
+            mine["maxHit"], theirs["maxHit"], mine["accuracy"], theirs["accuracy"],
+            mine.get("weapon", "")))
         worst.append((abs(delta), name))
     worst.sort(reverse=True)
     if worst:

@@ -338,8 +338,14 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");
 			boolean flying = style == CombatStyle.MELEE
 				&& selectedMonster != null && selectedMonster.hasAttribute("flying");
-			JLabel none = new JLabel(vyre
+			boolean immune = com.loadoutlab.engine.MonsterMechanics.styleImmune(selectedMonster, style);
+			boolean leafy = selectedMonster != null && selectedMonster.hasAttribute("leafy");
+			JLabel none = new JLabel(immune
+				? "Immune to " + style.toString().toLowerCase()
+				: vyre
 				? "Immune - needs a vyre weapon"
+				: leafy
+				? "Needs leaf-bladed / broad / Magic Dart"
 				: flying
 					? "Flying - needs a halberd"
 					: "No usable owned set found.");

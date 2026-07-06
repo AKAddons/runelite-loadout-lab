@@ -13,6 +13,9 @@ public final class PrayerBonuses
 	private final double rangedAccuracy;
 	private final double rangedStrength;
 	private final double magicAccuracy;
+	/** Mystic Vigour's separate x1.18 magic accuracy factor - the official
+	 * calc applies it with its own floor AFTER Augury's 1.25. */
+	private final double magicAccuracySecondary;
 	private final double magicDamagePercent;
 
 	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy)
@@ -27,6 +30,7 @@ public final class PrayerBonuses
 		this.rangedAccuracy = rangedAccuracy;
 		this.rangedStrength = rangedStrength;
 		this.magicAccuracy = magicAccuracy;
+		this.magicAccuracySecondary = levelFor(magicDamagePercent);
 		this.magicDamagePercent = magicDamagePercent;
 	}
 
@@ -186,6 +190,17 @@ public final class PrayerBonuses
 	public double getRangedStrength()
 	{
 		return rangedStrength;
+	}
+
+	/** 1.18 when Mystic Vigour is up (77+ prayer), else 1.0. */
+	private static double levelFor(double magicDamagePercent)
+	{
+		return magicDamagePercent >= 7.0 ? 1.18 : 1.0;
+	}
+
+	public double getMagicAccuracySecondary()
+	{
+		return magicAccuracySecondary;
 	}
 
 	public double getMagicAccuracy()

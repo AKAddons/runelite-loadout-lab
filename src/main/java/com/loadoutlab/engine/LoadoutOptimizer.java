@@ -318,6 +318,10 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
+			if (slot == GearSlot.WEAPON && !MonsterMechanics.weaponCanEverWork(request.getMonster(), request.getStyle(), item))
+			{
+				continue;
+			}
 			if (slot != GearSlot.WEAPON && candidateScore(request, item) <= 0)
 			{
 				continue;
