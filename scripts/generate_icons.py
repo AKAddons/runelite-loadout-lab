@@ -71,22 +71,21 @@ SIDEBAR_PALETTE = {
     "y": GOLD,
 }
 
-# Great helm whose visor doubles as an Erlenmeyer flask: the eye slit is
-# the flask rim, the breathing slit is its neck, and the face guard flares
-# into a base of golden potion (with one gold bubble rising). Helmet at
-# first glance - gear; flask of gold brew on the second look - the Lab and
-# the loot. Gold four-point star tops it off.
+# Great helm whose eye slits rise into two "L"s - the Loadout Lab
+# monogram - drawn as lab tubing with gold potion pooled in each foot.
+# Helmet at first glance - gear; look again and the eyes are L + L with
+# the gold settled at the bottom, the BiS loot. Gold star tops it off.
 SIDEBAR_GRID = [
     ".............y..",
     ".....GGGGGG.yyy.",
     "....GGGGGGGG.y..",
     "...GGGGGGGGGG...",
     "..GGGGGGGGGGGG..",
-    "..GG........GG..",
-    "..GGGGG..GGGGG..",
-    "..GGGGG..GGGGG..",
-    "..GGGG....GGGG..",
-    "..GGG.yyyy.GGG..",
+    "..GG..GGGG..GG..",
+    "..GG..GGGG..GG..",
+    "..GG..GGGG..GG..",
+    "..GG..GGGG..GG..",
+    "..GG...GGG...G..",
     "...GGGGGGGGGG...",
     "...GGGGGGGGGG...",
     "....GGGGGGGG....",
