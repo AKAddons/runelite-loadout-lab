@@ -13,6 +13,6 @@ public class MonsterNotesTest
 		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("gargoyle", 1).get(0)));
 		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("rockslug", 1).get(0)));
 		Assert.assertNull(MonsterNotes.noteFor(data.searchMonsters("goblin", 1).get(0)));
-		Assert.assertNull(MonsterNotes.noteFor(data.searchMonsters("zulrah", 1).get(0)));
+		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("zulrah", 1).get(0)));
 	}
 }

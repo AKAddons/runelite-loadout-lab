@@ -44,11 +44,15 @@ public class DataServiceTest
 	public void leaguesRewardsAreExcludedFromTheCorpus()
 	{
 		LoadoutData data = new DataService().load();
+		// Main-game 'Echo boots' (Amoxliatl recoil boots) must NOT be
+		// caught by the leagues echo filter.
+		Assert.assertNotNull(data.getGear(28945));
 		for (GearItem item : data.getGearItems())
 		{
 			String name = item.getName().toLowerCase();
 			Assert.assertFalse("leagues-only gear must not be suggestible: " + item.getName(),
-				name.startsWith("echo ") || name.contains("trailblazer"));
+				name.startsWith("echo venator") || name.startsWith("echo virtus")
+					|| name.startsWith("echo ahrim") || name.contains("trailblazer"));
 		}
 		// Spot-check the stat-relevant offender: Echo venator bow (charged).
 		Assert.assertNull(data.getGear(30434));

@@ -127,7 +127,11 @@ public final class DataService
 	private static boolean isLeaguesReward(String name, String examine)
 	{
 		String n = name == null ? "" : name.toLowerCase();
-		return n.startsWith("echo ")
+		// Only the actual Leagues V echo line - 'Echo boots' (Amoxliatl) is
+		// a main-game recoil item and must stay in the corpus.
+		return n.startsWith("echo venator") || n.startsWith("echo virtus")
+			|| n.startsWith("echo ahrim") || n.startsWith("echo axe")
+			|| n.startsWith("echo pickaxe") || n.startsWith("echo harpoon")
 			|| n.contains("trailblazer")
 			|| (examine != null && examine.toLowerCase().contains("league"));
 	}
