@@ -145,6 +145,23 @@ public final class OptimizationRequest
 			resultLimit);
 	}
 
+	public OptimizationRequest withMonster(com.loadoutlab.data.MonsterStats monster)
+	{
+		return new OptimizationRequest(
+			monster,
+			style,
+			levels,
+			prayers,
+			spell,
+			budget,
+			candidateMode,
+			includeUntradeables,
+			onSlayerTask,
+			ownedItems,
+			requirementProfile,
+			resultLimit);
+	}
+
 	public OptimizationRequest withSpell(SpellStats spell)
 	{
 		return new OptimizationRequest(

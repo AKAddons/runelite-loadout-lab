@@ -369,7 +369,8 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(dps);
 		addSpellLine(card, style, best);
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
-			best.getExpectedHit(), "Swapped into your best set for one special attack");
+			result.specDrainValue, best.getExpectedHit(),
+			"Swapped into your best set for one special attack");
 		card.add(Box.createVerticalStrut(4));
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage));
 
@@ -408,7 +409,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				addSpellLine(card, style, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
-					result.overallBest.getExpectedHit(),
+					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
 					"The strongest special attack that exists vs this monster");
 				card.add(Box.createVerticalStrut(4));
 				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage));
@@ -419,14 +420,18 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** A spec line with the weapon's icon: "Spec: <name> - avg N dmg (C% energy)". */
 	private void addSpecLine(JPanel card, SpecialAttack spec,
-		GearItem weapon, double expectedDamage, double replacedAutoExpected, String fallbackTooltip)
+		GearItem weapon, double expectedDamage, double drainValue,
+		double replacedAutoExpected, String fallbackTooltip)
 	{
 		if (spec == null || weapon == null || expectedDamage <= 0)
 		{
 			return;
 		}
-		JLabel line = new JLabel(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
-			spec.getDisplayName(), expectedDamage, spec.getEnergyCost()));
+		JLabel line = new JLabel(drainValue > 0.5
+			? String.format("Spec: %s - %.0f dmg + drain ~%.0f",
+				spec.getDisplayName(), expectedDamage, drainValue)
+			: String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
+				spec.getDisplayName(), expectedDamage, spec.getEnergyCost()));
 		line.setForeground(new Color(220, 180, 120));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
@@ -438,8 +443,13 @@ public class LoadoutLabPanel extends PluginPanel
 				+ " (+%.2f with a Lightbearer)",
 			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, false),
 			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, true));
+		String drain = drainValue > 0.5
+			? String.format("<br>Defence drain worth about %.0f extra damage over"
+				+ " the kill (your set hits harder once it lands - bigger"
+				+ " payoff on high-HP targets).", drainValue)
+			: "";
 		line.setToolTipText("<html>" + (note.isEmpty() ? fallbackTooltip : note)
-			+ "<br>" + sustained + "</html>");
+			+ "<br>" + sustained + drain + "</html>");
 		itemManager.getImage(weapon.getId()).addTo(line);
 		card.add(line);
 	}

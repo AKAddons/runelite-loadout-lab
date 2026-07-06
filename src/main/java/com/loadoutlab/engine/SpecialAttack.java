@@ -55,10 +55,24 @@ public final class SpecialAttack
 	private final double accuracyMultiplier;
 	private final double damageMultiplier;
 	private final String note;
+	/** Defence drained on a damaging hit, as a fraction of CURRENT defence
+	 * (DWH 0.30, elder maul 0.35); 0 for non-drain specs. BGS drains by
+	 * damage dealt - modeled via {@link #drainsByDamage}. */
+	private final double defenceDrainFraction;
+	private final boolean drainsByDamage;
 
 	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
 		int energyCost, double accuracyMultiplier, double damageMultiplier, String note)
 	{
+		this(namePrefixes, displayName, style, kind, energyCost, accuracyMultiplier, damageMultiplier, note, 0, false);
+	}
+
+	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
+		int energyCost, double accuracyMultiplier, double damageMultiplier, String note,
+		double defenceDrainFraction, boolean drainsByDamage)
+	{
+		this.defenceDrainFraction = defenceDrainFraction;
+		this.drainsByDamage = drainsByDamage;
 		this.namePrefixes = namePrefixes;
 		this.displayName = displayName;
 		this.style = style;
@@ -83,15 +97,15 @@ public final class SpecialAttack
 		new SpecialAttack(p("armadyl godsword"), "Armadyl godsword", CombatStyle.MELEE,
 			Kind.SINGLE, 50, 2.0, 1.375, ""),
 		new SpecialAttack(p("bandos godsword"), "Bandos godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.21, "drains combat stats by damage dealt"),
+			Kind.SINGLE, 50, 2.0, 1.21, "drains combat stats by damage dealt", 0, true),
 		new SpecialAttack(p("saradomin godsword"), "Saradomin godsword", CombatStyle.MELEE,
 			Kind.SINGLE, 50, 2.0, 1.10, "heals HP 50% / Prayer 25% of damage"),
 		new SpecialAttack(p("ancient godsword"), "Ancient godsword", CombatStyle.MELEE,
 			Kind.SINGLE, 50, 2.0, 1.10, "plus 25 delayed blood-sacrifice damage"),
 		new SpecialAttack(p("dragon warhammer"), "Dragon warhammer", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 1.0, 1.50, "lowers Defence 30% on a damaging hit"),
+			Kind.SINGLE, 50, 1.0, 1.50, "lowers Defence 30% on a damaging hit", 0.30, false),
 		new SpecialAttack(p("elder maul"), "Elder maul", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 1.25, 1.0, "lowers Defence 35% on a damaging hit"),
+			Kind.SINGLE, 50, 1.25, 1.0, "lowers Defence 35% on a damaging hit", 0.35, false),
 		new SpecialAttack(p("granite maul"), "Granite maul", CombatStyle.MELEE,
 			Kind.EXTRA_ATTACK, 60, 1.0, 1.0, "instant extra attack"),
 		new SpecialAttack(p("crystal halberd", "dragon halberd"), "Halberd sweep", CombatStyle.MELEE,
@@ -290,5 +304,38 @@ public final class SpecialAttack
 	public Kind getKind()
 	{
 		return kind;
+	}
+
+	/** Chance this spec lands a damaging hit, from the base result's rolls. */
+	public double landChance(DpsResult base)
+	{
+		if (kind == Kind.VOIDWAKER)
+		{
+			return 1.0;
+		}
+		return RollMath.normalAccuracy(
+			(long) (base.getAttackRoll() * accuracyMultiplier), base.getDefenceRoll());
+	}
+
+	/**
+	 * The monster's Defence level after ONE successful use of this spec, or
+	 * the unchanged level for non-drain specs. BGS drains by damage dealt.
+	 */
+	public int drainedDefence(int currentDefence, double specExpectedDamage)
+	{
+		if (drainsByDamage)
+		{
+			return Math.max(0, currentDefence - (int) specExpectedDamage);
+		}
+		if (defenceDrainFraction > 0)
+		{
+			return currentDefence - (int) (currentDefence * defenceDrainFraction);
+		}
+		return currentDefence;
+	}
+
+	public boolean drainsDefence()
+	{
+		return drainsByDamage || defenceDrainFraction > 0;
 	}
 }

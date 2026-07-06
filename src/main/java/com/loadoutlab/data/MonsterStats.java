@@ -68,6 +68,14 @@ public final class MonsterStats
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 	}
 
+	/** A copy at a different Defence level - defence-drain spec modeling. */
+	public MonsterStats withDefence(int newDefence)
+	{
+		return new MonsterStats(id, name, version, combatLevel, hitpoints, size,
+			Math.max(0, newDefence), magic, offensiveMagic, defensive,
+			attributes, slayerMonster, weaknessElement, weaknessSeverity);
+	}
+
 	public boolean hasAttribute(String attribute)
 	{
 		String normalized = attribute.toLowerCase(Locale.ROOT);

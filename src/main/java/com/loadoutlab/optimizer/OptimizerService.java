@@ -53,9 +53,11 @@ public class OptimizerService
 		public final SpecialAttack spec;
 		public final GearItem specWeapon;
 		public final double specExpectedDamage;
+		public final double specDrainValue;
 		public final SpecialAttack gameSpec;
 		public final GearItem gameSpecWeapon;
 		public final double gameSpecExpectedDamage;
+		public final double gameSpecDrainValue;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec)
@@ -65,9 +67,11 @@ public class OptimizerService
 			this.spec = spec == null ? null : spec.spec;
 			this.specWeapon = spec == null ? null : spec.weapon;
 			this.specExpectedDamage = spec == null ? 0 : spec.expectedDamage;
+			this.specDrainValue = spec == null ? 0 : spec.drainValue;
 			this.gameSpec = gameSpec == null ? null : gameSpec.spec;
 			this.gameSpecWeapon = gameSpec == null ? null : gameSpec.weapon;
 			this.gameSpecExpectedDamage = gameSpec == null ? 0 : gameSpec.expectedDamage;
+			this.gameSpecDrainValue = gameSpec == null ? 0 : gameSpec.drainValue;
 		}
 	}
 
@@ -173,12 +177,14 @@ public class OptimizerService
 		final SpecialAttack spec;
 		final GearItem weapon;
 		final double expectedDamage;
+		final double drainValue;
 
-		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage)
+		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage, double drainValue)
 		{
 			this.spec = spec;
 			this.weapon = weapon;
 			this.expectedDamage = expectedDamage;
+			this.drainValue = drainValue;
 		}
 	}
 
@@ -228,12 +234,53 @@ public class OptimizerService
 				continue;
 			}
 			double expected = spec.expectedDamage(base, monster, levels);
-			if (best == null || expected > best.expectedDamage)
+			double drainValue = drainValue(spec, base, expected, request, baseResults.get(0), monster);
+			if (best == null || expected + drainValue > best.expectedDamage + best.drainValue)
 			{
-				best = new SpecPick(spec, item, expected);
+				best = new SpecPick(spec, item, expected, drainValue);
 			}
 		}
 		return best;
+	}
+
+	/**
+	 * Defence-drain specs (DWH/BGS/elder maul) are worth more than their
+	 * hit: a landed drain raises the main set's DPS for the REST of the
+	 * kill. Valued as land-chance x dps-gain-at-drained-defence x expected
+	 * remaining fight (monster hp / current dps) - which is exactly why
+	 * drains shine on high-HP, high-defence targets and are pointless on
+	 * throwaway mobs.
+	 */
+	private double drainValue(
+		SpecialAttack spec,
+		DpsResult specBase,
+		double specExpectedDamage,
+		OptimizationRequest request,
+		DpsResult mainResult,
+		MonsterStats monster)
+	{
+		if (!spec.drainsDefence() || request.getStyle() != CombatStyle.MELEE)
+		{
+			return 0;
+		}
+		double mainDps = mainResult.getDps();
+		if (mainDps <= 0.01)
+		{
+			return 0;
+		}
+		int drainedDefence = spec.drainedDefence(monster.getDefence(), specExpectedDamage);
+		if (drainedDefence >= monster.getDefence())
+		{
+			return 0;
+		}
+		DpsResult drained = new DpsCalculator().calculate(
+			request.withMonster(monster.withDefence(drainedDefence)), mainResult.getLoadout());
+		if (drained == null || drained.getDps() <= mainDps)
+		{
+			return 0;
+		}
+		double fightSeconds = Math.min(600, monster.getHitpoints() / mainDps);
+		return spec.landChance(specBase) * (drained.getDps() - mainDps) * fightSeconds;
 	}
 
 	/** The base set with the spec weapon swapped in, or null if unusable.

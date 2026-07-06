@@ -18,6 +18,45 @@ import org.junit.Test;
 public class OptimizerServiceTest
 {
 	@Test
+	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception
+	{
+		LoadoutData data = new DataService().load();
+		// General Graardor: 250 defence, 255 hp - a drain pays off for the
+		// whole kill. Against a goblin the dagger's raw burst should win.
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip - main weapon
+		owned.put(1215, 1);   // dragon dagger - burst spec
+		owned.put(13576, 1);  // dragon warhammer - drain spec
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			Assert.assertEquals("Dragon warhammer", specPick(service, graardor, owned));
+			Assert.assertEquals("Dragon dagger", specPick(service, goblin, owned));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	private static String specPick(OptimizerService service, MonsterStats monster,
+		Map<Integer, Integer> owned) throws Exception
+	{
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		service.bestPerStyle(monster, PlayerLevels.MAXED, RequirementProfile.MAXED,
+			new OwnedItems(owned, true), owned.hashCode(), false, results ->
+			{
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		return out.get().get(CombatStyle.MELEE).spec.getDisplayName();
+	}
+
+	@Test
 	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
 	{
 		LoadoutData data = new DataService().load();
