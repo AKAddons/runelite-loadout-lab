@@ -45,6 +45,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -120,7 +121,7 @@ public class LoadoutLabPlugin extends Plugin
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
-					.icon(drawIcon())
+					.icon(loadSidebarIcon())
 					.priority(7)
 					.panel(panel)
 					.build();
@@ -309,7 +310,21 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-	/** Sidebar icon drawn at runtime - no bundled art needed for v0.1. */
+	/** Bundled sidebar icon (see scripts/generate_icons.py), drawn fallback if absent. */
+	private static BufferedImage loadSidebarIcon()
+	{
+		try
+		{
+			return ImageUtil.loadImageResource(LoadoutLabPlugin.class, "icon.png");
+		}
+		catch (RuntimeException e)
+		{
+			log.warn("Bundled icon.png missing or unreadable; using drawn fallback", e);
+			return drawIcon();
+		}
+	}
+
+	/** Fallback sidebar icon drawn at runtime. */
 	private static BufferedImage drawIcon()
 	{
 		BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
