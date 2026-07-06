@@ -114,13 +114,14 @@ public class OptimizerService
 		OwnedItems owned,
 		int collectionFingerprint,
 		boolean f2pOnly,
+		boolean onSlayerTask,
 		java.util.Set<Integer> excludedItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final java.util.Set<Integer> excluded = excludedItems == null
 			? java.util.Collections.emptySet() : excludedItems;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
+			+ "|" + onSlayerTask + "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -143,7 +144,7 @@ public class OptimizerService
 			{
 				OptimizationRequest ownedRequest = request(
 					monster, style, boostedLevels, requirements,
-					CandidateMode.OWNED_ONLY, effectiveOwned, 3).withExcludedItems(excluded);
+					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask).withExcludedItems(excluded);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -156,7 +157,7 @@ public class OptimizerService
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1).withExcludedItems(excluded);
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask).withExcludedItems(excluded);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
@@ -337,7 +338,8 @@ public class OptimizerService
 		RequirementProfile requirements,
 		CandidateMode mode,
 		OwnedItems owned,
-		int limit)
+		int limit,
+		boolean onSlayerTask)
 	{
 		return new OptimizationRequest(
 			monster,
@@ -348,7 +350,7 @@ public class OptimizerService
 			0,             // budget unused by these modes
 			mode,
 			true,          // untradeables count
-			false,         // slayer-task toggle arrives in v0.2
+			onSlayerTask,
 			owned,
 			requirements,
 			limit);

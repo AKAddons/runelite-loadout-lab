@@ -610,7 +610,21 @@ public final class LoadoutOptimizer
 		{
 			return candidate.isTradeable();
 		}
+		// And prefer a normal-looking version over Broken/Locked/Uncharged
+		// states (a 'Broken' Dizana's quiver was winning its stat tie).
+		boolean candidateBad = badVersion(candidate);
+		if (candidateBad != badVersion(current))
+		{
+			return !candidateBad;
+		}
 		return budgetCost(request, candidate) < budgetCost(request, current);
+	}
+
+	private static boolean badVersion(GearItem item)
+	{
+		String version = item.getVersion().toLowerCase(Locale.ROOT);
+		return version.contains("broken") || version.contains("locked")
+			|| version.contains("uncharged") || version.contains("inactive");
 	}
 
 	private static String signature(Loadout loadout)

@@ -83,9 +83,9 @@ listed below.
    EVs), utility value of drains (DWH/BGS worth beyond the hit), spec-weapon
    purchase advice, ZCB bolt-proc damage (blocked on #7).
 6. **Dharok's set** (HP-scaled max hit).
-6b. **Crystal armour + Bow of faerdhinen/crystal bow** set scaling (up to
-   +15% dmg / +30% acc with the full set) - Bofa suggestions are underrated
-   without it. Ahrim's 25% proc (+30% dmg) also missing.
+6b. ~~Crystal armour + Bofa~~ MIS-AUDIT (2026-07-06): the vendored engine
+   already modeled it (isCrystalBow/crystalArmourPieces) - sweep Bofa rows
+   converge exactly. Ahrim's 25% proc (+30% dmg) still missing.
 7. **Bolt procs** (ruby/diamond/dstone(e), Zaryte cbow multiplier, diary bonus) — materially changes high-defence ranged answers.
 8. **Elite void magic +2.5% damage** (only the accuracy part is modeled).
 9. **Tomes** (fire/water/earth), smoke battlestaff, chaos gauntlets, sunfire runes. (~~Mark of Darkness + demonbane~~ MODELED 2026-07-06: demonbane assumes MoD active - 40%/80% accuracy and +25%/+50% damage with the Purging staff; harness vectors carry a markOfDarkness flag so the official engine verifies under the same assumption. Purging staff is now the magic pick vs demons - TD magic converges at +0.7%.)

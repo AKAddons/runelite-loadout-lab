@@ -48,7 +48,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** (monster, f2pOnly, onDone) - the plugin wires this to the optimizer. */
 	public interface ComputeHook
 	{
-		void compute(MonsterStats monster, boolean f2pOnly, Runnable onDone);
+		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -82,6 +82,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel selectedLabel = new JLabel();
 	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
+	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	private final Timer searchDebounce;
@@ -174,6 +175,13 @@ public class LoadoutLabPanel extends PluginPanel
 		f2pOnly.addActionListener(e -> recompute());
 		f2pOnly.setVisible(false); // only shown on non-members worlds
 		top.add(f2pOnly);
+
+		slayerTask.setOpaque(false);
+		slayerTask.setForeground(new Color(200, 200, 200));
+		slayerTask.setAlignmentX(LEFT_ALIGNMENT);
+		slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
+		slayerTask.addActionListener(e -> recompute());
+		top.add(slayerTask);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
@@ -396,7 +404,8 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
 		statusLabel.setText(" ");
-		computeHook.compute(selectedMonster, f2pOnly.isSelected(), () -> statusLabel.setText(" "));
+		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
+			() -> statusLabel.setText(" "));
 	}
 
 	private void clearSelection()
@@ -487,6 +496,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(new Color(140, 200, 140));
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
+		addPrayerLine(card, best);
 		addSpellLine(card, style, best);
 		addDartLine(card, best);
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
@@ -538,6 +548,21 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return card;
+	}
+
+	/** The set's total prayer bonus - slower drain, longer trips. */
+	private void addPrayerLine(JPanel card, DpsResult result)
+	{
+		int prayer = result.getLoadout().getBonuses().getPrayer();
+		if (prayer == 0)
+		{
+			return;
+		}
+		JLabel line = new JLabel(String.format("Prayer bonus: %+d", prayer));
+		line.setForeground(new Color(160, 160, 160));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		card.add(line);
 	}
 
 	/** Blowpipes: name the loaded dart the numbers assume. */

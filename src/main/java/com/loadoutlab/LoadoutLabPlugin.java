@@ -239,7 +239,7 @@ public class LoadoutLabPlugin extends Plugin
 	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
 	// ------------------------------------------------------------------
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -253,7 +253,7 @@ public class LoadoutLabPlugin extends Plugin
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
 			optimizerService.bestPerStyle(monster, levels, profile, owned, fingerprint, f2pOnly,
-				exclusions.snapshot(),
+				onSlayerTask, exclusions.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
