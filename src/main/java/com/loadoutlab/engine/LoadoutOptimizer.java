@@ -19,16 +19,23 @@ public final class LoadoutOptimizer
 {
 	private static final int SLOT_LIMIT = 10;
 	private static final int WEAPON_LIMIT = 24;
-	private static final int BEAM_WIDTH = 64;
+	private static final int BEAM_WIDTH = 96;
+	/**
+	 * Beam evaluation order: high-impact slots first so pruning is informed,
+	 * and BODY immediately before LEGS so paired set bonuses (crystal armour
+	 * with the bofa) compound before the cut - with them apart, a lone
+	 * crystal body ranked below raw-stat bodies and was pruned before the
+	 * legs could complete the set (the slayer-helm-on regression).
+	 */
 	private static final GearSlot[] NON_WEAPON_SLOTS = {
-		GearSlot.HEAD,
-		GearSlot.CAPE,
-		GearSlot.NECK,
 		GearSlot.AMMO,
 		GearSlot.BODY,
-		GearSlot.SHIELD,
 		GearSlot.LEGS,
+		GearSlot.HEAD,
+		GearSlot.NECK,
 		GearSlot.HANDS,
+		GearSlot.SHIELD,
+		GearSlot.CAPE,
 		GearSlot.FEET,
 		GearSlot.RING
 	};
