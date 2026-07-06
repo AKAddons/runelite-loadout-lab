@@ -71,26 +71,27 @@ SIDEBAR_PALETTE = {
     "y": GOLD,
 }
 
-# Alchemy bottle perched on the "LL" monogram: gold-corked green bottle
-# with golden potion glowing inside, resting on two chunky L's. Bottle =
-# the Lab, LL = Loadout Lab, gold = the best-in-slot loot; gold star
+# Potion with legs: a gold-corked, HOLLOW green bottle - dark glass
+# interior with golden potion pooled at the bottom and one bubble
+# rising - standing on two chunky L's as its little boots. Bottle = the
+# Lab, LL legs = Loadout Lab, gold = the best-in-slot loot; gold star
 # sparkles beside the cork.
 SIDEBAR_GRID = [
     ".......yy....y..",
     ".......yy...yyy.",
     "......GGGG...y..",
     ".......GG.......",
-    "......GGGG......",
-    ".....GyyyyG.....",
-    ".....GyyyyG.....",
-    ".....GyyyyG.....",
-    "......GGGG......",
-    "................",
-    "...GG....GG.....",
-    "...GG....GG.....",
-    "...GG....GG.....",
-    "...GGGGG.GGGGG..",
-    "...GGGGG.GGGGG..",
+    ".....GGGGGG.....",
+    "....G..y...G....",
+    "....G......G....",
+    "....GyyyyyyG....",
+    "....GyyyyyyG....",
+    "....GGGGGGGG....",
+    ".....GG..GG.....",
+    ".....GG..GG.....",
+    ".....GG..GG.....",
+    ".....GGG.GGG....",
+    ".....GGG.GGG....",
     "................",
 ]
 
