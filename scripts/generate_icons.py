@@ -9,10 +9,11 @@ Outputs (paths relative to the repo root):
       (the hub's documented maximum size; filename + repo-root location are
       what the hub README requires).
 
-Theme: dark card a step above RuneLite's DARK_GRAY (#28282d) so the tile reads
-against the sidebar, with the panel's selected-item green (140,200,140) as the
-accent. The mark is an Erlenmeyer flask ("Lab"); the hub icon adds a sword
-behind it for the combat-gear angle.
+Theme: alchemy. An Erlenmeyer flask of bubbling potion on a dark card a step
+above RuneLite's DARK_GRAY (#28282d), liquid in the panel's selected-item
+green (140,200,140), with the plugin's "LL" monogram knocked out of the
+liquid in the card colour. The hub icon adds escaping bubbles and gold
+alchemy sparkles.
 
 Usage:
   python3 scripts/generate_icons.py [--preview DIR]
@@ -34,13 +35,9 @@ CARD = (45, 45, 52, 255)       # card fill - slightly lighter than #28282d
 EDGE = (64, 64, 74, 255)       # card border
 GREEN = (140, 200, 140, 255)   # liquid - the panel's selected-item green
 GREEN_DK = (86, 138, 92, 255)  # flask outline (hub icon)
-GREEN_MD = (108, 168, 112, 255)  # flask outline (sidebar - brighter to pop at 16px)
-GREEN_LT = (185, 228, 185, 255)  # liquid shine
+GREEN_MD = (108, 168, 112, 255)  # flask outline (sidebar - brighter at 16px)
 GLASS = (54, 60, 56, 255)      # empty glass above the liquid
-STEEL = (152, 157, 170, 255)   # sword blade
-STEEL_LT = (204, 209, 220, 255)  # blade ridge
-GOLD = (191, 160, 90, 255)     # crossguard + pommel
-GRIP = (122, 92, 62, 255)      # sword grip
+GOLD = (208, 178, 102, 255)    # alchemy sparkles
 
 # ---------------------------------------------------------------- png writer
 
@@ -78,23 +75,23 @@ SIDEBAR_PALETTE = {
     "G": GREEN,
 }
 
-# Erlenmeyer flask: rim (row 3), neck with a rising bubble, flared body,
-# liquid from the flare down.
+# Wide-bodied Erlenmeyer flask: rim, short neck with rising bubbles, flared
+# body, and "LL" knocked out of the liquid in the card colour.
 SIDEBAR_GRID = [
     ".eeeeeeeeeeeeee.",
     "eBBBBBBBBBBBBBBe",
-    "eBBBBBBBBBBBBBBe",
     "eBBBBggggggBBBBe",
     "eBBBBBgBBgBBBBBe",
-    "eBBBBBgGBgBBBBBe",
     "eBBBBBgBBgBBBBBe",
     "eBBBBgBBBBgBBBBe",
-    "eBBBgBBBBBBgBBBe",
-    "eBBBgGGGGGGgBBBe",
-    "eBBgGGGGGGGGgBBe",
-    "eBBgGGGGGGGGgBBe",
-    "eBBgGGGGGGGGgBBe",
-    "eBBggggggggggBBe",
+    "eBBggBBBBBBggBBe",
+    "eBgGGGGGGGGGGgBe",
+    "eBgGBGGGGBGGGgBe",
+    "eBgGBGGGGBGGGgBe",
+    "eBgGBGGGGBGGGgBe",
+    "eBgGBGGGGBGGGgBe",
+    "eBgGBBBGGBBBGgBe",
+    "eBggggggggggggBe",
     "eBBBBBBBBBBBBBBe",
     ".eeeeeeeeeeeeee.",
 ]
@@ -116,54 +113,57 @@ def rounded_rect(x, y, cx, cy, hw, hh, radius, inset):
     return math.hypot(qx, qy) <= radius - inset
 
 
-def capsule(x, y, ax, ay, bx, by, r):
-    vx, vy = bx - ax, by - ay
-    t = ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)
-    t = max(0.0, min(1.0, t))
-    return math.hypot(x - (ax + t * vx), y - (ay + t * vy)) <= r
-
-
 def circle(x, y, cx, cy, r):
     return math.hypot(x - cx, y - cy) <= r
 
 
+def rect(x, y, x0, x1, y0, y1):
+    return x0 <= x <= x1 and y0 <= y <= y1
+
+
+def diamond(x, y, cx, cy, r):
+    """Four-point alchemy sparkle."""
+    return abs(x - cx) + abs(y - cy) <= r
+
+
 def flask(x, y, inset):
     """Rim + neck + conical body, shrinkable by `inset` for outline/fill."""
-    rim = 17 + inset <= x <= 31 - inset and 20 + inset <= y <= 24 - inset
-    neck = 20 + inset <= x <= 28 - inset and 22 <= y <= 40
-    half_w = 4 + 10 * (y - 38) / 24  # 4 at the neck join, 14 at the base
-    body = 38 <= y <= 62 - inset and abs(x - 24) <= half_w - inset
+    rim = 16 + inset <= x <= 32 - inset and 12 + inset <= y <= 16 - inset
+    neck = 20 + inset <= x <= 28 - inset and 14 <= y <= 34
+    half_w = 4 + 11.5 * (y - 32) / 32  # 4 at the neck join, 15.5 at the base
+    body = 32 <= y <= 64 - inset and abs(x - 24) <= half_w - inset
     return rim or neck or body
 
 
-LIQUID_Y = 46
+LIQUID_Y = 44
 
-# Sword geometry: hilt bottom-left, tip top-right; the flask hides the middle.
-BLADE_A, BLADE_B = (11.0, 57.0), (37.0, 17.5)
-_dx, _dy = BLADE_B[0] - BLADE_A[0], BLADE_B[1] - BLADE_A[1]
-_len = math.hypot(_dx, _dy)
-_ux, _uy = _dx / _len, _dy / _len
-_gcx, _gcy = BLADE_A[0] + 6.5 * _ux, BLADE_A[1] + 6.5 * _uy
-GUARD_A = (_gcx + 5.8 * _uy, _gcy - 5.8 * _ux)  # perpendicular to the blade
-GUARD_B = (_gcx - 5.8 * _uy, _gcy + 5.8 * _ux)
+
+def monogram(x, y):
+    """The "LL" mark, sized to sit inside the liquid."""
+    l1 = rect(x, y, 17.0, 19.5, 47, 59) or rect(x, y, 17.0, 23.5, 56.5, 59)
+    l2 = rect(x, y, 25.5, 28.0, 47, 59) or rect(x, y, 25.5, 32.0, 56.5, 59)
+    return l1 or l2
+
 
 # Painted bottom-up; sampling walks it top-down and takes the first hit.
 HUB_LAYERS = [
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 0), EDGE),
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 1.5), CARD),
-    (lambda x, y: capsule(x, y, BLADE_A[0], BLADE_A[1], 7.2, 62.6, 1.7), GRIP),
-    (lambda x, y: circle(x, y, 6.6, 63.4, 2.3), GOLD),
-    (lambda x, y: capsule(x, y, *BLADE_A, *BLADE_B, 2.1), STEEL),
-    (lambda x, y: capsule(x, y, *BLADE_A, *BLADE_B, 0.7), STEEL_LT),
-    (lambda x, y: capsule(x, y, *GUARD_A, *GUARD_B, 1.6), GOLD),
     (lambda x, y: flask(x, y, 0), GREEN_DK),
     (lambda x, y: flask(x, y, 1.8), GLASS),
     (lambda x, y: flask(x, y, 1.8) and y >= LIQUID_Y, GREEN),
-    (lambda x, y: flask(x, y, 1.8) and y >= LIQUID_Y
-        and capsule(x, y, 18.5, 49, 17.5, 57, 1.1), GREEN_LT),
-    (lambda x, y: circle(x, y, 24.3, 42.0, 1.7), GREEN),
-    (lambda x, y: circle(x, y, 23.2, 35.5, 1.3), GREEN),
-    (lambda x, y: circle(x, y, 25.2, 29.5, 1.0), GREEN),
+    (lambda x, y: flask(x, y, 1.8) and y >= LIQUID_Y and monogram(x, y), CARD),
+    # bubbles rising through the glass and neck...
+    (lambda x, y: circle(x, y, 24.2, 41.0, 1.8), GREEN),
+    (lambda x, y: circle(x, y, 23.0, 35.0, 1.4), GREEN),
+    (lambda x, y: circle(x, y, 25.2, 29.0, 1.1), GREEN),
+    (lambda x, y: circle(x, y, 23.5, 23.0, 0.9), GREEN),
+    # ...and escaping above the rim
+    (lambda x, y: circle(x, y, 27.0, 8.5, 1.3), GREEN),
+    (lambda x, y: circle(x, y, 21.5, 5.5, 0.9), GREEN),
+    # gold alchemy sparkles in the open corners
+    (lambda x, y: diamond(x, y, 8.5, 20.0, 2.2), GOLD),
+    (lambda x, y: diamond(x, y, 39.5, 14.0, 1.7), GOLD),
 ]
 
 
