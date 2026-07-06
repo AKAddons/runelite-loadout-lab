@@ -369,7 +369,7 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(dps);
 		addSpellLine(card, style, best);
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
-			"Swapped into your best set for one special attack");
+			best.getExpectedHit(), "Swapped into your best set for one special attack");
 		card.add(Box.createVerticalStrut(4));
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage));
 
@@ -408,6 +408,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				addSpellLine(card, style, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
+					result.overallBest.getExpectedHit(),
 					"The strongest special attack that exists vs this monster");
 				card.add(Box.createVerticalStrut(4));
 				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage));
@@ -418,7 +419,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** A spec line with the weapon's icon: "Spec: <name> - avg N dmg (C% energy)". */
 	private void addSpecLine(JPanel card, SpecialAttack spec,
-		GearItem weapon, double expectedDamage, String fallbackTooltip)
+		GearItem weapon, double expectedDamage, double replacedAutoExpected, String fallbackTooltip)
 	{
 		if (spec == null || weapon == null || expectedDamage <= 0)
 		{
@@ -431,7 +432,14 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setAlignmentX(LEFT_ALIGNMENT);
 		line.setIconTextGap(6);
 		String note = spec.getNote();
-		line.setToolTipText(note.isEmpty() ? fallbackTooltip : note);
+		// Spec throughput: weaving this spec on cooldown adds sustained dps
+		// (energy regen 10% per 30s; the Lightbearer doubles it).
+		String sustained = String.format("Weaving on cooldown: about +%.2f dps"
+				+ " (+%.2f with a Lightbearer)",
+			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, false),
+			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, true));
+		line.setToolTipText("<html>" + (note.isEmpty() ? fallbackTooltip : note)
+			+ "<br>" + sustained + "</html>");
 		itemManager.getImage(weapon.getId()).addTo(line);
 		card.add(line);
 	}

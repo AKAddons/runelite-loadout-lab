@@ -74,6 +74,10 @@ monster, get your strongest owned set per combat style with exact DPS.
   others a gradient by % towards BiS.
 - **Slot alternates** - expandable per-slot list of runner-up items
   (owned and BiS variants).
+- **Spec-throughput vs ring slot** - jointly optimize the ring: a
+  Lightbearer doubles spec regen (sustained spec dps is now shown in the
+  spec tooltip), so vs a Venator/Ultor ring the right pick depends on
+  the spec weapon's net gain. Optimizer should compare the two totals.
 
 Done from this list: BiS section show/hide (v/> header, 2026-07-05);
 monster duplicate collapsing (2026-07-05).
