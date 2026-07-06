@@ -9,11 +9,11 @@ Outputs (paths relative to the repo root):
       (the hub's documented maximum size; filename + repo-root location are
       what the hub README requires).
 
-Theme: alchemy, potion liquid in the panel's selected-item green
-(140,200,140) with the plugin's "LL" monogram knocked out of it. The
-sidebar icon is a corked potion bottle drawn frameless on transparency;
-the hub icon is an Erlenmeyer flask on a dark card a step above RuneLite's
-DARK_GRAY (#28282d), with escaping bubbles and gold alchemy sparkles.
+Theme: gear. An upright sword in the panel's selected-item green
+(140,200,140) with a gold crossguard, pommel, and four-point star - the
+best-in-slot find. The sidebar icon is frameless pixel art on
+transparency; the hub icon sets the same sword on a dark card a step
+above RuneLite's DARK_GRAY (#28282d) with gold sparkles.
 
 Usage:
   python3 scripts/generate_icons.py [--preview DIR]
@@ -33,11 +33,9 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CARD = (45, 45, 52, 255)       # card fill - slightly lighter than #28282d
 EDGE = (64, 64, 74, 255)       # card border
-GREEN = (140, 200, 140, 255)   # liquid - the panel's selected-item green
-GREEN_DK = (86, 138, 92, 255)  # flask outline (hub icon)
-GREEN_MD = (108, 168, 112, 255)  # flask outline (sidebar - brighter at 16px)
-GLASS = (54, 60, 56, 255)      # empty glass above the liquid
-GOLD = (208, 178, 102, 255)    # alchemy sparkles
+GREEN = (140, 200, 140, 255)   # blade - the panel's selected-item green
+GREEN_DK = (86, 138, 92, 255)  # blade groove + grip (hub icon)
+GOLD = (208, 178, 102, 255)    # guard, pommel, star
 
 # ---------------------------------------------------------------- png writer
 
@@ -69,30 +67,28 @@ def write_png(path, width, height, rows):
 
 SIDEBAR_PALETTE = {
     ".": (0, 0, 0, 0),
-    "g": GREEN_MD,
     "G": GREEN,
     "y": GOLD,
 }
 
-# Corked potion bottle, frameless so it uses the full 16px: gold cork, lip,
-# a bubble rising in the neck, round belly of potion with "LL" knocked out
-# to transparency (the sidebar's dark background shows through as the mark).
+# Upright sword, frameless: green blade and grip, gold crossguard and
+# pommel, and a gold four-point star beside the blade - the BiS find.
 SIDEBAR_GRID = [
+    "................",
+    ".......GG.......",
+    "...y...GG.......",
+    "..yyy..GG.......",
+    "...y...GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".....yyyyyy.....",
+    ".......GG.......",
+    ".......GG.......",
     "......yyyy......",
-    "......yyyy......",
-    ".....gggggg.....",
-    "......g..g......",
-    "......gG.g......",
-    "....gg....gg....",
-    "...gGGGGGGGGg...",
-    "..gGGGGGGGGGGg..",
-    "..gG.GGGG.GGGg..",
-    "..gG.GGGG.GGGg..",
-    "..gG.GGGG.GGGg..",
-    "..gG.GGGG.GGGg..",
-    "..gG...GG...Gg..",
-    "...gGGGGGGGGg...",
-    "....gggggggg....",
     "................",
 ]
 
@@ -117,53 +113,37 @@ def circle(x, y, cx, cy, r):
     return math.hypot(x - cx, y - cy) <= r
 
 
-def rect(x, y, x0, x1, y0, y1):
-    return x0 <= x <= x1 and y0 <= y <= y1
+def capsule(x, y, ax, ay, bx, by, r):
+    vx, vy = bx - ax, by - ay
+    t = ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)
+    t = max(0.0, min(1.0, t))
+    return math.hypot(x - (ax + t * vx), y - (ay + t * vy)) <= r
 
 
 def diamond(x, y, cx, cy, r):
-    """Four-point alchemy sparkle."""
+    """Four-point sparkle."""
     return abs(x - cx) + abs(y - cy) <= r
 
 
-def flask(x, y, inset):
-    """Rim + neck + conical body, shrinkable by `inset` for outline/fill."""
-    rim = 16 + inset <= x <= 32 - inset and 12 + inset <= y <= 16 - inset
-    neck = 20 + inset <= x <= 28 - inset and 14 <= y <= 34
-    half_w = 4 + 11.5 * (y - 32) / 32  # 4 at the neck join, 15.5 at the base
-    body = 32 <= y <= 64 - inset and abs(x - 24) <= half_w - inset
-    return rim or neck or body
-
-
-LIQUID_Y = 44
-
-
-def monogram(x, y):
-    """The "LL" mark, sized to sit inside the liquid."""
-    l1 = rect(x, y, 17.0, 19.5, 47, 59) or rect(x, y, 17.0, 23.5, 56.5, 59)
-    l2 = rect(x, y, 25.5, 28.0, 47, 59) or rect(x, y, 25.5, 32.0, 56.5, 59)
-    return l1 or l2
+def blade(x, y):
+    """Upright blade: pointed tip at y=6 opening to a 3.2px half-width."""
+    return 6 <= y <= 46 and abs(x - 24) <= min(3.2, 0.9 * (y - 6))
 
 
 # Painted bottom-up; sampling walks it top-down and takes the first hit.
 HUB_LAYERS = [
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 0), EDGE),
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 1.5), CARD),
-    (lambda x, y: flask(x, y, 0), GREEN_DK),
-    (lambda x, y: flask(x, y, 1.8), GLASS),
-    (lambda x, y: flask(x, y, 1.8) and y >= LIQUID_Y, GREEN),
-    (lambda x, y: flask(x, y, 1.8) and y >= LIQUID_Y and monogram(x, y), CARD),
-    # bubbles rising through the glass and neck...
-    (lambda x, y: circle(x, y, 24.2, 41.0, 1.8), GREEN),
-    (lambda x, y: circle(x, y, 23.0, 35.0, 1.4), GREEN),
-    (lambda x, y: circle(x, y, 25.2, 29.0, 1.1), GREEN),
-    (lambda x, y: circle(x, y, 23.5, 23.0, 0.9), GREEN),
-    # ...and escaping above the rim
-    (lambda x, y: circle(x, y, 27.0, 8.5, 1.3), GREEN),
-    (lambda x, y: circle(x, y, 21.5, 5.5, 0.9), GREEN),
-    # gold alchemy sparkles in the open corners
-    (lambda x, y: diamond(x, y, 8.5, 20.0, 2.2), GOLD),
-    (lambda x, y: diamond(x, y, 39.5, 14.0, 1.7), GOLD),
+    (lambda x, y: blade(x, y), GREEN),
+    # centre groove down the blade
+    (lambda x, y: abs(x - 24) <= 0.75 and 14 <= y <= 40, GREEN_DK),
+    (lambda x, y: capsule(x, y, 15.5, 48, 32.5, 48, 2.2), GOLD),
+    (lambda x, y: capsule(x, y, 24, 51, 24, 59.5, 2.0), GREEN_DK),
+    (lambda x, y: circle(x, y, 24, 62.5, 3.0), GOLD),
+    # gold sparkles - the best-in-slot find
+    (lambda x, y: diamond(x, y, 10.5, 15.0, 2.3), GOLD),
+    (lambda x, y: diamond(x, y, 38.5, 23.0, 1.8), GOLD),
+    (lambda x, y: diamond(x, y, 12.0, 51.0, 1.4), GOLD),
 ]
 
 
