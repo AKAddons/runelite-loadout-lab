@@ -67,7 +67,7 @@ listed below.
 
 ## Correctness bugs in the vendored engine
 
-1. **Dragon hunter wand**: engine uses 7/4 acc AND dmg; wiki: +50% acc, +20% dmg.
+1. ~~Dragon hunter wand~~ FIXED 2026-07-06: official-verified values are 7/4 accuracy and 7/5 damage (the gap note's wiki numbers were also wrong); upstream applied 7/4 to both. Surfaced when the early-return stacking fix let the wand's bonus compound.
 2. **Silverlight/darklight**: engine applies 8/5 to accuracy AND damage; wiki: +60% damage only.
 3. ~~Twisted bow caps~~ NOT A BUG (see harness-verified deltas: identical to official; Zulrah's reroll was the difference).
 4. **Keris partisan of amascut** 1.15x looks invented; missing the 1/51 triple-hit proc (EV x1.0392).

@@ -619,7 +619,9 @@ public final class DpsCalculator
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
-			maxHit = multiply(maxHit, 7, 4);
+			// Accuracy is 7/4 but damage is 7/5 (official-verified) -
+			// upstream applied 7/4 to both (ENGINE-GAPS bug #1).
+			maxHit = multiply(maxHit, 7, 5);
 		}
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
