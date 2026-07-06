@@ -71,21 +71,24 @@ SIDEBAR_PALETTE = {
     "y": GOLD,
 }
 
-# Great helm, frameless: green silhouette with the eye slit and breathing
-# slit knocked out to transparency, gold four-point star - the BiS find.
+# Great helm whose visor doubles as an Erlenmeyer flask: the eye slit is
+# the flask rim, the breathing slit is its neck, and the face guard flares
+# into a base of golden potion (with one gold bubble rising). Helmet at
+# first glance - gear; flask of gold brew on the second look - the Lab and
+# the loot. Gold four-point star tops it off.
 SIDEBAR_GRID = [
     ".............y..",
     ".....GGGGGG.yyy.",
     "....GGGGGGGG.y..",
     "...GGGGGGGGGG...",
     "..GGGGGGGGGGGG..",
-    "..GGGGGGGGGGGG..",
     "..GG........GG..",
     "..GGGGG..GGGGG..",
     "..GGGGG..GGGGG..",
-    "..GGGGG..GGGGG..",
-    "...GGGG..GGGG...",
-    "...GGGG..GGGG...",
+    "..GGGG....GGGG..",
+    "..GGG.yyyy.GGG..",
+    "...GGGGGGGGGG...",
+    "...GGGGGGGGGG...",
     "....GGGGGGGG....",
     ".....GGGGGG.....",
     "................",
