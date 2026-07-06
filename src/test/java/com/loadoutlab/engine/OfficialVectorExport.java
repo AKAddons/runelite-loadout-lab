@@ -76,9 +76,13 @@ public class OfficialVectorExport
 				continue; // placeholder rows
 			}
 			String name = s[0];
+			// Our corpus collapses combat-identical versions (and blanks the
+			// label), so fall back to the first name match; s[2] stays in
+			// the vector for the official side's exact-version lookup.
 			MonsterStats monster = data.searchMonsters(s[1], 10).stream()
 				.filter(m -> s[2] == null || s[2].isEmpty() || s[2].equalsIgnoreCase(m.getVersion()))
-				.findFirst().orElse(null);
+				.findFirst()
+				.orElse(data.searchMonsters(s[1], 1).stream().findFirst().orElse(null));
 			GearItem weapon = byName(data, s[4]);
 			if (monster == null || weapon == null)
 			{

@@ -12,9 +12,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -173,10 +175,31 @@ public final class DataService
 	private List<MonsterStats> loadMonsters()
 	{
 		JsonArray rows = readArray(MONSTER_RESOURCE);
+		// The wiki data lists one row per SPAWN - Tormented Demon (1)..(4)
+		// are four combat-identical rows. Collapse same-name rows whose
+		// combat-relevant stats match, and drop the version label entirely
+		// when a name has only one distinct stat block (Dusk keeps its
+		// First/Second form; the four TDs become one unlabeled entry).
+		Map<String, Set<String>> statKeysByName = new HashMap<>();
+		for (JsonElement element : rows)
+		{
+			JsonObject row = element.getAsJsonObject();
+			statKeysByName
+				.computeIfAbsent(string(row, "name").toLowerCase(Locale.ROOT), k -> new LinkedHashSet<>())
+				.add(monsterStatKey(row));
+		}
+
+		Set<String> emitted = new HashSet<>();
 		List<MonsterStats> result = new ArrayList<>(rows.size());
 		for (JsonElement element : rows)
 		{
 			JsonObject row = element.getAsJsonObject();
+			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
+			if (!emitted.add(nameKey + "|" + monsterStatKey(row)))
+			{
+				continue;
+			}
+			boolean distinctVersions = statKeysByName.get(nameKey).size() > 1;
 			JsonObject skills = object(row, "skills");
 			JsonObject offensive = object(row, "offensive");
 			JsonObject defensive = object(row, "defensive");
@@ -194,7 +217,7 @@ public final class DataService
 			result.add(new MonsterStats(
 				integer(row, "id", -1),
 				string(row, "name"),
-				string(row, "version"),
+				distinctVersions ? string(row, "version") : "",
 				integer(row, "level", 0),
 				integer(skills, "hp", 1),
 				integer(row, "size", 1),
@@ -209,6 +232,20 @@ public final class DataService
 		}
 		result.sort(Comparator.comparing(MonsterStats::getName).thenComparing(MonsterStats::getVersion).thenComparingInt(MonsterStats::getId));
 		return result;
+	}
+
+	/** Everything the engine reads from a monster - rows agreeing on this are one entry. */
+	private static String monsterStatKey(JsonObject row)
+	{
+		JsonObject skills = object(row, "skills");
+		JsonObject offensive = object(row, "offensive");
+		return integer(skills, "def", 1) + "|" + integer(skills, "magic", 1)
+			+ "|" + integer(offensive, "magic", 0)
+			+ "|" + object(row, "defensive").toString()
+			+ "|" + array(row, "attributes").toString()
+			+ "|" + bool(row, "is_slayer_monster", false)
+			+ "|" + object(row, "weakness").toString()
+			+ "|" + integer(row, "size", 1);
 	}
 
 	private List<SpellStats> loadSpells()

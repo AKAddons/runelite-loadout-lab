@@ -11,7 +11,9 @@ public class DataServiceTest
 	{
 		LoadoutData data = new DataService().load();
 		Assert.assertTrue(data.getGearItems().size() > 5000);
-		Assert.assertTrue(data.getMonsters().size() > 2500);
+		// 1,941 distinct stat blocks after collapsing combat-identical spawns
+		// (2,851 raw rows - a third of the wiki list is duplicate spawns).
+		Assert.assertTrue(data.getMonsters().size() > 1800);
 		Assert.assertTrue(data.getSpells().size() > 20);
 		Assert.assertFalse(data.searchMonsters("zulrah", 10).isEmpty());
 	}
@@ -63,6 +65,21 @@ public class DataServiceTest
 			Assert.assertNotEquals("unselectable effect spells must not be castable",
 				"King's Ice Barrage", spell.getName());
 		}
+	}
+
+	@Test
+	public void combatIdenticalMonsterSpawnsCollapseToOneEntry()
+	{
+		LoadoutData data = new DataService().load();
+		// Four Tormented Demon spawns share one stat block -> one unlabeled entry.
+		java.util.List<MonsterStats> tds = data.searchMonsters("tormented demon", 10);
+		Assert.assertEquals(1, tds.size());
+		Assert.assertEquals("", tds.get(0).getVersion());
+		// Dusk's two forms have different stats -> both stay, labeled.
+		java.util.List<MonsterStats> dusks = data.searchMonsters("dusk", 10).stream()
+			.filter(m -> m.getName().equals("Dusk")).collect(java.util.stream.Collectors.toList());
+		Assert.assertEquals(2, dusks.size());
+		Assert.assertFalse(dusks.get(0).getVersion().isEmpty());
 	}
 
 	@Test

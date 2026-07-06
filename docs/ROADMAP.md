@@ -54,3 +54,32 @@ monster, get your strongest owned set per combat style with exact DPS.
 - Prayer/boost scheduling, tick-perfect rotations, PvP.
 - Telling other people what to buy: this is about what YOU own (a "next
   upgrade" advisor is a natural later feature: best set if you bought X).
+
+
+## v0.2 backlog (user wishlist, 2026-07-05)
+
+- **Save/lookup loadouts** - persist a computed loadout under a name;
+  browse saved loadouts. (Config-backed like goal planner's SavedPlanStore.)
+- **Issue reporting** - "report a problem with this loadout" dialog that
+  sends a direct report to the author. Build as a REUSABLE module so goal
+  planner can adopt it (shared repo or copy-in library - decide at build).
+- **Slayer task toggle** - on-task checkbox (swaps in slayer helm etc.;
+  engine already models it via OptimizationRequest.onSlayerTask).
+- **Prayer rating in output** - show the set's total prayer bonus.
+- **Offense/defense modes** - best-offense (current), best-defense, and a
+  smart hybrid: emphasize offense but make style-aware defensive picks
+  (e.g. ranged armour vs magic attackers). Needs monster attack styles
+  (in the data: 'style' field, currently unparsed).
+- **BiS proximity borders** - per-slot border: BiS gets a distinct border,
+  others a gradient by % towards BiS.
+- **Slot alternates** - expandable per-slot list of runner-up items
+  (owned and BiS variants).
+
+Done from this list: BiS section show/hide (v/> header, 2026-07-05);
+monster duplicate collapsing (2026-07-05).
+
+Set bonuses status (asked 2026-07-05): modeled - Void (all styles, elite
+ranged), Obsidian set + berserker necklace, Inquisitor's, slayer helm,
+salve. NOT modeled - crystal armour + Bofa/crystal bow scaling (material:
+Bofa is underrated without it), Dharok's, Ahrim's proc, elite void magic
+damage. Tracked in docs/ENGINE-GAPS.md.
