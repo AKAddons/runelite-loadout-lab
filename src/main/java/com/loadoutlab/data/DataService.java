@@ -197,12 +197,17 @@ public final class DataService
 		// when a name has only one distinct stat block (Dusk keeps its
 		// First/Second form; the four TDs become one unlabeled entry).
 		Map<String, Set<String>> statKeysByName = new HashMap<>();
+		// Collapsed groups display the HIGHEST combat level among their spawns.
+		Map<String, Integer> maxLevelByGroup = new HashMap<>();
 		for (JsonElement element : rows)
 		{
 			JsonObject row = element.getAsJsonObject();
+			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
 			statKeysByName
-				.computeIfAbsent(string(row, "name").toLowerCase(Locale.ROOT), k -> new LinkedHashSet<>())
+				.computeIfAbsent(nameKey, k -> new LinkedHashSet<>())
 				.add(monsterStatKey(row));
+			maxLevelByGroup.merge(nameKey + "|" + monsterStatKey(row),
+				integer(row, "level", 0), Math::max);
 		}
 
 		Set<String> emitted = new HashSet<>();
@@ -234,7 +239,7 @@ public final class DataService
 				integer(row, "id", -1),
 				string(row, "name"),
 				distinctVersions ? string(row, "version") : "",
-				integer(row, "level", 0),
+				maxLevelByGroup.get(nameKey + "|" + monsterStatKey(row)),
 				integer(skills, "hp", 1),
 				integer(row, "size", 1),
 				integer(skills, "def", 1),

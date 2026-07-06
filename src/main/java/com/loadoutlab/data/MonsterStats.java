@@ -92,7 +92,8 @@ public final class MonsterStats
 	public String label()
 	{
 		String suffix = version.isEmpty() ? "" : " (" + version + ")";
-		return name + suffix;
+		String level = combatLevel > 0 ? " - lvl " + combatLevel : "";
+		return name + suffix + level;
 	}
 
 	public String searchText()
