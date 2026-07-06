@@ -417,14 +417,14 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/**
-	 * The set as a fixed 4x3 equipment grid - 11 explicit slots (empty =
+	 * The set as a fixed 3x4 equipment grid - 11 explicit slots (empty =
 	 * empty box) plus the spec weapon as the 12th cell, amber-bordered.
 	 * Fixed rows x cols means the preferred height is always right (the
 	 * old wrapping grid clipped its second row).
 	 */
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected)
 	{
-		JPanel icons = new JPanel(new java.awt.GridLayout(4, 3, 2, 2));
+		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
 		int cell = ICON_SIZE + 4;
@@ -465,7 +465,7 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setToolTipText("Spec: none");
 		}
 		icons.add(specCell);
-		Dimension size = new Dimension(3 * cell + 4, 4 * cell + 6);
+		Dimension size = new Dimension(4 * cell + 6, 3 * cell + 4);
 		icons.setPreferredSize(size);
 		icons.setMaximumSize(size);
 		return icons;
