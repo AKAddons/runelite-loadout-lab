@@ -14,7 +14,8 @@ public final class DpsCalculator
 
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
 	{
-		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon()))
+		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon())
+			|| !FlyingRules.canReach(request.getMonster(), request.getStyle(), loadout.getWeapon()))
 		{
 			return null;
 		}

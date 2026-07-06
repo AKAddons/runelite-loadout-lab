@@ -29,7 +29,8 @@ analysis confidence was medium on the exact multipliers).
 10. **Fang in ToA** (two-roll on defence too); ToA invocation / CoX-ToB party scaling generally.
 11. **Wilderness weapons** (craw's/webweaver +50%).
 12. Oddballs: colossal blade scaling, soulreaper stacks, dual macuahuitl / blood moon proc, atlatl melee-str scaling, burning claws burn, venator ricochet.
-13. **Monster nuances**: defence-drain (DWH/BGS, blocked on #5), NPCs using Defence level vs magic, phase resistances. (`immunities` is back in the data since the 2026-07-05 regen but not consumed yet. Vampyre tiers ARE modeled - `VampyreRules`, 2026-07-05: tier 3 hard-gated to the vyre weapon set, tier 2 halves non-silver damage. Silver bolts vs tier 2 not modeled.)
+13. **Monster nuances**: defence-drain (DWH/BGS, blocked on #5), NPCs using Defence level vs magic, phase resistances. (`immunities` is back in the data since the 2026-07-05 regen but not consumed yet. Vampyre tiers ARE modeled - `VampyreRules`, 2026-07-05: tier 3 hard-gated to the vyre weapon set, tier 2 halves non-silver damage; silver bolts vs tier 2 not modeled. Flying IS modeled - `FlyingRules`, 2026-07-05: melee blocked vs `flying` monsters except Polearm/Salamander category, per the Kree'arra June-2025 rule.)
+15. **Style immunities not in the data**: Dusk is immune to Magic (wiki) but weirdgloop encodes neither that nor gargoyle-type finishing requirements (rock/granite hammer). A curated per-monster note table would cover: Dusk magic immunity + hammer-to-finish, gargoyles, rockslugs/salt, etc.
 14. ~~Slayer-monster detection is a name heuristic~~ FIXED 2026-07-05: the data regen restored `is_slayer_monster` (the loader reads it; the name fallback remains as a safety net).
 
 ## Data snapshot

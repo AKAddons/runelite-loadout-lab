@@ -318,15 +318,24 @@ public class LoadoutLabPanel extends PluginPanel
 		if (result == null || result.owned == null || result.owned.isEmpty())
 		{
 			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");
+			boolean flying = style == CombatStyle.MELEE
+				&& selectedMonster != null && selectedMonster.hasAttribute("flying");
 			JLabel none = new JLabel(vyre
 				? "Immune - needs a vyre weapon"
-				: "No usable owned set found.");
+				: flying
+					? "Flying - needs a halberd"
+					: "No usable owned set found.");
 			none.setForeground(new Color(160, 160, 160));
 			none.setAlignmentX(LEFT_ALIGNMENT);
 			if (vyre)
 			{
 				none.setToolTipText("Only the Ivandis flail, blisterwood weapons,"
 					+ " Sunspear, or Hallowed flail can damage this monster");
+			}
+			else if (flying)
+			{
+				none.setToolTipText("Melee cannot reach this monster"
+					+ " except with halberds or salamanders");
 			}
 			card.add(none);
 			return card;

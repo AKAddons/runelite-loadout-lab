@@ -217,10 +217,14 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
-			// Must come BEFORE the top-N cut: vyre weapons never win generic
-			// rough-score ranking, but vs tier-3 vampyres they are the only
-			// weapons that deal damage at all.
+			// Must come BEFORE the top-N cut: vyre weapons and halberds never
+			// win generic rough-score ranking, but vs tier-3 vampyres / flying
+			// monsters they are the only weapons that can deal damage at all.
 			if (slot == GearSlot.WEAPON && !VampyreRules.canDamage(request.getMonster(), item))
+			{
+				continue;
+			}
+			if (slot == GearSlot.WEAPON && !FlyingRules.canReach(request.getMonster(), request.getStyle(), item))
 			{
 				continue;
 			}
