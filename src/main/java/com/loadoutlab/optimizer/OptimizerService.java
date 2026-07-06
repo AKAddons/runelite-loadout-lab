@@ -115,13 +115,15 @@ public class OptimizerService
 		int collectionFingerprint,
 		boolean f2pOnly,
 		boolean onSlayerTask,
+		String spellbookLock,
 		java.util.Set<Integer> excludedItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final java.util.Set<Integer> excluded = excludedItems == null
 			? java.util.Collections.emptySet() : excludedItems;
+		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
+			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -144,7 +146,8 @@ public class OptimizerService
 			{
 				OptimizationRequest ownedRequest = request(
 					monster, style, boostedLevels, requirements,
-					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask).withExcludedItems(excluded);
+					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
+					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -157,7 +160,8 @@ public class OptimizerService
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask).withExcludedItems(excluded);
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
+					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{

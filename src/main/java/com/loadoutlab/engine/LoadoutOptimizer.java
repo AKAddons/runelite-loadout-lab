@@ -240,6 +240,24 @@ public final class LoadoutOptimizer
 
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
+		List<SpellStats> all = spellsForUnfiltered(data, request);
+		if (request.getSpellbookLock().isEmpty())
+		{
+			return all;
+		}
+		List<SpellStats> locked = new ArrayList<>();
+		for (SpellStats spell : all)
+		{
+			if (request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()))
+			{
+				locked.add(spell);
+			}
+		}
+		return locked;
+	}
+
+	private static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request)
+	{
 		if (request.getStyle() != CombatStyle.MAGIC || !request.isAutoSpell())
 		{
 			return java.util.Collections.emptyList();

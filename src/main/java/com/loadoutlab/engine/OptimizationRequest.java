@@ -23,6 +23,9 @@ public final class OptimizationRequest
 	/** Item ids the player has excluded ("protect my dragon darts") -
 	 * never suggested in any slot, ammo pick, dart tier, or spec. */
 	private final Set<Integer> excludedItems;
+	/** Lock auto-spell selection to one spellbook ("standard"/"ancient"/
+	 * "arceuus"); empty = any. Powered staves are unaffected. */
+	private final String spellbookLock;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -64,6 +67,7 @@ public final class OptimizationRequest
 		this.includeUntradeables = includeUntradeables;
 		this.onSlayerTask = onSlayerTask;
 		this.excludedItems = Collections.emptySet();
+		this.spellbookLock = "";
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -72,6 +76,13 @@ public final class OptimizationRequest
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems)
 	{
+		this(base, monster, style, spell, excludedItems, base.spellbookLock);
+	}
+
+	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
+		SpellStats spell, Set<Integer> excludedItems, String spellbookLock)
+	{
+		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
 		this.monster = monster;
 		this.style = style;
 		this.levels = base.levels;
@@ -100,6 +111,16 @@ public final class OptimizationRequest
 	public OptimizationRequest withExcludedItems(Set<Integer> excluded)
 	{
 		return new OptimizationRequest(this, monster, style, spell, excluded);
+	}
+
+	public String getSpellbookLock()
+	{
+		return spellbookLock;
+	}
+
+	public OptimizationRequest withSpellbookLock(String spellbook)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook);
 	}
 
 	public MonsterStats getMonster()

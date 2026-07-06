@@ -48,7 +48,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** (monster, f2pOnly, onDone) - the plugin wires this to the optimizer. */
 	public interface ComputeHook
 	{
-		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, Runnable onDone);
+		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
+			String spellbookLock, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -83,6 +84,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
+	private final javax.swing.JComboBox<String> spellbook =
+		new javax.swing.JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	private final Timer searchDebounce;
@@ -182,6 +185,14 @@ public class LoadoutLabPanel extends PluginPanel
 		slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
 		slayerTask.addActionListener(e -> recompute());
 		top.add(slayerTask);
+
+		// Lock the magic card's auto-spell to one spellbook.
+		spellbook.setAlignmentX(LEFT_ALIGNMENT);
+		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		spellbook.setToolTipText("Limit magic suggestions to spells from one spellbook"
+			+ " (powered staves are always considered)");
+		spellbook.addActionListener(e -> recompute());
+		top.add(spellbook);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
@@ -307,6 +318,12 @@ public class LoadoutLabPanel extends PluginPanel
 		recompute();
 	}
 
+	private String spellbookLock()
+	{
+		int index = spellbook.getSelectedIndex();
+		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+	}
+
 	private void refreshExclusionsLabel()
 	{
 		int count = exclusionView.snapshot().size();
@@ -405,7 +422,7 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			() -> statusLabel.setText(" "));
+			spellbookLock(), () -> statusLabel.setText(" "));
 	}
 
 	private void clearSelection()
