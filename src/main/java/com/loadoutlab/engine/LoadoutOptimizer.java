@@ -118,17 +118,21 @@ public final class LoadoutOptimizer
 		}
 
 		List<SpellStats> spells = spellsFor(data, request);
-		List<GearItem> weapons = candidates(data, request, GearSlot.WEAPON, WEAPON_LIMIT);
+		List<GearItem> weapons = candidates(data, request, GearSlot.WEAPON, WEAPON_LIMIT, null);
 		Map<GearSlot, List<GearItem>> slotCandidates = new EnumMap<>(GearSlot.class);
 		for (GearSlot slot : NON_WEAPON_SLOTS)
 		{
-			slotCandidates.put(slot, candidates(data, request, slot, SLOT_LIMIT));
+			slotCandidates.put(slot, candidates(data, request, slot, SLOT_LIMIT, null));
 		}
 
 		List<DpsResult> results = new ArrayList<>();
 		Set<String> seen = new HashSet<>();
 		for (GearItem weapon : weapons)
 		{
+			// The ammo top-N must be cut AFTER weapon compatibility: bolts
+			// and javelins out-score every arrow on raw ranged strength, so
+			// a global cut starves arrow weapons of usable ammo entirely.
+			slotCandidates.put(GearSlot.AMMO, candidates(data, request, GearSlot.AMMO, SLOT_LIMIT, weapon));
 			List<SearchState> states = new ArrayList<>();
 			EnumMap<GearSlot, GearItem> baseGear = new EnumMap<>(GearSlot.class);
 			baseGear.put(GearSlot.WEAPON, weapon);
@@ -265,11 +269,15 @@ public final class LoadoutOptimizer
 		return merged.size() > request.getResultLimit() ? new ArrayList<>(merged.subList(0, request.getResultLimit())) : merged;
 	}
 
-	private List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit)
+	private List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit, GearItem forWeapon)
 	{
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems())
 		{
+			if (slot == GearSlot.AMMO && forWeapon != null && !RangedAmmo.compatible(item, forWeapon))
+			{
+				continue;
+			}
 			if (item.getSlot() != slot || !item.isStandardGear())
 			{
 				continue;
@@ -579,6 +587,13 @@ public final class LoadoutOptimizer
 		if (candidateOwned != currentOwned)
 		{
 			return candidateOwned;
+		}
+		// Stat ties prefer the tradeable base item: untradeable stat-clones
+		// (fire arrows, locked variants) read as 'cost 0' and would shadow
+		// the item players actually recognize.
+		if (candidate.isTradeable() != current.isTradeable())
+		{
+			return candidate.isTradeable();
 		}
 		return budgetCost(request, candidate) < budgetCost(request, current);
 	}

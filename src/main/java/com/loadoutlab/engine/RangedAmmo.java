@@ -215,6 +215,8 @@ public final class RangedAmmo
 			case 22228:
 			case 22229:
 			case 22230:
+			case 33553: // seeking bronze (July 2026; missing ids made seeking
+			case 33559: // seeking iron - arrows incompatible with every bow
 				return 1;
 			case 886:
 			case 887:
@@ -222,6 +224,7 @@ public final class RangedAmmo
 			case 2535:
 			case 5618:
 			case 5624:
+			case 33565: // seeking steel
 				return 5;
 			case 888:
 			case 889:
@@ -229,6 +232,7 @@ public final class RangedAmmo
 			case 2537:
 			case 5619:
 			case 5625:
+			case 33571: // seeking mithril
 				return 20;
 			case 890:
 			case 891:
@@ -236,6 +240,7 @@ public final class RangedAmmo
 			case 2539:
 			case 5620:
 			case 5626:
+			case 33577: // seeking adamant
 				return 30;
 			case 892:
 			case 893:
@@ -243,6 +248,7 @@ public final class RangedAmmo
 			case 2541:
 			case 5621:
 			case 5627:
+			case 33583: // seeking rune
 				return 40;
 			case 4160:
 			case 21326:
@@ -251,6 +257,8 @@ public final class RangedAmmo
 			case 21332:
 			case 21334:
 			case 21336:
+			case 33589: // seeking amethyst
+			case 33601: // seeking broad
 				return 50;
 			case 11212:
 			case 11217:
@@ -258,6 +266,7 @@ public final class RangedAmmo
 			case 11227:
 			case 11228:
 			case 11229:
+			case 33595: // seeking dragon
 				return 60;
 			default:
 				return 0;
