@@ -65,6 +65,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JScrollPane monsterScroll;
 	private final JPanel selectedRow = new JPanel(new BorderLayout(4, 0));
 	private final JLabel selectedLabel = new JLabel();
+	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
@@ -115,6 +116,14 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedRow.add(clearSelection, BorderLayout.EAST);
 		selectedRow.setVisible(false);
 		top.add(selectedRow);
+
+		// Curated mechanics note (finishing items, immunities) for the
+		// selected monster - so a correct suggestion doesn't look wrong.
+		monsterNote.setForeground(new Color(200, 170, 110));
+		monsterNote.setFont(monsterNote.getFont().deriveFont(11f));
+		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
+		monsterNote.setVisible(false);
+		top.add(monsterNote);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -244,6 +253,9 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = monster;
 		selectedLabel.setText("vs " + monster.label());
 		selectedRow.setVisible(true);
+		String note = com.loadoutlab.data.MonsterNotes.noteFor(monster);
+		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
+		monsterNote.setVisible(note != null);
 		revalidate();
 		repaint();
 		recompute();
@@ -274,6 +286,8 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = null;
 		selectedRow.setVisible(false);
 		selectedLabel.setText("");
+		monsterNote.setText("");
+		monsterNote.setVisible(false);
 		resultsPanel.removeAll();
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
