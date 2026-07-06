@@ -228,6 +228,10 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
+			if (slot == GearSlot.WEAPON && !RatBoneRules.canUse(request.getMonster(), item))
+			{
+				continue;
+			}
 			if (slot != GearSlot.WEAPON && candidateScore(request, item) <= 0)
 			{
 				continue;

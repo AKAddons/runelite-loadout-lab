@@ -15,7 +15,8 @@ public final class DpsCalculator
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
 	{
 		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon())
-			|| !FlyingRules.canReach(request.getMonster(), request.getStyle(), loadout.getWeapon()))
+			|| !FlyingRules.canReach(request.getMonster(), request.getStyle(), loadout.getWeapon())
+			|| !RatBoneRules.canUse(request.getMonster(), loadout.getWeapon()))
 		{
 			return null;
 		}
@@ -72,6 +73,7 @@ public final class DpsCalculator
 		int baseMaxHit = maxHit;
 		attackRoll = applyMeleeAccuracyBonuses(request, loadout, attackRoll, baseAttackRoll, attackType);
 		maxHit = applyMeleeDamageBonuses(request, loadout, maxHit, baseMaxHit, attackType);
+		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
 
 		long defenceRoll = npcDefenceRoll(request.getMonster(), attackType, loadout.getWeapon());
 		double accuracy = isFang(loadout) && "stab".equals(attackType)
@@ -126,6 +128,7 @@ public final class DpsCalculator
 		int maxHit = RollMath.maxHitFromEffective(effectiveDamage, effectiveRangedStrength(loadout));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
+		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
 		maxHit = applyFlatArmour(request, maxHit);
 
 		long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
