@@ -255,6 +255,16 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
+		// Clear stale results immediately - showing the previous monster's
+		// sets while the optimizer runs reads as an answer for this one.
+		resultsPanel.removeAll();
+		JLabel computing = new JLabel("Optimizing vs " + selectedMonster.getName() + "...");
+		computing.setForeground(new Color(160, 160, 160));
+		computing.setAlignmentX(LEFT_ALIGNMENT);
+		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+		resultsPanel.add(computing);
+		resultsPanel.revalidate();
+		resultsPanel.repaint();
 		statusLabel.setText("Optimizing vs " + selectedMonster.getName() + "...");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), () -> statusLabel.setText(" "));
 	}
@@ -306,9 +316,17 @@ public class LoadoutLabPanel extends PluginPanel
 
 		if (result == null || result.owned == null || result.owned.isEmpty())
 		{
-			JLabel none = new JLabel("No usable owned set found.");
+			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");
+			JLabel none = new JLabel(vyre
+				? "Immune - needs a vyre weapon"
+				: "No usable owned set found.");
 			none.setForeground(new Color(160, 160, 160));
 			none.setAlignmentX(LEFT_ALIGNMENT);
+			if (vyre)
+			{
+				none.setToolTipText("Only the Ivandis flail, blisterwood weapons,"
+					+ " Sunspear, or Hallowed flail can damage this monster");
+			}
 			card.add(none);
 			return card;
 		}

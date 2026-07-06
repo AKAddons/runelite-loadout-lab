@@ -82,6 +82,10 @@ public final class LoadoutOptimizer
 						}
 						Loadout loadout = new Loadout(gear);
 						DpsResult score = bestSpellResult(request, loadout, spells);
+						if (score == null)
+						{
+							continue;
+						}
 						next.add(new SearchState(gear, cost, score.getDps()));
 					}
 				}
@@ -101,7 +105,11 @@ public final class LoadoutOptimizer
 				{
 					continue;
 				}
-				results.add(bestSpellResult(request, loadout, spells).withPurchaseCost(state.cost));
+				DpsResult scored = bestSpellResult(request, loadout, spells);
+				if (scored != null)
+				{
+					results.add(scored.withPurchaseCost(state.cost));
+				}
 			}
 		}
 
@@ -136,6 +144,10 @@ public final class LoadoutOptimizer
 
 	private static DpsResult best(DpsResult first, DpsResult second)
 	{
+		if (second == null)
+		{
+			return first;
+		}
 		if (first == null || second.getDps() > first.getDps())
 		{
 			return second;
@@ -195,6 +207,13 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			if (slot == GearSlot.WEAPON && !item.isWeaponFor(request.getStyle()))
+			{
+				continue;
+			}
+			// Must come BEFORE the top-N cut: vyre weapons never win generic
+			// rough-score ranking, but vs tier-3 vampyres they are the only
+			// weapons that deal damage at all.
+			if (slot == GearSlot.WEAPON && !VampyreRules.canDamage(request.getMonster(), item))
 			{
 				continue;
 			}

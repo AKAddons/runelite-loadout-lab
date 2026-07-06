@@ -14,16 +14,33 @@ public final class DpsCalculator
 
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
 	{
+		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon()))
+		{
+			return null;
+		}
+		DpsResult result;
 		switch (request.getStyle())
 		{
 			case RANGED:
-				return calculateRanged(request, loadout);
+				result = calculateRanged(request, loadout);
+				break;
 			case MAGIC:
-				return calculateMagic(request, loadout);
+				result = calculateMagic(request, loadout);
+				break;
 			case MELEE:
 			default:
-				return calculateMelee(request, loadout);
+				result = calculateMelee(request, loadout);
 		}
+		double factor = VampyreRules.damageFactor(request.getMonster(), loadout.getWeapon());
+		if (result != null && factor < 1.0)
+		{
+			result = new DpsResult(result.getLoadout(), result.getDps() * factor,
+				result.getAccuracy(), result.getExpectedHit() * factor,
+				(int) (result.getMaxHit() * factor), result.getAttackSpeed(),
+				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
+				result.getPurchaseCost(), result.getSpellName());
+		}
+		return result;
 	}
 
 	private DpsResult calculateMelee(OptimizationRequest request, Loadout loadout)
