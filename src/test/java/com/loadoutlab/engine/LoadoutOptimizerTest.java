@@ -523,6 +523,35 @@ public class LoadoutOptimizerTest
 		Assert.assertTrue(results.get(0).getLoadout().get(GearSlot.HEAD).isImbuedSlayerHead());
 	}
 
+	@Test
+	public void allStandardIncludesUnownedUntradeables()
+	{
+		// Fix over upstream best-dps: ALL_STANDARD is the "game best" ceiling
+		// query - untradeables (fire cape etc.) must count without ownership,
+		// or the ceiling silently means "best tradeable set".
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		OptimizationRequest request = new OptimizationRequest(
+			monster,
+			CombatStyle.MELEE,
+			PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+			null,
+			0,
+			CandidateMode.ALL_STANDARD,
+			true,
+			false,
+			OwnedItems.EMPTY,
+			RequirementProfile.MAXED,
+			1);
+
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
+		Assert.assertFalse(results.isEmpty());
+		GearItem cape = results.get(0).getLoadout().get(GearSlot.CAPE);
+		Assert.assertNotNull(cape);
+		Assert.assertFalse("the best melee cape in the game is untradeable", cape.isTradeable());
+	}
+
 	private static RequirementProfile requirements(int level, Set<String> quests)
 	{
 		EnumMap<Skill, Integer> levels = new EnumMap<>(Skill.class);

@@ -113,8 +113,11 @@ public class OptimizerService
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, request(
 					monster, style, boostedLevels, requirements,
 					CandidateMode.OWNED_ONLY, owned, 3));
+				// The ceiling: every obtainable item, no quest/level gating -
+				// but computed at the player's own levels, so the comparison
+				// percentage isolates the GEAR gap.
 				List<DpsResult> gameBest = optimizer.optimize(dataset, request(
-					monster, style, boostedLevels, requirements,
+					monster, style, boostedLevels, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1));
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0)));

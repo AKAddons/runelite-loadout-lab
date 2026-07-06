@@ -321,8 +321,14 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(new Color(140, 200, 140));
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
+		addSpellLine(card, style, best);
+		card.add(Box.createVerticalStrut(4));
+		card.add(iconGrid(best));
+
+		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		if (result.overallBest != null && result.overallBest.getDps() > 0)
 		{
+			card.add(Box.createVerticalStrut(6));
 			double pct = 100.0 * best.getDps() / result.overallBest.getDps();
 			JLabel ceiling = new JLabel(String.format("Game best: %.2f DPS - you are at %.0f%%",
 				result.overallBest.getDps(), Math.min(100.0, pct)));
@@ -330,30 +336,42 @@ public class LoadoutLabPanel extends PluginPanel
 			ceiling.setFont(ceiling.getFont().deriveFont(11f));
 			ceiling.setAlignmentX(LEFT_ALIGNMENT);
 			card.add(ceiling);
+			addSpellLine(card, style, result.overallBest);
+			card.add(Box.createVerticalStrut(4));
+			card.add(iconGrid(result.overallBest));
 		}
+		return card;
+	}
 
-		// Magic: the spell and its spellbook, explicitly - the weapon shown
-		// below is autocast-legal for that book (engine-gated).
-		if (style == CombatStyle.MAGIC && best.getSpellName() != null)
+	/**
+	 * Magic only: name the spell and its spellbook explicitly - the weapon in
+	 * the grid below is autocast-legal for that book (engine-gated).
+	 */
+	private void addSpellLine(JPanel card, CombatStyle style, DpsResult result)
+	{
+		if (style != CombatStyle.MAGIC || result.getSpellName() == null)
 		{
-			String book = data.getSpells().stream()
-				.filter(s -> best.getSpellName().equals(s.getName()))
-				.map(s -> s.getSpellbook())
-				.findFirst().orElse("");
-			JLabel spell = new JLabel("Spell: " + best.getSpellName()
-				+ (book.isEmpty() ? "" : " (" + capitalize(book) + " spellbook)"));
-			spell.setForeground(new Color(150, 170, 230));
-			spell.setFont(spell.getFont().deriveFont(11f));
-			spell.setAlignmentX(LEFT_ALIGNMENT);
-			card.add(spell);
+			return;
 		}
-		card.add(Box.createVerticalStrut(4));
+		String book = data.getSpells().stream()
+			.filter(s -> result.getSpellName().equals(s.getName()))
+			.map(s -> s.getSpellbook())
+			.findFirst().orElse("");
+		JLabel spell = new JLabel("Spell: " + result.getSpellName()
+			+ (book.isEmpty() ? "" : " (" + capitalize(book) + " spellbook)"));
+		spell.setForeground(new Color(150, 170, 230));
+		spell.setFont(spell.getFont().deriveFont(11f));
+		spell.setAlignmentX(LEFT_ALIGNMENT);
+		card.add(spell);
+	}
 
-		// The set, as item icons (names on hover) - wraps, never overflows.
+	/** A set as item icons (names on hover) - wraps, never overflows. */
+	private JPanel iconGrid(DpsResult result)
+	{
 		JPanel icons = new JPanel(new WrapLayout(FlowLayout.LEFT, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
-		for (Map.Entry<GearSlot, GearItem> e : best.getLoadout().getGear().entrySet())
+		for (Map.Entry<GearSlot, GearItem> e : result.getLoadout().getGear().entrySet())
 		{
 			GearItem item = e.getValue();
 			if (item == null)
@@ -369,8 +387,7 @@ public class LoadoutLabPanel extends PluginPanel
 			img.addTo(slot);
 			icons.add(slot);
 		}
-		card.add(icons);
-		return card;
+		return icons;
 	}
 
 	private static String capitalize(String s)

@@ -419,7 +419,13 @@ public final class LoadoutOptimizer
 
 	private static boolean canUseUntradeable(OptimizationRequest request, GearItem item)
 	{
-		return item != null && request.isIncludeUntradeables() && !item.isTradeable() && request.getOwnedItems().owns(item.getId());
+		// ALL_STANDARD means "everything obtainable in the game" - untradeables
+		// (fire cape, void, barrows gloves...) count without being owned.
+		// Every other mode is ownership/budget-scoped, and untradeables can't
+		// be bought, so there they require ownership.
+		return item != null && request.isIncludeUntradeables() && !item.isTradeable()
+			&& (request.getCandidateMode() == CandidateMode.ALL_STANDARD
+				|| request.getOwnedItems().owns(item.getId()));
 	}
 
 	private static int budgetCost(OptimizationRequest request, GearItem item)
