@@ -9,11 +9,11 @@ Outputs (paths relative to the repo root):
       (the hub's documented maximum size; filename + repo-root location are
       what the hub README requires).
 
-Theme: alchemy. An Erlenmeyer flask of bubbling potion on a dark card a step
-above RuneLite's DARK_GRAY (#28282d), liquid in the panel's selected-item
-green (140,200,140), with the plugin's "LL" monogram knocked out of the
-liquid in the card colour. The hub icon adds escaping bubbles and gold
-alchemy sparkles.
+Theme: alchemy, potion liquid in the panel's selected-item green
+(140,200,140) with the plugin's "LL" monogram knocked out of it. The
+sidebar icon is a corked potion bottle drawn frameless on transparency;
+the hub icon is an Erlenmeyer flask on a dark card a step above RuneLite's
+DARK_GRAY (#28282d), with escaping bubbles and gold alchemy sparkles.
 
 Usage:
   python3 scripts/generate_icons.py [--preview DIR]
@@ -69,31 +69,31 @@ def write_png(path, width, height, rows):
 
 SIDEBAR_PALETTE = {
     ".": (0, 0, 0, 0),
-    "e": EDGE,
-    "B": CARD,
     "g": GREEN_MD,
     "G": GREEN,
+    "y": GOLD,
 }
 
-# Wide-bodied Erlenmeyer flask: rim, short neck with rising bubbles, flared
-# body, and "LL" knocked out of the liquid in the card colour.
+# Corked potion bottle, frameless so it uses the full 16px: gold cork, lip,
+# a bubble rising in the neck, round belly of potion with "LL" knocked out
+# to transparency (the sidebar's dark background shows through as the mark).
 SIDEBAR_GRID = [
-    ".eeeeeeeeeeeeee.",
-    "eBBBBBBBBBBBBBBe",
-    "eBBBBggggggBBBBe",
-    "eBBBBBgBBgBBBBBe",
-    "eBBBBBgBBgBBBBBe",
-    "eBBBBgBBBBgBBBBe",
-    "eBBggBBBBBBggBBe",
-    "eBgGGGGGGGGGGgBe",
-    "eBgGBGGGGBGGGgBe",
-    "eBgGBGGGGBGGGgBe",
-    "eBgGBGGGGBGGGgBe",
-    "eBgGBGGGGBGGGgBe",
-    "eBgGBBBGGBBBGgBe",
-    "eBggggggggggggBe",
-    "eBBBBBBBBBBBBBBe",
-    ".eeeeeeeeeeeeee.",
+    "......yyyy......",
+    "......yyyy......",
+    ".....gggggg.....",
+    "......g..g......",
+    "......gG.g......",
+    "....gg....gg....",
+    "...gGGGGGGGGg...",
+    "..gGGGGGGGGGGg..",
+    "..gG.GGGG.GGGg..",
+    "..gG.GGGG.GGGg..",
+    "..gG.GGGG.GGGg..",
+    "..gG.GGGG.GGGg..",
+    "..gG...GG...Gg..",
+    "...gGGGGGGGGg...",
+    "....gggggggg....",
+    "................",
 ]
 
 
