@@ -66,6 +66,7 @@ public final class LoadoutOptimizer
 			for (GearItem item : data.getGearItems())
 			{
 				if (item.getSlot() != slot || !item.isStandardGear() || data.isVariant(item.getId())
+					|| request.isExcluded(item.getId())
 					|| utilityScore(item) <= 0
 					|| !request.getRequirementProfile().canEquip(item.getRequirements())
 					|| !allowedByMode(request, item)
@@ -281,6 +282,10 @@ public final class LoadoutOptimizer
 		for (GearItem item : data.getGearItems())
 		{
 			if (slot == GearSlot.AMMO && forWeapon != null && !RangedAmmo.compatible(item, forWeapon))
+			{
+				continue;
+			}
+			if (request.isExcluded(item.getId()))
 			{
 				continue;
 			}

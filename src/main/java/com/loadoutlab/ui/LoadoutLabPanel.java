@@ -51,6 +51,18 @@ public class LoadoutLabPanel extends PluginPanel
 		void compute(MonsterStats monster, boolean f2pOnly, Runnable onDone);
 	}
 
+	/** Toggle an item's excluded state; returns true when now excluded. */
+	public interface ExclusionToggle
+	{
+		boolean toggle(int itemId);
+	}
+
+	/** The current excluded item ids. */
+	public interface ExclusionView
+	{
+		java.util.Set<Integer> snapshot();
+	}
+
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
@@ -58,6 +70,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final LoadoutData data;
 	private final ItemManager itemManager;
 	private final ComputeHook computeHook;
+	private final ExclusionToggle exclusionToggle;
+	private final ExclusionView exclusionView;
+	private final JLabel exclusionsLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -80,11 +95,14 @@ public class LoadoutLabPanel extends PluginPanel
 	private final java.util.Set<CombatStyle> gameBestExpanded = java.util.EnumSet.noneOf(CombatStyle.class);
 	private Map<CombatStyle, StyleResult> lastResults;
 
-	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager, ComputeHook computeHook)
+	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager, ComputeHook computeHook,
+		ExclusionToggle exclusionToggle, ExclusionView exclusionView)
 	{
 		this.data = data;
 		this.itemManager = itemManager;
 		this.computeHook = computeHook;
+		this.exclusionToggle = exclusionToggle;
+		this.exclusionView = exclusionView;
 
 		setLayout(new BorderLayout(0, 6));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -156,6 +174,22 @@ public class LoadoutLabPanel extends PluginPanel
 		f2pOnly.addActionListener(e -> recompute());
 		f2pOnly.setVisible(false); // only shown on non-members worlds
 		top.add(f2pOnly);
+
+		// Excluded items ("protected" from suggestions) - click to manage.
+		exclusionsLabel.setForeground(new Color(200, 140, 140));
+		exclusionsLabel.setFont(exclusionsLabel.getFont().deriveFont(11f));
+		exclusionsLabel.setAlignmentX(LEFT_ALIGNMENT);
+		exclusionsLabel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		exclusionsLabel.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				showExclusionsMenu(e);
+			}
+		});
+		top.add(exclusionsLabel);
+		refreshExclusionsLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -263,6 +297,69 @@ public class LoadoutLabPanel extends PluginPanel
 		revalidate();
 		repaint();
 		recompute();
+	}
+
+	private void refreshExclusionsLabel()
+	{
+		int count = exclusionView.snapshot().size();
+		exclusionsLabel.setText(count == 0 ? "" : "Excluded items: " + count + " (click to manage)");
+		exclusionsLabel.setVisible(count > 0);
+	}
+
+	private void showExclusionsMenu(java.awt.event.MouseEvent e)
+	{
+		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		for (Integer id : exclusionView.snapshot())
+		{
+			GearItem item = data.getGear(id);
+			String label = item == null ? ("item " + id) : item.label();
+			javax.swing.JMenuItem entry = new javax.swing.JMenuItem("Allow again: " + label);
+			entry.addActionListener(a ->
+			{
+				exclusionToggle.toggle(id);
+				refreshExclusionsLabel();
+				recompute();
+			});
+			menu.add(entry);
+		}
+		menu.show(exclusionsLabel, e.getX(), e.getY());
+	}
+
+	/** Right-click menu on a suggested item: exclude it and recompute. */
+	private void attachExclusionMenu(JLabel cell, GearItem item)
+	{
+		cell.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mousePressed(java.awt.event.MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			@Override
+			public void mouseReleased(java.awt.event.MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			private void maybeShow(java.awt.event.MouseEvent e)
+			{
+				if (!e.isPopupTrigger())
+				{
+					return;
+				}
+				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + item.label() + " from suggestions");
+				exclude.addActionListener(a ->
+				{
+					exclusionToggle.toggle(item.getId());
+					refreshExclusionsLabel();
+					recompute();
+				});
+				menu.add(exclude);
+				menu.show(cell, e.getX(), e.getY());
+			}
+		});
 	}
 
 	private void recompute()
@@ -523,9 +620,10 @@ public class LoadoutLabPanel extends PluginPanel
 			if (item != null)
 			{
 				slot.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-				slot.setToolTipText(slotName(slotType) + ": " + item.label());
+				slot.setToolTipText(slotName(slotType) + ": " + item.label() + " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());
 				img.addTo(slot);
+				attachExclusionMenu(slot, item);
 			}
 			else
 			{
@@ -544,6 +642,7 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setToolTipText(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
 				spec.getDisplayName(), specExpected, spec.getEnergyCost()));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
+			attachExclusionMenu(specCell, specWeapon);
 		}
 		else
 		{

@@ -114,10 +114,13 @@ public class OptimizerService
 		OwnedItems owned,
 		int collectionFingerprint,
 		boolean f2pOnly,
+		java.util.Set<Integer> excludedItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
+		final java.util.Set<Integer> excluded = excludedItems == null
+			? java.util.Collections.emptySet() : excludedItems;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + levelKey(boostedLevels);
+			+ "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -140,7 +143,7 @@ public class OptimizerService
 			{
 				OptimizationRequest ownedRequest = request(
 					monster, style, boostedLevels, requirements,
-					CandidateMode.OWNED_ONLY, effectiveOwned, 3);
+					CandidateMode.OWNED_ONLY, effectiveOwned, 3).withExcludedItems(excluded);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -153,7 +156,7 @@ public class OptimizerService
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1);
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1).withExcludedItems(excluded);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
@@ -214,6 +217,7 @@ public class OptimizerService
 		for (GearItem item : dataset.getGearItems())
 		{
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
+				|| request.isExcluded(item.getId())
 				|| (owned != null && !owned.owns(item.getId())))
 			{
 				continue;
@@ -223,7 +227,7 @@ public class OptimizerService
 			{
 				continue;
 			}
-			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned);
+			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned, request);
 			if (loadout == null)
 			{
 				continue;
@@ -285,7 +289,7 @@ public class OptimizerService
 
 	/** The base set with the spec weapon swapped in, or null if unusable.
 	 * owned == null -> any standard ammo may be picked (game-best spec). */
-	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned)
+	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned, OptimizationRequest request)
 	{
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.putAll(baseSet.getGear());
@@ -301,6 +305,7 @@ public class OptimizerService
 			{
 				if (ammo.getSlot() == GearSlot.AMMO
 					&& ammo.isStandardGear() && !dataset.isVariant(ammo.getId())
+					&& !request.isExcluded(ammo.getId())
 					&& (owned == null || owned.owns(ammo.getId()))
 					&& RangedAmmo.compatible(ammo, weapon)
 					&& (replacement == null

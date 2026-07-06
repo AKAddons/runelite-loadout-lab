@@ -3,6 +3,8 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
+import java.util.Collections;
+import java.util.Set;
 
 public final class OptimizationRequest
 {
@@ -18,6 +20,9 @@ public final class OptimizationRequest
 	private final OwnedItems ownedItems;
 	private final RequirementProfile requirementProfile;
 	private final int resultLimit;
+	/** Item ids the player has excluded ("protect my dragon darts") -
+	 * never suggested in any slot, ammo pick, dart tier, or spec. */
+	private final Set<Integer> excludedItems;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -58,9 +63,43 @@ public final class OptimizationRequest
 		this.candidateMode = candidateMode == null ? CandidateMode.BUDGET : candidateMode;
 		this.includeUntradeables = includeUntradeables;
 		this.onSlayerTask = onSlayerTask;
+		this.excludedItems = Collections.emptySet();
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
+	}
+
+	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
+		SpellStats spell, Set<Integer> excludedItems)
+	{
+		this.monster = monster;
+		this.style = style;
+		this.levels = base.levels;
+		this.prayers = base.prayers;
+		this.spell = spell;
+		this.budget = base.budget;
+		this.candidateMode = base.candidateMode;
+		this.includeUntradeables = base.includeUntradeables;
+		this.onSlayerTask = base.onSlayerTask;
+		this.ownedItems = base.ownedItems;
+		this.requirementProfile = base.requirementProfile;
+		this.resultLimit = base.resultLimit;
+		this.excludedItems = excludedItems == null ? Collections.emptySet() : excludedItems;
+	}
+
+	public Set<Integer> getExcludedItems()
+	{
+		return excludedItems;
+	}
+
+	public boolean isExcluded(int itemId)
+	{
+		return excludedItems.contains(itemId);
+	}
+
+	public OptimizationRequest withExcludedItems(Set<Integer> excluded)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excluded);
 	}
 
 	public MonsterStats getMonster()
@@ -130,52 +169,16 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withStyle(CombatStyle style)
 	{
-		return new OptimizationRequest(
-			monster,
-			style,
-			levels,
-			prayers,
-			spell,
-			budget,
-			candidateMode,
-			includeUntradeables,
-			onSlayerTask,
-			ownedItems,
-			requirementProfile,
-			resultLimit);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems);
 	}
 
-	public OptimizationRequest withMonster(com.loadoutlab.data.MonsterStats monster)
+	public OptimizationRequest withMonster(MonsterStats monster)
 	{
-		return new OptimizationRequest(
-			monster,
-			style,
-			levels,
-			prayers,
-			spell,
-			budget,
-			candidateMode,
-			includeUntradeables,
-			onSlayerTask,
-			ownedItems,
-			requirementProfile,
-			resultLimit);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems);
 	}
 
 	public OptimizationRequest withSpell(SpellStats spell)
 	{
-		return new OptimizationRequest(
-			monster,
-			style,
-			levels,
-			prayers,
-			spell,
-			budget,
-			candidateMode,
-			includeUntradeables,
-			onSlayerTask,
-			ownedItems,
-			requirementProfile,
-			resultLimit);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems);
 	}
 }

@@ -50,6 +50,19 @@ public final class BlowpipeDarts
 		return tier < 0 ? null : TIER_NAMES[tier];
 	}
 
+	/** Excluding any variant of a dart tier protects the whole tier. */
+	private static boolean tierExcluded(OptimizationRequest request, int tier)
+	{
+		for (int i = 1; i < TIERS[tier].length; i++)
+		{
+			if (request.isExcluded(TIERS[tier][i]))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static int tierFor(OptimizationRequest request, GearItem weapon)
 	{
 		if (weapon == null || !weapon.getName().toLowerCase(Locale.ROOT).contains("blowpipe"))
@@ -60,10 +73,22 @@ public final class BlowpipeDarts
 			|| request.getCandidateMode() == CandidateMode.OWNED_OR_BUDGET;
 		if (!ownershipScoped)
 		{
-			return 0; // game best: dragon darts
+			// Game best: the best dart tier that is not excluded.
+			for (int tier = 0; tier < TIERS.length; tier++)
+			{
+				if (!tierExcluded(request, tier))
+				{
+					return tier;
+				}
+			}
+			return -1;
 		}
 		for (int tier = 0; tier < TIERS.length; tier++)
 		{
+			if (tierExcluded(request, tier))
+			{
+				continue;
+			}
 			for (int i = 1; i < TIERS[tier].length; i++)
 			{
 				if (request.getOwnedItems().owns(TIERS[tier][i]))
@@ -72,6 +97,6 @@ public final class BlowpipeDarts
 				}
 			}
 		}
-		return -1; // owns no darts: the blowpipe cannot fire
+		return -1; // owns no usable darts: the blowpipe cannot fire
 	}
 }

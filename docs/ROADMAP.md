@@ -80,7 +80,10 @@ monster, get your strongest owned set per combat style with exact DPS.
   the spec weapon's net gain. Optimizer should compare the two totals.
 
 Done from this list: BiS section show/hide (v/> header, 2026-07-05);
-monster duplicate collapsing (2026-07-05).
+monster duplicate collapsing (2026-07-05); item exclusions/protection
+(2026-07-06: right-click any suggested item -> excluded globally and
+persisted; 'Excluded items: N' manager under the F2P toggle; blowpipe
+dart tiers respect it). Follow-up: per-monster exclusion scope.
 
 Set bonuses status (asked 2026-07-05): modeled - Void (all styles, elite
 ranged), Obsidian set + berserker necklace, Inquisitor's, slayer helm,

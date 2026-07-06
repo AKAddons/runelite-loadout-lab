@@ -3,6 +3,7 @@ package com.loadoutlab;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
+import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -81,6 +82,7 @@ public class LoadoutLabPlugin extends Plugin
 	private ItemManager itemManager;
 
 	private CollectionLedger ledger;
+	private ExclusionStore exclusions;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
@@ -103,6 +105,7 @@ public class LoadoutLabPlugin extends Plugin
 	protected void startUp()
 	{
 		ledger = new CollectionLedger(configManager, gson);
+		exclusions = new ExclusionStore(configManager, gson);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
@@ -117,7 +120,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				panel = new LoadoutLabPanel(loaded, itemManager, this::computeForMonster);
+				panel = new LoadoutLabPanel(loaded, itemManager, this::computeForMonster, exclusions::toggle, exclusions::snapshot);
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
@@ -150,6 +153,7 @@ public class LoadoutLabPlugin extends Plugin
 		panel = null;
 		data = null;
 		ledger = null;
+		exclusions = null;
 		requirementProfile = null;
 		boostedLevels = null;
 		dirtySources.clear();
@@ -249,6 +253,7 @@ public class LoadoutLabPlugin extends Plugin
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
 			optimizerService.bestPerStyle(monster, levels, profile, owned, fingerprint, f2pOnly,
+				exclusions.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
