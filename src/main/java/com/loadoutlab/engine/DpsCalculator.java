@@ -34,10 +34,22 @@ public final class DpsCalculator
 				result = calculateMelee(request, loadout);
 		}
 		double factor = VampyreRules.damageFactor(request.getMonster(), loadout.getWeapon());
-		if (result != null && factor < 1.0)
+		if (result != null)
 		{
-			result = new DpsResult(result.getLoadout(), result.getDps() * factor,
-				result.getAccuracy(), result.getExpectedHit() * factor,
+			factor *= TormentedDemonRules.damageFactor(
+				request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName());
+		}
+		// Tormented demons: guaranteed hits in the official default phase -
+		// scale the expectation up to accuracy 1 (all hit models here are
+		// linear in accuracy).
+		double accuracyOverride = result != null
+			&& TormentedDemonRules.applies(request.getMonster())
+			&& result.getAccuracy() > 0 ? 1.0 / result.getAccuracy() : 1.0;
+		if (result != null && (factor < 1.0 || accuracyOverride != 1.0))
+		{
+			result = new DpsResult(result.getLoadout(), result.getDps() * factor * accuracyOverride,
+				Math.min(1.0, result.getAccuracy() * accuracyOverride),
+				result.getExpectedHit() * factor * accuracyOverride,
 				(int) (result.getMaxHit() * factor), result.getAttackSpeed(),
 				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
 				result.getPurchaseCost(), result.getSpellName());
@@ -151,7 +163,14 @@ public final class DpsCalculator
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
 		}
 
-		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getMagic());
+		int magicAttackBonus = loadout.getOffensive().getMagic();
+		if (wearing(loadout, "tumeken"))
+		{
+			// The shadow triples the magic attack bonus of ALL equipment
+			// (it triples magic damage too - handled in the damage path).
+			magicAttackBonus *= 3;
+		}
+		long attackRoll = RollMath.attackRoll(effectiveAccuracy, magicAttackBonus);
 		int maxHit = magicMaxHit(effectiveRequest, loadout);
 		attackRoll = applyMagicAccuracyBonuses(effectiveRequest, loadout, attackRoll);
 		maxHit = applyMagicDamageBonuses(effectiveRequest, loadout, maxHit);
@@ -181,7 +200,7 @@ public final class DpsCalculator
 				int base = magicLevel / 10 + 10;
 				return wearing(loadout, "slayer's staff (e)") ? magicLevel / 6 + 13 : base;
 			}
-			return spell.getMaxHit();
+			return elementalSpellMax(spell, magicLevel);
 		}
 		if (!poweredStaff)
 		{
@@ -215,11 +234,60 @@ public final class DpsCalculator
 		{
 			return Math.max(1, (8 * magicLevel + 96) / 37);
 		}
+		if (weaponName.contains("eye of ayak"))
+		{
+			return Math.max(1, magicLevel / 3 - 6);
+		}
 		if (weaponName.contains("bone staff"))
 		{
 			return Math.max(1, magicLevel / 3 - 5) + 10;
 		}
 		return Math.max(1, magicLevel / 3 + 1);
+	}
+
+	/**
+	 * June 2025 magic rebalance: elemental spells share a class-wide max
+	 * hit scaled by the caster's Magic level - Water Surge cast at 95+
+	 * hits like Fire Surge. The chosen element then only matters for
+	 * elemental-weakness matching, which is what makes weakness-exploiting
+	 * spell picks viable. Verified against the official calculator.
+	 */
+	private static int elementalSpellMax(SpellStats spell, int magicLevel)
+	{
+		if (spell.getElement().isEmpty())
+		{
+			return spell.getMaxHit();
+		}
+		String[] parts = spell.getName().split(" ");
+		if (parts.length != 2 || !isElementWord(parts[0]))
+		{
+			return spell.getMaxHit();
+		}
+		int tier;
+		switch (parts[1])
+		{
+			case "Strike": tier = magicLevel >= 13 ? 3 : magicLevel >= 9 ? 2 : magicLevel >= 5 ? 1 : 0; break;
+			case "Bolt": tier = magicLevel >= 35 ? 3 : magicLevel >= 29 ? 2 : magicLevel >= 23 ? 1 : 0; break;
+			case "Blast": tier = magicLevel >= 59 ? 3 : magicLevel >= 53 ? 2 : magicLevel >= 47 ? 1 : 0; break;
+			case "Wave": tier = magicLevel >= 75 ? 3 : magicLevel >= 70 ? 2 : magicLevel >= 65 ? 1 : 0; break;
+			case "Surge": tier = magicLevel >= 95 ? 3 : magicLevel >= 90 ? 2 : magicLevel >= 85 ? 1 : 0; break;
+			default: return spell.getMaxHit();
+		}
+		// Class max hits: wind/water/earth/fire per tier.
+		switch (parts[1])
+		{
+			case "Strike": return 2 + 2 * tier;
+			case "Bolt": return 9 + tier;
+			case "Blast": return 13 + tier;
+			case "Wave": return 17 + tier;
+			default: return 21 + tier;
+		}
+	}
+
+	private static boolean isElementWord(String word)
+	{
+		return "Wind".equals(word) || "Water".equals(word)
+			|| "Earth".equals(word) || "Fire".equals(word);
 	}
 
 	private long npcDefenceRoll(MonsterStats monster, String attackType, GearItem weapon)
@@ -269,6 +337,14 @@ public final class DpsCalculator
 		{
 			return style == CombatStyle.MAGIC ? 5 : 4;
 		}
+		if (style == CombatStyle.MAGIC && !isPoweredStaff(loadout))
+		{
+			// Casting a spell is 5 ticks regardless of the staff's melee
+			// speed (upstream billed autocasts at the wand's 4 ticks - a
+			// 25% dps overstatement). Harmonised nightmare staff: 4 ticks
+			// on standard spells.
+			return name(weapon).contains("harmonised") ? 4 : 5;
+		}
 		return Math.max(1, weapon.getSpeed());
 	}
 
@@ -309,9 +385,9 @@ public final class DpsCalculator
 		{
 			roll = multiply(roll, 17, 10);
 		}
-		if (isDemon(request) && (wearing(loadout, "silverlight") || wearing(loadout, "darklight")))
+		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
-			roll = multiply(roll, 8, 5);
+			roll = multiply(roll, 21, 20);
 		}
 		if (isKalphite(request) && wearing(loadout, "keris partisan of breaching"))
 		{
@@ -360,7 +436,12 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && (wearing(loadout, "silverlight") || wearing(loadout, "darklight")))
 		{
+			// Damage only - the wiki and official calc give these no accuracy bonus.
 			maxHit = multiply(maxHit, 8, 5);
+		}
+		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
+		{
+			maxHit = multiply(maxHit, 21, 20);
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
@@ -477,7 +558,10 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
-			roll = multiply(roll, 6, 5);
+			// 20% accuracy, doubled by the purging staff. The damage bonus
+			// requires Mark of Darkness (not modeled - matches the official
+			// calculator's default).
+			roll = wearing(loadout, "purging staff") ? multiply(roll, 7, 5) : multiply(roll, 6, 5);
 		}
 		return roll;
 	}
@@ -502,10 +586,6 @@ public final class DpsCalculator
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
 			maxHit += multiply(baseMaxHit, request.getMonster().getWeaknessSeverity(), 100);
-		}
-		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
-		{
-			maxHit = multiply(maxHit, 6, 5);
 		}
 		return maxHit;
 	}
@@ -635,6 +715,7 @@ public final class DpsCalculator
 			|| weaponName.contains("sanguinesti")
 			|| weaponName.contains("tumeken")
 			|| weaponName.contains("warped sceptre")
+			|| weaponName.contains("eye of ayak")
 			|| weaponName.contains("bone staff");
 	}
 

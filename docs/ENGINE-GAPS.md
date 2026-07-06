@@ -18,18 +18,33 @@ listed below.
   stance on every weapon (whip aggressive, barronite mace "slashing" a Grey
   golem past its 300 crush defence). `WeaponStyles` now models the real
   per-category style table; melee converged to <=0.2%.
-- **Tumeken's shadow** (-15% dps, acc .775 vs .889): the shadow's tripling of
-  equipment magic bonuses is not modeled (relates to #20-style items).
-- **Bone staff vs Scurrius** (-11%, acc .608 vs .669, max 39 vs 40): likely
-  the NPC-defends-magic-with-Defence-level rule (#13) plus a powered-staff
-  prayer-stacking difference.
-- **Sanguinesti max hit** (33 vs 34 with Augury+Mystic Vigour): powered-staff
-  magic damage% stacking differs by a rounding step.
-- **Twisted bow vs Zulrah** (max 62 vs 50): confirms #3 - the 140%/250% caps
-  are missing.
-- **Barronite mace accuracy**: we apply the wiki-stated 15% accuracy bonus;
-  the official calc applies only the damage part (acc .238 vs .207). Wiki
-  page explicitly says both - keeping ours, watch upstream.
+- ~~Tumeken's shadow~~ FIXED: the shadow now triples the magic ATTACK bonus
+  too (was damage only); shadow-zulrah converged to -2.3%.
+- ~~Sanguinesti / prayer stacking~~ FIXED: Augury (4%) + Mystic Vigour (3%)
+  stack to 7% magic damage; sang-goblin converged to -0.5%.
+- ~~Autocast speed~~ FIXED: casting is 5 ticks (harmonised 4), not the
+  wand's melee speed - upstream overstated every autocast DPS by 25%.
+- ~~Demonbane~~ FIXED to official/wiki values: spells +20% accuracy only
+  (Purging staff doubles to 40%; the damage bonus needs Mark of Darkness -
+  not modeled, matching the official default), silverlight/darklight +60%
+  damage only (upstream also boosted accuracy), bone/burning claws +5%
+  acc+dmg added. kodai-demonbane and purging-demonbane exact 0.0%.
+- ~~Elemental spell class scaling~~ ADDED (June 2025 rebalance): elemental
+  spells share a class-wide max scaled by Magic level (Water Surge at 95+
+  hits like Fire Surge) - this is what makes weakness-matched spell picks
+  win vs elemental-weak monsters.
+- ~~Tormented demons~~ ADDED (TormentedDemonRules, matching the official
+  default phase): guaranteed hits; 20% damage reduction bypassed by
+  demonbane and abyssal weapons. All TD scenarios within 3.4%.
+- **Bone staff vs Scurrius** (-9%, acc .608 vs .669): likely the
+  NPC-defends-magic-with-Defence-level rule (#13).
+- **Twisted bow vs Zulrah** (max 62 vs 50): confirms #3 - the 140%/250%
+  caps are missing.
+- **Barronite mace accuracy** (+15%): we apply the wiki-stated 15% accuracy
+  bonus; the official calc applies only the damage part. Wiki page
+  explicitly says both - keeping ours, watch upstream.
+- Residual ~2.6% on guaranteed-hit TD rows: EV rounding in the 0.8x
+  reduction (they floor per-hitsplat with min 1; we scale the mean).
 
 ## Correctness bugs in the vendored engine
 

@@ -31,7 +31,7 @@ import org.junit.Test;
 public class OfficialVectorExport
 {
 	private static final String[][] SCENARIOS = {
-		// name | monster | version | style | weapon | ammo (optional)
+		// name | monster | version | style | weapon | ammo | forced spell (both optional)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
 		{"tentacle-goblin", "Goblin", "", "MELEE", "Abyssal tentacle", null},
 		{"fang-goblin", "Goblin", "", "MELEE", "Osmumten's fang", null},
@@ -47,6 +47,15 @@ public class OfficialVectorExport
 		{"bonestaff-scurrius", "Scurrius", "", "MAGIC", "Bone staff", null},
 		{"whip-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Abyssal whip", null},
 		{"arclight-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Arclight", null},
+		// Tormented demons: demonbane + elemental weakness (water 30)
+		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
+		{"scorchingbow-td", "Tormented Demon", "1", "RANGED", "Scorching bow", "Dragon arrow"},
+		{"bofa-td", "Tormented Demon", "1", "RANGED", "Bow of faerdhinen", null},
+		{"eyeofayak-td", "Tormented Demon", "1", "MAGIC", "Eye of ayak", null},
+		{"purging-demonbane-td", "Tormented Demon", "1", "MAGIC", "Purging staff", null, "Dark Demonbane"},
+		{"kodai-demonbane-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Dark Demonbane"},
+		{"kodai-watersurge-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Water Surge"},
+		{"shadow-td", "Tormented Demon", "1", "MAGIC", "Tumeken's shadow", null},
 	};
 
 	@Test
@@ -76,6 +85,9 @@ public class OfficialVectorExport
 				continue;
 			}
 			CombatStyle style = CombatStyle.valueOf(s[3]);
+			com.loadoutlab.data.SpellStats forcedSpell = s.length > 6 && s[6] != null
+				? data.getSpells().stream().filter(sp -> sp.getName().equalsIgnoreCase(s[6])).findFirst().orElse(null)
+				: null;
 			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 			gear.put(GearSlot.WEAPON, weapon);
 			List<Object> gearNames = new ArrayList<>();
@@ -89,7 +101,7 @@ public class OfficialVectorExport
 
 			OptimizationRequest request = new OptimizationRequest(
 				monster, style, PlayerLevels.MAXED,
-				prayersFor(style), null, 0,
+				prayersFor(style), forcedSpell, 0,
 				CandidateMode.ALL_STANDARD, true, false,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 			DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));

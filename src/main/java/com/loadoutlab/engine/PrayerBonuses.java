@@ -75,7 +75,8 @@ public final class PrayerBonuses
 		double rangedAccuracy = levels.getPrayer() >= 74 ? 1.20 : levels.getPrayer() >= 44 ? 1.15 : levels.getPrayer() >= 26 ? 1.10 : levels.getPrayer() >= 8 ? 1.05 : 1.0;
 		double rangedStrength = levels.getPrayer() >= 74 ? 1.23 : levels.getPrayer() >= 44 ? 1.15 : levels.getPrayer() >= 26 ? 1.10 : levels.getPrayer() >= 8 ? 1.05 : 1.0;
 		double magic = levels.getPrayer() >= 77 ? 1.25 : levels.getPrayer() >= 45 ? 1.15 : levels.getPrayer() >= 27 ? 1.10 : levels.getPrayer() >= 9 ? 1.05 : 1.0;
-		double magicDamage = levels.getPrayer() >= 77 ? 4.0 : levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0;
+		// Augury (4%) and Mystic Vigour (3%) stack - verified vs the official calc.
+		double magicDamage = levels.getPrayer() >= 77 ? 7.0 : levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0;
 		return new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
 	}
 

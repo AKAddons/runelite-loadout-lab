@@ -331,7 +331,10 @@ public class LoadoutOptimizerTest
 			RequirementProfile.MAXED,
 			10);
 
-		Assert.assertEquals(28, new DpsCalculator().calculate(request, new Loadout(gear)).getMaxHit());
+		// 26% gear bonus on Earth Surge cast at 99 Magic - which hits at the
+		// class max (24, Fire Surge tier) since the 2025 magic rebalance:
+		// floor(24 * 1.26) = 30.
+		Assert.assertEquals(30, new DpsCalculator().calculate(request, new Loadout(gear)).getMaxHit());
 	}
 
 	@Test
@@ -404,7 +407,8 @@ public class LoadoutOptimizerTest
 		Assert.assertEquals(1.20, prayers.getRangedAccuracy(), 0.00001);
 		Assert.assertEquals(1.23, prayers.getRangedStrength(), 0.00001);
 		Assert.assertEquals(1.25, prayers.getMagicAccuracy(), 0.00001);
-		Assert.assertEquals(4.0, prayers.getMagicDamagePercent(), 0.00001);
+		// Augury 4% + Mystic Vigour 3% stack (verified vs the official calc).
+		Assert.assertEquals(7.0, prayers.getMagicDamagePercent(), 0.00001);
 	}
 
 	@Test
