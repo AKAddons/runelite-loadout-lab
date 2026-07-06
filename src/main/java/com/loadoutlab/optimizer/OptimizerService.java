@@ -121,12 +121,16 @@ public class OptimizerService
 		worker.execute(() ->
 		{
 			LoadoutData dataset = f2pOnly ? f2pView() : data;
+			// Owned ornament/locked variants count as their base item - the
+			// suggestion always shows the base version.
+			OwnedItems effectiveOwned = new OwnedItems(
+				dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
 				OptimizationRequest ownedRequest = request(
 					monster, style, boostedLevels, requirements,
-					CandidateMode.OWNED_ONLY, owned, 3);
+					CandidateMode.OWNED_ONLY, effectiveOwned, 3);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
@@ -134,7 +138,7 @@ public class OptimizerService
 				List<DpsResult> gameBest = optimizer.optimize(dataset, request(
 					monster, style, boostedLevels, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1));
-				SpecPick spec = bestOwnedSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, owned);
+				SpecPick spec = bestOwnedSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, effectiveOwned);
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0),
 					spec == null ? null : spec.spec,

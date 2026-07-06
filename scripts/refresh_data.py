@@ -157,6 +157,9 @@ def main():
     wg_equipment = fetch(WG_BASE + "/equipment.json", args.cache_dir, "wg_equipment.json")
     wg_monsters = fetch(WG_BASE + "/monsters.json", args.cache_dir, "wg_monsters.json")
     wg_spells = fetch(WG_BASE + "/spells.json", args.cache_dir, "wg_spells.json")
+    # variant id -> base id (ornaments, locked, degraded states with the
+    # same stats); the loader uses it to suggest base versions only.
+    wg_aliases = fetch(WG_BASE + "/equipment_aliases.json", args.cache_dir, "wg_aliases.json")
     mapping = fetch(WIKI_MAPPING, args.cache_dir, "wiki_mapping.json")
     latest = fetch(WIKI_LATEST, args.cache_dir, "wiki_latest.json")["data"]
 
@@ -175,6 +178,7 @@ def main():
     write_gz("gear_prices.json.gz", gear)
     write_gz("monsters.json.gz", wg_monsters)
     write_gz("spells.json.gz", wg_spells)
+    write_gz("equipment_aliases.json.gz", wg_aliases)
     print("done - run ./gradlew test to validate the snapshot")
     return 0
 

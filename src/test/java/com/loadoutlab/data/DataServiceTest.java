@@ -66,6 +66,20 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void ornamentVariantsCanonicalizeToTheBaseItem()
+	{
+		LoadoutData data = new DataService().load();
+		// Abyssal whip (or) = 12773, Volcanic abyssal whip = 12774 -> whip 4151.
+		Assert.assertTrue(data.isVariant(12773));
+		Assert.assertTrue(data.isVariant(12774));
+		Assert.assertFalse(data.isVariant(4151));
+
+		java.util.Map<Integer, Integer> owned = data.canonicalizeOwned(java.util.Map.of(12773, 1));
+		Assert.assertEquals(1, owned.get(4151).intValue());
+		Assert.assertEquals(1, owned.get(12773).intValue());
+	}
+
+	@Test
 	public void loadsEquipmentRequirements()
 	{
 		LoadoutData data = new DataService().load();

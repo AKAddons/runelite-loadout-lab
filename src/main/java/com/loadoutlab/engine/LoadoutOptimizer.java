@@ -202,6 +202,13 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
+			// Ornament/locked/degraded variants: identical stats to the base
+			// item, so suggesting them is noise - the base stands in, and
+			// canonicalized ownership credits owned variants to it.
+			if (data.isVariant(item.getId()))
+			{
+				continue;
+			}
 			if (!request.getRequirementProfile().canEquip(item.getRequirements()))
 			{
 				continue;

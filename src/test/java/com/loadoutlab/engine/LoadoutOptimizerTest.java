@@ -528,6 +528,40 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void suggestionsNeverUseOrnamentVariants()
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		// Own ONLY the ornamented whip: the canonicalized ownership credits
+		// the base whip, and the suggestion shows the base version.
+		Map<Integer, Integer> owned = data.canonicalizeOwned(Map.of(12773, 1));
+		OptimizationRequest request = new OptimizationRequest(
+			monster,
+			CombatStyle.MELEE,
+			PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+			null,
+			0,
+			CandidateMode.OWNED_ONLY,
+			false,
+			false,
+			new OwnedItems(owned, true),
+			RequirementProfile.MAXED,
+			5);
+
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
+		Assert.assertFalse(results.isEmpty());
+		Assert.assertEquals("Abyssal whip", results.get(0).getLoadout().getWeapon().getName());
+		for (DpsResult result : results)
+		{
+			for (GearItem item : result.getLoadout().getGear().values())
+			{
+				Assert.assertFalse("variant suggested: " + item.getName(), data.isVariant(item.getId()));
+			}
+		}
+	}
+
+	@Test
 	public void allStandardIncludesUnownedUntradeables()
 	{
 		// Fix over upstream best-dps: ALL_STANDARD is the "game best" ceiling

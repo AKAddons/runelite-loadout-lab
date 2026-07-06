@@ -11,17 +11,20 @@ public final class LoadoutData
 	private final List<MonsterStats> monsters;
 	private final List<SpellStats> spells;
 	private final Map<Integer, GearItem> gearById;
+	private final Map<Integer, Integer> variantToBase;
 
 	LoadoutData(
 		List<GearItem> gearItems,
 		List<MonsterStats> monsters,
 		List<SpellStats> spells,
-		Map<Integer, GearItem> gearById)
+		Map<Integer, GearItem> gearById,
+		Map<Integer, Integer> variantToBase)
 	{
 		this.gearItems = Collections.unmodifiableList(gearItems);
 		this.monsters = Collections.unmodifiableList(monsters);
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
+		this.variantToBase = Collections.unmodifiableMap(variantToBase);
 	}
 
 	/**
@@ -40,7 +43,34 @@ public final class LoadoutData
 				byId.put(g.getId(), g);
 			}
 		}
-		return new LoadoutData(free, monsters, spells, byId);
+		return new LoadoutData(free, monsters, spells, byId, variantToBase);
+	}
+
+	/**
+	 * True for ornament/locked/degraded variants of a base item with the
+	 * same stats - never suggested; the base version stands in for them.
+	 */
+	public boolean isVariant(int itemId)
+	{
+		return variantToBase.containsKey(itemId);
+	}
+
+	/**
+	 * Owned quantities with every variant also credited to its base item,
+	 * so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
+	 */
+	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned)
+	{
+		java.util.Map<Integer, Integer> result = new java.util.HashMap<>(owned);
+		for (Map.Entry<Integer, Integer> entry : owned.entrySet())
+		{
+			Integer base = variantToBase.get(entry.getKey());
+			if (base != null)
+			{
+				result.merge(base, entry.getValue(), Integer::sum);
+			}
+		}
+		return result;
 	}
 
 	public List<MonsterStats> searchMonsters(String query, int limit)

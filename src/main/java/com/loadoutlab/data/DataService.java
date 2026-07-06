@@ -25,6 +25,7 @@ public final class DataService
 	private static final String REQUIREMENTS_RESOURCE = "/com/loadoutlab/data/equipment_requirements.json.gz";
 	private static final String MONSTER_RESOURCE = "/com/loadoutlab/data/monsters.json.gz";
 	private static final String SPELL_RESOURCE = "/com/loadoutlab/data/spells.json.gz";
+	private static final String ALIAS_RESOURCE = "/com/loadoutlab/data/equipment_aliases.json.gz";
 
 	public LoadoutData load()
 	{
@@ -36,7 +37,23 @@ public final class DataService
 		{
 			gearById.put(item.getId(), item);
 		}
-		return new LoadoutData(gear, monsters, spells, gearById);
+		return new LoadoutData(gear, monsters, spells, gearById, loadAliases());
+	}
+
+	/** Variant id -> base id (ornament/locked/degraded, identical stats). */
+	private Map<Integer, Integer> loadAliases()
+	{
+		Map<Integer, Integer> aliases = new HashMap<>();
+		for (Map.Entry<String, JsonElement> entry : readObject(ALIAS_RESOURCE).entrySet())
+		{
+			int variant = Integer.parseInt(entry.getKey());
+			int base = entry.getValue().getAsInt();
+			if (variant != base)
+			{
+				aliases.put(variant, base);
+			}
+		}
+		return aliases;
 	}
 
 	private List<GearItem> loadGear()
@@ -314,6 +331,25 @@ public final class DataService
 			try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
 			{
 				return new JsonParser().parse(reader).getAsJsonArray();
+			}
+		}
+		catch (IOException ex)
+		{
+			throw new IllegalStateException("Could not load " + resource, ex);
+		}
+	}
+
+	private static JsonObject readObject(String resource)
+	{
+		try (InputStream stream = DataService.class.getResourceAsStream(resource))
+		{
+			if (stream == null)
+			{
+				throw new IllegalStateException("Missing resource " + resource);
+			}
+			try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
+			{
+				return new JsonParser().parse(reader).getAsJsonObject();
 			}
 		}
 		catch (IOException ex)

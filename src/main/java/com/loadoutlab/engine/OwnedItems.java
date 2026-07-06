@@ -23,6 +23,11 @@ public final class OwnedItems
 		return quantities.getOrDefault(itemId, 0) > 0;
 	}
 
+	public Map<Integer, Integer> getQuantities()
+	{
+		return quantities;
+	}
+
 	public boolean isBankScanned()
 	{
 		return bankScanned;
