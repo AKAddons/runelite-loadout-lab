@@ -48,14 +48,12 @@ public final class DpsCalculator
 	private DpsResult calculateMelee(OptimizationRequest request, Loadout loadout)
 	{
 		DpsResult best = null;
-		for (String attackType : MELEE_TYPES)
+		// Only the styles this weapon actually has: a whip cannot go
+		// aggressive, a mace cannot slash (see WeaponStyles).
+		for (WeaponStyles.MeleeStyle style : WeaponStyles.melee(loadout.getWeapon()))
 		{
-			DpsResult aggressive = meleeVariant(request, loadout, attackType, 0, 3);
-			DpsResult accurate = meleeVariant(request, loadout, attackType, 3, 0);
-			DpsResult controlled = meleeVariant(request, loadout, attackType, 1, 1);
-			best = best(best, aggressive);
-			best = best(best, accurate);
-			best = best(best, controlled);
+			best = best(best, meleeVariant(request, loadout, style.attackType,
+				style.attackStance, style.strengthStance));
 		}
 		return best;
 	}

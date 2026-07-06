@@ -1,9 +1,35 @@
 # Engine gaps & known issues (vs the wiki DPS calculator)
 
-From the 2026-07-05 vendoring analysis of guccifurs/best-dps. The vendor is
-verbatim — none of these are fixed yet. Items 1-4 are correctness bugs to fix
-FIRST (verify each against the wiki calculator's source before patching —
-analysis confidence was medium on the exact multipliers).
+From the 2026-07-05 vendoring analysis of guccifurs/best-dps, updated as
+fixes land. Items 1-4 are correctness bugs to fix FIRST.
+
+## Verification harness (the dispute resolver)
+
+`python3 scripts/verify_official.py` runs BOTH engines - ours and the wiki
+calculator's own (local clone of weirdgloop/osrs-dps-calc; see
+scripts/official-harness/README.md) - on the scenario table in
+`OfficialVectorExport.java` and prints per-scenario deltas. As of 2026-07-05
+every melee scenario matches within 0.2%; the exact remaining deltas are
+listed below.
+
+## Harness-verified deltas (2026-07-05)
+
+- ~~Weapon stance availability~~ FIXED: upstream tried every attack type and
+  stance on every weapon (whip aggressive, barronite mace "slashing" a Grey
+  golem past its 300 crush defence). `WeaponStyles` now models the real
+  per-category style table; melee converged to <=0.2%.
+- **Tumeken's shadow** (-15% dps, acc .775 vs .889): the shadow's tripling of
+  equipment magic bonuses is not modeled (relates to #20-style items).
+- **Bone staff vs Scurrius** (-11%, acc .608 vs .669, max 39 vs 40): likely
+  the NPC-defends-magic-with-Defence-level rule (#13) plus a powered-staff
+  prayer-stacking difference.
+- **Sanguinesti max hit** (33 vs 34 with Augury+Mystic Vigour): powered-staff
+  magic damage% stacking differs by a rounding step.
+- **Twisted bow vs Zulrah** (max 62 vs 50): confirms #3 - the 140%/250% caps
+  are missing.
+- **Barronite mace accuracy**: we apply the wiki-stated 15% accuracy bonus;
+  the official calc applies only the damage part (acc .238 vs .207). Wiki
+  page explicitly says both - keeping ours, watch upstream.
 
 ## Correctness bugs in the vendored engine
 
