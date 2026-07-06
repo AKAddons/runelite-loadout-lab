@@ -11,7 +11,6 @@ import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.List;
 import java.util.Map;
@@ -417,29 +416,51 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(spell);
 	}
 
-	/** A set as item icons (names on hover) - wraps, never overflows. */
+	/**
+	 * The set as a fixed equipment grid - every slot explicit, empty slots
+	 * shown as empty boxes. Fixed rows x cols means the preferred height is
+	 * always right (the old wrapping grid clipped its second row).
+	 */
 	private JPanel iconGrid(DpsResult result)
 	{
-		JPanel icons = new JPanel(new WrapLayout(FlowLayout.LEFT, 2, 2));
+		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
-		for (Map.Entry<GearSlot, GearItem> e : result.getLoadout().getGear().entrySet())
+		int cell = ICON_SIZE + 4;
+		for (GearSlot slotType : GearSlot.values())
 		{
-			GearItem item = e.getValue();
-			if (item == null)
-			{
-				continue;
-			}
+			GearItem item = result.getLoadout().get(slotType);
 			JLabel slot = new JLabel();
-			slot.setPreferredSize(new Dimension(ICON_SIZE + 4, ICON_SIZE + 4));
+			slot.setPreferredSize(new Dimension(cell, cell));
 			slot.setHorizontalAlignment(SwingConstants.CENTER);
-			slot.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-			slot.setToolTipText(e.getKey() + ": " + item.label());
-			AsyncBufferedImage img = itemManager.getImage(item.getId());
-			img.addTo(slot);
+			if (item != null)
+			{
+				slot.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
+				slot.setToolTipText(slotName(slotType) + ": " + item.label());
+				AsyncBufferedImage img = itemManager.getImage(item.getId());
+				img.addTo(slot);
+			}
+			else
+			{
+				slot.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50)));
+				slot.setToolTipText(slotName(slotType) + ": empty");
+			}
 			icons.add(slot);
 		}
+		// 11 slots on a 3x4 grid: one filler cell keeps rows even.
+		JLabel filler = new JLabel();
+		filler.setPreferredSize(new Dimension(cell, cell));
+		icons.add(filler);
+		Dimension size = new Dimension(4 * cell + 6, 3 * cell + 4);
+		icons.setPreferredSize(size);
+		icons.setMaximumSize(size);
 		return icons;
+	}
+
+	private static String slotName(GearSlot slot)
+	{
+		String name = slot.name().toLowerCase();
+		return Character.toUpperCase(name.charAt(0)) + name.substring(1);
 	}
 
 	private static String capitalize(String s)

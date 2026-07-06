@@ -138,6 +138,12 @@ public class OptimizerService
 					monster, style, boostedLevels, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
+				if (!ownedBest.isEmpty())
+				{
+					// The displayed set: top up DPS-neutral empty slots with
+					// prayer/defensive gear (verified not to change the DPS).
+					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
+				}
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
@@ -145,6 +151,10 @@ public class OptimizerService
 					monster, style, boostedLevels, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
+				if (!gameBest.isEmpty())
+				{
+					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
+				}
 				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, effectiveOwned);
 				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, boostedLevels, null);
 				results.put(style, new StyleResult(

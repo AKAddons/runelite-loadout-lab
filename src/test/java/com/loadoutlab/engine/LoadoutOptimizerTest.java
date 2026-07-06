@@ -590,6 +590,43 @@ public class LoadoutOptimizerTest
 		Assert.assertFalse("the best melee cape in the game is untradeable", cape.isTradeable());
 	}
 
+	@Test
+	public void dpsNeutralSlotsFillWithPrayerGearWithoutChangingDps()
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		GearItem blessing = data.getGearItems().stream()
+			.filter(g -> g.getName().equalsIgnoreCase("Holy blessing"))
+			.findFirst().orElseThrow(AssertionError::new);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);            // whip - the DPS pick
+		owned.put(blessing.getId(), 1); // +1 prayer, zero offence
+		OptimizationRequest request = new OptimizationRequest(
+			monster,
+			CombatStyle.MELEE,
+			PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+			null,
+			0,
+			CandidateMode.OWNED_ONLY,
+			true,
+			false,
+			new OwnedItems(owned, true),
+			RequirementProfile.MAXED,
+			3);
+
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		List<DpsResult> results = optimizer.optimize(data, request);
+		Assert.assertFalse(results.isEmpty());
+		DpsResult bare = results.get(0);
+		Assert.assertNull("a blessing adds no DPS, so the search leaves ammo empty",
+			bare.getLoadout().get(GearSlot.AMMO));
+
+		DpsResult filled = optimizer.fillDpsNeutralSlots(data, request, bare);
+		Assert.assertEquals(blessing.getId(), filled.getLoadout().get(GearSlot.AMMO).getId());
+		Assert.assertEquals(bare.getDps(), filled.getDps(), 1e-9);
+	}
+
 	private static RequirementProfile requirements(int level, Set<String> quests)
 	{
 		EnumMap<Skill, Integer> levels = new EnumMap<>(Skill.class);

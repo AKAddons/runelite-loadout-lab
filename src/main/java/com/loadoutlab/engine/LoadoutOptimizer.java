@@ -5,6 +5,7 @@ import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.data.StatBlock;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -33,6 +34,77 @@ public final class LoadoutOptimizer
 	};
 
 	private final DpsCalculator calculator = new DpsCalculator();
+
+	/**
+	 * Fill DPS-neutral empty slots: when no item can add damage, prefer
+	 * prayer bonus, then total defensive bonuses. A candidate survives only
+	 * if the recomputed DPS did not drop (negative style bonuses can cost
+	 * accuracy). Candidates respect the request's owned/budget mode - so a
+	 * best-owned set only fills from the bank, the game-best set from
+	 * everything.
+	 */
+	public DpsResult fillDpsNeutralSlots(LoadoutData data, OptimizationRequest request, DpsResult result)
+	{
+		if (result == null)
+		{
+			return null;
+		}
+		List<SpellStats> spells = spellsFor(data, request);
+		DpsResult current = result;
+		for (GearSlot slot : GearSlot.values())
+		{
+			if (slot == GearSlot.WEAPON || current.getLoadout().get(slot) != null)
+			{
+				continue;
+			}
+			GearItem weapon = current.getLoadout().getWeapon();
+			if (slot == GearSlot.SHIELD && weapon != null && weapon.isTwoHanded())
+			{
+				continue;
+			}
+			List<GearItem> options = new ArrayList<>();
+			for (GearItem item : data.getGearItems())
+			{
+				if (item.getSlot() != slot || !item.isStandardGear() || data.isVariant(item.getId())
+					|| utilityScore(item) <= 0
+					|| !request.getRequirementProfile().canEquip(item.getRequirements())
+					|| !allowedByMode(request, item)
+					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon)))
+				{
+					continue;
+				}
+				options.add(item);
+			}
+			options.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
+			int tried = 0;
+			for (GearItem item : options)
+			{
+				if (++tried > 12)
+				{
+					break;
+				}
+				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
+				gear.put(slot, item);
+				DpsResult candidate = bestSpellResult(request, new Loadout(gear), spells);
+				if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
+				{
+					current = candidate.withPurchaseCost(
+						current.getPurchaseCost() + budgetCost(request, item));
+					break;
+				}
+			}
+		}
+		return current;
+	}
+
+	/** Prayer first, then the sum of defensive bonuses. */
+	private static long utilityScore(GearItem item)
+	{
+		StatBlock defensive = item.getDefensive();
+		long defenceSum = defensive.getStab() + defensive.getSlash() + defensive.getCrush()
+			+ defensive.getMagic() + defensive.getRanged();
+		return item.getBonuses().getPrayer() * 1000L + defenceSum;
+	}
 
 	public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request)
 	{
