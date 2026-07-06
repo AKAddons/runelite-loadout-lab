@@ -9,11 +9,12 @@ Outputs (paths relative to the repo root):
       (the hub's documented maximum size; filename + repo-root location are
       what the hub README requires).
 
-Theme: gear. An upright sword in the panel's selected-item green
-(140,200,140) with a gold crossguard, pommel, and four-point star - the
-best-in-slot find. The sidebar icon is frameless pixel art on
-transparency; the hub icon sets the same sword on a dark card a step
-above RuneLite's DARK_GRAY (#28282d) with gold sparkles.
+Theme: gear. A great helm in the panel's selected-item green
+(140,200,140) with a gold four-point star - the best-in-slot find. The
+T-slit is knocked out to the background so the helm silhouette reads at
+any size. The sidebar icon is frameless pixel art on transparency; the
+hub icon sets the same helm on a dark card a step above RuneLite's
+DARK_GRAY (#28282d) with gold sparkles.
 
 Usage:
   python3 scripts/generate_icons.py [--preview DIR]
@@ -33,9 +34,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CARD = (45, 45, 52, 255)       # card fill - slightly lighter than #28282d
 EDGE = (64, 64, 74, 255)       # card border
-GREEN = (140, 200, 140, 255)   # blade - the panel's selected-item green
-GREEN_DK = (86, 138, 92, 255)  # blade groove + grip (hub icon)
-GOLD = (208, 178, 102, 255)    # guard, pommel, star
+GREEN = (140, 200, 140, 255)   # helm - the panel's selected-item green
+GOLD = (208, 178, 102, 255)    # star + sparkles
 
 # ---------------------------------------------------------------- png writer
 
@@ -71,24 +71,24 @@ SIDEBAR_PALETTE = {
     "y": GOLD,
 }
 
-# Upright sword, frameless: green blade and grip, gold crossguard and
-# pommel, and a gold four-point star beside the blade - the BiS find.
+# Great helm, frameless: green silhouette with the eye slit and breathing
+# slit knocked out to transparency, gold four-point star - the BiS find.
 SIDEBAR_GRID = [
+    ".............y..",
+    ".....GGGGGG.yyy.",
+    "....GGGGGGGG.y..",
+    "...GGGGGGGGGG...",
+    "..GGGGGGGGGGGG..",
+    "..GGGGGGGGGGGG..",
+    "..GG........GG..",
+    "..GGGGG..GGGGG..",
+    "..GGGGG..GGGGG..",
+    "..GGGGG..GGGGG..",
+    "...GGGG..GGGG...",
+    "...GGGG..GGGG...",
+    "....GGGGGGGG....",
+    ".....GGGGGG.....",
     "................",
-    ".......GG.......",
-    "...y...GG.......",
-    "..yyy..GG.......",
-    "...y...GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".....yyyyyy.....",
-    ".......GG.......",
-    ".......GG.......",
-    "......yyyy......",
     "................",
 ]
 
@@ -109,42 +109,34 @@ def rounded_rect(x, y, cx, cy, hw, hh, radius, inset):
     return math.hypot(qx, qy) <= radius - inset
 
 
-def circle(x, y, cx, cy, r):
-    return math.hypot(x - cx, y - cy) <= r
-
-
-def capsule(x, y, ax, ay, bx, by, r):
-    vx, vy = bx - ax, by - ay
-    t = ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)
-    t = max(0.0, min(1.0, t))
-    return math.hypot(x - (ax + t * vx), y - (ay + t * vy)) <= r
-
-
 def diamond(x, y, cx, cy, r):
     """Four-point sparkle."""
     return abs(x - cx) + abs(y - cy) <= r
 
 
-def blade(x, y):
-    """Upright blade: pointed tip at y=6 opening to a 3.2px half-width."""
-    return 6 <= y <= 46 and abs(x - 24) <= min(3.2, 0.9 * (y - 6))
-
-
-# Painted bottom-up; sampling walks it top-down and takes the first hit.
+# The hub icon is the dark card plus the SAME sidebar pixel grid pasted at
+# 3x (48x48, vertically centred) - one source of truth for the mark, and
+# the stepped pixel silhouette reads "helmet" far better than a smooth
+# vector dome did. Sparkles fill the free corners.
 HUB_LAYERS = [
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 0), EDGE),
     (lambda x, y: rounded_rect(x, y, 24, 36, 24, 36, 8, 1.5), CARD),
-    (lambda x, y: blade(x, y), GREEN),
-    # centre groove down the blade
-    (lambda x, y: abs(x - 24) <= 0.75 and 14 <= y <= 40, GREEN_DK),
-    (lambda x, y: capsule(x, y, 15.5, 48, 32.5, 48, 2.2), GOLD),
-    (lambda x, y: capsule(x, y, 24, 51, 24, 59.5, 2.0), GREEN_DK),
-    (lambda x, y: circle(x, y, 24, 62.5, 3.0), GOLD),
-    # gold sparkles - the best-in-slot find
-    (lambda x, y: diamond(x, y, 10.5, 15.0, 2.3), GOLD),
-    (lambda x, y: diamond(x, y, 38.5, 23.0, 1.8), GOLD),
-    (lambda x, y: diamond(x, y, 12.0, 51.0, 1.4), GOLD),
+    (lambda x, y: diamond(x, y, 8.0, 9.5, 1.8), GOLD),
+    (lambda x, y: diamond(x, y, 39.5, 64.0, 1.6), GOLD),
+    (lambda x, y: diamond(x, y, 9.0, 62.0, 1.3), GOLD),
 ]
+
+GRID_SCALE = 3
+GRID_Y = (HUB_H - 16 * GRID_SCALE) // 2  # vertical centring on the card
+
+
+def paste_grid(card_rows, grid_rows):
+    """Overlay non-transparent upscaled grid pixels onto the card."""
+    for gy, row in enumerate(grid_rows):
+        for gx, px in enumerate(row):
+            if px[3] > 0:
+                card_rows[GRID_Y + gy][gx] = px
+    return card_rows
 
 
 def sample(layers, x, y):
@@ -205,6 +197,7 @@ def main():
     print(f"wrote {sidebar_path} (16x16)")
 
     hub = render_layers(HUB_W, HUB_H, HUB_LAYERS)
+    hub = paste_grid(hub, upscale(sidebar, GRID_SCALE))
     assert HUB_W <= 48 and HUB_H <= 72, "Plugin Hub cap is 48x72"
     hub_path = os.path.join(REPO_ROOT, "icon.png")
     write_png(hub_path, HUB_W, HUB_H, hub)
