@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Refresh the vendored gear/monster/spell data from live sources.
+
+Rebuilds src/main/resources/com/loadoutlab/data/*.json.gz from:
+  - weirdgloop/osrs-dps-calc cdn JSON (equipment, monsters, spells) - the
+    wiki team's auto-updated stat data. DATA ONLY: never copy weirdgloop
+    CODE into this repo (their code is GPL-3; see CLAUDE.md).
+  - prices.runescape.wiki mapping + latest APIs - item metadata (examine,
+    members, alch, buy limit) and GE prices for the enrichment fields the
+    engine's schema expects (originally produced by best-dps's snapshot).
+
+Carry-over rules:
+  - isStandardGear is best-dps's curated usable-state flag; it is PRESERVED
+    for known item ids. New ids default to standard unless their version/
+    name marks an unusable variant (Inactive, deadman/beta/bh).
+  - Untradeables are absent from the wiki mapping; their examine/members
+    carry over from the previous snapshot when known.
+  - equipment_requirements.json.gz is NOT regenerated (curated); new items
+    have no requirements until added there.
+
+Leagues filtering intentionally does NOT happen here - DataService drops
+leagues rewards and unselectable effect spells at load, so a data refresh
+can never reintroduce them.
+
+Usage: python3 scripts/refresh_data.py [--cache-dir DIR]
+"""
+
+import argparse
+import gzip
+import io
+import json
+import os
+import sys
+import time
+import urllib.request
+
+WG_BASE = "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/master/cdn/json"
+WIKI_MAPPING = "https://prices.runescape.wiki/api/v1/osrs/mapping"
+WIKI_LATEST = "https://prices.runescape.wiki/api/v1/osrs/latest"
+USER_AGENT = "loadout-lab data refresh (github.com/ajkatz; RuneLite plugin)"
+
+RES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "src", "main", "resources", "com", "loadoutlab", "data")
+
+NONSTANDARD_VERSIONS = {"inactive", "broken", "locked"}
+NONSTANDARD_NAME_MARKS = ("(deadman)", "(beta)", "(bh)", "(dmm)")
+
+
+def fetch(url, cache_dir, cache_name):
+    path = os.path.join(cache_dir, cache_name)
+    if os.path.exists(path) and time.time() - os.path.getmtime(path) < 6 * 3600:
+        with open(path, "rb") as f:
+            return json.load(f)
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        raw = resp.read()
+    with open(path, "wb") as f:
+        f.write(raw)
+    return json.loads(raw)
+
+
+def load_old_gear():
+    path = os.path.join(RES_DIR, "gear_prices.json.gz")
+    if not os.path.exists(path):
+        return {}
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return {row["id"]: row for row in json.load(f)}
+
+
+def default_standard(name, version):
+    if (version or "").strip().lower() in NONSTANDARD_VERSIONS:
+        return False
+    lname = (name or "").lower()
+    return not any(mark in lname for mark in NONSTANDARD_NAME_MARKS)
+
+
+def build_gear(wg_equipment, mapping_by_id, latest_by_id, old_by_id):
+    result = []
+    for row in wg_equipment:
+        item_id = row.get("id")
+        old = old_by_id.get(item_id)
+        meta = mapping_by_id.get(item_id)
+        price = latest_by_id.get(str(item_id)) or {}
+
+        high = price.get("high")
+        low = price.get("low")
+        wiki_value = meta.get("value") if meta else (old or {}).get("wikiValue")
+        if high is not None:
+            estimated, source = high, "latestHigh"
+        elif low is not None:
+            estimated, source = low, "latestLow"
+        elif meta and wiki_value:
+            estimated, source = wiki_value, "wikiValue"
+        else:
+            estimated, source = None, "none"
+
+        out = {
+            # Stats: always the fresh wiki-team numbers.
+            "id": item_id,
+            "name": row.get("name"),
+            "version": row.get("version") or "",
+            "slot": row.get("slot"),
+            "image": row.get("image"),
+            "speed": row.get("speed"),
+            "category": row.get("category"),
+            "weight": row.get("weight"),
+            "isTwoHanded": bool(row.get("isTwoHanded")),
+            "bonuses": row.get("bonuses"),
+            "offensive": row.get("offensive"),
+            "defensive": row.get("defensive"),
+            # Metadata: wiki mapping, falling back to the prior snapshot
+            # for untradeables the mapping doesn't cover.
+            "tradeable": meta is not None,
+            "members": (meta.get("members") if meta is not None
+                        else (old or {}).get("members", True)),
+            "examine": (meta.get("examine") if meta is not None
+                        else (old or {}).get("examine", "")),
+            "buyLimit": meta.get("limit") if meta else (old or {}).get("buyLimit"),
+            "wikiValue": wiki_value,
+            "wikiIcon": meta.get("icon") if meta else (old or {}).get("wikiIcon"),
+            "highAlch": meta.get("highalch") if meta else (old or {}).get("highAlch"),
+            "lowAlch": meta.get("lowalch") if meta else (old or {}).get("lowAlch"),
+            # Prices: fresh GE numbers.
+            "high": high,
+            "low": low,
+            "highTime": price.get("highTime"),
+            "lowTime": price.get("lowTime"),
+            "estimatedPrice": estimated,
+            "priceSource": source,
+            # Curated usable-state flag: preserve; heuristic for new ids.
+            "isStandardGear": (old["isStandardGear"] if old is not None
+                               else default_standard(row.get("name"), row.get("version"))),
+        }
+        result.append(out)
+    return result
+
+
+def write_gz(name, payload):
+    path = os.path.join(RES_DIR, name)
+    buf = io.BytesIO()
+    # mtime=0 keeps the archive byte-reproducible for identical inputs.
+    with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0) as gz:
+        gz.write(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    with open(path, "wb") as f:
+        f.write(buf.getvalue())
+    print("wrote %s (%d bytes, %d records)" % (name, len(buf.getvalue()), len(payload)))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cache-dir", default="/tmp/loadout-lab-data-cache",
+                        help="download cache (6h TTL)")
+    args = parser.parse_args()
+    os.makedirs(args.cache_dir, exist_ok=True)
+
+    wg_equipment = fetch(WG_BASE + "/equipment.json", args.cache_dir, "wg_equipment.json")
+    wg_monsters = fetch(WG_BASE + "/monsters.json", args.cache_dir, "wg_monsters.json")
+    wg_spells = fetch(WG_BASE + "/spells.json", args.cache_dir, "wg_spells.json")
+    mapping = fetch(WIKI_MAPPING, args.cache_dir, "wiki_mapping.json")
+    latest = fetch(WIKI_LATEST, args.cache_dir, "wiki_latest.json")["data"]
+
+    mapping_by_id = {m["id"]: m for m in mapping}
+    old_by_id = load_old_gear()
+
+    gear = build_gear(wg_equipment, mapping_by_id, latest, old_by_id)
+    new_ids = [g for g in gear if g["id"] not in old_by_id]
+    print("equipment: %d rows (%d new since last snapshot)" % (len(gear), len(new_ids)))
+    for g in sorted(new_ids, key=lambda x: x["name"])[:40]:
+        print("  new: %s [%s] id=%d std=%s tradeable=%s" % (
+            g["name"], g["version"], g["id"], g["isStandardGear"], g["tradeable"]))
+    if len(new_ids) > 40:
+        print("  ... and %d more" % (len(new_ids) - 40))
+
+    write_gz("gear_prices.json.gz", gear)
+    write_gz("monsters.json.gz", wg_monsters)
+    write_gz("spells.json.gz", wg_spells)
+    print("done - run ./gradlew test to validate the snapshot")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -26,6 +26,19 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void snapshotContainsPostMay2026Content()
+	{
+		LoadoutData data = new DataService().load();
+		// Blood Moon Rises wave (June 2026): the Maggot King and the
+		// Necklace of rupture, which outclasses the Necklace of anguish.
+		Assert.assertFalse(data.searchMonsters("maggot king", 5).isEmpty());
+		GearItem rupture = data.getGear(33639);
+		Assert.assertNotNull(rupture);
+		Assert.assertTrue(rupture.getBonuses().getRangedStrength()
+			> data.getGear(19547).getBonuses().getRangedStrength());
+	}
+
+	@Test
 	public void leaguesRewardsAreExcludedFromTheCorpus()
 	{
 		LoadoutData data = new DataService().load();

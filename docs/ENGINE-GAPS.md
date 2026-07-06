@@ -22,13 +22,17 @@ analysis confidence was medium on the exact multipliers).
 10. **Fang in ToA** (two-roll on defence too); ToA invocation / CoX-ToB party scaling generally.
 11. **Wilderness weapons** (craw's/webweaver +50%).
 12. Oddballs: colossal blade scaling, soulreaper stacks, dual macuahuitl / blood moon proc, atlatl melee-str scaling, burning claws burn, venator ricochet.
-13. **Monster nuances**: immunities (snapshot stripped the field - restore on data regen), defence-drain (DWH/BGS, blocked on #5), NPCs using Defence level vs magic, phase resistances.
-14. Slayer-monster detection is a name heuristic — fixed properly by regenerating data WITH `is_slayer_monster` (the loader already reads it).
+13. **Monster nuances**: defence-drain (DWH/BGS, blocked on #5), NPCs using Defence level vs magic, phase resistances. (`immunities` is back in the data since the 2026-07-05 regen but not consumed yet.)
+14. ~~Slayer-monster detection is a name heuristic~~ FIXED 2026-07-05: the data regen restored `is_slayer_monster` (the loader reads it; the name fallback remains as a safety net).
 
 ## Data snapshot
 
-Bundled JSON = weirdgloop data enriched with GE prices, snapshot **2026-05-13**
-(2,829 monsters; missing post-May content incl. Maggot King; drops
-`immunities`/`is_slayer_monster`/`max_hit`/`speed`/`style` fields). Regeneration
-task: consume weirdgloop's published cdn/json directly + a small merge step for
-prices/requirements, keep ALL fields, gzip into resources.
+Bundled JSON regenerated **2026-07-05** by `scripts/refresh_data.py`:
+weirdgloop cdn/json (equipment/monsters/spells, ALL fields kept — 2,851
+monsters incl. Maggot King; 41 new items incl. Necklace of rupture) merged
+with wiki mapping metadata + live GE prices. `isStandardGear` carries over
+from the best-dps snapshot for known ids (it is a curated usable-state flag,
+NOT a main-game flag). `equipment_requirements.json.gz` is curated, not
+regenerated — post-May items list no wear requirements until added there.
+Re-run the script whenever content feels stale; the loader's leagues and
+effect-spell filters survive regeneration.

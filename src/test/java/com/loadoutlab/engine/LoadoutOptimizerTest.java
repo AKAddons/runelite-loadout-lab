@@ -411,7 +411,11 @@ public class LoadoutOptimizerTest
 	public void slayerHeadIsIgnoredForNonSlayerMonster()
 	{
 		LoadoutData data = new DataService().load();
-		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		// Abomination is not an assignable slayer monster. (Goblins ARE -
+		// the upstream fixture used one and only passed because the old
+		// snapshot had is_slayer_monster stripped from the data.)
+		MonsterStats monster = data.searchMonsters("abomination", 1).get(0);
+		Assert.assertFalse(monster.isSlayerMonster());
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);
 		owned.put(8901, 1);
