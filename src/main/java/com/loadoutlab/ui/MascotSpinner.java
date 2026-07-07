@@ -114,7 +114,7 @@ class MascotSpinner extends JComponent
 		double raw = beat - Math.floor(beat);
 		double eased = raw * raw * (3 - 2 * raw); // smoothstep across the step
 		double arc = Math.sin(raw * Math.PI);
-		final double A = 8.0; // travel per foot
+		final double A = 13.0; // travel per foot (wide enough to avoid foot clipping)
 
 		// Foot x-offsets (from their home columns) at the START of each
 		// count, per the user's choreography.
@@ -144,20 +144,32 @@ class MascotSpinner extends JComponent
 		drawLeg(g2, RIGHT_THIGH, RIGHT_SHIN, bodyX + 10 * SCALE,
 			centerX + 10 * SCALE + (int) Math.round(rightDx), bodyBottomY, groundY - rightLift, shinH);
 
-		// Arms alternate on the beat - one up while the other is down.
+		// Arms up, groove in the forearms: upper arms hold a raised pose,
+		// forearms wave gently left-right on the beat.
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setColor(LIMB);
 		g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		int shoulderY = bodyY + 8 * SCALE;
-		int armLen = 13;
-		double leftAngle = Math.toRadians(35 + Math.sin(beat * 2 * Math.PI) * 40);
-		double rightAngle = Math.toRadians(35 - Math.sin(beat * 2 * Math.PI) * 40);
-		g2.drawLine(bodyX + 3 * SCALE, shoulderY,
-			bodyX + 3 * SCALE - (int) Math.round(Math.cos(leftAngle) * armLen),
-			shoulderY - (int) Math.round(Math.sin(leftAngle) * armLen));
-		g2.drawLine(bodyX + 13 * SCALE, shoulderY,
-			bodyX + 13 * SCALE + (int) Math.round(Math.cos(rightAngle) * armLen),
-			shoulderY - (int) Math.round(Math.sin(rightAngle) * armLen));
+		int upperLen = 8;
+		int foreLen = 10;
+		double upperAngle = Math.toRadians(55); // raised, mostly static
+		double wave = Math.sin(beat * Math.PI) * Math.toRadians(16);
+		// Left arm
+		int lsx = bodyX + 3 * SCALE;
+		int lex = lsx - (int) Math.round(Math.cos(upperAngle) * upperLen);
+		int ley = shoulderY - (int) Math.round(Math.sin(upperAngle) * upperLen);
+		double lfa = Math.toRadians(90) + wave;
+		g2.drawLine(lsx, shoulderY, lex, ley);
+		g2.drawLine(lex, ley, lex - (int) Math.round(Math.cos(lfa) * foreLen),
+			ley - (int) Math.round(Math.sin(lfa) * foreLen));
+		// Right arm (forearm waves opposite for the groove)
+		int rsx = bodyX + 13 * SCALE;
+		int rex = rsx + (int) Math.round(Math.cos(upperAngle) * upperLen);
+		int rey = shoulderY - (int) Math.round(Math.sin(upperAngle) * upperLen);
+		double rfa = Math.toRadians(90) - wave;
+		g2.drawLine(rsx, shoulderY, rex, rey);
+		g2.drawLine(rex, rey, rex + (int) Math.round(Math.cos(rfa) * foreLen),
+			rey - (int) Math.round(Math.sin(rfa) * foreLen));
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
 		// Body over the limbs.
