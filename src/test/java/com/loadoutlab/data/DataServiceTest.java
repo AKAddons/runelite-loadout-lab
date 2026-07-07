@@ -22,6 +22,21 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void monsterOffensiveSheetIsParsed()
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterOffence off = graardor.getOffence();
+		Assert.assertEquals(280, off.getAttackLevel());
+		Assert.assertEquals(350, off.getStrengthLevel());
+		Assert.assertEquals(120, off.getAttackBonus());
+		Assert.assertEquals(43, off.getStrengthBonus());
+		Assert.assertEquals(6, off.getSpeedTicks());
+		Assert.assertTrue(off.getStyles().contains("Crush"));
+		Assert.assertTrue(off.getStyles().contains("Ranged"));
+	}
+
+	@Test
 	public void impossiblePvpVariantsAreNotStandardGear()
 	{
 		LoadoutData data = new DataService().load();

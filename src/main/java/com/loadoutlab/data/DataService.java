@@ -216,7 +216,12 @@ public final class DataService
 		{
 			JsonObject row = element.getAsJsonObject();
 			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
-			if (!emitted.add(nameKey + "|" + monsterStatKey(row)))
+			String groupKey = nameKey + "|" + monsterStatKey(row);
+			// Emit the HIGHEST-LEVEL spawn of each collapsed group, so the
+			// offensive sheet (used for incoming dps) matches the combat
+			// level the label displays.
+			if (integer(row, "level", 0) != maxLevelByGroup.get(groupKey)
+				|| !emitted.add(groupKey))
 			{
 				continue;
 			}
@@ -246,6 +251,19 @@ public final class DataService
 				integer(skills, "magic", 1),
 				integer(offensive, "magic", 0),
 				parseMonsterDefences(defensive),
+				new MonsterOffence(
+					integer(skills, "atk", 1),
+					integer(skills, "str", 1),
+					integer(skills, "ranged", 1),
+					integer(skills, "magic", 1),
+					integer(offensive, "atk", 0),
+					integer(offensive, "str", 0),
+					integer(offensive, "ranged", 0),
+					integer(offensive, "ranged_str", 0),
+					integer(offensive, "magic", 0),
+					integer(offensive, "magic_str", 0),
+					integer(row, "speed", 4),
+					styleList(row)),
 				attributes,
 				bool(row, "is_slayer_monster", false) || knownSlayerMonster(string(row, "name")),
 				string(weakness, "element"),
@@ -253,6 +271,19 @@ public final class DataService
 		}
 		result.sort(Comparator.comparing(MonsterStats::getName).thenComparing(MonsterStats::getVersion).thenComparingInt(MonsterStats::getId));
 		return result;
+	}
+
+	private static List<String> styleList(JsonObject row)
+	{
+		List<String> styles = new ArrayList<>();
+		for (JsonElement e : array(row, "style"))
+		{
+			if (!e.isJsonNull() && !e.getAsString().isEmpty())
+			{
+				styles.add(e.getAsString());
+			}
+		}
+		return styles;
 	}
 
 	/** Everything the engine reads from a monster - rows agreeing on this are one entry. */

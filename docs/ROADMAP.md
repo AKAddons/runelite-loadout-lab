@@ -90,3 +90,31 @@ ranged), Obsidian set + berserker necklace, Inquisitor's, slayer helm,
 salve. NOT modeled - crystal armour + Bofa/crystal bow scaling (material:
 Bofa is underrated without it), Dharok's, Ahrim's proc, elite void magic
 damage. Tracked in docs/ENGINE-GAPS.md.
+
+## Defensive arc (started 2026-07-07)
+
+The other half of the equation: what the boss does to YOU. End state: a
+recommended set optimizing the ratio (your dps out / boss dps in), with
+per-boss defensive thresholds. Phased:
+
+- **D-1 Incoming dps engine (DONE 2026-07-07)** - IncomingDpsCalculator:
+  standard NPC rolls (eff+9, roll=eff*(bonus+64), max=(eff*(bonus+64)+320)/640)
+  vs the loadout's summed defensive bonuses + real Def/Magic levels.
+  Assumptions v1: protection prayer blocks the worst modeled style fully,
+  uniform rotation share across the monster's listed styles, no defensive
+  boost/stance. Unmodeled styles (Typeless/Dragonfire) surfaced, not
+  dropped. Shown per style card: "Boss: ~X.XX DPS to you" + breakdown
+  tooltip. Data: MonsterOffence parsed from the vendored wiki sheet
+  (skills, offensive bonuses, speed, style list); collapsed spawn groups
+  now emit their highest-level row so offence matches the shown level.
+- **D-2 Per-boss overrides** - curated layer (npc_mechanics pattern) for
+  real rotations (Zulrah phases, Vorkath specials), prayer-pierce and
+  partial-block bosses, scripted per-style max hits (e.g. Graardor ranged
+  35 vs derived 58), typeless chip damage values.
+- **D-3 Threshold-constrained search** - OptimizationRequest gains
+  defensive constraints ("ranged def >= 100"); optimizer returns the best
+  dps set satisfying them.
+- **D-4 Ratio frontier** - sweep the owned-gear Pareto frontier of
+  (dps out, dps in); find knee points where a small dps sacrifice buys a
+  large defensive gain; auto-derive per-boss thresholds from the knees and
+  feed them into D-3; recommend the "optimized" balanced set.

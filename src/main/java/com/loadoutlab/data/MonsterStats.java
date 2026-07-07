@@ -17,6 +17,7 @@ public final class MonsterStats
 	private final int magic;
 	private final int offensiveMagic;
 	private final MonsterDefences defensive;
+	private final MonsterOffence offence;
 	private final List<String> attributes;
 	private final boolean slayerMonster;
 	private final String weaknessElement;
@@ -33,7 +34,8 @@ public final class MonsterStats
 		MonsterDefences defensive,
 		List<String> attributes)
 	{
-		this(id, name, version, combatLevel, hitpoints, 1, defence, magic, 0, defensive, attributes, false, "", 0);
+		this(id, name, version, combatLevel, hitpoints, 1, defence, magic, 0, defensive,
+			MonsterOffence.NONE, attributes, false, "", 0);
 	}
 
 	public MonsterStats(
@@ -47,6 +49,7 @@ public final class MonsterStats
 		int magic,
 		int offensiveMagic,
 		MonsterDefences defensive,
+		MonsterOffence offence,
 		List<String> attributes,
 		boolean slayerMonster,
 		String weaknessElement,
@@ -62,6 +65,7 @@ public final class MonsterStats
 		this.magic = magic;
 		this.offensiveMagic = offensiveMagic;
 		this.defensive = defensive == null ? MonsterDefences.ZERO : defensive;
+		this.offence = offence == null ? MonsterOffence.NONE : offence;
 		this.attributes = attributes == null ? Collections.emptyList() : Collections.unmodifiableList(attributes);
 		this.slayerMonster = slayerMonster;
 		this.weaknessElement = weaknessElement == null ? "" : weaknessElement.toLowerCase(Locale.ROOT);
@@ -72,7 +76,7 @@ public final class MonsterStats
 	public MonsterStats withDefence(int newDefence)
 	{
 		return new MonsterStats(id, name, version, combatLevel, hitpoints, size,
-			Math.max(0, newDefence), magic, offensiveMagic, defensive,
+			Math.max(0, newDefence), magic, offensiveMagic, defensive, offence,
 			attributes, slayerMonster, weaknessElement, weaknessSeverity);
 	}
 
@@ -167,6 +171,11 @@ public final class MonsterStats
 	public MonsterDefences getDefensive()
 	{
 		return defensive;
+	}
+
+	public MonsterOffence getOffence()
+	{
+		return offence;
 	}
 
 	public List<String> getAttributes()

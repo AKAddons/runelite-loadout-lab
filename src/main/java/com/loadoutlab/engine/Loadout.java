@@ -12,6 +12,7 @@ public final class Loadout
 {
 	private final EnumMap<GearSlot, GearItem> gear;
 	private final StatBlock offensive;
+	private final StatBlock defensive;
 	private final StatBlock bonuses;
 	private final int cost;
 
@@ -21,6 +22,7 @@ public final class Loadout
 		this.gear.putAll(gear);
 
 		StatBlock offensiveTotal = StatBlock.ZERO;
+		StatBlock defensiveTotal = StatBlock.ZERO;
 		StatBlock bonusTotal = StatBlock.ZERO;
 		int totalCost = 0;
 		for (GearItem item : this.gear.values())
@@ -30,10 +32,12 @@ public final class Loadout
 				continue;
 			}
 			offensiveTotal = offensiveTotal.plus(item.getOffensive());
+			defensiveTotal = defensiveTotal.plus(item.getDefensive());
 			bonusTotal = bonusTotal.plus(item.getBonuses());
 			totalCost += item.getPriceOrZero();
 		}
 		this.offensive = offensiveTotal;
+		this.defensive = defensiveTotal;
 		this.bonuses = bonusTotal;
 		this.cost = totalCost;
 	}
@@ -56,6 +60,11 @@ public final class Loadout
 	public StatBlock getOffensive()
 	{
 		return offensive;
+	}
+
+	public StatBlock getDefensive()
+	{
+		return defensive;
 	}
 
 	public StatBlock getBonuses()

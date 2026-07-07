@@ -526,6 +526,7 @@ public class LoadoutLabPanel extends PluginPanel
 		addAssumesRow(card, result.boostLabel,
 			"You own this boost - the numbers assume you drink it"
 				+ " (never assumed below your live boosted levels)");
+		addIncomingLine(card, result.incoming);
 		addPrayerLine(card, best);
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
@@ -729,6 +730,45 @@ public class LoadoutLabPanel extends PluginPanel
 			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
 			row.add(mod);
 		}
+	}
+
+	/** What the boss does back to you in this set, protection prayer up. */
+	private void addIncomingLine(JPanel card, com.loadoutlab.engine.IncomingDpsCalculator.Result incoming)
+	{
+		if (incoming == null || incoming.protectPrayer == null)
+		{
+			return;
+		}
+		JLabel line = new JLabel(String.format("Boss: ~%.2f DPS to you", incoming.totalDps));
+		line.setForeground(new Color(210, 140, 130));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		StringBuilder tip = new StringBuilder("<html>Praying ")
+			.append(incoming.protectPrayer).append(".");
+		for (com.loadoutlab.engine.IncomingDpsCalculator.StyleThreat threat : incoming.threats)
+		{
+			tip.append("<br>").append(threat.style).append(": ");
+			if (!threat.modeled)
+			{
+				tip.append("not modeled yet");
+			}
+			else if (threat.blocked)
+			{
+				tip.append(String.format("blocked (%.2f dps, max %d)", threat.dps, threat.maxHit));
+			}
+			else
+			{
+				tip.append(String.format("%.2f dps, max %d", threat.dps, threat.maxHit));
+			}
+		}
+		tip.append("<br>Assumes a uniform attack rotation, your real Defence")
+			.append(" and Magic levels, and no defensive boost.");
+		if (!incoming.fullyModeled)
+		{
+			tip.append("<br>Some attacks are beyond the stat sheet - treat this as a floor.");
+		}
+		line.setToolTipText(tip.append("</html>").toString());
+		card.add(line);
 	}
 
 	/** A left-aligned, height-capped flow row added to the card. */

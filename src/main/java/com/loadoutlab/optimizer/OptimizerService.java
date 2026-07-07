@@ -62,12 +62,16 @@ public class OptimizerService
 		public final String boostLabel;
 		/** The ceiling assumption for game best ("Rigour + Ranging potion"). */
 		public final String gameBoostLabel;
+		/** What the boss does back to you in the shown owned set (nullable). */
+		public final com.loadoutlab.engine.IncomingDpsCalculator.Result incoming;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel)
+			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
+			com.loadoutlab.engine.IncomingDpsCalculator.Result incoming)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
+			this.incoming = incoming;
 			this.owned = owned;
 			this.overallBest = overallBest;
 			this.spec = spec == null ? null : spec.spec;
@@ -196,9 +200,15 @@ public class OptimizerService
 				}
 				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
 				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
+				// The defensive story of the shown set: what the boss does
+				// back to you, at your REAL levels (protection prayer up).
+				com.loadoutlab.engine.IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
+					? null
+					: com.loadoutlab.engine.IncomingDpsCalculator.calculate(
+						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel));
+					boostLabel, gameBoostLabel, incoming));
 			}
 			synchronized (cache)
 			{
