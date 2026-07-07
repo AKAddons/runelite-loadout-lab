@@ -46,6 +46,7 @@ public class IncomingDpsCalculatorTest
 			monster(List.of("Crush")), armour(200, 200, 200, 0, 150), 99, 99);
 		Assert.assertEquals("Protect from Melee", result.protectPrayer);
 		Assert.assertEquals(0.0, result.totalDps, 1e-9);
+		Assert.assertTrue(result.unprayedDps > 0);
 		Assert.assertTrue(result.fullyModeled);
 		Assert.assertTrue(result.threats.get(0).blocked);
 	}
@@ -63,6 +64,8 @@ public class IncomingDpsCalculatorTest
 			monster(Arrays.asList("Crush", "Ranged")), armour(200, 200, 200, 0, 150), 99, 99);
 		Assert.assertEquals("Protect from Missiles", result.protectPrayer);
 		Assert.assertEquals(3.0495, result.totalDps, 0.005);
+		// Unprayed adds the blocked ranged share: 3.0495 + 6.4745/2 = 6.2868.
+		Assert.assertEquals(6.2868, result.unprayedDps, 0.005);
 		Assert.assertEquals(60, result.threats.get(0).maxHit);
 	}
 

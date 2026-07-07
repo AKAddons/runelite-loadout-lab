@@ -739,8 +739,10 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		// The protect icon IS the pray call; the text is just the cost.
-		JLabel line = new JLabel(String.format("~%.2f DPS to you", incoming.totalDps));
+		// The protect icon IS the pray call; the text is just the cost -
+		// prayed, and what skipping the prayer would cost you.
+		JLabel line = new JLabel(String.format("~%.2f DPS to you (~%.2f unprayed)",
+			incoming.totalDps, incoming.unprayedDps));
 		int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
 		if (sprite >= 0)
 		{

@@ -52,15 +52,19 @@ public final class IncomingDpsCalculator
 	{
 		/** Expected incoming dps with the protection prayer up. */
 		public final double totalDps;
+		/** Expected incoming dps with NO protection prayer running. */
+		public final double unprayedDps;
 		/** The prayer to run, e.g. "Protect from Missiles", or null. */
 		public final String protectPrayer;
 		public final List<StyleThreat> threats;
 		/** False when any listed style is beyond the stat-sheet model. */
 		public final boolean fullyModeled;
 
-		Result(double totalDps, String protectPrayer, List<StyleThreat> threats, boolean fullyModeled)
+		Result(double totalDps, double unprayedDps, String protectPrayer,
+			List<StyleThreat> threats, boolean fullyModeled)
 		{
 			this.totalDps = totalDps;
+			this.unprayedDps = unprayedDps;
 			this.protectPrayer = protectPrayer;
 			this.threats = Collections.unmodifiableList(threats);
 			this.fullyModeled = fullyModeled;
@@ -78,7 +82,7 @@ public final class IncomingDpsCalculator
 		List<String> styles = off.getStyles();
 		if (styles.isEmpty())
 		{
-			return new Result(0, null, Collections.emptyList(), false);
+			return new Result(0, 0, null, Collections.emptyList(), false);
 		}
 
 		StatBlock def = loadout.getDefensive();
@@ -112,14 +116,20 @@ public final class IncomingDpsCalculator
 
 		// Uniform rotation: each listed style owns 1/n of the cadence.
 		double total = 0;
+		double unprayed = 0;
 		for (StyleThreat threat : threats)
 		{
-			if (threat.modeled && !threat.blocked)
+			if (!threat.modeled)
+			{
+				continue;
+			}
+			unprayed += threat.dps / styles.size();
+			if (!threat.blocked)
 			{
 				total += threat.dps / styles.size();
 			}
 		}
-		return new Result(total, prayer, threats, fullyModeled);
+		return new Result(total, unprayed, prayer, threats, fullyModeled);
 	}
 
 	private static StyleThreat threatFor(String rawStyle, MonsterOffence off,
