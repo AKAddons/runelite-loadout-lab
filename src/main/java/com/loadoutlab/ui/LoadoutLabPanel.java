@@ -459,7 +459,14 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		lastResults = results;
 		resultsPanel.removeAll();
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		// Strongest style first: order the cards by your best set's dps.
+		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
+		java.util.Arrays.sort(styleOrder, java.util.Comparator.comparingDouble(style ->
+		{
+			StyleResult r = results.get(style);
+			return r == null || r.owned.isEmpty() ? 0.0 : -r.owned.get(0).getDps();
+		}));
+		for (CombatStyle style : styleOrder)
 		{
 			resultsPanel.add(styleCard(style, results.get(style)));
 			resultsPanel.add(Box.createVerticalStrut(6));
