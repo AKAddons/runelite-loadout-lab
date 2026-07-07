@@ -26,15 +26,24 @@ class MascotSpinner extends JComponent
 	private static final BufferedImage MASCOT = load();
 	// Sprite slices (16x16 grid): bottle body rows 0-9; per leg a 2px-wide
 	// thigh column (rows 10-12) and a 4px-wide L-foot shin (rows 13-15).
-	private static final BufferedImage BODY = slice(0, 0, 16, 10);
+	// The flask with the juice band (rows 7-8) drained - the juice is
+	// redrawn each frame so it can slosh with the dance.
+	private static final BufferedImage BODY = drainJuice(slice(0, 0, 16, 10));
 	private static final BufferedImage LEFT_THIGH = slice(5, 10, 2, 3);
 	private static final BufferedImage RIGHT_THIGH = slice(10, 10, 2, 3);
 	private static final BufferedImage LEFT_SHIN = slice(5, 13, 4, 3);
 	private static final BufferedImage RIGHT_SHIN = slice(10, 13, 4, 3);
 	private static final Color LIMB = new Color(140, 200, 140);
+	private static final Color JUICE = new Color(208, 178, 102);
 
 	private final Timer timer = new Timer(33, e -> repaint());
 	private long startedAt;
+	// Juice surface: a damped spring forced by the bottle's motion, so the
+	// liquid lags behind each step and sloshes back. Tilt is in sprite rows
+	// (positive = piled up on the left).
+	private double sloshTilt;
+	private double sloshVel;
+	private int lastBodyX = Integer.MIN_VALUE;
 
 	MascotSpinner()
 	{
@@ -54,6 +63,27 @@ class MascotSpinner extends JComponent
 		int kneeX = (hipX + footX) / 2;
 		g2.drawImage(thigh, kneeX, hipY, 2 * SCALE, thighH, null);
 		g2.drawImage(shin, footX, shinTopY, 4 * SCALE, shinH, null);
+	}
+
+	private static BufferedImage drainJuice(BufferedImage body)
+	{
+		if (body == null)
+		{
+			return null;
+		}
+		BufferedImage copy = new BufferedImage(body.getWidth(), body.getHeight(),
+			BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = copy.createGraphics();
+		g.drawImage(body, 0, 0, null);
+		g.dispose();
+		for (int y = 7; y <= 8; y++)
+		{
+			for (int x = 4; x <= 11; x++)
+			{
+				copy.setRGB(x, y, 0);
+			}
+		}
+		return copy;
 	}
 
 	private static BufferedImage load()
@@ -83,6 +113,9 @@ class MascotSpinner extends JComponent
 	{
 		super.addNotify();
 		startedAt = System.currentTimeMillis();
+		sloshTilt = 0;
+		sloshVel = 0;
+		lastBodyX = Integer.MIN_VALUE;
 		timer.start();
 	}
 
@@ -172,7 +205,24 @@ class MascotSpinner extends JComponent
 			rey - (int) Math.round(Math.sin(rfa) * foreLen));
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		// Body over the limbs.
+		// Juice under the glass: spring the surface against the bottle's
+		// motion, then fill the belly column by column so the tilted
+		// surface stays chunky pixel steps.
+		double push = lastBodyX == Integer.MIN_VALUE ? 0 : bodyX - lastBodyX;
+		lastBodyX = bodyX;
+		sloshVel += -sloshTilt * 0.20 - sloshVel * 0.12 + push * 0.45;
+		sloshTilt = Math.max(-1.4, Math.min(1.4, sloshTilt + sloshVel));
+		g2.setColor(JUICE);
+		int juiceBottom = bodyY + 9 * SCALE;
+		for (int i = 0; i < 8; i++)
+		{
+			double lever = (i + 0.5) / 8.0 - 0.5;
+			int surfY = bodyY + (int) Math.round((7.0 + sloshTilt * lever * 2.0) * SCALE);
+			surfY = Math.max(bodyY + 6 * SCALE, Math.min(juiceBottom - SCALE, surfY));
+			g2.fillRect(bodyX + (4 + i) * SCALE, surfY, SCALE, juiceBottom - surfY);
+		}
+
+		// Body over the limbs and juice (the walls cover the liquid's edges).
 		g2.drawImage(BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
 		g2.dispose();
 	}
