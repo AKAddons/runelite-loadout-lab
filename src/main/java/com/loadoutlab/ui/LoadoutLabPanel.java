@@ -565,6 +565,16 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(ceiling);
 			if (expanded)
 			{
+				if (result.boostLabel != null)
+				{
+					JLabel gameAssumes = new JLabel("Assumes: " + result.boostLabel);
+					gameAssumes.setForeground(new Color(160, 160, 160));
+					gameAssumes.setFont(gameAssumes.getFont().deriveFont(11f));
+					gameAssumes.setAlignmentX(LEFT_ALIGNMENT);
+					gameAssumes.setToolTipText("Game best is computed at your levels with the"
+						+ " same prayers and boost, so the percentage isolates the gear gap");
+					card.add(gameAssumes);
+				}
 				addSpellLine(card, style, result.overallBest);
 				addDartLine(card, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
