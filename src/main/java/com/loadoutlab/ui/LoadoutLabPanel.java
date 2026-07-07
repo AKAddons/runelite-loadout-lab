@@ -892,8 +892,16 @@ public class LoadoutLabPanel extends PluginPanel
 				tip.append(String.format("%.2f dps, max %d", threat.dps, threat.maxHit));
 			}
 		}
-		tip.append("<br>Assumes a uniform attack rotation, your real Defence")
-			.append(" and Magic levels, and no defensive boost.");
+		if (incoming.overrideNote != null && !incoming.overrideNote.isEmpty())
+		{
+			tip.append("<br>Curated: ").append(incoming.overrideNote);
+			tip.append("<br>Assumes your real Defence and Magic levels and no defensive boost.");
+		}
+		else
+		{
+			tip.append("<br>Assumes a uniform attack rotation, your real Defence")
+				.append(" and Magic levels, and no defensive boost.");
+		}
 		if (!incoming.fullyModeled)
 		{
 			tip.append("<br>Some attacks are beyond the stat sheet - treat this as a floor.");
