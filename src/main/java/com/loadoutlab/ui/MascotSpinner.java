@@ -12,16 +12,25 @@ import javax.swing.JComponent;
 import javax.swing.Timer;
 
 /**
- * The little helm mascot, working out while the optimizer thinks: arms
- * pump up and down and the legs bounce at the knee (feet planted, knees
- * absorb the bob). Pixel art scaled with nearest-neighbour so it stays
- * crisp; the animation timer only runs while the component is showing
- * (addNotify/removeNotify), so an idle panel costs nothing.
+ * The bottle mascot, working out while the optimizer thinks. Its own
+ * chunky L-legs (the LL in Loadout Lab) do the bouncing: feet planted,
+ * thigh segments squash and stretch at the knee as the body bobs, and
+ * little arms pump up and down. The sprite is sliced into body/thigh/
+ * shin segments so the art animates rather than gaining extra limbs.
+ * Nearest-neighbour scaling keeps the pixel art crisp; the timer only
+ * runs while showing.
  */
 class MascotSpinner extends JComponent
 {
 	private static final int SCALE = 3;
 	private static final BufferedImage MASCOT = load();
+	// Sprite slices (16x16 grid): bottle body rows 0-9; per leg a 2px-wide
+	// thigh column (rows 10-12) and a 4px-wide L-foot shin (rows 13-15).
+	private static final BufferedImage BODY = slice(0, 0, 16, 10);
+	private static final BufferedImage LEFT_THIGH = slice(5, 10, 2, 3);
+	private static final BufferedImage RIGHT_THIGH = slice(10, 10, 2, 3);
+	private static final BufferedImage LEFT_SHIN = slice(5, 13, 4, 3);
+	private static final BufferedImage RIGHT_SHIN = slice(10, 13, 4, 3);
 	private static final Color LIMB = new Color(140, 200, 140);
 
 	private final Timer timer = new Timer(33, e -> repaint());
@@ -29,10 +38,8 @@ class MascotSpinner extends JComponent
 
 	MascotSpinner()
 	{
-		int size = MASCOT == null ? 0 : MASCOT.getWidth() * SCALE;
-		// room for arms either side and legs below
-		setPreferredSize(new Dimension(size + 44, size + 34));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, size + 34));
+		setPreferredSize(new Dimension(16 * SCALE + 44, 16 * SCALE + 22));
+		setMaximumSize(new Dimension(Integer.MAX_VALUE, 16 * SCALE + 22));
 		setAlignmentX(LEFT_ALIGNMENT);
 	}
 
@@ -46,6 +53,11 @@ class MascotSpinner extends JComponent
 		{
 			return null;
 		}
+	}
+
+	private static BufferedImage slice(int x, int y, int w, int h)
+	{
+		return MASCOT == null ? null : MASCOT.getSubimage(x, y, w, h);
 	}
 
 	static boolean available()
@@ -78,46 +90,42 @@ class MascotSpinner extends JComponent
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 			RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 		double t = (System.currentTimeMillis() - startedAt) / 1000.0;
 		double phase = Math.sin(t * 5.0);
-		int size = MASCOT.getWidth() * SCALE;
-		int groundY = getHeight() - 6;
-		// The body bobs; the knees absorb it (feet stay planted).
-		int bodyX = 22;
-		int bodyY = groundY - 18 - size + (int) Math.round(phase * 4.0);
 
+		int bodyW = 16 * SCALE;
+		int bodyX = (getWidth() - bodyW) / 2; // centred in the frame
+		int groundY = getHeight() - 4;
+		int shinH = 3 * SCALE;
+		int shinTopY = groundY - shinH;
+		// Feet planted: the body bobs and the thighs squash at the knee.
+		int thighH = 3 * SCALE + (int) Math.round(phase * 3.0);
+		int bodyBottomY = shinTopY - thighH;
+		int bodyY = bodyBottomY - 10 * SCALE;
+
+		// Shins (the L-feet) stay on the ground.
+		g2.drawImage(LEFT_SHIN, bodyX + 5 * SCALE, shinTopY, 4 * SCALE, shinH, null);
+		g2.drawImage(RIGHT_SHIN, bodyX + 10 * SCALE, shinTopY, 4 * SCALE, shinH, null);
+		// Thighs stretch/squash between body and shins - the knee bounce.
+		g2.drawImage(LEFT_THIGH, bodyX + 5 * SCALE, bodyBottomY, 2 * SCALE, thighH, null);
+		g2.drawImage(RIGHT_THIGH, bodyX + 10 * SCALE, bodyBottomY, 2 * SCALE, thighH, null);
+
+		// Arms pump up and down from the bottle's sides.
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setColor(LIMB);
 		g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-
-		// Legs: hip -> knee -> planted foot; knees kick outward as the body dips.
-		int hipY = bodyY + size - 2;
-		int bend = 3 + (int) Math.round((phase + 1) * 3.0); // more bend when low
-		leg(g2, bodyX + size / 3, hipY, bodyX + size / 3 - bend, groundY, true);
-		leg(g2, bodyX + 2 * size / 3, hipY, bodyX + 2 * size / 3 + bend, groundY, false);
-
-		// Arms: shoulders at the body sides, pumping up and down together.
-		int shoulderY = bodyY + size / 2;
-		double armAngle = Math.toRadians(30 + phase * 45); // up-down sweep
-		int armLen = 14;
+		int shoulderY = bodyY + 8 * SCALE;
+		double armAngle = Math.toRadians(30 + phase * 45);
+		int armLen = 13;
 		int dx = (int) Math.round(Math.cos(armAngle) * armLen);
 		int dy = (int) Math.round(Math.sin(armAngle) * armLen);
-		g2.drawLine(bodyX + 1, shoulderY, bodyX + 1 - dx, shoulderY - dy);
-		g2.drawLine(bodyX + size - 1, shoulderY, bodyX + size - 1 + dx, shoulderY - dy);
+		g2.drawLine(bodyX + 3 * SCALE, shoulderY, bodyX + 3 * SCALE - dx, shoulderY - dy);
+		g2.drawLine(bodyX + 13 * SCALE, shoulderY, bodyX + 13 * SCALE + dx, shoulderY - dy);
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		// Body on top of the limbs.
-		g2.drawImage(MASCOT, bodyX, bodyY, size, size, null);
+		// Body over the limbs.
+		g2.drawImage(BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
 		g2.dispose();
-	}
-
-	private static void leg(Graphics2D g2, int hipX, int hipY, int kneeOutX, int groundY, boolean left)
-	{
-		int kneeY = (hipY + groundY) / 2;
-		int footX = hipX + (left ? -2 : 2);
-		g2.drawLine(hipX, hipY, kneeOutX, kneeY);
-		g2.drawLine(kneeOutX, kneeY, footX, groundY);
-		// little foot stub
-		g2.drawLine(footX, groundY, footX + (left ? -5 : 5), groundY);
 	}
 }
