@@ -132,7 +132,8 @@ public final class DpsCalculator
 			}
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
-		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
+		String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
+		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout)

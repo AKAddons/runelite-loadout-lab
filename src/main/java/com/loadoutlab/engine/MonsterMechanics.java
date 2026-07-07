@@ -254,7 +254,7 @@ public final class MonsterMechanics
 		{
 			return true;
 		}
-		if (style != CombatStyle.MELEE || !"stab".equals(attackType))
+		if (style != CombatStyle.MELEE || attackType == null || !attackType.startsWith("stab"))
 		{
 			return false;
 		}

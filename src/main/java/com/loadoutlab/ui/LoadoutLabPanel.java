@@ -528,6 +528,7 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(boost);
 		}
 		addPrayerLine(card, best);
+		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
 		addDartLine(card, best);
 		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
@@ -603,6 +604,31 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setForeground(new Color(160, 160, 160));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
+		card.add(line);
+	}
+
+	/** The attack style the numbers use: "Style: Slash (aggressive)". */
+	private void addStyleLine(JPanel card, CombatStyle style, DpsResult result)
+	{
+		if (style == CombatStyle.MAGIC)
+		{
+			return; // the spell / powered-staff line already covers magic
+		}
+		String type = result.getAttackType();
+		String text;
+		if (style == CombatStyle.RANGED)
+		{
+			text = type.contains("rapid") ? "Rapid" : "Accurate";
+		}
+		else
+		{
+			text = capitalize(type);
+		}
+		JLabel line = new JLabel("Style: " + text);
+		line.setForeground(new Color(150, 170, 230));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setToolTipText("Set your combat style to this for the shown numbers");
 		card.add(line);
 	}
 
