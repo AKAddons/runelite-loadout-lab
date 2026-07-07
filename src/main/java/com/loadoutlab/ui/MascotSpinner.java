@@ -43,6 +43,17 @@ class MascotSpinner extends JComponent
 		setAlignmentX(LEFT_ALIGNMENT);
 	}
 
+	/** Thigh from the flask down to the shin; the knee squash absorbs the
+	 * foot's lift so the leg stays connected top and bottom. */
+	private static void drawLeg(Graphics2D g2, BufferedImage thigh, BufferedImage shin,
+		int x, int hipY, int footY, int shinH)
+	{
+		int shinTopY = footY - shinH;
+		int thighH = Math.max(4, shinTopY - hipY);
+		g2.drawImage(thigh, x, hipY, 2 * SCALE, thighH, null);
+		g2.drawImage(shin, x, shinTopY, 4 * SCALE, shinH, null);
+	}
+
 	private static BufferedImage load()
 	{
 		try
@@ -92,34 +103,30 @@ class MascotSpinner extends JComponent
 			RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
 		double t = (System.currentTimeMillis() - startedAt) / 1000.0;
-		// The 2-step: sway side to side at ~1 step/sec with TWO bounces per
-		// step; weight shifts onto the leading leg each step.
+		// The 2-step: each beat one leg is picked up from the bottom -
+		// the foot translates up, arcs across with the body's sway, and
+		// plants back down - while the legs stay attached to the flask.
 		double beat = t * 1.1;
+		double progress = beat - Math.floor(beat);
+		boolean leftStepping = ((int) Math.floor(beat)) % 2 == 0;
+		double arc = Math.sin(progress * Math.PI);
 		double sway = Math.sin(beat * Math.PI);
-		double bounce = Math.abs(Math.sin(beat * 2 * Math.PI));
 
 		int bodyW = 16 * SCALE;
 		int bodyX = (getWidth() - bodyW) / 2 + (int) Math.round(sway * 6.0);
 		int groundY = getHeight() - 4;
 		int shinH = 3 * SCALE;
-		int shinTopY = groundY - shinH;
 		int thighBase = 3 * SCALE;
-		// Weight on the leading leg: its knee compresses, the trailing leg
-		// stretches; the bounce dips both.
-		int lean = (int) Math.round(sway * 2.5);
-		int dip = (int) Math.round(bounce * 3.0);
-		int leftThighH = thighBase - dip - lean;
-		int rightThighH = thighBase - dip + lean;
-		int bodyBottomY = shinTopY - Math.max(leftThighH, rightThighH);
+		// Body settles slightly between steps, rises a touch mid-step.
+		int dip = (int) Math.round((1.0 - arc) * 2.0);
+		int bodyBottomY = groundY - shinH - thighBase + dip;
 		int bodyY = bodyBottomY - 10 * SCALE;
 
-		// The L-feet stay planted (they do not sway with the body).
-		int feetX = (getWidth() - bodyW) / 2;
-		g2.drawImage(LEFT_SHIN, feetX + 5 * SCALE, shinTopY, 4 * SCALE, shinH, null);
-		g2.drawImage(RIGHT_SHIN, feetX + 10 * SCALE, shinTopY, 4 * SCALE, shinH, null);
-		// Thighs bridge from the swaying body down to the planted shins.
-		g2.drawImage(LEFT_THIGH, feetX + 5 * SCALE + lean / 2, shinTopY - leftThighH, 2 * SCALE, leftThighH, null);
-		g2.drawImage(RIGHT_THIGH, feetX + 10 * SCALE + lean / 2, shinTopY - rightThighH, 2 * SCALE, rightThighH, null);
+		// Legs hang from the flask (body-relative) - they never detach.
+		int leftLift = leftStepping ? (int) Math.round(arc * 6.0) : 0;
+		int rightLift = leftStepping ? 0 : (int) Math.round(arc * 6.0);
+		drawLeg(g2, LEFT_THIGH, LEFT_SHIN, bodyX + 5 * SCALE, bodyBottomY, groundY - leftLift, shinH);
+		drawLeg(g2, RIGHT_THIGH, RIGHT_SHIN, bodyX + 10 * SCALE, bodyBottomY, groundY - rightLift, shinH);
 
 		// Arms alternate on the beat - one up while the other is down.
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
