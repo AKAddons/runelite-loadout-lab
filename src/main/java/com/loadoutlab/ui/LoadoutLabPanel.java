@@ -413,6 +413,10 @@ public class LoadoutLabPanel extends PluginPanel
 		// Clear stale results immediately - showing the previous monster's
 		// sets while the optimizer runs reads as an answer for this one.
 		resultsPanel.removeAll();
+		if (MascotSpinner.available())
+		{
+			resultsPanel.add(new MascotSpinner());
+		}
 		JLabel computing = new JLabel("Optimizing vs " + selectedMonster.getName() + "...");
 		computing.setForeground(new Color(160, 160, 160));
 		computing.setAlignmentX(LEFT_ALIGNMENT);
