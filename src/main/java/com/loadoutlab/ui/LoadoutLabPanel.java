@@ -739,12 +739,22 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		JLabel line = new JLabel(String.format("Boss: ~%.2f DPS to you", incoming.totalDps));
+		// Lead with the prayer to run - icon + short name - then the cost.
+		String shortName = incoming.protectPrayer.replace("Protect from ", "");
+		JLabel line = new JLabel(String.format("Pray %s - boss ~%.2f DPS to you",
+			shortName, incoming.totalDps));
+		int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
+		if (sprite >= 0)
+		{
+			attachSprite(line, sprite);
+			line.setIconTextGap(4);
+		}
 		line.setForeground(new Color(210, 140, 130));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
-		StringBuilder tip = new StringBuilder("<html>Praying ")
-			.append(incoming.protectPrayer).append(".");
+		StringBuilder tip = new StringBuilder("<html>Run ")
+			.append(incoming.protectPrayer)
+			.append(" - it fully blocks the boss's strongest attack.");
 		for (com.loadoutlab.engine.IncomingDpsCalculator.StyleThreat threat : incoming.threats)
 		{
 			tip.append("<br>").append(threat.style).append(": ");

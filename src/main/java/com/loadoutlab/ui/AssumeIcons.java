@@ -31,6 +31,9 @@ final class AssumeIcons
 		PRAYERS.put("Augury", SpriteID.Prayeron.AUGURY);
 		PRAYERS.put("Mystic Vigour", SpriteID.Prayeron.MYSTIC_VIGOUR);
 		PRAYERS.put("Mystic Might", SpriteID.Prayeron.MYSTIC_MIGHT);
+		PRAYERS.put("Protect from Melee", SpriteID.Prayeron.PROTECT_FROM_MELEE);
+		PRAYERS.put("Protect from Missiles", SpriteID.Prayeron.PROTECT_FROM_MISSILES);
+		PRAYERS.put("Protect from Magic", SpriteID.Prayeron.PROTECT_FROM_MAGIC);
 
 		// BoostProfile labels -> the item the numbers assume you drink.
 		BOOST_ITEMS.put("Super combat", 12695);
