@@ -43,15 +43,17 @@ class MascotSpinner extends JComponent
 		setAlignmentX(LEFT_ALIGNMENT);
 	}
 
-	/** Thigh from the flask down to the shin; the knee squash absorbs the
-	 * foot's lift so the leg stays connected top and bottom. */
+	/** Thigh hangs from the flask hip, shin sits at the FOOT's spot; the
+	 * knee (thigh drawn toward the foot, squashing on lift) keeps the leg
+	 * connected top and bottom. */
 	private static void drawLeg(Graphics2D g2, BufferedImage thigh, BufferedImage shin,
-		int x, int hipY, int footY, int shinH)
+		int hipX, int footX, int hipY, int footY, int shinH)
 	{
 		int shinTopY = footY - shinH;
 		int thighH = Math.max(4, shinTopY - hipY);
-		g2.drawImage(thigh, x, hipY, 2 * SCALE, thighH, null);
-		g2.drawImage(shin, x, shinTopY, 4 * SCALE, shinH, null);
+		int kneeX = (hipX + footX) / 2;
+		g2.drawImage(thigh, kneeX, hipY, 2 * SCALE, thighH, null);
+		g2.drawImage(shin, footX, shinTopY, 4 * SCALE, shinH, null);
 	}
 
 	private static BufferedImage load()
@@ -103,30 +105,44 @@ class MascotSpinner extends JComponent
 			RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
 		double t = (System.currentTimeMillis() - startedAt) / 1000.0;
-		// The 2-step: each beat one leg is picked up from the bottom -
-		// the foot translates up, arcs across with the body's sway, and
-		// plants back down - while the legs stay attached to the flask.
-		double beat = t * 1.1;
-		double progress = beat - Math.floor(beat);
-		boolean leftStepping = ((int) Math.floor(beat)) % 2 == 0;
-		double arc = Math.sin(progress * Math.PI);
-		double sway = Math.sin(beat * Math.PI);
+		// The real 2-step, a 4-count: right foot steps LEFT, left foot
+		// steps LEFT, left foot steps RIGHT, right foot steps RIGHT. Each
+		// stepping foot lifts, arcs to its NEW spot, and plants; the body
+		// follows the midpoint of the feet.
+		double beat = t * 1.6;
+		int count = (int) Math.floor(beat) % 4;
+		double raw = beat - Math.floor(beat);
+		double eased = raw * raw * (3 - 2 * raw); // smoothstep across the step
+		double arc = Math.sin(raw * Math.PI);
+		final double A = 8.0; // travel per foot
+
+		// Foot x-offsets (from their home columns) at the START of each
+		// count, per the user's choreography.
+		double[] leftStart = {0, 0, -A, 0};
+		double[] leftEnd = {0, -A, 0, 0};
+		double[] rightStart = {0, -A, -A, -A};
+		double[] rightEnd = {-A, -A, -A, 0};
+		boolean leftStepping = count == 1 || count == 2;
+		double leftDx = leftStart[count] + (leftEnd[count] - leftStart[count]) * eased;
+		double rightDx = rightStart[count] + (rightEnd[count] - rightStart[count]) * eased;
 
 		int bodyW = 16 * SCALE;
-		int bodyX = (getWidth() - bodyW) / 2 + (int) Math.round(sway * 6.0);
+		int centerX = (getWidth() - bodyW) / 2;
+		int bodyX = centerX + (int) Math.round((leftDx + rightDx) / 2.0);
 		int groundY = getHeight() - 4;
 		int shinH = 3 * SCALE;
 		int thighBase = 3 * SCALE;
-		// Body settles slightly between steps, rises a touch mid-step.
 		int dip = (int) Math.round((1.0 - arc) * 2.0);
 		int bodyBottomY = groundY - shinH - thighBase + dip;
 		int bodyY = bodyBottomY - 10 * SCALE;
 
-		// Legs hang from the flask (body-relative) - they never detach.
 		int leftLift = leftStepping ? (int) Math.round(arc * 6.0) : 0;
 		int rightLift = leftStepping ? 0 : (int) Math.round(arc * 6.0);
-		drawLeg(g2, LEFT_THIGH, LEFT_SHIN, bodyX + 5 * SCALE, bodyBottomY, groundY - leftLift, shinH);
-		drawLeg(g2, RIGHT_THIGH, RIGHT_SHIN, bodyX + 10 * SCALE, bodyBottomY, groundY - rightLift, shinH);
+		// Hips stay on the flask; feet land where the step takes them.
+		drawLeg(g2, LEFT_THIGH, LEFT_SHIN, bodyX + 5 * SCALE,
+			centerX + 5 * SCALE + (int) Math.round(leftDx), bodyBottomY, groundY - leftLift, shinH);
+		drawLeg(g2, RIGHT_THIGH, RIGHT_SHIN, bodyX + 10 * SCALE,
+			centerX + 10 * SCALE + (int) Math.round(rightDx), bodyBottomY, groundY - rightLift, shinH);
 
 		// Arms alternate on the beat - one up while the other is down.
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
