@@ -40,6 +40,20 @@ public class RiskConstraintTest
 	}
 
 	@Test
+	public void taskOnlySlayerBossesAreDetectedAndOthersAreNot()
+	{
+		Assert.assertTrue(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
+			data.searchMonsters("alchemical hydra", 1).get(0)));
+		Assert.assertTrue(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
+			data.searchMonsters("araxxor", 1).get(0)));
+		Assert.assertTrue(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
+			data.searchMonsters("thermy", 1).get(0)));
+		Assert.assertFalse(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(callisto));
+		Assert.assertFalse(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
+			data.searchMonsters("zulrah", 1).get(0)));
+	}
+
+	@Test
 	public void riskCappedSetNeverExceedsTheTradeableBudget()
 	{
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();

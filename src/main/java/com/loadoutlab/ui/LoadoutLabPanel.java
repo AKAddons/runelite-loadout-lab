@@ -386,18 +386,27 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wilderness = com.loadoutlab.data.WildernessMonsters.isWilderness(monster);
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
-		// Raid bosses and other unassignable monsters cannot be a slayer
-		// task - grey the toggle out (and clear it) rather than let an
-		// impossible slayer-helm assumption inflate the numbers.
-		boolean assignable = monster.isSlayerMonster();
-		if (!assignable && slayerTask.isSelected())
+		// The slayer toggle has three states by monster: task-only bosses
+		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
+		// off-task; unassignable monsters (raid bosses) force it OFF; and
+		// everything else leaves it to the player.
+		if (com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(monster))
+		{
+			slayerTask.setSelected(true);
+			slayerTask.setEnabled(false);
+			slayerTask.setToolTipText("This boss can only be fought on a slayer task - always on");
+		}
+		else if (!monster.isSlayerMonster())
 		{
 			slayerTask.setSelected(false);
+			slayerTask.setEnabled(false);
+			slayerTask.setToolTipText("This monster cannot be assigned as a slayer task");
 		}
-		slayerTask.setEnabled(assignable);
-		slayerTask.setToolTipText(assignable
-			? "Fighting this monster on a slayer task (enables slayer helmet bonuses)"
-			: "This monster cannot be assigned as a slayer task");
+		else
+		{
+			slayerTask.setEnabled(true);
+			slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
+		}
 		usageLog.record(monster.label());
 		selectedLabel.setText("vs " + monster.label());
 		selectedRow.setVisible(true);
