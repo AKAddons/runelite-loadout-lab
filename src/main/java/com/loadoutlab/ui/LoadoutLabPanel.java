@@ -191,7 +191,7 @@ public class LoadoutLabPanel extends PluginPanel
 		slayerTask.setOpaque(false);
 		slayerTask.setForeground(new Color(200, 200, 200));
 		slayerTask.setAlignmentX(LEFT_ALIGNMENT);
-		slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
+		slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		slayerTask.addActionListener(e -> recompute());
 		top.add(slayerTask);
 
@@ -199,11 +199,8 @@ public class LoadoutLabPanel extends PluginPanel
 		lowRisk.setOpaque(false);
 		lowRisk.setForeground(new Color(200, 200, 200));
 		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
-		lowRisk.setToolTipText("Wilderness low-risk set: your 3 most valuable items are"
-			+ " kept on death (4 with Protect Item) - they ride free. Everything worn"
-			+ " beyond them can drop, and its TOTAL value is capped at 75k (glory,"
-			+ " black d'hide, mystic class fit comfortably). The Risk line prices"
-			+ " exactly what would drop.");
+		lowRisk.setToolTipText("Keep your 3 most valuable items (4 with Protect Item);"
+			+ " everything else must total under 75k of risk");
 		lowRisk.addActionListener(e -> recompute());
 		lowRisk.setVisible(false);
 		top.add(lowRisk);
@@ -211,8 +208,7 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.setOpaque(false);
 		protectItem.setForeground(new Color(200, 200, 200));
 		protectItem.setAlignmentX(LEFT_ALIGNMENT);
-		protectItem.setToolTipText("Run the Protect Item prayer (extra drain) to keep a"
-			+ " 4th tradeable - does not apply while skulled");
+		protectItem.setToolTipText("Protect Item keeps a 4th item (not while skulled)");
 		protectItem.addActionListener(e -> recompute());
 		protectItem.setVisible(false);
 		top.add(protectItem);
@@ -220,8 +216,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Lock the magic card's auto-spell to one spellbook.
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		spellbook.setToolTipText("Limit magic suggestions to spells from one spellbook"
-			+ " (powered staves are always considered)");
+		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
 		spellbook.addActionListener(e -> recompute());
 		top.add(spellbook);
 
@@ -390,18 +385,18 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			slayerTask.setSelected(true);
 			slayerTask.setEnabled(false);
-			slayerTask.setToolTipText("This boss can only be fought on a slayer task - always on");
+			slayerTask.setToolTipText("Task-only boss - always on");
 		}
 		else if (!monster.isSlayerMonster())
 		{
 			slayerTask.setSelected(false);
 			slayerTask.setEnabled(false);
-			slayerTask.setToolTipText("This monster cannot be assigned as a slayer task");
+			slayerTask.setToolTipText("Not assignable as a slayer task");
 		}
 		else
 		{
 			slayerTask.setEnabled(true);
-			slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
+			slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		}
 		usageLog.record(monster.label());
 		selectedLabel.setText("vs " + monster.label());
@@ -631,9 +626,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(new Color(140, 200, 140));
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
-		addAssumesRow(card, result.boostLabel,
-			"You own this boost - the numbers assume you drink it"
-				+ " (never assumed below your live boosted levels)");
+		addAssumesRow(card, result.boostLabel, "Assumed prayer + boost (you own these)");
 		addIncomingLine(card, result.incoming);
 		addRiskLine(card, best, result.specWeapon);
 		addPrayerLine(card, best);
@@ -642,8 +635,7 @@ public class LoadoutLabPanel extends PluginPanel
 		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-			result.specDrainValue, best.getExpectedHit(),
-			"Swapped into your best set for one special attack"));
+			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack"));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
@@ -678,15 +670,13 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(ceiling);
 			if (expanded)
 			{
-				addAssumesRow(card, result.gameBoostLabel,
-					"The ceiling assumes the best prayers and boost"
-						+ " in the game, regardless of your unlocks");
+				addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
 				addSpellLine(card, style, result.overallBest);
 				addDartLine(card, result.overallBest);
 				card.add(Box.createVerticalStrut(4));
 				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
 					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
-					"The strongest special attack that exists vs this monster"));
+					"Strongest special attack in the game vs this monster"));
 			}
 		}
 		return card;
@@ -751,7 +741,7 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setForeground(new Color(150, 170, 230));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
-		line.setToolTipText("Set your combat style to this for the shown numbers");
+		line.setToolTipText("Use this attack style");
 		card.add(line);
 	}
 
@@ -768,8 +758,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dart.setForeground(new Color(150, 170, 230));
 		dart.setFont(dart.getFont().deriveFont(11f));
 		dart.setAlignmentX(LEFT_ALIGNMENT);
-		dart.setToolTipText("The blowpipe's numbers include this dart's ranged"
-			+ " strength (right-click to exclude the darts)");
+		dart.setToolTipText("Dart included in the dps (right-click to exclude)");
 		GearItem dartItem = loadedDart(result);
 		if (dartItem != null)
 		{
@@ -795,9 +784,7 @@ public class LoadoutLabPanel extends PluginPanel
 			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, false),
 			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, true));
 		String drain = drainValue > 0.5
-			? String.format("<br>Defence drain worth about %.0f extra damage over"
-				+ " the kill (your set hits harder once it lands - bigger"
-				+ " payoff on high-HP targets).", drainValue)
+			? String.format("<br>Drain worth ~%.0f extra damage over the kill.", drainValue)
 			: "";
 		return "<html>" + headline
 			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note)
@@ -822,7 +809,7 @@ public class LoadoutLabPanel extends PluginPanel
 			builtIn.setForeground(new Color(150, 170, 230));
 			builtIn.setFont(builtIn.getFont().deriveFont(11f));
 			builtIn.setAlignmentX(LEFT_ALIGNMENT);
-			builtIn.setToolTipText("This weapon casts its own spell - nothing to select");
+			builtIn.setToolTipText("The staff casts its own spell");
 			GearItem weapon = result.getLoadout().getWeapon();
 			if (weapon != null)
 			{
@@ -842,7 +829,7 @@ public class LoadoutLabPanel extends PluginPanel
 		spell.setForeground(new Color(150, 170, 230));
 		spell.setFont(spell.getFont().deriveFont(11f));
 		spell.setToolTipText(book.isEmpty() ? "Autocast this spell"
-			: "Autocast this spell (" + capitalize(book) + " spellbook)");
+			: "Autocast (" + capitalize(book) + " book)");
 		int sprite = AssumeIcons.spellSprite(name);
 		if (sprite >= 0)
 		{
@@ -853,7 +840,7 @@ public class LoadoutLabPanel extends PluginPanel
 		if (name.contains("Demonbane"))
 		{
 			JLabel mod = new JLabel();
-			mod.setToolTipText("Assumes Mark of Darkness is active");
+			mod.setToolTipText("Assumes Mark of Darkness");
 			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
 			row.add(mod);
 		}
@@ -878,8 +865,7 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setForeground(risk.riskGp == 0 ? new Color(140, 200, 140) : new Color(220, 140, 120));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
-		StringBuilder tip = new StringBuilder("<html>Worn tradeables + the carried spec weapon,");
-		tip.append(" ranked by value. Kept on death:");
+		StringBuilder tip = new StringBuilder("<html>Kept on death:");
 		if (risk.kept.isEmpty())
 		{
 			tip.append(" (none - all untradeable)");
@@ -891,15 +877,14 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (!risk.lost.isEmpty())
 		{
-			tip.append("<br>Lost to the killer:");
+			tip.append("<br>Lost:");
 			for (GearItem item : risk.lost)
 			{
 				tip.append("<br>- ").append(item.label())
 					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
 			}
 		}
-		tip.append("<br>Untradeables are kept (combat ones may need a coin repair).");
-		tip.append("<br>Skulled you keep 0 (1 with Protect Item). Inventory not counted.");
+		tip.append("<br>Untradeables kept (repair fee). Skulled: keep 0-1.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
 		card.add(line);
@@ -927,7 +912,7 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setAlignmentX(LEFT_ALIGNMENT);
 		StringBuilder tip = new StringBuilder("<html>Run ")
 			.append(incoming.protectPrayer)
-			.append(" - it fully blocks the boss's strongest attack.");
+			.append(".");
 		for (com.loadoutlab.engine.IncomingDpsCalculator.StyleThreat threat : incoming.threats)
 		{
 			tip.append("<br>").append(threat.style).append(": ");
@@ -944,19 +929,12 @@ public class LoadoutLabPanel extends PluginPanel
 				tip.append(String.format("%.2f dps, max %d", threat.dps, threat.maxHit));
 			}
 		}
-		if (incoming.overrideNote != null && !incoming.overrideNote.isEmpty())
-		{
-			tip.append("<br>Curated: ").append(incoming.overrideNote);
-			tip.append("<br>Assumes your real Defence and Magic levels and no defensive boost.");
-		}
-		else
-		{
-			tip.append("<br>Assumes a uniform attack rotation, your real Defence")
-				.append(" and Magic levels, and no defensive boost.");
-		}
+		tip.append(incoming.overrideNote != null && !incoming.overrideNote.isEmpty()
+			? "<br>Curated: " + incoming.overrideNote
+			: "<br>Assumes a uniform rotation.");
 		if (!incoming.fullyModeled)
 		{
-			tip.append("<br>Some attacks are beyond the stat sheet - treat this as a floor.");
+			tip.append("<br>Unmodeled attacks not counted - treat as a floor.");
 		}
 		line.setToolTipText(tip.append("</html>").toString());
 		card.add(line);
@@ -993,7 +971,7 @@ public class LoadoutLabPanel extends PluginPanel
 		for (String part : label.split(" \\+ "))
 		{
 			JLabel chip = new JLabel();
-			chip.setToolTipText(part + " - " + tooltip);
+			chip.setToolTipText(part);
 			int sprite = AssumeIcons.prayerSprite(part);
 			int item = AssumeIcons.boostItem(part);
 			if (sprite >= 0)
