@@ -26,6 +26,12 @@ import java.util.Locale;
  *   protection is assumed to occupy the prayer slot.
  * - Styles the sheet cannot express (Typeless, Dragonfire, Curse...) are
  *   surfaced as unmodeled rather than silently dropped.
+ *
+ * D-2: when BossIncomingOverrides has a curated entry for the monster, its
+ * attack list replaces the uniform model - scripted max hits, real rotation
+ * shares, prayer-pierce flags, and typeless chip damage. Accuracy is still
+ * rolled from the stat sheet's offensive stats vs the loadout; an override
+ * maxHit only replaces the damage term (typeless attacks always hit).
  */
 public final class IncomingDpsCalculator
 {
@@ -37,14 +43,17 @@ public final class IncomingDpsCalculator
 		public final int maxHit;
 		public final boolean modeled;
 		public final boolean blocked;
+		/** This attack's slice of the rotation (1/n in the uniform model). */
+		public final double share;
 
-		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked)
+		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked, double share)
 		{
 			this.style = style;
 			this.dps = dps;
 			this.maxHit = maxHit;
 			this.modeled = modeled;
 			this.blocked = blocked;
+			this.share = share;
 		}
 	}
 
@@ -59,15 +68,18 @@ public final class IncomingDpsCalculator
 		public final List<StyleThreat> threats;
 		/** False when any listed style is beyond the stat-sheet model. */
 		public final boolean fullyModeled;
+		/** The curated override's source note, or null in the v1 model. */
+		public final String overrideNote;
 
 		Result(double totalDps, double unprayedDps, String protectPrayer,
-			List<StyleThreat> threats, boolean fullyModeled)
+			List<StyleThreat> threats, boolean fullyModeled, String overrideNote)
 		{
 			this.totalDps = totalDps;
 			this.unprayedDps = unprayedDps;
 			this.protectPrayer = protectPrayer;
 			this.threats = Collections.unmodifiableList(threats);
 			this.fullyModeled = fullyModeled;
+			this.overrideNote = overrideNote;
 		}
 	}
 
@@ -78,11 +90,17 @@ public final class IncomingDpsCalculator
 	public static Result calculate(MonsterStats monster, Loadout loadout,
 		int defenceLevel, int magicLevel)
 	{
+		BossIncomingOverrides.BossOverride override = BossIncomingOverrides.overridesFor(monster);
+		if (override != null)
+		{
+			return calculateWithOverride(monster, override, loadout, defenceLevel, magicLevel);
+		}
+
 		MonsterOffence off = monster.getOffence();
 		List<String> styles = off.getStyles();
 		if (styles.isEmpty())
 		{
-			return new Result(0, 0, null, Collections.emptyList(), false);
+			return new Result(0, 0, null, Collections.emptyList(), false, null);
 		}
 
 		StatBlock def = loadout.getDefensive();
@@ -90,9 +108,10 @@ public final class IncomingDpsCalculator
 		boolean fullyModeled = true;
 		int bestBlockable = -1;
 		double bestBlockableDps = -1;
+		double share = 1.0 / styles.size();
 		for (String style : styles)
 		{
-			StyleThreat threat = threatFor(style, off, def, defenceLevel, magicLevel);
+			StyleThreat threat = threatFor(style, off, def, defenceLevel, magicLevel, share);
 			if (!threat.modeled)
 			{
 				fullyModeled = false;
@@ -110,7 +129,7 @@ public final class IncomingDpsCalculator
 		{
 			StyleThreat blocked = threats.get(bestBlockable);
 			threats.set(bestBlockable, new StyleThreat(
-				blocked.style, blocked.dps, blocked.maxHit, true, true));
+				blocked.style, blocked.dps, blocked.maxHit, true, true, blocked.share));
 			prayer = protectPrayerFor(blocked.style);
 		}
 
@@ -123,50 +142,128 @@ public final class IncomingDpsCalculator
 			{
 				continue;
 			}
-			unprayed += threat.dps / styles.size();
+			unprayed += threat.dps * threat.share;
 			if (!threat.blocked)
 			{
-				total += threat.dps / styles.size();
+				total += threat.dps * threat.share;
 			}
 		}
-		return new Result(total, unprayed, prayer, threats, fullyModeled);
+		return new Result(total, unprayed, prayer, threats, fullyModeled, null);
+	}
+
+	/**
+	 * D-2 path: the curated attack list replaces the uniform model. Prayer
+	 * blocks the prayable attack with the largest CONTRIBUTION (dps x share);
+	 * prayable=false attacks always land - partial-block and typeless chip
+	 * damage is encoded in the curated maxHit.
+	 */
+	private static Result calculateWithOverride(MonsterStats monster,
+		BossIncomingOverrides.BossOverride override, Loadout loadout,
+		int defenceLevel, int magicLevel)
+	{
+		MonsterOffence off = monster.getOffence();
+		StatBlock def = loadout.getDefensive();
+		List<StyleThreat> threats = new ArrayList<>();
+		int bestPrayable = -1;
+		double bestContribution = -1;
+		for (BossIncomingOverrides.Attack attack : override.getAttacks())
+		{
+			String style = attack.getStyle();
+			// Typeless attacks have no defence roll: they always hit.
+			double accuracy = "typeless".equals(style) ? 1.0
+				: accuracyFor(style, off, def, defenceLevel, magicLevel);
+			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
+			double dps = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
+			if (attack.isPrayable() && dps * attack.getShare() > bestContribution)
+			{
+				bestContribution = dps * attack.getShare();
+				bestPrayable = threats.size();
+			}
+			threats.add(new StyleThreat(displayStyle(style), dps, attack.getMaxHit(),
+				true, false, attack.getShare()));
+		}
+
+		String prayer = null;
+		if (bestPrayable >= 0)
+		{
+			StyleThreat blocked = threats.get(bestPrayable);
+			threats.set(bestPrayable, new StyleThreat(
+				blocked.style, blocked.dps, blocked.maxHit, true, true, blocked.share));
+			prayer = protectPrayerFor(override.getAttacks().get(bestPrayable).getStyle());
+		}
+
+		double total = 0;
+		double unprayed = 0;
+		for (StyleThreat threat : threats)
+		{
+			unprayed += threat.dps * threat.share;
+			if (!threat.blocked)
+			{
+				total += threat.dps * threat.share;
+			}
+		}
+		return new Result(total, unprayed, prayer, threats, true, override.getNote());
+	}
+
+	private static String displayStyle(String style)
+	{
+		return style.isEmpty() ? style
+			: Character.toUpperCase(style.charAt(0)) + style.substring(1);
 	}
 
 	private static StyleThreat threatFor(String rawStyle, MonsterOffence off,
-		StatBlock def, int defenceLevel, int magicLevel)
+		StatBlock def, int defenceLevel, int magicLevel, double share)
 	{
 		String style = rawStyle.toLowerCase(Locale.ROOT);
-		int attackRoll;
 		int maxHit;
+		if (style.equals("stab") || style.equals("slash") || style.equals("crush") || style.equals("melee"))
+		{
+			maxHit = npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus());
+		}
+		else if (style.equals("ranged") || style.equals("range"))
+		{
+			maxHit = npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus());
+		}
+		else if (style.equals("magic") || style.equals("magical ranged") || style.equals("magical melee"))
+		{
+			maxHit = npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus());
+		}
+		else
+		{
+			return new StyleThreat(rawStyle, 0, 0, false, false, share);
+		}
+
+		double accuracy = accuracyFor(style, off, def, defenceLevel, magicLevel);
+		double dps = accuracy * (maxHit / 2.0) / (off.getSpeedTicks() * 0.6);
+		return new StyleThreat(rawStyle, dps, maxHit, true, false, share);
+	}
+
+	/** The monster's chance to hit with this style vs the loadout - shared
+	 * by the v1 sheet model and the curated overrides (which keep the sheet
+	 * accuracy and only replace the damage term). */
+	private static double accuracyFor(String style, MonsterOffence off,
+		StatBlock def, int defenceLevel, int magicLevel)
+	{
+		int attackRoll;
 		long defenceRoll;
 		if (style.equals("stab") || style.equals("slash") || style.equals("crush") || style.equals("melee"))
 		{
 			attackRoll = npcRoll(off.getAttackLevel(), off.getAttackBonus());
-			maxHit = npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus());
 			defenceRoll = (long) (defenceLevel + 9) * (meleeDefBonus(style, def) + 64);
 		}
 		else if (style.equals("ranged") || style.equals("range"))
 		{
 			attackRoll = npcRoll(off.getRangedLevel(), off.getRangedBonus());
-			maxHit = npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus());
 			defenceRoll = (long) (defenceLevel + 9) * (def.getRanged() + 64);
 		}
-		else if (style.equals("magic") || style.equals("magical ranged") || style.equals("magical melee"))
+		else
 		{
 			attackRoll = npcRoll(off.getMagicLevel(), off.getMagicBonus());
-			maxHit = npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus());
 			// Player magic defence: 70% Magic + 30% Defence for the level term.
 			int effective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
 			defenceRoll = (long) effective * (def.getMagic() + 64);
 		}
-		else
-		{
-			return new StyleThreat(rawStyle, 0, 0, false, false);
-		}
-
-		double accuracy = accuracy(attackRoll, defenceRoll);
-		double dps = accuracy * (maxHit / 2.0) / (off.getSpeedTicks() * 0.6);
-		return new StyleThreat(rawStyle, dps, maxHit, true, false);
+		return accuracy(attackRoll, defenceRoll);
 	}
 
 	private static int meleeDefBonus(String style, StatBlock def)

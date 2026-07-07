@@ -107,10 +107,17 @@ per-boss defensive thresholds. Phased:
   tooltip. Data: MonsterOffence parsed from the vendored wiki sheet
   (skills, offensive bonuses, speed, style list); collapsed spawn groups
   now emit their highest-level row so offence matches the shown level.
-- **D-2 Per-boss overrides** - curated layer (npc_mechanics pattern) for
-  real rotations (Zulrah phases, Vorkath specials), prayer-pierce and
-  partial-block bosses, scripted per-style max hits (e.g. Graardor ranged
-  35 vs derived 58), typeless chip damage values.
+- **D-2 Per-boss overrides (DONE 2026-07-07)** - curated layer:
+  `boss_incoming.json` (wiki-sourced, name-keyed) + `BossIncomingOverrides`
+  replace the uniform model with real attack lists - scripted max hits
+  (Graardor ranged 35 vs derived 58), rotation shares, prayer-pierce /
+  partial-block flags (K'ril smash, Corp magic, Callisto/Artio melee,
+  Vet'ion/Calvar'ion dodge-based), and typeless chip damage (dragonfire,
+  Cerberus souls). Accuracy still rolls from the stat sheet; overrides only
+  replace the damage term. Seeded: the 5 GWD/wildy boss pairs, Zulrah,
+  Vorkath, Cerberus, Chaos Elemental, KBD, Hydra, Corp (17 bosses).
+  Follow-ups: phase-aware rotations (Zulrah patterns, Hydra enrage),
+  antifire-aware dragonfire, spiderling prayer degradation.
 - **W-1 Wilderness low-risk sets (DONE 2026-07-07)** - for the curated
   wilderness boss list (WildernessMonsters), a "Low-risk" toggle caps the
   set to 3 tradeable items (4 with the Protect Item toggle) - exactly the
