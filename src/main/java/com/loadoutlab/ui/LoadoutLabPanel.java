@@ -27,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
@@ -70,6 +71,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private final LoadoutData data;
 	private final ItemManager itemManager;
+	private final net.runelite.client.game.SpriteManager spriteManager;
 	private final ComputeHook computeHook;
 	private final ExclusionToggle exclusionToggle;
 	private final ExclusionView exclusionView;
@@ -99,11 +101,13 @@ public class LoadoutLabPanel extends PluginPanel
 	private final java.util.Set<CombatStyle> gameBestExpanded = java.util.EnumSet.noneOf(CombatStyle.class);
 	private Map<CombatStyle, StyleResult> lastResults;
 
-	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager, ComputeHook computeHook,
+	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
+		net.runelite.client.game.SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView)
 	{
 		this.data = data;
 		this.itemManager = itemManager;
+		this.spriteManager = spriteManager;
 		this.computeHook = computeHook;
 		this.exclusionToggle = exclusionToggle;
 		this.exclusionView = exclusionView;
@@ -517,16 +521,9 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(new Color(140, 200, 140));
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
-		if (result.boostLabel != null)
-		{
-			JLabel boost = new JLabel("Assumes: " + result.boostLabel);
-			boost.setForeground(new Color(160, 160, 160));
-			boost.setFont(boost.getFont().deriveFont(11f));
-			boost.setAlignmentX(LEFT_ALIGNMENT);
-			boost.setToolTipText("You own this boost - the numbers assume you drink it"
+		addAssumesRow(card, result.boostLabel,
+			"You own this boost - the numbers assume you drink it"
 				+ " (never assumed below your live boosted levels)");
-			card.add(boost);
-		}
 		addPrayerLine(card, best);
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
@@ -570,16 +567,9 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(ceiling);
 			if (expanded)
 			{
-				if (result.gameBoostLabel != null)
-				{
-					JLabel gameAssumes = new JLabel("Assumes: " + result.gameBoostLabel);
-					gameAssumes.setForeground(new Color(160, 160, 160));
-					gameAssumes.setFont(gameAssumes.getFont().deriveFont(11f));
-					gameAssumes.setAlignmentX(LEFT_ALIGNMENT);
-					gameAssumes.setToolTipText("The ceiling assumes the best prayers and boost"
+				addAssumesRow(card, result.gameBoostLabel,
+					"The ceiling assumes the best prayers and boost"
 						+ " in the game, regardless of your unlocks");
-					card.add(gameAssumes);
-				}
 				addSpellLine(card, style, result.overallBest);
 				addDartLine(card, result.overallBest);
 				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
@@ -724,17 +714,101 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
+		String name = result.getSpellName();
 		String book = data.getSpells().stream()
-			.filter(s -> result.getSpellName().equals(s.getName()))
+			.filter(s -> name.equals(s.getName()))
 			.map(s -> s.getSpellbook())
 			.findFirst().orElse("");
-		JLabel spell = new JLabel("Spell: " + result.getSpellName()
-			+ (book.isEmpty() ? "" : " (" + capitalize(book) + " spellbook)")
-			+ (result.getSpellName().contains("Demonbane") ? " + Mark of Darkness" : ""));
+		JPanel row = iconRow(card);
+		JLabel spell = new JLabel(name);
 		spell.setForeground(new Color(150, 170, 230));
 		spell.setFont(spell.getFont().deriveFont(11f));
-		spell.setAlignmentX(LEFT_ALIGNMENT);
-		card.add(spell);
+		spell.setToolTipText(book.isEmpty() ? "Autocast this spell"
+			: "Autocast this spell (" + capitalize(book) + " spellbook)");
+		int sprite = AssumeIcons.spellSprite(name);
+		if (sprite >= 0)
+		{
+			attachSprite(spell, sprite);
+			spell.setIconTextGap(4);
+		}
+		row.add(spell);
+		if (name.contains("Demonbane"))
+		{
+			JLabel mod = new JLabel();
+			mod.setToolTipText("Assumes Mark of Darkness is active");
+			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
+			row.add(mod);
+		}
+	}
+
+	/** A left-aligned, height-capped flow row added to the card. */
+	private JPanel iconRow(JPanel card)
+	{
+		JPanel row = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+		card.add(row);
+		return row;
+	}
+
+	/**
+	 * The assumed prayer + boost as icons - prayer-book sprite plus the
+	 * potion/heart item icon; names live in the tooltips. Unmapped parts
+	 * (e.g. "Current boosted levels") stay as text.
+	 */
+	private void addAssumesRow(JPanel card, String label, String tooltip)
+	{
+		if (label == null || label.isEmpty())
+		{
+			return;
+		}
+		JPanel row = iconRow(card);
+		JLabel prefix = new JLabel("Assumes:");
+		prefix.setForeground(new Color(160, 160, 160));
+		prefix.setFont(prefix.getFont().deriveFont(11f));
+		prefix.setToolTipText(tooltip);
+		row.add(prefix);
+		for (String part : label.split(" \\+ "))
+		{
+			JLabel chip = new JLabel();
+			chip.setToolTipText(part + " - " + tooltip);
+			int sprite = AssumeIcons.prayerSprite(part);
+			int item = AssumeIcons.boostItem(part);
+			if (sprite >= 0)
+			{
+				attachSprite(chip, sprite);
+			}
+			else if (item >= 0)
+			{
+				attachItemIcon(chip, item);
+			}
+			else
+			{
+				chip.setText(part);
+				chip.setForeground(new Color(160, 160, 160));
+				chip.setFont(chip.getFont().deriveFont(11f));
+			}
+			row.add(chip);
+		}
+	}
+
+	/** Game-cache sprite, scaled to line height, set async. */
+	private void attachSprite(JLabel label, int spriteId)
+	{
+		spriteManager.getSpriteAsync(spriteId, 0, img ->
+			SwingUtilities.invokeLater(() -> label.setIcon(new javax.swing.ImageIcon(
+				img.getScaledInstance(-1, 16, java.awt.Image.SCALE_SMOOTH)))));
+	}
+
+	/** Item icon scaled to line height (the native 36x32 dwarfs a text row). */
+	private void attachItemIcon(JLabel label, int itemId)
+	{
+		net.runelite.client.util.AsyncBufferedImage img = itemManager.getImage(itemId);
+		Runnable set = () -> label.setIcon(new javax.swing.ImageIcon(
+			img.getScaledInstance(-1, 18, java.awt.Image.SCALE_SMOOTH)));
+		img.onLoaded(() -> SwingUtilities.invokeLater(set));
+		set.run();
 	}
 
 	/**

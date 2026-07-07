@@ -81,6 +81,9 @@ public class LoadoutLabPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
+	@Inject
+	private net.runelite.client.game.SpriteManager spriteManager;
+
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
 	private LoadoutData data;
@@ -122,7 +125,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				panel = new LoadoutLabPanel(loaded, itemManager, this::computeForMonster, exclusions::toggle, exclusions::snapshot);
+				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster, exclusions::toggle, exclusions::snapshot);
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
