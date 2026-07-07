@@ -92,36 +92,49 @@ class MascotSpinner extends JComponent
 			RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
 		double t = (System.currentTimeMillis() - startedAt) / 1000.0;
-		double phase = Math.sin(t * 5.0);
+		// The 2-step: sway side to side at ~1 step/sec with TWO bounces per
+		// step; weight shifts onto the leading leg each step.
+		double beat = t * 1.1;
+		double sway = Math.sin(beat * Math.PI);
+		double bounce = Math.abs(Math.sin(beat * 2 * Math.PI));
 
 		int bodyW = 16 * SCALE;
-		int bodyX = (getWidth() - bodyW) / 2; // centred in the frame
+		int bodyX = (getWidth() - bodyW) / 2 + (int) Math.round(sway * 6.0);
 		int groundY = getHeight() - 4;
 		int shinH = 3 * SCALE;
 		int shinTopY = groundY - shinH;
-		// Feet planted: the body bobs and the thighs squash at the knee.
-		int thighH = 3 * SCALE + (int) Math.round(phase * 3.0);
-		int bodyBottomY = shinTopY - thighH;
+		int thighBase = 3 * SCALE;
+		// Weight on the leading leg: its knee compresses, the trailing leg
+		// stretches; the bounce dips both.
+		int lean = (int) Math.round(sway * 2.5);
+		int dip = (int) Math.round(bounce * 3.0);
+		int leftThighH = thighBase - dip - lean;
+		int rightThighH = thighBase - dip + lean;
+		int bodyBottomY = shinTopY - Math.max(leftThighH, rightThighH);
 		int bodyY = bodyBottomY - 10 * SCALE;
 
-		// Shins (the L-feet) stay on the ground.
-		g2.drawImage(LEFT_SHIN, bodyX + 5 * SCALE, shinTopY, 4 * SCALE, shinH, null);
-		g2.drawImage(RIGHT_SHIN, bodyX + 10 * SCALE, shinTopY, 4 * SCALE, shinH, null);
-		// Thighs stretch/squash between body and shins - the knee bounce.
-		g2.drawImage(LEFT_THIGH, bodyX + 5 * SCALE, bodyBottomY, 2 * SCALE, thighH, null);
-		g2.drawImage(RIGHT_THIGH, bodyX + 10 * SCALE, bodyBottomY, 2 * SCALE, thighH, null);
+		// The L-feet stay planted (they do not sway with the body).
+		int feetX = (getWidth() - bodyW) / 2;
+		g2.drawImage(LEFT_SHIN, feetX + 5 * SCALE, shinTopY, 4 * SCALE, shinH, null);
+		g2.drawImage(RIGHT_SHIN, feetX + 10 * SCALE, shinTopY, 4 * SCALE, shinH, null);
+		// Thighs bridge from the swaying body down to the planted shins.
+		g2.drawImage(LEFT_THIGH, feetX + 5 * SCALE + lean / 2, shinTopY - leftThighH, 2 * SCALE, leftThighH, null);
+		g2.drawImage(RIGHT_THIGH, feetX + 10 * SCALE + lean / 2, shinTopY - rightThighH, 2 * SCALE, rightThighH, null);
 
-		// Arms pump up and down from the bottle's sides.
+		// Arms alternate on the beat - one up while the other is down.
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setColor(LIMB);
 		g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		int shoulderY = bodyY + 8 * SCALE;
-		double armAngle = Math.toRadians(30 + phase * 45);
 		int armLen = 13;
-		int dx = (int) Math.round(Math.cos(armAngle) * armLen);
-		int dy = (int) Math.round(Math.sin(armAngle) * armLen);
-		g2.drawLine(bodyX + 3 * SCALE, shoulderY, bodyX + 3 * SCALE - dx, shoulderY - dy);
-		g2.drawLine(bodyX + 13 * SCALE, shoulderY, bodyX + 13 * SCALE + dx, shoulderY - dy);
+		double leftAngle = Math.toRadians(35 + Math.sin(beat * 2 * Math.PI) * 40);
+		double rightAngle = Math.toRadians(35 - Math.sin(beat * 2 * Math.PI) * 40);
+		g2.drawLine(bodyX + 3 * SCALE, shoulderY,
+			bodyX + 3 * SCALE - (int) Math.round(Math.cos(leftAngle) * armLen),
+			shoulderY - (int) Math.round(Math.sin(leftAngle) * armLen));
+		g2.drawLine(bodyX + 13 * SCALE, shoulderY,
+			bodyX + 13 * SCALE + (int) Math.round(Math.cos(rightAngle) * armLen),
+			shoulderY - (int) Math.round(Math.sin(rightAngle) * armLen));
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
 		// Body over the limbs.
