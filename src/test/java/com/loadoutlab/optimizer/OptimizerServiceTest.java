@@ -41,6 +41,39 @@ public class OptimizerServiceTest
 		}
 	}
 
+	@Test
+	public void togglingAConditionMidLoadAbandonsTheStaleComputationAndDeliversTheNewOne() throws Exception
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			CountDownLatch fresh = new CountDownLatch(1);
+			java.util.concurrent.atomic.AtomicInteger staleDelivered = new java.util.concurrent.atomic.AtomicInteger();
+			// Stale request (off-task), immediately superseded by the toggle.
+			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+				new OwnedItems(owned, true), owned.hashCode(), false, false, "",
+				java.util.Collections.emptySet(), -1, results -> staleDelivered.incrementAndGet());
+			// The toggle: same monster, on-task, fired before the stale run ends.
+			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+				new OwnedItems(owned, true), owned.hashCode(), false, true, "",
+				java.util.Collections.emptySet(), -1, results -> fresh.countDown());
+			Assert.assertTrue(fresh.await(120, TimeUnit.SECONDS));
+			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
+			Assert.assertTrue("the stale computation must have been abandoned",
+				service.abandonedForTest >= 1);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	private static String specPick(OptimizerService service, MonsterStats monster,
 		Map<Integer, Integer> owned) throws Exception
 	{

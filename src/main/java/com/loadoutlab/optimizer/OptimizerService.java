@@ -97,6 +97,19 @@ public class OptimizerService
 	/** Lazily-built free-to-play view of the dataset (gear filtered by the members flag). */
 	private volatile LoadoutData f2pData;
 
+	/**
+	 * Supersession: every bestPerStyle call takes a fresh ticket; an
+	 * in-flight computation checks it at each checkpoint and abandons
+	 * itself the moment a newer request exists (toggling slayer/f2p/risk
+	 * mid-load must not make the new answer wait behind the stale one,
+	 * nor let stale results flash in). Panel-driven: only the newest
+	 * request ever matters.
+	 */
+	private final java.util.concurrent.atomic.AtomicLong requestSeq =
+		new java.util.concurrent.atomic.AtomicLong();
+	/** Abandoned-computation count - test observability only. */
+	volatile int abandonedForTest;
+
 	private final Map<String, Map<CombatStyle, StyleResult>> cache =
 		new LinkedHashMap<String, Map<CombatStyle, StyleResult>>(32, 0.75f, true)
 		{
@@ -151,8 +164,14 @@ public class OptimizerService
 			callback.accept(cached);
 			return;
 		}
+		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
 		{
+			if (requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return; // superseded while queued
+			}
 			LoadoutData dataset = f2pOnly ? f2pView() : data;
 			// Owned ornament/locked variants count as their base item - the
 			// suggestion always shows the base version.
@@ -161,6 +180,11 @@ public class OptimizerService
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
+				if (requestSeq.get() != ticket)
+				{
+					abandonedForTest++;
+					return; // superseded mid-flight - abandon between styles
+				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
 				com.loadoutlab.engine.BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
@@ -212,6 +236,11 @@ public class OptimizerService
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming));
+			}
+			if (requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return; // finished stale - never deliver over the newer answer
 			}
 			synchronized (cache)
 			{
