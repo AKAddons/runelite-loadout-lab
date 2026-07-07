@@ -51,6 +51,28 @@ public class LinkInTest
 	}
 
 	@Test
+	public void nicknamesAndActivityNamesResolveThroughAliases()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		Assert.assertTrue(panel(computed).selectExternal("Thermy", null));
+		Assert.assertEquals("Thermonuclear smoke devil", computed.get().getName());
+		Assert.assertTrue(panel(computed).selectExternal("Grotesque Guardians", null));
+		Assert.assertEquals("Dusk", computed.get().getName());
+		Assert.assertTrue(panel(computed).selectExternal("ToB (HM)", null));
+		Assert.assertEquals("Verzik Vitur", computed.get().getName());
+	}
+
+	@Test
+	public void qualifierSuffixesAreStrippedOnRetry()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		Assert.assertTrue(panel(computed).selectExternal("Doom of Mokhaiotl (L3)", null));
+		Assert.assertEquals("Doom of Mokhaiotl", computed.get().getName());
+		Assert.assertTrue(panel(computed).selectExternal("Duke (Awake)", null));
+		Assert.assertEquals("Duke Sucellus", computed.get().getName());
+	}
+
+	@Test
 	public void unknownMonsterReturnsFalseAndComputesNothing()
 	{
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();

@@ -349,11 +349,21 @@ public class LoadoutLabPanel extends PluginPanel
 		if (monsterName != null && !monsterName.isEmpty())
 		{
 			java.util.List<MonsterStats> hits = data.searchMonsters(monsterName, 1);
+			// Sender labels often carry qualifiers the corpus doesn't -
+			// "Doom of Mokhaiotl (L3)", "Duke (Awake)" - retry without them.
+			int paren = monsterName.indexOf(" (");
+			if (hits.isEmpty() && paren > 0)
+			{
+				hits = data.searchMonsters(monsterName.substring(0, paren), 1);
+			}
 			if (!hits.isEmpty())
 			{
 				select(hits.get(0));
 				return true;
 			}
+			// No match: surface the query in the search box so the caller's
+			// click visibly did something instead of nothing.
+			searchField.setText(monsterName);
 		}
 		return false;
 	}
