@@ -63,11 +63,39 @@ public class RiskConstraintTest
 			Assert.assertFalse(capped.isEmpty());
 			DpsResult best = optimizer.fillDpsNeutralSlots(data, request(style, 3), capped.get(0));
 			// The kept 3 are immune; the TOTAL of everything else must fit
-			// the budget - not a per-item floor.
+			// the budget - not a per-item floor. Untradeable repair/mangle
+			// fees count too, so a budget-fitting set can carry NO
+			// mangle-class untradeable (each of those alone costs 500k).
 			PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), null, 3);
 			Assert.assertTrue(style + " risks " + risk.riskGp,
 				risk.riskGp <= OptimizationRequest.RISK_BUDGET_GP);
+			for (PvpRisk.Charge charge : risk.untradeableCharges)
+			{
+				Assert.assertTrue(charge.item.label() + " costs " + charge.costGp,
+					charge.costGp <= OptimizationRequest.RISK_BUDGET_GP);
+			}
 		}
+	}
+
+	@Test
+	public void realUntradeablesCarryTheirWikiDeathFees()
+	{
+		Assert.assertEquals(500_000, costOf("infernal cape"));
+		Assert.assertEquals(150_000, costOf("fire cape"));
+		Assert.assertEquals(500_000, costOf("elite void top"));
+		Assert.assertEquals(35_000, costOf("rune defender"));
+	}
+
+	private static long costOf(String name)
+	{
+		for (com.loadoutlab.data.GearItem item : data.getGearItems())
+		{
+			if (name.equalsIgnoreCase(item.getName()) && !item.isTradeable())
+			{
+				return UntradeableDeathCosts.costFor(item);
+			}
+		}
+		throw new AssertionError("no untradeable item named " + name);
 	}
 
 	@Test

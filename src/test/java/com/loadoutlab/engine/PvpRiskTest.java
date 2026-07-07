@@ -16,6 +16,15 @@ public class PvpRiskTest
 			tradeable, true, price, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 	}
 
+	private static final StatBlock SOME_DEFENCE =
+		new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 2);
+
+	private static GearItem untradeable(int id, String name, GearSlot slot, StatBlock bonuses)
+	{
+		return new GearItem(id, name, "", slot, "", 0, false, true,
+			false, true, null, StatBlock.ZERO, StatBlock.ZERO, bonuses, null);
+	}
+
 	private static Loadout worn(GearItem... items)
 	{
 		Map<GearSlot, GearItem> gear = new HashMap<>();
@@ -68,6 +77,81 @@ public class PvpRiskTest
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, spec, 3);
 		Assert.assertEquals(60, risk.riskGp);
 		Assert.assertEquals("Item9", risk.kept.get(0).getName());
+	}
+
+	@Test
+	public void aTrouverClassUntradeableAddsTheFlat500kManglFeeToTheRisk()
+	{
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "Infernal cape", GearSlot.CAPE, SOME_DEFENCE));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(500_000L, risk.riskGp);
+		Assert.assertEquals(1, risk.untradeableCharges.size());
+		Assert.assertEquals("Infernal cape", risk.untradeableCharges.get(0).item.getName());
+		Assert.assertEquals(500_000L, risk.untradeableCharges.get(0).costGp);
+	}
+
+	@Test
+	public void aBreakableUntradeableAddsItsOwnWikiRepairFee()
+	{
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "Fire cape", GearSlot.CAPE, SOME_DEFENCE),
+			untradeable(3, "Rune defender", GearSlot.SHIELD, SOME_DEFENCE));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(150_000L + 35_000L, risk.riskGp);
+		// Biggest fee first, for the panel's itemised breakdown.
+		Assert.assertEquals("Fire cape", risk.untradeableCharges.get(0).item.getName());
+		Assert.assertEquals("Rune defender", risk.untradeableCharges.get(1).item.getName());
+	}
+
+	@Test
+	public void untradeablesWithoutCombatStatsStillCostNothing()
+	{
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "Graceful hood", GearSlot.HEAD, StatBlock.ZERO),
+			untradeable(3, "Completely unknown cosmetic", GearSlot.CAPE, StatBlock.ZERO));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(0, risk.riskGp);
+		Assert.assertTrue(risk.untradeableCharges.isEmpty());
+	}
+
+	@Test
+	public void anUncuratedCombatUntradeableDefaultsToTheConservative500k()
+	{
+		// Unknowns must not smuggle into "low-risk" sets for free.
+		Loadout loadout = worn(
+			untradeable(2, "Some future combat relic", GearSlot.BODY, SOME_DEFENCE));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(UntradeableDeathCosts.UNKNOWN_COMBAT_UNTRADEABLE_GP, risk.riskGp);
+	}
+
+	@Test
+	public void anUntradeableCarriedSpecWeaponAddsItsFeeToo()
+	{
+		Loadout loadout = worn(item(1, GearSlot.WEAPON, true, 100));
+		GearItem spec = untradeable(9, "Void knight mace", GearSlot.WEAPON, SOME_DEFENCE);
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, spec, 3);
+		Assert.assertEquals(20_000L, risk.riskGp);
+		Assert.assertEquals("Void knight mace", risk.untradeableCharges.get(0).item.getName());
+	}
+
+	@Test
+	public void untradeableFeesStackOnTopOfTheTradeableLosses()
+	{
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			item(2, GearSlot.BODY, true, 80),
+			item(3, GearSlot.LEGS, true, 60),
+			item(4, GearSlot.HEAD, true, 40),
+			untradeable(5, "Fire cape", GearSlot.CAPE, SOME_DEFENCE));
+		// Kept 3 -> the 40 is lost, plus the fire cape repair fee.
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(40L + 150_000L, risk.riskGp);
+		Assert.assertEquals(3, risk.kept.size());
+		Assert.assertEquals(1, risk.lost.size());
 	}
 
 	@Test

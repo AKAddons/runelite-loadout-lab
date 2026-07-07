@@ -124,8 +124,16 @@ per-boss defensive thresholds. Phased:
   kept-on-death items, everything else untradeable - via
   OptimizationRequest.maxTradeables enforced in the beam, the neutral
   fill, and the spec pick. Cards show "Risky items: N/K" with the
-  tradeables listed. Follow-ups: skull awareness (keep 0/1), per-item
-  repair costs for untradeables, risk-value display in gp.
+  tradeables listed. Per-item untradeable death costs (DONE 2026-07-07):
+  untradeable_death.json + UntradeableDeathCosts price every worn
+  untradeable per the June 2026 IKoD rework - wiki repair fees for
+  breakables, the flat 500k trouver-mangle fee for the strong tier,
+  component values for seed/mask/ring-style drops, and a conservative
+  500k default for uncurated combat untradeables - all summed into
+  PvpRisk riskGp (itemised in Assessment.untradeableCharges), so
+  "low-risk" sets can no longer smuggle mangle-class gear for free.
+  Follow-ups: skull awareness (keep 0/1), risk-value display in gp,
+  panel itemisation of the untradeable charges.
 - **D-3 Threshold-constrained search** - OptimizationRequest gains
   defensive constraints ("ranged def >= 100"); optimizer returns the best
   dps set satisfying them.
