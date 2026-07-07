@@ -72,6 +72,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final LoadoutData data;
 	private final ItemManager itemManager;
 	private final net.runelite.client.game.SpriteManager spriteManager;
+	private final com.loadoutlab.UsageLog usageLog = com.loadoutlab.UsageLog.defaultLog();
 	private final ComputeHook computeHook;
 	private final ExclusionToggle exclusionToggle;
 	private final ExclusionView exclusionView;
@@ -312,6 +313,7 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
+		usageLog.record(monster.label());
 		selectedLabel.setText("vs " + monster.label());
 		selectedRow.setVisible(true);
 		String note = com.loadoutlab.data.MonsterNotes.noteFor(monster);
