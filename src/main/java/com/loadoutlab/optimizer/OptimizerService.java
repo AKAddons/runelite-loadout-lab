@@ -58,10 +58,13 @@ public class OptimizerService
 		public final GearItem gameSpecWeapon;
 		public final double gameSpecExpectedDamage;
 		public final double gameSpecDrainValue;
+		/** The boost the numbers assume ("Super combat"), or null. */
+		public final String boostLabel;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec)
+			SpecPick spec, SpecPick gameSpec, String boostLabel)
 		{
+			this.boostLabel = boostLabel;
 			this.owned = owned;
 			this.overallBest = overallBest;
 			this.spec = spec == null ? null : spec.spec;
@@ -109,6 +112,7 @@ public class OptimizerService
 	 */
 	public void bestPerStyle(
 		MonsterStats monster,
+		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
 		RequirementProfile requirements,
 		OwnedItems owned,
@@ -122,8 +126,10 @@ public class OptimizerService
 		final java.util.Set<Integer> excluded = excludedItems == null
 			? java.util.Collections.emptySet() : excludedItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
+		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + levelKey(boostedLevels);
+			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode()
+			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -144,8 +150,13 @@ public class OptimizerService
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
+				// Assume the best boost the player OWNS (drink what you
+				// bring), never below what is already live.
+				com.loadoutlab.engine.BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
+				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
+				String boostLabel = boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString();
 				OptimizationRequest ownedRequest = request(
-					monster, style, boostedLevels, requirements,
+					monster, style, styleLevels, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
@@ -159,7 +170,7 @@ public class OptimizerService
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
-					monster, style, boostedLevels, RequirementProfile.MAXED,
+					monster, style, styleLevels, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
@@ -167,10 +178,10 @@ public class OptimizerService
 				{
 					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
 				}
-				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, boostedLevels, effectiveOwned);
-				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, boostedLevels, null);
+				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
+				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, styleLevels, null);
 				results.put(style, new StyleResult(
-					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec));
+					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec, boostLabel));
 			}
 			synchronized (cache)
 			{

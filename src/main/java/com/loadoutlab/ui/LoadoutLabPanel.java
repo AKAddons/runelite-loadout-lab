@@ -513,6 +513,16 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(new Color(140, 200, 140));
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
+		if (result.boostLabel != null)
+		{
+			JLabel boost = new JLabel("Assumes: " + result.boostLabel);
+			boost.setForeground(new Color(160, 160, 160));
+			boost.setFont(boost.getFont().deriveFont(11f));
+			boost.setAlignmentX(LEFT_ALIGNMENT);
+			boost.setToolTipText("You own this boost - the numbers assume you drink it"
+				+ " (never assumed below your live boosted levels)");
+			card.add(boost);
+		}
 		addPrayerLine(card, best);
 		addSpellLine(card, style, best);
 		addDartLine(card, best);

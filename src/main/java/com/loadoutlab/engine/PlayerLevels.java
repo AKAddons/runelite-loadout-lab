@@ -70,6 +70,23 @@ public final class PlayerLevels
 			hitpoints);
 	}
 
+	/** Element-wise max - never assume a boost below what is already live. */
+	public PlayerLevels max(PlayerLevels other)
+	{
+		if (other == null)
+		{
+			return this;
+		}
+		return new PlayerLevels(
+			Math.max(attack, other.attack),
+			Math.max(strength, other.strength),
+			Math.max(defence, other.defence),
+			Math.max(ranged, other.ranged),
+			Math.max(magic, other.magic),
+			Math.max(prayer, other.prayer),
+			Math.max(hitpoints, other.hitpoints));
+	}
+
 	public PlayerLevels boosted(BoostProfile boostProfile, PlayerLevels liveCurrent)
 	{
 		return (boostProfile == null ? BoostProfile.NONE : boostProfile).apply(this, liveCurrent);

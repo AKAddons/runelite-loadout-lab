@@ -95,6 +95,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * Invalidated on login.
 	 */
 	private RequirementProfile requirementProfile;
+	private PlayerLevels realLevels;
 	private PlayerLevels boostedLevels;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
@@ -155,6 +156,7 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = null;
 		exclusions = null;
 		requirementProfile = null;
+		realLevels = null;
 		boostedLevels = null;
 		dirtySources.clear();
 		log.info("Loadout Lab stopped");
@@ -174,6 +176,7 @@ public class LoadoutLabPlugin extends Plugin
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
 			// New login = possibly a different account/levels: re-snapshot lazily.
 			requirementProfile = null;
+			realLevels = null;
 			boostedLevels = null;
 
 			// Non-members world -> show the F2P filter, default on (world type
@@ -249,10 +252,11 @@ public class LoadoutLabPlugin extends Plugin
 			}
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
-			PlayerLevels levels = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
-			optimizerService.bestPerStyle(monster, levels, profile, owned, fingerprint, f2pOnly,
+			optimizerService.bestPerStyle(monster, real, live, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
@@ -268,7 +272,7 @@ public class LoadoutLabPlugin extends Plugin
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */
 	private void snapshotProfileIfNeeded()
 	{
-		if (requirementProfile != null && boostedLevels != null)
+		if (requirementProfile != null && boostedLevels != null && realLevels != null)
 		{
 			return;
 		}
@@ -297,6 +301,7 @@ public class LoadoutLabPlugin extends Plugin
 			}
 		}
 		requirementProfile = new RequirementProfile(real, quests);
+		realLevels = PlayerLevels.from(real);
 		boostedLevels = PlayerLevels.from(boosted);
 	}
 
