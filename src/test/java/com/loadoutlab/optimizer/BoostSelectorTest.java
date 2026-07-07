@@ -13,18 +13,17 @@ public class BoostSelectorTest
 	@Test
 	public void picksTheBestOwnedBoostPerStyle()
 	{
+		// Tradeable potions are always assumed, ownership or not.
 		OwnedItems none = OwnedItems.EMPTY;
-		Assert.assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MELEE, none));
+		Assert.assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, none));
+		Assert.assertEquals(BoostProfile.RANGING, BoostSelector.bestFor(CombatStyle.RANGED, none));
+		Assert.assertEquals(BoostProfile.MAGIC, BoostSelector.bestFor(CombatStyle.MAGIC, none));
 
-		OwnedItems scAndHearts = new OwnedItems(Map.of(
-			12697, 3,   // super combat (3)
-			22464, 1,   // bastion (3)
-			20724, 1,   // imbued heart
-			27641, 1),  // saturated heart - outranks the imbued
-			true);
-		Assert.assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, scAndHearts));
-		Assert.assertEquals(BoostProfile.RANGING, BoostSelector.bestFor(CombatStyle.RANGED, scAndHearts));
-		Assert.assertEquals(BoostProfile.SATURATED_HEART, BoostSelector.bestFor(CombatStyle.MAGIC, scAndHearts));
+		// The hearts (untradeable) gate on ownership; saturated outranks imbued.
+		OwnedItems hearts = new OwnedItems(Map.of(20724, 1, 27641, 1), true);
+		Assert.assertEquals(BoostProfile.SATURATED_HEART, BoostSelector.bestFor(CombatStyle.MAGIC, hearts));
+		Assert.assertEquals(BoostProfile.IMBUED_HEART,
+			BoostSelector.bestFor(CombatStyle.MAGIC, new OwnedItems(Map.of(20724, 1), true)));
 
 		// Boost application: 99 melee stats -> 118 with super combat.
 		PlayerLevels boosted = PlayerLevels.MAXED.boosted(BoostProfile.SUPER_COMBAT, PlayerLevels.MAXED);
