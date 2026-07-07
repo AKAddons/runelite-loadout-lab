@@ -258,8 +258,9 @@ class MascotSpinner extends JComponent
 			g2.fillRect(bodyX + (4 + i) * SCALE, surfY, SCALE, juiceBottom - surfY);
 		}
 
-		// The neck bubble drifts one pixel left and right with the sway.
-		int bubbleDx = (int) Math.round(Math.sin(beat * Math.PI));
+		// The neck bubble tracks the body's side-to-side travel: right of
+		// the neck when the bottle is at its right extreme, left at left.
+		int bubbleDx = (int) Math.round(1.0 + (leftDx + rightDx) / A);
 		g2.fillRect(bodyX + (7 + bubbleDx) * SCALE, bodyY + 4 * SCALE, SCALE, SCALE);
 
 		// Body over the limbs and juice (the walls cover the liquid's edges).
