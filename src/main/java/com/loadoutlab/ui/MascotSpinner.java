@@ -26,9 +26,10 @@ class MascotSpinner extends JComponent
 	private static final BufferedImage MASCOT = load();
 	// Sprite slices (16x16 grid): bottle body rows 0-9; per leg a 2px-wide
 	// thigh column (rows 10-12) and a 4px-wide L-foot shin (rows 13-15).
-	// The flask with the juice band (rows 7-8) drained - the juice is
-	// redrawn each frame so it can slosh with the dance.
-	private static final BufferedImage BODY = drainJuice(slice(0, 0, 16, 10));
+	// The flask with the animated bits carved out: the juice band (rows
+	// 7-8) is redrawn each frame so it can slosh, and the static corner
+	// star (cols 12-14, rows 0-2) is replaced by snap stars at the hands.
+	private static final BufferedImage BODY = prepareBody(slice(0, 0, 16, 10));
 	private static final BufferedImage LEFT_THIGH = slice(5, 10, 2, 3);
 	private static final BufferedImage RIGHT_THIGH = slice(10, 10, 2, 3);
 	private static final BufferedImage LEFT_SHIN = slice(5, 13, 4, 3);
@@ -65,7 +66,7 @@ class MascotSpinner extends JComponent
 		g2.drawImage(shin, footX, shinTopY, 4 * SCALE, shinH, null);
 	}
 
-	private static BufferedImage drainJuice(BufferedImage body)
+	private static BufferedImage prepareBody(BufferedImage body)
 	{
 		if (body == null)
 		{
@@ -83,7 +84,27 @@ class MascotSpinner extends JComponent
 				copy.setRGB(x, y, 0);
 			}
 		}
+		for (int y = 0; y <= 2; y++)
+		{
+			for (int x = 12; x <= 14; x++)
+			{
+				copy.setRGB(x, y, 0);
+			}
+		}
 		return copy;
+	}
+
+	/** A pixel plus-star that pops in and fades: age runs 0..1. */
+	private static void drawSnapStar(Graphics2D g2, int cx, int cy, double age)
+	{
+		java.awt.Composite old = g2.getComposite();
+		g2.setComposite(java.awt.AlphaComposite.getInstance(
+			java.awt.AlphaComposite.SRC_OVER, (float) Math.max(0.0, 1.0 - age)));
+		g2.setColor(JUICE);
+		int arm = (int) Math.round(SCALE * (1.0 + age * 1.5));
+		g2.fillRect(cx - SCALE / 2, cy - arm, SCALE, 2 * arm + SCALE);
+		g2.fillRect(cx - arm, cy - SCALE / 2, 2 * arm + SCALE, SCALE);
+		g2.setComposite(old);
 	}
 
 	private static BufferedImage load()
@@ -192,18 +213,32 @@ class MascotSpinner extends JComponent
 		int lex = lsx - (int) Math.round(Math.cos(upperAngle) * upperLen);
 		int ley = shoulderY - (int) Math.round(Math.sin(upperAngle) * upperLen);
 		double lfa = Math.toRadians(90) + wave;
+		int ltx = lex - (int) Math.round(Math.cos(lfa) * foreLen);
+		int lty = ley - (int) Math.round(Math.sin(lfa) * foreLen);
 		g2.drawLine(lsx, shoulderY, lex, ley);
-		g2.drawLine(lex, ley, lex - (int) Math.round(Math.cos(lfa) * foreLen),
-			ley - (int) Math.round(Math.sin(lfa) * foreLen));
+		g2.drawLine(lex, ley, ltx, lty);
 		// Right arm (forearm waves opposite for the groove)
 		int rsx = bodyX + 13 * SCALE;
 		int rex = rsx + (int) Math.round(Math.cos(upperAngle) * upperLen);
 		int rey = shoulderY - (int) Math.round(Math.sin(upperAngle) * upperLen);
 		double rfa = Math.toRadians(90) - wave;
+		int rtx = rex + (int) Math.round(Math.cos(rfa) * foreLen);
+		int rty = rey - (int) Math.round(Math.sin(rfa) * foreLen);
 		g2.drawLine(rsx, shoulderY, rex, rey);
-		g2.drawLine(rex, rey, rex + (int) Math.round(Math.cos(rfa) * foreLen),
-			rey - (int) Math.round(Math.sin(rfa) * foreLen));
+		g2.drawLine(rex, rey, rtx, rty);
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+
+		// Finger snaps: each forearm-wave extreme is a snap, and a star
+		// pops beside that hand for a moment - alternating sides.
+		double phase = beat % 2.0;
+		if (phase >= 0.5 && phase < 1.0)
+		{
+			drawSnapStar(g2, ltx - 4, lty - 6, (phase - 0.5) / 0.5);
+		}
+		else if (phase >= 1.5)
+		{
+			drawSnapStar(g2, rtx + 4, rty - 6, (phase - 1.5) / 0.5);
+		}
 
 		// Juice under the glass: spring the surface against the bottle's
 		// motion, then fill the belly column by column so the tilted
