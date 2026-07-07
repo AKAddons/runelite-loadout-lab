@@ -106,6 +106,37 @@ public class LoadoutLabPlugin extends Plugin
 	private final EnumSet<CollectionLedger.Source> dirtySources =
 		EnumSet.noneOf(CollectionLedger.Source.class);
 
+	/**
+	 * Cross-plugin link-in: other plugins (e.g. Goal Planner) post
+	 * PluginMessage(namespace "loadoutlab", name "search") with data
+	 * {"monster": String display name, "npcId": Integer optional,
+	 * "source": String} to open the panel on that monster. The message
+	 * arrives on the POSTER's thread - everything marshals to the EDT.
+	 */
+	@net.runelite.client.eventbus.Subscribe
+	public void onPluginMessage(net.runelite.client.events.PluginMessage event)
+	{
+		if (!"loadoutlab".equals(event.getNamespace()) || !"search".equals(event.getName()))
+		{
+			return;
+		}
+		Object monster = event.getData().get("monster");
+		Object npcId = event.getData().get("npcId");
+		String name = monster instanceof String ? (String) monster : null;
+		Integer id = npcId instanceof Number ? ((Number) npcId).intValue() : null;
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel == null || navButton == null)
+			{
+				return; // dataset still loading - drop rather than queue
+			}
+			if (panel.selectExternal(name, id))
+			{
+				clientToolbar.openPanel(navButton);
+			}
+		});
+	}
+
 	@Override
 	protected void startUp()
 	{

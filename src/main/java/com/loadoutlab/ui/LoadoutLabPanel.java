@@ -328,6 +328,36 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
+	/**
+	 * External link-in (cross-plugin PluginMessage): select a monster by
+	 * npc id or display name. Name matching reuses the search's
+	 * punctuation-insensitive normalization. EDT only. Returns success.
+	 */
+	public boolean selectExternal(String monsterName, Integer npcId)
+	{
+		if (npcId != null)
+		{
+			for (MonsterStats m : data.getMonsters())
+			{
+				if (m.getId() == npcId)
+				{
+					select(m);
+					return true;
+				}
+			}
+		}
+		if (monsterName != null && !monsterName.isEmpty())
+		{
+			java.util.List<MonsterStats> hits = data.searchMonsters(monsterName, 1);
+			if (!hits.isEmpty())
+			{
+				select(hits.get(0));
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** A pick: collapse the dropdown, show the selection, clear the query. */
 	private void select(MonsterStats monster)
 	{
