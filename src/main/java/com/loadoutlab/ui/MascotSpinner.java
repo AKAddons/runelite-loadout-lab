@@ -228,16 +228,16 @@ class MascotSpinner extends JComponent
 		g2.drawLine(rex, rey, rtx, rty);
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-		// Finger snaps: each forearm-wave extreme is a snap, and a star
-		// pops beside that hand for a moment - alternating sides.
-		double phase = beat % 2.0;
+		// Finger snaps: one snap every other wave extreme (half the waves
+		// snap), a star pops beside that hand - alternating sides.
+		double phase = beat % 4.0;
 		if (phase >= 0.5 && phase < 1.0)
 		{
 			drawSnapStar(g2, ltx - 4, lty - 6, (phase - 0.5) / 0.5);
 		}
-		else if (phase >= 1.5)
+		else if (phase >= 2.5 && phase < 3.0)
 		{
-			drawSnapStar(g2, rtx + 4, rty - 6, (phase - 1.5) / 0.5);
+			drawSnapStar(g2, rtx + 4, rty - 6, (phase - 2.5) / 0.5);
 		}
 
 		// Juice under the glass: spring the surface against the bottle's

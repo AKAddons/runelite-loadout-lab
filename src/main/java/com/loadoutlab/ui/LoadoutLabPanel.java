@@ -528,11 +528,10 @@ public class LoadoutLabPanel extends PluginPanel
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
 		addDartLine(card, best);
-		addSpecLine(card, result.spec, result.specWeapon, result.specExpectedDamage,
-			result.specDrainValue, best.getExpectedHit(),
-			"Swapped into your best set for one special attack");
 		card.add(Box.createVerticalStrut(4));
-		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage));
+		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
+			result.specDrainValue, best.getExpectedHit(),
+			"Swapped into your best set for one special attack"));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
@@ -572,11 +571,10 @@ public class LoadoutLabPanel extends PluginPanel
 						+ " in the game, regardless of your unlocks");
 				addSpellLine(card, style, result.overallBest);
 				addDartLine(card, result.overallBest);
-				addSpecLine(card, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
-					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
-					"The strongest special attack that exists vs this monster");
 				card.add(Box.createVerticalStrut(4));
-				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage));
+				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
+					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
+					"The strongest special attack that exists vs this monster"));
 			}
 		}
 		return card;
@@ -668,24 +666,15 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(dart);
 	}
 
-	/** A spec line with the weapon's icon: "Spec: <name> - avg N dmg (C% energy)". */
-	private void addSpecLine(JPanel card, SpecialAttack spec,
-		GearItem weapon, double expectedDamage, double drainValue,
-		double replacedAutoExpected, String fallbackTooltip)
+	/** Everything the old spec line said, as the spec cell's tooltip. */
+	private static String specTooltip(SpecialAttack spec, double expectedDamage,
+		double drainValue, double replacedAutoExpected, String fallbackTooltip)
 	{
-		if (spec == null || weapon == null || expectedDamage <= 0)
-		{
-			return;
-		}
-		JLabel line = new JLabel(drainValue > 0.5
-			? String.format("Spec: %s - %.0f dmg + drain ~%.0f",
-				spec.getDisplayName(), expectedDamage, drainValue)
+		String headline = drainValue > 0.5
+			? String.format("Spec: %s - %.0f dmg + drain ~%.0f (%d%% energy)",
+				spec.getDisplayName(), expectedDamage, drainValue, spec.getEnergyCost())
 			: String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
-				spec.getDisplayName(), expectedDamage, spec.getEnergyCost()));
-		line.setForeground(new Color(220, 180, 120));
-		line.setFont(line.getFont().deriveFont(11f));
-		line.setAlignmentX(LEFT_ALIGNMENT);
-		line.setIconTextGap(6);
+				spec.getDisplayName(), expectedDamage, spec.getEnergyCost());
 		String note = spec.getNote();
 		// Spec throughput: weaving this spec on cooldown adds sustained dps
 		// (energy regen 10% per 30s; the Lightbearer doubles it).
@@ -698,10 +687,9 @@ public class LoadoutLabPanel extends PluginPanel
 				+ " the kill (your set hits harder once it lands - bigger"
 				+ " payoff on high-HP targets).", drainValue)
 			: "";
-		line.setToolTipText("<html>" + (note.isEmpty() ? fallbackTooltip : note)
-			+ "<br>" + sustained + drain + "</html>");
-		itemManager.getImage(weapon.getId()).addTo(line);
-		card.add(line);
+		return "<html>" + headline
+			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note)
+			+ "<br>" + sustained + drain + "</html>";
 	}
 
 	/**
@@ -817,7 +805,8 @@ public class LoadoutLabPanel extends PluginPanel
 	 * Fixed rows x cols means the preferred height is always right (the
 	 * old wrapping grid clipped its second row).
 	 */
-	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected)
+	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
+		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip)
 	{
 		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
 		icons.setOpaque(false);
@@ -858,8 +847,8 @@ public class LoadoutLabPanel extends PluginPanel
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
 			specCell.setBorder(BorderFactory.createLineBorder(new Color(220, 180, 120)));
-			specCell.setToolTipText(String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
-				spec.getDisplayName(), specExpected, spec.getEnergyCost()));
+			specCell.setToolTipText(specTooltip(spec, specExpected,
+				specDrainValue, replacedAutoExpected, specFallbackTooltip));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
 			attachExclusionMenu(specCell, List.of(specWeapon));
 		}
