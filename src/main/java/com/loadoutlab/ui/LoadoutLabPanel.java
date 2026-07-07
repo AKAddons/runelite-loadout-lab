@@ -565,14 +565,14 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(ceiling);
 			if (expanded)
 			{
-				if (result.boostLabel != null)
+				if (result.gameBoostLabel != null)
 				{
-					JLabel gameAssumes = new JLabel("Assumes: " + result.boostLabel);
+					JLabel gameAssumes = new JLabel("Assumes: " + result.gameBoostLabel);
 					gameAssumes.setForeground(new Color(160, 160, 160));
 					gameAssumes.setFont(gameAssumes.getFont().deriveFont(11f));
 					gameAssumes.setAlignmentX(LEFT_ALIGNMENT);
-					gameAssumes.setToolTipText("Game best is computed at your levels with the"
-						+ " same prayers and boost, so the percentage isolates the gear gap");
+					gameAssumes.setToolTipText("The ceiling assumes the best prayers and boost"
+						+ " in the game, regardless of your unlocks");
 					card.add(gameAssumes);
 				}
 				addSpellLine(card, style, result.overallBest);

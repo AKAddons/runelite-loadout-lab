@@ -19,6 +19,18 @@ public final class BoostSelector
 	{
 	}
 
+	/** The best boost in the GAME per style - the BiS ceiling assumption. */
+	public static BoostProfile ceilingFor(CombatStyle style)
+	{
+		switch (style)
+		{
+			case MELEE: return BoostProfile.SUPER_COMBAT;
+			case RANGED: return BoostProfile.RANGING;
+			case MAGIC: return BoostProfile.SATURATED_HEART;
+			default: return BoostProfile.NONE;
+		}
+	}
+
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned)
 	{
 		switch (style)

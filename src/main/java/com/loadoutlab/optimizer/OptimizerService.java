@@ -58,13 +58,16 @@ public class OptimizerService
 		public final GearItem gameSpecWeapon;
 		public final double gameSpecExpectedDamage;
 		public final double gameSpecDrainValue;
-		/** The boost the numbers assume ("Super combat"), or null. */
+		/** The prayers/boost YOUR numbers assume ("Deadeye + Ranging potion"). */
 		public final String boostLabel;
+		/** The ceiling assumption for game best ("Rigour + Ranging potion"). */
+		public final String gameBoostLabel;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec, String boostLabel)
+			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel)
 		{
 			this.boostLabel = boostLabel;
+			this.gameBoostLabel = gameBoostLabel;
 			this.owned = owned;
 			this.overallBest = overallBest;
 			this.spec = spec == null ? null : spec.spec;
@@ -160,6 +163,13 @@ public class OptimizerService
 				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
 					boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString());
+				// The ceiling assumes the best prayers/boost in the GAME,
+				// not just what this player has unlocked or owns.
+				com.loadoutlab.engine.BoostProfile gameBoost = BoostSelector.ceilingFor(style);
+				PlayerLevels gameLevels = real.boosted(gameBoost, boostedLevels).max(boostedLevels);
+				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
+					com.loadoutlab.engine.PrayerUnlocks.ALL).nameFor(style);
+				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
 				OptimizationRequest ownedRequest = request(
 					monster, style, styleLevels, unlocks, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
@@ -175,7 +185,8 @@ public class OptimizerService
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
-					monster, style, styleLevels, unlocks, RequirementProfile.MAXED,
+					monster, style, gameLevels, com.loadoutlab.engine.PrayerUnlocks.ALL,
+					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
@@ -184,9 +195,10 @@ public class OptimizerService
 					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
 				}
 				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
-				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, styleLevels, null);
+				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
 				results.put(style, new StyleResult(
-					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec, boostLabel));
+					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
+					boostLabel, gameBoostLabel));
 			}
 			synchronized (cache)
 			{
