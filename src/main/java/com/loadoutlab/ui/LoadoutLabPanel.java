@@ -739,10 +739,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		// Lead with the prayer to run - icon + short name - then the cost.
-		String shortName = incoming.protectPrayer.replace("Protect from ", "");
-		JLabel line = new JLabel(String.format("Pray %s - boss ~%.2f DPS to you",
-			shortName, incoming.totalDps));
+		// The protect icon IS the pray call; the text is just the cost.
+		JLabel line = new JLabel(String.format("~%.2f DPS to you", incoming.totalDps));
 		int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
 		if (sprite >= 0)
 		{
