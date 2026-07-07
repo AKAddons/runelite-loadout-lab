@@ -16,6 +16,9 @@ public class DataServiceTest
 		Assert.assertTrue(data.getMonsters().size() > 1800);
 		Assert.assertTrue(data.getSpells().size() > 20);
 		Assert.assertFalse(data.searchMonsters("zulrah", 10).isEmpty());
+		// Punctuation-insensitive: "kril" -> K'ril, "kreearra" -> Kree'arra.
+		Assert.assertEquals("K'ril Tsutsaroth", data.searchMonsters("kril", 1).get(0).getName());
+		Assert.assertEquals("Kree'arra", data.searchMonsters("kreearra", 1).get(0).getName());
 	}
 
 	@Test

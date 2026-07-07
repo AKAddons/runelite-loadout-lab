@@ -101,7 +101,22 @@ public final class MonsterStats
 
 	public String searchText()
 	{
-		return (name + " " + version + " " + id).toLowerCase(Locale.ROOT);
+		return normalizeQuery(name + " " + version + " " + id);
+	}
+
+	/** Search matching ignores punctuation: "kril" finds K'ril Tsutsaroth,
+	 * "kreearra" finds Kree'arra. */
+	public static String normalizeQuery(String text)
+	{
+		StringBuilder sb = new StringBuilder(text.length());
+		for (char c : text.toLowerCase(Locale.ROOT).toCharArray())
+		{
+			if (Character.isLetterOrDigit(c) || c == ' ')
+			{
+				sb.append(c);
+			}
+		}
+		return sb.toString();
 	}
 
 	public int getId()

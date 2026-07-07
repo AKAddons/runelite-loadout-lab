@@ -75,7 +75,7 @@ public final class LoadoutData
 
 	public List<MonsterStats> searchMonsters(String query, int limit)
 	{
-		String text = query == null ? "" : query.trim().toLowerCase();
+		String text = query == null ? "" : MonsterStats.normalizeQuery(query.trim());
 		if (text.isEmpty())
 		{
 			return Collections.emptyList();
@@ -86,7 +86,7 @@ public final class LoadoutData
 		java.util.ArrayList<MonsterStats> contains = new java.util.ArrayList<>();
 		for (MonsterStats monster : monsters)
 		{
-			String name = monster.getName().toLowerCase();
+			String name = MonsterStats.normalizeQuery(monster.getName());
 			if (name.equals(text) || String.valueOf(monster.getId()).equals(text))
 			{
 				exact.add(monster);
