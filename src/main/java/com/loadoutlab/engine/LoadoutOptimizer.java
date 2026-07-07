@@ -91,6 +91,11 @@ public final class LoadoutOptimizer
 				{
 					break;
 				}
+				if (request.isRiskConstrained() && item.isTradeable()
+					&& current.getLoadout().tradeableCount() + 1 > request.getMaxTradeables())
+				{
+					continue;
+				}
 				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
 				gear.put(slot, item);
 				DpsResult candidate = bestSpellResult(request, new Loadout(gear), spells);
@@ -103,6 +108,19 @@ public final class LoadoutOptimizer
 			}
 		}
 		return current;
+	}
+
+	private static int tradeableCount(Map<GearSlot, GearItem> gear)
+	{
+		int count = 0;
+		for (GearItem item : gear.values())
+		{
+			if (item != null && item.isTradeable())
+			{
+				count++;
+			}
+		}
+		return count;
 	}
 
 	/** Prayer first, then the sum of defensive bonuses. */
@@ -137,6 +155,10 @@ public final class LoadoutOptimizer
 		Set<String> seen = new HashSet<>();
 		for (GearItem weapon : weapons)
 		{
+			if (request.isRiskConstrained() && weapon.isTradeable() && request.getMaxTradeables() < 1)
+			{
+				continue;
+			}
 			// The ammo top-N must be cut AFTER weapon compatibility: bolts
 			// and javelins out-score every arrow on raw ranged strength, so
 			// a global cut starves arrow weapons of usable ammo entirely.
@@ -152,8 +174,16 @@ public final class LoadoutOptimizer
 				List<GearItem> candidates = candidatesForSlotWithWeapon(slotCandidates.get(slot), weapon, slot);
 				for (SearchState state : states)
 				{
+					int riskUsed = request.isRiskConstrained() ? tradeableCount(state.gear) : 0;
 					for (GearItem item : candidates)
 					{
+						// Wilderness risk cap: no more tradeables than the
+						// death mechanics will keep.
+						if (request.isRiskConstrained() && item != null && item.isTradeable()
+							&& riskUsed + 1 > request.getMaxTradeables())
+						{
+							continue;
+						}
 						int cost = state.cost + budgetCost(request, item);
 						if (!withinBudget(request, cost))
 						{

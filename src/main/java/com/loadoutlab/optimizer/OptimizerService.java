@@ -129,6 +129,7 @@ public class OptimizerService
 		boolean onSlayerTask,
 		String spellbookLock,
 		java.util.Set<Integer> excludedItems,
+		int maxTradeables,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final java.util.Set<Integer> excluded = excludedItems == null
@@ -139,7 +140,7 @@ public class OptimizerService
 			? com.loadoutlab.engine.PrayerUnlocks.ALL : prayerUnlocks;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
-			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
+			+ "|" + maxTradeables + "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -177,7 +178,8 @@ public class OptimizerService
 				OptimizationRequest ownedRequest = request(
 					monster, style, styleLevels, unlocks, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
-					.withExcludedItems(excluded).withSpellbookLock(lock);
+					.withExcludedItems(excluded).withSpellbookLock(lock)
+					.withMaxTradeables(maxTradeables);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -192,7 +194,8 @@ public class OptimizerService
 					monster, style, gameLevels, com.loadoutlab.engine.PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
-					.withExcludedItems(excluded).withSpellbookLock(lock);
+					.withExcludedItems(excluded).withSpellbookLock(lock)
+					.withMaxTradeables(maxTradeables);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
@@ -280,6 +283,13 @@ public class OptimizerService
 			}
 			SpecialAttack spec = SpecialAttack.match(item, style);
 			if (spec == null || !request.getRequirementProfile().canEquip(item.getRequirements()))
+			{
+				continue;
+			}
+			// In a wilderness low-risk set the carried spec weapon is a risk
+			// item too - only untradeable specs fit once the cap is spent.
+			if (request.isRiskConstrained() && item.isTradeable()
+				&& baseResults.get(0).getLoadout().tradeableCount() + 1 > request.getMaxTradeables())
 			{
 				continue;
 			}

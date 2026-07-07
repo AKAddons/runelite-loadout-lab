@@ -46,11 +46,12 @@ import net.runelite.client.util.AsyncBufferedImage;
  */
 public class LoadoutLabPanel extends PluginPanel
 {
-	/** (monster, f2pOnly, onDone) - the plugin wires this to the optimizer. */
+	/** (monster, f2pOnly, onDone) - the plugin wires this to the optimizer.
+	 * maxTradeables: wilderness risk cap (-1 = unconstrained). */
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, Runnable onDone);
+			String spellbookLock, int maxTradeables, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -95,6 +96,9 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Guards against programmatic search-field changes re-opening the list. */
 	private boolean suppressSearchEvents;
+
+	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
+	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
 
 	private MonsterStats selectedMonster;
 	/** Per-style expanded game-best (BiS) sections - hidden by default,
@@ -190,6 +194,30 @@ public class LoadoutLabPanel extends PluginPanel
 		slayerTask.setToolTipText("Fighting this monster on a slayer task (enables slayer helmet bonuses)");
 		slayerTask.addActionListener(e -> recompute());
 		top.add(slayerTask);
+
+		// Wilderness only: cap the set to the items death mechanics keep.
+		lowRisk.setOpaque(false);
+		lowRisk.setForeground(new Color(200, 200, 200));
+		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
+		lowRisk.setToolTipText("Wilderness low-risk set: untradeables everywhere plus at"
+			+ " most 3 tradeable items - exactly the items you keep on a PvP death");
+		lowRisk.addActionListener(e ->
+		{
+			protectItem.setEnabled(lowRisk.isSelected());
+			recompute();
+		});
+		lowRisk.setVisible(false);
+		top.add(lowRisk);
+
+		protectItem.setOpaque(false);
+		protectItem.setForeground(new Color(200, 200, 200));
+		protectItem.setAlignmentX(LEFT_ALIGNMENT);
+		protectItem.setToolTipText("Run the Protect Item prayer (extra drain) to keep a"
+			+ " 4th tradeable - does not apply while skulled");
+		protectItem.addActionListener(e -> recompute());
+		protectItem.setEnabled(false);
+		protectItem.setVisible(false);
+		top.add(protectItem);
 
 		// Lock the magic card's auto-spell to one spellbook.
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
@@ -313,6 +341,9 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
+		boolean wilderness = com.loadoutlab.data.WildernessMonsters.isWilderness(monster);
+		lowRisk.setVisible(wilderness);
+		protectItem.setVisible(wilderness);
 		usageLog.record(monster.label());
 		selectedLabel.setText("vs " + monster.label());
 		selectedRow.setVisible(true);
@@ -322,6 +353,16 @@ public class LoadoutLabPanel extends PluginPanel
 		revalidate();
 		repaint();
 		recompute();
+	}
+
+	/** The wilderness tradeable cap, or -1 when the mode is off/hidden. */
+	private int riskCap()
+	{
+		if (!lowRisk.isVisible() || !lowRisk.isSelected())
+		{
+			return -1;
+		}
+		return protectItem.isSelected() ? 4 : 3;
 	}
 
 	private String spellbookLock()
@@ -432,7 +473,7 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			spellbookLock(), () -> statusLabel.setText(" "));
+			spellbookLock(), riskCap(), () -> statusLabel.setText(" "));
 	}
 
 	private void clearSelection()
@@ -534,6 +575,7 @@ public class LoadoutLabPanel extends PluginPanel
 			"You own this boost - the numbers assume you drink it"
 				+ " (never assumed below your live boosted levels)");
 		addIncomingLine(card, result.incoming);
+		addRiskLine(card, best);
 		addPrayerLine(card, best);
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
@@ -737,6 +779,33 @@ public class LoadoutLabPanel extends PluginPanel
 			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
 			row.add(mod);
 		}
+	}
+
+	/** Wilderness low-risk mode: how many kept-on-death slots the set uses. */
+	private void addRiskLine(JPanel card, DpsResult best)
+	{
+		int cap = riskCap();
+		if (cap < 0)
+		{
+			return;
+		}
+		int used = best.getLoadout().tradeableCount();
+		JLabel line = new JLabel(String.format("Risky items: %d/%d (kept on death)", used, cap));
+		line.setForeground(new Color(200, 180, 120));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		StringBuilder tip = new StringBuilder("<html>Tradeable items in this set");
+		tip.append(" - within the kept-on-death cap, so a PvP death loses nothing:");
+		for (GearItem item : best.getLoadout().getGear().values())
+		{
+			if (item != null && item.isTradeable())
+			{
+				tip.append("<br>").append(item.label());
+			}
+		}
+		tip.append("</html>");
+		line.setToolTipText(tip.toString());
+		card.add(line);
 	}
 
 	/** What the boss does back to you in this set, protection prayer up. */

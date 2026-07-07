@@ -111,6 +111,14 @@ per-boss defensive thresholds. Phased:
   real rotations (Zulrah phases, Vorkath specials), prayer-pierce and
   partial-block bosses, scripted per-style max hits (e.g. Graardor ranged
   35 vs derived 58), typeless chip damage values.
+- **W-1 Wilderness low-risk sets (DONE 2026-07-07)** - for the curated
+  wilderness boss list (WildernessMonsters), a "Low-risk" toggle caps the
+  set to 3 tradeable items (4 with the Protect Item toggle) - exactly the
+  kept-on-death items, everything else untradeable - via
+  OptimizationRequest.maxTradeables enforced in the beam, the neutral
+  fill, and the spec pick. Cards show "Risky items: N/K" with the
+  tradeables listed. Follow-ups: skull awareness (keep 0/1), per-item
+  repair costs for untradeables, risk-value display in gp.
 - **D-3 Threshold-constrained search** - OptimizationRequest gains
   defensive constraints ("ranged def >= 100"); optimizer returns the best
   dps set satisfying them.

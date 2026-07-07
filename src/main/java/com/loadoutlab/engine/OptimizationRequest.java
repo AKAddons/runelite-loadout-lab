@@ -26,6 +26,9 @@ public final class OptimizationRequest
 	/** Lock auto-spell selection to one spellbook ("standard"/"ancient"/
 	 * "arceuus"); empty = any. Powered staves are unaffected. */
 	private final String spellbookLock;
+	/** Wilderness risk cap: at most this many tradeable items in the set
+	 * (they become the items kept on death); -1 = unconstrained. */
+	private final int maxTradeables;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -68,6 +71,7 @@ public final class OptimizationRequest
 		this.onSlayerTask = onSlayerTask;
 		this.excludedItems = Collections.emptySet();
 		this.spellbookLock = "";
+		this.maxTradeables = -1;
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -76,13 +80,14 @@ public final class OptimizationRequest
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems)
 	{
-		this(base, monster, style, spell, excludedItems, base.spellbookLock);
+		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables);
 	}
 
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
-		SpellStats spell, Set<Integer> excludedItems, String spellbookLock)
+		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables)
 	{
 		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
+		this.maxTradeables = maxTradeables;
 		this.monster = monster;
 		this.style = style;
 		this.levels = base.levels;
@@ -120,7 +125,22 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables);
+	}
+
+	public int getMaxTradeables()
+	{
+		return maxTradeables;
+	}
+
+	public boolean isRiskConstrained()
+	{
+		return maxTradeables >= 0;
+	}
+
+	public OptimizationRequest withMaxTradeables(int maxTradeables)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables);
 	}
 
 	public MonsterStats getMonster()
