@@ -1,4 +1,24 @@
 {
+ "abyssal tentacle": {
+  "category": 4,
+  "costGp": 250000,
+  "note": "unprotected death fully degrades it into a kraken tentacle (wiki Abyssal tentacle); GE ~255k 2026-07"
+ },
+ "accumulator max cape": {
+  "category": 1,
+  "costGp": 0,
+  "note": "always kept in the inventory on a PvP death, even unprotected (wiki Max cape)"
+ },
+ "accursed sceptre": {
+  "category": 4,
+  "costGp": 5000000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Accursed sceptre; vendored uncharged price)"
+ },
+ "accursed sceptre (a)": {
+  "category": 4,
+  "costGp": 5000000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Accursed sceptre; vendored uncharged price)"
+ },
  "achievement diary cape": {
   "category": 2,
   "costGp": 99000,
@@ -34,15 +54,25 @@
   "costGp": 2000000,
   "note": "converts to an amulet of fury for the killer; blood shard and charges lost (wiki; vendored fury price)"
  },
+ "amulet of the damned": {
+  "category": 2,
+  "costGp": 34000,
+  "note": "crumbles to dust on death (wiki Amulet of the damned); a full replacement trades ~34k (GE 2026-07)"
+ },
  "ancient halo": {
   "category": 2,
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "ancient sceptre": {
-  "category": 3,
-  "costGp": 500000,
-  "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
+  "category": 4,
+  "costGp": 60000,
+  "note": "unlocked sceptre drops an ancient staff for the killer, icon lost (wiki Ancient sceptre); GE staff ~60k 2026-07"
+ },
+ "ancient wyvern shield": {
+  "category": 4,
+  "costGp": 29000000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
  },
  "archers ring (i)": {
   "category": 4,
@@ -69,6 +99,16 @@
   "costGp": 200,
   "note": "diary reward; Perdu sells a replacement for 200 coins"
  },
+ "ardougne max cape": {
+  "category": 1,
+  "costGp": 0,
+  "note": "always kept in the inventory on a PvP death, even unprotected (wiki Max cape)"
+ },
+ "arkan blade": {
+  "category": 4,
+  "costGp": 250000,
+  "note": "converted into 250,000 coins for the killer; reclaimed from Prince Itzla for 250k (wiki Arkan blade)"
+ },
  "armadyl halo": {
   "category": 2,
   "costGp": 25000,
@@ -78,6 +118,11 @@
   "category": 2,
   "costGp": 240000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "attack cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "ava's accumulator": {
   "category": 2,
@@ -159,6 +204,16 @@
   "costGp": 6000,
   "note": "Perdu sells a replacement (wiki Perdu store)"
  },
+ "beads of the dead": {
+  "category": 2,
+  "costGp": 1200,
+  "note": "Yanni Salika sells another for 1,200 coins (wiki Beads of the dead)"
+ },
+ "bearhead": {
+  "category": 2,
+  "costGp": 10000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
  "berserker ring (i)": {
   "category": 4,
   "costGp": 3000000,
@@ -184,10 +239,75 @@
   "costGp": 1500000,
   "note": "drops as a black mask; imbue points refunded"
  },
+ "blade of saeldor": {
+  "category": 4,
+  "costGp": 117000000,
+  "note": "unprotected PvP death drops the inactive blade, charges lost (wiki Blade of saeldor; vendored inactive price)"
+ },
+ "blade of saeldor (c)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (amlodd)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (cadarn)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (crwys)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (iorwerth)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (ithell)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (meilyr)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "blade of saeldor (c) (trahaearn)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "corrupted crystal; death behaviour undocumented - conservative mangle-class floor"
+ },
  "blessed dizana's quiver": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
+ },
+ "blisterwood flail": {
+  "category": 2,
+  "costGp": 0,
+  "note": "refletched from the Blisterwood tree at no cost (wiki Blisterwood flail)"
+ },
+ "blisterwood sickle": {
+  "category": 2,
+  "costGp": 0,
+  "note": "refletched from the Blisterwood tree at no cost (wiki Blisterwood flail)"
+ },
+ "blisterwood sickle (e)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "refletched from the Blisterwood tree at no cost (wiki Blisterwood flail)"
+ },
+ "blisterwood stake": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
  },
  "blood ancient sceptre": {
   "category": 3,
@@ -228,6 +348,26 @@
   "category": 2,
   "costGp": 0,
   "note": "consumable ammo; per-unit value negligible"
+ },
+ "bone mace": {
+  "category": 2,
+  "costGp": 0,
+  "note": "rebuilt from a cheap base weapon and Scurrius' spine, a common Scurrius drop (wiki Bone shortbow)"
+ },
+ "bone shortbow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "rebuilt from a cheap base weapon and Scurrius' spine, a common Scurrius drop (wiki Bone shortbow)"
+ },
+ "bone staff": {
+  "category": 2,
+  "costGp": 0,
+  "note": "rebuilt from a cheap base weapon and Scurrius' spine, a common Scurrius drop (wiki Bone shortbow)"
+ },
+ "bonecrusher necklace": {
+  "category": 4,
+  "costGp": 190000,
+  "note": "hydra tail and dragonbone necklace drop to the killer, bonecrusher kept (wiki Bonecrusher necklace); GE ~190k 2026-07"
  },
  "book of balance": {
   "category": 2,
@@ -273,6 +413,11 @@
   "category": 4,
   "costGp": 14000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
+ },
+ "boots of lightness": {
+  "category": 2,
+  "costGp": 9800,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
  },
  "bow of faerdhinen": {
   "category": 4,
@@ -324,25 +469,145 @@
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "broad arrows": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
+ },
  "bronze defender": {
   "category": 2,
   "costGp": 1000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "bronze fire arrow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
  },
  "bronze gloves": {
   "category": 4,
   "costGp": 130,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
+ "broodoo shield (combat)": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "charged items drop uncharged for the killer (wiki Items Kept on Death); vendored uncharged price"
+ },
+ "broodoo shield (disease)": {
+  "category": 4,
+  "costGp": 9000,
+  "note": "charged items drop uncharged for the killer (wiki Items Kept on Death); vendored uncharged price"
+ },
+ "broodoo shield (poison)": {
+  "category": 4,
+  "costGp": 2000,
+  "note": "charged items drop uncharged for the killer (wiki Items Kept on Death); vendored uncharged price"
+ },
+ "bryophyta's staff": {
+  "category": 4,
+  "costGp": 4200000,
+  "note": "untradeable while charged; drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "calamity breeches": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "calamity chest": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "camphor blowpipe": {
+  "category": 4,
+  "costGp": 1600000,
+  "note": "drops for the killer with darts unloaded (wiki Toxic blowpipe family); vendored empty price"
+ },
+ "cape of legends": {
+  "category": 2,
+  "costGp": 1900,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
  "castle wars arrow": {
   "category": 2,
   "costGp": 0,
   "note": "consumable ammo; per-unit value negligible"
  },
+ "chaos gauntlets": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free re-obtain from Dimintheis (wiki Goldsmith gauntlets)"
+ },
+ "clue hunter boots": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
+ "clue hunter cloak": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
+ "clue hunter garb": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
+ "clue hunter gloves": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
+ "clue hunter trousers": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
  "colossal blade": {
   "category": 2,
   "costGp": 300000,
   "note": "Perdu sells a replacement (wiki Perdu store)"
+ },
+ "combat bracelet": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "partially-charged bracelet is untradeable; killer receives the tradeable bracelet (wiki Items Kept on Death charged items; vendored price)"
+ },
+ "construct. cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "cooking cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "cooking gauntlets": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free re-obtain from Dimintheis (wiki Goldsmith gauntlets)"
+ },
+ "crafting cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "craw's bow": {
+  "category": 4,
+  "costGp": 19300000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Craw's bow; vendored uncharged price)"
+ },
+ "crystal axe": {
+  "category": 4,
+  "costGp": 80000,
+  "note": "reverts to a dragon axe dropped for the killer, shards lost (wiki Crystal axe); GE ~80k 2026-07"
+ },
+ "crystal axe (the gauntlet)": {
+  "category": 1,
+  "costGp": 0,
+  "note": "exists only inside the Gauntlet (wiki The Gauntlet)"
  },
  "crystal body": {
   "category": 4,
@@ -383,6 +648,31 @@
   "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
+ },
+ "crystal bow": {
+  "category": 4,
+  "costGp": 390000,
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+ },
+ "crystal bow (i)": {
+  "category": 4,
+  "costGp": 390000,
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+ },
+ "crystal halberd": {
+  "category": 4,
+  "costGp": 390000,
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+ },
+ "crystal harpoon": {
+  "category": 4,
+  "costGp": 2100000,
+  "note": "reverts to a dragon harpoon dropped for the killer, shards lost (wiki Crystal axe); GE ~2.1m 2026-07"
+ },
+ "crystal harpoon (the gauntlet)": {
+  "category": 1,
+  "costGp": 0,
+  "note": "exists only inside the Gauntlet (wiki The Gauntlet)"
  },
  "crystal helm": {
   "category": 4,
@@ -464,6 +754,26 @@
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
+ "crystal pickaxe": {
+  "category": 4,
+  "costGp": 560000,
+  "note": "reverts to a dragon pickaxe dropped for the killer, shards lost (wiki Crystal axe); GE ~560k 2026-07"
+ },
+ "crystal pickaxe (the gauntlet)": {
+  "category": 1,
+  "costGp": 0,
+  "note": "exists only inside the Gauntlet (wiki The Gauntlet)"
+ },
+ "crystal shield": {
+  "category": 4,
+  "costGp": 390000,
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+ },
+ "crystal shield (i)": {
+  "category": 4,
+  "costGp": 390000,
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+ },
  "damaged book (ancient)": {
   "category": 2,
   "costGp": 0,
@@ -494,10 +804,35 @@
   "costGp": 0,
   "note": "free reclaim from Jossik (wiki Book of war)"
  },
+ "dark squall hood": {
+  "category": 1,
+  "costGp": 0,
+  "note": "kept even on a skulled deep-Wilderness PvP death (wiki Dark squall hood)"
+ },
+ "dark squall robe bottom": {
+  "category": 1,
+  "costGp": 0,
+  "note": "kept even on a skulled deep-Wilderness PvP death (wiki Dark squall hood)"
+ },
+ "dark squall robe top": {
+  "category": 1,
+  "costGp": 0,
+  "note": "kept even on a skulled deep-Wilderness PvP death (wiki Dark squall hood)"
+ },
+ "dawnbringer": {
+  "category": 1,
+  "costGp": 0,
+  "note": "cannot leave the Theatre of Blood; destroyed if smuggled out (wiki Dawnbringer)"
+ },
  "decorative boots (gold)": {
   "category": 2,
   "costGp": 5000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "defence cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "dizana's max cape": {
   "category": 3,
@@ -529,6 +864,36 @@
   "costGp": 130000,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
+ "dragon hasta": {
+  "category": 4,
+  "costGp": 43000,
+  "note": "karambwan-poisoned variant is untradeable; killer receives the tradeable hasta (wiki Dragon hasta); GE ~43k"
+ },
+ "dragon spear": {
+  "category": 4,
+  "costGp": 41000,
+  "note": "karambwan-poisoned variant is untradeable; killer receives the tradeable spear (wiki Dragon hasta); GE ~41k"
+ },
+ "dragonfire shield": {
+  "category": 4,
+  "costGp": 3900000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "dragonfire ward": {
+  "category": 4,
+  "costGp": 15300000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "dramen staff": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-cut free from the Dramen tree in Entrana Dungeon (wiki Dramen staff)"
+ },
+ "drygore blowpipe": {
+  "category": 1,
+  "costGp": 0,
+  "note": "Demonic Pacts League echo item; league worlds have no dangerous PvP (wiki Drygore blowpipe)"
+ },
  "echo boots": {
   "category": 2,
   "costGp": 5000000,
@@ -548,6 +913,41 @@
   "category": 4,
   "costGp": 1442000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
+ },
+ "eldritch nightmare staff": {
+  "category": 4,
+  "costGp": 195000000,
+  "note": "killer receives the nightmare staff and eldritch orb (wiki Eldritch nightmare staff); GE ~195m 2026-07"
+ },
+ "elidinis' ward (f)": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "dismantles into the ward and an arcane sigil, soul runes lost (wiki); PvP death behaviour undocumented - conservative mangle-class floor"
+ },
+ "elite black full helm": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained by killing Elite Black Knights (wiki Elite black armour)"
+ },
+ "elite black platebody": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained by killing Elite Black Knights (wiki Elite black armour)"
+ },
+ "elite black platelegs": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained by killing Elite Black Knights (wiki Elite black armour)"
+ },
+ "elite calamity breeches": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "elite calamity chest": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
  },
  "elite void robe": {
   "category": 3,
@@ -569,6 +969,11 @@
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07); ornament kit drops to the killer"
  },
+ "emberlight": {
+  "category": 4,
+  "costGp": 34000000,
+  "note": "killer receives the tormented synapse (wiki Emberlight); GE ~34m 2026-07"
+ },
  "explorer's ring 1": {
   "category": 2,
   "costGp": 200,
@@ -588,6 +993,36 @@
   "category": 2,
   "costGp": 200,
   "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "eye of ayak": {
+  "category": 4,
+  "costGp": 50000000,
+  "note": "charges kept only if protected; unprotected it drops uncharged for the killer (wiki Eye of ayak; vendored uncharged price)"
+ },
+ "falador shield 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "falador shield 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "falador shield 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "falador shield 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "farming cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "ferocious gloves": {
   "category": 4,
@@ -618,6 +1053,21 @@
   "category": 2,
   "costGp": 150000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "firemaking cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "fishing cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "fletching cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "fremennik sea boots 1": {
   "category": 2,
@@ -654,30 +1104,110 @@
   "costGp": 13500,
   "note": "Perdu sells a replacement (wiki Perdu store)"
  },
+ "ghostly cloak": {
+  "category": 2,
+  "costGp": 15000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
  "ghostly gloves": {
   "category": 2,
   "costGp": 13500,
   "note": "Perdu sells a replacement (wiki Perdu store)"
+ },
+ "ghostly hood": {
+  "category": 2,
+  "costGp": 15000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
+ "ghostly robe (bottom)": {
+  "category": 2,
+  "costGp": 43000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
+ "ghostly robe (top)": {
+  "category": 2,
+  "costGp": 45000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
+ "goldsmith gauntlets": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free re-obtain from Dimintheis (wiki Goldsmith gauntlets)"
  },
  "graceful hood": {
   "category": 1,
   "costGp": 0,
   "note": "no combat benefit; kept on death (wiki Items Kept on Death rework, 2026-06)"
  },
+ "granite maul (ornate handle)": {
+  "category": 4,
+  "costGp": 135000,
+  "note": "killer receives the unmodified granite maul, the clamp is not returned (wiki Granite maul + Items Kept on Death); GE ~135k"
+ },
  "granite ring (i)": {
   "category": 4,
   "costGp": 20000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+ },
+ "guthix cape": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement by praying at the Mage Arena statue; Perdu sells one for 23k (wiki God capes)"
  },
  "guthix halo": {
   "category": 2,
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "guthix max cape": {
+  "category": 4,
+  "costGp": 569250,
+  "note": "unprotected above 20 wildy the cape converts into 569,250 coins for the killer (wiki Saradomin max cape + Max cape changelog)"
+ },
+ "guthix staff": {
+  "category": 2,
+  "costGp": 80000,
+  "note": "repurchased from the Chamber Guardian for 80k after Mage Arena I (wiki Guthix staff)"
+ },
+ "hallowed flail": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "The Blood Moon Rises silver flail; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "hardleather gloves": {
+  "category": 2,
+  "costGp": 0,
+  "note": "cheap shop item; drops as its shop price in coins (wiki Hardleather gloves)"
+ },
+ "harmonised nightmare staff": {
+  "category": 4,
+  "costGp": 400000000,
+  "note": "killer receives the nightmare staff and harmonised orb (wiki Harmonised nightmare staff); GE ~400m 2026-07"
+ },
  "healer hat": {
   "category": 2,
   "costGp": 45000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "helm of raedwald": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-obtained free the same way it was first dug up (wiki Clue hunter outfit)"
+ },
+ "helmet of the moon": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "rare moon chest drop with no reclaim documented - conservative mangle-class floor"
+ },
+ "herblore cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "hitpoints cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "holy book": {
   "category": 2,
@@ -689,10 +1219,40 @@
   "costGp": 12000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
+ "holy moleys": {
+  "category": 4,
+  "costGp": 800000,
+  "note": "killer receives the holy sandals and mole slippers (wiki Holy moleys); GE ~800k 2026-07"
+ },
+ "holy water": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable thrown weapon; per-unit value negligible"
+ },
+ "hunter cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "iban's staff": {
+  "category": 2,
+  "costGp": 200000,
+  "note": "Koftik returns a broken staff; the Dark Mage repairs it for 200k (wiki Iban's staff)"
+ },
+ "iban's staff (u)": {
+  "category": 2,
+  "costGp": 200000,
+  "note": "Koftik returns a broken staff; the Dark Mage repairs and re-upgrades for 200k (wiki Iban's staff)"
+ },
  "ice ancient sceptre": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
+ },
+ "ice arrows": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
  },
  "imbued guthix cape": {
   "category": 2,
@@ -724,25 +1284,70 @@
   "costGp": 99000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "infernal axe": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
+ },
+ "infernal axe (or)": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
+ },
  "infernal cape": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
+ },
+ "infernal harpoon": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
+ },
+ "infernal harpoon (or)": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
  },
  "infernal max cape": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
  },
+ "infernal pickaxe": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
+ },
+ "infernal pickaxe (or)": {
+  "category": 4,
+  "costGp": 12000,
+  "note": "converted to a ~12k coin drop for the killer above 20 wildy (wiki Infernal axe); the tool itself is lost"
+ },
+ "infernal tecpatl": {
+  "category": 1,
+  "costGp": 0,
+  "note": "Demonic Pacts League echo item; league worlds have no dangerous PvP (wiki)"
+ },
  "iron defender": {
   "category": 2,
   "costGp": 2000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "iron fire arrow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
+ },
  "iron gloves": {
   "category": 4,
   "costGp": 325,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
+ },
+ "ironwood blowpipe": {
+  "category": 4,
+  "costGp": 1330000,
+  "note": "drops for the killer with darts unloaded (wiki Toxic blowpipe family); vendored empty price"
  },
  "ivandis flail": {
   "category": 2,
@@ -759,14 +1364,129 @@
   "costGp": 0,
   "note": "consumable ammo; per-unit value negligible"
  },
+ "kandarin headgear 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "kandarin headgear 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "kandarin headgear 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "kandarin headgear 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "karamja gloves 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "karamja gloves 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "karamja gloves 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "karamja gloves 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "keris": {
+  "category": 2,
+  "costGp": 25000,
+  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+ },
+ "keris partisan": {
+  "category": 2,
+  "costGp": 60000,
+  "note": "additional partisans bought from Selim in Al Kharid for 60k (wiki Keris partisan)"
+ },
+ "keris partisan of amascut": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "untradeable Tombs of Amascut jewel attached; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "keris partisan of breaching": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "untradeable Tombs of Amascut jewel attached; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "keris partisan of corruption": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "untradeable Tombs of Amascut jewel attached; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "keris partisan of the sun": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "untradeable Tombs of Amascut jewel attached; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "kharedst's memoirs": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free reclaim from Veos on the Port Piscarilius docks (wiki Kharedst's memoirs)"
+ },
+ "king's barrage": {
+  "category": 1,
+  "costGp": 0,
+  "note": "Demonic Pacts League echo item; league worlds have no dangerous PvP (wiki)"
+ },
+ "klank's gauntlets": {
+  "category": 2,
+  "costGp": 5000,
+  "note": "recovered from Klank for 5,000 coins (wiki Klank's gauntlets)"
+ },
+ "leaf-bladed spear": {
+  "category": 2,
+  "costGp": 31000,
+  "note": "bought from any Slayer Master for 31k (wiki Leaf-bladed spear)"
+ },
+ "lithic sceptre": {
+  "category": 1,
+  "costGp": 0,
+  "note": "Demonic Pacts League echo item; league worlds have no dangerous PvP (wiki)"
+ },
+ "lunar amulet": {
+  "category": 2,
+  "costGp": 9000,
+  "note": "never kept on death (no ground state); Perdu sells a replacement"
+ },
  "lunar boots": {
   "category": 2,
   "costGp": 15000,
   "note": "never kept on death (no ground state); Perdu sells a replacement"
  },
+ "lunar cape": {
+  "category": 2,
+  "costGp": 18000,
+  "note": "never kept on death (no ground state); Perdu sells a replacement"
+ },
  "lunar gloves": {
   "category": 2,
   "costGp": 15000,
+  "note": "never kept on death (no ground state); Perdu sells a replacement"
+ },
+ "lunar helm": {
+  "category": 2,
+  "costGp": 22000,
+  "note": "never kept on death (no ground state); Perdu sells a replacement"
+ },
+ "lunar legs": {
+  "category": 2,
+  "costGp": 95000,
   "note": "never kept on death (no ground state); Perdu sells a replacement"
  },
  "lunar ring": {
@@ -779,6 +1499,41 @@
   "costGp": 60000,
   "note": "never kept on death (no ground state); Perdu sells a replacement"
  },
+ "lunar staff - pt1": {
+  "category": 2,
+  "costGp": 0,
+  "note": "Lunar Diplomacy quest intermediate; remade from the dramen staff during the quest (wiki Lunar staff)"
+ },
+ "lunar staff - pt2": {
+  "category": 2,
+  "costGp": 0,
+  "note": "Lunar Diplomacy quest intermediate; remade from the dramen staff during the quest (wiki Lunar staff)"
+ },
+ "lunar staff - pt3": {
+  "category": 2,
+  "costGp": 0,
+  "note": "Lunar Diplomacy quest intermediate; remade from the dramen staff during the quest (wiki Lunar staff)"
+ },
+ "lunar torso": {
+  "category": 2,
+  "costGp": 140000,
+  "note": "never kept on death (no ground state); Perdu sells a replacement"
+ },
+ "magic cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "magic shortbow (i)": {
+  "category": 4,
+  "costGp": 800,
+  "note": "drops a regular magic shortbow for the killer, imbue lost (wiki Magic shortbow (i)); GE ~800"
+ },
+ "magma helm": {
+  "category": 4,
+  "costGp": 3900000,
+  "note": "killer receives the tradeable uncharged serpentine helm; the mutagen returns to the victim's gravestone (wiki Magma helm + Items Kept on Death)"
+ },
  "masori assembler": {
   "category": 2,
   "costGp": 240000,
@@ -789,30 +1544,150 @@
   "costGp": 240000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "max cape": {
+  "category": 1,
+  "costGp": 0,
+  "note": "always kept in the inventory on a PvP death, even unprotected (wiki Max cape)"
+ },
+ "mining cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
  "mithril defender": {
   "category": 2,
   "costGp": 15000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "mithril fire arrow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
  },
  "mithril gloves": {
   "category": 4,
   "costGp": 1950,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
+ "mooleta": {
+  "category": 2,
+  "costGp": 0,
+  "note": "dropped by the post-quest Brutus; re-obtainable at no cost (wiki Mooleta)"
+ },
+ "moonclan armour": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan boots": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan cape": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan gloves": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan hat": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan helm": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "moonclan skirt": {
+  "category": 2,
+  "costGp": 1000,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+ },
+ "morytania legs 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "morytania legs 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "morytania legs 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "morytania legs 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "music cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from Olaf Hradson for 99k (wiki Music cape)"
+ },
  "mythical cape": {
   "category": 2,
   "costGp": 10000,
   "note": "rebought from the Mythical Cape Store for 10k (wiki)"
+ },
+ "mythical max cape": {
+  "category": 1,
+  "costGp": 0,
+  "note": "always kept in the inventory on a PvP death, even unprotected (wiki Max cape)"
+ },
+ "nature's recurve": {
+  "category": 1,
+  "costGp": 0,
+  "note": "Demonic Pacts League echo item; league worlds have no dangerous PvP (wiki)"
  },
  "neitiznot faceguard": {
   "category": 4,
   "costGp": 16000000,
   "note": "reverts to helm of neitiznot + basilisk jaw for the killer (wiki Neitiznot faceguard; GE jaw ~16m, 2026-07)"
  },
+ "penance gloves": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned with Barbarian Assault honour points; no coin fee (wiki Penance gloves)"
+ },
  "penance skirt": {
   "category": 2,
   "costGp": 20000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "pendant of ates": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "death behaviour undocumented - conservative mangle-class floor"
+ },
+ "pharaoh's sceptre": {
+  "category": 4,
+  "costGp": 6900000,
+  "note": "charged sceptre is untradeable; drops uncharged for the killer (wiki Items Kept on Death charged items); GE uncharged ~6.9m 2026-07"
+ },
+ "prayer cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "purging staff": {
+  "category": 4,
+  "costGp": 34000000,
+  "note": "killer receives the tormented synapse (wiki Purging staff); GE ~34m 2026-07"
+ },
+ "quest point cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the Wise Old Man for 99k (wiki Quest point cape)"
  },
  "rada's blessing 1": {
   "category": 2,
@@ -839,6 +1714,21 @@
   "costGp": 45000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "ranging cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "rapier": {
+  "category": 2,
+  "costGp": 25600,
+  "note": "bought from Smith on Mos Le'Harmless for 25,600 coins (wiki Rapier)"
+ },
+ "ring of shadows": {
+  "category": 4,
+  "costGp": 75000,
+  "note": "turns into 75,000 coins for the killer on a PvP death; charges lost (wiki Ring of shadows)"
+ },
  "ring of suffering": {
   "category": 4,
   "costGp": 19000000,
@@ -853,6 +1743,11 @@
   "category": 4,
   "costGp": 960000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+ },
+ "rosewood blowpipe": {
+  "category": 4,
+  "costGp": 1270000,
+  "note": "drops for the killer with darts unloaded (wiki Toxic blowpipe family); vendored empty price"
  },
  "rune defender": {
   "category": 2,
@@ -874,10 +1769,25 @@
   "costGp": 6500,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
+ "runecraft cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "runner boots": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned with 100 Barbarian Assault honour points per role; no coin fee (wiki Runner boots)"
+ },
  "runner hat": {
   "category": 2,
   "costGp": 40005,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "saika's hood": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07); has a locked variant in the item data"
  },
  "saika's shroud": {
   "category": 3,
@@ -888,6 +1798,11 @@
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07); has a locked variant in the item data"
+ },
+ "sailing cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "salve amulet": {
   "category": 2,
@@ -909,10 +1824,45 @@
   "costGp": 0,
   "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded"
  },
+ "sanguinesti staff": {
+  "category": 4,
+  "costGp": 20600000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "saradomin cape": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement by praying at the Mage Arena statue; Perdu sells one for 23k (wiki God capes)"
+ },
  "saradomin halo": {
   "category": 2,
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "saradomin max cape": {
+  "category": 4,
+  "costGp": 569250,
+  "note": "unprotected above 20 wildy the cape converts into 569,250 coins for the killer (wiki Saradomin max cape + Max cape changelog)"
+ },
+ "saradomin staff": {
+  "category": 2,
+  "costGp": 80000,
+  "note": "repurchased from the Chamber Guardian for 80k after Mage Arena I (wiki Guthix staff)"
+ },
+ "saradomin's blessed sword": {
+  "category": 4,
+  "costGp": 4700000,
+  "note": "unprotected death fully degrades it into Saradomin's tear (wiki Saradomin's blessed sword); GE tear ~4.7m 2026-07"
+ },
+ "scorching bow": {
+  "category": 4,
+  "costGp": 34000000,
+  "note": "killer receives the tormented synapse (wiki Scorching bow); GE ~34m 2026-07"
+ },
+ "scythe of vitur": {
+  "category": 4,
+  "costGp": 1290000000,
+  "note": "drops for the killer as the uncharged tradeable scythe, charges lost (wiki Scythe of vitur; vendored uncharged price)"
  },
  "seeking broad arrows": {
   "category": 2,
@@ -929,15 +1879,165 @@
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "serpentine helm": {
+  "category": 4,
+  "costGp": 3900000,
+  "note": "scales and the uncharged helm drop for the killer (wiki Serpentine helm); vendored uncharged price"
+ },
  "shadow ancient sceptre": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
  },
+ "shayzien body (5)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien boots (1)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien boots (2)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien boots (3)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien boots (4)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien boots (5)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien gloves (1)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien gloves (2)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien gloves (3)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien gloves (4)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien gloves (5)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien greaves (1)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien greaves (2)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien greaves (3)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien greaves (4)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien greaves (5)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien helm (1)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien helm (2)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien helm (3)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien helm (4)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien helm (5)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien platebody (1)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien platebody (2)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien platebody (3)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "shayzien platebody (4)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "re-earned free from the tier soldiers at the Shayzien Combat Ring (wiki Shayzien armour (tier 5))"
+ },
+ "silvthrill ballista": {
+  "category": 1,
+  "costGp": 0,
+  "note": "removed from the inventory after the quest segment (wiki Silvthrill ballista)"
+ },
  "silvthrill javelin": {
   "category": 2,
   "costGp": 0,
   "note": "consumable ammo; per-unit value negligible"
+ },
+ "skull sceptre": {
+  "category": 2,
+  "costGp": 0,
+  "note": "rebuilt free from Stronghold of Security monster drops (wiki Skull sceptre)"
+ },
+ "skull sceptre (i)": {
+  "category": 2,
+  "costGp": 0,
+  "note": "rebuilt free from Stronghold of Security monster drops; imbue persists via sceptre shards (wiki Skull sceptre)"
+ },
+ "slayer cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
  },
  "slayer helmet": {
   "category": 4,
@@ -949,25 +2049,170 @@
   "costGp": 1500000,
   "note": "drops as a black mask to the killer; imbue points refunded (wiki Slayer helmet)"
  },
+ "slayer's staff (e)": {
+  "category": 4,
+  "costGp": 24000,
+  "note": "enchanted staff is untradeable; reverts to the tradeable slayer's staff, enchantment lost (wiki Slayer's staff (e)); GE ~24k"
+ },
+ "smithing cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
  "smoke ancient sceptre": {
   "category": 3,
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
+ },
+ "soul cape": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Soul Wars reward bought with zeal, no coin reclaim - conservative mangle-class floor"
+ },
+ "spine": {
+  "category": 1,
+  "costGp": 0,
+  "note": "quest-area weapon; disappears on leaving the Softa Forest area (wiki Spine)"
  },
  "steel defender": {
   "category": 2,
   "costGp": 2500,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
+ "steel fire arrow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
+ },
+ "steel gauntlets": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free re-obtain from Dimintheis (wiki Goldsmith gauntlets)"
+ },
  "steel gloves": {
   "category": 4,
   "costGp": 650,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
+ "strength cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "sunspear": {
+  "category": 2,
+  "costGp": 100000,
+  "note": "reclaimed from Efaritay's Supplies in Castle Drakan for 100k (wiki Sunspear)"
+ },
+ "superior calamity breeches": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "superior calamity chest": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Bounty Hunter reward armour bought with points; death behaviour undocumented - conservative mangle-class floor"
+ },
+ "tanzanite helm": {
+  "category": 4,
+  "costGp": 3900000,
+  "note": "killer receives the tradeable uncharged serpentine helm; the mutagen returns to the victim's gravestone (wiki Tanzanite helm + Items Kept on Death)"
+ },
+ "thammaron's sceptre": {
+  "category": 4,
+  "costGp": 5000000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Thammaron's sceptre; vendored uncharged price)"
+ },
+ "thammaron's sceptre (a)": {
+  "category": 4,
+  "costGp": 4600000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Thammaron's sceptre; vendored uncharged price)"
+ },
+ "thieving cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "tome of earth": {
+  "category": 4,
+  "costGp": 730000,
+  "note": "treated like the tome of fire: empty tome and pages drop for the killer (wiki Tome of fire); vendored empty price"
+ },
+ "tome of fire": {
+  "category": 4,
+  "costGp": 1300000,
+  "note": "empty tome and its pages drop for the killer (wiki Tome of fire); vendored empty price"
+ },
+ "tome of water": {
+  "category": 4,
+  "costGp": 490000,
+  "note": "treated like the tome of fire: empty tome and pages drop for the killer (wiki Tome of fire); vendored empty price"
+ },
+ "tonalztics of ralos": {
+  "category": 4,
+  "costGp": 54000000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "toxic blowpipe": {
+  "category": 4,
+  "costGp": 10700000,
+  "note": "unprotected death drops the blowpipe with its scales and darts on the floor (wiki Toxic blowpipe); vendored empty price"
+ },
+ "toxic staff of the dead": {
+  "category": 4,
+  "costGp": 9200000,
+  "note": "scales drop on the floor with the uncharged staff (wiki Toxic staff of the dead); vendored uncharged price"
+ },
+ "training arrows": {
+  "category": 2,
+  "costGp": 0,
+  "note": "consumable ammo; per-unit value negligible"
+ },
+ "training bow": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement from the combat tutors (wiki Training sword)"
+ },
+ "training shield": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement from the combat tutors (wiki Training sword)"
+ },
+ "training sword": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement from the combat tutors (wiki Training sword)"
+ },
  "treasonous ring (i)": {
   "category": 4,
   "costGp": 90000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+ },
+ "trident of the seas": {
+  "category": 4,
+  "costGp": 46000,
+  "note": "scales drop on the floor with the uncharged trident (wiki Trident of the swamp; vendored uncharged price)"
+ },
+ "trident of the seas (e)": {
+  "category": 4,
+  "costGp": 2700000,
+  "note": "scales drop on the floor with the uncharged trident (wiki Trident of the swamp; vendored uncharged price)"
+ },
+ "trident of the swamp": {
+  "category": 4,
+  "costGp": 3450000,
+  "note": "scales drop on the floor with the uncharged trident (wiki Trident of the swamp; vendored uncharged price)"
+ },
+ "trident of the swamp (e)": {
+  "category": 4,
+  "costGp": 6100000,
+  "note": "scales drop on the floor with the uncharged trident (wiki Trident of the swamp; vendored uncharged price)"
+ },
+ "tumeken's shadow": {
+  "category": 4,
+  "costGp": 830000000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
  },
  "tyrannical ring (i)": {
   "category": 4,
@@ -983,6 +2228,41 @@
   "category": 4,
   "costGp": 12000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
+ },
+ "ursine chainmace": {
+  "category": 4,
+  "costGp": 5200000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Ursine chainmace; vendored uncharged price)"
+ },
+ "varrock armour 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "varrock armour 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "varrock armour 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "varrock armour 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "venator bow": {
+  "category": 4,
+  "costGp": 61000000,
+  "note": "charged item drops uncharged for the killer (wiki Items Kept on Death charged items; vendored uncharged price)"
+ },
+ "viggora's chainmace": {
+  "category": 4,
+  "costGp": 5000000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Viggora's chainmace; vendored uncharged price)"
  },
  "void knight gloves": {
   "category": 3,
@@ -1049,14 +2329,119 @@
   "costGp": 500000,
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07); ornament kit drops to the killer"
  },
+ "volatile nightmare staff": {
+  "category": 4,
+  "costGp": 79000000,
+  "note": "killer receives the nightmare staff and volatile orb (wiki Volatile nightmare staff); GE ~79m 2026-07"
+ },
+ "warped sceptre": {
+  "category": 4,
+  "costGp": 90000,
+  "note": "keeps charges only if protected (wiki Warped sceptre); drops uncharged for the killer (wiki Items Kept on Death; vendored uncharged price)"
+ },
  "warrior ring (i)": {
   "category": 4,
   "costGp": 60000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
+ "webweaver bow": {
+  "category": 4,
+  "costGp": 18300000,
+  "note": "drops uncharged for the killer along with the stored revenant ether (wiki Webweaver bow; vendored uncharged price)"
+ },
+ "western banner 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "western banner 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "western banner 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "western banner 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "wilderness sword 1": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "wilderness sword 2": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "wilderness sword 3": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "wilderness sword 4": {
+  "category": 2,
+  "costGp": 200,
+  "note": "diary reward; Perdu sells a replacement for 200 coins"
+ },
+ "witchwood icon": {
+  "category": 2,
+  "costGp": 900,
+  "note": "bought from any Slayer Master for 900 coins (wiki Witchwood icon)"
+ },
+ "woodcutting cape": {
+  "category": 2,
+  "costGp": 99000,
+  "note": "rebought from the skill master for 99k"
+ },
+ "xeric's talisman": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "inert talisman is also untradeable; no reclaim fee documented - conservative mangle-class floor"
+ },
+ "zamorak cape": {
+  "category": 2,
+  "costGp": 0,
+  "note": "free replacement by praying at the Mage Arena statue; Perdu sells one for 23k (wiki God capes)"
+ },
  "zamorak halo": {
   "category": 2,
   "costGp": 25000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+ },
+ "zamorak max cape": {
+  "category": 4,
+  "costGp": 569250,
+  "note": "unprotected above 20 wildy the cape converts into 569,250 coins for the killer (wiki Saradomin max cape + Max cape changelog)"
+ },
+ "zamorak staff": {
+  "category": 2,
+  "costGp": 80000,
+  "note": "repurchased from the Chamber Guardian for 80k after Mage Arena I (wiki Guthix staff)"
+ },
+ "zealot's boots": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Hallowed Sepulchre reward; always-lost class with no coin reclaim documented - conservative mangle-class floor"
+ },
+ "zealot's helm": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Hallowed Sepulchre reward; always-lost class with no coin reclaim documented - conservative mangle-class floor"
+ },
+ "zealot's robe bottom": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Hallowed Sepulchre reward; always-lost class with no coin reclaim documented - conservative mangle-class floor"
+ },
+ "zealot's robe top": {
+  "category": 3,
+  "costGp": 500000,
+  "note": "Hallowed Sepulchre reward; always-lost class with no coin reclaim documented - conservative mangle-class floor"
  }
 }

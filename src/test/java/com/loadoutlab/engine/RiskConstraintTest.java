@@ -86,13 +86,53 @@ public class RiskConstraintTest
 		Assert.assertEquals(35_000, costOf("rune defender"));
 	}
 
+	@Test
+	public void curatedConvertsArePricedAtWhatTheKillerGets()
+	{
+		// Charged items drop uncharged for the killer (wiki, 2026-07).
+		Assert.assertEquals(10_700_000, costOf("toxic blowpipe"));
+		Assert.assertEquals(4, categoryOf("toxic blowpipe"));
+		Assert.assertEquals(3_900_000, costOf("serpentine helm"));
+		// Unprotected death degrades it into a kraken tentacle.
+		Assert.assertEquals(250_000, costOf("abyssal tentacle"));
+		Assert.assertEquals(4, categoryOf("abyssal tentacle"));
+		// Reclassified: an unlocked ancient sceptre drops an ancient
+		// staff for the killer (wiki Ancient sceptre) - it was a
+		// mangle-class 500k before this audit.
+		Assert.assertEquals(60_000, costOf("ancient sceptre"));
+		Assert.assertEquals(4, categoryOf("ancient sceptre"));
+	}
+
+	@Test
+	public void curatedCheapReclaimsNoLongerPayTheUnknownDefault()
+	{
+		// Quest and shop reclaims (wiki-priced), not the 500k fallback.
+		Assert.assertEquals(100_000, costOf("sunspear"));
+		Assert.assertEquals(2, categoryOf("sunspear"));
+		Assert.assertEquals(140_000, costOf("lunar torso"));
+		Assert.assertEquals(99_000, costOf("strength cape"));
+		// Always kept on a PvP death per its wiki page: free to wear.
+		Assert.assertEquals(0, costOf("max cape"));
+		Assert.assertEquals(1, categoryOf("max cape"));
+	}
+
 	private static long costOf(String name)
+	{
+		return UntradeableDeathCosts.costFor(untradeable(name));
+	}
+
+	private static int categoryOf(String name)
+	{
+		return UntradeableDeathCosts.categoryFor(untradeable(name));
+	}
+
+	private static com.loadoutlab.data.GearItem untradeable(String name)
 	{
 		for (com.loadoutlab.data.GearItem item : data.getGearItems())
 		{
 			if (name.equalsIgnoreCase(item.getName()) && !item.isTradeable())
 			{
-				return UntradeableDeathCosts.costFor(item);
+				return item;
 			}
 		}
 		throw new AssertionError("no untradeable item named " + name);
