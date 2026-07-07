@@ -203,11 +203,7 @@ public class LoadoutLabPanel extends PluginPanel
 			+ " most 3 tradeable items. Death keeps your 3 highest-value items, so with"
 			+ " only 3 tradeables worn they are all kept; untradeables are kept too"
 			+ " (combat ones may come back broken - coin repair)");
-		lowRisk.addActionListener(e ->
-		{
-			protectItem.setEnabled(lowRisk.isSelected());
-			recompute();
-		});
+		lowRisk.addActionListener(e -> recompute());
 		lowRisk.setVisible(false);
 		top.add(lowRisk);
 
@@ -217,7 +213,6 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.setToolTipText("Run the Protect Item prayer (extra drain) to keep a"
 			+ " 4th tradeable - does not apply while skulled");
 		protectItem.addActionListener(e -> recompute());
-		protectItem.setEnabled(false);
 		protectItem.setVisible(false);
 		top.add(protectItem);
 
@@ -638,7 +633,7 @@ public class LoadoutLabPanel extends PluginPanel
 			"You own this boost - the numbers assume you drink it"
 				+ " (never assumed below your live boosted levels)");
 		addIncomingLine(card, result.incoming);
-		addRiskLine(card, best);
+		addRiskLine(card, best, result.specWeapon);
 		addPrayerLine(card, best);
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
@@ -862,31 +857,47 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** Wilderness low-risk mode: how many kept-on-death slots the set uses. */
-	private void addRiskLine(JPanel card, DpsResult best)
+	/**
+	 * Wilderness: what a PvP death costs in gp for this set. Worn
+	 * tradeables plus the carried spec weapon compete for the kept-on-
+	 * death slots by value; everything past them is the risk.
+	 */
+	private void addRiskLine(JPanel card, DpsResult best, GearItem specWeapon)
 	{
-		int cap = riskCap();
-		if (cap < 0)
+		if (!com.loadoutlab.data.WildernessMonsters.isWilderness(selectedMonster))
 		{
 			return;
 		}
-		int used = best.getLoadout().tradeableCount();
-		JLabel line = new JLabel(String.format("Risky items: %d/%d (kept on death)", used, cap));
-		line.setForeground(new Color(200, 180, 120));
+		int keep = protectItem.isSelected() ? 4 : 3;
+		com.loadoutlab.engine.PvpRisk.Assessment risk =
+			com.loadoutlab.engine.PvpRisk.assess(best.getLoadout(), specWeapon, keep);
+		JLabel line = new JLabel(String.format("Risk: %s gp (%d kept on death)",
+			com.loadoutlab.engine.PvpRisk.formatGp(risk.riskGp), keep));
+		line.setForeground(risk.riskGp == 0 ? new Color(140, 200, 140) : new Color(220, 140, 120));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
-		StringBuilder tip = new StringBuilder("<html>Tradeable items in this set -");
-		tip.append(" death keeps your highest-value items, and with no more");
-		tip.append(" tradeables than the cap these are all kept. Untradeables are");
-		tip.append(" kept too (combat ones may need a coin repair). Skulled you");
-		tip.append(" keep 0 (1 with Protect Item):");
-		for (GearItem item : best.getLoadout().getGear().values())
+		StringBuilder tip = new StringBuilder("<html>Worn tradeables + the carried spec weapon,");
+		tip.append(" ranked by value. Kept on death:");
+		if (risk.kept.isEmpty())
 		{
-			if (item != null && item.isTradeable())
+			tip.append(" (none - all untradeable)");
+		}
+		for (GearItem item : risk.kept)
+		{
+			tip.append("<br>+ ").append(item.label())
+				.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
+		}
+		if (!risk.lost.isEmpty())
+		{
+			tip.append("<br>Lost to the killer:");
+			for (GearItem item : risk.lost)
 			{
-				tip.append("<br>").append(item.label());
+				tip.append("<br>- ").append(item.label())
+					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
 			}
 		}
+		tip.append("<br>Untradeables are kept (combat ones may need a coin repair).");
+		tip.append("<br>Skulled you keep 0 (1 with Protect Item). Inventory not counted.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
 		card.add(line);
