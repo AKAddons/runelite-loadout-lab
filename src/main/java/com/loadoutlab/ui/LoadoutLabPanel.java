@@ -862,7 +862,8 @@ public class LoadoutLabPanel extends PluginPanel
 			com.loadoutlab.engine.PvpRisk.assess(best.getLoadout(), specWeapon, keep);
 		JLabel line = new JLabel(String.format("Risk: %s gp (%d kept on death)",
 			com.loadoutlab.engine.PvpRisk.formatGp(risk.riskGp), keep));
-		line.setForeground(risk.riskGp == 0 ? new Color(140, 200, 140) : new Color(220, 140, 120));
+		line.setForeground(risk.riskGp <= com.loadoutlab.engine.OptimizationRequest.RISK_BUDGET_GP
+			? new Color(140, 200, 140) : new Color(220, 140, 120));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
 		StringBuilder tip = new StringBuilder("<html>Kept on death:");
@@ -884,7 +885,16 @@ public class LoadoutLabPanel extends PluginPanel
 					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
 			}
 		}
-		tip.append("<br>Untradeables kept (repair fee). Skulled: keep 0-1.");
+		if (!risk.untradeableCharges.isEmpty())
+		{
+			tip.append("<br>Untradeable fees on death:");
+			for (com.loadoutlab.engine.PvpRisk.Charge charge : risk.untradeableCharges)
+			{
+				tip.append("<br>- ").append(charge.item.label())
+					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(charge.costGp)).append(")");
+			}
+		}
+		tip.append("<br>Skulled: keep 0-1.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
 		card.add(line);
