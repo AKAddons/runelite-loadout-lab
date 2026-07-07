@@ -91,6 +91,7 @@ class MascotSpinner extends JComponent
 				copy.setRGB(x, y, 0);
 			}
 		}
+		copy.setRGB(7, 4, 0); // the neck bubble - redrawn drifting each frame
 		return copy;
 	}
 
@@ -256,6 +257,10 @@ class MascotSpinner extends JComponent
 			surfY = Math.max(bodyY + 6 * SCALE, Math.min(juiceBottom - SCALE, surfY));
 			g2.fillRect(bodyX + (4 + i) * SCALE, surfY, SCALE, juiceBottom - surfY);
 		}
+
+		// The neck bubble drifts one pixel left and right with the sway.
+		int bubbleDx = (int) Math.round(Math.sin(beat * Math.PI));
+		g2.fillRect(bodyX + (7 + bubbleDx) * SCALE, bodyY + 4 * SCALE, SCALE, SCALE);
 
 		// Body over the limbs and juice (the walls cover the liquid's edges).
 		g2.drawImage(BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
