@@ -386,6 +386,18 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wilderness = com.loadoutlab.data.WildernessMonsters.isWilderness(monster);
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
+		// Raid bosses and other unassignable monsters cannot be a slayer
+		// task - grey the toggle out (and clear it) rather than let an
+		// impossible slayer-helm assumption inflate the numbers.
+		boolean assignable = monster.isSlayerMonster();
+		if (!assignable && slayerTask.isSelected())
+		{
+			slayerTask.setSelected(false);
+		}
+		slayerTask.setEnabled(assignable);
+		slayerTask.setToolTipText(assignable
+			? "Fighting this monster on a slayer task (enables slayer helmet bonuses)"
+			: "This monster cannot be assigned as a slayer task");
 		usageLog.record(monster.label());
 		selectedLabel.setText("vs " + monster.label());
 		selectedRow.setVisible(true);
@@ -792,8 +804,26 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private void addSpellLine(JPanel card, CombatStyle style, DpsResult result)
 	{
-		if (style != CombatStyle.MAGIC || result.getSpellName() == null)
+		if (style != CombatStyle.MAGIC)
 		{
+			return;
+		}
+		if (result.getSpellName() == null)
+		{
+			// A magic result without an autocast spell is a powered staff -
+			// the weapon casts its own built-in spell.
+			JLabel builtIn = new JLabel("Built-in spell (powered staff)");
+			builtIn.setForeground(new Color(150, 170, 230));
+			builtIn.setFont(builtIn.getFont().deriveFont(11f));
+			builtIn.setAlignmentX(LEFT_ALIGNMENT);
+			builtIn.setToolTipText("This weapon casts its own spell - nothing to select");
+			GearItem weapon = result.getLoadout().getWeapon();
+			if (weapon != null)
+			{
+				attachItemIcon(builtIn, weapon.getId());
+				builtIn.setIconTextGap(4);
+			}
+			card.add(builtIn);
 			return;
 		}
 		String name = result.getSpellName();
