@@ -37,21 +37,35 @@ public final class PvpRisk
 
 	public static final class Assessment
 	{
-		/** Total per-death cost: lost tradeables + untradeable fees. */
+		/** Total per-death cost: lost items + untradeable fees. */
 		public final long riskGp;
-		/** Most valuable tradeables, kept on death - best first. */
+		/** Most valuable losable items, kept on death - best first.
+		 * Includes convert-class untradeables (slayer helm, crystal):
+		 * protecting them prevents the component drop. */
 		public final List<GearItem> kept;
-		/** Tradeables beyond the kept slots - lost to the killer. */
+		/** Losable items beyond the kept slots - lost to the killer. */
 		public final List<GearItem> lost;
-		/** Worn untradeables that cost coins on death, biggest fee first. */
+		/** Worn untradeables that cost coins on death regardless of
+		 * protection (break/mangle fees), biggest first. */
 		public final List<Charge> untradeableCharges;
+		/** Display value per item id - a convert-class untradeable's
+		 * value is its component, not its (absent) GE price. */
+		public final java.util.Map<Integer, Long> valueById;
 
-		Assessment(long riskGp, List<GearItem> kept, List<GearItem> lost, List<Charge> untradeableCharges)
+		Assessment(long riskGp, List<GearItem> kept, List<GearItem> lost,
+			List<Charge> untradeableCharges, java.util.Map<Integer, Long> valueById)
 		{
 			this.riskGp = riskGp;
 			this.kept = Collections.unmodifiableList(kept);
 			this.lost = Collections.unmodifiableList(lost);
 			this.untradeableCharges = Collections.unmodifiableList(untradeableCharges);
+			this.valueById = Collections.unmodifiableMap(valueById);
+		}
+
+		public long valueOf(GearItem item)
+		{
+			Long value = valueById.get(item.getId());
+			return value == null ? item.getPriceOrZero() : value;
 		}
 	}
 
@@ -61,32 +75,39 @@ public final class PvpRisk
 
 	public static Assessment assess(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
-		List<GearItem> tradeables = new ArrayList<>();
+		// The protection pool: everything that would be LOST unprotected -
+		// tradeables at GE value, convert-class untradeables (slayer helm,
+		// crystal, treads...) at their component value. Break/mangle fees
+		// apply regardless of protection and never occupy a slot.
+		List<GearItem> pool = new ArrayList<>();
 		List<Charge> charges = new ArrayList<>();
+		java.util.Map<Integer, Long> valueById = new java.util.HashMap<>();
 		for (GearItem item : loadout.getGear().values())
 		{
-			sort(item, tradeables, charges);
+			sort(item, pool, charges, valueById);
 		}
-		sort(carriedSpecWeapon, tradeables, charges);
-		tradeables.sort(Comparator.comparingInt(GearItem::getPriceOrZero).reversed());
+		sort(carriedSpecWeapon, pool, charges, valueById);
+		pool.sort(Comparator.comparingLong((GearItem g) ->
+			valueById.getOrDefault(g.getId(), 0L)).reversed());
 		charges.sort(Comparator.comparingLong((Charge c) -> c.costGp).reversed());
 		int keep = Math.max(0, keptSlots);
-		List<GearItem> kept = new ArrayList<>(tradeables.subList(0, Math.min(keep, tradeables.size())));
-		List<GearItem> lost = new ArrayList<>(tradeables.subList(Math.min(keep, tradeables.size()), tradeables.size()));
+		List<GearItem> kept = new ArrayList<>(pool.subList(0, Math.min(keep, pool.size())));
+		List<GearItem> lost = new ArrayList<>(pool.subList(Math.min(keep, pool.size()), pool.size()));
 		long risk = 0;
 		for (GearItem item : lost)
 		{
-			risk += item.getPriceOrZero();
+			risk += valueById.getOrDefault(item.getId(), 0L);
 		}
 		for (Charge charge : charges)
 		{
 			risk += charge.costGp;
 		}
-		return new Assessment(risk, kept, lost, charges);
+		return new Assessment(risk, kept, lost, charges, valueById);
 	}
 
-	/** Tradeables compete for kept slots; untradeables accrue death fees. */
-	private static void sort(GearItem item, List<GearItem> tradeables, List<Charge> charges)
+	/** Losable items join the protection pool; the rest accrue fees. */
+	private static void sort(GearItem item, List<GearItem> pool,
+		List<Charge> charges, java.util.Map<Integer, Long> valueById)
 	{
 		if (item == null)
 		{
@@ -94,14 +115,22 @@ public final class PvpRisk
 		}
 		if (item.isTradeable())
 		{
-			tradeables.add(item);
+			pool.add(item);
+			valueById.put(item.getId(), (long) item.getPriceOrZero());
 			return;
 		}
 		long cost = UntradeableDeathCosts.costFor(item);
-		if (cost > 0)
+		if (cost <= 0)
 		{
-			charges.add(new Charge(item, cost));
+			return;
 		}
+		if (UntradeableDeathCosts.isConvertible(item))
+		{
+			pool.add(item);
+			valueById.put(item.getId(), cost);
+			return;
+		}
+		charges.add(new Charge(item, cost));
 	}
 
 	/** Compact gp formatting: 1.2B / 45.3M / 820k / 950. */

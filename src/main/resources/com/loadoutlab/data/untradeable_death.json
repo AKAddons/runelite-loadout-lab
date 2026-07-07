@@ -15,7 +15,7 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "adamant gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 3250,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -30,7 +30,7 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "amulet of blood fury": {
-  "category": 2,
+  "category": 4,
   "costGp": 2000000,
   "note": "converts to an amulet of fury for the killer; blood shard and charges lost (wiki; vendored fury price)"
  },
@@ -45,7 +45,7 @@
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
  },
  "archers ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 2100000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -100,37 +100,37 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "avernic treads (et)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (max)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (pe)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (pe)(et)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (pr)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (pr)(et)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
  "avernic treads (pr)(pe)": {
-  "category": 2,
+  "category": 4,
   "costGp": 194000000,
   "note": "base treads and add-on boots drop to the killer, demon tears lost (wiki Avernic treads; vendored treads price)"
  },
@@ -150,7 +150,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "barrows gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 130000,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -160,7 +160,7 @@
   "note": "Perdu sells a replacement (wiki Perdu store)"
  },
  "berserker ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 3000000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -170,17 +170,17 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "black gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 1300,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
  "black mask": {
-  "category": 2,
+  "category": 4,
   "costGp": 1500000,
   "note": "charged variants drop as a black mask; priced at vendored black mask value"
  },
  "black mask (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 1500000,
   "note": "drops as a black mask; imbue points refunded"
  },
@@ -195,32 +195,32 @@
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07)"
  },
  "blood moon chestplate": {
-  "category": 2,
+  "category": 4,
   "costGp": 3950000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "blood moon helm": {
-  "category": 2,
+  "category": 4,
   "costGp": 64000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "blood moon tassets": {
-  "category": 2,
+  "category": 4,
   "costGp": 8979000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "blue moon chestplate": {
-  "category": 2,
+  "category": 4,
   "costGp": 742000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "blue moon helm": {
-  "category": 2,
+  "category": 4,
   "costGp": 94000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "blue moon tassets": {
-  "category": 2,
+  "category": 4,
   "costGp": 3746000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
@@ -235,7 +235,7 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "book of balance (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 12000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
@@ -245,7 +245,7 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "book of darkness (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 14000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
@@ -255,7 +255,7 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "book of law (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 14000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
@@ -270,12 +270,12 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "book of war (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 14000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
  "bow of faerdhinen": {
-  "category": 2,
+  "category": 4,
   "costGp": 114000000,
   "note": "drops as the inactive tradeable bow, shards lost (wiki Bow of faerdhinen; vendored price snapshot)"
  },
@@ -330,7 +330,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "bronze gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 130,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -345,122 +345,122 @@
   "note": "Perdu sells a replacement (wiki Perdu store)"
  },
  "crystal body": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (amlodd)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (cadarn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (crwys)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (hefin)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (iorwerth)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (ithell)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal body (trahaearn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (amlodd)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (cadarn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (crwys)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (hefin)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (iorwerth)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (ithell)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal helm (trahaearn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (amlodd)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (cadarn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (crwys)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (hefin)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (iorwerth)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (ithell)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
  "crystal legs (trahaearn)": {
-  "category": 2,
+  "category": 4,
   "costGp": 6000000,
   "note": "reverts to a crystal armour seed dropped to the killer, shards lost (wiki Crystal helm; GE seed ~6.1m, 2026-07)"
  },
@@ -515,7 +515,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "dragon defender (t)": {
-  "category": 2,
+  "category": 4,
   "costGp": 240000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07); ornament kit drops to the killer"
  },
@@ -525,7 +525,7 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "dragon gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 130000,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -535,17 +535,17 @@
   "note": "priced at components (echo crystal + guardian boots, GE 2026-07); death drop undocumented"
  },
  "eclipse moon chestplate": {
-  "category": 2,
+  "category": 4,
   "costGp": 928000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "eclipse moon helm": {
-  "category": 2,
+  "category": 4,
   "costGp": 69000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
  "eclipse moon tassets": {
-  "category": 2,
+  "category": 4,
   "costGp": 1442000,
   "note": "used piece drops to the killer as the broken version (vendored broken price)"
  },
@@ -590,7 +590,7 @@
   "note": "diary reward; Perdu sells a replacement for 200 coins"
  },
  "ferocious gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 14000000,
   "note": "revertible to hydra leather; death drop undocumented - priced at leather value (GE ~13.9m, 2026-07)"
  },
@@ -665,7 +665,7 @@
   "note": "no combat benefit; kept on death (wiki Items Kept on Death rework, 2026-06)"
  },
  "granite ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 20000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -685,7 +685,7 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "holy book (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 12000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
@@ -740,7 +740,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "iron gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 325,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -795,7 +795,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "mithril gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 1950,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -805,7 +805,7 @@
   "note": "rebought from the Mythical Cape Store for 10k (wiki)"
  },
  "neitiznot faceguard": {
-  "category": 2,
+  "category": 4,
   "costGp": 16000000,
   "note": "reverts to helm of neitiznot + basilisk jaw for the killer (wiki Neitiznot faceguard; GE jaw ~16m, 2026-07)"
  },
@@ -840,17 +840,17 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "ring of suffering": {
-  "category": 2,
+  "category": 4,
   "costGp": 19000000,
   "note": "untradeable recoil variant drops as the uncharged ring (vendored price)"
  },
  "ring of suffering (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 19000000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
  "ring of the gods (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 960000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -860,7 +860,7 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "rune defender (t)": {
-  "category": 2,
+  "category": 4,
   "costGp": 35000,
   "note": "Perdu repair fee (wiki (broken) table, 2026-07); ornament kit drops to the killer"
  },
@@ -870,7 +870,7 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "rune gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 6500,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
@@ -920,7 +920,7 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "seers ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 700000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -940,12 +940,12 @@
   "note": "consumable ammo; per-unit value negligible"
  },
  "slayer helmet": {
-  "category": 2,
+  "category": 4,
   "costGp": 1500000,
   "note": "drops as a black mask to the killer (wiki Slayer helmet); priced at vendored black mask value"
  },
  "slayer helmet (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 1500000,
   "note": "drops as a black mask to the killer; imbue points refunded (wiki Slayer helmet)"
  },
@@ -960,17 +960,17 @@
   "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
  },
  "steel gloves": {
-  "category": 2,
+  "category": 4,
   "costGp": 650,
   "note": "dropped as coins to the killer; rebought at the Culinaromancer's Chest at 1.3x value (wiki)"
  },
  "treasonous ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 90000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
  "tyrannical ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 180000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },
@@ -980,7 +980,7 @@
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
  },
  "unholy book (or)": {
-  "category": 2,
+  "category": 4,
   "costGp": 12000,
   "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); ornament kit drops to the killer"
  },
@@ -1050,7 +1050,7 @@
   "note": "trouver class: lost above 20 wildy unless locked; locked deaths mangle for a 500k fee (wiki Trouver parchment, 2026-07); ornament kit drops to the killer"
  },
  "warrior ring (i)": {
-  "category": 2,
+  "category": 4,
   "costGp": 60000,
   "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
  },

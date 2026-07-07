@@ -88,7 +88,18 @@ public final class UntradeableDeathCosts
 		return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
 	}
 
-	/** Curated category (1, 2 or 3), or 0 when the item is not listed. */
+	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
+	/**
+	 * Category 4: converts to a tradeable component dropped for the
+	 * killer (slayer helm -> black mask, crystal -> seed). These are
+	 * LOSABLE, so they compete for kept-on-death protection slots at
+	 * their component value - protecting one prevents the drop.
+	 */
+	public static boolean isConvertible(GearItem item)
+	{
+		return categoryFor(item) == 4;
+	}
+
 	public static int categoryFor(GearItem item)
 	{
 		if (item == null)

@@ -874,7 +874,7 @@ public class LoadoutLabPanel extends PluginPanel
 		for (GearItem item : risk.kept)
 		{
 			tip.append("<br>+ ").append(item.label())
-				.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
+				.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(risk.valueOf(item))).append(")");
 		}
 		if (!risk.lost.isEmpty())
 		{
@@ -882,7 +882,7 @@ public class LoadoutLabPanel extends PluginPanel
 			for (GearItem item : risk.lost)
 			{
 				tip.append("<br>- ").append(item.label())
-					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
+					.append(" (").append(com.loadoutlab.engine.PvpRisk.formatGp(risk.valueOf(item))).append(")");
 			}
 		}
 		if (!risk.untradeableCharges.isEmpty())

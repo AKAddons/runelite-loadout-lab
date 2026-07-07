@@ -139,6 +139,37 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void aConvertClassUntradeableCompetesForProtectionAndIsFreeWhenItWins()
+	{
+		// Slayer helmet (converts to a 1.5M black mask) worn with two cheap
+		// tradeables: the helm ranks FIRST into the kept slots - protected,
+		// no drop, no fee. This is why wildy slayers count it as one of
+		// their 3 protected items.
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100_000),
+			item(2, GearSlot.BODY, true, 50_000),
+			untradeable(3, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(0, risk.riskGp);
+		Assert.assertEquals("Slayer helmet (i)", risk.kept.get(0).getName());
+		Assert.assertEquals(1_500_000L, risk.valueOf(risk.kept.get(0)));
+		Assert.assertTrue(risk.untradeableCharges.isEmpty());
+	}
+
+	@Test
+	public void aConvertClassUntradeableOutrankedByPricierItemsDropsAtItsComponentValue()
+	{
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100_000_000),
+			item(2, GearSlot.BODY, true, 50_000_000),
+			item(4, GearSlot.LEGS, true, 20_000_000),
+			untradeable(3, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE));
+		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(1_500_000L, risk.riskGp);
+		Assert.assertEquals("Slayer helmet (i)", risk.lost.get(0).getName());
+	}
+
+	@Test
 	public void untradeableFeesStackOnTopOfTheTradeableLosses()
 	{
 		Loadout loadout = worn(
