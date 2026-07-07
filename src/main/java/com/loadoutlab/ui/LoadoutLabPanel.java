@@ -585,7 +585,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		JLabel line = new JLabel(String.format("Prayer bonus: %+d", prayer));
+		JLabel line = new JLabel(String.format("Gear prayer bonus: %+d (slower drain)", prayer));
 		line.setForeground(new Color(160, 160, 160));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);

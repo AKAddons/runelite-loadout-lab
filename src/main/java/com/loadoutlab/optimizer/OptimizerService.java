@@ -157,7 +157,9 @@ public class OptimizerService
 				// bring), never below what is already live.
 				com.loadoutlab.engine.BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
 				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
-				String boostLabel = boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString();
+				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
+				String boostLabel = joinAssumes(prayerName,
+					boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString());
 				OptimizationRequest ownedRequest = request(
 					monster, style, styleLevels, unlocks, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
@@ -192,6 +194,19 @@ public class OptimizerService
 			}
 			callback.accept(results);
 		});
+	}
+
+	private static String joinAssumes(String prayer, String boost)
+	{
+		if (prayer != null && !prayer.isEmpty() && boost != null)
+		{
+			return prayer + " + " + boost;
+		}
+		if (prayer != null && !prayer.isEmpty())
+		{
+			return prayer;
+		}
+		return boost;
 	}
 
 	private static final class SpecPick

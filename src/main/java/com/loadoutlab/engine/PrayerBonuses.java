@@ -13,6 +13,9 @@ public final class PrayerBonuses
 	private final double rangedAccuracy;
 	private final double rangedStrength;
 	private final double magicAccuracy;
+	private String meleeName = "";
+	private String rangedName = "";
+	private String magicName = "";
 	/** Mystic Vigour's separate x1.18 magic accuracy factor - the official
 	 * calc applies it with its own floor AFTER Augury's 1.25. */
 	private final double magicAccuracySecondary;
@@ -41,23 +44,28 @@ public final class PrayerBonuses
 
 	public static PrayerBonuses bestAvailable(PlayerLevels levels, PrayerUnlocks unlocks)
 	{
+		String meleeName;
 		double meleeAcc = 1.0;
 		double meleeStr = 1.0;
 		if (levels.getPrayer() >= 70 && unlocks.piety())
 		{
 			meleeAcc = 1.20;
 			meleeStr = 1.23;
+			meleeName = "Piety";
 		}
 		else if (levels.getPrayer() >= 60 && unlocks.chivalry())
 		{
 			meleeAcc = 1.15;
 			meleeStr = 1.18;
+			meleeName = "Chivalry";
 		}
 		else
 		{
+			java.util.List<String> parts = new java.util.ArrayList<>();
 			if (levels.getPrayer() >= 31)
 			{
 				meleeAcc = 1.15;
+				parts.add("Incredible Reflexes");
 			}
 			else if (levels.getPrayer() >= 13)
 			{
@@ -70,6 +78,7 @@ public final class PrayerBonuses
 			if (levels.getPrayer() >= 31)
 			{
 				meleeStr = 1.15;
+				parts.add("Ultimate Strength");
 			}
 			else if (levels.getPrayer() >= 10)
 			{
@@ -79,6 +88,7 @@ public final class PrayerBonuses
 			{
 				meleeStr = 1.05;
 			}
+			meleeName = String.join(" + ", parts);
 		}
 
 		boolean rigour = levels.getPrayer() >= 74 && unlocks.rigour();
@@ -91,7 +101,25 @@ public final class PrayerBonuses
 		// Augury (4%) and Mystic Vigour (3%) stack - verified vs the official calc.
 		double magicDamage = (augury ? 4.0 : 0.0) + (vigour ? 3.0 : 0.0)
 			+ (!augury && !vigour ? (levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0) : 0.0);
-		return new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
+		PrayerBonuses result = new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
+		result.meleeName = meleeName;
+		result.rangedName = rigour ? "Rigour" : deadeye ? "Deadeye"
+			: levels.getPrayer() >= 44 ? "Eagle Eye" : "";
+		result.magicName = augury && vigour ? "Augury + Mystic Vigour"
+			: augury ? "Augury" : vigour ? "Mystic Vigour"
+			: levels.getPrayer() >= 45 ? "Mystic Might" : "";
+		return result;
+	}
+
+	/** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */
+	public String nameFor(CombatStyle style)
+	{
+		switch (style)
+		{
+			case RANGED: return rangedName;
+			case MAGIC: return magicName;
+			default: return meleeName;
+		}
 	}
 
 	public static PrayerBonuses fromActive(Set<Prayer> active)
