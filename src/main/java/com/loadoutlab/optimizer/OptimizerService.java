@@ -250,6 +250,19 @@ public class OptimizerService
 		});
 	}
 
+	private static int riskCapCount(OptimizationRequest request, com.loadoutlab.engine.Loadout loadout)
+	{
+		int count = 0;
+		for (com.loadoutlab.data.GearItem item : loadout.getGear().values())
+		{
+			if (request.countsAgainstRiskCap(item))
+			{
+				count++;
+			}
+		}
+		return count;
+	}
+
 	private static String joinAssumes(String prayer, String boost)
 	{
 		if (prayer != null && !prayer.isEmpty() && boost != null)
@@ -316,9 +329,10 @@ public class OptimizerService
 				continue;
 			}
 			// In a wilderness low-risk set the carried spec weapon is a risk
-			// item too - only untradeable specs fit once the cap is spent.
-			if (request.isRiskConstrained() && item.isTradeable()
-				&& baseResults.get(0).getLoadout().tradeableCount() + 1 > request.getMaxTradeables())
+			// item too - but throwaway-cheap ones (the classic dragon
+			// dagger) pass freely; only valuable specs need cap headroom.
+			if (request.countsAgainstRiskCap(item)
+				&& riskCapCount(request, baseResults.get(0).getLoadout()) + 1 > request.getMaxTradeables())
 			{
 				continue;
 			}

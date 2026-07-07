@@ -199,10 +199,11 @@ public class LoadoutLabPanel extends PluginPanel
 		lowRisk.setOpaque(false);
 		lowRisk.setForeground(new Color(200, 200, 200));
 		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
-		lowRisk.setToolTipText("Wilderness low-risk set: untradeables everywhere plus at"
-			+ " most 3 tradeable items. Death keeps your 3 highest-value items, so with"
-			+ " only 3 tradeables worn they are all kept; untradeables are kept too"
-			+ " (combat ones may come back broken - coin repair)");
+		lowRisk.setToolTipText("Wilderness low-risk set: at most 3 VALUABLE tradeables"
+			+ " (death keeps your 3 highest-value items, so they are all kept), with"
+			+ " untradeables and throwaway-cheap gear (black d'hide class, under 30k)"
+			+ " filling everything else - big stats per gp of risk. The Risk line"
+			+ " prices whatever would drop.");
 		lowRisk.addActionListener(e -> recompute());
 		lowRisk.setVisible(false);
 		top.add(lowRisk);
@@ -522,7 +523,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			resultsPanel.add(new MascotSpinner());
 		}
-		JLabel computing = new JLabel("Optimizing vs " + selectedMonster.getName() + "...");
+		// html so long monster names wrap instead of clipping at the edge
+		JLabel computing = new JLabel("<html>Optimizing vs " + selectedMonster.getName() + "...</html>");
 		computing.setForeground(new Color(160, 160, 160));
 		computing.setAlignmentX(LEFT_ALIGNMENT);
 		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));

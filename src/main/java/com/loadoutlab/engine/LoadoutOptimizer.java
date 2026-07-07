@@ -91,8 +91,8 @@ public final class LoadoutOptimizer
 				{
 					break;
 				}
-				if (request.isRiskConstrained() && item.isTradeable()
-					&& current.getLoadout().tradeableCount() + 1 > request.getMaxTradeables())
+				if (request.countsAgainstRiskCap(item)
+					&& riskCapCount(request, current.getLoadout().getGear()) + 1 > request.getMaxTradeables())
 				{
 					continue;
 				}
@@ -110,12 +110,12 @@ public final class LoadoutOptimizer
 		return current;
 	}
 
-	private static int tradeableCount(Map<GearSlot, GearItem> gear)
+	private static int riskCapCount(OptimizationRequest request, Map<GearSlot, GearItem> gear)
 	{
 		int count = 0;
 		for (GearItem item : gear.values())
 		{
-			if (item != null && item.isTradeable())
+			if (request.countsAgainstRiskCap(item))
 			{
 				count++;
 			}
@@ -155,7 +155,7 @@ public final class LoadoutOptimizer
 		Set<String> seen = new HashSet<>();
 		for (GearItem weapon : weapons)
 		{
-			if (request.isRiskConstrained() && weapon.isTradeable() && request.getMaxTradeables() < 1)
+			if (request.countsAgainstRiskCap(weapon) && request.getMaxTradeables() < 1)
 			{
 				continue;
 			}
@@ -174,12 +174,13 @@ public final class LoadoutOptimizer
 				List<GearItem> candidates = candidatesForSlotWithWeapon(slotCandidates.get(slot), weapon, slot);
 				for (SearchState state : states)
 				{
-					int riskUsed = request.isRiskConstrained() ? tradeableCount(state.gear) : 0;
+					int riskUsed = request.isRiskConstrained() ? riskCapCount(request, state.gear) : 0;
 					for (GearItem item : candidates)
 					{
-						// Wilderness risk cap: no more tradeables than the
-						// death mechanics will keep.
-						if (request.isRiskConstrained() && item != null && item.isTradeable()
+						// Wilderness risk cap: no more VALUABLE tradeables
+						// than the death mechanics will keep - throwaway-
+						// cheap gear (black d'hide class) passes freely.
+						if (request.countsAgainstRiskCap(item)
 							&& riskUsed + 1 > request.getMaxTradeables())
 						{
 							continue;

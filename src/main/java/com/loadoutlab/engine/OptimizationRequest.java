@@ -138,6 +138,21 @@ public final class OptimizationRequest
 		return maxTradeables >= 0;
 	}
 
+	/**
+	 * Wilderness risk cap: items at or below this price are throwaway -
+	 * black d'hide-class gear whose loss is a shrug. They never consume
+	 * the kept-slots budget (huge stats per gp is exactly the wilderness
+	 * pattern); the risk line prices whatever falls past the kept slots.
+	 */
+	public static final int THROWAWAY_GP = 30_000;
+
+	/** Does this item consume the risk cap? Valuable tradeables only. */
+	public boolean countsAgainstRiskCap(com.loadoutlab.data.GearItem item)
+	{
+		return isRiskConstrained() && item != null && item.isTradeable()
+			&& item.getPriceOrZero() > THROWAWAY_GP;
+	}
+
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
 		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables);
