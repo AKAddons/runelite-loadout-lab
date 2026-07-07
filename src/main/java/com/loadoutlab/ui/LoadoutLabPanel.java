@@ -592,7 +592,23 @@ public class LoadoutLabPanel extends PluginPanel
 		return card;
 	}
 
-	/** The set's total prayer bonus - slower drain, longer trips. */
+	private static final javax.swing.ImageIcon PRAYER_ICON = loadPrayerIcon();
+
+	private static javax.swing.ImageIcon loadPrayerIcon()
+	{
+		try
+		{
+			java.awt.image.BufferedImage img = net.runelite.client.util.ImageUtil.loadImageResource(
+				net.runelite.client.game.SkillIconManager.class, "/skill_icons_small/prayer.png");
+			return new javax.swing.ImageIcon(img.getScaledInstance(14, 14, java.awt.Image.SCALE_SMOOTH));
+		}
+		catch (RuntimeException ex)
+		{
+			return null;
+		}
+	}
+
+	/** The set's total prayer bonus - just the prayer icon and the number. */
 	private void addPrayerLine(JPanel card, DpsResult result)
 	{
 		int prayer = result.getLoadout().getBonuses().getPrayer();
@@ -600,10 +616,17 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		JLabel line = new JLabel(String.format("Gear prayer bonus: %+d (slower drain)", prayer));
+		JLabel line = new JLabel(PRAYER_ICON == null ? String.format("Prayer %+d", prayer)
+			: String.format("%+d", prayer));
+		if (PRAYER_ICON != null)
+		{
+			line.setIcon(PRAYER_ICON);
+			line.setIconTextGap(4);
+		}
 		line.setForeground(new Color(160, 160, 160));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setToolTipText("Gear prayer bonus - slower prayer drain");
 		card.add(line);
 	}
 
