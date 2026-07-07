@@ -201,9 +201,9 @@ public class LoadoutLabPanel extends PluginPanel
 		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
 		lowRisk.setToolTipText("Wilderness low-risk set: your 3 most valuable items are"
 			+ " kept on death (4 with Protect Item) - they ride free. Everything worn"
-			+ " beyond them must be throwaway-cheap (under 75k: glory, black d'hide,"
-			+ " mystic class), so the only gp that can drop is a shrug. The Risk line"
-			+ " prices exactly what would.");
+			+ " beyond them can drop, and its TOTAL value is capped at 75k (glory,"
+			+ " black d'hide, mystic class fit comfortably). The Risk line prices"
+			+ " exactly what would drop.");
 		lowRisk.addActionListener(e -> recompute());
 		lowRisk.setVisible(false);
 		top.add(lowRisk);

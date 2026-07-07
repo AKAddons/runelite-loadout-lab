@@ -250,19 +250,6 @@ public class OptimizerService
 		});
 	}
 
-	private static int riskCapCount(OptimizationRequest request, com.loadoutlab.engine.Loadout loadout)
-	{
-		int count = 0;
-		for (com.loadoutlab.data.GearItem item : loadout.getGear().values())
-		{
-			if (request.countsAgainstRiskCap(item))
-			{
-				count++;
-			}
-		}
-		return count;
-	}
-
 	private static String joinAssumes(String prayer, String boost)
 	{
 		if (prayer != null && !prayer.isEmpty() && boost != null)
@@ -328,11 +315,12 @@ public class OptimizerService
 			{
 				continue;
 			}
-			// In a wilderness low-risk set the carried spec weapon is a risk
-			// item too - but throwaway-cheap ones (the classic dragon
-			// dagger) pass freely; only valuable specs need cap headroom.
-			if (request.countsAgainstRiskCap(item)
-				&& riskCapCount(request, baseResults.get(0).getLoadout()) + 1 > request.getMaxTradeables())
+			// In a wilderness low-risk set the carried spec weapon competes
+			// for kept slots like everything else - the whole package (worn
+			// set + this weapon) must stay within the total risk budget.
+			if (request.isRiskConstrained()
+				&& com.loadoutlab.engine.PvpRisk.assess(baseResults.get(0).getLoadout(), item,
+					request.getMaxTradeables()).riskGp > com.loadoutlab.engine.OptimizationRequest.RISK_BUDGET_GP)
 			{
 				continue;
 			}

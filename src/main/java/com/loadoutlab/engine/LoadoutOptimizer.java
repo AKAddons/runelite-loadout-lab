@@ -91,14 +91,16 @@ public final class LoadoutOptimizer
 				{
 					break;
 				}
-				if (request.countsAgainstRiskCap(item)
-					&& riskCapCount(request, current.getLoadout().getGear()) + 1 > request.getMaxTradeables())
+				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
+				gear.put(slot, item);
+				Loadout trial = new Loadout(gear);
+				if (request.isRiskConstrained()
+					&& PvpRisk.assess(trial, null, request.getMaxTradeables()).riskGp
+						> OptimizationRequest.RISK_BUDGET_GP)
 				{
 					continue;
 				}
-				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
-				gear.put(slot, item);
-				DpsResult candidate = bestSpellResult(request, new Loadout(gear), spells);
+				DpsResult candidate = bestSpellResult(request, trial, spells);
 				if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
 				{
 					current = candidate.withPurchaseCost(
@@ -108,19 +110,6 @@ public final class LoadoutOptimizer
 			}
 		}
 		return current;
-	}
-
-	private static int riskCapCount(OptimizationRequest request, Map<GearSlot, GearItem> gear)
-	{
-		int count = 0;
-		for (GearItem item : gear.values())
-		{
-			if (request.countsAgainstRiskCap(item))
-			{
-				count++;
-			}
-		}
-		return count;
 	}
 
 	/** Prayer first, then the sum of defensive bonuses. */
@@ -155,10 +144,6 @@ public final class LoadoutOptimizer
 		Set<String> seen = new HashSet<>();
 		for (GearItem weapon : weapons)
 		{
-			if (request.countsAgainstRiskCap(weapon) && request.getMaxTradeables() < 1)
-			{
-				continue;
-			}
 			// The ammo top-N must be cut AFTER weapon compatibility: bolts
 			// and javelins out-score every arrow on raw ranged strength, so
 			// a global cut starves arrow weapons of usable ammo entirely.
@@ -174,17 +159,8 @@ public final class LoadoutOptimizer
 				List<GearItem> candidates = candidatesForSlotWithWeapon(slotCandidates.get(slot), weapon, slot);
 				for (SearchState state : states)
 				{
-					int riskUsed = request.isRiskConstrained() ? riskCapCount(request, state.gear) : 0;
 					for (GearItem item : candidates)
 					{
-						// Wilderness risk cap: no more VALUABLE tradeables
-						// than the death mechanics will keep - throwaway-
-						// cheap gear (black d'hide class) passes freely.
-						if (request.countsAgainstRiskCap(item)
-							&& riskUsed + 1 > request.getMaxTradeables())
-						{
-							continue;
-						}
 						int cost = state.cost + budgetCost(request, item);
 						if (!withinBudget(request, cost))
 						{
@@ -196,6 +172,16 @@ public final class LoadoutOptimizer
 							gear.put(slot, item);
 						}
 						Loadout loadout = new Loadout(gear);
+						// Wilderness risk budget: the kept 3-4 are immune;
+						// everything else may drop, and its TOTAL value must
+						// stay within budget. Monotone (adding items never
+						// lowers risk), so pruning partial states is safe.
+						if (request.isRiskConstrained()
+							&& PvpRisk.assess(loadout, null, request.getMaxTradeables()).riskGp
+								> OptimizationRequest.RISK_BUDGET_GP)
+						{
+							continue;
+						}
 						DpsResult score = bestSpellResult(request, loadout, spells);
 						if (score == null)
 						{

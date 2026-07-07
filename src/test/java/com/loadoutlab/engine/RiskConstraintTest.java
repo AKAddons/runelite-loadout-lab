@@ -54,7 +54,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void riskCappedSetKeepsEveryValuableAndOnlyRisksThrowawayGear()
+	public void riskCappedSetsTotalDroppableValueStaysWithinTheBudget()
 	{
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED})
@@ -62,24 +62,11 @@ public class RiskConstraintTest
 			List<DpsResult> capped = optimizer.optimize(data, request(style, 3));
 			Assert.assertFalse(capped.isEmpty());
 			DpsResult best = optimizer.fillDpsNeutralSlots(data, request(style, 3), capped.get(0));
-			int valuables = 0;
-			for (com.loadoutlab.data.GearItem item : best.getLoadout().getGear().values())
-			{
-				if (item != null && item.isTradeable()
-					&& item.getPriceOrZero() > OptimizationRequest.THROWAWAY_GP)
-				{
-					valuables++;
-				}
-			}
-			Assert.assertTrue(style + " wore " + valuables + " valuables", valuables <= 3);
-			// Everything past the 3 kept slots must be throwaway-cheap: the
-			// valuables all rank into the kept slots by price.
+			// The kept 3 are immune; the TOTAL of everything else must fit
+			// the budget - not a per-item floor.
 			PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), null, 3);
-			for (com.loadoutlab.data.GearItem lost : risk.lost)
-			{
-				Assert.assertTrue(lost.label() + " (" + lost.getPriceOrZero() + ") is not throwaway",
-					lost.getPriceOrZero() <= OptimizationRequest.THROWAWAY_GP);
-			}
+			Assert.assertTrue(style + " risks " + risk.riskGp,
+				risk.riskGp <= OptimizationRequest.RISK_BUDGET_GP);
 		}
 	}
 

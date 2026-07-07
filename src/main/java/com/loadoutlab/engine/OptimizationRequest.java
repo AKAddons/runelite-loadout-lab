@@ -139,22 +139,14 @@ public final class OptimizationRequest
 	}
 
 	/**
-	 * Wilderness risk cap: items at or below this price are throwaway -
-	 * black d'hide / glory / mystic-class gear whose loss is a shrug.
-	 * They never consume the kept-slots budget (huge stats per gp is
-	 * exactly the wilderness pattern); the risk line prices whatever
-	 * falls past the kept slots. The kept 3-4 themselves are immune -
-	 * bring your crystal set, they ARE the kept items - this floor only
-	 * governs what is acceptable to wear BEYOND them.
+	 * Wilderness risk budget: the TOTAL gp the set may drop on a PvP
+	 * death. The kept 3-4 highest-value items are immune and free -
+	 * bring your crystal set, they ARE the kept items - and everything
+	 * worn beyond them (glory, black d'hide, mystic class...) must SUM
+	 * to at most this. Not per item: one 70k amulet plus a 60k body
+	 * blows the budget together.
 	 */
-	public static final int THROWAWAY_GP = 75_000;
-
-	/** Does this item consume the risk cap? Valuable tradeables only. */
-	public boolean countsAgainstRiskCap(com.loadoutlab.data.GearItem item)
-	{
-		return isRiskConstrained() && item != null && item.isTradeable()
-			&& item.getPriceOrZero() > THROWAWAY_GP;
-	}
+	public static final int RISK_BUDGET_GP = 75_000;
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
