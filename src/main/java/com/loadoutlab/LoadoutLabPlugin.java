@@ -279,6 +279,15 @@ public class LoadoutLabPlugin extends Plugin
 			real.put(skill, client.getRealSkillLevel(skill));
 			boosted.put(skill, client.getBoostedSkillLevel(skill));
 		}
+		// Canary: real Hitpoints can never be below 10. A sub-10 read means
+		// the client stats were not populated yet (login race) - skip the
+		// snapshot so the next compute retries, instead of poisoning every
+		// number this session (field report: all magic at 0.06 dps).
+		if (real.getOrDefault(Skill.HITPOINTS, 0) < 10)
+		{
+			log.debug("skill snapshot looked uninitialized, retrying on next compute");
+			return;
+		}
 		Set<String> quests = new HashSet<>();
 		for (Quest quest : Quest.values())
 		{
