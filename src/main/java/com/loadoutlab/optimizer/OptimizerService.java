@@ -114,6 +114,7 @@ public class OptimizerService
 		MonsterStats monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
+		com.loadoutlab.engine.PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements,
 		OwnedItems owned,
 		int collectionFingerprint,
@@ -127,8 +128,10 @@ public class OptimizerService
 			? java.util.Collections.emptySet() : excludedItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
+		final com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks == null
+			? com.loadoutlab.engine.PrayerUnlocks.ALL : prayerUnlocks;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode()
+			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
@@ -156,7 +159,7 @@ public class OptimizerService
 				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
 				String boostLabel = boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString();
 				OptimizationRequest ownedRequest = request(
-					monster, style, styleLevels, requirements,
+					monster, style, styleLevels, unlocks, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
@@ -170,7 +173,7 @@ public class OptimizerService
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
 				OptimizationRequest gameRequest = request(
-					monster, style, styleLevels, RequirementProfile.MAXED,
+					monster, style, styleLevels, unlocks, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
@@ -350,6 +353,7 @@ public class OptimizerService
 		MonsterStats monster,
 		CombatStyle style,
 		PlayerLevels levels,
+		com.loadoutlab.engine.PrayerUnlocks unlocks,
 		RequirementProfile requirements,
 		CandidateMode mode,
 		OwnedItems owned,
@@ -360,7 +364,7 @@ public class OptimizerService
 			monster,
 			style,
 			levels,
-			PrayerBonuses.bestAvailable(levels),
+			PrayerBonuses.bestAvailable(levels, unlocks),
 			null,          // auto-pick the spell for magic
 			0,             // budget unused by these modes
 			mode,

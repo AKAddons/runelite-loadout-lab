@@ -46,7 +46,7 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, RequirementProfile.MAXED,
+		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), results ->
 			{
 				out.set(results);
@@ -69,7 +69,7 @@ public class OptimizerServiceTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, RequirementProfile.MAXED,
+			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), results ->
 				{
 					out.set(results);

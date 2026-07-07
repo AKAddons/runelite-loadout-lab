@@ -97,6 +97,7 @@ public class LoadoutLabPlugin extends Plugin
 	private RequirementProfile requirementProfile;
 	private PlayerLevels realLevels;
 	private PlayerLevels boostedLevels;
+	private com.loadoutlab.engine.PrayerUnlocks prayerUnlocks;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
 	private final EnumSet<CollectionLedger.Source> dirtySources =
@@ -158,6 +159,7 @@ public class LoadoutLabPlugin extends Plugin
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
+		prayerUnlocks = null;
 		dirtySources.clear();
 		log.info("Loadout Lab stopped");
 	}
@@ -178,6 +180,7 @@ public class LoadoutLabPlugin extends Plugin
 			requirementProfile = null;
 			realLevels = null;
 			boostedLevels = null;
+			prayerUnlocks = null;
 
 			// Non-members world -> show the F2P filter, default on (world type
 			// is client state, so read it here and hand the EDT a boolean).
@@ -256,7 +259,9 @@ public class LoadoutLabPlugin extends Plugin
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
-			optimizerService.bestPerStyle(monster, real, live, profile, owned, fingerprint, f2pOnly,
+			com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks != null
+				? prayerUnlocks : com.loadoutlab.engine.PrayerUnlocks.ALL;
+			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
@@ -303,6 +308,14 @@ public class LoadoutLabPlugin extends Plugin
 		requirementProfile = new RequirementProfile(real, quests);
 		realLevels = PlayerLevels.from(real);
 		boostedLevels = PlayerLevels.from(boosted);
+		// Unlock-gated prayers: King's Ransom for Piety/Chivalry; scroll
+		// unlock varbits for Rigour/Augury (CoX) and Deadeye/Mystic Vigour.
+		prayerUnlocks = new com.loadoutlab.engine.PrayerUnlocks(
+			quests.contains(Quest.KINGS_RANSOM.name()),
+			client.getVarbitValue(5451) == 1,
+			client.getVarbitValue(5452) == 1,
+			client.getVarbitValue(16097) == 1,
+			client.getVarbitValue(16098) == 1);
 	}
 
 	// ------------------------------------------------------------------
