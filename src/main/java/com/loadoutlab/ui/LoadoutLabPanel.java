@@ -200,7 +200,9 @@ public class LoadoutLabPanel extends PluginPanel
 		lowRisk.setForeground(new Color(200, 200, 200));
 		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
 		lowRisk.setToolTipText("Wilderness low-risk set: untradeables everywhere plus at"
-			+ " most 3 tradeable items - exactly the items you keep on a PvP death");
+			+ " most 3 tradeable items. Death keeps your 3 highest-value items, so with"
+			+ " only 3 tradeables worn they are all kept; untradeables are kept too"
+			+ " (combat ones may come back broken - coin repair)");
 		lowRisk.addActionListener(e ->
 		{
 			protectItem.setEnabled(lowRisk.isSelected());
@@ -794,8 +796,11 @@ public class LoadoutLabPanel extends PluginPanel
 		line.setForeground(new Color(200, 180, 120));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
-		StringBuilder tip = new StringBuilder("<html>Tradeable items in this set");
-		tip.append(" - within the kept-on-death cap, so a PvP death loses nothing:");
+		StringBuilder tip = new StringBuilder("<html>Tradeable items in this set -");
+		tip.append(" death keeps your highest-value items, and with no more");
+		tip.append(" tradeables than the cap these are all kept. Untradeables are");
+		tip.append(" kept too (combat ones may need a coin repair). Skulled you");
+		tip.append(" keep 0 (1 with Protect Item):");
 		for (GearItem item : best.getLoadout().getGear().values())
 		{
 			if (item != null && item.isTradeable())

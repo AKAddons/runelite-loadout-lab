@@ -5,11 +5,15 @@ import java.util.Set;
 
 /**
  * Monsters fought in the Wilderness, where dying to a PKer risks your
- * gear: you keep your 3 most valuable items (4 with Protect Item, fewer
- * if skulled) and untradeables are kept in a repairable state - so a
- * low-risk set is untradeables everywhere plus at most 3-4 tradeables.
- * Curated list (wiki-verified 2026-07-07): the boss ring, their escape
- * cave counterparts, and the Revenant Caves.
+ * gear. Verified vs the wiki (Items Kept on Death, 2026-07-07): death
+ * keeps your 3 highest-GE/alch-value items (4 with Protect Item; 0/1
+ * skulled); since the June 2026 rework most untradeables are kept in
+ * the Wilderness, with combat-capable ones returning broken/mangled
+ * for a coin repair above level 20. A low-risk set therefore wears NO
+ * MORE tradeables than the kept count - value ranking then cannot
+ * drop any of them - and untradeables everywhere else.
+ * Curated list: the boss ring, escape-cave counterparts, KBD, and the
+ * Revenant Caves.
  */
 public final class WildernessMonsters
 {
