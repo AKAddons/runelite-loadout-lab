@@ -199,11 +199,11 @@ public class LoadoutLabPanel extends PluginPanel
 		lowRisk.setOpaque(false);
 		lowRisk.setForeground(new Color(200, 200, 200));
 		lowRisk.setAlignmentX(LEFT_ALIGNMENT);
-		lowRisk.setToolTipText("Wilderness low-risk set: at most 3 VALUABLE tradeables"
-			+ " (death keeps your 3 highest-value items, so they are all kept), with"
-			+ " untradeables and throwaway-cheap gear (black d'hide class, under 30k)"
-			+ " filling everything else - big stats per gp of risk. The Risk line"
-			+ " prices whatever would drop.");
+		lowRisk.setToolTipText("Wilderness low-risk set: your 3 most valuable items are"
+			+ " kept on death (4 with Protect Item) - they ride free. Everything worn"
+			+ " beyond them must be throwaway-cheap (under 75k: glory, black d'hide,"
+			+ " mystic class), so the only gp that can drop is a shrug. The Risk line"
+			+ " prices exactly what would.");
 		lowRisk.addActionListener(e -> recompute());
 		lowRisk.setVisible(false);
 		top.add(lowRisk);
