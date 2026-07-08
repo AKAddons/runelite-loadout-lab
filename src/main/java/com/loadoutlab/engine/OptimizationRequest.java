@@ -32,7 +32,7 @@ public final class OptimizationRequest
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
 	private final boolean antifirePotion;
-	/** "Green" items: unowned gear considered as owned (dreaming). */
+	/** Dream items: unowned gear considered as owned. */
 	private final Set<Integer> dreamItems;
 
 	public OptimizationRequest(

@@ -255,9 +255,8 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.addActionListener(e -> recompute());
 		top.add(spellbook);
 
-		// The "green" set, automatic tier: buyable upgrades within a total
-		// gp budget join the consideration pool (dream items are the manual
-		// tier, via right-click).
+		// Buyable upgrades within a total gp budget join the consideration
+		// pool (dream items are the manual version, via right-click).
 		upgradeBudget.setAlignmentX(LEFT_ALIGNMENT);
 		upgradeBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		upgradeBudget.setToolTipText("Also consider buyable gear - total spend within this budget");
@@ -541,8 +540,8 @@ public class LoadoutLabPanel extends PluginPanel
 						recompute();
 					});
 					menu.add(exclude);
-					// The "green" set: unowned items can be dreamed into the
-					// owned pool (and undreamed).
+					// Unowned items can be dreamed into the owned pool
+					// (and undreamed).
 					if (!ownedCheck.owns(item.getId()))
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
@@ -974,7 +973,7 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
-	/** Green items in the set: what buying the unowned pieces would cost. */
+	/** What buying the unowned pieces in this set would cost. */
 	private void addUpgradeLine(JPanel card, DpsResult best)
 	{
 		long cost = 0;
@@ -1179,8 +1178,8 @@ public class LoadoutLabPanel extends PluginPanel
 				? dragonfireMenuEntries() : java.util.Collections.emptyList();
 			if (item != null)
 			{
-				// Green border: an item in the set you don't own (a dream or
-				// budget upgrade) - the "green" set made visible.
+				// Green border: an item in the set you don't own (a dream
+				// or budget upgrade).
 				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
 				slot.setBorder(BorderFactory.createLineBorder(
 					unowned ? new Color(110, 190, 110) : new Color(70, 70, 70)));

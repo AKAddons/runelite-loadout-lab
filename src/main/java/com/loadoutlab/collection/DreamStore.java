@@ -8,10 +8,10 @@ import java.util.Set;
 import net.runelite.client.config.ConfigManager;
 
 /**
- * "Green" items: unowned gear the player wants CONSIDERED as owned -
- * dreaming about an upgrade before buying or grinding it. Same
- * persistence shape as ExclusionStore; exclusions (red) always win
- * over dreams (green) because they filter earlier.
+ * Dream items: unowned gear the player wants CONSIDERED as owned -
+ * trying an upgrade on before buying or grinding it. Same persistence
+ * shape as ExclusionStore; exclusions always win over dreams because
+ * they filter earlier.
  */
 public class DreamStore
 {

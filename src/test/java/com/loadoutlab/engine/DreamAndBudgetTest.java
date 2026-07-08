@@ -12,8 +12,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * The item-colour model: owned = black, excluded = red, dream/budget =
- * green. Candidates = (black + green) - red.
+ * Candidate pool semantics: candidates = (owned + dreams + within-budget
+ * purchases) - exclusions.
  */
 public class DreamAndBudgetTest
 {
@@ -41,7 +41,7 @@ public class DreamAndBudgetTest
 	@Test
 	public void aDreamedTwistedBowJoinsAnOwnedOnlySearch()
 	{
-		// Black set: magic shortbow + rune arrows. Green: dream a tbow.
+		// Owned: magic shortbow + rune arrows. Dreamed: a twisted bow.
 		OptimizationRequest plain = owned(Map.of(861, 1, 892, 100), 0);
 		OptimizationRequest dreaming = plain.withDreamItems(Set.of(20997)); // twisted bow
 		DpsResult without = new LoadoutOptimizer().optimize(data, plain).get(0);
@@ -51,7 +51,7 @@ public class DreamAndBudgetTest
 	}
 
 	@Test
-	public void redBeatsGreen_anExcludedDreamStaysOut()
+	public void anExcludedDreamItemStaysOut()
 	{
 		OptimizationRequest req = owned(Map.of(861, 1, 892, 100), 0)
 			.withDreamItems(Set.of(20997))

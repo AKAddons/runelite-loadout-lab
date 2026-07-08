@@ -206,9 +206,9 @@ public class OptimizerService
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
 					com.loadoutlab.engine.PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
-				// The green set: dreams are pretend-owned; a positive upgrade
-				// budget also auto-greens anything buyable within it (total
-				// spend, tracked by the beam).
+				// Dreams are pretend-owned; a positive upgrade budget also
+				// admits anything buyable within it (total spend, tracked
+				// by the beam).
 				OptimizationRequest ownedRequest = request(
 					monster, style, styleLevels, unlocks, requirements,
 					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
