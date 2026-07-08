@@ -107,3 +107,13 @@ NOT a main-game flag). `equipment_requirements.json.gz` is curated, not
 regenerated — post-May items list no wear requirements until added there.
 Re-run the script whenever content feels stale; the loader's leagues and
 effect-spell filters survive regeneration.
+
+## Amulet of the damned / barrows set effects (2026-07-08)
+
+The damned amulet is stat-identical to a glory but crumbles on ANY death
+(category 5 in untradeable_death.json), so it loses every stat tie to the
+glory by design (LoadoutOptimizer.betterEquivalent). Its real value -
+enhancing barrows set effects (Dharok's, Ahrim's, Guthan's...) - is NOT
+modeled; when set effects land in DpsCalculator, the damned will re-earn
+its slot through dps with full barrows worn, no special-casing needed.
+Until then it only surfaces when no glory is owned.

@@ -162,6 +162,29 @@ public class RiskConstraintTest
 	}
 
 	@Test
+	public void theDamnedAmuletLosesStatTiesOutsideTheWildernessToo()
+	{
+		// It crumbles on ANY death (PvM included); its barrows set bonus is
+		// not modeled, so with a glory owned it should never be suggested.
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		owned.put(4151, 1);
+		owned.put(1712, 1);
+		owned.put(12851, 1);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		OptimizationRequest req = new OptimizationRequest(goblin, CombatStyle.MELEE,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
+			null, 0, CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(data.canonicalizeOwned(owned), true), 1);
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
+		Assert.assertFalse(out.isEmpty());
+		com.loadoutlab.data.GearItem neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
+		if (neck != null)
+		{
+			Assert.assertEquals("Amulet of glory", neck.getName());
+		}
+	}
+
+	@Test
 	public void protectItemBuysAFourthRiskSlotAndAtLeastAsMuchDps()
 	{
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();

@@ -673,10 +673,17 @@ public final class LoadoutOptimizer
 		{
 			return candidate.isTradeable();
 		}
+		// Destroyed-on-ANY-death items (amulet of the damned) lose stat
+		// ties everywhere, not just the wilderness - their only edge,
+		// enhancing barrows set effects, is not modeled yet (ENGINE-GAPS);
+		// without a glory owned they still surface via the owned check.
+		boolean candidateDestroyed = UntradeableDeathCosts.isDestroyedOnDeath(candidate);
+		if (candidateDestroyed != UntradeableDeathCosts.isDestroyedOnDeath(current))
+		{
+			return !candidateDestroyed;
+		}
 		// Wilderness risk mode: on stat ties prefer the item with the
-		// smaller unavoidable death fee - a glory (protectable, free)
-		// must beat the amulet of the damned (crumbles on any death,
-		// 34k every time) even though the version labels say otherwise.
+		// smaller unavoidable death fee.
 		if (request.isRiskConstrained())
 		{
 			long candidateFee = alwaysDeathFee(candidate);
