@@ -4,7 +4,9 @@ import com.loadoutlab.data.GearItem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * What a PvP death actually costs in a given set. Mechanics
@@ -50,10 +52,10 @@ public final class PvpRisk
 		public final List<Charge> untradeableCharges;
 		/** Display value per item id - a convert-class untradeable's
 		 * value is its component, not its (absent) GE price. */
-		public final java.util.Map<Integer, Long> valueById;
+		public final Map<Integer, Long> valueById;
 
 		Assessment(long riskGp, List<GearItem> kept, List<GearItem> lost,
-			List<Charge> untradeableCharges, java.util.Map<Integer, Long> valueById)
+			List<Charge> untradeableCharges, Map<Integer, Long> valueById)
 		{
 			this.riskGp = riskGp;
 			this.kept = Collections.unmodifiableList(kept);
@@ -81,7 +83,7 @@ public final class PvpRisk
 		// apply regardless of protection and never occupy a slot.
 		List<GearItem> pool = new ArrayList<>();
 		List<Charge> charges = new ArrayList<>();
-		java.util.Map<Integer, Long> valueById = new java.util.HashMap<>();
+		Map<Integer, Long> valueById = new HashMap<>();
 		for (GearItem item : loadout.getGear().values())
 		{
 			sort(item, pool, charges, valueById);
@@ -107,7 +109,7 @@ public final class PvpRisk
 
 	/** Losable items join the protection pool; the rest accrue fees. */
 	private static void sort(GearItem item, List<GearItem> pool,
-		List<Charge> charges, java.util.Map<Integer, Long> valueById)
+		List<Charge> charges, Map<Integer, Long> valueById)
 	{
 		if (item == null)
 		{

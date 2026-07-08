@@ -1,11 +1,13 @@
 package com.loadoutlab.engine;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.loadoutlab.data.GearItem;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -39,7 +41,7 @@ public final class QuestRewardItems
 			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
 		{
 			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			for (Map.Entry<String, com.google.gson.JsonElement> entry : root.entrySet())
+			for (Map.Entry<String, JsonElement> entry : root.entrySet())
 			{
 				JsonObject row = entry.getValue().getAsJsonObject();
 				QUEST_BY_NAME.put(entry.getKey().toLowerCase(Locale.ROOT),
@@ -75,6 +77,6 @@ public final class QuestRewardItems
 	/** Every curated item name (lowercase) - for corpus validation tests. */
 	public static Set<String> itemNames()
 	{
-		return java.util.Collections.unmodifiableSet(QUEST_BY_NAME.keySet());
+		return Collections.unmodifiableSet(QUEST_BY_NAME.keySet());
 	}
 }

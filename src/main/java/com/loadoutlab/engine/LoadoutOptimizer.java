@@ -7,9 +7,12 @@ import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.SpellStats;
 import com.loadoutlab.data.StatBlock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -125,7 +128,7 @@ public final class LoadoutOptimizer
 	{
 		if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null)
 		{
-			return java.util.Collections.emptyList();
+			return Collections.emptyList();
 		}
 		if (request.getStyle() == CombatStyle.ANY)
 		{
@@ -241,7 +244,7 @@ public final class LoadoutOptimizer
 			}
 		}
 
-		Map<DpsResult, Long> riskByResult = new java.util.IdentityHashMap<>();
+		Map<DpsResult, Long> riskByResult = new IdentityHashMap<>();
 		if (request.isRiskConstrained())
 		{
 			for (DpsResult result : results)
@@ -319,7 +322,7 @@ public final class LoadoutOptimizer
 	{
 		if (request.getStyle() != CombatStyle.MAGIC || !request.isAutoSpell())
 		{
-			return java.util.Collections.emptyList();
+			return Collections.emptyList();
 		}
 		List<SpellStats> spells = new ArrayList<>();
 		for (SpellStats spell : data.getSpells())
@@ -458,7 +461,7 @@ public final class LoadoutOptimizer
 	{
 		if (slot == GearSlot.SHIELD && weapon != null && weapon.isTwoHanded())
 		{
-			return java.util.Collections.singletonList(null);
+			return Collections.singletonList(null);
 		}
 		if (slot != GearSlot.AMMO)
 		{
@@ -474,7 +477,7 @@ public final class LoadoutOptimizer
 		}
 		if (result.isEmpty() && RangedAmmo.compatible(null, weapon))
 		{
-			return java.util.Collections.singletonList(null);
+			return Collections.singletonList(null);
 		}
 		return result;
 	}
@@ -693,7 +696,7 @@ public final class LoadoutOptimizer
 
 	private static List<GearItem> dedupe(List<GearItem> rows, OptimizationRequest request)
 	{
-		Map<String, GearItem> best = new java.util.LinkedHashMap<>();
+		Map<String, GearItem> best = new LinkedHashMap<>();
 		for (GearItem item : rows)
 		{
 			String key = item.getSlot() + ":" + item.getCategory() + ":" + item.getSpeed() + ":" + item.isTwoHanded()

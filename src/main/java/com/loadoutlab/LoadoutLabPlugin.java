@@ -3,20 +3,26 @@ package com.loadoutlab;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
+import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
+import com.loadoutlab.engine.PrayerUnlocks;
 import com.loadoutlab.engine.RequirementProfile;
 import com.loadoutlab.optimizer.OptimizerService;
+import com.loadoutlab.profile.PlayerProfile;
 import com.loadoutlab.ui.LoadoutLabPanel;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -38,10 +44,13 @@ import net.runelite.api.WorldType;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
@@ -82,11 +91,11 @@ public class LoadoutLabPlugin extends Plugin
 	private ItemManager itemManager;
 
 	@Inject
-	private net.runelite.client.game.SpriteManager spriteManager;
+	private SpriteManager spriteManager;
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
-	private com.loadoutlab.collection.DreamStore dreams;
+	private DreamStore dreams;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
@@ -101,7 +110,7 @@ public class LoadoutLabPlugin extends Plugin
 	private RequirementProfile requirementProfile;
 	private PlayerLevels realLevels;
 	private PlayerLevels boostedLevels;
-	private com.loadoutlab.engine.PrayerUnlocks prayerUnlocks;
+	private PrayerUnlocks prayerUnlocks;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
 	private final EnumSet<CollectionLedger.Source> dirtySources =
@@ -114,8 +123,8 @@ public class LoadoutLabPlugin extends Plugin
 	 * "source": String} to open the panel on that monster. The message
 	 * arrives on the POSTER's thread - everything marshals to the EDT.
 	 */
-	@net.runelite.client.eventbus.Subscribe
-	public void onPluginMessage(net.runelite.client.events.PluginMessage event)
+	@Subscribe
+	public void onPluginMessage(PluginMessage event)
 	{
 		if (!"loadoutlab".equals(event.getNamespace()) || !"search".equals(event.getName()))
 		{
@@ -143,7 +152,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
-		dreams = new com.loadoutlab.collection.DreamStore(configManager, gson);
+		dreams = new DreamStore(configManager, gson);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
@@ -291,7 +300,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * same canonicalization the optimizer itself uses. Cached per ledger
 	 * fingerprint; the canonicalization walks the whole bank otherwise.
 	 */
-	private volatile java.util.Set<Integer> canonicalOwnedCache;
+	private volatile Set<Integer> canonicalOwnedCache;
 	private volatile int canonicalOwnedFingerprint;
 
 	private boolean ownsCanonical(int itemId)
@@ -301,7 +310,7 @@ public class LoadoutLabPlugin extends Plugin
 			return ledger != null && ledger.owned().containsKey(itemId);
 		}
 		int fingerprint = ledger.fingerprint();
-		java.util.Set<Integer> cache = canonicalOwnedCache;
+		Set<Integer> cache = canonicalOwnedCache;
 		if (cache == null || canonicalOwnedFingerprint != fingerprint)
 		{
 			cache = data.canonicalizeOwned(ledger.owned()).keySet();
@@ -316,16 +325,16 @@ public class LoadoutLabPlugin extends Plugin
 	 * log on every query, so any in-game result can be reproduced headless
 	 * (./gradlew query) or attached to a bug report. Local only.
 	 */
-	private void exportProfile(com.loadoutlab.profile.PlayerProfile profile)
+	private void exportProfile(PlayerProfile profile)
 	{
 		Thread writer = new Thread(() ->
 		{
 			try
 			{
-				java.nio.file.Path file = new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR,
+				Path file = new File(RuneLite.RUNELITE_DIR,
 					"loadout-lab/profile.json").toPath();
-				java.nio.file.Files.createDirectories(file.getParent());
-				java.nio.file.Files.writeString(file, profile.toJson());
+				Files.createDirectories(file.getParent());
+				Files.writeString(file, profile.toJson());
 			}
 			catch (Exception ex)
 			{
@@ -350,9 +359,9 @@ public class LoadoutLabPlugin extends Plugin
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
 			int fingerprint = ledger.fingerprint();
-			com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks != null
-				? prayerUnlocks : com.loadoutlab.engine.PrayerUnlocks.ALL;
-			exportProfile(new com.loadoutlab.profile.PlayerProfile(
+			PrayerUnlocks unlocks = prayerUnlocks != null
+				? prayerUnlocks : PrayerUnlocks.ALL;
+			exportProfile(new PlayerProfile(
 				real, live, unlocks, profile, ledger.owned(), ledger.bankKnown()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, antifirePotion,
@@ -404,7 +413,7 @@ public class LoadoutLabPlugin extends Plugin
 		boostedLevels = PlayerLevels.from(boosted);
 		// Unlock-gated prayers: King's Ransom for Piety/Chivalry; scroll
 		// unlock varbits for Rigour/Augury (CoX) and Deadeye/Mystic Vigour.
-		prayerUnlocks = new com.loadoutlab.engine.PrayerUnlocks(
+		prayerUnlocks = new PrayerUnlocks(
 			quests.contains(Quest.KINGS_RANSOM.name()),
 			client.getVarbitValue(5451) == 1,
 			client.getVarbitValue(5452) == 1,

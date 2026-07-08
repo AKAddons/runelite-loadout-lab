@@ -1,15 +1,19 @@
 package com.loadoutlab.optimizer;
 
+import com.loadoutlab.engine.BoostProfile;
 import com.loadoutlab.engine.CandidateMode;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.DpsCalculator;
 import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.IncomingDpsCalculator;
 import com.loadoutlab.engine.Loadout;
+import com.loadoutlab.engine.LoadoutOptimizer;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerBonuses;
-import com.loadoutlab.engine.LoadoutOptimizer;
+import com.loadoutlab.engine.PrayerUnlocks;
+import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.RangedAmmo;
 import com.loadoutlab.engine.RequirementProfile;
 import com.loadoutlab.engine.SpecialAttack;
@@ -17,12 +21,15 @@ import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -63,11 +70,11 @@ public class OptimizerService
 		/** The ceiling assumption for game best ("Rigour + Ranging potion"). */
 		public final String gameBoostLabel;
 		/** What the boss does back to you in the shown owned set (nullable). */
-		public final com.loadoutlab.engine.IncomingDpsCalculator.Result incoming;
+		public final IncomingDpsCalculator.Result incoming;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			com.loadoutlab.engine.IncomingDpsCalculator.Result incoming)
+			IncomingDpsCalculator.Result incoming)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
@@ -105,8 +112,7 @@ public class OptimizerService
 	 * nor let stale results flash in). Panel-driven: only the newest
 	 * request ever matters.
 	 */
-	private final java.util.concurrent.atomic.AtomicLong requestSeq =
-		new java.util.concurrent.atomic.AtomicLong();
+	private final AtomicLong requestSeq = new AtomicLong();
 	/** Abandoned-computation count - test observability only. */
 	volatile int abandonedForTest;
 
@@ -134,28 +140,28 @@ public class OptimizerService
 		MonsterStats monster,
 		PlayerLevels realLevels,
 		PlayerLevels boostedLevels,
-		com.loadoutlab.engine.PrayerUnlocks prayerUnlocks,
+		PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements,
 		OwnedItems owned,
 		int collectionFingerprint,
 		boolean f2pOnly,
 		boolean onSlayerTask,
 		String spellbookLock,
-		java.util.Set<Integer> excludedItems,
+		Set<Integer> excludedItems,
 		int maxTradeables,
 		boolean antifirePotion,
-		java.util.Set<Integer> dreamItems,
+		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
-		final java.util.Set<Integer> excluded = excludedItems == null
-			? java.util.Collections.emptySet() : excludedItems;
-		final java.util.Set<Integer> dreams = dreamItems == null
-			? java.util.Collections.emptySet() : dreamItems;
+		final Set<Integer> excluded = excludedItems == null
+			? Collections.emptySet() : excludedItems;
+		final Set<Integer> dreams = dreamItems == null
+			? Collections.emptySet() : dreamItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
-		final com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks == null
-			? com.loadoutlab.engine.PrayerUnlocks.ALL : prayerUnlocks;
+		final PrayerUnlocks unlocks = prayerUnlocks == null
+			? PrayerUnlocks.ALL : prayerUnlocks;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + antifirePotion
@@ -194,17 +200,17 @@ public class OptimizerService
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
-				com.loadoutlab.engine.BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
+				BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
 				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
 				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
-					boost == com.loadoutlab.engine.BoostProfile.NONE ? null : boost.toString());
+					boost == BoostProfile.NONE ? null : boost.toString());
 				// The ceiling assumes the best prayers/boost in the GAME,
 				// not just what this player has unlocked or owns.
-				com.loadoutlab.engine.BoostProfile gameBoost = BoostSelector.ceilingFor(style);
+				BoostProfile gameBoost = BoostSelector.ceilingFor(style);
 				PlayerLevels gameLevels = real.boosted(gameBoost, boostedLevels).max(boostedLevels);
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
-					com.loadoutlab.engine.PrayerUnlocks.ALL).nameFor(style);
+					PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
 				// Dreams are pretend-owned; a positive upgrade budget also
 				// admits anything buyable within it (total spend, tracked
@@ -231,7 +237,7 @@ public class OptimizerService
 				// the game-best card shows YOUR god d'hide coif, not an
 				// arbitrary god's, and the BiS border matches by id.
 				OptimizationRequest gameRequest = request(
-					monster, style, gameLevels, com.loadoutlab.engine.PrayerUnlocks.ALL,
+					monster, style, gameLevels, PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
@@ -245,9 +251,9 @@ public class OptimizerService
 				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
-				com.loadoutlab.engine.IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
+				IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
 					? null
-					: com.loadoutlab.engine.IncomingDpsCalculator.calculate(
+					: IncomingDpsCalculator.calculate(
 						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
@@ -335,8 +341,8 @@ public class OptimizerService
 			// for kept slots like everything else - the whole package (worn
 			// set + this weapon) must stay within the total risk budget.
 			if (request.isRiskConstrained()
-				&& com.loadoutlab.engine.PvpRisk.assess(baseResults.get(0).getLoadout(), item,
-					request.getMaxTradeables()).riskGp > com.loadoutlab.engine.OptimizationRequest.RISK_BUDGET_GP)
+				&& PvpRisk.assess(baseResults.get(0).getLoadout(), item,
+					request.getMaxTradeables()).riskGp > OptimizationRequest.RISK_BUDGET_GP)
 			{
 				continue;
 			}
@@ -447,7 +453,7 @@ public class OptimizerService
 		MonsterStats monster,
 		CombatStyle style,
 		PlayerLevels levels,
-		com.loadoutlab.engine.PrayerUnlocks unlocks,
+		PrayerUnlocks unlocks,
 		RequirementProfile requirements,
 		CandidateMode mode,
 		OwnedItems owned,

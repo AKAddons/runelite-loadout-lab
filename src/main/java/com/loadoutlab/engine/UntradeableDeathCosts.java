@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.loadoutlab.data.GearItem;
@@ -51,7 +52,7 @@ public final class UntradeableDeathCosts
 			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
 		{
 			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			for (Map.Entry<String, com.google.gson.JsonElement> entry : root.entrySet())
+			for (Map.Entry<String, JsonElement> entry : root.entrySet())
 			{
 				JsonObject row = entry.getValue().getAsJsonObject();
 				String name = entry.getKey().toLowerCase(Locale.ROOT);
@@ -101,7 +102,6 @@ public final class UntradeableDeathCosts
 		return categoryFor(item) == 5;
 	}
 
-	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
 	/**
 	 * Category 4: converts to a tradeable component dropped for the
 	 * killer (slayer helm -> black mask, crystal -> seed). These are
@@ -113,6 +113,7 @@ public final class UntradeableDeathCosts
 		return categoryFor(item) == 4;
 	}
 
+	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
 	public static int categoryFor(GearItem item)
 	{
 		if (item == null)
