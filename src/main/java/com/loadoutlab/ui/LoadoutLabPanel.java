@@ -1263,9 +1263,34 @@ public class LoadoutLabPanel extends PluginPanel
 				String quest = com.loadoutlab.engine.QuestRewardItems.questFor(item);
 				String obtain = quest != null ? "quest: " + quest
 					: com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero());
+				String fate = "";
+				if (fates != null)
+				{
+					if (containsId(fates.kept, item))
+					{
+						slot.setDot(DOT_KEPT);
+						fate = " - KEPT on death";
+					}
+					else if (containsId(fates.lost, item))
+					{
+						slot.setDot(DOT_DROPPED);
+						fate = " - DROPPED on death ("
+							+ com.loadoutlab.engine.PvpRisk.formatGp(fates.valueOf(item)) + ")";
+					}
+					else
+					{
+						long fee = feeFor(fates, item);
+						if (fee > 0)
+						{
+							slot.setDot(DOT_FEE);
+							fate = " - fee on death (" + com.loadoutlab.engine.PvpRisk.formatGp(fee) + ")";
+						}
+					}
+				}
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
 					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
 					+ (bis ? " - best available" : "")
+					+ fate
 					+ " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());
 				img.addTo(slot);
