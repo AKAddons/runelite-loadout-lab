@@ -34,6 +34,42 @@ public class AnalogTest
 	}
 
 	@Test
+	public void legAnalogsAreStatIdenticalInTheData()
+	{
+		// Platelegs vs plateskirts, proselyte cuisse vs tasset: the
+		// dedupe's owned-preference and the gold border's stat
+		// equivalence both rest on these being true stat clones.
+		assertClones(1079, 1093);  // rune platelegs / plateskirt
+		assertClones(4087, 4585);  // dragon platelegs / plateskirt
+		assertClones(9676, 9678);  // proselyte cuisse / tasset
+	}
+
+	private static void assertClones(int a, int b)
+	{
+		GearItem left = data.getGear(a);
+		GearItem right = data.getGear(b);
+		Assert.assertNotNull(left);
+		Assert.assertNotNull(right);
+		Assert.assertEquals(left.getSlot(), right.getSlot());
+		for (java.util.function.Function<GearItem, com.loadoutlab.data.StatBlock> block
+			: java.util.List.<java.util.function.Function<GearItem, com.loadoutlab.data.StatBlock>>of(
+				GearItem::getOffensive, GearItem::getDefensive, GearItem::getBonuses))
+		{
+			com.loadoutlab.data.StatBlock l = block.apply(left);
+			com.loadoutlab.data.StatBlock r = block.apply(right);
+			Assert.assertEquals(l.getStab(), r.getStab());
+			Assert.assertEquals(l.getSlash(), r.getSlash());
+			Assert.assertEquals(l.getCrush(), r.getCrush());
+			Assert.assertEquals(l.getMagic(), r.getMagic());
+			Assert.assertEquals(l.getRanged(), r.getRanged());
+			Assert.assertEquals(l.getStrength(), r.getStrength());
+			Assert.assertEquals(l.getRangedStrength(), r.getRangedStrength());
+			Assert.assertEquals(l.getMagicDamage(), r.getMagicDamage());
+			Assert.assertEquals(l.getPrayer(), r.getPrayer());
+		}
+	}
+
+	@Test
 	public void statTiedAnalogsFollowOwnership()
 	{
 		GearItem armadyl = headPick(12512);
