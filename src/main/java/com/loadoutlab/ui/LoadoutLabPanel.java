@@ -21,6 +21,7 @@ import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -1105,42 +1106,103 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
+	/** The wilderness death fates a grid cell can be badged with. */
+	private enum Fate
+	{
+		KEPT, DROPPED, FEE
+	}
+
 	/**
-	 * A grid cell that can carry a small corner dot: the wilderness
-	 * death-fate marker (white = kept, red = dropped to the killer,
-	 * orange = costs a fee). Dot in the top-left; borders keep their
-	 * own language (gold/blue/green).
+	 * A grid cell that can carry a small top-left glyph: the wilderness
+	 * death-fate marker (halo = protected, skull = lost to the killer,
+	 * coin stack = survives but bills a replacement fee). Glyphs get a
+	 * dark backing so they read on bright item sprites; borders keep
+	 * their own language (gold/blue/green).
 	 */
 	private static final class RiskDotLabel extends JLabel
 	{
-		private Color dot;
+		private static final Color BACKING = new Color(30, 30, 30);
 
-		void setDot(Color dot)
+		private Fate fate;
+
+		void setFate(Fate fate)
 		{
-			this.dot = dot;
+			this.fate = fate;
 		}
 
 		@Override
 		protected void paintComponent(Graphics g)
 		{
 			super.paintComponent(g);
-			if (dot != null)
+			if (fate == null)
 			{
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-					RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(new Color(30, 30, 30));
-				g2.fillOval(3, 3, 9, 9);
-				g2.setColor(dot);
-				g2.fillOval(4, 4, 7, 7);
-				g2.dispose();
+				return;
 			}
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			switch (fate)
+			{
+				case KEPT:
+					paintHalo(g2);
+					break;
+				case DROPPED:
+					paintSkull(g2);
+					break;
+				default:
+					paintCoins(g2);
+					break;
+			}
+			g2.dispose();
+		}
+
+		/** Angel halo: a tilted golden-white ring over a dark backing. */
+		private static void paintHalo(Graphics2D g2)
+		{
+			g2.rotate(Math.toRadians(-15), 7.5, 4.5);
+			g2.setColor(BACKING);
+			g2.setStroke(new BasicStroke(4f));
+			g2.drawOval(2, 2, 11, 5);
+			g2.setColor(new Color(255, 236, 150));
+			g2.setStroke(new BasicStroke(2f));
+			g2.drawOval(2, 2, 11, 5);
+		}
+
+		/** The PK skull: cranium, jaw, eye sockets, tooth gaps. */
+		private static void paintSkull(Graphics2D g2)
+		{
+			g2.setColor(BACKING);
+			g2.fillOval(1, 1, 13, 12);
+			g2.setColor(new Color(235, 235, 225));
+			g2.fillOval(3, 2, 9, 8);
+			g2.fillRect(5, 9, 5, 3);
+			g2.setColor(BACKING);
+			g2.fillOval(5, 5, 2, 2);
+			g2.fillOval(8, 5, 2, 2);
+			g2.drawLine(6, 10, 6, 11);
+			g2.drawLine(8, 10, 8, 11);
+		}
+
+		/** The classic gp pile: stacked gold coins with darker rims. */
+		private static void paintCoins(Graphics2D g2)
+		{
+			g2.setColor(BACKING);
+			g2.fillOval(1, 1, 13, 12);
+			paintCoin(g2, 3, 8);
+			paintCoin(g2, 2, 5);
+			paintCoin(g2, 3, 2);
+		}
+
+		private static void paintCoin(Graphics2D g2, int x, int y)
+		{
+			g2.setColor(new Color(140, 100, 25));
+			g2.fillOval(x, y, 9, 5);
+			g2.setColor(new Color(255, 200, 60));
+			g2.fillOval(x + 1, y + 1, 7, 3);
+			g2.setColor(new Color(255, 214, 90));
+			g2.fillOval(x + 2, y + 1, 4, 2);
 		}
 	}
-
-	private static final Color DOT_KEPT = new Color(235, 235, 235);
-	private static final Color DOT_DROPPED = new Color(225, 95, 85);
-	private static final Color DOT_FEE = new Color(235, 165, 80);
 
 	/** Super antifire potion(4) - the icon for the assumed-potion chip. */
 	private static final int SUPER_ANTIFIRE_ID = 21978;
@@ -1299,13 +1361,13 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					if (containsId(fates.kept, item))
 					{
-						slot.setDot(DOT_KEPT);
-						fate = " - KEPT on death";
+						slot.setFate(Fate.KEPT);
+						fate = " - protected on death";
 					}
 					else if (containsId(fates.lost, item))
 					{
-						slot.setDot(DOT_DROPPED);
-						fate = " - DROPPED on death ("
+						slot.setFate(Fate.DROPPED);
+						fate = " - lost on death ("
 							+ PvpRisk.formatGp(fates.valueOf(item)) + ")";
 					}
 					else
@@ -1313,8 +1375,8 @@ public class LoadoutLabPanel extends PluginPanel
 						long fee = feeFor(fates, item);
 						if (fee > 0)
 						{
-							slot.setDot(DOT_FEE);
-							fate = " - fee on death (" + PvpRisk.formatGp(fee) + ")";
+							slot.setFate(Fate.FEE);
+							fate = " - replaceable for " + PvpRisk.formatGp(fee) + " on death";
 						}
 					}
 				}
@@ -1358,20 +1420,20 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				if (containsId(fates.kept, specWeapon))
 				{
-					specCell.setDot(DOT_KEPT);
-					specFate = "<br>KEPT on death.";
+					specCell.setFate(Fate.KEPT);
+					specFate = "<br>Protected on death.";
 				}
 				else if (containsId(fates.lost, specWeapon))
 				{
-					specCell.setDot(DOT_DROPPED);
-					specFate = "<br>DROPPED on death ("
+					specCell.setFate(Fate.DROPPED);
+					specFate = "<br>Lost on death ("
 						+ PvpRisk.formatGp(fates.valueOf(specWeapon)) + ").";
 				}
 				else if (feeFor(fates, specWeapon) > 0)
 				{
-					specCell.setDot(DOT_FEE);
-					specFate = "<br>Fee on death ("
-						+ PvpRisk.formatGp(feeFor(fates, specWeapon)) + ").";
+					specCell.setFate(Fate.FEE);
+					specFate = "<br>Replaceable for "
+						+ PvpRisk.formatGp(feeFor(fates, specWeapon)) + " on death.";
 				}
 			}
 			String specTip = specTooltip(spec, specExpected,
