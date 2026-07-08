@@ -56,5 +56,8 @@ the `run` command.
 The plugin has NO ironman/account-type detection, on purpose (2026-07-08,
 the maintainer tests on an ironman). Every feature - upgrade budget, GE
 prices, dream items, risk math - treats every account as a normal
-account. Do not add account-type gating; features an account cannot use
-are simply ignored by the player.
+account. Do not add account-type gating, and do NOT build iron-specific
+acquisition modes (e.g. "obtainable without the GE"): many upgrade items
+are craftable or vendor-bought, so GE price is an acceptable acquisition
+proxy for everyone, and quest rewards + dream items cover the rest.
+Features an account cannot use are simply ignored by the player.
