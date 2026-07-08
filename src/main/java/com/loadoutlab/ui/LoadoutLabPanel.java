@@ -130,6 +130,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
+	/** Grid display order: weapon beside shield, body beside legs. */
+	private static final GearSlot[] GRID_ORDER = {
+		GearSlot.HEAD, GearSlot.CAPE, GearSlot.NECK, GearSlot.AMMO,
+		GearSlot.WEAPON, GearSlot.SHIELD, GearSlot.BODY, GearSlot.LEGS,
+		GearSlot.HANDS, GearSlot.FEET, GearSlot.RING,
+	};
 
 	/** Text palette: muted grey for secondary info, green for good news,
 	 * blue for "do this" instructions, green-border green for unowned gear. */
@@ -1349,7 +1355,7 @@ public class LoadoutLabPanel extends PluginPanel
 			fates = PvpRisk.assess(result.getLoadout(), specWeapon,
 				protectItem.isSelected() ? 4 : 3);
 		}
-		for (GearSlot slotType : GearSlot.values())
+		for (GearSlot slotType : GRID_ORDER)
 		{
 			GearItem item = result.getLoadout().get(slotType);
 			RiskDotLabel slot = new RiskDotLabel();
