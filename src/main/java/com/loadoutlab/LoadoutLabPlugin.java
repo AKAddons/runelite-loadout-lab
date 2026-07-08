@@ -161,7 +161,7 @@ public class LoadoutLabPlugin extends Plugin
 				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
-					id -> ledger.owned().containsKey(id));
+					this::ownsCanonical);
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
@@ -283,6 +283,33 @@ public class LoadoutLabPlugin extends Plugin
 	// ------------------------------------------------------------------
 	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
 	// ------------------------------------------------------------------
+
+	/**
+	 * Ownership for the panel's borders/menus, VARIANT-AWARE: owning a
+	 * degraded or ornamented version (Blood moon tassets (Used), whip
+	 * (or)) counts as owning the base item the optimizer suggests - the
+	 * same canonicalization the optimizer itself uses. Cached per ledger
+	 * fingerprint; the canonicalization walks the whole bank otherwise.
+	 */
+	private volatile java.util.Set<Integer> canonicalOwnedCache;
+	private volatile int canonicalOwnedFingerprint;
+
+	private boolean ownsCanonical(int itemId)
+	{
+		if (data == null)
+		{
+			return ledger != null && ledger.owned().containsKey(itemId);
+		}
+		int fingerprint = ledger.fingerprint();
+		java.util.Set<Integer> cache = canonicalOwnedCache;
+		if (cache == null || canonicalOwnedFingerprint != fingerprint)
+		{
+			cache = data.canonicalizeOwned(ledger.owned()).keySet();
+			canonicalOwnedCache = cache;
+			canonicalOwnedFingerprint = fingerprint;
+		}
+		return cache.contains(itemId);
+	}
 
 	/**
 	 * The real account as a replayable fixture: written next to the usage

@@ -127,6 +127,11 @@ public class DataServiceTest
 		java.util.Map<Integer, Integer> owned = data.canonicalizeOwned(java.util.Map.of(12773, 1));
 		Assert.assertEquals(1, owned.get(4151).intValue());
 		Assert.assertEquals(1, owned.get(12773).intValue());
+
+		// Degraded charge-states count too: Blood moon tassets (Used)
+		// 29045 credits the base (New) 29025 the optimizer suggests.
+		java.util.Map<Integer, Integer> degraded = data.canonicalizeOwned(java.util.Map.of(29045, 1));
+		Assert.assertEquals(1, degraded.get(29025).intValue());
 	}
 
 	@Test
