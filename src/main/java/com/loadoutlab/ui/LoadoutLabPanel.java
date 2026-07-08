@@ -708,8 +708,11 @@ public class LoadoutLabPanel extends PluginPanel
 		addSpellLine(card, style, best);
 		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
+		// The owned grid marks what you don't own (green) and what already
+		// matches the game-best pick (gold).
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack"));
+			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
+			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
@@ -974,26 +977,44 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
-	/** What buying the unowned pieces in this set would cost. */
+	/**
+	 * What buying the unowned pieces in this set would cost. Quest rewards
+	 * are excluded from the gp sum - they cost effort, not coins - and are
+	 * listed by source quest in the tooltip instead; a set whose only
+	 * unowned pieces are quest rewards shows a compact quest-only line.
+	 */
 	private void addUpgradeLine(JPanel card, DpsResult best)
 	{
 		long cost = 0;
+		boolean questRewards = false;
 		StringBuilder tip = new StringBuilder("<html>Not owned yet:");
 		for (GearItem item : best.getLoadout().getGear().values())
 		{
-			if (item != null && !ownedCheck.owns(item.getId()))
+			if (item == null || ownedCheck.owns(item.getId()))
+			{
+				continue;
+			}
+			String quest = com.loadoutlab.engine.QuestRewardItems.questFor(item);
+			if (quest != null)
+			{
+				questRewards = true;
+				tip.append("<br>").append(item.label())
+					.append(" (quest: ").append(quest).append(")");
+			}
+			else
 			{
 				cost += item.getPriceOrZero();
 				tip.append("<br>").append(item.label()).append(" (")
 					.append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
 			}
 		}
-		if (cost <= 0)
+		if (cost <= 0 && !questRewards)
 		{
 			return;
 		}
-		JLabel line = new JLabel(String.format("Upgrade cost: ~%s gp",
-			com.loadoutlab.engine.PvpRisk.formatGp(cost)));
+		JLabel line = new JLabel(cost > 0
+			? String.format("Upgrade cost: ~%s gp", com.loadoutlab.engine.PvpRisk.formatGp(cost))
+			: "Upgrade: quest rewards");
 		line.setForeground(new Color(110, 190, 110));
 		line.setFont(line.getFont().deriveFont(11f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
@@ -1189,8 +1210,13 @@ public class LoadoutLabPanel extends PluginPanel
 				java.awt.Color border = unowned ? new Color(110, 190, 110)
 					: bis ? new Color(212, 175, 55) : new Color(70, 70, 70);
 				slot.setBorder(BorderFactory.createLineBorder(border));
+				// Quest rewards are earned, not bought: name the quest
+				// instead of quoting a gp price.
+				String quest = com.loadoutlab.engine.QuestRewardItems.questFor(item);
+				String obtain = quest != null ? "quest: " + quest
+					: com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero());
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
-					+ (unowned ? " - NOT OWNED (" + com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero()) + ")" : "")
+					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
 					+ (bis ? " - best available" : "")
 					+ " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());

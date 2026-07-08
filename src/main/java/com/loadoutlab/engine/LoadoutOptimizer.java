@@ -635,7 +635,10 @@ public final class LoadoutOptimizer
 			case OWNED_ONLY:
 				return owned;
 			case OWNED_OR_BUDGET:
-				return owned || affordable(request, item);
+				// The upgrade budget is the "show me obtainable gear" switch:
+				// quest rewards are obtainable too - for effort, not coins.
+				return owned || affordable(request, item)
+					|| QuestRewardItems.isQuestReward(item);
 			case BUDGET:
 			default:
 				return affordable(request, item);
@@ -657,18 +660,26 @@ public final class LoadoutOptimizer
 		// (fire cape, void, barrows gloves...) count without being owned.
 		// Every other mode is ownership/budget-scoped, and untradeables can't
 		// be bought, so there they require ownership.
+		// Exception: quest rewards (mostly untradeable) can be earned, so the
+		// upgrade budget - the "show me obtainable gear" switch - admits them.
 		return item != null && request.isIncludeUntradeables() && !item.isTradeable()
 			&& (request.getCandidateMode() == CandidateMode.ALL_STANDARD
 				|| request.getOwnedItems().owns(item.getId())
-				|| request.isDream(item.getId()));
+				|| request.isDream(item.getId())
+				|| (request.getCandidateMode() == CandidateMode.OWNED_OR_BUDGET
+					&& QuestRewardItems.isQuestReward(item)));
 	}
 
 	private static int budgetCost(OptimizationRequest request, GearItem item)
 	{
 		// Dream items are pretend-owned: free against the upgrade budget
-		// (the panel prices the dream separately).
+		// (the panel prices the dream separately). Quest rewards are free
+		// too when the budget admitted them - they cost effort, not gp
+		// (the panel labels them with their source quest instead).
 		if (item == null || request.getOwnedItems().owns(item.getId())
-			|| request.isDream(item.getId()))
+			|| request.isDream(item.getId())
+			|| (request.getCandidateMode() == CandidateMode.OWNED_OR_BUDGET
+				&& QuestRewardItems.isQuestReward(item)))
 		{
 			return 0;
 		}

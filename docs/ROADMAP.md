@@ -74,6 +74,10 @@ monster, get your strongest owned set per combat style with exact DPS.
   border + "best available" tooltip when your slot's item matches the
   game-best set's pick. Remaining: the gradient by %-towards-BiS for
   non-matching slots (needs per-slot dps attribution).
+- **Quest rewards in the budget pool** - DONE (2026-07-08): with the
+  upgrade budget on, curated quest rewards (quest_rewards.json, wiki
+  verified) join the green pool at 0 gp, labeled "quest: X" instead of
+  a price; they never charge the gp budget or the upgrade-cost sum.
 - **Slot alternates** - expandable per-slot list of runner-up items
   (owned and BiS variants).
 - **Spec-throughput vs ring slot** - jointly optimize the ring: a
