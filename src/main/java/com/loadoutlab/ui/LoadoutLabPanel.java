@@ -143,10 +143,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color GOOD = new Color(140, 200, 140);
 	private static final Color INFO = new Color(150, 170, 230);
 	private static final Color UNOWNED = new Color(110, 190, 110);
+	private static final Color BORDER_UNOWNED = new Color(100, 145, 100);
 
 	/** Cell border language: gold = your item IS the game best, blue = the
 	 * spec cell (matches the in-game spec orb), grey = owned/empty. */
-	private static final Color BORDER_BIS = new Color(212, 175, 55);
+	private static final Color BORDER_BIS = new Color(168, 148, 88);
 	private static final Color BORDER_SPEC = new Color(120, 190, 240);
 	private static final Color BORDER_PLAIN = new Color(70, 70, 70);
 	private static final Color BORDER_EMPTY = new Color(50, 50, 50);
@@ -1375,7 +1376,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// coif) is just as best-available as the exact pick.
 				boolean bis = !unowned && bisItem != null
 					&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
-				Color border = unowned ? UNOWNED
+				Color border = unowned ? BORDER_UNOWNED
 					: bis ? BORDER_BIS : BORDER_PLAIN;
 				slot.setBorder(BorderFactory.createLineBorder(border));
 				// Quest rewards are earned, not bought: name the quest
