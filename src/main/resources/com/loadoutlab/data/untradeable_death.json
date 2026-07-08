@@ -55,9 +55,9 @@
   "note": "converts to an amulet of fury for the killer; blood shard and charges lost (wiki; vendored fury price)"
  },
  "amulet of the damned": {
-  "category": 2,
+  "category": 5,
   "costGp": 34000,
-  "note": "crumbles to dust on death (wiki Amulet of the damned); a full replacement trades ~34k (GE 2026-07)"
+  "note": "destroyed on ANY death, protected or not (wiki Amulet of the damned); replacement trades ~34k"
  },
  "ancient halo": {
   "category": 2,

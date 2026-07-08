@@ -72,13 +72,20 @@ public final class UntradeableDeathCosts
 	/**
 	 * Per-death gp cost of wearing this item into PvP above 20 Wilderness.
 	 * Tradeables cost 0 here - their loss is priced by the kept-slot
-	 * ranking in PvpRisk, not by this table.
+	 * ranking in PvpRisk - EXCEPT category 5 (destroyed on any death,
+	 * protection does not help), which charges regardless of tradeability.
 	 */
 	public static long costFor(GearItem item)
 	{
-		if (item == null || item.isTradeable())
+		if (item == null)
 		{
 			return 0L;
+		}
+		if (item.isTradeable())
+		{
+			Long destroyed = categoryFor(item) == 5
+				? COST_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT)) : null;
+			return destroyed == null ? 0L : destroyed;
 		}
 		Long listed = COST_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT));
 		if (listed != null)
@@ -86,6 +93,12 @@ public final class UntradeableDeathCosts
 			return listed;
 		}
 		return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
+	}
+
+	/** Category 5: destroyed on any death - never protectable. */
+	public static boolean isDestroyedOnDeath(GearItem item)
+	{
+		return categoryFor(item) == 5;
 	}
 
 	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */

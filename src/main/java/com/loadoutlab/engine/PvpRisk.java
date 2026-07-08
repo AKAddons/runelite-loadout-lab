@@ -113,6 +113,13 @@ public final class PvpRisk
 		{
 			return;
 		}
+		if (UntradeableDeathCosts.isDestroyedOnDeath(item))
+		{
+			// Crumbles to dust on ANY death - protection cannot save it,
+			// so it never enters the pool; the replacement cost always applies.
+			charges.add(new Charge(item, UntradeableDeathCosts.costFor(item)));
+			return;
+		}
 		if (item.isTradeable())
 		{
 			pool.add(item);

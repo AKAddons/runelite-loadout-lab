@@ -139,6 +139,29 @@ public class RiskConstraintTest
 	}
 
 	@Test
+	public void dpsTiesBreakTowardLessRisk_gloryBeatsTheCrumblingDamnedAmulet()
+	{
+		// Amulet of the damned and amulet of glory have IDENTICAL stats.
+		// The damned crumbles to dust on death (34k every time); the glory
+		// rides a kept slot for free. In risk mode the tie must go to the
+		// glory - the old purchase-cost tie-break picked the damned because
+		// an owned untradeable reads as cost 0.
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		owned.put(4151, 1);  // abyssal whip
+		owned.put(1712, 1);  // amulet of glory (4)
+		owned.put(12851, 1); // amulet of the damned (full)
+		OptimizationRequest req = new OptimizationRequest(callisto, CombatStyle.MELEE,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
+			null, 0, CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(data.canonicalizeOwned(owned), true), 1).withMaxTradeables(3);
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
+		Assert.assertFalse(out.isEmpty());
+		com.loadoutlab.data.GearItem neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
+		Assert.assertNotNull(neck);
+		Assert.assertEquals("Amulet of glory", neck.getName());
+	}
+
+	@Test
 	public void protectItemBuysAFourthRiskSlotAndAtLeastAsMuchDps()
 	{
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();

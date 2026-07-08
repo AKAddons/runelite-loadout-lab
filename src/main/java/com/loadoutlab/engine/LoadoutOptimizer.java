@@ -176,11 +176,14 @@ public final class LoadoutOptimizer
 						// everything else may drop, and its TOTAL value must
 						// stay within budget. Monotone (adding items never
 						// lowers risk), so pruning partial states is safe.
-						if (request.isRiskConstrained()
-							&& PvpRisk.assess(loadout, null, request.getMaxTradeables()).riskGp
-								> OptimizationRequest.RISK_BUDGET_GP)
+						long riskGp = 0;
+						if (request.isRiskConstrained())
 						{
-							continue;
+							riskGp = PvpRisk.assess(loadout, null, request.getMaxTradeables()).riskGp;
+							if (riskGp > OptimizationRequest.RISK_BUDGET_GP)
+							{
+								continue;
+							}
 						}
 						DpsResult score = bestSpellResult(request, loadout, spells);
 						if (score == null)
@@ -191,10 +194,15 @@ public final class LoadoutOptimizer
 						// (tormented demons) accuracy gear ties on DPS, and a
 						// pure cost tie-break picked snakeskin boots over
 						// pegasians. Never outweighs a real DPS difference.
-						next.add(new SearchState(gear, cost, score.getDps() + score.getAttackRoll() * 1e-9));
+						next.add(new SearchState(gear, cost, score.getDps() + score.getAttackRoll() * 1e-9, riskGp));
 					}
 				}
-				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed().thenComparingInt(SearchState::getCost));
+				// On DPS ties prefer less risk (an untradeable that crumbles
+				// on death must lose to a glory that rides a kept slot),
+				// then lower purchase cost.
+				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed()
+					.thenComparingLong(SearchState::getRiskGp)
+					.thenComparingInt(SearchState::getCost));
 				states = next.size() > BEAM_WIDTH ? new ArrayList<>(next.subList(0, BEAM_WIDTH)) : next;
 				if (states.isEmpty())
 				{
@@ -218,8 +226,18 @@ public final class LoadoutOptimizer
 			}
 		}
 
+		Map<DpsResult, Long> riskByResult = new java.util.IdentityHashMap<>();
+		if (request.isRiskConstrained())
+		{
+			for (DpsResult result : results)
+			{
+				riskByResult.put(result,
+					PvpRisk.assess(result.getLoadout(), null, request.getMaxTradeables()).riskGp);
+			}
+		}
 		results.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
+			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
 	}
@@ -655,6 +673,19 @@ public final class LoadoutOptimizer
 		{
 			return candidate.isTradeable();
 		}
+		// Wilderness risk mode: on stat ties prefer the item with the
+		// smaller unavoidable death fee - a glory (protectable, free)
+		// must beat the amulet of the damned (crumbles on any death,
+		// 34k every time) even though the version labels say otherwise.
+		if (request.isRiskConstrained())
+		{
+			long candidateFee = alwaysDeathFee(candidate);
+			long currentFee = alwaysDeathFee(current);
+			if (candidateFee != currentFee)
+			{
+				return candidateFee < currentFee;
+			}
+		}
 		// And prefer a normal-looking version over Broken/Locked/Uncharged
 		// states (a 'Broken' Dizana's quiver was winning its stat tie).
 		boolean candidateBad = badVersion(candidate);
@@ -663,6 +694,20 @@ public final class LoadoutOptimizer
 			return !candidateBad;
 		}
 		return budgetCost(request, candidate) < budgetCost(request, current);
+	}
+
+	/** The per-death fee this item pays no matter what is protected. */
+	private static long alwaysDeathFee(GearItem item)
+	{
+		if (item.isTradeable() && !UntradeableDeathCosts.isDestroyedOnDeath(item))
+		{
+			return 0; // priced by the kept-slot ranking instead
+		}
+		if (UntradeableDeathCosts.isConvertible(item))
+		{
+			return 0; // protectable - may ride a kept slot
+		}
+		return UntradeableDeathCosts.costFor(item);
 	}
 
 	private static boolean badVersion(GearItem item)
@@ -693,17 +738,19 @@ public final class LoadoutOptimizer
 		private final EnumMap<GearSlot, GearItem> gear;
 		private final int cost;
 		private final double score;
+		private final long riskGp;
 
 		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost)
 		{
-			this(gear, cost, 0.0);
+			this(gear, cost, 0.0, 0L);
 		}
 
-		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score)
+		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score, long riskGp)
 		{
 			this.gear = gear;
 			this.cost = cost;
 			this.score = score;
+			this.riskGp = riskGp;
 		}
 
 		private int getCost()
@@ -714,6 +761,11 @@ public final class LoadoutOptimizer
 		private double getScore()
 		{
 			return score;
+		}
+
+		private long getRiskGp()
+		{
+			return riskGp;
 		}
 	}
 }
