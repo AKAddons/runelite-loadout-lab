@@ -29,6 +29,16 @@ public final class RequirementProfile
 		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Collections.emptySet() : completedQuests));
 	}
 
+	public Map<Skill, Integer> getLevels()
+	{
+		return java.util.Collections.unmodifiableMap(levels);
+	}
+
+	public Set<String> getCompletedQuests()
+	{
+		return java.util.Collections.unmodifiableSet(completedQuests);
+	}
+
 	public boolean canEquip(GearRequirements requirements)
 	{
 		if (requirements == null || requirements.isEmpty())

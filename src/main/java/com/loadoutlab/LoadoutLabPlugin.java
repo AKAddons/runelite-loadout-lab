@@ -279,6 +279,31 @@ public class LoadoutLabPlugin extends Plugin
 	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
 	// ------------------------------------------------------------------
 
+	/**
+	 * The real account as a replayable fixture: written next to the usage
+	 * log on every query, so any in-game result can be reproduced headless
+	 * (./gradlew query) or attached to a bug report. Local only.
+	 */
+	private void exportProfile(com.loadoutlab.profile.PlayerProfile profile)
+	{
+		Thread writer = new Thread(() ->
+		{
+			try
+			{
+				java.nio.file.Path file = new java.io.File(net.runelite.client.RuneLite.RUNELITE_DIR,
+					"loadout-lab/profile.json").toPath();
+				java.nio.file.Files.createDirectories(file.getParent());
+				java.nio.file.Files.writeString(file, profile.toJson());
+			}
+			catch (Exception ex)
+			{
+				log.warn("could not export the player profile", ex);
+			}
+		}, "loadout-lab-profile-export");
+		writer.setDaemon(true);
+		writer.start();
+	}
+
 	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, boolean antifirePotion, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
@@ -295,6 +320,8 @@ public class LoadoutLabPlugin extends Plugin
 			int fingerprint = ledger.fingerprint();
 			com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : com.loadoutlab.engine.PrayerUnlocks.ALL;
+			exportProfile(new com.loadoutlab.profile.PlayerProfile(
+				real, live, unlocks, profile, ledger.owned(), ledger.bankKnown()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, antifirePotion,
 				results -> SwingUtilities.invokeLater(() ->

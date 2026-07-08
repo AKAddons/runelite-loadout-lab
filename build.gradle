@@ -73,3 +73,13 @@ tasks.register('preSubmit') {
 	description = 'Pre-submission checks for a Plugin Hub update (test + checkTokens + checkGlyphs).'
 	dependsOn 'test', 'checkTokens', 'checkGlyphs'
 }
+
+// Headless query runner - the mock environment (see HeadlessQuery):
+//   ./gradlew query -Pargs="vorkath --maxed"
+task query(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Run a Loadout Lab query against a saved profile, no client needed'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.profile.HeadlessQuery'
+	args = (findProperty('args') ?: '').toString().split(' ').findAll { !it.isEmpty() }
+}
