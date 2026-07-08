@@ -54,7 +54,10 @@ public class UntradeableDeathCostsTest
 	@Test
 	public void cheapReclaimsAndFreeUntradeablesStayCheap()
 	{
-		Assert.assertEquals(200, UntradeableDeathCosts.costFor(gear("Ardougne cloak 4", false, COMBAT)));
+		// Trivial reclaims (diary rewards, 200gp at Perdu) are FREE TIER:
+		// noise that must not evict them from a zero-risk-cap set.
+		Assert.assertEquals(0, UntradeableDeathCosts.costFor(gear("Ardougne cloak 4", false, COMBAT)));
+		Assert.assertEquals(0, UntradeableDeathCosts.costFor(gear("Rada's blessing 4", false, COMBAT)));
 		Assert.assertEquals(0, UntradeableDeathCosts.costFor(gear("Salve amulet(ei)", false, COMBAT)));
 		Assert.assertEquals(130_000, UntradeableDeathCosts.costFor(gear("Barrows gloves", false, COMBAT)));
 	}

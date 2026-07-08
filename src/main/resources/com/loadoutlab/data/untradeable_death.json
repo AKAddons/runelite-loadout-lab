@@ -81,23 +81,23 @@
  },
  "ardougne cloak 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ardougne cloak 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ardougne cloak 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ardougne cloak 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ardougne max cape": {
   "category": 1,
@@ -476,8 +476,8 @@
  },
  "bronze defender": {
   "category": 2,
-  "costGp": 1000,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "bronze fire arrow": {
   "category": 2,
@@ -976,23 +976,23 @@
  },
  "explorer's ring 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "explorer's ring 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "explorer's ring 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "explorer's ring 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "eye of ayak": {
   "category": 4,
@@ -1001,23 +1001,23 @@
  },
  "falador shield 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "falador shield 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "falador shield 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "falador shield 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "farming cape": {
   "category": 2,
@@ -1071,23 +1071,23 @@
  },
  "fremennik sea boots 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "fremennik sea boots 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "fremennik sea boots 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "fremennik sea boots 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ghommal's avernic defender 5": {
   "category": 2,
@@ -1366,43 +1366,43 @@
  },
  "kandarin headgear 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "kandarin headgear 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "kandarin headgear 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "kandarin headgear 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "karamja gloves 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "karamja gloves 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "karamja gloves 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "karamja gloves 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "keris": {
   "category": 2,
@@ -1576,58 +1576,58 @@
  },
  "moonclan armour": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan boots": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan cape": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan gloves": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan hat": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan helm": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "moonclan skirt": {
   "category": 2,
-  "costGp": 1000,
-  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour)"
+  "costGp": 0,
+  "note": "cheap replacement from the Lunar Isle clothing shop (wiki Moonclan armour); trivial reclaim - treated as free tier"
  },
  "morytania legs 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "morytania legs 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "morytania legs 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "morytania legs 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "music cape": {
   "category": 2,
@@ -1691,23 +1691,23 @@
  },
  "rada's blessing 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "rada's blessing 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "rada's blessing 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "rada's blessing 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "ranger hat": {
   "category": 2,
@@ -2236,23 +2236,23 @@
  },
  "varrock armour 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "varrock armour 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "varrock armour 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "varrock armour 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "venator bow": {
   "category": 4,
@@ -2351,48 +2351,48 @@
  },
  "western banner 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "western banner 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "western banner 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "western banner 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "wilderness sword 1": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "wilderness sword 2": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "wilderness sword 3": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "wilderness sword 4": {
   "category": 2,
-  "costGp": 200,
-  "note": "diary reward; Perdu sells a replacement for 200 coins"
+  "costGp": 0,
+  "note": "diary reward; Perdu sells a replacement for 200 coins; trivial reclaim - treated as free tier"
  },
  "witchwood icon": {
   "category": 2,
-  "costGp": 900,
-  "note": "bought from any Slayer Master for 900 coins (wiki Witchwood icon)"
+  "costGp": 0,
+  "note": "bought from any Slayer Master for 900 coins (wiki Witchwood icon); trivial reclaim - treated as free tier"
  },
  "woodcutting cape": {
   "category": 2,
