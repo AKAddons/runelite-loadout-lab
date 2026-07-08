@@ -1248,7 +1248,8 @@ public class LoadoutLabPanel extends PluginPanel
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
-			specCell.setBorder(BorderFactory.createLineBorder(new Color(110, 150, 220)));
+			// Light sky blue, sampled from the in-game spec orb's gradient.
+			specCell.setBorder(BorderFactory.createLineBorder(new Color(120, 190, 240)));
 			specCell.setToolTipText(specTooltip(spec, specExpected,
 				specDrainValue, replacedAutoExpected, specFallbackTooltip));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
