@@ -143,6 +143,7 @@ public class OptimizerService
 		String spellbookLock,
 		java.util.Set<Integer> excludedItems,
 		int maxTradeables,
+		boolean antifirePotion,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final java.util.Set<Integer> excluded = excludedItems == null
@@ -153,7 +154,8 @@ public class OptimizerService
 			? com.loadoutlab.engine.PrayerUnlocks.ALL : prayerUnlocks;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
-			+ "|" + maxTradeables + "|" + levelKey(real) + "|" + levelKey(boostedLevels);
+			+ "|" + maxTradeables + "|" + antifirePotion
+			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
 		{
@@ -203,7 +205,7 @@ public class OptimizerService
 					monster, style, styleLevels, unlocks, requirements,
 					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables);
+					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -219,7 +221,7 @@ public class OptimizerService
 					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables);
+					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{

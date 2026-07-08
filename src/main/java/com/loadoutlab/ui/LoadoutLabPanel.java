@@ -51,7 +51,7 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, int maxTradeables, Runnable onDone);
+			String spellbookLock, int maxTradeables, boolean antifirePotion, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -99,6 +99,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
+	private final JCheckBox antifirePotion = new JCheckBox("Antifire potion");
 
 	private MonsterStats selectedMonster;
 	/** Per-style expanded game-best (BiS) sections - hidden by default,
@@ -212,6 +213,16 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.addActionListener(e -> recompute());
 		protectItem.setVisible(false);
 		top.add(protectItem);
+
+		// Dragonfire monsters: gear protection by default (shield forced,
+		// no 2h); this toggle assumes a super antifire instead.
+		antifirePotion.setOpaque(false);
+		antifirePotion.setForeground(new Color(200, 200, 200));
+		antifirePotion.setAlignmentX(LEFT_ALIGNMENT);
+		antifirePotion.setToolTipText("Assume a super antifire - no anti-dragon shield forced");
+		antifirePotion.addActionListener(e -> recompute());
+		antifirePotion.setVisible(false);
+		top.add(antifirePotion);
 
 		// Lock the magic card's auto-spell to one spellbook.
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
@@ -377,6 +388,7 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wilderness = com.loadoutlab.data.WildernessMonsters.isWilderness(monster);
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
+		antifirePotion.setVisible(com.loadoutlab.engine.DragonfireRules.breathesFire(monster));
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -528,7 +540,9 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			spellbookLock(), riskCap(), () -> statusLabel.setText(" "));
+			spellbookLock(), riskCap(),
+			antifirePotion.isVisible() && antifirePotion.isSelected(),
+			() -> statusLabel.setText(" "));
 	}
 
 	private void clearSelection()

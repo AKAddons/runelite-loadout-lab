@@ -27,7 +27,7 @@ public class LinkInTest
 		return new LoadoutLabPanel(data,
 			Mockito.mock(ItemManager.class, Mockito.RETURNS_DEEP_STUBS),
 			Mockito.mock(SpriteManager.class),
-			(monster, f2p, slayer, book, maxTradeables, onDone) -> computed.set(monster),
+			(monster, f2p, slayer, book, maxTradeables, antifire, onDone) -> computed.set(monster),
 			itemId -> false,
 			java.util.Collections::emptySet);
 	}

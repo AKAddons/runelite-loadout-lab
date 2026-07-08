@@ -279,7 +279,7 @@ public class LoadoutLabPlugin extends Plugin
 	// Optimization flow: client thread (profile) -> worker (search) -> EDT (render)
 	// ------------------------------------------------------------------
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, boolean antifirePotion, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -296,7 +296,7 @@ public class LoadoutLabPlugin extends Plugin
 			com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : com.loadoutlab.engine.PrayerUnlocks.ALL;
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables,
+				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, antifirePotion,
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)

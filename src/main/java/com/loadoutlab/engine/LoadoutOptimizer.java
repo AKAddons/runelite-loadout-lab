@@ -142,8 +142,15 @@ public final class LoadoutOptimizer
 
 		List<DpsResult> results = new ArrayList<>();
 		Set<String> seen = new HashSet<>();
+		boolean dragonShield = DragonfireRules.shieldRequired(request);
 		for (GearItem weapon : weapons)
 		{
+			// Dragonfire without a potion: the shield slot is spoken for,
+			// so two-handed weapons cannot provide protection.
+			if (dragonShield && weapon.isTwoHanded())
+			{
+				continue;
+			}
 			// The ammo top-N must be cut AFTER weapon compatibility: bolts
 			// and javelins out-score every arrow on raw ranged strength, so
 			// a global cut starves arrow weapons of usable ammo entirely.
@@ -157,6 +164,14 @@ public final class LoadoutOptimizer
 			{
 				List<SearchState> next = new ArrayList<>();
 				List<GearItem> candidates = candidatesForSlotWithWeapon(slotCandidates.get(slot), weapon, slot);
+				if (dragonShield && slot == GearSlot.SHIELD)
+				{
+					candidates = protectiveShieldsOnly(candidates);
+					if (candidates.isEmpty())
+					{
+						break; // no owned protection - this weapon line dies
+					}
+				}
 				for (SearchState state : states)
 				{
 					for (GearItem item : candidates)
@@ -340,6 +355,11 @@ public final class LoadoutOptimizer
 
 	private List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit, GearItem forWeapon)
 	{
+		// Dragonfire gear mode: protective shields must reach the pool even
+		// though most have zero offensive stats (the score filter and the
+		// stat-dedupe would silently drop the anti-dragon shield).
+		boolean needProtectiveShield = slot == GearSlot.SHIELD && DragonfireRules.shieldRequired(request);
+		List<GearItem> protectives = new ArrayList<>();
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems())
 		{
@@ -389,12 +409,18 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
-			if (slot != GearSlot.WEAPON && candidateScore(request, item) <= 0)
+			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item);
+			if (slot != GearSlot.WEAPON && !protective && candidateScore(request, item) <= 0)
 			{
 				continue;
 			}
 			if (!allowedByMode(request, item))
 			{
+				continue;
+			}
+			if (protective)
+			{
+				protectives.add(item);
 				continue;
 			}
 			rows.add(item);
@@ -406,11 +432,26 @@ public final class LoadoutOptimizer
 		{
 			rows = new ArrayList<>(rows.subList(0, limit));
 		}
+		rows.addAll(protectives);
 		if (slot != GearSlot.WEAPON)
 		{
 			rows.add(0, null);
 		}
 		return rows;
+	}
+
+	/** Dragonfire gear mode: the shield MUST protect (no empty slot). */
+	private static List<GearItem> protectiveShieldsOnly(List<GearItem> candidates)
+	{
+		List<GearItem> result = new ArrayList<>();
+		for (GearItem item : candidates)
+		{
+			if (DragonfireRules.isProtectiveShield(item))
+			{
+				result.add(item);
+			}
+		}
+		return result;
 	}
 
 	private static List<GearItem> candidatesForSlotWithWeapon(List<GearItem> candidates, GearItem weapon, GearSlot slot)

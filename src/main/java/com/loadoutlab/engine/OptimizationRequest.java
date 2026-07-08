@@ -29,6 +29,9 @@ public final class OptimizationRequest
 	/** Wilderness risk cap: at most this many tradeable items in the set
 	 * (they become the items kept on death); -1 = unconstrained. */
 	private final int maxTradeables;
+	/** Dragonfire monsters: true = assume a super antifire (no shield
+	 * forced); false = protection must come from a shield. */
+	private final boolean antifirePotion;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -72,6 +75,7 @@ public final class OptimizationRequest
 		this.excludedItems = Collections.emptySet();
 		this.spellbookLock = "";
 		this.maxTradeables = -1;
+		this.antifirePotion = false;
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -80,14 +84,16 @@ public final class OptimizationRequest
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems)
 	{
-		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables);
+		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables, base.antifirePotion);
 	}
 
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
-		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables)
+		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables,
+		boolean antifirePotion)
 	{
 		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
 		this.maxTradeables = maxTradeables;
+		this.antifirePotion = antifirePotion;
 		this.monster = monster;
 		this.style = style;
 		this.levels = base.levels;
@@ -125,7 +131,17 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, antifirePotion);
+	}
+
+	public boolean isAntifirePotion()
+	{
+		return antifirePotion;
+	}
+
+	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion);
 	}
 
 	public int getMaxTradeables()
@@ -150,7 +166,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion);
 	}
 
 	public MonsterStats getMonster()
