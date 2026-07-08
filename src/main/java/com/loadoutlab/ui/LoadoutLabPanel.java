@@ -1072,6 +1072,43 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
+	/**
+	 * A grid cell that can carry a small corner dot: the wilderness
+	 * death-fate marker (white = kept, red = dropped to the killer,
+	 * orange = costs a fee). Dot in the top-left; borders keep their
+	 * own language (gold/blue/green).
+	 */
+	private static final class RiskDotLabel extends JLabel
+	{
+		private Color dot;
+
+		void setDot(Color dot)
+		{
+			this.dot = dot;
+		}
+
+		@Override
+		protected void paintComponent(java.awt.Graphics g)
+		{
+			super.paintComponent(g);
+			if (dot != null)
+			{
+				java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+				g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+					java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(30, 30, 30));
+				g2.fillOval(3, 3, 9, 9);
+				g2.setColor(dot);
+				g2.fillOval(4, 4, 7, 7);
+				g2.dispose();
+			}
+		}
+	}
+
+	private static final Color DOT_KEPT = new Color(235, 235, 235);
+	private static final Color DOT_DROPPED = new Color(225, 95, 85);
+	private static final Color DOT_FEE = new Color(235, 165, 80);
+
 	/** Super antifire potion(4) - the icon for the assumed-potion chip. */
 	private static final int SUPER_ANTIFIRE_ID = 21978;
 
@@ -1191,10 +1228,17 @@ public class LoadoutLabPanel extends PluginPanel
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
 		int cell = ICON_SIZE + 4;
+		// Wilderness: badge every cell with its death fate.
+		com.loadoutlab.engine.PvpRisk.Assessment fates = null;
+		if (markUnowned && com.loadoutlab.data.WildernessMonsters.isWilderness(selectedMonster))
+		{
+			fates = com.loadoutlab.engine.PvpRisk.assess(result.getLoadout(), specWeapon,
+				protectItem.isSelected() ? 4 : 3);
+		}
 		for (GearSlot slotType : GearSlot.values())
 		{
 			GearItem item = result.getLoadout().get(slotType);
-			JLabel slot = new JLabel();
+			RiskDotLabel slot = new RiskDotLabel();
 			slot.setPreferredSize(new Dimension(cell, cell));
 			slot.setHorizontalAlignment(SwingConstants.CENTER);
 			List<javax.swing.JMenuItem> extras = slotType == GearSlot.SHIELD
@@ -1243,15 +1287,38 @@ public class LoadoutLabPanel extends PluginPanel
 			icons.add(slot);
 		}
 		// Cell 12: the special-attack weapon to swap in.
-		JLabel specCell = new JLabel();
+		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
 			// Light sky blue, sampled from the in-game spec orb's gradient.
 			specCell.setBorder(BorderFactory.createLineBorder(new Color(120, 190, 240)));
-			specCell.setToolTipText(specTooltip(spec, specExpected,
-				specDrainValue, replacedAutoExpected, specFallbackTooltip));
+			String specFate = "";
+			if (fates != null && specWeapon != null)
+			{
+				if (containsId(fates.kept, specWeapon))
+				{
+					specCell.setDot(DOT_KEPT);
+					specFate = "<br>KEPT on death.";
+				}
+				else if (containsId(fates.lost, specWeapon))
+				{
+					specCell.setDot(DOT_DROPPED);
+					specFate = "<br>DROPPED on death ("
+						+ com.loadoutlab.engine.PvpRisk.formatGp(fates.valueOf(specWeapon)) + ").";
+				}
+				else if (feeFor(fates, specWeapon) > 0)
+				{
+					specCell.setDot(DOT_FEE);
+					specFate = "<br>Fee on death ("
+						+ com.loadoutlab.engine.PvpRisk.formatGp(feeFor(fates, specWeapon)) + ").";
+				}
+			}
+			String specTip = specTooltip(spec, specExpected,
+				specDrainValue, replacedAutoExpected, specFallbackTooltip);
+			specCell.setToolTipText(specFate.isEmpty() ? specTip
+				: specTip.replace("</html>", specFate + "</html>"));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
 			attachExclusionMenu(specCell, List.of(specWeapon));
 		}
@@ -1267,6 +1334,30 @@ public class LoadoutLabPanel extends PluginPanel
 		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
 		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
 		return icons;
+	}
+
+	private static boolean containsId(List<GearItem> items, GearItem item)
+	{
+		for (GearItem candidate : items)
+		{
+			if (candidate.getId() == item.getId())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static long feeFor(com.loadoutlab.engine.PvpRisk.Assessment fates, GearItem item)
+	{
+		for (com.loadoutlab.engine.PvpRisk.Charge charge : fates.untradeableCharges)
+		{
+			if (charge.item.getId() == item.getId())
+			{
+				return charge.costGp;
+			}
+		}
+		return 0;
 	}
 
 	private static String slotName(GearSlot slot)
