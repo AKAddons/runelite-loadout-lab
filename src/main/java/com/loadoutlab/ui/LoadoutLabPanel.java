@@ -1158,11 +1158,12 @@ public class LoadoutLabPanel extends PluginPanel
 		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip)
 	{
 		return iconGrid(result, spec, specWeapon, specExpected, specDrainValue,
-			replacedAutoExpected, specFallbackTooltip, false);
+			replacedAutoExpected, specFallbackTooltip, false, null);
 	}
 
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned)
+		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned,
+		Loadout gameBest)
 	{
 		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
 		icons.setOpaque(false);
@@ -1178,13 +1179,18 @@ public class LoadoutLabPanel extends PluginPanel
 				? dragonfireMenuEntries() : java.util.Collections.emptyList();
 			if (item != null)
 			{
-				// Green border: an item in the set you don't own (a dream
-				// or budget upgrade).
+				// Border language: green = you don't own it (dream/budget
+				// upgrade); gold = your item IS the game's best available
+				// for this slot - nothing left to chase.
 				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
-				slot.setBorder(BorderFactory.createLineBorder(
-					unowned ? new Color(110, 190, 110) : new Color(70, 70, 70)));
+				GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
+				boolean bis = !unowned && bisItem != null && bisItem.getId() == item.getId();
+				java.awt.Color border = unowned ? new Color(110, 190, 110)
+					: bis ? new Color(212, 175, 55) : new Color(70, 70, 70);
+				slot.setBorder(BorderFactory.createLineBorder(border));
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
 					+ (unowned ? " - NOT OWNED (" + com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero()) + ")" : "")
+					+ (bis ? " - best available" : "")
 					+ " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());
 				img.addTo(slot);

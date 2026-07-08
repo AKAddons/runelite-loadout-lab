@@ -70,8 +70,10 @@ monster, get your strongest owned set per combat style with exact DPS.
   smart hybrid: emphasize offense but make style-aware defensive picks
   (e.g. ranged armour vs magic attackers). Needs monster attack styles
   (in the data: 'style' field, currently unparsed).
-- **BiS proximity borders** - per-slot border: BiS gets a distinct border,
-  others a gradient by % towards BiS.
+- **BiS proximity borders** - DONE (first tier, 2026-07-08): a gold
+  border + "best available" tooltip when your slot's item matches the
+  game-best set's pick. Remaining: the gradient by %-towards-BiS for
+  non-matching slots (needs per-slot dps attribution).
 - **Slot alternates** - expandable per-slot list of runner-up items
   (owned and BiS variants).
 - **Spec-throughput vs ring slot** - jointly optimize the ring: a
