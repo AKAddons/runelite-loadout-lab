@@ -50,3 +50,11 @@ the `run` command.
   code from weirdgloop/osrs-dps-calc (GPL-3.0) into this repo; its published
   formulas/behavior may inform reimplementation, and its data JSON is vendored
   as resources (wiki data, CC BY-NC-SA - keep the attribution notice).
+
+## Account types: deliberately none
+
+The plugin has NO ironman/account-type detection, on purpose (2026-07-08,
+the maintainer tests on an ironman). Every feature - upgrade budget, GE
+prices, dream items, risk math - treats every account as a normal
+account. Do not add account-type gating; features an account cannot use
+are simply ignored by the player.
