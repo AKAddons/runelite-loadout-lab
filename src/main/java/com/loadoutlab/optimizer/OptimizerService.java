@@ -234,6 +234,7 @@ public class OptimizerService
 					// The displayed set: top up DPS-neutral empty slots with
 					// prayer/defensive gear (verified not to change the DPS).
 					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.ensureRequiredUtility(dataset, ownedRequest, ownedBest.get(0)));
 				}
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
@@ -253,6 +254,7 @@ public class OptimizerService
 				if (!gameBest.isEmpty())
 				{
 					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.ensureRequiredUtility(dataset, gameRequest, gameBest.get(0)));
 				}
 				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
 				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);

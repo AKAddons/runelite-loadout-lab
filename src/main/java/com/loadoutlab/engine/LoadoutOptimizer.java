@@ -115,6 +115,35 @@ public final class LoadoutOptimizer
 		return current;
 	}
 
+	/**
+	 * Mandatory utility (Zulrah recoil): when the fight requires an item
+	 * class the dps ranking would never pick, swap in the least-costly
+	 * satisfying option - ring slot vs feet slot compared on the full
+	 * set's dps. Runs after the main search; when nothing satisfying is
+	 * accessible the set is returned unchanged (the monster note warns).
+	 */
+	public DpsResult ensureRequiredUtility(LoadoutData data, OptimizationRequest request, DpsResult result)
+	{
+		if (result == null || !RequiredUtility.requiresRecoil(request.getMonster())
+			|| RequiredUtility.hasRecoil(result.getLoadout()))
+		{
+			return result;
+		}
+		List<SpellStats> spells = spellsFor(data, request);
+		DpsResult best = null;
+		for (GearItem candidate : RequiredUtility.recoilCandidates(data, request))
+		{
+			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(result.getLoadout().getGear());
+			gear.put(candidate.getSlot(), candidate);
+			DpsResult swapped = bestSpellResult(request, new Loadout(gear), spells);
+			if (swapped != null && (best == null || swapped.getDps() > best.getDps()))
+			{
+				best = swapped.withPurchaseCost(result.getPurchaseCost() + budgetCost(request, candidate));
+			}
+		}
+		return best == null ? result : best;
+	}
+
 	/** Prayer first, then the sum of defensive bonuses. */
 	private static long utilityScore(GearItem item)
 	{
