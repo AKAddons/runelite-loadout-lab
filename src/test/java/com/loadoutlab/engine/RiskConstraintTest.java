@@ -37,6 +37,11 @@ public class RiskConstraintTest
 			data.searchMonsters("revenant dragon", 1).get(0)));
 		Assert.assertFalse(WildernessMonsters.isWilderness(
 			data.searchMonsters("zulrah", 1).get(0)));
+		// Non-boss wilderness mobs get the low-risk toggles too.
+		Assert.assertTrue(WildernessMonsters.isWilderness(
+			data.searchMonsters("green dragon", 1).get(0)));
+		Assert.assertTrue(WildernessMonsters.isWilderness(
+			data.searchMonsters("dust devil", 1).get(0)));
 	}
 
 	@Test

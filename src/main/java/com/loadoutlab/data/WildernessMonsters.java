@@ -12,8 +12,11 @@ import java.util.Set;
  * for a coin repair above level 20. A low-risk set therefore wears NO
  * MORE tradeables than the kept count - value ranking then cannot
  * drop any of them - and untradeables everywhere else.
- * Curated list: the boss ring, escape-cave counterparts, KBD, and the
- * Revenant Caves.
+ * Curated list: the boss ring, escape-cave counterparts, KBD, the
+ * Revenant Caves, and the non-boss monsters players actually fight in
+ * the Wilderness (Slayer Cave dwellers, dragons, Krystilia-task and
+ * moneymaker mobs) - many also exist elsewhere, but the low-risk
+ * toggles default off, so offering them costs nothing outside.
  */
 public final class WildernessMonsters
 {
@@ -40,7 +43,46 @@ public final class WildernessMonsters
 		"revenant dark beast",
 		"revenant knight",
 		"revenant dragon",
-		"revenant maledictus");
+		"revenant maledictus",
+		// Wilderness Slayer Cave + common wildy mobs (wiki-listed 2026-07-08)
+		"green dragon",
+		"black dragon",
+		"lava dragon",
+		"abyssal demon",
+		"ankou",
+		"bandit",
+		"black demon",
+		"dust devil",
+		"greater demon",
+		"greater nechryael",
+		"hellhound",
+		"ice giant",
+		"jelly",
+		"lesser demon",
+		"chaos druid",
+		"elder chaos druid",
+		"dark warrior",
+		"rogue",
+		"pirate",
+		"earth warrior",
+		"ent",
+		"runite golem",
+		"mammoth",
+		"magic axe",
+		"bloodveld",
+		"ice warrior",
+		"moss giant",
+		"fire giant",
+		"skeleton",
+		"zombie",
+		"ghost",
+		"grizzly bear",
+		"king scorpion",
+		"scorpion",
+		"poison spider",
+		"chaos dwarf",
+		"black knight",
+		"skeleton hellhound");
 
 	private WildernessMonsters()
 	{
