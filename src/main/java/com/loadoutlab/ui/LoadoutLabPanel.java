@@ -99,7 +99,9 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
-	private final JCheckBox antifirePotion = new JCheckBox("Antifire potion");
+	/** Dragonfire: gear protection by default; right-clicking the shield
+	 * cell flips to an assumed super antifire (and back). */
+	private boolean superAntifireAssumed;
 
 	private MonsterStats selectedMonster;
 	/** Per-style expanded game-best (BiS) sections - hidden by default,
@@ -214,15 +216,6 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.setVisible(false);
 		top.add(protectItem);
 
-		// Dragonfire monsters: gear protection by default (shield forced,
-		// no 2h); this toggle assumes a super antifire instead.
-		antifirePotion.setOpaque(false);
-		antifirePotion.setForeground(new Color(200, 200, 200));
-		antifirePotion.setAlignmentX(LEFT_ALIGNMENT);
-		antifirePotion.setToolTipText("Assume a super antifire - no anti-dragon shield forced");
-		antifirePotion.addActionListener(e -> recompute());
-		antifirePotion.setVisible(false);
-		top.add(antifirePotion);
 
 		// Lock the magic card's auto-spell to one spellbook.
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
@@ -388,7 +381,7 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wilderness = com.loadoutlab.data.WildernessMonsters.isWilderness(monster);
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
-		antifirePotion.setVisible(com.loadoutlab.engine.DragonfireRules.breathesFire(monster));
+		superAntifireAssumed = false; // each monster starts on gear protection
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -467,6 +460,12 @@ public class LoadoutLabPanel extends PluginPanel
 	 * container weapon (blowpipe) also offers its loaded ammo. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
 	{
+		attachExclusionMenu(cell, items, java.util.Collections.emptyList());
+	}
+
+	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
+		List<javax.swing.JMenuItem> extras)
+	{
 		cell.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
@@ -488,6 +487,10 @@ public class LoadoutLabPanel extends PluginPanel
 					return;
 				}
 				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				for (javax.swing.JMenuItem extra : extras)
+				{
+					menu.add(extra);
+				}
 				for (GearItem item : items)
 				{
 					javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + item.label() + " from suggestions");
@@ -541,7 +544,7 @@ public class LoadoutLabPanel extends PluginPanel
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
 			spellbookLock(), riskCap(),
-			antifirePotion.isVisible() && antifirePotion.isSelected(),
+			superAntifireAssumed && com.loadoutlab.engine.DragonfireRules.breathesFire(selectedMonster),
 			() -> statusLabel.setText(" "));
 	}
 
@@ -964,6 +967,27 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
+	/** Super antifire potion(4) - the icon for the assumed-potion chip. */
+	private static final int SUPER_ANTIFIRE_ID = 21978;
+
+	/** The dragonfire protection flip, shown on the shield cell. */
+	private List<javax.swing.JMenuItem> dragonfireMenuEntries()
+	{
+		if (!com.loadoutlab.engine.DragonfireRules.breathesFire(selectedMonster))
+		{
+			return java.util.Collections.emptyList();
+		}
+		javax.swing.JMenuItem flip = new javax.swing.JMenuItem(superAntifireAssumed
+			? "Require a dragonfire shield (drop the super antifire)"
+			: "Assume a super antifire (drop the shield)");
+		flip.addActionListener(a ->
+		{
+			superAntifireAssumed = !superAntifireAssumed;
+			recompute();
+		});
+		return List.of(flip);
+	}
+
 	/** A left-aligned, height-capped flow row added to the card. */
 	private JPanel iconRow(JPanel card)
 	{
@@ -992,6 +1016,13 @@ public class LoadoutLabPanel extends PluginPanel
 		prefix.setFont(prefix.getFont().deriveFont(11f));
 		prefix.setToolTipText(tooltip);
 		row.add(prefix);
+		if (superAntifireAssumed && com.loadoutlab.engine.DragonfireRules.breathesFire(selectedMonster))
+		{
+			JLabel potion = new JLabel();
+			potion.setToolTipText("Super antifire (right-click the shield cell to flip back)");
+			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
+			row.add(potion);
+		}
 		for (String part : label.split(" \\+ "))
 		{
 			JLabel chip = new JLabel();
@@ -1053,6 +1084,8 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel slot = new JLabel();
 			slot.setPreferredSize(new Dimension(cell, cell));
 			slot.setHorizontalAlignment(SwingConstants.CENTER);
+			List<javax.swing.JMenuItem> extras = slotType == GearSlot.SHIELD
+				? dragonfireMenuEntries() : java.util.Collections.emptyList();
 			if (item != null)
 			{
 				slot.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
@@ -1066,12 +1099,16 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					menuItems.add(dart);
 				}
-				attachExclusionMenu(slot, menuItems);
+				attachExclusionMenu(slot, menuItems, extras);
 			}
 			else
 			{
 				slot.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50)));
 				slot.setToolTipText(slotName(slotType) + ": empty");
+				if (!extras.isEmpty())
+				{
+					attachExclusionMenu(slot, java.util.Collections.emptyList(), extras);
+				}
 			}
 			icons.add(slot);
 		}
