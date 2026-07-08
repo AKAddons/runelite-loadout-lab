@@ -1251,7 +1251,10 @@ public class LoadoutLabPanel extends PluginPanel
 				// special attack bar).
 				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
 				GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
-				boolean bis = !unowned && bisItem != null && bisItem.getId() == item.getId();
+				// Analogs count: a stat-identical item (any god's d'hide
+				// coif) is just as best-available as the exact pick.
+				boolean bis = !unowned && bisItem != null
+					&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
 				java.awt.Color border = unowned ? new Color(110, 190, 110)
 					: bis ? new Color(212, 175, 55) : new Color(70, 70, 70);
 				slot.setBorder(BorderFactory.createLineBorder(border));
@@ -1334,6 +1337,28 @@ public class LoadoutLabPanel extends PluginPanel
 		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
 		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
 		return icons;
+	}
+
+	/** Same combat stats in every block - interchangeable for dps. */
+	private static boolean statEquivalent(GearItem a, GearItem b)
+	{
+		return a.getSlot() == b.getSlot()
+			&& a.getSpeed() == b.getSpeed()
+			&& a.isTwoHanded() == b.isTwoHanded()
+			&& a.getCategory().equals(b.getCategory())
+			&& sameBlock(a.getOffensive(), b.getOffensive())
+			&& sameBlock(a.getDefensive(), b.getDefensive())
+			&& sameBlock(a.getBonuses(), b.getBonuses());
+	}
+
+	private static boolean sameBlock(com.loadoutlab.data.StatBlock a, com.loadoutlab.data.StatBlock b)
+	{
+		return a.getStab() == b.getStab() && a.getSlash() == b.getSlash()
+			&& a.getCrush() == b.getCrush() && a.getMagic() == b.getMagic()
+			&& a.getRanged() == b.getRanged() && a.getStrength() == b.getStrength()
+			&& a.getRangedStrength() == b.getRangedStrength()
+			&& a.getMagicDamage() == b.getMagicDamage()
+			&& a.getPrayer() == b.getPrayer();
 	}
 
 	private static boolean containsId(List<GearItem> items, GearItem item)

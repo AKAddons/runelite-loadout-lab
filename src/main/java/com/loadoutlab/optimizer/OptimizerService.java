@@ -226,10 +226,14 @@ public class OptimizerService
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
+				// ALL_STANDARD ignores ownership for eligibility, but the
+				// candidate dedupe prefers OWNED analogs on stat ties - so
+				// the game-best card shows YOUR god d'hide coif, not an
+				// arbitrary god's, and the BiS border matches by id.
 				OptimizationRequest gameRequest = request(
 					monster, style, gameLevels, com.loadoutlab.engine.PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask, 0)
+					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
