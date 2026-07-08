@@ -149,6 +149,7 @@ public class OptimizerService
 		String spellbookLock,
 		Set<Integer> excludedItems,
 		int maxTradeables,
+		int riskBudgetGp,
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
@@ -162,9 +163,13 @@ public class OptimizerService
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
 		final PrayerUnlocks unlocks = prayerUnlocks == null
 			? PrayerUnlocks.ALL : prayerUnlocks;
+		// The budget only matters when risk-constrained; pin it otherwise so
+		// flipping the dropdown with the cap off cannot split the cache.
+		final int riskBudget = maxTradeables >= 0
+			? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
-			+ "|" + maxTradeables + "|" + antifirePotion
+			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
@@ -220,7 +225,8 @@ public class OptimizerService
 					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
 					effectiveOwned, 3, onSlayerTask, Math.max(0, upgradeBudgetGp))
 					.withExcludedItems(excluded).withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion)
+					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
+					.withAntifirePotion(antifirePotion)
 					.withDreamItems(dreams);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
@@ -241,7 +247,8 @@ public class OptimizerService
 					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
+					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
+					.withAntifirePotion(antifirePotion);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
@@ -342,7 +349,7 @@ public class OptimizerService
 			// set + this weapon) must stay within the total risk budget.
 			if (request.isRiskConstrained()
 				&& PvpRisk.assess(baseResults.get(0).getLoadout(), item,
-					request.getMaxTradeables()).riskGp > OptimizationRequest.RISK_BUDGET_GP)
+					request.getMaxTradeables()).riskGp > request.getRiskBudgetGp())
 			{
 				continue;
 			}

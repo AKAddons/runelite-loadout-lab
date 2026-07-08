@@ -29,6 +29,10 @@ public final class OptimizationRequest
 	/** Wilderness risk cap: at most this many tradeable items in the set
 	 * (they become the items kept on death); -1 = unconstrained. */
 	private final int maxTradeables;
+	/** Wilderness risk budget in gp for THIS request (see
+	 * DEFAULT_RISK_BUDGET_GP for the semantics); only consulted when
+	 * risk-constrained. */
+	private final int riskBudgetGp;
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
 	private final boolean antifirePotion;
@@ -77,6 +81,7 @@ public final class OptimizationRequest
 		this.excludedItems = Collections.emptySet();
 		this.spellbookLock = "";
 		this.maxTradeables = -1;
+		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
 		this.dreamItems = Collections.emptySet();
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
@@ -88,16 +93,17 @@ public final class OptimizationRequest
 		SpellStats spell, Set<Integer> excludedItems)
 	{
 		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables,
-			base.antifirePotion, base.dreamItems);
+			base.riskBudgetGp, base.antifirePotion, base.dreamItems);
 	}
 
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables,
-		boolean antifirePotion, Set<Integer> dreamItems)
+		int riskBudgetGp, boolean antifirePotion, Set<Integer> dreamItems)
 	{
 		this.dreamItems = dreamItems == null ? Collections.emptySet() : dreamItems;
 		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
 		this.maxTradeables = maxTradeables;
+		this.riskBudgetGp = riskBudgetGp;
 		this.antifirePotion = antifirePotion;
 		this.monster = monster;
 		this.style = style;
@@ -136,7 +142,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
 	}
 
 	public boolean isAntifirePotion()
@@ -146,7 +152,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
 	}
 
 	public int getMaxTradeables()
@@ -160,18 +166,29 @@ public final class OptimizationRequest
 	}
 
 	/**
-	 * Wilderness risk budget: the TOTAL gp the set may drop on a PvP
-	 * death. The kept 3-4 highest-value items are immune and free -
+	 * Default wilderness risk budget: the TOTAL gp the set may drop on a
+	 * PvP death. The kept 3-4 highest-value items are immune and free -
 	 * bring your crystal set, they ARE the kept items - and everything
 	 * worn beyond them (glory, black d'hide, mystic class...) must SUM
 	 * to at most this. Not per item: one 70k amulet plus a 60k body
-	 * blows the budget together.
+	 * blows the budget together. A 0 budget means nothing droppable and
+	 * no fees at all: kept-slot items plus free untradeables only.
 	 */
-	public static final int RISK_BUDGET_GP = 75_000;
+	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
+
+	public int getRiskBudgetGp()
+	{
+		return riskBudgetGp;
+	}
+
+	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+	}
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
 	}
 
 	public boolean isDream(int itemId)
@@ -181,7 +198,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
 	}
 
 	public MonsterStats getMonster()

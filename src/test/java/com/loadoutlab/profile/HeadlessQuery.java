@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  *   ./gradlew query -Pargs="vorkath"
  *   ./gradlew query -Pargs="callisto --low-risk 3 --slayer"
+ *   ./gradlew query -Pargs="callisto --low-risk 3 --risk-budget 25000"
  *   ./gradlew query -Pargs="green dragon --profile /path/to/profile.json"
  *   ./gradlew query -Pargs="zulrah --maxed"
  *
@@ -51,6 +52,7 @@ public final class HeadlessQuery
 		boolean antifirePotion = false;
 		String spellbook = "";
 		int lowRisk = -1;
+		int riskBudget = com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		int upgradeBudget = 0;
 		for (int i = 0; i < args.length; i++)
 		{
@@ -63,6 +65,7 @@ public final class HeadlessQuery
 				case "--antifire-potion": antifirePotion = true; break;
 				case "--spellbook": spellbook = args[++i]; break;
 				case "--low-risk": lowRisk = Integer.parseInt(args[++i]); break;
+				case "--risk-budget": riskBudget = Integer.parseInt(args[++i]); break;
 				case "--budget": upgradeBudget = Integer.parseInt(args[++i]); break;
 				default: monsterName.append(monsterName.length() > 0 ? " " : "").append(args[i]);
 			}
@@ -86,7 +89,7 @@ public final class HeadlessQuery
 			service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
-				java.util.Collections.emptySet(), lowRisk, antifirePotion,
+				java.util.Collections.emptySet(), lowRisk, riskBudget, antifirePotion,
 				java.util.Collections.emptySet(), upgradeBudget,
 				results ->
 				{

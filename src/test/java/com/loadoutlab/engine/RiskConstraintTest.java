@@ -73,11 +73,11 @@ public class RiskConstraintTest
 			// mangle-class untradeable (each of those alone costs 500k).
 			PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), null, 3);
 			Assert.assertTrue(style + " risks " + risk.riskGp,
-				risk.riskGp <= OptimizationRequest.RISK_BUDGET_GP);
+				risk.riskGp <= OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 			for (PvpRisk.Charge charge : risk.untradeableCharges)
 			{
 				Assert.assertTrue(charge.item.label() + " costs " + charge.costGp,
-					charge.costGp <= OptimizationRequest.RISK_BUDGET_GP);
+					charge.costGp <= OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 			}
 		}
 	}
@@ -206,5 +206,19 @@ public class RiskConstraintTest
 		double capped = optimizer.optimize(data, request(CombatStyle.RANGED, 3)).get(0).getDps();
 		double free = optimizer.optimize(data, request(CombatStyle.RANGED, -1)).get(0).getDps();
 		Assert.assertTrue(free >= capped - 1e-9);
+	}
+
+	@Test
+	public void aTighterRiskBudgetIsHonoredAndNeverBeatsTheDefault()
+	{
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		List<DpsResult> tight = optimizer.optimize(data,
+			request(CombatStyle.MELEE, 3).withRiskBudgetGp(10_000));
+		Assert.assertFalse(tight.isEmpty());
+		PvpRisk.Assessment risk = PvpRisk.assess(tight.get(0).getLoadout(), null, 3);
+		Assert.assertTrue("risks " + risk.riskGp, risk.riskGp <= 10_000);
+		// A tighter budget can only shrink the candidate space.
+		double withDefault = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
+		Assert.assertTrue(tight.get(0).getDps() <= withDefault + 1e-9);
 	}
 }

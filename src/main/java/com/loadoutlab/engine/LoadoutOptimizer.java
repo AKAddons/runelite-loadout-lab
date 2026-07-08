@@ -99,7 +99,7 @@ public final class LoadoutOptimizer
 				Loadout trial = new Loadout(gear);
 				if (request.isRiskConstrained()
 					&& PvpRisk.assess(trial, null, request.getMaxTradeables()).riskGp
-						> OptimizationRequest.RISK_BUDGET_GP)
+						> request.getRiskBudgetGp())
 				{
 					continue;
 				}
@@ -198,7 +198,7 @@ public final class LoadoutOptimizer
 						if (request.isRiskConstrained())
 						{
 							riskGp = PvpRisk.assess(loadout, null, request.getMaxTradeables()).riskGp;
-							if (riskGp > OptimizationRequest.RISK_BUDGET_GP)
+							if (riskGp > request.getRiskBudgetGp())
 							{
 								continue;
 							}

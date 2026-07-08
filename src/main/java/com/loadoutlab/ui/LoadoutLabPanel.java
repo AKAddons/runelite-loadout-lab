@@ -16,7 +16,6 @@ import com.loadoutlab.engine.DragonfireRules;
 import com.loadoutlab.engine.IncomingDpsCalculator;
 import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.MonsterMechanics;
-import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
@@ -89,12 +88,13 @@ import net.runelite.client.util.ImageUtil;
 public class LoadoutLabPanel extends PluginPanel
 {
 	/** (monster, f2pOnly, onDone) - the plugin wires this to the optimizer.
-	 * maxTradeables: wilderness risk cap (-1 = unconstrained). */
+	 * maxTradeables: wilderness kept-slot cap (-1 = unconstrained);
+	 * riskBudgetGp: the total gp the set may drop on a PvP death. */
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, int maxTradeables, boolean antifirePotion,
-			int upgradeBudgetGp, Runnable onDone);
+			String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean antifirePotion, int upgradeBudgetGp, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -182,6 +182,10 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
+	/** Wilderness risk-cap dropdown values in gp; 75k is the default. */
+	private static final int[] RISK_STEPS = {0, 25_000, 75_000, 200_000, 1_000_000};
+	private final JComboBox<String> riskBudget = new JComboBox<>(
+		new String[]{"Risk cap: 0", "Risk cap: 25k", "Risk cap: 75k", "Risk cap: 200k", "Risk cap: 1M"});
 	/** Dragonfire: gear protection by default; right-clicking the shield
 	 * cell flips to an assumed super antifire (and back). */
 	private boolean superAntifireAssumed;
@@ -279,13 +283,23 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// Wilderness only: cap the set to the items death mechanics keep.
 		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
-			+ " everything else must total under 75k of risk");
+			+ " everything else must total under the risk cap");
 		lowRisk.setVisible(false);
 		top.add(lowRisk);
 
 		initToggle(protectItem, "Protect Item keeps a 4th item (not while skulled)");
 		protectItem.setVisible(false);
 		top.add(protectItem);
+
+		// How much gp the set may drop on a wilderness death; 0 = nothing
+		// droppable and no fees at all.
+		riskBudget.setAlignmentX(LEFT_ALIGNMENT);
+		riskBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
+		riskBudget.setSelectedIndex(2);
+		riskBudget.addActionListener(e -> recompute());
+		riskBudget.setVisible(false);
+		top.add(riskBudget);
 
 
 		// Lock the magic card's auto-spell to one spellbook.
@@ -480,6 +494,7 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wilderness = WildernessMonsters.isWilderness(monster);
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
+		riskBudget.setVisible(wilderness);
 		superAntifireAssumed = false; // each monster starts on gear protection
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
@@ -521,6 +536,12 @@ public class LoadoutLabPanel extends PluginPanel
 			return -1;
 		}
 		return protectItem.isSelected() ? 4 : 3;
+	}
+
+	/** The selected wilderness risk budget in gp. */
+	private int selectedRiskBudget()
+	{
+		return RISK_STEPS[riskBudget.getSelectedIndex()];
 	}
 
 	private String spellbookLock()
@@ -657,7 +678,7 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			spellbookLock(), riskCap(),
+			spellbookLock(), riskCap(), selectedRiskBudget(),
 			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
 			(int) BUDGET_STEPS[upgradeBudget.getSelectedIndex()],
 			() -> statusLabel.setText(" "));
@@ -981,7 +1002,7 @@ public class LoadoutLabPanel extends PluginPanel
 			PvpRisk.assess(best.getLoadout(), specWeapon, keep);
 		JLabel line = line(String.format("Risk: %s gp (%d kept on death)",
 			PvpRisk.formatGp(risk.riskGp), keep),
-			risk.riskGp <= OptimizationRequest.RISK_BUDGET_GP
+			risk.riskGp <= selectedRiskBudget()
 				? GOOD : new Color(220, 140, 120));
 		StringBuilder tip = new StringBuilder("<html>Kept on death:");
 		if (risk.kept.isEmpty())
