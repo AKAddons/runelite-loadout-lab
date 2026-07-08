@@ -51,6 +51,7 @@ public final class HeadlessQuery
 		boolean antifirePotion = false;
 		String spellbook = "";
 		int lowRisk = -1;
+		int upgradeBudget = 0;
 		for (int i = 0; i < args.length; i++)
 		{
 			switch (args[i])
@@ -62,6 +63,7 @@ public final class HeadlessQuery
 				case "--antifire-potion": antifirePotion = true; break;
 				case "--spellbook": spellbook = args[++i]; break;
 				case "--low-risk": lowRisk = Integer.parseInt(args[++i]); break;
+				case "--budget": upgradeBudget = Integer.parseInt(args[++i]); break;
 				default: monsterName.append(monsterName.length() > 0 ? " " : "").append(args[i]);
 			}
 		}
@@ -85,6 +87,7 @@ public final class HeadlessQuery
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
 				java.util.Collections.emptySet(), lowRisk, antifirePotion,
+				java.util.Collections.emptySet(), upgradeBudget,
 				results ->
 				{
 					out.set(results);

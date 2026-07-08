@@ -32,6 +32,8 @@ public final class OptimizationRequest
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
 	private final boolean antifirePotion;
+	/** "Green" items: unowned gear considered as owned (dreaming). */
+	private final Set<Integer> dreamItems;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -76,6 +78,7 @@ public final class OptimizationRequest
 		this.spellbookLock = "";
 		this.maxTradeables = -1;
 		this.antifirePotion = false;
+		this.dreamItems = Collections.emptySet();
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -84,13 +87,15 @@ public final class OptimizationRequest
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems)
 	{
-		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables, base.antifirePotion);
+		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables,
+			base.antifirePotion, base.dreamItems);
 	}
 
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables,
-		boolean antifirePotion)
+		boolean antifirePotion, Set<Integer> dreamItems)
 	{
+		this.dreamItems = dreamItems == null ? Collections.emptySet() : dreamItems;
 		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
 		this.maxTradeables = maxTradeables;
 		this.antifirePotion = antifirePotion;
@@ -131,7 +136,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, antifirePotion);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, antifirePotion, dreamItems);
 	}
 
 	public boolean isAntifirePotion()
@@ -141,7 +146,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
 	}
 
 	public int getMaxTradeables()
@@ -166,7 +171,17 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
+	}
+
+	public boolean isDream(int itemId)
+	{
+		return dreamItems.contains(itemId);
+	}
+
+	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, antifirePotion, dreamItems);
 	}
 
 	public MonsterStats getMonster()

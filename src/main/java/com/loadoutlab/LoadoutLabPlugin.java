@@ -86,6 +86,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
+	private com.loadoutlab.collection.DreamStore dreams;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
@@ -142,6 +143,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
+		dreams = new com.loadoutlab.collection.DreamStore(configManager, gson);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
@@ -156,7 +158,10 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster, exclusions::toggle, exclusions::snapshot);
+				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
+					exclusions::toggle, exclusions::snapshot,
+					dreams::toggle, dreams::snapshot,
+					id -> ledger.owned().containsKey(id));
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
@@ -304,7 +309,7 @@ public class LoadoutLabPlugin extends Plugin
 		writer.start();
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, boolean antifirePotion, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, boolean antifirePotion, int upgradeBudgetGp, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -324,6 +329,7 @@ public class LoadoutLabPlugin extends Plugin
 				real, live, unlocks, profile, ledger.owned(), ledger.bankKnown()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, antifirePotion,
+				dreams.snapshot(), upgradeBudgetGp,
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)

@@ -626,7 +626,8 @@ public final class LoadoutOptimizer
 		{
 			return canUseUntradeable(request, item);
 		}
-		boolean owned = request.getOwnedItems().owns(item.getId());
+		boolean owned = request.getOwnedItems().owns(item.getId())
+			|| request.isDream(item.getId());
 		switch (request.getCandidateMode())
 		{
 			case ALL_STANDARD:
@@ -658,12 +659,16 @@ public final class LoadoutOptimizer
 		// be bought, so there they require ownership.
 		return item != null && request.isIncludeUntradeables() && !item.isTradeable()
 			&& (request.getCandidateMode() == CandidateMode.ALL_STANDARD
-				|| request.getOwnedItems().owns(item.getId()));
+				|| request.getOwnedItems().owns(item.getId())
+				|| request.isDream(item.getId()));
 	}
 
 	private static int budgetCost(OptimizationRequest request, GearItem item)
 	{
-		if (item == null || request.getOwnedItems().owns(item.getId()))
+		// Dream items are pretend-owned: free against the upgrade budget
+		// (the panel prices the dream separately).
+		if (item == null || request.getOwnedItems().owns(item.getId())
+			|| request.isDream(item.getId()))
 		{
 			return 0;
 		}

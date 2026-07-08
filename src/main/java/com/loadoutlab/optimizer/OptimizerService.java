@@ -144,10 +144,14 @@ public class OptimizerService
 		java.util.Set<Integer> excludedItems,
 		int maxTradeables,
 		boolean antifirePotion,
+		java.util.Set<Integer> dreamItems,
+		int upgradeBudgetGp,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final java.util.Set<Integer> excluded = excludedItems == null
 			? java.util.Collections.emptySet() : excludedItems;
+		final java.util.Set<Integer> dreams = dreamItems == null
+			? java.util.Collections.emptySet() : dreamItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
 		final com.loadoutlab.engine.PrayerUnlocks unlocks = prayerUnlocks == null
@@ -155,6 +159,7 @@ public class OptimizerService
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + antifirePotion
+			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
@@ -201,11 +206,16 @@ public class OptimizerService
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
 					com.loadoutlab.engine.PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
+				// The green set: dreams are pretend-owned; a positive upgrade
+				// budget also auto-greens anything buyable within it (total
+				// spend, tracked by the beam).
 				OptimizationRequest ownedRequest = request(
 					monster, style, styleLevels, unlocks, requirements,
-					CandidateMode.OWNED_ONLY, effectiveOwned, 3, onSlayerTask)
+					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+					effectiveOwned, 3, onSlayerTask, Math.max(0, upgradeBudgetGp))
 					.withExcludedItems(excluded).withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
+					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion)
+					.withDreamItems(dreams);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -219,7 +229,7 @@ public class OptimizerService
 				OptimizationRequest gameRequest = request(
 					monster, style, gameLevels, com.loadoutlab.engine.PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask)
+					CandidateMode.ALL_STANDARD, OwnedItems.EMPTY, 1, onSlayerTask, 0)
 					.withExcludedItems(excluded).withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withAntifirePotion(antifirePotion);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
@@ -438,7 +448,8 @@ public class OptimizerService
 		CandidateMode mode,
 		OwnedItems owned,
 		int limit,
-		boolean onSlayerTask)
+		boolean onSlayerTask,
+		int budgetGp)
 	{
 		return new OptimizationRequest(
 			monster,
@@ -446,7 +457,7 @@ public class OptimizerService
 			levels,
 			PrayerBonuses.bestAvailable(levels, unlocks),
 			null,          // auto-pick the spell for magic
-			0,             // budget unused by these modes
+			budgetGp,      // OWNED_OR_BUDGET: total upgrade spend allowed
 			mode,
 			true,          // untradeables count
 			onSlayerTask,

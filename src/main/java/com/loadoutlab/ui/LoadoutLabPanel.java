@@ -51,7 +51,8 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, int maxTradeables, boolean antifirePotion, Runnable onDone);
+			String spellbookLock, int maxTradeables, boolean antifirePotion,
+			int upgradeBudgetGp, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -66,6 +67,24 @@ public class LoadoutLabPanel extends PluginPanel
 		java.util.Set<Integer> snapshot();
 	}
 
+	/** Toggle an item's dream ("green") state; true when now dreamed. */
+	public interface DreamToggle
+	{
+		boolean toggle(int itemId);
+	}
+
+	/** The current dream item ids. */
+	public interface DreamView
+	{
+		java.util.Set<Integer> snapshot();
+	}
+
+	/** Does the player actually own this item (black set)? */
+	public interface OwnedCheck
+	{
+		boolean owns(int itemId);
+	}
+
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
@@ -77,6 +96,14 @@ public class LoadoutLabPanel extends PluginPanel
 	private final ComputeHook computeHook;
 	private final ExclusionToggle exclusionToggle;
 	private final ExclusionView exclusionView;
+	private final DreamToggle dreamToggle;
+	private final DreamView dreamView;
+	private final OwnedCheck ownedCheck;
+	/** Upgrade budget dropdown values in gp; 0 = off. */
+	private static final long[] BUDGET_STEPS = {0, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000};
+	private final javax.swing.JComboBox<String> upgradeBudget = new javax.swing.JComboBox<>(
+		new String[]{"No upgrade budget", "Upgrades under 100k", "Upgrades under 1M",
+			"Upgrades under 10M", "Upgrades under 100M", "Upgrades under 1B"});
 	private final JLabel exclusionsLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
@@ -111,7 +138,8 @@ public class LoadoutLabPanel extends PluginPanel
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		net.runelite.client.game.SpriteManager spriteManager, ComputeHook computeHook,
-		ExclusionToggle exclusionToggle, ExclusionView exclusionView)
+		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
+		DreamToggle dreamToggle, DreamView dreamView, OwnedCheck ownedCheck)
 	{
 		this.data = data;
 		this.itemManager = itemManager;
@@ -119,6 +147,9 @@ public class LoadoutLabPanel extends PluginPanel
 		this.computeHook = computeHook;
 		this.exclusionToggle = exclusionToggle;
 		this.exclusionView = exclusionView;
+		this.dreamToggle = dreamToggle;
+		this.dreamView = dreamView;
+		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -223,6 +254,15 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
 		spellbook.addActionListener(e -> recompute());
 		top.add(spellbook);
+
+		// The "green" set, automatic tier: buyable upgrades within a total
+		// gp budget join the consideration pool (dream items are the manual
+		// tier, via right-click).
+		upgradeBudget.setAlignmentX(LEFT_ALIGNMENT);
+		upgradeBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		upgradeBudget.setToolTipText("Also consider buyable gear - total spend within this budget");
+		upgradeBudget.addActionListener(e -> recompute());
+		top.add(upgradeBudget);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
@@ -501,6 +541,21 @@ public class LoadoutLabPanel extends PluginPanel
 						recompute();
 					});
 					menu.add(exclude);
+					// The "green" set: unowned items can be dreamed into the
+					// owned pool (and undreamed).
+					if (!ownedCheck.owns(item.getId()))
+					{
+						boolean dreamed = dreamView.snapshot().contains(item.getId());
+						javax.swing.JMenuItem dream = new javax.swing.JMenuItem(dreamed
+							? "Stop dreaming of " + item.label()
+							: "Dream: consider " + item.label() + " as owned");
+						dream.addActionListener(a ->
+						{
+							dreamToggle.toggle(item.getId());
+							recompute();
+						});
+						menu.add(dream);
+					}
 				}
 				menu.show(cell, e.getX(), e.getY());
 			}
@@ -545,6 +600,7 @@ public class LoadoutLabPanel extends PluginPanel
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
 			spellbookLock(), riskCap(),
 			superAntifireAssumed && com.loadoutlab.engine.DragonfireRules.breathesFire(selectedMonster),
+			(int) BUDGET_STEPS[upgradeBudget.getSelectedIndex()],
 			() -> statusLabel.setText(" "));
 	}
 
@@ -646,6 +702,7 @@ public class LoadoutLabPanel extends PluginPanel
 		addAssumesRow(card, result.boostLabel, "Assumed prayer + boost (you own these)");
 		addIncomingLine(card, result.incoming);
 		addRiskLine(card, best, result.specWeapon);
+		addUpgradeLine(card, best);
 		addPrayerLine(card, best);
 		addStyleLine(card, style, best);
 		addSpellLine(card, style, best);
@@ -917,6 +974,33 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(line);
 	}
 
+	/** Green items in the set: what buying the unowned pieces would cost. */
+	private void addUpgradeLine(JPanel card, DpsResult best)
+	{
+		long cost = 0;
+		StringBuilder tip = new StringBuilder("<html>Not owned yet:");
+		for (GearItem item : best.getLoadout().getGear().values())
+		{
+			if (item != null && !ownedCheck.owns(item.getId()))
+			{
+				cost += item.getPriceOrZero();
+				tip.append("<br>").append(item.label()).append(" (")
+					.append(com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero())).append(")");
+			}
+		}
+		if (cost <= 0)
+		{
+			return;
+		}
+		JLabel line = new JLabel(String.format("Upgrade cost: ~%s gp",
+			com.loadoutlab.engine.PvpRisk.formatGp(cost)));
+		line.setForeground(new Color(110, 190, 110));
+		line.setFont(line.getFont().deriveFont(11f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setToolTipText(tip.append("</html>").toString());
+		card.add(line);
+	}
+
 	/** What the boss does back to you in this set, protection prayer up. */
 	private void addIncomingLine(JPanel card, com.loadoutlab.engine.IncomingDpsCalculator.Result incoming)
 	{
@@ -1074,6 +1158,13 @@ public class LoadoutLabPanel extends PluginPanel
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
 		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip)
 	{
+		return iconGrid(result, spec, specWeapon, specExpected, specDrainValue,
+			replacedAutoExpected, specFallbackTooltip, false);
+	}
+
+	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
+		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned)
+	{
 		JPanel icons = new JPanel(new java.awt.GridLayout(3, 4, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
@@ -1088,8 +1179,14 @@ public class LoadoutLabPanel extends PluginPanel
 				? dragonfireMenuEntries() : java.util.Collections.emptyList();
 			if (item != null)
 			{
-				slot.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-				slot.setToolTipText(slotName(slotType) + ": " + item.label() + " (right-click to exclude)");
+				// Green border: an item in the set you don't own (a dream or
+				// budget upgrade) - the "green" set made visible.
+				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
+				slot.setBorder(BorderFactory.createLineBorder(
+					unowned ? new Color(110, 190, 110) : new Color(70, 70, 70)));
+				slot.setToolTipText(slotName(slotType) + ": " + item.label()
+					+ (unowned ? " - NOT OWNED (" + com.loadoutlab.engine.PvpRisk.formatGp(item.getPriceOrZero()) + ")" : "")
+					+ " (right-click to exclude)");
 				AsyncBufferedImage img = itemManager.getImage(item.getId());
 				img.addTo(slot);
 				List<GearItem> menuItems = new java.util.ArrayList<>();
