@@ -6,6 +6,7 @@ import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.SpecialAttack;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BorderLayout;
