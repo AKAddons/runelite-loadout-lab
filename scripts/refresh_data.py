@@ -136,6 +136,41 @@ def build_gear(wg_equipment, mapping_by_id, latest_by_id, old_by_id):
     return result
 
 
+def supplement_aliases(aliases, wg_equipment):
+    """Weirdgloop treats corrupted '(c)' rows as their own base; for
+    OWNERSHIP crediting they equal the Charged base (identical stats,
+    e.g. Bow of faerdhinen (c) -> Charged). Add those links, then
+    flatten chains so one-hop canonicalization lands on the final base
+    (hue variants -> (c) -> Charged must become hue -> Charged)."""
+    def stats(row):
+        import json as _json
+        return (row.get("slot"), row.get("speed"), row.get("isTwoHanded"),
+                _json.dumps(row.get("offensive"), sort_keys=True),
+                _json.dumps(row.get("defensive"), sort_keys=True),
+                _json.dumps(row.get("bonuses"), sort_keys=True))
+    by_name = {}
+    for row in wg_equipment:
+        by_name.setdefault(row.get("name"), []).append(row)
+    for row in wg_equipment:
+        name = row.get("name") or ""
+        if not name.endswith(" (c)") or str(row["id"]) in aliases:
+            continue
+        for base in by_name.get(name[:-4], []):
+            if base.get("version") in ("Charged", "", "Active", "New") \
+                    and stats(base) == stats(row):
+                aliases[str(row["id"])] = base["id"]
+                break
+    for key in list(aliases):
+        target = aliases[key]
+        seen = {int(key)}
+        while str(target) in aliases and aliases[str(target)] != target \
+                and target not in seen:
+            seen.add(target)
+            target = aliases[str(target)]
+        aliases[key] = target
+    return aliases
+
+
 def write_gz(name, payload):
     path = os.path.join(RES_DIR, name)
     buf = io.BytesIO()
@@ -178,7 +213,8 @@ def main():
     write_gz("gear_prices.json.gz", gear)
     write_gz("monsters.json.gz", wg_monsters)
     write_gz("spells.json.gz", wg_spells)
-    write_gz("equipment_aliases.json.gz", wg_aliases)
+    write_gz("equipment_aliases.json.gz",
+             supplement_aliases(wg_aliases, wg_equipment))
     print("done - run ./gradlew test to validate the snapshot")
     return 0
 

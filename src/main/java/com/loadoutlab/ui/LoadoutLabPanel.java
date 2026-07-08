@@ -1203,7 +1203,8 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// Border language: green = you don't own it (dream/budget
 				// upgrade); gold = your item IS the game's best available
-				// for this slot - nothing left to chase.
+				// for this slot; blue = the spec cell (matches the in-game
+				// special attack bar).
 				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
 				GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
 				boolean bis = !unowned && bisItem != null && bisItem.getId() == item.getId();
@@ -1247,7 +1248,7 @@ public class LoadoutLabPanel extends PluginPanel
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
-			specCell.setBorder(BorderFactory.createLineBorder(new Color(220, 180, 120)));
+			specCell.setBorder(BorderFactory.createLineBorder(new Color(110, 150, 220)));
 			specCell.setToolTipText(specTooltip(spec, specExpected,
 				specDrainValue, replacedAutoExpected, specFallbackTooltip));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);

@@ -132,6 +132,11 @@ public class DataServiceTest
 		// 29045 credits the base (New) 29025 the optimizer suggests.
 		java.util.Map<Integer, Integer> degraded = data.canonicalizeOwned(java.util.Map.of(29045, 1));
 		Assert.assertEquals(1, degraded.get(29025).intValue());
+
+		// Corrupted/cosmetic crystal: bofa (c) and a saeldor hue variant
+		// credit the Charged base - including through the (c) chain.
+		Assert.assertEquals(1, data.canonicalizeOwned(java.util.Map.of(25867, 1)).get(25865).intValue());
+		Assert.assertEquals(1, data.canonicalizeOwned(java.util.Map.of(25882, 1)).get(23995).intValue());
 	}
 
 	@Test
