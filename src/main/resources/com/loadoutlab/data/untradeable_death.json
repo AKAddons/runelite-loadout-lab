@@ -1526,8 +1526,8 @@
  },
  "magic shortbow (i)": {
   "category": 4,
-  "costGp": 800,
-  "note": "drops a regular magic shortbow for the killer, imbue lost (wiki Magic shortbow (i)); GE ~800"
+  "costGp": 37000,
+  "note": "drops a regular magic shortbow for the killer AND the imbue scroll is lost - replacement = bow ~800 + magic shortbow scroll ~36k (GE 2026-07-08)"
  },
  "magma helm": {
   "category": 4,
