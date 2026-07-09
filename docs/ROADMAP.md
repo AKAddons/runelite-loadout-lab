@@ -143,7 +143,13 @@ per-boss defensive thresholds. Phased:
 - **D-3 Threshold-constrained search** - OptimizationRequest gains
   defensive constraints ("ranged def >= 100"); optimizer returns the best
   dps set satisfying them.
-- **D-4 Ratio frontier** - sweep the owned-gear Pareto frontier of
-  (dps out, dps in); find knee points where a small dps sacrifice buys a
-  large defensive gain; auto-derive per-boss thresholds from the knees and
-  feed them into D-3; recommend the "optimized" balanced set.
+- **D-4 Ratio frontier (DONE 2026-07-08)** - the beam gains a defense
+  weight (score = dps - w * incoming); OptimizerService sweeps four
+  weights per style, traces the (dps out, dps in) frontier, and the
+  "Optimize:" selector picks the point: Max DPS (endpoint, default),
+  Balanced (the knee - farthest from the endpoint line), Tanky (best
+  out/in ratio holding >= half max dps). The chosen set flows through
+  every existing display (incoming, risk, spec, grids) plus a trade
+  note ("Balanced: -7% less dps for -34% less damage taken").
+  Remaining: D-3 explicit stat thresholds (subsumed for most uses by
+  the modes), per-boss threshold derivation from the knees.

@@ -54,6 +54,7 @@ public final class HeadlessQuery
 		int lowRisk = -1;
 		int riskBudget = com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		int upgradeBudget = 0;
+		OptimizerService.OptimizeMode mode = OptimizerService.OptimizeMode.MAX_DPS;
 		for (int i = 0; i < args.length; i++)
 		{
 			switch (args[i])
@@ -67,6 +68,7 @@ public final class HeadlessQuery
 				case "--low-risk": lowRisk = Integer.parseInt(args[++i]); break;
 				case "--risk-budget": riskBudget = Integer.parseInt(args[++i]); break;
 				case "--budget": upgradeBudget = Integer.parseInt(args[++i]); break;
+				case "--mode": mode = OptimizerService.OptimizeMode.valueOf(args[++i].toUpperCase()); break;
 				default: monsterName.append(monsterName.length() > 0 ? " " : "").append(args[i]);
 			}
 		}
@@ -90,7 +92,7 @@ public final class HeadlessQuery
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
 				java.util.Collections.emptySet(), lowRisk, riskBudget, antifirePotion,
-				java.util.Collections.emptySet(), upgradeBudget,
+				java.util.Collections.emptySet(), upgradeBudget, mode,
 				results ->
 				{
 					out.set(results);

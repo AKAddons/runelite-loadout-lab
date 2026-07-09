@@ -21,6 +21,7 @@ import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -51,6 +52,17 @@ public class OptimizerService
 {
 	private static final int CACHE_MAX = 64;
 
+	/** D-4: which point of the offense/defense frontier to recommend. */
+	public enum OptimizeMode
+	{
+		MAX_DPS,
+		BALANCED,
+		TANKY
+	}
+
+	/** Frontier sweep weights, as multiples of maxDps/incoming. */
+	private static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0};
+
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
 	public static final class StyleResult
@@ -71,14 +83,19 @@ public class OptimizerService
 		public final String gameBoostLabel;
 		/** What the boss does back to you in the shown owned set (nullable). */
 		public final IncomingDpsCalculator.Result incoming;
+		/** The frontier trade the chosen mode made, e.g.
+		 * "Balanced: -7% dps for -34% damage taken" (null on max dps). */
+		public final String modeNote;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming)
+			IncomingDpsCalculator.Result incoming,
+			String modeNote)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
 			this.incoming = incoming;
+			this.modeNote = modeNote;
 			this.owned = owned;
 			this.overallBest = overallBest;
 			this.spec = spec == null ? null : spec.spec;
@@ -153,6 +170,7 @@ public class OptimizerService
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
+		OptimizeMode mode,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final Set<Integer> excluded = excludedItems == null
@@ -171,6 +189,7 @@ public class OptimizerService
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
+			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
 		synchronized (cache)
@@ -182,6 +201,7 @@ public class OptimizerService
 			callback.accept(cached);
 			return;
 		}
+		final OptimizeMode chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
 		{
@@ -236,6 +256,16 @@ public class OptimizerService
 					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
 					ownedBest.set(0, optimizer.ensureRequiredUtility(dataset, ownedRequest, ownedBest.get(0)));
 				}
+				// D-4 frontier: when the mode wants safety, sweep defense
+				// weights, walk the (dps out, dps in) frontier, and swap the
+				// displayed set for the mode's pick. Every downstream number
+				// (spec, incoming, risk) then describes the chosen set.
+				String modeNote = null;
+				if (chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
+				{
+					modeNote = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
+						monster, real, ticket);
+				}
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
@@ -266,7 +296,7 @@ public class OptimizerService
 						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming));
+					boostLabel, gameBoostLabel, incoming, modeNote));
 			}
 			if (requestSeq.get() != ticket)
 			{
@@ -279,6 +309,106 @@ public class OptimizerService
 			}
 			callback.accept(results);
 		});
+	}
+
+	/**
+	 * Sweep defense weights to trace the offense/defense frontier, pick
+	 * the mode's point, swap it into ownedBest[0], and return the note
+	 * quantifying the trade. BALANCED = the knee (farthest from the
+	 * line between the max-dps and tankiest points); TANKY = best
+	 * out/in ratio holding at least half the max dps.
+	 */
+	private String applyMode(LoadoutData dataset, OptimizationRequest ownedRequest,
+		List<DpsResult> ownedBest, OptimizeMode mode,
+		MonsterStats monster, PlayerLevels real, long ticket)
+	{
+		DpsResult maxDps = ownedBest.get(0);
+		double d0 = maxDps.getDps();
+		double i0 = incomingOf(monster, maxDps, real);
+		if (d0 <= 0 || i0 <= 0.05)
+		{
+			return null; // nothing meaningful to trade against
+		}
+		List<DpsResult> frontier = new ArrayList<>();
+		frontier.add(maxDps);
+		for (double alpha : SWEEP_ALPHAS)
+		{
+			if (requestSeq.get() != ticket)
+			{
+				return null; // superseded mid-sweep
+			}
+			OptimizationRequest weighted = ownedRequest.withDefenseWeight(alpha * d0 / i0);
+			List<DpsResult> out = optimizer.optimize(dataset, weighted);
+			if (out.isEmpty())
+			{
+				continue;
+			}
+			DpsResult candidate = optimizer.ensureRequiredUtility(dataset, weighted,
+				optimizer.fillDpsNeutralSlots(dataset, weighted, out.get(0)));
+			frontier.add(candidate);
+		}
+		DpsResult tankiest = frontier.get(0);
+		double tankIn = i0;
+		for (DpsResult candidate : frontier)
+		{
+			double in = incomingOf(monster, candidate, real);
+			if (in < tankIn - 1e-9)
+			{
+				tankIn = in;
+				tankiest = candidate;
+			}
+		}
+		DpsResult picked = maxDps;
+		if (mode == OptimizeMode.TANKY)
+		{
+			double bestRatio = -1;
+			for (DpsResult candidate : frontier)
+			{
+				double d = candidate.getDps();
+				double in = Math.max(incomingOf(monster, candidate, real), 1e-9);
+				if (d >= 0.5 * d0 && d / in > bestRatio)
+				{
+					bestRatio = d / in;
+					picked = candidate;
+				}
+			}
+		}
+		else
+		{
+			// Knee: normalized distance from the endpoint line - where a
+			// small dps sacrifice buys the largest defensive gain.
+			double dT = tankiest.getDps();
+			double best = 0;
+			for (DpsResult candidate : frontier)
+			{
+				double dn = d0 - dT < 1e-9 ? 0 : (candidate.getDps() - dT) / (d0 - dT);
+				double in = incomingOf(monster, candidate, real);
+				double inNorm = i0 - tankIn < 1e-9 ? 0 : (in - tankIn) / (i0 - tankIn);
+				double distance = dn - inNorm; // above the diagonal = good
+				if (distance > best + 1e-9)
+				{
+					best = distance;
+					picked = candidate;
+				}
+			}
+		}
+		if (picked == maxDps)
+		{
+			return "Max-dps set is already the best trade here";
+		}
+		double d = picked.getDps();
+		double in = incomingOf(monster, picked, real);
+		ownedBest.set(0, picked);
+		return String.format("%s: %.0f%% less dps for %.0f%% less damage taken",
+			mode == OptimizeMode.TANKY ? "Tanky" : "Balanced",
+			(1 - d / d0) * 100, (1 - in / i0) * 100);
+	}
+
+	private static double incomingOf(MonsterStats monster,
+		DpsResult result, PlayerLevels real)
+	{
+		return IncomingDpsCalculator.calculate(
+			monster, result.getLoadout(), real.getDefence(), real.getMagic()).totalDps;
 	}
 
 	private static String joinAssumes(String prayer, String boost)

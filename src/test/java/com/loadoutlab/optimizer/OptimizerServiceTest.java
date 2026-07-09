@@ -58,12 +58,12 @@ public class OptimizerServiceTest
 			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, false, "",
-				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> staleDelivered.incrementAndGet());
+				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> staleDelivered.incrementAndGet());
 			// The toggle: same monster, on-task, fired before the stale run ends.
 			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, true, "",
-				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> fresh.countDown());
+				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> fresh.countDown());
 			Assert.assertTrue(fresh.await(120, TimeUnit.SECONDS));
 			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
 			Assert.assertTrue("the stale computation must have been abandoned",
@@ -81,7 +81,7 @@ public class OptimizerServiceTest
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
+			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
 			{
 				out.set(results);
 				done.countDown();
@@ -104,7 +104,7 @@ public class OptimizerServiceTest
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
+				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
 				{
 					out.set(results);
 					done.countDown();

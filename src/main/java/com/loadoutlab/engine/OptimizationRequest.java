@@ -38,6 +38,9 @@ public final class OptimizationRequest
 	private final boolean antifirePotion;
 	/** Dream items: unowned gear considered as owned. */
 	private final Set<Integer> dreamItems;
+	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
+	 * 0 = pure offense (default), higher trades damage for safety. */
+	private final double defenseWeight;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -84,6 +87,7 @@ public final class OptimizationRequest
 		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
 		this.dreamItems = Collections.emptySet();
+		this.defenseWeight = 0;
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -93,13 +97,14 @@ public final class OptimizationRequest
 		SpellStats spell, Set<Integer> excludedItems)
 	{
 		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables,
-			base.riskBudgetGp, base.antifirePotion, base.dreamItems);
+			base.riskBudgetGp, base.antifirePotion, base.dreamItems, base.defenseWeight);
 	}
 
 	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
 		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables,
-		int riskBudgetGp, boolean antifirePotion, Set<Integer> dreamItems)
+		int riskBudgetGp, boolean antifirePotion, Set<Integer> dreamItems, double defenseWeight)
 	{
+		this.defenseWeight = defenseWeight;
 		this.dreamItems = dreamItems == null ? Collections.emptySet() : dreamItems;
 		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
 		this.maxTradeables = maxTradeables;
@@ -142,7 +147,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
 	}
 
 	public boolean isAntifirePotion()
@@ -152,7 +157,7 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
 	}
 
 	public int getMaxTradeables()
@@ -183,12 +188,12 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
 	}
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
 	}
 
 	public boolean isDream(int itemId)
@@ -198,7 +203,17 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems);
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+	}
+
+	public double getDefenseWeight()
+	{
+		return defenseWeight;
+	}
+
+	public OptimizationRequest withDefenseWeight(double defenseWeight)
+	{
+		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
 	}
 
 	public MonsterStats getMonster()

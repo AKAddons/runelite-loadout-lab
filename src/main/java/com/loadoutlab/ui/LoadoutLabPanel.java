@@ -94,7 +94,8 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int upgradeBudgetGp, Runnable onDone);
+			boolean antifirePotion, int upgradeBudgetGp,
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -164,6 +165,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final OwnedCheck ownedCheck;
 	/** Upgrade budget dropdown values in gp; 0 = off. */
 	private static final long[] BUDGET_STEPS = {0, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000};
+	/** D-4: which frontier point to recommend per style. */
+	private final JComboBox<String> optimizeMode = new JComboBox<>(
+		new String[]{"Optimize: Max DPS", "Optimize: Balanced", "Optimize: Tanky"});
 	private final JComboBox<String> upgradeBudget = new JComboBox<>(
 		new String[]{"No upgrade budget", "Upgrades under 100k", "Upgrades under 1M",
 			"Upgrades under 10M", "Upgrades under 100M", "Upgrades under 1B"});
@@ -323,6 +327,13 @@ public class LoadoutLabPanel extends PluginPanel
 		upgradeBudget.setToolTipText("Also consider buyable gear - total spend within this budget");
 		upgradeBudget.addActionListener(e -> recompute());
 		top.add(upgradeBudget);
+
+		// D-4: pick the offense/defense frontier point (sweep is slower).
+		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
+		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
+		optimizeMode.addActionListener(e -> recompute());
+		top.add(optimizeMode);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
@@ -688,6 +699,7 @@ public class LoadoutLabPanel extends PluginPanel
 			spellbookLock(), riskCap(), selectedRiskBudget(),
 			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
 			(int) BUDGET_STEPS[upgradeBudget.getSelectedIndex()],
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
 			() -> statusLabel.setText(" "));
 	}
 
@@ -788,6 +800,10 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(dps);
 		addAssumesRow(card, result.boostLabel, "Assumed prayer + boost (you own these)");
 		addIncomingLine(card, result.incoming);
+		if (result.modeNote != null)
+		{
+			card.add(line(result.modeNote, INFO));
+		}
 		addRiskLine(card, best, result.specWeapon);
 		addUpgradeLine(card, best);
 		addPrayerLine(card, best);

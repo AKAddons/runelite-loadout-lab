@@ -152,6 +152,23 @@ public final class LoadoutOptimizer
 		return best == null ? result : best;
 	}
 
+	/**
+	 * D-4: the beam's objective. Pure dps by default; with a defense
+	 * weight the score becomes dps - weight * incoming dps, so the beam
+	 * walks the offense/defense frontier instead of its endpoint.
+	 */
+	private static double weightedScore(OptimizationRequest request, DpsResult score, Loadout loadout)
+	{
+		double value = score.getDps() + score.getAttackRoll() * 1e-9;
+		if (request.getDefenseWeight() > 0)
+		{
+			value -= request.getDefenseWeight() * IncomingDpsCalculator.calculate(
+				request.getMonster(), loadout,
+				request.getLevels().getDefence(), request.getLevels().getMagic()).totalDps;
+		}
+		return value;
+	}
+
 	/** Prayer first, then the sum of defensive bonuses. */
 	private static long utilityScore(GearItem item)
 	{
@@ -249,7 +266,8 @@ public final class LoadoutOptimizer
 						// (tormented demons) accuracy gear ties on DPS, and a
 						// pure cost tie-break picked snakeskin boots over
 						// pegasians. Never outweighs a real DPS difference.
-						next.add(new SearchState(gear, cost, score.getDps() + score.getAttackRoll() * 1e-9, riskGp));
+						next.add(new SearchState(gear, cost,
+							weightedScore(request, score, loadout), riskGp));
 					}
 				}
 				// On DPS ties prefer less risk (an untradeable that crumbles
@@ -290,7 +308,16 @@ public final class LoadoutOptimizer
 					PvpRisk.assess(result.getLoadout(), null, request.getMaxTradeables()).riskGp);
 			}
 		}
-		results.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
+		Map<DpsResult, Double> weighted = new IdentityHashMap<>();
+		if (request.getDefenseWeight() > 0)
+		{
+			for (DpsResult result : results)
+			{
+				weighted.put(result, weightedScore(request, result, result.getLoadout()));
+			}
+		}
+		results.sort(Comparator.comparingDouble(
+				(DpsResult r) -> weighted.getOrDefault(r, r.getDps())).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
 			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
 			.thenComparingInt(DpsResult::getPurchaseCost));

@@ -345,7 +345,7 @@ public class LoadoutLabPlugin extends Plugin
 		writer.start();
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -365,7 +365,7 @@ public class LoadoutLabPlugin extends Plugin
 				real, live, unlocks, profile, ledger.owned(), ledger.bankKnown()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
-				dreams.snapshot(), upgradeBudgetGp,
+				dreams.snapshot(), upgradeBudgetGp, mode,
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
