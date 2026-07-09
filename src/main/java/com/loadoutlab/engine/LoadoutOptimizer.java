@@ -436,7 +436,7 @@ public final class LoadoutOptimizer
 		boolean poweredStaff = isPoweredStaff(loadout.getWeapon());
 		if (poweredStaff)
 		{
-			best = best(best, calculator.calculate(request, loadout));
+			best = DpsResult.better(best, calculator.calculate(request, loadout));
 		}
 		if (!poweredStaff)
 		{
@@ -445,26 +445,13 @@ public final class LoadoutOptimizer
 			{
 				if (allowed[i])
 				{
-					best = best(best, calculator.calculate(context.spellRequests[i], loadout));
+					best = DpsResult.better(best, calculator.calculate(context.spellRequests[i], loadout));
 				}
 			}
 		}
 		// No legal spell for this staff/book: no result - a spell-less
 		// 'cast' has max hit 0 and produced garbage 0.04-dps rows.
 		return best;
-	}
-
-	private static DpsResult best(DpsResult first, DpsResult second)
-	{
-		if (second == null)
-		{
-			return first;
-		}
-		if (first == null || second.getDps() > first.getDps())
-		{
-			return second;
-		}
-		return first;
 	}
 
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)

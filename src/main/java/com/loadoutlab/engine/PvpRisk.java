@@ -155,11 +155,12 @@ public final class PvpRisk
 	}
 
 	/**
-	 * This item's protection-pool value, mirroring sort(): tradeables at GE
-	 * price, convert-class untradeables at their component value; -1 when
-	 * the item is not poolable (absent, fee-class, or worthless untradeable
-	 * - the caller adds costFor(), which is 0 for the latter two... only
-	 * fee-class items charge).
+	 * This item's protection-pool value: tradeables at GE price,
+	 * convert-class untradeables at their component value. -1 means the
+	 * item is not poolable - absent, destroyed-on-death, fee-class, or a
+	 * costless untradeable; for those, costFor() is the per-death fee
+	 * (0 except the destroyed/fee classes). Shared classification for
+	 * assess() and the lean riskGp().
 	 */
 	private static long poolValue(GearItem item)
 	{
@@ -215,12 +216,20 @@ public final class PvpRisk
 		return count;
 	}
 
-	/** Losable items join the protection pool; the rest accrue fees. */
+	/** Losable items join the protection pool; the rest accrue fees.
+	 * Classification lives in poolValue() - shared with the lean riskGp(). */
 	private static void sort(GearItem item, List<GearItem> pool,
 		List<Charge> charges, Map<Integer, Long> valueById)
 	{
 		if (item == null)
 		{
+			return;
+		}
+		long value = poolValue(item);
+		if (value >= 0)
+		{
+			pool.add(item);
+			valueById.put(item.getId(), value);
 			return;
 		}
 		if (UntradeableDeathCosts.isDestroyedOnDeath(item))
@@ -230,24 +239,11 @@ public final class PvpRisk
 			charges.add(new Charge(item, UntradeableDeathCosts.costFor(item)));
 			return;
 		}
-		if (item.isTradeable())
-		{
-			pool.add(item);
-			valueById.put(item.getId(), (long) item.getPriceOrZero());
-			return;
-		}
 		long cost = UntradeableDeathCosts.costFor(item);
-		if (cost <= 0)
+		if (cost > 0)
 		{
-			return;
+			charges.add(new Charge(item, cost));
 		}
-		if (UntradeableDeathCosts.isConvertible(item))
-		{
-			pool.add(item);
-			valueById.put(item.getId(), cost);
-			return;
-		}
-		charges.add(new Charge(item, cost));
 	}
 
 	/** Compact gp formatting: 1.2B / 45.3M / 820k / 950. */

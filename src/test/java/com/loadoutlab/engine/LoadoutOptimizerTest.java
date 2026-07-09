@@ -47,6 +47,20 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void betterPicksTheHigherDpsAndTheFirstOnTiesOrNulls()
+	{
+		DpsResult low = new DpsResult(null, 1.0, 0.5, 1.0, 10, 4, "stab", 100, 100);
+		DpsResult high = new DpsResult(null, 2.0, 0.5, 2.0, 20, 4, "stab", 100, 100);
+		DpsResult tie = new DpsResult(null, 2.0, 0.5, 2.0, 20, 4, "slash", 100, 100);
+		Assert.assertSame(high, DpsResult.better(low, high));
+		Assert.assertSame(high, DpsResult.better(high, low));
+		Assert.assertSame(high, DpsResult.better(high, tie));
+		Assert.assertSame(high, DpsResult.better(null, high));
+		Assert.assertSame(high, DpsResult.better(high, null));
+		Assert.assertNull(DpsResult.better(null, null));
+	}
+
+	@Test
 	public void prebuiltPoolsProduceTheSameResultsAsAFreshOptimize()
 	{
 		// The D-4 sweep reuses one CandidatePools across its weighted runs;

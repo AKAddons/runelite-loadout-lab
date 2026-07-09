@@ -86,7 +86,7 @@ public final class DpsCalculator
 		// aggressive, a mace cannot slash (see WeaponStyles).
 		for (WeaponStyles.MeleeStyle style : WeaponStyles.melee(loadout.getWeapon()))
 		{
-			best = best(best, meleeVariant(request, loadout, style.attackType,
+			best = DpsResult.better(best, meleeVariant(request, loadout, style.attackType,
 				style.attackStance, style.strengthStance));
 		}
 		return best;
@@ -143,7 +143,7 @@ public final class DpsCalculator
 
 		DpsResult rapid = rangedVariant(request, loadout, levels, prayers, 0, true);
 		DpsResult accurate = rangedVariant(request, loadout, levels, prayers, 3, false);
-		return best(rapid, accurate);
+		return DpsResult.better(rapid, accurate);
 	}
 
 	private DpsResult rangedVariant(OptimizationRequest request, Loadout loadout, PlayerLevels levels, PrayerBonuses prayers, int stanceBonus, boolean rapid)
@@ -639,19 +639,6 @@ public final class DpsCalculator
 				? multiply(maxHit, 3, 2) : multiply(maxHit, 5, 4);
 		}
 		return maxHit;
-	}
-
-	private static DpsResult best(DpsResult left, DpsResult right)
-	{
-		if (left == null)
-		{
-			return right;
-		}
-		if (right == null)
-		{
-			return left;
-		}
-		return right.getDps() > left.getDps() ? right : left;
 	}
 
 	private static boolean wearing(Loadout loadout, String marker)

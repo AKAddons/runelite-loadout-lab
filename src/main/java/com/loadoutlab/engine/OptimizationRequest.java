@@ -93,36 +93,85 @@ public final class OptimizationRequest
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
 	}
 
-	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
-		SpellStats spell, Set<Integer> excludedItems)
+	/**
+	 * Copy-on-write core for the with- helpers: a Copy captures every
+	 * field of a base request, the helper overwrites the one it changes,
+	 * and build() re-normalizes exactly what the old copy constructor
+	 * normalized (null lock/sets). Adding a field means one line here and
+	 * one in the constructor below - not re-threading every helper.
+	 */
+	private static final class Copy
 	{
-		this(base, monster, style, spell, excludedItems, base.spellbookLock, base.maxTradeables,
-			base.riskBudgetGp, base.antifirePotion, base.dreamItems, base.defenseWeight);
+		private MonsterStats monster;
+		private CombatStyle style;
+		private PlayerLevels levels;
+		private PrayerBonuses prayers;
+		private SpellStats spell;
+		private int budget;
+		private CandidateMode candidateMode;
+		private boolean includeUntradeables;
+		private boolean onSlayerTask;
+		private OwnedItems ownedItems;
+		private RequirementProfile requirementProfile;
+		private int resultLimit;
+		private Set<Integer> excludedItems;
+		private String spellbookLock;
+		private int maxTradeables;
+		private int riskBudgetGp;
+		private boolean antifirePotion;
+		private Set<Integer> dreamItems;
+		private double defenseWeight;
+
+		private Copy(OptimizationRequest base)
+		{
+			monster = base.monster;
+			style = base.style;
+			levels = base.levels;
+			prayers = base.prayers;
+			spell = base.spell;
+			budget = base.budget;
+			candidateMode = base.candidateMode;
+			includeUntradeables = base.includeUntradeables;
+			onSlayerTask = base.onSlayerTask;
+			ownedItems = base.ownedItems;
+			requirementProfile = base.requirementProfile;
+			resultLimit = base.resultLimit;
+			excludedItems = base.excludedItems;
+			spellbookLock = base.spellbookLock;
+			maxTradeables = base.maxTradeables;
+			riskBudgetGp = base.riskBudgetGp;
+			antifirePotion = base.antifirePotion;
+			dreamItems = base.dreamItems;
+			defenseWeight = base.defenseWeight;
+		}
+
+		private OptimizationRequest build()
+		{
+			return new OptimizationRequest(this);
+		}
 	}
 
-	private OptimizationRequest(OptimizationRequest base, MonsterStats monster, CombatStyle style,
-		SpellStats spell, Set<Integer> excludedItems, String spellbookLock, int maxTradeables,
-		int riskBudgetGp, boolean antifirePotion, Set<Integer> dreamItems, double defenseWeight)
+	private OptimizationRequest(Copy copy)
 	{
-		this.defenseWeight = defenseWeight;
-		this.dreamItems = dreamItems == null ? Collections.emptySet() : dreamItems;
-		this.spellbookLock = spellbookLock == null ? "" : spellbookLock;
-		this.maxTradeables = maxTradeables;
-		this.riskBudgetGp = riskBudgetGp;
-		this.antifirePotion = antifirePotion;
-		this.monster = monster;
-		this.style = style;
-		this.levels = base.levels;
-		this.prayers = base.prayers;
-		this.spell = spell;
-		this.budget = base.budget;
-		this.candidateMode = base.candidateMode;
-		this.includeUntradeables = base.includeUntradeables;
-		this.onSlayerTask = base.onSlayerTask;
-		this.ownedItems = base.ownedItems;
-		this.requirementProfile = base.requirementProfile;
-		this.resultLimit = base.resultLimit;
-		this.excludedItems = excludedItems == null ? Collections.emptySet() : excludedItems;
+		this.monster = copy.monster;
+		this.style = copy.style;
+		this.levels = copy.levels;
+		this.prayers = copy.prayers;
+		this.spell = copy.spell;
+		this.budget = copy.budget;
+		this.candidateMode = copy.candidateMode;
+		this.includeUntradeables = copy.includeUntradeables;
+		this.onSlayerTask = copy.onSlayerTask;
+		this.ownedItems = copy.ownedItems;
+		this.requirementProfile = copy.requirementProfile;
+		this.resultLimit = copy.resultLimit;
+		this.excludedItems = copy.excludedItems == null ? Collections.emptySet() : copy.excludedItems;
+		this.spellbookLock = copy.spellbookLock == null ? "" : copy.spellbookLock;
+		this.maxTradeables = copy.maxTradeables;
+		this.riskBudgetGp = copy.riskBudgetGp;
+		this.antifirePotion = copy.antifirePotion;
+		this.dreamItems = copy.dreamItems == null ? Collections.emptySet() : copy.dreamItems;
+		this.defenseWeight = copy.defenseWeight;
 	}
 
 	public Set<Integer> getExcludedItems()
@@ -137,7 +186,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withExcludedItems(Set<Integer> excluded)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excluded);
+		Copy copy = new Copy(this);
+		copy.excludedItems = excluded;
+		return copy.build();
 	}
 
 	public String getSpellbookLock()
@@ -147,7 +198,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbook, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.spellbookLock = spellbook;
+		return copy.build();
 	}
 
 	public boolean isAntifirePotion()
@@ -157,7 +210,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.antifirePotion = antifirePotion;
+		return copy.build();
 	}
 
 	public int getMaxTradeables()
@@ -188,12 +243,16 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.riskBudgetGp = riskBudgetGp;
+		return copy.build();
 	}
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.maxTradeables = maxTradeables;
+		return copy.build();
 	}
 
 	public boolean isDream(int itemId)
@@ -203,7 +262,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.dreamItems = dreamItems;
+		return copy.build();
 	}
 
 	public double getDefenseWeight()
@@ -213,7 +274,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withDefenseWeight(double defenseWeight)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems, spellbookLock, maxTradeables, riskBudgetGp, antifirePotion, dreamItems, defenseWeight);
+		Copy copy = new Copy(this);
+		copy.defenseWeight = defenseWeight;
+		return copy.build();
 	}
 
 	public MonsterStats getMonster()
@@ -283,16 +346,22 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withStyle(CombatStyle style)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems);
+		Copy copy = new Copy(this);
+		copy.style = style;
+		return copy.build();
 	}
 
 	public OptimizationRequest withMonster(MonsterStats monster)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems);
+		Copy copy = new Copy(this);
+		copy.monster = monster;
+		return copy.build();
 	}
 
 	public OptimizationRequest withSpell(SpellStats spell)
 	{
-		return new OptimizationRequest(this, monster, style, spell, excludedItems);
+		Copy copy = new Copy(this);
+		copy.spell = spell;
+		return copy.build();
 	}
 }

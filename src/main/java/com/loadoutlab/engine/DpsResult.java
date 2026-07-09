@@ -55,6 +55,24 @@ public final class DpsResult
 		this.spellName = spellName == null ? "" : spellName;
 	}
 
+	/**
+	 * The higher-dps of two nullable results; the first wins ties. The
+	 * one comparison rule for "keep the better candidate" - previously
+	 * duplicated by DpsCalculator and LoadoutOptimizer.
+	 */
+	static DpsResult better(DpsResult first, DpsResult second)
+	{
+		if (second == null)
+		{
+			return first;
+		}
+		if (first == null || second.getDps() > first.getDps())
+		{
+			return second;
+		}
+		return first;
+	}
+
 	public DpsResult withPurchaseCost(int purchaseCost)
 	{
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType, attackRoll, defenceRoll, purchaseCost, spellName);
