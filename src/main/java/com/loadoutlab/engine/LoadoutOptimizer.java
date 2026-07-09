@@ -477,7 +477,13 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item);
-			if (slot != GearSlot.WEAPON && !protective && candidateScore(request, item) <= 0)
+			// Defense-weighted runs (Tanky/Balanced) must SEE pure-defense
+			// gear - ring of suffering, guardian boots, tank shields score
+			// zero offense and would never enter the pool otherwise.
+			boolean defensiveCandidate = request.getDefenseWeight() > 0
+				&& slot != GearSlot.WEAPON && utilityScore(item) > 0;
+			if (slot != GearSlot.WEAPON && !protective && !defensiveCandidate
+				&& candidateScore(request, item) <= 0)
 			{
 				continue;
 			}
@@ -497,7 +503,23 @@ public final class LoadoutOptimizer
 		rows = dedupe(rows, request);
 		if (rows.size() > limit)
 		{
-			rows = new ArrayList<>(rows.subList(0, limit));
+			// Defense-weighted runs keep a second tier: the best defensive
+			// items by utility, unioned with the offensive top-N, so the
+			// beam can genuinely trade damage for safety.
+			List<GearItem> cut = new ArrayList<>(rows.subList(0, limit));
+			if (request.getDefenseWeight() > 0 && slot != GearSlot.WEAPON)
+			{
+				List<GearItem> defensive = new ArrayList<>(rows.subList(limit, rows.size()));
+				defensive.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
+				for (GearItem item : defensive.subList(0, Math.min(8, defensive.size())))
+				{
+					if (utilityScore(item) > 0)
+					{
+						cut.add(item);
+					}
+				}
+			}
+			rows = cut;
 		}
 		rows.addAll(protectives);
 		if (slot != GearSlot.WEAPON)

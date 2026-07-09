@@ -65,6 +65,37 @@ public class OptimizeModeTest
 	}
 
 	@Test
+	public void defenseWeightedRunsCanPickPureDefenseGear() throws Exception
+	{
+		// Own a basic ranged kit plus an archers ring (i) (offense) and a
+		// ring of suffering (i) (pure defense, zero offense). At lambda=0
+		// the archers ring wins; with a heavy defense weight the beam must
+		// be ABLE to pick the suffering - it used to be filtered from the
+		// candidate pool entirely for scoring zero offense.
+		com.loadoutlab.data.LoadoutData d = data;
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		owned.put(861, 1);    // magic shortbow
+		owned.put(892, 500);  // rune arrows
+		owned.put(11771, 1);  // archers ring (i)
+		owned.put(19710, 1);  // ring of suffering (i)
+		com.loadoutlab.engine.OptimizationRequest base = new com.loadoutlab.engine.OptimizationRequest(
+			graardor, CombatStyle.RANGED, PlayerLevels.MAXED,
+			com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
+			null, 0, com.loadoutlab.engine.CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(d.canonicalizeOwned(owned), true), 1);
+		com.loadoutlab.engine.LoadoutOptimizer optimizer = new com.loadoutlab.engine.LoadoutOptimizer();
+		com.loadoutlab.data.GearItem offenseRing = optimizer.optimize(d, base).get(0)
+			.getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+		com.loadoutlab.engine.DpsResult tanky = optimizer.optimize(d,
+			base.withDefenseWeight(50)).get(0);
+		com.loadoutlab.data.GearItem tankyRing = tanky.getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+		Assert.assertNotNull(offenseRing);
+		Assert.assertEquals("Archers ring (i)", offenseRing.getName());
+		Assert.assertNotNull(tankyRing);
+		Assert.assertEquals("Ring of suffering (i)", tankyRing.getName());
+	}
+
+	@Test
 	public void balancedNeverTakesMoreDamageAndNeverDealsMoreThanMaxDps() throws Exception
 	{
 		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
