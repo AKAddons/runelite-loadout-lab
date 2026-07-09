@@ -61,7 +61,9 @@ public class OptimizerService
 	}
 
 	/** Frontier sweep weights, as multiples of maxDps/incoming. */
-	private static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0};
+	/** Frontier sweep weights (x maxDps/incoming); the 10.0 extreme lets
+	 * Tanky reach the genuine minimum-intake end of the frontier. */
+	private static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0, 10.0};
 
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
@@ -354,25 +356,39 @@ public class OptimizerService
 				optimizer.fillDpsNeutralSlots(dataset, weighted, out.get(0)));
 			frontier.add(candidate);
 		}
-		// Both modes maximize the RATIO (dps out / dps in) - the user's
-		// actual objective - differing only in how much raw dps they may
-		// sacrifice. Max-dps is in the candidate set, so the chosen ratio
-		// can never be WORSE than the max-dps set's (a knee heuristic
-		// once picked 2.87/1.12 over a 4.5/1.5 max-dps set at Graardor).
-		double floor = (mode == OptimizeMode.TANKY ? 0.5 : 0.75) * d0;
+		// Three pure objectives: MAX_DPS maximizes output (the input set);
+		// TANKY minimizes intake, full stop; BALANCED maximizes the out/in
+		// ratio over the whole frontier INCLUDING both endpoints - so its
+		// ratio is >= the max-dps ratio and >= the tanky ratio by
+		// construction. Ties always prefer more dps.
 		DpsResult picked = maxDps;
-		double bestRatio = d0 / Math.max(i0, 1e-9);
-		for (DpsResult candidate : frontier)
+		if (mode == OptimizeMode.TANKY)
 		{
-			double d = candidate.getDps();
-			double in = Math.max(incomingOf(monster, candidate, real), 1e-9);
-			double ratio = d / in;
-			// Strictly-better ratio wins; ratio ties prefer more dps.
-			if (d >= floor && (ratio > bestRatio + 1e-9
-				|| (ratio > bestRatio - 1e-9 && d > picked.getDps() + 1e-9)))
+			double bestIn = i0;
+			for (DpsResult candidate : frontier)
 			{
-				bestRatio = ratio;
-				picked = candidate;
+				double in = incomingOf(monster, candidate, real);
+				if (in < bestIn - 1e-9
+					|| (in < bestIn + 1e-9 && candidate.getDps() > picked.getDps() + 1e-9))
+				{
+					bestIn = in;
+					picked = candidate;
+				}
+			}
+		}
+		else
+		{
+			double bestRatio = d0 / Math.max(i0, 1e-9);
+			for (DpsResult candidate : frontier)
+			{
+				double ratio = candidate.getDps()
+					/ Math.max(incomingOf(monster, candidate, real), 1e-9);
+				if (ratio > bestRatio + 1e-9
+					|| (ratio > bestRatio - 1e-9 && candidate.getDps() > picked.getDps() + 1e-9))
+				{
+					bestRatio = ratio;
+					picked = candidate;
+				}
 			}
 		}
 		if (picked == maxDps)

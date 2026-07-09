@@ -101,28 +101,24 @@ public class OptimizeModeTest
 	}
 
 	@Test
-	public void balancedRatioNeverRegressesBelowTheMaxDpsRatio() throws Exception
+	public void theThreeModesHonorTheirPureObjectives() throws Exception
 	{
-		// Field report: a knee heuristic once picked 2.87/1.12 (ratio 2.56)
-		// over the 4.5/1.5 max-dps set (ratio 3.0). The modes now MAXIMIZE
-		// the out/in ratio with max-dps in the candidate set, so the chosen
-		// ratio is >= the max-dps ratio by construction.
-		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
-		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
-		Assert.assertNull(max.modeNote);
-		Assert.assertTrue(ratio(balanced) >= ratio(max) - 1e-9);
-		Assert.assertTrue(balanced.owned.get(0).getDps() >= 0.75 * max.owned.get(0).getDps() - 1e-9);
-	}
-
-	@Test
-	public void tankyRatioIsAtLeastBalancedAndKeepsHalfTheDps() throws Exception
-	{
+		// MAX_DPS: most output. TANKY: least intake, no dps floor.
+		// BALANCED: best out/in ratio, >= BOTH other modes' ratios by
+		// construction (field report: a knee heuristic once picked ratio
+		// 2.56 over the max-dps set's 3.0).
 		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
 		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
 		OptimizerService.StyleResult tanky = ranged(OptimizerService.OptimizeMode.TANKY);
-		// The looser dps floor can only widen the ratio search space.
-		Assert.assertTrue(ratio(tanky) >= ratio(balanced) - 1e-9);
-		Assert.assertTrue(ratio(tanky) >= ratio(max) - 1e-9);
-		Assert.assertTrue(tanky.owned.get(0).getDps() >= 0.5 * max.owned.get(0).getDps() - 1e-9);
+		Assert.assertNull(max.modeNote);
+		// Max dps deals the most.
+		Assert.assertTrue(max.owned.get(0).getDps() >= balanced.owned.get(0).getDps() - 1e-9);
+		Assert.assertTrue(max.owned.get(0).getDps() >= tanky.owned.get(0).getDps() - 1e-9);
+		// Tanky takes the least.
+		Assert.assertTrue(incoming(tanky) <= incoming(max) + 1e-9);
+		Assert.assertTrue(incoming(tanky) <= incoming(balanced) + 1e-9);
+		// Balanced owns the best ratio.
+		Assert.assertTrue(ratio(balanced) >= ratio(max) - 1e-9);
+		Assert.assertTrue(ratio(balanced) >= ratio(tanky) - 1e-9);
 	}
 }
