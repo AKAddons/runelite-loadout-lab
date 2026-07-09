@@ -778,16 +778,7 @@ public final class LoadoutOptimizer
 
 	private static boolean isPoweredStaff(GearItem weapon)
 	{
-		String category = weapon == null ? "" : weapon.getCategoryLower();
-		String name = label(weapon);
-		return category.contains("powered staff")
-			|| name.contains("trident")
-			|| name.contains("thammaron")
-			|| name.contains("accursed sceptre")
-			|| name.contains("sanguinesti")
-			|| name.contains("tumeken")
-			|| name.contains("warped sceptre")
-			|| name.contains("bone staff");
+		return DpsCalculator.isPoweredStaff(weapon);
 	}
 
 	private static boolean isTzhaarWeapon(String name)

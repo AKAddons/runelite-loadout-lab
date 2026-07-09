@@ -128,8 +128,11 @@ public final class DpsResult
 		return purchaseCost;
 	}
 
+	/** The autocast spell, or null for powered staves / non-magic - the
+	 * calculator passes "" internally for the powered path, which made
+	 * null-keyed consumers (the panel's built-in-spell line) miss. */
 	public String getSpellName()
 	{
-		return spellName;
+		return spellName == null || spellName.isEmpty() ? null : spellName;
 	}
 }

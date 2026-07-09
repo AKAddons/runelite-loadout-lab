@@ -734,7 +734,14 @@ public final class DpsCalculator
 
 	private static boolean isPoweredStaff(Loadout loadout)
 	{
-		GearItem weapon = loadout.getWeapon();
+		return isPoweredStaff(loadout.getWeapon());
+	}
+
+	/** THE powered-staff check - the optimizer must agree with the
+	 * calculator or a staff gets evaluated down the wrong path (the
+	 * optimizer once had its own copy missing eye of ayak). */
+	static boolean isPoweredStaff(GearItem weapon)
+	{
 		String weaponName = name(weapon);
 		String category = weapon == null ? "" : weapon.getCategoryLower();
 		return category.contains("powered staff")

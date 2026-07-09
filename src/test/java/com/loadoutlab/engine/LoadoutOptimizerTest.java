@@ -275,7 +275,7 @@ public class LoadoutOptimizerTest
 
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
 		Assert.assertFalse(results.isEmpty());
-		Assert.assertFalse(results.get(0).getSpellName().isEmpty());
+		Assert.assertNotNull(results.get(0).getSpellName());
 		Assert.assertTrue(results.get(0).getAttackType().startsWith("magic: "));
 	}
 
@@ -303,7 +303,7 @@ public class LoadoutOptimizerTest
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
 		Assert.assertFalse(results.isEmpty());
 		Assert.assertTrue(results.get(0).getLoadout().getWeapon().getName().contains("Tumeken"));
-		Assert.assertTrue(results.get(0).getSpellName().isEmpty());
+		Assert.assertNull(results.get(0).getSpellName());
 		Assert.assertEquals(34, results.get(0).getMaxHit());
 	}
 
@@ -410,7 +410,8 @@ public class LoadoutOptimizerTest
 
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
 		Assert.assertFalse(results.isEmpty());
-		Assert.assertFalse(results.get(0).getSpellName().contains("Demonbane"));
+		Assert.assertTrue(results.get(0).getSpellName() == null
+			|| !results.get(0).getSpellName().contains("Demonbane"));
 	}
 
 	@Test
