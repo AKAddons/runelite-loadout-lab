@@ -42,15 +42,26 @@ public final class BossIncomingOverrides
 		private final int maxHit;
 		private final double share;
 		private final boolean prayable;
+		/** Fraction of damage that gets THROUGH the matching protection
+		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
+		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
+		 * unprayed value. */
+		private final double prayerFactor;
 		private final int speedTicks;
 
-		Attack(String style, int maxHit, double share, boolean prayable, int speedTicks)
+		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks)
 		{
 			this.style = style;
 			this.maxHit = maxHit;
 			this.share = share;
 			this.prayable = prayable;
+			this.prayerFactor = prayerFactor;
 			this.speedTicks = speedTicks;
+		}
+
+		public double getPrayerFactor()
+		{
+			return prayerFactor;
 		}
 
 		public String getStyle()
@@ -134,6 +145,14 @@ public final class BossIncomingOverrides
 			int maxHit = a.get("maxHit").getAsInt();
 			double share = a.get("share").getAsDouble();
 			boolean prayable = !a.has("prayable") || a.get("prayable").getAsBoolean();
+			// Legacy semantics preserved: prayable = full block (0 through),
+			// unprayable = full pierce (1 through), unless a factor is given.
+			double prayerFactor = a.has("prayerFactor") ? a.get("prayerFactor").getAsDouble()
+				: (prayable ? 0.0 : 1.0);
+			if (prayerFactor < 0 || prayerFactor > 1)
+			{
+				throw new IllegalStateException(name + ": prayerFactor out of range");
+			}
 			int speedTicks = a.has("speedTicks") ? a.get("speedTicks").getAsInt() : 0;
 			if (!STYLES.contains(style))
 			{
@@ -148,7 +167,7 @@ public final class BossIncomingOverrides
 				throw new IllegalStateException(name + ": bad attack values");
 			}
 			shareSum += share;
-			attacks.add(new Attack(style, maxHit, share, prayable, speedTicks));
+			attacks.add(new Attack(style, maxHit, share, prayable, prayerFactor, speedTicks));
 		}
 		if (attacks.isEmpty() || shareSum > 1.0 + 1e-9)
 		{

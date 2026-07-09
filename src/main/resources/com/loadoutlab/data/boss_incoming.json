@@ -1,132 +1,325 @@
 {
-  "general graardor": {
-    "attacks": [
-      {"style": "crush", "maxHit": 60, "share": 0.667},
-      {"style": "ranged", "maxHit": 35, "share": 0.333}
-    ],
-    "note": "Wiki: melee 2/3, room-wide ranged 1/3 (even 15-35, so max 35 not the derived 58); both fully prayable."
-  },
-  "k'ril tsutsaroth": {
-    "attacks": [
-      {"style": "slash", "maxHit": 46, "share": 0.593},
-      {"style": "magic", "maxHit": 30, "share": 0.333},
-      {"style": "melee", "maxHit": 49, "share": 0.074, "prayable": false}
-    ],
-    "note": "Wiki: melee 2/3 and magic 1/3; 1 in 9 hits is the prayer-smash spec (35-49, 2/27 overall) that pierces Protect from Melee and halves prayer points."
-  },
-  "kree'arra": {
-    "attacks": [
-      {"style": "ranged", "maxHit": 69, "share": 0.65},
-      {"style": "magic", "maxHit": 21, "share": 0.35}
-    ],
-    "note": "Wiki: primarily ranged (69) with secondary magic (21); melee (25) only vs players not targeting him, omitted. Both prayable."
-  },
-  "commander zilyana": {
-    "attacks": [
-      {"style": "crush", "maxHit": 27, "share": 0.5},
-      {"style": "magic", "maxHit": 20, "share": 0.5}
-    ],
-    "note": "Wiki: very fast (2t) melee 27 / magic 20, magic used at melee distance with a min hit of 10; no frequency given - uniform. Both prayable."
-  },
-  "zulrah": {
-    "attacks": [
-      {"style": "ranged", "maxHit": 41, "share": 0.45},
-      {"style": "magic", "maxHit": 41, "share": 0.45},
-      {"style": "typeless", "maxHit": 30, "share": 0.1, "prayable": false}
-    ],
-    "note": "Wiki: 41 ranged/magic across the serpentine and tanzanite forms (approximate phase mix); magma tail slam (30) is typeless and dodgeable; snakelings and venom unmodeled."
-  },
-  "vorkath": {
-    "attacks": [
-      {"style": "ranged", "maxHit": 32, "share": 0.25},
-      {"style": "magic", "maxHit": 30, "share": 0.25},
-      {"style": "typeless", "maxHit": 80, "share": 0.25, "prayable": false}
-    ],
-    "note": "Wiki (post-quest): ranged 32 / magic 30 / dragonfire up to 80 unprotected; 2 of every 8 attacks are the avoidable specials (spawn, acid) - left unallocated; melee only adjacent - omitted; shield/antifire mitigation unmodeled."
-  },
-  "cerberus": {
-    "attacks": [
-      {"style": "stab", "maxHit": 23, "share": 0.3},
-      {"style": "ranged", "maxHit": 23, "share": 0.3},
-      {"style": "magic", "maxHit": 23, "share": 0.3},
-      {"style": "typeless", "maxHit": 30, "share": 0.1, "prayable": false}
-    ],
-    "note": "Wiki: all three styles max 23 (no frequency - uniform); summoned souls hit 30 hp if the matching prayer is down (30 prayer if up) - modeled as unblockable chip; lava pools and the triple-attack combo avoidable."
-  },
-  "callisto": {
-    "attacks": [
-      {"style": "crush", "maxHit": 28, "share": 0.334, "prayable": false},
-      {"style": "ranged", "maxHit": 31, "share": 0.333},
-      {"style": "magic", "maxHit": 50, "share": 0.333}
-    ],
-    "note": "Wiki: melee (55) is only ~50% reduced by Protect from Melee - modeled as unblockable 28; ranged 31 and the magic shockwave 50 fully prayable; no frequency - uniform."
-  },
-  "artio": {
-    "attacks": [
-      {"style": "crush", "maxHit": 18, "share": 0.334, "prayable": false},
-      {"style": "magic", "maxHit": 50, "share": 0.333},
-      {"style": "ranged", "maxHit": 17, "share": 0.333}
-    ],
-    "note": "Wiki: melee (35) only partially blocked by Protect from Melee - modeled as unblockable 18; magic 50 and ranged 17 prayable; no frequency - uniform."
-  },
-  "vet'ion": {
-    "attacks": [
-      {"style": "magic", "maxHit": 44, "share": 0.8, "prayable": false},
-      {"style": "slash", "maxHit": 35, "share": 0.1, "prayable": false}
-    ],
-    "note": "Wiki: tile-targeted lightning (max 44) and the shield bash (35, melee range) are dodge-based; no prayer reduction documented - modeled as unblockable; hellhound adds and enrage speed-up unmodeled."
-  },
-  "calvar'ion": {
-    "attacks": [
-      {"style": "magic", "maxHit": 26, "share": 0.8, "prayable": false},
-      {"style": "slash", "maxHit": 26, "share": 0.1, "prayable": false}
-    ],
-    "note": "Wiki: Vet'ion's mechanics at max hit 26; lightning and shield bash are dodge-based, no prayer reduction documented - modeled as unblockable."
-  },
-  "venenatis": {
-    "attacks": [
-      {"style": "stab", "maxHit": 21, "share": 0.333},
-      {"style": "ranged", "maxHit": 35, "share": 0.333},
-      {"style": "magic", "maxHit": 30, "share": 0.333}
-    ],
-    "note": "Wiki: melee 21 / ranged 35 / magic 30, all fully prayable, but spiderlings degrade prayer effectiveness (unmodeled); sticky-web chip unmodeled; no frequency - uniform."
-  },
-  "spindel": {
-    "attacks": [
-      {"style": "stab", "maxHit": 14, "share": 0.333},
-      {"style": "ranged", "maxHit": 31, "share": 0.333},
-      {"style": "magic", "maxHit": 24, "share": 0.333}
-    ],
-    "note": "Wiki: melee 14 / ranged 31 / magic 24, Venenatis mechanics at lower values; all prayable; no frequency - uniform."
-  },
-  "chaos elemental": {
-    "attacks": [
-      {"style": "melee", "maxHit": 28, "share": 0.3},
-      {"style": "ranged", "maxHit": 28, "share": 0.3},
-      {"style": "magic", "maxHit": 28, "share": 0.3}
-    ],
-    "note": "Wiki: Discord deals melee, ranged or magic damage (max 28); Confusion (teleport) and Madness (unequip) deal no damage - shares approximate; all prayable."
-  },
-  "king black dragon": {
-    "attacks": [
-      {"style": "stab", "maxHit": 25, "share": 0.2},
-      {"style": "typeless", "maxHit": 65, "share": 0.2, "prayable": false},
-      {"style": "typeless", "maxHit": 50, "share": 0.6, "prayable": false}
-    ],
-    "note": "Wiki: melee 25; normal dragonfire 65 and shock/ice/poison dragonfire 50 vs an unprotected player - uniform across the five attacks; shield/antifire mitigation unmodeled."
-  },
-  "alchemical hydra": {
-    "attacks": [
-      {"style": "ranged", "maxHit": 17, "share": 0.45},
-      {"style": "magic", "maxHit": 17, "share": 0.45}
-    ],
-    "note": "Wiki: alternates 3 ranged / 3 magic at 17 default (correctly lured); empowered (26) and the faster final phase (up to 55) not modeled; avoidable phase specials left unallocated."
-  },
-  "corporeal beast": {
-    "attacks": [
-      {"style": "crush", "maxHit": 33, "share": 0.4},
-      {"style": "magic", "maxHit": 43, "share": 0.6, "prayable": false}
-    ],
-    "note": "Wiki: in melee range melee 40% / magic 60%; Protect from Magic only blocks 1/3 of the 65 magic max - modeled as unblockable 43; stomp (30-51, under him) avoidable - omitted."
-  }
+ "alchemical hydra": {
+  "attacks": [
+   {
+    "maxHit": 17,
+    "share": 0.45,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 17,
+    "share": 0.45,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: alternates 3 ranged / 3 magic at 17 default (correctly lured); empowered (26) and the faster final phase (up to 55) not modeled; avoidable phase specials left unallocated."
+ },
+ "artio": {
+  "attacks": [
+   {
+    "maxHit": 35,
+    "prayerFactor": 0.5,
+    "share": 0.334,
+    "style": "crush"
+   },
+   {
+    "maxHit": 50,
+    "share": 0.333,
+    "style": "magic"
+   },
+   {
+    "maxHit": 17,
+    "share": 0.333,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: melee (35) only partially blocked by Protect from Melee - modeled as unblockable 18; magic 50 and ranged 17 prayable; no frequency - uniform.; melee TRUE max 35, Protect from Melee halves it (factor 0.5)"
+ },
+ "callisto": {
+  "attacks": [
+   {
+    "maxHit": 55,
+    "prayerFactor": 0.5,
+    "share": 0.334,
+    "style": "crush"
+   },
+   {
+    "maxHit": 31,
+    "share": 0.333,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 50,
+    "share": 0.333,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: melee (55) is only ~50% reduced by Protect from Melee - modeled as unblockable 28; ranged 31 and the magic shockwave 50 fully prayable; no frequency - uniform.; melee TRUE max 55, Protect from Melee halves it (factor 0.5)"
+ },
+ "calvar'ion": {
+  "attacks": [
+   {
+    "maxHit": 26,
+    "prayable": false,
+    "share": 0.8,
+    "style": "magic"
+   },
+   {
+    "maxHit": 26,
+    "prayable": false,
+    "share": 0.1,
+    "style": "slash"
+   }
+  ],
+  "note": "Wiki: Vet'ion's mechanics at max hit 26; lightning and shield bash are dodge-based, no prayer reduction documented - modeled as unblockable."
+ },
+ "cerberus": {
+  "attacks": [
+   {
+    "maxHit": 23,
+    "share": 0.3,
+    "style": "stab"
+   },
+   {
+    "maxHit": 23,
+    "share": 0.3,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 23,
+    "share": 0.3,
+    "style": "magic"
+   },
+   {
+    "maxHit": 30,
+    "prayable": false,
+    "share": 0.1,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki: all three styles max 23 (no frequency - uniform); summoned souls hit 30 hp if the matching prayer is down (30 prayer if up) - modeled as unblockable chip; lava pools and the triple-attack combo avoidable."
+ },
+ "chaos elemental": {
+  "attacks": [
+   {
+    "maxHit": 28,
+    "share": 0.3,
+    "style": "melee"
+   },
+   {
+    "maxHit": 28,
+    "share": 0.3,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 28,
+    "share": 0.3,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: Discord deals melee, ranged or magic damage (max 28); Confusion (teleport) and Madness (unequip) deal no damage - shares approximate; all prayable."
+ },
+ "commander zilyana": {
+  "attacks": [
+   {
+    "maxHit": 27,
+    "share": 0.5,
+    "style": "crush"
+   },
+   {
+    "maxHit": 20,
+    "share": 0.5,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: very fast (2t) melee 27 / magic 20, magic used at melee distance with a min hit of 10; no frequency given - uniform. Both prayable."
+ },
+ "corporeal beast": {
+  "attacks": [
+   {
+    "maxHit": 33,
+    "share": 0.4,
+    "style": "crush"
+   },
+   {
+    "maxHit": 65,
+    "prayerFactor": 0.667,
+    "share": 0.6,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: in melee range melee 40% / magic 60%; Protect from Magic only blocks 1/3 of the 65 magic max - modeled as unblockable 43; stomp (30-51, under him) avoidable - omitted.; magic TRUE max 65, prayer blocks 1/3 (factor 0.667)"
+ },
+ "general graardor": {
+  "attacks": [
+   {
+    "maxHit": 60,
+    "share": 0.667,
+    "style": "crush"
+   },
+   {
+    "maxHit": 35,
+    "share": 0.333,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: melee 2/3, room-wide ranged 1/3 (even 15-35, so max 35 not the derived 58); both fully prayable."
+ },
+ "k'ril tsutsaroth": {
+  "attacks": [
+   {
+    "maxHit": 46,
+    "share": 0.593,
+    "style": "slash"
+   },
+   {
+    "maxHit": 30,
+    "share": 0.333,
+    "style": "magic"
+   },
+   {
+    "maxHit": 49,
+    "prayable": false,
+    "share": 0.074,
+    "style": "melee"
+   }
+  ],
+  "note": "Wiki: melee 2/3 and magic 1/3; 1 in 9 hits is the prayer-smash spec (35-49, 2/27 overall) that pierces Protect from Melee and halves prayer points."
+ },
+ "king black dragon": {
+  "attacks": [
+   {
+    "maxHit": 25,
+    "share": 0.2,
+    "style": "stab"
+   },
+   {
+    "maxHit": 65,
+    "prayable": false,
+    "share": 0.2,
+    "style": "typeless"
+   },
+   {
+    "maxHit": 50,
+    "prayable": false,
+    "share": 0.6,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki: melee 25; normal dragonfire 65 and shock/ice/poison dragonfire 50 vs an unprotected player - uniform across the five attacks; shield/antifire mitigation unmodeled."
+ },
+ "kree'arra": {
+  "attacks": [
+   {
+    "maxHit": 69,
+    "share": 0.65,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 21,
+    "share": 0.35,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: primarily ranged (69) with secondary magic (21); melee (25) only vs players not targeting him, omitted. Both prayable."
+ },
+ "spindel": {
+  "attacks": [
+   {
+    "maxHit": 14,
+    "share": 0.333,
+    "style": "stab"
+   },
+   {
+    "maxHit": 31,
+    "share": 0.333,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 24,
+    "share": 0.333,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: melee 14 / ranged 31 / magic 24, Venenatis mechanics at lower values; all prayable; no frequency - uniform."
+ },
+ "venenatis": {
+  "attacks": [
+   {
+    "maxHit": 21,
+    "share": 0.333,
+    "style": "stab"
+   },
+   {
+    "maxHit": 35,
+    "share": 0.333,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 30,
+    "share": 0.333,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: melee 21 / ranged 35 / magic 30, all fully prayable, but spiderlings degrade prayer effectiveness (unmodeled); sticky-web chip unmodeled; no frequency - uniform."
+ },
+ "vet'ion": {
+  "attacks": [
+   {
+    "maxHit": 44,
+    "prayable": false,
+    "share": 0.8,
+    "style": "magic"
+   },
+   {
+    "maxHit": 35,
+    "prayable": false,
+    "share": 0.1,
+    "style": "slash"
+   }
+  ],
+  "note": "Wiki: tile-targeted lightning (max 44) and the shield bash (35, melee range) are dodge-based; no prayer reduction documented - modeled as unblockable; hellhound adds and enrage speed-up unmodeled."
+ },
+ "vorkath": {
+  "attacks": [
+   {
+    "maxHit": 32,
+    "share": 0.25,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 30,
+    "share": 0.25,
+    "style": "magic"
+   },
+   {
+    "maxHit": 80,
+    "prayable": false,
+    "share": 0.25,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki (post-quest): ranged 32 / magic 30 / dragonfire up to 80 unprotected; 2 of every 8 attacks are the avoidable specials (spawn, acid) - left unallocated; melee only adjacent - omitted; shield/antifire mitigation unmodeled."
+ },
+ "zulrah": {
+  "attacks": [
+   {
+    "maxHit": 41,
+    "share": 0.45,
+    "style": "ranged"
+   },
+   {
+    "maxHit": 41,
+    "share": 0.45,
+    "style": "magic"
+   },
+   {
+    "maxHit": 30,
+    "prayable": false,
+    "share": 0.1,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki: 41 ranged/magic across the serpentine and tanzanite forms (approximate phase mix); magma tail slam (30) is typeless and dodgeable; snakelings and venom unmodeled."
+ }
 }

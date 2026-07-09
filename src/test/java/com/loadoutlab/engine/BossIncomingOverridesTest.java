@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.LoadoutData;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -70,19 +72,24 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void unprayableAttacksContributeDespiteTheProtectionPrayer()
+	public void partialPierceAttacksAlwaysContributeSomething()
 	{
-		// Corporeal Beast: magic is prayable=false (Protect from Magic only
-		// blocks a third), so it must land even while melee is prayed off.
+		// Corporeal Beast: magic carries TRUE max 65 with prayerFactor
+		// 0.667 - whichever prayer is chosen, the prayed total must equal
+		// the per-threat identity sum and stay strictly positive.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("Corporeal Beast", Arrays.asList("Crush", "Magic")),
 			armour(200, 200, 200, 0, 150), 99, 99);
-		Assert.assertEquals("Protect from Melee", result.protectPrayer);
 		IncomingDpsCalculator.StyleThreat magic = threat(result, "magic");
-		Assert.assertFalse(magic.blocked);
-		Assert.assertEquals(43, magic.maxHit);
-		Assert.assertEquals(magic.dps * magic.share, result.totalDps, 1e-9);
+		Assert.assertEquals(65, magic.maxHit);
+		double identity = 0;
+		for (IncomingDpsCalculator.StyleThreat threat : result.threats)
+		{
+			identity += threat.dps * threat.share * (threat.blocked ? threat.prayerFactor : 1);
+		}
+		Assert.assertEquals(identity, result.totalDps, 1e-9);
 		Assert.assertTrue(result.totalDps > 0);
+		Assert.assertTrue(result.totalDps < result.unprayedDps);
 	}
 
 	@Test
@@ -171,5 +178,58 @@ public class BossIncomingOverridesTest
 		Assert.assertNull(result.protectPrayer);
 		Assert.assertEquals(result.unprayedDps, result.totalDps, 1e-9);
 		Assert.assertTrue(result.totalDps > 0);
+	}
+
+	@Test
+	public void partialPrayerPierceCountsTheThroughDamage()
+	{
+		// Corp's magic: TRUE max 65, Protect from Magic blocks only 1/3
+		// (factor 0.667). Prayed total must include the pierce-through;
+		// unprayed must use the full 65-based dps.
+		LoadoutData data = new DataService().load();
+		MonsterStats corp = data.searchMonsters("corporeal beast", 1).get(0);
+		// Heavy melee armour + zero magic defence: the magic saving must
+		// dominate, so Protect from Magic gets prayed and the pierce shows.
+		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
+			corp, tankMeleeArmour(), 99, 99);
+		Assert.assertEquals("Protect from Magic", result.protectPrayer);
+		Assert.assertTrue(result.totalDps > 0);
+		Assert.assertTrue(result.totalDps < result.unprayedDps);
+		boolean sawPierce = false;
+		for (IncomingDpsCalculator.StyleThreat threat : result.threats)
+		{
+			if (threat.blocked && threat.prayerFactor > 0)
+			{
+				sawPierce = true;
+				Assert.assertEquals(65, threat.maxHit);
+				Assert.assertEquals(0.667, threat.prayerFactor, 1e-9);
+			}
+		}
+		Assert.assertTrue("corp magic must be a partial pierce", sawPierce);
+	}
+
+	@Test
+	public void prayerChoiceMaximizesSavingsNotRawSize()
+	{
+		// Callisto: melee 55 but only half-blocked; magic 50 fully
+		// blockable. Praying magic SAVES more than praying melee even
+		// though the melee hit is bigger - the chosen prayer must be the
+		// bigger saving.
+		LoadoutData data = new DataService().load();
+		MonsterStats callisto = data.searchMonsters("callisto", 1).get(0);
+		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
+			callisto, new Loadout(java.util.Map.of()), 99, 99);
+		Assert.assertEquals("Protect from Magic", result.protectPrayer);
+	}
+
+	private static Loadout tankMeleeArmour()
+	{
+		com.loadoutlab.data.GearItem body = new com.loadoutlab.data.GearItem(
+			99, "Tank platebody", "", com.loadoutlab.data.GearSlot.BODY, "", 0,
+			false, true, true, true, 0,
+			com.loadoutlab.data.StatBlock.ZERO,
+			new com.loadoutlab.data.StatBlock(500, 500, 500, 0, 0, 0, 0, 0, 0),
+			com.loadoutlab.data.StatBlock.ZERO, null);
+		return new Loadout(java.util.Map.of(com.loadoutlab.data.GearSlot.BODY, body));
 	}
 }

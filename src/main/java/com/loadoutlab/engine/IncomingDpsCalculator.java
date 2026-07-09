@@ -4,8 +4,10 @@ import com.loadoutlab.data.MonsterOffence;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.StatBlock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
@@ -45,8 +47,17 @@ public final class IncomingDpsCalculator
 		public final boolean blocked;
 		/** This attack's slice of the rotation (1/n in the uniform model). */
 		public final double share;
+		/** When blocked: the fraction that still gets THROUGH the prayer
+		 * (0 = fully blocked, 0.5 = half pierces). 1 when not blocked. */
+		public final double prayerFactor;
 
 		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked, double share)
+		{
+			this(style, dps, maxHit, modeled, blocked, share, blocked ? 0.0 : 1.0);
+		}
+
+		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked,
+			double share, double prayerFactor)
 		{
 			this.style = style;
 			this.dps = dps;
@@ -54,6 +65,7 @@ public final class IncomingDpsCalculator
 			this.modeled = modeled;
 			this.blocked = blocked;
 			this.share = share;
+			this.prayerFactor = prayerFactor;
 		}
 	}
 
@@ -163,44 +175,55 @@ public final class IncomingDpsCalculator
 	{
 		MonsterOffence off = monster.getOffence();
 		StatBlock def = loadout.getDefensive();
-		List<StyleThreat> threats = new ArrayList<>();
-		int bestPrayable = -1;
-		double bestContribution = -1;
-		for (BossIncomingOverrides.Attack attack : override.getAttacks())
+		List<BossIncomingOverrides.Attack> attacks = override.getAttacks();
+		double[] dpsPer = new double[attacks.size()];
+		// Which protection prayer SAVES the most? An attack's saving is
+		// dps x share x (1 - prayerFactor) - partial pierces (Corp magic,
+		// Callisto melee) save less than their raw size suggests.
+		// Insertion-ordered so tied savings resolve deterministically
+		// (attack order in the curated data wins).
+		Map<String, Double> savedByPrayer = new java.util.LinkedHashMap<>();
+		for (int i = 0; i < attacks.size(); i++)
 		{
+			BossIncomingOverrides.Attack attack = attacks.get(i);
 			String style = attack.getStyle();
 			// Typeless attacks have no defence roll: they always hit.
 			double accuracy = "typeless".equals(style) ? 1.0
 				: accuracyFor(style, off, def, defenceLevel, magicLevel);
 			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
-			double dps = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
-			if (attack.isPrayable() && dps * attack.getShare() > bestContribution)
+			dpsPer[i] = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
+			double saving = dpsPer[i] * attack.getShare() * (1 - attack.getPrayerFactor());
+			if (saving > 0)
 			{
-				bestContribution = dps * attack.getShare();
-				bestPrayable = threats.size();
+				savedByPrayer.merge(protectPrayerFor(style), saving, Double::sum);
 			}
-			threats.add(new StyleThreat(displayStyle(style), dps, attack.getMaxHit(),
-				true, false, attack.getShare()));
 		}
-
 		String prayer = null;
-		if (bestPrayable >= 0)
+		double bestSaved = 0;
+		for (Map.Entry<String, Double> entry : savedByPrayer.entrySet())
 		{
-			StyleThreat blocked = threats.get(bestPrayable);
-			threats.set(bestPrayable, new StyleThreat(
-				blocked.style, blocked.dps, blocked.maxHit, true, true, blocked.share));
-			prayer = protectPrayerFor(override.getAttacks().get(bestPrayable).getStyle());
+			if (entry.getValue() > bestSaved)
+			{
+				bestSaved = entry.getValue();
+				prayer = entry.getKey();
+			}
 		}
 
+		List<StyleThreat> threats = new ArrayList<>();
 		double total = 0;
 		double unprayed = 0;
-		for (StyleThreat threat : threats)
+		for (int i = 0; i < attacks.size(); i++)
 		{
-			unprayed += threat.dps * threat.share;
-			if (!threat.blocked)
-			{
-				total += threat.dps * threat.share;
-			}
+			BossIncomingOverrides.Attack attack = attacks.get(i);
+			boolean prayedClass = prayer != null
+				&& prayer.equals(protectPrayerFor(attack.getStyle()))
+				&& attack.getPrayerFactor() < 1;
+			double through = prayedClass ? attack.getPrayerFactor() : 1;
+			unprayed += dpsPer[i] * attack.getShare();
+			total += dpsPer[i] * attack.getShare() * through;
+			threats.add(new StyleThreat(displayStyle(attack.getStyle()), dpsPer[i],
+				attack.getMaxHit(), true, prayedClass, attack.getShare(),
+				prayedClass ? attack.getPrayerFactor() : 1));
 		}
 		return new Result(total, unprayed, prayer, threats, true, override.getNote());
 	}

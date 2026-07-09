@@ -1160,7 +1160,10 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			else if (threat.blocked)
 			{
-				tip.append(String.format("blocked (%.2f dps, max %d)", threat.dps, threat.maxHit));
+				tip.append(threat.prayerFactor > 0
+					? String.format("%.0f%% pierces prayer (%.2f dps, max %d)",
+						threat.prayerFactor * 100, threat.dps, threat.maxHit)
+					: String.format("blocked (%.2f dps, max %d)", threat.dps, threat.maxHit));
 			}
 			else
 			{
