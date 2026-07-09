@@ -95,22 +95,34 @@ public class OptimizeModeTest
 		Assert.assertEquals("Ring of suffering (i)", tankyRing.getName());
 	}
 
-	@Test
-	public void balancedNeverTakesMoreDamageAndNeverDealsMoreThanMaxDps() throws Exception
+	private static double ratio(OptimizerService.StyleResult result)
 	{
-		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
-		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
-		Assert.assertNull(max.modeNote);
-		Assert.assertTrue(balanced.owned.get(0).getDps() <= max.owned.get(0).getDps() + 1e-9);
-		Assert.assertTrue(incoming(balanced) <= incoming(max) + 1e-9);
+		return result.owned.get(0).getDps() / Math.max(incoming(result), 1e-9);
 	}
 
 	@Test
-	public void tankyTakesAtMostBalancedDamageAndKeepsHalfTheDps() throws Exception
+	public void balancedRatioNeverRegressesBelowTheMaxDpsRatio() throws Exception
+	{
+		// Field report: a knee heuristic once picked 2.87/1.12 (ratio 2.56)
+		// over the 4.5/1.5 max-dps set (ratio 3.0). The modes now MAXIMIZE
+		// the out/in ratio with max-dps in the candidate set, so the chosen
+		// ratio is >= the max-dps ratio by construction.
+		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
+		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
+		Assert.assertNull(max.modeNote);
+		Assert.assertTrue(ratio(balanced) >= ratio(max) - 1e-9);
+		Assert.assertTrue(balanced.owned.get(0).getDps() >= 0.75 * max.owned.get(0).getDps() - 1e-9);
+	}
+
+	@Test
+	public void tankyRatioIsAtLeastBalancedAndKeepsHalfTheDps() throws Exception
 	{
 		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
+		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
 		OptimizerService.StyleResult tanky = ranged(OptimizerService.OptimizeMode.TANKY);
-		Assert.assertTrue(incoming(tanky) <= incoming(max) + 1e-9);
+		// The looser dps floor can only widen the ratio search space.
+		Assert.assertTrue(ratio(tanky) >= ratio(balanced) - 1e-9);
+		Assert.assertTrue(ratio(tanky) >= ratio(max) - 1e-9);
 		Assert.assertTrue(tanky.owned.get(0).getDps() >= 0.5 * max.owned.get(0).getDps() - 1e-9);
 	}
 }

@@ -354,49 +354,25 @@ public class OptimizerService
 				optimizer.fillDpsNeutralSlots(dataset, weighted, out.get(0)));
 			frontier.add(candidate);
 		}
-		DpsResult tankiest = frontier.get(0);
-		double tankIn = i0;
+		// Both modes maximize the RATIO (dps out / dps in) - the user's
+		// actual objective - differing only in how much raw dps they may
+		// sacrifice. Max-dps is in the candidate set, so the chosen ratio
+		// can never be WORSE than the max-dps set's (a knee heuristic
+		// once picked 2.87/1.12 over a 4.5/1.5 max-dps set at Graardor).
+		double floor = (mode == OptimizeMode.TANKY ? 0.5 : 0.75) * d0;
+		DpsResult picked = maxDps;
+		double bestRatio = d0 / Math.max(i0, 1e-9);
 		for (DpsResult candidate : frontier)
 		{
-			double in = incomingOf(monster, candidate, real);
-			if (in < tankIn - 1e-9)
+			double d = candidate.getDps();
+			double in = Math.max(incomingOf(monster, candidate, real), 1e-9);
+			double ratio = d / in;
+			// Strictly-better ratio wins; ratio ties prefer more dps.
+			if (d >= floor && (ratio > bestRatio + 1e-9
+				|| (ratio > bestRatio - 1e-9 && d > picked.getDps() + 1e-9)))
 			{
-				tankIn = in;
-				tankiest = candidate;
-			}
-		}
-		DpsResult picked = maxDps;
-		if (mode == OptimizeMode.TANKY)
-		{
-			double bestRatio = -1;
-			for (DpsResult candidate : frontier)
-			{
-				double d = candidate.getDps();
-				double in = Math.max(incomingOf(monster, candidate, real), 1e-9);
-				if (d >= 0.5 * d0 && d / in > bestRatio)
-				{
-					bestRatio = d / in;
-					picked = candidate;
-				}
-			}
-		}
-		else
-		{
-			// Knee: normalized distance from the endpoint line - where a
-			// small dps sacrifice buys the largest defensive gain.
-			double dT = tankiest.getDps();
-			double best = 0;
-			for (DpsResult candidate : frontier)
-			{
-				double dn = d0 - dT < 1e-9 ? 0 : (candidate.getDps() - dT) / (d0 - dT);
-				double in = incomingOf(monster, candidate, real);
-				double inNorm = i0 - tankIn < 1e-9 ? 0 : (in - tankIn) / (i0 - tankIn);
-				double distance = dn - inNorm; // above the diagonal = good
-				if (distance > best + 1e-9)
-				{
-					best = distance;
-					picked = candidate;
-				}
+				bestRatio = ratio;
+				picked = candidate;
 			}
 		}
 		if (picked == maxDps)
