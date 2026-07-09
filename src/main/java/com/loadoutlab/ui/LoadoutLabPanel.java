@@ -128,6 +128,12 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean owns(int itemId);
 	}
 
+	/** "Show in bank": set the highlighted item ids (null clears). */
+	public interface BankHighlighter
+	{
+		void highlight(Set<Integer> itemIds);
+	}
+
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
@@ -163,6 +169,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DreamToggle dreamToggle;
 	private final DreamView dreamView;
 	private final OwnedCheck ownedCheck;
+	private final BankHighlighter bankHighlighter;
+	/** Which style's set is currently glowing in the bank (null = none). */
+	private CombatStyle bankShown;
 	/** Upgrade budget dropdown values in gp; 0 = off. */
 	private static final long[] BUDGET_STEPS = {0, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000};
 	/** D-4: which frontier point to recommend per style. */
@@ -210,8 +219,10 @@ public class LoadoutLabPanel extends PluginPanel
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
-		DreamToggle dreamToggle, DreamView dreamView, OwnedCheck ownedCheck)
+		DreamToggle dreamToggle, DreamView dreamView, OwnedCheck ownedCheck,
+		BankHighlighter bankHighlighter)
 	{
+		this.bankHighlighter = bankHighlighter;
 		this.data = data;
 		this.itemManager = itemManager;
 		this.spriteManager = spriteManager;
@@ -514,6 +525,8 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.setVisible(wilderness);
 		riskBudget.setVisible(wilderness);
 		superAntifireAssumed = false; // each monster starts on gear protection
+		bankShown = null;
+		bankHighlighter.highlight(null);
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -816,6 +829,7 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		card.add(bankButton(style, best, result.specWeapon));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
@@ -1267,6 +1281,52 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		});
 		return List.of(flip);
+	}
+
+	/** "Show in bank": outline this set's items while the bank is open. */
+	private JButton bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	{
+		boolean showing = bankShown == style;
+		JButton button = new JButton(showing ? "Stop showing in bank" : "Show in bank");
+		button.setAlignmentX(LEFT_ALIGNMENT);
+		button.setFont(button.getFont().deriveFont(11f));
+		button.setMargin(new Insets(1, 6, 1, 6));
+		button.setToolTipText("Outline this set's items in the bank");
+		button.addActionListener(e ->
+		{
+			if (bankShown == style)
+			{
+				bankShown = null;
+				bankHighlighter.highlight(null);
+			}
+			else
+			{
+				Set<Integer> ids = new java.util.HashSet<>();
+				for (GearItem item : best.getLoadout().getGear().values())
+				{
+					if (item != null)
+					{
+						ids.add(item.getId());
+					}
+				}
+				GearItem dart = loadedDart(best);
+				if (dart != null)
+				{
+					ids.add(dart.getId());
+				}
+				if (specWeapon != null)
+				{
+					ids.add(specWeapon.getId());
+				}
+				bankShown = style;
+				bankHighlighter.highlight(ids);
+			}
+			if (selectedMonster != null && lastResults != null)
+			{
+				showResults(selectedMonster, lastResults); // refresh button labels
+			}
+		});
+		return button;
 	}
 
 	/** A left-aligned, height-capped flow row added to the card. */

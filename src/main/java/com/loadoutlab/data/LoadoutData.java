@@ -150,6 +150,27 @@ public final class LoadoutData
 		}
 	}
 
+	/**
+	 * All ids interchangeable with this one for OWNERSHIP purposes: the
+	 * base plus every variant that canonicalizes to it - so a bank
+	 * highlight for "Abyssal whip" also lights the (or) version.
+	 */
+	public java.util.Set<Integer> equivalentIds(int itemId)
+	{
+		Integer base = variantToBase.getOrDefault(itemId, itemId);
+		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		ids.add(itemId);
+		ids.add(base);
+		for (Map.Entry<Integer, Integer> entry : variantToBase.entrySet())
+		{
+			if (entry.getValue().equals(base))
+			{
+				ids.add(entry.getKey());
+			}
+		}
+		return ids;
+	}
+
 	public GearItem getGear(int id)
 	{
 		return gearById.get(id);

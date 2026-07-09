@@ -140,6 +140,19 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void equivalentIdsSpanTheWholeVariantFamily()
+	{
+		LoadoutData data = new DataService().load();
+		// Base whip expands to its ornament variants and back.
+		java.util.Set<Integer> family = data.equivalentIds(4151);
+		Assert.assertTrue(family.contains(4151));
+		Assert.assertTrue(family.contains(12773));
+		Assert.assertTrue(data.equivalentIds(12773).contains(4151));
+		// A variant-free item is just itself.
+		Assert.assertEquals(java.util.Set.of(20997), data.equivalentIds(20997));
+	}
+
+	@Test
 	public void loadsEquipmentRequirements()
 	{
 		LoadoutData data = new DataService().load();

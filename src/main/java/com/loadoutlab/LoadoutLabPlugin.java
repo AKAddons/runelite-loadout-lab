@@ -91,10 +91,16 @@ public class LoadoutLabPlugin extends Plugin
 	private ItemManager itemManager;
 
 	@Inject
+	private net.runelite.client.ui.overlay.OverlayManager overlayManager;
+
+	@Inject
 	private SpriteManager spriteManager;
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
+	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
+	private volatile java.util.Set<Integer> bankHighlight;
+	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
@@ -153,6 +159,8 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
+		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
+		overlayManager.add(bankOverlay);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
@@ -170,7 +178,8 @@ public class LoadoutLabPlugin extends Plugin
 				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
-					this::ownsCanonical);
+					this::ownsCanonical,
+					this::setBankHighlight);
 				panel.setF2pWorld(onF2pWorld());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
@@ -190,6 +199,12 @@ public class LoadoutLabPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		if (bankOverlay != null)
+		{
+			overlayManager.remove(bankOverlay);
+			bankOverlay = null;
+		}
+		bankHighlight = null;
 		if (navButton != null)
 		{
 			clientToolbar.removeNavigation(navButton);
@@ -343,6 +358,22 @@ public class LoadoutLabPlugin extends Plugin
 		}, "loadout-lab-profile-export");
 		writer.setDaemon(true);
 		writer.start();
+	}
+
+	/** Panel hook: set (or clear, with null) the bank-highlighted item ids. */
+	private void setBankHighlight(java.util.Set<Integer> itemIds)
+	{
+		if (itemIds == null || itemIds.isEmpty() || data == null)
+		{
+			bankHighlight = null;
+			return;
+		}
+		java.util.Set<Integer> expanded = new java.util.HashSet<>();
+		for (int id : itemIds)
+		{
+			expanded.addAll(data.equivalentIds(id));
+		}
+		bankHighlight = expanded;
 	}
 
 	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
