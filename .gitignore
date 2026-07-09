@@ -17,3 +17,6 @@ Thumbs.db
 *.log
 .claude/
 dev-plugins/
+
+# Python
+scripts/__pycache__/
