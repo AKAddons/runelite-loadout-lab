@@ -65,6 +65,13 @@ public class OptimizerService
 	 * Tanky reach the genuine minimum-intake end of the frontier. */
 	private static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0, 10.0};
 
+	/**
+	 * Balanced's objective slightly favors dps out over dps in:
+	 * score = dpsOut^(1+BIAS) / dpsIn. At BIAS 0 it is the plain ratio;
+	 * 0.2 means a 10% dps gain outweighs a ~12% intake increase.
+	 */
+	static final double BALANCED_DPS_BIAS = 0.2;
+
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
 	public static final class StyleResult
@@ -378,15 +385,15 @@ public class OptimizerService
 		}
 		else
 		{
-			double bestRatio = d0 / Math.max(i0, 1e-9);
+			double bestScore = balancedScore(d0, i0);
 			for (DpsResult candidate : frontier)
 			{
-				double ratio = candidate.getDps()
-					/ Math.max(incomingOf(monster, candidate, real), 1e-9);
-				if (ratio > bestRatio + 1e-9
-					|| (ratio > bestRatio - 1e-9 && candidate.getDps() > picked.getDps() + 1e-9))
+				double score = balancedScore(candidate.getDps(),
+					incomingOf(monster, candidate, real));
+				if (score > bestScore + 1e-9
+					|| (score > bestScore - 1e-9 && candidate.getDps() > picked.getDps() + 1e-9))
 				{
-					bestRatio = ratio;
+					bestScore = score;
 					picked = candidate;
 				}
 			}
@@ -401,6 +408,13 @@ public class OptimizerService
 		return String.format("%s: %.0f%% less dps for %.0f%% less damage taken",
 			mode == OptimizeMode.TANKY ? "Tanky" : "Balanced",
 			(1 - d / d0) * 100, (1 - in / i0) * 100);
+	}
+
+	/** The dps-favored ratio Balanced maximizes. */
+	static double balancedScore(double dpsOut, double dpsIn)
+	{
+		return Math.pow(Math.max(dpsOut, 0), 1 + BALANCED_DPS_BIAS)
+			/ Math.max(dpsIn, 1e-9);
 	}
 
 	private static double incomingOf(MonsterStats monster,

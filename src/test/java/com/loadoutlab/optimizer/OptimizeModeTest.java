@@ -95,9 +95,10 @@ public class OptimizeModeTest
 		Assert.assertEquals("Ring of suffering (i)", tankyRing.getName());
 	}
 
+	/** Balanced's own metric: the dps-favored ratio. */
 	private static double ratio(OptimizerService.StyleResult result)
 	{
-		return result.owned.get(0).getDps() / Math.max(incoming(result), 1e-9);
+		return OptimizerService.balancedScore(result.owned.get(0).getDps(), incoming(result));
 	}
 
 	@Test
@@ -117,7 +118,7 @@ public class OptimizeModeTest
 		// Tanky takes the least.
 		Assert.assertTrue(incoming(tanky) <= incoming(max) + 1e-9);
 		Assert.assertTrue(incoming(tanky) <= incoming(balanced) + 1e-9);
-		// Balanced owns the best ratio.
+		// Balanced owns the best (dps-favored) ratio.
 		Assert.assertTrue(ratio(balanced) >= ratio(max) - 1e-9);
 		Assert.assertTrue(ratio(balanced) >= ratio(tanky) - 1e-9);
 	}
