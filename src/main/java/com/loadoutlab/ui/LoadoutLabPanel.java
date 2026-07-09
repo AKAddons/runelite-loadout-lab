@@ -253,7 +253,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		JLabel title = new JLabel("Loadout Lab");
 		title.setForeground(Color.WHITE);
-		title.setFont(title.getFont().deriveFont(Font.BOLD, 14f));
+		title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
 		title.setAlignmentX(LEFT_ALIGNMENT);
 		top.add(title);
 		top.add(Box.createVerticalStrut(4));
@@ -268,7 +268,7 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedRow.setAlignmentX(LEFT_ALIGNMENT);
 		selectedRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		selectedLabel.setForeground(GOOD);
-		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 12f));
+		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
 		selectedRow.add(selectedLabel, BorderLayout.CENTER);
 		JButton clearSelection = new JButton("x");
 		clearSelection.setMargin(new Insets(0, 6, 0, 6));
@@ -281,7 +281,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Curated mechanics note (finishing items, immunities) for the
 		// selected monster - so a correct suggestion doesn't look wrong.
 		monsterNote.setForeground(new Color(200, 170, 110));
-		monsterNote.setFont(monsterNote.getFont().deriveFont(11f));
+		monsterNote.setFont(monsterNote.getFont().deriveFont(13f));
 		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
 		monsterNote.setVisible(false);
 		top.add(monsterNote);
@@ -358,7 +358,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
-		exclusionsLabel.setFont(exclusionsLabel.getFont().deriveFont(11f));
+		exclusionsLabel.setFont(exclusionsLabel.getFont().deriveFont(13f));
 		exclusionsLabel.setAlignmentX(LEFT_ALIGNMENT);
 		exclusionsLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		exclusionsLabel.addMouseListener(new MouseAdapter()
@@ -420,7 +420,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		JLabel line = new JLabel(text);
 		line.setForeground(fg);
-		line.setFont(line.getFont().deriveFont(11f));
+		line.setFont(line.getFont().deriveFont(13f));
 		line.setAlignmentX(LEFT_ALIGNMENT);
 		return line;
 	}
@@ -779,7 +779,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		JLabel header = new JLabel(style.toString());
 		header.setForeground(Color.WHITE);
-		header.setFont(header.getFont().deriveFont(Font.BOLD, 12f));
+		header.setFont(header.getFont().deriveFont(Font.BOLD, 14f));
 		header.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(header);
 
@@ -1324,7 +1324,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		boolean filtering = bankFiltered == style;
 		JButton button = new JButton(filtering ? "Unfilter bank" : "Filter bank");
-		button.setFont(button.getFont().deriveFont(11f));
+		button.setFont(button.getFont().deriveFont(13f));
 		button.setMargin(new Insets(1, 6, 1, 6));
 		button.setToolTipText("Show only this set's items in the bank (needs Bank Tags enabled)");
 		button.addActionListener(e ->
@@ -1353,7 +1353,7 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean showing = bankShown == style;
 		JButton button = new JButton(showing ? "Stop showing in bank" : "Show in bank");
 		button.setAlignmentX(LEFT_ALIGNMENT);
-		button.setFont(button.getFont().deriveFont(11f));
+		button.setFont(button.getFont().deriveFont(13f));
 		button.setMargin(new Insets(1, 6, 1, 6));
 		button.setToolTipText("Outline this set's items in the bank");
 		button.addActionListener(e ->
@@ -1444,7 +1444,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				chip.setText(part);
 				chip.setForeground(MUTED);
-				chip.setFont(chip.getFont().deriveFont(11f));
+				chip.setFont(chip.getFont().deriveFont(13f));
 			}
 			row.add(chip);
 		}
