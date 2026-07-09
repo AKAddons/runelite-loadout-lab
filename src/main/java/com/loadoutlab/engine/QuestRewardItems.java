@@ -71,7 +71,7 @@ public final class QuestRewardItems
 		{
 			return null;
 		}
-		return QUEST_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT));
+		return QUEST_BY_NAME.get(item.getNameLower());
 	}
 
 	/** Every curated item name (lowercase) - for corpus validation tests. */

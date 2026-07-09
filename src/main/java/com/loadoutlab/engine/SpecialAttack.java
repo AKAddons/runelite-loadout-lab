@@ -141,7 +141,7 @@ public final class SpecialAttack
 		{
 			return null;
 		}
-		String name = item.getName().toLowerCase();
+		String name = item.getNameLower();
 		for (SpecialAttack spec : REGISTRY)
 		{
 			if (spec.style != style)
@@ -239,7 +239,7 @@ public final class SpecialAttack
 	private static boolean usesDragonArrows(DpsResult base)
 	{
 		GearItem ammo = base.getLoadout().get(GearSlot.AMMO);
-		return ammo != null && ammo.getName().toLowerCase().startsWith("dragon arrow");
+		return ammo != null && ammo.getNameLower().startsWith("dragon arrow");
 	}
 
 	/**

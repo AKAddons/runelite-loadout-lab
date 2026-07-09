@@ -47,6 +47,44 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void prebuiltPoolsProduceTheSameResultsAsAFreshOptimize()
+	{
+		// The D-4 sweep reuses one CandidatePools across its weighted runs;
+		// the pool-taking overload must be indistinguishable from
+		// optimize(data, request) at every weight it is reused for.
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.RANGED, CombatStyle.MAGIC})
+		{
+			OptimizationRequest request = new OptimizationRequest(
+				monster, style, PlayerLevels.MAXED,
+				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
+				10_000_000, CandidateMode.BUDGET, false, false,
+				OwnedItems.EMPTY, 5).withDefenseWeight(0.5);
+			// One pools instance, reused for two differently-weighted runs.
+			LoadoutOptimizer.CandidatePools pools = optimizer.preparePools(data, request);
+			assertSameResults(optimizer.optimize(data, request),
+				optimizer.optimize(data, request, pools));
+			OptimizationRequest reweighted = request.withDefenseWeight(1.5);
+			assertSameResults(optimizer.optimize(data, reweighted),
+				optimizer.optimize(data, reweighted, pools));
+		}
+	}
+
+	private static void assertSameResults(List<DpsResult> expected, List<DpsResult> actual)
+	{
+		Assert.assertEquals(expected.size(), actual.size());
+		for (int i = 0; i < expected.size(); i++)
+		{
+			Assert.assertEquals(expected.get(i).getDps(), actual.get(i).getDps(), 0.0);
+			Assert.assertEquals(expected.get(i).getSpellName(), actual.get(i).getSpellName());
+			Assert.assertEquals(expected.get(i).getPurchaseCost(), actual.get(i).getPurchaseCost());
+			Assert.assertEquals(expected.get(i).getLoadout().getGear(), actual.get(i).getLoadout().getGear());
+		}
+	}
+
+	@Test
 	public void anyStyleReturnsBestConcreteSetups()
 	{
 		LoadoutData data = new DataService().load();

@@ -101,6 +101,19 @@ defects WERE found and fixed: the multiplier floored after salve/slayer
 instead of before, and inactive pieces counted). NOT modeled - Dharok's,
 Ahrim's proc, elite void magic damage. Tracked in docs/ENGINE-GAPS.md.
 
+## Performance round (2026-07-09)
+
+- Optimizer hot paths measured (JFR) and fixed with byte-identical golden
+  outputs (`./gradlew golden`/`benchmark`, QueryBenchmark medians):
+  bestPerStyle ~3.8x faster across the Graardor/Zulrah/Callisto x
+  MAX_DPS/BALANCED x risk matrix (Graardor max-dps 8.6s -> 2.3s, balanced
+  10.6s -> 2.8s, low-risk 3.9s -> 1.1s). Headline wins: precomputed
+  lowercase name/category/label on GearItem (per-call toLowerCase was 64%
+  of CPU), newline-joined name blobs on Loadout for wearing(), lean
+  PvpRisk.riskGp for the beam, prepared IncomingDpsCalculator context,
+  per-slot corpus index, D-4 sweep candidate-pool reuse, per-weapon spell
+  prefilter.
+
 ## Defensive arc (started 2026-07-07)
 
 The other half of the equation: what the boss does to YOU. End state: a

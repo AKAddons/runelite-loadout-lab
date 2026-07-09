@@ -99,6 +99,273 @@ public final class IncomingDpsCalculator
 	{
 	}
 
+	// Style kinds for the precomputed accuracy path (Prepared).
+	private static final int KIND_STAB = 0;
+	private static final int KIND_SLASH = 1;
+	private static final int KIND_CRUSH = 2;
+	private static final int KIND_MELEE_GENERIC = 3;
+	private static final int KIND_RANGED = 4;
+	private static final int KIND_MAGIC = 5;
+	private static final int KIND_TYPELESS = 6;
+	private static final int KIND_UNMODELED = -1;
+
+	/**
+	 * Everything about the incoming model that does NOT depend on the worn
+	 * set, hoisted once per optimize: override lookup, style parsing, npc
+	 * max hits and attack rolls, rotation shares, prayer names. The
+	 * defense-weighted beam then scores each candidate loadout with
+	 * totalDps() - the same number calculate() reports (asserted in
+	 * IncomingDpsCalculatorTest), without the per-call threat/Result
+	 * allocations. calculate() stays the authoritative display path.
+	 */
+	public static final class Prepared
+	{
+		private final int defenceLevel;
+		/** Player magic defence level term: 70% Magic + 30% (Defence+9). */
+		private final int magicEffective;
+		/** Per style/attack: KIND_*, npc attack roll, and (v1) max hit. */
+		private final int[] kinds;
+		private final int[] attackRolls;
+		private final int[] maxHits;
+		// v1 sheet model (override == null): uniform rotation.
+		private final double share;
+		private final int speedTicks;
+		// Curated override model: per-attack constants.
+		private final boolean overridden;
+		private final double[] shares;
+		private final double[] prayerFactors;
+		private final int[] speeds;
+		/** Per attack: index into the distinct prayer list, or -1. */
+		private final int[] prayerIndex;
+		private final int prayerCount;
+
+		private Prepared(MonsterStats monster, BossIncomingOverrides.BossOverride override,
+			int defenceLevel, int magicLevel)
+		{
+			this.defenceLevel = defenceLevel;
+			this.magicEffective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
+			MonsterOffence off = monster.getOffence();
+			this.overridden = override != null;
+			if (override == null)
+			{
+				List<String> styles = off.getStyles();
+				this.kinds = new int[styles.size()];
+				this.attackRolls = new int[styles.size()];
+				this.maxHits = new int[styles.size()];
+				this.share = styles.isEmpty() ? 0 : 1.0 / styles.size();
+				this.speedTicks = off.getSpeedTicks();
+				for (int i = 0; i < styles.size(); i++)
+				{
+					int kind = kindOf(styles.get(i));
+					kinds[i] = kind;
+					attackRolls[i] = attackRollFor(kind, off);
+					maxHits[i] = maxHitFor(kind, off);
+				}
+				this.shares = null;
+				this.prayerFactors = null;
+				this.speeds = null;
+				this.prayerIndex = null;
+				this.prayerCount = 0;
+			}
+			else
+			{
+				List<BossIncomingOverrides.Attack> attacks = override.getAttacks();
+				this.kinds = new int[attacks.size()];
+				this.attackRolls = new int[attacks.size()];
+				this.maxHits = new int[attacks.size()];
+				this.shares = new double[attacks.size()];
+				this.prayerFactors = new double[attacks.size()];
+				this.speeds = new int[attacks.size()];
+				this.prayerIndex = new int[attacks.size()];
+				this.share = 0;
+				this.speedTicks = off.getSpeedTicks();
+				// Distinct prayers in first-occurrence order - mirrors the
+				// insertion-ordered savedByPrayer map in the full path.
+				List<String> prayers = new ArrayList<>();
+				for (int i = 0; i < attacks.size(); i++)
+				{
+					BossIncomingOverrides.Attack attack = attacks.get(i);
+					String style = attack.getStyle();
+					int kind = "typeless".equals(style) ? KIND_TYPELESS : kindOf(style);
+					kinds[i] = kind;
+					attackRolls[i] = kind == KIND_TYPELESS ? 0 : attackRollFor(kind, off);
+					maxHits[i] = attack.getMaxHit();
+					shares[i] = attack.getShare();
+					prayerFactors[i] = attack.getPrayerFactor();
+					speeds[i] = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
+					String prayer = protectPrayerFor(style);
+					int index = prayers.indexOf(prayer);
+					if (index < 0)
+					{
+						index = prayers.size();
+						prayers.add(prayer);
+					}
+					prayerIndex[i] = index;
+				}
+				this.prayerCount = prayers.size();
+			}
+		}
+
+		/**
+		 * The prayed incoming dps of calculate() for this loadout - same
+		 * math, same order, none of the display allocations.
+		 */
+		public double totalDps(Loadout loadout)
+		{
+			StatBlock def = loadout.getDefensive();
+			if (!overridden)
+			{
+				// v1 uniform model: pray the nastiest modeled style away.
+				int bestBlockable = -1;
+				double bestBlockableDps = -1;
+				double[] dps = new double[kinds.length];
+				for (int i = 0; i < kinds.length; i++)
+				{
+					if (kinds[i] == KIND_UNMODELED)
+					{
+						continue;
+					}
+					dps[i] = accuracyOf(kinds[i], attackRolls[i], def)
+						* (maxHits[i] / 2.0) / (speedTicks * 0.6);
+					if (dps[i] > bestBlockableDps)
+					{
+						bestBlockableDps = dps[i];
+						bestBlockable = i;
+					}
+				}
+				double total = 0;
+				for (int i = 0; i < kinds.length; i++)
+				{
+					if (kinds[i] != KIND_UNMODELED && i != bestBlockable)
+					{
+						total += dps[i] * share;
+					}
+				}
+				return total;
+			}
+			// Override model: block the prayer with the largest saving.
+			double[] dpsPer = new double[kinds.length];
+			double[] saved = new double[prayerCount];
+			for (int i = 0; i < kinds.length; i++)
+			{
+				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
+					: accuracyOf(kinds[i], attackRolls[i], def);
+				dpsPer[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
+				double saving = dpsPer[i] * shares[i] * (1 - prayerFactors[i]);
+				if (saving > 0)
+				{
+					saved[prayerIndex[i]] += saving;
+				}
+			}
+			int bestPrayer = -1;
+			double bestSaved = 0;
+			for (int p = 0; p < prayerCount; p++)
+			{
+				if (saved[p] > bestSaved)
+				{
+					bestSaved = saved[p];
+					bestPrayer = p;
+				}
+			}
+			double total = 0;
+			for (int i = 0; i < kinds.length; i++)
+			{
+				boolean prayedClass = bestPrayer >= 0
+					&& prayerIndex[i] == bestPrayer && prayerFactors[i] < 1;
+				total += dpsPer[i] * shares[i] * (prayedClass ? prayerFactors[i] : 1);
+			}
+			return total;
+		}
+
+		private double accuracyOf(int kind, int attackRoll, StatBlock def)
+		{
+			long defenceRoll;
+			switch (kind)
+			{
+				case KIND_STAB:
+					defenceRoll = (long) (defenceLevel + 9) * (def.getStab() + 64);
+					break;
+				case KIND_SLASH:
+					defenceRoll = (long) (defenceLevel + 9) * (def.getSlash() + 64);
+					break;
+				case KIND_CRUSH:
+					defenceRoll = (long) (defenceLevel + 9) * (def.getCrush() + 64);
+					break;
+				case KIND_MELEE_GENERIC:
+					defenceRoll = (long) (defenceLevel + 9)
+						* (Math.min(def.getStab(), Math.min(def.getSlash(), def.getCrush())) + 64);
+					break;
+				case KIND_RANGED:
+					defenceRoll = (long) (defenceLevel + 9) * (def.getRanged() + 64);
+					break;
+				default:
+					defenceRoll = (long) magicEffective * (def.getMagic() + 64);
+			}
+			return accuracy(attackRoll, defenceRoll);
+		}
+	}
+
+	public static Prepared prepare(MonsterStats monster, int defenceLevel, int magicLevel)
+	{
+		return new Prepared(monster,
+			BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel);
+	}
+
+	/** The KIND_* for a sheet/override style string (never "typeless"). */
+	private static int kindOf(String rawStyle)
+	{
+		String style = rawStyle.toLowerCase(Locale.ROOT);
+		switch (style)
+		{
+			case "stab": return KIND_STAB;
+			case "slash": return KIND_SLASH;
+			case "crush": return KIND_CRUSH;
+			case "melee": return KIND_MELEE_GENERIC;
+			case "ranged":
+			case "range": return KIND_RANGED;
+			case "magic":
+			case "magical ranged":
+			case "magical melee": return KIND_MAGIC;
+			default: return KIND_UNMODELED;
+		}
+	}
+
+	private static int attackRollFor(int kind, MonsterOffence off)
+	{
+		switch (kind)
+		{
+			case KIND_STAB:
+			case KIND_SLASH:
+			case KIND_CRUSH:
+			case KIND_MELEE_GENERIC:
+				return npcRoll(off.getAttackLevel(), off.getAttackBonus());
+			case KIND_RANGED:
+				return npcRoll(off.getRangedLevel(), off.getRangedBonus());
+			case KIND_MAGIC:
+				return npcRoll(off.getMagicLevel(), off.getMagicBonus());
+			default:
+				return 0;
+		}
+	}
+
+	private static int maxHitFor(int kind, MonsterOffence off)
+	{
+		switch (kind)
+		{
+			case KIND_STAB:
+			case KIND_SLASH:
+			case KIND_CRUSH:
+			case KIND_MELEE_GENERIC:
+				return npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus());
+			case KIND_RANGED:
+				return npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus());
+			case KIND_MAGIC:
+				return npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus());
+			default:
+				return 0;
+		}
+	}
+
 	public static Result calculate(MonsterStats monster, Loadout loadout,
 		int defenceLevel, int magicLevel)
 	{

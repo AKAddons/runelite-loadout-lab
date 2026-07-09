@@ -77,7 +77,7 @@ public final class VampyreRules
 		{
 			return false;
 		}
-		String name = weapon.getName().toLowerCase();
+		String name = weapon.getNameLower();
 		for (String prefix : prefixes)
 		{
 			if (name.startsWith(prefix))

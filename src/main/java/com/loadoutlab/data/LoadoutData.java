@@ -12,6 +12,9 @@ public final class LoadoutData
 	private final List<SpellStats> spells;
 	private final Map<Integer, GearItem> gearById;
 	private final Map<Integer, Integer> variantToBase;
+	/** Corpus partitioned by equip slot, corpus order preserved - so slot
+	 * scans (every optimizer pool build) skip the other ~5k rows. */
+	private final Map<GearSlot, List<GearItem>> gearBySlot;
 
 	LoadoutData(
 		List<GearItem> gearItems,
@@ -25,6 +28,20 @@ public final class LoadoutData
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
 		this.variantToBase = Collections.unmodifiableMap(variantToBase);
+		java.util.EnumMap<GearSlot, List<GearItem>> bySlot = new java.util.EnumMap<>(GearSlot.class);
+		for (GearSlot slot : GearSlot.values())
+		{
+			bySlot.put(slot, new java.util.ArrayList<>());
+		}
+		for (GearItem item : this.gearItems)
+		{
+			bySlot.get(item.getSlot()).add(item);
+		}
+		for (GearSlot slot : GearSlot.values())
+		{
+			bySlot.put(slot, Collections.unmodifiableList(bySlot.get(slot)));
+		}
+		this.gearBySlot = Collections.unmodifiableMap(bySlot);
 	}
 
 	/**
@@ -179,6 +196,12 @@ public final class LoadoutData
 	public List<GearItem> getGearItems()
 	{
 		return gearItems;
+	}
+
+	/** The corpus items for one equip slot, in getGearItems() order. */
+	public List<GearItem> getGearItems(GearSlot slot)
+	{
+		return gearBySlot.get(slot);
 	}
 
 	public List<MonsterStats> getMonsters()

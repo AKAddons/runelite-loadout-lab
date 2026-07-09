@@ -44,7 +44,7 @@ public final class DragonfireRules
 	public static boolean isProtectiveShield(GearItem item)
 	{
 		return item != null
-			&& PROTECTIVE_SHIELDS.contains(item.getName().toLowerCase(Locale.ROOT));
+			&& PROTECTIVE_SHIELDS.contains(item.getNameLower());
 	}
 
 	/** Must this request's sets carry a dragonfire shield? */

@@ -186,6 +186,36 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void theLeanRiskGpMatchesTheFullAssessmentExactly()
+	{
+		// The beam calls riskGp() thousands of times per optimize; it must
+		// be the same number assess() reports, for every item class at once.
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100_000),
+			item(2, GearSlot.BODY, true, 80_000),
+			item(3, GearSlot.LEGS, true, 60_000),
+			item(4, GearSlot.RING, true, 40),
+			untradeable(5, "Fire cape", GearSlot.CAPE, SOME_DEFENCE),
+			untradeable(6, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE),
+			untradeable(7, "Rune defender", GearSlot.SHIELD, SOME_DEFENCE),
+			untradeable(8, "Amulet of the damned", GearSlot.NECK, SOME_DEFENCE));
+		GearItem spec = item(9, GearSlot.WEAPON, true, 500_000);
+		for (GearItem carried : new GearItem[]{null, spec})
+		{
+			for (int kept : new int[]{0, 1, 3, 4, 10})
+			{
+				Assert.assertEquals(
+					PvpRisk.assess(loadout, carried, kept).riskGp,
+					PvpRisk.riskGp(loadout, carried, kept));
+			}
+		}
+		// Empty set and the destroyed-on-death class too.
+		Loadout empty = worn(item(1, GearSlot.WEAPON, true, 0));
+		Assert.assertEquals(PvpRisk.assess(empty, null, 3).riskGp,
+			PvpRisk.riskGp(empty, null, 3));
+	}
+
+	@Test
 	public void gpFormattingReadsLikeAPlayerWouldSayIt()
 	{
 		Assert.assertEquals("950", PvpRisk.formatGp(950));

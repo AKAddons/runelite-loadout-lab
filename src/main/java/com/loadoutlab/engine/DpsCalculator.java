@@ -344,7 +344,7 @@ public final class DpsCalculator
 
 	private static String rangedDefenceType(GearItem weapon)
 	{
-		String category = weapon == null ? "" : weapon.getCategory().toLowerCase(Locale.ROOT);
+		String category = weapon == null ? "" : weapon.getCategoryLower();
 		if (category.contains("thrown"))
 		{
 			return "light";
@@ -656,21 +656,12 @@ public final class DpsCalculator
 
 	private static boolean wearing(Loadout loadout, String marker)
 	{
-		String needle = marker.toLowerCase(Locale.ROOT);
-		for (Map.Entry<GearSlot, GearItem> entry : loadout.getGear().entrySet())
-		{
-			GearItem item = entry.getValue();
-			if (item != null && item.getName().toLowerCase(Locale.ROOT).contains(needle))
-			{
-				return true;
-			}
-		}
-		return false;
+		return loadout.namesLower().contains(marker.toLowerCase(Locale.ROOT));
 	}
 
 	private static String name(GearItem item)
 	{
-		return item == null ? "" : item.getName().toLowerCase(Locale.ROOT);
+		return item == null ? "" : item.getNameLower();
 	}
 
 	private static boolean isWearingMeleeVoid(Loadout loadout)
@@ -758,7 +749,7 @@ public final class DpsCalculator
 	{
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = name(weapon);
-		String category = weapon == null ? "" : weapon.getCategory().toLowerCase(Locale.ROOT);
+		String category = weapon == null ? "" : weapon.getCategoryLower();
 		return category.contains("powered staff")
 			|| weaponName.contains("trident")
 			|| weaponName.contains("thammaron")
@@ -812,18 +803,7 @@ public final class DpsCalculator
 	/** wearing(), but "Inactive" versions (uncharged crystal) never match. */
 	private static boolean wearingActive(Loadout loadout, String marker)
 	{
-		String needle = marker.toLowerCase(Locale.ROOT);
-		for (Map.Entry<GearSlot, GearItem> entry : loadout.getGear().entrySet())
-		{
-			GearItem item = entry.getValue();
-			if (item != null
-				&& item.getName().toLowerCase(Locale.ROOT).contains(needle)
-				&& !"inactive".equalsIgnoreCase(item.getVersion()))
-			{
-				return true;
-			}
-		}
-		return false;
+		return loadout.activeNamesLower().contains(marker.toLowerCase(Locale.ROOT));
 	}
 
 	private static boolean isTzhaarWeapon(Loadout loadout)

@@ -331,6 +331,9 @@ public class OptimizerService
 		}
 		List<DpsResult> frontier = new ArrayList<>();
 		frontier.add(maxDps);
+		// Candidate pools do not depend on the weight's magnitude (only on
+		// weight > 0), so the sweep builds them once and reuses them.
+		LoadoutOptimizer.CandidatePools pools = null;
 		for (double alpha : SWEEP_ALPHAS)
 		{
 			if (requestSeq.get() != ticket)
@@ -338,7 +341,11 @@ public class OptimizerService
 				return null; // superseded mid-sweep
 			}
 			OptimizationRequest weighted = ownedRequest.withDefenseWeight(alpha * d0 / i0);
-			List<DpsResult> out = optimizer.optimize(dataset, weighted);
+			if (pools == null)
+			{
+				pools = optimizer.preparePools(dataset, weighted);
+			}
+			List<DpsResult> out = optimizer.optimize(dataset, weighted, pools);
 			if (out.isEmpty())
 			{
 				continue;
@@ -463,7 +470,9 @@ public class OptimizerService
 		}
 		DpsCalculator calculator = new DpsCalculator();
 		SpecPick best = null;
-		for (GearItem item : dataset.getGearItems())
+		// Spec weapons are weapons by definition (SpecialAttack.match rejects
+		// every other slot), so only the weapon partition needs scanning.
+		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
 		{
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
 				|| request.isExcluded(item.getId())
@@ -480,8 +489,8 @@ public class OptimizerService
 			// for kept slots like everything else - the whole package (worn
 			// set + this weapon) must stay within the total risk budget.
 			if (request.isRiskConstrained()
-				&& PvpRisk.assess(baseResults.get(0).getLoadout(), item,
-					request.getMaxTradeables()).riskGp > request.getRiskBudgetGp())
+				&& PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
+					request.getMaxTradeables()) > request.getRiskBudgetGp())
 			{
 				continue;
 			}
@@ -559,10 +568,9 @@ public class OptimizerService
 		if (!RangedAmmo.compatible(gear.get(GearSlot.AMMO), weapon))
 		{
 			GearItem replacement = null;
-			for (GearItem ammo : dataset.getGearItems())
+			for (GearItem ammo : dataset.getGearItems(GearSlot.AMMO))
 			{
-				if (ammo.getSlot() == GearSlot.AMMO
-					&& ammo.isStandardGear() && !dataset.isVariant(ammo.getId())
+				if (ammo.isStandardGear() && !dataset.isVariant(ammo.getId())
 					&& !request.isExcluded(ammo.getId())
 					&& (owned == null || owned.owns(ammo.getId()))
 					&& RangedAmmo.compatible(ammo, weapon)

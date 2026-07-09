@@ -85,10 +85,10 @@ public final class UntradeableDeathCosts
 		if (item.isTradeable())
 		{
 			Long destroyed = categoryFor(item) == 5
-				? COST_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT)) : null;
+				? COST_BY_NAME.get(item.getNameLower()) : null;
 			return destroyed == null ? 0L : destroyed;
 		}
-		Long listed = COST_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT));
+		Long listed = COST_BY_NAME.get(item.getNameLower());
 		if (listed != null)
 		{
 			return listed;
@@ -120,7 +120,7 @@ public final class UntradeableDeathCosts
 		{
 			return 0;
 		}
-		Integer listed = CATEGORY_BY_NAME.get(item.getName().toLowerCase(Locale.ROOT));
+		Integer listed = CATEGORY_BY_NAME.get(item.getNameLower());
 		return listed == null ? 0 : listed;
 	}
 

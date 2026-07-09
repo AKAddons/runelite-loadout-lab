@@ -1,6 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.GearSlot;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -105,6 +106,113 @@ public final class PvpRisk
 			risk += charge.costGp;
 		}
 		return new Assessment(risk, kept, lost, charges, valueById);
+	}
+
+	/**
+	 * The riskGp of assess() alone, without building the kept/lost lists,
+	 * the value map, or sorting - the beam search calls this per candidate
+	 * set, where the full assessment allocated its way to the top of the
+	 * profile. Identity: riskGp = (pool total - top keptSlots pool values)
+	 * + fees; ties in the value ranking cannot change either sum.
+	 */
+	public static long riskGp(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
+	{
+		int keep = Math.max(0, keptSlots);
+		// The largest `keep` pool values seen so far, ascending (top[0] is
+		// the smallest of them); a worn set is at most 11 items + the spec.
+		long[] top = new long[Math.min(keep, 12)];
+		int topCount = 0;
+		long poolTotal = 0;
+		long fees = 0;
+		for (GearSlot slot : GearSlot.values())
+		{
+			GearItem item = loadout.get(slot);
+			long value = poolValue(item);
+			if (value < 0)
+			{
+				fees += UntradeableDeathCosts.costFor(item);
+				continue;
+			}
+			poolTotal += value;
+			topCount = offerTop(top, topCount, value);
+		}
+		long specValue = poolValue(carriedSpecWeapon);
+		if (specValue < 0)
+		{
+			fees += UntradeableDeathCosts.costFor(carriedSpecWeapon);
+		}
+		else
+		{
+			poolTotal += specValue;
+			topCount = offerTop(top, topCount, specValue);
+		}
+		long keptTotal = 0;
+		for (int i = 0; i < topCount; i++)
+		{
+			keptTotal += top[i];
+		}
+		return poolTotal - keptTotal + fees;
+	}
+
+	/**
+	 * This item's protection-pool value, mirroring sort(): tradeables at GE
+	 * price, convert-class untradeables at their component value; -1 when
+	 * the item is not poolable (absent, fee-class, or worthless untradeable
+	 * - the caller adds costFor(), which is 0 for the latter two... only
+	 * fee-class items charge).
+	 */
+	private static long poolValue(GearItem item)
+	{
+		if (item == null)
+		{
+			return -1; // costFor(null) == 0
+		}
+		if (UntradeableDeathCosts.isDestroyedOnDeath(item))
+		{
+			return -1; // always a charge, never poolable
+		}
+		if (item.isTradeable())
+		{
+			return item.getPriceOrZero();
+		}
+		long cost = UntradeableDeathCosts.costFor(item);
+		if (cost <= 0)
+		{
+			return -1; // costs nothing either way
+		}
+		return UntradeableDeathCosts.isConvertible(item) ? cost : -1;
+	}
+
+	/** Insert value into the ascending top-N array; returns the new count. */
+	private static int offerTop(long[] top, int count, long value)
+	{
+		if (top.length == 0)
+		{
+			return 0;
+		}
+		if (count < top.length)
+		{
+			int i = count;
+			while (i > 0 && top[i - 1] > value)
+			{
+				top[i] = top[i - 1];
+				i--;
+			}
+			top[i] = value;
+			return count + 1;
+		}
+		if (value <= top[0])
+		{
+			return count;
+		}
+		int i = 1;
+		while (i < top.length && top[i] < value)
+		{
+			top[i - 1] = top[i];
+			i++;
+		}
+		top[i - 1] = value;
+		return count;
 	}
 
 	/** Losable items join the protection pool; the rest accrue fees. */

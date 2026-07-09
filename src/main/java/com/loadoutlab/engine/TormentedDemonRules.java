@@ -52,7 +52,7 @@ public final class TormentedDemonRules
 		{
 			return spellName != null && spellName.contains("Demonbane");
 		}
-		String name = weapon == null ? "" : weapon.getName().toLowerCase(Locale.ROOT);
+		String name = weapon == null ? "" : weapon.getNameLower();
 		if (style == CombatStyle.RANGED)
 		{
 			return name.startsWith("scorching bow");

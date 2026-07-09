@@ -20,6 +20,14 @@ public final class GearItem
 	private final StatBlock defensive;
 	private final StatBlock bonuses;
 	private final GearRequirements requirements;
+	// Lowercase views, precomputed once: the engine matches items by name
+	// fragment on every candidate evaluation, and per-call toLowerCase was
+	// the single hottest path in the whole optimize (64% of CPU samples).
+	private final String nameLower;
+	private final String versionLower;
+	private final String categoryLower;
+	private final String labelLower;
+	private final String nameVersionLower;
 
 	public GearItem(
 		int id,
@@ -53,6 +61,11 @@ public final class GearItem
 		this.defensive = defensive == null ? StatBlock.ZERO : defensive;
 		this.bonuses = bonuses == null ? StatBlock.ZERO : bonuses;
 		this.requirements = requirements == null ? GearRequirements.NONE : requirements;
+		this.nameLower = this.name.toLowerCase(Locale.ROOT);
+		this.versionLower = this.version.toLowerCase(Locale.ROOT);
+		this.categoryLower = this.category.toLowerCase(Locale.ROOT);
+		this.labelLower = label().toLowerCase(Locale.ROOT);
+		this.nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
 	}
 
 	public boolean isWeaponFor(com.loadoutlab.engine.CombatStyle style)
@@ -62,7 +75,7 @@ public final class GearItem
 			return false;
 		}
 
-		String normalized = category.toLowerCase(Locale.ROOT);
+		String normalized = categoryLower;
 		switch (style)
 		{
 			case RANGED:
@@ -132,9 +145,33 @@ public final class GearItem
 		return version.isEmpty() ? name : name + " (" + version + ")";
 	}
 
+	/** label() lowercased (Locale.ROOT), precomputed. */
+	public String labelLower()
+	{
+		return labelLower;
+	}
+
+	/** getName() lowercased (Locale.ROOT), precomputed. */
+	public String getNameLower()
+	{
+		return nameLower;
+	}
+
+	/** getVersion() lowercased (Locale.ROOT), precomputed. */
+	public String getVersionLower()
+	{
+		return versionLower;
+	}
+
+	/** getCategory() lowercased (Locale.ROOT), precomputed. */
+	public String getCategoryLower()
+	{
+		return categoryLower;
+	}
+
 	private String normalizedLabel()
 	{
-		return (name + " " + version).toLowerCase(Locale.ROOT);
+		return nameVersionLower;
 	}
 
 	public int getPriceOrZero()

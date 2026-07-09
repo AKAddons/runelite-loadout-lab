@@ -79,7 +79,7 @@ public final class BlowpipeDarts
 
 	private static int tierFor(OptimizationRequest request, GearItem weapon)
 	{
-		if (weapon == null || !weapon.getName().toLowerCase(Locale.ROOT).contains("blowpipe"))
+		if (weapon == null || !weapon.getNameLower().contains("blowpipe"))
 		{
 			return -1;
 		}

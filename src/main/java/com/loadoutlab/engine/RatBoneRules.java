@@ -31,7 +31,7 @@ public final class RatBoneRules
 		{
 			return 0;
 		}
-		String name = weapon.getName().toLowerCase();
+		String name = weapon.getNameLower();
 		return name.startsWith("bone mace") || name.startsWith("bone shortbow") ? 10 : 0;
 	}
 
@@ -41,7 +41,7 @@ public final class RatBoneRules
 		{
 			return false;
 		}
-		String name = weapon.getName().toLowerCase();
+		String name = weapon.getNameLower();
 		return name.startsWith("bone mace")
 			|| name.startsWith("bone shortbow")
 			|| name.startsWith("bone staff");

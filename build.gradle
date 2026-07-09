@@ -74,6 +74,29 @@ tasks.register('preSubmit') {
 	dependsOn 'test', 'checkTokens', 'checkGlyphs'
 }
 
+// Optimizer wall-clock benchmark over a fixed monster/mode/risk matrix
+// (see QueryBenchmark): ./gradlew benchmark
+task benchmark(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Time OptimizerService.bestPerStyle across the benchmark matrix'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.profile.QueryBenchmark'
+	args = (findProperty('args') ?: '').toString().split(' ').findAll { !it.isEmpty() }
+	// Optional flight-recorder capture: ./gradlew benchmark -Pjfr=/tmp/bench.jfr
+	if (findProperty('jfr')) {
+		jvmArgs "-XX:StartFlightRecording=filename=${findProperty('jfr')},settings=profile"
+	}
+}
+
+// Golden-output capture for the same matrix (see QueryGolden):
+//   ./gradlew -q golden > golden.txt   (diff across optimizer changes)
+task golden(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Print HeadlessQuery output for the benchmark matrix (golden diffing)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.profile.QueryGolden'
+}
+
 // Headless query runner - the mock environment (see HeadlessQuery):
 //   ./gradlew query -Pargs="vorkath --maxed"
 task query(type: JavaExec) {

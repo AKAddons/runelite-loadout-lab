@@ -141,7 +141,7 @@ public final class MonsterMechanics
 	private static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell)
 	{
 		GearItem weapon = loadout.getWeapon();
-		String weaponName = weapon == null ? "" : weapon.getName().toLowerCase(Locale.ROOT);
+		String weaponName = weapon == null ? "" : weapon.getNameLower();
 		if (style == CombatStyle.MELEE)
 		{
 			return weaponName.startsWith("leaf-bladed");
@@ -149,7 +149,7 @@ public final class MonsterMechanics
 		if (style == CombatStyle.RANGED)
 		{
 			GearItem ammo = loadout.get(GearSlot.AMMO);
-			String ammoName = ammo == null ? "" : ammo.getName().toLowerCase(Locale.ROOT);
+			String ammoName = ammo == null ? "" : ammo.getNameLower();
 			return ammoName.contains("broad");
 		}
 		return spell != null && "Magic Dart".equals(spell.getName());
@@ -182,7 +182,7 @@ public final class MonsterMechanics
 			return false;
 		}
 		if (monster.hasAttribute("leafy")
-			&& !weapon.getName().toLowerCase(Locale.ROOT).startsWith("leaf-bladed"))
+			&& !weapon.getNameLower().startsWith("leaf-bladed"))
 		{
 			return false;
 		}
@@ -211,7 +211,7 @@ public final class MonsterMechanics
 		}
 		String name = monster.getName();
 		GearItem weapon = loadout.getWeapon();
-		String weaponName = weapon == null ? "" : weapon.getName().toLowerCase(Locale.ROOT);
+		String weaponName = weapon == null ? "" : weapon.getNameLower();
 		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType))
 		{
 			return 0.5;

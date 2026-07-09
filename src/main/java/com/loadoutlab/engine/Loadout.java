@@ -15,6 +15,13 @@ public final class Loadout
 	private final StatBlock defensive;
 	private final StatBlock bonuses;
 	private final int cost;
+	/** All worn item names, lowercased and newline-joined - so the engine's
+	 * name-fragment checks ("salve amulet", "void knight top"...) are one
+	 * substring scan instead of an 11-slot map iteration per marker. Item
+	 * names never contain a newline, so a needle cannot straddle two names. */
+	private final String namesLower;
+	/** namesLower minus "Inactive"-version items (uncharged crystal). */
+	private final String activeNamesLower;
 
 	public Loadout(Map<GearSlot, GearItem> gear)
 	{
@@ -25,6 +32,8 @@ public final class Loadout
 		StatBlock defensiveTotal = StatBlock.ZERO;
 		StatBlock bonusTotal = StatBlock.ZERO;
 		int totalCost = 0;
+		StringBuilder names = new StringBuilder(160);
+		StringBuilder activeNames = new StringBuilder(160);
 		for (GearItem item : this.gear.values())
 		{
 			if (item == null)
@@ -35,11 +44,18 @@ public final class Loadout
 			defensiveTotal = defensiveTotal.plus(item.getDefensive());
 			bonusTotal = bonusTotal.plus(item.getBonuses());
 			totalCost += item.getPriceOrZero();
+			names.append(item.getNameLower()).append('\n');
+			if (!"inactive".equalsIgnoreCase(item.getVersion()))
+			{
+				activeNames.append(item.getNameLower()).append('\n');
+			}
 		}
 		this.offensive = offensiveTotal;
 		this.defensive = defensiveTotal;
 		this.bonuses = bonusTotal;
 		this.cost = totalCost;
+		this.namesLower = names.toString();
+		this.activeNamesLower = activeNames.toString();
 	}
 
 	public GearItem get(GearSlot slot)
@@ -75,6 +91,18 @@ public final class Loadout
 	public int getCost()
 	{
 		return cost;
+	}
+
+	/** Lowercased worn item names, newline-joined (see field doc). */
+	String namesLower()
+	{
+		return namesLower;
+	}
+
+	/** namesLower() without "Inactive"-version items. */
+	String activeNamesLower()
+	{
+		return activeNamesLower;
 	}
 
 	/** Items in this set you would risk in PvP (tradeables). */

@@ -70,6 +70,43 @@ public class IncomingDpsCalculatorTest
 	}
 
 	@Test
+	public void aPreparedCalculatorMatchesTheFullCalculationExactly()
+	{
+		// The defense-weighted beam scores thousands of candidate sets per
+		// optimize; prepare() hoists the monster-side constants and must
+		// reproduce calculate() bit-for-bit on both model paths.
+		MonsterStats sheet = monster(Arrays.asList("Crush", "Ranged", "Magic", "Dragonfire"));
+		Loadout[] armours = {
+			armour(0, 0, 0, 0, 0),
+			armour(200, 180, 210, 40, 150),
+			armour(-20, 300, 5, 120, 60),
+		};
+		IncomingDpsCalculator.Prepared prepared = IncomingDpsCalculator.prepare(sheet, 82, 91);
+		for (Loadout loadout : armours)
+		{
+			IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(sheet, loadout, 82, 91);
+			Assert.assertEquals(full.totalDps, prepared.totalDps(loadout), 0.0);
+		}
+	}
+
+	@Test
+	public void aPreparedCalculatorMatchesOnCuratedOverrideBosses()
+	{
+		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
+		for (String name : new String[]{"Callisto", "Zulrah", "Corporeal Beast"})
+		{
+			MonsterStats boss = data.searchMonsters(name, 1).get(0);
+			IncomingDpsCalculator.Prepared prepared = IncomingDpsCalculator.prepare(boss, 85, 89);
+			for (Loadout loadout : new Loadout[]{
+				armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)})
+			{
+				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(boss, loadout, 85, 89);
+				Assert.assertEquals(full.totalDps, prepared.totalDps(loadout), 0.0);
+			}
+		}
+	}
+
+	@Test
 	public void betterArmourMeansLessIncomingDps()
 	{
 		double tank = IncomingDpsCalculator.calculate(

@@ -19,6 +19,7 @@ public final class MonsterStats
 	private final MonsterDefences defensive;
 	private final MonsterOffence offence;
 	private final List<String> attributes;
+	private final java.util.Set<String> attributesLower;
 	private final boolean slayerMonster;
 	private final String weaknessElement;
 	private final int weaknessSeverity;
@@ -70,6 +71,17 @@ public final class MonsterStats
 		this.slayerMonster = slayerMonster;
 		this.weaknessElement = weaknessElement == null ? "" : weaknessElement.toLowerCase(Locale.ROOT);
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
+		// hasAttribute runs per candidate set in the optimizer's inner loop;
+		// lowercase once instead of per query.
+		java.util.HashSet<String> lower = new java.util.HashSet<>();
+		for (String value : this.attributes)
+		{
+			if (value != null)
+			{
+				lower.add(value.toLowerCase(Locale.ROOT));
+			}
+		}
+		this.attributesLower = lower;
 	}
 
 	/** A copy at a different Defence level - defence-drain spec modeling. */
@@ -82,15 +94,7 @@ public final class MonsterStats
 
 	public boolean hasAttribute(String attribute)
 	{
-		String normalized = attribute.toLowerCase(Locale.ROOT);
-		for (String value : attributes)
-		{
-			if (value != null && value.toLowerCase(Locale.ROOT).equals(normalized))
-			{
-				return true;
-			}
-		}
-		return false;
+		return attributesLower.contains(attribute.toLowerCase(Locale.ROOT));
 	}
 
 	public String label()
