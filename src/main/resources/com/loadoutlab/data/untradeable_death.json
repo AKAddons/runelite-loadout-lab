@@ -126,8 +126,8 @@
  },
  "ava's accumulator": {
   "category": 2,
-  "costGp": 7000,
-  "note": "Perdu sells a replacement for 7,000 coins (wiki Perdu store)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement for 7,000 coins (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "ava's assembler": {
   "category": 2,
@@ -136,8 +136,8 @@
  },
  "ava's attractor": {
   "category": 2,
-  "costGp": 7000,
-  "note": "Perdu sells a replacement for 7,000 coins (wiki Perdu store)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement for 7,000 coins (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "avernic defender": {
   "category": 2,
@@ -191,8 +191,8 @@
  },
  "barronite mace": {
   "category": 2,
-  "costGp": 10500,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "barrows gloves": {
   "category": 4,
@@ -201,18 +201,18 @@
  },
  "beacon ring": {
   "category": 2,
-  "costGp": 6000,
-  "note": "Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "beads of the dead": {
   "category": 2,
-  "costGp": 1200,
-  "note": "Yanni Salika sells another for 1,200 coins (wiki Beads of the dead)"
+  "costGp": 0,
+  "note": "Yanni Salika sells another for 1,200 coins (wiki Beads of the dead); trivial reclaim - treated as free tier"
  },
  "bearhead": {
   "category": 2,
-  "costGp": 10000,
-  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Lost Property shop); trivial reclaim - treated as free tier"
  },
  "berserker ring (i)": {
   "category": 4,
@@ -221,8 +221,8 @@
  },
  "black defender": {
   "category": 2,
-  "costGp": 5000,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "black gloves": {
   "category": 4,
@@ -371,8 +371,8 @@
  },
  "book of balance": {
   "category": 2,
-  "costGp": 12000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "book of balance (or)": {
   "category": 4,
@@ -381,8 +381,8 @@
  },
  "book of darkness": {
   "category": 2,
-  "costGp": 14000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "book of darkness (or)": {
   "category": 4,
@@ -391,8 +391,8 @@
  },
  "book of law": {
   "category": 2,
-  "costGp": 14000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "book of law (or)": {
   "category": 4,
@@ -401,13 +401,13 @@
  },
  "book of the dead": {
   "category": 2,
-  "costGp": 9500,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "book of war": {
   "category": 2,
-  "costGp": 14000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "book of war (or)": {
   "category": 4,
@@ -416,8 +416,8 @@
  },
  "boots of lightness": {
   "category": 2,
-  "costGp": 9800,
-  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Lost Property shop); trivial reclaim - treated as free tier"
  },
  "bow of faerdhinen": {
   "category": 4,
@@ -526,8 +526,8 @@
  },
  "cape of legends": {
   "category": 2,
-  "costGp": 1900,
-  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Lost Property shop); trivial reclaim - treated as free tier"
  },
  "castle wars arrow": {
   "category": 2,
@@ -826,8 +826,8 @@
  },
  "decorative boots (gold)": {
   "category": 2,
-  "costGp": 5000,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "defence cape": {
   "category": 2,
@@ -1101,23 +1101,23 @@
  },
  "ghostly boots": {
   "category": 2,
-  "costGp": 13500,
-  "note": "Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "ghostly cloak": {
   "category": 2,
-  "costGp": 15000,
-  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Lost Property shop); trivial reclaim - treated as free tier"
  },
  "ghostly gloves": {
   "category": 2,
-  "costGp": 13500,
-  "note": "Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "ghostly hood": {
   "category": 2,
-  "costGp": 15000,
-  "note": "Perdu sells a replacement (wiki Lost Property shop)"
+  "costGp": 0,
+  "note": "Perdu sells a replacement (wiki Lost Property shop); trivial reclaim - treated as free tier"
  },
  "ghostly robe (bottom)": {
   "category": 2,
@@ -1211,8 +1211,8 @@
  },
  "holy book": {
   "category": 2,
-  "costGp": 12000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "holy book (or)": {
   "category": 4,
@@ -1331,8 +1331,8 @@
  },
  "iron defender": {
   "category": 2,
-  "costGp": 2000,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "iron fire arrow": {
   "category": 2,
@@ -1446,8 +1446,8 @@
  },
  "klank's gauntlets": {
   "category": 2,
-  "costGp": 5000,
-  "note": "recovered from Klank for 5,000 coins (wiki Klank's gauntlets)"
+  "costGp": 0,
+  "note": "recovered from Klank for 5,000 coins (wiki Klank's gauntlets); trivial reclaim - treated as free tier"
  },
  "leaf-bladed spear": {
   "category": 2,
@@ -1461,13 +1461,13 @@
  },
  "lunar amulet": {
   "category": 2,
-  "costGp": 9000,
-  "note": "never kept on death (no ground state); Perdu sells a replacement"
+  "costGp": 0,
+  "note": "never kept on death (no ground state); Perdu sells a replacement; trivial reclaim - treated as free tier"
  },
  "lunar boots": {
   "category": 2,
-  "costGp": 15000,
-  "note": "never kept on death (no ground state); Perdu sells a replacement"
+  "costGp": 0,
+  "note": "never kept on death (no ground state); Perdu sells a replacement; trivial reclaim - treated as free tier"
  },
  "lunar cape": {
   "category": 2,
@@ -1476,8 +1476,8 @@
  },
  "lunar gloves": {
   "category": 2,
-  "costGp": 15000,
-  "note": "never kept on death (no ground state); Perdu sells a replacement"
+  "costGp": 0,
+  "note": "never kept on death (no ground state); Perdu sells a replacement; trivial reclaim - treated as free tier"
  },
  "lunar helm": {
   "category": 2,
@@ -1491,8 +1491,8 @@
  },
  "lunar ring": {
   "category": 2,
-  "costGp": 8000,
-  "note": "never kept on death (no ground state); Perdu sells a replacement"
+  "costGp": 0,
+  "note": "never kept on death (no ground state); Perdu sells a replacement; trivial reclaim - treated as free tier"
  },
  "lunar staff": {
   "category": 2,
@@ -1556,8 +1556,8 @@
  },
  "mithril defender": {
   "category": 2,
-  "costGp": 15000,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "mithril fire arrow": {
   "category": 2,
@@ -1636,8 +1636,8 @@
  },
  "mythical cape": {
   "category": 2,
-  "costGp": 10000,
-  "note": "rebought from the Mythical Cape Store for 10k (wiki)"
+  "costGp": 0,
+  "note": "rebought from the Mythical Cape Store for 10k (wiki); trivial reclaim - treated as free tier"
  },
  "mythical max cape": {
   "category": 1,
@@ -2076,8 +2076,8 @@
  },
  "steel defender": {
   "category": 2,
-  "costGp": 2500,
-  "note": "Perdu repair fee (wiki (broken) table, 2026-07)"
+  "costGp": 0,
+  "note": "Perdu repair fee (wiki (broken) table, 2026-07); trivial reclaim - treated as free tier"
  },
  "steel fire arrow": {
   "category": 2,
@@ -2221,8 +2221,8 @@
  },
  "unholy book": {
   "category": 2,
-  "costGp": 12000,
-  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store)"
+  "costGp": 0,
+  "note": "not a PvP-breakable; Perdu sells a replacement (wiki Perdu store); trivial reclaim - treated as free tier"
  },
  "unholy book (or)": {
   "category": 4,

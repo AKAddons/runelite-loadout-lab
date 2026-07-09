@@ -86,22 +86,30 @@ public final class LoadoutOptimizer
 				}
 				options.add(item);
 			}
+			// Collapse stat-clone families first (explorer's ring tiers, god
+			// book analogs) so the owned version represents its clones and
+			// the try cap is spent on genuinely different items.
+			options = dedupe(options, request);
 			options.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
 			int tried = 0;
 			for (GearItem item : options)
 			{
-				if (++tried > 12)
-				{
-					break;
-				}
 				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
 				gear.put(slot, item);
 				Loadout trial = new Loadout(gear);
+				// Risk rejections must not consume tries: in risk mode the
+				// top utility items are exactly the expensive gear the
+				// budget rejects, and the free tier (god books, diary
+				// boots) sits below them - it starved behind the cap.
 				if (request.isRiskConstrained()
 					&& PvpRisk.assess(trial, null, request.getMaxTradeables()).riskGp
 						> request.getRiskBudgetGp())
 				{
 					continue;
+				}
+				if (++tried > 12)
+				{
+					break;
 				}
 				DpsResult candidate = bestSpellResult(request, trial, spells);
 				if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
