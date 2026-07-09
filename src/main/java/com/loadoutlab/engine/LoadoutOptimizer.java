@@ -772,6 +772,16 @@ public final class LoadoutOptimizer
 				+ ":" + item.getBonuses().getStrength()
 				+ ":" + item.getBonuses().getRangedStrength()
 				+ ":" + item.getBonuses().getMagicDamage()
+				// Prayer and defence distinguish items too: without them all
+				// zero-offense blessings collapsed and the tradeable
+				// preference ate Rada's blessing 4 (+2 prayer) in favor of
+				// a +1 tradeable blessing.
+				+ ":" + item.getBonuses().getPrayer()
+				+ ":" + item.getDefensive().getStab()
+				+ ":" + item.getDefensive().getSlash()
+				+ ":" + item.getDefensive().getCrush()
+				+ ":" + item.getDefensive().getMagic()
+				+ ":" + item.getDefensive().getRanged()
 				+ ":" + request.getStyle();
 			GearItem current = best.get(key);
 			if (current == null || betterEquivalent(request, item, current))

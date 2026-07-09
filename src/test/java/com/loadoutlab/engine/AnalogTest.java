@@ -70,6 +70,29 @@ public class AnalogTest
 	}
 
 	@Test
+	public void prayerDistinguishesStatClones_radasBlessingBeatsAncientBlessing()
+	{
+		// Both are zero-offense ammo-slot blessings; Rada's 4 gives +2
+		// prayer vs +1. The old dedupe key ignored prayer, collapsed them,
+		// and the tradeable preference picked the ancient blessing.
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(20235, 1);  // ancient blessing (+1, tradeable)
+		owned.put(22947, 1);  // rada's blessing 4 (+2, untradeable)
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		OptimizationRequest req = new OptimizationRequest(goblin, CombatStyle.MELEE,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
+			null, 0, CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(data.canonicalizeOwned(owned), true), 1);
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		DpsResult best = optimizer.fillDpsNeutralSlots(data, req,
+			optimizer.optimize(data, req).get(0));
+		GearItem ammo = best.getLoadout().get(com.loadoutlab.data.GearSlot.AMMO);
+		Assert.assertNotNull(ammo);
+		Assert.assertEquals("Rada's blessing 4", ammo.getName());
+	}
+
+	@Test
 	public void statTiedAnalogsFollowOwnership()
 	{
 		GearItem armadyl = headPick(12512);
