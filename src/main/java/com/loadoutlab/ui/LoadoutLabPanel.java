@@ -134,6 +134,12 @@ public class LoadoutLabPanel extends PluginPanel
 		void highlight(Set<Integer> itemIds);
 	}
 
+	/** "Filter bank": show only these item ids in the bank (null clears). */
+	public interface BankFilter
+	{
+		void filter(Set<Integer> itemIds);
+	}
+
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
@@ -170,6 +176,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DreamView dreamView;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
+	private final BankFilter bankFilter;
+	/** Which style's set is filtering the bank (null = none). */
+	private CombatStyle bankFiltered;
 	/** Which style's set is currently glowing in the bank (null = none). */
 	private CombatStyle bankShown;
 	/** Upgrade budget dropdown values in gp; 0 = off. */
@@ -220,9 +229,10 @@ public class LoadoutLabPanel extends PluginPanel
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView, OwnedCheck ownedCheck,
-		BankHighlighter bankHighlighter)
+		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
+		this.bankFilter = bankFilter;
 		this.data = data;
 		this.itemManager = itemManager;
 		this.spriteManager = spriteManager;
@@ -527,6 +537,8 @@ public class LoadoutLabPanel extends PluginPanel
 		superAntifireAssumed = false; // each monster starts on gear protection
 		bankShown = null;
 		bankHighlighter.highlight(null);
+		bankFiltered = null;
+		bankFilter.filter(null);
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -829,7 +841,9 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
-		card.add(bankButton(style, best, result.specWeapon));
+		JPanel bankRow = iconRow(card);
+		bankRow.add(bankButton(style, best, result.specWeapon));
+		bankRow.add(bankFilterButton(style, best, result.specWeapon));
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
@@ -1281,6 +1295,56 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		});
 		return List.of(flip);
+	}
+
+	/** The active set's item ids: gear + loaded dart + spec weapon. */
+	private static Set<Integer> setItemIds(DpsResult best, GearItem specWeapon, GearItem dart)
+	{
+		Set<Integer> ids = new java.util.HashSet<>();
+		for (GearItem item : best.getLoadout().getGear().values())
+		{
+			if (item != null)
+			{
+				ids.add(item.getId());
+			}
+		}
+		if (dart != null)
+		{
+			ids.add(dart.getId());
+		}
+		if (specWeapon != null)
+		{
+			ids.add(specWeapon.getId());
+		}
+		return ids;
+	}
+
+	/** "Filter bank": a virtual bank tag showing only this set's items. */
+	private JButton bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	{
+		boolean filtering = bankFiltered == style;
+		JButton button = new JButton(filtering ? "Unfilter bank" : "Filter bank");
+		button.setFont(button.getFont().deriveFont(11f));
+		button.setMargin(new Insets(1, 6, 1, 6));
+		button.setToolTipText("Show only this set's items in the bank (needs Bank Tags enabled)");
+		button.addActionListener(e ->
+		{
+			if (bankFiltered == style)
+			{
+				bankFiltered = null;
+				bankFilter.filter(null);
+			}
+			else
+			{
+				bankFiltered = style;
+				bankFilter.filter(setItemIds(best, specWeapon, loadedDart(best)));
+			}
+			if (selectedMonster != null && lastResults != null)
+			{
+				showResults(selectedMonster, lastResults);
+			}
+		});
+		return button;
 	}
 
 	/** "Show in bank": outline this set's items while the bank is open. */

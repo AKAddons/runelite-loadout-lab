@@ -33,6 +33,7 @@ public class LinkInTest
 			itemId -> false,
 			java.util.Collections::emptySet,
 			itemId -> true,
+			ids -> { },
 			ids -> { });
 	}
 
