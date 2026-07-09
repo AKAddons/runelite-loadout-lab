@@ -83,9 +83,21 @@ listed below.
    EVs), utility value of drains (DWH/BGS worth beyond the hit), spec-weapon
    purchase advice, ZCB bolt-proc damage (blocked on #7).
 6. **Dharok's set** (HP-scaled max hit).
-6b. ~~Crystal armour + Bofa~~ MIS-AUDIT (2026-07-06): the vendored engine
-   already modeled it (isCrystalBow/crystalArmourPieces) - sweep Bofa rows
-   converge exactly. Ahrim's 25% proc (+30% dmg) still missing.
+6b. ~~Crystal armour + Bofa~~ MIS-AUDIT (2026-07-06), then VERIFIED AND
+   HARDENED (2026-07-08): the engine's isCrystalBow/crystalArmourPieces
+   scaling (acc x(20+n)/20, dmg x(40+n)/40; helm 1 / legs 2 / body 3) is
+   correct - harness scenarios bofa-graardor, bofahelm/body/legs/set-,
+   cbowset- and bofasetslayer-graardor all 0.0% delta vs the official
+   engine. Two real defects fixed 2026-07-08: (a) the multiplier floored
+   AFTER salve/slayer; the game applies it to the base roll/max hit first
+   (official engine has this in-game verified: bofa + slayer helm (i) +
+   crystal body/legs maxes 36 with crystal-first, 37 the other way - at
+   maxed+Rigour the two orders coincide, which is why the harness had not
+   caught it), and (b) name-substring matching counted INACTIVE crystal
+   pieces (same name, version "Inactive") as active, a false +30%/+15%.
+   Pinned by CrystalSetTest (exact per-piece multipliers, inactive no-op,
+   flooring order, blade-of-saeldor no-scale guard). Ahrim's 25% proc
+   (+30% dmg) still missing.
 7. **Bolt procs** (ruby/diamond/dstone(e), Zaryte cbow multiplier, diary bonus) — materially changes high-defence ranged answers.
 8. **Elite void magic +2.5% damage** (only the accuracy part is modeled).
 9. **Tomes** (fire/water/earth), smoke battlestaff, chaos gauntlets, sunfire runes. (~~Mark of Darkness + demonbane~~ MODELED 2026-07-06: demonbane assumes MoD active - 40%/80% accuracy and +25%/+50% damage with the Purging staff; harness vectors carry a markOfDarkness flag so the official engine verifies under the same assumption. Purging staff is now the magic pick vs demons - TD magic converges at +0.7%.)

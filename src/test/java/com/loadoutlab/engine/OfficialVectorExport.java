@@ -44,6 +44,17 @@ public class OfficialVectorExport
 		{"tbow-hydra", "Alchemical Hydra", "", "RANGED", "Twisted bow", "Dragon arrow"},
 		{"tbowslayer-graardor", "General Graardor", "", "RANGED", "Twisted bow", "Dragon arrow", null, "Slayer helmet (i)"},
 		{"bofaslayer-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Slayer helmet (i)"},
+		// Crystal armour scaling (crystal bow / bofa only): helm +5% acc +2.5% dmg,
+		// legs +10%/+5%, body +15%/+7.5%. Applied to the BASE roll/max hit,
+		// before salve/slayer (in-game verified by the wiki calc devs).
+		{"bofa-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null},
+		{"bofahelm-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm"},
+		{"bofabody-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal body"},
+		{"bofalegs-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal legs"},
+		{"bofaset-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
+		{"cbowset-graardor", "General Graardor", "", "RANGED", "Crystal bow", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
+		// Slayer helm + crystal body/legs: flooring order (crystal before slayer) matters.
+		{"bofasetslayer-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Slayer helmet (i)", "Crystal body", "Crystal legs"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},
@@ -209,12 +220,16 @@ public class OfficialVectorExport
 				gearNames.add(gearRef(ammo));
 			}
 			boolean onTask = false;
-			if (s.length > 7 && s[7] != null)
+			for (int i = 7; i < s.length; i++)
 			{
-				GearItem extra = byName(data, s[7]);
+				if (s[i] == null)
+				{
+					continue;
+				}
+				GearItem extra = byName(data, s[i]);
 				gear.put(extra.getSlot(), extra);
 				gearNames.add(gearRef(extra));
-				onTask = s[7].toLowerCase().contains("slayer helmet");
+				onTask |= s[i].toLowerCase().contains("slayer helmet");
 			}
 
 			OptimizationRequest request = new OptimizationRequest(

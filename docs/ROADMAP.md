@@ -91,11 +91,15 @@ monster duplicate collapsing (2026-07-05); item exclusions/protection
 persisted; 'Excluded items: N' manager under the F2P toggle; blowpipe
 dart tiers respect it). Follow-up: per-monster exclusion scope.
 
-Set bonuses status (asked 2026-07-05): modeled - Void (all styles, elite
-ranged), Obsidian set + berserker necklace, Inquisitor's, slayer helm,
-salve. NOT modeled - crystal armour + Bofa/crystal bow scaling (material:
-Bofa is underrated without it), Dharok's, Ahrim's proc, elite void magic
-damage. Tracked in docs/ENGINE-GAPS.md.
+Set bonuses status (asked 2026-07-05, corrected 2026-07-08): modeled -
+Void (all styles, elite ranged), Obsidian set + berserker necklace,
+Inquisitor's, slayer helm, salve, AND crystal armour + Bofa/crystal bow
+scaling (helm +5% acc/+2.5% dmg, legs +10%/+5%, body +15%/+7.5%; verified
+vs the official engine 2026-07-08 at 0.0% delta per piece and full set -
+this list previously claimed it was missing, which was wrong; two real
+defects WERE found and fixed: the multiplier floored after salve/slayer
+instead of before, and inactive pieces counted). NOT modeled - Dharok's,
+Ahrim's proc, elite void magic damage. Tracked in docs/ENGINE-GAPS.md.
 
 ## Defensive arc (started 2026-07-07)
 

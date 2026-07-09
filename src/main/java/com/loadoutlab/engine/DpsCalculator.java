@@ -507,6 +507,13 @@ public final class DpsCalculator
 
 	private long applyRangedAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll)
 	{
+		// Crystal armour scales the base roll BEFORE salve/slayer - the wiki
+		// calc devs verified the flooring order in-game (bofa + slayer helm
+		// + crystal body/legs maxes 36, not the 37 the reverse order gives).
+		if (isCrystalBow(loadout))
+		{
+			roll = multiply(roll, 20 + crystalArmourPieces(loadout), 20);
+		}
 		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
 			roll = multiply(roll, 6, 5);
@@ -518,10 +525,6 @@ public final class DpsCalculator
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			roll = multiply(roll, 23, 20);
-		}
-		if (isCrystalBow(loadout))
-		{
-			roll = multiply(roll, 20 + crystalArmourPieces(loadout), 20);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
@@ -541,6 +544,11 @@ public final class DpsCalculator
 
 	private int applyRangedDamageBonuses(OptimizationRequest request, Loadout loadout, int maxHit)
 	{
+		// Crystal scaling floors before salve/slayer - see accuracy note above.
+		if (isCrystalBow(loadout))
+		{
+			maxHit = multiply(maxHit, 40 + crystalArmourPieces(loadout), 40);
+		}
 		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
 			maxHit = multiply(maxHit, 6, 5);
@@ -552,10 +560,6 @@ public final class DpsCalculator
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			maxHit = multiply(maxHit, 23, 20);
-		}
-		if (isCrystalBow(loadout))
-		{
-			maxHit = multiply(maxHit, 40 + crystalArmourPieces(loadout), 40);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
@@ -778,25 +782,48 @@ public final class DpsCalculator
 
 	private static boolean isCrystalBow(Loadout loadout)
 	{
-		return wearing(loadout, "crystal bow") || wearing(loadout, "bow of faerdhinen");
+		return wearingActive(loadout, "crystal bow") || wearingActive(loadout, "bow of faerdhinen");
 	}
 
+	/**
+	 * Crystal armour boost weights for the crystal bow / bow of faerdhinen:
+	 * accuracy x(20+n)/20, damage x(40+n)/40 (helm 1, legs 2, body 3; full
+	 * set +30% accuracy, +15% damage). Inactive pieces share the item name
+	 * and differ only by version, so the check must be version-aware.
+	 */
 	private static int crystalArmourPieces(Loadout loadout)
 	{
 		int pieces = 0;
-		if (wearing(loadout, "crystal helm"))
+		if (wearingActive(loadout, "crystal helm"))
 		{
 			pieces += 1;
 		}
-		if (wearing(loadout, "crystal legs"))
+		if (wearingActive(loadout, "crystal legs"))
 		{
 			pieces += 2;
 		}
-		if (wearing(loadout, "crystal body"))
+		if (wearingActive(loadout, "crystal body"))
 		{
 			pieces += 3;
 		}
 		return pieces;
+	}
+
+	/** wearing(), but "Inactive" versions (uncharged crystal) never match. */
+	private static boolean wearingActive(Loadout loadout, String marker)
+	{
+		String needle = marker.toLowerCase(Locale.ROOT);
+		for (Map.Entry<GearSlot, GearItem> entry : loadout.getGear().entrySet())
+		{
+			GearItem item = entry.getValue();
+			if (item != null
+				&& item.getName().toLowerCase(Locale.ROOT).contains(needle)
+				&& !"inactive".equalsIgnoreCase(item.getVersion()))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static boolean isTzhaarWeapon(Loadout loadout)
