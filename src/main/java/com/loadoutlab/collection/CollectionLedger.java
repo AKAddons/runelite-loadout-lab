@@ -80,6 +80,15 @@ public class CollectionLedger
 		{
 			Map<Integer, Integer> loaded = null;
 			String json = configManager.getConfiguration(CONFIG_GROUP, key(s));
+			if (json == null || json.isEmpty())
+			{
+				// One-time adoption of pre-account-scoping data ("std.*"):
+				// a single-account install keeps its scanned bank when the
+				// scope key gains the account hash.
+				int dot = scope.indexOf('.');
+				String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
+				json = configManager.getConfiguration(CONFIG_GROUP, legacy);
+			}
 			if (json != null && !json.isEmpty())
 			{
 				try

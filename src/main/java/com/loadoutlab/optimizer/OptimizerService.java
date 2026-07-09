@@ -647,6 +647,15 @@ public class OptimizerService
 			+ l.getRanged() + "." + l.getMagic() + "." + l.getPrayer() + "." + l.getHitpoints();
 	}
 
+	/** Drop all cached results - account or profile switched. */
+	public void clearCache()
+	{
+		synchronized (cache)
+		{
+			cache.clear();
+		}
+	}
+
 	public void shutdown()
 	{
 		worker.shutdownNow();

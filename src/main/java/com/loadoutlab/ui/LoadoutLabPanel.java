@@ -728,6 +728,16 @@ public class LoadoutLabPanel extends PluginPanel
 			() -> statusLabel.setText(" "));
 	}
 
+	/** Account or profile switched: nothing on screen may survive. */
+	public void resetForIdentityChange()
+	{
+		bankShown = null;
+		bankFiltered = null;
+		lastResults = null;
+		clearSelection();
+		refreshExclusionsLabel();
+	}
+
 	private void clearSelection()
 	{
 		selectedMonster = null;

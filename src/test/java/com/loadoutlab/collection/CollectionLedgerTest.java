@@ -100,4 +100,26 @@ class CollectionLedgerTest
 		assertTrue(fresh.owned().isEmpty());
 		assertFalse(fresh.bankKnown());
 	}
+
+	@org.junit.jupiter.api.Test
+	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce()
+	{
+		com.google.gson.Gson gson = new com.google.gson.Gson();
+		CollectionLedger ledger = new CollectionLedger(configManager, gson);
+		// Legacy pre-account data saved under the bare world scope.
+		ledger.loadScope("std");
+		ledger.update(CollectionLedger.Source.BANK, java.util.Map.of(4151, 1));
+		// Account A adopts the legacy bank on first load...
+		ledger.loadScope("std.1111");
+		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(4151));
+		// ...and its own writes stay isolated from account B.
+		ledger.update(CollectionLedger.Source.BANK, java.util.Map.of(20997, 1));
+		ledger.loadScope("std.2222");
+		org.junit.jupiter.api.Assertions.assertFalse(ledger.owned().containsKey(20997));
+		// B still adopts the legacy whip, but never A's tbow.
+		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(4151));
+		// Back to A: the tbow is still there.
+		ledger.loadScope("std.1111");
+		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(20997));
+	}
 }

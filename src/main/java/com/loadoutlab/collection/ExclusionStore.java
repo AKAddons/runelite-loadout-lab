@@ -29,6 +29,12 @@ public class ExclusionStore
 		load();
 	}
 
+	/** Re-read from config - the active RuneLite profile may have changed. */
+	public synchronized void reload()
+	{
+		load();
+	}
+
 	private void load()
 	{
 		excluded.clear();

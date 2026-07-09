@@ -245,6 +245,56 @@ public class LoadoutLabPlugin extends Plugin
 	// Owned-gear collection (see CollectionLedger)
 	// ------------------------------------------------------------------
 
+	/** A different character logged in: nothing from the previous one may
+	 * survive - ledger scope, caches, snapshot, panel results, bank tools. */
+	@Subscribe
+	public void onAccountHashChanged(net.runelite.api.events.AccountHashChanged event)
+	{
+		resetForIdentityChange();
+	}
+
+	/** The RuneLite config profile changed: config-backed stores re-read. */
+	@Subscribe
+	public void onProfileChanged(net.runelite.client.events.ProfileChanged event)
+	{
+		if (exclusions != null)
+		{
+			exclusions.reload();
+		}
+		if (dreams != null)
+		{
+			dreams.reload();
+		}
+		resetForIdentityChange();
+	}
+
+	private void resetForIdentityChange()
+	{
+		if (ledger != null)
+		{
+			ledger.loadScope(worldScope());
+		}
+		requirementProfile = null;
+		realLevels = null;
+		boostedLevels = null;
+		prayerUnlocks = null;
+		canonicalOwnedCache = null;
+		bankHighlight = null;
+		bankFilter = null;
+		if (optimizerService != null)
+		{
+			optimizerService.clearCache();
+		}
+		dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.resetForIdentityChange();
+			}
+		});
+	}
+
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
@@ -502,9 +552,16 @@ public class LoadoutLabPlugin extends Plugin
 
 	// ------------------------------------------------------------------
 
+	/**
+	 * Persistence scope: world type PLUS the account hash - two accounts
+	 * on standard worlds must never share a scanned bank (field report:
+	 * switching characters showed the previous character's gear).
+	 */
 	private String worldScope()
 	{
-		return client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
+		String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
+		long account = client.getAccountHash();
+		return account == -1 ? world : world + "." + account;
 	}
 
 	/** True only when logged in to a non-members world - the F2P filter default. */
