@@ -181,14 +181,13 @@ public class LoadoutLabPanel extends PluginPanel
 	private CombatStyle bankFiltered;
 	/** Which style's set is currently glowing in the bank (null = none). */
 	private CombatStyle bankShown;
-	/** Upgrade budget dropdown values in gp; 0 = off. */
-	private static final long[] BUDGET_STEPS = {0, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000};
 	/** D-4: which frontier point to recommend per style. */
 	private final JComboBox<String> optimizeMode = new JComboBox<>(
 		new String[]{"Optimize: Max DPS", "Optimize: Balanced", "Optimize: Tanky"});
-	private final JComboBox<String> upgradeBudget = new JComboBox<>(
-		new String[]{"No upgrade budget", "Upgrades under 100k", "Upgrades under 1M",
-			"Upgrades under 10M", "Upgrades under 100M", "Upgrades under 1B"});
+	/** Free-form upgrade budget: "750k", "1m", "1.5b", plain gp, or "-"
+	 * for max. Empty or unparseable = off. */
+	private final JTextField upgradeBudget = new JTextField();
+	private int lastBudgetGp;
 	private final JLabel exclusionsLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
@@ -343,11 +342,26 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// Buyable upgrades within a total gp budget join the consideration
 		// pool (dream items are the manual version, via right-click).
-		upgradeBudget.setAlignmentX(LEFT_ALIGNMENT);
-		upgradeBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		upgradeBudget.setToolTipText("Also consider buyable gear - total spend within this budget");
-		upgradeBudget.addActionListener(e -> recompute());
-		top.add(upgradeBudget);
+		JPanel budgetRow = new JPanel(new BorderLayout(4, 0));
+		budgetRow.setOpaque(false);
+		budgetRow.setAlignmentX(LEFT_ALIGNMENT);
+		budgetRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		JLabel budgetLabel = new JLabel("Upgrade budget:");
+		budgetLabel.setForeground(new Color(200, 200, 200));
+		budgetLabel.setFont(budgetLabel.getFont().deriveFont(13f));
+		budgetRow.add(budgetLabel, BorderLayout.WEST);
+		upgradeBudget.setToolTipText("Buyable-gear budget: 750k, 1m, 1.5b, or - for max; empty = off");
+		upgradeBudget.addActionListener(e -> budgetEdited());
+		upgradeBudget.addFocusListener(new java.awt.event.FocusAdapter()
+		{
+			@Override
+			public void focusLost(java.awt.event.FocusEvent e)
+			{
+				budgetEdited();
+			}
+		});
+		budgetRow.add(upgradeBudget, BorderLayout.CENTER);
+		top.add(budgetRow);
 
 		// D-4: pick the offense/defense frontier point (sweep is slower).
 		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
@@ -587,6 +601,49 @@ public class LoadoutLabPanel extends PluginPanel
 		return RISK_STEPS[riskBudget.getSelectedIndex()];
 	}
 
+	/** Recompute only when the parsed budget actually changed. */
+	private void budgetEdited()
+	{
+		int parsed = parsedBudgetGp();
+		if (parsed != lastBudgetGp)
+		{
+			lastBudgetGp = parsed;
+			recompute();
+		}
+	}
+
+	/**
+	 * "750k" / "1m" / "2.5b" / "1000000" -> gp; "-" -> max (clamped to
+	 * 2b; the optimizer saturates cost sums); empty/junk -> 0 (off).
+	 */
+	private int parsedBudgetGp()
+	{
+		String raw = upgradeBudget.getText() == null ? "" : upgradeBudget.getText().trim().toLowerCase();
+		if (raw.isEmpty())
+		{
+			return 0;
+		}
+		if (raw.equals("-") || raw.equals("max"))
+		{
+			return 2_000_000_000;
+		}
+		double multiplier = 1;
+		if (raw.endsWith("k") || raw.endsWith("m") || raw.endsWith("b"))
+		{
+			multiplier = raw.endsWith("k") ? 1_000 : raw.endsWith("m") ? 1_000_000 : 1_000_000_000;
+			raw = raw.substring(0, raw.length() - 1);
+		}
+		try
+		{
+			double value = Double.parseDouble(raw) * multiplier;
+			return (int) Math.max(0, Math.min(value, 2_000_000_000));
+		}
+		catch (NumberFormatException ex)
+		{
+			return 0;
+		}
+	}
+
 	private String spellbookLock()
 	{
 		int index = spellbook.getSelectedIndex();
@@ -723,7 +780,7 @@ public class LoadoutLabPanel extends PluginPanel
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
 			spellbookLock(), riskCap(), selectedRiskBudget(),
 			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
-			(int) BUDGET_STEPS[upgradeBudget.getSelectedIndex()],
+			parsedBudgetGp(),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
 			() -> statusLabel.setText(" "));
 	}

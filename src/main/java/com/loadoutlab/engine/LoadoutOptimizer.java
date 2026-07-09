@@ -293,7 +293,9 @@ public final class LoadoutOptimizer
 				{
 					for (GearItem item : candidates)
 					{
-						int cost = state.cost + budgetCost(request, item);
+						// Saturating: a "max" budget plus a full endgame set
+						// can push an int sum past overflow.
+						int cost = (int) Math.min((long) state.cost + budgetCost(request, item), Integer.MAX_VALUE);
 						if (!withinBudget(request, cost))
 						{
 							continue;
