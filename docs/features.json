@@ -6,7 +6,6 @@
       "title": "Best owned set per style",
       "group": "Owned-gear optimizer",
       "anchor": "best-owned-set-per-style",
-      "media": "docs/img/owned-bis.png",
       "code": [
         "optimizer/OptimizerService.java",
         "engine/LoadoutOptimizer.java",
@@ -19,7 +18,7 @@
         "engine/LoadoutOptimizerTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Vorkath searched, three style cards populated; frame the melee card showing set, DPS, max hit, accuracy. Single PNG screenshot."
+      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots."
     },
     {
       "id": "game-best",
