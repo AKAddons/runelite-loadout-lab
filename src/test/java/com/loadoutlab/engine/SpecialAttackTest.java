@@ -132,4 +132,167 @@ public class SpecialAttackTest
 		Assert.assertNull(SpecialAttack.match(byName("Dark bow"), CombatStyle.MELEE));
 		Assert.assertNull(SpecialAttack.match(byName("Abyssal whip"), CombatStyle.MELEE));
 	}
+
+	/**
+	 * Fabricated result with hand-picked rolls. normalAccuracy gives
+	 * exact hit chances for these: (1_000_000_000, 1) is ~1,
+	 * (1, 0) is exactly 0.5, (0, 1) is exactly 0.
+	 */
+	private static DpsResult fabricated(GearItem weapon, int maxHit, long attackRoll, long defenceRoll)
+	{
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		gear.put(GearSlot.WEAPON, weapon);
+		return new DpsResult(new Loadout(gear), 0, 0, 0, maxHit, 4, "melee: slash",
+			attackRoll, defenceRoll);
+	}
+
+	@Test
+	public void sunspearSpecDealsExactlySeventyPercentOfMaxOnAHit()
+	{
+		GearItem sunspear = byName("Sunspear");
+		SpecialAttack spec = SpecialAttack.match(sunspear, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		Assert.assertEquals(SpecialAttack.Kind.FIXED_FRACTION, spec.getKind());
+		// Guaranteed accuracy: a hit is always exactly 70% of max, no damage roll.
+		Assert.assertEquals(0.70 * 40,
+			spec.expectedDamage(fabricated(sunspear, 40, 1_000_000_000L, 1L), null, PlayerLevels.MAXED), 1e-5);
+		// Exactly half the hits land: half of 70% of max.
+		Assert.assertEquals(0.35 * 40,
+			spec.expectedDamage(fabricated(sunspear, 40, 1L, 0L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void crimsonKistenLandsAllFourRollsAtGuaranteedAccuracyForOneAndAHalfMax()
+	{
+		GearItem kisten = byName("Crimson kisten");
+		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		Assert.assertEquals(SpecialAttack.Kind.MULTI_ROLL_TIERED, spec.getKind());
+		// k = 4 tier: uniform 130-170% of max, mean (0.7 + 0.8) * max.
+		Assert.assertEquals(1.5 * 40,
+			spec.expectedDamage(fabricated(kisten, 40, 1_000_000_000L, 1L), null, PlayerLevels.MAXED), 1e-5);
+	}
+
+	@Test
+	public void crimsonKistenDealsNothingWhenEveryRollMisses()
+	{
+		GearItem kisten = byName("Crimson kisten");
+		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		Assert.assertEquals(0.0,
+			spec.expectedDamage(fabricated(kisten, 40, 0L, 1L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void crimsonKistenMidAccuracyMatchesTheBinomialClosedForm()
+	{
+		GearItem kisten = byName("Crimson kisten");
+		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		// p = 0.5 exactly: sum over k of C(4,k) p^k (1-p)^(4-k) (0.7 + 0.2k) max
+		// = (4*0.9 + 6*1.1 + 4*1.3 + 1*1.5) / 16 * max = 16.9 / 16 * max.
+		Assert.assertEquals(16.9 / 16.0 * 40,
+			spec.expectedDamage(fabricated(kisten, 40, 1L, 0L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void burningClawsFirstCascadeTierAveragesFiveQuartersOfMaxAtGuaranteedAccuracy()
+	{
+		GearItem claws = byName("Burning claws");
+		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		Assert.assertEquals(SpecialAttack.Kind.CASCADE_CLAWS, spec.getKind());
+		Assert.assertEquals(1.25 * 40,
+			spec.expectedDamage(fabricated(claws, 40, 1_000_000_000L, 1L), null, PlayerLevels.MAXED), 1e-5);
+	}
+
+	@Test
+	public void burningClawsFullMissStillAveragesOnePointTwo()
+	{
+		GearItem claws = byName("Burning claws");
+		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		// All three rolls miss: 20% 0 / 40% 1 / 40% 2 = 1.2 expected.
+		Assert.assertEquals(1.2,
+			spec.expectedDamage(fabricated(claws, 40, 0L, 1L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void burningClawsMidAccuracyMatchesTheCascadeClosedForm()
+	{
+		GearItem claws = byName("Burning claws");
+		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
+		Assert.assertNotNull(spec);
+		// p = 0.5 exactly: 0.5*1.25*40 + 0.25*1.0*40 + 0.125*0.75*40 + 0.125*1.2.
+		Assert.assertEquals(0.5 * 1.25 * 40 + 0.25 * 40 + 0.125 * 0.75 * 40 + 0.125 * 1.2,
+			spec.expectedDamage(fabricated(claws, 40, 1L, 0L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void newAuditSpecWeaponsResolveFromTheRegistry()
+	{
+		SpecialAttack zgs = SpecialAttack.match(byName("Zamorak godsword"), CombatStyle.MELEE);
+		Assert.assertNotNull(zgs);
+		Assert.assertEquals("Zamorak godsword", zgs.getDisplayName());
+		Assert.assertEquals(SpecialAttack.Kind.SINGLE, zgs.getKind());
+		Assert.assertEquals(50, zgs.getEnergyCost());
+
+		SpecialAttack sunspear = SpecialAttack.match(byName("Sunspear"), CombatStyle.MELEE);
+		Assert.assertNotNull(sunspear);
+		Assert.assertEquals("Sunspear", sunspear.getDisplayName());
+		Assert.assertEquals(50, sunspear.getEnergyCost());
+
+		SpecialAttack kisten = SpecialAttack.match(byName("Crimson kisten"), CombatStyle.MELEE);
+		Assert.assertNotNull(kisten);
+		Assert.assertEquals("Crimson kisten", kisten.getDisplayName());
+		Assert.assertEquals(50, kisten.getEnergyCost());
+
+		SpecialAttack burningClaws = SpecialAttack.match(byName("Burning claws"), CombatStyle.MELEE);
+		Assert.assertNotNull(burningClaws);
+		Assert.assertEquals("Burning claws", burningClaws.getDisplayName());
+		Assert.assertEquals(30, burningClaws.getEnergyCost());
+	}
+
+	@Test
+	public void ornateGraniteMaulSpecCostsFiftyWhileThePlainMaulCostsSixty()
+	{
+		SpecialAttack ornate = SpecialAttack.match(byName("Granite maul (ornate handle)"), CombatStyle.MELEE);
+		SpecialAttack plain = SpecialAttack.match(byName("Granite maul"), CombatStyle.MELEE);
+		Assert.assertNotNull(ornate);
+		Assert.assertNotNull(plain);
+		Assert.assertEquals(SpecialAttack.Kind.EXTRA_ATTACK, ornate.getKind());
+		Assert.assertEquals(SpecialAttack.Kind.EXTRA_ATTACK, plain.getKind());
+		Assert.assertEquals(50, ornate.getEnergyCost());
+		Assert.assertEquals(60, plain.getEnergyCost());
+	}
+
+	@Test
+	public void accursedSceptreSpecBoostsDamageByHalf()
+	{
+		GearItem sceptre = byName("Accursed sceptre");
+		SpecialAttack spec = SpecialAttack.match(sceptre, CombatStyle.MAGIC);
+		Assert.assertNotNull(spec);
+		// Rolls (2, 0) with the 1.5x accuracy boost give attack roll 3:
+		// hit chance 1 - 2/8 = 0.75 exactly; damage rolls 0..(1.5 * 40).
+		Assert.assertEquals(0.75 * ((int) (40 * 1.5)) / 2.0,
+			spec.expectedDamage(fabricated(sceptre, 40, 2L, 0L), null, PlayerLevels.MAXED), 1e-9);
+	}
+
+	@Test
+	public void volatileSpellMaxMatchesTheWikiAnchorsAtEightyFourAndNinetyNineMagic()
+	{
+		GearItem staff = byName("Volatile nightmare staff");
+		SpecialAttack spec = SpecialAttack.match(staff, CombatStyle.MAGIC);
+		Assert.assertNotNull(spec);
+		DpsResult sureHit = fabricated(staff, 30, 1_000_000_000L, 1L);
+		// Level 84: spell max min(floor(58*84/99) + 1, 58) = 50; the staff's
+		// 15% magic damage takes it to 57. Expected = mean = 28.5.
+		PlayerLevels magic84 = new PlayerLevels(99, 99, 99, 99, 84, 99, 99);
+		Assert.assertEquals(57 / 2.0, spec.expectedDamage(sureHit, null, magic84), 1e-4);
+		// Level 99: spell max caps at 58; 15% gear takes it to 66. Mean 33.
+		Assert.assertEquals(66 / 2.0, spec.expectedDamage(sureHit, null, PlayerLevels.MAXED), 1e-4);
+		// A boosted 98 already hits the 58 cap.
+		PlayerLevels magic98 = new PlayerLevels(99, 99, 99, 99, 98, 99, 99);
+		Assert.assertEquals(66 / 2.0, spec.expectedDamage(sureHit, null, magic98), 1e-4);
+	}
 }

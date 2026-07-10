@@ -43,6 +43,12 @@ public final class SpecialAttack
 		EXTRA_ATTACK,
 		/** Level-scaled unique damage roll (volatile nightmare staff). */
 		VOLATILE,
+		/** One accuracy roll; a hit deals EXACTLY damageMultiplier * max, no damage roll (sunspear). */
+		FIXED_FRACTION,
+		/** Four independent accuracy rolls; damage tier scales with successes (crimson kisten). */
+		MULTI_ROLL_TIERED,
+		/** Claws-style cascade with tier means 1.25/1.00/0.75 of max (burning claws). */
+		CASCADE_CLAWS,
 	}
 
 	private static final int DARK_BOW_CAP = 48;
@@ -106,10 +112,35 @@ public final class SpecialAttack
 			Kind.SINGLE, 50, 1.0, 1.50, "lowers Defence 30% on a damaging hit", 0.30, false),
 		new SpecialAttack(p("elder maul"), "Elder maul", CombatStyle.MELEE,
 			Kind.SINGLE, 50, 1.25, 1.0, "lowers Defence 35% on a damaging hit", 0.35, false),
+		new SpecialAttack(p("dragon mace"), "Dragon mace", CombatStyle.MELEE,
+			Kind.SINGLE, 25, 1.25, 1.50, "Shatter: rolls against the target's crush defence"),
+		// "granite maul (or" (ornate handle) is more specific: it must come first.
+		new SpecialAttack(p("granite maul (or"), "Granite maul", CombatStyle.MELEE,
+			Kind.EXTRA_ATTACK, 50, 1.0, 1.0, "instant extra attack"),
 		new SpecialAttack(p("granite maul"), "Granite maul", CombatStyle.MELEE,
 			Kind.EXTRA_ATTACK, 60, 1.0, 1.0, "instant extra attack"),
 		new SpecialAttack(p("crystal halberd", "dragon halberd"), "Halberd sweep", CombatStyle.MELEE,
 			Kind.HALBERD_SWEEP, 30, 1.0, 1.10, "second hit only vs large (2x2+) monsters"),
+		new SpecialAttack(p("sunspear"), "Sunspear", CombatStyle.MELEE,
+			Kind.FIXED_FRACTION, 50, 1.0, 0.70, "Seeking Lunge: always exactly 70% of max on a hit"),
+		new SpecialAttack(p("crimson kisten"), "Crimson kisten", CombatStyle.MELEE,
+			Kind.MULTI_ROLL_TIERED, 50, 1.0, 1.0, "Brutal Swing: four rolls; damage tier scales with hits landed; rolls crush defence"),
+		new SpecialAttack(p("burning claws"), "Burning claws", CombatStyle.MELEE,
+			Kind.CASCADE_CLAWS, 30, 1.0, 1.0, "plus a burn (10 per stack) not counted here"),
+		new SpecialAttack(p("zamorak godsword"), "Zamorak godsword", CombatStyle.MELEE,
+			Kind.SINGLE, 50, 2.0, 1.10, "freezes the target for 20 seconds"),
+		new SpecialAttack(p("arkan blade"), "Arkan blade", CombatStyle.MELEE,
+			Kind.SINGLE, 30, 1.5, 1.50, "plus a 10 damage burn over 24s, not counted here"),
+		new SpecialAttack(p("ursine chainmace"), "Ursine chainmace", CombatStyle.MELEE,
+			Kind.SINGLE, 50, 2.0, 1.0, "wilderness weapon; damage-over-time rider not counted"),
+		new SpecialAttack(p("dragon sword"), "Dragon sword", CombatStyle.MELEE,
+			Kind.SINGLE, 40, 1.25, 1.25, "ignores Protect from Melee"),
+		new SpecialAttack(p("dragon longsword"), "Dragon longsword", CombatStyle.MELEE,
+			Kind.SINGLE, 25, 1.0, 1.25, ""),
+		new SpecialAttack(p("saradomin sword"), "Saradomin sword", CombatStyle.MELEE,
+			Kind.SINGLE, 100, 1.0, 1.10, "plus 1-16 magic damage rolled separately, not counted"),
+		new SpecialAttack(p("bone dagger"), "Bone dagger", CombatStyle.MELEE,
+			Kind.SINGLE, 75, 1.0, 1.0, "drains Defence by damage dealt", 0, true),
 		// Ranged
 		new SpecialAttack(p("dark bow"), "Dark bow", CombatStyle.RANGED,
 			Kind.DARK_BOW, 55, 1.0, 1.30, "with dragon arrows: +50% damage, min 8 per hit"),
@@ -123,11 +154,23 @@ public final class SpecialAttack
 			Kind.SINGLE, 50, 2.0, 1.50, "heals 50% of damage dealt"),
 		new SpecialAttack(p("zaryte crossbow"), "Zaryte crossbow", CombatStyle.RANGED,
 			Kind.SINGLE, 75, 2.0, 1.0, "guaranteed bolt proc on hit (proc damage not modeled)"),
+		new SpecialAttack(p("armadyl crossbow"), "Armadyl crossbow", CombatStyle.RANGED,
+			Kind.SINGLE, 50, 2.0, 1.0, "doubles enchanted bolt proc chance, not modeled"),
+		new SpecialAttack(p("rosewood blowpipe"), "Rosewood blowpipe", CombatStyle.RANGED,
+			Kind.DOUBLE_INDEPENDENT, 25, 0.8, 1.10, ""),
+		new SpecialAttack(p("dragon crossbow"), "Dragon crossbow", CombatStyle.RANGED,
+			Kind.SINGLE, 60, 1.0, 1.20, ""),
+		new SpecialAttack(p("heavy ballista", "light ballista"), "Ballista", CombatStyle.RANGED,
+			Kind.SINGLE, 65, 1.25, 1.25, "fires 2.4s slower than normal"),
+		new SpecialAttack(p("dorgeshuun crossbow"), "Dorgeshuun crossbow", CombatStyle.RANGED,
+			Kind.SINGLE, 75, 1.0, 1.0, "drains Defence by damage dealt", 0, true),
 		// Magic
 		new SpecialAttack(p("volatile nightmare staff"), "Volatile nightmare staff", CombatStyle.MAGIC,
 			Kind.VOLATILE, 55, 1.5, 1.0, "rune-free; damage scales with Magic level"),
 		new SpecialAttack(p("accursed sceptre"), "Accursed sceptre", CombatStyle.MAGIC,
-			Kind.SINGLE, 50, 1.5, 1.0, "lowers target Defence and Magic 15%"));
+			Kind.SINGLE, 50, 1.5, 1.5, "lowers target Defence and Magic 15%"),
+		new SpecialAttack(p("eye of ayak"), "Eye of ayak", CombatStyle.MAGIC,
+			Kind.SINGLE, 50, 2.0, 1.30, "drains magic defence bonus by damage dealt, not modeled"));
 
 	private static String[] p(String... prefixes)
 	{
@@ -201,6 +244,13 @@ public final class SpecialAttack
 			}
 			case EXTRA_ATTACK:
 				return base.getExpectedHit();
+			case FIXED_FRACTION:
+				// No damage roll: a hit deals exactly damageMultiplier * max.
+				return hitChance * damageMultiplier * max;
+			case MULTI_ROLL_TIERED:
+				return multiRollTieredExpected(hitChance, max);
+			case CASCADE_CLAWS:
+				return cascadeClawsExpected(hitChance, max);
 			case VOLATILE:
 			default:
 				return hitChance * mean(volatileMax(base, levels));
@@ -221,6 +271,39 @@ public final class SpecialAttack
 			+ miss * miss * p * max
 			+ miss * miss * miss * p * (0.75 * max)
 			+ Math.pow(miss, 4) * 1.0;
+	}
+
+	/**
+	 * Crimson kisten Brutal Swing: four independent accuracy rolls; with
+	 * k >= 1 successes damage is uniform in [(50+20k)%, (90+20k)%] of max
+	 * (mean (0.7 + 0.2k) * max); zero successes deal nothing.
+	 */
+	private static double multiRollTieredExpected(double p, int max)
+	{
+		// Binomial coefficients C(4, k) for k = 0..4.
+		final int[] choose = {1, 4, 6, 4, 1};
+		double expected = 0;
+		for (int k = 1; k <= 4; k++)
+		{
+			expected += choose[k] * Math.pow(p, k) * Math.pow(1 - p, 4 - k)
+				* (0.7 + 0.2 * k) * max;
+		}
+		return expected;
+	}
+
+	/**
+	 * Burning claws cascade: the first successful roll (of up to three)
+	 * sets the tier - uniform damage with means 1.25/1.00/0.75 of max; a
+	 * full miss deals 0/1/2 with 20/40/40% odds (expected 1.2). The burn
+	 * damage-over-time is described in the note, not counted here.
+	 */
+	private static double cascadeClawsExpected(double p, int max)
+	{
+		double miss = 1 - p;
+		return p * (1.25 * max)
+			+ miss * p * (1.00 * max)
+			+ miss * miss * p * (0.75 * max)
+			+ miss * miss * miss * 1.2;
 	}
 
 	/** Dark bow: two hits, each rolled 0..boostedMax then clamped [min, 48]. */
@@ -254,14 +337,16 @@ public final class SpecialAttack
 	}
 
 	/**
-	 * Volatile spec max: ~58 at 99 Magic before gear, scaled by the
-	 * loadout's magic damage bonus (tenths of a percent). Level scaling
-	 * approximated linearly - wiki gives 49 at 82 through 97 fully geared.
+	 * Volatile spec max: spell max is min(floor(58 * level / 99) + 1, 58)
+	 * - 58 from level 98 up - then the loadout's magic damage bonus
+	 * (tenths of a percent) scales it. Wiki anchors: level 84 gives spell
+	 * max 50 (57 with the staff's 15% bonus); level 99 gives 58 (66).
 	 */
 	private static int volatileMax(DpsResult base, PlayerLevels levels)
 	{
+		int spellMax = Math.min((int) Math.floor(58.0 * levels.getMagic() / 99.0) + 1, 58);
 		double gearBonus = 1 + base.getLoadout().getBonuses().getMagicDamage() / 1000.0;
-		return (int) Math.floor(levels.getMagic() * 58.0 / 99.0 * gearBonus);
+		return (int) Math.floor(spellMax * gearBonus);
 	}
 
 	private static double mean(int maxHit)

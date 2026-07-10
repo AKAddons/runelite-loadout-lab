@@ -170,3 +170,23 @@ per-boss defensive thresholds. Phased:
   note ("Balanced: -7% less dps for -34% less damage taken").
   Remaining: D-3 explicit stat thresholds (subsumed for most uses by
   the modes), per-boss threshold derivation from the knees.
+
+## Spec registry follow-ups (deferred, from the 2026-07 wiki audit)
+
+Weapons the audit surfaced that need engine work beyond a registry row:
+
+- Osmumten's fang Eviscerate - needs true-max recovery (the fang's normal
+  attack already reshapes the damage roll; the spec math needs the
+  unmodified max back).
+- Tonalztics of ralos + Arclight/Emberlight - need new drain modes
+  (flat/percentage stat drains that aren't defence-by-damage or
+  defence-by-fraction).
+- Dinh's bulwark - hit linkage unverified (single vs multi-target rolls).
+- Dual macuahuitl - blood moon set gate; spec depends on worn set pieces.
+- Eldritch nightmare staff - damage formula unconfirmed against the wiki.
+- Webweaver bow - needs an N-hit kind (four hits at reduced max).
+- Granite hammer - flat +5 damage rider on the spec hit.
+- Dragon hasta - energy-scaled accuracy/damage (spends 5% per boost step).
+- Soulreaper axe - stack-based (spec power scales with built-up stacks).
+- Magic longbow Powershot - guaranteed-hit normal roll (accuracy skipped,
+  normal damage roll).
