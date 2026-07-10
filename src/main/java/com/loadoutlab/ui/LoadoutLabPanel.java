@@ -73,6 +73,7 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.ImageUtil;
 
 /**
@@ -143,6 +144,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final int SEARCH_DEBOUNCE_MS = 150;
 	private static final int SEARCH_LIMIT = 25;
 	private static final int ICON_SIZE = 32;
+	/** Discord invite for the plugin's community; opened from the header. */
+	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
 	/** Grid display order: weapon beside shield, body beside legs. */
 	private static final GearSlot[] GRID_ORDER = {
 		GearSlot.HEAD, GearSlot.CAPE, GearSlot.NECK, GearSlot.AMMO,
@@ -253,8 +256,27 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel title = new JLabel("Loadout Lab");
 		title.setForeground(Color.WHITE);
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
-		title.setAlignmentX(LEFT_ALIGNMENT);
-		top.add(title);
+
+		// Header row: title left, an "Options" menu right (Discord, and
+		// future plugin-wide actions) - mirrors the Goal Planner header.
+		JPanel header = new JPanel(new BorderLayout());
+		header.setOpaque(false);
+		header.setAlignmentX(LEFT_ALIGNMENT);
+		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+		header.add(title, BorderLayout.WEST);
+		JButton optionsButton = new JButton(new DotsIcon(13));
+		optionsButton.setToolTipText("Options");
+		optionsButton.setMargin(new Insets(2, 6, 2, 6));
+		optionsButton.addActionListener(e ->
+		{
+			JPopupMenu menu = new JPopupMenu();
+			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
+			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
+			menu.add(joinDiscord);
+			menu.show(optionsButton, 0, optionsButton.getHeight());
+		});
+		header.add(optionsButton, BorderLayout.EAST);
+		top.add(header);
 		top.add(Box.createVerticalStrut(4));
 
 		searchField.setAlignmentX(LEFT_ALIGNMENT);
@@ -269,11 +291,19 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedLabel.setForeground(GOOD);
 		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
 		selectedRow.add(selectedLabel, BorderLayout.CENTER);
+		JButton reloadButton = new JButton(new ReloadIcon(12));
+		reloadButton.setMargin(new Insets(0, 6, 0, 6));
+		reloadButton.setToolTipText("Re-run the search for this monster");
+		reloadButton.addActionListener(e -> recompute());
 		JButton clearSelection = new JButton("x");
 		clearSelection.setMargin(new Insets(0, 6, 0, 6));
 		clearSelection.setToolTipText("Choose a different monster");
 		clearSelection.addActionListener(e -> clearSelection());
-		selectedRow.add(clearSelection, BorderLayout.EAST);
+		JPanel selectedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+		selectedButtons.setOpaque(false);
+		selectedButtons.add(reloadButton);
+		selectedButtons.add(clearSelection);
+		selectedRow.add(selectedButtons, BorderLayout.EAST);
 		selectedRow.setVisible(false);
 		top.add(selectedRow);
 
@@ -350,7 +380,7 @@ public class LoadoutLabPanel extends PluginPanel
 		budgetLabel.setForeground(new Color(200, 200, 200));
 		budgetLabel.setFont(budgetLabel.getFont().deriveFont(13f));
 		budgetRow.add(budgetLabel, BorderLayout.WEST);
-		upgradeBudget.setToolTipText("Buyable-gear budget: 750k, 1m, 1.5b, or - for max; empty = off");
+		upgradeBudget.setToolTipText("Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited; empty = 0 (owned gear only, default)");
 		upgradeBudget.addActionListener(e -> budgetEdited());
 		upgradeBudget.addFocusListener(new java.awt.event.FocusAdapter()
 		{
@@ -753,6 +783,125 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		Integer dartId = BlowpipeDarts.baseIdForTierName(type.substring(idx + 3));
 		return dartId == null ? null : data.getGear(dartId);
+	}
+
+	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
+	private static final class DotsIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		DotsIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(c.getForeground());
+			double r = Math.max(1.2, size / 9.0);
+			double cy = y + size / 2.0;
+			for (int i = 0; i < 3; i++)
+			{
+				double cx = x + size * (0.22 + 0.28 * i);
+				g2.fill(new java.awt.geom.Ellipse2D.Double(cx - r, cy - r, 2 * r, 2 * r));
+			}
+			g2.dispose();
+		}
+	}
+
+	/**
+	 * Refresh glyph (circular arrow) painted as a ShapeIcon - the Unicode
+	 * reload symbols tofu in Swing on macOS Tahoe, so we draw it. Inherits
+	 * the host button's foreground colour.
+	 */
+	private static final class ReloadIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		ReloadIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.translate(x, y);
+			g2.setColor(c.getForeground());
+			double cx = size / 2.0;
+			double cy = size / 2.0;
+			double r = size / 2.0 - 2.0;
+			// 0 deg points up, sweeps clockwise; a gap is left for the head.
+			double startDeg = 50;
+			double sweepDeg = 265;
+			java.awt.geom.Path2D.Double arc = new java.awt.geom.Path2D.Double();
+			int steps = 48;
+			for (int i = 0; i <= steps; i++)
+			{
+				double a = Math.toRadians(startDeg + sweepDeg * i / steps);
+				double px = cx + r * Math.sin(a);
+				double py = cy - r * Math.cos(a);
+				if (i == 0)
+				{
+					arc.moveTo(px, py);
+				}
+				else
+				{
+					arc.lineTo(px, py);
+				}
+			}
+			g2.setStroke(new BasicStroke(Math.max(1.4f, size / 9f),
+				BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			g2.draw(arc);
+			// Arrowhead at the swept end, pointing along the clockwise tangent.
+			double aEnd = Math.toRadians(startDeg + sweepDeg);
+			double ex = cx + r * Math.sin(aEnd);
+			double ey = cy - r * Math.cos(aEnd);
+			double tx = Math.cos(aEnd);
+			double ty = Math.sin(aEnd);
+			double nx = -ty;
+			double ny = tx;
+			double h = size * 0.32;
+			double w = size * 0.22;
+			java.awt.geom.Path2D.Double head = new java.awt.geom.Path2D.Double();
+			head.moveTo(ex + tx * h, ey + ty * h);
+			head.lineTo(ex - tx * h * 0.2 + nx * w, ey - ty * h * 0.2 + ny * w);
+			head.lineTo(ex - tx * h * 0.2 - nx * w, ey - ty * h * 0.2 - ny * w);
+			head.closePath();
+			g2.fill(head);
+			g2.dispose();
+		}
 	}
 
 	private void recompute()
