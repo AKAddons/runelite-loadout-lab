@@ -1,150 +1,156 @@
 #!/usr/bin/env python3
-"""Render the AKAddons monogram avatar: a serif "AK" whose terminals
-bloom into comets - a bright head with a tapering gold tail streaking
-outward - over a cosmic gradient and starfield. 512x512 PNG, pure
-stdlib (zlib writer + analytic distance/glow/comet math), no deps.
+"""Generate the AKAddons brand mark: a blue-enamel engraved "AK" (Big Caslon,
+interlocked) on a brushed-steel plate stamped with a topographic-contour
+landscape and a cluster of meshing gears.
 
-    python3 scripts/generate_brand_icon.py [out.png]
+Writes a self-contained SVG page to ./akmetal.html; render it to PNG with
+headless Chrome (needs the macOS 'Big Caslon' font):
 
-Tunables: gradient (BG_*), palette (LETTER / COMET / STAR), the letter
-STROKES, and the COMET_TERMINALS the tails stream from.
+  python3 generate_brand_icon.py
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \\
+    --headless=new --force-device-scale-factor=2 --default-background-color=00000000 \\
+    --screenshot=akaddons.png --window-size=512,512 "file://$PWD/akmetal.html"
+
+Tunables: BUMPS (terrain peaks/basins), NLEVELS (contour density), GEARS
+(cog cluster), the engrave/steel filters, and the AK transforms in HTML.
 """
 import math
-import struct
-import sys
-import zlib
 
-SIZE = 512
-
-BG_INNER = (46, 40, 84)      # indigo core of the sky
-BG_OUTER = (10, 11, 26)      # deep navy at the edges
-LETTER = (250, 245, 232)     # warm cream letterforms
-COMET = (255, 214, 150)      # warm gold comet light
-STAR = (238, 242, 255)       # cool starfield
-STROKE = 18.0                # half-width of the letter strokes
-TAIL_LEN = 92.0              # comet tail length (px)
-
-Y_TOP, Y_BOT = 156.0, 356.0
-Y_MID = (Y_TOP + Y_BOT) / 2
-STROKES = [
-    (112, Y_BOT, 179, Y_TOP),   # A left leg
-    (179, Y_TOP, 246, Y_BOT),   # A right leg
-    (130, 304, 228, 304),       # A crossbar
-    (302, Y_TOP, 302, Y_BOT),   # K stem
-    (302, Y_MID, 402, Y_TOP),   # K upper arm
-    (302, Y_MID, 408, Y_BOT),   # K lower leg
-]
-
-# Terminals whose serifs become comets; tails stream radially outward.
-# Third value scales tail length - the upper terminals lead, baseline trails.
-COMET_TERMINALS = [
-    (112, Y_BOT, 0.78), (246, Y_BOT, 0.78), (179, Y_TOP, 1.4),
-    (302, Y_TOP, 1.4), (302, Y_BOT, 0.78), (402, Y_TOP, 1.4), (408, Y_BOT, 0.9),
-]
-CX, CY = 256.0, 256.0
+# Peaks (+) and basins (-) of the height field: (x, y, amplitude, sigma).
+BUMPS = [(150, 180, 1.0, 120), (382, 342, -0.9, 145), (300, 108, 0.62, 95),
+         (112, 412, 0.72, 110), (432, 150, -0.55, 100), (250, 300, 0.4, 80)]
+NLEVELS = 13
+# Meshing cogs: (cx, cy, r_tip, r_valley, teeth, hub_r)
+GEARS = [(176, 336, 94, 75, 14, 27), (322, 250, 66, 52, 10, 20),
+         (312, 402, 52, 40, 8, 16), (420, 348, 60, 47, 9, 18)]
 
 
-def _dirs():
+def gear_elements():
     out = []
-    for tx, ty, scale in COMET_TERMINALS:
-        dx, dy = tx - CX, ty - CY
-        n = math.hypot(dx, dy) or 1.0
-        out.append((tx, ty, dx / n, dy / n, TAIL_LEN * scale))
+    for cx, cy, ro, ri, teeth, hub in GEARS:
+        steps = teeth * 20
+        pts = []
+        for k in range(steps + 1):
+            th = 2 * math.pi * k / steps
+            frac = ((th * teeth) / (2 * math.pi)) % 1.0
+            if frac < 0.40:
+                r = ro
+            elif frac < 0.50:
+                r = ri + (ro - ri) * (0.50 - frac) / 0.10
+            elif frac < 0.90:
+                r = ri
+            else:
+                r = ri + (ro - ri) * (frac - 0.90) / 0.10
+            pts.append((cx + r * math.cos(th), cy + r * math.sin(th)))
+        out.append('<path d="M' + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + ' Z"/>')
+        out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{hub:.1f}"/>')
+        out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{hub * 0.42:.1f}"/>')
     return out
 
 
-COMETS = _dirs()
+def _height(x, y):
+    v = 0.35 * math.sin(x * 0.02 + 0.5) * math.cos(y * 0.018 - 0.3)
+    for bx, by, amp, sig in BUMPS:
+        v += amp * math.exp(-((x - bx) ** 2 + (y - by) ** 2) / (2 * sig * sig))
+    return v
 
 
-def seg_dist(px, py, ax, ay, bx, by):
-    dx, dy = bx - ax, by - ay
-    L2 = dx * dx + dy * dy
-    t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
-    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+def field_paths():
+    """Topographic contours of a height field via marching squares."""
+    x0, y0, h = -12.0, -12.0, 6.5
+    nx = int((536 - x0) / h) + 1
+    ny = int((536 - y0) / h) + 1
+    xs = [x0 + i * h for i in range(nx)]
+    ys = [y0 + j * h for j in range(ny)]
+    F = [[_height(xs[i], ys[j]) for j in range(ny)] for i in range(nx)]
+    lo = min(min(c) for c in F)
+    hi = max(max(c) for c in F)
+    levels = [lo + (hi - lo) * (k + 0.5) / NLEVELS for k in range(NLEVELS)]
+
+    def crs(pa, va, pb, vb, L):
+        t = (L - va) / (vb - va)
+        return (pa[0] + (pb[0] - pa[0]) * t, pa[1] + (pb[1] - pa[1]) * t)
+
+    d = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            p00, v00 = (xs[i], ys[j]), F[i][j]
+            p10, v10 = (xs[i + 1], ys[j]), F[i + 1][j]
+            p11, v11 = (xs[i + 1], ys[j + 1]), F[i + 1][j + 1]
+            p01, v01 = (xs[i], ys[j + 1]), F[i][j + 1]
+            for L in levels:
+                pts = []
+                if (v00 - L) * (v10 - L) < 0: pts.append(crs(p00, v00, p10, v10, L))
+                if (v10 - L) * (v11 - L) < 0: pts.append(crs(p10, v10, p11, v11, L))
+                if (v01 - L) * (v11 - L) < 0: pts.append(crs(p01, v01, p11, v11, L))
+                if (v00 - L) * (v01 - L) < 0: pts.append(crs(p00, v00, p01, v01, L))
+                if len(pts) == 2:
+                    d.append(f"M{pts[0][0]:.1f},{pts[0][1]:.1f}L{pts[1][0]:.1f},{pts[1][1]:.1f}")
+                elif len(pts) == 4:
+                    d.append(f"M{pts[0][0]:.1f},{pts[0][1]:.1f}L{pts[1][0]:.1f},{pts[1][1]:.1f}")
+                    d.append(f"M{pts[2][0]:.1f},{pts[2][1]:.1f}L{pts[3][0]:.1f},{pts[3][1]:.1f}")
+    return [f'<path d="{"".join(d)}"/>'] + gear_elements()
 
 
-def comet_value(px, py):
-    """Brightness [0,1+] of every comet head+tail at a pixel."""
-    total = 0.0
-    for hx, hy, dx, dy, tlen in COMETS:
-        vx, vy = px - hx, py - hy
-        d2 = vx * vx + vy * vy
-        tip = 1.6 * math.exp(-d2 / (2 * 3.4 ** 2))   # hot pinpoint at the serif
-        head = 0.7 * math.exp(-d2 / (2 * 7.0 ** 2))  # tight coma
-        along = vx * dx + vy * dy
-        tail = 0.0
-        if 0.0 < along < tlen:
-            perp = abs(vx * -dy + vy * dx)
-            frac = along / tlen
-            w = 1.8 + 5.0 * frac                     # narrow at head, flaring out
-            fall = (1.0 - frac) ** 2.2               # and fading to nothing
-            tail = 1.25 * fall * math.exp(-(perp * perp) / (2 * w * w))
-        total += tip + head + tail
-    return total
+PATHS = "\n      ".join(field_paths())
 
+HTML = f'''<div style="width:512px;height:512px">
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sheet" x1="0" y1="0" x2="0.15" y2="1">
+      <stop offset="0" stop-color="#c3c6cb"/><stop offset="0.45" stop-color="#a0a4aa"/>
+      <stop offset="0.55" stop-color="#969ba2"/><stop offset="1" stop-color="#7a7f85"/>
+    </linearGradient>
+    <g id="field" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      {PATHS}
+    </g>
+    <filter id="stampRough" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="9" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="roughen" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045 0.07" numOctaves="2" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="3.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="engrave" x="-25%" y="-25%" width="150%" height="150%">
+      <feFlood flood-color="#25599f" result="fc"/>
+      <feComposite in="fc" in2="SourceAlpha" operator="in" result="face"/>
+      <feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>
+      <feGaussianBlur in="inv" stdDeviation="1.9" result="invb"/>
+      <feOffset in="invb" dx="3" dy="3" result="sMask"/>
+      <feFlood flood-color="#0e1116" flood-opacity="0.92" result="sCol"/>
+      <feComposite in="sCol" in2="sMask" operator="in" result="s0"/>
+      <feComposite in="s0" in2="SourceAlpha" operator="in" result="innerShadow"/>
+      <feOffset in="invb" dx="-3" dy="-3" result="hMask"/>
+      <feFlood flood-color="#cfe2ff" flood-opacity="0.7" result="hCol"/>
+      <feComposite in="hCol" in2="hMask" operator="in" result="h0"/>
+      <feComposite in="h0" in2="SourceAlpha" operator="in" result="innerHi"/>
+      <feMerge><feMergeNode in="face"/><feMergeNode in="innerHi"/><feMergeNode in="innerShadow"/></feMerge>
+    </filter>
+    <filter id="brush"><feTurbulence type="fractalNoise" baseFrequency="0.004 0.55" numOctaves="2" seed="7"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="mottle"><feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="3" seed="21"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="4"/><feColorMatrix type="saturate" values="0"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#sheet)"/>
+  <rect width="512" height="512" filter="url(#mottle)" style="mix-blend-mode:overlay" opacity="0.6"/>
+  <rect width="512" height="512" filter="url(#brush)" style="mix-blend-mode:soft-light" opacity="0.85"/>
+  <g filter="url(#stampRough)">
+    <g color="#181c22" transform="translate(-0.8,-0.8)" opacity="0.5" style="mix-blend-mode:multiply"><use href="#field"/></g>
+    <g color="#ffffff" transform="translate(0.9,0.9)" opacity="0.6" style="mix-blend-mode:screen"><use href="#field"/></g>
+  </g>
+  <g filter="url(#engrave)">
+    <g filter="url(#roughen)">
+      <g transform="translate(6,-52)" font-family="'Big Caslon',serif" font-weight="700"
+         font-size="236" text-anchor="start" fill="#000">
+        <text x="64" y="300">A</text>
+        <text x="240" y="300" transform="translate(-85,172)">K</text>
+      </g>
+    </g>
+  </g>
+  <rect width="512" height="512" filter="url(#grain)" style="mix-blend-mode:overlay" opacity="0.55"/>
+</svg>
+</div>'''
 
-STARS = [(74, 96, 3.2), (255, 52, 2.4), (150, 116, 1.8), (466, 210, 2.6),
-         (56, 250, 2.0), (92, 420, 3.0), (446, 432, 2.4), (386, 300, 1.7),
-         (34, 168, 1.7), (488, 336, 1.7), (210, 470, 1.7), (330, 60, 1.6)]
-
-
-def star_value(px, py):
-    total = 0.0
-    for sx, sy, s in STARS:
-        dx, dy = px - sx, py - sy
-        total += math.exp(-(dx * dx + dy * dy) / (2 * (s * 0.6) ** 2))
-    return total
-
-
-def lerp(a, b, t):
-    return [a[i] + (b[i] - a[i]) * t for i in range(3)]
-
-
-def screen(base, add, amt):
-    return [min(255.0, base[i] + add[i] * amt) for i in range(3)]
-
-
-def render():
-    maxd = math.hypot(CX, CY)
-    rows = []
-    for y in range(SIZE):
-        row = bytearray()
-        py = y + 0.5
-        for x in range(SIZE):
-            px = x + 0.5
-            t = min(1.0, math.hypot(px - CX, py - CY) / maxd)
-            col = lerp(BG_INNER, BG_OUTER, t ** 1.3)
-            sv = star_value(px, py)
-            if sv > 0.0:
-                col = screen(col, STAR, min(1.0, sv))
-            cv = comet_value(px, py)
-            if cv > 0.0:
-                col = screen(col, COMET, min(1.0, cv))
-            d = min(seg_dist(px, py, *s) for s in STROKES) - STROKE
-            col = screen(col, COMET, math.exp(-max(0.0, d) / 13.0) * 0.18)
-            core = max(0.0, min(1.0, (0.0 - d) / 1.4 + 0.5))
-            col = lerp(col, LETTER, core)
-            row += bytes(int(round(max(0.0, min(255.0, c)))) for c in col) + b"\xff"
-        rows.append(row)
-    return rows
-
-
-def write_png(path, rows):
-    def chunk(tag, data):
-        return (struct.pack(">I", len(data)) + tag + data
-                + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff))
-    raw = bytearray()
-    for row in rows:
-        raw += b"\x00" + row
-    png = (b"\x89PNG\r\n\x1a\n"
-           + chunk(b"IHDR", struct.pack(">IIBBBBB", SIZE, SIZE, 8, 6, 0, 0, 0))
-           + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-           + chunk(b"IEND", b""))
-    with open(path, "wb") as f:
-        f.write(png)
-
-
-if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else "/tmp/akaddons-icon.png"
-    write_png(out, render())
-    print("wrote", out)
+with open("akmetal.html", "w") as f:
+    f.write(HTML)
+print("wrote akmetal.html")
