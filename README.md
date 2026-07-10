@@ -20,8 +20,9 @@ equipment.
 - **Incoming damage**: how hard the boss hits YOU in that set, with
   curated per-boss attack data (GWD, Zulrah, Vorkath, Cerberus, the
   wilderness ring, and more).
-- **Optimize modes**: Max DPS, Balanced (best damage-out per
-  damage-taken), or Tanky (least damage taken).
+- **Optimize modes**: Max DPS (maximize output), Balanced (maximize
+  dps-out^1.2 / dps-in - exact math in the feature guide), or Tanky
+  (minimize damage taken).
 - **Wilderness risk**: low-risk sets built around the items-kept-on-death
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates
@@ -77,9 +78,25 @@ a stat-identical analog) get a gold border.
 
 ### Optimize modes
 
-Choose Max DPS, Balanced (best damage-out per damage-taken), or Tanky
-(least damage taken). The mode note tells you the frontier trade the
-chosen set made.
+Exact definitions - `dps_out` is your damage per second into the monster;
+`dps_in` is the monster's expected damage per second into YOU wearing that
+set, at your real defence/magic levels with the best protection prayer up.
+
+- **Max DPS** - maximize `dps_out`. Incoming damage is ignored entirely.
+- **Tanky** - minimize `dps_in`, full stop. Ties go to the higher-dps set.
+- **Balanced** - maximize the ratio `dps_out^1.2 / dps_in`. The 1.2
+  exponent slightly favors output: a 10% dps gain is worth taking ~12%
+  more damage. Balanced considers the Max DPS and Tanky sets too, so its
+  ratio is always >= both by construction. Ties go to the higher-dps set.
+
+How the candidates are found: the optimizer re-runs its search five times
+with the beam scored as `dps_out - w * dps_in` for
+`w = a * dps_out0 / dps_in0`, `a` in `{0.3, 0.7, 1.5, 3.0, 10.0}` (scaled
+so the weights are comparable across monsters). That traces the
+(dps out, dps in) frontier from full glass-cannon to full turtle; each
+mode then picks its point off that frontier. The card's sword/shield note
+shows the trade the pick made vs the Max DPS set ("10%- / 56%+" = 10%
+less dps for 56% less damage taken).
 
 ![Optimize modes](docs/img/optimize-modes.png)
 
