@@ -164,6 +164,61 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
+	/**
+	 * In-world link-in: right-clicking an NPC the dataset knows adds a
+	 * "Search in Loadout Lab" entry. Client thread; the click marshals to
+	 * the EDT and reuses the same select-and-open path as onPluginMessage.
+	 */
+	@Subscribe
+	public void onMenuOpened(net.runelite.api.events.MenuOpened event)
+	{
+		if (data == null || panel == null || navButton == null)
+		{
+			return;
+		}
+		for (net.runelite.api.MenuEntry entry : event.getMenuEntries())
+		{
+			net.runelite.api.NPC npc = entry.getNpc();
+			if (npc == null || npc.getName() == null)
+			{
+				continue;
+			}
+			final String name = npc.getName();
+			final int id = npc.getId();
+			if (!knownMonster(name, id))
+			{
+				return; // an NPC menu, but not one we can compute for
+			}
+			client.createMenuEntry(1)
+				.setOption("Search in Loadout Lab")
+				.setTarget(entry.getTarget())
+				.setType(net.runelite.api.MenuAction.RUNELITE)
+				.onClick(e -> SwingUtilities.invokeLater(() ->
+				{
+					if (panel.selectExternal(name, id))
+					{
+						clientToolbar.openPanel(navButton);
+					}
+				}));
+			return; // one entry, even when several rows reference the NPC
+		}
+	}
+
+	/** Cheap client-thread gate: exact id or normalized-name match. */
+	private boolean knownMonster(String name, int id)
+	{
+		String normalized = name.toLowerCase().replaceAll("[^a-z0-9]", "");
+		for (com.loadoutlab.data.MonsterStats m : data.getMonsters())
+		{
+			if (m.getId() == id
+				|| m.getName().toLowerCase().replaceAll("[^a-z0-9]", "").equals(normalized))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	@Override
 	protected void startUp()
 	{

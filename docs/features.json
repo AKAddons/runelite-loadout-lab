@@ -217,7 +217,9 @@
         "ui/LinkInTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Goal Planner boss card right-click -> 'Search in Loadout Lab'. BLOCKED: the sender lives on goal-planner branch feature/loadout-lab-linkin (unmerged); screenshot after that ships. Single PNG."
+      "capture": "In-world right-click menu open on a known monster showing 'Search in Loadout Lab'. Single PNG screenshot.",
+      "media": "docs/img/link-in.png",
+      "notes": "onMenuOpened wiring is client-bound (no automated coverage) - verified in-client; the resolution+compute path it calls is covered by LinkInTest."
     },
     {
       "id": "owned-ledger",
