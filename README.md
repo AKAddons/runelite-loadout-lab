@@ -131,8 +131,9 @@ only them. Uses the core Bank Tags plugin.
 
 ### Search in Loadout Lab (cross-plugin)
 
-Right-click a monster and choose "Search in Loadout Lab" to open the panel
-and compute the best owned set for it.
+Other plugins can send a monster straight to Loadout Lab: the panel opens
+and computes the best owned set for it. Goal Planner's boss cards use this
+for a right-click "Search in Loadout Lab" (rolling out).
 
 ### Community Discord
 

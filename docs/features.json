@@ -209,7 +209,6 @@
       "title": "Search in Loadout Lab (cross-plugin)",
       "group": "Bank and integrations",
       "anchor": "search-in-loadout-lab-cross-plugin",
-      "media": "docs/img/link-in.png",
       "code": [
         "LoadoutLabPlugin.java",
         "ui/LoadoutLabPanel.java"
@@ -218,7 +217,7 @@
         "ui/LinkInTest.java"
       ],
       "since": "0.1.0",
-      "capture": "In-world right-click menu open on a monster showing 'Search in Loadout Lab'. Single PNG screenshot."
+      "capture": "Goal Planner boss card right-click -> 'Search in Loadout Lab'. BLOCKED: the sender lives on goal-planner branch feature/loadout-lab-linkin (unmerged); screenshot after that ships. Single PNG."
     },
     {
       "id": "owned-ledger",
