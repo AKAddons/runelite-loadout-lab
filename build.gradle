@@ -56,6 +56,12 @@ tasks.register('run', JavaExec) {
 	args "--developer-mode", "--debug"
 }
 
+tasks.register('checkDocs', Exec) {
+	group = 'verification'
+	description = 'Audit the feature registry against the README guide, media, and source tree.'
+	commandLine 'python3', 'scripts/check_docs.py'
+}
+
 tasks.register('checkTokens', Exec) {
 	group = 'verification'
 	description = 'Plugin Hub 200k-token source-size gate.'
@@ -70,8 +76,8 @@ tasks.register('checkGlyphs', Exec) {
 
 tasks.register('preSubmit') {
 	group = 'verification'
-	description = 'Pre-submission checks for a Plugin Hub update (test + checkTokens + checkGlyphs).'
-	dependsOn 'test', 'checkTokens', 'checkGlyphs'
+	description = 'Pre-submission checks for a Plugin Hub update (test + checkDocs + checkTokens + checkGlyphs).'
+	dependsOn 'test', 'checkDocs', 'checkTokens', 'checkGlyphs'
 }
 
 // Optimizer wall-clock benchmark over a fixed monster/mode/risk matrix

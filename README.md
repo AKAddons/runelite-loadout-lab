@@ -54,3 +54,87 @@ search history). Nothing is ever sent anywhere.
 BSD 2-Clause. DPS engine derived from
 [best-dps](https://github.com/guccifurs/best-dps) (BSD-2-Clause);
 monster and gear data from the OSRS Wiki.
+
+# Feature guide
+
+One section per user-facing feature. Each heading below is mirrored in
+`docs/features.json`; `./gradlew checkDocs` audits the two against the
+source tree and flags drift or missing screenshots.
+
+### Best owned set per style
+
+Pick a monster and Loadout Lab computes the strongest set you actually
+OWN for melee, ranged, and magic - with exact DPS, max hit, and accuracy,
+verified against the official wiki calculator.
+
+### Game-best ceiling comparison
+
+Every style card can show the true best-in-slot ceiling set beside yours,
+so you see how close your kit is. Slots where you already own the best (or
+a stat-identical analog) get a gold border.
+
+### Optimize modes
+
+Choose Max DPS, Balanced (best damage-out per damage-taken), or Tanky
+(least damage taken). The mode note tells you the frontier trade the
+chosen set made.
+
+### Owned-gear ledger (profile-aware)
+
+Your owned gear is learned from your bank, inventory, and equipment as you
+play, and remembered per account so suggestions always reflect what THIS
+character actually has.
+
+### Incoming damage and protection prayer
+
+See how hard the boss hits YOU in the chosen set, from curated per-boss
+attack data, plus which protection prayer to use - including bosses whose
+attacks partially pierce prayer.
+
+### Spell and spellbook recommendation
+
+On the magic card, Loadout Lab shows the spell to autocast. Lock the
+spellbook to your setup and the suggested spell and set adjust to match.
+
+### Dream items
+
+Right-click any suggestion you do not own ("what if I had a tbow?") to
+highlight it as an aspirational pick and see the set it would build.
+
+### Upgrade budget
+
+Enter a gp budget and Loadout Lab suggests buyable upgrades within it; use
+"-" for the unlimited ceiling. Quest rewards join for free with their
+source quest named.
+
+### Wilderness low-risk sets
+
+Build low-risk sets around the items-kept-on-death rules: your most
+valuable items ride protected while everything else stays under an
+adjustable gp risk cap. Per-item death fates and honest kept/lost gp
+totals include untradeable repair and mangle fees.
+
+### Slayer task toggle
+
+Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
+behind an active task are greyed out.
+
+### Exclude items from suggestions
+
+Right-click a suggestion to protect rare supplies (like dragon darts) so
+the optimizer stops recommending them.
+
+### Bank tools: show and filter
+
+"Show in bank" outlines the set's items in your bank; "Filter bank" shows
+only them. Uses the core Bank Tags plugin.
+
+### Search in Loadout Lab (cross-plugin)
+
+Right-click a monster and choose "Search in Loadout Lab" to open the panel
+and compute the best owned set for it.
+
+### Community Discord
+
+The header Options menu has a "Join our Discord" link to the plugin's
+community server.

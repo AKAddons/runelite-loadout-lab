@@ -1,0 +1,258 @@
+{
+  "$comment": "Central feature registry. One entry per user-facing feature. Every code change that adds/alters a feature updates its entry (and the README feature guide + CHANGELOG) in the same PR. `./gradlew checkDocs` audits this file against README.md, docs/img/, and the source tree, and prints the documentation-gap report. `code`/`tests` paths are relative to src/main/java/com/loadoutlab and src/test/java/com/loadoutlab respectively; `anchor` must equal the slugified '### ' heading of the feature's section in the README '# Feature guide'.",
+  "features": [
+    {
+      "id": "owned-bis",
+      "title": "Best owned set per style",
+      "group": "Owned-gear optimizer",
+      "anchor": "best-owned-set-per-style",
+      "media": "docs/img/owned-bis.gif",
+      "code": [
+        "optimizer/OptimizerService.java",
+        "engine/LoadoutOptimizer.java",
+        "engine/DpsCalculator.java",
+        "engine/DpsResult.java",
+        "engine/Loadout.java"
+      ],
+      "tests": [
+        "optimizer/OptimizerServiceTest.java",
+        "engine/LoadoutOptimizerTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Open the bank once, then search a monster (e.g. Vorkath) in the panel and let the three style cards populate. Point at the melee card to show the strongest owned set, its exact DPS, max hit and accuracy. ~10s."
+    },
+    {
+      "id": "game-best",
+      "title": "Game-best ceiling comparison",
+      "group": "Owned-gear optimizer",
+      "anchor": "game-best-ceiling-comparison",
+      "media": "docs/img/game-best.gif",
+      "code": [
+        "engine/LoadoutOptimizer.java",
+        "optimizer/OptimizerService.java",
+        "engine/OwnedItems.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "engine/LoadoutOptimizerTest.java",
+        "engine/AnalogTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "On a style card, expand the game-best comparison so the true ceiling set shows next to yours; hover a slot with a gold border to show you already own a best-in-slot (or stat-identical analog). ~8s."
+    },
+    {
+      "id": "optimize-modes",
+      "title": "Optimize modes",
+      "group": "Owned-gear optimizer",
+      "anchor": "optimize-modes",
+      "media": "docs/img/optimize-modes.gif",
+      "code": [
+        "optimizer/OptimizerService.java",
+        "engine/CandidateMode.java",
+        "engine/OptimizationRequest.java",
+        "engine/IncomingDpsCalculator.java"
+      ],
+      "tests": [
+        "optimizer/OptimizeModeTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Cycle the optimize-mode toggle Max DPS -> Balanced -> Tanky on the same monster and watch the sets and the mode-note line (the frontier trade) change. ~9s."
+    },
+    {
+      "id": "incoming-damage",
+      "title": "Incoming damage and protection prayer",
+      "group": "Combat readiness",
+      "anchor": "incoming-damage-and-protection-prayer",
+      "media": "docs/img/incoming-damage.gif",
+      "code": [
+        "engine/IncomingDpsCalculator.java",
+        "engine/BossIncomingOverrides.java",
+        "data/MonsterOffence.java",
+        "ui/AssumeIcons.java"
+      ],
+      "tests": [
+        "engine/IncomingDpsCalculatorTest.java",
+        "engine/BossIncomingOverridesTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Pick a boss with curated attack data (e.g. Zulrah or K'ril Tsutsaroth) and show the incoming-damage figure plus the recommended protection-prayer icon; note a boss whose attack partially pierces prayer. ~9s."
+    },
+    {
+      "id": "spellbook",
+      "title": "Spell and spellbook recommendation",
+      "group": "Combat readiness",
+      "anchor": "spell-and-spellbook-recommendation",
+      "media": "docs/img/spellbook.gif",
+      "code": [
+        "data/SpellStats.java",
+        "engine/DpsCalculator.java",
+        "optimizer/OptimizerService.java",
+        "ui/AssumeIcons.java"
+      ],
+      "tests": [
+        "engine/SpellbookLockTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "On the magic card, show the recommended autocast spell icon; toggle the spellbook lock and watch the suggested spell/set change. ~8s."
+    },
+    {
+      "id": "dream-items",
+      "title": "Dream items",
+      "group": "Gear sources",
+      "anchor": "dream-items",
+      "media": "docs/img/dream-items.gif",
+      "code": [
+        "collection/DreamStore.java",
+        "engine/OptimizationRequest.java",
+        "engine/LoadoutOptimizer.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "engine/DreamAndBudgetTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Right-click a game-best suggestion you do not own (e.g. Twisted bow) and mark it a dream item; recompute and show it highlighted as if owned. ~8s."
+    },
+    {
+      "id": "upgrade-budget",
+      "title": "Upgrade budget",
+      "group": "Gear sources",
+      "anchor": "upgrade-budget",
+      "media": "docs/img/upgrade-budget.gif",
+      "code": [
+        "engine/OptimizationRequest.java",
+        "engine/LoadoutOptimizer.java",
+        "engine/QuestRewardItems.java",
+        "optimizer/OptimizerService.java"
+      ],
+      "tests": [
+        "engine/DreamAndBudgetTest.java",
+        "engine/QuestRewardItemsTest.java",
+        "engine/QuestRewardPoolTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Type a gp budget (e.g. 50m) into the budget field and show buyable upgrades appear; clear it to '-' for the unlimited ceiling, and point out a quest reward that joins free with its source quest named. ~10s."
+    },
+    {
+      "id": "wilderness-risk",
+      "title": "Wilderness low-risk sets",
+      "group": "Wilderness and risk",
+      "anchor": "wilderness-low-risk-sets",
+      "media": "docs/img/wilderness-risk.gif",
+      "code": [
+        "engine/PvpRisk.java",
+        "engine/UntradeableDeathCosts.java",
+        "data/WildernessMonsters.java",
+        "engine/OptimizationRequest.java"
+      ],
+      "tests": [
+        "engine/PvpRiskTest.java",
+        "engine/RiskConstraintTest.java",
+        "engine/UntradeableDeathCostsTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Pick a wilderness target, enable low-risk and set a gp risk cap; show the per-item death fates (halo = protected, skull = lost, coins = repair fee) and the honest kept/lost gp totals including untradeable fees. ~11s."
+    },
+    {
+      "id": "slayer-toggle",
+      "title": "Slayer task toggle",
+      "group": "Filters and tasks",
+      "anchor": "slayer-task-toggle",
+      "media": "docs/img/slayer-toggle.gif",
+      "code": [
+        "data/SlayerLockedMonsters.java",
+        "engine/OptimizationRequest.java",
+        "optimizer/OptimizerService.java",
+        "data/DataService.java"
+      ],
+      "tests": [
+        "engine/SlayerInvariantTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Flip the slayer-task toggle on and show the slayer-helm bonus lifting DPS; scroll the monster list to show a task-locked boss greyed out. ~8s."
+    },
+    {
+      "id": "exclusions",
+      "title": "Exclude items from suggestions",
+      "group": "Filters and tasks",
+      "anchor": "exclude-items-from-suggestions",
+      "media": "docs/img/exclusions.gif",
+      "code": [
+        "collection/ExclusionStore.java",
+        "engine/LoadoutOptimizer.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "collection/ExclusionStoreTest.java",
+        "engine/ExclusionTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Right-click a suggested item (e.g. Dragon darts) and exclude it; recompute and show the next-best replacement fill the slot. ~8s."
+    },
+    {
+      "id": "bank-tools",
+      "title": "Bank tools: show and filter",
+      "group": "Bank and integrations",
+      "anchor": "bank-tools-show-and-filter",
+      "media": "docs/img/bank-tools.gif",
+      "code": [
+        "ui/BankHighlightOverlay.java",
+        "ui/LoadoutLabPanel.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [],
+      "since": "0.1.0",
+      "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
+      "capture": "With the bank open, click 'Show in bank' to outline the set's items, then 'Filter bank' to show only them (uses the core Bank Tags plugin); clear to restore. ~9s."
+    },
+    {
+      "id": "link-in",
+      "title": "Search in Loadout Lab (cross-plugin)",
+      "group": "Bank and integrations",
+      "anchor": "search-in-loadout-lab-cross-plugin",
+      "media": "docs/img/link-in.gif",
+      "code": [
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "ui/LinkInTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Right-click a monster in the game world (or another plugin's list) and pick 'Search in Loadout Lab'; the panel opens and computes that monster. ~7s."
+    },
+    {
+      "id": "owned-ledger",
+      "title": "Owned-gear ledger (profile-aware)",
+      "group": "Owned-gear optimizer",
+      "anchor": "owned-gear-ledger-profile-aware",
+      "media": "docs/img/owned-ledger.gif",
+      "code": [
+        "profile/PlayerProfile.java",
+        "collection/CollectionLedger.java",
+        "engine/OwnedItems.java",
+        "engine/ProfileSnapshot.java"
+      ],
+      "tests": [
+        "profile/PlayerProfileTest.java",
+        "collection/CollectionLedgerTest.java"
+      ],
+      "since": "0.1.0",
+      "capture": "Open bank / inventory / equipment across a session and show the owned-gear ledger accumulating; switch accounts to show the ledger is per-account. ~9s."
+    },
+    {
+      "id": "discord",
+      "title": "Community Discord",
+      "group": "Bank and integrations",
+      "anchor": "community-discord",
+      "media": "docs/img/discord.png",
+      "code": [
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [],
+      "since": "0.1.0",
+      "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
+      "capture": "Click the header Options (dots) button and show the 'Join our Discord' menu item. A single PNG screenshot is enough. ~4s."
+    }
+  ]
+}
