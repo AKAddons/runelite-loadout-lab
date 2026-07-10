@@ -72,6 +72,20 @@ public class OptimizerService
 	 */
 	static final double BALANCED_DPS_BIAS = 0.2;
 
+	/** The frontier trade a non-max mode made: dps given up vs damage cut,
+	 * both as whole percents relative to the max-dps set. */
+	public static final class ModeTrade
+	{
+		public final int dpsLossPct;
+		public final int dmgCutPct;
+
+		ModeTrade(int dpsLossPct, int dmgCutPct)
+		{
+			this.dpsLossPct = dpsLossPct;
+			this.dmgCutPct = dmgCutPct;
+		}
+	}
+
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
 	public static final class StyleResult
@@ -92,19 +106,19 @@ public class OptimizerService
 		public final String gameBoostLabel;
 		/** What the boss does back to you in the shown owned set (nullable). */
 		public final IncomingDpsCalculator.Result incoming;
-		/** The frontier trade the chosen mode made, e.g.
-		 * "Balanced: -7% dps for -34% damage taken" (null on max dps). */
-		public final String modeNote;
+		/** The frontier trade the chosen mode made: dps given up vs damage
+		 * cut, as whole percents (null on max dps / when no better trade). */
+		public final ModeTrade modeTrade;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
 			IncomingDpsCalculator.Result incoming,
-			String modeNote)
+			ModeTrade modeTrade)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
 			this.incoming = incoming;
-			this.modeNote = modeNote;
+			this.modeTrade = modeTrade;
 			this.owned = owned;
 			this.overallBest = overallBest;
 			this.spec = spec == null ? null : spec.spec;
@@ -269,10 +283,10 @@ public class OptimizerService
 				// weights, walk the (dps out, dps in) frontier, and swap the
 				// displayed set for the mode's pick. Every downstream number
 				// (spec, incoming, risk) then describes the chosen set.
-				String modeNote = null;
+				ModeTrade modeTrade = null;
 				if (chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
 				{
-					modeNote = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
+					modeTrade = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
 						monster, real, ticket);
 				}
 				// The ceiling: every obtainable item, no quest/level gating -
@@ -305,7 +319,7 @@ public class OptimizerService
 						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
 				results.put(style, new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, modeNote));
+					boostLabel, gameBoostLabel, incoming, modeTrade));
 			}
 			if (requestSeq.get() != ticket)
 			{
@@ -327,7 +341,7 @@ public class OptimizerService
 	 * line between the max-dps and tankiest points); TANKY = best
 	 * out/in ratio holding at least half the max dps.
 	 */
-	private String applyMode(LoadoutData dataset, OptimizationRequest ownedRequest,
+	private ModeTrade applyMode(LoadoutData dataset, OptimizationRequest ownedRequest,
 		List<DpsResult> ownedBest, OptimizeMode mode,
 		MonsterStats monster, PlayerLevels real, long ticket)
 	{
@@ -400,14 +414,14 @@ public class OptimizerService
 		}
 		if (picked == maxDps)
 		{
-			return "Max-dps set is already the best trade here";
+			return null;
 		}
 		double d = picked.getDps();
 		double in = incomingOf(monster, picked, real);
 		ownedBest.set(0, picked);
-		return String.format("%s: %.0f%% less dps for %.0f%% less damage taken",
-			mode == OptimizeMode.TANKY ? "Tanky" : "Balanced",
-			(1 - d / d0) * 100, (1 - in / i0) * 100);
+		return new ModeTrade(
+			(int) Math.round((1 - d / d0) * 100),
+			(int) Math.round((1 - in / i0) * 100));
 	}
 
 	/** The dps-favored ratio Balanced maximizes. */

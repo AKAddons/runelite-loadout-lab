@@ -111,7 +111,7 @@ public class OptimizeModeTest
 		OptimizerService.StyleResult max = ranged(OptimizerService.OptimizeMode.MAX_DPS);
 		OptimizerService.StyleResult balanced = ranged(OptimizerService.OptimizeMode.BALANCED);
 		OptimizerService.StyleResult tanky = ranged(OptimizerService.OptimizeMode.TANKY);
-		Assert.assertNull(max.modeNote);
+		Assert.assertNull(max.modeTrade);
 		// Max dps deals the most.
 		Assert.assertTrue(max.owned.get(0).getDps() >= balanced.owned.get(0).getDps() - 1e-9);
 		Assert.assertTrue(max.owned.get(0).getDps() >= tanky.owned.get(0).getDps() - 1e-9);

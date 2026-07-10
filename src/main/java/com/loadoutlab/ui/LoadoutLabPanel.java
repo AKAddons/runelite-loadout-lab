@@ -19,6 +19,7 @@ import com.loadoutlab.engine.MonsterMechanics;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
+import com.loadoutlab.optimizer.OptimizerService.ModeTrade;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -1041,9 +1042,9 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(dps);
 		addAssumesRow(card, result.boostLabel, "Assumed prayer + boost (you own these)");
 		addIncomingLine(card, result.incoming);
-		if (result.modeNote != null)
+		if (result.modeTrade != null)
 		{
-			card.add(line(result.modeNote, INFO));
+			card.add(modeTradeRow(result.modeTrade));
 		}
 		addRiskLine(card, best, result.specWeapon);
 		addUpgradeLine(card, best);
@@ -1104,19 +1105,54 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
+	private static final ImageIcon SWORD_ICON = loadSkillIcon("attack");
+	private static final ImageIcon SHIELD_ICON = loadSkillIcon("defence");
 
 	private static ImageIcon loadPrayerIcon()
+	{
+		return loadSkillIcon("prayer");
+	}
+
+	private static ImageIcon loadSkillIcon(String skill)
 	{
 		try
 		{
 			BufferedImage img = ImageUtil.loadImageResource(
-				SkillIconManager.class, "/skill_icons_small/prayer.png");
+				SkillIconManager.class, "/skill_icons_small/" + skill + ".png");
 			return new ImageIcon(img.getScaledInstance(14, 14, Image.SCALE_SMOOTH));
 		}
 		catch (RuntimeException ex)
 		{
 			return null;
 		}
+	}
+
+	/** Compact frontier trade: [sword] N%-  [shield] M%+ using the Attack and
+	 * Defence skill icons (Swing emoji tofu on macOS Tahoe). Hover for the
+	 * full sentence. */
+	private JPanel modeTradeRow(ModeTrade t)
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+		row.setToolTipText(String.format(
+			"This mode: %d%% less DPS for %d%% less damage taken", t.dpsLossPct, t.dmgCutPct));
+		row.add(tradeChip(SWORD_ICON, t.dpsLossPct + "%-"));
+		row.add(tradeChip(SHIELD_ICON, t.dmgCutPct + "%+"));
+		return row;
+	}
+
+	private static JLabel tradeChip(ImageIcon icon, String text)
+	{
+		JLabel label = new JLabel(text);
+		if (icon != null)
+		{
+			label.setIcon(icon);
+			label.setIconTextGap(3);
+		}
+		label.setForeground(INFO);
+		return label;
 	}
 
 	/** The set's total prayer bonus - just the prayer icon and the number. */
