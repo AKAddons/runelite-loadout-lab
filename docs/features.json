@@ -203,7 +203,7 @@
       "tests": [],
       "since": "0.1.0",
       "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
-      "capture": "Bank open with the set outlined by Show in bank; the Show/Filter buttons visible in the card. Single PNG screenshot."
+      "capture": "Bank open with 'Show in bank' outlining the set (or 'Filter bank' active); Show/Filter buttons visible in the card. Same capture moment can also serve owned-ledger. Single PNG screenshot."
     },
     {
       "id": "link-in",
@@ -238,7 +238,7 @@
         "collection/CollectionLedgerTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Panel mid-session with a computed set proving the ledger knows your bank (fresh account/profile switch note optional). Single PNG screenshot."
+      "capture": "With a set computed, click 'Filter bank' and frame the bank: it shows exactly the recommended items - the ledger's knowledge of what you own, on screen. Same capture moment as bank-tools; save a second copy/crop under this name. Single PNG screenshot."
     },
     {
       "id": "discord",
