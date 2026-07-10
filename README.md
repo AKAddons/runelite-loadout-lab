@@ -73,11 +73,15 @@ Every style card can show the true best-in-slot ceiling set beside yours,
 so you see how close your kit is. Slots where you already own the best (or
 a stat-identical analog) get a gold border.
 
+![Game-best ceiling comparison](docs/img/game-best.png)
+
 ### Optimize modes
 
 Choose Max DPS, Balanced (best damage-out per damage-taken), or Tanky
 (least damage taken). The mode note tells you the frontier trade the
 chosen set made.
+
+![Optimize modes](docs/img/optimize-modes.png)
 
 ### Owned-gear ledger (profile-aware)
 
@@ -85,27 +89,37 @@ Your owned gear is learned from your bank, inventory, and equipment as you
 play, and remembered per account so suggestions always reflect what THIS
 character actually has.
 
+![Owned-gear ledger (profile-aware)](docs/img/owned-ledger.png)
+
 ### Incoming damage and protection prayer
 
 See how hard the boss hits YOU in the chosen set, from curated per-boss
 attack data, plus which protection prayer to use - including bosses whose
 attacks partially pierce prayer.
 
+![Incoming damage and protection prayer](docs/img/incoming-damage.png)
+
 ### Spell and spellbook recommendation
 
 On the magic card, Loadout Lab shows the spell to autocast. Lock the
 spellbook to your setup and the suggested spell and set adjust to match.
+
+![Spell and spellbook recommendation](docs/img/spellbook.png)
 
 ### Dream items
 
 Right-click any suggestion you do not own ("what if I had a tbow?") to
 highlight it as an aspirational pick and see the set it would build.
 
+![Dream items](docs/img/dream-items.png)
+
 ### Upgrade budget
 
 Enter a gp budget and Loadout Lab suggests buyable upgrades within it; use
 "-" for the unlimited ceiling. Quest rewards join for free with their
 source quest named.
+
+![Upgrade budget](docs/img/upgrade-budget.png)
 
 ### Wilderness low-risk sets
 
@@ -114,20 +128,28 @@ valuable items ride protected while everything else stays under an
 adjustable gp risk cap. Per-item death fates and honest kept/lost gp
 totals include untradeable repair and mangle fees.
 
+![Wilderness low-risk sets](docs/img/wilderness-risk.png)
+
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
 behind an active task are greyed out.
+
+![Slayer task toggle](docs/img/slayer-toggle.png)
 
 ### Exclude items from suggestions
 
 Right-click a suggestion to protect rare supplies (like dragon darts) so
 the optimizer stops recommending them.
 
+![Exclude items from suggestions](docs/img/exclusions.png)
+
 ### Bank tools: show and filter
 
 "Show in bank" outlines the set's items in your bank; "Filter bank" shows
 only them. Uses the core Bank Tags plugin.
+
+![Bank tools: show and filter](docs/img/bank-tools.png)
 
 ### Search in Loadout Lab (cross-plugin)
 
@@ -135,7 +157,12 @@ Right-click a monster in the world and choose "Search in Loadout Lab":
 the panel opens and computes the best owned set for it. Other plugins can
 send a monster the same way (Goal Planner's boss cards are rolling it out).
 
+![Search in Loadout Lab (cross-plugin)](docs/img/link-in.png)
+
 ### Community Discord
 
 The header Options menu has a "Join our Discord" link to the plugin's
 community server.
+
+![Community Discord](docs/img/discord.png)
+
