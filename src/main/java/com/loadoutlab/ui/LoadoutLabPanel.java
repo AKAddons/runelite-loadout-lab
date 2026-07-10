@@ -786,6 +786,49 @@ public class LoadoutLabPanel extends PluginPanel
 		return dartId == null ? null : data.getGear(dartId);
 	}
 
+	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
+	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
+	private static final class NoPrayerIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		NoPrayerIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(c.getForeground());
+			g2.setStroke(new BasicStroke(Math.max(1.3f, size / 9f),
+				BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			double m = 1.5;
+			double d = size - 2 * m - 1;
+			g2.draw(new java.awt.geom.Ellipse2D.Double(x + m, y + m, d, d));
+			double off = (d / 2.0) / Math.sqrt(2);
+			double cx = x + size / 2.0;
+			double cy = y + size / 2.0;
+			g2.draw(new java.awt.geom.Line2D.Double(cx - off, cy + off, cx + off, cy - off));
+			g2.dispose();
+		}
+	}
+
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
 	private static final class DotsIcon implements javax.swing.Icon
 	{
@@ -1107,6 +1150,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
 	private static final ImageIcon SWORD_ICON = loadSkillIcon("attack");
 	private static final ImageIcon SHIELD_ICON = loadSkillIcon("defence");
+	private static final javax.swing.Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
 
 	private static ImageIcon loadPrayerIcon()
 	{
@@ -1386,23 +1430,36 @@ public class LoadoutLabPanel extends PluginPanel
 	/** What the boss does back to you in this set, protection prayer up. */
 	private void addIncomingLine(JPanel card, IncomingDpsCalculator.Result incoming)
 	{
-		if (incoming == null || incoming.protectPrayer == null)
+		if (incoming == null || incoming.totalDps <= 0)
 		{
 			return;
 		}
-		// The protect icon IS the pray call; the text is just the cost -
-		// prayed, and what skipping the prayer would cost you.
-		JLabel line = line(String.format("~%.2f DPS to you (~%.2f unprayed)",
-			incoming.totalDps, incoming.unprayedDps), new Color(210, 140, 130));
-		int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
-		if (sprite >= 0)
+		boolean prayable = incoming.protectPrayer != null;
+		// The protect icon IS the pray call; the text is the cost - prayed,
+		// and what skipping the prayer would cost you. Unblockable bosses
+		// (dodge-based / typeless) still show the intake, with a no-prayer mark.
+		JLabel line = line(prayable
+			? String.format("~%.2f DPS to you (~%.2f unprayed)",
+				incoming.totalDps, incoming.unprayedDps)
+			: String.format("~%.2f DPS to you (unavoidable)", incoming.totalDps),
+			new Color(210, 140, 130));
+		if (prayable)
 		{
-			attachSprite(line, sprite);
+			int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
+			if (sprite >= 0)
+			{
+				attachSprite(line, sprite);
+				line.setIconTextGap(4);
+			}
+		}
+		else
+		{
+			line.setIcon(NO_PRAYER_ICON);
 			line.setIconTextGap(4);
 		}
-		StringBuilder tip = new StringBuilder("<html>Run ")
-			.append(incoming.protectPrayer)
-			.append(".");
+		StringBuilder tip = new StringBuilder("<html>")
+			.append(prayable ? "Run " + incoming.protectPrayer + "."
+				: "No prayer reduces this damage.");
 		for (IncomingDpsCalculator.StyleThreat threat : incoming.threats)
 		{
 			tip.append("<br>").append(threat.style).append(": ");
