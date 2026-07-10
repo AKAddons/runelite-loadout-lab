@@ -6,7 +6,7 @@
       "title": "Best owned set per style",
       "group": "Owned-gear optimizer",
       "anchor": "best-owned-set-per-style",
-      "media": "docs/img/owned-bis.gif",
+      "media": "docs/img/owned-bis.png",
       "code": [
         "optimizer/OptimizerService.java",
         "engine/LoadoutOptimizer.java",
@@ -19,14 +19,14 @@
         "engine/LoadoutOptimizerTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Open the bank once, then search a monster (e.g. Vorkath) in the panel and let the three style cards populate. Point at the melee card to show the strongest owned set, its exact DPS, max hit and accuracy. ~10s."
+      "capture": "Vorkath searched, three style cards populated; frame the melee card showing set, DPS, max hit, accuracy. Single PNG screenshot."
     },
     {
       "id": "game-best",
       "title": "Game-best ceiling comparison",
       "group": "Owned-gear optimizer",
       "anchor": "game-best-ceiling-comparison",
-      "media": "docs/img/game-best.gif",
+      "media": "docs/img/game-best.png",
       "code": [
         "engine/LoadoutOptimizer.java",
         "optimizer/OptimizerService.java",
@@ -38,14 +38,14 @@
         "engine/AnalogTest.java"
       ],
       "since": "0.1.0",
-      "capture": "On a style card, expand the game-best comparison so the true ceiling set shows next to yours; hover a slot with a gold border to show you already own a best-in-slot (or stat-identical analog). ~8s."
+      "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot."
     },
     {
       "id": "optimize-modes",
       "title": "Optimize modes",
       "group": "Owned-gear optimizer",
       "anchor": "optimize-modes",
-      "media": "docs/img/optimize-modes.gif",
+      "media": "docs/img/optimize-modes.png",
       "code": [
         "optimizer/OptimizerService.java",
         "engine/CandidateMode.java",
@@ -56,14 +56,14 @@
         "optimizer/OptimizeModeTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Cycle the optimize-mode toggle Max DPS -> Balanced -> Tanky on the same monster and watch the sets and the mode-note line (the frontier trade) change. ~9s."
+      "capture": "Tanky selected; frame the card with the sword/shield trade row visible under the DPS line. Single PNG screenshot."
     },
     {
       "id": "incoming-damage",
       "title": "Incoming damage and protection prayer",
       "group": "Combat readiness",
       "anchor": "incoming-damage-and-protection-prayer",
-      "media": "docs/img/incoming-damage.gif",
+      "media": "docs/img/incoming-damage.png",
       "code": [
         "engine/IncomingDpsCalculator.java",
         "engine/BossIncomingOverrides.java",
@@ -75,14 +75,14 @@
         "engine/BossIncomingOverridesTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Pick a boss with curated attack data (e.g. Zulrah or K'ril Tsutsaroth) and show the incoming-damage figure plus the recommended protection-prayer icon; note a boss whose attack partially pierces prayer. ~9s."
+      "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot."
     },
     {
       "id": "spellbook",
       "title": "Spell and spellbook recommendation",
       "group": "Combat readiness",
       "anchor": "spell-and-spellbook-recommendation",
-      "media": "docs/img/spellbook.gif",
+      "media": "docs/img/spellbook.png",
       "code": [
         "data/SpellStats.java",
         "engine/DpsCalculator.java",
@@ -93,14 +93,14 @@
         "engine/SpellbookLockTest.java"
       ],
       "since": "0.1.0",
-      "capture": "On the magic card, show the recommended autocast spell icon; toggle the spellbook lock and watch the suggested spell/set change. ~8s."
+      "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot."
     },
     {
       "id": "dream-items",
       "title": "Dream items",
       "group": "Gear sources",
       "anchor": "dream-items",
-      "media": "docs/img/dream-items.gif",
+      "media": "docs/img/dream-items.png",
       "code": [
         "collection/DreamStore.java",
         "engine/OptimizationRequest.java",
@@ -111,14 +111,14 @@
         "engine/DreamAndBudgetTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click a game-best suggestion you do not own (e.g. Twisted bow) and mark it a dream item; recompute and show it highlighted as if owned. ~8s."
+      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot."
     },
     {
       "id": "upgrade-budget",
       "title": "Upgrade budget",
       "group": "Gear sources",
       "anchor": "upgrade-budget",
-      "media": "docs/img/upgrade-budget.gif",
+      "media": "docs/img/upgrade-budget.png",
       "code": [
         "engine/OptimizationRequest.java",
         "engine/LoadoutOptimizer.java",
@@ -131,14 +131,14 @@
         "engine/QuestRewardPoolTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Type a gp budget (e.g. 50m) into the budget field and show buyable upgrades appear; clear it to '-' for the unlimited ceiling, and point out a quest reward that joins free with its source quest named. ~10s."
+      "capture": "Budget field showing e.g. 50m with a buyable upgrade line visible under a card. Single PNG screenshot."
     },
     {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",
       "anchor": "wilderness-low-risk-sets",
-      "media": "docs/img/wilderness-risk.gif",
+      "media": "docs/img/wilderness-risk.png",
       "code": [
         "engine/PvpRisk.java",
         "engine/UntradeableDeathCosts.java",
@@ -151,14 +151,14 @@
         "engine/UntradeableDeathCostsTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Pick a wilderness target, enable low-risk and set a gp risk cap; show the per-item death fates (halo = protected, skull = lost, coins = repair fee) and the honest kept/lost gp totals including untradeable fees. ~11s."
+      "capture": "Calvar'ion low-risk card: halo/skull/coins fates on the grid plus the risk gp line. Single PNG screenshot."
     },
     {
       "id": "slayer-toggle",
       "title": "Slayer task toggle",
       "group": "Filters and tasks",
       "anchor": "slayer-task-toggle",
-      "media": "docs/img/slayer-toggle.gif",
+      "media": "docs/img/slayer-toggle.png",
       "code": [
         "data/SlayerLockedMonsters.java",
         "engine/OptimizationRequest.java",
@@ -169,14 +169,14 @@
         "engine/SlayerInvariantTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Flip the slayer-task toggle on and show the slayer-helm bonus lifting DPS; scroll the monster list to show a task-locked boss greyed out. ~8s."
+      "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot."
     },
     {
       "id": "exclusions",
       "title": "Exclude items from suggestions",
       "group": "Filters and tasks",
       "anchor": "exclude-items-from-suggestions",
-      "media": "docs/img/exclusions.gif",
+      "media": "docs/img/exclusions.png",
       "code": [
         "collection/ExclusionStore.java",
         "engine/LoadoutOptimizer.java",
@@ -187,14 +187,14 @@
         "engine/ExclusionTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click a suggested item (e.g. Dragon darts) and exclude it; recompute and show the next-best replacement fill the slot. ~8s."
+      "capture": "Right-click menu open on a suggested item showing 'Exclude ... from suggestions' (or the excluded-items count line). Single PNG screenshot."
     },
     {
       "id": "bank-tools",
       "title": "Bank tools: show and filter",
       "group": "Bank and integrations",
       "anchor": "bank-tools-show-and-filter",
-      "media": "docs/img/bank-tools.gif",
+      "media": "docs/img/bank-tools.png",
       "code": [
         "ui/BankHighlightOverlay.java",
         "ui/LoadoutLabPanel.java",
@@ -203,14 +203,14 @@
       "tests": [],
       "since": "0.1.0",
       "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
-      "capture": "With the bank open, click 'Show in bank' to outline the set's items, then 'Filter bank' to show only them (uses the core Bank Tags plugin); clear to restore. ~9s."
+      "capture": "Bank open with the set outlined by Show in bank; the Show/Filter buttons visible in the card. Single PNG screenshot."
     },
     {
       "id": "link-in",
       "title": "Search in Loadout Lab (cross-plugin)",
       "group": "Bank and integrations",
       "anchor": "search-in-loadout-lab-cross-plugin",
-      "media": "docs/img/link-in.gif",
+      "media": "docs/img/link-in.png",
       "code": [
         "LoadoutLabPlugin.java",
         "ui/LoadoutLabPanel.java"
@@ -219,14 +219,14 @@
         "ui/LinkInTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click a monster in the game world (or another plugin's list) and pick 'Search in Loadout Lab'; the panel opens and computes that monster. ~7s."
+      "capture": "In-world right-click menu open on a monster showing 'Search in Loadout Lab'. Single PNG screenshot."
     },
     {
       "id": "owned-ledger",
       "title": "Owned-gear ledger (profile-aware)",
       "group": "Owned-gear optimizer",
       "anchor": "owned-gear-ledger-profile-aware",
-      "media": "docs/img/owned-ledger.gif",
+      "media": "docs/img/owned-ledger.png",
       "code": [
         "profile/PlayerProfile.java",
         "collection/CollectionLedger.java",
@@ -238,7 +238,7 @@
         "collection/CollectionLedgerTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Open bank / inventory / equipment across a session and show the owned-gear ledger accumulating; switch accounts to show the ledger is per-account. ~9s."
+      "capture": "Panel mid-session with a computed set proving the ledger knows your bank (fresh account/profile switch note optional). Single PNG screenshot."
     },
     {
       "id": "discord",
@@ -252,7 +252,7 @@
       "tests": [],
       "since": "0.1.0",
       "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
-      "capture": "Click the header Options (dots) button and show the 'Join our Discord' menu item. A single PNG screenshot is enough. ~4s."
+      "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
     }
   ]
 }
