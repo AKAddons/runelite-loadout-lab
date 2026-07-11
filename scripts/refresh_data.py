@@ -37,7 +37,7 @@ import urllib.request
 WG_BASE = "https://raw.githubusercontent.com/weirdgloop/osrs-dps-calc/master/cdn/json"
 WIKI_MAPPING = "https://prices.runescape.wiki/api/v1/osrs/mapping"
 WIKI_LATEST = "https://prices.runescape.wiki/api/v1/osrs/latest"
-USER_AGENT = "loadout-lab data refresh (github.com/ajkatz; RuneLite plugin)"
+USER_AGENT = "loadout-lab data refresh (github.com/AKAddons; RuneLite plugin)"
 
 RES_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
