@@ -32,6 +32,8 @@ public class LinkInTest
 			java.util.Collections::emptySet,
 			itemId -> false,
 			java.util.Collections::emptySet,
+			itemId -> false,
+			java.util.Collections::emptySet,
 			itemId -> true,
 			ids -> { },
 			ids -> { });

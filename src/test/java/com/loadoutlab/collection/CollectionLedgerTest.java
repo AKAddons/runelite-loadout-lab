@@ -101,6 +101,19 @@ class CollectionLedgerTest
 		assertFalse(fresh.bankKnown());
 	}
 
+	@Test
+	@DisplayName("the looting bag is a ledger source: its contents count as owned and persist")
+	void lootingBagCountsAndPersists()
+	{
+		ledger.update(CollectionLedger.Source.LOOTING_BAG, Map.of(2434, 3));
+		assertEquals(3, ledger.owned().get(2434));
+
+		CollectionLedger next = new CollectionLedger(configManager, new Gson());
+		next.loadScope("std");
+		assertEquals(3, next.owned().get(2434));
+		assertFalse(next.bankKnown(), "a looting bag scan alone is not a bank scan");
+	}
+
 	@org.junit.jupiter.api.Test
 	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce()
 	{

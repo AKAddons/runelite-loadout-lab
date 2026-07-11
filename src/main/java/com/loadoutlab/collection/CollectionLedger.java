@@ -10,8 +10,8 @@ import net.runelite.client.config.ConfigManager;
 /**
  * The persistent "what I own" ledger - Loadout Lab's first differentiator.
  *
- * <p>Three container snapshots (equipment, inventory, bank), each replaced
- * wholesale when its container is seen, merged on demand into one
+ * <p>Container snapshots (equipment, inventory, bank, looting bag), each
+ * replaced wholesale when its container is seen, merged on demand into one
  * itemId → quantity view. Persisted through RuneLite's ConfigManager so the
  * ledger survives sessions: your bank from LAST visit still counts today,
  * no re-scan required (unlike per-session scanners).
@@ -38,7 +38,9 @@ public class CollectionLedger
 	{
 		EQUIPMENT("equipment"),
 		INVENTORY("inventory"),
-		BANK("bank");
+		BANK("bank"),
+		/** Seen when the bag is opened or checked; vital for UIM accounts. */
+		LOOTING_BAG("lootingBag");
 
 		private final String key;
 
