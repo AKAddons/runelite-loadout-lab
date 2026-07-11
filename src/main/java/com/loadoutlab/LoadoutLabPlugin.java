@@ -5,6 +5,7 @@ import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
 import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.ExclusionStore;
+import com.loadoutlab.collection.ManualOwnedStore;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -113,6 +114,7 @@ public class LoadoutLabPlugin extends Plugin
 	private static final String BANK_TAG = "loadout-lab";
 	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
+	private ManualOwnedStore manualOwned;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
@@ -225,11 +227,13 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
+		manualOwned = new ManualOwnedStore(configManager, gson);
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
+			manualOwned.loadScope(worldScope());
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
 
@@ -244,6 +248,7 @@ public class LoadoutLabPlugin extends Plugin
 				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
+					manualOwned::toggle, manualOwned::snapshot,
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -288,6 +293,7 @@ public class LoadoutLabPlugin extends Plugin
 		data = null;
 		ledger = null;
 		exclusions = null;
+		manualOwned = null;
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -329,6 +335,10 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			ledger.loadScope(worldScope());
 		}
+		if (manualOwned != null)
+		{
+			manualOwned.loadScope(worldScope());
+		}
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -356,6 +366,7 @@ public class LoadoutLabPlugin extends Plugin
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
+			manualOwned.loadScope(worldScope());
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
 			// New login = possibly a different account/levels: re-snapshot lazily.
@@ -392,6 +403,12 @@ public class LoadoutLabPlugin extends Plugin
 		else if (id == InventoryID.BANK.getId())
 		{
 			dirtySources.add(CollectionLedger.Source.BANK);
+		}
+		else if (id == net.runelite.api.gameval.InventoryID.LOOTING_BAG)
+		{
+			// Fires when the bag is opened or checked - the only times the
+			// client learns its contents. Vital owned-gear storage for UIM.
+			dirtySources.add(CollectionLedger.Source.LOOTING_BAG);
 		}
 	}
 
@@ -441,17 +458,33 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		if (data == null)
 		{
-			return ledger != null && ledger.owned().containsKey(itemId);
+			return ledger != null && ownedItems().containsKey(itemId);
 		}
-		int fingerprint = ledger.fingerprint();
+		int fingerprint = ownedFingerprint();
 		Set<Integer> cache = canonicalOwnedCache;
 		if (cache == null || canonicalOwnedFingerprint != fingerprint)
 		{
-			cache = data.canonicalizeOwned(ledger.owned()).keySet();
+			cache = data.canonicalizeOwned(ownedItems()).keySet();
 			canonicalOwnedCache = cache;
 			canonicalOwnedFingerprint = fingerprint;
 		}
 		return cache.contains(itemId);
+	}
+
+	/** The ledger view plus the manual "stored elsewhere" items. */
+	private Map<Integer, Integer> ownedItems()
+	{
+		return manualOwned.mergeInto(ledger.owned());
+	}
+
+	/**
+	 * Ownership fingerprint covering BOTH the ledger and the manual list -
+	 * the optimizer/panel cache key, so a stored-elsewhere toggle is a real
+	 * ownership change everywhere a bank deposit would be.
+	 */
+	private int ownedFingerprint()
+	{
+		return 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
 	}
 
 	/**
@@ -541,12 +574,12 @@ public class LoadoutLabPlugin extends Plugin
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
-			OwnedItems owned = new OwnedItems(ledger.owned(), ledger.bankKnown());
-			int fingerprint = ledger.fingerprint();
+			OwnedItems owned = new OwnedItems(ownedItems(), ledger.bankKnown());
+			int fingerprint = ownedFingerprint();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			exportProfile(new PlayerProfile(
-				real, live, unlocks, profile, ledger.owned(), ledger.bankKnown()));
+				real, live, unlocks, profile, ownedItems(), ledger.bankKnown()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
@@ -626,13 +659,16 @@ public class LoadoutLabPlugin extends Plugin
 			&& !client.getWorldType().contains(WorldType.MEMBERS);
 	}
 
-	private static InventoryID containerFor(CollectionLedger.Source source)
+	private static int containerFor(CollectionLedger.Source source)
 	{
 		switch (source)
 		{
-			case EQUIPMENT: return InventoryID.EQUIPMENT;
-			case INVENTORY: return InventoryID.INVENTORY;
-			default: return InventoryID.BANK;
+			case EQUIPMENT: return InventoryID.EQUIPMENT.getId();
+			case INVENTORY: return InventoryID.INVENTORY.getId();
+			// The classic InventoryID enum has no looting bag entry; the
+			// gameval id is the authoritative modern constant.
+			case LOOTING_BAG: return net.runelite.api.gameval.InventoryID.LOOTING_BAG;
+			default: return InventoryID.BANK.getId();
 		}
 	}
 

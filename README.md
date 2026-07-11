@@ -35,13 +35,17 @@ equipment.
   shows only them (uses the core Bank Tags plugin).
 - **Exclusions**: right-click any suggestion to protect rare supplies
   (dragon darts) from being recommended.
+- **Stored elsewhere (UIM-friendly)**: the looting bag is tracked as owned
+  storage automatically; gear kept in STASH units, the POH costume room,
+  or other unseen storage can be counted as owned by name.
 
 ## Getting started
 
 1. Open your bank once so the plugin can learn what you own.
 2. Search a monster in the sidebar panel and pick a style card.
-3. Right-click items for exclusions and dream items; use the toggles for
-   slayer tasks, spellbook locks, wilderness risk, and optimize modes.
+3. Right-click items for exclusions, dream items, and stored-elsewhere
+   marks; use the toggles for slayer tasks, spellbook locks, wilderness
+   risk, and optimize modes.
 
 ## Privacy
 
@@ -102,9 +106,9 @@ less dps for 56% less damage taken).
 
 ### Owned-gear ledger (profile-aware)
 
-Your owned gear is learned from your bank, inventory, and equipment as you
-play, and remembered per account so suggestions always reflect what THIS
-character actually has.
+Your owned gear is learned from your bank, inventory, equipment, and
+looting bag as you play, and remembered per account so suggestions always
+reflect what THIS character actually has.
 
 ![Owned-gear ledger (profile-aware)](docs/img/owned-ledger.png)
 
@@ -137,6 +141,19 @@ Enter a gp budget and Loadout Lab suggests buyable upgrades within it; use
 source quest named.
 
 ![Upgrade budget](docs/img/upgrade-budget.png)
+
+### Stored elsewhere (manual owned items)
+
+Gear kept where the ledger cannot see it - STASH units, the POH costume
+room, an Ultimate Ironman's cold or nest storage - can still count as
+owned: right-click an unowned suggestion and pick "Stored elsewhere", or
+add any item by name from the header Options menu. The list is kept per
+account, marked items join suggestions, bank borders, and the exported
+profile exactly like banked gear, and the green "Stored elsewhere" line
+in the panel manages them. The looting bag needs no marking at all: its
+contents are tracked automatically once you open or check the bag.
+
+![Stored elsewhere (manual owned items)](docs/img/stored-elsewhere.png)
 
 ### Wilderness low-risk sets
 

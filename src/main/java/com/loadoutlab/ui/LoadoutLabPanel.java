@@ -58,6 +58,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -124,6 +125,18 @@ public class LoadoutLabPanel extends PluginPanel
 		Set<Integer> snapshot();
 	}
 
+	/** Toggle an item's "stored elsewhere" (manual owned) state. */
+	public interface StoredToggle
+	{
+		boolean toggle(int itemId);
+	}
+
+	/** The current stored-elsewhere item ids. */
+	public interface StoredView
+	{
+		Set<Integer> snapshot();
+	}
+
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
 	{
@@ -178,6 +191,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private final ExclusionView exclusionView;
 	private final DreamToggle dreamToggle;
 	private final DreamView dreamView;
+	private final StoredToggle storedToggle;
+	private final StoredView storedView;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
@@ -193,6 +208,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JTextField upgradeBudget = new JTextField();
 	private int lastBudgetGp;
 	private final JLabel exclusionsLabel = new JLabel();
+	private final JLabel storedLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -231,7 +247,8 @@ public class LoadoutLabPanel extends PluginPanel
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
-		DreamToggle dreamToggle, DreamView dreamView, OwnedCheck ownedCheck,
+		DreamToggle dreamToggle, DreamView dreamView,
+		StoredToggle storedToggle, StoredView storedView, OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
@@ -244,6 +261,8 @@ public class LoadoutLabPanel extends PluginPanel
 		this.exclusionView = exclusionView;
 		this.dreamToggle = dreamToggle;
 		this.dreamView = dreamView;
+		this.storedToggle = storedToggle;
+		this.storedView = storedView;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -271,6 +290,11 @@ public class LoadoutLabPanel extends PluginPanel
 		optionsButton.addActionListener(e ->
 		{
 			JPopupMenu menu = new JPopupMenu();
+			// Entry point for the first stored-elsewhere item (before any
+			// exists there is no label or right-click row to reach it from).
+			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
+			addStored.addActionListener(ev -> showAddStoredDialog());
+			menu.add(addStored);
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
 			menu.add(joinDiscord);
@@ -416,6 +440,22 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 		top.add(exclusionsLabel);
 		refreshExclusionsLabel();
+
+		// Stored-elsewhere items (manual owned: STASH, POH, UIM storages).
+		storedLabel.setForeground(GOOD);
+		storedLabel.setFont(storedLabel.getFont().deriveFont(13f));
+		storedLabel.setAlignmentX(LEFT_ALIGNMENT);
+		storedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		storedLabel.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showStoredMenu(e);
+			}
+		});
+		top.add(storedLabel);
+		refreshStoredLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -707,6 +747,89 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.show(exclusionsLabel, e.getX(), e.getY());
 	}
 
+	private void refreshStoredLabel()
+	{
+		int count = storedView.snapshot().size();
+		storedLabel.setText(count == 0 ? "" : "Stored elsewhere: " + count + " (click to manage)");
+		storedLabel.setVisible(count > 0);
+	}
+
+	private void showStoredMenu(MouseEvent e)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		for (Integer id : storedView.snapshot())
+		{
+			GearItem item = data.getGear(id);
+			String label = item == null ? ("item " + id) : item.label();
+			JMenuItem entry = new JMenuItem("No longer stored elsewhere: " + label);
+			entry.addActionListener(a ->
+			{
+				storedToggle.toggle(id);
+				refreshStoredLabel();
+				recompute();
+			});
+			menu.add(entry);
+		}
+		menu.addSeparator();
+		JMenuItem add = new JMenuItem("Add a stored-elsewhere item...");
+		add.addActionListener(a -> showAddStoredDialog());
+		menu.add(add);
+		menu.show(storedLabel, e.getX(), e.getY());
+	}
+
+	/**
+	 * Add-by-name flow: gear kept in storages the ledger cannot see may
+	 * never surface as a right-clickable suggestion, so typing the name is
+	 * the only reliable way in (Options menu and the manage menu open this).
+	 */
+	private void showAddStoredDialog()
+	{
+		String query = JOptionPane.showInputDialog(this,
+			"Item name (kept in a STASH, POH, or other storage):",
+			"Stored elsewhere", JOptionPane.PLAIN_MESSAGE);
+		if (query == null || query.trim().isEmpty())
+		{
+			return;
+		}
+		List<GearItem> matches = data.searchGear(query, 12);
+		if (matches.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+				"No equipment matches '" + query.trim() + "'.",
+				"Stored elsewhere", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		GearItem pick = matches.get(0);
+		if (matches.size() > 1)
+		{
+			String[] labels = new String[matches.size()];
+			for (int i = 0; i < matches.size(); i++)
+			{
+				labels[i] = matches.get(i).label();
+			}
+			Object chosen = JOptionPane.showInputDialog(this, "Which item?",
+				"Stored elsewhere", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
+			if (chosen == null)
+			{
+				return;
+			}
+			for (int i = 0; i < labels.length; i++)
+			{
+				if (labels[i].equals(chosen))
+				{
+					pick = matches.get(i);
+					break;
+				}
+			}
+		}
+		if (!storedView.snapshot().contains(pick.getId()))
+		{
+			storedToggle.toggle(pick.getId());
+		}
+		refreshStoredLabel();
+		recompute();
+	}
+
 	/** Right-click menu on a suggested item: exclude it and recompute. A
 	 * container weapon (blowpipe) also offers its loaded ammo. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
@@ -754,6 +877,7 @@ public class LoadoutLabPanel extends PluginPanel
 					menu.add(exclude);
 					// Unowned items can be dreamed into the owned pool
 					// (and undreamed).
+					boolean stored = storedView.snapshot().contains(item.getId());
 					if (!ownedCheck.owns(item.getId()))
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
@@ -766,6 +890,23 @@ public class LoadoutLabPanel extends PluginPanel
 							recompute();
 						});
 						menu.add(dream);
+					}
+					// Stored elsewhere: STASH, POH costume room, UIM cold or
+					// nest storage - genuinely owned, just invisible to the
+					// ledger. Once marked, owns() is true, so the un-mark
+					// entry is what keeps the state reachable.
+					if (stored || !ownedCheck.owns(item.getId()))
+					{
+						JMenuItem storeToggle = new JMenuItem(stored
+							? "No longer stored elsewhere: " + item.label()
+							: "Stored elsewhere: count " + item.label() + " as owned");
+						storeToggle.addActionListener(a ->
+						{
+							storedToggle.toggle(item.getId());
+							refreshStoredLabel();
+							recompute();
+						});
+						menu.add(storeToggle);
 					}
 				}
 				menu.show(cell, e.getX(), e.getY());
@@ -986,6 +1127,7 @@ public class LoadoutLabPanel extends PluginPanel
 		lastResults = null;
 		clearSelection();
 		refreshExclusionsLabel();
+		refreshStoredLabel();
 	}
 
 	private void clearSelection()

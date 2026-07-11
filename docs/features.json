@@ -133,6 +133,28 @@
       "capture": "Budget field showing e.g. 50m with a buyable upgrade line visible under a card. Single PNG screenshot."
     },
     {
+      "id": "stored-elsewhere",
+      "title": "Stored elsewhere (manual owned items)",
+      "group": "Gear sources",
+      "anchor": "stored-elsewhere-manual-owned-items",
+      "media": "docs/img/stored-elsewhere.png",
+      "code": [
+        "collection/ManualOwnedStore.java",
+        "collection/CollectionLedger.java",
+        "data/LoadoutData.java",
+        "ui/LoadoutLabPanel.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [
+        "collection/ManualOwnedStoreTest.java",
+        "collection/CollectionLedgerTest.java",
+        "data/GearSearchTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source.",
+      "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",
