@@ -93,6 +93,9 @@ class DwmsImportTest
 		assertEquals(3, dwms.count());
 		assertEquals(1, dwms.snapshot().get(4151));
 		assertEquals(1, dwms.snapshot().get(11832));
+		assertEquals(Map.of(4151, 1), dwms.families().get("stash"),
+			"per-family provenance is kept for location hints");
+		assertTrue(dwms.families().containsKey("poh"));
 
 		Map<Integer, Integer> owned = new HashMap<>(Map.of(4151, 2));
 		dwms.mergeInto(owned);

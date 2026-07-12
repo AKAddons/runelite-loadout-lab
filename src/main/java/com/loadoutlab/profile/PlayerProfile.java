@@ -29,10 +29,21 @@ public final class PlayerProfile
 	public final RequirementProfile requirements;
 	public final Map<Integer, Integer> owned;
 	public final boolean bankScanned;
+	/** Optional provenance: origin label ("bank", "STASH", ...) -> items.
+	 * The flat owned map stays the source of truth for the optimizer. */
+	public final Map<String, Map<Integer, Integer>> ownedBySource;
 
 	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
 		Map<Integer, Integer> owned, boolean bankScanned)
+	{
+		this(realLevels, boostedLevels, prayerUnlocks, requirements, owned, bankScanned, null);
+	}
+
+	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
+		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
+		Map<Integer, Integer> owned, boolean bankScanned,
+		Map<String, Map<Integer, Integer>> ownedBySource)
 	{
 		this.realLevels = realLevels;
 		this.boostedLevels = boostedLevels == null ? realLevels : boostedLevels;
@@ -40,6 +51,17 @@ public final class PlayerProfile
 		this.requirements = requirements == null ? RequirementProfile.MAXED : requirements;
 		this.owned = owned == null ? Map.of() : Map.copyOf(owned);
 		this.bankScanned = bankScanned;
+		// Deep-copied on the constructing thread: the export writer runs
+		// off-thread while the client keeps mutating the live snapshots.
+		java.util.LinkedHashMap<String, Map<Integer, Integer>> copy = new java.util.LinkedHashMap<>();
+		if (ownedBySource != null)
+		{
+			for (Map.Entry<String, Map<Integer, Integer>> e : ownedBySource.entrySet())
+			{
+				copy.put(e.getKey(), Map.copyOf(e.getValue()));
+			}
+		}
+		this.ownedBySource = java.util.Collections.unmodifiableMap(copy);
 	}
 
 	public OwnedItems ownedItems()
@@ -86,6 +108,20 @@ public final class PlayerProfile
 			ownedObj.addProperty(String.valueOf(entry.getKey()), entry.getValue());
 		}
 		root.add("owned", ownedObj);
+		if (!ownedBySource.isEmpty())
+		{
+			JsonObject bySource = new JsonObject();
+			for (Map.Entry<String, Map<Integer, Integer>> origin : ownedBySource.entrySet())
+			{
+				JsonObject originItems = new JsonObject();
+				for (Map.Entry<Integer, Integer> entry : origin.getValue().entrySet())
+				{
+					originItems.addProperty(String.valueOf(entry.getKey()), entry.getValue());
+				}
+				bySource.add(origin.getKey(), originItems);
+			}
+			root.add("ownedBySource", bySource);
+		}
 		root.addProperty("bankScanned", bankScanned);
 		return root.toString();
 	}
@@ -116,13 +152,29 @@ public final class PlayerProfile
 		{
 			owned.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
 		}
+		// Optional (older exports lack it) - absence means no provenance.
+		Map<String, Map<Integer, Integer>> bySource = null;
+		if (root.has("ownedBySource"))
+		{
+			bySource = new java.util.LinkedHashMap<>();
+			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet())
+			{
+				Map<Integer, Integer> items = new HashMap<>();
+				for (Map.Entry<String, JsonElement> entry : origin.getValue().getAsJsonObject().entrySet())
+				{
+					items.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
+				}
+				bySource.put(origin.getKey(), items);
+			}
+		}
 		return new PlayerProfile(
 			parseLevels(root.getAsJsonObject("realLevels")),
 			parseLevels(root.getAsJsonObject("boostedLevels")),
 			unlocks,
 			new RequirementProfile(reqSkills, quests),
 			owned,
-			root.get("bankScanned").getAsBoolean());
+			root.get("bankScanned").getAsBoolean(),
+			bySource);
 	}
 
 	private static JsonObject levels(PlayerLevels levels)

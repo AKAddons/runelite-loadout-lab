@@ -320,6 +320,7 @@ public class LoadoutLabPlugin extends Plugin
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
 					dwmsView(),
+					this::locationHint,
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -739,6 +740,74 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/**
+	 * Origin label -> items, in display order - the provenance the flat
+	 * owned map erases. Feeds the tooltip location hints and the profile
+	 * export's per-source breakdown. DWMS labels come from the config-read
+	 * families even when the live link supplies ownership (same underlying
+	 * data, and the live snapshot is flat); an owned item with no known
+	 * origin simply gets no hint.
+	 */
+	private Map<String, Map<Integer, Integer>> ownedBySources()
+	{
+		java.util.LinkedHashMap<String, Map<Integer, Integer>> origins = new java.util.LinkedHashMap<>();
+		origins.put("equipped", ledger.snapshot(CollectionLedger.Source.EQUIPMENT));
+		origins.put("inventory", ledger.snapshot(CollectionLedger.Source.INVENTORY));
+		origins.put("bank", ledger.snapshot(CollectionLedger.Source.BANK));
+		origins.put("looting bag", ledger.snapshot(CollectionLedger.Source.LOOTING_BAG));
+		origins.put("POH costume room", ledger.snapshot(CollectionLedger.Source.POH_COSTUMES));
+		origins.put("STASH", ledger.snapshot(CollectionLedger.Source.STASH));
+		Map<Integer, Integer> cargo = new HashMap<>();
+		for (CollectionLedger.Source hold : java.util.List.of(
+			CollectionLedger.Source.CARGO_HOLD_1, CollectionLedger.Source.CARGO_HOLD_2,
+			CollectionLedger.Source.CARGO_HOLD_3, CollectionLedger.Source.CARGO_HOLD_4,
+			CollectionLedger.Source.CARGO_HOLD_5))
+		{
+			for (Map.Entry<Integer, Integer> e : ledger.snapshot(hold).entrySet())
+			{
+				cargo.merge(e.getKey(), e.getValue(), Integer::sum);
+			}
+		}
+		origins.put("cargo hold", cargo);
+		Map<Integer, Integer> manual = new HashMap<>();
+		for (int id : manualOwned.snapshot())
+		{
+			manual.put(id, 1);
+		}
+		origins.put("stored elsewhere", manual);
+		for (Map.Entry<String, Map<Integer, Integer>> family : dwmsImport.families().entrySet())
+		{
+			origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
+		}
+		origins.values().removeIf(Map::isEmpty);
+		return origins;
+	}
+
+	private static String dwmsFamilyLabel(String family)
+	{
+		switch (family)
+		{
+			case "poh": return "POH costume room" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			case "stash": return "STASH" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			case "death": return "death storage" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			case "sailing": return "cargo hold" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			case "carryable": return "carried container" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			default: return "world storage" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+		}
+	}
+
+	/** Panel hook: one tooltip clause naming where a suggested item lives
+	 * ("" when at hand or unowned). Hover-frequency, cheap to rebuild. */
+	private String locationHint(int itemId)
+	{
+		if (ledger == null || manualOwned == null || dwmsImport == null)
+		{
+			return "";
+		}
+		return new com.loadoutlab.collection.ItemLocations(ownedBySources(),
+			data == null ? null : data::equivalentIds).fetchHint(itemId);
+	}
+
+	/**
 	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
 	 * Nothing is posted when the plugin is absent or disabled, and a
 	 * missing reply (a DWMS predating the contract) just leaves the
@@ -939,7 +1008,8 @@ public class LoadoutLabPlugin extends Plugin
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			exportProfile(new PlayerProfile(
-				real, live, unlocks, profile, ownedItems(), ledger.bankKnown()));
+				real, live, unlocks, profile, ownedItems(), ledger.bankKnown(),
+				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
