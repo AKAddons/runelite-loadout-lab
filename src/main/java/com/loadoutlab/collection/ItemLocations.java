@@ -55,6 +55,36 @@ public final class ItemLocations
 	}
 
 	/**
+	 * Legend label for the item's primary origin: the first origin in
+	 * display order, with DWMS families folded onto their native twin
+	 * ("STASH (via DWMS)" -> "STASH") and DWMS-only families bucketed as
+	 * "DWMS". "" when the location is unknown.
+	 */
+	public String primary(int itemId)
+	{
+		List<String> where = where(itemId);
+		if (where.isEmpty())
+		{
+			return "";
+		}
+		String label = where.get(0);
+		if (!label.endsWith(VIA_DWMS))
+		{
+			return label;
+		}
+		String base = label.substring(0, label.length() - VIA_DWMS.length());
+		switch (base)
+		{
+			case "POH costume room":
+			case "STASH":
+			case "cargo hold":
+				return base;
+			default:
+				return "DWMS";
+		}
+	}
+
+	/**
 	 * One tooltip clause: "" when the item is at hand (equipped, inventory,
 	 * bank) or not owned at all; otherwise "stored in X" naming the
 	 * storage(s) to fetch from. DWMS-attributed origins are dropped when a

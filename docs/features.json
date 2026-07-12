@@ -209,8 +209,8 @@
         "collection/ItemLocationsTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Per-source provenance kept end-to-end: ledger source snapshots + manual list + DWMS families feed a variant-aware lookup; a tooltip clause names the storage only when a fetch trip is needed. profile.json gains an optional ownedBySource breakdown.",
-      "capture": "Tooltip open on a suggested item that lives in a STASH or the POH, showing the 'stored in ...' clause. Single PNG screenshot."
+      "notes": "Per-source provenance kept end-to-end: ledger source snapshots + manual list + DWMS families feed a variant-aware lookup. Each cell gets a bottom-right source dot; the 'Stored:' legend under the cards lists EXACTLY the sources present in the current results, never the full palette. Tooltips add a 'stored in ...' clause only when a fetch trip is needed. profile.json gains an optional ownedBySource breakdown.",
+      "capture": "A result with mixed sources (bank + STASH or POH): source dots visible on cells and the contextual 'Stored:' legend under the cards showing only those entries. Single PNG screenshot."
     },
     {
       "id": "wilderness-risk",

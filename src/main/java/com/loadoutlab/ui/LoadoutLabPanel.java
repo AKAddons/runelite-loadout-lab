@@ -147,10 +147,14 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean live();
 	}
 
-	/** One tooltip clause naming where an owned item lives ("" = at hand). */
+	/** Where an owned item lives, for tooltips and the source legend. */
 	public interface LocationHint
 	{
+		/** One tooltip clause ("" = at hand or unknown). */
 		String hint(int itemId);
+
+		/** Legend label of the primary origin ("" = unknown). */
+		String primary(int itemId);
 	}
 
 	/** Does the player actually own this item (black set)? */
@@ -190,6 +194,26 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color INFO = new Color(150, 170, 230);
 	private static final Color UNOWNED = new Color(110, 190, 110);
 	private static final Color BORDER_UNOWNED = new Color(100, 145, 100);
+
+	/** Source-dot palette (bottom-right cell corner + legend), display
+	 * order. Separate vocabulary from the BORDERS (gold/green/blue). */
+	private static final Map<String, Color> SOURCE_COLORS = new java.util.LinkedHashMap<>();
+	static
+	{
+		SOURCE_COLORS.put("equipped", new Color(200, 200, 200));
+		SOURCE_COLORS.put("inventory", new Color(235, 170, 90));
+		SOURCE_COLORS.put("bank", new Color(100, 150, 235));
+		SOURCE_COLORS.put("looting bag", new Color(180, 130, 80));
+		SOURCE_COLORS.put("POH costume room", new Color(190, 130, 230));
+		SOURCE_COLORS.put("STASH", new Color(230, 120, 120));
+		SOURCE_COLORS.put("cargo hold", new Color(100, 200, 190));
+		SOURCE_COLORS.put("stored elsewhere", new Color(180, 210, 110));
+		SOURCE_COLORS.put("DWMS", new Color(160, 160, 210));
+	}
+
+	/** Sources that appear in the CURRENT results - the legend shows
+	 * exactly these, never the full palette. */
+	private final Set<String> usedSources = new java.util.LinkedHashSet<>();
 
 	/** Cell border language: gold = your item IS the game best, blue = the
 	 * spec cell (matches the in-game spec orb), grey = owned/empty. */
@@ -784,6 +808,71 @@ public class LoadoutLabPanel extends PluginPanel
 		storedLabel.setVisible(count > 0);
 	}
 
+	/** Legend for the source dots - EXACTLY the sources in the current
+	 * results, in palette order; null when nothing has a known source. */
+	private javax.swing.JComponent buildSourceLegend()
+	{
+		if (usedSources.isEmpty())
+		{
+			return null;
+		}
+		JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+		legend.setOpaque(false);
+		legend.setAlignmentX(LEFT_ALIGNMENT);
+		JLabel title = new JLabel("Stored:");
+		title.setForeground(MUTED);
+		title.setFont(title.getFont().deriveFont(11f));
+		legend.add(title);
+		for (Map.Entry<String, Color> entry : SOURCE_COLORS.entrySet())
+		{
+			if (!usedSources.contains(entry.getKey()))
+			{
+				continue;
+			}
+			JLabel item = new JLabel(entry.getKey(), new SourceDotIcon(entry.getValue()),
+				SwingConstants.LEADING);
+			item.setForeground(MUTED);
+			item.setFont(item.getFont().deriveFont(11f));
+			item.setIconTextGap(4);
+			legend.add(item);
+		}
+		return legend;
+	}
+
+	/** The small filled circle used by legend entries. */
+	private static final class SourceDotIcon implements javax.swing.Icon
+	{
+		private final Color color;
+
+		SourceDotIcon(Color color)
+		{
+			this.color = color;
+		}
+
+		@Override
+		public void paintIcon(java.awt.Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			g2.fillOval(x, y + 1, 7, 7);
+			g2.dispose();
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return 8;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 9;
+		}
+	}
+
 	private void refreshDwmsLabel()
 	{
 		int count = dwmsView.count();
@@ -1201,6 +1290,7 @@ public class LoadoutLabPanel extends PluginPanel
 		lastResults = results;
 		refreshDwmsLabel();
 		resultsPanel.removeAll();
+		usedSources.clear();
 		// Strongest style first: order the cards by your best set's dps.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
 		Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
@@ -1212,6 +1302,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			resultsPanel.add(styleCard(style, results.get(style)));
 			resultsPanel.add(Box.createVerticalStrut(6));
+		}
+		javax.swing.JComponent legend = buildSourceLegend();
+		if (legend != null)
+		{
+			resultsPanel.add(legend);
 		}
 		statusLabel.setText("Best owned sets vs " + monster.getName());
 		resultsPanel.revalidate();
@@ -1697,34 +1792,51 @@ public class LoadoutLabPanel extends PluginPanel
 		private static final Color BACKING = new Color(30, 30, 30);
 
 		private Fate fate;
+		/** Item-source dot (bottom-right; fates own the top-left). */
+		private Color sourceDot;
 
 		void setFate(Fate fate)
 		{
 			this.fate = fate;
 		}
 
+		void setSourceDot(Color color)
+		{
+			this.sourceDot = color;
+		}
+
 		@Override
 		protected void paintComponent(Graphics g)
 		{
 			super.paintComponent(g);
-			if (fate == null)
+			if (fate == null && sourceDot == null)
 			{
 				return;
 			}
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 				RenderingHints.VALUE_ANTIALIAS_ON);
-			switch (fate)
+			if (sourceDot != null)
 			{
-				case KEPT:
-					paintHalo(g2);
-					break;
-				case DROPPED:
-					paintSkull(g2);
-					break;
-				default:
-					paintCoins(g2);
-					break;
+				g2.setColor(BACKING);
+				g2.fillOval(getWidth() - 12, getHeight() - 12, 10, 10);
+				g2.setColor(sourceDot);
+				g2.fillOval(getWidth() - 10, getHeight() - 10, 6, 6);
+			}
+			if (fate != null)
+			{
+				switch (fate)
+				{
+					case KEPT:
+						paintHalo(g2);
+						break;
+					case DROPPED:
+						paintSkull(g2);
+						break;
+					default:
+						paintCoins(g2);
+						break;
+				}
 			}
 			g2.dispose();
 		}
@@ -2052,6 +2164,17 @@ public class LoadoutLabPanel extends PluginPanel
 				// Location clause only when a fetch trip is needed - "in
 				// bank" would be noise on 95% of cells.
 				String where = unowned ? "" : locationHint.hint(item.getId());
+				// Source dot + legend entry: only for locations we know.
+				if (!unowned)
+				{
+					String source = locationHint.primary(item.getId());
+					Color sourceColor = SOURCE_COLORS.get(source);
+					if (sourceColor != null)
+					{
+						slot.setSourceDot(sourceColor);
+						usedSources.add(source);
+					}
+				}
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
 					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
 					+ (where.isEmpty() ? "" : " - " + where)

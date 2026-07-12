@@ -320,7 +320,7 @@ public class LoadoutLabPlugin extends Plugin
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
 					dwmsView(),
-					this::locationHint,
+					locationHintView(),
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -795,16 +795,34 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-	/** Panel hook: one tooltip clause naming where a suggested item lives
-	 * ("" when at hand or unowned). Hover-frequency, cheap to rebuild. */
-	private String locationHint(int itemId)
+	/** Panel hook: tooltip clause + legend label for an item's location.
+	 * Render/hover frequency; each lookup rebuilds the small origins map. */
+	private LoadoutLabPanel.LocationHint locationHintView()
 	{
-		if (ledger == null || manualOwned == null || dwmsImport == null)
+		return new LoadoutLabPanel.LocationHint()
 		{
-			return "";
-		}
-		return new com.loadoutlab.collection.ItemLocations(ownedBySources(),
-			data == null ? null : data::equivalentIds).fetchHint(itemId);
+			@Override
+			public String hint(int itemId)
+			{
+				return locations() == null ? "" : locations().fetchHint(itemId);
+			}
+
+			@Override
+			public String primary(int itemId)
+			{
+				return locations() == null ? "" : locations().primary(itemId);
+			}
+
+			private com.loadoutlab.collection.ItemLocations locations()
+			{
+				if (ledger == null || manualOwned == null || dwmsImport == null)
+				{
+					return null;
+				}
+				return new com.loadoutlab.collection.ItemLocations(ownedBySources(),
+					data == null ? null : data::equivalentIds);
+			}
+		};
 	}
 
 	/**
