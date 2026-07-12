@@ -157,6 +157,10 @@ public class LoadoutLabPlugin extends Plugin
 	private final Map<CollectionLedger.Source, Map<Integer, Integer>> pendingScans =
 		new EnumMap<>(CollectionLedger.Source.class);
 
+	/** Ticks left to re-scan the looting bag after its Check screen opens
+	 * (the contents can land a tick after the widget). */
+	private int lootingBagScanTicks;
+
 	/**
 	 * Cross-plugin link-in: other plugins (e.g. Goal Planner) post
 	 * PluginMessage(namespace "loadoutlab", name "search") with data
@@ -518,6 +522,22 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Checking the looting bag does NOT fire ItemContainerChanged
+	 * (field-tested; DWMS polls this container per tick for the same
+	 * reason). The Check screen opening is the capture moment - scan the
+	 * container for a few ticks so contents that land a tick late are
+	 * still seen. An empty-over-empty scan is a no-op write.
+	 */
+	@Subscribe
+	public void onWidgetLoaded(net.runelite.api.events.WidgetLoaded event)
+	{
+		if (event.getGroupId() == net.runelite.api.gameval.InterfaceID.WILDERNESS_LOOTINGBAG)
+		{
+			lootingBagScanTicks = 3;
+		}
+	}
+
 	/** Storage containers scanned from the event rather than re-fetched. */
 	private static CollectionLedger.Source storageSourceFor(int containerId)
 	{
@@ -564,6 +584,11 @@ public class LoadoutLabPlugin extends Plugin
 			return;
 		}
 		scanStashChart();
+		if (lootingBagScanTicks > 0)
+		{
+			lootingBagScanTicks--;
+			dirtySources.add(CollectionLedger.Source.LOOTING_BAG);
+		}
 		if (dirtySources.isEmpty())
 		{
 			return;
