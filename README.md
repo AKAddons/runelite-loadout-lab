@@ -244,6 +244,9 @@ melee card, a ranged potion on ranged, sharks everywhere) that join
 that card's "Show in bank" and "Filter bank" views. The "This mob: ..."
 line manages everything, and each style card collapses to its DPS
 header - sets a standard deviation under your best start collapsed.
+The magic card hosts its own controls: PIN THE SPELL ("I am casting
+Wind Bolt") and the gear optimizes around it, with the spellbook lock
+shown while the spell is on Auto.
 
 ![Mob profiles: pins, notes, and bank-filter items](docs/img/mob-profiles.png)
 

@@ -74,14 +74,28 @@ class MonsterProfileStoreTest
 	}
 
 	@Test
+	@DisplayName("the pinned spell persists per mob and clears to auto")
+	void pinnedSpellPersists()
+	{
+		store.setPinnedSpell(415, "Wind Bolt");
+		assertEquals("Wind Bolt", new MonsterProfileStore(configManager, new Gson())
+			.pinnedSpellFor(415));
+		assertEquals("", store.pinnedSpellFor(9999), "other mobs stay on auto");
+		store.setPinnedSpell(415, "");
+		assertEquals("", store.pinnedSpellFor(415));
+	}
+
+	@Test
 	@DisplayName("clearing every field prunes the profile from config entirely")
 	void emptyProfilesPrune()
 	{
 		store.pin(415, ALL, GearSlot.HANDS, 21183);
 		store.setNote(415, "note");
+		store.setPinnedSpell(415, "Wind Bolt");
 		store.addFilterItem(415, "MELEE", 385, "Shark");
 		store.unpin(415, ALL, GearSlot.HANDS);
 		store.setNote(415, "  ");
+		store.setPinnedSpell(415, null);
 		store.removeFilterItem(415, "MELEE", 385);
 
 		String json = configManager.getConfiguration("loadoutlab", "monsterProfiles");

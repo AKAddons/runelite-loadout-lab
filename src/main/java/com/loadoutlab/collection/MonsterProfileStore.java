@@ -41,6 +41,8 @@ public class MonsterProfileStore
 		Map<String, Map<String, Integer>> pins;
 		String note;
 		Map<String, Map<Integer, String>> filterItems;
+		/** Pinned autocast spell name for the magic card ("" / null = auto). */
+		String spell;
 	}
 
 	private final ConfigManager configManager;
@@ -173,6 +175,21 @@ public class MonsterProfileStore
 		save();
 	}
 
+	/** The pinned autocast spell for this monster ("" = auto-pick). */
+	public synchronized String pinnedSpellFor(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		return profile == null || profile.spell == null ? "" : profile.spell;
+	}
+
+	public synchronized void setPinnedSpell(int monsterId, String spellName)
+	{
+		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		profile.spell = spellName == null || spellName.trim().isEmpty()
+			? null : spellName.trim();
+		save();
+	}
+
 	/** Effective filter-item ids for one style card: ALL plus the style. */
 	public synchronized Set<Integer> filterItemsFor(int monsterId, String style)
 	{
@@ -248,6 +265,7 @@ public class MonsterProfileStore
 			prune(profile.filterItems);
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
+				&& (profile.spell == null || profile.spell.isEmpty())
 				&& (profile.filterItems == null || profile.filterItems.isEmpty());
 			if (!empty)
 			{

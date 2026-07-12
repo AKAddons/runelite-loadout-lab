@@ -200,7 +200,9 @@ public class OptimizerService
 		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedItems, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode, Collections.<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(), callback);
+			upgradeBudgetGp, mode,
+			Collections.<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(),
+			null, callback);
 	}
 
 	public void bestPerStyle(
@@ -222,6 +224,7 @@ public class OptimizerService
 		int upgradeBudgetGp,
 		OptimizeMode mode,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
@@ -241,7 +244,8 @@ public class OptimizerService
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
-			+ "|" + dreams.hashCode() + "|" + pins.hashCode() + "|" + upgradeBudgetGp
+			+ "|" + dreams.hashCode() + "|" + pins.hashCode()
+			+ "|" + (pinnedSpell == null ? "" : pinnedSpell.getName()) + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
@@ -304,6 +308,12 @@ public class OptimizerService
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
 					.withPinnedItems(pins.getOrDefault(style, Collections.emptyMap()));
+				if (style == CombatStyle.MAGIC && pinnedSpell != null)
+				{
+					// The mob's pinned autocast spell: forced, the search
+					// optimizes the gear around it.
+					ownedRequest = ownedRequest.withSpell(pinnedSpell);
+				}
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{

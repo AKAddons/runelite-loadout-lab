@@ -121,6 +121,17 @@ public class LinkInTest
 				public void removeFilterItem(int monsterId, String scope, int itemId)
 				{
 				}
+
+				@Override
+				public String pinnedSpell(int monsterId)
+				{
+					return "";
+				}
+
+				@Override
+				public void setPinnedSpell(int monsterId, String spellName)
+				{
+				}
 			},
 			(prompt, onPicked) -> { },
 			itemId -> true,

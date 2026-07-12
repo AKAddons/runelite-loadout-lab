@@ -905,7 +905,40 @@ public class LoadoutLabPlugin extends Plugin
 					mobProfiles.removeFilterItem(monsterId, scope, itemId);
 				}
 			}
+
+			@Override
+			public String pinnedSpell(int monsterId)
+			{
+				return mobProfiles == null ? "" : mobProfiles.pinnedSpellFor(monsterId);
+			}
+
+			@Override
+			public void setPinnedSpell(int monsterId, String spellName)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.setPinnedSpell(monsterId, spellName);
+				}
+			}
 		};
+	}
+
+	/** The mob's pinned autocast spell resolved to the dataset, or null. */
+	private com.loadoutlab.data.SpellStats resolvedPinnedSpell(int monsterId)
+	{
+		String name = mobProfiles == null ? "" : mobProfiles.pinnedSpellFor(monsterId);
+		if (name.isEmpty() || data == null)
+		{
+			return null;
+		}
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			if (spell.getName().equalsIgnoreCase(name))
+			{
+				return spell;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -1163,7 +1196,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
-				pinnedByStyle(monster.getId()),
+				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)

@@ -187,6 +187,11 @@ public class LoadoutLabPanel extends PluginPanel
 		void addFilterItem(int monsterId, String scope, int itemId, String name);
 
 		void removeFilterItem(int monsterId, String scope, int itemId);
+
+		/** Pinned autocast spell name for the magic card ("" = auto). */
+		String pinnedSpell(int monsterId);
+
+		void setPinnedSpell(int monsterId, String spellName);
 	}
 
 	/** Open the native chatbox item search; the pick (id, name) returns
@@ -499,12 +504,12 @@ public class LoadoutLabPanel extends PluginPanel
 		top.add(riskBudget);
 
 
-		// Lock the magic card's auto-spell to one spellbook.
+		// Spellbook lock lives ON the magic card (vertical space) - the
+		// combo keeps its state here and is re-parented per render.
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
 		spellbook.addActionListener(e -> recompute());
-		top.add(spellbook);
 
 		// Buyable upgrades within a total gp budget join the consideration
 		// pool (dream items are the manual version, via right-click).
@@ -1141,6 +1146,51 @@ public class LoadoutLabPanel extends PluginPanel
 		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
 		menu.add(addFilter);
 		menu.show(pinnedLabel, e.getX(), e.getY());
+	}
+
+	/**
+	 * The magic card's spell controls: pin the autocast spell for this
+	 * mob (the gear then optimizes around it - "I am casting Wind Bolt"),
+	 * with the spellbook lock shown only while the spell is on Auto.
+	 */
+	private JPanel magicSpellRow()
+	{
+		JPanel wrap = new JPanel();
+		wrap.setLayout(new BoxLayout(wrap, BoxLayout.Y_AXIS));
+		wrap.setOpaque(false);
+		wrap.setAlignmentX(LEFT_ALIGNMENT);
+		String pinned = mobProfile.pinnedSpell(currentMonsterId());
+		JComboBox<String> spellPin = new JComboBox<>();
+		spellPin.addItem("Spell: Auto (best)");
+		List<String> names = new ArrayList<>();
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			names.add(spell.getName());
+		}
+		Collections.sort(names);
+		for (String name : names)
+		{
+			spellPin.addItem(name);
+		}
+		if (!pinned.isEmpty())
+		{
+			spellPin.setSelectedItem(pinned);
+		}
+		spellPin.setAlignmentX(LEFT_ALIGNMENT);
+		spellPin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		spellPin.setToolTipText("Pin the autocast spell for this mob - the gear optimizes around it");
+		spellPin.addActionListener(e ->
+		{
+			mobProfile.setPinnedSpell(currentMonsterId(),
+				spellPin.getSelectedIndex() <= 0 ? "" : (String) spellPin.getSelectedItem());
+			recompute();
+		});
+		wrap.add(spellPin);
+		if (pinned.isEmpty())
+		{
+			wrap.add(spellbook);
+		}
+		return wrap;
 	}
 
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
@@ -1852,6 +1902,11 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 
 		DpsResult best = result.owned.get(0);
+
+		if (style == CombatStyle.MAGIC)
+		{
+			card.add(magicSpellRow());
+		}
 
 		// Yours vs the game's ceiling.
 		JLabel dps = new JLabel(String.format("Yours: %.2f DPS  (max %d, %.0f%% acc)",
