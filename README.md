@@ -55,6 +55,26 @@ Everything is local. The plugin writes two files under
 levels/bank snapshot, useful for bug reports) and `usage.tsv` (your own
 search history). Nothing is ever sent anywhere.
 
+## Data sharing (for other plugins)
+
+Loadout Lab's owned-gear data is deliberately readable by other plugins
+through the public ConfigManager API - the same zero-dependency way we
+import from Dude, Where's My Stuff. No reflection needed:
+
+- Config group: `loadoutlab`
+- Keys: `<world>.<accountHash>.collection.<source>`, where `<world>` is
+  `std` or `seasonal`, `<accountHash>` is `Client.getAccountHash()`, and
+  `<source>` is `equipment`, `inventory`, `bank`, or `lootingBag`. The
+  user's manually marked items live at `<world>.<accountHash>.manualOwned`.
+- Values: JSON. Collection keys hold `{"<itemId>": <quantity>, ...}` maps
+  (raw item ids, not canonicalized); `manualOwned` is a JSON array of ids.
+
+Stability promise: these semantics never change silently. If the schema
+ever has to change, the new shape gets a NEW key and existing keys keep
+their meaning. A PluginMessage contract is the preferred interface and is
+planned; config reads are the fallback that works even while a plugin is
+disabled.
+
 ## License
 
 BSD 2-Clause. DPS engine derived from
