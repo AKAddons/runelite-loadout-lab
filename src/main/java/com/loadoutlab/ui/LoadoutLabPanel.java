@@ -2149,7 +2149,8 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						slot.setFate(Fate.DROPPED);
 						fate = " - lost on death ("
-							+ PvpRisk.formatGp(fates.valueOf(item)) + ")";
+							+ PvpRisk.formatGp(fates.valueOf(item))
+							+ imbueRefundNote(item) + ")";
 					}
 					else
 					{
@@ -2309,6 +2310,22 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return 0;
+	}
+
+	/**
+	 * Imbued convert-class items (rings (i), ...) drop UNIMBUED to the
+	 * killer and the imbue points are fully refunded (April 2024 change) -
+	 * without saying so, the bare gp figure looks like it forgot the imbue
+	 * (field report: warrior ring (i) at 60k read as a bad suggestion).
+	 */
+	private static String imbueRefundNote(GearItem item)
+	{
+		if (com.loadoutlab.engine.UntradeableDeathCosts.categoryFor(item) == 4
+			&& (item.getNameLower().endsWith("(i)") || item.getNameLower().endsWith("(ei)")))
+		{
+			return "; drops unimbued, imbue points refunded";
+		}
+		return "";
 	}
 
 	/** True when the item breaks on death even at zero reclaim cost. */
