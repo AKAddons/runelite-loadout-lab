@@ -65,18 +65,26 @@ public class LinkInTest
 			new LoadoutLabPanel.MobProfile()
 			{
 				@Override
-				public java.util.Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId)
+				public java.util.Map<com.loadoutlab.data.GearSlot, Integer> pins(
+					int monsterId, com.loadoutlab.engine.CombatStyle style)
 				{
 					return java.util.Map.of();
 				}
 
 				@Override
-				public void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId)
+				public java.util.Map<String, java.util.Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId)
+				{
+					return java.util.Map.of();
+				}
+
+				@Override
+				public void pin(int monsterId, String scope,
+					com.loadoutlab.data.GearSlot slot, int itemId)
 				{
 				}
 
 				@Override
-				public void unpin(int monsterId, com.loadoutlab.data.GearSlot slot)
+				public void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot)
 				{
 				}
 
@@ -92,27 +100,29 @@ public class LinkInTest
 				}
 
 				@Override
-				public java.util.Set<Integer> filterItems(int monsterId)
+				public java.util.Set<Integer> filterItems(
+					int monsterId, com.loadoutlab.engine.CombatStyle style)
 				{
 					return java.util.Set.of();
 				}
 
 				@Override
-				public java.util.Map<Integer, String> filterItemNames(int monsterId)
+				public java.util.Map<String, java.util.Map<Integer, String>> allFilterItems(int monsterId)
 				{
 					return java.util.Map.of();
 				}
 
 				@Override
-				public void addFilterItem(int monsterId, int itemId, String name)
+				public void addFilterItem(int monsterId, String scope, int itemId, String name)
 				{
 				}
 
 				@Override
-				public void removeFilterItem(int monsterId, int itemId)
+				public void removeFilterItem(int monsterId, String scope, int itemId)
 				{
 				}
 			},
+			(prompt, onPicked) -> { },
 			itemId -> true,
 			ids -> { },
 			ids -> { });

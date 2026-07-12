@@ -200,7 +200,7 @@ public class OptimizerService
 		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedItems, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode, Collections.emptyMap(), callback);
+			upgradeBudgetGp, mode, Collections.<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(), callback);
 	}
 
 	public void bestPerStyle(
@@ -221,11 +221,11 @@ public class OptimizerService
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		OptimizeMode mode,
-		Map<com.loadoutlab.data.GearSlot, Integer> pinnedItems,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
-		final Map<com.loadoutlab.data.GearSlot, Integer> pins = pinnedItems == null
-			? Collections.emptyMap() : pinnedItems;
+		final Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
+			pinnedByStyle == null ? Collections.emptyMap() : pinnedByStyle;
 		final Set<Integer> excluded = excludedItems == null
 			? Collections.emptySet() : excludedItems;
 		final Set<Integer> dreams = dreamItems == null
@@ -303,7 +303,7 @@ public class OptimizerService
 					.withDreamItems(dreams)
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
-					.withPinnedItems(pins);
+					.withPinnedItems(pins.getOrDefault(style, Collections.emptyMap()));
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{

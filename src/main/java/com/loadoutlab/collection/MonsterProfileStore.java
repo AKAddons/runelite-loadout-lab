@@ -8,7 +8,6 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.client.config.ConfigManager;
@@ -16,28 +15,32 @@ import net.runelite.client.config.ConfigManager;
 /**
  * Per-monster user profiles: the preferences the optimizer cannot infer,
  * remembered per mob. Each profile carries PINS (slot -> item the player
- * always brings THERE - bracelet of slaughter class), a free-text NOTE
- * ("bring antidote++, pray melee after the spec"), and extra ITEM IDS
- * unioned into the Show-in-bank / Filter-bank sets (supplies the trip
- * needs that no loadout suggestion would ever contain).
+ * always brings THERE), a free-text NOTE, and extra ITEMS unioned into
+ * the Show-in-bank / Filter-bank sets (trip supplies no suggestion would
+ * contain). Pins and filter items are SCOPED: "ALL" applies to every
+ * style card, or a specific style ("MELEE"/"RANGED"/"MAGIC") applies to
+ * that card only - a super combat for melee, a ranged potion for ranged.
+ * The effective view overlays ALL with the style scope (style wins a
+ * pin-slot collision).
  *
- * <p>Scope-free in v1 like dreams/exclusions: trip preferences follow
- * the player, and the RuneLite config profile isolates setups. Empty
- * profiles are pruned on save so the config never accumulates husks.
+ * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
+ * follow the player. Empty profiles are pruned on save.
  */
 public class MonsterProfileStore
 {
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "monsterProfiles";
+	/** The every-style scope key. Style scopes use CombatStyle names. */
+	public static final String ALL = "ALL";
 
-	/** Serialized form: slot names and plain maps survive gson cleanly.
-	 * Filter items carry their NAME (captured at add time from the item
-	 * search) - resolving ids to names later needs the client thread. */
+	/** Serialized form: scope -> slot-name -> id for pins; scope -> id ->
+	 * display name for filter items (names captured at add time - id
+	 * resolution later needs the client thread). */
 	private static final class Stored
 	{
-		Map<String, Integer> pins;
+		Map<String, Map<String, Integer>> pins;
 		String note;
-		Map<Integer, String> filterItems;
+		Map<String, Map<Integer, String>> filterItems;
 	}
 
 	private final ConfigManager configManager;
@@ -80,45 +83,78 @@ public class MonsterProfileStore
 		}
 	}
 
-	public synchronized Map<GearSlot, Integer> pinsFor(int monsterId)
+	/** Effective pins for one style card: ALL overlaid by the style scope. */
+	public synchronized Map<GearSlot, Integer> pinsFor(int monsterId, String style)
 	{
 		Stored profile = profiles.get(monsterId);
-		if (profile == null || profile.pins == null || profile.pins.isEmpty())
+		if (profile == null || profile.pins == null)
 		{
 			return Collections.emptyMap();
 		}
 		EnumMap<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
-		for (Map.Entry<String, Integer> entry : profile.pins.entrySet())
+		copyPins(profile.pins.get(ALL), pins);
+		copyPins(profile.pins.get(style), pins);
+		return pins.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(pins);
+	}
+
+	private static void copyPins(Map<String, Integer> from, EnumMap<GearSlot, Integer> into)
+	{
+		if (from == null)
+		{
+			return;
+		}
+		for (Map.Entry<String, Integer> entry : from.entrySet())
 		{
 			try
 			{
-				pins.put(GearSlot.valueOf(entry.getKey()), entry.getValue());
+				into.put(GearSlot.valueOf(entry.getKey()), entry.getValue());
 			}
 			catch (IllegalArgumentException ignored)
 			{
 				// Unknown slot name in config: drop that pin.
 			}
 		}
-		return Collections.unmodifiableMap(pins);
 	}
 
-	public synchronized void pin(int monsterId, GearSlot slot, int itemId)
+	/** Raw pins by scope, for the manage menu: scope -> slot -> id. */
+	public synchronized Map<String, Map<GearSlot, Integer>> allPins(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.pins == null || profile.pins.isEmpty())
+		{
+			return Collections.emptyMap();
+		}
+		Map<String, Map<GearSlot, Integer>> out = new LinkedHashMap<>();
+		for (Map.Entry<String, Map<String, Integer>> scope : profile.pins.entrySet())
+		{
+			EnumMap<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
+			copyPins(scope.getValue(), pins);
+			if (!pins.isEmpty())
+			{
+				out.put(scope.getKey(), Collections.unmodifiableMap(pins));
+			}
+		}
+		return Collections.unmodifiableMap(out);
+	}
+
+	public synchronized void pin(int monsterId, String scope, GearSlot slot, int itemId)
 	{
 		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
 		if (profile.pins == null)
 		{
 			profile.pins = new LinkedHashMap<>();
 		}
-		profile.pins.put(slot.name(), itemId);
+		profile.pins.computeIfAbsent(scope, s -> new LinkedHashMap<>())
+			.put(slot.name(), itemId);
 		save();
 	}
 
-	public synchronized void unpin(int monsterId, GearSlot slot)
+	public synchronized void unpin(int monsterId, String scope, GearSlot slot)
 	{
 		Stored profile = profiles.get(monsterId);
-		if (profile != null && profile.pins != null)
+		if (profile != null && profile.pins != null && profile.pins.get(scope) != null)
 		{
-			profile.pins.remove(slot.name());
+			profile.pins.get(scope).remove(slot.name());
 			save();
 		}
 	}
@@ -137,41 +173,67 @@ public class MonsterProfileStore
 		save();
 	}
 
-	/** Extra item ids unioned into Show-in-bank / Filter-bank sets. */
-	public synchronized Set<Integer> filterItemsFor(int monsterId)
+	/** Effective filter-item ids for one style card: ALL plus the style. */
+	public synchronized Set<Integer> filterItemsFor(int monsterId, String style)
 	{
 		Stored profile = profiles.get(monsterId);
-		return profile == null || profile.filterItems == null || profile.filterItems.isEmpty()
-			? Collections.emptySet()
-			: Collections.unmodifiableSet(new LinkedHashSet<>(profile.filterItems.keySet()));
+		if (profile == null || profile.filterItems == null)
+		{
+			return Collections.emptySet();
+		}
+		Set<Integer> ids = new LinkedHashSet<>();
+		Map<Integer, String> all = profile.filterItems.get(ALL);
+		if (all != null)
+		{
+			ids.addAll(all.keySet());
+		}
+		Map<Integer, String> styled = profile.filterItems.get(style);
+		if (styled != null)
+		{
+			ids.addAll(styled.keySet());
+		}
+		return ids.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(ids);
 	}
 
-	/** Display names for the filter items, id -> name (add-time names). */
-	public synchronized Map<Integer, String> filterItemNamesFor(int monsterId)
+	/** Raw filter items by scope: scope -> id -> display name. */
+	public synchronized Map<String, Map<Integer, String>> allFilterItems(int monsterId)
 	{
 		Stored profile = profiles.get(monsterId);
-		return profile == null || profile.filterItems == null || profile.filterItems.isEmpty()
-			? Collections.emptyMap()
-			: Collections.unmodifiableMap(new LinkedHashMap<>(profile.filterItems));
+		if (profile == null || profile.filterItems == null || profile.filterItems.isEmpty())
+		{
+			return Collections.emptyMap();
+		}
+		Map<String, Map<Integer, String>> out = new LinkedHashMap<>();
+		for (Map.Entry<String, Map<Integer, String>> scope : profile.filterItems.entrySet())
+		{
+			if (scope.getValue() != null && !scope.getValue().isEmpty())
+			{
+				out.put(scope.getKey(),
+					Collections.unmodifiableMap(new LinkedHashMap<>(scope.getValue())));
+			}
+		}
+		return Collections.unmodifiableMap(out);
 	}
 
-	public synchronized void addFilterItem(int monsterId, int itemId, String name)
+	public synchronized void addFilterItem(int monsterId, String scope, int itemId, String name)
 	{
 		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
 		if (profile.filterItems == null)
 		{
 			profile.filterItems = new LinkedHashMap<>();
 		}
-		profile.filterItems.put(itemId, name == null ? ("item " + itemId) : name);
+		profile.filterItems.computeIfAbsent(scope, s -> new LinkedHashMap<>())
+			.put(itemId, name == null ? ("item " + itemId) : name);
 		save();
 	}
 
-	public synchronized void removeFilterItem(int monsterId, int itemId)
+	public synchronized void removeFilterItem(int monsterId, String scope, int itemId)
 	{
 		Stored profile = profiles.get(monsterId);
-		if (profile != null && profile.filterItems != null)
+		if (profile != null && profile.filterItems != null
+			&& profile.filterItems.get(scope) != null)
 		{
-			profile.filterItems.remove(itemId);
+			profile.filterItems.get(scope).remove(itemId);
 			save();
 		}
 	}
@@ -182,6 +244,8 @@ public class MonsterProfileStore
 		for (Map.Entry<Integer, Stored> entry : profiles.entrySet())
 		{
 			Stored profile = entry.getValue();
+			prune(profile.pins);
+			prune(profile.filterItems);
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.filterItems == null || profile.filterItems.isEmpty());
@@ -192,5 +256,13 @@ public class MonsterProfileStore
 		}
 		profiles.keySet().retainAll(out.keySet());
 		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(out));
+	}
+
+	private static void prune(Map<String, ? extends Map<?, ?>> scoped)
+	{
+		if (scoped != null)
+		{
+			scoped.values().removeIf(m -> m == null || m.isEmpty());
+		}
 	}
 }

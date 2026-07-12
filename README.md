@@ -229,18 +229,21 @@ for bug reports.
 
 ### Mob profiles: pins, notes, and bank-filter items
 
-Every monster remembers your preferences for it. PIN an item to a slot
-for that mob (right-click a cell, or add by name from the Options menu)
-- a Bracelet of slaughter stretching that slayer task - and every
-suggestion there brings it, owned or not, with the optimizer building
-the best set around it; pins outrank exclusions, budgets, and the
-low-risk safety vetoes while the risk numbers stay honest, and game
-best stays unpinned so you can see what the preference costs. Add a
-NOTE ("bring antidote++, pray melee after the spec") that shows under
-the mechanics note. And add BANK-FILTER ITEMS - the supplies this trip
-needs (food, antidotes, cannonballs, searched from the full item list)
-- which join "Show in bank" and "Filter bank" alongside the suggested
-set. The "This mob: ..." line manages all three.
+Every monster remembers your preferences for it - scoped to one combat
+set or all of them. PIN an item (right-click a cell's Pin submenu, or
+the card's dots menu, both opening the native in-game item search) - a
+Bracelet of slaughter stretching that slayer task - and that card
+always brings it, owned or not, with the optimizer building the best
+set around it; a melee-only pin never touches your ranged card. Pins
+outrank exclusions, budgets, and the low-risk safety vetoes while the
+risk numbers stay honest, and game best stays unpinned so you can see
+what the preference costs. The mob's NOTE is a collapsible post-it
+under the storage lines, edited inline - click, type, click away.
+BANK-FILTER ITEMS are per-set trip supplies (a super combat on the
+melee card, a ranged potion on ranged, sharks everywhere) that join
+that card's "Show in bank" and "Filter bank" views. The "This mob: ..."
+line manages everything, and each style card collapses to its DPS
+header - sets a standard deviation under your best start collapsed.
 
 ![Mob profiles: pins, notes, and bank-filter items](docs/img/mob-profiles.png)
 

@@ -110,6 +110,9 @@ public class LoadoutLabPlugin extends Plugin
 	private SpriteManager spriteManager;
 
 	@Inject
+	private net.runelite.client.game.chatbox.ChatboxItemSearch chatboxItemSearch;
+
+	@Inject
 	private EventBus eventBus;
 
 	@Inject
@@ -323,7 +326,7 @@ public class LoadoutLabPlugin extends Plugin
 					manualOwned::toggle, manualOwned::snapshot,
 					dwmsView(),
 					locationHintView(),
-					mobProfileView(),
+					mobProfileView(), itemSearchView(),
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -803,32 +806,57 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
+	/** The mob's effective pins per style (ALL overlaid by each style) -
+	 * what the optimizer request for each card carries. */
+	private Map<com.loadoutlab.engine.CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle(int monsterId)
+	{
+		EnumMap<com.loadoutlab.engine.CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> byStyle =
+			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.values())
+		{
+			Map<com.loadoutlab.data.GearSlot, Integer> pins =
+				mobProfiles.pinsFor(monsterId, style.name());
+			if (!pins.isEmpty())
+			{
+				byStyle.put(style, pins);
+			}
+		}
+		return byStyle;
+	}
+
 	/** Panel hook: the per-monster user profile, backed by the store. */
 	private LoadoutLabPanel.MobProfile mobProfileView()
 	{
 		return new LoadoutLabPanel.MobProfile()
 		{
 			@Override
-			public Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId)
+			public Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId, com.loadoutlab.engine.CombatStyle style)
 			{
-				return mobProfiles == null ? Map.of() : mobProfiles.pinsFor(monsterId);
+				return mobProfiles == null ? Map.of()
+					: mobProfiles.pinsFor(monsterId, style.name());
 			}
 
 			@Override
-			public void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId)
+			public Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.allPins(monsterId);
+			}
+
+			@Override
+			public void pin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot, int itemId)
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.pin(monsterId, slot, itemId);
+					mobProfiles.pin(monsterId, scope, slot, itemId);
 				}
 			}
 
 			@Override
-			public void unpin(int monsterId, com.loadoutlab.data.GearSlot slot)
+			public void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot)
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.unpin(monsterId, slot);
+					mobProfiles.unpin(monsterId, scope, slot);
 				}
 			}
 
@@ -848,35 +876,55 @@ public class LoadoutLabPlugin extends Plugin
 			}
 
 			@Override
-			public Set<Integer> filterItems(int monsterId)
+			public Set<Integer> filterItems(int monsterId, com.loadoutlab.engine.CombatStyle style)
 			{
-				return mobProfiles == null ? Set.of() : mobProfiles.filterItemsFor(monsterId);
+				return mobProfiles == null ? Set.of()
+					: mobProfiles.filterItemsFor(monsterId, style.name());
 			}
 
 			@Override
-			public Map<Integer, String> filterItemNames(int monsterId)
+			public Map<String, Map<Integer, String>> allFilterItems(int monsterId)
 			{
-				return mobProfiles == null ? Map.of() : mobProfiles.filterItemNamesFor(monsterId);
+				return mobProfiles == null ? Map.of() : mobProfiles.allFilterItems(monsterId);
 			}
 
 			@Override
-			public void addFilterItem(int monsterId, int itemId, String name)
+			public void addFilterItem(int monsterId, String scope, int itemId, String name)
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.addFilterItem(monsterId, itemId, name);
+					mobProfiles.addFilterItem(monsterId, scope, itemId, name);
 				}
 			}
 
 			@Override
-			public void removeFilterItem(int monsterId, int itemId)
+			public void removeFilterItem(int monsterId, String scope, int itemId)
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.removeFilterItem(monsterId, itemId);
+					mobProfiles.removeFilterItem(monsterId, scope, itemId);
 				}
 			}
 		};
+	}
+
+	/**
+	 * Panel hook: the NATIVE chatbox item search (field request - replaces
+	 * the dialog matcher). Runs on the client thread; the pick resolves
+	 * its display name there (the only thread where that is legal) and
+	 * returns to the EDT.
+	 */
+	private LoadoutLabPanel.ItemSearch itemSearchView()
+	{
+		return (prompt, onPicked) -> clientThread.invokeLater(() ->
+			chatboxItemSearch
+				.tooltipText(prompt)
+				.onItemSelected(itemId ->
+				{
+					String name = itemManager.getItemComposition(itemId).getName();
+					SwingUtilities.invokeLater(() -> onPicked.accept(itemId, name));
+				})
+				.build());
 	}
 
 	/** Panel hook: tooltip clause + legend label for an item's location.
@@ -1115,7 +1163,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
-				mobProfiles.pinsFor(monster.getId()),
+				pinnedByStyle(monster.getId()),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)

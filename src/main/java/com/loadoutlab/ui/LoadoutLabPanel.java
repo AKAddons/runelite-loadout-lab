@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -158,28 +159,45 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Per-monster user profile: pins ("always bring this HERE"), a free
-	 * note, and extra items unioned into the bank Show/Filter sets. */
+	 * note, and extra items unioned into the bank Show/Filter sets. Pins
+	 * and filter items are scoped: "ALL" or a CombatStyle name - a super
+	 * combat for the melee card, a ranged potion for the ranged card. */
 	public interface MobProfile
 	{
-		Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId);
+		/** Effective pins for one style card (ALL overlaid by the style). */
+		Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId, CombatStyle style);
 
-		void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId);
+		/** Raw pins by scope, for the manage menu. */
+		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId);
 
-		void unpin(int monsterId, com.loadoutlab.data.GearSlot slot);
+		void pin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot, int itemId);
+
+		void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot);
 
 		String note(int monsterId);
 
 		void setNote(int monsterId, String note);
 
-		Set<Integer> filterItems(int monsterId);
+		/** Effective filter-item ids for one style card (ALL + the style). */
+		Set<Integer> filterItems(int monsterId, CombatStyle style);
 
-		/** id -> display name captured when the item was added. */
-		Map<Integer, String> filterItemNames(int monsterId);
+		/** Raw filter items by scope: scope -> id -> add-time name. */
+		Map<String, Map<Integer, String>> allFilterItems(int monsterId);
 
-		void addFilterItem(int monsterId, int itemId, String name);
+		void addFilterItem(int monsterId, String scope, int itemId, String name);
 
-		void removeFilterItem(int monsterId, int itemId);
+		void removeFilterItem(int monsterId, String scope, int itemId);
 	}
+
+	/** Open the native chatbox item search; the pick (id, name) returns
+	 * on the EDT. The strange dialog matcher is gone (field request). */
+	public interface ItemSearch
+	{
+		void search(String prompt, java.util.function.BiConsumer<Integer, String> onPicked);
+	}
+
+	/** The every-style pin/filter scope key. */
+	public static final String ALL_SETS = "ALL";
 
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
@@ -260,7 +278,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DwmsView dwmsView;
 	private final LocationHint locationHint;
 	private final MobProfile mobProfile;
+	private final ItemSearch itemSearch;
 	private final OwnedCheck ownedCheck;
+	/** Per-style card collapse: user override on top of the auto default
+	 * (collapsed when a standard deviation under the best set's dps). */
+	private final Map<CombatStyle, Boolean> cardCollapsed = new EnumMap<>(CombatStyle.class);
+	private final Map<CombatStyle, Boolean> autoCollapsed = new EnumMap<>(CombatStyle.class);
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
 	/** Which style's set is filtering the bank (null = none). */
@@ -278,8 +301,14 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel storedLabel = new JLabel();
 	private final JLabel dwmsLabel = new JLabel();
 	private final JLabel pinnedLabel = new JLabel();
-	/** The user's own note for the selected monster ("Note: ..."). */
-	private final JLabel userNoteLabel = new JLabel();
+	/** The user's own note for the selected monster: a collapsible
+	 * post-it, edited inline (saves on focus loss - no edit button). */
+	private final JPanel notePanel = new JPanel();
+	private final JLabel noteHeader = new JLabel();
+	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
+	private boolean noteCollapsed = true;
+	private static final Color POSTIT_BG = new Color(222, 212, 150);
+	private static final Color POSTIT_FG = new Color(55, 50, 25);
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -310,6 +339,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private boolean superAntifireAssumed;
 
 	private MonsterStats selectedMonster;
+	/** The style card currently being rendered (EDT-only render state) -
+	 * grid cells read it for per-style pin menus and tooltips. */
+	private CombatStyle renderingStyle;
 	/** Per-style expanded game-best (BiS) sections - hidden by default,
 	 * each card's header toggles only its own section. */
 	private final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
@@ -320,7 +352,7 @@ public class LoadoutLabPanel extends PluginPanel
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
 		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
-		LocationHint locationHint, MobProfile mobProfile,
+		LocationHint locationHint, MobProfile mobProfile, ItemSearch itemSearch,
 		OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
@@ -339,6 +371,7 @@ public class LoadoutLabPanel extends PluginPanel
 		this.dwmsView = dwmsView;
 		this.locationHint = locationHint;
 		this.mobProfile = mobProfile;
+		this.itemSearch = itemSearch;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -371,18 +404,8 @@ public class LoadoutLabPanel extends PluginPanel
 			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
 			addStored.addActionListener(ev -> showAddStoredDialog());
 			menu.add(addStored);
-			if (selectedMonster != null)
-			{
-				JMenuItem addPin = new JMenuItem("Pin an item for this mob...");
-				addPin.addActionListener(ev -> showPinDialog());
-				menu.add(addPin);
-				JMenuItem addFilter = new JMenuItem("Add a bank-filter item for this mob...");
-				addFilter.addActionListener(ev -> showFilterItemDialog());
-				menu.add(addFilter);
-				JMenuItem editNote = new JMenuItem("Edit the note for this mob...");
-				editNote.addActionListener(ev -> showNoteDialog());
-				menu.add(editNote);
-			}
+			// Mob-specific actions live on the style cards and the
+			// "This mob" line - the header menu stays plugin-wide.
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
 			menu.add(joinDiscord);
@@ -427,13 +450,6 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
 		monsterNote.setVisible(false);
 		top.add(monsterNote);
-
-		// The user's own note for the selected monster.
-		userNoteLabel.setForeground(INFO);
-		userNoteLabel.setFont(userNoteLabel.getFont().deriveFont(13f));
-		userNoteLabel.setAlignmentX(LEFT_ALIGNMENT);
-		userNoteLabel.setVisible(false);
-		top.add(userNoteLabel);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -559,6 +575,49 @@ public class LoadoutLabPanel extends PluginPanel
 		dwmsLabel.setAlignmentX(LEFT_ALIGNMENT);
 		top.add(dwmsLabel);
 		refreshDwmsLabel();
+
+		// The mob's post-it note: collapsible, edited inline (saves when
+		// focus leaves the text area). Lives under the DWMS line.
+		notePanel.setLayout(new BoxLayout(notePanel, BoxLayout.Y_AXIS));
+		notePanel.setBackground(POSTIT_BG);
+		notePanel.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6));
+		notePanel.setAlignmentX(LEFT_ALIGNMENT);
+		noteHeader.setForeground(POSTIT_FG);
+		noteHeader.setFont(noteHeader.getFont().deriveFont(Font.BOLD, 12f));
+		noteHeader.setAlignmentX(LEFT_ALIGNMENT);
+		noteHeader.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		noteHeader.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				saveNoteIfChanged();
+				noteCollapsed = !noteCollapsed;
+				refreshNotePanel();
+			}
+		});
+		noteArea.setLineWrap(true);
+		noteArea.setWrapStyleWord(true);
+		noteArea.setRows(3);
+		noteArea.setBackground(POSTIT_BG);
+		noteArea.setForeground(POSTIT_FG);
+		noteArea.setCaretColor(POSTIT_FG);
+		noteArea.setFont(noteArea.getFont().deriveFont(12f));
+		noteArea.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+		noteArea.setAlignmentX(LEFT_ALIGNMENT);
+		noteArea.addFocusListener(new java.awt.event.FocusAdapter()
+		{
+			@Override
+			public void focusLost(java.awt.event.FocusEvent e)
+			{
+				saveNoteIfChanged();
+				refreshNotePanel();
+			}
+		});
+		notePanel.add(noteHeader);
+		notePanel.add(noteArea);
+		notePanel.setVisible(false);
+		top.add(notePanel);
 
 		// Pinned items ("always bring") - click to manage.
 		pinnedLabel.setForeground(INFO);
@@ -770,7 +829,10 @@ public class LoadoutLabPanel extends PluginPanel
 		String note = MonsterNotes.noteFor(monster);
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
 		monsterNote.setVisible(note != null);
-		refreshUserNote();
+		// A new mob: fresh collapse defaults, its own note state.
+		cardCollapsed.clear();
+		noteCollapsed = mobProfile.note(monster.getId()).isEmpty();
+		refreshNotePanel();
 		refreshPinnedLabel();
 		revalidate();
 		repaint();
@@ -945,6 +1007,11 @@ public class LoadoutLabPanel extends PluginPanel
 		return selectedMonster == null ? -1 : selectedMonster.getId();
 	}
 
+	private static String scopeLabel(String scope)
+	{
+		return ALL_SETS.equals(scope) ? "all sets" : scope.toLowerCase(java.util.Locale.ROOT);
+	}
+
 	private void refreshPinnedLabel()
 	{
 		if (selectedMonster == null)
@@ -953,8 +1020,17 @@ public class LoadoutLabPanel extends PluginPanel
 			return;
 		}
 		int monsterId = currentMonsterId();
-		int pins = mobProfile.pins(monsterId).size();
-		int filters = mobProfile.filterItems(monsterId).size();
+		int pins = 0;
+		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
+			: mobProfile.allPins(monsterId).values())
+		{
+			pins += scoped.size();
+		}
+		int filters = 0;
+		for (Map<Integer, String> scoped : mobProfile.allFilterItems(monsterId).values())
+		{
+			filters += scoped.size();
+		}
 		if (pins == 0 && filters == 0)
 		{
 			pinnedLabel.setVisible(false);
@@ -974,11 +1050,41 @@ public class LoadoutLabPanel extends PluginPanel
 		pinnedLabel.setVisible(true);
 	}
 
-	private void refreshUserNote()
+	private void saveNoteIfChanged()
 	{
-		String note = selectedMonster == null ? "" : mobProfile.note(currentMonsterId());
-		userNoteLabel.setText(note.isEmpty() ? "" : "<html>Note: " + note + "</html>");
-		userNoteLabel.setVisible(!note.isEmpty());
+		if (selectedMonster == null)
+		{
+			return;
+		}
+		String current = mobProfile.note(currentMonsterId());
+		String edited = noteArea.getText() == null ? "" : noteArea.getText().trim();
+		if (!edited.equals(current))
+		{
+			mobProfile.setNote(currentMonsterId(), edited);
+		}
+	}
+
+	/** The post-it: hidden without a monster; collapsed shows only the
+	 * header line; expanded is the inline-editable note body. */
+	private void refreshNotePanel()
+	{
+		if (selectedMonster == null)
+		{
+			notePanel.setVisible(false);
+			return;
+		}
+		String note = mobProfile.note(currentMonsterId());
+		if (!noteArea.getText().equals(note) && !noteArea.isFocusOwner())
+		{
+			noteArea.setText(note);
+		}
+		noteHeader.setText(noteCollapsed
+			? (note.isEmpty() ? "+ Note (click to add)" : "> Note")
+			: "v Note");
+		noteArea.setVisible(!noteCollapsed);
+		notePanel.setVisible(true);
+		notePanel.revalidate();
+		notePanel.repaint();
 	}
 
 	private void showPinnedMenu(MouseEvent e)
@@ -989,166 +1095,163 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int monsterId = currentMonsterId();
 		JPopupMenu menu = new JPopupMenu();
-		for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry
-			: mobProfile.pins(monsterId).entrySet())
+		for (Map.Entry<String, Map<com.loadoutlab.data.GearSlot, Integer>> scoped
+			: mobProfile.allPins(monsterId).entrySet())
 		{
-			GearItem item = data.getGear(entry.getValue());
-			String label = item == null ? ("item " + entry.getValue()) : item.label();
-			JMenuItem row = new JMenuItem("Unpin " + label + " (" + slotName(entry.getKey()) + ")");
-			com.loadoutlab.data.GearSlot slot = entry.getKey();
-			row.addActionListener(a ->
+			String scope = scoped.getKey();
+			for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry
+				: scoped.getValue().entrySet())
 			{
-				mobProfile.unpin(monsterId, slot);
-				refreshPinnedLabel();
-				recompute();
-			});
-			menu.add(row);
+				GearItem item = data.getGear(entry.getValue());
+				String label = item == null ? ("item " + entry.getValue()) : item.label();
+				JMenuItem row = new JMenuItem(
+					"Unpin " + label + " (" + scopeLabel(scope) + ")");
+				com.loadoutlab.data.GearSlot slot = entry.getKey();
+				row.addActionListener(a ->
+				{
+					mobProfile.unpin(monsterId, scope, slot);
+					refreshPinnedLabel();
+					recompute();
+				});
+				menu.add(row);
+			}
 		}
-		for (Map.Entry<Integer, String> entry
-			: mobProfile.filterItemNames(monsterId).entrySet())
+		for (Map.Entry<String, Map<Integer, String>> scoped
+			: mobProfile.allFilterItems(monsterId).entrySet())
 		{
-			JMenuItem row = new JMenuItem("Remove from bank filter: " + entry.getValue());
-			int finalId = entry.getKey();
-			row.addActionListener(a ->
+			String scope = scoped.getKey();
+			for (Map.Entry<Integer, String> entry : scoped.getValue().entrySet())
 			{
-				mobProfile.removeFilterItem(monsterId, finalId);
-				refreshPinnedLabel();
-			});
-			menu.add(row);
+				JMenuItem row = new JMenuItem("Remove filter item " + entry.getValue()
+					+ " (" + scopeLabel(scope) + ")");
+				int itemId = entry.getKey();
+				row.addActionListener(a ->
+				{
+					mobProfile.removeFilterItem(monsterId, scope, itemId);
+					refreshPinnedLabel();
+				});
+				menu.add(row);
+			}
 		}
 		menu.addSeparator();
-		JMenuItem addPin = new JMenuItem("Pin an item for this mob...");
-		addPin.addActionListener(a -> showPinDialog());
+		JMenuItem addPin = new JMenuItem("Pin an item - all sets (search)...");
+		addPin.addActionListener(a -> searchAndPin(ALL_SETS));
 		menu.add(addPin);
-		JMenuItem addFilter = new JMenuItem("Add a bank-filter item for this mob...");
-		addFilter.addActionListener(a -> showFilterItemDialog());
+		JMenuItem addFilter = new JMenuItem("Add a bank-filter item - all sets (search)...");
+		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
 		menu.add(addFilter);
-		JMenuItem editNote = new JMenuItem("Edit the note for this mob...");
-		editNote.addActionListener(a -> showNoteDialog());
-		menu.add(editNote);
 		menu.show(pinnedLabel, e.getX(), e.getY());
 	}
 
-	/** Add-by-name flow for pins: items worth pinning (bracelet of
-	 * slaughter class) are exactly the ones no suggestion ever shows. */
-	private void showPinDialog()
+	/** The per-cell pin submenu: pin/unpin the shown item for this set or
+	 * all sets, or chatbox-search ANOTHER item into the pin. */
+	private javax.swing.JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
+		CombatStyle style)
+	{
+		int monsterId = currentMonsterId();
+		javax.swing.JMenu pinMenu = new javax.swing.JMenu("Pin " + item.label());
+		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> raw = mobProfile.allPins(monsterId);
+		Integer styleScoped = raw.getOrDefault(style.name(), Collections.emptyMap()).get(slot);
+		Integer allScoped = raw.getOrDefault(ALL_SETS, Collections.emptyMap()).get(slot);
+
+		if (styleScoped == null || styleScoped != item.getId())
+		{
+			JMenuItem thisSet = new JMenuItem("This set only");
+			thisSet.addActionListener(a ->
+			{
+				mobProfile.pin(monsterId, style.name(), slot, item.getId());
+				refreshPinnedLabel();
+				recompute();
+			});
+			pinMenu.add(thisSet);
+		}
+		if (allScoped == null || allScoped != item.getId())
+		{
+			JMenuItem allSets = new JMenuItem("All sets");
+			allSets.addActionListener(a ->
+			{
+				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
+				refreshPinnedLabel();
+				recompute();
+			});
+			pinMenu.add(allSets);
+		}
+		if (styleScoped != null)
+		{
+			GearItem pinned = data.getGear(styleScoped);
+			JMenuItem un = new JMenuItem("Unpin "
+				+ (pinned == null ? "item" : pinned.label()) + " (this set)");
+			un.addActionListener(a ->
+			{
+				mobProfile.unpin(monsterId, style.name(), slot);
+				refreshPinnedLabel();
+				recompute();
+			});
+			pinMenu.add(un);
+		}
+		if (allScoped != null)
+		{
+			GearItem pinned = data.getGear(allScoped);
+			JMenuItem un = new JMenuItem("Unpin "
+				+ (pinned == null ? "item" : pinned.label()) + " (all sets)");
+			un.addActionListener(a ->
+			{
+				mobProfile.unpin(monsterId, ALL_SETS, slot);
+				refreshPinnedLabel();
+				recompute();
+			});
+			pinMenu.add(un);
+		}
+		pinMenu.addSeparator();
+		JMenuItem searchThis = new JMenuItem("Another item (search) - this set only...");
+		searchThis.addActionListener(a -> searchAndPin(style.name()));
+		pinMenu.add(searchThis);
+		JMenuItem searchAll = new JMenuItem("Another item (search) - all sets...");
+		searchAll.addActionListener(a -> searchAndPin(ALL_SETS));
+		pinMenu.add(searchAll);
+		return pinMenu;
+	}
+
+	/** Chatbox item search -> pin into the picked item's own slot. */
+	private void searchAndPin(String scope)
 	{
 		if (selectedMonster == null)
 		{
 			return;
 		}
-		String query = JOptionPane.showInputDialog(this,
-			"Item to always bring vs " + selectedMonster.getName()
-				+ " (its slot is pinned to it):",
-			"Pin an item", JOptionPane.PLAIN_MESSAGE);
-		if (query == null || query.trim().isEmpty())
+		int monsterId = currentMonsterId();
+		itemSearch.search("Pin vs " + selectedMonster.getName()
+			+ " (" + scopeLabel(scope) + ")", (itemId, name) ->
 		{
-			return;
-		}
-		List<GearItem> matches = data.searchGear(query, 12);
-		if (matches.isEmpty())
-		{
-			JOptionPane.showMessageDialog(this,
-				"No equipment matches '" + query.trim() + "'.",
-				"Pin an item", JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-		GearItem pick = matches.get(0);
-		if (matches.size() > 1)
-		{
-			String[] labels = new String[matches.size()];
-			for (int i = 0; i < matches.size(); i++)
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
 			{
-				labels[i] = matches.get(i).label();
-			}
-			Object chosen = JOptionPane.showInputDialog(this, "Which item?",
-				"Pin an item", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
-			if (chosen == null)
-			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not equippable combat gear - use a bank-filter"
+						+ " item for supplies.",
+					"Pin an item", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
-			for (int i = 0; i < labels.length; i++)
-			{
-				if (labels[i].equals(chosen))
-				{
-					pick = matches.get(i);
-					break;
-				}
-			}
-		}
-		mobProfile.pin(currentMonsterId(), pick.getSlot(), pick.getId());
-		refreshPinnedLabel();
-		recompute();
+			mobProfile.pin(monsterId, scope, gear.getSlot(), gear.getId());
+			refreshPinnedLabel();
+			recompute();
+		});
 	}
 
-	/**
-	 * Bank-filter extras: supplies the trip needs (food, antidotes,
-	 * cannonballs) that no loadout suggestion contains. Resolved via the
-	 * client's own item search - the gear corpus has no consumables.
-	 */
-	private void showFilterItemDialog()
+	/** Chatbox item search -> per-scope bank-filter supply. */
+	private void searchAndAddFilter(String scope)
 	{
 		if (selectedMonster == null)
 		{
 			return;
 		}
-		String query = JOptionPane.showInputDialog(this,
-			"Item to include in Show/Filter bank vs " + selectedMonster.getName() + ":",
-			"Bank-filter item", JOptionPane.PLAIN_MESSAGE);
-		if (query == null || query.trim().isEmpty())
+		int monsterId = currentMonsterId();
+		itemSearch.search("Bank filter vs " + selectedMonster.getName()
+			+ " (" + scopeLabel(scope) + ")", (itemId, name) ->
 		{
-			return;
-		}
-		List<net.runelite.http.api.item.ItemPrice> matches = itemManager.search(query.trim());
-		if (matches.isEmpty())
-		{
-			JOptionPane.showMessageDialog(this,
-				"No item matches '" + query.trim() + "'.",
-				"Bank-filter item", JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-		int limit = Math.min(matches.size(), 12);
-		String[] labels = new String[limit];
-		for (int i = 0; i < limit; i++)
-		{
-			labels[i] = matches.get(i).getName();
-		}
-		Object chosen = limit == 1 ? labels[0]
-			: JOptionPane.showInputDialog(this, "Which item?",
-				"Bank-filter item", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
-		if (chosen == null)
-		{
-			return;
-		}
-		for (int i = 0; i < limit; i++)
-		{
-			if (labels[i].equals(chosen))
-			{
-				mobProfile.addFilterItem(currentMonsterId(),
-					matches.get(i).getId(), matches.get(i).getName());
-				break;
-			}
-		}
-		refreshPinnedLabel();
-	}
-
-	private void showNoteDialog()
-	{
-		if (selectedMonster == null)
-		{
-			return;
-		}
-		String existing = mobProfile.note(currentMonsterId());
-		String note = (String) JOptionPane.showInputDialog(this,
-			"Note for " + selectedMonster.getName() + " (empty clears it):",
-			"Mob note", JOptionPane.PLAIN_MESSAGE, null, null, existing);
-		if (note == null)
-		{
-			return;
-		}
-		mobProfile.setNote(currentMonsterId(), note);
-		refreshUserNote();
-		refreshPinnedLabel();
+			mobProfile.addFilterItem(monsterId, scope, itemId, name);
+			refreshPinnedLabel();
+		});
 	}
 
 	private void refreshDwmsLabel()
@@ -1246,17 +1349,17 @@ public class LoadoutLabPanel extends PluginPanel
 	 * container weapon (blowpipe) also offers its loaded ammo. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
 	{
-		attachExclusionMenu(cell, items, Collections.emptyList(), null);
+		attachExclusionMenu(cell, items, Collections.emptyList(), null, null);
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
 		List<JMenuItem> extras)
 	{
-		attachExclusionMenu(cell, items, extras, null);
+		attachExclusionMenu(cell, items, extras, null, null);
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
-		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot)
+		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot, CombatStyle pinStyle)
 	{
 		cell.addMouseListener(new MouseAdapter()
 		{
@@ -1327,29 +1430,10 @@ public class LoadoutLabPanel extends PluginPanel
 						menu.add(storeToggle);
 					}
 					// Pin: user preference wins the slot outright - for
-					// THIS monster only.
-					if (pinSlot != null && selectedMonster != null)
+					// THIS monster, scoped to this set or all sets.
+					if (pinSlot != null && pinStyle != null && selectedMonster != null)
 					{
-						int monsterId = currentMonsterId();
-						Integer pinnedId = mobProfile.pins(monsterId).get(pinSlot);
-						boolean isPinned = pinnedId != null && pinnedId == item.getId();
-						JMenuItem pinItem = new JMenuItem(isPinned
-							? "Unpin " + item.label() + " for this mob"
-							: "Pin " + item.label() + " here for this mob");
-						pinItem.addActionListener(a ->
-						{
-							if (isPinned)
-							{
-								mobProfile.unpin(monsterId, pinSlot);
-							}
-							else
-							{
-								mobProfile.pin(monsterId, pinSlot, item.getId());
-							}
-							refreshPinnedLabel();
-							recompute();
-						});
-						menu.add(pinItem);
+						menu.add(pinSubmenu(item, pinSlot, pinStyle));
 					}
 				}
 				menu.show(cell, e.getX(), e.getY());
@@ -1573,16 +1657,19 @@ public class LoadoutLabPanel extends PluginPanel
 		refreshStoredLabel();
 		refreshDwmsLabel();
 		refreshPinnedLabel();
-		refreshUserNote();
+		refreshNotePanel();
 	}
 
 	private void clearSelection()
 	{
 		selectedMonster = null;
+		cardCollapsed.clear();
 		selectedRow.setVisible(false);
 		selectedLabel.setText("");
 		monsterNote.setText("");
 		monsterNote.setVisible(false);
+		refreshNotePanel();
+		refreshPinnedLabel();
 		resultsPanel.removeAll();
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
@@ -1602,6 +1689,36 @@ public class LoadoutLabPanel extends PluginPanel
 		refreshDwmsLabel();
 		resultsPanel.removeAll();
 		usedSources.clear();
+		// Default collapse: a set a full standard deviation under the best
+		// dps (or with no usable set at all) starts folded to its header.
+		autoCollapsed.clear();
+		double bestDps = 0;
+		double sum = 0;
+		double sumSquares = 0;
+		int usable = 0;
+		for (CombatStyle style : CombatStyle.values())
+		{
+			StyleResult r = results.get(style);
+			if (r != null && r.owned != null && !r.owned.isEmpty())
+			{
+				double d = r.owned.get(0).getDps();
+				bestDps = Math.max(bestDps, d);
+				sum += d;
+				sumSquares += d * d;
+				usable++;
+			}
+		}
+		double stdev = usable > 1
+			? Math.sqrt(Math.max(0, sumSquares / usable - (sum / usable) * (sum / usable)))
+			: 0;
+		for (CombatStyle style : CombatStyle.values())
+		{
+			StyleResult r = results.get(style);
+			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
+			autoCollapsed.put(style, !hasSet
+				|| (usable > 1 && stdev > 0.01
+					&& r.owned.get(0).getDps() < bestDps - stdev));
+		}
 		// Strongest style first: order the cards by your best set's dps.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
 		Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
@@ -1626,17 +1743,71 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private JPanel styleCard(CombatStyle style, StyleResult result)
 	{
+		renderingStyle = style;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		card.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
 		card.setAlignmentX(LEFT_ALIGNMENT);
 
-		JLabel header = new JLabel(style.toString());
+		boolean hasSet = result != null && result.owned != null && !result.owned.isEmpty();
+		boolean collapsed = cardCollapsed.containsKey(style)
+			? cardCollapsed.get(style)
+			: autoCollapsed.getOrDefault(style, false);
+
+		// Header row: collapse toggle + summary dps left, the set's own
+		// menu (per-set pins and bank-filter supplies) right.
+		JLabel header = new JLabel((collapsed ? "> " : "v ") + style
+			+ (hasSet
+				? String.format(" - %.2f DPS", result.owned.get(0).getDps())
+				: " - no set"));
 		header.setForeground(Color.WHITE);
 		header.setFont(header.getFont().deriveFont(Font.BOLD, 14f));
-		header.setAlignmentX(LEFT_ALIGNMENT);
-		card.add(header);
+		header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		header.setToolTipText(collapsed ? "Click to expand this set" : "Click to collapse this set");
+		header.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				cardCollapsed.put(style, !collapsed);
+				if (selectedMonster != null && lastResults != null)
+				{
+					showResults(selectedMonster, lastResults);
+				}
+			}
+		});
+		JPanel headerRow = new JPanel(new BorderLayout());
+		headerRow.setOpaque(false);
+		headerRow.setAlignmentX(LEFT_ALIGNMENT);
+		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		headerRow.add(header, BorderLayout.WEST);
+		JButton setMenu = new JButton(new DotsIcon(11));
+		setMenu.setToolTipText("Pins and bank-filter items for this set");
+		setMenu.setMargin(new Insets(1, 5, 1, 5));
+		setMenu.addActionListener(e ->
+		{
+			JPopupMenu menu = new JPopupMenu();
+			JMenuItem pinThis = new JMenuItem("Pin an item - this set only (search)...");
+			pinThis.addActionListener(ev -> searchAndPin(style.name()));
+			menu.add(pinThis);
+			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
+			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
+			menu.add(pinAll);
+			JMenuItem filterThis = new JMenuItem("Bank-filter item - this set only (search)...");
+			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
+			menu.add(filterThis);
+			JMenuItem filterAll = new JMenuItem("Bank-filter item - all sets (search)...");
+			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
+			menu.add(filterAll);
+			menu.show(setMenu, 0, setMenu.getHeight());
+		});
+		headerRow.add(setMenu, BorderLayout.EAST);
+		card.add(headerRow);
+		if (collapsed)
+		{
+			return card;
+		}
 
 		if (result == null || result.owned == null || result.owned.isEmpty())
 		{
@@ -2264,8 +2435,9 @@ public class LoadoutLabPanel extends PluginPanel
 				Set<Integer> filterIds =
 					new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
 				// The mob profile's supplies (food, antidotes...) join the
-				// filtered bank view - they are part of THIS trip.
-				filterIds.addAll(mobProfile.filterItems(currentMonsterId()));
+				// filtered bank view - they are part of THIS trip; ALL-sets
+				// items plus this style's own (ranged pot on the ranged set).
+				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 				bankFilter.filter(filterIds);
 			}
 			if (selectedMonster != null && lastResults != null)
@@ -2311,7 +2483,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					ids.add(specWeapon.getId());
 				}
-				ids.addAll(mobProfile.filterItems(currentMonsterId()));
+				ids.addAll(mobProfile.filterItems(currentMonsterId(), style));
 				bankShown = style;
 				bankHighlighter.highlight(ids);
 			}
@@ -2495,7 +2667,8 @@ public class LoadoutLabPanel extends PluginPanel
 				// Location clause only when a fetch trip is needed - "in
 				// bank" would be noise on 95% of cells.
 				String where = unowned ? "" : locationHint.hint(item.getId());
-				Integer pinnedHere = mobProfile.pins(currentMonsterId()).get(slotType);
+				Integer pinnedHere = renderingStyle == null ? null
+					: mobProfile.pins(currentMonsterId(), renderingStyle).get(slotType);
 				String pinNote = pinnedHere != null && pinnedHere == item.getId()
 					? " - pinned" : "";
 				// Source dot + legend entry: only for locations we know.
@@ -2525,7 +2698,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					menuItems.add(dart);
 				}
-				attachExclusionMenu(slot, menuItems, extras, slotType);
+				attachExclusionMenu(slot, menuItems, extras, slotType, renderingStyle);
 			}
 			else
 			{
