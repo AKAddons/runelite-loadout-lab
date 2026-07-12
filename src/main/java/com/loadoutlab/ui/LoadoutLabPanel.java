@@ -196,13 +196,13 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color BORDER_UNOWNED = new Color(100, 145, 100);
 
 	/** Source-dot palette (bottom-right cell corner + legend), display
-	 * order. Separate vocabulary from the BORDERS (gold/green/blue). */
+	 * order. Separate vocabulary from the BORDERS (gold/green/blue).
+	 * At-hand sources (equipped/inventory/bank) are deliberately absent:
+	 * no palette entry = no dot and no legend row - only gear needing a
+	 * fetch trip gets marked, so the grid stays quiet for bank-only sets. */
 	private static final Map<String, Color> SOURCE_COLORS = new java.util.LinkedHashMap<>();
 	static
 	{
-		SOURCE_COLORS.put("equipped", new Color(200, 200, 200));
-		SOURCE_COLORS.put("inventory", new Color(235, 170, 90));
-		SOURCE_COLORS.put("bank", new Color(100, 150, 235));
 		SOURCE_COLORS.put("looting bag", new Color(180, 130, 80));
 		SOURCE_COLORS.put("POH costume room", new Color(190, 130, 230));
 		SOURCE_COLORS.put("STASH", new Color(230, 120, 120));
