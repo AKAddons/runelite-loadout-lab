@@ -1012,9 +1012,22 @@ public class LoadoutLabPanel extends PluginPanel
 		return selectedMonster == null ? -1 : selectedMonster.getId();
 	}
 
+	/** Pin-scope label: "melee set" / "all sets" (menus append " only"). */
 	private static String scopeLabel(String scope)
 	{
-		return ALL_SETS.equals(scope) ? "all sets" : scope.toLowerCase(java.util.Locale.ROOT);
+		return ALL_SETS.equals(scope) ? "all sets"
+			: scope.toLowerCase(java.util.Locale.ROOT) + " set";
+	}
+
+	/** Filter-scope label: the MOB'S NAME for all-sets ("bank filter -
+	 * Venator"), the set name otherwise (field request). */
+	private String filterScopeLabel(String scope)
+	{
+		if (ALL_SETS.equals(scope))
+		{
+			return selectedMonster == null ? "this mob" : selectedMonster.getName();
+		}
+		return scope.toLowerCase(java.util.Locale.ROOT) + " set";
 	}
 
 	private void refreshPinnedLabel()
@@ -1142,12 +1155,13 @@ public class LoadoutLabPanel extends PluginPanel
 			for (Map.Entry<Integer, String> entry : scoped.getValue().entrySet())
 			{
 				JMenuItem row = new JMenuItem("Remove filter item " + entry.getValue()
-					+ " (" + scopeLabel(scope) + ")");
+					+ " (" + filterScopeLabel(scope) + ")");
 				int itemId = entry.getKey();
 				row.addActionListener(a ->
 				{
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
 					refreshPinnedLabel();
+					reapplyBankViews();
 				});
 				menu.add(row);
 			}
@@ -1156,7 +1170,8 @@ public class LoadoutLabPanel extends PluginPanel
 		JMenuItem addPin = new JMenuItem("Pin an item - all sets (search)...");
 		addPin.addActionListener(a -> searchAndPin(ALL_SETS));
 		menu.add(addPin);
-		JMenuItem addFilter = new JMenuItem("Add a bank-filter item - all sets (search)...");
+		JMenuItem addFilter = new JMenuItem("Bank filter - "
+			+ filterScopeLabel(ALL_SETS) + " (search)...");
 		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
 		menu.add(addFilter);
 		menu.show(pinnedLabel, e.getX(), e.getY());
@@ -1220,7 +1235,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		if (styleScoped == null || styleScoped != item.getId())
 		{
-			JMenuItem thisSet = new JMenuItem("This set only");
+			JMenuItem thisSet = new JMenuItem(scopeLabel(style.name()) + " only");
 			thisSet.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
@@ -1232,6 +1247,7 @@ public class LoadoutLabPanel extends PluginPanel
 		if (allScoped == null || allScoped != item.getId())
 		{
 			JMenuItem allSets = new JMenuItem("All sets");
+			// (all-sets pins keep their name - the mob is implicit)
 			allSets.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
@@ -1244,7 +1260,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			GearItem pinned = data.getGear(styleScoped);
 			JMenuItem un = new JMenuItem("Unpin "
-				+ (pinned == null ? "item" : pinned.label()) + " (this set)");
+				+ (pinned == null ? "item" : pinned.label())
+				+ " (" + style.name().toLowerCase(java.util.Locale.ROOT) + " set)");
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
@@ -1267,7 +1284,8 @@ public class LoadoutLabPanel extends PluginPanel
 			pinMenu.add(un);
 		}
 		pinMenu.addSeparator();
-		JMenuItem searchThis = new JMenuItem("Another item (search) - this set only...");
+		JMenuItem searchThis = new JMenuItem("Another item (search) - "
+			+ scopeLabel(style.name()) + " only...");
 		searchThis.addActionListener(a -> searchAndPin(style.name()));
 		pinMenu.add(searchThis);
 		JMenuItem searchAll = new JMenuItem("Another item (search) - all sets...");
@@ -1310,12 +1328,66 @@ public class LoadoutLabPanel extends PluginPanel
 			return;
 		}
 		int monsterId = currentMonsterId();
-		itemSearch.search("Bank filter vs " + selectedMonster.getName()
-			+ " (" + scopeLabel(scope) + ")", (itemId, name) ->
+		itemSearch.search("Bank filter - " + filterScopeLabel(scope), (itemId, name) ->
 		{
+			// Filter items never touch the optimizer: NO recompute here or
+			// anywhere in the filter paths - only the id-set views refresh.
 			mobProfile.addFilterItem(monsterId, scope, itemId, name);
 			refreshPinnedLabel();
+			reapplyBankViews();
 		});
+	}
+
+	/**
+	 * Re-apply an active Show/Filter after the profile's filter items
+	 * change: a pure id-set rebuild from the LAST results - never an
+	 * optimizer recompute (filter items do not affect the math).
+	 */
+	private void reapplyBankViews()
+	{
+		if (lastResults == null || selectedMonster == null)
+		{
+			return;
+		}
+		if (bankFiltered != null)
+		{
+			StyleResult r = lastResults.get(bankFiltered);
+			if (r != null && r.owned != null && !r.owned.isEmpty())
+			{
+				DpsResult best = r.owned.get(0);
+				Set<Integer> ids = new java.util.HashSet<>(
+					setItemIds(best, r.specWeapon, loadedDart(best)));
+				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankFiltered));
+				bankFilter.filter(ids);
+			}
+		}
+		if (bankShown != null)
+		{
+			StyleResult r = lastResults.get(bankShown);
+			if (r != null && r.owned != null && !r.owned.isEmpty())
+			{
+				DpsResult best = r.owned.get(0);
+				Set<Integer> ids = new java.util.HashSet<>();
+				for (GearItem item : best.getLoadout().getGear().values())
+				{
+					if (item != null)
+					{
+						ids.add(item.getId());
+					}
+				}
+				GearItem dart = loadedDart(best);
+				if (dart != null)
+				{
+					ids.add(dart.getId());
+				}
+				if (r.specWeapon != null)
+				{
+					ids.add(r.specWeapon.getId());
+				}
+				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankShown));
+				bankHighlighter.highlight(ids);
+			}
+		}
 	}
 
 	private void refreshDwmsLabel()
@@ -1827,16 +1899,19 @@ public class LoadoutLabPanel extends PluginPanel
 		setMenu.addActionListener(e ->
 		{
 			JPopupMenu menu = new JPopupMenu();
-			JMenuItem pinThis = new JMenuItem("Pin an item - this set only (search)...");
+			JMenuItem pinThis = new JMenuItem("Pin an item - "
+				+ scopeLabel(style.name()) + " only (search)...");
 			pinThis.addActionListener(ev -> searchAndPin(style.name()));
 			menu.add(pinThis);
 			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
 			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
 			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank-filter item - this set only (search)...");
+			JMenuItem filterThis = new JMenuItem("Bank filter - "
+				+ scopeLabel(style.name()) + " only (search)...");
 			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
 			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank-filter item - all sets (search)...");
+			JMenuItem filterAll = new JMenuItem("Bank filter - "
+				+ filterScopeLabel(ALL_SETS) + " (search)...");
 			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
 			menu.add(filterAll);
 			menu.show(setMenu, 0, setMenu.getHeight());
