@@ -35,10 +35,11 @@ equipment.
   shows only them (uses the core Bank Tags plugin).
 - **Exclusions**: right-click any suggestion to protect rare supplies
   (dragon darts) from being recommended.
-- **Stored elsewhere (UIM-friendly)**: the looting bag is tracked as owned
-  storage automatically; gear kept in STASH units, the POH costume room,
-  or other unseen storage can be counted as owned by name - or imported
-  automatically from the Dude, Where's My Stuff plugin.
+- **UIM storages**: the looting bag, POH costume room, sailing cargo
+  holds, and STASH units (one read of the chart) are tracked
+  automatically - no extra plugin needed. Anything else (cold storage,
+  nest storage) can be counted as owned by name, or imported from the
+  Dude, Where's My Stuff plugin.
 
 ## Getting started
 
@@ -165,25 +166,42 @@ source quest named.
 
 ### Stored elsewhere (manual owned items)
 
-Gear kept where the ledger cannot see it - STASH units, the POH costume
-room, an Ultimate Ironman's cold or nest storage - can still count as
-owned: right-click an unowned suggestion and pick "Stored elsewhere", or
-add any item by name from the header Options menu. The list is kept per
-account, marked items join suggestions, bank borders, and the exported
-profile exactly like banked gear, and the green "Stored elsewhere" line
-in the panel manages them. The looting bag needs no marking at all: its
-contents are tracked automatically once you open or check the bag.
+Gear kept where no plugin can see it - an Ultimate Ironman's cold or
+nest storage, a friend's holding, anything untracked - can still count
+as owned: right-click an unowned suggestion and pick "Stored elsewhere",
+or add any item by name from the header Options menu. The list is kept
+per account, marked items join suggestions, bank borders, and the
+exported profile exactly like banked gear, and the green "Stored
+elsewhere" line in the panel manages them. (The looting bag, POH costume
+room, STASH units, and cargo holds need no marking - see the next
+sections.)
 
 ![Stored elsewhere (manual owned items)](docs/img/stored-elsewhere.png)
 
+### STASH, POH costume room, and cargo hold tracking
+
+These storages track natively, the same way the bank does - open each
+once and the contents count as owned from then on:
+
+- **STASH units**: read the STASH unit chart (the noticeboard by
+  Watson's house) once. Every filled unit across all tiers counts its
+  stored items as owned in that single read - no visiting each unit.
+- **POH costume room**: open a costume storage (armour case, wardrobe,
+  treasure chest, cape rack) in your house once.
+- **Cargo holds**: open a boat's cargo hold once - cannonballs stored
+  there count for ranged setups.
+
+![STASH, POH costume room, and cargo hold tracking](docs/img/native-storages.png)
+
 ### Dude, Where's My Stuff import
 
-If you run the Dude, Where's My Stuff plugin, the gear storages it tracks
-- STASH units, the POH costume room, death storage, boat cargo holds -
-are counted as owned automatically. This is a best-effort read of the
-data DWMS has already saved (it even works while DWMS is disabled), with
-strictly defensive parsing: if a future DWMS update changes its format,
-items quietly stop importing rather than ever miscounting, and the
+If you run the Dude, Where's My Stuff plugin, the gear storages it has
+seen are also counted as owned - useful for death storage (which Loadout
+Lab does not track) and for instantly seeding storages you opened before
+installing Loadout Lab. This is a best-effort read of the data DWMS has
+already saved (it even works while DWMS is disabled), with strictly
+defensive parsing: if a future DWMS update changes its format, items
+quietly stop importing rather than ever miscounting, and the
 stored-elsewhere list remains the manual override. A muted panel line
 shows how many items came in this way.
 

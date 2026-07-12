@@ -118,6 +118,10 @@ public class LoadoutLabPlugin extends Plugin
 	private ManualOwnedStore manualOwned;
 	private DwmsImport dwmsImport;
 	private LoadoutData data;
+	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
+	private volatile com.loadoutlab.data.StashUnits stashUnits;
+	/** One chart read per opening, mirroring the container-scan coalescing. */
+	private boolean stashChartSeen;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
 	private NavigationButton navButton;
@@ -244,6 +248,14 @@ public class LoadoutLabPlugin extends Plugin
 		// The dataset is ~3MB of gzipped JSON - parse off the startup path.
 		Thread loader = new Thread(() ->
 		{
+			try
+			{
+				stashUnits = com.loadoutlab.data.StashUnits.load();
+			}
+			catch (RuntimeException ex)
+			{
+				log.warn("STASH unit table unavailable; chart scans disabled", ex);
+			}
 			LoadoutData loaded = new DataService().load();
 			SwingUtilities.invokeLater(() ->
 			{
@@ -300,6 +312,8 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = null;
 		manualOwned = null;
 		dwmsImport = null;
+		stashUnits = null;
+		stashChartSeen = false;
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -361,6 +375,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.clearCache();
 		}
 		dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+		stashChartSeen = false;
 		SwingUtilities.invokeLater(() ->
 		{
 			if (panel != null)
@@ -421,12 +436,51 @@ public class LoadoutLabPlugin extends Plugin
 			// client learns its contents. Vital owned-gear storage for UIM.
 			dirtySources.add(CollectionLedger.Source.LOOTING_BAG);
 		}
+		else if (id == net.runelite.api.gameval.InventoryID.POH_COSTUMES)
+		{
+			// Shared container for every costume-room storage; fires when a
+			// case/wardrobe/chest interface is opened in the POH.
+			dirtySources.add(CollectionLedger.Source.POH_COSTUMES);
+		}
+		else
+		{
+			CollectionLedger.Source cargo = cargoSourceFor(id);
+			if (cargo != null)
+			{
+				dirtySources.add(cargo);
+			}
+		}
+	}
+
+	/** Sailing cargo holds: one container per boat slot. */
+	private static CollectionLedger.Source cargoSourceFor(int containerId)
+	{
+		switch (containerId)
+		{
+			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD:
+				return CollectionLedger.Source.CARGO_HOLD_1;
+			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD:
+				return CollectionLedger.Source.CARGO_HOLD_2;
+			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD:
+				return CollectionLedger.Source.CARGO_HOLD_3;
+			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD:
+				return CollectionLedger.Source.CARGO_HOLD_4;
+			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD:
+				return CollectionLedger.Source.CARGO_HOLD_5;
+			default:
+				return null;
+		}
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (dirtySources.isEmpty() || client.getGameState() != GameState.LOGGED_IN)
+		if (client.getGameState() != GameState.LOGGED_IN)
+		{
+			return;
+		}
+		scanStashChart();
+		if (dirtySources.isEmpty())
 		{
 			return;
 		}
@@ -449,6 +503,62 @@ public class LoadoutLabPlugin extends Plugin
 			ledger.update(source, items);
 			dirtySources.remove(source);
 		}
+	}
+
+	/** Tier panels on the STASH chart, beginner through master. */
+	private static final int[] STASH_TIER_CHILDREN = {4, 6, 8, 10, 12, 14};
+
+	/**
+	 * The STASH chart (widget group 493, the noticeboard by Watson's house)
+	 * shows every unit's built/filled state - one read covers all 100+
+	 * units, no visits needed. Filled units count their default items as
+	 * owned; the whole STASH source is replaced per read, so emptied units
+	 * drop out. Client thread, once per chart opening.
+	 */
+	private void scanStashChart()
+	{
+		if (client.getWidget(493, 2) == null)
+		{
+			stashChartSeen = false;
+			return;
+		}
+		com.loadoutlab.data.StashUnits units = stashUnits;
+		if (stashChartSeen || units == null)
+		{
+			return;
+		}
+		stashChartSeen = true;
+		Map<Integer, Integer> items = new HashMap<>();
+		for (int childId : STASH_TIER_CHILDREN)
+		{
+			net.runelite.api.widgets.Widget tier = client.getWidget(493, childId);
+			if (tier == null || tier.getChildren() == null)
+			{
+				continue;
+			}
+			java.util.List<com.loadoutlab.data.StashUnits.Cell> cells = new java.util.ArrayList<>();
+			for (net.runelite.api.widgets.Widget child : tier.getChildren())
+			{
+				if (child != null)
+				{
+					cells.add(new com.loadoutlab.data.StashUnits.Cell(child.getType(), child.getText()));
+				}
+			}
+			for (String name : com.loadoutlab.data.StashUnits.filledNames(cells, childId == 14))
+			{
+				int[] ids = units.itemsFor(name);
+				if (ids == null)
+				{
+					log.debug("unknown STASH chart unit: {}", name);
+					continue;
+				}
+				for (int id : ids)
+				{
+					items.merge(id, 1, Integer::sum);
+				}
+			}
+		}
+		ledger.update(CollectionLedger.Source.STASH, items);
 	}
 
 	// ------------------------------------------------------------------
@@ -680,10 +790,19 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			case EQUIPMENT: return InventoryID.EQUIPMENT.getId();
 			case INVENTORY: return InventoryID.INVENTORY.getId();
-			// The classic InventoryID enum has no looting bag entry; the
-			// gameval id is the authoritative modern constant.
+			case BANK: return InventoryID.BANK.getId();
+			// The classic InventoryID enum lacks the newer containers; the
+			// gameval ids are the authoritative modern constants.
 			case LOOTING_BAG: return net.runelite.api.gameval.InventoryID.LOOTING_BAG;
-			default: return InventoryID.BANK.getId();
+			case POH_COSTUMES: return net.runelite.api.gameval.InventoryID.POH_COSTUMES;
+			case CARGO_HOLD_1: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD;
+			case CARGO_HOLD_2: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD;
+			case CARGO_HOLD_3: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD;
+			case CARGO_HOLD_4: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD;
+			case CARGO_HOLD_5: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD;
+			// STASH is chart-driven, never container-scanned; -1 makes the
+			// per-tick drain's null-container check clear a stray dirty flag.
+			default: return -1;
 		}
 	}
 

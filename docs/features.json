@@ -173,6 +173,25 @@
       "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
     },
     {
+      "id": "native-storages",
+      "title": "STASH, POH costume room, and cargo hold tracking",
+      "group": "Gear sources",
+      "anchor": "stash-poh-costume-room-and-cargo-hold-tracking",
+      "media": "docs/img/native-storages.png",
+      "code": [
+        "collection/CollectionLedger.java",
+        "data/StashUnits.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [
+        "data/StashUnitsTest.java",
+        "collection/CollectionLedgerTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap.",
+      "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",
