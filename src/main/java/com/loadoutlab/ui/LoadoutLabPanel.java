@@ -157,6 +157,24 @@ public class LoadoutLabPanel extends PluginPanel
 		String primary(int itemId);
 	}
 
+	/** Pin an item into its slot - the search must always bring it. */
+	public interface PinToggle
+	{
+		void pin(com.loadoutlab.data.GearSlot slot, int itemId);
+	}
+
+	/** Release a slot's pin. */
+	public interface PinRelease
+	{
+		void unpin(com.loadoutlab.data.GearSlot slot);
+	}
+
+	/** The current pins, slot -> item id. */
+	public interface PinView
+	{
+		Map<com.loadoutlab.data.GearSlot, Integer> snapshot();
+	}
+
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
 	{
@@ -235,6 +253,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final StoredView storedView;
 	private final DwmsView dwmsView;
 	private final LocationHint locationHint;
+	private final PinToggle pinToggle;
+	private final PinRelease pinRelease;
+	private final PinView pinView;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
@@ -252,6 +273,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
 	private final JLabel dwmsLabel = new JLabel();
+	private final JLabel pinnedLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -292,7 +314,9 @@ public class LoadoutLabPanel extends PluginPanel
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
 		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
-		LocationHint locationHint, OwnedCheck ownedCheck,
+		LocationHint locationHint,
+		PinToggle pinToggle, PinRelease pinRelease, PinView pinView,
+		OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
@@ -309,6 +333,9 @@ public class LoadoutLabPanel extends PluginPanel
 		this.storedView = storedView;
 		this.dwmsView = dwmsView;
 		this.locationHint = locationHint;
+		this.pinToggle = pinToggle;
+		this.pinRelease = pinRelease;
+		this.pinView = pinView;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -341,6 +368,9 @@ public class LoadoutLabPanel extends PluginPanel
 			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
 			addStored.addActionListener(ev -> showAddStoredDialog());
 			menu.add(addStored);
+			JMenuItem addPin = new JMenuItem("Pin an item (always bring)...");
+			addPin.addActionListener(ev -> showPinDialog());
+			menu.add(addPin);
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
 			menu.add(joinDiscord);
@@ -510,6 +540,22 @@ public class LoadoutLabPanel extends PluginPanel
 		dwmsLabel.setAlignmentX(LEFT_ALIGNMENT);
 		top.add(dwmsLabel);
 		refreshDwmsLabel();
+
+		// Pinned items ("always bring") - click to manage.
+		pinnedLabel.setForeground(INFO);
+		pinnedLabel.setFont(pinnedLabel.getFont().deriveFont(13f));
+		pinnedLabel.setAlignmentX(LEFT_ALIGNMENT);
+		pinnedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		pinnedLabel.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showPinnedMenu(e);
+			}
+		});
+		top.add(pinnedLabel);
+		refreshPinnedLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -873,6 +919,84 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	private void refreshPinnedLabel()
+	{
+		int count = pinView.snapshot().size();
+		pinnedLabel.setText(count == 0 ? "" : "Pinned: " + count + " (click to manage)");
+		pinnedLabel.setVisible(count > 0);
+	}
+
+	private void showPinnedMenu(MouseEvent e)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry : pinView.snapshot().entrySet())
+		{
+			GearItem item = data.getGear(entry.getValue());
+			String label = item == null ? ("item " + entry.getValue()) : item.label();
+			JMenuItem row = new JMenuItem("Unpin " + label + " (" + slotName(entry.getKey()) + ")");
+			com.loadoutlab.data.GearSlot slot = entry.getKey();
+			row.addActionListener(a ->
+			{
+				pinRelease.unpin(slot);
+				refreshPinnedLabel();
+				recompute();
+			});
+			menu.add(row);
+		}
+		menu.addSeparator();
+		JMenuItem add = new JMenuItem("Pin an item (always bring)...");
+		add.addActionListener(a -> showPinDialog());
+		menu.add(add);
+		menu.show(pinnedLabel, e.getX(), e.getY());
+	}
+
+	/** Add-by-name flow for pins: items worth pinning (bracelet of
+	 * slaughter class) are exactly the ones no suggestion ever shows. */
+	private void showPinDialog()
+	{
+		String query = JOptionPane.showInputDialog(this,
+			"Item to always bring (its slot is pinned to it):",
+			"Pin an item", JOptionPane.PLAIN_MESSAGE);
+		if (query == null || query.trim().isEmpty())
+		{
+			return;
+		}
+		List<GearItem> matches = data.searchGear(query, 12);
+		if (matches.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+				"No equipment matches '" + query.trim() + "'.",
+				"Pin an item", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		GearItem pick = matches.get(0);
+		if (matches.size() > 1)
+		{
+			String[] labels = new String[matches.size()];
+			for (int i = 0; i < matches.size(); i++)
+			{
+				labels[i] = matches.get(i).label();
+			}
+			Object chosen = JOptionPane.showInputDialog(this, "Which item?",
+				"Pin an item", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
+			if (chosen == null)
+			{
+				return;
+			}
+			for (int i = 0; i < labels.length; i++)
+			{
+				if (labels[i].equals(chosen))
+				{
+					pick = matches.get(i);
+					break;
+				}
+			}
+		}
+		pinToggle.pin(pick.getSlot(), pick.getId());
+		refreshPinnedLabel();
+		recompute();
+	}
+
 	private void refreshDwmsLabel()
 	{
 		int count = dwmsView.count();
@@ -968,11 +1092,17 @@ public class LoadoutLabPanel extends PluginPanel
 	 * container weapon (blowpipe) also offers its loaded ammo. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
 	{
-		attachExclusionMenu(cell, items, Collections.emptyList());
+		attachExclusionMenu(cell, items, Collections.emptyList(), null);
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
 		List<JMenuItem> extras)
+	{
+		attachExclusionMenu(cell, items, extras, null);
+	}
+
+	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
+		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot)
 	{
 		cell.addMouseListener(new MouseAdapter()
 		{
@@ -1041,6 +1171,29 @@ public class LoadoutLabPanel extends PluginPanel
 							recompute();
 						});
 						menu.add(storeToggle);
+					}
+					// Pin: user preference wins the slot outright.
+					if (pinSlot != null)
+					{
+						Integer pinnedId = pinView.snapshot().get(pinSlot);
+						boolean isPinned = pinnedId != null && pinnedId == item.getId();
+						JMenuItem pinItem = new JMenuItem(isPinned
+							? "Unpin " + item.label()
+							: "Pin " + item.label() + " here (always bring)");
+						pinItem.addActionListener(a ->
+						{
+							if (isPinned)
+							{
+								pinRelease.unpin(pinSlot);
+							}
+							else
+							{
+								pinToggle.pin(pinSlot, item.getId());
+							}
+							refreshPinnedLabel();
+							recompute();
+						});
+						menu.add(pinItem);
 					}
 				}
 				menu.show(cell, e.getX(), e.getY());
@@ -1263,6 +1416,7 @@ public class LoadoutLabPanel extends PluginPanel
 		refreshExclusionsLabel();
 		refreshStoredLabel();
 		refreshDwmsLabel();
+		refreshPinnedLabel();
 	}
 
 	private void clearSelection()
@@ -2178,6 +2332,9 @@ public class LoadoutLabPanel extends PluginPanel
 				// Location clause only when a fetch trip is needed - "in
 				// bank" would be noise on 95% of cells.
 				String where = unowned ? "" : locationHint.hint(item.getId());
+				Integer pinnedHere = pinView.snapshot().get(slotType);
+				String pinNote = pinnedHere != null && pinnedHere == item.getId()
+					? " - pinned" : "";
 				// Source dot + legend entry: only for locations we know.
 				if (!unowned)
 				{
@@ -2190,6 +2347,7 @@ public class LoadoutLabPanel extends PluginPanel
 					}
 				}
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
+					+ pinNote
 					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
 					+ (where.isEmpty() ? "" : " - " + where)
 					+ (bis ? " - best available" : "")
@@ -2204,7 +2362,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					menuItems.add(dart);
 				}
-				attachExclusionMenu(slot, menuItems, extras);
+				attachExclusionMenu(slot, menuItems, extras, slotType);
 			}
 			else
 			{

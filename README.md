@@ -35,6 +35,8 @@ equipment.
   shows only them (uses the core Bank Tags plugin).
 - **Exclusions**: right-click any suggestion to protect rare supplies
   (dragon darts) from being recommended.
+- **Pinned items**: force a slot ("always bring my Bracelet of
+  slaughter") and the optimizer builds the best set around it.
 - **UIM storages**: the looting bag, POH costume room, sailing cargo
   holds, and STASH units (one read of the chart) are tracked
   automatically - no extra plugin needed. Anything else (cold storage,
@@ -223,6 +225,19 @@ STASH"), and the profile export carries the same per-source breakdown
 for bug reports.
 
 ![Where your gear is (location hints)](docs/img/location-hints.png)
+
+### Pinned items (always bring)
+
+Some gear is worth wearing for reasons no DPS model can price - a
+Bracelet of slaughter stretching a slayer task, an Expeditious bracelet
+shortening one. Pin an item (right-click a cell, or add by name from the
+Options menu) and its slot is decided: every suggestion brings it, owned
+or not, and the optimizer builds the best set around it. Pins outrank
+exclusions, budgets, and the low-risk safety vetoes - the risk numbers
+stay honest, and the wilderness cap constrains the rest of the set. Game
+best stays unpinned, so you can always see what the preference costs.
+
+![Pinned items (always bring)](docs/img/pinned-items.png)
 
 ### Dude, Where's My Stuff import
 

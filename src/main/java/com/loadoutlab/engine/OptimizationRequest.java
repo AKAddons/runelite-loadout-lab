@@ -1,9 +1,11 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 public final class OptimizationRequest
@@ -41,6 +43,11 @@ public final class OptimizationRequest
 	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
 	 * 0 = pure offense (default), higher trades damage for safety. */
 	private final double defenseWeight;
+	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
+	 * of slaughter class - value the model cannot price). A pinned slot
+	 * has exactly one candidate; exclusions, mode, budget, and the risk
+	 * vetoes all yield to the pin, while risk totals stay honest. */
+	private final Map<GearSlot, Integer> pinnedItems;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -88,6 +95,7 @@ public final class OptimizationRequest
 		this.antifirePotion = false;
 		this.dreamItems = Collections.emptySet();
 		this.defenseWeight = 0;
+		this.pinnedItems = Collections.emptyMap();
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -121,6 +129,7 @@ public final class OptimizationRequest
 		private boolean antifirePotion;
 		private Set<Integer> dreamItems;
 		private double defenseWeight;
+		private Map<GearSlot, Integer> pinnedItems;
 
 		private Copy(OptimizationRequest base)
 		{
@@ -143,6 +152,7 @@ public final class OptimizationRequest
 			antifirePotion = base.antifirePotion;
 			dreamItems = base.dreamItems;
 			defenseWeight = base.defenseWeight;
+			pinnedItems = base.pinnedItems;
 		}
 
 		private OptimizationRequest build()
@@ -172,6 +182,7 @@ public final class OptimizationRequest
 		this.antifirePotion = copy.antifirePotion;
 		this.dreamItems = copy.dreamItems == null ? Collections.emptySet() : copy.dreamItems;
 		this.defenseWeight = copy.defenseWeight;
+		this.pinnedItems = copy.pinnedItems == null ? Collections.emptyMap() : copy.pinnedItems;
 	}
 
 	public Set<Integer> getExcludedItems()
@@ -264,6 +275,29 @@ public final class OptimizationRequest
 	{
 		Copy copy = new Copy(this);
 		copy.dreamItems = dreamItems;
+		return copy.build();
+	}
+
+	public Map<GearSlot, Integer> getPinnedItems()
+	{
+		return pinnedItems;
+	}
+
+	/** The pinned item id for this slot, or null when unpinned. */
+	public Integer pinnedFor(GearSlot slot)
+	{
+		return pinnedItems.get(slot);
+	}
+
+	public boolean isPinned(int itemId)
+	{
+		return pinnedItems.containsValue(itemId);
+	}
+
+	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems)
+	{
+		Copy copy = new Copy(this);
+		copy.pinnedItems = pinnedItems;
 		return copy.build();
 	}
 

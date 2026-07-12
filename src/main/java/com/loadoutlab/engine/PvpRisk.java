@@ -189,6 +189,14 @@ public final class PvpRisk
 	 */
 	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
+		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, java.util.Collections.emptySet());
+	}
+
+	/** Pin-aware variant: a PINNED friction item is the player's explicit
+	 * choice and never vetoes the set (its risk still counts). */
+	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
+		java.util.Set<Integer> pinnedIds)
+	{
 		boolean anyFriction = UntradeableDeathCosts.frictionFor(carriedSpecWeapon) > 0;
 		for (GearSlot slot : GearSlot.values())
 		{
@@ -201,14 +209,16 @@ public final class PvpRisk
 		Assessment fates = assess(loadout, carriedSpecWeapon, keptSlots);
 		for (Charge charge : fates.untradeableCharges)
 		{
-			if (UntradeableDeathCosts.frictionFor(charge.item) > 0)
+			if (UntradeableDeathCosts.frictionFor(charge.item) > 0
+				&& !pinnedIds.contains(charge.item.getId()))
 			{
 				return true;
 			}
 		}
 		for (GearItem lost : fates.lost)
 		{
-			if (UntradeableDeathCosts.frictionFor(lost) > 0)
+			if (UntradeableDeathCosts.frictionFor(lost) > 0
+				&& !pinnedIds.contains(lost.getId()))
 			{
 				return true;
 			}

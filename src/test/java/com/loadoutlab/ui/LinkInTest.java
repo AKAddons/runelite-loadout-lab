@@ -62,6 +62,9 @@ public class LinkInTest
 					return "";
 				}
 			},
+			(slot, itemId) -> { },
+			slot -> { },
+			java.util.Collections::emptyMap,
 			itemId -> true,
 			ids -> { },
 			ids -> { });

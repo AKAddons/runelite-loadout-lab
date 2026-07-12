@@ -102,8 +102,9 @@ public final class LoadoutOptimizer
 				// boots) sits below them - it starved behind the cap.
 				if (request.isRiskConstrained()
 					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables())
-							> request.getRiskBudgetGp()
-						|| PvpRisk.risksRebuild(trial, null, request.getMaxTradeables())))
+							> request.getRiskBudgetGp() + pinnedRiskFloor(data, request)
+						|| PvpRisk.risksRebuild(trial, null, request.getMaxTradeables(),
+							pinnedIds(request))))
 				{
 					continue;
 				}
@@ -133,7 +134,10 @@ public final class LoadoutOptimizer
 	public DpsResult ensureRequiredUtility(LoadoutData data, OptimizationRequest request, DpsResult result)
 	{
 		if (result == null || !RequiredUtility.requiresRecoil(request.getMonster())
-			|| RequiredUtility.hasRecoil(result.getLoadout()))
+			|| RequiredUtility.hasRecoil(result.getLoadout())
+			// A pinned ring is the player's explicit pick - the forced
+			// recoil swap must not override it.
+			|| request.pinnedFor(GearSlot.RING) != null)
 		{
 			return result;
 		}
@@ -317,9 +321,13 @@ public final class LoadoutOptimizer
 							riskGp = PvpRisk.riskGp(loadout, null, request.getMaxTradeables());
 							// A rebuild-burdened item (salve line, imbued
 							// gear) may never ride UNPROTECTED in a low-risk
-							// set, no matter the cap (field request).
-							if (riskGp > request.getRiskBudgetGp()
-								|| PvpRisk.risksRebuild(loadout, null, request.getMaxTradeables()))
+							// set, no matter the cap (field request) -
+							// unless the player PINNED it. Pins also raise
+							// the effective budget by their own risk floor:
+							// the cap constrains the rest of the set.
+							if (riskGp > request.getRiskBudgetGp() + pinnedRiskFloor(data, request)
+								|| PvpRisk.risksRebuild(loadout, null, request.getMaxTradeables(),
+									pinnedIds(request)))
 							{
 								continue;
 							}
@@ -519,6 +527,28 @@ public final class LoadoutOptimizer
 
 	private List<GearItem> candidates(LoadoutData data, OptimizationRequest request, GearSlot slot, int limit, GearItem forWeapon)
 	{
+		// A pinned slot has exactly one candidate: the player's explicit
+		// choice (bracelet of slaughter class - value the model cannot
+		// price) bypasses exclusions, mode, scoring, and dedupe; the
+		// optimizer's job becomes building the best set AROUND it. Pinned
+		// ammo still respects weapon compatibility - an incompatible
+		// weapon line dies honestly instead of computing nonsense.
+		Integer pinnedId = request.pinnedFor(slot);
+		if (pinnedId != null)
+		{
+			GearItem pinned = data.getGear(pinnedId);
+			if (pinned != null)
+			{
+				if (slot == GearSlot.AMMO && forWeapon != null
+					&& !RangedAmmo.compatible(pinned, forWeapon))
+				{
+					return new ArrayList<>();
+				}
+				List<GearItem> only = new ArrayList<>();
+				only.add(pinned);
+				return only;
+			}
+		}
 		// Dragonfire gear mode: protective shields must reach the pool even
 		// though most have zero offensive stats (the score filter and the
 		// stat-dedupe would silently drop the anti-dragon shield).
@@ -733,6 +763,37 @@ public final class LoadoutOptimizer
 		return score;
 	}
 
+	/**
+	 * Risk the pinned items alone carry - the wilderness cap constrains
+	 * the REST of the set, never the player's explicit picks. Cheap when
+	 * nothing is pinned (the overwhelmingly common case).
+	 */
+	public static long pinnedRiskFloor(LoadoutData data, OptimizationRequest request)
+	{
+		if (request.getPinnedItems().isEmpty())
+		{
+			return 0;
+		}
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		for (Map.Entry<GearSlot, Integer> entry : request.getPinnedItems().entrySet())
+		{
+			GearItem item = data.getGear(entry.getValue());
+			if (item != null)
+			{
+				gear.put(entry.getKey(), item);
+			}
+		}
+		return gear.isEmpty() ? 0
+			: PvpRisk.riskGp(new Loadout(gear), null, request.getMaxTradeables());
+	}
+
+	private static java.util.Set<Integer> pinnedIds(OptimizationRequest request)
+	{
+		return request.getPinnedItems().isEmpty()
+			? java.util.Collections.emptySet()
+			: new java.util.HashSet<>(request.getPinnedItems().values());
+	}
+
 	/** Test seam: RevenantPoolTest pins the conditional pool boosts. */
 	static double candidateScoreForTest(OptimizationRequest request, GearItem item)
 	{
@@ -902,6 +963,7 @@ public final class LoadoutOptimizer
 		// (the panel labels them with their source quest instead).
 		if (item == null || request.getOwnedItems().owns(item.getId())
 			|| request.isDream(item.getId())
+			|| request.isPinned(item.getId())
 			|| (request.getCandidateMode() == CandidateMode.OWNED_OR_BUDGET
 				&& QuestRewardItems.isQuestReward(item)))
 		{

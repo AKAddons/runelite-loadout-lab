@@ -230,6 +230,26 @@
       "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card."
     },
     {
+      "id": "pinned-items",
+      "title": "Pinned items (always bring)",
+      "group": "Gear sources",
+      "anchor": "pinned-items-always-bring",
+      "media": "docs/img/pinned-items.png",
+      "code": [
+        "collection/PinStore.java",
+        "engine/OptimizationRequest.java",
+        "engine/LoadoutOptimizer.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "engine/PinTest.java",
+        "collection/PinStoreTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "User preference wins the slot (bracelet of slaughter class - value the model cannot price): a pinned slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor). Any slot, owned or not; pins shape YOUR set only - game best stays the pure ceiling.",
+      "capture": "Right-click menu open on a hands cell showing 'Pin ... here (always bring)', with the blue 'Pinned: N' manage label visible. Single PNG screenshot."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",

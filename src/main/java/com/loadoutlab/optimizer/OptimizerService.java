@@ -176,6 +176,7 @@ public class OptimizerService
 	 * best set against a monster. Cached; the callback runs on the worker
 	 * thread on a miss and synchronously on a hit.
 	 */
+	/** Back-compat overload (headless/tests): no pinned items. */
 	public void bestPerStyle(
 		MonsterStats monster,
 		PlayerLevels realLevels,
@@ -196,6 +197,35 @@ public class OptimizerService
 		OptimizeMode mode,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
+		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
+			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
+			excludedItems, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
+			upgradeBudgetGp, mode, Collections.emptyMap(), callback);
+	}
+
+	public void bestPerStyle(
+		MonsterStats monster,
+		PlayerLevels realLevels,
+		PlayerLevels boostedLevels,
+		PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements,
+		OwnedItems owned,
+		int collectionFingerprint,
+		boolean f2pOnly,
+		boolean onSlayerTask,
+		String spellbookLock,
+		Set<Integer> excludedItems,
+		int maxTradeables,
+		int riskBudgetGp,
+		boolean antifirePotion,
+		Set<Integer> dreamItems,
+		int upgradeBudgetGp,
+		OptimizeMode mode,
+		Map<com.loadoutlab.data.GearSlot, Integer> pinnedItems,
+		Consumer<Map<CombatStyle, StyleResult>> callback)
+	{
+		final Map<com.loadoutlab.data.GearSlot, Integer> pins = pinnedItems == null
+			? Collections.emptyMap() : pinnedItems;
 		final Set<Integer> excluded = excludedItems == null
 			? Collections.emptySet() : excludedItems;
 		final Set<Integer> dreams = dreamItems == null
@@ -211,7 +241,7 @@ public class OptimizerService
 		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
-			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
+			+ "|" + dreams.hashCode() + "|" + pins.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> cached;
@@ -270,7 +300,10 @@ public class OptimizerService
 					.withExcludedItems(excluded).withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
-					.withDreamItems(dreams);
+					.withDreamItems(dreams)
+					// Pins shape YOUR set only; game best stays the pure
+					// ceiling so the cost of the preference is visible.
+					.withPinnedItems(pins);
 				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
@@ -512,8 +545,10 @@ public class OptimizerService
 			if (request.isRiskConstrained()
 				&& (PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
 						request.getMaxTradeables()) > request.getRiskBudgetGp()
+							+ LoadoutOptimizer.pinnedRiskFloor(dataset, request)
 					|| PvpRisk.risksRebuild(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables())))
+						request.getMaxTradeables(),
+						new java.util.HashSet<>(request.getPinnedItems().values()))))
 			{
 				continue;
 			}

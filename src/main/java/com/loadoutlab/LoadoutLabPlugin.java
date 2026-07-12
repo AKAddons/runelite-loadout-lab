@@ -126,6 +126,7 @@ public class LoadoutLabPlugin extends Plugin
 	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
+	private com.loadoutlab.collection.PinStore pins;
 	private DwmsImport dwmsImport;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
@@ -286,6 +287,7 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
+		pins = new com.loadoutlab.collection.PinStore(configManager, gson);
 		dwmsImport = new DwmsImport(configManager);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
@@ -321,6 +323,7 @@ public class LoadoutLabPlugin extends Plugin
 					manualOwned::toggle, manualOwned::snapshot,
 					dwmsView(),
 					locationHintView(),
+					pins::pin, pins::unpin, pins::snapshot,
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -366,6 +369,7 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = null;
 		exclusions = null;
 		manualOwned = null;
+		pins = null;
 		dwmsImport = null;
 		dwmsLink = null;
 		stashUnits = null;
@@ -402,6 +406,10 @@ public class LoadoutLabPlugin extends Plugin
 		if (dreams != null)
 		{
 			dreams.reload();
+		}
+		if (pins != null)
+		{
+			pins.reload();
 		}
 		resetForIdentityChange();
 	}
@@ -1030,7 +1038,7 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
-				dreams.snapshot(), upgradeBudgetGp, mode,
+				dreams.snapshot(), upgradeBudgetGp, mode, pins.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
