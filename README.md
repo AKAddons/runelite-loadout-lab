@@ -211,15 +211,14 @@ once and the contents count as owned from then on:
 ### Where your gear is (location hints)
 
 The ledger remembers which storage each item was seen in, not just that
-you own it. Every suggested item you own carries a small colored dot in
-its cell corner naming its source, and a "Stored:" legend under the
-cards decodes the colors - listing only the sources actually present in
-the current result (a bank-and-inventory set shows just those two
-entries; STASH joins the legend only when a STASH item is on screen).
-When an item needs a fetch trip - a STASH, the POH costume room, a cargo
-hold, the looting bag - its tooltip also says so ("stored in STASH"), so
-you know what to collect before heading out. The profile export carries
-the same per-source breakdown for bug reports.
+you own it. Suggested items that need a fetch trip - a STASH, the POH
+costume room, a cargo hold, the looting bag - carry a small colored dot
+in the cell corner naming the storage, with a "Stored:" legend under the
+cards that lists only the sources actually on screen. Gear at hand
+(equipped, inventory, bank) stays unmarked, so an all-bank set shows no
+dots and no legend at all. The tooltip spells it out too ("stored in
+STASH"), and the profile export carries the same per-source breakdown
+for bug reports.
 
 ![Where your gear is (location hints)](docs/img/location-hints.png)
 
