@@ -1978,12 +1978,13 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(GOOD);
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
-		// Assurance: name the conditional bonuses the math actually
-		// counted (salve, wilderness weapon, crystal set...).
+		// Assurance: name the conditional bonuses the math actually counted
+		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
+		// +16.7% damage"). Entries carry commas, so sources join on ";".
 		if (!best.getCountedBonuses().isEmpty())
 		{
 			JLabel counting = line("Counting: "
-				+ String.join(", ", best.getCountedBonuses()), MUTED);
+				+ String.join("; ", best.getCountedBonuses()), MUTED);
 			counting.setFont(counting.getFont().deriveFont(11f));
 			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
 			card.add(counting);
