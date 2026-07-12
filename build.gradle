@@ -31,6 +31,12 @@ dependencies {
 
 	testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
+
+	// Dev-only: hub-plugin jars (plus their dependency jars) dropped into
+	// dev-plugins/ (gitignored) join the `run` client, so cross-plugin
+	// integrations (DWMS etc.) can be tested locally before an upstream PR
+	// ships. The dev main loads known plugin classes reflectively.
+	testRuntimeOnly fileTree(dir: 'dev-plugins', include: '*.jar')
 }
 
 tasks.named('test', Test) {
