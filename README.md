@@ -208,6 +208,18 @@ once and the contents count as owned from then on:
 
 ![STASH, POH costume room, and cargo hold tracking](docs/img/native-storages.png)
 
+### Where your gear is (location hints)
+
+The ledger remembers which storage each item was seen in, not just that
+you own it. When a suggested item needs a fetch trip - it lives in a
+STASH, the POH costume room, a cargo hold, or your looting bag rather
+than the bank - its tooltip says so ("stored in STASH"), so you know
+what to collect before heading out. Items at hand (equipped, inventory,
+bank) stay clause-free, and the profile export carries the same
+per-source breakdown for bug reports.
+
+![Where your gear is (location hints)](docs/img/location-hints.png)
+
 ### Dude, Where's My Stuff import
 
 If you run the Dude, Where's My Stuff plugin, the gear storages it has

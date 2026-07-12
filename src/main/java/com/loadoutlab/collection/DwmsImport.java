@@ -34,6 +34,8 @@ public class DwmsImport
 	private final ConfigManager configManager;
 
 	private volatile Map<Integer, Integer> items = Collections.emptyMap();
+	/** Storage family ("poh", "stash", ...) -> items, for location hints. */
+	private volatile Map<String, Map<Integer, Integer>> families = Collections.emptyMap();
 
 	public DwmsImport(ConfigManager configManager)
 	{
@@ -43,6 +45,7 @@ public class DwmsImport
 	/** Re-read the current RSProfile's DWMS data (cheap; called per compute). */
 	public void reload()
 	{
+		Map<String, Map<Integer, Integer>> nextFamilies = new java.util.LinkedHashMap<>();
 		Map<Integer, Integer> next = new HashMap<>();
 		String profileKey = configManager.getRSProfileKey();
 		if (profileKey != null)
@@ -55,13 +58,32 @@ public class DwmsImport
 				{
 					continue;
 				}
+				Map<Integer, Integer> family = new HashMap<>();
 				for (String key : keys)
 				{
-					parseValue(configManager.getConfiguration(DWMS_GROUP, profileKey, key), next);
+					parseValue(configManager.getConfiguration(DWMS_GROUP, profileKey, key), family);
+				}
+				if (family.isEmpty())
+				{
+					continue;
+				}
+				nextFamilies.put(prefix.substring(0, prefix.length() - 1),
+					Collections.unmodifiableMap(family));
+				for (Map.Entry<Integer, Integer> e : family.entrySet())
+				{
+					next.merge(e.getKey(), e.getValue(), Integer::sum);
 				}
 			}
 		}
+		families = nextFamilies.isEmpty() ? Collections.emptyMap()
+			: Collections.unmodifiableMap(nextFamilies);
 		items = next.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(next);
+	}
+
+	/** Per-family snapshots ("poh", "stash", "death", ...), display order. */
+	public Map<String, Map<Integer, Integer>> families()
+	{
+		return families;
 	}
 
 	/** Item id -> quantity last seen by DWMS, merged across its storages. */

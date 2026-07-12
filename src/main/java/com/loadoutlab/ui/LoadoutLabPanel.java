@@ -147,6 +147,12 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean live();
 	}
 
+	/** One tooltip clause naming where an owned item lives ("" = at hand). */
+	public interface LocationHint
+	{
+		String hint(int itemId);
+	}
+
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
 	{
@@ -204,6 +210,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final StoredToggle storedToggle;
 	private final StoredView storedView;
 	private final DwmsView dwmsView;
+	private final LocationHint locationHint;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
@@ -261,7 +268,7 @@ public class LoadoutLabPanel extends PluginPanel
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
 		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
-		OwnedCheck ownedCheck,
+		LocationHint locationHint, OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
@@ -277,6 +284,7 @@ public class LoadoutLabPanel extends PluginPanel
 		this.storedToggle = storedToggle;
 		this.storedView = storedView;
 		this.dwmsView = dwmsView;
+		this.locationHint = locationHint;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -2041,8 +2049,12 @@ public class LoadoutLabPanel extends PluginPanel
 						}
 					}
 				}
+				// Location clause only when a fetch trip is needed - "in
+				// bank" would be noise on 95% of cells.
+				String where = unowned ? "" : locationHint.hint(item.getId());
 				slot.setToolTipText(slotName(slotType) + ": " + item.label()
 					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
+					+ (where.isEmpty() ? "" : " - " + where)
 					+ (bis ? " - best available" : "")
 					+ fate
 					+ " (right-click to exclude)");

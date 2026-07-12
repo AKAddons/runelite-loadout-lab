@@ -194,6 +194,25 @@
       "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
     },
     {
+      "id": "location-hints",
+      "title": "Where your gear is (location hints)",
+      "group": "Gear sources",
+      "anchor": "where-your-gear-is-location-hints",
+      "media": "docs/img/location-hints.png",
+      "code": [
+        "collection/ItemLocations.java",
+        "collection/CollectionLedger.java",
+        "ui/LoadoutLabPanel.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [
+        "collection/ItemLocationsTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "Per-source provenance kept end-to-end: ledger source snapshots + manual list + DWMS families feed a variant-aware lookup; a tooltip clause names the storage only when a fetch trip is needed. profile.json gains an optional ownedBySource breakdown.",
+      "capture": "Tooltip open on a suggested item that lives in a STASH or the POH, showing the 'stored in ...' clause. Single PNG screenshot."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",

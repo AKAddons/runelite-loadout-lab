@@ -48,6 +48,7 @@ public class LinkInTest
 					return false;
 				}
 			},
+			itemId -> "",
 			itemId -> true,
 			ids -> { },
 			ids -> { });
