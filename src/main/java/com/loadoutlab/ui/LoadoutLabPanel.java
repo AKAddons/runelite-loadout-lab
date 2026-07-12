@@ -312,6 +312,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
 	private final JLabel dwmsLabel = new JLabel();
+	/** "Connected:" row hosting addon chips (DWMS today) - see ctor. */
+	private final JPanel connectionsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+	private final JLabel connectionsCaption = new JLabel("Connected:");
 	private final JLabel pinnedLabel = new JLabel();
 	/** The user's own note for the selected monster: a collapsible
 	 * post-it, edited inline (saves on focus loss - no edit button). */
@@ -580,16 +583,8 @@ public class LoadoutLabPanel extends PluginPanel
 		top.add(storedLabel);
 		refreshStoredLabel();
 
-		// Provenance line for the Dude Where's My Stuff import - shows the
-		// import is working (and how much gear came in that way).
-		dwmsLabel.setForeground(MUTED);
-		dwmsLabel.setFont(dwmsLabel.getFont().deriveFont(12f));
-		dwmsLabel.setAlignmentX(LEFT_ALIGNMENT);
-		top.add(dwmsLabel);
-		refreshDwmsLabel();
-
 		// The mob's post-it note: collapsible, edited inline (saves when
-		// focus leaves the text area). Lives under the DWMS line.
+		// focus leaves the text area).
 		notePanel.setLayout(new BoxLayout(notePanel, BoxLayout.Y_AXIS));
 		notePanel.setBackground(POSTIT_BG);
 		notePanel.setBorder(BorderFactory.createEmptyBorder(3, 6, 3, 6));
@@ -646,6 +641,23 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 		top.add(pinnedLabel);
 		refreshPinnedLabel();
+
+		// Connected addons: the other plugins feeding this panel, as icon
+		// chips with the details on hover (field request - the DWMS
+		// provenance sentence was a whole row of the summary area). Today
+		// that is DWMS; future integrations join this row. Hidden when
+		// nothing is connected.
+		connectionsCaption.setForeground(MUTED);
+		connectionsCaption.setFont(connectionsCaption.getFont().deriveFont(11f));
+		dwmsLabel.setForeground(MUTED);
+		dwmsLabel.setFont(dwmsLabel.getFont().deriveFont(12f));
+		connectionsRow.setOpaque(false);
+		connectionsRow.setAlignmentX(LEFT_ALIGNMENT);
+		connectionsRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+		connectionsRow.add(connectionsCaption);
+		connectionsRow.add(dwmsLabel);
+		top.add(connectionsRow);
+		refreshDwmsLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -1403,6 +1415,7 @@ public class LoadoutLabPanel extends PluginPanel
 		if (count <= 0)
 		{
 			dwmsLabel.setVisible(false);
+			connectionsRow.setVisible(false);
 			return;
 		}
 		String text = "From Dude Where's My Stuff: " + count + " items"
@@ -1418,11 +1431,14 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
+			// Not running - the items came from its saved config; say so
+			// in text since there is no plugin to borrow an icon from.
 			dwmsLabel.setIcon(null);
 			dwmsLabel.setText(text);
 			dwmsLabel.setToolTipText(null);
 		}
 		dwmsLabel.setVisible(true);
+		connectionsRow.setVisible(true);
 	}
 
 	/** The DWMS live link answered (EDT): refresh the provenance line. */
