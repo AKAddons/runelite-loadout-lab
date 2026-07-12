@@ -289,6 +289,9 @@ public class LoadoutLabPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		// Build marker for perf-log sessions: confirms the instrumented
+		// build is running and whether [LL-PERF] debug lines will appear.
+		log.info("[LL-PERF] instrumentation active, debugEnabled={}", log.isDebugEnabled());
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
@@ -550,6 +553,35 @@ public class LoadoutLabPlugin extends Plugin
 		if (event.getGroupId() == net.runelite.api.gameval.InterfaceID.WILDERNESS_LOOTINGBAG)
 		{
 			lootingBagScanTicks = 3;
+		}
+	}
+
+	/** Previous BeforeRender timestamp - the frame-stall watchdog's memory. */
+	private long lastFrameNanos;
+
+	/**
+	 * [LL-PERF] frame-stall watchdog: BeforeRender fires every frame on the
+	 * client thread, so a large gap between frames IS the choppiness the
+	 * field report describes - whatever the cause (GC pause, a long client
+	 * thread task, ours or another plugin's). One nanoTime compare per
+	 * frame; logs only when a frame took >150ms (~7fps momentary). Caveat
+	 * for reading logs: RuneLite's unfocused-FPS limiter makes long gaps
+	 * NORMAL while the window is unfocused.
+	 */
+	@Subscribe
+	public void onBeforeRender(net.runelite.api.events.BeforeRender event)
+	{
+		long now = System.nanoTime();
+		long last = lastFrameNanos;
+		lastFrameNanos = now;
+		if (last == 0 || !log.isDebugEnabled())
+		{
+			return;
+		}
+		long gapMs = (now - last) / 1_000_000L;
+		if (gapMs > 150)
+		{
+			log.debug("[LL-PERF] frame-stall gapMs={}", gapMs);
 		}
 	}
 
@@ -1192,12 +1224,17 @@ public class LoadoutLabPlugin extends Plugin
 
 	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
 	{
+		// [LL-PERF] posted->prep delay = client-thread queue backlog; the
+		// prep phases are the per-action client-thread (frame) tax.
+		long posted = System.nanoTime();
 		clientThread.invokeLater(() ->
 		{
+			long prepStart = System.nanoTime();
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				snapshotProfileIfNeeded();
 			}
+			long snapshotDone = System.nanoTime();
 			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
 			// re-read keeps imported storages as fresh as they can be. The
 			// PluginMessage re-request refreshes the live snapshot the same
@@ -1205,6 +1242,7 @@ public class LoadoutLabPlugin extends Plugin
 			// DWMS-tracked storages change rarely).
 			dwmsImport.reload();
 			requestDwmsStorages();
+			long reloadDone = System.nanoTime();
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
@@ -1214,23 +1252,42 @@ public class LoadoutLabPlugin extends Plugin
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			int fingerprint = ownedFingerprint();
+			long mergeDone = System.nanoTime();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			exportProfile(new PlayerProfile(
 				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
+			long exportDone = System.nanoTime();
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
-				results -> SwingUtilities.invokeLater(() ->
+				results ->
 				{
-					if (panel != null)
+					long delivered = System.nanoTime();
+					SwingUtilities.invokeLater(() ->
 					{
-						panel.showResults(monster, results);
-					}
-					onDone.run();
-				}));
+						long edtStart = System.nanoTime();
+						if (panel != null)
+						{
+							panel.showResults(monster, results);
+						}
+						onDone.run();
+						log.debug("[LL-PERF] render monster={} edtDelayMs={} renderMs={}",
+							monster.getName(),
+							(edtStart - delivered) / 1_000_000L,
+							(System.nanoTime() - edtStart) / 1_000_000L);
+					});
+				});
+			log.debug("[LL-PERF] prep monster={} queueDelayMs={} prepMs={} snapshot={} reload={} merge={} export={}",
+				monster.getName(),
+				(prepStart - posted) / 1_000_000L,
+				(System.nanoTime() - prepStart) / 1_000_000L,
+				(snapshotDone - prepStart) / 1_000_000L,
+				(reloadDone - snapshotDone) / 1_000_000L,
+				(mergeDone - reloadDone) / 1_000_000L,
+				(exportDone - mergeDone) / 1_000_000L);
 		});
 	}
 
