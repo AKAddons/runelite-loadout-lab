@@ -114,6 +114,27 @@ class CollectionLedgerTest
 		assertFalse(next.bankKnown(), "a looting bag scan alone is not a bank scan");
 	}
 
+	@Test
+	@DisplayName("the storage sources (POH, STASH, cargo) merge into owned and persist independently")
+	void storageSourcesMergeAndPersist()
+	{
+		ledger.update(CollectionLedger.Source.POH_COSTUMES, Map.of(11832, 1));
+		ledger.update(CollectionLedger.Source.STASH, Map.of(4151, 1));
+		ledger.update(CollectionLedger.Source.CARGO_HOLD_1, Map.of(2, 5000));
+
+		CollectionLedger next = new CollectionLedger(configManager, new Gson());
+		next.loadScope("std");
+		assertEquals(1, next.owned().get(11832));
+		assertEquals(1, next.owned().get(4151));
+		assertEquals(5000, next.owned().get(2));
+		assertFalse(next.bankKnown());
+
+		// Emptying a STASH via a fresh chart read removes only its items.
+		next.update(CollectionLedger.Source.STASH, Map.of());
+		assertNull(next.owned().get(4151));
+		assertEquals(1, next.owned().get(11832));
+	}
+
 	@org.junit.jupiter.api.Test
 	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce()
 	{

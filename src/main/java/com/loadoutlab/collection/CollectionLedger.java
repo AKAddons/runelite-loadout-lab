@@ -40,7 +40,20 @@ public class CollectionLedger
 		INVENTORY("inventory"),
 		BANK("bank"),
 		/** Seen when the bag is opened or checked; vital for UIM accounts. */
-		LOOTING_BAG("lootingBag");
+		LOOTING_BAG("lootingBag"),
+		/** POH costume storage: one shared container covering the armour
+		 * case, wardrobes, treasure chest, and cape rack, seen when a
+		 * costume storage interface is opened. */
+		POH_COSTUMES("pohCostumes"),
+		/** Not container-backed: filled units' default items, read from
+		 * the STASH chart (see LoadoutLabPlugin.scanStashChart). */
+		STASH("stash"),
+		/** Sailing boat cargo holds, one container per boat slot. */
+		CARGO_HOLD_1("cargoHold1"),
+		CARGO_HOLD_2("cargoHold2"),
+		CARGO_HOLD_3("cargoHold3"),
+		CARGO_HOLD_4("cargoHold4"),
+		CARGO_HOLD_5("cargoHold5");
 
 		private final String key;
 
