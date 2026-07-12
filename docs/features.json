@@ -155,6 +155,24 @@
       "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
     },
     {
+      "id": "dwms-import",
+      "title": "Dude, Where's My Stuff import",
+      "group": "Bank and integrations",
+      "anchor": "dude-wheres-my-stuff-import",
+      "media": "docs/img/dwms-import.png",
+      "code": [
+        "collection/DwmsImport.java",
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "collection/DwmsImportTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "Best-effort read of DWMS's persisted ConfigManager data (public API, no reflection; works with DWMS disabled). Strictly defensive parsing - an upstream format change drops items rather than miscounting. A PluginMessage contract upstream is the planned durable path.",
+      "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",

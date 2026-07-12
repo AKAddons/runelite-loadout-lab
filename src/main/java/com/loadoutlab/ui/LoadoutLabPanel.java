@@ -137,6 +137,12 @@ public class LoadoutLabPanel extends PluginPanel
 		Set<Integer> snapshot();
 	}
 
+	/** How many items the Dude Where's My Stuff import contributed. */
+	public interface DwmsView
+	{
+		int count();
+	}
+
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
 	{
@@ -193,6 +199,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DreamView dreamView;
 	private final StoredToggle storedToggle;
 	private final StoredView storedView;
+	private final DwmsView dwmsView;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
@@ -209,6 +216,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private int lastBudgetGp;
 	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
+	private final JLabel dwmsLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -248,7 +256,8 @@ public class LoadoutLabPanel extends PluginPanel
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
-		StoredToggle storedToggle, StoredView storedView, OwnedCheck ownedCheck,
+		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
+		OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
@@ -263,6 +272,7 @@ public class LoadoutLabPanel extends PluginPanel
 		this.dreamView = dreamView;
 		this.storedToggle = storedToggle;
 		this.storedView = storedView;
+		this.dwmsView = dwmsView;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -456,6 +466,14 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 		top.add(storedLabel);
 		refreshStoredLabel();
+
+		// Provenance line for the Dude Where's My Stuff import - shows the
+		// import is working (and how much gear came in that way).
+		dwmsLabel.setForeground(MUTED);
+		dwmsLabel.setFont(dwmsLabel.getFont().deriveFont(12f));
+		dwmsLabel.setAlignmentX(LEFT_ALIGNMENT);
+		top.add(dwmsLabel);
+		refreshDwmsLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -752,6 +770,14 @@ public class LoadoutLabPanel extends PluginPanel
 		int count = storedView.snapshot().size();
 		storedLabel.setText(count == 0 ? "" : "Stored elsewhere: " + count + " (click to manage)");
 		storedLabel.setVisible(count > 0);
+	}
+
+	private void refreshDwmsLabel()
+	{
+		int count = dwmsView.count();
+		dwmsLabel.setText(count == 0 ? ""
+			: "From Dude Where's My Stuff: " + count + " items");
+		dwmsLabel.setVisible(count > 0);
 	}
 
 	private void showStoredMenu(MouseEvent e)
@@ -1128,6 +1154,7 @@ public class LoadoutLabPanel extends PluginPanel
 		clearSelection();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
+		refreshDwmsLabel();
 	}
 
 	private void clearSelection()
@@ -1153,6 +1180,7 @@ public class LoadoutLabPanel extends PluginPanel
 			return; // stale result for a monster the user moved away from
 		}
 		lastResults = results;
+		refreshDwmsLabel();
 		resultsPanel.removeAll();
 		// Strongest style first: order the cards by your best set's dps.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};

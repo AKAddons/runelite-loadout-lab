@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
 import com.loadoutlab.collection.DreamStore;
+import com.loadoutlab.collection.DwmsImport;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.ManualOwnedStore;
 import com.loadoutlab.data.DataService;
@@ -115,6 +116,7 @@ public class LoadoutLabPlugin extends Plugin
 	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
+	private DwmsImport dwmsImport;
 	private LoadoutData data;
 	private OptimizerService optimizerService;
 	private LoadoutLabPanel panel;
@@ -228,12 +230,14 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
+		dwmsImport = new DwmsImport(configManager);
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
+			dwmsImport.reload();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
 
@@ -249,6 +253,7 @@ public class LoadoutLabPlugin extends Plugin
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
+					dwmsImport::count,
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -294,6 +299,7 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = null;
 		exclusions = null;
 		manualOwned = null;
+		dwmsImport = null;
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -339,6 +345,10 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			manualOwned.loadScope(worldScope());
 		}
+		if (dwmsImport != null)
+		{
+			dwmsImport.reload();
+		}
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -367,6 +377,7 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
+			dwmsImport.reload();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
 			// New login = possibly a different account/levels: re-snapshot lazily.
@@ -471,20 +482,21 @@ public class LoadoutLabPlugin extends Plugin
 		return cache.contains(itemId);
 	}
 
-	/** The ledger view plus the manual "stored elsewhere" items. */
+	/** The ledger view plus manual "stored elsewhere" and DWMS imports. */
 	private Map<Integer, Integer> ownedItems()
 	{
-		return manualOwned.mergeInto(ledger.owned());
+		return dwmsImport.mergeInto(manualOwned.mergeInto(ledger.owned()));
 	}
 
 	/**
-	 * Ownership fingerprint covering BOTH the ledger and the manual list -
-	 * the optimizer/panel cache key, so a stored-elsewhere toggle is a real
-	 * ownership change everywhere a bank deposit would be.
+	 * Ownership fingerprint covering the ledger, the manual list, AND the
+	 * DWMS import - the optimizer/panel cache key, so any of them changing
+	 * is a real ownership change everywhere a bank deposit would be.
 	 */
 	private int ownedFingerprint()
 	{
-		return 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
+		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
+		return 31 * fingerprint + dwmsImport.snapshot().hashCode();
 	}
 
 	/**
@@ -570,6 +582,9 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				snapshotProfileIfNeeded();
 			}
+			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
+			// re-read keeps imported storages as fresh as they can be.
+			dwmsImport.reload();
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
