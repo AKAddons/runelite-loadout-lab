@@ -34,7 +34,20 @@ public class LinkInTest
 			java.util.Collections::emptySet,
 			itemId -> false,
 			java.util.Collections::emptySet,
-			() -> 0,
+			new LoadoutLabPanel.DwmsView()
+			{
+				@Override
+				public int count()
+				{
+					return 0;
+				}
+
+				@Override
+				public boolean live()
+				{
+					return false;
+				}
+			},
 			itemId -> true,
 			ids -> { },
 			ids -> { });
