@@ -152,6 +152,11 @@ public class LoadoutLabPlugin extends Plugin
 	private final EnumSet<CollectionLedger.Source> dirtySources =
 		EnumSet.noneOf(CollectionLedger.Source.class);
 
+	/** Event-time snapshots for storage containers that cannot be
+	 * re-fetched by id at drain time (see onItemContainerChanged). */
+	private final Map<CollectionLedger.Source, Map<Integer, Integer>> pendingScans =
+		new EnumMap<>(CollectionLedger.Source.class);
+
 	/**
 	 * Cross-plugin link-in: other plugins (e.g. Goal Planner) post
 	 * PluginMessage(namespace "loadoutlab", name "search") with data
@@ -365,6 +370,7 @@ public class LoadoutLabPlugin extends Plugin
 		boostedLevels = null;
 		prayerUnlocks = null;
 		dirtySources.clear();
+		pendingScans.clear();
 		log.info("Loadout Lab stopped");
 	}
 
@@ -428,6 +434,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.clearCache();
 		}
 		dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+		pendingScans.clear();
 		stashChartSeen = false;
 		SwingUtilities.invokeLater(() ->
 		{
@@ -471,7 +478,15 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
+		// Storage containers (POH costume storage confirmed in the field)
+		// arrive with the 0x8000 flag set on the id - the same masking
+		// DWMS applies. Field report: the treasure chest fired 0x8000|637
+		// and the unmasked comparison missed it.
 		int id = event.getContainerId();
+		if (id >= 0x8000)
+		{
+			id -= 0x8000;
+		}
 		if (id == InventoryID.EQUIPMENT.getId())
 		{
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
@@ -484,25 +499,40 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			dirtySources.add(CollectionLedger.Source.BANK);
 		}
-		else if (id == net.runelite.api.gameval.InventoryID.LOOTING_BAG)
-		{
-			// Fires when the bag is opened or checked - the only times the
-			// client learns its contents. Vital owned-gear storage for UIM.
-			dirtySources.add(CollectionLedger.Source.LOOTING_BAG);
-		}
-		else if (id == net.runelite.api.gameval.InventoryID.POH_COSTUMES)
-		{
-			// Shared container for every costume-room storage; fires when a
-			// case/wardrobe/chest interface is opened in the POH.
-			dirtySources.add(CollectionLedger.Source.POH_COSTUMES);
-		}
 		else
 		{
-			CollectionLedger.Source cargo = cargoSourceFor(id);
-			if (cargo != null)
+			CollectionLedger.Source source = storageSourceFor(id);
+			if (source != null)
 			{
-				dirtySources.add(cargo);
+				// These containers may not be re-fetchable later under the
+				// unmasked id, so capture the contents off the event now
+				// (rare one-shot opens, not bank-style event storms); the
+				// per-tick drain still does the coalesced ledger write.
+				ItemContainer container = event.getItemContainer();
+				if (container != null)
+				{
+					pendingScans.put(source, itemsOf(container));
+				}
+				dirtySources.add(source);
 			}
+		}
+	}
+
+	/** Storage containers scanned from the event rather than re-fetched. */
+	private static CollectionLedger.Source storageSourceFor(int containerId)
+	{
+		switch (containerId)
+		{
+			case net.runelite.api.gameval.InventoryID.LOOTING_BAG:
+				// Fires when the bag is opened or checked - the only times
+				// the client learns its contents. Vital for UIM.
+				return CollectionLedger.Source.LOOTING_BAG;
+			case net.runelite.api.gameval.InventoryID.POH_COSTUMES:
+				// One shared container for every costume-room storage; fires
+				// when a case/wardrobe/chest interface is opened in the POH.
+				return CollectionLedger.Source.POH_COSTUMES;
+			default:
+				return cargoSourceFor(containerId);
 		}
 	}
 
@@ -540,23 +570,35 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		for (CollectionLedger.Source source : EnumSet.copyOf(dirtySources))
 		{
+			Map<Integer, Integer> pending = pendingScans.remove(source);
+			if (pending != null)
+			{
+				ledger.update(source, pending);
+				dirtySources.remove(source);
+				continue;
+			}
 			ItemContainer c = client.getItemContainer(containerFor(source));
 			if (c == null)
 			{
 				dirtySources.remove(source);
 				continue;
 			}
-			Map<Integer, Integer> items = new HashMap<>();
-			for (Item item : c.getItems())
-			{
-				if (item.getId() > 0 && item.getQuantity() > 0)
-				{
-					items.merge(item.getId(), item.getQuantity(), Integer::sum);
-				}
-			}
-			ledger.update(source, items);
+			ledger.update(source, itemsOf(c));
 			dirtySources.remove(source);
 		}
+	}
+
+	private static Map<Integer, Integer> itemsOf(ItemContainer container)
+	{
+		Map<Integer, Integer> items = new HashMap<>();
+		for (Item item : container.getItems())
+		{
+			if (item.getId() > 0 && item.getQuantity() > 0)
+			{
+				items.merge(item.getId(), item.getQuantity(), Integer::sum);
+			}
+		}
+		return items;
 	}
 
 	/** Tier panels on the STASH chart, beginner through master. */
