@@ -240,8 +240,11 @@ public final class PvpRisk
 			return;
 		}
 		long cost = UntradeableDeathCosts.costFor(item);
-		if (cost > 0)
+		if (cost > 0 || UntradeableDeathCosts.categoryFor(item) >= 2)
 		{
+			// Cost-0 breakers (the salve line: free reclaim, imbue points
+			// refunded) still BREAK on death - record the charge so the UI
+			// never presents them as kept. They add nothing to riskGp.
 			charges.add(new Charge(item, cost));
 		}
 	}

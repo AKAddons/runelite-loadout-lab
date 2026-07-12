@@ -52,6 +52,23 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void costFreeBreakersStillChargeSoTheUiNeverShowsThemAsKept()
+	{
+		// Salve amulet(ei): curated reclaim cost is 0 (free tomb re-obtain,
+		// imbue points refunded) but it is category 2 - it BREAKS on a
+		// wilderness death. It must appear in the charges (so the panel can
+		// mark it) while adding nothing to the gp risk total.
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE));
+		PvpRisk.Assessment fates = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(1, fates.untradeableCharges.size());
+		Assert.assertEquals(2, fates.untradeableCharges.get(0).item.getId());
+		Assert.assertEquals(0, fates.untradeableCharges.get(0).costGp);
+		Assert.assertEquals(0, fates.riskGp);
+	}
+
+	@Test
 	public void untradeablesAreKeptOutsideTheSlotRanking()
 	{
 		Loadout loadout = worn(

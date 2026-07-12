@@ -2159,6 +2159,13 @@ public class LoadoutLabPanel extends PluginPanel
 							slot.setFate(Fate.FEE);
 							fate = " - replaceable for " + PvpRisk.formatGp(fee) + " on death";
 						}
+						else if (hasDeathCharge(fates, item))
+						{
+							// Free to reclaim, but still gone mid-trip
+							// (salve line) - never show it as kept.
+							slot.setFate(Fate.FEE);
+							fate = " - breaks on death (free reclaim)";
+						}
 					}
 				}
 				// Location clause only when a fetch trip is needed - "in
@@ -2224,6 +2231,11 @@ public class LoadoutLabPanel extends PluginPanel
 					specCell.setFate(Fate.DROPPED);
 					specFate = "<br>Lost on death ("
 						+ PvpRisk.formatGp(fates.valueOf(specWeapon)) + ").";
+				}
+				else if (feeFor(fates, specWeapon) == 0 && hasDeathCharge(fates, specWeapon))
+				{
+					specCell.setFate(Fate.FEE);
+					specFate = "<br>Breaks on death (free reclaim).";
 				}
 				else if (feeFor(fates, specWeapon) > 0)
 				{
@@ -2297,6 +2309,19 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return 0;
+	}
+
+	/** True when the item breaks on death even at zero reclaim cost. */
+	private static boolean hasDeathCharge(PvpRisk.Assessment fates, GearItem item)
+	{
+		for (PvpRisk.Charge charge : fates.untradeableCharges)
+		{
+			if (charge.item.getId() == item.getId())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static String slotName(GearSlot slot)
