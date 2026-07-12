@@ -58,9 +58,26 @@ search history). Nothing is ever sent anywhere.
 
 ## Data sharing (for other plugins)
 
-Loadout Lab's owned-gear data is deliberately readable by other plugins
-through the public ConfigManager API - the same zero-dependency way we
-import from Dude, Where's My Stuff. No reflection needed:
+Loadout Lab's owned-gear data is deliberately readable by other plugins,
+two ways.
+
+Preferred - ask over the PluginMessage bus (the same bidirectional
+request/response shape DWMS answers under its namespace):
+
+- Request: namespace `loadoutlab`, name `storages-request`, data
+  `{"source": "<your plugin's display name>"}` (required; unattributed
+  requests are ignored).
+- Response (posted on the client thread): name `storages-response`, data
+  `source` (`"Loadout Lab"`), `target` (your `source` echoed back -
+  filter on it), `version` (Integer `1`), and `storages` - a List of
+  Maps, one per non-empty source, each with `category` (String,
+  `collection` or `manual`), `name` (String, the source key below),
+  `lastUpdated` (Long, `-1`; the ledger keeps no timestamps), and
+  `items` (List of `{"id": Integer canonical item id, "quantity" Long}`).
+
+Fallback - read the persisted config through the public ConfigManager
+API, which works even while Loadout Lab is disabled. No reflection
+needed:
 
 - Config group: `loadoutlab`
 - Keys: `<world>.<accountHash>.collection.<source>`, where `<world>` is
@@ -70,12 +87,9 @@ import from Dude, Where's My Stuff. No reflection needed:
 - Values: JSON. Collection keys hold `{"<itemId>": <quantity>, ...}` maps
   (raw item ids, not canonicalized); `manualOwned` is a JSON array of ids.
 
-Stability promise: these semantics never change silently. If the schema
-ever has to change, the new shape gets a NEW key and existing keys keep
-their meaning. PluginMessage contracts are the preferred interface (the
-DWMS storages-request/storages-response contract we authored upstream is
-the model); config reads are the fallback that works even while a plugin
-is disabled.
+Stability promise: these semantics never change silently. If the message
+or config schema ever has to change, the new shape gets a new version /
+a NEW key, and existing shapes keep their meaning.
 
 ## License
 

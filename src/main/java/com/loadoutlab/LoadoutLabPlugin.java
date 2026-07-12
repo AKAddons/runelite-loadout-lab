@@ -8,6 +8,7 @@ import com.loadoutlab.collection.DwmsImport;
 import com.loadoutlab.collection.DwmsLink;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.ManualOwnedStore;
+import com.loadoutlab.collection.StoragesApi;
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -177,6 +178,19 @@ public class LoadoutLabPlugin extends Plugin
 						panel.dwmsUpdated();
 					}
 				});
+			}
+			return;
+		}
+		// Our half of the bidirectional storages contract (see StoragesApi):
+		// another plugin asks for the owned-gear ledger; the reply is built
+		// and posted on the client thread (ids canonicalize there).
+		if (StoragesApi.NAMESPACE.equals(event.getNamespace())
+			&& StoragesApi.REQUEST_NAME.equals(event.getName()))
+		{
+			String requester = StoragesApi.requester(event.getData());
+			if (requester != null)
+			{
+				clientThread.invokeLater(() -> respondWithStorages(requester));
 			}
 			return;
 		}
@@ -671,6 +685,51 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		eventBus.post(new PluginMessage(
 			DwmsLink.DWMS_NAMESPACE, DwmsLink.REQUEST_NAME, DwmsLink.request()));
+	}
+
+	/**
+	 * Client thread: answer a storages-request with the ledger's per-source
+	 * snapshots plus the manual stored-elsewhere list (quantity 1 each, the
+	 * same way the optimizer counts them). Fire-and-forget like the DWMS
+	 * side: no reply while the stores are down (plugin shutting down).
+	 */
+	private void respondWithStorages(String target)
+	{
+		CollectionLedger currentLedger = ledger;
+		ManualOwnedStore manual = manualOwned;
+		if (currentLedger == null || manual == null)
+		{
+			return;
+		}
+		// Canonicalization needs the item cache; before the login screen
+		// exists, ship raw ids rather than crash (DWMS guards the same way).
+		java.util.function.IntUnaryOperator canonicalize =
+			client.getGameState().getState() >= GameState.LOGIN_SCREEN.getState()
+				? itemManager::canonicalize
+				: java.util.function.IntUnaryOperator.identity();
+		java.util.List<Map<String, Object>> storages = new java.util.ArrayList<>();
+		for (CollectionLedger.Source source : CollectionLedger.Source.values())
+		{
+			Map<String, Object> entry = StoragesApi.storage(
+				"collection", source.key(), -1L, currentLedger.snapshot(source), canonicalize);
+			if (entry != null)
+			{
+				storages.add(entry);
+			}
+		}
+		Map<Integer, Integer> manualItems = new HashMap<>();
+		for (int itemId : manual.snapshot())
+		{
+			manualItems.put(itemId, 1);
+		}
+		Map<String, Object> manualEntry = StoragesApi.storage(
+			"manual", "manualOwned", -1L, manualItems, canonicalize);
+		if (manualEntry != null)
+		{
+			storages.add(manualEntry);
+		}
+		eventBus.post(new PluginMessage(StoragesApi.NAMESPACE, StoragesApi.RESPONSE_NAME,
+			StoragesApi.response(target, storages)));
 	}
 
 	/** Check ALL same-named plugins - a hub copy and a sideloaded dev copy

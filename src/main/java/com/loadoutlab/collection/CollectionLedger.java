@@ -61,6 +61,13 @@ public class CollectionLedger
 		{
 			this.key = key;
 		}
+
+		/** The persisted config-key segment; also the storage name in the
+		 * storages-response PluginMessage (see StoragesApi). */
+		public String key()
+		{
+			return key;
+		}
 	}
 
 	private final ConfigManager configManager;
@@ -136,6 +143,12 @@ public class CollectionLedger
 		configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE));
 		fingerprint = null;
 		return true;
+	}
+
+	/** One source's current snapshot, read-only (itemId → quantity). */
+	public Map<Integer, Integer> snapshot(Source source)
+	{
+		return java.util.Collections.unmodifiableMap(snapshots.get(source));
 	}
 
 	/** Merged itemId → total quantity across all sources. */
