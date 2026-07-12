@@ -37,4 +37,32 @@ public final class OwnedItems
 	{
 		return quantities.size();
 	}
+
+	/**
+	 * Fingerprint of what owns() answers - the ids with quantity > 0,
+	 * order-independent, quantity-BLIND. The optimizer's results depend
+	 * only on presence, so its cache keys on this: a quantity-sensitive
+	 * hash invalidated every cached answer each time the player shot an
+	 * arrow or picked up loot (field-observed: a 22s Balanced compute
+	 * re-paid on every revisit while grinding).
+	 */
+	public int presenceFingerprint()
+	{
+		int[] ids = new int[quantities.size()];
+		int count = 0;
+		for (Map.Entry<Integer, Integer> entry : quantities.entrySet())
+		{
+			if (entry.getValue() != null && entry.getValue() > 0)
+			{
+				ids[count++] = entry.getKey();
+			}
+		}
+		java.util.Arrays.sort(ids, 0, count);
+		int hash = count;
+		for (int i = 0; i < count; i++)
+		{
+			hash = 31 * hash + ids[i];
+		}
+		return hash;
+	}
 }

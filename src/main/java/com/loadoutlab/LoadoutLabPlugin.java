@@ -1251,7 +1251,9 @@ public class LoadoutLabPlugin extends Plugin
 			// runs on the client thread, where every merge is a frame tax.
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
-			int fingerprint = ownedFingerprint();
+			// The optimizer cache keys on ownership PRESENCE, not quantities
+			// - firing an arrow must not re-pay a 20s Balanced compute.
+			int fingerprint = owned.presenceFingerprint();
 			long mergeDone = System.nanoTime();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
