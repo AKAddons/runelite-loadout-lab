@@ -68,6 +68,19 @@ class ItemLocationsTest
 	}
 
 	@Test
+	@DisplayName("the primary label folds DWMS twins onto native names and buckets the rest")
+	void primaryLabels()
+	{
+		ItemLocations locations = locations(origins());
+		assertEquals("equipped", locations.primary(1));
+		assertEquals("bank", locations.primary(2));
+		assertEquals("STASH", locations.primary(3), "first origin in display order wins");
+		assertEquals("STASH", locations.primary(4), "DWMS twin folds onto the native name");
+		assertEquals("DWMS", locations.primary(5), "DWMS-only family buckets as DWMS");
+		assertEquals("", locations.primary(99), "unknown location has no label");
+	}
+
+	@Test
 	@DisplayName("without a variant map, matching falls back to exact ids")
 	void exactMatchingWithoutDataset()
 	{

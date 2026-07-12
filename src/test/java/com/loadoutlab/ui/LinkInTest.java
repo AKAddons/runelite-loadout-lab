@@ -48,7 +48,20 @@ public class LinkInTest
 					return false;
 				}
 			},
-			itemId -> "",
+			new LoadoutLabPanel.LocationHint()
+			{
+				@Override
+				public String hint(int itemId)
+				{
+					return "";
+				}
+
+				@Override
+				public String primary(int itemId)
+				{
+					return "";
+				}
+			},
 			itemId -> true,
 			ids -> { },
 			ids -> { });
