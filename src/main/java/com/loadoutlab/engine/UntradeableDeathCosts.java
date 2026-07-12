@@ -45,6 +45,11 @@ public final class UntradeableDeathCosts
 
 	private static final Map<String, Long> COST_BY_NAME = new HashMap<>();
 	private static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
+	/** Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
+	 * NOT gp - imbue points refund since April 2024). Counted into the
+	 * risk total and the risk cap so "free but a 25-minute errand" items
+	 * never read as safe (field request). */
+	private static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
 
 	static
 	{
@@ -58,6 +63,10 @@ public final class UntradeableDeathCosts
 				String name = entry.getKey().toLowerCase(Locale.ROOT);
 				COST_BY_NAME.put(name, row.get("costGp").getAsLong());
 				CATEGORY_BY_NAME.put(name, row.get("category").getAsInt());
+				if (row.has("frictionGp"))
+				{
+					FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong());
+				}
 			}
 		}
 		catch (Exception ex)
@@ -94,6 +103,17 @@ public final class UntradeableDeathCosts
 			return listed;
 		}
 		return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
+	}
+
+	/** Rebuild-errand proxy for a death loss (0 when none curated). */
+	public static long frictionFor(GearItem item)
+	{
+		if (item == null)
+		{
+			return 0L;
+		}
+		Long friction = FRICTION_BY_NAME.get(item.getNameLower());
+		return friction == null ? 0L : friction;
 	}
 
 	/** Category 5: destroyed on any death - never protectable. */

@@ -244,7 +244,12 @@ items came in this way.
 Build low-risk sets around the items-kept-on-death rules: your most
 valuable items ride protected while everything else stays under an
 adjustable gp risk cap. Per-item death fates and honest kept/lost gp
-totals include untradeable repair and mangle fees.
+totals include untradeable repair and mangle fees - and curated
+"rebuild errand" friction for gear that is gp-free to replace but
+costs a real trip (the salve line's tomb-and-re-imbue run, an imbued
+ring's re-imbue visit). Friction counts against the risk cap, so the
+cap is your dial: a tight cap swaps such items out, a loose one says
+the errand is acceptable.
 
 ![Wilderness low-risk sets](docs/img/wilderness-risk.png)
 

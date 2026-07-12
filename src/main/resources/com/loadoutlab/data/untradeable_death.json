@@ -77,7 +77,8 @@
  "archers ring (i)": {
   "category": 4,
   "costGp": 2100000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "ardougne cloak 1": {
   "category": 2,
@@ -217,7 +218,8 @@
  "berserker ring (i)": {
   "category": 4,
   "costGp": 3000000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "black defender": {
   "category": 2,
@@ -237,7 +239,8 @@
  "black mask (i)": {
   "category": 4,
   "costGp": 1500000,
-  "note": "drops as a black mask; imbue points refunded"
+  "note": "drops as a black mask; imbue points refunded; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "blade of saeldor": {
   "category": 4,
@@ -657,7 +660,8 @@
  "crystal bow (i)": {
   "category": 4,
   "costGp": 390000,
-  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "crystal halberd": {
   "category": 4,
@@ -772,7 +776,8 @@
  "crystal shield (i)": {
   "category": 4,
   "costGp": 390000,
-  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07"
+  "note": "reverts to a crystal weapon seed dropped on death (wiki Crystal bow changelog); GE seed ~390k 2026-07; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "damaged book (ancient)": {
   "category": 2,
@@ -1147,7 +1152,8 @@
  "granite ring (i)": {
   "category": 4,
   "costGp": 20000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "guthix cape": {
   "category": 2,
@@ -1527,7 +1533,8 @@
  "magic shortbow (i)": {
   "category": 4,
   "costGp": 37000,
-  "note": "drops a regular magic shortbow for the killer AND the imbue scroll is lost - replacement = bow ~800 + magic shortbow scroll ~36k (GE 2026-07-08)"
+  "note": "drops a regular magic shortbow for the killer AND the imbue scroll is lost - replacement = bow ~800 + magic shortbow scroll ~36k (GE 2026-07-08); frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "magma helm": {
   "category": 4,
@@ -1737,12 +1744,14 @@
  "ring of suffering (i)": {
   "category": 4,
   "costGp": 19000000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "ring of the gods (i)": {
   "category": 4,
   "costGp": 960000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "rosewood blowpipe": {
   "category": 4,
@@ -1807,22 +1816,26 @@
  "salve amulet": {
   "category": 2,
   "costGp": 0,
-  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded"
+  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "salve amulet (e)": {
   "category": 2,
   "costGp": 0,
-  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded"
+  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 100000
  },
  "salve amulet(ei)": {
   "category": 2,
   "costGp": 0,
-  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded"
+  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 150000
  },
  "salve amulet(i)": {
   "category": 2,
   "costGp": 0,
-  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded"
+  "note": "free to re-obtain from the Haunted Mine tomb; imbue points refunded; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 100000
  },
  "sanguinesti staff": {
   "category": 4,
@@ -1872,7 +1885,8 @@
  "seers ring (i)": {
   "category": 4,
   "costGp": 700000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "seren halo": {
   "category": 2,
@@ -2032,7 +2046,8 @@
  "skull sceptre (i)": {
   "category": 2,
   "costGp": 0,
-  "note": "rebuilt free from Stronghold of Security monster drops; imbue persists via sceptre shards (wiki Skull sceptre)"
+  "note": "rebuilt free from Stronghold of Security monster drops; imbue persists via sceptre shards (wiki Skull sceptre); frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 25000
  },
  "slayer cape": {
   "category": 2,
@@ -2047,7 +2062,8 @@
  "slayer helmet (i)": {
   "category": 4,
   "costGp": 1500000,
-  "note": "drops as a black mask to the killer; imbue points refunded (wiki Slayer helmet)"
+  "note": "drops as a black mask to the killer; imbue points refunded (wiki Slayer helmet); frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "slayer's staff (e)": {
   "category": 4,
@@ -2187,7 +2203,8 @@
  "treasonous ring (i)": {
   "category": 4,
   "costGp": 90000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "trident of the seas": {
   "category": 4,
@@ -2217,7 +2234,8 @@
  "tyrannical ring (i)": {
   "category": 4,
   "costGp": 180000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "unholy book": {
   "category": 2,
@@ -2342,7 +2360,8 @@
  "warrior ring (i)": {
   "category": 4,
   "costGp": 60000,
-  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price"
+  "note": "unimbued ring drops to the killer; imbue points refunded (wiki Berserker ring (i)); vendored base price; frictionGp prices the rebuild errand (trip/re-enchant/re-imbue), not gp",
+  "frictionGp": 50000
  },
  "webweaver bow": {
   "category": 4,

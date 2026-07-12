@@ -74,6 +74,33 @@ class RevenantPoolTest
 	}
 
 	@Test
+	@DisplayName("the risk cap is the dial: a tight cap drops the salve's rebuild errand, a loose one keeps it")
+	void riskCapDialsTheSalveOut()
+	{
+		OptimizationRequest tight = request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY)
+			.withMaxTradeables(3).withRiskBudgetGp(25_000);
+		OptimizationRequest loose = request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY)
+			.withMaxTradeables(3).withRiskBudgetGp(5_000_000);
+
+		List<DpsResult> tightResults = new LoadoutOptimizer().optimize(data, tight);
+		List<DpsResult> looseResults = new LoadoutOptimizer().optimize(data, loose);
+		assertFalse(tightResults.isEmpty());
+		assertFalse(looseResults.isEmpty());
+
+		com.loadoutlab.data.GearItem tightNeck =
+			tightResults.get(0).getLoadout().get(GearSlot.NECK);
+		com.loadoutlab.data.GearItem looseNeck =
+			looseResults.get(0).getLoadout().get(GearSlot.NECK);
+		assertTrue(tightNeck == null || !tightNeck.getNameLower().contains("salve"),
+			"a 25k cap cannot afford the salve's 150k rebuild errand, got: "
+				+ (tightNeck == null ? "empty" : tightNeck.getNameLower()));
+		assertNotNull(looseNeck);
+		assertTrue(looseNeck.getNameLower().contains("salve")
+				|| looseNeck.getNameLower().contains("avarice"),
+			"a loose cap keeps the conditional neck, got: " + looseNeck.getNameLower());
+	}
+
+	@Test
 	@DisplayName("the ethereum bracelet and avarice survive the candidate pool at revenants")
 	void conditionalItemsSurviveThePool()
 	{

@@ -74,20 +74,33 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void costFreeBreakersStillChargeSoTheUiNeverShowsThemAsKept()
+	public void costFreeBreakersChargeTheirRebuildFriction()
 	{
-		// Salve amulet(ei): curated reclaim cost is 0 (free tomb re-obtain,
-		// imbue points refunded) but it is category 2 - it BREAKS on a
-		// wilderness death. It must appear in the charges (so the panel can
-		// mark it) while adding nothing to the gp risk total.
+		// Salve amulet(ei): gp cost 0 (free tomb re-obtain, imbue points
+		// refunded) but the death still costs the rebuild errand - the
+		// curated 150k friction charges into the risk total and the risk
+		// cap, so it can never ride into a low-risk set as "safe".
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE));
 		PvpRisk.Assessment fates = PvpRisk.assess(loadout, null, 3);
 		Assert.assertEquals(1, fates.untradeableCharges.size());
 		Assert.assertEquals(2, fates.untradeableCharges.get(0).item.getId());
-		Assert.assertEquals(0, fates.untradeableCharges.get(0).costGp);
-		Assert.assertEquals(0, fates.riskGp);
+		Assert.assertEquals(150_000, fates.untradeableCharges.get(0).costGp);
+		Assert.assertEquals(150_000, fates.riskGp);
+	}
+
+	@Test
+	public void imbuedConvertsCarryTheirReimbueFrictionInThePool()
+	{
+		// Warrior ring (i): the killer gets the 60k base ring and the
+		// victim owes a re-imbue visit - loss price is 60k + 50k friction.
+		Loadout loadout = worn(
+			untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE));
+		PvpRisk.Assessment fates = PvpRisk.assess(loadout, null, 0);
+		Assert.assertEquals(110_000, fates.riskGp);
+		Assert.assertEquals(110_000, fates.valueOf(
+			loadout.get(GearSlot.RING)));
 	}
 
 	@Test
@@ -191,7 +204,8 @@ public class PvpRiskTest
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
 		Assert.assertEquals(0, risk.riskGp);
 		Assert.assertEquals("Slayer helmet (i)", risk.kept.get(0).getName());
-		Assert.assertEquals(1_500_000L, risk.valueOf(risk.kept.get(0)));
+		// 1.5M black mask component + 50k re-imbue rebuild friction.
+		Assert.assertEquals(1_550_000L, risk.valueOf(risk.kept.get(0)));
 		Assert.assertTrue(risk.untradeableCharges.isEmpty());
 	}
 
@@ -204,7 +218,8 @@ public class PvpRiskTest
 			item(4, GearSlot.LEGS, true, 20_000_000),
 			untradeable(3, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE));
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, null, 3);
-		Assert.assertEquals(1_500_000L, risk.riskGp);
+		// 1.5M black mask component + 50k re-imbue rebuild friction.
+		Assert.assertEquals(1_550_000L, risk.riskGp);
 		Assert.assertEquals("Slayer helmet (i)", risk.lost.get(0).getName());
 	}
 

@@ -149,7 +149,10 @@ public final class PvpRisk
 			long value = poolValue(item);
 			if (value < 0)
 			{
-				fees += UntradeableDeathCosts.costFor(item);
+				// Mirror sort(): the fee is gp cost PLUS rebuild friction,
+				// so the beam's risk filter feels the errand too.
+				fees += UntradeableDeathCosts.costFor(item)
+					+ UntradeableDeathCosts.frictionFor(item);
 				continue;
 			}
 			poolTotal += value;
@@ -158,7 +161,8 @@ public final class PvpRisk
 		long specValue = poolValue(carriedSpecWeapon);
 		if (specValue < 0)
 		{
-			fees += UntradeableDeathCosts.costFor(carriedSpecWeapon);
+			fees += UntradeableDeathCosts.costFor(carriedSpecWeapon)
+				+ UntradeableDeathCosts.frictionFor(carriedSpecWeapon);
 		}
 		else
 		{
@@ -200,7 +204,12 @@ public final class PvpRisk
 		{
 			return -1; // costs nothing either way
 		}
-		return UntradeableDeathCosts.isConvertible(item) ? cost : -1;
+		// Convertibles ride the kept-slot pool at component value PLUS the
+		// rebuild friction (imbued rings: killer gets the base ring, the
+		// victim still owes a re-imbue visit) - raising both their loss
+		// price and their protection priority.
+		return UntradeableDeathCosts.isConvertible(item)
+			? cost + UntradeableDeathCosts.frictionFor(item) : -1;
 	}
 
 	/** Insert value into the ascending top-N array; returns the new count. */
@@ -259,12 +268,15 @@ public final class PvpRisk
 			return;
 		}
 		long cost = UntradeableDeathCosts.costFor(item);
-		if (cost > 0 || UntradeableDeathCosts.categoryFor(item) >= 2)
+		long friction = UntradeableDeathCosts.frictionFor(item);
+		if (cost > 0 || friction > 0 || UntradeableDeathCosts.categoryFor(item) >= 2)
 		{
-			// Cost-0 breakers (the salve line: free reclaim, imbue points
-			// refunded) still BREAK on death - record the charge so the UI
-			// never presents them as kept. They add nothing to riskGp.
-			charges.add(new Charge(item, cost));
+			// Breakers charge their gp cost PLUS the curated rebuild
+			// friction (the salve line: gp-free but a real errand chain) -
+			// so the risk total and the risk cap feel the loss and a
+			// "free reclaim" item can never ride into a low-risk set
+			// unnoticed (field request).
+			charges.add(new Charge(item, cost + friction));
 		}
 	}
 

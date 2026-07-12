@@ -672,7 +672,15 @@ public final class LoadoutOptimizer
 		{
 			if (request.getMonster().hasAttribute("undead") && name.contains("salve amulet"))
 			{
-				score += 5_000.0;
+				// Tiered: the salve family stat-ties at zero raw stats, so
+				// dedupe keeps the first of equals - score the stronger
+				// enchant/imbue higher so the survivor is the variant the
+				// DPS chains actually reward ((ei) > (i)/(e) > base). Field-
+				// found: the BASE salve was shadowing the (ei) in game-best
+				// pools, so ranged/magic "salve" suggestions did nothing.
+				score += name.contains("(ei)") ? 5_300.0
+					: name.contains("(i)") || name.contains("salve amulet (e)") ? 5_150.0
+					: 5_000.0;
 			}
 			if (request.getMonster().hasAttribute("dragon") && name.contains("dragon hunter"))
 			{

@@ -2155,15 +2155,21 @@ public class LoadoutLabPanel extends PluginPanel
 					else
 					{
 						long fee = feeFor(fates, item);
-						if (fee > 0)
+						long friction = com.loadoutlab.engine.UntradeableDeathCosts.frictionFor(item);
+						if (fee > 0 && fee <= friction)
+						{
+							// Gp-free but a real errand chain (salve line):
+							// the charge is all rebuild friction.
+							slot.setFate(Fate.FEE);
+							fate = " - breaks on death (rebuild errand ~" + PvpRisk.formatGp(friction) + ")";
+						}
+						else if (fee > 0)
 						{
 							slot.setFate(Fate.FEE);
 							fate = " - replaceable for " + PvpRisk.formatGp(fee) + " on death";
 						}
 						else if (hasDeathCharge(fates, item))
 						{
-							// Free to reclaim, but still gone mid-trip
-							// (salve line) - never show it as kept.
 							slot.setFate(Fate.FEE);
 							fate = " - breaks on death (free reclaim)";
 						}
@@ -2323,7 +2329,9 @@ public class LoadoutLabPanel extends PluginPanel
 		if (com.loadoutlab.engine.UntradeableDeathCosts.categoryFor(item) == 4
 			&& (item.getNameLower().endsWith("(i)") || item.getNameLower().endsWith("(ei)")))
 		{
-			return "; drops unimbued, imbue points refunded";
+			return com.loadoutlab.engine.UntradeableDeathCosts.frictionFor(item) > 0
+				? "; incl. rebuild errand - imbue points refunded"
+				: "; drops unimbued, imbue points refunded";
 		}
 		return "";
 	}
