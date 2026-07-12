@@ -129,6 +129,8 @@ public class LoadoutLabPlugin extends Plugin
 	 * tag config) containing the active set's expanded ids; null = off. */
 	private volatile java.util.Set<Integer> bankFilter;
 	private static final String BANK_TAG = "loadout-lab";
+	/** DWMS's exact plugin name - detection and icon lookup key off it. */
+	private static final String DWMS_PLUGIN_NAME = "Dude, Where's My Stuff?";
 	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
@@ -1112,7 +1114,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		for (Plugin p : pluginManager.getPlugins())
 		{
-			if ("Dude, Where's My Stuff?".equals(p.getName()) && pluginManager.isPluginEnabled(p))
+			if (DWMS_PLUGIN_NAME.equals(p.getName()) && pluginManager.isPluginEnabled(p))
 			{
 				return true;
 			}
@@ -1169,7 +1171,57 @@ public class LoadoutLabPlugin extends Plugin
 				DwmsLink link = dwmsLink;
 				return link != null && link.isLive();
 			}
+
+			@Override
+			public java.awt.image.BufferedImage icon()
+			{
+				return dwmsPluginIcon();
+			}
 		};
+	}
+
+	/** The DWMS icon, loaded once from ITS jar (null until then / on any
+	 * failure). Success-only cache: a miss retries on the next refresh,
+	 * so asking before DWMS registers cannot latch "no icon" forever. */
+	private volatile java.awt.image.BufferedImage dwmsIcon;
+
+	/**
+	 * The running DWMS plugin's own sidebar icon, read through its class's
+	 * resource lookup (plain read-only Class.getResourceAsStream - no
+	 * reflection; path verified in the hub jar: icon-28.png beside the
+	 * plugin class). Null when DWMS is not running or anything about the
+	 * load fails - the provenance line then keeps its text form.
+	 */
+	private java.awt.image.BufferedImage dwmsPluginIcon()
+	{
+		java.awt.image.BufferedImage cached = dwmsIcon;
+		if (cached != null)
+		{
+			return cached;
+		}
+		try
+		{
+			for (Plugin p : pluginManager.getPlugins())
+			{
+				if (!DWMS_PLUGIN_NAME.equals(p.getName()) || !pluginManager.isPluginEnabled(p))
+				{
+					continue;
+				}
+				try (java.io.InputStream in = p.getClass().getResourceAsStream("icon-28.png"))
+				{
+					if (in != null)
+					{
+						dwmsIcon = javax.imageio.ImageIO.read(in);
+					}
+				}
+				break;
+			}
+		}
+		catch (Exception ex)
+		{
+			log.debug("could not load the DWMS icon", ex);
+		}
+		return dwmsIcon;
 	}
 
 	/** Panel hook: set (or clear, with null) the bank-highlighted item ids. */

@@ -146,6 +146,13 @@ public class LoadoutLabPanel extends PluginPanel
 		int count();
 
 		boolean live();
+
+		/** The installed DWMS plugin's own icon, or null (not running /
+		 * icon not loadable) - the provenance line then stays text. */
+		default java.awt.image.BufferedImage icon()
+		{
+			return null;
+		}
 	}
 
 	/** Where an owned item lives, for tooltips and the source legend. */
@@ -1393,10 +1400,29 @@ public class LoadoutLabPanel extends PluginPanel
 	private void refreshDwmsLabel()
 	{
 		int count = dwmsView.count();
-		dwmsLabel.setText(count == 0 ? ""
-			: "From Dude Where's My Stuff: " + count + " items"
-				+ (dwmsView.live() ? " (live)" : ""));
-		dwmsLabel.setVisible(count > 0);
+		if (count <= 0)
+		{
+			dwmsLabel.setVisible(false);
+			return;
+		}
+		String text = "From Dude Where's My Stuff: " + count + " items"
+			+ (dwmsView.live() ? " (live)" : "");
+		java.awt.image.BufferedImage icon = dwmsView.icon();
+		if (icon != null)
+		{
+			// DWMS is running: its own icon stands in for the sentence
+			// (field request) - the details move into the hover.
+			dwmsLabel.setIcon(new ImageIcon(icon.getScaledInstance(-1, 16, Image.SCALE_SMOOTH)));
+			dwmsLabel.setText("");
+			dwmsLabel.setToolTipText(text);
+		}
+		else
+		{
+			dwmsLabel.setIcon(null);
+			dwmsLabel.setText(text);
+			dwmsLabel.setToolTipText(null);
+		}
+		dwmsLabel.setVisible(true);
 	}
 
 	/** The DWMS live link answered (EDT): refresh the provenance line. */
