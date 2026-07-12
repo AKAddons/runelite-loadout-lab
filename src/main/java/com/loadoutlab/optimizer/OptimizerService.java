@@ -451,7 +451,8 @@ public class OptimizerService
 		return boost;
 	}
 
-	private static final class SpecPick
+	/** Package-private: SpecPoisonTest pins the spec tie-break. */
+	static final class SpecPick
 	{
 		final SpecialAttack spec;
 		final GearItem weapon;
@@ -475,7 +476,7 @@ public class OptimizerService
 	 * (requirement #7/#8); with null, everything standard counts - the
 	 * game-best spec.
 	 */
-	private SpecPick bestSpec(
+	SpecPick bestSpec(
 		LoadoutData dataset,
 		OptimizationRequest request,
 		List<DpsResult> baseResults,
@@ -528,7 +529,13 @@ public class OptimizerService
 			}
 			double expected = spec.expectedDamage(base, monster, levels);
 			double drainValue = drainValue(spec, base, expected, request, baseResults.get(0), monster);
-			if (best == null || expected + drainValue > best.expectedDamage + best.drainValue)
+			double total = expected + drainValue;
+			double bestTotal = best == null
+				? Double.NEGATIVE_INFINITY : best.expectedDamage + best.drainValue;
+			// Ties (identical stats across poison tiers) prefer the higher
+			// tier - the venom is free spec damage the model does not price.
+			if (best == null || total > bestTotal + 1e-9
+				|| (total > bestTotal - 1e-9 && item.poisonTier() > best.weapon.poisonTier()))
 			{
 				best = new SpecPick(spec, item, expected, drainValue);
 			}

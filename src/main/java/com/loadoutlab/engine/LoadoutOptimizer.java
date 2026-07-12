@@ -1011,6 +1011,14 @@ public final class LoadoutOptimizer
 			{
 				return !candidateBad;
 			}
+			// Poison tiers stat-tie but are NOT equal in game: the venom
+			// is free damage the model does not price. Without this the
+			// tie fell to budgetCost and the CHEAPEST (unpoisoned) tier
+			// won every dagger/knife family collapse.
+			if (candidate.poisonTier() != current.poisonTier())
+			{
+				return candidate.poisonTier() > current.poisonTier();
+			}
 		}
 		// Stat ties prefer the tradeable base item: untradeable stat-clones
 		// (fire arrows, locked variants) read as 'cost 0' and would shadow

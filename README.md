@@ -107,7 +107,9 @@ source tree and flags drift or missing screenshots.
 
 Pick a monster and Loadout Lab computes the strongest set you actually
 OWN for melee, ranged, and magic - with exact DPS, max hit, and accuracy,
-verified against the official wiki calculator.
+verified against the official wiki calculator. When poison tiers of the
+same weapon tie on stats, the strongest venom wins the suggestion
+(dragon dagger p++ over plain, main hand and spec alike).
 
 ### Game-best ceiling comparison
 

@@ -163,6 +163,29 @@ public final class GearItem
 		return versionLower;
 	}
 
+	/**
+	 * Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
+	 * everything else 0. Poison is free damage the DPS model does not
+	 * price, so suggestion tie-breaks prefer the higher tier (field
+	 * request: always recommend dragon dagger p++ over plain).
+	 */
+	public int poisonTier()
+	{
+		if (versionLower.contains("unpoison"))
+		{
+			return 0;
+		}
+		if (versionLower.contains("poison++"))
+		{
+			return 3;
+		}
+		if (versionLower.contains("poison+"))
+		{
+			return 2;
+		}
+		return versionLower.contains("poison") ? 1 : 0;
+	}
+
 	/** getCategory() lowercased (Locale.ROOT), precomputed. */
 	public String getCategoryLower()
 	{
