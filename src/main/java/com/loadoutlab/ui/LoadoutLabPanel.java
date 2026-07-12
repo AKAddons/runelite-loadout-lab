@@ -1802,7 +1802,17 @@ public class LoadoutLabPanel extends PluginPanel
 			menu.add(filterAll);
 			menu.show(setMenu, 0, setMenu.getHeight());
 		});
-		headerRow.add(setMenu, BorderLayout.EAST);
+		// Assume icons ride the header (right, before the menu) - a whole
+		// row of vertical space reclaimed per card.
+		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+		headerEast.setOpaque(false);
+		if (hasSet && result.boostLabel != null && !result.boostLabel.isEmpty())
+		{
+			headerEast.add(assumesChips(result.boostLabel,
+				"Assumed prayer + boost (you own these)"));
+		}
+		headerEast.add(setMenu);
+		headerRow.add(headerEast, BorderLayout.EAST);
 		card.add(headerRow);
 		if (collapsed)
 		{
@@ -1849,7 +1859,6 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(GOOD);
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
-		addAssumesRow(card, result.boostLabel, "Assumed prayer + boost (you own these)");
 		addIncomingLine(card, result.incoming);
 		if (result.modeTrade != null)
 		{
@@ -2521,12 +2530,23 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel prefix = line("Assumes:", MUTED);
 		prefix.setToolTipText(tooltip);
 		row.add(prefix);
+		row.add(assumesChips(label, tooltip));
+	}
+
+	/** Just the prayer/boost icon chips - the card HEADER hosts these
+	 * inline with the style title to reclaim a whole row of vertical
+	 * space (field request); tooltips carry the words. */
+	private JPanel assumesChips(String label, String tooltip)
+	{
+		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+		chips.setOpaque(false);
+		chips.setToolTipText(tooltip);
 		if (superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster))
 		{
 			JLabel potion = new JLabel();
 			potion.setToolTipText("Super antifire (right-click the shield cell to flip back)");
 			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
-			row.add(potion);
+			chips.add(potion);
 		}
 		for (String part : label.split(" \\+ "))
 		{
@@ -2548,8 +2568,9 @@ public class LoadoutLabPanel extends PluginPanel
 				chip.setForeground(MUTED);
 				chip.setFont(chip.getFont().deriveFont(13f));
 			}
-			row.add(chip);
+			chips.add(chip);
 		}
+		return chips;
 	}
 
 	/** Game-cache sprite, scaled to line height, set async. */
