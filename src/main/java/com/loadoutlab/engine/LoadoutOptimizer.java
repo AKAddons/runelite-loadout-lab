@@ -101,8 +101,9 @@ public final class LoadoutOptimizer
 				// budget rejects, and the free tier (god books, diary
 				// boots) sits below them - it starved behind the cap.
 				if (request.isRiskConstrained()
-					&& PvpRisk.riskGp(trial, null, request.getMaxTradeables())
-						> request.getRiskBudgetGp())
+					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables())
+							> request.getRiskBudgetGp()
+						|| PvpRisk.risksRebuild(trial, null, request.getMaxTradeables())))
 				{
 					continue;
 				}
@@ -314,7 +315,11 @@ public final class LoadoutOptimizer
 						if (request.isRiskConstrained())
 						{
 							riskGp = PvpRisk.riskGp(loadout, null, request.getMaxTradeables());
-							if (riskGp > request.getRiskBudgetGp())
+							// A rebuild-burdened item (salve line, imbued
+							// gear) may never ride UNPROTECTED in a low-risk
+							// set, no matter the cap (field request).
+							if (riskGp > request.getRiskBudgetGp()
+								|| PvpRisk.risksRebuild(loadout, null, request.getMaxTradeables()))
 							{
 								continue;
 							}

@@ -247,7 +247,7 @@
         "engine/UntradeableDeathCostsTest.java"
       ],
       "since": "0.1.0",
-      "notes": "0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp, the risk cap, and convert pool values - gp-free-but-annoying losses can no longer read as safe. Tooltips say 'breaks on death (rebuild errand ~X)'.",
+      "notes": "0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp and convert pool values, and low-risk sets NEVER put a friction item at risk (PvpRisk.risksRebuild rejects unprotected ones outright, any cap; protected kept-slot rides stay legal). Tooltips say 'breaks on death (rebuild errand ~X)'.",
       "capture": "Calvar'ion low-risk card: halo/skull/coins fates on the grid plus the risk gp line. Single PNG screenshot."
     },
     {

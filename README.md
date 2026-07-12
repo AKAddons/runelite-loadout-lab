@@ -247,9 +247,10 @@ adjustable gp risk cap. Per-item death fates and honest kept/lost gp
 totals include untradeable repair and mangle fees - and curated
 "rebuild errand" friction for gear that is gp-free to replace but
 costs a real trip (the salve line's tomb-and-re-imbue run, an imbued
-ring's re-imbue visit). Friction counts against the risk cap, so the
-cap is your dial: a tight cap swaps such items out, a loose one says
-the errand is acceptable.
+ring's re-imbue visit). Low-risk sets NEVER put such an item at risk:
+it may ride a kept slot (a protected slayer helmet is standard
+practice), but if it would be lost or broken it is swapped out of the
+suggestion entirely, no matter the risk cap.
 
 ![Wilderness low-risk sets](docs/img/wilderness-risk.png)
 

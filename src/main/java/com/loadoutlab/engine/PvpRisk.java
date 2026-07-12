@@ -178,6 +178,45 @@ public final class PvpRisk
 	}
 
 	/**
+	 * True when this set would put a rebuild-burdened item (curated
+	 * frictionGp: the salve line, imbued rings/masks) at risk - i.e. the
+	 * item is NOT protected by a kept slot. Risk-constrained optimization
+	 * rejects such sets outright (field request: never suggest something
+	 * that needs a re-imbue as a risked item). Protected is fine: a kept
+	 * slayer helmet is standard wilderness practice. Monotone-bad: adding
+	 * items can only push a friction item OUT of the kept slots, never
+	 * back in, so pruning partial states is safe.
+	 */
+	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
+	{
+		boolean anyFriction = UntradeableDeathCosts.frictionFor(carriedSpecWeapon) > 0;
+		for (GearSlot slot : GearSlot.values())
+		{
+			anyFriction |= UntradeableDeathCosts.frictionFor(loadout.get(slot)) > 0;
+		}
+		if (!anyFriction)
+		{
+			return false;
+		}
+		Assessment fates = assess(loadout, carriedSpecWeapon, keptSlots);
+		for (Charge charge : fates.untradeableCharges)
+		{
+			if (UntradeableDeathCosts.frictionFor(charge.item) > 0)
+			{
+				return true;
+			}
+		}
+		for (GearItem lost : fates.lost)
+		{
+			if (UntradeableDeathCosts.frictionFor(lost) > 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * This item's protection-pool value: tradeables at GE price,
 	 * convert-class untradeables at their component value. -1 means the
 	 * item is not poolable - absent, destroyed-on-death, fee-class, or a

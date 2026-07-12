@@ -509,8 +509,10 @@ public class OptimizerService
 			// for kept slots like everything else - the whole package (worn
 			// set + this weapon) must stay within the total risk budget.
 			if (request.isRiskConstrained()
-				&& PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
-					request.getMaxTradeables()) > request.getRiskBudgetGp())
+				&& (PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
+						request.getMaxTradeables()) > request.getRiskBudgetGp()
+					|| PvpRisk.risksRebuild(baseResults.get(0).getLoadout(), item,
+						request.getMaxTradeables())))
 			{
 				continue;
 			}

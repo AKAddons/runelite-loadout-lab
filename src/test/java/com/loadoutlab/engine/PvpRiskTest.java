@@ -91,6 +91,36 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void risksRebuildFlagsUnprotectedFrictionItemsOnly()
+	{
+		// Salve: unprotectable in the model - always a risked rebuild.
+		Loadout salve = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE));
+		Assert.assertTrue(PvpRisk.risksRebuild(salve, null, 3));
+
+		// Warrior ring (i) with cheap tradeables: it ranks into the kept
+		// slots - protected, so no risked rebuild.
+		Loadout protectedRing = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE));
+		Assert.assertFalse(PvpRisk.risksRebuild(protectedRing, null, 3));
+
+		// The same ring displaced from the kept slots by pricier gear IS
+		// a risked rebuild.
+		Loadout displacedRing = worn(
+			item(1, GearSlot.WEAPON, true, 100_000_000),
+			item(2, GearSlot.BODY, true, 50_000_000),
+			item(4, GearSlot.LEGS, true, 20_000_000),
+			untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE));
+		Assert.assertTrue(PvpRisk.risksRebuild(displacedRing, null, 3));
+
+		// No friction anywhere: cheap early exit, never flagged.
+		Loadout plain = worn(item(1, GearSlot.WEAPON, true, 100));
+		Assert.assertFalse(PvpRisk.risksRebuild(plain, null, 3));
+	}
+
+	@Test
 	public void imbuedConvertsCarryTheirReimbueFrictionInThePool()
 	{
 		// Warrior ring (i): the killer gets the 60k base ring and the
