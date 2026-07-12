@@ -686,6 +686,24 @@ public final class LoadoutOptimizer
 			{
 				score += 3_000.0;
 			}
+			// Wilderness/revenant conditionals: their raw stats undersell
+			// them (the +50% passive and the incoming-nullify live in the
+			// DPS models), so without a boost the pool cut or the zero-score
+			// prune removes them before they are ever evaluated.
+			if (com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster())
+				&& !badVersion(item) && isWildernessWeapon(name))
+			{
+				score += 6_000.0;
+			}
+			if (isRevenantMonster(request) && name.contains("amulet of avarice"))
+			{
+				score += 5_000.0;
+			}
+			if (isRevenantMonster(request) && name.contains("bracelet of ethereum")
+				&& !badVersion(item))
+			{
+				score += 4_000.0;
+			}
 		}
 		if (request.getStyle() == CombatStyle.RANGED && (name.contains("crystal helm") || name.contains("crystal body") || name.contains("crystal legs") || name.contains("bow of faerdhinen") || name.contains("crystal bow")))
 		{
@@ -700,6 +718,27 @@ public final class LoadoutOptimizer
 			score += 1_750.0;
 		}
 		return score;
+	}
+
+	/** Test seam: RevenantPoolTest pins the conditional pool boosts. */
+	static double candidateScoreForTest(OptimizationRequest request, GearItem item)
+	{
+		return candidateScore(request, item);
+	}
+
+	private static boolean isRevenantMonster(OptimizationRequest request)
+	{
+		return request.getMonster() != null && request.getMonster().getName()
+			.toLowerCase(java.util.Locale.ROOT).startsWith("revenant");
+	}
+
+	/** The six wilderness weapons whose charged +50% passive the DPS
+	 * model grants (DpsCalculator.revWeaponBuff). */
+	private static boolean isWildernessWeapon(String name)
+	{
+		return name.contains("craw's bow") || name.contains("webweaver bow")
+			|| name.contains("ursine chainmace") || name.contains("viggora's chainmace")
+			|| name.contains("thammaron's sceptre") || name.contains("accursed sceptre");
 	}
 
 	private static boolean slayerTaskHeadCandidate(OptimizationRequest request, GearItem item)
@@ -945,6 +984,20 @@ public final class LoadoutOptimizer
 		if (candidateOwned != currentOwned)
 		{
 			return candidateOwned;
+		}
+		// Between versions of the SAME item, version state breaks the tie
+		// BEFORE tradeability: the tradeable Uncharged twin of a wilderness
+		// weapon was shadowing the Charged one, and only Charged fires the
+		// +50% passive (field report: craw's bow missing at revenants).
+		// Cross-item ties (uncharged glory vs amulet of the damned) must
+		// NOT use this - there tradeability/death behavior decides.
+		if (candidate.getNameLower().equals(current.getNameLower()))
+		{
+			boolean candidateBad = badVersion(candidate);
+			if (candidateBad != badVersion(current))
+			{
+				return !candidateBad;
+			}
 		}
 		// Stat ties prefer the tradeable base item: untradeable stat-clones
 		// (fire arrows, locked variants) read as 'cost 0' and would shadow
