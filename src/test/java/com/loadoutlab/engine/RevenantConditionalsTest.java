@@ -117,6 +117,35 @@ class RevenantConditionalsTest
 	}
 
 	@Test
+	@DisplayName("defense-aware search wears the ethereum bracelet at revenants, Max DPS keeps gloves")
+	void tankySearchWearsEthereum()
+	{
+		// msb + amethyst arrows + barrows gloves + charged ethereum owned:
+		// with a defense weight (the Tanky/Balanced building block) the
+		// zero-incoming bracelet must beat the small glove dps gain; with
+		// weight 0 (Max DPS) the gloves stay.
+		OwnedItems owned = new OwnedItems(java.util.Map.of(
+			861, 1, 21326, 100, 7462, 1, 21816, 1), true);
+		OptimizationRequest base = new OptimizationRequest(revDemon, CombatStyle.RANGED,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.OWNED_ONLY, true, false, owned, RequirementProfile.MAXED, 1);
+
+		GearItem tankyHands = new LoadoutOptimizer()
+			.optimize(data, base.withDefenseWeight(10.0))
+			.get(0).getLoadout().get(GearSlot.HANDS);
+		assertNotNull(tankyHands);
+		assertEquals("bracelet of ethereum", tankyHands.getNameLower(),
+			"got: " + tankyHands.getNameLower());
+
+		GearItem dpsHands = new LoadoutOptimizer()
+			.optimize(data, base)
+			.get(0).getLoadout().get(GearSlot.HANDS);
+		assertNotNull(dpsHands);
+		assertEquals("barrows gloves", dpsHands.getNameLower(),
+			"Max DPS must keep the offensive gloves, got: " + dpsHands.getNameLower());
+	}
+
+	@Test
 	@DisplayName("a charged bracelet of ethereum zeroes revenant incoming damage")
 	void ethereumZeroesIncoming()
 	{

@@ -138,10 +138,16 @@ public final class IncomingDpsCalculator
 		/** Per attack: index into the distinct prayer list, or -1. */
 		private final int[] prayerIndex;
 		private final int prayerCount;
+		/** Revenants deal NO damage through a charged ethereum bracelet -
+		 * the beam's defense scoring must see that, or Tanky/Balanced can
+		 * never choose the bracelet (field report: not recommended). */
+		private final boolean revenant;
 
 		private Prepared(MonsterStats monster, BossIncomingOverrides.BossOverride override,
 			int defenceLevel, int magicLevel)
 		{
+			this.revenant = monster.getName()
+				.toLowerCase(java.util.Locale.ROOT).startsWith("revenant");
 			this.defenceLevel = defenceLevel;
 			this.magicEffective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
 			MonsterOffence off = monster.getOffence();
@@ -212,6 +218,10 @@ public final class IncomingDpsCalculator
 		 */
 		public double totalDps(Loadout loadout)
 		{
+			if (revenant && wearsChargedEthereum(loadout))
+			{
+				return 0;
+			}
 			StatBlock def = loadout.getDefensive();
 			if (!overridden)
 			{
