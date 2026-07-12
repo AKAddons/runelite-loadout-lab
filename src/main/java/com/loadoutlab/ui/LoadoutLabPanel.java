@@ -137,10 +137,14 @@ public class LoadoutLabPanel extends PluginPanel
 		Set<Integer> snapshot();
 	}
 
-	/** How many items the Dude Where's My Stuff import contributed. */
+	/** How many items the Dude Where's My Stuff integration contributed,
+	 * and whether they came over the live PluginMessage link (as opposed
+	 * to the best-effort config read). */
 	public interface DwmsView
 	{
 		int count();
+
+		boolean live();
 	}
 
 	/** Does the player actually own this item (black set)? */
@@ -776,8 +780,15 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		int count = dwmsView.count();
 		dwmsLabel.setText(count == 0 ? ""
-			: "From Dude Where's My Stuff: " + count + " items");
+			: "From Dude Where's My Stuff: " + count + " items"
+				+ (dwmsView.live() ? " (live)" : ""));
 		dwmsLabel.setVisible(count > 0);
+	}
+
+	/** The DWMS live link answered (EDT): refresh the provenance line. */
+	public void dwmsUpdated()
+	{
+		refreshDwmsLabel();
 	}
 
 	private void showStoredMenu(MouseEvent e)

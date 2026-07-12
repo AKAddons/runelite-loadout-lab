@@ -72,9 +72,10 @@ import from Dude, Where's My Stuff. No reflection needed:
 
 Stability promise: these semantics never change silently. If the schema
 ever has to change, the new shape gets a NEW key and existing keys keep
-their meaning. A PluginMessage contract is the preferred interface and is
-planned; config reads are the fallback that works even while a plugin is
-disabled.
+their meaning. PluginMessage contracts are the preferred interface (the
+DWMS storages-request/storages-response contract we authored upstream is
+the model); config reads are the fallback that works even while a plugin
+is disabled.
 
 ## License
 
@@ -198,12 +199,15 @@ once and the contents count as owned from then on:
 If you run the Dude, Where's My Stuff plugin, the gear storages it has
 seen are also counted as owned - useful for death storage (which Loadout
 Lab does not track) and for instantly seeding storages you opened before
-installing Loadout Lab. This is a best-effort read of the data DWMS has
-already saved (it even works while DWMS is disabled), with strictly
-defensive parsing: if a future DWMS update changes its format, items
-quietly stop importing rather than ever miscounting, and the
-stored-elsewhere list remains the manual override. A muted panel line
-shows how many items came in this way.
+installing Loadout Lab. With a DWMS version that supports the storages
+PluginMessage contract, Loadout Lab asks DWMS directly and gets its exact
+tracked items back (the panel line shows "(live)"); with older versions
+it falls back to a best-effort read of the data DWMS has already saved
+(that even works while DWMS is disabled), with strictly defensive
+parsing: if a future DWMS update changes its format, items quietly stop
+importing rather than ever miscounting. Either way the stored-elsewhere
+list remains the manual override, and a muted panel line shows how many
+items came in this way.
 
 ![Dude, Where's My Stuff import](docs/img/dwms-import.png)
 

@@ -5,6 +5,7 @@ import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
 import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.DwmsImport;
+import com.loadoutlab.collection.DwmsLink;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.ManualOwnedStore;
 import com.loadoutlab.data.DataService;
@@ -49,12 +50,14 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
@@ -105,6 +108,12 @@ public class LoadoutLabPlugin extends Plugin
 	@Inject
 	private SpriteManager spriteManager;
 
+	@Inject
+	private EventBus eventBus;
+
+	@Inject
+	private PluginManager pluginManager;
+
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
@@ -117,6 +126,7 @@ public class LoadoutLabPlugin extends Plugin
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
 	private DwmsImport dwmsImport;
+	private DwmsLink dwmsLink;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
 	private volatile com.loadoutlab.data.StashUnits stashUnits;
@@ -151,6 +161,25 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onPluginMessage(PluginMessage event)
 	{
+		// DWMS storages-response (see DwmsLink): arrives on DWMS's client
+		// thread; the parse is pure and the snapshot swap volatile, so only
+		// the provenance-label refresh marshals (to the EDT).
+		if (DwmsLink.DWMS_NAMESPACE.equals(event.getNamespace())
+			&& DwmsLink.RESPONSE_NAME.equals(event.getName()))
+		{
+			DwmsLink link = dwmsLink;
+			if (link != null && link.accept(event.getData()))
+			{
+				SwingUtilities.invokeLater(() ->
+				{
+					if (panel != null)
+					{
+						panel.dwmsUpdated();
+					}
+				});
+			}
+			return;
+		}
 		if (!"loadoutlab".equals(event.getNamespace()) || !"search".equals(event.getName()))
 		{
 			return;
@@ -235,6 +264,7 @@ public class LoadoutLabPlugin extends Plugin
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
 		dwmsImport = new DwmsImport(configManager);
+		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		if (client.getGameState() == GameState.LOGGED_IN)
@@ -242,6 +272,7 @@ public class LoadoutLabPlugin extends Plugin
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
 			dwmsImport.reload();
+			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
 
@@ -265,7 +296,7 @@ public class LoadoutLabPlugin extends Plugin
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
-					dwmsImport::count,
+					dwmsView(),
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -312,6 +343,7 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = null;
 		manualOwned = null;
 		dwmsImport = null;
+		dwmsLink = null;
 		stashUnits = null;
 		stashChartSeen = false;
 		requirementProfile = null;
@@ -363,6 +395,13 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			dwmsImport.reload();
 		}
+		if (dwmsLink != null)
+		{
+			// The live snapshot belongs to the PREVIOUS identity; drop it and
+			// re-ask. DWMS re-answers for whoever is logged in now.
+			dwmsLink.reset();
+			requestDwmsStorages();
+		}
 		requirementProfile = null;
 		realLevels = null;
 		boostedLevels = null;
@@ -393,6 +432,7 @@ public class LoadoutLabPlugin extends Plugin
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
 			dwmsImport.reload();
+			requestDwmsStorages();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
 			// New login = possibly a different account/levels: re-snapshot lazily.
@@ -592,21 +632,59 @@ public class LoadoutLabPlugin extends Plugin
 		return cache.contains(itemId);
 	}
 
-	/** The ledger view plus manual "stored elsewhere" and DWMS imports. */
+	/**
+	 * The ledger view plus manual "stored elsewhere" and DWMS storages.
+	 * Once DWMS has answered a PluginMessage request this session the live
+	 * snapshot wins outright (guaranteed-correct parse, every storage);
+	 * until then the best-effort config read fills in.
+	 */
 	private Map<Integer, Integer> ownedItems()
 	{
-		return dwmsImport.mergeInto(manualOwned.mergeInto(ledger.owned()));
+		Map<Integer, Integer> owned = manualOwned.mergeInto(ledger.owned());
+		return dwmsLink.isLive() ? dwmsLink.mergeInto(owned) : dwmsImport.mergeInto(owned);
 	}
 
 	/**
 	 * Ownership fingerprint covering the ledger, the manual list, AND the
-	 * DWMS import - the optimizer/panel cache key, so any of them changing
-	 * is a real ownership change everywhere a bank deposit would be.
+	 * effective DWMS source - the optimizer/panel cache key, so any of them
+	 * changing is a real ownership change everywhere a bank deposit would be.
 	 */
 	private int ownedFingerprint()
 	{
 		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
-		return 31 * fingerprint + dwmsImport.snapshot().hashCode();
+		int dwms = dwmsLink.isLive()
+			? dwmsLink.snapshot().hashCode() : dwmsImport.snapshot().hashCode();
+		return 31 * fingerprint + dwms;
+	}
+
+	/**
+	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
+	 * Nothing is posted when the plugin is absent or disabled, and a
+	 * missing reply (a DWMS predating the contract) just leaves the
+	 * config-read fallback in charge.
+	 */
+	private void requestDwmsStorages()
+	{
+		if (!dwmsPresent())
+		{
+			return;
+		}
+		eventBus.post(new PluginMessage(
+			DwmsLink.DWMS_NAMESPACE, DwmsLink.REQUEST_NAME, DwmsLink.request()));
+	}
+
+	/** Check ALL same-named plugins - a hub copy and a sideloaded dev copy
+	 * can coexist and the first match may be the disabled loser. */
+	private boolean dwmsPresent()
+	{
+		for (Plugin p : pluginManager.getPlugins())
+		{
+			if ("Dude, Where's My Stuff?".equals(p.getName()) && pluginManager.isPluginEnabled(p))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -632,6 +710,33 @@ public class LoadoutLabPlugin extends Plugin
 		}, "loadout-lab-profile-export");
 		writer.setDaemon(true);
 		writer.start();
+	}
+
+	/** Panel view of the effective DWMS source: live once DWMS replied,
+	 * the config read before then. Null-safe across shutdown. */
+	private LoadoutLabPanel.DwmsView dwmsView()
+	{
+		return new LoadoutLabPanel.DwmsView()
+		{
+			@Override
+			public int count()
+			{
+				DwmsLink link = dwmsLink;
+				DwmsImport imported = dwmsImport;
+				if (link != null && link.isLive())
+				{
+					return link.count();
+				}
+				return imported != null ? imported.count() : 0;
+			}
+
+			@Override
+			public boolean live()
+			{
+				DwmsLink link = dwmsLink;
+				return link != null && link.isLive();
+			}
+		};
 	}
 
 	/** Panel hook: set (or clear, with null) the bank-highlighted item ids. */
@@ -693,8 +798,12 @@ public class LoadoutLabPlugin extends Plugin
 				snapshotProfileIfNeeded();
 			}
 			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
-			// re-read keeps imported storages as fresh as they can be.
+			// re-read keeps imported storages as fresh as they can be. The
+			// PluginMessage re-request refreshes the live snapshot the same
+			// way (its reply lands after this compute - one-query lag, and
+			// DWMS-tracked storages change rarely).
 			dwmsImport.reload();
+			requestDwmsStorages();
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
