@@ -37,7 +37,8 @@ equipment.
   (dragon darts) from being recommended.
 - **Stored elsewhere (UIM-friendly)**: the looting bag is tracked as owned
   storage automatically; gear kept in STASH units, the POH costume room,
-  or other unseen storage can be counted as owned by name.
+  or other unseen storage can be counted as owned by name - or imported
+  automatically from the Dude, Where's My Stuff plugin.
 
 ## Getting started
 
@@ -154,6 +155,19 @@ in the panel manages them. The looting bag needs no marking at all: its
 contents are tracked automatically once you open or check the bag.
 
 ![Stored elsewhere (manual owned items)](docs/img/stored-elsewhere.png)
+
+### Dude, Where's My Stuff import
+
+If you run the Dude, Where's My Stuff plugin, the gear storages it tracks
+- STASH units, the POH costume room, death storage, boat cargo holds -
+are counted as owned automatically. This is a best-effort read of the
+data DWMS has already saved (it even works while DWMS is disabled), with
+strictly defensive parsing: if a future DWMS update changes its format,
+items quietly stop importing rather than ever miscounting, and the
+stored-elsewhere list remains the manual override. A muted panel line
+shows how many items came in this way.
+
+![Dude, Where's My Stuff import](docs/img/dwms-import.png)
 
 ### Wilderness low-risk sets
 
