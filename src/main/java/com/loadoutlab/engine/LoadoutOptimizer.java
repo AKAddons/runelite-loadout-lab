@@ -59,6 +59,15 @@ public final class LoadoutOptimizer
 			return null;
 		}
 		SpellContext spellContext = new SpellContext(request, spellsFor(data, request));
+		// Request-level risk constants, hoisted out of the trial loops (they
+		// were recomputed - EnumMap, Loadout, riskGp - per candidate).
+		long riskCapGp = 0;
+		Set<Integer> pinnedIds = Collections.emptySet();
+		if (request.isRiskConstrained())
+		{
+			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
+			pinnedIds = pinnedIds(request);
+		}
 		DpsResult current = result;
 		for (GearSlot slot : GearSlot.values())
 		{
@@ -95,16 +104,15 @@ public final class LoadoutOptimizer
 			{
 				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
 				gear.put(slot, item);
-				Loadout trial = new Loadout(gear);
+				Loadout trial = Loadout.adopting(gear);
 				// Risk rejections must not consume tries: in risk mode the
 				// top utility items are exactly the expensive gear the
 				// budget rejects, and the free tier (god books, diary
 				// boots) sits below them - it starved behind the cap.
 				if (request.isRiskConstrained()
-					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables())
-							> request.getRiskBudgetGp() + pinnedRiskFloor(data, request)
+					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables()) > riskCapGp
 						|| PvpRisk.risksRebuild(trial, null, request.getMaxTradeables(),
-							pinnedIds(request))))
+							pinnedIds)))
 				{
 					continue;
 				}
@@ -147,7 +155,7 @@ public final class LoadoutOptimizer
 		{
 			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(result.getLoadout().getGear());
 			gear.put(candidate.getSlot(), candidate);
-			DpsResult swapped = bestSpellResult(request, new Loadout(gear), spellContext);
+			DpsResult swapped = bestSpellResult(request, Loadout.adopting(gear), spellContext);
 			if (swapped != null && (best == null || swapped.getDps() > best.getDps()))
 			{
 				best = swapped.withPurchaseCost(result.getPurchaseCost() + budgetCost(request, candidate));
@@ -262,6 +270,15 @@ public final class LoadoutOptimizer
 			? IncomingDpsCalculator.prepare(request.getMonster(),
 				request.getLevels().getDefence(), request.getLevels().getMagic())
 			: null;
+		// Request-level risk constants, hoisted out of the beam (they were
+		// recomputed - EnumMap, Loadout, riskGp, a HashSet - per trial).
+		long riskCapGp = 0;
+		Set<Integer> pinnedIds = Collections.emptySet();
+		if (request.isRiskConstrained())
+		{
+			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
+			pinnedIds = pinnedIds(request);
+		}
 		for (GearItem weapon : weapons)
 		{
 			// Dragonfire without a potion: the shield slot is spoken for,
@@ -281,6 +298,9 @@ public final class LoadoutOptimizer
 			baseGear.put(GearSlot.WEAPON, weapon);
 			states.add(new SearchState(baseGear, budgetCost(request, weapon)));
 
+			// Beam trials never reach the panel - skip the counted-bonus
+			// bookkeeping until the final rescore below.
+			calculator.setCollectCounted(false);
 			for (GearSlot slot : NON_WEAPON_SLOTS)
 			{
 				List<SearchState> next = new ArrayList<>();
@@ -310,7 +330,7 @@ public final class LoadoutOptimizer
 						{
 							gear.put(slot, item);
 						}
-						Loadout loadout = new Loadout(gear);
+						Loadout loadout = Loadout.adopting(gear);
 						// Wilderness risk budget: the kept 3-4 are immune;
 						// everything else may drop, and its TOTAL value must
 						// stay within budget. Monotone (adding items never
@@ -325,9 +345,9 @@ public final class LoadoutOptimizer
 							// unless the player PINNED it. Pins also raise
 							// the effective budget by their own risk floor:
 							// the cap constrains the rest of the set.
-							if (riskGp > request.getRiskBudgetGp() + pinnedRiskFloor(data, request)
+							if (riskGp > riskCapGp
 								|| PvpRisk.risksRebuild(loadout, null, request.getMaxTradeables(),
-									pinnedIds(request)))
+									pinnedIds))
 							{
 								continue;
 							}
@@ -358,9 +378,12 @@ public final class LoadoutOptimizer
 				}
 			}
 
+			// Rescore the survivors WITH counted bonuses - these are the
+			// results the panel can show.
+			calculator.setCollectCounted(true);
 			for (SearchState state : states)
 			{
-				Loadout loadout = new Loadout(state.gear);
+				Loadout loadout = Loadout.adopting(state.gear);
 				String signature = signature(loadout);
 				if (!seen.add(signature))
 				{
@@ -472,19 +495,66 @@ public final class LoadoutOptimizer
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
 		List<SpellStats> all = spellsForUnfiltered(data, request);
-		if (request.getSpellbookLock().isEmpty())
+		if (!request.getSpellbookLock().isEmpty())
 		{
-			return all;
-		}
-		List<SpellStats> locked = new ArrayList<>();
-		for (SpellStats spell : all)
-		{
-			if (request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()))
+			List<SpellStats> locked = new ArrayList<>();
+			for (SpellStats spell : all)
 			{
-				locked.add(spell);
+				if (request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()))
+				{
+					locked.add(spell);
+				}
+			}
+			all = locked;
+		}
+		return pruneDominatedElementals(all, request);
+	}
+
+	/**
+	 * Plain elementals are interchangeable up to (effective max hit at this
+	 * magic level, weakness match): the DPS chain reads nothing else from
+	 * them, so for any loadout two same-class spells score identically and
+	 * only the FIRST in list order can win (better() keeps the first on
+	 * ties). Keeping one spell per class cuts the beam's per-trial spell
+	 * loop from ~20 calculates to ~2 without changing any result. Spells
+	 * with their own rules (Magic Dart, god/Iban casts, demonbane,
+	 * ancients) are never pruned.
+	 */
+	private static List<SpellStats> pruneDominatedElementals(List<SpellStats> spells,
+		OptimizationRequest request)
+	{
+		if (spells.isEmpty() || request.getMonster() == null)
+		{
+			return spells;
+		}
+		String weakness = request.getMonster().getWeaknessElement();
+		int magicLevel = request.getLevels().getMagic();
+		List<SpellStats> kept = new ArrayList<>(spells.size());
+		int bestMatching = -1;
+		int bestPlain = -1;
+		for (SpellStats spell : spells)
+		{
+			if (!DpsCalculator.isPlainElemental(spell))
+			{
+				kept.add(spell);
+				continue;
+			}
+			boolean match = spell.getElement().equals(weakness);
+			int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
+			if (match ? effective > bestMatching : effective > bestPlain)
+			{
+				kept.add(spell);
+				if (match)
+				{
+					bestMatching = effective;
+				}
+				else
+				{
+					bestPlain = effective;
+				}
 			}
 		}
-		return locked;
+		return kept;
 	}
 
 	private static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request)
@@ -784,7 +854,7 @@ public final class LoadoutOptimizer
 			}
 		}
 		return gear.isEmpty() ? 0
-			: PvpRisk.riskGp(new Loadout(gear), null, request.getMaxTradeables());
+			: PvpRisk.riskGp(Loadout.adopting(gear), null, request.getMaxTradeables());
 	}
 
 	private static java.util.Set<Integer> pinnedIds(OptimizationRequest request)
@@ -802,8 +872,7 @@ public final class LoadoutOptimizer
 
 	private static boolean isRevenantMonster(OptimizationRequest request)
 	{
-		return request.getMonster() != null && request.getMonster().getName()
-			.toLowerCase(java.util.Locale.ROOT).startsWith("revenant");
+		return request.getMonster() != null && request.getMonster().isRevenantMonster();
 	}
 
 	/** The six wilderness weapons whose charged +50% passive the DPS

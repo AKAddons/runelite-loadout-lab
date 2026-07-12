@@ -146,8 +146,7 @@ public final class IncomingDpsCalculator
 		private Prepared(MonsterStats monster, BossIncomingOverrides.BossOverride override,
 			int defenceLevel, int magicLevel)
 		{
-			this.revenant = monster.getName()
-				.toLowerCase(java.util.Locale.ROOT).startsWith("revenant");
+			this.revenant = monster.isRevenantMonster();
 			this.defenceLevel = defenceLevel;
 			this.magicEffective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
 			MonsterOffence off = monster.getOffence();
@@ -381,8 +380,7 @@ public final class IncomingDpsCalculator
 	{
 		// Bracelet of ethereum (charged): revenants deal NO damage while it
 		// is worn - an absolute rule that outranks every other model.
-		if (monster.getName().toLowerCase(java.util.Locale.ROOT).startsWith("revenant")
-			&& wearsChargedEthereum(loadout))
+		if (monster.isRevenantMonster() && wearsChargedEthereum(loadout))
 		{
 			return new Result(0, 0, null, Collections.emptyList(), true,
 				"Bracelet of ethereum blocks all revenant damage");

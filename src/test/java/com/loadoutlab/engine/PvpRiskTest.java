@@ -299,6 +299,89 @@ public class PvpRiskTest
 			PvpRisk.riskGp(empty, null, 3));
 	}
 
+	/** The assess()-derived meaning of risksRebuild - the lean production
+	 * implementation must agree with this everywhere, ties included. */
+	private static boolean rebuildViaAssess(Loadout loadout, GearItem spec, int kept,
+		java.util.Set<Integer> pinnedIds)
+	{
+		PvpRisk.Assessment fates = PvpRisk.assess(loadout, spec, kept);
+		for (PvpRisk.Charge charge : fates.untradeableCharges)
+		{
+			if (UntradeableDeathCosts.frictionFor(charge.item) > 0
+				&& !pinnedIds.contains(charge.item.getId()))
+			{
+				return true;
+			}
+		}
+		for (GearItem lost : fates.lost)
+		{
+			if (UntradeableDeathCosts.frictionFor(lost) > 0
+				&& !pinnedIds.contains(lost.getId()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Test
+	public void theLeanRisksRebuildMatchesTheAssessmentSemanticsExactly()
+	{
+		// The beam calls risksRebuild() per candidate set; it must agree with
+		// the full assessment's kept/lost/charge classification everywhere -
+		// charge-class friction (salve), convertible friction inside and
+		// outside the kept slots, pins, the avarice skull, and value TIES at
+		// the kept boundary (stable order decides which of two equals wins
+		// the slot).
+		GearItem tieA = item(21, GearSlot.BODY, true, 110_000);
+		GearItem tieRing = untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE);
+		// warrior ring (i) pools at 60k component + 50k friction = 110k -
+		// an exact tie with tieA; body precedes ring in slot order.
+		Loadout[] loadouts = {
+			worn(item(1, GearSlot.WEAPON, true, 100),
+				untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE)),
+			worn(item(1, GearSlot.WEAPON, true, 100), tieRing),
+			worn(item(1, GearSlot.WEAPON, true, 100_000_000),
+				item(2, GearSlot.BODY, true, 50_000_000),
+				item(4, GearSlot.LEGS, true, 20_000_000), tieRing),
+			worn(item(1, GearSlot.WEAPON, true, 200_000), tieA, tieRing),
+			worn(item(1, GearSlot.WEAPON, true, 100),
+				new GearItem(9, "Amulet of avarice", "", GearSlot.NECK, "", 0, false,
+					true, true, true, 500_000, StatBlock.ZERO, StatBlock.ZERO,
+					StatBlock.ZERO, null),
+				untradeable(6, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE)),
+			worn(item(1, GearSlot.WEAPON, true, 100),
+				untradeable(5, "Fire cape", GearSlot.CAPE, SOME_DEFENCE),
+				untradeable(6, "Slayer helmet (i)", GearSlot.HEAD, SOME_DEFENCE),
+				untradeable(8, "Amulet of the damned", GearSlot.NECK, SOME_DEFENCE)),
+			worn(item(1, GearSlot.WEAPON, true, 100)),
+		};
+		GearItem specTradeable = item(9, GearSlot.WEAPON, true, 500_000);
+		GearItem specFriction = untradeable(10, "salve amulet(i)", GearSlot.WEAPON, SOME_DEFENCE);
+		java.util.List<java.util.Set<Integer>> pinSets = java.util.List.of(
+			java.util.Collections.emptySet(),
+			java.util.Set.of(2, 3),
+			java.util.Set.of(6, 10));
+		for (Loadout loadout : loadouts)
+		{
+			for (GearItem spec : new GearItem[]{null, specTradeable, specFriction})
+			{
+				// kept=2 lands ON the tieA/tieRing boundary: exactly one of
+				// the two 110k equals wins the slot, by stable pool order.
+				for (int kept : new int[]{0, 1, 2, 3, 4})
+				{
+					for (java.util.Set<Integer> pins : pinSets)
+					{
+						Assert.assertEquals(
+							"kept=" + kept + " pins=" + pins,
+							rebuildViaAssess(loadout, spec, kept, pins),
+							PvpRisk.risksRebuild(loadout, spec, kept, pins));
+					}
+				}
+			}
+		}
+	}
+
 	@Test
 	public void gpFormattingReadsLikeAPlayerWouldSayIt()
 	{

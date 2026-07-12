@@ -16,10 +16,23 @@ public final class DpsCalculator
 	 * attached to the result for user assurance (single-threaded use,
 	 * matching how the optimizer drives this class). */
 	private final java.util.LinkedHashSet<String> counted = new java.util.LinkedHashSet<>();
+	/** The beam turns collection off: only results that can reach the panel
+	 * (final rescore, fill, spec) need the bonus list, and the set churn +
+	 * per-result copy is pure waste across beam trials. */
+	private boolean collectCounted = true;
+
+	/** Toggle counted-bonus collection (optimizer beam: off). */
+	void setCollectCounted(boolean collect)
+	{
+		collectCounted = collect;
+	}
 
 	private void counted(String bonus)
 	{
-		counted.add(bonus);
+		if (collectCounted)
+		{
+			counted.add(bonus);
+		}
 	}
 
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
@@ -299,19 +312,23 @@ public final class DpsCalculator
 	 * elemental-weakness matching, which is what makes weakness-exploiting
 	 * spell picks viable. Verified against the official calculator.
 	 */
-	private static int elementalSpellMax(SpellStats spell, int magicLevel)
+	/** Package-private: the optimizer prunes dominated elementals with the
+	 * same effective-max computation the DPS chain uses. */
+	static int elementalSpellMax(SpellStats spell, int magicLevel)
 	{
 		if (spell.getElement().isEmpty())
 		{
 			return spell.getMaxHit();
 		}
-		String[] parts = spell.getName().split(" ");
-		if (parts.length != 2 || !isElementWord(parts[0]))
+		// The two-word parse is precomputed on SpellStats - split() here
+		// allocated a String[] per spell per trial.
+		String tierWord = spell.getNameSecondWord();
+		if (tierWord == null || !isElementWord(spell.getNameFirstWord()))
 		{
 			return spell.getMaxHit();
 		}
 		int tier;
-		switch (parts[1])
+		switch (tierWord)
 		{
 			case "Strike": tier = magicLevel >= 13 ? 3 : magicLevel >= 9 ? 2 : magicLevel >= 5 ? 1 : 0; break;
 			case "Bolt": tier = magicLevel >= 35 ? 3 : magicLevel >= 29 ? 2 : magicLevel >= 23 ? 1 : 0; break;
@@ -321,7 +338,7 @@ public final class DpsCalculator
 			default: return spell.getMaxHit();
 		}
 		// Class max hits: wind/water/earth/fire per tier.
-		switch (parts[1])
+		switch (tierWord)
 		{
 			case "Strike": return 2 + 2 * tier;
 			case "Bolt": return 9 + tier;
@@ -335,6 +352,20 @@ public final class DpsCalculator
 	{
 		return "Wind".equals(word) || "Water".equals(word)
 			|| "Earth".equals(word) || "Fire".equals(word);
+	}
+
+	/**
+	 * Plain standard-book elemental combat spell ("Wind Strike".."Fire
+	 * Surge"): legal on every non-powered staff (spellAllowed has no rule
+	 * for them), and the DPS chain reads nothing from it beyond the
+	 * effective max hit and the weakness element - which makes same-class
+	 * spells interchangeable, and dominated ones prunable per optimize.
+	 */
+	static boolean isPlainElemental(SpellStats spell)
+	{
+		return !spell.getElement().isEmpty()
+			&& spell.getNameSecondWord() != null
+			&& isElementWord(spell.getNameFirstWord());
 	}
 
 	private long npcDefenceRoll(MonsterStats monster, String attackType, GearItem weapon)
@@ -782,7 +813,7 @@ public final class DpsCalculator
 	 * Package-private: RevenantConditionalsTest exercises the gate. */
 	static boolean isRevenant(OptimizationRequest request)
 	{
-		return request.getMonster().getName().toLowerCase(Locale.ROOT).startsWith("revenant");
+		return request.getMonster().isRevenantMonster();
 	}
 
 	/**
@@ -906,20 +937,12 @@ public final class DpsCalculator
 
 	/** THE powered-staff check - the optimizer must agree with the
 	 * calculator or a staff gets evaluated down the wrong path (the
-	 * optimizer once had its own copy missing eye of ayak). */
+	 * optimizer once had its own copy missing eye of ayak). The rule
+	 * itself is precomputed per item (GearItem ctor) - this ran the
+	 * name-fragment chain per trial and topped the profile. */
 	static boolean isPoweredStaff(GearItem weapon)
 	{
-		String weaponName = name(weapon);
-		String category = weapon == null ? "" : weapon.getCategoryLower();
-		return category.contains("powered staff")
-			|| weaponName.contains("trident")
-			|| weaponName.contains("thammaron")
-			|| weaponName.contains("accursed sceptre")
-			|| weaponName.contains("sanguinesti")
-			|| weaponName.contains("tumeken")
-			|| weaponName.contains("warped sceptre")
-			|| weaponName.contains("eye of ayak")
-			|| weaponName.contains("bone staff");
+		return weapon != null && weapon.isPoweredStaff();
 	}
 
 	private static boolean isFang(Loadout loadout)

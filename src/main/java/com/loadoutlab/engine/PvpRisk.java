@@ -193,7 +193,17 @@ public final class PvpRisk
 	}
 
 	/** Pin-aware variant: a PINNED friction item is the player's explicit
-	 * choice and never vetoes the set (its risk still counts). */
+	 * choice and never vetoes the set (its risk still counts).
+	 *
+	 * <p>Lean on purpose - the beam calls this per candidate set, and the
+	 * assess()-based version built and sorted the full kept/lost profile
+	 * per trial (the risk path's dominant cost whenever a salve was in the
+	 * pool). Same semantics, asserted against assess() in PvpRiskTest:
+	 * a non-poolable friction item is a Charge no matter what is protected;
+	 * a poolable (convertible) one risks its rebuild only when it ranks
+	 * OUTSIDE the kept slots under assess()'s stable value-descending
+	 * order (count of strictly-greater values, plus equal values earlier
+	 * in pool order). */
 	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
 		java.util.Set<Integer> pinnedIds)
 	{
@@ -206,24 +216,81 @@ public final class PvpRisk
 		{
 			return false;
 		}
-		Assessment fates = assess(loadout, carriedSpecWeapon, keptSlots);
-		for (Charge charge : fates.untradeableCharges)
+		// Pool values in assess()'s pool order: worn slots, then the spec.
+		// A worn set is at most 11 items + the carried spec weapon.
+		long[] values = new long[12];
+		int count = 0;
+		// Bit i set = pool item i carries unpinned rebuild friction.
+		int frictionAt = 0;
+		for (GearSlot slot : GearSlot.values())
 		{
-			if (UntradeableDeathCosts.frictionFor(charge.item) > 0
-				&& !pinnedIds.contains(charge.item.getId()))
+			GearItem item = loadout.get(slot);
+			int fate = offerRebuild(item, values, count, pinnedIds);
+			if (fate < 0)
 			{
-				return true;
+				return true; // unpinned charge-class friction: never protectable
 			}
+			frictionAt |= (fate & 1) << count;
+			count += fate >> 1;
 		}
-		for (GearItem lost : fates.lost)
+		int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds);
+		if (fate < 0)
 		{
-			if (UntradeableDeathCosts.frictionFor(lost) > 0
-				&& !pinnedIds.contains(lost.getId()))
+			return true;
+		}
+		frictionAt |= (fate & 1) << count;
+		count += fate >> 1;
+		if (frictionAt == 0)
+		{
+			return false;
+		}
+		int keep = Math.max(0, effectiveKeptSlots(loadout, keptSlots));
+		for (int i = 0; i < count; i++)
+		{
+			if ((frictionAt & (1 << i)) == 0)
 			{
-				return true;
+				continue;
+			}
+			int ahead = 0;
+			for (int j = 0; j < count; j++)
+			{
+				if (values[j] > values[i] || (values[j] == values[i] && j < i))
+				{
+					ahead++;
+				}
+			}
+			if (ahead >= keep)
+			{
+				return true; // ranks outside the kept slots - lost, rebuild due
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * risksRebuild's per-item step. Returns -1 when the item is an UNPINNED
+	 * charge-class friction item (instant veto); otherwise a two-bit code:
+	 * bit1 = "joined the pool at values[count]", bit0 = "and carries
+	 * unpinned friction" (0 = not poolable, contributes nothing).
+	 */
+	private static int offerRebuild(GearItem item, long[] values, int count,
+		java.util.Set<Integer> pinnedIds)
+	{
+		if (item == null)
+		{
+			return 0;
+		}
+		long value = poolValue(item);
+		boolean friction = UntradeableDeathCosts.frictionFor(item) > 0
+			&& !pinnedIds.contains(item.getId());
+		if (value < 0)
+		{
+			// Mirror sort(): non-poolable items become Charges (fees apply
+			// regardless of protection) - friction there is always a veto.
+			return friction ? -1 : 0;
+		}
+		values[count] = value;
+		return friction ? 3 : 2;
 	}
 
 	/**

@@ -970,31 +970,45 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/** Panel hook: tooltip clause + legend label for an item's location.
-	 * Render/hover frequency; each lookup rebuilds the small origins map. */
+	 * Render/hover frequency - the origins map is memoized on the ownership
+	 * fingerprint (a render pass asked ~2x per gear cell, and every ask
+	 * rebuilt all the per-source snapshots). */
 	private LoadoutLabPanel.LocationHint locationHintView()
 	{
 		return new LoadoutLabPanel.LocationHint()
 		{
+			private com.loadoutlab.collection.ItemLocations cached;
+			private int cachedFingerprint;
+
 			@Override
 			public String hint(int itemId)
 			{
-				return locations() == null ? "" : locations().fetchHint(itemId);
+				com.loadoutlab.collection.ItemLocations locations = locations();
+				return locations == null ? "" : locations.fetchHint(itemId);
 			}
 
 			@Override
 			public String primary(int itemId)
 			{
-				return locations() == null ? "" : locations().primary(itemId);
+				com.loadoutlab.collection.ItemLocations locations = locations();
+				return locations == null ? "" : locations.primary(itemId);
 			}
 
+			/** EDT-confined (panel render/hover), like the panel itself. */
 			private com.loadoutlab.collection.ItemLocations locations()
 			{
 				if (ledger == null || manualOwned == null || dwmsImport == null)
 				{
 					return null;
 				}
-				return new com.loadoutlab.collection.ItemLocations(ownedBySources(),
-					data == null ? null : data::equivalentIds);
+				int fingerprint = ownedFingerprint();
+				if (cached == null || cachedFingerprint != fingerprint)
+				{
+					cached = new com.loadoutlab.collection.ItemLocations(ownedBySources(),
+						data == null ? null : data::equivalentIds);
+					cachedFingerprint = fingerprint;
+				}
+				return cached;
 			}
 		};
 	}
@@ -1195,12 +1209,15 @@ public class LoadoutLabPlugin extends Plugin
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
-			OwnedItems owned = new OwnedItems(ownedItems(), ledger.bankKnown());
+			// One merge, shared by the optimizer request and the export - this
+			// runs on the client thread, where every merge is a frame tax.
+			Map<Integer, Integer> mergedOwned = ownedItems();
+			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			int fingerprint = ownedFingerprint();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			exportProfile(new PlayerProfile(
-				real, live, unlocks, profile, ownedItems(), ledger.bankKnown(),
+				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,

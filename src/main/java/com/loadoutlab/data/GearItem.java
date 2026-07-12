@@ -28,6 +28,7 @@ public final class GearItem
 	private final String categoryLower;
 	private final String labelLower;
 	private final String nameVersionLower;
+	private final boolean poweredStaff;
 
 	public GearItem(
 		int id,
@@ -66,6 +67,24 @@ public final class GearItem
 		this.categoryLower = this.category.toLowerCase(Locale.ROOT);
 		this.labelLower = label().toLowerCase(Locale.ROOT);
 		this.nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
+		// Precomputed once: the optimizer asks this on every trial, and the
+		// name-fragment chain was the single hottest call in the profile.
+		// DpsCalculator.isPoweredStaff stays the API - it delegates here.
+		this.poweredStaff = categoryLower.contains("powered staff")
+			|| nameLower.contains("trident")
+			|| nameLower.contains("thammaron")
+			|| nameLower.contains("accursed sceptre")
+			|| nameLower.contains("sanguinesti")
+			|| nameLower.contains("tumeken")
+			|| nameLower.contains("warped sceptre")
+			|| nameLower.contains("eye of ayak")
+			|| nameLower.contains("bone staff");
+	}
+
+	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
+	public boolean isPoweredStaff()
+	{
+		return poweredStaff;
 	}
 
 	public boolean isWeaponFor(com.loadoutlab.engine.CombatStyle style)

@@ -2759,6 +2759,9 @@ public class LoadoutLabPanel extends PluginPanel
 			fates = PvpRisk.assess(result.getLoadout(), specWeapon,
 				protectItem.isSelected() ? 4 : 3);
 		}
+		// One store lookup per grid, not one per cell.
+		Map<GearSlot, Integer> pinnedSlots = renderingStyle == null
+			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
 		for (GearSlot slotType : GRID_ORDER)
 		{
 			GearItem item = result.getLoadout().get(slotType);
@@ -2828,8 +2831,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// Location clause only when a fetch trip is needed - "in
 				// bank" would be noise on 95% of cells.
 				String where = unowned ? "" : locationHint.hint(item.getId());
-				Integer pinnedHere = renderingStyle == null ? null
-					: mobProfile.pins(currentMonsterId(), renderingStyle).get(slotType);
+				Integer pinnedHere = pinnedSlots.get(slotType);
 				String pinNote = pinnedHere != null && pinnedHere == item.getId()
 					? " - pinned" : "";
 				// Source dot + legend entry: only for locations we know.

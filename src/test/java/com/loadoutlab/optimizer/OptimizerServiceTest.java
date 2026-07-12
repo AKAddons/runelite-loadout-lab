@@ -91,6 +91,62 @@ public class OptimizerServiceTest
 	}
 
 	@Test
+	public void pinningOneStyleReusesTheOtherStylesCachedAnswers() throws Exception
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		owned.put(1215, 1); // dragon dagger - a pinnable melee weapon
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			Map<CombatStyle, OptimizerService.StyleResult> first =
+				resultsFor(service, goblin, owned, java.util.Collections.emptyMap());
+			// Pin the dagger for MELEE only: the ranged and magic answers are
+			// unchanged queries and must come back as the SAME cached objects,
+			// not fresh recomputes.
+			Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
+				java.util.Map.of(CombatStyle.MELEE,
+					java.util.Map.of(com.loadoutlab.data.GearSlot.WEAPON, 1215));
+			Map<CombatStyle, OptimizerService.StyleResult> pinned =
+				resultsFor(service, goblin, owned, pins);
+			Assert.assertSame("ranged must be the cached result",
+				first.get(CombatStyle.RANGED), pinned.get(CombatStyle.RANGED));
+			Assert.assertSame("magic must be the cached result",
+				first.get(CombatStyle.MAGIC), pinned.get(CombatStyle.MAGIC));
+			Assert.assertNotSame("melee must be recomputed around the pin",
+				first.get(CombatStyle.MELEE), pinned.get(CombatStyle.MELEE));
+			Assert.assertEquals("the pin must be honored", 1215,
+				pinned.get(CombatStyle.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	private static Map<CombatStyle, OptimizerService.StyleResult> resultsFor(
+		OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins) throws Exception
+	{
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			new OwnedItems(owned, true), 1, false, false, "",
+			java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+			pins, null, results ->
+			{
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		return out.get();
+	}
+
+	@Test
 	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
 	{
 		LoadoutData data = new DataService().load();

@@ -188,7 +188,7 @@ public final class BossIncomingOverrides
 		{
 			return null;
 		}
-		return OVERRIDES.get(monster.getName().toLowerCase(Locale.ROOT));
+		return OVERRIDES.get(monster.getNameLower());
 	}
 
 	/** All curated boss names (lowercase) - test and tooling surface. */

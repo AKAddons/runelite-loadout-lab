@@ -90,6 +90,12 @@ public final class WildernessMonsters
 
 	public static boolean isWilderness(MonsterStats monster)
 	{
-		return monster != null && NAMES.contains(monster.getName().toLowerCase(Locale.ROOT));
+		return monster != null && monster.isWildernessMonster();
+	}
+
+	/** The raw name-list membership - MonsterStats caches this at build. */
+	static boolean containsName(String nameLower)
+	{
+		return NAMES.contains(nameLower);
 	}
 }

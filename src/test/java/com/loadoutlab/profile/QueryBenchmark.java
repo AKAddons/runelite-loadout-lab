@@ -61,6 +61,10 @@ public final class QueryBenchmark
 					}
 				}
 			}
+			// The friction + pin cell: a revenant (salve territory) with the
+			// salve owned AND pinned, risk-capped - the per-trial rebuild-veto
+			// and pinned-risk-floor paths the standard matrix never touches.
+			runPinnedSalve(service, data, profile, fingerprint);
 			System.out.println("monster            mode      risk  median_ms  passes_ms");
 			for (String monster : MONSTERS)
 			{
@@ -82,11 +86,74 @@ public final class QueryBenchmark
 					}
 				}
 			}
+			long[] times = new long[PASSES];
+			for (int pass = 0; pass < PASSES; pass++)
+			{
+				times[pass] = runPinnedSalve(service, data, profile, fingerprint);
+			}
+			long[] sorted = times.clone();
+			Arrays.sort(sorted);
+			System.out.println(String.format(Locale.ROOT,
+				"%-18s %-9s %-5s %9d  %s",
+				"rev demon+salvepin", OptimizerService.OptimizeMode.MAX_DPS, "lr3",
+				sorted[PASSES / 2], Arrays.toString(times)));
 		}
 		finally
 		{
 			service.shutdown();
 		}
+	}
+
+	/**
+	 * The risk-constrained + pinned scenario: revenant demon at lr3 with a
+	 * salve amulet(ei) added to the fixture bank and pinned in every style.
+	 * The salve is friction gear, so every trial runs the rebuild veto, and
+	 * the pin keeps the pinned-risk-floor path live.
+	 */
+	private static long runPinnedSalve(OptimizerService service, LoadoutData data,
+		PlayerProfile profile, int[] fingerprint) throws Exception
+	{
+		com.loadoutlab.data.GearItem salve = null;
+		for (com.loadoutlab.data.GearItem item : data.getGearItems())
+		{
+			if ("salve amulet(ei)".equalsIgnoreCase(item.getName())
+				&& item.isStandardGear() && !data.isVariant(item.getId()))
+			{
+				salve = item;
+				break;
+			}
+		}
+		if (salve == null)
+		{
+			throw new IllegalStateException("salve amulet(ei) not in dataset");
+		}
+		java.util.Map<Integer, Integer> owned =
+			new java.util.LinkedHashMap<>(profile.ownedItems().getQuantities());
+		owned.put(salve.getId(), 1);
+		java.util.Map<com.loadoutlab.engine.CombatStyle,
+			java.util.Map<com.loadoutlab.data.GearSlot, Integer>> pins = new java.util.EnumMap<>(
+			com.loadoutlab.engine.CombatStyle.class);
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		{
+			pins.put(style, java.util.Map.of(com.loadoutlab.data.GearSlot.NECK, salve.getId()));
+		}
+		MonsterStats monster = data.searchMonsters("revenant demon", 1).get(0);
+		CountDownLatch done = new CountDownLatch(1);
+		long start = System.nanoTime();
+		service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
+			profile.prayerUnlocks, profile.requirements,
+			new com.loadoutlab.engine.OwnedItems(owned, true),
+			fingerprint[0]++, false, false, "",
+			Collections.emptySet(), 3,
+			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
+			Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+			pins, null,
+			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
+		if (!done.await(600, TimeUnit.SECONDS))
+		{
+			throw new IllegalStateException("benchmark cell timed out: pinned salve");
+		}
+		return (System.nanoTime() - start) / 1_000_000L;
 	}
 
 	private static long runOnce(OptimizerService service, LoadoutData data,

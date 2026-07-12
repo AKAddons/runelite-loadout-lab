@@ -36,9 +36,11 @@ import java.util.function.Consumer;
 /**
  * Runs BiS searches off the game threads and caches results.
  *
- * <p>Caching (founding requirement): results are keyed by
- * (collection fingerprint, monster id, levels, f2p) - the fingerprint changes
- * iff ownership changes, so a cache hit is always current. LRU-bounded.
+ * <p>Caching (founding requirement): results are keyed PER STYLE by
+ * (collection fingerprint, monster id, levels, f2p, ..., style, that style's
+ * pins) - the fingerprint changes iff ownership changes, so a cache hit is
+ * always current, and per-style state (pins) never invalidates the other
+ * styles' answers. LRU-bounded.
  *
  * <p>Each query answers TWO questions per style: the best set you OWN, and
  * the best set that exists in the game - so the panel can show how close
@@ -50,7 +52,8 @@ import java.util.function.Consumer;
  */
 public class OptimizerService
 {
-	private static final int CACHE_MAX = 64;
+	/** Per-STYLE entries (a monster query stores three). */
+	private static final int CACHE_MAX = 192;
 
 	/** D-4: which point of the offense/defense frontier to recommend. */
 	public enum OptimizeMode
@@ -138,6 +141,10 @@ public class OptimizerService
 	{
 		Thread t = new Thread(r, "loadout-lab-optimizer");
 		t.setDaemon(true);
+		// A full search pegs a core for seconds; at default priority that
+		// competes with the client thread for CPU (field report: the game
+		// felt choppy while recomputing). Background-priority compute only.
+		t.setPriority(Thread.MIN_PRIORITY + 1);
 		return t;
 	});
 
@@ -156,11 +163,17 @@ public class OptimizerService
 	/** Abandoned-computation count - test observability only. */
 	volatile int abandonedForTest;
 
-	private final Map<String, Map<CombatStyle, StyleResult>> cache =
-		new LinkedHashMap<String, Map<CombatStyle, StyleResult>>(32, 0.75f, true)
+	/**
+	 * Results cached PER STYLE, not per query: pins are per-style state, so
+	 * pinning a melee item must not throw away the ranged and magic answers
+	 * (a pin toggle was recomputing all three - the reported-choppy path).
+	 * The key is the query key minus pins, plus the style and ITS pins.
+	 */
+	private final Map<String, StyleResult> cache =
+		new LinkedHashMap<String, StyleResult>(32, 0.75f, true)
 		{
 			@Override
-			protected boolean removeEldestEntry(Map.Entry<String, Map<CombatStyle, StyleResult>> eldest)
+			protected boolean removeEldestEntry(Map.Entry<String, StyleResult> eldest)
 			{
 				return size() > CACHE_MAX;
 			}
@@ -241,21 +254,29 @@ public class OptimizerService
 		// flipping the dropdown with the cap off cannot split the cache.
 		final int riskBudget = maxTradeables >= 0
 			? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-		final String key = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
+		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
-			+ "|" + dreams.hashCode() + "|" + pins.hashCode()
-			+ "|" + (pinnedSpell == null ? "" : pinnedSpell.getName()) + "|" + upgradeBudgetGp
+			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
-		Map<CombatStyle, StyleResult> cached;
+		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
 		{
-			cached = cache.get(key);
+			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+			{
+				StyleResult hit = cache.get(styleKey(baseKey, style, pins, pinnedSpell));
+				if (hit == null)
+				{
+					allCached = null;
+					break;
+				}
+				allCached.put(style, hit);
+			}
 		}
-		if (cached != null)
+		if (allCached != null)
 		{
-			callback.accept(cached);
+			callback.accept(allCached);
 			return;
 		}
 		final OptimizeMode chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
@@ -279,6 +300,19 @@ public class OptimizerService
 				{
 					abandonedForTest++;
 					return; // superseded mid-flight - abandon between styles
+				}
+				// Styles cache independently: a pin on one style leaves the
+				// other two answers standing.
+				String styleKey = styleKey(baseKey, style, pins, pinnedSpell);
+				StyleResult cachedStyle;
+				synchronized (cache)
+				{
+					cachedStyle = cache.get(styleKey);
+				}
+				if (cachedStyle != null)
+				{
+					results.put(style, cachedStyle);
+					continue;
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
@@ -360,21 +394,35 @@ public class OptimizerService
 					? null
 					: IncomingDpsCalculator.calculate(
 						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
-				results.put(style, new StyleResult(
+				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, modeTrade));
+					boostLabel, gameBoostLabel, incoming, modeTrade);
+				// Store per style as computed - even a superseded job donates
+				// the styles it finished.
+				synchronized (cache)
+				{
+					cache.put(styleKey, styleResult);
+				}
+				results.put(style, styleResult);
 			}
 			if (requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
 				return; // finished stale - never deliver over the newer answer
 			}
-			synchronized (cache)
-			{
-				cache.put(key, results);
-			}
 			callback.accept(results);
 		});
+	}
+
+	/** The per-style cache key: the query key minus pins, plus this style
+	 * and the pins/pinned-spell state that shapes THIS style's answer. */
+	private static String styleKey(String baseKey, CombatStyle style,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins,
+		com.loadoutlab.data.SpellStats pinnedSpell)
+	{
+		return baseKey + "|" + style.name()
+			+ "|" + pins.getOrDefault(style, Collections.emptyMap()).hashCode()
+			+ "|" + (style == CombatStyle.MAGIC && pinnedSpell != null ? pinnedSpell.getName() : "");
 	}
 
 	/**
@@ -534,6 +582,18 @@ public class OptimizerService
 		}
 		DpsCalculator calculator = new DpsCalculator();
 		SpecPick best = null;
+		// Request-level risk constants, hoisted out of the weapon scan (they
+		// were rebuilt - floor Loadout + a HashSet - per candidate weapon).
+		long riskCapGp = 0;
+		Set<Integer> pinnedIds = Collections.emptySet();
+		if (request.isRiskConstrained())
+		{
+			riskCapGp = request.getRiskBudgetGp()
+				+ LoadoutOptimizer.pinnedRiskFloor(dataset, request);
+			pinnedIds = request.getPinnedItems().isEmpty()
+				? Collections.emptySet()
+				: new java.util.HashSet<>(request.getPinnedItems().values());
+		}
 		// Spec weapons are weapons by definition (SpecialAttack.match rejects
 		// every other slot), so only the weapon partition needs scanning.
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
@@ -554,11 +614,9 @@ public class OptimizerService
 			// set + this weapon) must stay within the total risk budget.
 			if (request.isRiskConstrained()
 				&& (PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables()) > request.getRiskBudgetGp()
-							+ LoadoutOptimizer.pinnedRiskFloor(dataset, request)
+						request.getMaxTradeables()) > riskCapGp
 					|| PvpRisk.risksRebuild(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables(),
-						new java.util.HashSet<>(request.getPinnedItems().values()))))
+						request.getMaxTradeables(), pinnedIds)))
 			{
 				continue;
 			}
@@ -573,7 +631,7 @@ public class OptimizerService
 				continue;
 			}
 			double expected = spec.expectedDamage(base, monster, levels);
-			double drainValue = drainValue(spec, base, expected, request, baseResults.get(0), monster);
+			double drainValue = drainValue(calculator, spec, base, expected, request, baseResults.get(0), monster);
 			double total = expected + drainValue;
 			double bestTotal = best == null
 				? Double.NEGATIVE_INFINITY : best.expectedDamage + best.drainValue;
@@ -597,6 +655,7 @@ public class OptimizerService
 	 * throwaway mobs.
 	 */
 	private double drainValue(
+		DpsCalculator calculator,
 		SpecialAttack spec,
 		DpsResult specBase,
 		double specExpectedDamage,
@@ -618,7 +677,7 @@ public class OptimizerService
 		{
 			return 0;
 		}
-		DpsResult drained = new DpsCalculator().calculate(
+		DpsResult drained = calculator.calculate(
 			request.withMonster(monster.withDefence(drainedDefence)), mainResult.getLoadout());
 		if (drained == null || drained.getDps() <= mainDps)
 		{

@@ -25,12 +25,38 @@ public final class Loadout
 
 	public Loadout(Map<GearSlot, GearItem> gear)
 	{
-		this.gear = new EnumMap<>(GearSlot.class);
-		this.gear.putAll(gear);
+		this(copyOf(gear), true);
+	}
 
-		StatBlock offensiveTotal = StatBlock.ZERO;
-		StatBlock defensiveTotal = StatBlock.ZERO;
-		StatBlock bonusTotal = StatBlock.ZERO;
+	/**
+	 * Adopt the given map WITHOUT copying: the caller hands over ownership
+	 * and must never mutate it afterward. The optimizer builds a fresh
+	 * EnumMap per beam trial - the public constructor's defensive copy
+	 * doubled that work across hundreds of thousands of trials.
+	 */
+	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear)
+	{
+		return new Loadout(gear, true);
+	}
+
+	private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear)
+	{
+		EnumMap<GearSlot, GearItem> copy = new EnumMap<>(GearSlot.class);
+		copy.putAll(gear);
+		return copy;
+	}
+
+	/** The marker keeps this overload from ever being chosen by a plain
+	 * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
+	private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker)
+	{
+		this.gear = gear;
+
+		// Summed into an int array, not StatBlock.plus chains - the chain
+		// allocated ~3 blocks per worn item per trial (top allocation site).
+		int[] off = new int[9];
+		int[] def = new int[9];
+		int[] bon = new int[9];
 		int totalCost = 0;
 		StringBuilder names = new StringBuilder(160);
 		StringBuilder activeNames = new StringBuilder(160);
@@ -40,9 +66,9 @@ public final class Loadout
 			{
 				continue;
 			}
-			offensiveTotal = offensiveTotal.plus(item.getOffensive());
-			defensiveTotal = defensiveTotal.plus(item.getDefensive());
-			bonusTotal = bonusTotal.plus(item.getBonuses());
+			add(off, item.getOffensive());
+			add(def, item.getDefensive());
+			add(bon, item.getBonuses());
 			totalCost += item.getPriceOrZero();
 			names.append(item.getNameLower()).append('\n');
 			if (!"inactive".equalsIgnoreCase(item.getVersion()))
@@ -50,12 +76,31 @@ public final class Loadout
 				activeNames.append(item.getNameLower()).append('\n');
 			}
 		}
-		this.offensive = offensiveTotal;
-		this.defensive = defensiveTotal;
-		this.bonuses = bonusTotal;
+		this.offensive = block(off);
+		this.defensive = block(def);
+		this.bonuses = block(bon);
 		this.cost = totalCost;
 		this.namesLower = names.toString();
 		this.activeNamesLower = activeNames.toString();
+	}
+
+	private static void add(int[] acc, StatBlock block)
+	{
+		acc[0] += block.getStab();
+		acc[1] += block.getSlash();
+		acc[2] += block.getCrush();
+		acc[3] += block.getMagic();
+		acc[4] += block.getRanged();
+		acc[5] += block.getStrength();
+		acc[6] += block.getRangedStrength();
+		acc[7] += block.getMagicDamage();
+		acc[8] += block.getPrayer();
+	}
+
+	private static StatBlock block(int[] acc)
+	{
+		return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4],
+			acc[5], acc[6], acc[7], acc[8]);
 	}
 
 	public GearItem get(GearSlot slot)

@@ -23,6 +23,9 @@ public final class MonsterStats
 	private final boolean slayerMonster;
 	private final String weaknessElement;
 	private final int weaknessSeverity;
+	private final String nameLower;
+	private final boolean wilderness;
+	private final boolean revenant;
 
 	public MonsterStats(
 		int id,
@@ -82,6 +85,30 @@ public final class MonsterStats
 			}
 		}
 		this.attributesLower = lower;
+		// The revenant/wilderness gates lowercase the name per DPS trial -
+		// that allocation was ~20% of optimizer samples. Once, here.
+		this.nameLower = this.name.toLowerCase(Locale.ROOT);
+		this.wilderness = WildernessMonsters.containsName(this.nameLower);
+		this.revenant = this.nameLower.startsWith("revenant");
+	}
+
+	/** Lowercased monster name, cached (per-trial engine gates). */
+	public String getNameLower()
+	{
+		return nameLower;
+	}
+
+	/** Fought in the Wilderness (see WildernessMonsters) - cached, the
+	 * wilderness-weapon gate asks several times per DPS trial. */
+	public boolean isWildernessMonster()
+	{
+		return wilderness;
+	}
+
+	/** Name starts with "revenant" - the avarice/ethereum gates. */
+	public boolean isRevenantMonster()
+	{
+		return revenant;
 	}
 
 	/** A copy at a different Defence level - defence-drain spec modeling. */
