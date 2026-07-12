@@ -156,4 +156,17 @@ class CollectionLedgerTest
 		ledger.loadScope("std.1111");
 		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(20997));
 	}
+
+	@org.junit.jupiter.api.Test
+	void perSourceSnapshotsAreReadableAndReadOnly()
+	{
+		CollectionLedger ledger = new CollectionLedger(configManager, new Gson());
+		ledger.loadScope("std");
+		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
+
+		assertEquals(Map.of(4151, 1), ledger.snapshot(CollectionLedger.Source.BANK));
+		assertEquals(Map.of(), ledger.snapshot(CollectionLedger.Source.STASH));
+		org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
+			() -> ledger.snapshot(CollectionLedger.Source.BANK).put(1, 1));
+	}
 }
