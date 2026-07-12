@@ -62,9 +62,57 @@ public class LinkInTest
 					return "";
 				}
 			},
-			(slot, itemId) -> { },
-			slot -> { },
-			java.util.Collections::emptyMap,
+			new LoadoutLabPanel.MobProfile()
+			{
+				@Override
+				public java.util.Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId)
+				{
+					return java.util.Map.of();
+				}
+
+				@Override
+				public void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId)
+				{
+				}
+
+				@Override
+				public void unpin(int monsterId, com.loadoutlab.data.GearSlot slot)
+				{
+				}
+
+				@Override
+				public String note(int monsterId)
+				{
+					return "";
+				}
+
+				@Override
+				public void setNote(int monsterId, String note)
+				{
+				}
+
+				@Override
+				public java.util.Set<Integer> filterItems(int monsterId)
+				{
+					return java.util.Set.of();
+				}
+
+				@Override
+				public java.util.Map<Integer, String> filterItemNames(int monsterId)
+				{
+					return java.util.Map.of();
+				}
+
+				@Override
+				public void addFilterItem(int monsterId, int itemId, String name)
+				{
+				}
+
+				@Override
+				public void removeFilterItem(int monsterId, int itemId)
+				{
+				}
+			},
 			itemId -> true,
 			ids -> { },
 			ids -> { });

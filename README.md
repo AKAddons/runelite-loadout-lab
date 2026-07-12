@@ -35,8 +35,9 @@ equipment.
   shows only them (uses the core Bank Tags plugin).
 - **Exclusions**: right-click any suggestion to protect rare supplies
   (dragon darts) from being recommended.
-- **Pinned items**: force a slot ("always bring my Bracelet of
-  slaughter") and the optimizer builds the best set around it.
+- **Mob profiles**: per-monster pins ("always bring my Bracelet of
+  slaughter HERE"), your own notes, and trip supplies that join the
+  bank Show/Filter views - remembered per mob.
 - **UIM storages**: the looting bag, POH costume room, sailing cargo
   holds, and STASH units (one read of the chart) are tracked
   automatically - no extra plugin needed. Anything else (cold storage,
@@ -226,18 +227,22 @@ for bug reports.
 
 ![Where your gear is (location hints)](docs/img/location-hints.png)
 
-### Pinned items (always bring)
+### Mob profiles: pins, notes, and bank-filter items
 
-Some gear is worth wearing for reasons no DPS model can price - a
-Bracelet of slaughter stretching a slayer task, an Expeditious bracelet
-shortening one. Pin an item (right-click a cell, or add by name from the
-Options menu) and its slot is decided: every suggestion brings it, owned
-or not, and the optimizer builds the best set around it. Pins outrank
-exclusions, budgets, and the low-risk safety vetoes - the risk numbers
-stay honest, and the wilderness cap constrains the rest of the set. Game
-best stays unpinned, so you can always see what the preference costs.
+Every monster remembers your preferences for it. PIN an item to a slot
+for that mob (right-click a cell, or add by name from the Options menu)
+- a Bracelet of slaughter stretching that slayer task - and every
+suggestion there brings it, owned or not, with the optimizer building
+the best set around it; pins outrank exclusions, budgets, and the
+low-risk safety vetoes while the risk numbers stay honest, and game
+best stays unpinned so you can see what the preference costs. Add a
+NOTE ("bring antidote++, pray melee after the spec") that shows under
+the mechanics note. And add BANK-FILTER ITEMS - the supplies this trip
+needs (food, antidotes, cannonballs, searched from the full item list)
+- which join "Show in bank" and "Filter bank" alongside the suggested
+set. The "This mob: ..." line manages all three.
 
-![Pinned items (always bring)](docs/img/pinned-items.png)
+![Mob profiles: pins, notes, and bank-filter items](docs/img/mob-profiles.png)
 
 ### Dude, Where's My Stuff import
 

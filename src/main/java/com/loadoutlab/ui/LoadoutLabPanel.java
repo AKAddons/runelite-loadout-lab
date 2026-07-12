@@ -157,22 +157,28 @@ public class LoadoutLabPanel extends PluginPanel
 		String primary(int itemId);
 	}
 
-	/** Pin an item into its slot - the search must always bring it. */
-	public interface PinToggle
+	/** Per-monster user profile: pins ("always bring this HERE"), a free
+	 * note, and extra items unioned into the bank Show/Filter sets. */
+	public interface MobProfile
 	{
-		void pin(com.loadoutlab.data.GearSlot slot, int itemId);
-	}
+		Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId);
 
-	/** Release a slot's pin. */
-	public interface PinRelease
-	{
-		void unpin(com.loadoutlab.data.GearSlot slot);
-	}
+		void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId);
 
-	/** The current pins, slot -> item id. */
-	public interface PinView
-	{
-		Map<com.loadoutlab.data.GearSlot, Integer> snapshot();
+		void unpin(int monsterId, com.loadoutlab.data.GearSlot slot);
+
+		String note(int monsterId);
+
+		void setNote(int monsterId, String note);
+
+		Set<Integer> filterItems(int monsterId);
+
+		/** id -> display name captured when the item was added. */
+		Map<Integer, String> filterItemNames(int monsterId);
+
+		void addFilterItem(int monsterId, int itemId, String name);
+
+		void removeFilterItem(int monsterId, int itemId);
 	}
 
 	/** Does the player actually own this item (black set)? */
@@ -253,9 +259,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final StoredView storedView;
 	private final DwmsView dwmsView;
 	private final LocationHint locationHint;
-	private final PinToggle pinToggle;
-	private final PinRelease pinRelease;
-	private final PinView pinView;
+	private final MobProfile mobProfile;
 	private final OwnedCheck ownedCheck;
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
@@ -274,6 +278,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel storedLabel = new JLabel();
 	private final JLabel dwmsLabel = new JLabel();
 	private final JLabel pinnedLabel = new JLabel();
+	/** The user's own note for the selected monster ("Note: ..."). */
+	private final JLabel userNoteLabel = new JLabel();
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -314,8 +320,7 @@ public class LoadoutLabPanel extends PluginPanel
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
 		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
-		LocationHint locationHint,
-		PinToggle pinToggle, PinRelease pinRelease, PinView pinView,
+		LocationHint locationHint, MobProfile mobProfile,
 		OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
@@ -333,9 +338,7 @@ public class LoadoutLabPanel extends PluginPanel
 		this.storedView = storedView;
 		this.dwmsView = dwmsView;
 		this.locationHint = locationHint;
-		this.pinToggle = pinToggle;
-		this.pinRelease = pinRelease;
-		this.pinView = pinView;
+		this.mobProfile = mobProfile;
 		this.ownedCheck = ownedCheck;
 
 		setLayout(new BorderLayout(0, 6));
@@ -368,9 +371,18 @@ public class LoadoutLabPanel extends PluginPanel
 			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
 			addStored.addActionListener(ev -> showAddStoredDialog());
 			menu.add(addStored);
-			JMenuItem addPin = new JMenuItem("Pin an item (always bring)...");
-			addPin.addActionListener(ev -> showPinDialog());
-			menu.add(addPin);
+			if (selectedMonster != null)
+			{
+				JMenuItem addPin = new JMenuItem("Pin an item for this mob...");
+				addPin.addActionListener(ev -> showPinDialog());
+				menu.add(addPin);
+				JMenuItem addFilter = new JMenuItem("Add a bank-filter item for this mob...");
+				addFilter.addActionListener(ev -> showFilterItemDialog());
+				menu.add(addFilter);
+				JMenuItem editNote = new JMenuItem("Edit the note for this mob...");
+				editNote.addActionListener(ev -> showNoteDialog());
+				menu.add(editNote);
+			}
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
 			menu.add(joinDiscord);
@@ -415,6 +427,13 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
 		monsterNote.setVisible(false);
 		top.add(monsterNote);
+
+		// The user's own note for the selected monster.
+		userNoteLabel.setForeground(INFO);
+		userNoteLabel.setFont(userNoteLabel.getFont().deriveFont(13f));
+		userNoteLabel.setAlignmentX(LEFT_ALIGNMENT);
+		userNoteLabel.setVisible(false);
+		top.add(userNoteLabel);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -751,6 +770,8 @@ public class LoadoutLabPanel extends PluginPanel
 		String note = MonsterNotes.noteFor(monster);
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
 		monsterNote.setVisible(note != null);
+		refreshUserNote();
+		refreshPinnedLabel();
 		revalidate();
 		repaint();
 		recompute();
@@ -919,17 +940,57 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	private int currentMonsterId()
+	{
+		return selectedMonster == null ? -1 : selectedMonster.getId();
+	}
+
 	private void refreshPinnedLabel()
 	{
-		int count = pinView.snapshot().size();
-		pinnedLabel.setText(count == 0 ? "" : "Pinned: " + count + " (click to manage)");
-		pinnedLabel.setVisible(count > 0);
+		if (selectedMonster == null)
+		{
+			pinnedLabel.setVisible(false);
+			return;
+		}
+		int monsterId = currentMonsterId();
+		int pins = mobProfile.pins(monsterId).size();
+		int filters = mobProfile.filterItems(monsterId).size();
+		if (pins == 0 && filters == 0)
+		{
+			pinnedLabel.setVisible(false);
+			return;
+		}
+		StringBuilder text = new StringBuilder("This mob:");
+		if (pins > 0)
+		{
+			text.append(" ").append(pins).append(pins == 1 ? " pin" : " pins");
+		}
+		if (filters > 0)
+		{
+			text.append(pins > 0 ? "," : "").append(" ")
+				.append(filters).append(" filter item").append(filters == 1 ? "" : "s");
+		}
+		pinnedLabel.setText(text + " (click to manage)");
+		pinnedLabel.setVisible(true);
+	}
+
+	private void refreshUserNote()
+	{
+		String note = selectedMonster == null ? "" : mobProfile.note(currentMonsterId());
+		userNoteLabel.setText(note.isEmpty() ? "" : "<html>Note: " + note + "</html>");
+		userNoteLabel.setVisible(!note.isEmpty());
 	}
 
 	private void showPinnedMenu(MouseEvent e)
 	{
+		if (selectedMonster == null)
+		{
+			return;
+		}
+		int monsterId = currentMonsterId();
 		JPopupMenu menu = new JPopupMenu();
-		for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry : pinView.snapshot().entrySet())
+		for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry
+			: mobProfile.pins(monsterId).entrySet())
 		{
 			GearItem item = data.getGear(entry.getValue());
 			String label = item == null ? ("item " + entry.getValue()) : item.label();
@@ -937,16 +998,34 @@ public class LoadoutLabPanel extends PluginPanel
 			com.loadoutlab.data.GearSlot slot = entry.getKey();
 			row.addActionListener(a ->
 			{
-				pinRelease.unpin(slot);
+				mobProfile.unpin(monsterId, slot);
 				refreshPinnedLabel();
 				recompute();
 			});
 			menu.add(row);
 		}
+		for (Map.Entry<Integer, String> entry
+			: mobProfile.filterItemNames(monsterId).entrySet())
+		{
+			JMenuItem row = new JMenuItem("Remove from bank filter: " + entry.getValue());
+			int finalId = entry.getKey();
+			row.addActionListener(a ->
+			{
+				mobProfile.removeFilterItem(monsterId, finalId);
+				refreshPinnedLabel();
+			});
+			menu.add(row);
+		}
 		menu.addSeparator();
-		JMenuItem add = new JMenuItem("Pin an item (always bring)...");
-		add.addActionListener(a -> showPinDialog());
-		menu.add(add);
+		JMenuItem addPin = new JMenuItem("Pin an item for this mob...");
+		addPin.addActionListener(a -> showPinDialog());
+		menu.add(addPin);
+		JMenuItem addFilter = new JMenuItem("Add a bank-filter item for this mob...");
+		addFilter.addActionListener(a -> showFilterItemDialog());
+		menu.add(addFilter);
+		JMenuItem editNote = new JMenuItem("Edit the note for this mob...");
+		editNote.addActionListener(a -> showNoteDialog());
+		menu.add(editNote);
 		menu.show(pinnedLabel, e.getX(), e.getY());
 	}
 
@@ -954,8 +1033,13 @@ public class LoadoutLabPanel extends PluginPanel
 	 * slaughter class) are exactly the ones no suggestion ever shows. */
 	private void showPinDialog()
 	{
+		if (selectedMonster == null)
+		{
+			return;
+		}
 		String query = JOptionPane.showInputDialog(this,
-			"Item to always bring (its slot is pinned to it):",
+			"Item to always bring vs " + selectedMonster.getName()
+				+ " (its slot is pinned to it):",
 			"Pin an item", JOptionPane.PLAIN_MESSAGE);
 		if (query == null || query.trim().isEmpty())
 		{
@@ -992,9 +1076,79 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			}
 		}
-		pinToggle.pin(pick.getSlot(), pick.getId());
+		mobProfile.pin(currentMonsterId(), pick.getSlot(), pick.getId());
 		refreshPinnedLabel();
 		recompute();
+	}
+
+	/**
+	 * Bank-filter extras: supplies the trip needs (food, antidotes,
+	 * cannonballs) that no loadout suggestion contains. Resolved via the
+	 * client's own item search - the gear corpus has no consumables.
+	 */
+	private void showFilterItemDialog()
+	{
+		if (selectedMonster == null)
+		{
+			return;
+		}
+		String query = JOptionPane.showInputDialog(this,
+			"Item to include in Show/Filter bank vs " + selectedMonster.getName() + ":",
+			"Bank-filter item", JOptionPane.PLAIN_MESSAGE);
+		if (query == null || query.trim().isEmpty())
+		{
+			return;
+		}
+		List<net.runelite.http.api.item.ItemPrice> matches = itemManager.search(query.trim());
+		if (matches.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+				"No item matches '" + query.trim() + "'.",
+				"Bank-filter item", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		int limit = Math.min(matches.size(), 12);
+		String[] labels = new String[limit];
+		for (int i = 0; i < limit; i++)
+		{
+			labels[i] = matches.get(i).getName();
+		}
+		Object chosen = limit == 1 ? labels[0]
+			: JOptionPane.showInputDialog(this, "Which item?",
+				"Bank-filter item", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
+		if (chosen == null)
+		{
+			return;
+		}
+		for (int i = 0; i < limit; i++)
+		{
+			if (labels[i].equals(chosen))
+			{
+				mobProfile.addFilterItem(currentMonsterId(),
+					matches.get(i).getId(), matches.get(i).getName());
+				break;
+			}
+		}
+		refreshPinnedLabel();
+	}
+
+	private void showNoteDialog()
+	{
+		if (selectedMonster == null)
+		{
+			return;
+		}
+		String existing = mobProfile.note(currentMonsterId());
+		String note = (String) JOptionPane.showInputDialog(this,
+			"Note for " + selectedMonster.getName() + " (empty clears it):",
+			"Mob note", JOptionPane.PLAIN_MESSAGE, null, null, existing);
+		if (note == null)
+		{
+			return;
+		}
+		mobProfile.setNote(currentMonsterId(), note);
+		refreshUserNote();
+		refreshPinnedLabel();
 	}
 
 	private void refreshDwmsLabel()
@@ -1172,23 +1326,25 @@ public class LoadoutLabPanel extends PluginPanel
 						});
 						menu.add(storeToggle);
 					}
-					// Pin: user preference wins the slot outright.
-					if (pinSlot != null)
+					// Pin: user preference wins the slot outright - for
+					// THIS monster only.
+					if (pinSlot != null && selectedMonster != null)
 					{
-						Integer pinnedId = pinView.snapshot().get(pinSlot);
+						int monsterId = currentMonsterId();
+						Integer pinnedId = mobProfile.pins(monsterId).get(pinSlot);
 						boolean isPinned = pinnedId != null && pinnedId == item.getId();
 						JMenuItem pinItem = new JMenuItem(isPinned
-							? "Unpin " + item.label()
-							: "Pin " + item.label() + " here (always bring)");
+							? "Unpin " + item.label() + " for this mob"
+							: "Pin " + item.label() + " here for this mob");
 						pinItem.addActionListener(a ->
 						{
 							if (isPinned)
 							{
-								pinRelease.unpin(pinSlot);
+								mobProfile.unpin(monsterId, pinSlot);
 							}
 							else
 							{
-								pinToggle.pin(pinSlot, item.getId());
+								mobProfile.pin(monsterId, pinSlot, item.getId());
 							}
 							refreshPinnedLabel();
 							recompute();
@@ -1417,6 +1573,7 @@ public class LoadoutLabPanel extends PluginPanel
 		refreshStoredLabel();
 		refreshDwmsLabel();
 		refreshPinnedLabel();
+		refreshUserNote();
 	}
 
 	private void clearSelection()
@@ -2104,7 +2261,12 @@ public class LoadoutLabPanel extends PluginPanel
 			else
 			{
 				bankFiltered = style;
-				bankFilter.filter(setItemIds(best, specWeapon, loadedDart(best)));
+				Set<Integer> filterIds =
+					new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				// The mob profile's supplies (food, antidotes...) join the
+				// filtered bank view - they are part of THIS trip.
+				filterIds.addAll(mobProfile.filterItems(currentMonsterId()));
+				bankFilter.filter(filterIds);
 			}
 			if (selectedMonster != null && lastResults != null)
 			{
@@ -2149,6 +2311,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					ids.add(specWeapon.getId());
 				}
+				ids.addAll(mobProfile.filterItems(currentMonsterId()));
 				bankShown = style;
 				bankHighlighter.highlight(ids);
 			}
@@ -2332,7 +2495,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// Location clause only when a fetch trip is needed - "in
 				// bank" would be noise on 95% of cells.
 				String where = unowned ? "" : locationHint.hint(item.getId());
-				Integer pinnedHere = pinView.snapshot().get(slotType);
+				Integer pinnedHere = mobProfile.pins(currentMonsterId()).get(slotType);
 				String pinNote = pinnedHere != null && pinnedHere == item.getId()
 					? " - pinned" : "";
 				// Source dot + legend entry: only for locations we know.

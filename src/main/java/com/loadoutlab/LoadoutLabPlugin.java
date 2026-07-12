@@ -126,7 +126,7 @@ public class LoadoutLabPlugin extends Plugin
 	private com.loadoutlab.ui.BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
-	private com.loadoutlab.collection.PinStore pins;
+	private com.loadoutlab.collection.MonsterProfileStore mobProfiles;
 	private DwmsImport dwmsImport;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
@@ -287,7 +287,7 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = new ExclusionStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
-		pins = new com.loadoutlab.collection.PinStore(configManager, gson);
+		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
 		dwmsImport = new DwmsImport(configManager);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
@@ -323,7 +323,7 @@ public class LoadoutLabPlugin extends Plugin
 					manualOwned::toggle, manualOwned::snapshot,
 					dwmsView(),
 					locationHintView(),
-					pins::pin, pins::unpin, pins::snapshot,
+					mobProfileView(),
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
@@ -369,7 +369,7 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = null;
 		exclusions = null;
 		manualOwned = null;
-		pins = null;
+		mobProfiles = null;
 		dwmsImport = null;
 		dwmsLink = null;
 		stashUnits = null;
@@ -407,9 +407,9 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			dreams.reload();
 		}
-		if (pins != null)
+		if (mobProfiles != null)
 		{
-			pins.reload();
+			mobProfiles.reload();
 		}
 		resetForIdentityChange();
 	}
@@ -803,6 +803,82 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
+	/** Panel hook: the per-monster user profile, backed by the store. */
+	private LoadoutLabPanel.MobProfile mobProfileView()
+	{
+		return new LoadoutLabPanel.MobProfile()
+		{
+			@Override
+			public Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.pinsFor(monsterId);
+			}
+
+			@Override
+			public void pin(int monsterId, com.loadoutlab.data.GearSlot slot, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.pin(monsterId, slot, itemId);
+				}
+			}
+
+			@Override
+			public void unpin(int monsterId, com.loadoutlab.data.GearSlot slot)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.unpin(monsterId, slot);
+				}
+			}
+
+			@Override
+			public String note(int monsterId)
+			{
+				return mobProfiles == null ? "" : mobProfiles.noteFor(monsterId);
+			}
+
+			@Override
+			public void setNote(int monsterId, String note)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.setNote(monsterId, note);
+				}
+			}
+
+			@Override
+			public Set<Integer> filterItems(int monsterId)
+			{
+				return mobProfiles == null ? Set.of() : mobProfiles.filterItemsFor(monsterId);
+			}
+
+			@Override
+			public Map<Integer, String> filterItemNames(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.filterItemNamesFor(monsterId);
+			}
+
+			@Override
+			public void addFilterItem(int monsterId, int itemId, String name)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.addFilterItem(monsterId, itemId, name);
+				}
+			}
+
+			@Override
+			public void removeFilterItem(int monsterId, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.removeFilterItem(monsterId, itemId);
+				}
+			}
+		};
+	}
+
 	/** Panel hook: tooltip clause + legend label for an item's location.
 	 * Render/hover frequency; each lookup rebuilds the small origins map. */
 	private LoadoutLabPanel.LocationHint locationHintView()
@@ -1038,7 +1114,8 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
-				dreams.snapshot(), upgradeBudgetGp, mode, pins.snapshot(),
+				dreams.snapshot(), upgradeBudgetGp, mode,
+				mobProfiles.pinsFor(monster.getId()),
 				results -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
