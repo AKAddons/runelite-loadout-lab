@@ -1972,12 +1972,14 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(magicSpellRow());
 		}
 
-		// Yours vs the game's ceiling.
-		JLabel dps = new JLabel(String.format("Yours: %.2f DPS  (max %d, %.0f%% acc)",
-			best.getDps(), best.getMaxHit(), best.getAccuracy() * 100));
-		dps.setForeground(GOOD);
-		dps.setAlignmentX(LEFT_ALIGNMENT);
-		card.add(dps);
+		// Max hit + accuracy for the shown set. Its DPS lives in the card
+		// header - the old "Yours: X DPS" prefix restated the same number
+		// one line apart (field report: inconsistent).
+		JLabel hitLine = new JLabel(String.format("Max hit %d - %.0f%% accuracy",
+			best.getMaxHit(), best.getAccuracy() * 100));
+		hitLine.setForeground(GOOD);
+		hitLine.setAlignmentX(LEFT_ALIGNMENT);
+		card.add(hitLine);
 		// Assurance: name the conditional bonuses the math actually counted
 		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
 		// +16.7% damage"). Entries carry commas, so sources join on ";".
