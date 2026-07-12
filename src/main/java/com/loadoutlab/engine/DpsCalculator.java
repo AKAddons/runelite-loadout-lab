@@ -402,9 +402,14 @@ public final class DpsCalculator
 		{
 			roll = multiply(roll, 23, 20);
 		}
-		// Salve and the slayer helm are exclusive with EACH OTHER only -
-		// weapon bonuses below (arclight, dhl, golembane...) stack on top.
-		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
+		// Avarice, salve, and the slayer helm are exclusive with EACH OTHER
+		// only - weapon bonuses below (arclight, dhl...) stack on top.
+		// Chain order mirrors the wiki calc (avarice first at revenants).
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			roll = multiply(roll, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
 			roll = multiply(roll, 6, 5);
 		}
@@ -419,6 +424,10 @@ public final class DpsCalculator
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
 			roll += multiply(baseRoll, 1, 10);
+		}
+		if (revWeaponBuff(request, loadout, "ursine chainmace", "viggora's chainmace"))
+		{
+			roll = multiply(roll, 3, 2);
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
@@ -457,7 +466,11 @@ public final class DpsCalculator
 		{
 			maxHit = multiply(maxHit, 23, 20);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
 			maxHit = multiply(maxHit, 6, 5);
 		}
@@ -485,6 +498,10 @@ public final class DpsCalculator
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
 			maxHit += multiply(baseMaxHit, 1, 10);
+		}
+		if (revWeaponBuff(request, loadout, "ursine chainmace", "viggora's chainmace"))
+		{
+			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isTzhaarWeapon(loadout) && wearing(loadout, "berserker necklace"))
 		{
@@ -514,7 +531,11 @@ public final class DpsCalculator
 		{
 			roll = multiply(roll, 20 + crystalArmourPieces(loadout), 20);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			roll = multiply(roll, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
 			roll = multiply(roll, 6, 5);
 		}
@@ -525,6 +546,10 @@ public final class DpsCalculator
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			roll = multiply(roll, 23, 20);
+		}
+		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
+		{
+			roll = multiply(roll, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
@@ -549,7 +574,11 @@ public final class DpsCalculator
 		{
 			maxHit = multiply(maxHit, 40 + crystalArmourPieces(loadout), 40);
 		}
-		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
 			maxHit = multiply(maxHit, 6, 5);
 		}
@@ -560,6 +589,10 @@ public final class DpsCalculator
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			maxHit = multiply(maxHit, 23, 20);
+		}
+		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
+		{
+			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
@@ -579,7 +612,11 @@ public final class DpsCalculator
 
 	private long applyMagicAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll)
 	{
-		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			roll = multiply(roll, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
 			roll = multiply(roll, 6, 5);
 		}
@@ -590,6 +627,11 @@ public final class DpsCalculator
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			roll = multiply(roll, 23, 20);
+		}
+		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
+			"accursed sceptre", "accursed sceptre (a)"))
+		{
+			roll = multiply(roll, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
@@ -618,9 +660,18 @@ public final class DpsCalculator
 			magicDamage = Math.min(1000, magicDamage * 3);
 		}
 		maxHit = (int) Math.floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
-		if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
 			maxHit = multiply(maxHit, 23, 20);
+		}
+		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
+			"accursed sceptre", "accursed sceptre (a)"))
+		{
+			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
@@ -644,6 +695,42 @@ public final class DpsCalculator
 	private static boolean wearing(Loadout loadout, String marker)
 	{
 		return loadout.namesLower().contains(marker.toLowerCase(Locale.ROOT));
+	}
+
+	/** Revenants: the avarice and wilderness-weapon conditionals key off
+	 * them (wiki calc: monster name starts with "Revenant").
+	 * Package-private: RevenantConditionalsTest exercises the gate. */
+	static boolean isRevenant(OptimizationRequest request)
+	{
+		return request.getMonster().getName().toLowerCase(Locale.ROOT).startsWith("revenant");
+	}
+
+	/**
+	 * Wilderness weapon passive: +50% accuracy AND damage against monsters
+	 * in the Wilderness, CHARGED version only (wiki calc BaseCalc
+	 * .isRevWeaponBuffApplicable, applied after the avarice/salve/slayer
+	 * chain). Fighting a monster on the wilderness list is our "in the
+	 * Wilderness" signal.
+	 */
+	static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons)
+	{
+		if (!com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster()))
+		{
+			return false;
+		}
+		GearItem weapon = loadout.get(GearSlot.WEAPON);
+		if (weapon == null || !"charged".equals(weapon.getVersionLower()))
+		{
+			return false;
+		}
+		for (String name : weapons)
+		{
+			if (weapon.getNameLower().equals(name))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static String name(GearItem item)

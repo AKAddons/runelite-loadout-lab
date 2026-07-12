@@ -67,9 +67,11 @@ describe('loadout lab vectors', () => {
             style,
             skills: v.skills || undefined,
             spell: v.spell ? findSpell(v.spell) : undefined,
-            buffs: (v.markOfDarkness || v.onSlayerTask) ? {
+            buffs: (v.markOfDarkness || v.onSlayerTask || v.monster.startsWith('Revenant')) ? {
               ...(v.markOfDarkness ? { markOfDarknessSpell: true } : {}),
               ...(v.onSlayerTask ? { onSlayerTask: true } : {}),
+              // Fighting a revenant implies the Wilderness (rev weapon buff).
+              ...(v.monster.startsWith('Revenant') ? { inWilderness: true } : {}),
             } : undefined,
           });
           const r = calculatePlayerVsNpc(monster, player);

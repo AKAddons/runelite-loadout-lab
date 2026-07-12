@@ -213,6 +213,23 @@
       "capture": "A result mixing bank gear with a STASH or POH item: dots only on the fetch-trip cells, and the 'Stored:' legend under the cards showing only those entries. Single PNG screenshot."
     },
     {
+      "id": "revenant-conditionals",
+      "title": "Revenant and wilderness gear conditionals",
+      "group": "Wilderness and risk",
+      "anchor": "revenant-and-wilderness-gear-conditionals",
+      "code": [
+        "engine/DpsCalculator.java",
+        "engine/IncomingDpsCalculator.java",
+        "engine/PvpRisk.java"
+      ],
+      "tests": [
+        "engine/RevenantConditionalsTest.java",
+        "engine/PvpRiskTest.java"
+      ],
+      "since": "0.2.0",
+      "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card."
+    },
+    {
       "id": "wilderness-risk",
       "title": "Wilderness low-risk sets",
       "group": "Wilderness and risk",

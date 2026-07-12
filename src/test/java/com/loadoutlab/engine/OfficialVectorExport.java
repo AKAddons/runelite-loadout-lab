@@ -33,6 +33,12 @@ public class OfficialVectorExport
 	private static final String[][] SCENARIOS = {
 		// name | monster | version | style | weapon | ammo | forced spell | extra gear (slayer helm implies on-task)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
+		// Revenant conditionals: byName resolves the Charged versions
+		// (they precede Uncharged in the corpus); the harness infers the
+		// inWilderness buff from the Revenant monster name.
+		{"craws-revdemon", "Revenant demon", "", "RANGED", "Craw's bow", null},
+		{"ursine-revdemon", "Revenant demon", "", "MELEE", "Ursine chainmace", null},
+		{"avarice-msb-revdemon", "Revenant demon", "", "RANGED", "Magic shortbow", "Amethyst arrow", null, "Amulet of avarice"},
 		{"tentacle-goblin", "Goblin", "", "MELEE", "Abyssal tentacle", null},
 		{"fang-goblin", "Goblin", "", "MELEE", "Osmumten's fang", null},
 		{"tentacle-dusk1", "Dusk", "First form", "MELEE", "Abyssal tentacle", null},
@@ -253,10 +259,11 @@ public class OfficialVectorExport
 			{
 				vector.put("onSlayerTask", true);
 			}
-			if (!result.getSpellName().isEmpty())
+			String spellName = result.getSpellName();
+			if (spellName != null && !spellName.isEmpty())
 			{
-				vector.put("spell", result.getSpellName());
-				if (result.getSpellName().contains("Demonbane"))
+				vector.put("spell", spellName);
+				if (spellName.contains("Demonbane"))
 				{
 					vector.put("markOfDarkness", true);
 				}

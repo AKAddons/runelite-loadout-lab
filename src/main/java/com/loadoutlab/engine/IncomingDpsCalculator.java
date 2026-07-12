@@ -369,11 +369,33 @@ public final class IncomingDpsCalculator
 	public static Result calculate(MonsterStats monster, Loadout loadout,
 		int defenceLevel, int magicLevel)
 	{
+		// Bracelet of ethereum (charged): revenants deal NO damage while it
+		// is worn - an absolute rule that outranks every other model.
+		if (monster.getName().toLowerCase(java.util.Locale.ROOT).startsWith("revenant")
+			&& wearsChargedEthereum(loadout))
+		{
+			return new Result(0, 0, null, Collections.emptyList(), true,
+				"Bracelet of ethereum blocks all revenant damage");
+		}
 		BossIncomingOverrides.BossOverride override = BossIncomingOverrides.overridesFor(monster);
 		if (override != null)
 		{
 			return calculateWithOverride(monster, override, loadout, defenceLevel, magicLevel);
 		}
+		return calculateFromStatSheet(monster, loadout, defenceLevel, magicLevel);
+	}
+
+	private static boolean wearsChargedEthereum(Loadout loadout)
+	{
+		com.loadoutlab.data.GearItem hands = loadout.get(com.loadoutlab.data.GearSlot.HANDS);
+		return hands != null
+			&& "bracelet of ethereum".equals(hands.getNameLower())
+			&& "charged".equals(hands.getVersionLower());
+	}
+
+	private static Result calculateFromStatSheet(MonsterStats monster, Loadout loadout,
+		int defenceLevel, int magicLevel)
+	{
 
 		MonsterOffence off = monster.getOffence();
 		List<String> styles = off.getStyles();

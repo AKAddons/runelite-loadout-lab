@@ -248,6 +248,16 @@ totals include untradeable repair and mangle fees.
 
 ![Wilderness low-risk sets](docs/img/wilderness-risk.png)
 
+### Revenant and wilderness gear conditionals
+
+Charged wilderness weapons (Craw's bow, Webweaver bow, the chainmaces,
+the sceptres) get their +50% accuracy and damage against wilderness
+monsters. The Amulet of avarice boosts you against revenants - and the
+risk model knows it keeps you skulled, so your usual three protected
+items drop to zero (one with Protect Item). A charged Bracelet of
+ethereum zeroes the revenant incoming-damage line. All verified against
+the official wiki calculator's engine.
+
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked

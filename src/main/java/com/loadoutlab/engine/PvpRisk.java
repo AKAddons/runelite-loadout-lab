@@ -76,6 +76,25 @@ public final class PvpRisk
 	{
 	}
 
+	/**
+	 * The amulet of avarice keeps its wearer PERMANENTLY SKULLED: the
+	 * default 3-item protection is gone (1 item with Protect Item). Maps
+	 * the caller's kept-slot count (3 or 4) onto the skulled reality.
+	 */
+	private static int effectiveKeptSlots(Loadout loadout, int keptSlots)
+	{
+		if (keptSlots <= 0)
+		{
+			return keptSlots;
+		}
+		GearItem neck = loadout.get(com.loadoutlab.data.GearSlot.NECK);
+		if (neck != null && "amulet of avarice".equals(neck.getNameLower()))
+		{
+			return keptSlots >= 4 ? 1 : 0;
+		}
+		return keptSlots;
+	}
+
 	public static Assessment assess(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
 		// The protection pool: everything that would be LOST unprotected -
@@ -93,7 +112,7 @@ public final class PvpRisk
 		pool.sort(Comparator.comparingLong((GearItem g) ->
 			valueById.getOrDefault(g.getId(), 0L)).reversed());
 		charges.sort(Comparator.comparingLong((Charge c) -> c.costGp).reversed());
-		int keep = Math.max(0, keptSlots);
+		int keep = Math.max(0, effectiveKeptSlots(loadout, keptSlots));
 		List<GearItem> kept = new ArrayList<>(pool.subList(0, Math.min(keep, pool.size())));
 		List<GearItem> lost = new ArrayList<>(pool.subList(Math.min(keep, pool.size()), pool.size()));
 		long risk = 0;
@@ -117,7 +136,7 @@ public final class PvpRisk
 	 */
 	public static long riskGp(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
-		int keep = Math.max(0, keptSlots);
+		int keep = Math.max(0, effectiveKeptSlots(loadout, keptSlots));
 		// The largest `keep` pool values seen so far, ascending (top[0] is
 		// the smallest of them); a worn set is at most 11 items + the spec.
 		long[] top = new long[Math.min(keep, 12)];

@@ -52,6 +52,28 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void avariceSkullsTheWearerSoDefaultProtectionVanishes()
+	{
+		// The amulet of avarice keeps the wearer permanently skulled:
+		// keep-3 becomes keep-0, keep-4 (Protect Item) becomes keep-1.
+		GearItem avarice = new GearItem(9, "Amulet of avarice", "", GearSlot.NECK, "", 0,
+			false, true, true, true, 500_000, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
+		Loadout loadout = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			item(2, GearSlot.BODY, true, 80),
+			avarice);
+
+		PvpRisk.Assessment skulled = PvpRisk.assess(loadout, null, 3);
+		Assert.assertEquals(0, skulled.kept.size());
+		Assert.assertEquals(100 + 80 + 500_000, skulled.riskGp);
+
+		PvpRisk.Assessment protect = PvpRisk.assess(loadout, null, 4);
+		Assert.assertEquals(1, protect.kept.size());
+		Assert.assertEquals("the amulet itself is the most valuable piece",
+			9, protect.kept.get(0).getId());
+	}
+
+	@Test
 	public void costFreeBreakersStillChargeSoTheUiNeverShowsThemAsKept()
 	{
 		// Salve amulet(ei): curated reclaim cost is 0 (free tomb re-obtain,
