@@ -113,6 +113,9 @@ public class LoadoutLabPlugin extends Plugin
 	private net.runelite.client.game.chatbox.ChatboxItemSearch chatboxItemSearch;
 
 	@Inject
+	private net.runelite.client.ui.ClientUI clientUI;
+
+	@Inject
 	private EventBus eventBus;
 
 	@Inject
@@ -949,15 +952,21 @@ public class LoadoutLabPlugin extends Plugin
 	 */
 	private LoadoutLabPanel.ItemSearch itemSearchView()
 	{
-		return (prompt, onPicked) -> clientThread.invokeLater(() ->
-			chatboxItemSearch
-				.tooltipText(prompt)
-				.onItemSelected(itemId ->
-				{
-					String name = itemManager.getItemComposition(itemId).getName();
-					SwingUtilities.invokeLater(() -> onPicked.accept(itemId, name));
-				})
-				.build());
+		return (prompt, onPicked) ->
+		{
+			clientThread.invokeLater(() ->
+				chatboxItemSearch
+					.tooltipText(prompt)
+					.onItemSelected(itemId ->
+					{
+						String name = itemManager.getItemComposition(itemId).getName();
+						SwingUtilities.invokeLater(() -> onPicked.accept(itemId, name));
+					})
+					.build());
+			// The click came from the Swing sidebar - hand the OS focus to
+			// the game so typing searches immediately (field request).
+			clientUI.requestFocus();
+		};
 	}
 
 	/** Panel hook: tooltip clause + legend label for an item's location.

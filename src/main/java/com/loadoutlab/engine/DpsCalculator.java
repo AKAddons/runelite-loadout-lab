@@ -12,8 +12,19 @@ public final class DpsCalculator
 {
 	private static final String[] MELEE_TYPES = {"stab", "slash", "crush"};
 
+	/** Conditional bonuses counted during the CURRENT calculate() call -
+	 * attached to the result for user assurance (single-threaded use,
+	 * matching how the optimizer drives this class). */
+	private final java.util.LinkedHashSet<String> counted = new java.util.LinkedHashSet<>();
+
+	private void counted(String bonus)
+	{
+		counted.add(bonus);
+	}
+
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
 	{
+		counted.clear();
 		if (!VampyreRules.canDamage(request.getMonster(), loadout.getWeapon())
 			|| !FlyingRules.canReach(request.getMonster(), request.getStyle(), loadout.getWeapon())
 			|| !RatBoneRules.canUse(request.getMonster(), loadout.getWeapon())
@@ -76,7 +87,8 @@ public final class DpsCalculator
 				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
 				result.getPurchaseCost(), result.getSpellName());
 		}
-		return result;
+		return result == null || counted.isEmpty()
+			? result : result.withCountedBonuses(new java.util.ArrayList<>(counted));
 	}
 
 	private DpsResult calculateMelee(OptimizationRequest request, Loadout loadout)
@@ -153,6 +165,7 @@ public final class DpsCalculator
 
 		if (isWearingRangedVoid(loadout))
 		{
+			counted("void set");
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.10);
 			effectiveDamage = (int) Math.floor(effectiveDamage * (isWearingEliteVoid(loadout) ? 1.125 : 1.10));
 		}
@@ -193,6 +206,7 @@ public final class DpsCalculator
 			* prayers.getMagicAccuracySecondary()) + 2 + 9;
 		if (isWearingMagicVoid(loadout))
 		{
+			counted("void set");
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
 		}
 
@@ -389,6 +403,7 @@ public final class DpsCalculator
 	{
 		if (isWearingMeleeVoid(loadout))
 		{
+			counted("void set");
 			roll = multiply(roll, 11, 10);
 		}
 		// Golembane (Aug 2025: granite hammer 30%, barronite mace 15%) -
@@ -396,10 +411,12 @@ public final class DpsCalculator
 		// multiplicatively with them (helm first, per the wiki).
 		if (isGolem(request) && wearing(loadout, "granite hammer"))
 		{
+			counted("golembane weapon");
 			roll = multiply(roll, 13, 10);
 		}
 		if (isGolem(request) && wearing(loadout, "barronite mace"))
 		{
+			counted("golembane weapon");
 			roll = multiply(roll, 23, 20);
 		}
 		// Avarice, salve, and the slayer helm are exclusive with EACH OTHER
@@ -407,42 +424,52 @@ public final class DpsCalculator
 		// Chain order mirrors the wiki calc (avarice first at revenants).
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
+			counted("salve amulet (e)");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
+			counted("salve amulet");
 			roll = multiply(roll, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
 		{
+			counted("slayer helmet");
 			roll = multiply(roll, 7, 6);
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
+			counted("obsidian set");
 			roll += multiply(baseRoll, 1, 10);
 		}
 		if (revWeaponBuff(request, loadout, "ursine chainmace", "viggora's chainmace"))
 		{
+			counted("wilderness weapon +50%");
 			roll = multiply(roll, 3, 2);
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
+			counted("demonbane weapon");
 			roll = multiply(roll, 17, 10);
 		}
 		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
+			counted("demonbane weapon");
 			roll = multiply(roll, 21, 20);
 		}
 		if (isKalphite(request) && wearing(loadout, "keris partisan of breaching"))
 		{
+			counted("keris vs kalphites");
 			roll = multiply(roll, 133, 100);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter lance"))
 		{
+			counted("dragon hunter lance");
 			roll = multiply(roll, 6, 5);
 		}
 		if ("crush".equals(attackType))
@@ -456,63 +483,78 @@ public final class DpsCalculator
 	{
 		if (isWearingMeleeVoid(loadout))
 		{
+			counted("void set");
 			maxHit = multiply(maxHit, 11, 10);
 		}
 		if (isGolem(request) && wearing(loadout, "granite hammer"))
 		{
+			counted("golembane weapon");
 			maxHit = multiply(maxHit, 13, 10);
 		}
 		if (isGolem(request) && wearing(loadout, "barronite mace"))
 		{
+			counted("golembane weapon");
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
+			counted("salve amulet (e)");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
+			counted("salve amulet");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
 		{
+			counted("slayer helmet");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
+			counted("demonbane weapon");
 			maxHit = multiply(maxHit, 17, 10);
 		}
 		if (isDemon(request) && (wearing(loadout, "silverlight") || wearing(loadout, "darklight")))
 		{
+			counted("demonbane weapon");
 			// Damage only - the wiki and official calc give these no accuracy bonus.
 			maxHit = multiply(maxHit, 8, 5);
 		}
 		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
+			counted("demonbane weapon");
 			maxHit = multiply(maxHit, 21, 20);
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
+			counted("obsidian set");
 			maxHit += multiply(baseMaxHit, 1, 10);
 		}
 		if (revWeaponBuff(request, loadout, "ursine chainmace", "viggora's chainmace"))
 		{
+			counted("wilderness weapon +50%");
 			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isTzhaarWeapon(loadout) && wearing(loadout, "berserker necklace"))
 		{
+			counted("berserker necklace");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		if (isKalphite(request) && wearing(loadout, "keris"))
 		{
+			counted("keris vs kalphites");
 			maxHit = multiply(maxHit, wearing(loadout, "keris partisan of amascut") ? 115 : 133, 100);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter lance"))
 		{
+			counted("dragon hunter lance");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		if ("crush".equals(attackType))
@@ -529,38 +571,50 @@ public final class DpsCalculator
 		// + crystal body/legs maxes 36, not the 37 the reverse order gives).
 		if (isCrystalBow(loadout))
 		{
+			if (crystalArmourPieces(loadout) > 0)
+			{
+				counted("crystal armour set");
+			}
 			roll = multiply(roll, 20 + crystalArmourPieces(loadout), 20);
 		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
+			counted("salve amulet(ei)");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
+			counted("salve amulet(i)");
 			roll = multiply(roll, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
+			counted("slayer helmet (i)");
 			roll = multiply(roll, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
 		{
+			counted("wilderness weapon +50%");
 			roll = multiply(roll, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
+			counted("dragon hunter crossbow");
 			roll = multiply(roll, 13, 10);
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
+			counted("scorching bow");
 			roll = multiply(roll, 13, 10);
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
+			counted("twisted bow scaling");
 			int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
 			return tbowScaling(roll, Math.min(cap, Math.max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic())), true);
 		}
@@ -572,38 +626,50 @@ public final class DpsCalculator
 		// Crystal scaling floors before salve/slayer - see accuracy note above.
 		if (isCrystalBow(loadout))
 		{
+			if (crystalArmourPieces(loadout) > 0)
+			{
+				counted("crystal armour set");
+			}
 			maxHit = multiply(maxHit, 40 + crystalArmourPieces(loadout), 40);
 		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
+			counted("salve amulet(ei)");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
+			counted("salve amulet(i)");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
+			counted("slayer helmet (i)");
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
 		{
+			counted("wilderness weapon +50%");
 			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter crossbow"))
 		{
+			counted("dragon hunter crossbow");
 			maxHit = multiply(maxHit, 5, 4);
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
+			counted("scorching bow");
 			maxHit = multiply(maxHit, 13, 10);
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
+			counted("twisted bow scaling");
 			int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
 			return (int) tbowScaling(maxHit, Math.min(cap, Math.max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic())), false);
 		}
@@ -614,35 +680,43 @@ public final class DpsCalculator
 	{
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
+			counted("salve amulet(ei)");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
+			counted("salve amulet(i)");
 			roll = multiply(roll, 23, 20);
 		}
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
+			counted("slayer helmet (i)");
 			roll = multiply(roll, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
 			"accursed sceptre", "accursed sceptre (a)"))
 		{
+			counted("wilderness weapon +50%");
 			roll = multiply(roll, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
+			counted("dragon hunter wand");
 			roll = multiply(roll, 7, 4);
 		}
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
+			counted("elemental weakness");
 			roll = multiply(roll, 100 + request.getMonster().getWeaknessSeverity(), 100);
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
+			counted("demonbane spell (Mark of Darkness)");
 			// Demonbane assumes Mark of Darkness (standard practice - it is
 			// a cheap self-buff and the purging staff quintuples its
 			// duration): 40% accuracy, 80% with the purging staff.
@@ -662,29 +736,35 @@ public final class DpsCalculator
 		maxHit = (int) Math.floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
+			counted("amulet of avarice");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
 		{
+			counted("slayer helmet (i)");
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
 			"accursed sceptre", "accursed sceptre (a)"))
 		{
+			counted("wilderness weapon +50%");
 			maxHit = multiply(maxHit, 3, 2);
 		}
 		if (isDragon(request) && wearing(loadout, "dragon hunter wand"))
 		{
+			counted("dragon hunter wand");
 			// Accuracy is 7/4 but damage is 7/5 (official-verified) -
 			// upstream applied 7/4 to both (ENGINE-GAPS bug #1).
 			maxHit = multiply(maxHit, 7, 5);
 		}
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
+			counted("elemental weakness");
 			maxHit += multiply(baseMaxHit, request.getMonster().getWeaknessSeverity(), 100);
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
+			counted("demonbane spell (Mark of Darkness)");
 			// Mark of Darkness damage: +25%, +50% with the purging staff.
 			maxHit = wearing(loadout, "purging staff")
 				? multiply(maxHit, 3, 2) : multiply(maxHit, 5, 4);

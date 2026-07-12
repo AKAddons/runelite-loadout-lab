@@ -1083,9 +1083,23 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			noteArea.setText(note);
 		}
-		noteHeader.setText(noteCollapsed
-			? (note.isEmpty() ? "+ Note (click to add)" : "> Note")
-			: "v Note");
+		if (noteCollapsed && !note.isEmpty())
+		{
+			// Collapsed preview: the note's first line, truncated - the
+			// full text rides the tooltip.
+			String preview = note.replace('\n', ' ');
+			if (preview.length() > 34)
+			{
+				preview = preview.substring(0, 34) + "...";
+			}
+			noteHeader.setText("> Note: " + preview);
+			noteHeader.setToolTipText("<html>" + note.replace("\n", "<br>") + "</html>");
+		}
+		else
+		{
+			noteHeader.setText(noteCollapsed ? "+ Note (click to add)" : "v Note");
+			noteHeader.setToolTipText(null);
+		}
 		noteArea.setVisible(!noteCollapsed);
 		notePanel.setVisible(true);
 		notePanel.revalidate();
@@ -1343,56 +1357,31 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/**
-	 * Add-by-name flow: gear kept in storages the ledger cannot see may
-	 * never surface as a right-clickable suggestion, so typing the name is
-	 * the only reliable way in (Options menu and the manage menu open this).
+	 * Stored-elsewhere add: gear kept in storages the ledger cannot see
+	 * never surfaces as a right-clickable suggestion, so the NATIVE
+	 * chatbox item search is the way in (field request - the dialog
+	 * matcher is gone here too).
 	 */
 	private void showAddStoredDialog()
 	{
-		String query = JOptionPane.showInputDialog(this,
-			"Item name (kept in a STASH, POH, or other storage):",
-			"Stored elsewhere", JOptionPane.PLAIN_MESSAGE);
-		if (query == null || query.trim().isEmpty())
+		itemSearch.search("Stored elsewhere (counts as owned)", (itemId, name) ->
 		{
-			return;
-		}
-		List<GearItem> matches = data.searchGear(query, 12);
-		if (matches.isEmpty())
-		{
-			JOptionPane.showMessageDialog(this,
-				"No equipment matches '" + query.trim() + "'.",
-				"Stored elsewhere", JOptionPane.INFORMATION_MESSAGE);
-			return;
-		}
-		GearItem pick = matches.get(0);
-		if (matches.size() > 1)
-		{
-			String[] labels = new String[matches.size()];
-			for (int i = 0; i < matches.size(); i++)
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
 			{
-				labels[i] = matches.get(i).label();
-			}
-			Object chosen = JOptionPane.showInputDialog(this, "Which item?",
-				"Stored elsewhere", JOptionPane.PLAIN_MESSAGE, null, labels, labels[0]);
-			if (chosen == null)
-			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " affects the loadout search.",
+					"Stored elsewhere", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
-			for (int i = 0; i < labels.length; i++)
+			if (!storedView.snapshot().contains(gear.getId()))
 			{
-				if (labels[i].equals(chosen))
-				{
-					pick = matches.get(i);
-					break;
-				}
+				storedToggle.toggle(gear.getId());
 			}
-		}
-		if (!storedView.snapshot().contains(pick.getId()))
-		{
-			storedToggle.toggle(pick.getId());
-		}
-		refreshStoredLabel();
-		recompute();
+			refreshStoredLabel();
+			recompute();
+		});
 	}
 
 	/** Right-click menu on a suggested item: exclude it and recompute. A
@@ -1914,10 +1903,31 @@ public class LoadoutLabPanel extends PluginPanel
 		dps.setForeground(GOOD);
 		dps.setAlignmentX(LEFT_ALIGNMENT);
 		card.add(dps);
+		// Assurance: name the conditional bonuses the math actually
+		// counted (salve, wilderness weapon, crystal set...).
+		if (!best.getCountedBonuses().isEmpty())
+		{
+			JLabel counting = line("Counting: "
+				+ String.join(", ", best.getCountedBonuses()), MUTED);
+			counting.setFont(counting.getFont().deriveFont(11f));
+			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
+			card.add(counting);
+		}
 		addIncomingLine(card, result.incoming);
 		if (result.modeTrade != null)
 		{
 			card.add(modeTradeRow(result.modeTrade));
+		}
+		else if (optimizeMode.getSelectedIndex() > 0)
+		{
+			// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
+			// mix-up (common when a monster's incoming damage barely varies
+			// with armour, or is not modeled).
+			JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
+			same.setFont(same.getFont().deriveFont(11f));
+			same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
+				+ " worth trading dps for at this monster");
+			card.add(same);
 		}
 		addRiskLine(card, best, result.specWeapon);
 		addUpgradeLine(card, best);

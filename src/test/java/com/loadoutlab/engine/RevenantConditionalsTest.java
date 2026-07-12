@@ -99,6 +99,8 @@ class RevenantConditionalsTest
 		assertNotNull(msbAtRevs);
 		assertTrue(atRevs.getDps() > msbAtRevs.getDps() * 1.4,
 			"buffed craw's should dominate: craws=" + atRevs.getDps() + " msb=" + msbAtRevs.getDps());
+		assertTrue(atRevs.getCountedBonuses().contains("wilderness weapon +50%"),
+			"the counted-bonus assurance must name the buff, got: " + atRevs.getCountedBonuses());
 	}
 
 	@Test

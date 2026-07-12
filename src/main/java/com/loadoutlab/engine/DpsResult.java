@@ -14,6 +14,10 @@ public final class DpsResult
 	private final long defenceRoll;
 	private final int purchaseCost;
 	private final String spellName;
+	/** Conditional bonuses the calculator actually counted for this set
+	 * (salve, wilderness weapon, crystal set...) - user assurance that
+	 * the situational math is happening. */
+	private final java.util.List<String> countedBonuses;
 
 	public DpsResult(
 		Loadout loadout,
@@ -42,6 +46,24 @@ public final class DpsResult
 		int purchaseCost,
 		String spellName)
 	{
+		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
+			attackRoll, defenceRoll, purchaseCost, spellName, java.util.Collections.emptyList());
+	}
+
+	private DpsResult(
+		Loadout loadout,
+		double dps,
+		double accuracy,
+		double expectedHit,
+		int maxHit,
+		int attackSpeed,
+		String attackType,
+		long attackRoll,
+		long defenceRoll,
+		int purchaseCost,
+		String spellName,
+		java.util.List<String> countedBonuses)
+	{
 		this.loadout = loadout;
 		this.dps = dps;
 		this.accuracy = accuracy;
@@ -53,6 +75,20 @@ public final class DpsResult
 		this.defenceRoll = defenceRoll;
 		this.purchaseCost = Math.max(0, purchaseCost);
 		this.spellName = spellName == null ? "" : spellName;
+		this.countedBonuses = countedBonuses == null
+			? java.util.Collections.emptyList() : countedBonuses;
+	}
+
+	public java.util.List<String> getCountedBonuses()
+	{
+		return countedBonuses;
+	}
+
+	public DpsResult withCountedBonuses(java.util.List<String> bonuses)
+	{
+		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
+			java.util.List.copyOf(bonuses));
 	}
 
 	/**
@@ -75,7 +111,8 @@ public final class DpsResult
 
 	public DpsResult withPurchaseCost(int purchaseCost)
 	{
-		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType, attackRoll, defenceRoll, purchaseCost, spellName);
+		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses);
 	}
 
 	public Loadout getLoadout()
