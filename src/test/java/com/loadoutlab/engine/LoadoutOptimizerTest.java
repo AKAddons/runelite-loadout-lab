@@ -277,6 +277,40 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void theFillPassNeverTradesDamageForUtility()
+	{
+		// Field bug: a max-dps melee set showed Proselyte tassets (0 strength,
+		// +6 prayer) over Blood moon tassets (+2 strength) - the fill-upgrade
+		// swapped a DPS leg for a pure-prayer tank leg on a floored DPS tie.
+		// The offense guard must keep the strength leg.
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		GearItem bloodMoonLegs = data.getGear(29045); // +2 str
+		GearItem proselyte = data.getGear(9678);      // 0 str, +6 prayer
+		Assert.assertTrue("blood moon legs carry strength",
+			bloodMoonLegs.getBonuses().getStrength() > 0);
+		Assert.assertEquals("proselyte carries no strength",
+			0, proselyte.getBonuses().getStrength());
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);
+		owned.put(29045, 1);
+		owned.put(9678, 1);
+		OptimizationRequest request = new OptimizationRequest(
+			monster, CombatStyle.MELEE, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.OWNED_ONLY, true, false, new OwnedItems(owned, true), 10);
+
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		gear.put(GearSlot.WEAPON, data.getGear(4151));
+		gear.put(GearSlot.LEGS, bloodMoonLegs);
+		DpsResult shown = new DpsCalculator().calculate(request, new Loadout(gear)).withPurchaseCost(0);
+
+		DpsResult polished = new LoadoutOptimizer().fillDpsNeutralSlots(data, request, shown);
+		Assert.assertEquals("the strength leg must survive the fill pass",
+			29045, polished.getLoadout().get(GearSlot.LEGS).getId());
+	}
+
+	@Test
 	public void ownedGearDoesNotConsumePurchaseBudget()
 	{
 		LoadoutData data = new DataService().load();

@@ -93,12 +93,22 @@ public final class LoadoutOptimizer
 			GearItem worn = current.getLoadout().get(slot);
 			// Only a strictly better utility can justify touching the slot.
 			long wornUtility = worn == null ? 0 : utilityScore(worn);
+			long wornDamage = damageBonus(request, worn);
 			List<GearItem> options = new ArrayList<>();
 			for (GearItem item : data.getGearItems(slot))
 			{
 				if (!item.isStandardGear() || data.isVariant(item.getId())
 					|| request.isExcluded(item.getId())
 					|| utilityScore(item) <= wornUtility
+					// Never TRADE DAMAGE for utility: a dps-neutral swap that
+					// drops the style's damage bonus tank-ified a max-dps set
+					// (proselyte legs displacing blood moon on a floored tie).
+					// Torva-over-blood-moon still passes: it GAINS strength.
+					|| damageBonus(request, item) < wornDamage
+					// And never SPEND the budget on a dps-neutral upgrade swap
+					// (game best has no budget - its ceiling swap is exempt).
+					|| (worn != null && request.getCandidateMode() != CandidateMode.ALL_STANDARD
+						&& budgetCost(request, item) > budgetCost(request, worn))
 					|| !request.getRequirementProfile().canEquip(item.getRequirements())
 					|| !allowedByMode(request, item)
 					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon))
@@ -203,6 +213,26 @@ public final class LoadoutOptimizer
 		return value;
 	}
 
+	/** The style's damage-driving bonus (melee strength / ranged strength /
+	 * magic damage). A DPS-neutral fill swap must never REDUCE it. */
+	private static long damageBonus(OptimizationRequest request, GearItem item)
+	{
+		if (item == null)
+		{
+			return 0;
+		}
+		switch (request.getStyle())
+		{
+			case RANGED:
+				return item.getBonuses().getRangedStrength();
+			case MAGIC:
+				return item.getBonuses().getMagicDamage();
+			case MELEE:
+			default:
+				return item.getBonuses().getStrength();
+		}
+	}
+
 	/** Prayer first, then the sum of defensive bonuses. */
 	private static long utilityScore(GearItem item)
 	{
@@ -213,12 +243,33 @@ public final class LoadoutOptimizer
 	}
 
 	/**
-	 * utilityScore at the SET level - the deliberate last-resort tie-break.
-	 * Field bug: the slayer helmet and the bare black mask tie EXACTLY on
-	 * DPS (same on-task multiplier, zero offensive stats each), and with no
-	 * deliberate breaker the winner fell out of beam ordering - fragile
-	 * enough that unrelated pool changes flipped it. Same DPS, same risk:
-	 * prefer the set that protects better.
+	 * The set's total damage bonus for the style - the FIRST DPS-tie
+	 * breaker. On a floored DPS tie prefer the set that carries more raw
+	 * damage bonus (the stat that almost mattered): blood moon legs (+str)
+	 * over proselyte (a pure-prayer tank leg), and torva (+6 str) over blood
+	 * moon (+4). Only when damage ties (helms with zero offence: slayer helm
+	 * vs bare black mask) does setUtility decide on defence.
+	 */
+	private static long setDamageBonus(OptimizationRequest request, Loadout loadout)
+	{
+		switch (request.getStyle())
+		{
+			case RANGED:
+				return loadout.getBonuses().getRangedStrength();
+			case MAGIC:
+				return loadout.getBonuses().getMagicDamage();
+			case MELEE:
+			default:
+				return loadout.getBonuses().getStrength();
+		}
+	}
+
+	/**
+	 * utilityScore at the SET level - the SECONDARY DPS-tie breaker (after
+	 * setDamageBonus). Field bug: the slayer helmet and the bare black mask
+	 * tie EXACTLY on DPS (same on-task multiplier, zero offence each) AND on
+	 * damage bonus (zero), so this decides on defence. Same DPS, same risk,
+	 * same damage: prefer the set that protects better.
 	 */
 	private static long setUtility(Loadout loadout)
 	{
@@ -282,6 +333,7 @@ public final class LoadoutOptimizer
 		}
 		merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
+			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return merged.size() > request.getResultLimit()
@@ -509,6 +561,7 @@ public final class LoadoutOptimizer
 				(DpsResult r) -> weighted.getOrDefault(r, r.getDps())).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
 			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
+			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;

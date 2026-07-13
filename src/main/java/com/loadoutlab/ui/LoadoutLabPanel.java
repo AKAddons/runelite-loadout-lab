@@ -461,6 +461,10 @@ public class LoadoutLabPanel extends PluginPanel
 	 * each card's header toggles only its own section. */
 	private final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
 	private Map<CombatStyle, StyleResult> lastResults;
+	/** The monster lastResults belongs to - so a display-only re-render
+	 * never paints a previous monster's sets under the current name while a
+	 * new compute is still in flight. */
+	private int lastResultsMonsterId = -1;
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -856,8 +860,11 @@ public class LoadoutLabPanel extends PluginPanel
 		protectItem.setVisible(wild && options.wildyRisk);
 		riskBudget.setVisible(wild && options.wildyRisk);
 		refreshNotePanel();
-		// Rebuild the cards so per-line gates apply, reusing cached results.
-		if (selectedMonster != null && lastResults != null)
+		// Rebuild the cards so per-line gates apply, reusing cached results -
+		// but only when those results are for the CURRENT monster (a compute
+		// may be in flight for a just-selected one; its render will follow).
+		if (selectedMonster != null && lastResults != null
+			&& lastResultsMonsterId == currentMonsterId())
 		{
 			showResults(selectedMonster, lastResults);
 		}
@@ -1038,6 +1045,12 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private int parsedBudgetGp()
 	{
+		// Hidden control -> no budget (owned gear only), so a hidden field
+		// cannot keep buying upgrades the user can no longer see or clear.
+		if (!displayOptions.upgradeBudget)
+		{
+			return 0;
+		}
 		String raw = upgradeBudget.getText() == null ? "" : upgradeBudget.getText().trim().toLowerCase();
 		if (raw.isEmpty())
 		{
@@ -1066,6 +1079,13 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private String spellbookLock()
 	{
+		// Hidden control -> no lock (its combo lives only on the magic card's
+		// spell row, which displayOptions.spellControls can remove). Matches
+		// riskCap() neutralizing when the wildy controls are hidden.
+		if (!displayOptions.spellControls)
+		{
+			return "";
+		}
 		int index = spellbook.getSelectedIndex();
 		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
 	}
@@ -1423,9 +1443,11 @@ public class LoadoutLabPanel extends PluginPanel
 		Integer styleScoped = raw.getOrDefault(style.name(), Collections.emptyMap()).get(slot);
 		Integer allScoped = raw.getOrDefault(ALL_SETS, Collections.emptyMap()).get(slot);
 
+		// Each item completes the parent "Pin <item>" - "...for the ranged
+		// set only" / "...for all sets".
 		if (styleScoped == null || styleScoped != item.getId())
 		{
-			JMenuItem thisSet = new JMenuItem(scopeLabel(style.name()) + " only");
+			JMenuItem thisSet = new JMenuItem("For the " + scopeLabel(style.name()) + " only");
 			thisSet.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
@@ -1436,7 +1458,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (allScoped == null || allScoped != item.getId())
 		{
-			JMenuItem allSets = new JMenuItem("All sets");
+			JMenuItem allSets = new JMenuItem("For all sets");
 			// (all-sets pins keep their name - the mob is implicit)
 			allSets.addActionListener(a ->
 			{
@@ -1474,11 +1496,12 @@ public class LoadoutLabPanel extends PluginPanel
 			pinMenu.add(un);
 		}
 		pinMenu.addSeparator();
-		JMenuItem searchThis = new JMenuItem("Another item (search) - "
-			+ scopeLabel(style.name()) + " only...");
+		// Pin a DIFFERENT item into this slot (chatbox search), scoped.
+		JMenuItem searchThis = new JMenuItem("Pin a different item (for the "
+			+ scopeLabel(style.name()) + ")...");
 		searchThis.addActionListener(a -> searchAndPin(style.name()));
 		pinMenu.add(searchThis);
-		JMenuItem searchAll = new JMenuItem("Another item (search) - all sets...");
+		JMenuItem searchAll = new JMenuItem("Pin a different item (for all sets)...");
 		searchAll.addActionListener(a -> searchAndPin(ALL_SETS));
 		pinMenu.add(searchAll);
 		return pinMenu;
@@ -2034,6 +2057,7 @@ public class LoadoutLabPanel extends PluginPanel
 			return; // stale result for a monster the user moved away from
 		}
 		lastResults = results;
+		lastResultsMonsterId = monster.getId();
 		resultsPanel.removeAll();
 		usedSources.clear();
 		// Default collapse: a set a full standard deviation under the best

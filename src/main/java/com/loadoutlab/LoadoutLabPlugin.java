@@ -294,7 +294,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		// Build marker for perf-log sessions: confirms the instrumented
 		// build is running and whether [LL-PERF] debug lines will appear.
-		log.info("[LL-PERF] instrumentation active, debugEnabled={}", log.isDebugEnabled());
+		log.debug("[LL-PERF] instrumentation active, debugEnabled={}", log.isDebugEnabled());
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
 		protectOnly = new com.loadoutlab.collection.ProtectOnlyStore(configManager, gson);
@@ -420,26 +420,44 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			return;
 		}
-		// useDwmsData changes the computed ownership -> recompute; every other
-		// toggle is display-only -> re-apply the display options (which
-		// re-renders from cached results, no compute).
-		boolean recompute = "useDwmsData".equals(event.getKey());
+		// The stores share this config group (ledger, exclusions, dreams,
+		// profiles all write "loadoutlab" keys) and fire ConfigChanged on
+		// every drain - a bank deposit is an event storm. React ONLY to the
+		// wrench-panel keys, never a store write, or each ledger flush would
+		// rebuild the whole results panel on the EDT.
+		String key = event.getKey();
+		if ("useDwmsData".equals(key))
+		{
+			// Ownership changed -> recompute (not just re-render).
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.recomputeCurrent();
+				}
+			});
+			return;
+		}
+		if (!PANEL_CONFIG_KEYS.contains(key))
+		{
+			return; // a store write, not a display toggle
+		}
 		SwingUtilities.invokeLater(() ->
 		{
-			if (panel == null)
-			{
-				return;
-			}
-			if (recompute)
-			{
-				panel.recomputeCurrent();
-			}
-			else
+			if (panel != null)
 			{
 				panel.setDisplayOptions(buildDisplayOptions());
 			}
 		});
 	}
+
+	/** The wrench-panel display/control keys (see LoadoutLabConfig) - the
+	 * only keys onConfigChanged reacts to besides useDwmsData. */
+	private static final java.util.Set<String> PANEL_CONFIG_KEYS = java.util.Set.of(
+		"displayMaxHit", "displayAccuracy", "displayBonuses", "displayAssumes",
+		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
+		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
+		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton");
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
