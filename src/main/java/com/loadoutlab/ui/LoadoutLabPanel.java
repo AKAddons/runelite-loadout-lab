@@ -324,6 +324,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel noteHeader = new JLabel();
 	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
 	private boolean noteCollapsed = true;
+	/** Config gate (Per-monster notes) - false hides the post-it entirely;
+	 * saved notes are untouched and return when re-enabled. */
+	private boolean notesEnabled = true;
 	private static final Color POSTIT_BG = new Color(222, 212, 150);
 	private static final Color POSTIT_FG = new Color(55, 50, 25);
 
@@ -757,6 +760,25 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
+	/** Config hook: show or hide the per-monster note post-it. Saved notes
+	 * are never touched - re-enabling brings them back. */
+	public void setNotesEnabled(boolean enabled)
+	{
+		if (notesEnabled == enabled)
+		{
+			return;
+		}
+		notesEnabled = enabled;
+		if (!enabled)
+		{
+			// Persist any in-progress edit before the panel disappears.
+			saveNoteIfChanged();
+		}
+		refreshNotePanel();
+		revalidate();
+		repaint();
+	}
+
 	public boolean isF2pOnly()
 	{
 		return f2pOnly.isSelected();
@@ -1143,7 +1165,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * header line; expanded is the inline-editable note body. */
 	private void refreshNotePanel()
 	{
-		if (selectedMonster == null)
+		if (selectedMonster == null || !notesEnabled)
 		{
 			notePanel.setVisible(false);
 			return;

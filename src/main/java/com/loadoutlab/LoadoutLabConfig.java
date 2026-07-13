@@ -11,10 +11,23 @@ public interface LoadoutLabConfig extends Config
 	// Config items land with their features (owned-gear tracking scope,
 	// optimizer preferences, food/potion options later).
 
+	@ConfigItem(
+		keyName = "enableNotes",
+		name = "Per-monster notes",
+		description = "Show the collapsible note ('+ Note') on each monster's"
+			+ " panel for your own reminders. Turning this off hides the note"
+			+ " control; saved notes are kept and reappear when re-enabled.",
+		position = 0
+	)
+	default boolean enableNotes()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Connections",
 		description = "Other plugins Loadout Lab reads data from when they are installed",
-		position = 0
+		position = 1
 	)
 	String connections = "connections";
 

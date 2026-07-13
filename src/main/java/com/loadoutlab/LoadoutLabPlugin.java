@@ -341,6 +341,7 @@ public class LoadoutLabPlugin extends Plugin
 					this::setBankHighlight,
 					this::setBankFilter);
 				panel.setF2pWorld(onF2pWorld());
+				panel.setNotesEnabled(config.enableNotes());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
@@ -415,17 +416,32 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(net.runelite.client.events.ConfigChanged event)
 	{
-		if (!"loadoutlab".equals(event.getGroup()) || !"useDwmsData".equals(event.getKey()))
+		if (!"loadoutlab".equals(event.getGroup()))
 		{
 			return;
 		}
-		SwingUtilities.invokeLater(() ->
+		if ("enableNotes".equals(event.getKey()))
 		{
-			if (panel != null)
+			boolean enabled = config.enableNotes();
+			SwingUtilities.invokeLater(() ->
 			{
-				panel.recomputeCurrent();
-			}
-		});
+				if (panel != null)
+				{
+					panel.setNotesEnabled(enabled);
+				}
+			});
+			return;
+		}
+		if ("useDwmsData".equals(event.getKey()))
+		{
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.recomputeCurrent();
+				}
+			});
+		}
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
