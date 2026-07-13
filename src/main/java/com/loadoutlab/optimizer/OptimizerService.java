@@ -49,12 +49,7 @@ import java.util.function.Consumer;
  * <p>Threading: optimize() is CPU work - it runs on a single daemon worker,
  * never the EDT or client thread. Callbacks are NOT thread-marshalled here;
  * UI callers wrap in SwingUtilities.invokeLater.
- *
- * <p>Perf instrumentation: debug-level "[LL-PERF]" lines time each job,
- * style, and cache decision (plus the JVM-wide GC time the job overlapped).
- * Dev client only in practice - the hub build runs at info.
  */
-@lombok.extern.slf4j.Slf4j
 public class OptimizerService
 {
 	/** Per-STYLE entries (a monster query stores three). */
@@ -322,7 +317,6 @@ public class OptimizerService
 		}
 		if (allCached != null)
 		{
-			log.debug("[LL-PERF] query all-cached monster={}", monster.getName());
 			callback.accept(allCached);
 			return;
 		}
@@ -333,11 +327,8 @@ public class OptimizerService
 			if (requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
-				log.debug("[LL-PERF] abandoned ticket={} stage=queued", ticket);
 				return; // superseded while queued
 			}
-			long jobStart = System.nanoTime();
-			long gcStart = gcMillis();
 			LoadoutData dataset = f2pOnly ? f2pView() : data;
 			// Owned ornament/locked variants count as their base item - the
 			// suggestion always shows the base version.
@@ -349,10 +340,8 @@ public class OptimizerService
 				if (requestSeq.get() != ticket)
 				{
 					abandonedForTest++;
-					log.debug("[LL-PERF] abandoned ticket={} stage=before-{}", ticket, style);
 					return; // superseded mid-flight - abandon between styles
 				}
-				long styleStart = System.nanoTime();
 				// Styles cache independently: a pin or per-set exclusion on
 				// one style leaves the other two answers standing.
 				String styleKey = styleKey(baseKey, style, pins, excluded, pinnedSpell);
@@ -363,7 +352,6 @@ public class OptimizerService
 				}
 				if (cachedStyle != null)
 				{
-					log.debug("[LL-PERF] style-hit ticket={} style={}", ticket, style);
 					results.put(style, cachedStyle);
 					continue;
 				}
@@ -411,7 +399,6 @@ public class OptimizerService
 					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
 					ownedBest.set(0, optimizer.ensureRequiredUtility(dataset, ownedRequest, ownedBest.get(0)));
 				}
-				long ownedDone = System.nanoTime();
 				// D-4 frontier: when the mode wants safety, sweep defense
 				// weights, walk the (dps out, dps in) frontier, and swap the
 				// displayed set for the mode's pick. Every downstream number
@@ -422,7 +409,6 @@ public class OptimizerService
 					modeTrade = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
 						monster, real, ticket);
 				}
-				long sweepDone = System.nanoTime();
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
@@ -445,7 +431,6 @@ public class OptimizerService
 					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
 					gameBest.set(0, optimizer.ensureRequiredUtility(dataset, gameRequest, gameBest.get(0)));
 				}
-				long gameDone = System.nanoTime();
 				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
 				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
 				// The defensive story of the shown set: what the boss does
@@ -464,45 +449,14 @@ public class OptimizerService
 					cache.put(styleKey, styleResult);
 				}
 				results.put(style, styleResult);
-				long styleEnd = System.nanoTime();
-				log.debug("[LL-PERF] style ticket={} style={} ms={} owned={} sweep={} game={} spec={}",
-					ticket, style,
-					(styleEnd - styleStart) / 1_000_000L,
-					(ownedDone - styleStart) / 1_000_000L,
-					(sweepDone - ownedDone) / 1_000_000L,
-					(gameDone - sweepDone) / 1_000_000L,
-					(styleEnd - gameDone) / 1_000_000L);
 			}
 			if (requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
-				log.debug("[LL-PERF] abandoned ticket={} stage=delivery", ticket);
 				return; // finished stale - never deliver over the newer answer
 			}
-			log.debug("[LL-PERF] job ticket={} monster={} totalMs={} gcMs={}",
-				ticket, monster.getName(),
-				(System.nanoTime() - jobStart) / 1_000_000L,
-				gcMillis() - gcStart);
 			callback.accept(results);
 		});
-	}
-
-	/** JVM-wide accumulated GC time - deltas around a job show how much
-	 * collector work the optimize overlapped (the client-thread stall
-	 * mechanism the field report pointed at). */
-	private static long gcMillis()
-	{
-		long total = 0;
-		for (java.lang.management.GarbageCollectorMXBean gc
-			: java.lang.management.ManagementFactory.getGarbageCollectorMXBeans())
-		{
-			long time = gc.getCollectionTime();
-			if (time > 0)
-			{
-				total += time;
-			}
-		}
-		return total;
 	}
 
 	/** The per-style cache key: the query key minus per-style state, plus
