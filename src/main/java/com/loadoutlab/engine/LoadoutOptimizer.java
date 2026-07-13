@@ -189,6 +189,22 @@ public final class LoadoutOptimizer
 		return item.getBonuses().getPrayer() * 1000L + defenceSum;
 	}
 
+	/**
+	 * utilityScore at the SET level - the deliberate last-resort tie-break.
+	 * Field bug: the slayer helmet and the bare black mask tie EXACTLY on
+	 * DPS (same on-task multiplier, zero offensive stats each), and with no
+	 * deliberate breaker the winner fell out of beam ordering - fragile
+	 * enough that unrelated pool changes flipped it. Same DPS, same risk:
+	 * prefer the set that protects better.
+	 */
+	private static long setUtility(Loadout loadout)
+	{
+		StatBlock defensive = loadout.getDefensive();
+		long defenceSum = defensive.getStab() + defensive.getSlash() + defensive.getCrush()
+			+ defensive.getMagic() + defensive.getRanged();
+		return loadout.getBonuses().getPrayer() * 1000L + defenceSum;
+	}
+
 	public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request)
 	{
 		if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null)
@@ -367,7 +383,10 @@ public final class LoadoutOptimizer
 				}
 				// On DPS ties prefer less risk (an untradeable that crumbles
 				// on death must lose to a glory that rides a kept slot),
-				// then lower purchase cost.
+				// then lower purchase cost. Deliberately NO utility tie-break
+				// HERE: reordering the beam cut changes which partials survive
+				// pruning (tried - it broke "lifting the dragonfire constraint
+				// never costs dps"). Utility decides at the RESULTS sort only.
 				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed()
 					.thenComparingLong(SearchState::getRiskGp)
 					.thenComparingInt(SearchState::getCost));
@@ -418,6 +437,7 @@ public final class LoadoutOptimizer
 				(DpsResult r) -> weighted.getOrDefault(r, r.getDps())).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
 			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
+			.thenComparingLong(r -> -setUtility(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
 	}
@@ -591,7 +611,9 @@ public final class LoadoutOptimizer
 				}
 			}
 		}
-		merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed().thenComparingInt(DpsResult::getPurchaseCost));
+		merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
+			.thenComparingLong(r -> -setUtility(r.getLoadout()))
+			.thenComparingInt(DpsResult::getPurchaseCost));
 		return merged.size() > request.getResultLimit() ? new ArrayList<>(merged.subList(0, request.getResultLimit())) : merged;
 	}
 

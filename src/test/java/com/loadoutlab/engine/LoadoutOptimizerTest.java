@@ -122,6 +122,65 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void slayerHelmetWinsItsDpsTieWithTheBlackMask()
+	{
+		// Field bug: both give the same on-task melee multiplier, so they
+		// tie exactly on DPS - and the winner fell out of fragile beam
+		// ordering (the client and a headless run over the same account
+		// disagreed). The tie must break DELIBERATELY: same DPS -> prefer
+		// the higher set utility (defence; the helmet has plenty, the bare
+		// mask none).
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(nameToId(data, "abyssal whip"), 1);
+		owned.put(nameToId(data, "black mask"), 1);
+		owned.put(nameToId(data, "slayer helmet"), 1);
+		OptimizationRequest request = new OptimizationRequest(
+			monster,
+			CombatStyle.MELEE,
+			PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+			null,
+			0,
+			CandidateMode.OWNED_ONLY,
+			true,
+			true,
+			new OwnedItems(owned, true),
+			10);
+
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
+		Assert.assertFalse(results.isEmpty());
+		GearItem head = results.get(0).getLoadout().get(GearSlot.HEAD);
+		Assert.assertNotNull("a slayer head must be worn on task", head);
+		Assert.assertEquals("the helmet must win its stat tie with the bare mask",
+			"slayer helmet", head.getNameLower());
+	}
+
+	private static int nameToId(LoadoutData data, String name)
+	{
+		GearItem fallback = null;
+		for (GearItem item : data.getGearItems())
+		{
+			if (!item.getName().equalsIgnoreCase(name) || !item.isStandardGear()
+				|| data.isVariant(item.getId()))
+			{
+				continue;
+			}
+			if (item.getVersion().isEmpty())
+			{
+				return item.getId();
+			}
+			if (fallback == null)
+			{
+				fallback = item;
+			}
+		}
+		Assert.assertNotNull("dataset must contain " + name, fallback);
+		return fallback.getId();
+	}
+
+	@Test
 	public void ownedGearDoesNotConsumePurchaseBudget()
 	{
 		LoadoutData data = new DataService().load();
@@ -676,9 +735,9 @@ public class LoadoutOptimizerTest
 		List<DpsResult> results = optimizer.optimize(data, request);
 		Assert.assertFalse(results.isEmpty());
 		DpsResult bare = results.get(0);
-		Assert.assertNull("a blessing adds no DPS, so the search leaves ammo empty",
-			bare.getLoadout().get(GearSlot.AMMO));
-
+		// The results-level utility tie-break may seat the blessing straight
+		// from the main search (same DPS, +1 prayer beats an empty slot);
+		// the fill pass guarantees it either way, at unchanged DPS.
 		DpsResult filled = optimizer.fillDpsNeutralSlots(data, request, bare);
 		Assert.assertEquals(blessing.getId(), filled.getLoadout().get(GearSlot.AMMO).getId());
 		Assert.assertEquals(bare.getDps(), filled.getDps(), 1e-9);

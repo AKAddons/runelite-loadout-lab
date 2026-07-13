@@ -485,9 +485,9 @@ public final class DpsCalculator
 			counted("salve amulet", "+16.7% accuracy");
 			roll = multiply(roll, 7, 6);
 		}
-		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && slayerHead(loadout) != null)
 		{
-			counted("slayer helmet", "+16.7% accuracy");
+			counted(slayerHead(loadout).getNameLower(), "+16.7% accuracy");
 			roll = multiply(roll, 7, 6);
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
@@ -559,9 +559,9 @@ public final class DpsCalculator
 			counted("salve amulet", "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
-		else if (isSlayerTaskEligible(request) && isSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && slayerHead(loadout) != null)
 		{
-			counted("slayer helmet", "+16.7% damage");
+			counted(slayerHead(loadout).getNameLower(), "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
@@ -643,9 +643,9 @@ public final class DpsCalculator
 			counted("salve amulet(i)", "+16.7% accuracy");
 			roll = multiply(roll, 7, 6);
 		}
-		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
-			counted("slayer helmet (i)", "+15% accuracy");
+			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% accuracy");
 			roll = multiply(roll, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
@@ -705,9 +705,9 @@ public final class DpsCalculator
 			counted("salve amulet(i)", "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
-		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
-			counted("slayer helmet (i)", "+15% damage");
+			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% damage");
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "craw's bow", "webweaver bow"))
@@ -753,9 +753,9 @@ public final class DpsCalculator
 			counted("salve amulet(i)", "+15% accuracy");
 			roll = multiply(roll, 23, 20);
 		}
-		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
-			counted("slayer helmet (i)", "+15% accuracy");
+			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% accuracy");
 			roll = multiply(roll, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
@@ -802,9 +802,9 @@ public final class DpsCalculator
 			counted("amulet of avarice", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
-		else if (isSlayerTaskEligible(request) && isImbuedSlayerHelm(loadout))
+		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
-			counted("slayer helmet (i)", "+15% damage");
+			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% damage");
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",
@@ -910,28 +910,32 @@ public final class DpsCalculator
 		return wearing(loadout, "elite void top") && wearing(loadout, "elite void robe") && wearing(loadout, "void knight gloves");
 	}
 
-	private static boolean isSlayerHelm(Loadout loadout)
+	/** The worn slayer-head item (helm, mask, imbued variants), or null -
+	 * the counted-bonus line names the ACTUAL item (a bare black mask must
+	 * not be reported as "slayer helmet"). */
+	private static GearItem slayerHead(Loadout loadout)
 	{
 		for (GearItem item : loadout.getGear().values())
 		{
 			if (item != null && item.isSlayerHead())
 			{
-				return true;
+				return item;
 			}
 		}
-		return false;
+		return null;
 	}
 
-	private static boolean isImbuedSlayerHelm(Loadout loadout)
+	/** The worn IMBUED slayer head, or null (ranged/magic need the imbue). */
+	private static GearItem imbuedSlayerHead(Loadout loadout)
 	{
 		for (GearItem item : loadout.getGear().values())
 		{
 			if (item != null && item.isImbuedSlayerHead())
 			{
-				return true;
+				return item;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private static boolean isUndead(OptimizationRequest request)
