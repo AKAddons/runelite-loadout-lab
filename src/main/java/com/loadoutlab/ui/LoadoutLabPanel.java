@@ -123,6 +123,48 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean isProtectOnly(int itemId);
 	}
 
+	/**
+	 * Which detail lines and controls the panel shows - driven by the
+	 * plugin's config. Immutable; the plugin builds one and hands it over
+	 * with setDisplayOptions. Everything defaults on (the full panel).
+	 */
+	public static final class DisplayOptions
+	{
+		final boolean maxHit;
+		final boolean accuracy;
+		final boolean bonuses;
+		final boolean damageTaken;
+		final boolean prayerBonus;
+		final boolean attackStyle;
+		final boolean gameBest;
+		final boolean notes;
+		final boolean spellControls;
+		final boolean upgradeBudget;
+		final boolean wildyRisk;
+
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses,
+			boolean damageTaken, boolean prayerBonus, boolean attackStyle, boolean gameBest,
+			boolean notes, boolean spellControls, boolean upgradeBudget, boolean wildyRisk)
+		{
+			this.maxHit = maxHit;
+			this.accuracy = accuracy;
+			this.bonuses = bonuses;
+			this.damageTaken = damageTaken;
+			this.prayerBonus = prayerBonus;
+			this.attackStyle = attackStyle;
+			this.gameBest = gameBest;
+			this.notes = notes;
+			this.spellControls = spellControls;
+			this.upgradeBudget = upgradeBudget;
+			this.wildyRisk = wildyRisk;
+		}
+
+		static DisplayOptions all()
+		{
+			return new DisplayOptions(true, true, true, true, true, true, true, true, true, true, true);
+		}
+	}
+
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
 	public interface DreamToggle
 	{
@@ -324,9 +366,10 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel noteHeader = new JLabel();
 	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
 	private boolean noteCollapsed = true;
-	/** Config gate (Per-monster notes) - false hides the post-it entirely;
-	 * saved notes are untouched and return when re-enabled. */
-	private boolean notesEnabled = true;
+	/** Config-driven display gates (all on until the plugin sets them). */
+	private DisplayOptions displayOptions = DisplayOptions.all();
+	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
+	private JPanel budgetRow;
 	private static final Color POSTIT_BG = new Color(222, 212, 150);
 	private static final Color POSTIT_FG = new Color(55, 50, 25);
 
@@ -571,7 +614,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// Buyable upgrades within a total gp budget join the consideration
 		// pool (dream items are the manual version, via right-click).
-		JPanel budgetRow = new JPanel(new BorderLayout(4, 0));
+		budgetRow = new JPanel(new BorderLayout(4, 0));
 		budgetRow.setOpaque(false);
 		budgetRow.setAlignmentX(LEFT_ALIGNMENT);
 		budgetRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
@@ -743,6 +786,20 @@ public class LoadoutLabPanel extends PluginPanel
 		return line;
 	}
 
+	/** "Max hit N - X% accuracy", either half omitted per the display gates;
+	 * "" when both are off. */
+	private String hitAccuracyText(int maxHit, double accuracy)
+	{
+		String hit = displayOptions.maxHit ? "Max hit " + maxHit : "";
+		String acc = displayOptions.accuracy
+			? String.format("%.0f%% accuracy", accuracy * 100) : "";
+		if (hit.isEmpty())
+		{
+			return acc;
+		}
+		return acc.isEmpty() ? hit : hit + " - " + acc;
+	}
+
 	/**
 	 * Set by the plugin on login. On a non-members world the filter appears
 	 * and defaults on; on a members world it is hidden and forced off - the
@@ -760,21 +817,31 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
-	/** Config hook: show or hide the per-monster note post-it. Saved notes
-	 * are never touched - re-enabling brings them back. */
-	public void setNotesEnabled(boolean enabled)
+	/** Config hook: which detail lines and controls to show. Re-renders the
+	 * cards from the cached results (no recompute - display only) and updates
+	 * the top-control visibility. Saved notes are never touched. */
+	public void setDisplayOptions(DisplayOptions options)
 	{
-		if (notesEnabled == enabled)
+		this.displayOptions = options;
+		// Flush any in-progress note edit before the post-it can vanish.
+		if (!options.notes)
 		{
-			return;
-		}
-		notesEnabled = enabled;
-		if (!enabled)
-		{
-			// Persist any in-progress edit before the panel disappears.
 			saveNoteIfChanged();
 		}
+		if (budgetRow != null)
+		{
+			budgetRow.setVisible(options.upgradeBudget);
+		}
+		boolean wild = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
+		lowRisk.setVisible(wild && options.wildyRisk);
+		protectItem.setVisible(wild && options.wildyRisk);
+		riskBudget.setVisible(wild && options.wildyRisk);
 		refreshNotePanel();
+		// Rebuild the cards so per-line gates apply, reusing cached results.
+		if (selectedMonster != null && lastResults != null)
+		{
+			showResults(selectedMonster, lastResults);
+		}
 		revalidate();
 		repaint();
 	}
@@ -867,7 +934,8 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
-		boolean wilderness = WildernessMonsters.isWilderness(monster);
+		boolean wilderness = WildernessMonsters.isWilderness(monster)
+			&& displayOptions.wildyRisk;
 		lowRisk.setVisible(wilderness);
 		protectItem.setVisible(wilderness);
 		riskBudget.setVisible(wilderness);
@@ -1165,7 +1233,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * header line; expanded is the inline-editable note body. */
 	private void refreshNotePanel()
 	{
-		if (selectedMonster == null || !notesEnabled)
+		if (selectedMonster == null || !displayOptions.notes)
 		{
 			notePanel.setVisible(false);
 			return;
@@ -2116,19 +2184,22 @@ public class LoadoutLabPanel extends PluginPanel
 
 		DpsResult best = result.owned.get(0);
 
-		if (style == CombatStyle.MAGIC)
+		if (style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
 			card.add(magicSpellRow());
 		}
 
-		// Max hit + accuracy for the shown set. Its DPS lives in the card
-		// header - the old "Yours: X DPS" prefix restated the same number
-		// one line apart (field report: inconsistent).
-		JLabel hitLine = new JLabel(String.format("Max hit %d - %.0f%% accuracy",
-			best.getMaxHit(), best.getAccuracy() * 100));
-		hitLine.setForeground(GOOD);
-		hitLine.setAlignmentX(LEFT_ALIGNMENT);
-		card.add(hitLine);
+		// Max hit + accuracy for the shown set (each independently gated).
+		// Its DPS lives in the card header - the old "Yours: X DPS" prefix
+		// restated the same number one line apart (field report).
+		String hitText = hitAccuracyText(best.getMaxHit(), best.getAccuracy());
+		if (!hitText.isEmpty())
+		{
+			JLabel hitLine = new JLabel(hitText);
+			hitLine.setForeground(GOOD);
+			hitLine.setAlignmentX(LEFT_ALIGNMENT);
+			card.add(hitLine);
+		}
 		// Assurance: name the conditional bonuses the math actually counted
 		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
 		// +16.7% damage"). Entries carry commas, so sources join on ";".
@@ -2136,7 +2207,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// reports a wrapped preferred HEIGHT - bare html labels still
 		// measure single-line). As a plain label its preferred width
 		// inflated every card past the sidebar edge.
-		if (!best.getCountedBonuses().isEmpty())
+		if (displayOptions.bonuses && !best.getCountedBonuses().isEmpty())
 		{
 			JLabel counting = line("<html><body style='width: 185px'>Counting: "
 				+ String.join("; ", best.getCountedBonuses()) + "</body></html>", MUTED);
@@ -2144,7 +2215,10 @@ public class LoadoutLabPanel extends PluginPanel
 			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
 			card.add(counting);
 		}
-		addIncomingLine(card, result.incoming);
+		if (displayOptions.damageTaken)
+		{
+			addIncomingLine(card, result.incoming);
+		}
 		if (result.modeTrade != null)
 		{
 			card.add(modeTradeRow(result.modeTrade));
@@ -2162,9 +2236,15 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		addRiskLine(card, best, result.specWeapon);
 		addUpgradeLine(card, best);
-		addPrayerLine(card, best);
-		addStyleLine(card, style, best);
-		addSpellLine(card, style, best);
+		if (displayOptions.prayerBonus)
+		{
+			addPrayerLine(card, best);
+		}
+		if (displayOptions.attackStyle)
+		{
+			addStyleLine(card, style, best);
+			addSpellLine(card, style, best);
+		}
 		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
@@ -2178,7 +2258,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.
-		if (result.overallBest != null && result.overallBest.getDps() > 0)
+		if (displayOptions.gameBest && result.overallBest != null && result.overallBest.getDps() > 0)
 		{
 			card.add(Box.createVerticalStrut(6));
 			boolean expanded = gameBestExpanded.contains(style);
@@ -2208,11 +2288,17 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
 				// Max hit + accuracy for the ceiling set - the header only
-				// carries its DPS, same as the owned card (field request).
-				JLabel gameHit = line(String.format("Max hit %d - %.0f%% accuracy",
-					result.overallBest.getMaxHit(), result.overallBest.getAccuracy() * 100), MUTED);
-				card.add(gameHit);
-				addSpellLine(card, style, result.overallBest);
+				// carries its DPS, same as the owned card (each gated).
+				String gameHitText = hitAccuracyText(result.overallBest.getMaxHit(),
+					result.overallBest.getAccuracy());
+				if (!gameHitText.isEmpty())
+				{
+					card.add(line(gameHitText, MUTED));
+				}
+				if (displayOptions.attackStyle)
+				{
+					addSpellLine(card, style, result.overallBest);
+				}
 				addDartLine(card, result.overallBest);
 				card.add(Box.createVerticalStrut(4));
 				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,

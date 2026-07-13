@@ -341,7 +341,7 @@ public class LoadoutLabPlugin extends Plugin
 					this::setBankHighlight,
 					this::setBankFilter);
 				panel.setF2pWorld(onF2pWorld());
-				panel.setNotesEnabled(config.enableNotes());
+				panel.setDisplayOptions(buildDisplayOptions());
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
@@ -420,28 +420,41 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			return;
 		}
-		if ("enableNotes".equals(event.getKey()))
+		// useDwmsData changes the computed ownership -> recompute; every other
+		// toggle is display-only -> re-apply the display options (which
+		// re-renders from cached results, no compute).
+		boolean recompute = "useDwmsData".equals(event.getKey());
+		SwingUtilities.invokeLater(() ->
 		{
-			boolean enabled = config.enableNotes();
-			SwingUtilities.invokeLater(() ->
+			if (panel == null)
 			{
-				if (panel != null)
-				{
-					panel.setNotesEnabled(enabled);
-				}
-			});
-			return;
-		}
-		if ("useDwmsData".equals(event.getKey()))
-		{
-			SwingUtilities.invokeLater(() ->
+				return;
+			}
+			if (recompute)
 			{
-				if (panel != null)
-				{
-					panel.recomputeCurrent();
-				}
-			});
-		}
+				panel.recomputeCurrent();
+			}
+			else
+			{
+				panel.setDisplayOptions(buildDisplayOptions());
+			}
+		});
+	}
+
+	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
+	{
+		return new LoadoutLabPanel.DisplayOptions(
+			config.displayMaxHit(),
+			config.displayAccuracy(),
+			config.displayBonuses(),
+			config.displayDamageTaken(),
+			config.displayPrayerBonus(),
+			config.displayAttackStyle(),
+			config.displayGameBest(),
+			config.enableNotes(),
+			config.showSpellControls(),
+			config.showUpgradeBudget(),
+			config.showWildyRisk());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */

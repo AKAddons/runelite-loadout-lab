@@ -8,8 +8,116 @@ import net.runelite.client.config.ConfigSection;
 @ConfigGroup("loadoutlab")
 public interface LoadoutLabConfig extends Config
 {
-	// Config items land with their features (owned-gear tracking scope,
-	// optimizer preferences, food/potion options later).
+	@ConfigSection(
+		name = "Display",
+		description = "Which detail lines each set card shows",
+		position = 0
+	)
+	String display = "display";
+
+	@ConfigSection(
+		name = "Controls",
+		description = "Which input controls appear above the results",
+		position = 1
+	)
+	String controls = "controls";
+
+	@ConfigSection(
+		name = "Connections",
+		description = "Other plugins Loadout Lab reads data from when they are installed",
+		position = 2
+	)
+	String connections = "connections";
+
+	// --- Display ---------------------------------------------------------
+
+	@ConfigItem(
+		keyName = "displayMaxHit",
+		name = "Max hit",
+		description = "Show the max hit on each set card.",
+		section = display,
+		position = 1
+	)
+	default boolean displayMaxHit()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayAccuracy",
+		name = "Accuracy",
+		description = "Show the hit chance on each set card.",
+		section = display,
+		position = 2
+	)
+	default boolean displayAccuracy()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayBonuses",
+		name = "Counted bonuses",
+		description = "Show the 'Counting:' line naming the conditional bonuses"
+			+ " (salve, slayer helm, crystal set...) applied to the numbers.",
+		section = display,
+		position = 3
+	)
+	default boolean displayBonuses()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayDamageTaken",
+		name = "Damage taken per second",
+		description = "Show the incoming-damage line (what the monster does back"
+			+ " to you, prayed and unprayed).",
+		section = display,
+		position = 4
+	)
+	default boolean displayDamageTaken()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayPrayerBonus",
+		name = "Prayer bonus",
+		description = "Show the set's total prayer bonus line.",
+		section = display,
+		position = 5
+	)
+	default boolean displayPrayerBonus()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayAttackStyle",
+		name = "Attack style / spell",
+		description = "Show the attack-style line (and, on the magic card, the"
+			+ " cast spell).",
+		section = display,
+		position = 6
+	)
+	default boolean displayAttackStyle()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayGameBest",
+		name = "Game best (BiS)",
+		description = "Show the collapsible game-best ceiling under each set - the"
+			+ " strongest set in the game and how close yours is.",
+		section = display,
+		position = 7
+	)
+	default boolean displayGameBest()
+	{
+		return true;
+	}
 
 	@ConfigItem(
 		keyName = "enableNotes",
@@ -17,19 +125,56 @@ public interface LoadoutLabConfig extends Config
 		description = "Show the collapsible note ('+ Note') on each monster's"
 			+ " panel for your own reminders. Turning this off hides the note"
 			+ " control; saved notes are kept and reappear when re-enabled.",
-		position = 0
+		section = display,
+		position = 8
 	)
 	default boolean enableNotes()
 	{
 		return true;
 	}
 
-	@ConfigSection(
-		name = "Connections",
-		description = "Other plugins Loadout Lab reads data from when they are installed",
+	// --- Controls --------------------------------------------------------
+
+	@ConfigItem(
+		keyName = "showSpellControls",
+		name = "Spell selection",
+		description = "Show the spellbook lock and per-monster autocast spell"
+			+ " pin on the magic card.",
+		section = controls,
 		position = 1
 	)
-	String connections = "connections";
+	default boolean showSpellControls()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showUpgradeBudget",
+		name = "Upgrade budget",
+		description = "Show the upgrade-budget field (suggest buyable gear within"
+			+ " a gp budget).",
+		section = controls,
+		position = 2
+	)
+	default boolean showUpgradeBudget()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showWildyRisk",
+		name = "Wilderness risk options",
+		description = "Show the low-risk, Protect Item, and risk-cap controls on"
+			+ " wilderness monsters.",
+		section = controls,
+		position = 3
+	)
+	default boolean showWildyRisk()
+	{
+		return true;
+	}
+
+	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(
 		keyName = "useDwmsData",
