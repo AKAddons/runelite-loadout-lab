@@ -328,7 +328,49 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
-	private final JPanel resultsPanel = new JPanel();
+	private final JPanel resultsPanel = new ScrollableColumn();
+
+	/**
+	 * A vertical column that always matches its viewport's WIDTH (scrolling
+	 * only vertically). Without this, one over-wide child - a long
+	 * counting/assurance line, a wide grid - inflates EVERY card's width
+	 * past the sidebar, and with the horizontal scrollbar off the right
+	 * edge (header chips, the per-set menus) silently clips away
+	 * (field-reported as the menus disappearing until all cards collapse).
+	 */
+	private static final class ScrollableColumn extends JPanel implements javax.swing.Scrollable
+	{
+		@Override
+		public Dimension getPreferredScrollableViewportSize()
+		{
+			return getPreferredSize();
+		}
+
+		@Override
+		public int getScrollableUnitIncrement(java.awt.Rectangle visible, int orientation, int direction)
+		{
+			return 16;
+		}
+
+		@Override
+		public int getScrollableBlockIncrement(java.awt.Rectangle visible, int orientation, int direction)
+		{
+			return orientation == javax.swing.SwingConstants.VERTICAL
+				? visible.height : visible.width;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportWidth()
+		{
+			return true;
+		}
+
+		@Override
+		public boolean getScrollableTracksViewportHeight()
+		{
+			return false;
+		}
+	}
 	private final JLabel statusLabel = new JLabel(" ");
 	private final Timer searchDebounce;
 
@@ -1789,7 +1831,8 @@ public class LoadoutLabPanel extends PluginPanel
 		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
 		resultsPanel.add(computing);
 		resultsPanel.revalidate();
-		resultsPanel.repaint();
+		revalidate();
+		repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
 			spellbookLock(), riskCap(), selectedRiskBudget(),
@@ -1888,8 +1931,13 @@ public class LoadoutLabPanel extends PluginPanel
 			resultsPanel.add(legend);
 		}
 		statusLabel.setText("Best owned sets vs " + monster.getName());
+		// Revalidate the PANEL, not just the results column: the inner
+		// scroll pane is a Swing validate root, so a column-only revalidate
+		// never re-measures the wrapped PluginPanel - collapsing cards left
+		// the sidebar stuck at the shrunken height (field report).
 		resultsPanel.revalidate();
-		resultsPanel.repaint();
+		revalidate();
+		repaint();
 	}
 
 	private JPanel styleCard(CombatStyle style, StyleResult result)
@@ -2023,10 +2071,14 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assurance: name the conditional bonuses the math actually counted
 		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
 		// +16.7% damage"). Entries carry commas, so sources join on ";".
+		// html with a fixed body width so the now-longer line WRAPS (and
+		// reports a wrapped preferred HEIGHT - bare html labels still
+		// measure single-line). As a plain label its preferred width
+		// inflated every card past the sidebar edge.
 		if (!best.getCountedBonuses().isEmpty())
 		{
-			JLabel counting = line("Counting: "
-				+ String.join("; ", best.getCountedBonuses()), MUTED);
+			JLabel counting = line("<html><body style='width: 185px'>Counting: "
+				+ String.join("; ", best.getCountedBonuses()) + "</body></html>", MUTED);
 			counting.setFont(counting.getFont().deriveFont(11f));
 			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
 			card.add(counting);
