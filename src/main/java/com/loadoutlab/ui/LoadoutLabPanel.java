@@ -2146,6 +2146,11 @@ public class LoadoutLabPanel extends PluginPanel
 			if (expanded)
 			{
 				addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
+				// Max hit + accuracy for the ceiling set - the header only
+				// carries its DPS, same as the owned card (field request).
+				JLabel gameHit = line(String.format("Max hit %d - %.0f%% accuracy",
+					result.overallBest.getMaxHit(), result.overallBest.getAccuracy() * 100), MUTED);
+				card.add(gameHit);
 				addSpellLine(card, style, result.overallBest);
 				addDartLine(card, result.overallBest);
 				card.add(Box.createVerticalStrut(4));
