@@ -223,6 +223,7 @@ public class OptimizerService
 			null, callback);
 	}
 
+	/** Back-compat overload (headless/tests): one exclusion set, all styles. */
 	public void bestPerStyle(
 		MonsterStats monster,
 		PlayerLevels realLevels,
@@ -245,10 +246,45 @@ public class OptimizerService
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
+		Set<Integer> uniform = excludedItems == null
+			? Collections.emptySet() : excludedItems;
+		Map<CombatStyle, Set<Integer>> byStyle = new EnumMap<>(CombatStyle.class);
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			byStyle.put(style, uniform);
+		}
+		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
+			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
+			upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell, callback);
+	}
+
+	public void bestPerStyle(
+		MonsterStats monster,
+		PlayerLevels realLevels,
+		PlayerLevels boostedLevels,
+		PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements,
+		OwnedItems owned,
+		int collectionFingerprint,
+		boolean f2pOnly,
+		boolean onSlayerTask,
+		String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle,
+		int maxTradeables,
+		int riskBudgetGp,
+		boolean antifirePotion,
+		Set<Integer> dreamItems,
+		int upgradeBudgetGp,
+		OptimizeMode mode,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell,
+		Consumer<Map<CombatStyle, StyleResult>> callback)
+	{
 		final Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
 			pinnedByStyle == null ? Collections.emptyMap() : pinnedByStyle;
-		final Set<Integer> excluded = excludedItems == null
-			? Collections.emptySet() : excludedItems;
+		final Map<CombatStyle, Set<Integer>> excluded = excludedByStyle == null
+			? Collections.emptyMap() : excludedByStyle;
 		final Set<Integer> dreams = dreamItems == null
 			? Collections.emptySet() : dreamItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
@@ -260,7 +296,7 @@ public class OptimizerService
 		final int riskBudget = maxTradeables >= 0
 			? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + lock + "|" + excluded.hashCode() + "|" + unlocks.key()
+			+ "|" + onSlayerTask + "|" + lock + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
@@ -270,7 +306,7 @@ public class OptimizerService
 		{
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
-				StyleResult hit = cache.get(styleKey(baseKey, style, pins, pinnedSpell));
+				StyleResult hit = cache.get(styleKey(baseKey, style, pins, excluded, pinnedSpell));
 				if (hit == null)
 				{
 					allCached = null;
@@ -312,9 +348,9 @@ public class OptimizerService
 					return; // superseded mid-flight - abandon between styles
 				}
 				long styleStart = System.nanoTime();
-				// Styles cache independently: a pin on one style leaves the
-				// other two answers standing.
-				String styleKey = styleKey(baseKey, style, pins, pinnedSpell);
+				// Styles cache independently: a pin or per-set exclusion on
+				// one style leaves the other two answers standing.
+				String styleKey = styleKey(baseKey, style, pins, excluded, pinnedSpell);
 				StyleResult cachedStyle;
 				synchronized (cache)
 				{
@@ -347,7 +383,8 @@ public class OptimizerService
 					monster, style, styleLevels, unlocks, requirements,
 					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
 					effectiveOwned, 3, onSlayerTask, Math.max(0, upgradeBudgetGp))
-					.withExcludedItems(excluded).withSpellbookLock(lock)
+					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
 					.withDreamItems(dreams)
@@ -391,7 +428,8 @@ public class OptimizerService
 					monster, style, gameLevels, PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
-					.withExcludedItems(excluded).withSpellbookLock(lock)
+					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
@@ -460,14 +498,16 @@ public class OptimizerService
 		return total;
 	}
 
-	/** The per-style cache key: the query key minus pins, plus this style
-	 * and the pins/pinned-spell state that shapes THIS style's answer. */
+	/** The per-style cache key: the query key minus per-style state, plus
+	 * this style and the pins/exclusions/pinned-spell that shape ITS answer. */
 	private static String styleKey(String baseKey, CombatStyle style,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins,
+		Map<CombatStyle, Set<Integer>> excluded,
 		com.loadoutlab.data.SpellStats pinnedSpell)
 	{
 		return baseKey + "|" + style.name()
 			+ "|" + pins.getOrDefault(style, Collections.emptyMap()).hashCode()
+			+ "|" + excluded.getOrDefault(style, Collections.emptySet()).hashCode()
 			+ "|" + (style == CombatStyle.MAGIC && pinnedSpell != null ? pinnedSpell.getName() : "");
 	}
 

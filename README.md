@@ -303,7 +303,9 @@ behind an active task are greyed out.
 ### Exclude items from suggestions
 
 Right-click a suggestion to protect rare supplies (like dragon darts) so
-the optimizer stops recommending them.
+the optimizer stops recommending them - everywhere, only against this
+monster, or only against this monster's melee/ranged/magic set. Per-mob
+exclusions are managed from the "This mob" line.
 
 ![Exclude items from suggestions](docs/img/exclusions.png)
 

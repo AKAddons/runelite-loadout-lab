@@ -889,6 +889,29 @@ public class LoadoutLabPlugin extends Plugin
 		return byStyle;
 	}
 
+	/** Effective exclusions per style: the global list unioned with this
+	 * mob's ALL + style scopes. Styles with no mob exclusions share the
+	 * global set instance, so their cache keys stay stable. */
+	private Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> excludedByStyle(int monsterId)
+	{
+		java.util.Set<Integer> global = exclusions.snapshot();
+		EnumMap<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> byStyle =
+			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		{
+			java.util.Set<Integer> mob = mobProfiles.exclusionsFor(monsterId, style.name());
+			if (mob.isEmpty())
+			{
+				byStyle.put(style, global);
+				continue;
+			}
+			java.util.Set<Integer> merged = new java.util.HashSet<>(global);
+			merged.addAll(mob);
+			byStyle.put(style, merged);
+		}
+		return byStyle;
+	}
+
 	/** Panel hook: the per-monster user profile, backed by the store. */
 	private LoadoutLabPanel.MobProfile mobProfileView()
 	{
@@ -983,6 +1006,30 @@ public class LoadoutLabPlugin extends Plugin
 				if (mobProfiles != null)
 				{
 					mobProfiles.setPinnedSpell(monsterId, spellName);
+				}
+			}
+
+			@Override
+			public Map<String, java.util.Set<Integer>> allMobExclusions(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.allExclusions(monsterId);
+			}
+
+			@Override
+			public void excludeForMob(int monsterId, String scope, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.exclude(monsterId, scope, itemId);
+				}
+			}
+
+			@Override
+			public void removeMobExclusion(int monsterId, String scope, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					mobProfiles.removeExclusion(monsterId, scope, itemId);
 				}
 			}
 		};
@@ -1268,7 +1315,7 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			long exportDone = System.nanoTime();
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, exclusions.snapshot(), maxTradeables, riskBudgetGp, antifirePotion,
+				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				results ->

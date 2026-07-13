@@ -58,6 +58,66 @@ class MonsterProfileStoreTest
 	}
 
 	@Test
+	@DisplayName("per-mob exclusions merge all-sets with the style scope, per monster")
+	void exclusionsMergeScopes()
+	{
+		store.exclude(415, ALL, 4151);
+		store.exclude(415, "MELEE", 11802);
+		store.exclude(9999, ALL, 12006);
+
+		assertEquals(Set.of(4151, 11802), store.exclusionsFor(415, "MELEE"),
+			"the melee card excludes the all-sets item AND the melee-only one");
+		assertEquals(Set.of(4151), store.exclusionsFor(415, "RANGED"),
+			"other cards only inherit the all-sets exclusion");
+		assertEquals(Set.of(12006), store.exclusionsFor(9999, "MELEE"),
+			"exclusions are per monster");
+		assertTrue(store.exclusionsFor(1, "MELEE").isEmpty(), "unknown mob starts clean");
+	}
+
+	@Test
+	@DisplayName("removing a per-mob exclusion restores the item for that scope only")
+	void exclusionRemoval()
+	{
+		store.exclude(415, ALL, 4151);
+		store.exclude(415, "MELEE", 4151);
+
+		store.removeExclusion(415, "MELEE", 4151);
+		assertEquals(Set.of(4151), store.exclusionsFor(415, "MELEE"),
+			"the all-sets exclusion still applies after the style one is removed");
+
+		store.removeExclusion(415, ALL, 4151);
+		assertTrue(store.exclusionsFor(415, "MELEE").isEmpty());
+		assertTrue(store.allExclusions(415).isEmpty(),
+			"raw view empties once every scope is removed");
+	}
+
+	@Test
+	@DisplayName("per-mob exclusions survive a reload (config round-trip)")
+	void exclusionsPersist()
+	{
+		store.exclude(415, ALL, 4151);
+		store.exclude(415, "RANGED", 12926);
+
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals(Set.of(4151, 12926), reloaded.exclusionsFor(415, "RANGED"));
+		assertEquals(Map.of(ALL, Set.of(4151), "RANGED", Set.of(12926)),
+			reloaded.allExclusions(415));
+	}
+
+	@Test
+	@DisplayName("a profile holding only exclusions is not pruned; removing them prunes it")
+	void exclusionsKeepTheProfileAlive()
+	{
+		store.exclude(415, ALL, 4151);
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals(Set.of(4151), reloaded.exclusionsFor(415, "MELEE"));
+
+		reloaded.removeExclusion(415, ALL, 4151);
+		MonsterProfileStore emptied = new MonsterProfileStore(configManager, new Gson());
+		assertTrue(emptied.allExclusions(415).isEmpty());
+	}
+
+	@Test
 	@DisplayName("the whole profile survives a new session, scopes intact")
 	void profilePersistsAcrossSessions()
 	{

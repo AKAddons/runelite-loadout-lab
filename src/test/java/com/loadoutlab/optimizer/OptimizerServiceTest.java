@@ -10,6 +10,7 @@ import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.RequirementProfile;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -138,6 +139,72 @@ public class OptimizerServiceTest
 			java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
 			pins, null, results ->
+			{
+				out.set(results);
+				done.countDown();
+			});
+		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+		return out.get();
+	}
+
+	@Test
+	public void aStyleScopedExclusionRecomputesOnlyThatStyle() throws Exception
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // abyssal whip
+		owned.put(1333, 1); // rune scimitar - the fallback once the whip is excluded
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			Map<CombatStyle, Set<Integer>> none = uniformExclusions(java.util.Collections.emptySet());
+			Map<CombatStyle, OptimizerService.StyleResult> first =
+				resultsForExcluding(service, goblin, owned, none);
+			Assert.assertEquals("whip wins melee before the exclusion", 4151,
+				first.get(CombatStyle.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+
+			// Exclude the whip for the MELEE card only: ranged and magic are
+			// unchanged queries and must come back as the same cached objects.
+			Map<CombatStyle, Set<Integer>> meleeOnly = uniformExclusions(java.util.Collections.emptySet());
+			meleeOnly.put(CombatStyle.MELEE, Set.of(4151));
+			Map<CombatStyle, OptimizerService.StyleResult> excluded =
+				resultsForExcluding(service, goblin, owned, meleeOnly);
+			Assert.assertNotEquals("the melee card must drop the excluded whip", 4151,
+				excluded.get(CombatStyle.MELEE).owned.get(0).getLoadout().getWeapon().getId());
+			Assert.assertSame("ranged must be the cached result",
+				first.get(CombatStyle.RANGED), excluded.get(CombatStyle.RANGED));
+			Assert.assertSame("magic must be the cached result",
+				first.get(CombatStyle.MAGIC), excluded.get(CombatStyle.MAGIC));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	private static Map<CombatStyle, Set<Integer>> uniformExclusions(Set<Integer> set)
+	{
+		Map<CombatStyle, Set<Integer>> byStyle = new java.util.EnumMap<>(CombatStyle.class);
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			byStyle.put(style, set);
+		}
+		return byStyle;
+	}
+
+	private static Map<CombatStyle, OptimizerService.StyleResult> resultsForExcluding(
+		OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
+		Map<CombatStyle, Set<Integer>> excludedByStyle) throws Exception
+	{
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			new OwnedItems(owned, true), 1, false, false, "",
+			excludedByStyle, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+			java.util.Collections.emptyMap(), null, results ->
 			{
 				out.set(results);
 				done.countDown();

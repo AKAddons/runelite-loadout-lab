@@ -43,6 +43,9 @@ public class MonsterProfileStore
 		Map<String, Map<Integer, String>> filterItems;
 		/** Pinned autocast spell name for the magic card ("" / null = auto). */
 		String spell;
+		/** Per-mob exclusions: scope -> item ids the suggestions here must
+		 * never contain (the global exclusion list handles "everywhere"). */
+		Map<String, Set<Integer>> exclusions;
 	}
 
 	private final ConfigManager configManager;
@@ -232,6 +235,71 @@ public class MonsterProfileStore
 		return Collections.unmodifiableMap(out);
 	}
 
+	/** Effective per-mob exclusions for one style card: ALL plus the style
+	 * scope. The caller unions in the global exclusion list. */
+	public synchronized Set<Integer> exclusionsFor(int monsterId, String style)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.exclusions == null)
+		{
+			return Collections.emptySet();
+		}
+		LinkedHashSet<Integer> merged = new LinkedHashSet<>();
+		Set<Integer> all = profile.exclusions.get(ALL);
+		if (all != null)
+		{
+			merged.addAll(all);
+		}
+		Set<Integer> scoped = profile.exclusions.get(style);
+		if (scoped != null)
+		{
+			merged.addAll(scoped);
+		}
+		return merged.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(merged);
+	}
+
+	/** Raw per-mob exclusions by scope, for the manage menu. */
+	public synchronized Map<String, Set<Integer>> allExclusions(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.exclusions == null || profile.exclusions.isEmpty())
+		{
+			return Collections.emptyMap();
+		}
+		Map<String, Set<Integer>> out = new LinkedHashMap<>();
+		for (Map.Entry<String, Set<Integer>> scope : profile.exclusions.entrySet())
+		{
+			if (scope.getValue() != null && !scope.getValue().isEmpty())
+			{
+				out.put(scope.getKey(),
+					Collections.unmodifiableSet(new LinkedHashSet<>(scope.getValue())));
+			}
+		}
+		return Collections.unmodifiableMap(out);
+	}
+
+	public synchronized void exclude(int monsterId, String scope, int itemId)
+	{
+		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		if (profile.exclusions == null)
+		{
+			profile.exclusions = new LinkedHashMap<>();
+		}
+		profile.exclusions.computeIfAbsent(scope, s -> new LinkedHashSet<>()).add(itemId);
+		save();
+	}
+
+	public synchronized void removeExclusion(int monsterId, String scope, int itemId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile != null && profile.exclusions != null
+			&& profile.exclusions.get(scope) != null)
+		{
+			profile.exclusions.get(scope).remove(itemId);
+			save();
+		}
+	}
+
 	public synchronized void addFilterItem(int monsterId, String scope, int itemId, String name)
 	{
 		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
@@ -263,10 +331,15 @@ public class MonsterProfileStore
 			Stored profile = entry.getValue();
 			prune(profile.pins);
 			prune(profile.filterItems);
+			if (profile.exclusions != null)
+			{
+				profile.exclusions.values().removeIf(s -> s == null || s.isEmpty());
+			}
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
-				&& (profile.filterItems == null || profile.filterItems.isEmpty());
+				&& (profile.filterItems == null || profile.filterItems.isEmpty())
+				&& (profile.exclusions == null || profile.exclusions.isEmpty());
 			if (!empty)
 			{
 				out.put(entry.getKey(), profile);

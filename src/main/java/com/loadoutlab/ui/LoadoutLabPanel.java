@@ -182,6 +182,20 @@ public class LoadoutLabPanel extends PluginPanel
 		String pinnedSpell(int monsterId);
 
 		void setPinnedSpell(int monsterId, String spellName);
+
+		/** Raw per-mob exclusions by scope, for the manage menu. */
+		default Map<String, Set<Integer>> allMobExclusions(int monsterId)
+		{
+			return Map.of();
+		}
+
+		default void excludeForMob(int monsterId, String scope, int itemId)
+		{
+		}
+
+		default void removeMobExclusion(int monsterId, String scope, int itemId)
+		{
+		}
 	}
 
 	/** Open the native chatbox item search; the pick (id, name) returns
@@ -1028,7 +1042,12 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			filters += scoped.size();
 		}
-		if (pins == 0 && filters == 0)
+		int excluded = 0;
+		for (Set<Integer> scoped : mobProfile.allMobExclusions(monsterId).values())
+		{
+			excluded += scoped.size();
+		}
+		if (pins == 0 && filters == 0 && excluded == 0)
 		{
 			pinnedLabel.setVisible(false);
 			return;
@@ -1042,6 +1061,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			text.append(pins > 0 ? "," : "").append(" ")
 				.append(filters).append(" filter item").append(filters == 1 ? "" : "s");
+		}
+		if (excluded > 0)
+		{
+			text.append(pins > 0 || filters > 0 ? "," : "").append(" ")
+				.append(excluded).append(" excluded");
 		}
 		pinnedLabel.setText(text + " (click to manage)");
 		pinnedLabel.setVisible(true);
@@ -1141,6 +1165,25 @@ public class LoadoutLabPanel extends PluginPanel
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
 					refreshPinnedLabel();
 					reapplyBankViews();
+				});
+				menu.add(row);
+			}
+		}
+		for (Map.Entry<String, Set<Integer>> scoped
+			: mobProfile.allMobExclusions(monsterId).entrySet())
+		{
+			String scope = scoped.getKey();
+			for (int itemId : scoped.getValue())
+			{
+				GearItem item = data.getGear(itemId);
+				String label = item == null ? ("item " + itemId) : item.label();
+				JMenuItem row = new JMenuItem("Allow " + label + " again ("
+					+ scopeLabel(scope) + ")");
+				row.addActionListener(a ->
+				{
+					mobProfile.removeMobExclusion(monsterId, scope, itemId);
+					refreshPinnedLabel();
+					recompute();
 				});
 				menu.add(row);
 			}
@@ -1470,14 +1513,42 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 				for (GearItem item : items)
 				{
-					JMenuItem exclude = new JMenuItem("Exclude " + item.label() + " from suggestions");
-					exclude.addActionListener(a ->
+					// Exclusion scopes (field request): everywhere, this mob,
+					// or this mob + this set only.
+					javax.swing.JMenu excludeMenu = new javax.swing.JMenu("Exclude " + item.label());
+					JMenuItem everywhere = new JMenuItem("All mobs");
+					everywhere.addActionListener(a ->
 					{
 						exclusionToggle.toggle(item.getId());
 						refreshExclusionsLabel();
 						recompute();
 					});
-					menu.add(exclude);
+					excludeMenu.add(everywhere);
+					if (selectedMonster != null)
+					{
+						int monsterId = currentMonsterId();
+						JMenuItem thisMob = new JMenuItem("Vs " + selectedMonster.getName() + " (all sets)");
+						thisMob.addActionListener(a ->
+						{
+							mobProfile.excludeForMob(monsterId, ALL_SETS, item.getId());
+							refreshPinnedLabel();
+							recompute();
+						});
+						excludeMenu.add(thisMob);
+						if (pinStyle != null)
+						{
+							JMenuItem thisSet = new JMenuItem("Vs " + selectedMonster.getName()
+								+ " (" + scopeLabel(pinStyle.name()) + " only)");
+							thisSet.addActionListener(a ->
+							{
+								mobProfile.excludeForMob(monsterId, pinStyle.name(), item.getId());
+								refreshPinnedLabel();
+								recompute();
+							});
+							excludeMenu.add(thisSet);
+						}
+					}
+					menu.add(excludeMenu);
 					// Unowned items can be dreamed into the owned pool
 					// (and undreamed).
 					boolean stored = storedView.snapshot().contains(item.getId());
