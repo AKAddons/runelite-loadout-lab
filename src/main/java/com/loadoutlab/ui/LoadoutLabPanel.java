@@ -138,23 +138,6 @@ public class LoadoutLabPanel extends PluginPanel
 		Set<Integer> snapshot();
 	}
 
-	/** How many items the Dude Where's My Stuff integration contributed,
-	 * and whether they came over the live PluginMessage link (as opposed
-	 * to the best-effort config read). */
-	public interface DwmsView
-	{
-		int count();
-
-		boolean live();
-
-		/** The installed DWMS plugin's own icon, or null (not running /
-		 * icon not loadable) - the provenance line then stays text. */
-		default java.awt.image.BufferedImage icon()
-		{
-			return null;
-		}
-	}
-
 	/** Where an owned item lives, for tooltips and the source legend. */
 	public interface LocationHint
 	{
@@ -287,7 +270,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DreamView dreamView;
 	private final StoredToggle storedToggle;
 	private final StoredView storedView;
-	private final DwmsView dwmsView;
 	private final LocationHint locationHint;
 	private final MobProfile mobProfile;
 	private final ItemSearch itemSearch;
@@ -311,10 +293,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private int lastBudgetGp;
 	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
-	private final JLabel dwmsLabel = new JLabel();
-	/** "Connected:" row hosting addon chips (DWMS today) - see ctor. */
-	private final JPanel connectionsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-	private final JLabel connectionsCaption = new JLabel("Connected:");
 	private final JLabel pinnedLabel = new JLabel();
 	/** The user's own note for the selected monster: a collapsible
 	 * post-it, edited inline (saves on focus loss - no edit button). */
@@ -366,7 +344,7 @@ public class LoadoutLabPanel extends PluginPanel
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
 		DreamToggle dreamToggle, DreamView dreamView,
-		StoredToggle storedToggle, StoredView storedView, DwmsView dwmsView,
+		StoredToggle storedToggle, StoredView storedView,
 		LocationHint locationHint, MobProfile mobProfile, ItemSearch itemSearch,
 		OwnedCheck ownedCheck,
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
@@ -383,7 +361,6 @@ public class LoadoutLabPanel extends PluginPanel
 		this.dreamView = dreamView;
 		this.storedToggle = storedToggle;
 		this.storedView = storedView;
-		this.dwmsView = dwmsView;
 		this.locationHint = locationHint;
 		this.mobProfile = mobProfile;
 		this.itemSearch = itemSearch;
@@ -641,23 +618,6 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 		top.add(pinnedLabel);
 		refreshPinnedLabel();
-
-		// Connected addons: the other plugins feeding this panel, as icon
-		// chips with the details on hover (field request - the DWMS
-		// provenance sentence was a whole row of the summary area). Today
-		// that is DWMS; future integrations join this row. Hidden when
-		// nothing is connected.
-		connectionsCaption.setForeground(MUTED);
-		connectionsCaption.setFont(connectionsCaption.getFont().deriveFont(11f));
-		dwmsLabel.setForeground(MUTED);
-		dwmsLabel.setFont(dwmsLabel.getFont().deriveFont(12f));
-		connectionsRow.setOpaque(false);
-		connectionsRow.setAlignmentX(LEFT_ALIGNMENT);
-		connectionsRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-		connectionsRow.add(connectionsCaption);
-		connectionsRow.add(dwmsLabel);
-		top.add(connectionsRow);
-		refreshDwmsLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -1409,42 +1369,11 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	private void refreshDwmsLabel()
+	/** Recompute the selected monster (the Connections toggle changes
+	 * effective ownership; the plugin calls this on config change). */
+	public void recomputeCurrent()
 	{
-		int count = dwmsView.count();
-		if (count <= 0)
-		{
-			dwmsLabel.setVisible(false);
-			connectionsRow.setVisible(false);
-			return;
-		}
-		String text = "From Dude Where's My Stuff: " + count + " items"
-			+ (dwmsView.live() ? " (live)" : "");
-		java.awt.image.BufferedImage icon = dwmsView.icon();
-		if (icon != null)
-		{
-			// DWMS is running: its own icon stands in for the sentence
-			// (field request) - the details move into the hover.
-			dwmsLabel.setIcon(new ImageIcon(icon.getScaledInstance(-1, 16, Image.SCALE_SMOOTH)));
-			dwmsLabel.setText("");
-			dwmsLabel.setToolTipText(text);
-		}
-		else
-		{
-			// Not running - the items came from its saved config; say so
-			// in text since there is no plugin to borrow an icon from.
-			dwmsLabel.setIcon(null);
-			dwmsLabel.setText(text);
-			dwmsLabel.setToolTipText(null);
-		}
-		dwmsLabel.setVisible(true);
-		connectionsRow.setVisible(true);
-	}
-
-	/** The DWMS live link answered (EDT): refresh the provenance line. */
-	public void dwmsUpdated()
-	{
-		refreshDwmsLabel();
+		recompute();
 	}
 
 	private void showStoredMenu(MouseEvent e)
@@ -1808,7 +1737,6 @@ public class LoadoutLabPanel extends PluginPanel
 		clearSelection();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
-		refreshDwmsLabel();
 		refreshPinnedLabel();
 		refreshNotePanel();
 	}
@@ -1839,7 +1767,6 @@ public class LoadoutLabPanel extends PluginPanel
 			return; // stale result for a monster the user moved away from
 		}
 		lastResults = results;
-		refreshDwmsLabel();
 		resultsPanel.removeAll();
 		usedSources.clear();
 		// Default collapse: a set a full standard deviation under the best

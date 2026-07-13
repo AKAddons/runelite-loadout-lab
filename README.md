@@ -42,7 +42,8 @@ equipment.
   holds, and STASH units (one read of the chart) are tracked
   automatically - no extra plugin needed. Anything else (cold storage,
   nest storage) can be counted as owned by name, or imported from the
-  Dude, Where's My Stuff plugin.
+  Dude, Where's My Stuff plugin (togglable under the plugin's settings,
+  in the Connections section).
 
 ## Getting started
 

@@ -92,6 +92,9 @@ public class LoadoutLabPlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
+	private LoadoutLabConfig config;
+
+	@Inject
 	private Gson gson;
 
 	@Inject
@@ -187,15 +190,12 @@ public class LoadoutLabPlugin extends Plugin
 			&& DwmsLink.RESPONSE_NAME.equals(event.getName()))
 		{
 			DwmsLink link = dwmsLink;
-			if (link != null && link.accept(event.getData()))
+			if (link != null)
 			{
-				SwingUtilities.invokeLater(() ->
-				{
-					if (panel != null)
-					{
-						panel.dwmsUpdated();
-					}
-				});
+				// The live snapshot feeds the next compute via the ownership
+				// fingerprint; nothing on screen shows it directly anymore
+				// (the connection lives in the config panel now).
+				link.accept(event.getData());
 			}
 			return;
 		}
@@ -332,7 +332,6 @@ public class LoadoutLabPlugin extends Plugin
 					exclusions::toggle, exclusions::snapshot,
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
-					dwmsView(),
 					locationHintView(),
 					mobProfileView(), itemSearchView(),
 					this::ownsCanonical,
@@ -404,6 +403,25 @@ public class LoadoutLabPlugin extends Plugin
 	public void onAccountHashChanged(net.runelite.api.events.AccountHashChanged event)
 	{
 		resetForIdentityChange();
+	}
+
+	/** The Connections toggle changed: effective ownership changed with it,
+	 * so refresh the shown answer (the ownership fingerprint keys the
+	 * optimizer cache - neither direction can serve a stale set). */
+	@Subscribe
+	public void onConfigChanged(net.runelite.client.events.ConfigChanged event)
+	{
+		if (!"loadoutlab".equals(event.getGroup()) || !"useDwmsData".equals(event.getKey()))
+		{
+			return;
+		}
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.recomputeCurrent();
+			}
+		});
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
@@ -771,6 +789,12 @@ public class LoadoutLabPlugin extends Plugin
 	private Map<Integer, Integer> ownedItems()
 	{
 		Map<Integer, Integer> owned = manualOwned.mergeInto(ledger.owned());
+		if (!config.useDwmsData())
+		{
+			// The Connections toggle is off: DWMS-tracked storages do not
+			// count as owned (the stores stay loaded for a live re-enable).
+			return owned;
+		}
 		return dwmsLink.isLive() ? dwmsLink.mergeInto(owned) : dwmsImport.mergeInto(owned);
 	}
 
@@ -782,8 +806,9 @@ public class LoadoutLabPlugin extends Plugin
 	private int ownedFingerprint()
 	{
 		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
-		int dwms = dwmsLink.isLive()
-			? dwmsLink.snapshot().hashCode() : dwmsImport.snapshot().hashCode();
+		int dwms = !config.useDwmsData() ? 0
+			: dwmsLink.isLive()
+				? dwmsLink.snapshot().hashCode() : dwmsImport.snapshot().hashCode();
 		return 31 * fingerprint + dwms;
 	}
 
@@ -822,9 +847,12 @@ public class LoadoutLabPlugin extends Plugin
 			manual.put(id, 1);
 		}
 		origins.put("stored elsewhere", manual);
-		for (Map.Entry<String, Map<Integer, Integer>> family : dwmsImport.families().entrySet())
+		if (config.useDwmsData())
 		{
-			origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
+			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsImport.families().entrySet())
+			{
+				origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
+			}
 		}
 		origins.values().removeIf(Map::isEmpty);
 		return origins;
@@ -1055,7 +1083,7 @@ public class LoadoutLabPlugin extends Plugin
 	 */
 	private void requestDwmsStorages()
 	{
-		if (!dwmsPresent())
+		if (!config.useDwmsData() || !dwmsPresent())
 		{
 			return;
 		}
@@ -1147,83 +1175,6 @@ public class LoadoutLabPlugin extends Plugin
 		writer.start();
 	}
 
-	/** Panel view of the effective DWMS source: live once DWMS replied,
-	 * the config read before then. Null-safe across shutdown. */
-	private LoadoutLabPanel.DwmsView dwmsView()
-	{
-		return new LoadoutLabPanel.DwmsView()
-		{
-			@Override
-			public int count()
-			{
-				DwmsLink link = dwmsLink;
-				DwmsImport imported = dwmsImport;
-				if (link != null && link.isLive())
-				{
-					return link.count();
-				}
-				return imported != null ? imported.count() : 0;
-			}
-
-			@Override
-			public boolean live()
-			{
-				DwmsLink link = dwmsLink;
-				return link != null && link.isLive();
-			}
-
-			@Override
-			public java.awt.image.BufferedImage icon()
-			{
-				return dwmsPluginIcon();
-			}
-		};
-	}
-
-	/** The DWMS icon, loaded once from ITS jar (null until then / on any
-	 * failure). Success-only cache: a miss retries on the next refresh,
-	 * so asking before DWMS registers cannot latch "no icon" forever. */
-	private volatile java.awt.image.BufferedImage dwmsIcon;
-
-	/**
-	 * The running DWMS plugin's own sidebar icon, read through its class's
-	 * resource lookup (plain read-only Class.getResourceAsStream - no
-	 * reflection; path verified in the hub jar: icon-28.png beside the
-	 * plugin class). Null when DWMS is not running or anything about the
-	 * load fails - the provenance line then keeps its text form.
-	 */
-	private java.awt.image.BufferedImage dwmsPluginIcon()
-	{
-		java.awt.image.BufferedImage cached = dwmsIcon;
-		if (cached != null)
-		{
-			return cached;
-		}
-		try
-		{
-			for (Plugin p : pluginManager.getPlugins())
-			{
-				if (!DWMS_PLUGIN_NAME.equals(p.getName()) || !pluginManager.isPluginEnabled(p))
-				{
-					continue;
-				}
-				try (java.io.InputStream in = p.getClass().getResourceAsStream("icon-28.png"))
-				{
-					if (in != null)
-					{
-						dwmsIcon = javax.imageio.ImageIO.read(in);
-					}
-				}
-				break;
-			}
-		}
-		catch (Exception ex)
-		{
-			log.debug("could not load the DWMS icon", ex);
-		}
-		return dwmsIcon;
-	}
-
 	/** Panel hook: set (or clear, with null) the bank-highlighted item ids. */
 	private void setBankHighlight(java.util.Set<Integer> itemIds)
 	{
@@ -1292,8 +1243,11 @@ public class LoadoutLabPlugin extends Plugin
 			// PluginMessage re-request refreshes the live snapshot the same
 			// way (its reply lands after this compute - one-query lag, and
 			// DWMS-tracked storages change rarely).
-			dwmsImport.reload();
-			requestDwmsStorages();
+			if (config.useDwmsData())
+			{
+				dwmsImport.reload();
+				requestDwmsStorages();
+			}
 			long reloadDone = System.nanoTime();
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
