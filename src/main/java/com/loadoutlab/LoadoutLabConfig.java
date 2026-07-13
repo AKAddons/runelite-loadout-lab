@@ -69,14 +69,41 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "displayAssumes",
+		name = "Assumed prayer / boost",
+		description = "Show the assumed prayer and potion/boost the numbers use"
+			+ " (e.g. 'Piety + Super combat'), in the card header and the"
+			+ " game-best section. The cast spell is under 'Attack style / spell'.",
+		section = display,
+		position = 4
+	)
+	default boolean displayAssumes()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "displayDamageTaken",
 		name = "Damage taken per second",
 		description = "Show the incoming-damage line (what the monster does back"
 			+ " to you, prayed and unprayed).",
 		section = display,
-		position = 4
+		position = 5
 	)
 	default boolean displayDamageTaken()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayRiskOnDeath",
+		name = "Risk on death",
+		description = "Show the wilderness 'Risk: X gp (N kept on death)' line on"
+			+ " each set (wilderness monsters only).",
+		section = display,
+		position = 6
+	)
+	default boolean displayRiskOnDeath()
 	{
 		return true;
 	}
@@ -86,7 +113,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Prayer bonus",
 		description = "Show the set's total prayer bonus line.",
 		section = display,
-		position = 5
+		position = 7
 	)
 	default boolean displayPrayerBonus()
 	{
@@ -99,7 +126,7 @@ public interface LoadoutLabConfig extends Config
 		description = "Show the attack-style line (and, on the magic card, the"
 			+ " cast spell).",
 		section = display,
-		position = 6
+		position = 8
 	)
 	default boolean displayAttackStyle()
 	{
@@ -112,7 +139,7 @@ public interface LoadoutLabConfig extends Config
 		description = "Show the collapsible game-best ceiling under each set - the"
 			+ " strongest set in the game and how close yours is.",
 		section = display,
-		position = 7
+		position = 9
 	)
 	default boolean displayGameBest()
 	{
@@ -126,7 +153,7 @@ public interface LoadoutLabConfig extends Config
 			+ " panel for your own reminders. Turning this off hides the note"
 			+ " control; saved notes are kept and reappear when re-enabled.",
 		section = display,
-		position = 8
+		position = 10
 	)
 	default boolean enableNotes()
 	{

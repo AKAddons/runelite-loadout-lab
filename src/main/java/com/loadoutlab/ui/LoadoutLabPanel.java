@@ -133,7 +133,9 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean maxHit;
 		final boolean accuracy;
 		final boolean bonuses;
+		final boolean assumes;
 		final boolean damageTaken;
+		final boolean riskLine;
 		final boolean prayerBonus;
 		final boolean attackStyle;
 		final boolean gameBest;
@@ -142,14 +144,17 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean upgradeBudget;
 		final boolean wildyRisk;
 
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses,
-			boolean damageTaken, boolean prayerBonus, boolean attackStyle, boolean gameBest,
-			boolean notes, boolean spellControls, boolean upgradeBudget, boolean wildyRisk)
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
+			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
+			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
+			boolean wildyRisk)
 		{
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
 			this.bonuses = bonuses;
+			this.assumes = assumes;
 			this.damageTaken = damageTaken;
+			this.riskLine = riskLine;
 			this.prayerBonus = prayerBonus;
 			this.attackStyle = attackStyle;
 			this.gameBest = gameBest;
@@ -161,7 +166,8 @@ public class LoadoutLabPanel extends PluginPanel
 
 		static DisplayOptions all()
 		{
-			return new DisplayOptions(true, true, true, true, true, true, true, true, true, true, true);
+			return new DisplayOptions(true, true, true, true, true, true, true,
+				true, true, true, true, true, true);
 		}
 	}
 
@@ -2137,7 +2143,8 @@ public class LoadoutLabPanel extends PluginPanel
 		// row of vertical space reclaimed per card.
 		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		headerEast.setOpaque(false);
-		if (hasSet && result.boostLabel != null && !result.boostLabel.isEmpty())
+		if (hasSet && displayOptions.assumes
+			&& result.boostLabel != null && !result.boostLabel.isEmpty())
 		{
 			headerEast.add(assumesChips(result.boostLabel,
 				"Assumed prayer + boost (you own these)"));
@@ -2234,7 +2241,10 @@ public class LoadoutLabPanel extends PluginPanel
 				+ " worth trading dps for at this monster");
 			card.add(same);
 		}
-		addRiskLine(card, best, result.specWeapon);
+		if (displayOptions.riskLine)
+		{
+			addRiskLine(card, best, result.specWeapon);
+		}
 		addUpgradeLine(card, best);
 		if (displayOptions.prayerBonus)
 		{
@@ -2286,7 +2296,10 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(ceiling);
 			if (expanded)
 			{
-				addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
+				if (displayOptions.assumes)
+				{
+					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
+				}
 				// Max hit + accuracy for the ceiling set - the header only
 				// carries its DPS, same as the owned card (each gated).
 				String gameHitText = hitAccuracyText(result.overallBest.getMaxHit(),
