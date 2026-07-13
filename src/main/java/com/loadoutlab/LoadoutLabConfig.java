@@ -201,6 +201,32 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "showInBankButton",
+		name = "'Show in bank' button",
+		description = "Show the button that outlines the set's items in your"
+			+ " open bank (uses the Bank Tags plugin).",
+		section = controls,
+		position = 4
+	)
+	default boolean showInBankButton()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showFilterBankButton",
+		name = "'Filter bank' button",
+		description = "Show the button that filters your open bank to only the"
+			+ " set's items (uses the Bank Tags plugin).",
+		section = controls,
+		position = 5
+	)
+	default boolean showFilterBankButton()
+	{
+		return true;
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

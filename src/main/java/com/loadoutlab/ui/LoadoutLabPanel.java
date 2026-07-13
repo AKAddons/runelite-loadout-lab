@@ -143,11 +143,13 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean spellControls;
 		final boolean upgradeBudget;
 		final boolean wildyRisk;
+		final boolean showInBank;
+		final boolean filterBank;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk)
+			boolean wildyRisk, boolean showInBank, boolean filterBank)
 		{
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
@@ -162,12 +164,14 @@ public class LoadoutLabPanel extends PluginPanel
 			this.spellControls = spellControls;
 			this.upgradeBudget = upgradeBudget;
 			this.wildyRisk = wildyRisk;
+			this.showInBank = showInBank;
+			this.filterBank = filterBank;
 		}
 
 		static DisplayOptions all()
 		{
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true);
+				true, true, true, true, true, true, true, true);
 		}
 	}
 
@@ -2262,9 +2266,18 @@ public class LoadoutLabPanel extends PluginPanel
 		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
-		JPanel bankRow = iconRow(card);
-		bankRow.add(bankButton(style, best, result.specWeapon));
-		bankRow.add(bankFilterButton(style, best, result.specWeapon));
+		if (displayOptions.showInBank || displayOptions.filterBank)
+		{
+			JPanel bankRow = iconRow(card);
+			if (displayOptions.showInBank)
+			{
+				bankRow.add(bankButton(style, best, result.specWeapon));
+			}
+			if (displayOptions.filterBank)
+			{
+				bankRow.add(bankFilterButton(style, best, result.specWeapon));
+			}
+		}
 
 		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
 		// The header always shows the summary; clicking it shows/hides the rest.

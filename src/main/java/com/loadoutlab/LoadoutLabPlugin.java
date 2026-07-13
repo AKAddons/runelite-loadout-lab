@@ -456,7 +456,9 @@ public class LoadoutLabPlugin extends Plugin
 			config.enableNotes(),
 			config.showSpellControls(),
 			config.showUpgradeBudget(),
-			config.showWildyRisk());
+			config.showWildyRisk(),
+			config.showInBankButton(),
+			config.showFilterBankButton());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
