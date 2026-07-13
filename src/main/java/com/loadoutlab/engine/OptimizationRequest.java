@@ -392,6 +392,13 @@ public final class OptimizationRequest
 		return copy.build();
 	}
 
+	public OptimizationRequest withSlayerTask(boolean onSlayerTask)
+	{
+		Copy copy = new Copy(this);
+		copy.onSlayerTask = onSlayerTask;
+		return copy.build();
+	}
+
 	public OptimizationRequest withSpell(SpellStats spell)
 	{
 		Copy copy = new Copy(this);

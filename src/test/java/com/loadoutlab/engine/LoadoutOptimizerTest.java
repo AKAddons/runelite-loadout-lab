@@ -122,6 +122,42 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void onTaskBestNeverScoresBelowOffTask()
+	{
+		// Field invariant: being on a slayer task only ADDS the slayer-helm
+		// option, so the on-task best set can never do LESS damage than the
+		// off-task best. The beam breaks this on undead slayer targets - the
+		// salve amulet dominates the exclusive slayer-helm bonus, so the
+		// helm is never worn in the optimum, yet its candidate boost steered
+		// the beam into a helm branch and pruned the salve set's head. The
+		// off-task fold-in guarantees monotonicity. Vorkath and Vet'ion are
+		// undead slayer targets where the raw beam went backwards on ranged.
+		LoadoutData data = new DataService().load();
+		for (String name : new String[]{"vorkath", "vet'ion", "alchemical hydra"})
+		{
+			MonsterStats monster = data.searchMonsters(name, 1).get(0);
+			for (CombatStyle style : CombatStyle.concreteValues())
+			{
+				double off = taskBestDps(data, monster, style, false);
+				double on = taskBestDps(data, monster, style, true);
+				Assert.assertTrue(name + " " + style + ": on-task " + on
+					+ " must be >= off-task " + off, on >= off - 1e-6);
+			}
+		}
+	}
+
+	private static double taskBestDps(LoadoutData data, MonsterStats monster,
+		CombatStyle style, boolean onTask)
+	{
+		OptimizationRequest req = new OptimizationRequest(
+			monster, style, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.ALL_STANDARD, true, onTask, OwnedItems.EMPTY, 1);
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
+		return out.isEmpty() ? 0 : out.get(0).getDps();
+	}
+
+	@Test
 	public void slayerHelmetWinsItsDpsTieWithTheBlackMask()
 	{
 		// Field bug: both give the same on-task melee multiplier, so they

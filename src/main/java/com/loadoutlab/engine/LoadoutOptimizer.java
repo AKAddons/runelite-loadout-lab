@@ -236,7 +236,54 @@ public final class LoadoutOptimizer
 		{
 			return optimizeAny(data, request);
 		}
-		return optimize(data, request, preparePools(data, request));
+		List<DpsResult> results = optimize(data, request, preparePools(data, request));
+		return request.isOnSlayerTask()
+			? guaranteeTaskMonotone(data, request, results)
+			: results;
+	}
+
+	/**
+	 * Being on a slayer task can only ADD an option - the imbued slayer
+	 * helm's accuracy bonus - so the on-task best set must never score below
+	 * the off-task best (field-reported invariant). The beam is a heuristic
+	 * and can break this: on an UNDEAD slayer target the salve amulet's
+	 * bonus DOMINATES the exclusive slayer-helm bonus, so the helm is never
+	 * actually worn in the optimum, yet its candidate boost steers the beam
+	 * into a slayer-helm branch and prunes the raw-stat head the salve set
+	 * wants. No beam ORDER fixes this in general (reordering just relocates
+	 * the violation). The guarantee: the off-task optimum is always legal
+	 * on task at the same dps, so fold the off-task search in and re-rank.
+	 * Off-task sets never wear a bonus helm, so their dps is task-invariant
+	 * (no recompute needed).
+	 */
+	private List<DpsResult> guaranteeTaskMonotone(LoadoutData data,
+		OptimizationRequest request, List<DpsResult> onTask)
+	{
+		OptimizationRequest offRequest = request.withSlayerTask(false);
+		List<DpsResult> offTask = optimize(data, offRequest, preparePools(data, offRequest));
+		if (offTask.isEmpty())
+		{
+			return onTask;
+		}
+		List<DpsResult> merged = new ArrayList<>(onTask);
+		Set<String> seen = new HashSet<>();
+		for (DpsResult r : onTask)
+		{
+			seen.add(signature(r.getLoadout()));
+		}
+		for (DpsResult r : offTask)
+		{
+			if (seen.add(signature(r.getLoadout())))
+			{
+				merged.add(r);
+			}
+		}
+		merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
+			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
+			.thenComparingLong(r -> -setUtility(r.getLoadout()))
+			.thenComparingInt(DpsResult::getPurchaseCost));
+		return merged.size() > request.getResultLimit()
+			? new ArrayList<>(merged.subList(0, request.getResultLimit())) : merged;
 	}
 
 	/**
