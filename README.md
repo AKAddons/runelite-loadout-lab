@@ -281,6 +281,11 @@ it may ride a kept slot (a protected slayer helmet is standard
 practice), but if it would be lost or broken it is swapped out of the
 suggestion entirely, no matter the risk cap.
 
+You can extend that treatment to any item yourself: right-click a
+suggestion shown with the death skull and pick "Only bring if protected
+on death". The optimizer then keeps that item protected or leaves it out
+of the set - never risking it - just like the rebuild-friction gear.
+
 ![Wilderness low-risk sets](docs/img/wilderness-risk.png)
 
 ### Revenant and wilderness gear conditionals

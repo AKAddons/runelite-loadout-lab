@@ -207,12 +207,29 @@ public final class PvpRisk
 	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
 		java.util.Set<Integer> pinnedIds)
 	{
-		boolean anyFriction = UntradeableDeathCosts.frictionFor(carriedSpecWeapon) > 0;
+		return risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
+			java.util.Collections.emptySet());
+	}
+
+	/**
+	 * True when this set would leave a MUST-PROTECT item unprotected (in the
+	 * lost pile / paying a fee). Must-protect covers two sources, unified in
+	 * one pass: engine friction (the salve line, imbued gear - see
+	 * risksRebuild's contract) and the player's own "only bring if protected
+	 * on death" flag (protectOnlyIds - a plain tradeable they refuse to
+	 * risk). A PINNED item is the player's explicit pick and never vetoes.
+	 * Same lean ranking as the friction-only path, asserted against
+	 * risksRebuild in PvpRiskTest for the no-flag case.
+	 */
+	public static boolean risksUnprotected(Loadout loadout, GearItem carriedSpecWeapon,
+		int keptSlots, java.util.Set<Integer> pinnedIds, java.util.Set<Integer> protectOnlyIds)
+	{
+		boolean anyProtected = mustProtect(carriedSpecWeapon, pinnedIds, protectOnlyIds);
 		for (GearSlot slot : GearSlot.values())
 		{
-			anyFriction |= UntradeableDeathCosts.frictionFor(loadout.get(slot)) > 0;
+			anyProtected |= mustProtect(loadout.get(slot), pinnedIds, protectOnlyIds);
 		}
-		if (!anyFriction)
+		if (!anyProtected)
 		{
 			return false;
 		}
@@ -220,20 +237,20 @@ public final class PvpRisk
 		// A worn set is at most 11 items + the carried spec weapon.
 		long[] values = new long[12];
 		int count = 0;
-		// Bit i set = pool item i carries unpinned rebuild friction.
+		// Bit i set = pool item i is an unpinned must-protect item.
 		int frictionAt = 0;
 		for (GearSlot slot : GearSlot.values())
 		{
 			GearItem item = loadout.get(slot);
-			int fate = offerRebuild(item, values, count, pinnedIds);
+			int fate = offerRebuild(item, values, count, pinnedIds, protectOnlyIds);
 			if (fate < 0)
 			{
-				return true; // unpinned charge-class friction: never protectable
+				return true; // unpinned non-poolable must-protect: never kept
 			}
 			frictionAt |= (fate & 1) << count;
 			count += fate >> 1;
 		}
-		int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds);
+		int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds, protectOnlyIds);
 		if (fate < 0)
 		{
 			return true;
@@ -267,30 +284,43 @@ public final class PvpRisk
 		return false;
 	}
 
+	/** An unpinned item the set is required to protect - engine friction
+	 * (salve line) OR the player's protect-only flag. */
+	private static boolean mustProtect(GearItem item, java.util.Set<Integer> pinnedIds,
+		java.util.Set<Integer> protectOnlyIds)
+	{
+		if (item == null || pinnedIds.contains(item.getId()))
+		{
+			return false;
+		}
+		return UntradeableDeathCosts.frictionFor(item) > 0
+			|| protectOnlyIds.contains(item.getId());
+	}
+
 	/**
-	 * risksRebuild's per-item step. Returns -1 when the item is an UNPINNED
-	 * charge-class friction item (instant veto); otherwise a two-bit code:
-	 * bit1 = "joined the pool at values[count]", bit0 = "and carries
-	 * unpinned friction" (0 = not poolable, contributes nothing).
+	 * risksUnprotected's per-item step. Returns -1 when the item is an
+	 * UNPINNED non-poolable must-protect item (instant veto - it can never
+	 * ride a kept slot); otherwise a two-bit code: bit1 = "joined the pool
+	 * at values[count]", bit0 = "and is an unpinned must-protect item"
+	 * (0 = not poolable, contributes nothing).
 	 */
 	private static int offerRebuild(GearItem item, long[] values, int count,
-		java.util.Set<Integer> pinnedIds)
+		java.util.Set<Integer> pinnedIds, java.util.Set<Integer> protectOnlyIds)
 	{
 		if (item == null)
 		{
 			return 0;
 		}
 		long value = poolValue(item);
-		boolean friction = UntradeableDeathCosts.frictionFor(item) > 0
-			&& !pinnedIds.contains(item.getId());
+		boolean protect = mustProtect(item, pinnedIds, protectOnlyIds);
 		if (value < 0)
 		{
 			// Mirror sort(): non-poolable items become Charges (fees apply
-			// regardless of protection) - friction there is always a veto.
-			return friction ? -1 : 0;
+			// regardless of protection) - a must-protect one is a veto.
+			return protect ? -1 : 0;
 		}
 		values[count] = value;
-		return friction ? 3 : 2;
+		return protect ? 3 : 2;
 	}
 
 	/**

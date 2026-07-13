@@ -256,7 +256,8 @@ public class OptimizerService
 		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			byStyle, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell, callback);
+			upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell,
+			Collections.<Integer>emptySet(), callback);
 	}
 
 	public void bestPerStyle(
@@ -279,6 +280,7 @@ public class OptimizerService
 		OptimizeMode mode,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
+		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
@@ -287,6 +289,8 @@ public class OptimizerService
 			? Collections.emptyMap() : excludedByStyle;
 		final Set<Integer> dreams = dreamItems == null
 			? Collections.emptySet() : dreamItems;
+		final Set<Integer> protectOnly = protectOnlyItems == null
+			? Collections.emptySet() : protectOnlyItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
 		final PrayerUnlocks unlocks = prayerUnlocks == null
@@ -300,6 +304,7 @@ public class OptimizerService
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
+			+ "|" + protectOnly.hashCode()
 			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
@@ -388,6 +393,7 @@ public class OptimizerService
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
 					.withDreamItems(dreams)
+					.withProtectOnlyItems(protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
 					.withPinnedItems(pins.getOrDefault(style, Collections.emptyMap()));
@@ -431,7 +437,8 @@ public class OptimizerService
 					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
 					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
-					.withAntifirePotion(antifirePotion);
+					.withAntifirePotion(antifirePotion)
+					.withProtectOnlyItems(protectOnly);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
@@ -701,8 +708,8 @@ public class OptimizerService
 			if (request.isRiskConstrained()
 				&& (PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
 						request.getMaxTradeables()) > riskCapGp
-					|| PvpRisk.risksRebuild(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables(), pinnedIds)))
+					|| PvpRisk.risksUnprotected(baseResults.get(0).getLoadout(), item,
+						request.getMaxTradeables(), pinnedIds, request.getProtectOnlyItems())))
 			{
 				continue;
 			}

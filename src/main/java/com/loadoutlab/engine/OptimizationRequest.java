@@ -48,6 +48,10 @@ public final class OptimizationRequest
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
 	 * vetoes all yield to the pin, while risk totals stay honest. */
 	private final Map<GearSlot, Integer> pinnedItems;
+	/** Items the player will bring ONLY if protected on death - a low-risk
+	 * set that leaves one in the lost pile is vetoed (same as the salve-line
+	 * friction veto, but user-chosen). Empty = no such constraint. */
+	private final Set<Integer> protectOnlyItems;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -96,6 +100,7 @@ public final class OptimizationRequest
 		this.dreamItems = Collections.emptySet();
 		this.defenseWeight = 0;
 		this.pinnedItems = Collections.emptyMap();
+		this.protectOnlyItems = Collections.emptySet();
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -130,6 +135,7 @@ public final class OptimizationRequest
 		private Set<Integer> dreamItems;
 		private double defenseWeight;
 		private Map<GearSlot, Integer> pinnedItems;
+		private Set<Integer> protectOnlyItems;
 
 		private Copy(OptimizationRequest base)
 		{
@@ -153,6 +159,7 @@ public final class OptimizationRequest
 			dreamItems = base.dreamItems;
 			defenseWeight = base.defenseWeight;
 			pinnedItems = base.pinnedItems;
+			protectOnlyItems = base.protectOnlyItems;
 		}
 
 		private OptimizationRequest build()
@@ -183,11 +190,25 @@ public final class OptimizationRequest
 		this.dreamItems = copy.dreamItems == null ? Collections.emptySet() : copy.dreamItems;
 		this.defenseWeight = copy.defenseWeight;
 		this.pinnedItems = copy.pinnedItems == null ? Collections.emptyMap() : copy.pinnedItems;
+		this.protectOnlyItems = copy.protectOnlyItems == null ? Collections.emptySet() : copy.protectOnlyItems;
 	}
 
 	public Set<Integer> getExcludedItems()
 	{
 		return excludedItems;
+	}
+
+	/** Items to bring only when protected on death (see the field doc). */
+	public Set<Integer> getProtectOnlyItems()
+	{
+		return protectOnlyItems;
+	}
+
+	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids)
+	{
+		Copy copy = new Copy(this);
+		copy.protectOnlyItems = ids;
+		return copy.build();
 	}
 
 	public boolean isExcluded(int itemId)

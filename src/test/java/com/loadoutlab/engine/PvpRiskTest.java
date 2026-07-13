@@ -383,6 +383,60 @@ public class PvpRiskTest
 	}
 
 	@Test
+	public void protectOnlyItemsAreVetoedWhenTheyLandInTheLostPile()
+	{
+		// User flag "only bring if protected on death": a plain tradeable
+		// with no friction is normally fine to risk, but once flagged the
+		// set is vetoed exactly when the item ranks OUTSIDE the kept slots.
+		java.util.Set<Integer> flag = java.util.Set.of(2);
+		java.util.Set<Integer> noPins = java.util.Collections.emptySet();
+
+		// Kept: the flagged body ranks into the top-3, so it is protected.
+		Loadout kept = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			item(2, GearSlot.BODY, true, 80),
+			item(3, GearSlot.LEGS, true, 60));
+		Assert.assertFalse("protected flagged item is fine",
+			PvpRisk.risksUnprotected(kept, null, 3, noPins, flag));
+
+		// Displaced: pricier gear pushes the flagged body into the lost pile.
+		Loadout lost = worn(
+			item(1, GearSlot.WEAPON, true, 100_000_000),
+			item(4, GearSlot.LEGS, true, 50_000_000),
+			item(5, GearSlot.HEAD, true, 20_000_000),
+			item(2, GearSlot.BODY, true, 80));
+		Assert.assertTrue("flagged item in the lost pile vetoes the set",
+			PvpRisk.risksUnprotected(lost, null, 3, noPins, flag));
+
+		// A pinned flagged item is the player's explicit pick - never vetoes.
+		Assert.assertFalse("pinned overrides the protect-only flag",
+			PvpRisk.risksUnprotected(lost, null, 3, java.util.Set.of(2), flag));
+
+		// Unflagged: the same displaced set is perfectly legal.
+		Assert.assertFalse("unflagged tradeables may be risked",
+			PvpRisk.risksUnprotected(lost, null, 3, noPins, noPins));
+	}
+
+	@Test
+	public void protectOnlyStacksWithTheFrictionVeto()
+	{
+		// Both vetoes live in the same pass: a salve (friction) AND a
+		// separately-flagged tradeable in the lost pile each trip it.
+		java.util.Set<Integer> noPins = java.util.Collections.emptySet();
+		Loadout salveSet = worn(
+			item(1, GearSlot.WEAPON, true, 100),
+			untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE));
+		Assert.assertTrue("friction alone still vetoes with an empty flag set",
+			PvpRisk.risksUnprotected(salveSet, null, 3, noPins, noPins));
+
+		// The lean protect-only path must agree with risksRebuild for the
+		// pure-friction case (no user flags).
+		Assert.assertEquals(
+			PvpRisk.risksRebuild(salveSet, null, 3, noPins),
+			PvpRisk.risksUnprotected(salveSet, null, 3, noPins, noPins));
+	}
+
+	@Test
 	public void gpFormattingReadsLikeAPlayerWouldSayIt()
 	{
 		Assert.assertEquals("950", PvpRisk.formatGp(950));

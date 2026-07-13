@@ -114,6 +114,15 @@ public class LoadoutLabPanel extends PluginPanel
 		Set<Integer> snapshot();
 	}
 
+	/** Toggle an item's "only bring if protected on death" flag (wilderness
+	 * low-risk sets); returns true when the flag is now set. */
+	public interface ProtectOnlyToggle
+	{
+		boolean toggle(int itemId);
+
+		boolean isProtectOnly(int itemId);
+	}
+
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
 	public interface DreamToggle
 	{
@@ -280,6 +289,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final ComputeHook computeHook;
 	private final ExclusionToggle exclusionToggle;
 	private final ExclusionView exclusionView;
+	private final ProtectOnlyToggle protectOnlyToggle;
 	private final DreamToggle dreamToggle;
 	private final DreamView dreamView;
 	private final StoredToggle storedToggle;
@@ -399,6 +409,7 @@ public class LoadoutLabPanel extends PluginPanel
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
 		ExclusionToggle exclusionToggle, ExclusionView exclusionView,
+		ProtectOnlyToggle protectOnlyToggle,
 		DreamToggle dreamToggle, DreamView dreamView,
 		StoredToggle storedToggle, StoredView storedView,
 		LocationHint locationHint, MobProfile mobProfile, ItemSearch itemSearch,
@@ -407,6 +418,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		this.bankHighlighter = bankHighlighter;
 		this.bankFilter = bankFilter;
+		this.protectOnlyToggle = protectOnlyToggle;
 		this.data = data;
 		this.itemManager = itemManager;
 		this.spriteManager = spriteManager;
@@ -1516,17 +1528,26 @@ public class LoadoutLabPanel extends PluginPanel
 	 * container weapon (blowpipe) also offers its loaded ammo. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items)
 	{
-		attachExclusionMenu(cell, items, Collections.emptyList(), null, null);
+		attachExclusionMenu(cell, items, Collections.emptyList(), null, null, Collections.emptySet());
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
 		List<JMenuItem> extras)
 	{
-		attachExclusionMenu(cell, items, extras, null, null);
+		attachExclusionMenu(cell, items, extras, null, null, Collections.emptySet());
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
 		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot, CombatStyle pinStyle)
+	{
+		attachExclusionMenu(cell, items, extras, pinSlot, pinStyle, Collections.emptySet());
+	}
+
+	/** lostIds: item ids currently shown with the death skull (dropped on
+	 * death) - the "only bring if protected" flag is offered for those. */
+	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
+		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot, CombatStyle pinStyle,
+		Set<Integer> lostIds)
 	{
 		cell.addMouseListener(new MouseAdapter()
 		{
@@ -1591,6 +1612,24 @@ public class LoadoutLabPanel extends PluginPanel
 						}
 					}
 					menu.add(excludeMenu);
+					// Wilderness low-risk: an item shown with the death skull
+					// (dropped) can be flagged "only bring if protected" - the
+					// optimizer then keeps it or omits it, never risks it.
+					// Also offered while already flagged, to turn it back off.
+					boolean flagged = protectOnlyToggle != null
+						&& protectOnlyToggle.isProtectOnly(item.getId());
+					if (protectOnlyToggle != null && (lostIds.contains(item.getId()) || flagged))
+					{
+						JMenuItem protect = new JMenuItem(flagged
+							? "Allow " + item.label() + " unprotected again"
+							: "Only bring " + item.label() + " if protected on death");
+						protect.addActionListener(a ->
+						{
+							protectOnlyToggle.toggle(item.getId());
+							recompute();
+						});
+						menu.add(protect);
+					}
 					// Unowned items can be dreamed into the owned pool
 					// (and undreamed).
 					boolean stored = storedView.snapshot().contains(item.getId());
@@ -2961,7 +3000,11 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					menuItems.add(dart);
 				}
-				attachExclusionMenu(slot, menuItems, extras, slotType, renderingStyle);
+				// Offer the protect-only flag on this cell only when the item
+				// is dropped-on-death in the current wilderness set.
+				Set<Integer> lostHere = fates != null && containsId(fates.lost, item)
+					? Collections.singleton(item.getId()) : Collections.emptySet();
+				attachExclusionMenu(slot, menuItems, extras, slotType, renderingStyle, lostHere);
 			}
 			else
 			{

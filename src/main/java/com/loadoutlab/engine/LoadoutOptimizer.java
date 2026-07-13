@@ -69,10 +69,12 @@ public final class LoadoutOptimizer
 		// were recomputed - EnumMap, Loadout, riskGp - per candidate).
 		long riskCapGp = 0;
 		Set<Integer> pinnedIds = Collections.emptySet();
+		Set<Integer> protectOnly = Collections.emptySet();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
 			pinnedIds = pinnedIds(request);
+			protectOnly = request.getProtectOnlyItems();
 		}
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
 		DpsResult current = result;
@@ -133,8 +135,8 @@ public final class LoadoutOptimizer
 				// boots) sits below them - it starved behind the cap.
 				if (request.isRiskConstrained()
 					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables()) > riskCapGp
-						|| PvpRisk.risksRebuild(trial, null, request.getMaxTradeables(),
-							pinnedIds)))
+						|| PvpRisk.risksUnprotected(trial, null, request.getMaxTradeables(),
+							pinnedIds, protectOnly)))
 				{
 					continue;
 				}
@@ -358,10 +360,12 @@ public final class LoadoutOptimizer
 		// recomputed - EnumMap, Loadout, riskGp, a HashSet - per trial).
 		long riskCapGp = 0;
 		Set<Integer> pinnedIds = Collections.emptySet();
+		Set<Integer> protectOnly = Collections.emptySet();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
 			pinnedIds = pinnedIds(request);
+			protectOnly = request.getProtectOnlyItems();
 		}
 		for (GearItem weapon : weapons)
 		{
@@ -430,8 +434,8 @@ public final class LoadoutOptimizer
 							// the effective budget by their own risk floor:
 							// the cap constrains the rest of the set.
 							if (riskGp > riskCapGp
-								|| PvpRisk.risksRebuild(loadout, null, request.getMaxTradeables(),
-									pinnedIds))
+								|| PvpRisk.risksUnprotected(loadout, null, request.getMaxTradeables(),
+									pinnedIds, protectOnly))
 							{
 								continue;
 							}

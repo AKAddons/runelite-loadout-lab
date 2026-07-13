@@ -126,6 +126,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
+	private com.loadoutlab.collection.ProtectOnlyStore protectOnly;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
 	private volatile java.util.Set<Integer> bankHighlight;
 	/** "Filter bank": a VIRTUAL bank tag (never persisted to the player's
@@ -296,6 +297,7 @@ public class LoadoutLabPlugin extends Plugin
 		log.info("[LL-PERF] instrumentation active, debugEnabled={}", log.isDebugEnabled());
 		ledger = new CollectionLedger(configManager, gson);
 		exclusions = new ExclusionStore(configManager, gson);
+		protectOnly = new com.loadoutlab.collection.ProtectOnlyStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
@@ -330,6 +332,7 @@ public class LoadoutLabPlugin extends Plugin
 				optimizerService = new OptimizerService(loaded);
 				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
 					exclusions::toggle, exclusions::snapshot,
+					protectOnlyView(),
 					dreams::toggle, dreams::snapshot,
 					manualOwned::toggle, manualOwned::snapshot,
 					locationHintView(),
@@ -378,6 +381,7 @@ public class LoadoutLabPlugin extends Plugin
 		data = null;
 		ledger = null;
 		exclusions = null;
+		protectOnly = null;
 		manualOwned = null;
 		mobProfiles = null;
 		dwmsImport = null;
@@ -431,6 +435,10 @@ public class LoadoutLabPlugin extends Plugin
 		if (exclusions != null)
 		{
 			exclusions.reload();
+		}
+		if (protectOnly != null)
+		{
+			protectOnly.reload();
 		}
 		if (dreams != null)
 		{
@@ -889,6 +897,25 @@ public class LoadoutLabPlugin extends Plugin
 		return byStyle;
 	}
 
+	/** Panel hook: the "only bring if protected on death" flag store. */
+	private LoadoutLabPanel.ProtectOnlyToggle protectOnlyView()
+	{
+		return new LoadoutLabPanel.ProtectOnlyToggle()
+		{
+			@Override
+			public boolean toggle(int itemId)
+			{
+				return protectOnly != null && protectOnly.toggle(itemId);
+			}
+
+			@Override
+			public boolean isProtectOnly(int itemId)
+			{
+				return protectOnly != null && protectOnly.isProtectOnly(itemId);
+			}
+		};
+	}
+
 	/** Effective exclusions per style: the global list unioned with this
 	 * mob's ALL + style scopes. Styles with no mob exclusions share the
 	 * global set instance, so their cache keys stay stable. */
@@ -1318,6 +1345,7 @@ public class LoadoutLabPlugin extends Plugin
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
 				dreams.snapshot(), upgradeBudgetGp, mode,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
+				protectOnly.snapshot(),
 				results ->
 				{
 					long delivered = System.nanoTime();

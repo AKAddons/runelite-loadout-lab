@@ -30,6 +30,20 @@ public class LinkInTest
 			(monster, f2p, slayer, book, maxTradeables, riskBudget, antifire, budget, mode, onDone) -> computed.set(monster),
 			itemId -> false,
 			java.util.Collections::emptySet,
+			new LoadoutLabPanel.ProtectOnlyToggle()
+			{
+				@Override
+				public boolean toggle(int itemId)
+				{
+					return false;
+				}
+
+				@Override
+				public boolean isProtectOnly(int itemId)
+				{
+					return false;
+				}
+			},
 			itemId -> false,
 			java.util.Collections::emptySet,
 			itemId -> false,

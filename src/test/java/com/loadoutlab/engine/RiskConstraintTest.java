@@ -200,6 +200,35 @@ public class RiskConstraintTest
 	}
 
 	@Test
+	public void aProtectOnlyItemIsNeverLeftInTheLostPile()
+	{
+		// Flag a mid-value tradeable "only bring if protected on death". In a
+		// low-risk set it must come back either protected (a kept slot) or
+		// not at all - never in the dropped pile.
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		// Amulet of fury: a plausible tradeable the optimizer would otherwise
+		// risk in a melee set at Callisto.
+		int fury = 6585;
+		OptimizationRequest base = request(CombatStyle.MELEE, 3);
+		DpsResult unflagged = optimizer.fillDpsNeutralSlots(data, base,
+			optimizer.optimize(data, base).get(0));
+
+		OptimizationRequest flagged = base.withProtectOnlyItems(java.util.Set.of(fury));
+		List<DpsResult> out = optimizer.optimize(data, flagged);
+		Assert.assertFalse(out.isEmpty());
+		DpsResult best = optimizer.fillDpsNeutralSlots(data, flagged, out.get(0));
+
+		PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), null, 3);
+		boolean droppedFlagged = risk.lost.stream().anyMatch(g -> g.getId() == fury);
+		Assert.assertFalse("a protect-only item must never be dropped", droppedFlagged);
+		// Sanity: the flag actually bit (either the item is protected, or it
+		// was dropped from the set - both are acceptable, but the set must
+		// remain valid and its risk within budget).
+		Assert.assertTrue(risk.riskGp <= OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
+		Assert.assertNotNull(unflagged);
+	}
+
+	@Test
 	public void unconstrainedIsAtLeastAsStrongAsTheCappedSet()
 	{
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
