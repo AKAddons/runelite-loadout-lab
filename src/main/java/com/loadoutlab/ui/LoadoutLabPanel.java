@@ -539,9 +539,12 @@ public class LoadoutLabPanel extends PluginPanel
 		// Selected-monster row: replaces the dropdown once a pick is made.
 		selectedRow.setOpaque(false);
 		selectedRow.setAlignmentX(LEFT_ALIGNMENT);
-		selectedRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		// Height follows content: a long monster name wraps to a second line
+		// rather than clipping (was capped at one 26px row).
+		selectedRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 		selectedLabel.setForeground(GOOD);
 		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
+		selectedLabel.setVerticalAlignment(SwingConstants.TOP);
 		selectedRow.add(selectedLabel, BorderLayout.CENTER);
 		JButton reloadButton = new JButton(new ReloadIcon(12));
 		reloadButton.setMargin(new Insets(0, 6, 0, 6));
@@ -796,6 +799,12 @@ public class LoadoutLabPanel extends PluginPanel
 		return line;
 	}
 
+	/** Minimal HTML escape for text going into an html-rendered JLabel. */
+	private static String escapeHtml(String text)
+	{
+		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	}
+
 	/** "Max hit N - X% accuracy", either half omitted per the display gates;
 	 * "" when both are off. */
 	private String hitAccuracyText(int maxHit, double accuracy)
@@ -976,7 +985,12 @@ public class LoadoutLabPanel extends PluginPanel
 			slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		}
 		usageLog.record(monster.label());
-		selectedLabel.setText("vs " + monster.label());
+		// html so a long name/level wraps to a second line instead of
+		// clipping to "..." in the fixed-width BorderLayout centre (the body
+		// width leaves room for the reload/close buttons beside it).
+		selectedLabel.setText("<html><body style='width:140px'>vs "
+			+ escapeHtml(monster.label()) + "</body></html>");
+		selectedLabel.setToolTipText(monster.label());
 		selectedRow.setVisible(true);
 		String note = MonsterNotes.noteFor(monster);
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
