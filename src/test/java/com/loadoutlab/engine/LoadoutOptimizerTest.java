@@ -181,6 +181,62 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void theFillPassUpgradesFilledSlotsToHigherUtilityStatTies()
+	{
+		// Field bug two: game best showed the Blood moon chestplate over the
+		// Torva platebody. They tie EXACTLY on DPS (the +2 str floors away),
+		// but the beam's cost tie-break starves the expensive branch at the
+		// width cut, so the results sort never sees a Torva set. The fill
+		// pass must repair the DISPLAYED set: same DPS, higher utility
+		// (prayer + defence) wins the slot.
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
+		GearItem torva = data.getGear(nameToId(data, "torva platebody"));
+		GearItem bloodMoon = null;
+		for (GearItem item : data.getGearItems())
+		{
+			if (item.getName().equalsIgnoreCase("blood moon chestplate")
+				&& "new".equalsIgnoreCase(item.getVersion()))
+			{
+				bloodMoon = item;
+				break;
+			}
+		}
+		Assert.assertNotNull(bloodMoon);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1); // whip
+		owned.put(torva.getId(), 1);
+		owned.put(bloodMoon.getId(), 1);
+		OptimizationRequest request = new OptimizationRequest(
+			monster,
+			CombatStyle.MELEE,
+			PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+			null,
+			0,
+			CandidateMode.OWNED_ONLY,
+			true,
+			false,
+			new OwnedItems(owned, true),
+			10);
+
+		// A displayed set that carries the blood moon chest (as the beam can
+		// produce): the fill pass must swap in the Torva at unchanged DPS.
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
+		gear.put(GearSlot.WEAPON, data.getGear(4151));
+		gear.put(GearSlot.BODY, bloodMoon);
+		DpsResult shown = new DpsCalculator().calculate(request, new Loadout(gear));
+		Assert.assertNotNull(shown);
+
+		DpsResult polished = optimizer.fillDpsNeutralSlots(data, request, shown);
+		Assert.assertEquals("the swap must not change the DPS",
+			shown.getDps(), polished.getDps(), 1e-9);
+		Assert.assertEquals("the higher-utility stat tie must win the body slot",
+			torva.getId(), polished.getLoadout().get(GearSlot.BODY).getId());
+	}
+
+	@Test
 	public void ownedGearDoesNotConsumePurchaseBudget()
 	{
 		LoadoutData data = new DataService().load();

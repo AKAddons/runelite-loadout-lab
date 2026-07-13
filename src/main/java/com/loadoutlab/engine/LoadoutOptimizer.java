@@ -45,12 +45,18 @@ public final class LoadoutOptimizer
 	private final DpsCalculator calculator = new DpsCalculator();
 
 	/**
-	 * Fill DPS-neutral empty slots: when no item can add damage, prefer
-	 * prayer bonus, then total defensive bonuses. A candidate survives only
-	 * if the recomputed DPS did not drop (negative style bonuses can cost
-	 * accuracy). Candidates respect the request's owned/budget mode - so a
-	 * best-owned set only fills from the bank, the game-best set from
-	 * everything.
+	 * DPS-neutral set polish: fill empty slots AND upgrade filled ones to
+	 * higher-utility stat ties - prefer prayer bonus, then total defensive
+	 * bonuses. A candidate survives only if the recomputed DPS did not drop
+	 * (negative style bonuses can cost accuracy). Candidates respect the
+	 * request's owned/budget mode - so a best-owned set only draws from the
+	 * bank, the game-best set from everything.
+	 *
+	 * <p>The filled-slot upgrade exists because the BEAM cannot promise the
+	 * best of an exact DPS tie: its width cut breaks ties on cost, so a
+	 * cheap-but-flimsy body (blood moon) could starve the Torva branch out
+	 * of the search entirely (field report). Repairing the DISPLAYED set
+	 * here is deterministic and cannot disturb the search.
 	 */
 	public DpsResult fillDpsNeutralSlots(LoadoutData data, OptimizationRequest request, DpsResult result)
 	{
@@ -68,10 +74,12 @@ public final class LoadoutOptimizer
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
 			pinnedIds = pinnedIds(request);
 		}
+		boolean dragonShield = DragonfireRules.shieldRequired(request);
 		DpsResult current = result;
 		for (GearSlot slot : GearSlot.values())
 		{
-			if (slot == GearSlot.WEAPON || current.getLoadout().get(slot) != null)
+			// A pinned slot is the player's explicit choice - never swapped.
+			if (slot == GearSlot.WEAPON || request.pinnedFor(slot) != null)
 			{
 				continue;
 			}
@@ -80,15 +88,21 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
+			GearItem worn = current.getLoadout().get(slot);
+			// Only a strictly better utility can justify touching the slot.
+			long wornUtility = worn == null ? 0 : utilityScore(worn);
 			List<GearItem> options = new ArrayList<>();
 			for (GearItem item : data.getGearItems(slot))
 			{
 				if (!item.isStandardGear() || data.isVariant(item.getId())
 					|| request.isExcluded(item.getId())
-					|| utilityScore(item) <= 0
+					|| utilityScore(item) <= wornUtility
 					|| !request.getRequirementProfile().canEquip(item.getRequirements())
 					|| !allowedByMode(request, item)
-					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon)))
+					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon))
+					// Dragonfire gear mode: never swap the protection away.
+					|| (dragonShield && slot == GearSlot.SHIELD
+						&& !DragonfireRules.isProtectiveShield(item)))
 				{
 					continue;
 				}
@@ -102,6 +116,14 @@ public final class LoadoutOptimizer
 			int tried = 0;
 			for (GearItem item : options)
 			{
+				// Swap accounting: the replaced item's spend comes back.
+				int cost = (int) Math.min(Integer.MAX_VALUE,
+					(long) current.getPurchaseCost() - budgetCost(request, worn)
+						+ budgetCost(request, item));
+				if (!withinBudget(request, cost))
+				{
+					continue;
+				}
 				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
 				gear.put(slot, item);
 				Loadout trial = Loadout.adopting(gear);
@@ -123,8 +145,7 @@ public final class LoadoutOptimizer
 				DpsResult candidate = bestSpellResult(request, trial, spellContext);
 				if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
 				{
-					current = candidate.withPurchaseCost(
-						current.getPurchaseCost() + budgetCost(request, item));
+					current = candidate.withPurchaseCost(cost);
 					break;
 				}
 			}
