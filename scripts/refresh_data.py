@@ -46,6 +46,19 @@ RES_DIR = os.path.join(
 NONSTANDARD_VERSIONS = {"inactive", "broken", "locked"}
 NONSTANDARD_NAME_MARKS = ("(deadman)", "(beta)", "(bh)", "(dmm)")
 
+# Ids best-dps froze as non-standard while unreleased that are now live,
+# usable gear. The preserve rule would keep the stale False forever, so
+# these WIN over both preserve and the heuristic. Verified against the
+# wiki (released, tradeable, ordinary equip). Oathplate is a slash-
+# accuracy set with NO passive (wiki-confirmed 2026-07); it earns its
+# place on raw stats, it just has to be allowed into the pool first.
+STANDARD_OVERRIDES = {
+    30750: "Oathplate helm",
+    30753: "Oathplate chest",
+    30756: "Oathplate legs",
+    31106: "Confliction gauntlets",
+}
+
 
 def fetch(url, cache_dir, cache_name):
     path = os.path.join(cache_dir, cache_name)
@@ -128,8 +141,10 @@ def build_gear(wg_equipment, mapping_by_id, latest_by_id, old_by_id):
             "lowTime": price.get("lowTime"),
             "estimatedPrice": estimated,
             "priceSource": source,
-            # Curated usable-state flag: preserve; heuristic for new ids.
-            "isStandardGear": (old["isStandardGear"] if old is not None
+            # Curated usable-state flag: an explicit override wins (stale
+            # pre-release Falses); else preserve; else heuristic for new ids.
+            "isStandardGear": (True if item_id in STANDARD_OVERRIDES
+                               else old["isStandardGear"] if old is not None
                                else default_standard(row.get("name"), row.get("version"))),
         }
         result.append(out)

@@ -46,6 +46,24 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void releasedYamaGearIsStandardNotFrozenOffAsPreRelease()
+	{
+		// Field report: oathplate never appeared. best-dps froze these ids
+		// non-standard while unreleased and the refresh preserved the stale
+		// False, so they were filtered out of every candidate pool. Now
+		// live, tradeable, ordinary equip - the refresh override forces them
+		// standard (see scripts/refresh_data.py STANDARD_OVERRIDES).
+		LoadoutData data = new DataService().load();
+		for (int id : new int[]{30750, 30753, 30756, 31106})
+		{
+			GearItem item = data.getGear(id);
+			Assert.assertNotNull("missing gear id " + id, item);
+			Assert.assertTrue(item.getName() + " must be standard gear",
+				item.isStandardGear());
+		}
+	}
+
+	@Test
 	public void snapshotContainsPostMay2026Content()
 	{
 		LoadoutData data = new DataService().load();
