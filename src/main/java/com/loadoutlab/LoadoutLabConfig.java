@@ -241,6 +241,20 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "npcRightClickEntry",
+		name = "NPC right-click entry",
+		description = "Add a 'Search in Loadout Lab' option when you right-click"
+			+ " a monster the plugin knows. Turn off to keep NPC menus clean;"
+			+ " you can still search from the panel.",
+		section = controls,
+		position = 6
+	)
+	default boolean npcRightClickEntry()
+	{
+		return true;
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

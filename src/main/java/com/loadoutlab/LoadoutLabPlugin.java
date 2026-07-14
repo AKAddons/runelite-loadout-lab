@@ -242,7 +242,7 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onMenuOpened(net.runelite.api.events.MenuOpened event)
 	{
-		if (data == null || panel == null || navButton == null)
+		if (data == null || panel == null || navButton == null || !config.npcRightClickEntry())
 		{
 			return;
 		}
