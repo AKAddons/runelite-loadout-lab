@@ -1,42 +1,27 @@
 package com.loadoutlab.ui;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.Timer;
+
+import static com.loadoutlab.ui.MascotArt.JUICE;
+import static com.loadoutlab.ui.MascotArt.LIMB;
+import static com.loadoutlab.ui.MascotArt.SCALE;
 
 /**
  * The bottle mascot, working out while the optimizer thinks. Its own
  * chunky L-legs (the LL in Loadout Lab) do the bouncing: feet planted,
  * thigh segments squash and stretch at the knee as the body bobs, and
- * little arms pump up and down. The sprite is sliced into body/thigh/
- * shin segments so the art animates rather than gaining extra limbs.
- * Nearest-neighbour scaling keeps the pixel art crisp; the timer only
- * runs while showing.
+ * little arms pump up and down. Sprite slices and the leg renderer live
+ * in MascotArt (shared with MascotChef). Nearest-neighbour scaling keeps
+ * the pixel art crisp; the timer only runs while showing.
  */
 class MascotSpinner extends JComponent
 {
-	private static final int SCALE = 3;
-	private static final BufferedImage MASCOT = load();
-	// Sprite slices (16x16 grid): bottle body rows 0-9; per leg a 2px-wide
-	// thigh column (rows 10-12) and a 4px-wide L-foot shin (rows 13-15).
-	// The flask with the animated bits carved out: the juice band (rows
-	// 7-8) is redrawn each frame so it can slosh, and the static corner
-	// star (cols 12-14, rows 0-2) is replaced by snap stars at the hands.
-	private static final BufferedImage BODY = prepareBody(slice(0, 0, 16, 10));
-	private static final BufferedImage LEFT_THIGH = slice(5, 10, 2, 3);
-	private static final BufferedImage RIGHT_THIGH = slice(10, 10, 2, 3);
-	private static final BufferedImage LEFT_SHIN = slice(5, 13, 4, 3);
-	private static final BufferedImage RIGHT_SHIN = slice(10, 13, 4, 3);
-	private static final Color LIMB = new Color(140, 200, 140);
-	private static final Color JUICE = new Color(208, 178, 102);
-
 	private final Timer timer = new Timer(33, e -> repaint());
 	private long startedAt;
 	// Juice surface: a damped spring forced by the bottle's motion, so the
@@ -51,83 +36,6 @@ class MascotSpinner extends JComponent
 		setPreferredSize(new Dimension(16 * SCALE + 44, 16 * SCALE + 22));
 		setMaximumSize(new Dimension(Integer.MAX_VALUE, 16 * SCALE + 22));
 		setAlignmentX(LEFT_ALIGNMENT);
-	}
-
-	/** Thigh hangs from the flask hip, shin sits at the FOOT's spot; the
-	 * knee (thigh drawn toward the foot, squashing on lift) keeps the leg
-	 * connected top and bottom. */
-	private static void drawLeg(Graphics2D g2, BufferedImage thigh, BufferedImage shin,
-		int hipX, int footX, int hipY, int footY, int shinH)
-	{
-		int shinTopY = footY - shinH;
-		int thighH = Math.max(4, shinTopY - hipY);
-		int kneeX = (hipX + footX) / 2;
-		g2.drawImage(thigh, kneeX, hipY, 2 * SCALE, thighH, null);
-		g2.drawImage(shin, footX, shinTopY, 4 * SCALE, shinH, null);
-	}
-
-	private static BufferedImage prepareBody(BufferedImage body)
-	{
-		if (body == null)
-		{
-			return null;
-		}
-		BufferedImage copy = new BufferedImage(body.getWidth(), body.getHeight(),
-			BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = copy.createGraphics();
-		g.drawImage(body, 0, 0, null);
-		g.dispose();
-		for (int y = 7; y <= 8; y++)
-		{
-			for (int x = 4; x <= 11; x++)
-			{
-				copy.setRGB(x, y, 0);
-			}
-		}
-		for (int y = 0; y <= 2; y++)
-		{
-			for (int x = 12; x <= 14; x++)
-			{
-				copy.setRGB(x, y, 0);
-			}
-		}
-		copy.setRGB(7, 4, 0); // the neck bubble - redrawn drifting each frame
-		return copy;
-	}
-
-	/** A pixel plus-star that pops in and fades: age runs 0..1. */
-	private static void drawSnapStar(Graphics2D g2, int cx, int cy, double age)
-	{
-		java.awt.Composite old = g2.getComposite();
-		g2.setComposite(java.awt.AlphaComposite.getInstance(
-			java.awt.AlphaComposite.SRC_OVER, (float) Math.max(0.0, 1.0 - age)));
-		g2.setColor(JUICE);
-		int arm = (int) Math.round(SCALE * (1.0 + age * 1.5));
-		g2.fillRect(cx - SCALE / 2, cy - arm, SCALE, 2 * arm + SCALE);
-		g2.fillRect(cx - arm, cy - SCALE / 2, 2 * arm + SCALE, SCALE);
-		g2.setComposite(old);
-	}
-
-	private static BufferedImage load()
-	{
-		try
-		{
-			return ImageIO.read(MascotSpinner.class.getResourceAsStream("/com/loadoutlab/icon.png"));
-		}
-		catch (Exception ex)
-		{
-			return null;
-		}
-	}
-
-	private static BufferedImage slice(int x, int y, int w, int h)
-	{
-		return MASCOT == null ? null : MASCOT.getSubimage(x, y, w, h);
-	}
-
-	static boolean available()
-	{
-		return MASCOT != null;
 	}
 
 	@Override
@@ -151,7 +59,7 @@ class MascotSpinner extends JComponent
 	@Override
 	protected void paintComponent(Graphics g)
 	{
-		if (MASCOT == null)
+		if (!MascotArt.available())
 		{
 			return;
 		}
@@ -194,9 +102,9 @@ class MascotSpinner extends JComponent
 		int leftLift = leftStepping ? (int) Math.round(arc * 6.0) : 0;
 		int rightLift = leftStepping ? 0 : (int) Math.round(arc * 6.0);
 		// Hips stay on the flask; feet land where the step takes them.
-		drawLeg(g2, LEFT_THIGH, LEFT_SHIN, bodyX + 5 * SCALE,
+		MascotArt.drawLeg(g2, MascotArt.LEFT_THIGH, MascotArt.LEFT_SHIN, bodyX + 5 * SCALE,
 			centerX + 5 * SCALE + (int) Math.round(leftDx), bodyBottomY, groundY - leftLift, shinH);
-		drawLeg(g2, RIGHT_THIGH, RIGHT_SHIN, bodyX + 10 * SCALE,
+		MascotArt.drawLeg(g2, MascotArt.RIGHT_THIGH, MascotArt.RIGHT_SHIN, bodyX + 10 * SCALE,
 			centerX + 10 * SCALE + (int) Math.round(rightDx), bodyBottomY, groundY - rightLift, shinH);
 
 		// Arms up, groove in the forearms: upper arms hold a raised pose,
@@ -234,11 +142,11 @@ class MascotSpinner extends JComponent
 		double phase = beat % 4.0;
 		if (phase >= 0.5 && phase < 1.0)
 		{
-			drawSnapStar(g2, ltx - 4, lty - 6, (phase - 0.5) / 0.5);
+			MascotArt.drawSnapStar(g2, ltx - 4, lty - 6, (phase - 0.5) / 0.5);
 		}
 		else if (phase >= 2.5 && phase < 3.0)
 		{
-			drawSnapStar(g2, rtx + 4, rty - 6, (phase - 2.5) / 0.5);
+			MascotArt.drawSnapStar(g2, rtx + 4, rty - 6, (phase - 2.5) / 0.5);
 		}
 
 		// Juice under the glass: spring the surface against the bottle's
@@ -265,7 +173,7 @@ class MascotSpinner extends JComponent
 		g2.fillRect(bodyX + (7 + bubbleDx) * SCALE, bodyY + 4 * SCALE, SCALE, SCALE);
 
 		// Body over the limbs and juice (the walls cover the liquid's edges).
-		g2.drawImage(BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
+		g2.drawImage(MascotArt.BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
 		g2.dispose();
 	}
 }

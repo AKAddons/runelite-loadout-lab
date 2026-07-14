@@ -403,6 +403,10 @@ public class LoadoutLabPanel extends PluginPanel
 	// back when this lived in its own JScrollPane.
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
+	/** Picks which loading animation each compute gets. */
+	private static final java.util.Random MASCOT_MOOD = new java.util.Random();
+	/** Last day of the striker's headline run (the 2026 final, inclusive). */
+	private static final java.time.LocalDate WORLD_CUP_FINAL = java.time.LocalDate.of(2026, 7, 19);
 	private final Timer searchDebounce;
 
 	/** Guards against programmatic search-field changes re-opening the list. */
@@ -1967,9 +1971,25 @@ public class LoadoutLabPanel extends PluginPanel
 		// Clear stale results immediately - showing the previous monster's
 		// sets while the optimizer runs reads as an answer for this one.
 		resultsPanel.removeAll();
-		if (MascotSpinner.available())
+		if (MascotArt.available())
 		{
-			resultsPanel.add(new MascotSpinner());
+			// Mood roll, date-aware: through the World Cup final the striker
+			// headlines (6/9), the 2-step keeps warm (2/9), the chef sneaks
+			// in (1/9). After the final the striker hangs up his boots:
+			// 2-step 2/3, chef 1/3.
+			javax.swing.JComponent mascot;
+			if (!java.time.LocalDate.now().isAfter(WORLD_CUP_FINAL))
+			{
+				int roll = MASCOT_MOOD.nextInt(9);
+				mascot = roll < 6 ? new MascotStriker()
+					: roll < 8 ? new MascotSpinner() : new MascotChef();
+			}
+			else
+			{
+				mascot = MASCOT_MOOD.nextInt(3) == 0
+					? new MascotChef() : new MascotSpinner();
+			}
+			resultsPanel.add(mascot);
 		}
 		// html so long monster names wrap instead of clipping at the edge
 		JLabel computing = new JLabel("<html>Optimizing vs " + selectedMonster.getName() + "...</html>");
