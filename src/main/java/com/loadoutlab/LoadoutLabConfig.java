@@ -160,6 +160,20 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "classicGearLayout",
+		name = "Classic gear layout",
+		description = "Lay each set out like the in-game worn-equipment tab"
+			+ " (5 rows of 3) instead of the compact grid. The spec weapon"
+			+ " sits in the empty slot left of the legs.",
+		section = display,
+		position = 11
+	)
+	default boolean classicGearLayout()
+	{
+		return false;
+	}
+
 	// --- Controls --------------------------------------------------------
 
 	@ConfigItem(

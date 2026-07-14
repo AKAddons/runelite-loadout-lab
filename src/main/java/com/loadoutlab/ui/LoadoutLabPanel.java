@@ -145,11 +145,12 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean wildyRisk;
 		final boolean showInBank;
 		final boolean filterBank;
+		final boolean classicLayout;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank)
+			boolean wildyRisk, boolean showInBank, boolean filterBank, boolean classicLayout)
 		{
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
@@ -166,12 +167,14 @@ public class LoadoutLabPanel extends PluginPanel
 			this.wildyRisk = wildyRisk;
 			this.showInBank = showInBank;
 			this.filterBank = filterBank;
+			this.classicLayout = classicLayout;
 		}
 
 		static DisplayOptions all()
 		{
+			// classicLayout defaults OFF - the compact grid is the default look.
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true);
+				true, true, true, true, true, true, true, true, false);
 		}
 	}
 
@@ -293,7 +296,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Discord invite for the plugin's community; opened from the header. */
 	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
 	/** Grid display order: weapon beside shield, body beside legs. */
-	private static final GearSlot[] GRID_ORDER = {
+	static final GearSlot[] GRID_ORDER = {
 		GearSlot.HEAD, GearSlot.CAPE, GearSlot.NECK, GearSlot.AMMO,
 		GearSlot.WEAPON, GearSlot.SHIELD, GearSlot.BODY, GearSlot.LEGS,
 		GearSlot.HANDS, GearSlot.FEET, GearSlot.RING,
@@ -394,49 +397,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
-	private final JPanel resultsPanel = new ScrollableColumn();
-
-	/**
-	 * A vertical column that always matches its viewport's WIDTH (scrolling
-	 * only vertically). Without this, one over-wide child - a long
-	 * counting/assurance line, a wide grid - inflates EVERY card's width
-	 * past the sidebar, and with the horizontal scrollbar off the right
-	 * edge (header chips, the per-set menus) silently clips away
-	 * (field-reported as the menus disappearing until all cards collapse).
-	 */
-	private static final class ScrollableColumn extends JPanel implements javax.swing.Scrollable
-	{
-		@Override
-		public Dimension getPreferredScrollableViewportSize()
-		{
-			return getPreferredSize();
-		}
-
-		@Override
-		public int getScrollableUnitIncrement(java.awt.Rectangle visible, int orientation, int direction)
-		{
-			return 16;
-		}
-
-		@Override
-		public int getScrollableBlockIncrement(java.awt.Rectangle visible, int orientation, int direction)
-		{
-			return orientation == javax.swing.SwingConstants.VERTICAL
-				? visible.height : visible.width;
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportWidth()
-		{
-			return true;
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportHeight()
-		{
-			return false;
-		}
-	}
+	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
+	// the fixed sidebar width and over-wide children can't inflate it - the
+	// horizontal-clip guard the old Scrollable width-tracking used to provide
+	// back when this lived in its own JScrollPane.
+	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	private final Timer searchDebounce;
 
@@ -754,12 +719,18 @@ public class LoadoutLabPanel extends PluginPanel
 
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.Y_AXIS));
 		resultsPanel.setOpaque(false);
-		JScrollPane resultsScroll = new JScrollPane(resultsPanel,
-			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		resultsScroll.setBorder(null);
-		resultsScroll.getViewport().setOpaque(false);
-		resultsScroll.setOpaque(false);
-		add(resultsScroll, BorderLayout.CENTER);
+		// No inner JScrollPane here: PluginPanel already wraps us in one (and
+		// anchors this panel at BorderLayout.NORTH of its viewport, so we always
+		// render at our preferred height). A nested scroll pane is a second Swing
+		// validate root, which is why an expanded card's new height didn't reach
+		// RuneLite's outer scroll in one pass - the panel wouldn't grow into the
+		// empty space below, and a second collapse/expand was needed to force the
+		// re-measure. Dropping straight into CENTER leaves one validate root, so
+		// revalidate() propagates cleanly and the outer bar scrolls only once the
+		// content actually exceeds the sidebar. CENTER stretches resultsPanel to
+		// the fixed panel width, so over-wide children still can't inflate it
+		// (the invariant the old ScrollableColumn width-tracking enforced).
+		add(resultsPanel, BorderLayout.CENTER);
 
 		statusLabel.setForeground(MUTED);
 		add(statusLabel, BorderLayout.SOUTH);
@@ -2108,10 +2079,9 @@ public class LoadoutLabPanel extends PluginPanel
 			resultsPanel.add(legend);
 		}
 		statusLabel.setText("Best owned sets vs " + monster.getName());
-		// Revalidate the PANEL, not just the results column: the inner
-		// scroll pane is a Swing validate root, so a column-only revalidate
-		// never re-measures the wrapped PluginPanel - collapsing cards left
-		// the sidebar stuck at the shrunken height (field report).
+		// Revalidate the PANEL, not just the results column: our new preferred
+		// height has to reach RuneLite's outer scroll pane so the sidebar grows
+		// to fit an expanded card (or shrinks back when one collapses).
 		resultsPanel.revalidate();
 		revalidate();
 		repaint();
@@ -3043,10 +3013,12 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/**
-	 * The set as a fixed 3x4 equipment grid - 11 explicit slots (empty =
-	 * empty box) plus the spec weapon as the 12th cell, amber-bordered.
-	 * Fixed rows x cols means the preferred height is always right (the
-	 * old wrapping grid clipped its second row).
+	 * The set as an equipment grid. Two layouts share one cell builder: the
+	 * compact 3x4 (11 slots + the amber spec cell as the 12th) for vertical
+	 * density, or - when "Classic gear layout" is on - the in-game worn-
+	 * equipment tab (5 rows of 3, empty corners) with the spec weapon in the
+	 * empty slot left of the legs. Fixed rows x cols means the preferred
+	 * height is always right (the old wrapping grid clipped its second row).
 	 */
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
 		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip)
@@ -3059,9 +3031,6 @@ public class LoadoutLabPanel extends PluginPanel
 		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned,
 		Loadout gameBest)
 	{
-		JPanel icons = new JPanel(new GridLayout(3, 4, 2, 2));
-		icons.setOpaque(false);
-		icons.setAlignmentX(LEFT_ALIGNMENT);
 		int cell = ICON_SIZE + 4;
 		// Wilderness: badge every cell with its death fate.
 		PvpRisk.Assessment fates = null;
@@ -3073,123 +3042,225 @@ public class LoadoutLabPanel extends PluginPanel
 		// One store lookup per grid, not one per cell.
 		Map<GearSlot, Integer> pinnedSlots = renderingStyle == null
 			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
+		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
+			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
+		JPanel grid = displayOptions.classicLayout
+			? classicGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell)
+			: compactGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell);
+		return centerRow(grid);
+	}
+
+	/**
+	 * Wrap a grid in a full-width row that centres it horizontally. The card
+	 * is a Y_AXIS BoxLayout of LEFT-aligned rows; centring the grid's own
+	 * alignmentX instead would drag it against the other rows' alignment
+	 * point (Swing's mixed-alignment gotcha), so we give it its own row.
+	 */
+	private JPanel centerRow(JPanel grid)
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.add(grid);
+		// Fill the card's width (so FlowLayout has room to centre in) but keep
+		// the row's own height at the grid's height - don't let BoxLayout
+		// stretch it vertically.
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+		return row;
+	}
+
+	/** Compact 3x4: the 11 slots in GRID_ORDER, then the spec cell. */
+	private JPanel compactGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
+	{
+		JPanel icons = new JPanel(new GridLayout(3, 4, 2, 2));
+		icons.setOpaque(false);
+		icons.setAlignmentX(LEFT_ALIGNMENT);
 		for (GearSlot slotType : GRID_ORDER)
 		{
-			GearItem item = result.getLoadout().get(slotType);
-			RiskDotLabel slot = new RiskDotLabel();
-			slot.setPreferredSize(new Dimension(cell, cell));
-			slot.setHorizontalAlignment(SwingConstants.CENTER);
-			List<JMenuItem> extras = slotType == GearSlot.SHIELD
-				? dragonfireMenuEntries() : Collections.emptyList();
-			if (item != null)
-			{
-				// Border language: green = you don't own it (dream/budget
-				// upgrade); gold = your item IS the game's best available
-				// for this slot; blue = the spec cell (matches the in-game
-				// special attack bar).
-				boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
-				GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
-				// Analogs count: a stat-identical item (any god's d'hide
-				// coif) is just as best-available as the exact pick.
-				boolean bis = !unowned && bisItem != null
-					&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
-				Color border = unowned ? BORDER_UNOWNED
-					: bis ? BORDER_BIS : BORDER_PLAIN;
-				slot.setBorder(BorderFactory.createLineBorder(border));
-				// Quest rewards are earned, not bought: name the quest
-				// instead of quoting a gp price.
-				String quest = QuestRewardItems.questFor(item);
-				String obtain = quest != null ? "quest: " + quest
-					: PvpRisk.formatGp(item.getPriceOrZero());
-				String fate = "";
-				if (fates != null)
-				{
-					if (containsId(fates.kept, item))
-					{
-						slot.setFate(Fate.KEPT);
-						fate = " - protected on death";
-					}
-					else if (containsId(fates.lost, item))
-					{
-						slot.setFate(Fate.DROPPED);
-						fate = " - lost on death ("
-							+ PvpRisk.formatGp(fates.valueOf(item))
-							+ imbueRefundNote(item) + ")";
-					}
-					else
-					{
-						long fee = feeFor(fates, item);
-						long friction = com.loadoutlab.engine.UntradeableDeathCosts.frictionFor(item);
-						if (fee > 0 && fee <= friction)
-						{
-							// Gp-free but a real errand chain (salve line):
-							// the charge is all rebuild friction.
-							slot.setFate(Fate.FEE);
-							fate = " - breaks on death (rebuild errand ~" + PvpRisk.formatGp(friction) + ")";
-						}
-						else if (fee > 0)
-						{
-							slot.setFate(Fate.FEE);
-							fate = " - replaceable for " + PvpRisk.formatGp(fee) + " on death";
-						}
-						else if (hasDeathCharge(fates, item))
-						{
-							slot.setFate(Fate.FEE);
-							fate = " - breaks on death (free reclaim)";
-						}
-					}
-				}
-				// Location clause only when a fetch trip is needed - "in
-				// bank" would be noise on 95% of cells.
-				String where = unowned ? "" : locationHint.hint(item.getId());
-				Integer pinnedHere = pinnedSlots.get(slotType);
-				String pinNote = pinnedHere != null && pinnedHere == item.getId()
-					? " - pinned" : "";
-				// Source dot + legend entry: only for locations we know.
-				if (!unowned)
-				{
-					String source = locationHint.primary(item.getId());
-					Color sourceColor = SOURCE_COLORS.get(source);
-					if (sourceColor != null)
-					{
-						slot.setSourceDot(sourceColor);
-						usedSources.add(source);
-					}
-				}
-				slot.setToolTipText(slotName(slotType) + ": " + item.label()
-					+ pinNote
-					+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
-					+ (where.isEmpty() ? "" : " - " + where)
-					+ (bis ? " - best available" : "")
-					+ fate
-					+ " (right-click to exclude)");
-				AsyncBufferedImage img = itemManager.getImage(item.getId());
-				img.addTo(slot);
-				List<GearItem> menuItems = new ArrayList<>();
-				menuItems.add(item);
-				GearItem dart = slotType == GearSlot.WEAPON ? loadedDart(result) : null;
-				if (dart != null)
-				{
-					menuItems.add(dart);
-				}
-				// Offer the protect-only flag on this cell only when the item
-				// is dropped-on-death in the current wilderness set.
-				Set<Integer> lostHere = fates != null && containsId(fates.lost, item)
-					? Collections.singleton(item.getId()) : Collections.emptySet();
-				attachExclusionMenu(slot, menuItems, extras, slotType, renderingStyle, lostHere);
-			}
-			else
-			{
-				slot.setBorder(BorderFactory.createLineBorder(BORDER_EMPTY));
-				slot.setToolTipText(slotName(slotType) + ": empty");
-				if (!extras.isEmpty())
-				{
-					attachExclusionMenu(slot, Collections.emptyList(), extras);
-				}
-			}
-			icons.add(slot);
+			icons.add(buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
 		}
-		// Cell 12: the special-attack weapon to swap in.
+		icons.add(specCell);
+		// Stretch past the minimum so there is no dead right margin, but cap
+		// the width - unbounded stretch made cells balloon on wide layouts.
+		int height = 3 * cell + 4;
+		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
+		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
+		return icons;
+	}
+
+	/**
+	 * The in-game worn-equipment tab as a flat 5x3 order (read left-to-right,
+	 * top-to-bottom): null = a blank corner, CLASSIC_SPEC_INDEX = the spec
+	 * cell (the empty slot left of the legs). Every GearSlot in GRID_ORDER
+	 * appears exactly once - guarded by ClassicLayoutTest.
+	 */
+	static final GearSlot[] CLASSIC_ORDER = {
+		null,            GearSlot.HEAD, null,
+		GearSlot.CAPE,   GearSlot.NECK, GearSlot.AMMO,
+		GearSlot.WEAPON, GearSlot.BODY, GearSlot.SHIELD,
+		null,            GearSlot.LEGS, null,   // index 9 (null) holds the spec cell
+		GearSlot.HANDS,  GearSlot.FEET, GearSlot.RING,
+	};
+	static final int CLASSIC_SPEC_INDEX = 9;
+
+	/** The in-game worn-equipment tab: 5 rows of 3, empty corners blank, spec
+	 * in the empty slot left of the legs. */
+	private JPanel classicGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
+	{
+		JPanel icons = new JPanel(new GridLayout(5, 3, 2, 2));
+		icons.setOpaque(false);
+		icons.setAlignmentX(LEFT_ALIGNMENT);
+		for (int i = 0; i < CLASSIC_ORDER.length; i++)
+		{
+			if (i == CLASSIC_SPEC_INDEX)
+			{
+				icons.add(specCell);
+				continue;
+			}
+			GearSlot slotType = CLASSIC_ORDER[i];
+			icons.add(slotType == null ? blankCell(cell)
+				: buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
+		}
+		int height = 5 * cell + 8;
+		icons.setPreferredSize(new Dimension(3 * cell + 4, height));
+		icons.setMaximumSize(new Dimension(3 * (cell + 8) + 4, height));
+		return icons;
+	}
+
+	/** A transparent placeholder holding a grid corner open (classic layout). */
+	private static javax.swing.JComponent blankCell(int cell)
+	{
+		JLabel blank = new JLabel();
+		blank.setPreferredSize(new Dimension(cell, cell));
+		return blank;
+	}
+
+	/** One equipment-slot cell: the item icon with its border language, death
+	 * fate, source dot, tooltip and right-click menu - or an empty box. */
+	private RiskDotLabel buildSlotCell(GearSlot slotType, DpsResult result, int cell,
+		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest)
+	{
+		GearItem item = result.getLoadout().get(slotType);
+		RiskDotLabel slot = new RiskDotLabel();
+		slot.setPreferredSize(new Dimension(cell, cell));
+		slot.setHorizontalAlignment(SwingConstants.CENTER);
+		List<JMenuItem> extras = slotType == GearSlot.SHIELD
+			? dragonfireMenuEntries() : Collections.emptyList();
+		if (item != null)
+		{
+			// Border language: green = you don't own it (dream/budget
+			// upgrade); gold = your item IS the game's best available
+			// for this slot; blue = the spec cell (matches the in-game
+			// special attack bar).
+			boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
+			GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
+			// Analogs count: a stat-identical item (any god's d'hide
+			// coif) is just as best-available as the exact pick.
+			boolean bis = !unowned && bisItem != null
+				&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
+			Color border = unowned ? BORDER_UNOWNED
+				: bis ? BORDER_BIS : BORDER_PLAIN;
+			slot.setBorder(BorderFactory.createLineBorder(border));
+			// Quest rewards are earned, not bought: name the quest
+			// instead of quoting a gp price.
+			String quest = QuestRewardItems.questFor(item);
+			String obtain = quest != null ? "quest: " + quest
+				: PvpRisk.formatGp(item.getPriceOrZero());
+			String fate = "";
+			if (fates != null)
+			{
+				if (containsId(fates.kept, item))
+				{
+					slot.setFate(Fate.KEPT);
+					fate = " - protected on death";
+				}
+				else if (containsId(fates.lost, item))
+				{
+					slot.setFate(Fate.DROPPED);
+					fate = " - lost on death ("
+						+ PvpRisk.formatGp(fates.valueOf(item))
+						+ imbueRefundNote(item) + ")";
+				}
+				else
+				{
+					long fee = feeFor(fates, item);
+					long friction = com.loadoutlab.engine.UntradeableDeathCosts.frictionFor(item);
+					if (fee > 0 && fee <= friction)
+					{
+						// Gp-free but a real errand chain (salve line):
+						// the charge is all rebuild friction.
+						slot.setFate(Fate.FEE);
+						fate = " - breaks on death (rebuild errand ~" + PvpRisk.formatGp(friction) + ")";
+					}
+					else if (fee > 0)
+					{
+						slot.setFate(Fate.FEE);
+						fate = " - replaceable for " + PvpRisk.formatGp(fee) + " on death";
+					}
+					else if (hasDeathCharge(fates, item))
+					{
+						slot.setFate(Fate.FEE);
+						fate = " - breaks on death (free reclaim)";
+					}
+				}
+			}
+			// Location clause only when a fetch trip is needed - "in
+			// bank" would be noise on 95% of cells.
+			String where = unowned ? "" : locationHint.hint(item.getId());
+			Integer pinnedHere = pinnedSlots.get(slotType);
+			String pinNote = pinnedHere != null && pinnedHere == item.getId()
+				? " - pinned" : "";
+			// Source dot + legend entry: only for locations we know.
+			if (!unowned)
+			{
+				String source = locationHint.primary(item.getId());
+				Color sourceColor = SOURCE_COLORS.get(source);
+				if (sourceColor != null)
+				{
+					slot.setSourceDot(sourceColor);
+					usedSources.add(source);
+				}
+			}
+			slot.setToolTipText(slotName(slotType) + ": " + item.label()
+				+ pinNote
+				+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
+				+ (where.isEmpty() ? "" : " - " + where)
+				+ (bis ? " - best available" : "")
+				+ fate
+				+ " (right-click to exclude)");
+			AsyncBufferedImage img = itemManager.getImage(item.getId());
+			img.addTo(slot);
+			List<GearItem> menuItems = new ArrayList<>();
+			menuItems.add(item);
+			GearItem dart = slotType == GearSlot.WEAPON ? loadedDart(result) : null;
+			if (dart != null)
+			{
+				menuItems.add(dart);
+			}
+			// Offer the protect-only flag on this cell only when the item
+			// is dropped-on-death in the current wilderness set.
+			Set<Integer> lostHere = fates != null && containsId(fates.lost, item)
+				? Collections.singleton(item.getId()) : Collections.emptySet();
+			attachExclusionMenu(slot, menuItems, extras, slotType, renderingStyle, lostHere);
+		}
+		else
+		{
+			slot.setBorder(BorderFactory.createLineBorder(BORDER_EMPTY));
+			slot.setToolTipText(slotName(slotType) + ": empty");
+			if (!extras.isEmpty())
+			{
+				attachExclusionMenu(slot, Collections.emptyList(), extras);
+			}
+		}
+		return slot;
+	}
+
+	/** The special-attack weapon to swap in, amber-bordered - or an empty box. */
+	private RiskDotLabel buildSpecCell(int cell, SpecialAttack spec, GearItem specWeapon, double specExpected,
+		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, PvpRisk.Assessment fates)
+	{
 		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
@@ -3235,13 +3306,7 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setBorder(BorderFactory.createLineBorder(BORDER_EMPTY));
 			specCell.setToolTipText("Spec: none");
 		}
-		icons.add(specCell);
-		// Stretch past the minimum so there is no dead right margin, but cap
-		// the width - unbounded stretch made cells balloon on wide layouts.
-		int height = 3 * cell + 4;
-		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
-		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
-		return icons;
+		return specCell;
 	}
 
 	/** Same combat stats in every block - interchangeable for dps. */
