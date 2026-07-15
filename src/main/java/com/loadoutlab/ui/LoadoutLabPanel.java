@@ -220,6 +220,24 @@ public class LoadoutLabPanel extends PluginPanel
 	 * note, and extra items unioned into the bank Show/Filter sets. Pins
 	 * and filter items are scoped: "ALL" or a CombatStyle name - a super
 	 * combat for the melee card, a ranged potion for the ranged card. */
+	/** Undo/redo over the plugin's CommandHistory. The panel only renders
+	 * buttons and relays clicks; the stack lives plugin-side. */
+	public interface HistoryControl
+	{
+		boolean undo();
+
+		boolean redo();
+
+		boolean canUndo();
+
+		boolean canRedo();
+
+		/** Next undo target's description, or null when the stack is empty. */
+		String undoLabel();
+
+		String redoLabel();
+	}
+
 	public interface MobProfile
 	{
 		/** Effective pins for one style card (ALL overlaid by the style). */
@@ -399,6 +417,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
+
+	/** Header undo/redo buttons; state refreshed after every command. */
+	private JButton undoButton;
+	private JButton redoButton;
+	private HistoryControl historyControl;
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
 	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
@@ -486,6 +509,26 @@ public class LoadoutLabPanel extends PluginPanel
 		header.setAlignmentX(LEFT_ALIGNMENT);
 		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 		header.add(title, BorderLayout.WEST);
+		// Undo/redo arrows ride the header row next to the options dots
+		// (header-inline per the vertical-space rule; no row of their own).
+		undoButton = new JButton(new UndoArrowIcon(12, false));
+		undoButton.setMargin(new Insets(2, 5, 2, 5));
+		undoButton.addActionListener(e ->
+		{
+			if (historyControl != null && historyControl.undo())
+			{
+				refreshAfterHistory();
+			}
+		});
+		redoButton = new JButton(new UndoArrowIcon(12, true));
+		redoButton.setMargin(new Insets(2, 5, 2, 5));
+		redoButton.addActionListener(e ->
+		{
+			if (historyControl != null && historyControl.redo())
+			{
+				refreshAfterHistory();
+			}
+		});
 		JButton optionsButton = new JButton(new DotsIcon(13));
 		optionsButton.setToolTipText("Options");
 		optionsButton.setMargin(new Insets(2, 6, 2, 6));
@@ -511,7 +554,13 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
-		header.add(optionsButton, BorderLayout.EAST);
+		JPanel headerButtons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 2, 0));
+		headerButtons.setOpaque(false);
+		headerButtons.add(undoButton);
+		headerButtons.add(redoButton);
+		headerButtons.add(optionsButton);
+		header.add(headerButtons, BorderLayout.EAST);
+		refreshHistoryButtons();
 		top.add(header);
 		top.add(Box.createVerticalStrut(4));
 
@@ -1100,6 +1149,41 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int index = spellbook.getSelectedIndex();
 		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+	}
+
+	/** Wire the plugin's undo/redo stack in. Called once after construction. */
+	public void setHistoryControl(HistoryControl control)
+	{
+		this.historyControl = control;
+		refreshHistoryButtons();
+	}
+
+	/** Sync the header buttons' enabled state and peek tooltips. */
+	public void refreshHistoryButtons()
+	{
+		if (undoButton == null)
+		{
+			return;
+		}
+		boolean canUndo = historyControl != null && historyControl.canUndo();
+		boolean canRedo = historyControl != null && historyControl.canRedo();
+		undoButton.setEnabled(canUndo);
+		redoButton.setEnabled(canRedo);
+		undoButton.setToolTipText(canUndo ? "Undo: " + historyControl.undoLabel() : "Nothing to undo");
+		redoButton.setToolTipText(canRedo ? "Redo: " + historyControl.redoLabel() : "Nothing to redo");
+	}
+
+	/** After an undo/redo any store may have changed - refresh every
+	 * affordance that renders store state, then recompute. Each refresher
+	 * is null-guarded for the no-monster-selected case. */
+	private void refreshAfterHistory()
+	{
+		refreshExclusionsLabel();
+		refreshStoredLabel();
+		refreshPinnedLabel();
+		refreshNotePanel();
+		refreshHistoryButtons();
+		recompute();
 	}
 
 	private void refreshExclusionsLabel()
@@ -1877,6 +1961,71 @@ public class LoadoutLabPanel extends PluginPanel
 			double cy = y + size / 2.0;
 			g2.draw(new java.awt.geom.Line2D.Double(cx - off, cy + off, cx + off, cy - off));
 			g2.dispose();
+		}
+	}
+
+	/** Curved undo/redo arrow, painted (Swing glyphs tofu on Tahoe): a 3/4
+	 * arc opening downward with an arrowhead at the top - left-hooking for
+	 * undo, mirrored for redo. Greys out with the button's enabled state. */
+	private static final class UndoArrowIcon implements javax.swing.Icon
+	{
+		private final int size;
+		private final boolean mirrored;
+
+		UndoArrowIcon(int size, boolean mirrored)
+		{
+			this.size = size;
+			this.mirrored = mirrored;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size + 2;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size + 2;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				Color color = c.isEnabled() ? new Color(180, 180, 220) : new Color(96, 96, 108);
+				int cx = x + getIconWidth() / 2;
+				int cy = y + getIconHeight() / 2 + 1;
+				int r = (size - 2) / 2 + 1;
+				if (mirrored)
+				{
+					g2.translate(2 * cx, 0);
+					g2.scale(-1, 1);
+				}
+				g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g2.setColor(color);
+				g2.drawArc(cx - r, cy - r, r * 2, r * 2, 60, 240);
+				// Arrowhead at the arc's start (60 degrees, upper right).
+				double a = Math.toRadians(60);
+				int hx = (int) Math.round(cx + r * Math.cos(a));
+				int hy = (int) Math.round(cy - r * Math.sin(a));
+				int hs = Math.max(3, size / 3);
+				java.awt.geom.Path2D head = new java.awt.geom.Path2D.Float();
+				head.moveTo(hx, hy);
+				head.lineTo(hx - hs, hy);
+				head.lineTo(hx, hy - hs);
+				head.closePath();
+				g2.fill(head);
+			}
+			finally
+			{
+				g2.dispose();
+			}
 		}
 	}
 

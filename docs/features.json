@@ -371,6 +371,27 @@
       "since": "0.1.0",
       "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
       "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
+    },
+    {
+      "id": "undo-redo",
+      "title": "Undo and redo",
+      "group": "Filters and tasks",
+      "anchor": "undo-and-redo",
+      "media": "docs/img/undo-redo.png",
+      "code": [
+        "command/Command.java",
+        "command/CommandHistory.java",
+        "command/CompositeCommand.java",
+        "command/Commands.java",
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "command/CommandHistoryTest.java",
+        "command/CommandsTest.java"
+      ],
+      "since": "0.3.0",
+      "capture": "Header with the undo arrow hovered, tooltip reading 'Undo: Pin <item>' after pinning something. Single PNG screenshot."
     }
   ]
 }

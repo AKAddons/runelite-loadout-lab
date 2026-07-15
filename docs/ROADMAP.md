@@ -86,17 +86,17 @@ monster, get your strongest owned set per combat style with exact DPS.
   Lightbearer doubles spec regen (sustained spec dps is now shown in the
   spec tooltip), so vs a Venator/Ultor ring the right pick depends on
   the spec weapon's net gain. Optimizer should compare the two totals.
-- **Undo/redo for mutations (added 2026-07-15)** - port goal planner's
-  command pattern (`com.goalplanner.command`: Command.apply()/revert(),
-  CommandHistory with bounded 50-entry undo/redo stacks, CompositeCommand
-  + ref-counted compounds for multi-step actions; session-only, EDT-only).
-  Toolbar undo/redo arrow buttons with peek-description tooltips, exactly
-  like GP's. Route every persistent mutation through commands: exclusions
-  (ExclusionStore), monster pins/notes/supplies (MonsterProfileStore),
-  dream items (DreamStore), manual owned edits (ManualOwnedStore),
-  protect-only flags (ProtectOnlyStore). Queries/toggles are NOT
-  undoable - only state that persists. Like issue reporting, keep the
-  ported module reusable rather than diverging from GP's semantics.
+- **Undo/redo for mutations** - DONE (2026-07-15, 0.3.0): goal planner's
+  command pattern ported as `com.loadoutlab.command` (Command.apply()/
+  revert(), CommandHistory bounded at 50, CompositeCommand + ref-counted
+  compounds; session-only, EDT-only, cleared on profile change).
+  Header-inline undo/redo arrows with peek tooltips. Every deliberate
+  mutation routes through Commands at the plugin-adapter seam: global +
+  per-mob exclusions, pins (undo restores the PRIOR pin), notes, pinned
+  spells, dream items, stored-elsewhere, protect-only, trip supplies
+  (undo restores the persisted name). Scan-driven mutations stay off the
+  stack by design. SaveBatchingCommand deliberately not ported until a
+  bulk op exists. Module kept in lockstep with GP for future sharing.
 
 Shipped since (outside this list): 0.2.2 (2026-07-14: set-card
 scroll-expand fix, classic equipment-tab gear layout option, NPC
