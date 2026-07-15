@@ -1,0 +1,10 @@
+{
+  "name": "loadout-lab-discord-announce",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Summarizes a git push with the Claude API and announces it to a Discord channel webhook.",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}

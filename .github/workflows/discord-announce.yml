@@ -1,0 +1,47 @@
+name: Announce pushes to Discord
+
+# Summarizes every push to main with the Claude API and posts a rich embed to a
+# Discord channel webhook, so the community can follow repo progress without
+# opening GitHub. Setup + secrets: see .github/scripts/README.md
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Let a burst of pushes each post in turn rather than cancelling each other.
+concurrency:
+  group: discord-announce-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    # Nothing to announce for branch deletes / tag-only pushes.
+    if: ${{ github.event.head_commit != null }}
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          # Need the parent commit present so we can diff the feature registry.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: .github/scripts
+        run: npm install --no-audit --no-fund
+
+      - name: Summarize and announce
+        working-directory: .github/scripts
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Defaults to claude-haiku-4-5; set this repo variable to override
+          # (e.g. claude-opus-4-8 for richer summaries).
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+        run: node announce.mjs
