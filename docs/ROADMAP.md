@@ -63,9 +63,11 @@ monster, get your strongest owned set per combat style with exact DPS.
 - **Issue reporting** - "report a problem with this loadout" dialog that
   sends a direct report to the author. Build as a REUSABLE module so goal
   planner can adopt it (shared repo or copy-in library - decide at build).
-- **Slayer task toggle** - on-task checkbox (swaps in slayer helm etc.;
-  engine already models it via OptimizationRequest.onSlayerTask).
-- **Prayer rating in output** - show the set's total prayer bonus.
+- **Slayer task toggle** - DONE: "On slayer task" checkbox in the panel
+  (with not-assignable tooltips per monster); engine models it via
+  OptimizationRequest.onSlayerTask.
+- **Prayer rating in output** - DONE: set prayer bonus shown on the card
+  (prayerBonus display option).
 - **Offense/defense modes** - best-offense (current), best-defense, and a
   smart hybrid: emphasize offense but make style-aware defensive picks
   (e.g. ranged armour vs magic attackers). Needs monster attack styles
@@ -84,6 +86,26 @@ monster, get your strongest owned set per combat style with exact DPS.
   Lightbearer doubles spec regen (sustained spec dps is now shown in the
   spec tooltip), so vs a Venator/Ultor ring the right pick depends on
   the spec weapon's net gain. Optimizer should compare the two totals.
+- **Undo/redo for mutations (added 2026-07-15)** - port goal planner's
+  command pattern (`com.goalplanner.command`: Command.apply()/revert(),
+  CommandHistory with bounded 50-entry undo/redo stacks, CompositeCommand
+  + ref-counted compounds for multi-step actions; session-only, EDT-only).
+  Toolbar undo/redo arrow buttons with peek-description tooltips, exactly
+  like GP's. Route every persistent mutation through commands: exclusions
+  (ExclusionStore), monster pins/notes/supplies (MonsterProfileStore),
+  dream items (DreamStore), manual owned edits (ManualOwnedStore),
+  protect-only flags (ProtectOnlyStore). Queries/toggles are NOT
+  undoable - only state that persists. Like issue reporting, keep the
+  ported module reusable rather than diverging from GP's semantics.
+
+Shipped since (outside this list): 0.2.2 (2026-07-14: set-card
+scroll-expand fix, classic equipment-tab gear layout option, NPC
+right-click menu toggle); 0.2.3 (2026-07-15, merged to main: date-aware
+mascot loading-animation roster - six moods, weighted calendar windows,
+dev-mode gallery).
+
+Hub cadence: hub submissions are not roadmap items. Next hub submission
+lands with 0.3.0 (0.2.3 rides along in it).
 
 Done from this list: BiS section show/hide (v/> header, 2026-07-05);
 monster duplicate collapsing (2026-07-05); item exclusions/protection
