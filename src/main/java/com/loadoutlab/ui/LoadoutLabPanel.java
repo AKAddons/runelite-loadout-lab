@@ -146,11 +146,13 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean showInBank;
 		final boolean filterBank;
 		final boolean classicLayout;
+		final boolean loadingAnimation;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank, boolean classicLayout)
+			boolean wildyRisk, boolean showInBank, boolean filterBank, boolean classicLayout,
+			boolean loadingAnimation)
 		{
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
@@ -168,13 +170,15 @@ public class LoadoutLabPanel extends PluginPanel
 			this.showInBank = showInBank;
 			this.filterBank = filterBank;
 			this.classicLayout = classicLayout;
+			this.loadingAnimation = loadingAnimation;
 		}
 
 		static DisplayOptions all()
 		{
-			// classicLayout defaults OFF - the compact grid is the default look.
+			// classicLayout defaults OFF - the compact grid is the default look;
+			// loadingAnimation defaults ON.
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, false);
+				true, true, true, true, true, true, true, true, false, true);
 		}
 	}
 
@@ -403,10 +407,10 @@ public class LoadoutLabPanel extends PluginPanel
 	// back when this lived in its own JScrollPane.
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
-	/** Picks which loading animation each compute gets. */
+	/** The weighted-random source the roster draws each compute's mood from. */
 	private static final java.util.Random MASCOT_MOOD = new java.util.Random();
-	/** Last day of the striker's headline run (the 2026 final, inclusive). */
-	private static final java.time.LocalDate WORLD_CUP_FINAL = java.time.LocalDate.of(2026, 7, 19);
+	/** RuneLite developer mode: unlocks the resting animation gallery. */
+	private boolean developerMode;
 	private final Timer searchDebounce;
 
 	/** Guards against programmatic search-field changes re-opening the list. */
@@ -498,6 +502,13 @@ public class LoadoutLabPanel extends PluginPanel
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
 			menu.add(joinDiscord);
+			// Developer-mode only: reopen the live gallery of every mood.
+			if (developerMode)
+			{
+				JMenuItem gallery = new JMenuItem("Preview loading animations");
+				gallery.addActionListener(ev -> showGallery());
+				menu.add(gallery);
+			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
 		header.add(optionsButton, BorderLayout.EAST);
@@ -843,6 +854,32 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			showResults(selectedMonster, lastResults);
 		}
+		revalidate();
+		repaint();
+	}
+
+	/** Plugin hook: RuneLite developer mode. When on, the resting panel shows
+	 * the live animation gallery and the "..." menu can reopen it. */
+	public void setDeveloperMode(boolean dev)
+	{
+		this.developerMode = dev;
+		// At rest (no monster picked yet) drop straight into the gallery.
+		if (dev && selectedMonster == null)
+		{
+			showGallery();
+		}
+	}
+
+	/** Fill the results area with a live gallery of every roster mood. */
+	private void showGallery()
+	{
+		if (!MascotArt.available())
+		{
+			return;
+		}
+		resultsPanel.removeAll();
+		resultsPanel.add(new MascotGallery());
+		resultsPanel.revalidate();
 		revalidate();
 		repaint();
 	}
@@ -1971,25 +2008,14 @@ public class LoadoutLabPanel extends PluginPanel
 		// Clear stale results immediately - showing the previous monster's
 		// sets while the optimizer runs reads as an answer for this one.
 		resultsPanel.removeAll();
-		if (MascotArt.available())
+		// The roster picks today's mood (weighted by season); see MascotRoster.
+		if (displayOptions.loadingAnimation && MascotArt.available())
 		{
-			// Mood roll, date-aware: through the World Cup final the striker
-			// headlines (6/9), the 2-step keeps warm (2/9), the chef sneaks
-			// in (1/9). After the final the striker hangs up his boots:
-			// 2-step 2/3, chef 1/3.
-			javax.swing.JComponent mascot;
-			if (!java.time.LocalDate.now().isAfter(WORLD_CUP_FINAL))
+			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
+			if (mascot != null)
 			{
-				int roll = MASCOT_MOOD.nextInt(9);
-				mascot = roll < 6 ? new MascotStriker()
-					: roll < 8 ? new MascotSpinner() : new MascotChef();
+				resultsPanel.add(mascot);
 			}
-			else
-			{
-				mascot = MASCOT_MOOD.nextInt(3) == 0
-					? new MascotChef() : new MascotSpinner();
-			}
-			resultsPanel.add(mascot);
 		}
 		// html so long monster names wrap instead of clipping at the edge
 		JLabel computing = new JLabel("<html>Optimizing vs " + selectedMonster.getName() + "...</html>");
