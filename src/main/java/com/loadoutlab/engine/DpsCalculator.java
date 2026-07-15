@@ -475,6 +475,13 @@ public final class DpsCalculator
 			counted("amulet of avarice", "+20% accuracy");
 			roll = multiply(roll, 6, 5);
 		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Named WITHOUT a space, unlike "salve amulet (e)" - a contains
+			// match on the (e) string misses it and demotes it a tier.
+			counted("salve amulet(ei)", "+20% accuracy");
+			roll = multiply(roll, 6, 5);
+		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
 			counted("salve amulet (e)", "+20% accuracy");
@@ -547,6 +554,12 @@ public final class DpsCalculator
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Spaceless name - see the accuracy chain note.
+			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
@@ -801,6 +814,18 @@ public final class DpsCalculator
 		{
 			counted("amulet of avarice", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// The magic damage path lacked a salve branch entirely (the
+			// accuracy path had one) - wiki: (ei) +20%, (i) +15% magic damage.
+			counted("salve amulet(ei)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
+		{
+			counted("salve amulet(i)", "+15% damage");
+			maxHit = multiply(maxHit, 23, 20);
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
