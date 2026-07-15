@@ -174,6 +174,19 @@ public interface LoadoutLabConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = "loadingAnimation",
+		name = "Loading animation",
+		description = "Show the animated mascot while the optimizer computes a"
+			+ " set. Some moods are seasonal. Turn off for a plain loading line.",
+		section = display,
+		position = 12
+	)
+	default boolean loadingAnimation()
+	{
+		return true;
+	}
+
 	// --- Controls --------------------------------------------------------
 
 	@ConfigItem(

@@ -98,6 +98,10 @@ public class LoadoutLabPlugin extends Plugin
 	private Gson gson;
 
 	@Inject
+	@javax.inject.Named("developerMode")
+	private boolean developerMode;
+
+	@Inject
 	private ItemManager itemManager;
 
 	@Inject
@@ -339,6 +343,7 @@ public class LoadoutLabPlugin extends Plugin
 					this::setBankFilter);
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
+				panel.setDeveloperMode(developerMode);
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
@@ -455,7 +460,7 @@ public class LoadoutLabPlugin extends Plugin
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"classicGearLayout");
+		"classicGearLayout", "loadingAnimation");
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
@@ -475,7 +480,8 @@ public class LoadoutLabPlugin extends Plugin
 			config.showWildyRisk(),
 			config.showInBankButton(),
 			config.showFilterBankButton(),
-			config.classicGearLayout());
+			config.classicGearLayout(),
+			config.loadingAnimation());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */

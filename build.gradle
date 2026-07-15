@@ -44,7 +44,7 @@ tasks.named('test', Test) {
 }
 
 group = 'com.loadoutlab'
-version = '0.2.2'
+version = '0.2.3'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
@@ -84,6 +84,16 @@ tasks.register('preSubmit') {
 	group = 'verification'
 	description = 'Pre-submission checks for a Plugin Hub update (test + checkDocs + checkTokens + checkGlyphs).'
 	dependsOn 'test', 'checkDocs', 'checkTokens', 'checkGlyphs'
+}
+
+// Render every mascot loading animation to build/mascot-preview/<mood>.png
+// for an eyeball check when adding or tweaking a mood: ./gradlew mascotPreview
+tasks.register('mascotPreview', JavaExec) {
+	group = 'loadout lab'
+	description = 'Render each mascot mood to build/mascot-preview/<mood>.png'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.ui.MascotPreview'
+	systemProperty 'java.awt.headless', 'true'
 }
 
 // Optimizer wall-clock benchmark over a fixed monster/mode/risk matrix

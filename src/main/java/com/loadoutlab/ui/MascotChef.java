@@ -2,12 +2,8 @@ package com.loadoutlab.ui;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.JComponent;
-import javax.swing.Timer;
 
 import static com.loadoutlab.ui.MascotArt.JUICE;
 import static com.loadoutlab.ui.MascotArt.LIMB;
@@ -22,7 +18,7 @@ import static com.loadoutlab.ui.MascotArt.SCALE;
  * Shares the sprite slices and leg renderer with MascotSpinner via
  * MascotArt.
  */
-class MascotChef extends JComponent
+class MascotChef extends Mascot
 {
 	// Props palette. The soup is deliberately NOT the juice amber - the
 	// mascot is not cooking itself.
@@ -45,42 +41,10 @@ class MascotChef extends JComponent
 	 * fall into lockstep. */
 	private static final double STIR_PERIOD = 0.9;
 
-	private final Timer timer = new Timer(33, e -> repaint());
-	private long startedAt;
-
-	MascotChef()
-	{
-		setPreferredSize(new Dimension(16 * SCALE + 96, 16 * SCALE + 32));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, 16 * SCALE + 32));
-		setAlignmentX(LEFT_ALIGNMENT);
-	}
-
 	@Override
-	public void addNotify()
+	protected void render(Graphics2D g2, double t, int w, int h)
 	{
-		super.addNotify();
-		startedAt = System.currentTimeMillis();
-		timer.start();
-	}
-
-	@Override
-	public void removeNotify()
-	{
-		timer.stop();
-		super.removeNotify();
-	}
-
-	@Override
-	protected void paintComponent(Graphics g)
-	{
-		if (!MascotArt.available())
-		{
-			return;
-		}
-		Graphics2D g2 = (Graphics2D) g.create();
-		paintFrame(g2, (System.currentTimeMillis() - startedAt) / 1000.0,
-			getWidth(), getHeight());
-		g2.dispose();
+		paintFrame(g2, t, w, h);
 	}
 
 	/** The whole scene at time t - static and deterministic so the preview
@@ -115,7 +79,7 @@ class MascotChef extends JComponent
 			double flick = Math.sin(t * 8 + i * 2.4) * Math.sin(t * 5.3 + i * 1.7);
 			int fh = 3 + (int) Math.round(Math.abs(flick) * 4);
 			int fx = potX + 2 + i * (potW - 7) / 3;
-			g2.setColor(FIRE[((int) (t * 10) + i) % 3]);
+			g2.setColor(FIRE[Math.floorMod((int) (t * 10) + i, 3)]);
 			g2.fillRect(fx, groundY - fh, 3, fh);
 		}
 		g2.setColor(POT);

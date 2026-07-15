@@ -2,12 +2,8 @@ package com.loadoutlab.ui;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.JComponent;
-import javax.swing.Timer;
 
 import static com.loadoutlab.ui.MascotArt.JUICE;
 import static com.loadoutlab.ui.MascotArt.SCALE;
@@ -23,7 +19,7 @@ import static com.loadoutlab.ui.MascotArt.SCALE;
  * along: it tracks the ball like an eye instead of flipping on a step
  * count. Stars pop for the header-settle and the clean drop-catch.
  */
-class MascotStriker extends JComponent
+class MascotStriker extends Mascot
 {
 	private static final Color BALL = new Color(240, 240, 240);
 	private static final Color BALL_PATCH = new Color(38, 38, 44);
@@ -55,42 +51,10 @@ class MascotStriker extends JComponent
 	/** Balance sway lap - unrelated to the kick beat on purpose. */
 	private static final double WOBBLE = 0.7;
 
-	private final Timer timer = new Timer(33, e -> repaint());
-	private long startedAt;
-
-	MascotStriker()
-	{
-		setPreferredSize(new Dimension(16 * SCALE + 96, 16 * SCALE + 32));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, 16 * SCALE + 32));
-		setAlignmentX(LEFT_ALIGNMENT);
-	}
-
 	@Override
-	public void addNotify()
+	protected void render(Graphics2D g2, double t, int w, int h)
 	{
-		super.addNotify();
-		startedAt = System.currentTimeMillis();
-		timer.start();
-	}
-
-	@Override
-	public void removeNotify()
-	{
-		timer.stop();
-		super.removeNotify();
-	}
-
-	@Override
-	protected void paintComponent(Graphics g)
-	{
-		if (!MascotArt.available())
-		{
-			return;
-		}
-		Graphics2D g2 = (Graphics2D) g.create();
-		paintFrame(g2, (System.currentTimeMillis() - startedAt) / 1000.0,
-			getWidth(), getHeight());
-		g2.dispose();
+		paintFrame(g2, t, w, h);
 	}
 
 	/** The whole scene at time t - static and deterministic so the preview
