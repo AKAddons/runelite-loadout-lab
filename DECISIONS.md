@@ -75,3 +75,30 @@ data rows, not raw wiki names (the stat-key collapse merges versions).
 session: "each result is in a collapsible card and we can show multiple
 results on a page... a precursor for raids, all Zulrah versions at once,
 all Dagannoth Kings at once."
+
+## 2026-07-16 (addendum): M-4 is a group LOOKUP - the hybrid/tribrid assistant
+
+**Decision:** Beyond showing multiple results (M-1..M-3), a monster group is
+itself queryable: one answer against the whole group - a worn base kit plus
+a carried swap set under a swap budget N. Implementation: greedy-merge from
+the members' independent best sets, pricing each slot compromise, until the
+swap budget holds; surfaced as a slider showing the dps retained at each
+budget. Hybrid knowledge is NOT curated - void tribrid must emerge from
+slot-sharing economics (the validation case).
+
+**Alternatives considered:**
+- Joint beam over the full multi-monster space - rejected for v1:
+  combinatorial blowup; the greedy merge works on already-cached
+  per-monster results and every step is explainable.
+- Curated hybrid-set tables - rejected: a maintenance treadmill, and the
+  engine can discover sharing (salve/void/barrows-gloves class items)
+  from the slot economics directly.
+
+**Open (deferred to build time):** objective per group (weighted-sum with
+rotation shares vs maximize-min dps); whether N counts carried switch
+items (lean - ties into v0.4 inventory planning) or switch clicks.
+
+**Context:** Field refinement of the multi-mob canvas, same day: "another
+concept of a multi-result lookup where you are actually looking up a set
+that is effective against the group... hybrid/tribrid with a minimum of N
+gear swaps."

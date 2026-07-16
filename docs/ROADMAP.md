@@ -43,9 +43,19 @@ needs a page-scoped supersession ticket + progressive card fill-in.
   "Dagannoth Kings", GWD rooms, Barrows) searchable as virtual hits
   that expand into a page. MUST be built against LOADED rows, not raw
   wiki names (the stat-key collapse merges some versions). (S-M)
-- **M-4 Group synthesis** - one carry set scored across the page
-  (weighted/min dps) + per-room switch suggestions; the raid and
-  slayer-task-planner foundation. (L)
+- **M-4 Group lookup: the hybrid/tribrid assistant** - a group is
+  QUERYABLE, not just viewable: one answer optimized against all
+  members - a worn base kit + a carried swap set under a swap budget
+  N. Algorithm: start from the members' independent bests (cached),
+  then greedy-merge the cheapest slot differences ("one shared helm
+  costs 0.3 dps, saves 2 swaps") until within budget - every step
+  priced, so the UI is a swap SLIDER (6 swaps: 99% / 4: 95% / 2: 88%)
+  and every compromise item explains itself. No curated hybrid tables:
+  void tribrid must EMERGE from slot-sharing economics (validation
+  case). Open calls: objective per group (weighted-sum with rotation
+  shares vs maximize-min) and whether N counts carried switch items
+  (lean: yes - ties into v0.4 inventory planning) or per-transition
+  clicks. The raid and slayer-task-planner foundation. (L)
 
 Favorites/save (the former 0.3.0 wishlist item) is subsumed: a saved
 PAGE ("my Zulrah setup", "DKs trip") replaces saved single loadouts.
