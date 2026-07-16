@@ -36,3 +36,42 @@ discovery reframed the project from "build a DPS calculator" to "build the 10%
 that doesn't exist." Licensing rule recorded in CLAUDE.md: never copy GPL
 weirdgloop code; its data JSON is wiki content (CC BY-NC-SA, keep attribution);
 retain best-dps's BSD-2 license text with derived code.
+
+## 2026-07-16: Results area becomes a multi-mob canvas (v0.3.0 headline arc)
+
+**Decision:** The results area renders a LIST of collapsible monster cards
+instead of a single monster's result. A list of one is pixel-identical to
+today's UI. Phased: M-1 list refactor → M-2 multi-add UX (add-to-view,
+close/collapse/reorder, pages join back/forward history) → M-3 curated
+monster groups ("Zulrah (all forms)", "Dagannoth Kings", GWD rooms,
+Barrows) → M-4 group synthesis (one carry set scored across the page +
+per-room switches). Favorites/save is subsumed: saved PAGES replace saved
+single loadouts. The old v0.3 trip plan renumbers to v0.4 and builds on M-4.
+
+**Alternatives considered:**
+- Keep single-result view, add a separate "compare" screen — rejected: a
+  second surface duplicates the style-card renderer and splits history/
+  pins/notes semantics; the list generalizes the existing view instead.
+- Per-monster tabs — rejected: tabs hide the cross-mob comparison that is
+  the point (DKs, Zulrah forms) and fight the sidebar's vertical model.
+- Jump straight to raid support without the canvas — rejected: every raid/
+  slayer-planner feature needs a multi-mob surface first; building it once
+  as the general case avoids a raids-only dead end.
+
+**Rationale:** Matches how combat actually works (multiple mobs per trip);
+the style-card level already collapses, so this adds one level above with
+the single view as the degenerate case. It is the enabling layer for the
+audit's highest-value gaps (raid scaling, phase-weighted bosses, slayer
+task planning).
+
+**Key design calls:** global toggles act as DEFAULTS resolved per-card
+against each monster's own gating (the applySelection rules, per card);
+monster cards collapse to a one-line best-style summary (vertical-budget
+rule); OptimizerService gets a page-scoped supersession ticket with
+progressive card fill-in; monster groups must be curated against LOADED
+data rows, not raw wiki names (the stat-key collapse merges versions).
+
+**Context:** Field request 2026-07-16 during the audit-fixes/back-forward
+session: "each result is in a collapsible card and we can show multiple
+results on a page... a precursor for raids, all Zulrah versions at once,
+all Dagannoth Kings at once."
