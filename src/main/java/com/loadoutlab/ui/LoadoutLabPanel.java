@@ -220,8 +220,9 @@ public class LoadoutLabPanel extends PluginPanel
 	 * note, and extra items unioned into the bank Show/Filter sets. Pins
 	 * and filter items are scoped: "ALL" or a CombatStyle name - a super
 	 * combat for the melee card, a ranged potion for the ranged card. */
-	/** Undo/redo over the plugin's CommandHistory. The panel only renders
-	 * buttons and relays clicks; the stack lives plugin-side. */
+	/** Back/forward over the plugin's CommandHistory. The panel renders the
+	 * buttons, relays clicks, and feeds its own steps (monster selections)
+	 * into the shared stack; the stack lives plugin-side. */
 	public interface HistoryControl
 	{
 		boolean undo();
@@ -232,10 +233,14 @@ public class LoadoutLabPanel extends PluginPanel
 
 		boolean canRedo();
 
-		/** Next undo target's description, or null when the stack is empty. */
+		/** Next back target's description, or null when the stack is empty. */
 		String undoLabel();
 
 		String redoLabel();
+
+		/** Run a panel-originated step (a monster selection) through the
+		 * same stack the store mutations use - ONE unified back/forward. */
+		boolean execute(com.loadoutlab.command.Command command);
 	}
 
 	public interface MobProfile
@@ -515,7 +520,7 @@ public class LoadoutLabPanel extends PluginPanel
 		header.add(title, BorderLayout.WEST);
 		// Undo/redo arrows ride the header row next to the options dots
 		// (header-inline per the vertical-space rule; no row of their own).
-		undoButton = new JButton(new UndoArrowIcon(12, false));
+		undoButton = new JButton(new UndoArrowIcon(12, true));
 		undoButton.setMargin(new Insets(2, 5, 2, 5));
 		undoButton.addActionListener(e ->
 		{
@@ -524,7 +529,7 @@ public class LoadoutLabPanel extends PluginPanel
 				refreshAfterHistory();
 			}
 		});
-		redoButton = new JButton(new UndoArrowIcon(12, true));
+		redoButton = new JButton(new UndoArrowIcon(12, false));
 		redoButton.setMargin(new Insets(2, 5, 2, 5));
 		redoButton.addActionListener(e ->
 		{
@@ -1039,8 +1044,46 @@ public class LoadoutLabPanel extends PluginPanel
 		return false;
 	}
 
-	/** A pick: collapse the dropdown, show the selection, clear the query. */
+	/** A pick: record it as a back/forward step, then apply. Selecting a
+	 * monster joins the same history as edits - the arrows are BACK and
+	 * FORWARD through everything you did, so searching Vorkath after
+	 * Zulrah means back lands on Zulrah (field request 2026-07-16). The
+	 * first pick of a session is not recorded: back never lands on a
+	 * blank panel. */
 	private void select(MonsterStats monster)
+	{
+		MonsterStats previous = selectedMonster;
+		if (historyControl == null || previous == null || previous == monster)
+		{
+			applySelection(monster);
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applySelection(monster);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				applySelection(previous);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "vs " + monster.label();
+			}
+		});
+	}
+
+	/** The selection itself: collapse the dropdown, show it, recompute. */
+	private void applySelection(MonsterStats monster)
 	{
 		suppressSearchEvents = true;
 		try
@@ -1201,8 +1244,8 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean canRedo = historyControl != null && historyControl.canRedo();
 		undoButton.setEnabled(canUndo);
 		redoButton.setEnabled(canRedo);
-		undoButton.setToolTipText(canUndo ? "Undo: " + historyControl.undoLabel() : "Nothing to undo");
-		redoButton.setToolTipText(canRedo ? "Redo: " + historyControl.redoLabel() : "Nothing to redo");
+		undoButton.setToolTipText(canUndo ? "Back: " + historyControl.undoLabel() : "Nothing to go back to");
+		redoButton.setToolTipText(canRedo ? "Forward: " + historyControl.redoLabel() : "Nothing to go forward to");
 	}
 
 	/** After an undo/redo any store may have changed - refresh every
@@ -1996,9 +2039,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** Curved undo/redo arrow, painted (Swing glyphs tofu on Tahoe): a 3/4
-	 * arc opening downward with an arrowhead at the top - left-hooking for
-	 * undo, mirrored for redo. Greys out with the button's enabled state. */
+	/** Curved back/forward arrow, painted (Swing glyphs tofu on Tahoe): a
+	 * 3/4 arc opening downward with an arrowhead at the top - mirrored
+	 * (head upper-left) for back, plain (head upper-right) for forward.
+	 * Greys out with the button's enabled state. */
 	private static final class UndoArrowIcon implements javax.swing.Icon
 	{
 		private final int size;

@@ -1015,6 +1015,12 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				return commandHistory.peekRedoDescription();
 			}
+
+			@Override
+			public boolean execute(com.loadoutlab.command.Command command)
+			{
+				return exec(command);
+			}
 		};
 	}
 

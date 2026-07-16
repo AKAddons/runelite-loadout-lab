@@ -323,12 +323,14 @@ exclusions are managed from the "This mob" line.
 
 ### Undo and redo
 
-The header's undo/redo arrows walk back (and forward again) your last 50
-edits: exclusions, pins, notes, dream items, stored-elsewhere marks,
-protect-only flags, pinned spells, and trip supplies. Hover for exactly
-what's next ("Undo: Pin Osmumten's fang"). Scan-driven changes (bank
-snapshots, storage captures) are never undoable - only your deliberate
-edits. History is per-session and resets on profile switch.
+The header's back/forward arrows walk your last 50 steps - monster
+searches AND edits in one history: search Zulrah, search Vorkath, hit
+back and you are on Zulrah again. Edits covered: exclusions, pins,
+notes, dream items, stored-elsewhere marks, protect-only flags, pinned
+spells, and trip supplies. Hover for exactly what's next ("Back: Pin
+Osmumten's fang"). Scan-driven changes (bank snapshots, storage
+captures) are never steps - only what you deliberately did. History is
+per-session and resets on profile switch.
 
 ![Undo and redo](docs/img/undo-redo.png)
 

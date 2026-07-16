@@ -389,10 +389,12 @@
       ],
       "tests": [
         "command/CommandHistoryTest.java",
-        "command/CommandsTest.java"
+        "command/CommandsTest.java",
+        "ui/SelectionHistoryTest.java"
       ],
       "since": "0.3.0",
-      "capture": "Header with the undo arrow hovered, tooltip reading 'Undo: Pin <item>' after pinning something. Single PNG screenshot."
+      "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
+      "notes": "Back/forward semantics: monster selections join the same CommandHistory stack as store mutations (SelectionHistoryTest); first pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
     }
   ]
 }
