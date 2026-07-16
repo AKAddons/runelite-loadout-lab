@@ -302,6 +302,74 @@ public class SelectionHistoryTest
 	}
 
 	@Test
+	public void addToViewGrowsThePageAndBackShrinksIt()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));
+		Assert.assertEquals(1, panel.pageSizeForTest());
+
+		panel.addToView(data.searchMonsters("general graardor", 1).get(0));
+		Assert.assertEquals("the page holds both results", 2, panel.pageSizeForTest());
+		Assert.assertEquals("the newcomer is active",
+			"General Graardor", panel.selectedMonsterForTest().getName());
+		Assert.assertEquals("only the newcomer computed",
+			"General Graardor", computed.get().getName());
+
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("back removes the added result", 1, panel.pageSizeForTest());
+		Assert.assertEquals("Zulrah", panel.selectedMonsterForTest().getName());
+
+		Assert.assertTrue(history.redo());
+		Assert.assertEquals(2, panel.pageSizeForTest());
+		Assert.assertEquals("General Graardor", panel.selectedMonsterForTest().getName());
+	}
+
+	@Test
+	public void closingAResultIsAStepAndBackRestoresIt()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));
+		panel.addToView(data.searchMonsters("general graardor", 1).get(0));
+		Assert.assertEquals(2, panel.pageSizeForTest());
+
+		panel.closeActiveResultForTest();
+		Assert.assertEquals("closing the active result shrinks the page", 1, panel.pageSizeForTest());
+		Assert.assertEquals("the remaining result's mob takes over",
+			"Zulrah", panel.selectedMonsterForTest().getName());
+		Assert.assertEquals("Close - General Graardor", history.peekUndoDescription());
+
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("back re-adds the closed result", 2, panel.pageSizeForTest());
+		Assert.assertEquals("General Graardor", panel.selectedMonsterForTest().getName());
+	}
+
+	@Test
+	public void closingTheLastResultClearsThePanel()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));
+		panel.closeActiveResultForTest();
+		Assert.assertEquals(0, panel.pageSizeForTest());
+		Assert.assertNull(panel.selectedMonsterForTest());
+
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("back restores the lone result", 1, panel.pageSizeForTest());
+		Assert.assertEquals("Zulrah", panel.selectedMonsterForTest().getName());
+	}
+
+	@Test
 	public void repickingTheSameMonsterAddsNoHistoryStep()
 	{
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
