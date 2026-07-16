@@ -392,7 +392,7 @@
         "command/CommandsTest.java",
         "ui/SelectionHistoryTest.java"
       ],
-      "since": "0.3.0",
+      "since": "0.2.4",
       "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
       "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
     }

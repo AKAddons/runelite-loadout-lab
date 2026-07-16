@@ -207,7 +207,7 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
   game-best/BiS stays ungated (runes are cheap consumables there -
   the assumed-potion philosophy). Pairs with the ironman-aware
   direction from the 2026-07 audit.
-- **Undo/redo for mutations** - DONE (2026-07-15, 0.3.0): goal planner's
+- **Undo/redo for mutations** - DONE (2026-07-15, 0.2.4): goal planner's
   command pattern ported as `com.loadoutlab.command` (Command.apply()/
   revert(), CommandHistory bounded at 50, CompositeCommand + ref-counted
   compounds; session-only, EDT-only, cleared on profile change).
@@ -230,7 +230,8 @@ mascot loading-animation roster - six moods, weighted calendar windows,
 dev-mode gallery).
 
 Hub cadence: hub submissions are not roadmap items. Next hub submission
-lands with 0.3.0 (0.2.3 rides along in it).
+lands with 0.2.4 (this batch: audit fixes, back/forward, style icons -
+0.2.3's mascots ride along in it).
 
 Player audit (2026-07-15, docs/audits/2026-07-15-player-audit.md): a
 merciless full-engine review from every persona (new/mid/max x main/
