@@ -71,6 +71,17 @@ standalone win that pre-builds the M-1 assets).
   serving up to three kits - the ultimate swap-saver, and the merge
   must discover it). The BUDGET knob (slider + text entry) counts
   SWAP ITEMS - the intentional extra inventory slots - not kits.
+  MAX SWAPS parameter (added 2026-07-16): the search parameter area
+  gains "Max swaps: 0/1/2" = max kit TRANSITIONS (kits - 1): 0 mono /
+  1 hybrid / 2 tribrid. Orthogonal to the item budget (swaps bound
+  the kit count; the slider bounds the slots spent achieving it).
+  Max swaps 0 on a group is meaningful: ONE worn set for the whole
+  roster, zero switch items - style may still vary per mob when the
+  weapon permits (salamander). A plugin CONFIG option hides the
+  control and locks 0 for every search (DisplayOptions pattern, like
+  the budget/wildy-risk rows) for users who never want hybrid
+  suggestions. As a panel parameter it joins the back/forward stream
+  and cache keys via the existing recording machinery.
   Algorithm: greedy-merge from the members' cached independent bests,
   pricing each compromise until within the item budget. UI: TAB VIEW
   between kits at the result level (worn view per kit, shared pieces
