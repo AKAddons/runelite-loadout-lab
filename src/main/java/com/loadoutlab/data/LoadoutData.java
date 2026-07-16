@@ -148,11 +148,47 @@ public final class LoadoutData
 			}
 		}
 
+		// Among same-name versions, surface the fight a player MEANS by the
+		// bare name first: post-quest/normal over quest, Awakened, Enraged,
+		// Entry/Hard mode or Deep Delve rows (which sort first alphabetically
+		// and used to be the silent default for vorkath, the DT2 four, zuk
+		// and verzik). Stable sort - corpus order breaks ties, and every
+		// version stays reachable further down the hit list.
+		exact.sort(java.util.Comparator.comparingInt(m -> versionTier(m.getVersion())));
+
 		java.util.ArrayList<MonsterStats> result = new java.util.ArrayList<>(limit);
 		addLimited(result, exact, limit);
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
 		return result;
+	}
+
+	/** Lower = a better default for a bare-name search. */
+	private static int versionTier(String version)
+	{
+		if (version == null || version.isEmpty())
+		{
+			return 1;
+		}
+		String v = version.toLowerCase(java.util.Locale.ROOT);
+		if (v.contains("post-quest"))
+		{
+			return 0;   // the everyday fight
+		}
+		if (v.contains("normal") || v.contains("serpentine"))
+		{
+			return 1;   // normal mode / Zulrah's spawn form
+		}
+		if (v.contains("awakened") || v.contains("enraged") || v.contains("entry mode")
+			|| v.contains("deep delve") || v.contains("quest"))
+		{
+			return 3;   // scaled/hard variants and quest-only rows: never the default
+		}
+		// "Hard mode" stays neutral (tier 2): where a true Normal row exists it
+		// outranks hard at tier 1 anyway, and ToB's Normal rows stat-collapse
+		// INTO the Hard-labeled ones (same defensive block), so for Verzik the
+		// hard-labeled row IS the everyday fight's numbers.
+		return 2;
 	}
 
 	/**
