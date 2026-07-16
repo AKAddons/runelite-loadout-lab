@@ -36,7 +36,12 @@ Design calls: top toggles stay GLOBAL as defaults, each mob section
 resolves them against its own monster (the applySelection gating);
 collapsed levels show one-line best-style summaries (vertical-budget
 rule); OptimizerService needs a page-scoped supersession ticket +
-progressive fill-in.
+progressive fill-in; combat styles render as GAME SPRITE ICONS
+(SpriteManager skill icons - attack/ranged/magic - the AssumeIcons
+pattern; sprites not glyphs per the Tahoe tofu rule, tooltips carry
+the words) everywhere: kit tabs, mob-row kit chips, and today's
+[Melee]/[Ranged]/[Magic] card headers (the last is a small
+standalone win that pre-builds the M-1 assets).
 
 - **M-1 List refactor** - results area renders a list of RESULT
   cards, each holding 1..N mob sections; a single-mob result is
