@@ -484,6 +484,8 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Dragonfire: gear protection by default; the shield cell flips
 		 * this result to an assumed super antifire (and back). */
 		boolean superAntifireAssumed;
+		/** Whole-result fold: collapsed to the header's one-line summary. */
+		boolean folded;
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -855,6 +857,42 @@ public class LoadoutLabPanel extends PluginPanel
 			public void removeUpdate(DocumentEvent e) { onSearchEdited(); }
 			public void changedUpdate(DocumentEvent e) { onSearchEdited(); }
 		});
+		// Right-click a search hit: add it to the page WITHOUT dropping the
+		// current results (multi-mob canvas M-2). Plain click still replaces.
+		monsterList.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				maybePopup(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				maybePopup(e);
+			}
+
+			private void maybePopup(MouseEvent e)
+			{
+				if (!e.isPopupTrigger())
+				{
+					return;
+				}
+				int idx = monsterList.locationToIndex(e.getPoint());
+				if (idx < 0)
+				{
+					return;
+				}
+				MonsterStats hit = monsterModel.get(idx);
+				JPopupMenu menu = new JPopupMenu();
+				JMenuItem add = new JMenuItem(selectedMonster == null
+					? "Open" : "Add to view");
+				add.addActionListener(a -> addToView(hit));
+				menu.add(add);
+				menu.show(monsterList, e.getX(), e.getY());
+			}
+		});
 		monsterList.addListSelectionListener(e ->
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
@@ -911,11 +949,18 @@ public class LoadoutLabPanel extends PluginPanel
 	 * shared-name wilderness monsters only when the user checked the box. */
 	private boolean effectiveWilderness()
 	{
-		if (selectedMonster == null || !WildernessMonsters.isWilderness(selectedMonster))
+		return active != null && effectiveWilderness(active);
+	}
+
+	/** Per-entry resolution: the checkbox is a page-level statement, each
+	 * entry resolves it against its own monster (canvas design call). */
+	private boolean effectiveWilderness(ResultEntry entry)
+	{
+		if (!WildernessMonsters.isWilderness(entry.monster))
 		{
 			return false;
 		}
-		return WildernessMonsters.isExclusive(selectedMonster) || inWilderness.isSelected();
+		return WildernessMonsters.isExclusive(entry.monster) || inWilderness.isSelected();
 	}
 
 	/** Sync the wilderness checkbox + risk rows to the selected monster. */
@@ -1282,6 +1327,14 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The selection itself: collapse the dropdown, show it, recompute. */
 	private void applySelection(MonsterStats monster)
 	{
+		applySelection(monster, true);
+	}
+
+	/** The selection itself. replacePage: the classic pick (page becomes
+	 * this monster alone); otherwise the monster JOINS the page as a new
+	 * result and becomes active (multi-add, M-2). */
+	private void applySelection(MonsterStats monster, boolean replacePage)
+	{
 		suppressSearchEvents = true;
 		try
 		{
@@ -1295,9 +1348,14 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
 		hadSelection = true;
-		// M-1 page-of-one: selecting replaces the page with this monster's
-		// entry; selectedMonster stays the active entry's mob by contract.
-		page.clear();
+		if (replacePage)
+		{
+			page.clear();
+		}
+		else
+		{
+			page.removeIf(e -> e.monster.getId() == monster.getId());
+		}
 		active = new ResultEntry(monster);
 		page.add(active);
 		// Each monster starts OUT of the wilderness unless it lives nowhere
@@ -1308,6 +1366,33 @@ public class LoadoutLabPanel extends PluginPanel
 		bankHighlighter.highlight(null);
 		bankFiltered = null;
 		bankFilter.filter(null);
+		applyActiveMonsterUi(monster);
+		usageLog.record(monster.label());
+		// A new mob: fresh collapse defaults, its own note state.
+		cardCollapsed().clear();
+		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
+		refreshNotePanel();
+		refreshPinnedLabel();
+		revalidate();
+		repaint();
+		if (replacePage)
+		{
+			recompute();
+		}
+		else
+		{
+			// Existing results stay; only the newcomer computes.
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(active);
+		}
+	}
+
+	/** The affordances keyed to the ACTIVE monster: slayer-toggle gating,
+	 * the selected row, and the curated monster note. Shared by selection
+	 * and by active-entry changes when a result closes. */
+	private void applyActiveMonsterUi(MonsterStats monster)
+	{
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -1329,7 +1414,6 @@ public class LoadoutLabPanel extends PluginPanel
 			slayerTask.setEnabled(true);
 			slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		}
-		usageLog.record(monster.label());
 		// html so a long name/level wraps to a second line instead of
 		// clipping to "..." in the fixed-width BorderLayout centre (the body
 		// width leaves room for the reload/close buttons beside it).
@@ -1340,14 +1424,112 @@ public class LoadoutLabPanel extends PluginPanel
 		String note = MonsterNotes.noteFor(monster);
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
 		monsterNote.setVisible(note != null);
-		// A new mob: fresh collapse defaults, its own note state.
-		cardCollapsed().clear();
-		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
+	}
+
+	/** Add a monster to the page as its own result (search-hit right-click).
+	 * A back/forward step: back removes it and restores the previous active. */
+	void addToView(MonsterStats monster)
+	{
+		MonsterStats previousActive = selectedMonster;
+		if (historyControl == null || previousActive == null)
+		{
+			applySelection(monster, previousActive != null);
+			return;
+		}
+		if (previousActive.getId() == monster.getId())
+		{
+			return; // already the active result
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applySelection(monster, false);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				removeFromPage(monster.getId(), previousActive);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "+ vs " + monster.label();
+			}
+		});
+	}
+
+	/** Close a result (the X or a step revert): drop the entry; if it was
+	 * active, the given (or last remaining) entry's monster takes over. */
+	private void removeFromPage(int monsterId, MonsterStats nextActive)
+	{
+		page.removeIf(e -> e.monster.getId() == monsterId);
+		if (page.isEmpty())
+		{
+			clearSelectionInternal();
+			return;
+		}
+		ResultEntry next = nextActive != null ? entryFor(nextActive.getId()) : null;
+		if (next == null)
+		{
+			next = page.get(page.size() - 1);
+		}
+		active = next;
+		selectedMonster = next.monster;
+		applyActiveMonsterUi(next.monster);
+		refreshWildernessRows();
 		refreshNotePanel();
 		refreshPinnedLabel();
-		revalidate();
-		repaint();
-		recompute();
+		renderPage();
+	}
+
+	/** The header X: a recorded step - back re-adds the result (recomputed;
+	 * results are not retained through a close). */
+	private void closeResult(ResultEntry entry)
+	{
+		MonsterStats closing = entry.monster;
+		MonsterStats fallback = null;
+		for (ResultEntry e : page)
+		{
+			if (e != entry)
+			{
+				fallback = e.monster; // the last other entry wins below anyway
+			}
+		}
+		MonsterStats nextActive = selectedMonster != null
+			&& selectedMonster.getId() == closing.getId() ? fallback : selectedMonster;
+		if (historyControl == null)
+		{
+			removeFromPage(closing.getId(), nextActive);
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				removeFromPage(closing.getId(), nextActive);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				applySelection(closing, false);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Close - " + closing.getName();
+			}
+		});
 	}
 
 	/** The wilderness tradeable cap, or -1 when the mode is off/hidden. */
@@ -1465,6 +1647,19 @@ public class LoadoutLabPanel extends PluginPanel
 	void clearSelectionForTest()
 	{
 		clearSelection();
+	}
+
+	int pageSizeForTest()
+	{
+		return page.size();
+	}
+
+	void closeActiveResultForTest()
+	{
+		if (active != null)
+		{
+			closeResult(active);
+		}
 	}
 
 	MonsterStats selectedMonsterForTest()
@@ -2351,6 +2546,48 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
+	private static final class CloseIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		CloseIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g2.setColor(c.isEnabled() ? new Color(180, 180, 220) : new Color(96, 96, 108));
+				g2.drawLine(x + 1, y + 1, x + size - 1, y + size - 1);
+				g2.drawLine(x + size - 1, y + 1, x + 1, y + size - 1);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
 	private static final class DotsIcon implements javax.swing.Icon
 	{
@@ -2470,45 +2707,37 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** Parameters changed: every entry on the page is stale - drop results
+	 * (a previous answer under new settings reads as this one's), render
+	 * the placeholders, and recompute each entry. */
 	private void recompute()
 	{
 		if (selectedMonster == null)
 		{
 			return;
 		}
-		// Clear stale results immediately - showing the previous monster's
-		// sets while the optimizer runs reads as an answer for this one.
-		resultsPanel.removeAll();
-		// The roster picks today's mood (weighted by season); see MascotRoster.
-		if (displayOptions.loadingAnimation && MascotArt.available())
-		{
-			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
-			if (mascot != null)
-			{
-				resultsPanel.add(mascot);
-			}
-		}
-		// html so long monster names wrap instead of clipping at the edge
-		JLabel computing = new JLabel("<html>Optimizing vs " + selectedMonster.getName() + "...</html>");
-		computing.setForeground(MUTED);
-		computing.setAlignmentX(LEFT_ALIGNMENT);
-		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-		resultsPanel.add(computing);
-		resultsPanel.revalidate();
-		revalidate();
-		repaint();
-		statusLabel.setText(" ");
-		// Compute every entry on the page (M-1: exactly one). Each result
-		// routes back through showResults into its entry and re-renders.
 		for (ResultEntry entry : page)
 		{
-			computeHook.compute(entry.monster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			effectiveWilderness(), spellbookLock(), riskCap(), selectedRiskBudget(),
-			superAntifireAssumed() && DragonfireRules.breathesFire(selectedMonster),
+			entry.results = null;
+		}
+		renderPage();
+		statusLabel.setText(" ");
+		for (ResultEntry entry : page)
+		{
+			computeEntry(entry);
+		}
+	}
+
+	/** One entry's compute: parameters are the global defaults resolved
+	 * against THIS entry's monster (wilderness exclusivity, antifire). */
+	private void computeEntry(ResultEntry entry)
+	{
+		computeHook.compute(entry.monster, f2pOnly.isSelected(), slayerTask.isSelected(),
+			effectiveWilderness(entry), spellbookLock(), riskCap(), selectedRiskBudget(),
+			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.monster),
 			parsedBudgetGp(),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
-				() -> statusLabel.setText(" "));
-		}
+			() -> statusLabel.setText(" "));
 	}
 
 	/** Account or profile switched: nothing on screen may survive. */
@@ -2602,16 +2831,39 @@ public class LoadoutLabPanel extends PluginPanel
 		return null;
 	}
 
-	/** Rebuild the results area from the page: one card per entry. With a
-	 * one-entry page this renders exactly the old single-result layout. */
+	/** Rebuild the results area from the page: one card per entry - chrome
+	 * (header with fold + close) only appears once the page holds more than
+	 * one result, so the single view stays pixel-identical to 0.2.4.
+	 * Entries still computing render a placeholder (mascot on the first). */
 	private void renderPage()
 	{
 		resultsPanel.removeAll();
+		boolean chrome = page.size() > 1;
+		boolean mascotShown = false;
 		for (ResultEntry entry : page)
 		{
+			if (chrome)
+			{
+				resultsPanel.add(resultChrome(entry));
+				resultsPanel.add(Box.createVerticalStrut(4));
+			}
+			if (chrome && entry.folded)
+			{
+				resultsPanel.add(Box.createVerticalStrut(4));
+				continue;
+			}
 			if (entry.results != null)
 			{
 				resultsPanel.add(resultCard(entry));
+			}
+			else
+			{
+				resultsPanel.add(pendingCard(entry, !mascotShown));
+				mascotShown = true;
+			}
+			if (chrome)
+			{
+				resultsPanel.add(Box.createVerticalStrut(8));
 			}
 		}
 		if (selectedMonster != null)
@@ -2624,6 +2876,81 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.revalidate();
 		revalidate();
 		repaint();
+	}
+
+	/** A result's header row: fold chevron + "vs <name>" (+ one-line best
+	 * summary when folded) left, close (X) right. Only rendered on
+	 * multi-result pages. */
+	private javax.swing.JComponent resultChrome(ResultEntry entry)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+		String summary = "";
+		if (entry.folded && entry.results != null)
+		{
+			double best = 0;
+			for (StyleResult r : entry.results.values())
+			{
+				if (r != null && r.owned != null && !r.owned.isEmpty())
+				{
+					best = Math.max(best, r.owned.get(0).getDps());
+				}
+			}
+			summary = best > 0 ? String.format(" - %.2f DPS", best) : " - no set";
+		}
+		JLabel title = new JLabel((entry.folded ? "> " : "v ") + "vs "
+			+ entry.monster.label() + summary);
+		title.setForeground(Color.WHITE);
+		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
+		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		title.setToolTipText(entry.folded ? "Click to expand this result" : "Click to fold this result");
+		title.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				entry.folded = !entry.folded;
+				renderPage();
+			}
+		});
+		row.add(title, BorderLayout.WEST);
+		JButton close = new JButton(new CloseIcon(9));
+		close.setToolTipText("Close this result");
+		close.setMargin(new Insets(1, 5, 1, 5));
+		close.addActionListener(e -> closeResult(entry));
+		JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+		east.setOpaque(false);
+		east.add(close);
+		row.add(east, BorderLayout.EAST);
+		return row;
+	}
+
+	/** The still-computing placeholder: the mascot (first pending card
+	 * only - one performer per stage) and the optimizing line. */
+	private javax.swing.JComponent pendingCard(ResultEntry entry, boolean withMascot)
+	{
+		JPanel column = new JPanel();
+		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
+		column.setOpaque(false);
+		column.setAlignmentX(LEFT_ALIGNMENT);
+		// The roster picks today's mood (weighted by season); see MascotRoster.
+		if (withMascot && displayOptions.loadingAnimation && MascotArt.available())
+		{
+			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
+			if (mascot != null)
+			{
+				column.add(mascot);
+			}
+		}
+		// html so long monster names wrap instead of clipping at the edge
+		JLabel computing = new JLabel("<html>Optimizing vs " + entry.monster.getName() + "...</html>");
+		computing.setForeground(MUTED);
+		computing.setAlignmentX(LEFT_ALIGNMENT);
+		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+		column.add(computing);
+		return column;
 	}
 
 	/** One result's card: the entry's style cards and source legend in a
