@@ -959,6 +959,12 @@ public final class LoadoutOptimizer
 			{
 				score += 3_000.0;
 			}
+			// The battleaxe's +17.5% vs leafy lives in the DPS model, not its
+			// raw stats - without a boost the pool cut prunes it (pool lesson).
+			if (request.getMonster().hasAttribute("leafy") && name.contains("leaf-bladed battleaxe"))
+			{
+				score += 4_000.0;
+			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score

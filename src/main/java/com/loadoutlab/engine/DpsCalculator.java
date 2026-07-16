@@ -551,6 +551,12 @@ public final class DpsCalculator
 			counted("golembane weapon", "+15% damage");
 			maxHit = multiply(maxHit, 23, 20);
 		}
+		if (isLeafy(request) && wearing(loadout, "leaf-bladed battleaxe"))
+		{
+			// Damage only (accuracy untouched); stacks with the slayer helm.
+			counted("leaf-bladed battleaxe", "+17.5% damage vs leafy");
+			maxHit = multiply(maxHit, 47, 40);
+		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% damage");
@@ -986,6 +992,11 @@ public final class DpsCalculator
 	private static boolean isGolem(OptimizationRequest request)
 	{
 		return request.getMonster().hasAttribute("golem");
+	}
+
+	private static boolean isLeafy(OptimizationRequest request)
+	{
+		return request.getMonster().hasAttribute("leafy");
 	}
 
 	private static boolean isSlayerTaskEligible(OptimizationRequest request)
