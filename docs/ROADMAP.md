@@ -107,6 +107,16 @@ dev-mode gallery).
 Hub cadence: hub submissions are not roadmap items. Next hub submission
 lands with 0.3.0 (0.2.3 rides along in it).
 
+Player audit (2026-07-15, docs/audits/2026-07-15-player-audit.md): a
+merciless full-engine review from every persona (new/mid/max x main/
+iron/UIM/F2P/pure). Quick-wins batch landed same day: requirements
+backfill (452 rows, ~4 years of gear), salve(ei) tiers + magic damage,
+wilderness toggle, dragonfire honesty, uncharged-weapon gate, default
+monster versions, leaf-bladed battleaxe, F2P assumptions, sub-31
+prayer labels. Remaining audit findings (fight-state inputs, prayer/
+boost override, ironman acquisition paths, TTK, raid scaling, spec
+defence styles, brimstone/twinflame...) feed the backlog above.
+
 Done from this list: BiS section show/hide (v/> header, 2026-07-05);
 monster duplicate collapsing (2026-07-05); item exclusions/protection
 (2026-07-06: right-click any suggested item -> excluded globally and
