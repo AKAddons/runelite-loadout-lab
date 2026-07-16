@@ -94,9 +94,13 @@ monster, get your strongest owned set per combat style with exact DPS.
   mutation routes through Commands at the plugin-adapter seam: global +
   per-mob exclusions, pins (undo restores the PRIOR pin), notes, pinned
   spells, dream items, stored-elsewhere, protect-only, trip supplies
-  (undo restores the persisted name). Scan-driven mutations stay off the
-  stack by design. SaveBatchingCommand deliberately not ported until a
-  bulk op exists. Module kept in lockstep with GP for future sharing.
+  (undo restores the persisted name). EXPANDED 2026-07-16 (field
+  feedback): the arrows are BACK/FORWARD over one stream - monster
+  selections and panel parameters (toggles, dropdowns, budget, antifire
+  flip) record as steps alongside the store mutations; replays drive
+  the real controls behind a reentrancy guard. Scan-driven mutations
+  stay off the stack by design. SaveBatchingCommand deliberately not
+  ported until a bulk op exists. Command core kept in lockstep with GP.
 
 Shipped since (outside this list): 0.2.2 (2026-07-14: set-card
 scroll-expand fix, classic equipment-tab gear layout option, NPC

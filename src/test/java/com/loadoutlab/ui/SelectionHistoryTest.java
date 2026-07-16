@@ -230,6 +230,35 @@ public class SelectionHistoryTest
 	}
 
 	@Test
+	public void parameterChangesAndSelectionsInterleaveInOneStream()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));          // unrecorded first pick
+		panel.optimizeModeForTest().setSelectedIndex(1);                  // step: Optimize: Balanced
+		Assert.assertTrue(panel.selectExternal("vorkath", null));         // step: vs Vorkath
+
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("first back re-lands the previous search",
+			"Zulrah", computed.get().getName());
+		Assert.assertEquals("the optimize step is untouched so far",
+			1, panel.optimizeModeForTest().getSelectedIndex());
+
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("second back reverts the optimize change",
+			0, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertFalse(history.canUndo());
+
+		Assert.assertTrue(history.redo());
+		Assert.assertEquals(1, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertTrue(history.redo());
+		Assert.assertEquals("Vorkath", computed.get().getName());
+	}
+
+	@Test
 	public void repickingTheSameMonsterAddsNoHistoryStep()
 	{
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();

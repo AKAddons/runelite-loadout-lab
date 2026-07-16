@@ -427,10 +427,15 @@ public class LoadoutLabPanel extends PluginPanel
 	 * checkbox - fighting them IS the Wilderness. */
 	private final JCheckBox inWilderness = new JCheckBox("In the Wilderness");
 
-	/** Header undo/redo buttons; state refreshed after every command. */
+	/** Header back/forward buttons; state refreshed after every step. */
 	private JButton undoButton;
 	private JButton redoButton;
 	private HistoryControl historyControl;
+	/** True while back/forward replays a step - the control listeners must
+	 * apply effects (recompute) without recording a second step. */
+	private boolean replayingHistory;
+	/** The budget field's last committed text, for the back step. */
+	private String lastBudgetText = "";
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
 	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
@@ -665,6 +670,7 @@ public class LoadoutLabPanel extends PluginPanel
 		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
 		riskBudget.setSelectedIndex(2);
 		riskBudget.addActionListener(e -> recompute());
+		recordCombo(riskBudget, "Risk cap");
 		riskBudget.setVisible(false);
 		top.add(riskBudget);
 
@@ -675,6 +681,7 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
 		spellbook.addActionListener(e -> recompute());
+		recordCombo(spellbook, "Spellbook");
 
 		// Buyable upgrades within a total gp budget join the consideration
 		// pool (dream items are the manual version, via right-click).
@@ -704,6 +711,7 @@ public class LoadoutLabPanel extends PluginPanel
 		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
 		optimizeMode.addActionListener(e -> recompute());
+		recordCombo(optimizeMode, "Optimize");
 		top.add(optimizeMode);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
@@ -867,6 +875,109 @@ public class LoadoutLabPanel extends PluginPanel
 		box.setAlignmentX(LEFT_ALIGNMENT);
 		box.setToolTipText(tooltip);
 		box.addActionListener(e -> recompute());
+		// Every deliberate flip is a back/forward step. Replays drive the
+		// box via doClick() so the effect listeners above still fire; this
+		// recorder skips itself during a replay.
+		box.addActionListener(e ->
+		{
+			if (replayingHistory)
+			{
+				return;
+			}
+			boolean turnedOn = box.isSelected();
+			recordStep(box.getText() + (turnedOn ? " on" : " off"),
+				() -> setToggleTo(box, turnedOn),
+				() -> setToggleTo(box, !turnedOn));
+		});
+	}
+
+	/** Drive a checkbox to a state as a replay: doClick fires the effect
+	 * listeners (recompute, wilderness rows) exactly like a user click. */
+	private void setToggleTo(JCheckBox box, boolean selected)
+	{
+		if (box.isSelected() != selected)
+		{
+			replayingHistory = true;
+			try
+			{
+				box.doClick();
+			}
+			finally
+			{
+				replayingHistory = false;
+			}
+		}
+	}
+
+	/** Record a reversible panel step into the shared back/forward stack.
+	 * CommandHistory.execute() runs apply() immediately; the setters are
+	 * idempotent, so applying the state the control already shows is a
+	 * no-op and nothing recomputes twice. */
+	private void recordStep(String description, Runnable toNew, Runnable toOld)
+	{
+		if (historyControl == null)
+		{
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				toNew.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				toOld.run();
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return description;
+			}
+		});
+	}
+
+	/** Combo steps: track the previous index so the step can go back to it;
+	 * replays and programmatic sets only refresh the tracker. */
+	private void recordCombo(JComboBox<String> combo, String prefix)
+	{
+		int[] last = {combo.getSelectedIndex()};
+		combo.addActionListener(e ->
+		{
+			int now = combo.getSelectedIndex();
+			if (replayingHistory || historyControl == null || now == last[0] || now < 0)
+			{
+				last[0] = now;
+				return;
+			}
+			int old = last[0];
+			last[0] = now;
+			recordStep(prefix + ": " + combo.getItemAt(now),
+				() -> setComboTo(combo, now),
+				() -> setComboTo(combo, old));
+		});
+	}
+
+	private void setComboTo(JComboBox<String> combo, int index)
+	{
+		if (combo.getSelectedIndex() != index)
+		{
+			replayingHistory = true;
+			try
+			{
+				combo.setSelectedIndex(index);
+			}
+			finally
+			{
+				replayingHistory = false;
+			}
+		}
 	}
 
 	/** Small 11pt info line - the shape every card row shares. */
@@ -1168,10 +1279,38 @@ public class LoadoutLabPanel extends PluginPanel
 	private void budgetEdited()
 	{
 		int parsed = parsedBudgetGp();
-		if (parsed != lastBudgetGp)
+		if (parsed == lastBudgetGp)
 		{
-			lastBudgetGp = parsed;
-			recompute();
+			return;
+		}
+		String oldText = lastBudgetText;
+		String newText = upgradeBudget.getText();
+		lastBudgetGp = parsed;
+		lastBudgetText = newText;
+		if (!replayingHistory)
+		{
+			recordStep(newText == null || newText.isEmpty()
+					? "Upgrade budget cleared" : "Upgrade budget " + newText,
+				() -> setBudgetTo(newText), () -> setBudgetTo(oldText));
+		}
+		recompute();
+	}
+
+	private void setBudgetTo(String text)
+	{
+		if (upgradeBudget.getText().equals(text))
+		{
+			return;
+		}
+		replayingHistory = true;
+		try
+		{
+			upgradeBudget.setText(text);
+			budgetEdited();
+		}
+		finally
+		{
+			replayingHistory = false;
 		}
 	}
 
@@ -1224,6 +1363,12 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int index = spellbook.getSelectedIndex();
 		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+	}
+
+	/** Test seam (package-private): a parameter control for history tests. */
+	JComboBox<String> optimizeModeForTest()
+	{
+		return optimizeMode;
 	}
 
 	/** Wire the plugin's undo/redo stack in. Called once after construction. */
@@ -3102,10 +3247,24 @@ public class LoadoutLabPanel extends PluginPanel
 			: "Assume a super antifire (drop the shield)");
 		flip.addActionListener(a ->
 		{
-			superAntifireAssumed = !superAntifireAssumed;
-			recompute();
+			boolean assume = !superAntifireAssumed;
+			recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
+				() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
+			if (historyControl == null)
+			{
+				setAntifireTo(assume); // no history wired: still flip
+			}
 		});
 		return List.of(flip);
+	}
+
+	private void setAntifireTo(boolean assume)
+	{
+		if (superAntifireAssumed != assume)
+		{
+			superAntifireAssumed = assume;
+			recompute();
+		}
 	}
 
 	/** The active set's item ids: gear + loaded dart + spec weapon. */
