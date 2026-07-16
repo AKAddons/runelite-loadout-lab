@@ -191,6 +191,20 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
   curated CA -> (monster, params) table (Goal Planner or a CA-interface
   right-click as senders). Same plumbing later serves pure/zerker
   constraint profiles (no-Defence-xp styles, level caps).
+- **Rune-aware spell auto-selection (added 2026-07-16)** - the OWNED
+  card's auto-spell must be castable with runes you actually have: no
+  Surge suggestions without wrath runes. Data prereq: a spell_runes
+  table (spell -> rune ids+qty; wiki-generated in refresh_data.py or
+  curated once - the vendored spells.json has no costs). Gate logic:
+  each required rune is either PROVIDED by the wielded staff
+  (elemental + combo battlestaves, kodai, tomes) or OWNED per the
+  ledger with combination-rune substitution (lava covers fire+earth)
+  plus rune-pouch contents via RuneLite varbits (pouch runes are in
+  no scanned container). Membership check, not quantity (ledger
+  model). Pinned spells BYPASS the gate (explicit intent, like pins);
+  game-best/BiS stays ungated (runes are cheap consumables there -
+  the assumed-potion philosophy). Pairs with the ironman-aware
+  direction from the 2026-07 audit.
 - **Undo/redo for mutations** - DONE (2026-07-15, 0.3.0): goal planner's
   command pattern ported as `com.loadoutlab.command` (Command.apply()/
   revert(), CommandHistory bounded at 50, CompositeCommand + ref-counted
