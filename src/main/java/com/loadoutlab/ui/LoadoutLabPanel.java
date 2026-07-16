@@ -2236,8 +2236,21 @@ public class LoadoutLabPanel extends PluginPanel
 		if (hasSet && displayOptions.assumes
 			&& result.boostLabel != null && !result.boostLabel.isEmpty())
 		{
+			// Engine-forced honesty flag (no protective shield owned) OR the
+			// user's own shield-cell flip - either way the chip must show.
+			String antifireTooltip = null;
+			if (result.owned != null && !result.owned.isEmpty()
+				&& result.owned.get(0).isAntifireAssumed())
+			{
+				antifireTooltip = "Assumes a super antifire - you own no"
+					+ " anti-dragon or dragonfire shield";
+			}
+			else if (superAntifireAssumed)
+			{
+				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
+			}
 			headerEast.add(assumesChips(result.boostLabel,
-				"Assumed prayer + boost (you own these)"));
+				"Assumed prayer + boost (you own these)", antifireTooltip));
 		}
 		headerEast.add(setMenu);
 		headerRow.add(headerEast, BorderLayout.EAST);
@@ -2397,7 +2410,9 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				if (displayOptions.assumes)
 				{
-					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
+					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game",
+						superAntifireAssumed
+							? "Super antifire (right-click the shield cell to flip back)" : null);
 				}
 				// Max hit + accuracy for the ceiling set - the header only
 				// carries its DPS, same as the owned card (each gated).
@@ -3019,7 +3034,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * potion/heart item icon; names live in the tooltips. Unmapped parts
 	 * (e.g. "Current boosted levels") stay as text.
 	 */
-	private void addAssumesRow(JPanel card, String label, String tooltip)
+	private void addAssumesRow(JPanel card, String label, String tooltip, String antifireTooltip)
 	{
 		if (label == null || label.isEmpty())
 		{
@@ -3029,21 +3044,21 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel prefix = line("Assumes:", MUTED);
 		prefix.setToolTipText(tooltip);
 		row.add(prefix);
-		row.add(assumesChips(label, tooltip));
+		row.add(assumesChips(label, tooltip, antifireTooltip));
 	}
 
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
 	 * inline with the style title to reclaim a whole row of vertical
 	 * space (field request); tooltips carry the words. */
-	private JPanel assumesChips(String label, String tooltip)
+	private JPanel assumesChips(String label, String tooltip, String antifireTooltip)
 	{
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
 		chips.setOpaque(false);
 		chips.setToolTipText(tooltip);
-		if (superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster))
+		if (antifireTooltip != null && DragonfireRules.breathesFire(selectedMonster))
 		{
 			JLabel potion = new JLabel();
-			potion.setToolTipText("Super antifire (right-click the shield cell to flip back)");
+			potion.setToolTipText(antifireTooltip);
 			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
 			chips.add(potion);
 		}

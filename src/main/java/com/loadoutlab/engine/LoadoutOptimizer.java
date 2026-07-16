@@ -402,6 +402,20 @@ public final class LoadoutOptimizer
 		List<DpsResult> results = new ArrayList<>();
 		Set<String> seen = new HashSet<>();
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
+		// Honesty rule (audit A3.2): with no protective shield in the pool the
+		// constraint cannot be satisfied - half-applying it banned every 2h
+		// weapon AND still returned an empty shield, while the neutral fill
+		// could not restore pure-damage items (Ultor, Avernic). All-or-nothing
+		// instead: fall back to the unconstrained hunt and FLAG the results,
+		// so the panel says "assumes a super antifire" rather than quietly
+		// recommending a worse set that protects nothing.
+		boolean antifireAssumed = false;
+		if (dragonShield
+			&& protectiveShieldsOnly(pools.slotCandidates.get(GearSlot.SHIELD)).isEmpty())
+		{
+			dragonShield = false;
+			antifireAssumed = true;
+		}
 		// The monster-side incoming constants for the D-4 beam objective,
 		// hoisted once per optimize (call-scoped, worker-thread confined).
 		IncomingDpsCalculator.Prepared incoming = request.getDefenseWeight() > 0
@@ -564,6 +578,10 @@ public final class LoadoutOptimizer
 			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
+		if (antifireAssumed)
+		{
+			results.replaceAll(r -> r.withAntifireAssumed(true));
+		}
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
 	}
 
