@@ -18,7 +18,7 @@
         "engine/LoadoutOptimizerTest.java"
       ],
       "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots."
+      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word."
     },
     {
       "id": "game-best",

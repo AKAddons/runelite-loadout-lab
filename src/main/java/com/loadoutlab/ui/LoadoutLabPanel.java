@@ -2517,17 +2517,29 @@ public class LoadoutLabPanel extends PluginPanel
 			? cardCollapsed.get(style)
 			: autoCollapsed.getOrDefault(style, false);
 
-		// Header row: collapse toggle + summary dps left, the set's own
-		// menu (per-set pins and bank-filter supplies) right.
-		JLabel header = new JLabel((collapsed ? "> " : "v ") + style
-			+ (hasSet
-				? String.format(" - %.2f DPS", result.owned.get(0).getDps())
-				: " - no set"));
-		header.setForeground(Color.WHITE);
-		header.setFont(header.getFont().deriveFont(Font.BOLD, 14f));
-		header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		// Header row: collapse toggle + the style's SKILL ICON (sprite, not a
+		// glyph - Tahoe tofu rule; the tooltip carries the word) + summary
+		// dps left, the set's own menu (per-set pins and supplies) right.
+		JLabel chevron = new JLabel(collapsed ? "> " : "v ");
+		JLabel styleIcon = new JLabel();
+		styleIcon.setToolTipText(String.valueOf(style));
+		attachSprite(styleIcon, AssumeIcons.styleSprite(style));
+		JLabel header = new JLabel(hasSet
+			? String.format("%.2f DPS", result.owned.get(0).getDps())
+			: "no set");
+		JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+		headerLeft.setOpaque(false);
+		for (JLabel part : new JLabel[]{chevron, header})
+		{
+			part.setForeground(Color.WHITE);
+			part.setFont(part.getFont().deriveFont(Font.BOLD, 14f));
+		}
+		headerLeft.add(chevron);
+		headerLeft.add(styleIcon);
+		headerLeft.add(header);
+		headerLeft.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		header.setToolTipText(collapsed ? "Click to expand this set" : "Click to collapse this set");
-		header.addMouseListener(new MouseAdapter()
+		headerLeft.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
@@ -2543,7 +2555,7 @@ public class LoadoutLabPanel extends PluginPanel
 		headerRow.setOpaque(false);
 		headerRow.setAlignmentX(LEFT_ALIGNMENT);
 		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		headerRow.add(header, BorderLayout.WEST);
+		headerRow.add(headerLeft, BorderLayout.WEST);
 		JButton setMenu = new JButton(new DotsIcon(11));
 		setMenu.setToolTipText("Pins and bank-filter items for this set");
 		setMenu.setMargin(new Insets(1, 5, 1, 5));

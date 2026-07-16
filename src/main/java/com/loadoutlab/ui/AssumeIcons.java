@@ -131,6 +131,21 @@ final class AssumeIcons
 		return PRAYERS.getOrDefault(name, -1);
 	}
 
+	/** Skill icon for a combat style - melee wears the Attack icon. Sprites,
+	 * never font glyphs (Tahoe tofu rule); tooltips carry the words. */
+	static int styleSprite(com.loadoutlab.engine.CombatStyle style)
+	{
+		switch (style)
+		{
+			case RANGED:
+				return SpriteID.Staticons.RANGED;
+			case MAGIC:
+				return SpriteID.Staticons.MAGIC;
+			default:
+				return SpriteID.Staticons.ATTACK;
+		}
+	}
+
 	/** Item id whose icon represents this boost label, or -1. */
 	static int boostItem(String label)
 	{
