@@ -177,3 +177,21 @@ panel parameter.
 **Context:** User: "in the parameter area for search we should be able to
 specify max swaps: 0/1/2 and then in the options we should be able to
 hide this option (lock in 0 for every search)."
+
+## 2026-07-16 (redesign): style tabs + per-result parameters (M-2c)
+
+**Decision:** (a) The stacked, individually-collapsible style cards become
+a TAB STRIP (skill icon + dps per tab, best selected by default) over one
+flipping detail body; assume chips and the set menu move into the detail
+header; auto-collapse is removed. The same strip renders kits at M-4 -
+hybrid/tribrid can push the option count to ~7, which stacked cards cannot
+carry. (b) Parameters move from the global row into each result: a compact
+per-card chip row (on-task, wilderness, optimize mode; risk/budget behind
+the card menu), owned by ResultEntry and read by computeEntry; the global
+row keeps only search, back/forward, F2P and exclusions. Saved results
+then serialize (mobs + own params) cleanly.
+
+**Context:** First multi-result field look: "with tribrid/hybrid this is
+going to up the number of options from 3 to possibly 7... buttons/tabs
+with just the style + dps... a toggle that flips a single gear view...
+each mob should have its own parameter options per search."
