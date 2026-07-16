@@ -132,3 +132,18 @@ out at 3 swaps (tribrid) or 2 (hybrid)... show the type of swap by the
 style used (account for a staff in melee or a salamander)... slider/text
 entry = number of swap items... tab view between swaps, collapsed mobs
 showing which swap to bring."
+
+## 2026-07-16 (refinement): M-4 BiS layer under the same budget
+
+**Decision:** Group results keep the ceiling comparison. The BiS group
+answer is computed under the SAME swap-item budget and at the player's own
+levels, so the percentage isolates the gear gap (a BiS tribrid at N=4 is
+the fair ceiling for your tribrid at N=4). Header carries a dual verdict:
+"% of your max" (the compromise cost) and "% of BiS" (the gear gap). Each
+kit tab hosts a Yours|BiS chip toggle instead of a second stacked grid
+(vertical-budget rule); the gold BiS-proximity border language carries
+over per slot; collapsed mob rows show the yours/BiS dps pair.
+
+**Context:** User: "we also need to show the BiS versions as well and
+account for that in design" - extending the single-result game-best
+comparison into the multi-mob canvas.

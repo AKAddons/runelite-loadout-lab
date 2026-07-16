@@ -70,7 +70,13 @@ progressive fill-in.
   pricing each compromise until within the item budget. UI: TAB VIEW
   between kits at the result level (worn view per kit, shared pieces
   stay put, per-kit "+N items" on the tab); collapsed mob rows show
-  just which kit to bring + dps. Engine prerequisites this makes
+  just which kit to bring + dps. BiS LAYER (added same day): the BiS
+  group answer is computed under the SAME swap-item budget and at
+  your levels (existing gear-gap philosophy) - the header carries a
+  DUAL verdict ("94% of your max" = compromise cost, "78% of BiS" =
+  gear gap); each kit tab gets a Yours|BiS chip toggle (not a second
+  stacked grid - vertical budget); gold borders carry over (you own
+  the BiS pick); collapsed mob rows show the dps pair (9.4 / 12.1). Engine prerequisites this makes
   load-bearing: salamander multi-style support and the staff-in-melee
   dead path (audit A2.8). No curated hybrid tables: void tribrid must
   EMERGE from slot-sharing economics. FLAGSHIP VALIDATION: the
