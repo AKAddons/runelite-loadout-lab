@@ -9,7 +9,8 @@ equipment.
 
 - **Best owned set per style** (melee / ranged / magic) vs any monster,
   with exact DPS, max hit, and accuracy - engine verified against the
-  official wiki DPS calculator.
+  official wiki DPS calculator across a scenario battery (known deltas
+  tracked in docs/ENGINE-GAPS.md).
 - **Game-best comparison**: see the true ceiling set and how close your
   gear is, with gold borders on slots where you already own best-in-slot
   (stat-identical analogs count).

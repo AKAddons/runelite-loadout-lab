@@ -68,7 +68,7 @@ listed below.
 ## Correctness bugs in the vendored engine
 
 1. ~~Dragon hunter wand~~ FIXED 2026-07-06: official-verified values are 7/4 accuracy and 7/5 damage (the gap note's wiki numbers were also wrong); upstream applied 7/4 to both. Surfaced when the early-return stacking fix let the wand's bonus compound.
-2. **Silverlight/darklight**: engine applies 8/5 to accuracy AND damage; wiki: +60% damage only.
+2. ~~Silverlight/darklight~~ FIXED (found stale by the 2026-07-15 player audit A5.1): the code already applies 8/5 to damage only (DpsCalculator melee damage chain).
 3. ~~Twisted bow caps~~ NOT A BUG (see harness-verified deltas: identical to official; Zulrah's reroll was the difference).
 4. **Keris partisan of amascut** 1.15x looks invented; missing the 1/51 triple-hit proc (EV x1.0392).
 
@@ -116,7 +116,12 @@ monsters incl. Maggot King; 41 new items incl. Necklace of rupture) merged
 with wiki mapping metadata + live GE prices. `isStandardGear` carries over
 from the best-dps snapshot for known ids (it is a curated usable-state flag,
 NOT a main-game flag). `equipment_requirements.json.gz` is curated, not
-regenerated — post-May items list no wear requirements until added there.
+regenerated. BACKFILLED 2026-07-15 (player audit A1.1): the file's
+coverage had stopped ~Feb 2022, not "post-May" — 452 wiki-cited rows
+added for fang/Torva/Masori/Shadow through Varlamore/Yama gear, plus
+stale-row fixes (bowfa 80 Ranged + 70 Agility, saeldor 80 Attack).
+Citations: docs/audits/2026-07-15-req-backfill.json. New items still
+need rows added HERE when they release.
 Re-run the script whenever content feels stale; the loader's leagues and
 effect-spell filters survive regeneration.
 
