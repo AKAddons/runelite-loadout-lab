@@ -49,6 +49,20 @@ standalone win that pre-builds the M-1 assets).
 - **M-2 Multi-add UX** - "add to view" on search hits (new result vs
   add-mob-to-result), result close/collapse/reorder + Save,
   progressive loading, pages join back/forward history. (M)
+  REDESIGN (field-driven 2026-07-16, after the first multi-result
+  build): (a) STYLE TABS replace the stacked style cards - a tab is
+  just the skill icon + dps, best tab selected by default, ONE detail
+  body flips beneath; assume chips + the set menu move into the
+  detail header; auto-collapse dies (tabs subsume it); the BiS
+  section lives per tab. At M-4 kits are simply more tabs - with
+  hybrid/tribrid the option count can reach 7, which stacked cards
+  cannot carry. (b) PARAMETERS BECOME PER-RESULT: each card carries a
+  compact param chip row (on-task, wilderness, optimize mode;
+  risk/budget behind the card menu), seeded from defaults at add
+  time and owned by ResultEntry; computeEntry reads them; the global
+  row keeps only what is truly global (search, back/forward, F2P,
+  exclusions). Saved results serialize (mobs + own params) with no
+  global state to untangle. (M-2c)
 - **M-3 Monster groups** - curated table searchable as virtual hits
   that expand into a result. A group is the ROSTER of distinct mob
   types featured in the content, not the wave sequence. Flagship
