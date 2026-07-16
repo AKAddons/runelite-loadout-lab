@@ -102,13 +102,15 @@ standalone win that pre-builds the M-1 assets).
   dead path (audit A2.8). No curated hybrid tables: void tribrid must
   EMERGE from slot-sharing economics. FLAGSHIP VALIDATION: the
   Inferno preset - a credible Inferno tribrid proves the model;
-  Fight Caves is the smaller sibling case. Open calls: objective per group (weighted-sum with rotation
-  shares vs maximize-min) and whether N counts carried switch items
-  (lean: yes - ties into v0.4 inventory planning) or per-transition
-  clicks. The raid and slayer-task-planner foundation. (L)
+  Fight Caves is the smaller sibling case. Open call remaining:
+  objective per group (weighted-sum with rotation shares vs
+  maximize-min); the budget unit is RESOLVED (swap items = inventory
+  slots, ties into v0.4). The raid and slayer-task-planner
+  foundation. (L)
 
 Favorites/save (the former 0.3.0 wishlist item) is subsumed: a saved
-PAGE ("my Zulrah setup", "DKs trip") replaces saved single loadouts.
+RESULT ("my Zulrah setup", "DKs trip" - the query + mobs + params,
+re-run against current gear) replaces saved single loadouts.
 Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
 
 ## v0.4 — the full trip plan
