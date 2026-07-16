@@ -475,9 +475,6 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		MonsterStats monster;
 		Map<CombatStyle, StyleResult> results;
-		/** Per-style collapse: the user's override, and the derived default. */
-		final Map<CombatStyle, Boolean> cardCollapsed = new EnumMap<>(CombatStyle.class);
-		final Map<CombatStyle, Boolean> autoCollapsed = new EnumMap<>(CombatStyle.class);
 		/** Per-style expanded game-best (BiS) sections - hidden by default. */
 		final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
 		boolean noteCollapsed = true;
@@ -486,6 +483,8 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean superAntifireAssumed;
 		/** Whole-result fold: collapsed to the header's one-line summary. */
 		boolean folded;
+		/** The style tab in view; null = strongest owned set (the default). */
+		CombatStyle selectedTab;
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -905,18 +904,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
-	/** The active result's per-style collapse override map (never null -
-	 * an empty page yields a throwaway map so render paths stay simple). */
-	private Map<CombatStyle, Boolean> cardCollapsed()
-	{
-		return active == null ? new EnumMap<>(CombatStyle.class) : active.cardCollapsed;
-	}
-
-	private Map<CombatStyle, Boolean> autoCollapsed()
-	{
-		return active == null ? new EnumMap<>(CombatStyle.class) : active.autoCollapsed;
-	}
-
 	private Set<CombatStyle> gameBestExpanded()
 	{
 		return active == null ? EnumSet.noneOf(CombatStyle.class) : active.gameBestExpanded;
@@ -1368,8 +1355,7 @@ public class LoadoutLabPanel extends PluginPanel
 		bankFilter.filter(null);
 		applyActiveMonsterUi(monster);
 		usageLog.record(monster.label());
-		// A new mob: fresh collapse defaults, its own note state.
-		cardCollapsed().clear();
+		// A new mob: its own note state.
 		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
 		refreshNotePanel();
 		refreshPinnedLabel();
@@ -2790,7 +2776,6 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = null;
 		page.clear();
 		active = null;
-		cardCollapsed().clear();
 		selectedRow.setVisible(false);
 		selectedLabel.setText("");
 		monsterNote.setText("");
@@ -2959,9 +2944,10 @@ public class LoadoutLabPanel extends PluginPanel
 		return column;
 	}
 
-	/** One result's card: the entry's style cards and source legend in a
-	 * transparent column (M-1: no chrome - headers/Save/X arrive with the
-	 * multi-add UX). */
+	/** One result's card: the style TAB STRIP (skill icon + dps per tab,
+	 * strongest first and selected by default) over ONE flipping detail
+	 * body, then the source legend (M-2c: tabs replaced the stacked
+	 * style cards - hybrid/tribrid kits become more tabs at M-4). */
 	private javax.swing.JComponent resultCard(ResultEntry entry)
 	{
 		Map<CombatStyle, StyleResult> results = entry.results;
@@ -2970,54 +2956,65 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
-		// Default collapse: a set a full standard deviation under the best
-		// dps (or with no usable set at all) starts folded to its header.
-		entry.autoCollapsed.clear();
-		double bestDps = 0;
-		double sum = 0;
-		double sumSquares = 0;
-		int usable = 0;
-		for (CombatStyle style : CombatStyle.values())
-		{
-			StyleResult r = results.get(style);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
-			{
-				double d = r.owned.get(0).getDps();
-				bestDps = Math.max(bestDps, d);
-				sum += d;
-				sumSquares += d * d;
-				usable++;
-			}
-		}
-		double stdev = usable > 1
-			? Math.sqrt(Math.max(0, sumSquares / usable - (sum / usable) * (sum / usable)))
-			: 0;
-		for (CombatStyle style : CombatStyle.values())
-		{
-			StyleResult r = results.get(style);
-			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
-			entry.autoCollapsed.put(style, !hasSet
-				|| (usable > 1 && stdev > 0.01
-					&& r.owned.get(0).getDps() < bestDps - stdev));
-		}
-		// Strongest style first: order the cards by your best set's dps.
+		// Strongest style first: order the tabs by your best set's dps.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
 		Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
 		{
 			StyleResult r = results.get(style);
 			return r == null || r.owned.isEmpty() ? 0.0 : -r.owned.get(0).getDps();
 		}));
-		for (CombatStyle style : styleOrder)
-		{
-			column.add(styleCard(style, results.get(style)));
-			column.add(Box.createVerticalStrut(6));
-		}
+		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : styleOrder[0];
+		column.add(styleTabs(entry, results, styleOrder, selected));
+		column.add(styleCard(selected, results.get(selected)));
+		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
 		{
 			column.add(legend);
 		}
 		return column;
+	}
+
+	/** The tab strip: one equal-width tab per style - the skill sprite and
+	 * the best owned dps, nothing else. The selected tab wears the detail
+	 * card's background so the two read as one surface. */
+	private javax.swing.JComponent styleTabs(ResultEntry entry,
+		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected)
+	{
+		JPanel strip = new JPanel(new java.awt.GridLayout(1, order.length, 2, 0));
+		strip.setOpaque(false);
+		strip.setAlignmentX(LEFT_ALIGNMENT);
+		strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		for (CombatStyle style : order)
+		{
+			StyleResult r = results.get(style);
+			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
+			boolean isSelected = style == selected;
+			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
+			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			tab.setOpaque(isSelected);
+			JLabel icon = new JLabel();
+			attachSprite(icon, AssumeIcons.styleSprite(style));
+			JLabel dps = new JLabel(hasSet
+				? String.format("%.2f", r.owned.get(0).getDps()) : "-");
+			dps.setForeground(isSelected ? Color.WHITE : new Color(160, 160, 160));
+			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
+			tab.add(icon);
+			tab.add(dps);
+			tab.setToolTipText(style + (hasSet ? " - " + dps.getText() + " DPS" : " - no set"));
+			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			tab.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					entry.selectedTab = style;
+					renderPage();
+				}
+			});
+			strip.add(tab);
+		}
+		return strip;
 	}
 
 	private JPanel styleCard(CombatStyle style, StyleResult result)
@@ -3030,49 +3027,13 @@ public class LoadoutLabPanel extends PluginPanel
 		card.setAlignmentX(LEFT_ALIGNMENT);
 
 		boolean hasSet = result != null && result.owned != null && !result.owned.isEmpty();
-		boolean collapsed = cardCollapsed().containsKey(style)
-			? cardCollapsed().get(style)
-			: autoCollapsed().getOrDefault(style, false);
 
-		// Header row: collapse toggle + the style's SKILL ICON (sprite, not a
-		// glyph - Tahoe tofu rule; the tooltip carries the word) + summary
-		// dps left, the set's own menu (per-set pins and supplies) right.
-		JLabel chevron = new JLabel(collapsed ? "> " : "v ");
-		JLabel styleIcon = new JLabel();
-		styleIcon.setToolTipText(String.valueOf(style));
-		attachSprite(styleIcon, AssumeIcons.styleSprite(style));
-		JLabel header = new JLabel(hasSet
-			? String.format("%.2f DPS", result.owned.get(0).getDps())
-			: "no set");
-		JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
-		headerLeft.setOpaque(false);
-		for (JLabel part : new JLabel[]{chevron, header})
-		{
-			part.setForeground(Color.WHITE);
-			part.setFont(part.getFont().deriveFont(Font.BOLD, 14f));
-		}
-		headerLeft.add(chevron);
-		headerLeft.add(styleIcon);
-		headerLeft.add(header);
-		headerLeft.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		header.setToolTipText(collapsed ? "Click to expand this set" : "Click to collapse this set");
-		headerLeft.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				cardCollapsed().put(style, !collapsed);
-				if (selectedMonster != null && lastResults() != null)
-				{
-					showResults(selectedMonster, lastResults());
-				}
-			}
-		});
+		// Detail header: the tab strip above carries style + dps, so this
+		// row is just the set's assume chips and its menu, right-aligned.
 		JPanel headerRow = new JPanel(new BorderLayout());
 		headerRow.setOpaque(false);
 		headerRow.setAlignmentX(LEFT_ALIGNMENT);
 		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		headerRow.add(headerLeft, BorderLayout.WEST);
 		JButton setMenu = new JButton(new DotsIcon(11));
 		setMenu.setToolTipText("Pins and bank-filter items for this set");
 		setMenu.setMargin(new Insets(1, 5, 1, 5));
@@ -3122,10 +3083,6 @@ public class LoadoutLabPanel extends PluginPanel
 		headerEast.add(setMenu);
 		headerRow.add(headerEast, BorderLayout.EAST);
 		card.add(headerRow);
-		if (collapsed)
-		{
-			return card;
-		}
 
 		if (result == null || result.owned == null || result.owned.isEmpty())
 		{
