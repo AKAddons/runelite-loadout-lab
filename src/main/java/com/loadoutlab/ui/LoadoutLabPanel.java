@@ -434,6 +434,10 @@ public class LoadoutLabPanel extends PluginPanel
 	/** True while back/forward replays a step - the control listeners must
 	 * apply effects (recompute) without recording a second step. */
 	private boolean replayingHistory;
+	/** True once any monster has been selected this session - a pick after
+	 * a deliberate CLEAR records (back returns to the cleared state), while
+	 * the session's true first pick stays unrecorded. */
+	private boolean hadSelection;
 	/** The budget field's last committed text, for the back step. */
 	private String lastBudgetText = "";
 	private final JComboBox<String> spellbook =
@@ -919,11 +923,17 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
+		// A step is (action + the mob it was taken on): replaying it first
+		// restores that monster, so "Optimize: Tanky" never flips a setting
+		// against a cleared or different selection (field report 2026-07-16).
+		MonsterStats at = selectedMonster;
+		String label = at == null ? description : description + " - " + at.getName();
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
 			@Override
 			public boolean apply()
 			{
+				restoreContext(at);
 				toNew.run();
 				return true;
 			}
@@ -931,6 +941,7 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean revert()
 			{
+				restoreContext(at);
 				toOld.run();
 				return true;
 			}
@@ -938,9 +949,18 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public String getDescription()
 			{
-				return description;
+				return label;
 			}
 		});
+	}
+
+	/** Re-select the monster a step was taken on before replaying it. */
+	private void restoreContext(MonsterStats at)
+	{
+		if (at != null && selectedMonster != at)
+		{
+			applySelection(at);
+		}
 	}
 
 	/** Combo steps: track the previous index so the step can go back to it;
@@ -1164,7 +1184,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private void select(MonsterStats monster)
 	{
 		MonsterStats previous = selectedMonster;
-		if (historyControl == null || previous == null || previous == monster)
+		if (historyControl == null || (previous == null && !hadSelection) || previous == monster)
 		{
 			applySelection(monster);
 			return;
@@ -1181,7 +1201,16 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean revert()
 			{
-				applySelection(previous);
+				// A pick made from a deliberately cleared panel goes back
+				// to the cleared state, not to a blank-page surprise.
+				if (previous != null)
+				{
+					applySelection(previous);
+				}
+				else
+				{
+					clearSelectionInternal();
+				}
 				return true;
 			}
 
@@ -1208,6 +1237,7 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
+		hadSelection = true;
 		// Each monster starts OUT of the wilderness unless it lives nowhere
 		// else - the checkbox is a per-fight statement, not a preference.
 		inWilderness.setSelected(false);
@@ -1365,10 +1395,20 @@ public class LoadoutLabPanel extends PluginPanel
 		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
 	}
 
-	/** Test seam (package-private): a parameter control for history tests. */
+	/** Test seams (package-private): controls and state for history tests. */
 	JComboBox<String> optimizeModeForTest()
 	{
 		return optimizeMode;
+	}
+
+	void clearSelectionForTest()
+	{
+		clearSelection();
+	}
+
+	MonsterStats selectedMonsterForTest()
+	{
+		return selectedMonster;
 	}
 
 	/** Wire the plugin's undo/redo stack in. Called once after construction. */
@@ -2411,14 +2451,47 @@ public class LoadoutLabPanel extends PluginPanel
 		bankShown = null;
 		bankFiltered = null;
 		lastResults = null;
-		clearSelection();
+		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
 		refreshPinnedLabel();
 		refreshNotePanel();
 	}
 
+	/** The clear button: a recorded step whose back restores the mob. */
 	private void clearSelection()
+	{
+		MonsterStats previous = selectedMonster;
+		if (historyControl == null || previous == null)
+		{
+			clearSelectionInternal();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				clearSelectionInternal();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				applySelection(previous);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Clear - " + previous.getName();
+			}
+		});
+	}
+
+	private void clearSelectionInternal()
 	{
 		selectedMonster = null;
 		cardCollapsed.clear();

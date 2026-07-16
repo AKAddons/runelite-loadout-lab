@@ -259,6 +259,49 @@ public class SelectionHistoryTest
 	}
 
 	@Test
+	public void parameterStepsReplayInTheMobContextTheyWereTakenOn()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("general graardor", null));
+		panel.optimizeModeForTest().setSelectedIndex(2);               // step: Tanky @ Graardor
+		panel.clearSelectionForTest();                                 // step: Clear - Graardor
+		computed.set(null);
+
+		Assert.assertEquals("the step names its mob",
+			"Clear - General Graardor", history.peekUndoDescription());
+		Assert.assertTrue(history.undo());                             // back over the clear
+		Assert.assertEquals("General Graardor", computed.get().getName());
+
+		Assert.assertTrue(history.undo());                             // back over Tanky
+		Assert.assertEquals("the toggle reverts WITH its mob on screen, not in a vacuum",
+			0, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertEquals("General Graardor", computed.get().getName());
+	}
+
+	@Test
+	public void selectingAfterAClearIsARecordedStepBackToTheClearedState()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));       // first pick: unrecorded
+		panel.clearSelectionForTest();                                 // step
+		Assert.assertTrue(panel.selectExternal("vorkath", null));      // step (post-clear pick)
+
+		Assert.assertTrue(history.undo());
+		Assert.assertNull("back from a post-clear pick returns to the cleared state",
+			panel.selectedMonsterForTest());
+		Assert.assertTrue(history.undo());
+		Assert.assertEquals("Zulrah", panel.selectedMonsterForTest().getName());
+	}
+
+	@Test
 	public void repickingTheSameMonsterAddsNoHistoryStep()
 	{
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
