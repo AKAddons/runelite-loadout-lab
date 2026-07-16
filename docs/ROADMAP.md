@@ -23,22 +23,27 @@ monster, get your strongest owned set per combat style with exact DPS.
 
 ## v0.3.0 — the multi-mob canvas (headline arc, decided 2026-07-16)
 
-The results area becomes a LIST of collapsible monster cards instead of
-a single result - the precursor for raids, multi-form bosses (all
-Zulrah forms at once), boss groups (Dagannoth Kings), and the way
-combat actually works: multiple mobs per trip. Style cards already
-collapse; this adds the level above. Design calls: top toggles stay
-GLOBAL as defaults, each card resolves them against its own monster
-(the applySelection gating, per card); monster cards collapse to a
-one-line best-style summary (vertical-budget rule); OptimizerService
-needs a page-scoped supersession ticket + progressive card fill-in.
+Structure (user-specified 2026-07-16): PAGE -> RESULT CARDS -> MOB
+SECTIONS. A result is one QUERY (single mob or a group); Save and
+close (X) live on the RESULT card, not on mobs. Examples: result 1 =
+Graardor alone; result 2 = Zulrah's three forms; result 3 = a wave
+sequence (bat, blob, ... Jad) - groups must scale to long raid/wave
+lists, so mob sections collapse individually and the result header
+summarizes deep lists. Saved RESULTS are the favorites concept: a
+saved result re-runs its query (mobs + params) against current gear.
+M-4's hybrid answer renders at the RESULT level above its mobs.
+Design calls: top toggles stay GLOBAL as defaults, each mob section
+resolves them against its own monster (the applySelection gating);
+collapsed levels show one-line best-style summaries (vertical-budget
+rule); OptimizerService needs a page-scoped supersession ticket +
+progressive fill-in.
 
-- **M-1 List refactor** - results area renders a list of monster
-  cards; a list of one is pixel-identical to today. Compute plumbing
-  takes a set. (M)
-- **M-2 Multi-add UX** - "add to view" on search hits, card close/
-  collapse/reorder, progressive loading, pages join back/forward
-  history. (M)
+- **M-1 List refactor** - results area renders a list of RESULT
+  cards, each holding 1..N mob sections; a single-mob result is
+  pixel-identical to today. Compute plumbing takes a set. (M)
+- **M-2 Multi-add UX** - "add to view" on search hits (new result vs
+  add-mob-to-result), result close/collapse/reorder + Save,
+  progressive loading, pages join back/forward history. (M)
 - **M-3 Monster groups** - curated table ("Zulrah (all forms)",
   "Dagannoth Kings", GWD rooms, Barrows) searchable as virtual hits
   that expand into a page. MUST be built against LOADED rows, not raw

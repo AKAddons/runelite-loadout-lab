@@ -102,3 +102,16 @@ items (lean - ties into v0.4 inventory planning) or switch clicks.
 concept of a multi-result lookup where you are actually looking up a set
 that is effective against the group... hybrid/tribrid with a minimum of N
 gear swaps."
+
+## 2026-07-16 (clarification): canvas hierarchy is Page -> Results -> Mobs
+
+**Decision:** The multi-mob canvas is three levels: the PAGE holds RESULT
+cards; each result is one QUERY holding 1..N MOB sections. Save and close
+(X) are RESULT-level affordances. Favorites = saved results (query + mobs
++ params, re-run against current gear on load). Groups must scale to long
+wave sequences (bat, blob, ... Jad), so mob sections collapse individually
+and result headers summarize deep lists. M-4's hybrid/swap-budget answer
+renders at the result level, above its mob sections.
+
+**Context:** User sketch, same session: "result 1 (Save / X): Graardor;
+result 2: Zulrah Tanzanite/Serpentine/Magma; result 3: bat, blob, ... Jad."
