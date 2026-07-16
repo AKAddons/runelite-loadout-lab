@@ -147,3 +147,16 @@ over per slot; collapsed mob rows show the yours/BiS dps pair.
 **Context:** User: "we also need to show the BiS versions as well and
 account for that in design" - extending the single-result game-best
 comparison into the multi-mob canvas.
+
+## 2026-07-16 (correction): Yours|BiS toggles the whole answer, not a tab view
+
+**Decision:** The BiS group answer is a complete independent solution - it
+may use a different style combo, kit count, and swap composition than your
+best available (a BiS 2-kit Shadow hybrid vs your 3-kit tribrid). The
+Yours|BiS toggle therefore sits ABOVE the kit tabs and swaps the entire
+answer block: tab strip, per-mob kit assignments, swaps. The dual header
+verdict and per-mob dps pairs render regardless of the viewed side; mob
+kit chips follow the viewed side.
+
+**Context:** User caught the flaw in the kit-tab-level toggle: "the best
+bis hybrid may not be the same style combo as your best available."
