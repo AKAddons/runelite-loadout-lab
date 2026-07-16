@@ -44,10 +44,18 @@ progressive fill-in.
 - **M-2 Multi-add UX** - "add to view" on search hits (new result vs
   add-mob-to-result), result close/collapse/reorder + Save,
   progressive loading, pages join back/forward history. (M)
-- **M-3 Monster groups** - curated table ("Zulrah (all forms)",
-  "Dagannoth Kings", GWD rooms, Barrows) searchable as virtual hits
-  that expand into a page. MUST be built against LOADED rows, not raw
-  wiki names (the stat-key collapse merges some versions). (S-M)
+- **M-3 Monster groups** - curated table searchable as virtual hits
+  that expand into a result. A group is the ROSTER of distinct mob
+  types featured in the content, not the wave sequence. Flagship
+  presets: FIGHT CAVES (Tz-Kih, Tz-Kek, Tok-Xil, Yt-MejKot, Ket-Zek,
+  TzTok-Jad + Yt-HurKot healers - you gear to attack them on Jad
+  phase) and INFERNO (Jal-Nib, Jal-MejRah, Jal-Ak, Jal-ImKot,
+  Jal-Xil, Jal-Zek, JalTok-Jad, TzKal-Zuk + Jal-MejJak healers);
+  also "Zulrah (all forms)", "Dagannoth Kings", GWD rooms, Barrows.
+  Rosters verified present in the corpus 2026-07-16. MUST be built
+  against LOADED rows, not raw wiki names (the stat-key collapse
+  merges versions - e.g. Zuk Normal/Enraged is ONE loaded row;
+  Tz-Kek has two level variants). (S-M)
 - **M-4 Group lookup: the hybrid/tribrid assistant** - a group is
   QUERYABLE, not just viewable: one answer optimized against all
   members - a worn base kit + a carried swap set under a swap budget
@@ -56,8 +64,10 @@ progressive fill-in.
   costs 0.3 dps, saves 2 swaps") until within budget - every step
   priced, so the UI is a swap SLIDER (6 swaps: 99% / 4: 95% / 2: 88%)
   and every compromise item explains itself. No curated hybrid tables:
-  void tribrid must EMERGE from slot-sharing economics (validation
-  case). Open calls: objective per group (weighted-sum with rotation
+  void tribrid must EMERGE from slot-sharing economics. FLAGSHIP
+  VALIDATION: the Inferno preset - if the group lookup reproduces a
+  credible Inferno tribrid (the game's canonical swap-budget problem),
+  the model is proven; Fight Caves is the smaller sibling case. Open calls: objective per group (weighted-sum with rotation
   shares vs maximize-min) and whether N counts carried switch items
   (lean: yes - ties into v0.4 inventory planning) or per-transition
   clicks. The raid and slayer-task-planner foundation. (L)
