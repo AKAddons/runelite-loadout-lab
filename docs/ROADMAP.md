@@ -58,16 +58,24 @@ progressive fill-in.
   Tz-Kek has two level variants). (S-M)
 - **M-4 Group lookup: the hybrid/tribrid assistant** - a group is
   QUERYABLE, not just viewable: one answer optimized against all
-  members - a worn base kit + a carried swap set under a swap budget
-  N. Algorithm: start from the members' independent bests (cached),
-  then greedy-merge the cheapest slot differences ("one shared helm
-  costs 0.3 dps, saves 2 swaps") until within budget - every step
-  priced, so the UI is a swap SLIDER (6 swaps: 99% / 4: 95% / 2: 88%)
-  and every compromise item explains itself. No curated hybrid tables:
-  void tribrid must EMERGE from slot-sharing economics. FLAGSHIP
-  VALIDATION: the Inferno preset - if the group lookup reproduces a
-  credible Inferno tribrid (the game's canonical swap-budget problem),
-  the model is proven; Fight Caves is the smaller sibling case. Open calls: objective per group (weighted-sum with rotation
+  members. STRUCTURE (user-refined 2026-07-16): the KIT is the
+  structural unit, naturally capped at 3 (tribrid) or 2 (hybrid) -
+  one per combat style in use. Kit TYPE is labeled by the attack
+  style actually USED against each mob, not the weapon's category
+  (nuances: a melee-cast staff labels melee; a salamander is ONE item
+  serving up to three kits - the ultimate swap-saver, and the merge
+  must discover it). The BUDGET knob (slider + text entry) counts
+  SWAP ITEMS - the intentional extra inventory slots - not kits.
+  Algorithm: greedy-merge from the members' cached independent bests,
+  pricing each compromise until within the item budget. UI: TAB VIEW
+  between kits at the result level (worn view per kit, shared pieces
+  stay put, per-kit "+N items" on the tab); collapsed mob rows show
+  just which kit to bring + dps. Engine prerequisites this makes
+  load-bearing: salamander multi-style support and the staff-in-melee
+  dead path (audit A2.8). No curated hybrid tables: void tribrid must
+  EMERGE from slot-sharing economics. FLAGSHIP VALIDATION: the
+  Inferno preset - a credible Inferno tribrid proves the model;
+  Fight Caves is the smaller sibling case. Open calls: objective per group (weighted-sum with rotation
   shares vs maximize-min) and whether N counts carried switch items
   (lean: yes - ties into v0.4 inventory planning) or per-transition
   clicks. The raid and slayer-task-planner foundation. (L)

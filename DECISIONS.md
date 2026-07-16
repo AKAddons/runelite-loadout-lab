@@ -115,3 +115,20 @@ renders at the result level, above its mob sections.
 
 **Context:** User sketch, same session: "result 1 (Save / X): Graardor;
 result 2: Zulrah Tanzanite/Serpentine/Magma; result 3: bat, blob, ... Jad."
+
+## 2026-07-16 (refinement): M-4 kits, item budget, and tab UI
+
+**Decision:** The kit is M-4's structural unit - capped naturally at 3
+(tribrid) / 2 (hybrid), one per combat style in use. Kit type derives from
+the attack style USED against each mob, not weapon category (melee-cast
+staves label melee; a salamander is one item serving multiple kits). The
+budget control (slider + text entry) counts SWAP ITEMS - intentional extra
+inventory slots - not kits. UI: tabs between kits on the result card, each
+tab showing the worn view for that kit with shared pieces constant;
+collapsed mob rows show only which kit to bring + dps.
+
+**Context:** User refinement over the first result-card mockup: "we max
+out at 3 swaps (tribrid) or 2 (hybrid)... show the type of swap by the
+style used (account for a staff in melee or a salamander)... slider/text
+entry = number of swap items... tab view between swaps, collapsed mobs
+showing which swap to bring."
