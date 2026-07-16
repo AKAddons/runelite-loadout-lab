@@ -321,6 +321,17 @@ exclusions are managed from the "This mob" line.
 
 ![Exclude items from suggestions](docs/img/exclusions.png)
 
+### Undo and redo
+
+The header's undo/redo arrows walk back (and forward again) your last 50
+edits: exclusions, pins, notes, dream items, stored-elsewhere marks,
+protect-only flags, pinned spells, and trip supplies. Hover for exactly
+what's next ("Undo: Pin Osmumten's fang"). Scan-driven changes (bank
+snapshots, storage captures) are never undoable - only your deliberate
+edits. History is per-session and resets on profile switch.
+
+![Undo and redo](docs/img/undo-redo.png)
+
 ### Bank tools: show and filter
 
 "Show in bank" outlines the set's items in your bank; "Filter bank" shows
