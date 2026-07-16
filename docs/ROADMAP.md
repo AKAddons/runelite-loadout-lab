@@ -126,6 +126,21 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
   Lightbearer doubles spec regen (sustained spec dps is now shown in the
   spec tooltip), so vs a Venator/Ultor ring the right pick depends on
   the spec weapon's net gain. Optimizer should compare the two totals.
+- **Constraint parameters + parameterized link-in API (added 2026-07-16)** -
+  broader query constraints: max total gear WEIGHT (data prereq: carry the
+  weirdgloop weight field through refresh_data.py - not vendored today) and
+  max total WORN VALUE gp (distinct from the upgrade budget, which caps
+  acquisition of unowned gear; this caps the whole set, owned or not).
+  Both are additive caps - the riskGp beam pattern. Single weapon/set is
+  already covered by pinning. Then extend the loadoutlab/"search"
+  PluginMessage with OPTIONAL keys (maxWeightKg, maxSetValueGp,
+  pinnedItems, style, slayer, wilderness) - additive keys keep the README
+  stability promise; the panel applies them like back/forward replays so
+  deep-linked params are visible and steppable, and they join cache keys.
+  Payoff: deep links from restriction-bearing COMBAT ACHIEVEMENTS via a
+  curated CA -> (monster, params) table (Goal Planner or a CA-interface
+  right-click as senders). Same plumbing later serves pure/zerker
+  constraint profiles (no-Defence-xp styles, level caps).
 - **Undo/redo for mutations** - DONE (2026-07-15, 0.3.0): goal planner's
   command pattern ported as `com.loadoutlab.command` (Command.apply()/
   revert(), CommandHistory bounded at 50, CompositeCommand + ref-counted
