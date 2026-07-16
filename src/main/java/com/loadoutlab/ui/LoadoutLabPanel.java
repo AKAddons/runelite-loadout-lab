@@ -619,11 +619,11 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedRow.add(selectedLabel, BorderLayout.CENTER);
 		JButton reloadButton = new JButton(new ReloadIcon(12));
 		reloadButton.setMargin(new Insets(0, 6, 0, 6));
-		reloadButton.setToolTipText("Re-run the search for this monster");
+		reloadButton.setToolTipText("Recompute every result on the page");
 		reloadButton.addActionListener(e -> recompute());
 		JButton clearSelection = new JButton("x");
 		clearSelection.setMargin(new Insets(0, 6, 0, 6));
-		clearSelection.setToolTipText("Choose a different monster");
+		clearSelection.setToolTipText("Clear the page (every result)");
 		clearSelection.addActionListener(e -> clearSelection());
 		JPanel selectedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		selectedButtons.setOpaque(false);
@@ -2868,7 +2868,9 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (selectedMonster != null)
 		{
-			statusLabel.setText("Best owned sets vs " + selectedMonster.getName());
+			statusLabel.setText(page.size() > 1
+				? "Best owned sets - " + page.size() + " results"
+				: "Best owned sets vs " + selectedMonster.getName());
 		}
 		// Revalidate the PANEL, not just the results column: our new preferred
 		// height has to reach RuneLite's outer scroll pane so the sidebar grows
@@ -2879,11 +2881,13 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A result's header row: fold chevron + "vs <name>" (+ one-line best
-	 * summary when folded) left, close (X) right. Only rendered on
-	 * multi-result pages. */
+	 * summary when folded) filling the row, close (X) right. The title sits
+	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
+	 * result (the one the toggles above apply to) renders white; the others
+	 * muted. Only rendered on multi-result pages. */
 	private javax.swing.JComponent resultChrome(ResultEntry entry)
 	{
-		JPanel row = new JPanel(new BorderLayout());
+		JPanel row = new JPanel(new BorderLayout(4, 0));
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
@@ -2900,12 +2904,14 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			summary = best > 0 ? String.format(" - %.2f DPS", best) : " - no set";
 		}
+		boolean isActive = entry == active;
 		JLabel title = new JLabel((entry.folded ? "> " : "v ") + "vs "
 			+ entry.monster.label() + summary);
-		title.setForeground(Color.WHITE);
+		title.setForeground(isActive ? Color.WHITE : new Color(170, 170, 170));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		title.setToolTipText(entry.folded ? "Click to expand this result" : "Click to fold this result");
+		title.setToolTipText((entry.folded ? "Click to expand" : "Click to fold")
+			+ (isActive ? " - the toggles above apply to this result" : ""));
 		title.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -2915,20 +2921,19 @@ public class LoadoutLabPanel extends PluginPanel
 				renderPage();
 			}
 		});
-		row.add(title, BorderLayout.WEST);
+		row.add(title, BorderLayout.CENTER);
 		JButton close = new JButton(new CloseIcon(9));
 		close.setToolTipText("Close this result");
 		close.setMargin(new Insets(1, 5, 1, 5));
 		close.addActionListener(e -> closeResult(entry));
-		JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-		east.setOpaque(false);
-		east.add(close);
-		row.add(east, BorderLayout.EAST);
+		row.add(close, BorderLayout.EAST);
 		return row;
 	}
 
-	/** The still-computing placeholder: the mascot (first pending card
-	 * only - one performer per stage) and the optimizing line. */
+	/** The still-computing placeholder. The mascot performs only on a
+	 * SINGLE-result page (the classic loading experience); on a multi-
+	 * result page a pending entry is one compact line so the rendered
+	 * results around it stay put. */
 	private javax.swing.JComponent pendingCard(ResultEntry entry, boolean withMascot)
 	{
 		JPanel column = new JPanel();
@@ -2936,7 +2941,8 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		// The roster picks today's mood (weighted by season); see MascotRoster.
-		if (withMascot && displayOptions.loadingAnimation && MascotArt.available())
+		if (withMascot && page.size() == 1
+			&& displayOptions.loadingAnimation && MascotArt.available())
 		{
 			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
 			if (mascot != null)
@@ -2948,7 +2954,7 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel computing = new JLabel("<html>Optimizing vs " + entry.monster.getName() + "...</html>");
 		computing.setForeground(MUTED);
 		computing.setAlignmentX(LEFT_ALIGNMENT);
-		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
 		column.add(computing);
 		return column;
 	}
