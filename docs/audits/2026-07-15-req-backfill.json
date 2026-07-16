@@ -1,0 +1,3648 @@
+{
+ "rows": [
+  {
+   "id": 25193,
+   "skills": {
+    "defence": 50,
+    "strength": 50
+   }
+  },
+  {
+   "id": 25574,
+   "skills": {
+    "magic": 50
+   }
+  },
+  {
+   "id": 25576,
+   "skills": {
+    "magic": 50
+   }
+  },
+  {
+   "id": 25643,
+   "skills": {
+    "attack": 40
+   }
+  },
+  {
+   "id": 25731,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 25733,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 25734,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 25736,
+   "skills": {
+    "attack": 75,
+    "strength": 75
+   }
+  },
+  {
+   "id": 25738,
+   "skills": {
+    "attack": 75,
+    "strength": 75
+   }
+  },
+  {
+   "id": 25739,
+   "skills": {
+    "attack": 75,
+    "strength": 75
+   }
+  },
+  {
+   "id": 25741,
+   "skills": {
+    "attack": 75,
+    "strength": 75
+   }
+  },
+  {
+   "id": 25849,
+   "skills": {
+    "ranged": 50
+   }
+  },
+  {
+   "id": 25851,
+   "skills": {
+    "ranged": 50
+   }
+  },
+  {
+   "id": 25855,
+   "skills": {
+    "ranged": 50
+   }
+  },
+  {
+   "id": 25857,
+   "skills": {
+    "ranged": 50
+   }
+  },
+  {
+   "id": 25867,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25870,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25872,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25874,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25876,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25878,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25880,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25882,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25884,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25886,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25888,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25890,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25892,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25894,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25896,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 25898,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25900,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25902,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25904,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25906,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25908,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25910,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25912,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25914,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 25916,
+   "skills": {
+    "ranged": 65
+   }
+  },
+  {
+   "id": 25918,
+   "skills": {
+    "ranged": 65
+   }
+  },
+  {
+   "id": 25979,
+   "skills": {
+    "attack": 65
+   }
+  },
+  {
+   "id": 25981,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 25985,
+   "skills": {
+    "magic": 80,
+    "defence": 80,
+    "prayer": 80
+   }
+  },
+  {
+   "id": 26219,
+   "skills": {
+    "attack": 82
+   }
+  },
+  {
+   "id": 26233,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 26235,
+   "skills": {
+    "ranged": 80,
+    "defence": 45
+   }
+  },
+  {
+   "id": 26241,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 26243,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 26245,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 26374,
+   "skills": {
+    "ranged": 80
+   }
+  },
+  {
+   "id": 26382,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 26384,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 26386,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 26463,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26465,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26467,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26469,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26471,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26473,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26475,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26477,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 26482,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 26484,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 26486,
+   "skills": {
+    "ranged": 61
+   }
+  },
+  {
+   "id": 26531,
+   "skills": {
+    "magic": 40,
+    "defence": 20
+   }
+  },
+  {
+   "id": 26533,
+   "skills": {
+    "magic": 40,
+    "defence": 20
+   }
+  },
+  {
+   "id": 26535,
+   "skills": {
+    "magic": 40,
+    "defence": 20
+   }
+  },
+  {
+   "id": 26537,
+   "skills": {
+    "magic": 40,
+    "defence": 20
+   }
+  },
+  {
+   "id": 26539,
+   "skills": {
+    "magic": 40,
+    "defence": 20
+   }
+  },
+  {
+   "id": 26674,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26675,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26676,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26677,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26678,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26679,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26680,
+   "skills": {
+    "defence": 10,
+    "slayer": 60
+   }
+  },
+  {
+   "id": 26681,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26682,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26683,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26684,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 26685,
+   "skills": {
+    "defence": 50,
+    "strength": 50
+   }
+  },
+  {
+   "id": 26708,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 26712,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 26719,
+   "skills": {
+    "defence": 65
+   }
+  },
+  {
+   "id": 26720,
+   "skills": {
+    "defence": 65
+   }
+  },
+  {
+   "id": 26731,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 26732,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 26733,
+   "skills": {
+    "defence": 40,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26734,
+   "skills": {
+    "defence": 40,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26735,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26736,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26737,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26738,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26739,
+   "skills": {
+    "defence": 40,
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26740,
+   "skills": {
+    "defence": 40,
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26741,
+   "skills": {
+    "defence": 70,
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26742,
+   "skills": {
+    "defence": 70,
+    "ranged": 70
+   }
+  },
+  {
+   "id": 26743,
+   "skills": {
+    "strength": 70
+   }
+  },
+  {
+   "id": 26744,
+   "skills": {
+    "strength": 70
+   }
+  },
+  {
+   "id": 26745,
+   "skills": {
+    "defence": 40,
+    "strength": 70
+   }
+  },
+  {
+   "id": 26746,
+   "skills": {
+    "defence": 40,
+    "strength": 70
+   }
+  },
+  {
+   "id": 26747,
+   "skills": {
+    "defence": 70,
+    "strength": 70
+   }
+  },
+  {
+   "id": 26748,
+   "skills": {
+    "defence": 70,
+    "strength": 70
+   }
+  },
+  {
+   "id": 26749,
+   "skills": {
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26750,
+   "skills": {
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26751,
+   "skills": {
+    "defence": 40,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26752,
+   "skills": {
+    "defence": 40,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26753,
+   "skills": {
+    "defence": 70,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26754,
+   "skills": {
+    "defence": 70,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26755,
+   "skills": {
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26756,
+   "skills": {
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26757,
+   "skills": {
+    "defence": 40,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26758,
+   "skills": {
+    "defence": 40,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26759,
+   "skills": {
+    "defence": 70,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26760,
+   "skills": {
+    "defence": 70,
+    "strength": 70,
+    "ranged": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 26945,
+   "skills": {
+    "attack": 30,
+    "magic": 30
+   }
+  },
+  {
+   "id": 26948,
+   "skills": {
+    "attack": 30,
+    "magic": 30
+   }
+  },
+  {
+   "id": 27000,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27001,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27002,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27003,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27004,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27005,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27006,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27007,
+   "skills": {
+    "attack": 42,
+    "strength": 42,
+    "defence": 42,
+    "hitpoints": 42,
+    "ranged": 42,
+    "magic": 42,
+    "prayer": 22
+   }
+  },
+  {
+   "id": 27008,
+   "skills": {
+    "attack": 60,
+    "defence": 60
+   }
+  },
+  {
+   "id": 27009,
+   "skills": {
+    "attack": 40,
+    "defence": 40
+   }
+  },
+  {
+   "id": 27021,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 27100,
+   "skills": {
+    "attack": 75,
+    "strength": 75
+   }
+  },
+  {
+   "id": 27115,
+   "skills": {
+    "magic": 40
+   }
+  },
+  {
+   "id": 27117,
+   "skills": {
+    "magic": 40
+   }
+  },
+  {
+   "id": 27119,
+   "skills": {
+    "magic": 40
+   }
+  },
+  {
+   "id": 27226,
+   "skills": {
+    "ranged": 80,
+    "defence": 30
+   }
+  },
+  {
+   "id": 27229,
+   "skills": {
+    "ranged": 80,
+    "defence": 30
+   }
+  },
+  {
+   "id": 27232,
+   "skills": {
+    "ranged": 80,
+    "defence": 30
+   }
+  },
+  {
+   "id": 27235,
+   "skills": {
+    "ranged": 80,
+    "defence": 80
+   }
+  },
+  {
+   "id": 27238,
+   "skills": {
+    "ranged": 80,
+    "defence": 80
+   }
+  },
+  {
+   "id": 27241,
+   "skills": {
+    "ranged": 80,
+    "defence": 80
+   }
+  },
+  {
+   "id": 27246,
+   "skills": {
+    "attack": 82
+   }
+  },
+  {
+   "id": 27251,
+   "skills": {
+    "magic": 80,
+    "defence": 80,
+    "prayer": 80
+   }
+  },
+  {
+   "id": 27253,
+   "skills": {
+    "magic": 80,
+    "defence": 80,
+    "prayer": 80
+   }
+  },
+  {
+   "id": 27275,
+   "skills": {
+    "magic": 85
+   }
+  },
+  {
+   "id": 27277,
+   "skills": {
+    "magic": 85
+   }
+  },
+  {
+   "id": 27287,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 27291,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 27363,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 27365,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 27366,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 27374,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 27376,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 27550,
+   "skills": {
+    "attack": 70,
+    "defence": 70
+   }
+  },
+  {
+   "id": 27551,
+   "skills": {
+    "attack": 70,
+    "defence": 70
+   }
+  },
+  {
+   "id": 27552,
+   "skills": {
+    "attack": 70,
+    "defence": 70
+   }
+  },
+  {
+   "id": 27553,
+   "skills": {
+    "attack": 70,
+    "defence": 70
+   }
+  },
+  {
+   "id": 27610,
+   "skills": {
+    "ranged": 80
+   }
+  },
+  {
+   "id": 27612,
+   "skills": {
+    "ranged": 80
+   }
+  },
+  {
+   "id": 27624,
+   "skills": {
+    "magic": 70,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 27626,
+   "skills": {
+    "magic": 70,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 27652,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 27655,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 27657,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27660,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27662,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 27665,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 27676,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 27679,
+   "skills": {
+    "magic": 70
+   }
+  },
+  {
+   "id": 27690,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 27697,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27701,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27705,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27709,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27713,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27717,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27721,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27725,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27729,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27733,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27737,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27741,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27745,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27749,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27753,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27757,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27761,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27765,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27769,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27773,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27777,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 27785,
+   "skills": {
+    "magic": 60
+   }
+  },
+  {
+   "id": 27788,
+   "skills": {
+    "magic": 60
+   }
+  },
+  {
+   "id": 27831,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27832,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27833,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27834,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27835,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27836,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27837,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27838,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27839,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27840,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27841,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 27842,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27843,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27844,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27845,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27846,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27847,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27848,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27849,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27850,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27851,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27852,
+   "skills": {
+    "defence": 20
+   }
+  },
+  {
+   "id": 27853,
+   "skills": {
+    "ranged": 60
+   }
+  },
+  {
+   "id": 27855,
+   "skills": {
+    "attack": 60,
+    "strength": 40
+   }
+  },
+  {
+   "id": 27857,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 27859,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 27861,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27863,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27865,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27867,
+   "skills": {
+    "attack": 70
+   }
+  },
+  {
+   "id": 27900,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 27904,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 27908,
+   "skills": {
+    "strength": 75
+   }
+  },
+  {
+   "id": 27912,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 27916,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 27920,
+   "skills": {
+    "magic": 75,
+    "attack": 30
+   }
+  },
+  {
+   "id": 28019,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28021,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28023,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28025,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28027,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28029,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28031,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28033,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28035,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28037,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28039,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28041,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28043,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28045,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28047,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28049,
+   "skills": {
+    "attack": 60,
+    "strength": 30
+   }
+  },
+  {
+   "id": 28051,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28053,
+   "skills": {
+    "ranged": 64
+   }
+  },
+  {
+   "id": 28055,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28057,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28059,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28061,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28063,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28065,
+   "skills": {
+    "defence": 60
+   }
+  },
+  {
+   "id": 28067,
+   "skills": {
+    "defence": 40
+   }
+  },
+  {
+   "id": 28069,
+   "skills": {
+    "defence": 40
+   }
+  },
+  {
+   "id": 28070,
+   "skills": {
+    "defence": 55
+   }
+  },
+  {
+   "id": 28202,
+   "skills": {
+    "attack": 5
+   }
+  },
+  {
+   "id": 28205,
+   "skills": {
+    "attack": 10
+   }
+  },
+  {
+   "id": 28208,
+   "skills": {
+    "attack": 20
+   }
+  },
+  {
+   "id": 28211,
+   "skills": {
+    "attack": 30
+   }
+  },
+  {
+   "id": 28214,
+   "skills": {
+    "attack": 40
+   }
+  },
+  {
+   "id": 28217,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 28220,
+   "skills": {
+    "attack": 70,
+    "agility": 50
+   }
+  },
+  {
+   "id": 28223,
+   "skills": {
+    "attack": 70,
+    "agility": 50
+   }
+  },
+  {
+   "id": 28226,
+   "skills": {
+    "attack": 65
+   }
+  },
+  {
+   "id": 28254,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 28256,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 28258,
+   "skills": {
+    "defence": 80
+   }
+  },
+  {
+   "id": 28260,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28262,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28264,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28266,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28338,
+   "skills": {
+    "attack": 80,
+    "strength": 80
+   }
+  },
+  {
+   "id": 28473,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28474,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28475,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28476,
+   "skills": {
+    "magic": 75,
+    "strength": 60,
+    "attack": 50
+   }
+  },
+  {
+   "id": 28583,
+   "skills": {
+    "magic": 62
+   }
+  },
+  {
+   "id": 28585,
+   "skills": {
+    "magic": 62
+   }
+  },
+  {
+   "id": 28682,
+   "skills": {
+    "attack": 75,
+    "defence": 75
+   }
+  },
+  {
+   "id": 28687,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28688,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28792,
+   "skills": {
+    "attack": 50
+   }
+  },
+  {
+   "id": 28794,
+   "skills": {
+    "ranged": 50
+   }
+  },
+  {
+   "id": 28796,
+   "skills": {
+    "magic": 50
+   }
+  },
+  {
+   "id": 28810,
+   "skills": {
+    "attack": 65
+   }
+  },
+  {
+   "id": 28834,
+   "skills": {
+    "attack": 80,
+    "magic": 80,
+    "ranged": 80
+   }
+  },
+  {
+   "id": 28869,
+   "skills": {
+    "ranged": 66,
+    "hunter": 50
+   }
+  },
+  {
+   "id": 28902,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 28904,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 28906,
+   "skills": {
+    "attack": 99,
+    "strength": 99,
+    "defence": 99,
+    "hitpoints": 99,
+    "ranged": 99,
+    "magic": 99,
+    "prayer": 99,
+    "agility": 99,
+    "herblore": 99,
+    "thieving": 99,
+    "crafting": 99,
+    "fletching": 99,
+    "slayer": 99,
+    "hunter": 99,
+    "mining": 99,
+    "smithing": 99,
+    "fishing": 99,
+    "cooking": 99,
+    "firemaking": 99,
+    "woodcutting": 99,
+    "farming": 99,
+    "construction": 99,
+    "runecraft": 99
+   }
+  },
+  {
+   "id": 28919,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28922,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28933,
+   "skills": {
+    "prayer": 60,
+    "defence": 40
+   }
+  },
+  {
+   "id": 28936,
+   "skills": {
+    "prayer": 60,
+    "defence": 40
+   }
+  },
+  {
+   "id": 28939,
+   "skills": {
+    "prayer": 60,
+    "defence": 40
+   }
+  },
+  {
+   "id": 28945,
+   "skills": {
+    "defence": 75
+   }
+  },
+  {
+   "id": 28947,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28951,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28955,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28957,
+   "skills": {
+    "ranged": 75
+   }
+  },
+  {
+   "id": 28988,
+   "skills": {
+    "attack": 70,
+    "magic": 75
+   }
+  },
+  {
+   "id": 28997,
+   "skills": {
+    "attack": 70,
+    "strength": 75
+   }
+  },
+  {
+   "id": 29000,
+   "skills": {
+    "ranged": 75,
+    "attack": 50,
+    "strength": 50
+   }
+  },
+  {
+   "id": 29004,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29007,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29010,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29013,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29016,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29019,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29022,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29025,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29028,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29031,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29033,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29035,
+   "skills": {
+    "ranged": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29037,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29039,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29041,
+   "skills": {
+    "magic": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29043,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29045,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29047,
+   "skills": {
+    "strength": 75,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29084,
+   "skills": {
+    "attack": 55
+   }
+  },
+  {
+   "id": 29280,
+   "skills": {
+    "ranged": 60,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29283,
+   "skills": {
+    "ranged": 60
+   }
+  },
+  {
+   "id": 29286,
+   "skills": {
+    "ranged": 60,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29289,
+   "skills": {
+    "ranged": 60,
+    "defence": 50
+   }
+  },
+  {
+   "id": 29305,
+   "skills": {
+    "ranged": 55,
+    "strength": 30
+   }
+  },
+  {
+   "id": 29560,
+   "skills": {
+    "defence": 40
+   }
+  },
+  {
+   "id": 29562,
+   "skills": {
+    "defence": 40
+   }
+  },
+  {
+   "id": 29564,
+   "skills": {
+    "defence": 40
+   }
+  },
+  {
+   "id": 29577,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 29589,
+   "skills": {
+    "attack": 77
+   }
+  },
+  {
+   "id": 29591,
+   "skills": {
+    "ranged": 77
+   }
+  },
+  {
+   "id": 29594,
+   "skills": {
+    "magic": 77,
+    "attack": 50
+   }
+  },
+  {
+   "id": 29605,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 29607,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 29609,
+   "skills": {
+    "magic": 75,
+    "hitpoints": 50
+   }
+  },
+  {
+   "id": 29611,
+   "skills": {
+    "ranged": 60
+   }
+  },
+  {
+   "id": 29796,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 29801,
+   "skills": {
+    "hitpoints": 90
+   }
+  },
+  {
+   "id": 29804,
+   "skills": {
+    "hitpoints": 90
+   }
+  },
+  {
+   "id": 29816,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 29818,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 29820,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 29822,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 29889,
+   "skills": {
+    "attack": 55
+   }
+  },
+  {
+   "id": 30064,
+   "skills": {
+    "magic": 50
+   }
+  },
+  {
+   "id": 30066,
+   "skills": {
+    "magic": 50
+   }
+  },
+  {
+   "id": 30070,
+   "skills": {
+    "magic": 65
+   }
+  },
+  {
+   "id": 30073,
+   "skills": {
+    "ranged": 70,
+    "defence": 40
+   }
+  },
+  {
+   "id": 30076,
+   "skills": {
+    "ranged": 70,
+    "defence": 40
+   }
+  },
+  {
+   "id": 30079,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 30082,
+   "skills": {
+    "ranged": 70
+   }
+  },
+  {
+   "id": 30305,
+   "skills": {
+    "attack": 75
+   }
+  },
+  {
+   "id": 30321,
+   "skills": {
+    "strength": 50,
+    "defence": 50
+   }
+  },
+  {
+   "id": 30342,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30343,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30345,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30346,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30347,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30348,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30349,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30351,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30352,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30434,
+   "skills": {
+    "ranged": 80
+   }
+  },
+  {
+   "id": 30436,
+   "skills": {
+    "ranged": 80
+   }
+  },
+  {
+   "id": 30437,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 30439,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 30441,
+   "skills": {
+    "magic": 78,
+    "defence": 75
+   }
+  },
+  {
+   "id": 30445,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30447,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30449,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30519,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30521,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30523,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30525,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30527,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30529,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30531,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30533,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30535,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30537,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30539,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30541,
+   "skills": {
+    "defence": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30568,
+   "skills": {
+    "attack": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30570,
+   "skills": {
+    "attack": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30571,
+   "skills": {
+    "attack": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30572,
+   "skills": {
+    "attack": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30573,
+   "skills": {
+    "attack": 70,
+    "magic": 70
+   }
+  },
+  {
+   "id": 30634,
+   "skills": {
+    "magic": 60
+   }
+  },
+  {
+   "id": 30750,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30753,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30756,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30759,
+   "skills": {
+    "magic": 80
+   }
+  },
+  {
+   "id": 30777,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30779,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30781,
+   "skills": {
+    "defence": 78
+   }
+  },
+  {
+   "id": 30891,
+   "skills": {
+    "attack": 80
+   }
+  },
+  {
+   "id": 30955,
+   "skills": {
+    "attack": 60
+   }
+  },
+  {
+   "id": 30957,
+   "skills": {
+    "attack": 55
+   }
+  },
+  {
+   "id": 31081,
+   "skills": {
+    "prayer": 50
+   }
+  },
+  {
+   "id": 31088,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31091,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31092,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31093,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31094,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31095,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31096,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31097,
+   "skills": {
+    "defence": 80,
+    "strength": 80,
+    "ranged": 80,
+    "magic": 80
+   }
+  },
+  {
+   "id": 31106,
+   "skills": {
+    "hitpoints": 90
+   }
+  },
+  {
+   "id": 31113,
+   "skills": {
+    "magic": 83
+   }
+  },
+  {
+   "id": 31115,
+   "skills": {
+    "magic": 83
+   }
+  },
+  {
+   "id": 31248,
+   "skills": {
+    "attack": 65
+   }
+  },
+  {
+   "id": 31575,
+   "skills": {
+    "ranged": 45
+   }
+  },
+  {
+   "id": 31577,
+   "skills": {
+    "ranged": 45
+   }
+  },
+  {
+   "id": 31579,
+   "skills": {
+    "ranged": 55
+   }
+  },
+  {
+   "id": 31581,
+   "skills": {
+    "ranged": 55
+   }
+  },
+  {
+   "id": 31583,
+   "skills": {
+    "ranged": 65
+   }
+  },
+  {
+   "id": 31585,
+   "skills": {
+    "ranged": 65
+   }
+  },
+  {
+   "id": 32879,
+   "skills": {
+    "ranged": 60
+   }
+  },
+  {
+   "id": 33021,
+   "skills": {
+    "ranged": 80,
+    "agility": 70
+   }
+  },
+  {
+   "id": 33023,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 33027,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 33031,
+   "skills": {
+    "defence": 70
+   }
+  },
+  {
+   "id": 33035,
+   "skills": {
+    "attack": 75,
+    "magic": 75
+   }
+  },
+  {
+   "id": 33036,
+   "skills": {
+    "attack": 75,
+    "magic": 75
+   }
+  },
+  {
+   "id": 33066,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33068,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33070,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33072,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33314,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33316,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33318,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33320,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33322,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33323,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33326,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33328,
+   "skills": {
+    "magic": 75
+   }
+  },
+  {
+   "id": 33330,
+   "skills": {
+    "attack": 50,
+    "magic": 50
+   }
+  },
+  {
+   "id": 33332,
+   "skills": {
+    "attack": 50,
+    "magic": 50
+   }
+  },
+  {
+   "id": 33335,
+   "skills": {
+    "attack": 80,
+    "strength": 80
+   }
+  },
+  {
+   "id": 33338,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33340,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33439,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33441,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33443,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33445,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33447,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33449,
+   "skills": {
+    "defence": 10
+   }
+  },
+  {
+   "id": 33631,
+   "skills": {
+    "attack": 60,
+    "strength": 85
+   }
+  },
+  {
+   "id": 33639,
+   "skills": {
+    "hitpoints": 90
+   }
+  },
+  {
+   "id": 33718,
+   "skills": {
+    "attack": 50
+   }
+  }
+ ],
+ "citations": {
+  "25193": "Granite ring (i) [Soul Wars] \u2014 50 Defence, 50 Strength (wiki 'Granite ring (i)'; Soul Wars/Emir's Arena imbue variants)",
+  "25574": "Tome of water [Charged] \u2014 50 Magic (wiki 'Tome of water')",
+  "25576": "Tome of water [Empty] \u2014 50 Magic (wiki 'Tome of water')",
+  "25643": "Barronite mace [Locked] \u2014 40 Attack \u2014 locked (leagues) barronite mace (wiki 'Barronite mace'; file row 25641)",
+  "25731": "Holy sanguinesti staff [Charged] \u2014 75 Magic \u2014 holy ornament sanguinesti staff (wiki 'Sanguinesti staff'; file rows 22323/22481)",
+  "25733": "Holy sanguinesti staff [Uncharged] \u2014 75 Magic \u2014 holy ornament sanguinesti staff (wiki 'Sanguinesti staff'; file rows 22323/22481)",
+  "25734": "Holy ghrazi rapier \u2014 75 Attack \u2014 holy ornament ghrazi rapier (wiki 'Ghrazi rapier'; file row 22324)",
+  "25736": "Holy scythe of vitur [Charged] \u2014 75 Attack, 75 Strength \u2014 holy/sanguine ornament scythe (wiki 'Scythe of vitur'; file rows 22325/22486)",
+  "25738": "Holy scythe of vitur [Uncharged] \u2014 75 Attack, 75 Strength \u2014 holy/sanguine ornament scythe (wiki 'Scythe of vitur'; file rows 22325/22486)",
+  "25739": "Sanguine scythe of vitur [Charged] \u2014 75 Attack, 75 Strength \u2014 holy/sanguine ornament scythe (wiki 'Scythe of vitur'; file rows 22325/22486)",
+  "25741": "Sanguine scythe of vitur [Uncharged] \u2014 75 Attack, 75 Strength \u2014 holy/sanguine ornament scythe (wiki 'Scythe of vitur'; file rows 22325/22486)",
+  "25849": "Amethyst dart [Unpoisoned] \u2014 50 Ranged (wiki 'Amethyst dart')",
+  "25851": "Amethyst dart [Poison] \u2014 50 Ranged (wiki 'Amethyst dart')",
+  "25855": "Amethyst dart [Poison+] \u2014 50 Ranged (wiki 'Amethyst dart')",
+  "25857": "Amethyst dart [Poison++] \u2014 50 Ranged (wiki 'Amethyst dart')",
+  "25867": "Bow of faerdhinen (c) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25870": "Blade of saeldor (c) (Ithell) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25872": "Blade of saeldor (c) (Iorwerth) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25874": "Blade of saeldor (c) (Trahaearn) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25876": "Blade of saeldor (c) (Cadarn) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25878": "Blade of saeldor (c) (Crwys) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25880": "Blade of saeldor (c) (Meilyr) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25882": "Blade of saeldor (c) (Amlodd) \u2014 80 Attack (wiki 'Blade of saeldor', post-buff; (c) colour variants share)",
+  "25884": "Bow of faerdhinen (c) (Ithell) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25886": "Bow of faerdhinen (c) (Iorwerth) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25888": "Bow of faerdhinen (c) (Trahaearn) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25890": "Bow of faerdhinen (c) (Cadarn) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25892": "Bow of faerdhinen (c) (Crwys) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25894": "Bow of faerdhinen (c) (Meilyr) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25896": "Bow of faerdhinen (c) (Amlodd) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "25898": "Tztok slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25900": "Tztok slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25902": "Tztok slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25904": "Vampyric slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25906": "Vampyric slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25908": "Vampyric slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25910": "Tzkal slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25912": "Tzkal slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25914": "Tzkal slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "25916": "Dragon hunter crossbow (t) \u2014 65 Ranged \u2014 cosmetic kit variants of dragon hunter crossbow (wiki 'Dragon hunter crossbow'; file row 21012)",
+  "25918": "Dragon hunter crossbow (b) \u2014 65 Ranged \u2014 cosmetic kit variants of dragon hunter crossbow (wiki 'Dragon hunter crossbow'; file row 21012)",
+  "25979": "Keris partisan \u2014 65 Attack (wiki 'Keris partisan', current lead)",
+  "25981": "Keris partisan of breaching \u2014 80 Attack \u2014 jewelled keris partisans (wiki 'Keris partisan of breaching/corruption/the sun/amascut')",
+  "25985": "Elidinis' ward \u2014 80 Magic, 80 Defence, 80 Prayer (wiki 'Elidinis' ward'/'(f)'; (or) is fortified+kit)",
+  "26219": "Osmumten's fang \u2014 82 Attack (wiki 'Osmumten's fang')",
+  "26233": "Ancient godsword \u2014 75 Attack, as all godswords (wiki 'Ancient godsword')",
+  "26235": "Zaryte vambraces \u2014 80 Ranged, 45 Defence (wiki 'Zaryte vambraces')",
+  "26241": "Virtus mask \u2014 78 Magic, 75 Defence (wiki 'Virtus mask/robe top/robe bottom')",
+  "26243": "Virtus robe top \u2014 78 Magic, 75 Defence (wiki 'Virtus mask/robe top/robe bottom')",
+  "26245": "Virtus robe bottom \u2014 78 Magic, 75 Defence (wiki 'Virtus mask/robe top/robe bottom')",
+  "26374": "Zaryte crossbow \u2014 80 Ranged (wiki 'Zaryte crossbow')",
+  "26382": "Torva full helm [Restored] \u2014 80 Defence (wiki 'Torva full helm/platebody/platelegs')",
+  "26384": "Torva platebody [Restored] \u2014 80 Defence (wiki 'Torva full helm/platebody/platelegs')",
+  "26386": "Torva platelegs [Restored] \u2014 80 Defence (wiki 'Torva full helm/platebody/platelegs')",
+  "26463": "Void knight top (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26465": "Void knight robe (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26467": "Void knight gloves (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26469": "Elite void top (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26471": "Elite void robe (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26473": "Void mage helm (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26475": "Void ranger helm (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26477": "Void melee helm (or) [Normal] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "26482": "Abyssal whip (or) \u2014 70 Attack \u2014 abyssal whip + ornament kit (wiki 'Abyssal whip'; file row 4151)",
+  "26484": "Abyssal tentacle (or) \u2014 75 Attack \u2014 abyssal tentacle (or) (wiki 'Abyssal tentacle'; file row 12006)",
+  "26486": "Rune crossbow (or) \u2014 61 Ranged \u2014 rune crossbow (or) (wiki 'Rune crossbow'; file row 9185)",
+  "26531": "Mystic hat (or) \u2014 40 Magic, 20 Defence \u2014 mystic (or) set (wiki 'Mystic robes'; file rows e.g. 4091)",
+  "26533": "Mystic robe top (or) \u2014 40 Magic, 20 Defence \u2014 mystic (or) set (wiki 'Mystic robes'; file rows e.g. 4091)",
+  "26535": "Mystic robe bottom (or) \u2014 40 Magic, 20 Defence \u2014 mystic (or) set (wiki 'Mystic robes'; file rows e.g. 4091)",
+  "26537": "Mystic gloves (or) \u2014 40 Magic, 20 Defence \u2014 mystic (or) set (wiki 'Mystic robes'; file rows e.g. 4091)",
+  "26539": "Mystic boots (or) \u2014 40 Magic, 20 Defence \u2014 mystic (or) set (wiki 'Mystic robes'; file rows e.g. 4091)",
+  "26674": "Slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26675": "Black slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Black slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26676": "Green slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Green slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26677": "Red slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Red slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26678": "Purple slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Purple slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26679": "Turquoise slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Turquoise slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26680": "Hydra slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Hydra slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26681": "Twisted slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Twisted slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26682": "Tztok slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Tztok slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26683": "Vampyric slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Vampyric slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26684": "Tzkal slayer helmet (i) [Emir's Arena] \u2014 mirrors 'Tzkal slayer helmet (i)' (10 Defence per wiki 'Slayer helmet'; Emir's Arena imbue variant)",
+  "26685": "Granite ring (i) [Emir's Arena] \u2014 50 Defence, 50 Strength (wiki 'Granite ring (i)'; Soul Wars/Emir's Arena imbue variants)",
+  "26708": "Dragon claws (or) \u2014 60 Attack \u2014 dragon claws (or) (wiki 'Dragon claws'; file row 13652)",
+  "26712": "Heavy ballista (or) \u2014 75 Ranged \u2014 heavy ballista (or) (wiki 'Heavy ballista'; file row 19481)",
+  "26719": "Bandos tassets (or) \u2014 65 Defence \u2014 bandos tassets (or) (wiki 'Bandos tassets'; file row 11834)",
+  "26720": "Bandos boots (or) \u2014 65 Defence \u2014 bandos boots (or) (wiki 'Bandos boots'; file row 11836)",
+  "26731": "Saika's hood [Normal] \u2014 70 Magic (wiki 'Saika's hood')",
+  "26732": "Saika's hood [Locked] \u2014 70 Magic (wiki 'Saika's hood')",
+  "26733": "Saika's veil [Normal] \u2014 40 Defence, 70 Magic (wiki 'Saika's veil')",
+  "26734": "Saika's veil [Locked] \u2014 40 Defence, 70 Magic (wiki 'Saika's veil')",
+  "26735": "Saika's shroud [Normal] \u2014 70 Defence, 70 Magic (wiki 'Saika's shroud')",
+  "26736": "Saika's shroud [Locked] \u2014 70 Defence, 70 Magic (wiki 'Saika's shroud')",
+  "26737": "Koriff's headband [Normal] \u2014 70 Ranged (wiki 'Koriff's headband')",
+  "26738": "Koriff's headband [Locked] \u2014 70 Ranged (wiki 'Koriff's headband')",
+  "26739": "Koriff's cowl [Normal] \u2014 40 Defence, 70 Ranged (wiki 'Koriff's cowl')",
+  "26740": "Koriff's cowl [Locked] \u2014 40 Defence, 70 Ranged (wiki 'Koriff's cowl')",
+  "26741": "Koriff's coif [Normal] \u2014 70 Defence, 70 Ranged (wiki 'Koriff's coif')",
+  "26742": "Koriff's coif [Locked] \u2014 70 Defence, 70 Ranged (wiki 'Koriff's coif')",
+  "26743": "Maoma's med helm [Normal] \u2014 70 Strength (wiki 'Maoma's med helm')",
+  "26744": "Maoma's med helm [Locked] \u2014 70 Strength (wiki 'Maoma's med helm')",
+  "26745": "Maoma's full helm [Normal] \u2014 40 Defence, 70 Strength (wiki 'Maoma's full helm')",
+  "26746": "Maoma's full helm [Locked] \u2014 40 Defence, 70 Strength (wiki 'Maoma's full helm')",
+  "26747": "Maoma's great helm [Normal] \u2014 70 Defence, 70 Strength (wiki 'Maoma's great helm')",
+  "26748": "Maoma's great helm [Locked] \u2014 70 Defence, 70 Strength (wiki 'Maoma's great helm')",
+  "26749": "Calamity chest [Normal] \u2014 70 Strength/Ranged/Magic (wiki 'Calamity chest')",
+  "26750": "Calamity chest [Locked] \u2014 70 Strength/Ranged/Magic (wiki 'Calamity chest')",
+  "26751": "Superior calamity chest [Normal] \u2014 40 Defence + 70 Strength/Ranged/Magic (wiki 'Superior calamity chest')",
+  "26752": "Superior calamity chest [Locked] \u2014 40 Defence + 70 Strength/Ranged/Magic (wiki 'Superior calamity chest')",
+  "26753": "Elite calamity chest [Normal] \u2014 70 Defence/Strength/Ranged/Magic (wiki 'Elite calamity chest')",
+  "26754": "Elite calamity chest [Locked] \u2014 70 Defence/Strength/Ranged/Magic (wiki 'Elite calamity chest')",
+  "26755": "Calamity breeches [Normal] \u2014 70 Strength/Ranged/Magic (wiki 'Calamity breeches')",
+  "26756": "Calamity breeches [Locked] \u2014 70 Strength/Ranged/Magic (wiki 'Calamity breeches')",
+  "26757": "Superior calamity breeches [Normal] \u2014 40 Defence + 70 Strength/Ranged/Magic (wiki 'Superior calamity breeches')",
+  "26758": "Superior calamity breeches [Locked] \u2014 40 Defence + 70 Strength/Ranged/Magic (wiki 'Superior calamity breeches')",
+  "26759": "Elite calamity breeches [Normal] \u2014 70 Defence/Strength/Ranged/Magic (wiki 'Elite calamity breeches')",
+  "26760": "Elite calamity breeches [Locked] \u2014 70 Defence/Strength/Ranged/Magic (wiki 'Elite calamity breeches')",
+  "26945": "Pharaoh's sceptre [Uncharged] \u2014 30 Attack, 30 Magic (wiki 'Pharaoh's sceptre')",
+  "26948": "Pharaoh's sceptre [Charged] \u2014 30 Attack, 30 Magic (wiki 'Pharaoh's sceptre')",
+  "27000": "Void knight top (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27001": "Void knight robe (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27002": "Void knight gloves (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27003": "Elite void top (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27004": "Elite void robe (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27005": "Void mage helm (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27006": "Void ranger helm (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27007": "Void melee helm (or) [Locked] \u2014 42 Attack/Strength/Defence/Hitpoints/Ranged/Magic + 22 Prayer \u2014 void (or) variants (wiki 'Void Knight equipment'; file rows 8839 etc.)",
+  "27008": "Dragon defender (t) [Locked] \u2014 60 Attack, 60 Defence \u2014 dragon defender (t) locked (wiki 'Dragon defender'; file row 24143)",
+  "27009": "Rune defender (t) [Locked] \u2014 40 Attack, 40 Defence \u2014 rune defender (t) locked (wiki 'Rune defender'; file rows 8850/24142)",
+  "27021": "Colossal blade \u2014 60 Attack (wiki 'Colossal blade')",
+  "27100": "Elder maul (or) \u2014 75 Attack, 75 Strength \u2014 elder maul (or) (wiki 'Elder maul'; file row 21003)",
+  "27115": "Elder chaos top (or) \u2014 40 Magic \u2014 elder chaos (or) (wiki 'Elder chaos druid robes'; file rows 20517 etc.)",
+  "27117": "Elder chaos robe (or) \u2014 40 Magic \u2014 elder chaos (or) (wiki 'Elder chaos druid robes'; file rows 20517 etc.)",
+  "27119": "Elder chaos hood (or) \u2014 40 Magic \u2014 elder chaos (or) (wiki 'Elder chaos druid robes'; file rows 20517 etc.)",
+  "27226": "Masori mask \u2014 80 Ranged, 30 Defence (wiki 'Masori mask/body/chaps')",
+  "27229": "Masori body \u2014 80 Ranged, 30 Defence (wiki 'Masori mask/body/chaps')",
+  "27232": "Masori chaps \u2014 80 Ranged, 30 Defence (wiki 'Masori mask/body/chaps')",
+  "27235": "Masori mask (f) \u2014 80 Ranged, 80 Defence \u2014 fortified raises Defence req to 80 (wiki 'Masori ... (f)')",
+  "27238": "Masori body (f) \u2014 80 Ranged, 80 Defence \u2014 fortified raises Defence req to 80 (wiki 'Masori ... (f)')",
+  "27241": "Masori chaps (f) \u2014 80 Ranged, 80 Defence \u2014 fortified raises Defence req to 80 (wiki 'Masori ... (f)')",
+  "27246": "Osmumten's fang (or) \u2014 82 Attack; cosmetic (or) variant of Osmumten's fang (wiki 'Osmumten's fang (or)')",
+  "27251": "Elidinis' ward (f) \u2014 80 Magic, 80 Defence, 80 Prayer (wiki 'Elidinis' ward'/'(f)'; (or) is fortified+kit)",
+  "27253": "Elidinis' ward (or) \u2014 80 Magic, 80 Defence, 80 Prayer (wiki 'Elidinis' ward'/'(f)'; (or) is fortified+kit)",
+  "27275": "Tumeken's shadow [Charged] \u2014 85 Magic (wiki 'Tumeken's shadow')",
+  "27277": "Tumeken's shadow [Uncharged] \u2014 85 Magic (wiki 'Tumeken's shadow')",
+  "27287": "Keris partisan of corruption \u2014 80 Attack \u2014 jewelled keris partisans (wiki 'Keris partisan of breaching/corruption/the sun/amascut')",
+  "27291": "Keris partisan of the sun \u2014 80 Attack \u2014 jewelled keris partisans (wiki 'Keris partisan of breaching/corruption/the sun/amascut')",
+  "27363": "Masori assembler max cape [Normal] \u2014 Max cape variant/hood \u2014 max cape requires 99 in all skills (file precedent Max cape/Max hood rows; wiki 'Masori assembler max cape')",
+  "27365": "Masori assembler max cape [Locked] \u2014 Max cape variant/hood \u2014 max cape requires 99 in all skills (file precedent Max cape/Max hood rows; wiki 'Masori assembler max cape')",
+  "27366": "Masori assembler max hood \u2014 Max cape variant/hood \u2014 max cape requires 99 in all skills (file precedent Max cape/Max hood rows; wiki 'Masori assembler max cape')",
+  "27374": "Masori assembler [Normal] \u2014 70 Ranged \u2014 Ava's assembler + Masori crafting kit, shares assembler req (wiki 'Ava's assembler': 70 Ranged; 'Masori assembler' is its cosmetic upgrade)",
+  "27376": "Masori assembler [Locked] \u2014 70 Ranged \u2014 Ava's assembler + Masori crafting kit, shares assembler req (wiki 'Ava's assembler': 70 Ranged; 'Masori assembler' is its cosmetic upgrade)",
+  "27550": "Ghommal's avernic defender 5 [Normal] \u2014 70 Attack, 70 Defence \u2014 Avernic defender + Ghommal's hilt cosmetic (wiki 'Avernic defender'; file row 22322)",
+  "27551": "Ghommal's avernic defender 5 [Locked] \u2014 70 Attack, 70 Defence \u2014 Avernic defender + Ghommal's hilt cosmetic (wiki 'Avernic defender'; file row 22322)",
+  "27552": "Ghommal's avernic defender 6 [Normal] \u2014 70 Attack, 70 Defence \u2014 Avernic defender + Ghommal's hilt cosmetic (wiki 'Avernic defender'; file row 22322)",
+  "27553": "Ghommal's avernic defender 6 [Locked] \u2014 70 Attack, 70 Defence \u2014 Avernic defender + Ghommal's hilt cosmetic (wiki 'Avernic defender'; file row 22322)",
+  "27610": "Venator bow [Charged] \u2014 80 Ranged (wiki 'Venator bow')",
+  "27612": "Venator bow [Uncharged] \u2014 80 Ranged (wiki 'Venator bow')",
+  "27624": "Ancient sceptre [Normal] \u2014 70 Magic, 60 Strength, 50 Attack (wiki 'Ancient sceptre')",
+  "27626": "Ancient sceptre [Locked] \u2014 70 Magic, 60 Strength, 50 Attack (wiki 'Ancient sceptre')",
+  "27652": "Webweaver bow [Uncharged] \u2014 70 Ranged (wiki 'Webweaver bow')",
+  "27655": "Webweaver bow [Charged] \u2014 70 Ranged (wiki 'Webweaver bow')",
+  "27657": "Ursine chainmace [Uncharged] \u2014 70 Attack (wiki 'Ursine chainmace')",
+  "27660": "Ursine chainmace [Charged] \u2014 70 Attack (wiki 'Ursine chainmace')",
+  "27662": "Accursed sceptre [Uncharged] \u2014 70 Magic (wiki 'Accursed sceptre'/'(a)')",
+  "27665": "Accursed sceptre [Charged] \u2014 70 Magic (wiki 'Accursed sceptre'/'(a)')",
+  "27676": "Accursed sceptre (a) [Uncharged] \u2014 70 Magic (wiki 'Accursed sceptre'/'(a)')",
+  "27679": "Accursed sceptre (a) [Charged] \u2014 70 Magic (wiki 'Accursed sceptre'/'(a)')",
+  "27690": "Voidwaker \u2014 75 Attack only, despite blog stating more (wiki 'Voidwaker'; deadman is cosmetic variant)",
+  "27697": "Crystal body (Hefin) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27701": "Crystal legs (Hefin) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27705": "Crystal helm (Hefin) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27709": "Crystal body (Ithell) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27713": "Crystal legs (Ithell) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27717": "Crystal helm (Ithell) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27721": "Crystal body (Iorwerth) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27725": "Crystal legs (Iorwerth) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27729": "Crystal helm (Iorwerth) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27733": "Crystal body (Trahaearn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27737": "Crystal legs (Trahaearn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27741": "Crystal helm (Trahaearn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27745": "Crystal body (Cadarn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27749": "Crystal legs (Cadarn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27753": "Crystal helm (Cadarn) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27757": "Crystal body (Crwys) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27761": "Crystal legs (Crwys) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27765": "Crystal helm (Crwys) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27769": "Crystal body (Amlodd) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27773": "Crystal legs (Amlodd) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27777": "Crystal helm (Amlodd) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "27785": "Thammaron's sceptre (a) [Uncharged] \u2014 60 Magic (wiki 'Thammaron's sceptre (a)')",
+  "27788": "Thammaron's sceptre (a) [Charged] \u2014 60 Magic (wiki 'Thammaron's sceptre (a)')",
+  "27831": "Vesta's chainbody (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27832": "Vesta's plateskirt (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27833": "Statius's full helm (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27834": "Statius's platebody (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27835": "Statius's platelegs (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27836": "Morrigan's coif (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27837": "Morrigan's leather body (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27838": "Morrigan's leather chaps (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27839": "Zuriel's hood (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27840": "Zuriel's robe top (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27841": "Zuriel's robe bottom (bh) [Activated] \u2014 78 Defence (wiki 'Vesta's/Statius's/Morrigan's/Zuriel's ... (bh)' armour pages)",
+  "27842": "Corrupted vesta's chainbody (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27843": "Corrupted vesta's plateskirt (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27844": "Corrupted statius's full helm (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27845": "Corrupted statius's platebody (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27846": "Corrupted statius's platelegs (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27847": "Corrupted morrigan's coif (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27848": "Corrupted morrigan's leather body (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27849": "Corrupted morrigan's leather chaps (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27850": "Corrupted zuriel's hood (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27851": "Corrupted zuriel's robe top (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27852": "Corrupted zuriel's robe bottom (bh) [Activated] \u2014 20 Defence (wiki 'Corrupted ... (bh)' armour pages)",
+  "27853": "Dark bow (bh) \u2014 60 Ranged (wiki 'Dark bow (bh)')",
+  "27855": "Barrelchest anchor (bh) \u2014 60 Attack, 40 Strength \u2014 BH variant of barrelchest anchor (wiki 'Barrelchest anchor'; file row 10887)",
+  "27857": "Dragon mace (bh) \u2014 60 Attack \u2014 dragon mace (bh) (wiki 'Dragon mace'; file row 1434)",
+  "27859": "Dragon longsword (bh) \u2014 60 Attack \u2014 dragon longsword (bh) (wiki 'Dragon longsword'; file row 1305)",
+  "27861": "Abyssal dagger (bh) [Unpoisoned] \u2014 70 Attack \u2014 abyssal dagger (bh) (wiki 'Abyssal dagger'; file rows 13265+)",
+  "27863": "Abyssal dagger (bh) [Poison] \u2014 70 Attack \u2014 abyssal dagger (bh) (wiki 'Abyssal dagger'; file rows 13265+)",
+  "27865": "Abyssal dagger (bh) [Poison+] \u2014 70 Attack \u2014 abyssal dagger (bh) (wiki 'Abyssal dagger'; file rows 13265+)",
+  "27867": "Abyssal dagger (bh) [Poison++] \u2014 70 Attack \u2014 abyssal dagger (bh) (wiki 'Abyssal dagger'; file rows 13265+)",
+  "27900": "Vesta's spear (bh) [Activated] \u2014 75 Attack (wiki 'Vesta's spear (bh)'/'Vesta's longsword (bh)')",
+  "27904": "Vesta's longsword (bh) [Activated] \u2014 75 Attack (wiki 'Vesta's spear (bh)'/'Vesta's longsword (bh)')",
+  "27908": "Statius's warhammer (bh) [Activated] \u2014 75 Strength (wiki 'Statius's warhammer (bh)')",
+  "27912": "Morrigan's throwing axe (bh) [Activated] \u2014 75 Ranged (wiki 'Morrigan's throwing axe (bh)'/'Morrigan's javelin (bh)')",
+  "27916": "Morrigan's javelin (bh) [Activated] \u2014 75 Ranged (wiki 'Morrigan's throwing axe (bh)'/'Morrigan's javelin (bh)')",
+  "27920": "Zuriel's staff (bh) [Activated] \u2014 75 Magic, 30 Attack (wiki 'Zuriel's staff (bh)')",
+  "28019": "Dragon dagger (cr) [Unpoisoned] \u2014 mirrors base 'Dragon dagger' row 1215 (Calvar'ion cosmetic variant; wiki 'Dragon dagger')",
+  "28021": "Dragon dagger (cr) [Poison] \u2014 mirrors base 'Dragon dagger' row 1231 (Calvar'ion cosmetic variant; wiki 'Dragon dagger')",
+  "28023": "Dragon dagger (cr) [Poison+] \u2014 mirrors base 'Dragon dagger' row 5680 (Calvar'ion cosmetic variant; wiki 'Dragon dagger')",
+  "28025": "Dragon dagger (cr) [Poison++] \u2014 mirrors base 'Dragon dagger' row 5698 (Calvar'ion cosmetic variant; wiki 'Dragon dagger')",
+  "28027": "Dragon mace (cr) \u2014 mirrors base 'Dragon mace' row 1434 (Calvar'ion cosmetic variant; wiki 'Dragon mace')",
+  "28029": "Dragon sword (cr) \u2014 mirrors base 'Dragon sword' row 21009 (Calvar'ion cosmetic variant; wiki 'Dragon sword')",
+  "28031": "Dragon scimitar (cr) \u2014 mirrors base 'Dragon scimitar' row 4587 (Calvar'ion cosmetic variant; wiki 'Dragon scimitar')",
+  "28033": "Dragon longsword (cr) \u2014 mirrors base 'Dragon longsword' row 1305 (Calvar'ion cosmetic variant; wiki 'Dragon longsword')",
+  "28035": "Dragon warhammer (cr) \u2014 mirrors base 'Dragon warhammer' row 13576 (Calvar'ion cosmetic variant; wiki 'Dragon warhammer')",
+  "28037": "Dragon battleaxe (cr) \u2014 mirrors base 'Dragon battleaxe' row 1377 (Calvar'ion cosmetic variant; wiki 'Dragon battleaxe')",
+  "28039": "Dragon claws (cr) \u2014 mirrors base 'Dragon claws' row 13652 (Calvar'ion cosmetic variant; wiki 'Dragon claws')",
+  "28041": "Dragon spear (cr) [Unpoisoned] \u2014 mirrors base 'Dragon spear' row 1249 (Calvar'ion cosmetic variant; wiki 'Dragon spear')",
+  "28043": "Dragon spear (cr) [Poison] \u2014 mirrors base 'Dragon spear' row 1263 (Calvar'ion cosmetic variant; wiki 'Dragon spear')",
+  "28045": "Dragon spear (cr) [Poison+] \u2014 mirrors base 'Dragon spear' row 5716 (Calvar'ion cosmetic variant; wiki 'Dragon spear')",
+  "28047": "Dragon spear (cr) [Poison++] \u2014 mirrors base 'Dragon spear' row 5730 (Calvar'ion cosmetic variant; wiki 'Dragon spear')",
+  "28049": "Dragon halberd (cr) \u2014 mirrors base 'Dragon halberd' row 3204 (Calvar'ion cosmetic variant; wiki 'Dragon halberd')",
+  "28051": "Dragon 2h sword (cr) \u2014 mirrors base 'Dragon 2h sword' row 7158 (Calvar'ion cosmetic variant; wiki 'Dragon 2h sword')",
+  "28053": "Dragon crossbow (cr) \u2014 mirrors base 'Dragon crossbow' row 21902 (Calvar'ion cosmetic variant; wiki 'Dragon crossbow')",
+  "28055": "Dragon boots (cr) \u2014 mirrors base 'Dragon boots' row 11840 (Calvar'ion cosmetic variant; wiki 'Dragon boots')",
+  "28057": "Dragon med helm (cr) \u2014 mirrors base 'Dragon med helm' row 1149 (Calvar'ion cosmetic variant; wiki 'Dragon med helm')",
+  "28059": "Dragon sq shield (cr) \u2014 mirrors base 'Dragon sq shield' row 1187 (Calvar'ion cosmetic variant; wiki 'Dragon sq shield')",
+  "28061": "Dragon platelegs (cr) \u2014 mirrors base 'Dragon platelegs' row 4087 (Calvar'ion cosmetic variant; wiki 'Dragon platelegs')",
+  "28063": "Dragon plateskirt (cr) \u2014 mirrors base 'Dragon plateskirt' row 4585 (Calvar'ion cosmetic variant; wiki 'Dragon plateskirt')",
+  "28065": "Dragon chainbody (cr) \u2014 mirrors base 'Dragon chainbody' row 3140 (Calvar'ion cosmetic variant; wiki 'Dragon chainbody')",
+  "28067": "Fighter torso (or) [Normal] \u2014 40 Defence \u2014 fighter torso (or) (wiki 'Fighter torso'; file rows 10551/24175)",
+  "28069": "Fighter torso (or) [Locked] \u2014 40 Defence \u2014 fighter torso (or) (wiki 'Fighter torso'; file rows 10551/24175)",
+  "28070": "Helm of neitiznot (or) \u2014 55 Defence \u2014 helm of neitiznot (or) (wiki 'Helm of Neitiznot'; file row 10828)",
+  "28202": "Steel felling axe \u2014 5 Attack (wiki 'Felling axe' table)",
+  "28205": "Black felling axe \u2014 10 Attack (wiki 'Felling axe' table)",
+  "28208": "Mithril felling axe \u2014 20 Attack (wiki 'Felling axe' table)",
+  "28211": "Adamant felling axe \u2014 30 Attack (wiki 'Felling axe' table)",
+  "28214": "Rune felling axe \u2014 40 Attack (wiki 'Felling axe' table)",
+  "28217": "Dragon felling axe \u2014 60 Attack (wiki 'Felling axe' table)",
+  "28220": "Crystal felling axe [Active] \u2014 70 Attack, 50 Agility (wiki 'Crystal felling axe')",
+  "28223": "Crystal felling axe [Inactive] \u2014 70 Attack, 50 Agility (wiki 'Crystal felling axe')",
+  "28226": "3rd age felling axe \u2014 65 Attack (wiki '3rd age felling axe')",
+  "28254": "Sanguine torva full helm \u2014 80 Defence \u2014 sanguine cosmetic Torva (wiki 'Torva ...' + sanguine variant pages)",
+  "28256": "Sanguine torva platebody \u2014 80 Defence \u2014 sanguine cosmetic Torva (wiki 'Torva ...' + sanguine variant pages)",
+  "28258": "Sanguine torva platelegs \u2014 80 Defence \u2014 sanguine cosmetic Torva (wiki 'Torva ...' + sanguine variant pages)",
+  "28260": "Blood ancient sceptre [Normal] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28262": "Ice ancient sceptre [Normal] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28264": "Smoke ancient sceptre [Normal] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28266": "Shadow ancient sceptre [Normal] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28338": "Soulreaper axe \u2014 80 Attack, 80 Strength (wiki 'Soulreaper axe'; (o) is ornament variant)",
+  "28473": "Blood ancient sceptre [Locked] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28474": "Ice ancient sceptre [Locked] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28475": "Smoke ancient sceptre [Locked] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28476": "Shadow ancient sceptre [Locked] \u2014 75 Magic, 60 Strength, 50 Attack \u2014 elemental ancient sceptres (wiki 'Blood ancient sceptre' et al.)",
+  "28583": "Warped sceptre [Uncharged] \u2014 62 Magic (wiki 'Warped sceptre')",
+  "28585": "Warped sceptre [Charged] \u2014 62 Magic (wiki 'Warped sceptre')",
+  "28682": "Dinh's blazing bulwark \u2014 75 Attack, 75 Defence \u2014 Dinh's bulwark + blazing kit (wiki 'Dinh's bulwark'; file row 21015)",
+  "28687": "Blazing blowpipe [Empty] \u2014 75 Ranged \u2014 toxic blowpipe + blazing kit (wiki 'Toxic blowpipe'; file row 12926)",
+  "28688": "Blazing blowpipe [Charged] \u2014 75 Ranged \u2014 toxic blowpipe + blazing kit (wiki 'Toxic blowpipe'; file row 12926)",
+  "28792": "Bone mace \u2014 50 Attack (wiki 'Bone mace')",
+  "28794": "Bone shortbow \u2014 50 Ranged (wiki 'Bone shortbow')",
+  "28796": "Bone staff \u2014 50 Magic (wiki 'Bone staff')",
+  "28810": "Zombie axe \u2014 65 Attack (wiki 'Zombie axe')",
+  "28834": "Tecu salamander \u2014 80 Attack, 80 Magic, 80 Ranged (wiki 'Tecu salamander')",
+  "28869": "Hunters' sunlight crossbow \u2014 66 Ranged, 50 Hunter (wiki 'Hunters' sunlight crossbow')",
+  "28902": "Dizana's max cape [Normal] \u2014 Max cape/hood variant \u2014 99 all skills (file precedent Max cape 13342/Max hood 13281; wiki 'Dizana's max cape')",
+  "28904": "Dizana's max hood \u2014 Max cape/hood variant \u2014 99 all skills (file precedent Max cape 13342/Max hood 13281; wiki 'Dizana's max cape')",
+  "28906": "Dizana's max cape [Locked] \u2014 Max cape/hood variant \u2014 99 all skills (file precedent Max cape 13342/Max hood 13281; wiki 'Dizana's max cape')",
+  "28919": "Tonalztics of ralos [Uncharged] \u2014 75 Ranged (wiki 'Tonalztics of ralos')",
+  "28922": "Tonalztics of ralos [Charged] \u2014 75 Ranged (wiki 'Tonalztics of ralos')",
+  "28933": "Sunfire fanatic helm \u2014 60 Prayer, 40 Defence (wiki 'Sunfire fanatic helm/cuirass/chausses')",
+  "28936": "Sunfire fanatic cuirass \u2014 60 Prayer, 40 Defence (wiki 'Sunfire fanatic helm/cuirass/chausses')",
+  "28939": "Sunfire fanatic chausses \u2014 60 Prayer, 40 Defence (wiki 'Sunfire fanatic helm/cuirass/chausses')",
+  "28945": "Echo boots \u2014 75 Defence (wiki 'Echo boots')",
+  "28947": "Dizana's quiver [Uncharged] \u2014 75 Ranged (wiki 'Dizana's quiver'/'Blessed dizana's quiver')",
+  "28951": "Dizana's quiver [Charged] \u2014 75 Ranged (wiki 'Dizana's quiver'/'Blessed dizana's quiver')",
+  "28955": "Blessed dizana's quiver [Normal] \u2014 75 Ranged (wiki 'Dizana's quiver'/'Blessed dizana's quiver')",
+  "28957": "Blessed dizana's quiver [Locked] \u2014 75 Ranged (wiki 'Dizana's quiver'/'Blessed dizana's quiver')",
+  "28988": "Blue moon spear \u2014 70 Attack, 75 Magic (wiki 'Blue moon spear')",
+  "28997": "Dual macuahuitl \u2014 70 Attack, 75 Strength (wiki 'Dual macuahuitl')",
+  "29000": "Eclipse atlatl \u2014 75 Ranged, 50 Attack, 50 Strength (wiki 'Eclipse atlatl', post-change)",
+  "29004": "Eclipse moon chestplate [New] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29007": "Eclipse moon tassets [New] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29010": "Eclipse moon helm [New] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29013": "Blue moon chestplate [New] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29016": "Blue moon tassets [New] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29019": "Blue moon helm [New] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29022": "Blood moon chestplate [New] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29025": "Blood moon tassets [New] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29028": "Blood moon helm [New] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29031": "Eclipse moon chestplate [Used] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29033": "Eclipse moon tassets [Used] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29035": "Eclipse moon helm [Used] \u2014 75 Ranged, 50 Defence (wiki 'Eclipse moon chestplate/tassets/helm'; New+Used)",
+  "29037": "Blue moon chestplate [Used] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29039": "Blue moon tassets [Used] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29041": "Blue moon helm [Used] \u2014 75 Magic, 50 Defence (wiki 'Blue moon chestplate/tassets/helm'; New+Used)",
+  "29043": "Blood moon chestplate [Used] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29045": "Blood moon tassets [Used] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29047": "Blood moon helm [Used] \u2014 75 Strength, 50 Defence (wiki 'Blood moon chestplate/tassets/helm'; New+Used)",
+  "29084": "Sulphur blades \u2014 55 Attack (wiki 'Sulphur blades')",
+  "29280": "Mixed hide top \u2014 60 Ranged, 50 Defence (wiki 'Mixed hide top/boots/cape')",
+  "29283": "Mixed hide legs \u2014 60 Ranged \u2014 wiki 'Mixed hide legs' lists no Defence req unlike the rest of the set",
+  "29286": "Mixed hide boots \u2014 60 Ranged, 50 Defence (wiki 'Mixed hide top/boots/cape')",
+  "29289": "Mixed hide cape \u2014 60 Ranged, 50 Defence (wiki 'Mixed hide top/boots/cape')",
+  "29305": "Hunter's spear \u2014 55 Ranged, 30 Strength (wiki 'Hunter's spear')",
+  "29560": "Elite black full helm \u2014 40 Defence (wiki 'Elite black full helm/platebody/platelegs')",
+  "29562": "Elite black platebody \u2014 40 Defence (wiki 'Elite black full helm/platebody/platelegs')",
+  "29564": "Elite black platelegs \u2014 40 Defence (wiki 'Elite black full helm/platebody/platelegs')",
+  "29577": "Burning claws \u2014 60 Attack (wiki 'Burning claws')",
+  "29589": "Emberlight \u2014 77 Attack (wiki 'Emberlight')",
+  "29591": "Scorching bow \u2014 77 Ranged (wiki 'Scorching bow')",
+  "29594": "Purging staff \u2014 77 Magic, 50 Attack (wiki 'Purging staff')",
+  "29605": "Armadyl godsword (deadman) \u2014 75 Attack \u2014 deadman AGS (wiki 'Armadyl godsword'; file row 11802)",
+  "29607": "Voidwaker (deadman) \u2014 75 Attack only, despite blog stating more (wiki 'Voidwaker'; deadman is cosmetic variant)",
+  "29609": "Volatile nightmare staff (deadman) \u2014 75 Magic, 50 Hitpoints \u2014 deadman volatile staff (wiki 'Volatile nightmare staff'; file row 24424)",
+  "29611": "Dark bow (deadman) \u2014 60 Ranged \u2014 deadman dark bow (wiki 'Dark bow'; file row 11235)",
+  "29796": "Noxious halberd \u2014 80 Attack (wiki 'Noxious halberd')",
+  "29801": "Amulet of rancour \u2014 90 Hitpoints (wiki 'Amulet of rancour'; (s) is cosmetic recolour)",
+  "29804": "Amulet of rancour (s) \u2014 90 Hitpoints (wiki 'Amulet of rancour'; (s) is cosmetic recolour)",
+  "29816": "Araxyte slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "29818": "Araxyte slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "29820": "Araxyte slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "29822": "Araxyte slayer helmet (i) [Emir's Arena] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "29889": "Glacial temotli \u2014 55 Attack (wiki 'Glacial temotli')",
+  "30064": "Tome of earth [Charged] \u2014 50 Magic (wiki 'Tome of earth')",
+  "30066": "Tome of earth [Empty] \u2014 50 Magic (wiki 'Tome of earth')",
+  "30070": "Dragon hunter wand \u2014 65 Magic (wiki 'Dragon hunter wand')",
+  "30073": "Hueycoatl hide coif \u2014 70 Ranged, 40 Defence (wiki 'Hueycoatl hide coif/body')",
+  "30076": "Hueycoatl hide body \u2014 70 Ranged, 40 Defence (wiki 'Hueycoatl hide coif/body')",
+  "30079": "Hueycoatl hide chaps \u2014 70 Ranged (wiki 'Hueycoatl hide chaps/vambraces')",
+  "30082": "Hueycoatl hide vambraces \u2014 70 Ranged (wiki 'Hueycoatl hide chaps/vambraces')",
+  "30305": "Arclight [Inactive] \u2014 75 Attack \u2014 inactive Arclight (wiki 'Arclight'; file row 19675)",
+  "30321": "Zombie helmet \u2014 50 Strength, 50 Defence (wiki 'Zombie helmet')",
+  "30342": "Infernal harpoon (or) (Trailblazer Reloaded) [Charged] \u2014 60 Attack \u2014 infernal harpoon (or) TR (wiki 'Infernal harpoon'; file rows 21031/21033)",
+  "30343": "Infernal harpoon (or) (Trailblazer Reloaded) [Uncharged] \u2014 60 Attack \u2014 infernal harpoon (or) TR (wiki 'Infernal harpoon'; file rows 21031/21033)",
+  "30345": "Infernal pickaxe (or) (Trailblazer Reloaded) [Charged] \u2014 60 Attack \u2014 infernal pickaxe (or) TR (wiki 'Infernal pickaxe'; file rows 13243/13244)",
+  "30346": "Infernal pickaxe (or) (Trailblazer Reloaded) [Uncharged] \u2014 60 Attack \u2014 infernal pickaxe (or) TR (wiki 'Infernal pickaxe'; file rows 13243/13244)",
+  "30347": "Infernal axe (or) (Trailblazer Reloaded) [Charged] \u2014 60 Attack \u2014 infernal axe (or) TR (wiki 'Infernal axe'; file rows 13241/13242)",
+  "30348": "Infernal axe (or) (Trailblazer Reloaded) [Uncharged] \u2014 60 Attack \u2014 infernal axe (or) TR (wiki 'Infernal axe'; file rows 13241/13242)",
+  "30349": "Dragon harpoon (or) [Trailblazer Reloaded] \u2014 60 Attack \u2014 dragon harpoon (or) (wiki 'Dragon harpoon'; file row 21028)",
+  "30351": "Dragon pickaxe (or) (Trailblazer) [Trailblazer Reloaded] \u2014 60 Attack \u2014 dragon pickaxe (or) (wiki 'Dragon pickaxe'; file row 11920)",
+  "30352": "Dragon axe (or) [Trailblazer Reloaded] \u2014 60 Attack to wield per wiki 'Dragon axe' (note: file's base row 6739 says 61, which is the Woodcutting level)",
+  "30434": "Echo venator bow [Charged] \u2014 80 Ranged \u2014 venator bow + echo ornament kit (wiki 'Echo venator bow')",
+  "30436": "Echo venator bow [Uncharged] \u2014 80 Ranged \u2014 venator bow + echo ornament kit (wiki 'Echo venator bow')",
+  "30437": "Echo virtus mask \u2014 78 Magic, 75 Defence \u2014 Virtus + echo ornament kit, 'kit gives no additional bonuses' (wiki 'Echo virtus mask' etc.)",
+  "30439": "Echo virtus robe top \u2014 78 Magic, 75 Defence \u2014 Virtus + echo ornament kit, 'kit gives no additional bonuses' (wiki 'Echo virtus mask' etc.)",
+  "30441": "Echo virtus robe bottom \u2014 78 Magic, 75 Defence \u2014 Virtus + echo ornament kit, 'kit gives no additional bonuses' (wiki 'Echo virtus mask' etc.)",
+  "30445": "Echo ahrim's hood [Undamaged] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30447": "Echo ahrim's robetop [Undamaged] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30449": "Echo ahrim's robeskirt [Undamaged] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30519": "Echo ahrim's hood [100] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30521": "Echo ahrim's robetop [100] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30523": "Echo ahrim's robeskirt [100] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30525": "Echo ahrim's hood [75] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30527": "Echo ahrim's robetop [75] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30529": "Echo ahrim's robeskirt [75] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30531": "Echo ahrim's hood [50] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30533": "Echo ahrim's robetop [50] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30535": "Echo ahrim's robeskirt [50] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30537": "Echo ahrim's hood [25] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30539": "Echo ahrim's robetop [25] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30541": "Echo ahrim's robeskirt [25] \u2014 70 Defence, 70 Magic \u2014 Ahrim's + echo ornament kit (wiki 'Ahrim's robes'; file rows 4708-4714)",
+  "30568": "Echo ahrim's staff [Undamaged] \u2014 70 Attack, 70 Magic \u2014 Ahrim's staff + echo kit (wiki 'Ahrim's staff'; file row 4710)",
+  "30570": "Echo ahrim's staff [100] \u2014 70 Attack, 70 Magic \u2014 Ahrim's staff + echo kit (wiki 'Ahrim's staff'; file row 4710)",
+  "30571": "Echo ahrim's staff [75] \u2014 70 Attack, 70 Magic \u2014 Ahrim's staff + echo kit (wiki 'Ahrim's staff'; file row 4710)",
+  "30572": "Echo ahrim's staff [50] \u2014 70 Attack, 70 Magic \u2014 Ahrim's staff + echo kit (wiki 'Ahrim's staff'; file row 4710)",
+  "30573": "Echo ahrim's staff [25] \u2014 70 Attack, 70 Magic \u2014 Ahrim's staff + echo kit (wiki 'Ahrim's staff'; file row 4710)",
+  "30634": "Twinflame staff \u2014 60 Magic (wiki 'Twinflame staff')",
+  "30750": "Oathplate helm \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30753": "Oathplate chest \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30756": "Oathplate legs \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30759": "Soulflame horn \u2014 80 Magic (wiki 'Soulflame horn')",
+  "30777": "Radiant oathplate helm \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30779": "Radiant oathplate chest \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30781": "Radiant oathplate legs \u2014 78 Defence (wiki 'Oathplate helm/chest/legs'; radiant is aether recolour)",
+  "30891": "Keris partisan of amascut \u2014 80 Attack \u2014 jewelled keris partisans (wiki 'Keris partisan of breaching/corruption/the sun/amascut')",
+  "30955": "Arkan blade \u2014 60 Attack (wiki 'Arkan blade')",
+  "30957": "Earthbound tecpatl \u2014 55 Attack (wiki 'Earthbound tecpatl')",
+  "31081": "Antler guard \u2014 50 Prayer (wiki 'Antler guard')",
+  "31088": "Avernic treads \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31091": "Avernic treads (pr) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31092": "Avernic treads (pe) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31093": "Avernic treads (et) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31094": "Avernic treads (pr)(pe) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31095": "Avernic treads (pr)(et) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31096": "Avernic treads (pe)(et) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31097": "Avernic treads (max) \u2014 80 Defence, 80 Strength, 80 Ranged, 80 Magic (wiki 'Avernic treads'; upgrade variants share)",
+  "31106": "Confliction gauntlets \u2014 90 Hitpoints (wiki 'Confliction gauntlets')",
+  "31113": "Eye of ayak [Charged] \u2014 83 Magic (wiki 'Eye of ayak')",
+  "31115": "Eye of ayak [Uncharged] \u2014 83 Magic (wiki 'Eye of ayak')",
+  "31248": "Belle's folly \u2014 65 Attack (wiki 'Belle's folly')",
+  "31575": "Camphor blowpipe [Charged] \u2014 45 Ranged (wiki 'Camphor blowpipe')",
+  "31577": "Camphor blowpipe [Empty] \u2014 45 Ranged (wiki 'Camphor blowpipe')",
+  "31579": "Ironwood blowpipe [Charged] \u2014 55 Ranged (wiki 'Ironwood blowpipe')",
+  "31581": "Ironwood blowpipe [Empty] \u2014 55 Ranged (wiki 'Ironwood blowpipe')",
+  "31583": "Rosewood blowpipe [Charged] \u2014 65 Ranged (wiki 'Rosewood blowpipe')",
+  "31585": "Rosewood blowpipe [Empty] \u2014 65 Ranged (wiki 'Rosewood blowpipe')",
+  "32879": "Aquanite hopper \u2014 60 Ranged (wiki 'Aquanite hopper')",
+  "33021": "Bow of faerdhinen (c) (deadman) \u2014 80 Ranged, 70 Agility (wiki 'Bow of faerdhinen', post-buff; (c) colour/deadman variants share)",
+  "33023": "Crystal body (deadman) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "33027": "Crystal legs (deadman) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "33031": "Crystal helm (deadman) [Active] \u2014 70 Defence (wiki 'Crystal armour'; file rows 23971-23979; colour/deadman variants share)",
+  "33035": "Toxic staff (deadman) [Uncharged] \u2014 75 Attack, 75 Magic \u2014 deadman toxic staff (wiki 'Toxic staff of the dead'; file rows 12904/12902)",
+  "33036": "Toxic staff (deadman) [Charged] \u2014 75 Attack, 75 Magic \u2014 deadman toxic staff (wiki 'Toxic staff of the dead'; file rows 12904/12902)",
+  "33066": "Hooded slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33068": "Hooded slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33070": "Hooded slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33072": "Hooded slayer helmet (i) [Emir's Arena] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33314": "Trident of the swamp (o) [Charged] \u2014 75 Magic \u2014 trident of the swamp (o) (wiki 'Trident of the swamp'; file rows 12899/12900)",
+  "33316": "Trident of the swamp (o) [Uncharged] \u2014 75 Magic \u2014 trident of the swamp (o) (wiki 'Trident of the swamp'; file rows 12899/12900)",
+  "33318": "Trident of the swamp (e) (o) [Charged] \u2014 75 Magic \u2014 trident of the swamp (e) (o) (wiki 'Trident of the swamp (e)')",
+  "33320": "Trident of the swamp (e) (o) [Uncharged] \u2014 75 Magic \u2014 trident of the swamp (e) (o) (wiki 'Trident of the swamp (e)')",
+  "33322": "Trident of the seas (o) [Partially charged] \u2014 75 Magic \u2014 trident of the seas (o) (wiki 'Trident of the seas'; file row 11907)",
+  "33323": "Trident of the seas (o) [Fully charged] \u2014 75 Magic \u2014 trident of the seas (o) (wiki 'Trident of the seas'; file row 11907)",
+  "33326": "Trident of the seas (e) (o) [Charged] \u2014 75 Magic \u2014 trident of the seas (e) (o) (wiki 'Trident of the seas (e)')",
+  "33328": "Trident of the seas (e) (o) [Uncharged] \u2014 75 Magic \u2014 trident of the seas (e) (o) (wiki 'Trident of the seas (e)')",
+  "33330": "Iban's staff (o) [Regular] \u2014 50 Attack, 50 Magic \u2014 Iban's staff (o)/(u)(o) (wiki 'Iban's staff'; file rows 1409/12658)",
+  "33332": "Iban's staff (u) (o) \u2014 50 Attack, 50 Magic \u2014 Iban's staff (o)/(u)(o) (wiki 'Iban's staff'; file rows 1409/12658)",
+  "33335": "Soulreaper axe (o) \u2014 80 Attack, 80 Strength (wiki 'Soulreaper axe'; (o) is ornament variant)",
+  "33338": "Oathplate slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33340": "Radiant slayer helmet \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33439": "Oathplate slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33441": "Oathplate slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33443": "Oathplate slayer helmet (i) [Emir's Arena] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33445": "Radiant slayer helmet (i) \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33447": "Radiant slayer helmet (i) [Soul Wars] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33449": "Radiant slayer helmet (i) [Emir's Arena] \u2014 10 Defence, no Slayer level required to wear (wiki 'Slayer helmet'; cosmetic recolour variants share)",
+  "33631": "Crimson kisten \u2014 60 Attack, 85 Strength (wiki 'Crimson kisten')",
+  "33639": "Necklace of rupture \u2014 90 Hitpoints (wiki 'Necklace of rupture')",
+  "33718": "Hallowed flail \u2014 50 Attack (wiki 'Hallowed flail')"
+ },
+ "verified_no_requirements": [
+  "Lightbearer (25975) \u2014 wiki page states no equip requirements",
+  "Ultor ring (28307), Venator ring (28310), Magus ring (28313), Bellator ring (28316) \u2014 DT2 rings: wiki lists only creation reqs (90 Magic/80 Crafting to combine); no equip requirements",
+  "Ring of shadows (28327/28329) \u2014 no equip requirements per wiki",
+  "Ancient ceremonial top/legs/mask/gloves/boots (26221-26229) \u2014 no equip requirements per wiki",
+  "Amulet of blood fury (24780) \u2014 no equip requirements per wiki",
+  "Book of the dead (25818) \u2014 no equip requirements per wiki",
+  "Aranea boots (29806) \u2014 wiki explicitly: 'With no requirements to wear', BiS for 1-def pures",
+  "Dark squall hood/robe top/robe bottom (29566-29570) \u2014 no equip requirements per wiki (WGS quest robes)",
+  "Helmet of the moon (30111) \u2014 wiki: 'without prayer and magic requirements'",
+  "Twitcher's gloves (28630) \u2014 no equip requirements per wiki",
+  "Pendant of ates (29892/29893) \u2014 teleport pendant, no equip requirements per wiki",
+  "Sunspear (33722) \u2014 Blood Moon Rises quest weapon, no equip requirements per wiki",
+  "Blisterwood stake (33716), Diamond sickle (b) (33709), Enchanted diamond sickle (b) (33711), Blisterwood sickle (e) (33713) \u2014 no equip requirements per wiki",
+  "Silvthrill ballista (33800), Silvthrill javelin (33801), Spine (33790) \u2014 no equip requirements per wiki",
+  "Tortugan shield (31398) \u2014 quest reward cape-slot shield, no equip requirements per wiki",
+  "Redwood hiking staff (31049) \u2014 no equip requirements per wiki",
+  "Steel ring (30895) \u2014 no equip requirements per wiki",
+  "Starter cape (33063) \u2014 no equip requirements per wiki",
+  "Dark flippers (25557) \u2014 no equip requirements per wiki",
+  "Cursed amulet of magic (29486) \u2014 no equip requirements per wiki",
+  "Atlatl dart (28991) \u2014 ammo; no own equip req (75 Ranged gate is on the eclipse atlatl)",
+  "Sunlight/Moonlight antler bolts (28872/28878) \u2014 wiki 'effectively requiring 66 Ranged' refers to the crossbow, not an equip req on the bolts",
+  "Irit tar (28837) \u2014 salamander ammo, no equip requirements",
+  "God books (or) (26488-26498) \u2014 base god books have no equip requirements (file precedent + wiki)",
+  "RFD gloves (wrapped) (27110-27112) \u2014 base mithril/rune/barrows gloves have no equip requirements (file precedent)",
+  "Castle wars arrow/bolts (30694/30696), Crystal blessing (30384) \u2014 no equip requirements per wiki"
+ ],
+ "needs_human": [
+  "Imbued god capes (deadman) 29613/29615/29617 \u2014 wiki lead only states 75 Magic to IMBUE; equip req unclear. Existing file rows for base imbued capes say magic 50, leagues-locked variants say 75. Reconcile before adding.",
+  "Sailing cape 31288/31290 \u2014 skillcape implies {sailing: 99}, but 'sailing' is a new skill key absent from the existing requirements file; confirm plugin supports it before adding.",
+  "Seeking arrows 33553/33559/33565/33571/33577/33583/33589/33595/33601 \u2014 Blood Moon Rises silver arrows; wiki pages state no equip reqs, but base tier arrows carry ranged reqs in the file (e.g. dragon arrow 60) and Seeking broad arrows likely inherit broad-arrow slayer 55. Unverified \u2014 decide policy.",
+  "Lithic sceptre 33255/33257 \u2014 Leagues VI (Demonic Pacts) drop; page states no requirements but main-game obtainability/permanence unclear."
+ ],
+ "not_in_corpus": [],
+ "skipped_leagues_or_cosmetic_no_stats": [
+  "Leagues VI league-locked items (some with removal dates): Infernal tecpatl 33243, Nature's recurve 33245, V's helm 33247, Fang of the hound 33249, King's barrage 33251, Shadowflame quadrant 33253, Demonic sceptre 33296, Devil's element 30371, Drygore blowpipe 30373/30374, Crystal dagger (perfected) 30340 (Leagues V)",
+  "Holiday/event/cosmetic no-req items: Cursed banana, Banana cape, Gregg's eastdoor, Haunted wine bottle, Skis, Nutcracker staff, Mystic cards, Dragon candle dagger, Giant bronze dagger, Love crossbow, 10th birthday balloons, Giant stopwatch, speedrun/league trophies, Fish sack barrel, Potato sack, Holy moleys, Mooleta, Archibald, Fancier boots, Echo ahrim's 0-charge (not in corpus)",
+  "Group ironman armour (26156-26182, 27042-27054) \u2014 cosmetic, no requirements",
+  "Broken-state variants skipped per file precedent (cannot be equipped): PvP arena Broken 26686-26703, moon armour Broken 29049-29073, ancient sceptre Broken 28238-28244, Masori assembler/max cape Broken 27359/27361, Dizana Broken 28828/28830, Iban's staff Broken (o) 33333",
+  "Torva (unobtainable item) 30302-30304"
+ ],
+ "stale_existing_rows_flagged": [
+  "25865/25862 Bow of faerdhinen: file has ranged 75; wiki now 80 Ranged + 70 Agility (buffed). New (c) rows use 80/70 \u2014 base rows should be updated.",
+  "24551 Blade of saeldor (c) (and base saeldor ids): file has attack 75; wiki now 80 Attack. New colour rows use 80.",
+  "6739 Dragon axe: file has attack 61; wiki equip req is 60 Attack (61 is the Woodcutting level).",
+  "12954 Dragon defender (Normal): file has only defence 60; wiki requires 60 Attack + 60 Defence (Locked variant 24143 already has both).",
+  "21791/21793/21795 Imbued god capes: file has magic 50; wiki imbue requires 75 Magic (equip req unclear) \u2014 see needs_human.",
+  "12924 Toxic blowpipe (Empty): no row in file though the 75 Ranged wield req applies regardless of charge (new Blazing blowpipe rows cover both states)."
+ ]
+}
