@@ -84,6 +84,50 @@ public final class WildernessMonsters
 		"black knight",
 		"skeleton hellhound");
 
+	/**
+	 * The subset that exists ONLY in the Wilderness - fighting one of these
+	 * IS being in the Wilderness, so the wilderness-weapon buff and the risk
+	 * UI apply unconditionally. Everything else on the list also spawns
+	 * elsewhere (Catacombs hellhounds, Taverley black dragons...), so those
+	 * take the user's "In the Wilderness" toggle instead (audit A3.1).
+	 * KBD note: the lair is reached through level-42 Wilderness; it stays
+	 * exclusive here so the risk UI covers the walk, matching the pre-toggle
+	 * behaviour.
+	 */
+	private static final Set<String> EXCLUSIVE = Set.of(
+		"callisto",
+		"artio",
+		"vet'ion",
+		"calvar'ion",
+		"venenatis",
+		"spindel",
+		"chaos elemental",
+		"chaos fanatic",
+		"crazy archaeologist",
+		"scorpia",
+		"king black dragon",
+		"revenant imp",
+		"revenant goblin",
+		"revenant pyrefiend",
+		"revenant hobgoblin",
+		"revenant cyclops",
+		"revenant hellhound",
+		"revenant demon",
+		"revenant ork",
+		"revenant dark beast",
+		"revenant knight",
+		"revenant dragon",
+		"revenant maledictus",
+		"lava dragon",
+		"elder chaos druid",
+		"mammoth",
+		"magic axe",
+		"ent",
+		"runite golem",
+		"dark warrior",
+		"earth warrior",
+		"skeleton hellhound");
+
 	private WildernessMonsters()
 	{
 	}
@@ -91,6 +135,12 @@ public final class WildernessMonsters
 	public static boolean isWilderness(MonsterStats monster)
 	{
 		return monster != null && monster.isWildernessMonster();
+	}
+
+	/** True when the monster exists nowhere but the Wilderness. */
+	public static boolean isExclusive(MonsterStats monster)
+	{
+		return monster != null && EXCLUSIVE.contains(monster.getNameLower());
 	}
 
 	/** The raw name-list membership - MonsterStats caches this at build. */

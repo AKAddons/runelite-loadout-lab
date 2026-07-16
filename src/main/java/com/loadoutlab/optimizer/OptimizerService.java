@@ -250,8 +250,11 @@ public class OptimizerService
 		}
 		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			byStyle, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion,
+			// Headless/tests default: in the Wilderness only when the
+			// monster exists nowhere else (matches the request default).
+			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
+			dreamItems, upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell,
 			Collections.<Integer>emptySet(), callback);
 	}
 
@@ -270,6 +273,7 @@ public class OptimizerService
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
+		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		OptimizeMode mode,
@@ -297,6 +301,7 @@ public class OptimizerService
 		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
+			+ "|" + inWilderness
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + protectOnly.hashCode()
@@ -380,6 +385,7 @@ public class OptimizerService
 					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
+					.withInWilderness(inWilderness)
 					.withDreamItems(dreams)
 					.withProtectOnlyItems(protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
@@ -424,6 +430,7 @@ public class OptimizerService
 					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
+					.withInWilderness(inWilderness)
 					.withProtectOnlyItems(protectOnly);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())

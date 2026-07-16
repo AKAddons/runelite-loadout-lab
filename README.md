@@ -298,6 +298,12 @@ items drop to zero (one with Protect Item). A charged Bracelet of
 ethereum zeroes the revenant incoming-damage line. All verified against
 the official wiki calculator's engine.
 
+Monsters that also live outside the Wilderness (hellhounds, dust
+devils, green dragons...) get an "In the Wilderness" checkbox: the
++50% and the risk options apply only when you say the fight is
+actually happening there. Wilderness-exclusive monsters (revenants,
+the boss ring) are always "in".
+
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked

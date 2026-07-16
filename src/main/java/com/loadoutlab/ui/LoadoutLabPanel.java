@@ -97,7 +97,7 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
 	}
@@ -399,6 +399,10 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
+	/** Shared-name wilderness monsters (Catacombs hellhounds...): the user
+	 * says where the fight happens. Wilderness-exclusive monsters skip the
+	 * checkbox - fighting them IS the Wilderness. */
+	private final JCheckBox inWilderness = new JCheckBox("In the Wilderness");
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
 	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
@@ -580,6 +584,15 @@ public class LoadoutLabPanel extends PluginPanel
 
 		initToggle(slayerTask, "On task: slayer helmet bonuses apply");
 		top.add(slayerTask);
+
+		// Shown only for monsters that ALSO live outside the Wilderness:
+		// checked = wilderness weapons get their +50% and the risk options
+		// appear. Wilderness-exclusive monsters are always "in".
+		initToggle(inWilderness, "Fighting this monster inside the Wilderness:"
+			+ " wilderness weapons get their +50% and the risk options apply");
+		inWilderness.setVisible(false);
+		inWilderness.addActionListener(e -> refreshWildernessRows());
+		top.add(inWilderness);
 
 		// Wilderness only: cap the set to the items death mechanics keep.
 		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
@@ -770,6 +783,29 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
+	/** Is the CURRENT query a Wilderness fight - exclusive monsters always,
+	 * shared-name wilderness monsters only when the user checked the box. */
+	private boolean effectiveWilderness()
+	{
+		if (selectedMonster == null || !WildernessMonsters.isWilderness(selectedMonster))
+		{
+			return false;
+		}
+		return WildernessMonsters.isExclusive(selectedMonster) || inWilderness.isSelected();
+	}
+
+	/** Sync the wilderness checkbox + risk rows to the selected monster. */
+	private void refreshWildernessRows()
+	{
+		boolean listed = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
+		boolean exclusive = selectedMonster != null && WildernessMonsters.isExclusive(selectedMonster);
+		inWilderness.setVisible(listed && !exclusive);
+		boolean wild = effectiveWilderness() && displayOptions.wildyRisk;
+		lowRisk.setVisible(wild);
+		protectItem.setVisible(wild);
+		riskBudget.setVisible(wild);
+	}
+
 	private void initToggle(JCheckBox box, String tooltip)
 	{
 		box.setOpaque(false);
@@ -841,10 +877,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			budgetRow.setVisible(options.upgradeBudget);
 		}
-		boolean wild = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
-		lowRisk.setVisible(wild && options.wildyRisk);
-		protectItem.setVisible(wild && options.wildyRisk);
-		riskBudget.setVisible(wild && options.wildyRisk);
+		refreshWildernessRows();
 		refreshNotePanel();
 		// Rebuild the cards so per-line gates apply, reusing cached results -
 		// but only when those results are for the CURRENT monster (a compute
@@ -972,11 +1005,10 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
-		boolean wilderness = WildernessMonsters.isWilderness(monster)
-			&& displayOptions.wildyRisk;
-		lowRisk.setVisible(wilderness);
-		protectItem.setVisible(wilderness);
-		riskBudget.setVisible(wilderness);
+		// Each monster starts OUT of the wilderness unless it lives nowhere
+		// else - the checkbox is a per-fight statement, not a preference.
+		inWilderness.setSelected(false);
+		refreshWildernessRows();
 		superAntifireAssumed = false; // each monster starts on gear protection
 		bankShown = null;
 		bankHighlighter.highlight(null);
@@ -2028,7 +2060,7 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			spellbookLock(), riskCap(), selectedRiskBudget(),
+			effectiveWilderness(), spellbookLock(), riskCap(), selectedRiskBudget(),
 			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
 			parsedBudgetGp(),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
@@ -2582,7 +2614,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private void addRiskLine(JPanel card, DpsResult best, GearItem specWeapon)
 	{
-		if (!WildernessMonsters.isWilderness(selectedMonster))
+		if (!effectiveWilderness())
 		{
 			return;
 		}
@@ -3080,7 +3112,7 @@ public class LoadoutLabPanel extends PluginPanel
 		int cell = ICON_SIZE + 4;
 		// Wilderness: badge every cell with its death fate.
 		PvpRisk.Assessment fates = null;
-		if (markUnowned && WildernessMonsters.isWilderness(selectedMonster))
+		if (markUnowned && effectiveWilderness())
 		{
 			fates = PvpRisk.assess(result.getLoadout(), specWeapon,
 				protectItem.isSelected() ? 4 : 3);

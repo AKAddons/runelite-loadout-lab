@@ -969,8 +969,7 @@ public final class LoadoutOptimizer
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score
 			// prune removes them before they are ever evaluated.
-			if (com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster())
-				&& !badVersion(item) && isWildernessWeapon(name))
+			if (request.isInWilderness() && !badVersion(item) && isWildernessWeapon(name))
 			{
 				score += 6_000.0;
 			}

@@ -885,12 +885,13 @@ public final class DpsCalculator
 	 * Wilderness weapon passive: +50% accuracy AND damage against monsters
 	 * in the Wilderness, CHARGED version only (wiki calc BaseCalc
 	 * .isRevWeaponBuffApplicable, applied after the avarice/salve/slayer
-	 * chain). Fighting a monster on the wilderness list is our "in the
-	 * Wilderness" signal.
+	 * chain). Keyed on the REQUEST's in-Wilderness flag - name membership
+	 * alone buffed Catacombs hellhounds and Taverley dungeon staples
+	 * (audit A3.1); wilderness-exclusive monsters default the flag on.
 	 */
 	static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons)
 	{
-		if (!com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster()))
+		if (!request.isInWilderness())
 		{
 			return false;
 		}
