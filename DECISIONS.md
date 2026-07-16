@@ -160,3 +160,20 @@ kit chips follow the viewed side.
 
 **Context:** User caught the flaw in the kit-tab-level toggle: "the best
 bis hybrid may not be the same style combo as your best available."
+
+## 2026-07-16 (refinement): "Max swaps" search parameter + config lock
+
+**Decision:** The search parameter area gains "Max swaps: 0/1/2" - the max
+kit transitions (kits - 1): 0 mono-style, 1 hybrid, 2 tribrid. It is
+orthogonal to the swap-item budget: swaps bound the kit count, the item
+slider bounds the inventory slots spent achieving it. Max swaps 0 on a
+group still answers: one worn set for the whole roster (style may vary
+per mob only where the weapon permits, e.g. salamanders). A plugin config
+option hides the control and locks 0 for every search (DisplayOptions
+visibility pattern) for users who never want hybrid suggestions. The
+parameter records into back/forward and cache keys like every other
+panel parameter.
+
+**Context:** User: "in the parameter area for search we should be able to
+specify max swaps: 0/1/2 and then in the options we should be able to
+hide this option (lock in 0 for every search)."
