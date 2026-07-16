@@ -382,8 +382,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private final OwnedCheck ownedCheck;
 	/** Per-style card collapse: user override on top of the auto default
 	 * (collapsed when a standard deviation under the best set's dps). */
-	private final Map<CombatStyle, Boolean> cardCollapsed = new EnumMap<>(CombatStyle.class);
-	private final Map<CombatStyle, Boolean> autoCollapsed = new EnumMap<>(CombatStyle.class);
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
 	/** Which style's set is filtering the bank (null = none). */
@@ -405,7 +403,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JPanel notePanel = new JPanel();
 	private final JLabel noteHeader = new JLabel();
 	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
-	private boolean noteCollapsed = true;
 	/** Config-driven display gates (all on until the plugin sets them). */
 	private DisplayOptions displayOptions = DisplayOptions.all();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
@@ -463,22 +460,43 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final int[] RISK_STEPS = {0, 25_000, 75_000, 200_000, 1_000_000};
 	private final JComboBox<String> riskBudget = new JComboBox<>(
 		new String[]{"Risk cap: 0", "Risk cap: 25k", "Risk cap: 75k", "Risk cap: 200k", "Risk cap: 1M"});
-	/** Dragonfire: gear protection by default; right-clicking the shield
-	 * cell flips to an assumed super antifire (and back). */
-	private boolean superAntifireAssumed;
 
 	private MonsterStats selectedMonster;
 	/** The style card currently being rendered (EDT-only render state) -
 	 * grid cells read it for per-style pin menus and tooltips. */
 	private CombatStyle renderingStyle;
-	/** Per-style expanded game-best (BiS) sections - hidden by default,
-	 * each card's header toggles only its own section. */
-	private final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
-	private Map<CombatStyle, StyleResult> lastResults;
-	/** The monster lastResults belongs to - so a display-only re-render
-	 * never paints a previous monster's sets under the current name while a
-	 * new compute is still in flight. */
-	private int lastResultsMonsterId = -1;
+	/**
+	 * One RESULT on the page: a query's monster plus its computed style
+	 * results and every piece of view state that belongs to THIS result
+	 * rather than the panel (multi-mob canvas M-1). The page renders each
+	 * entry as its own card; today the page holds at most one.
+	 */
+	static final class ResultEntry
+	{
+		MonsterStats monster;
+		Map<CombatStyle, StyleResult> results;
+		/** Per-style collapse: the user's override, and the derived default. */
+		final Map<CombatStyle, Boolean> cardCollapsed = new EnumMap<>(CombatStyle.class);
+		final Map<CombatStyle, Boolean> autoCollapsed = new EnumMap<>(CombatStyle.class);
+		/** Per-style expanded game-best (BiS) sections - hidden by default. */
+		final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
+		boolean noteCollapsed = true;
+		/** Dragonfire: gear protection by default; the shield cell flips
+		 * this result to an assumed super antifire (and back). */
+		boolean superAntifireAssumed;
+
+		ResultEntry(MonsterStats monster)
+		{
+			this.monster = monster;
+		}
+	}
+
+	/** The page: an ordered list of results. M-1 keeps it at 0..1 entries -
+	 * a single-mob page renders pixel-identical to the old single view. */
+	private final java.util.List<ResultEntry> page = new java.util.ArrayList<>();
+	/** The entry the panel-global affordances (toggles, notes, bank tools)
+	 * act on. With a one-entry page this is always page.get(0). */
+	private ResultEntry active;
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -766,7 +784,7 @@ public class LoadoutLabPanel extends PluginPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				saveNoteIfChanged();
-				noteCollapsed = !noteCollapsed;
+				setNoteCollapsed(!noteCollapsed());
 				refreshNotePanel();
 			}
 		});
@@ -849,6 +867,46 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
+	/** The active result's per-style collapse override map (never null -
+	 * an empty page yields a throwaway map so render paths stay simple). */
+	private Map<CombatStyle, Boolean> cardCollapsed()
+	{
+		return active == null ? new EnumMap<>(CombatStyle.class) : active.cardCollapsed;
+	}
+
+	private Map<CombatStyle, Boolean> autoCollapsed()
+	{
+		return active == null ? new EnumMap<>(CombatStyle.class) : active.autoCollapsed;
+	}
+
+	private Set<CombatStyle> gameBestExpanded()
+	{
+		return active == null ? EnumSet.noneOf(CombatStyle.class) : active.gameBestExpanded;
+	}
+
+	private boolean noteCollapsed()
+	{
+		return active == null || active.noteCollapsed;
+	}
+
+	private void setNoteCollapsed(boolean collapsed)
+	{
+		if (active != null)
+		{
+			active.noteCollapsed = collapsed;
+		}
+	}
+
+	private boolean superAntifireAssumed()
+	{
+		return active != null && active.superAntifireAssumed;
+	}
+
+	private Map<CombatStyle, StyleResult> lastResults()
+	{
+		return active == null ? null : active.results;
+	}
+
 	/** Is the CURRENT query a Wilderness fight - exclusive monsters always,
 	 * shared-name wilderness monsters only when the user checked the box. */
 	private boolean effectiveWilderness()
@@ -1067,10 +1125,9 @@ public class LoadoutLabPanel extends PluginPanel
 		// Rebuild the cards so per-line gates apply, reusing cached results -
 		// but only when those results are for the CURRENT monster (a compute
 		// may be in flight for a just-selected one; its render will follow).
-		if (selectedMonster != null && lastResults != null
-			&& lastResultsMonsterId == currentMonsterId())
+		if (selectedMonster != null && lastResults() != null)
 		{
-			showResults(selectedMonster, lastResults);
+			showResults(selectedMonster, lastResults());
 		}
 		revalidate();
 		repaint();
@@ -1238,11 +1295,15 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
 		hadSelection = true;
+		// M-1 page-of-one: selecting replaces the page with this monster's
+		// entry; selectedMonster stays the active entry's mob by contract.
+		page.clear();
+		active = new ResultEntry(monster);
+		page.add(active);
 		// Each monster starts OUT of the wilderness unless it lives nowhere
 		// else - the checkbox is a per-fight statement, not a preference.
 		inWilderness.setSelected(false);
 		refreshWildernessRows();
-		superAntifireAssumed = false; // each monster starts on gear protection
 		bankShown = null;
 		bankHighlighter.highlight(null);
 		bankFiltered = null;
@@ -1280,8 +1341,8 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
 		monsterNote.setVisible(note != null);
 		// A new mob: fresh collapse defaults, its own note state.
-		cardCollapsed.clear();
-		noteCollapsed = mobProfile.note(monster.getId()).isEmpty();
+		cardCollapsed().clear();
+		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
 		refreshNotePanel();
 		refreshPinnedLabel();
 		revalidate();
@@ -1643,7 +1704,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			noteArea.setText(note);
 		}
-		if (noteCollapsed && !note.isEmpty())
+		if (noteCollapsed() && !note.isEmpty())
 		{
 			// Collapsed preview: the note's first line, truncated - the
 			// full text rides the tooltip.
@@ -1657,10 +1718,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
-			noteHeader.setText(noteCollapsed ? "+ Note (click to add)" : "v Note");
+			noteHeader.setText(noteCollapsed() ? "+ Note (click to add)" : "v Note");
 			noteHeader.setToolTipText(null);
 		}
-		noteArea.setVisible(!noteCollapsed);
+		noteArea.setVisible(!noteCollapsed());
 		notePanel.setVisible(true);
 		notePanel.revalidate();
 		notePanel.repaint();
@@ -1914,13 +1975,13 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private void reapplyBankViews()
 	{
-		if (lastResults == null || selectedMonster == null)
+		if (lastResults() == null || selectedMonster == null)
 		{
 			return;
 		}
 		if (bankFiltered != null)
 		{
-			StyleResult r = lastResults.get(bankFiltered);
+			StyleResult r = lastResults().get(bankFiltered);
 			if (r != null && r.owned != null && !r.owned.isEmpty())
 			{
 				DpsResult best = r.owned.get(0);
@@ -1932,7 +1993,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (bankShown != null)
 		{
-			StyleResult r = lastResults.get(bankShown);
+			StyleResult r = lastResults().get(bankShown);
 			if (r != null && r.owned != null && !r.owned.isEmpty())
 			{
 				DpsResult best = r.owned.get(0);
@@ -2437,12 +2498,17 @@ public class LoadoutLabPanel extends PluginPanel
 		revalidate();
 		repaint();
 		statusLabel.setText(" ");
-		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
+		// Compute every entry on the page (M-1: exactly one). Each result
+		// routes back through showResults into its entry and re-renders.
+		for (ResultEntry entry : page)
+		{
+			computeHook.compute(entry.monster, f2pOnly.isSelected(), slayerTask.isSelected(),
 			effectiveWilderness(), spellbookLock(), riskCap(), selectedRiskBudget(),
-			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
+			superAntifireAssumed() && DragonfireRules.breathesFire(selectedMonster),
 			parsedBudgetGp(),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
-			() -> statusLabel.setText(" "));
+				() -> statusLabel.setText(" "));
+		}
 	}
 
 	/** Account or profile switched: nothing on screen may survive. */
@@ -2450,7 +2516,6 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		bankShown = null;
 		bankFiltered = null;
-		lastResults = null;
 		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
@@ -2494,7 +2559,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private void clearSelectionInternal()
 	{
 		selectedMonster = null;
-		cardCollapsed.clear();
+		page.clear();
+		active = null;
+		cardCollapsed().clear();
 		selectedRow.setVisible(false);
 		selectedLabel.setText("");
 		monsterNote.setText("");
@@ -2509,20 +2576,70 @@ public class LoadoutLabPanel extends PluginPanel
 		searchField.requestFocusInWindow();
 	}
 
-	/** Render results (EDT). Called by the plugin once the optimizer returns. */
+	/** Render results (EDT). Called by the plugin once the optimizer returns.
+	 * Routes into the matching page entry - a result for a monster no longer
+	 * on the page is stale and dropped. */
 	public void showResults(MonsterStats monster, Map<CombatStyle, StyleResult> results)
 	{
-		if (selectedMonster == null || monster.getId() != selectedMonster.getId())
+		ResultEntry entry = entryFor(monster.getId());
+		if (entry == null)
 		{
 			return; // stale result for a monster the user moved away from
 		}
-		lastResults = results;
-		lastResultsMonsterId = monster.getId();
+		entry.results = results;
+		renderPage();
+	}
+
+	private ResultEntry entryFor(int monsterId)
+	{
+		for (ResultEntry entry : page)
+		{
+			if (entry.monster.getId() == monsterId)
+			{
+				return entry;
+			}
+		}
+		return null;
+	}
+
+	/** Rebuild the results area from the page: one card per entry. With a
+	 * one-entry page this renders exactly the old single-result layout. */
+	private void renderPage()
+	{
 		resultsPanel.removeAll();
+		for (ResultEntry entry : page)
+		{
+			if (entry.results != null)
+			{
+				resultsPanel.add(resultCard(entry));
+			}
+		}
+		if (selectedMonster != null)
+		{
+			statusLabel.setText("Best owned sets vs " + selectedMonster.getName());
+		}
+		// Revalidate the PANEL, not just the results column: our new preferred
+		// height has to reach RuneLite's outer scroll pane so the sidebar grows
+		// to fit an expanded card (or shrinks back when one collapses).
+		resultsPanel.revalidate();
+		revalidate();
+		repaint();
+	}
+
+	/** One result's card: the entry's style cards and source legend in a
+	 * transparent column (M-1: no chrome - headers/Save/X arrive with the
+	 * multi-add UX). */
+	private javax.swing.JComponent resultCard(ResultEntry entry)
+	{
+		Map<CombatStyle, StyleResult> results = entry.results;
+		JPanel column = new JPanel();
+		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
+		column.setOpaque(false);
+		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
 		// Default collapse: a set a full standard deviation under the best
 		// dps (or with no usable set at all) starts folded to its header.
-		autoCollapsed.clear();
+		entry.autoCollapsed.clear();
 		double bestDps = 0;
 		double sum = 0;
 		double sumSquares = 0;
@@ -2546,7 +2663,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			StyleResult r = results.get(style);
 			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
-			autoCollapsed.put(style, !hasSet
+			entry.autoCollapsed.put(style, !hasSet
 				|| (usable > 1 && stdev > 0.01
 					&& r.owned.get(0).getDps() < bestDps - stdev));
 		}
@@ -2559,21 +2676,15 @@ public class LoadoutLabPanel extends PluginPanel
 		}));
 		for (CombatStyle style : styleOrder)
 		{
-			resultsPanel.add(styleCard(style, results.get(style)));
-			resultsPanel.add(Box.createVerticalStrut(6));
+			column.add(styleCard(style, results.get(style)));
+			column.add(Box.createVerticalStrut(6));
 		}
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
 		{
-			resultsPanel.add(legend);
+			column.add(legend);
 		}
-		statusLabel.setText("Best owned sets vs " + monster.getName());
-		// Revalidate the PANEL, not just the results column: our new preferred
-		// height has to reach RuneLite's outer scroll pane so the sidebar grows
-		// to fit an expanded card (or shrinks back when one collapses).
-		resultsPanel.revalidate();
-		revalidate();
-		repaint();
+		return column;
 	}
 
 	private JPanel styleCard(CombatStyle style, StyleResult result)
@@ -2586,9 +2697,9 @@ public class LoadoutLabPanel extends PluginPanel
 		card.setAlignmentX(LEFT_ALIGNMENT);
 
 		boolean hasSet = result != null && result.owned != null && !result.owned.isEmpty();
-		boolean collapsed = cardCollapsed.containsKey(style)
-			? cardCollapsed.get(style)
-			: autoCollapsed.getOrDefault(style, false);
+		boolean collapsed = cardCollapsed().containsKey(style)
+			? cardCollapsed().get(style)
+			: autoCollapsed().getOrDefault(style, false);
 
 		// Header row: collapse toggle + the style's SKILL ICON (sprite, not a
 		// glyph - Tahoe tofu rule; the tooltip carries the word) + summary
@@ -2617,10 +2728,10 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				cardCollapsed.put(style, !collapsed);
-				if (selectedMonster != null && lastResults != null)
+				cardCollapsed().put(style, !collapsed);
+				if (selectedMonster != null && lastResults() != null)
 				{
-					showResults(selectedMonster, lastResults);
+					showResults(selectedMonster, lastResults());
 				}
 			}
 		});
@@ -2668,7 +2779,7 @@ public class LoadoutLabPanel extends PluginPanel
 				antifireTooltip = "Assumes a super antifire - you own no"
 					+ " anti-dragon or dragonfire shield";
 			}
-			else if (superAntifireAssumed)
+			else if (superAntifireAssumed())
 			{
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
 			}
@@ -2806,7 +2917,7 @@ public class LoadoutLabPanel extends PluginPanel
 		if (displayOptions.gameBest && result.overallBest != null && result.overallBest.getDps() > 0)
 		{
 			card.add(Box.createVerticalStrut(6));
-			boolean expanded = gameBestExpanded.contains(style);
+			boolean expanded = gameBestExpanded().contains(style);
 			double pct = 100.0 * best.getDps() / result.overallBest.getDps();
 			JLabel ceiling = line(String.format("%s Game best: %.2f DPS - you are at %.0f%%",
 				expanded ? "v" : ">",
@@ -2818,13 +2929,13 @@ public class LoadoutLabPanel extends PluginPanel
 				@Override
 				public void mouseClicked(MouseEvent e)
 				{
-					if (!gameBestExpanded.remove(style))
+					if (!gameBestExpanded().remove(style))
 					{
-						gameBestExpanded.add(style);
+						gameBestExpanded().add(style);
 					}
-					if (selectedMonster != null && lastResults != null)
+					if (selectedMonster != null && lastResults() != null)
 					{
-						showResults(selectedMonster, lastResults);
+						showResults(selectedMonster, lastResults());
 					}
 				}
 			});
@@ -2834,7 +2945,7 @@ public class LoadoutLabPanel extends PluginPanel
 				if (displayOptions.assumes)
 				{
 					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game",
-						superAntifireAssumed
+						superAntifireAssumed()
 							? "Super antifire (right-click the shield cell to flip back)" : null);
 				}
 				// Max hit + accuracy for the ceiling set - the header only
@@ -3327,12 +3438,12 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return Collections.emptyList();
 		}
-		JMenuItem flip = new JMenuItem(superAntifireAssumed
+		JMenuItem flip = new JMenuItem(superAntifireAssumed()
 			? "Require a dragonfire shield (drop the super antifire)"
 			: "Assume a super antifire (drop the shield)");
 		flip.addActionListener(a ->
 		{
-			boolean assume = !superAntifireAssumed;
+			boolean assume = !superAntifireAssumed();
 			recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
 				() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
 			if (historyControl == null)
@@ -3345,9 +3456,9 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void setAntifireTo(boolean assume)
 	{
-		if (superAntifireAssumed != assume)
+		if (active != null && active.superAntifireAssumed != assume)
 		{
-			superAntifireAssumed = assume;
+			active.superAntifireAssumed = assume;
 			recompute();
 		}
 	}
@@ -3400,9 +3511,9 @@ public class LoadoutLabPanel extends PluginPanel
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 				bankFilter.filter(filterIds);
 			}
-			if (selectedMonster != null && lastResults != null)
+			if (selectedMonster != null && lastResults() != null)
 			{
-				showResults(selectedMonster, lastResults);
+				showResults(selectedMonster, lastResults());
 			}
 		});
 		return button;
@@ -3447,9 +3558,9 @@ public class LoadoutLabPanel extends PluginPanel
 				bankShown = style;
 				bankHighlighter.highlight(ids);
 			}
-			if (selectedMonster != null && lastResults != null)
+			if (selectedMonster != null && lastResults() != null)
 			{
-				showResults(selectedMonster, lastResults); // refresh button labels
+				showResults(selectedMonster, lastResults()); // refresh button labels
 			}
 		});
 		return button;
