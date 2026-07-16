@@ -9,7 +9,8 @@ equipment.
 
 - **Best owned set per style** (melee / ranged / magic) vs any monster,
   with exact DPS, max hit, and accuracy - engine verified against the
-  official wiki DPS calculator.
+  official wiki DPS calculator across a scenario battery (known deltas
+  tracked in docs/ENGINE-GAPS.md).
 - **Game-best comparison**: see the true ceiling set and how close your
   gear is, with gold borders on slots where you already own best-in-slot
   (stat-identical analogs count).
@@ -298,6 +299,12 @@ items drop to zero (one with Protect Item). A charged Bracelet of
 ethereum zeroes the revenant incoming-damage line. All verified against
 the official wiki calculator's engine.
 
+Monsters that also live outside the Wilderness (hellhounds, dust
+devils, green dragons...) get an "In the Wilderness" checkbox: the
++50% and the risk options apply only when you say the fight is
+actually happening there. Wilderness-exclusive monsters (revenants,
+the boss ring) are always "in".
+
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
@@ -313,6 +320,23 @@ monster, or only against this monster's melee/ranged/magic set. Per-mob
 exclusions are managed from the "This mob" line.
 
 ![Exclude items from suggestions](docs/img/exclusions.png)
+
+### Undo and redo
+
+The header's back/forward arrows walk your last 50 steps - monster
+searches, panel settings, AND edits in one history: search Zulrah,
+flip the slayer toggle, search Vorkath - back, back, back retraces
+each of those in turn. Steps cover: monster selections; the toggles
+(F2P, slayer task, wilderness, low-risk, Protect Item); the optimize
+mode, spellbook and risk-cap dropdowns; the upgrade budget; the
+antifire flip; and every edit (exclusions, pins, notes, dream items,
+stored-elsewhere marks, protect-only flags, pinned spells, trip
+supplies). Hover for exactly what's next ("Back: Optimize: Balanced").
+Scan-driven changes (bank snapshots, storage captures) are never
+steps - only what you deliberately did. History is per-session and
+resets on profile switch.
+
+![Undo and redo](docs/img/undo-redo.png)
 
 ### Bank tools: show and filter
 

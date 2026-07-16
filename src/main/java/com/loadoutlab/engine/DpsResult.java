@@ -18,6 +18,10 @@ public final class DpsResult
 	 * (salve, wilderness weapon, crystal set...) - user assurance that
 	 * the situational math is happening. */
 	private final java.util.List<String> countedBonuses;
+	/** True when the optimizer could not satisfy a dragonfire shield
+	 * constraint (no protective shield in the pool) and fell back to the
+	 * unconstrained set - the panel must say "assumes a super antifire". */
+	private final boolean antifireAssumed;
 
 	public DpsResult(
 		Loadout loadout,
@@ -47,7 +51,7 @@ public final class DpsResult
 		String spellName)
 	{
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
-			attackRoll, defenceRoll, purchaseCost, spellName, java.util.Collections.emptyList());
+			attackRoll, defenceRoll, purchaseCost, spellName, java.util.Collections.emptyList(), false);
 	}
 
 	private DpsResult(
@@ -62,7 +66,8 @@ public final class DpsResult
 		long defenceRoll,
 		int purchaseCost,
 		String spellName,
-		java.util.List<String> countedBonuses)
+		java.util.List<String> countedBonuses,
+		boolean antifireAssumed)
 	{
 		this.loadout = loadout;
 		this.dps = dps;
@@ -77,6 +82,7 @@ public final class DpsResult
 		this.spellName = spellName == null ? "" : spellName;
 		this.countedBonuses = countedBonuses == null
 			? java.util.Collections.emptyList() : countedBonuses;
+		this.antifireAssumed = antifireAssumed;
 	}
 
 	public java.util.List<String> getCountedBonuses()
@@ -88,7 +94,19 @@ public final class DpsResult
 	{
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
-			java.util.List.copyOf(bonuses));
+			java.util.List.copyOf(bonuses), antifireAssumed);
+	}
+
+	public boolean isAntifireAssumed()
+	{
+		return antifireAssumed;
+	}
+
+	public DpsResult withAntifireAssumed(boolean assumed)
+	{
+		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
+			countedBonuses, assumed);
 	}
 
 	/**
@@ -112,7 +130,8 @@ public final class DpsResult
 	public DpsResult withPurchaseCost(int purchaseCost)
 	{
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
-			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses);
+			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses,
+			antifireAssumed);
 	}
 
 	public Loadout getLoadout()

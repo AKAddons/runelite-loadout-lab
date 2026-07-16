@@ -97,7 +97,7 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface ComputeHook
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
 	}
@@ -220,6 +220,29 @@ public class LoadoutLabPanel extends PluginPanel
 	 * note, and extra items unioned into the bank Show/Filter sets. Pins
 	 * and filter items are scoped: "ALL" or a CombatStyle name - a super
 	 * combat for the melee card, a ranged potion for the ranged card. */
+	/** Back/forward over the plugin's CommandHistory. The panel renders the
+	 * buttons, relays clicks, and feeds its own steps (monster selections)
+	 * into the shared stack; the stack lives plugin-side. */
+	public interface HistoryControl
+	{
+		boolean undo();
+
+		boolean redo();
+
+		boolean canUndo();
+
+		boolean canRedo();
+
+		/** Next back target's description, or null when the stack is empty. */
+		String undoLabel();
+
+		String redoLabel();
+
+		/** Run a panel-originated step (a monster selection) through the
+		 * same stack the store mutations use - ONE unified back/forward. */
+		boolean execute(com.loadoutlab.command.Command command);
+	}
+
 	public interface MobProfile
 	{
 		/** Effective pins for one style card (ALL overlaid by the style). */
@@ -399,6 +422,24 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
+	/** Shared-name wilderness monsters (Catacombs hellhounds...): the user
+	 * says where the fight happens. Wilderness-exclusive monsters skip the
+	 * checkbox - fighting them IS the Wilderness. */
+	private final JCheckBox inWilderness = new JCheckBox("In the Wilderness");
+
+	/** Header back/forward buttons; state refreshed after every step. */
+	private JButton undoButton;
+	private JButton redoButton;
+	private HistoryControl historyControl;
+	/** True while back/forward replays a step - the control listeners must
+	 * apply effects (recompute) without recording a second step. */
+	private boolean replayingHistory;
+	/** True once any monster has been selected this session - a pick after
+	 * a deliberate CLEAR records (back returns to the cleared state), while
+	 * the session's true first pick stays unrecorded. */
+	private boolean hadSelection;
+	/** The budget field's last committed text, for the back step. */
+	private String lastBudgetText = "";
 	private final JComboBox<String> spellbook =
 		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
 	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
@@ -486,6 +527,26 @@ public class LoadoutLabPanel extends PluginPanel
 		header.setAlignmentX(LEFT_ALIGNMENT);
 		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 		header.add(title, BorderLayout.WEST);
+		// Undo/redo arrows ride the header row next to the options dots
+		// (header-inline per the vertical-space rule; no row of their own).
+		undoButton = new JButton(new UndoArrowIcon(12, true));
+		undoButton.setMargin(new Insets(2, 5, 2, 5));
+		undoButton.addActionListener(e ->
+		{
+			if (historyControl != null && historyControl.undo())
+			{
+				refreshAfterHistory();
+			}
+		});
+		redoButton = new JButton(new UndoArrowIcon(12, false));
+		redoButton.setMargin(new Insets(2, 5, 2, 5));
+		redoButton.addActionListener(e ->
+		{
+			if (historyControl != null && historyControl.redo())
+			{
+				refreshAfterHistory();
+			}
+		});
 		JButton optionsButton = new JButton(new DotsIcon(13));
 		optionsButton.setToolTipText("Options");
 		optionsButton.setMargin(new Insets(2, 6, 2, 6));
@@ -511,7 +572,13 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
-		header.add(optionsButton, BorderLayout.EAST);
+		JPanel headerButtons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 2, 0));
+		headerButtons.setOpaque(false);
+		headerButtons.add(undoButton);
+		headerButtons.add(redoButton);
+		headerButtons.add(optionsButton);
+		header.add(headerButtons, BorderLayout.EAST);
+		refreshHistoryButtons();
 		top.add(header);
 		top.add(Box.createVerticalStrut(4));
 
@@ -581,6 +648,15 @@ public class LoadoutLabPanel extends PluginPanel
 		initToggle(slayerTask, "On task: slayer helmet bonuses apply");
 		top.add(slayerTask);
 
+		// Shown only for monsters that ALSO live outside the Wilderness:
+		// checked = wilderness weapons get their +50% and the risk options
+		// appear. Wilderness-exclusive monsters are always "in".
+		initToggle(inWilderness, "Fighting this monster inside the Wilderness:"
+			+ " wilderness weapons get their +50% and the risk options apply");
+		inWilderness.setVisible(false);
+		inWilderness.addActionListener(e -> refreshWildernessRows());
+		top.add(inWilderness);
+
 		// Wilderness only: cap the set to the items death mechanics keep.
 		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
 			+ " everything else must total under the risk cap");
@@ -598,6 +674,7 @@ public class LoadoutLabPanel extends PluginPanel
 		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
 		riskBudget.setSelectedIndex(2);
 		riskBudget.addActionListener(e -> recompute());
+		recordCombo(riskBudget, "Risk cap");
 		riskBudget.setVisible(false);
 		top.add(riskBudget);
 
@@ -608,6 +685,7 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
 		spellbook.addActionListener(e -> recompute());
+		recordCombo(spellbook, "Spellbook");
 
 		// Buyable upgrades within a total gp budget join the consideration
 		// pool (dream items are the manual version, via right-click).
@@ -637,6 +715,7 @@ public class LoadoutLabPanel extends PluginPanel
 		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
 		optimizeMode.addActionListener(e -> recompute());
+		recordCombo(optimizeMode, "Optimize");
 		top.add(optimizeMode);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
@@ -770,6 +849,29 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
+	/** Is the CURRENT query a Wilderness fight - exclusive monsters always,
+	 * shared-name wilderness monsters only when the user checked the box. */
+	private boolean effectiveWilderness()
+	{
+		if (selectedMonster == null || !WildernessMonsters.isWilderness(selectedMonster))
+		{
+			return false;
+		}
+		return WildernessMonsters.isExclusive(selectedMonster) || inWilderness.isSelected();
+	}
+
+	/** Sync the wilderness checkbox + risk rows to the selected monster. */
+	private void refreshWildernessRows()
+	{
+		boolean listed = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
+		boolean exclusive = selectedMonster != null && WildernessMonsters.isExclusive(selectedMonster);
+		inWilderness.setVisible(listed && !exclusive);
+		boolean wild = effectiveWilderness() && displayOptions.wildyRisk;
+		lowRisk.setVisible(wild);
+		protectItem.setVisible(wild);
+		riskBudget.setVisible(wild);
+	}
+
 	private void initToggle(JCheckBox box, String tooltip)
 	{
 		box.setOpaque(false);
@@ -777,6 +879,125 @@ public class LoadoutLabPanel extends PluginPanel
 		box.setAlignmentX(LEFT_ALIGNMENT);
 		box.setToolTipText(tooltip);
 		box.addActionListener(e -> recompute());
+		// Every deliberate flip is a back/forward step. Replays drive the
+		// box via doClick() so the effect listeners above still fire; this
+		// recorder skips itself during a replay.
+		box.addActionListener(e ->
+		{
+			if (replayingHistory)
+			{
+				return;
+			}
+			boolean turnedOn = box.isSelected();
+			recordStep(box.getText() + (turnedOn ? " on" : " off"),
+				() -> setToggleTo(box, turnedOn),
+				() -> setToggleTo(box, !turnedOn));
+		});
+	}
+
+	/** Drive a checkbox to a state as a replay: doClick fires the effect
+	 * listeners (recompute, wilderness rows) exactly like a user click. */
+	private void setToggleTo(JCheckBox box, boolean selected)
+	{
+		if (box.isSelected() != selected)
+		{
+			replayingHistory = true;
+			try
+			{
+				box.doClick();
+			}
+			finally
+			{
+				replayingHistory = false;
+			}
+		}
+	}
+
+	/** Record a reversible panel step into the shared back/forward stack.
+	 * CommandHistory.execute() runs apply() immediately; the setters are
+	 * idempotent, so applying the state the control already shows is a
+	 * no-op and nothing recomputes twice. */
+	private void recordStep(String description, Runnable toNew, Runnable toOld)
+	{
+		if (historyControl == null)
+		{
+			return;
+		}
+		// A step is (action + the mob it was taken on): replaying it first
+		// restores that monster, so "Optimize: Tanky" never flips a setting
+		// against a cleared or different selection (field report 2026-07-16).
+		MonsterStats at = selectedMonster;
+		String label = at == null ? description : description + " - " + at.getName();
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				restoreContext(at);
+				toNew.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				restoreContext(at);
+				toOld.run();
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return label;
+			}
+		});
+	}
+
+	/** Re-select the monster a step was taken on before replaying it. */
+	private void restoreContext(MonsterStats at)
+	{
+		if (at != null && selectedMonster != at)
+		{
+			applySelection(at);
+		}
+	}
+
+	/** Combo steps: track the previous index so the step can go back to it;
+	 * replays and programmatic sets only refresh the tracker. */
+	private void recordCombo(JComboBox<String> combo, String prefix)
+	{
+		int[] last = {combo.getSelectedIndex()};
+		combo.addActionListener(e ->
+		{
+			int now = combo.getSelectedIndex();
+			if (replayingHistory || historyControl == null || now == last[0] || now < 0)
+			{
+				last[0] = now;
+				return;
+			}
+			int old = last[0];
+			last[0] = now;
+			recordStep(prefix + ": " + combo.getItemAt(now),
+				() -> setComboTo(combo, now),
+				() -> setComboTo(combo, old));
+		});
+	}
+
+	private void setComboTo(JComboBox<String> combo, int index)
+	{
+		if (combo.getSelectedIndex() != index)
+		{
+			replayingHistory = true;
+			try
+			{
+				combo.setSelectedIndex(index);
+			}
+			finally
+			{
+				replayingHistory = false;
+			}
+		}
 	}
 
 	/** Small 11pt info line - the shape every card row shares. */
@@ -841,10 +1062,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			budgetRow.setVisible(options.upgradeBudget);
 		}
-		boolean wild = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
-		lowRisk.setVisible(wild && options.wildyRisk);
-		protectItem.setVisible(wild && options.wildyRisk);
-		riskBudget.setVisible(wild && options.wildyRisk);
+		refreshWildernessRows();
 		refreshNotePanel();
 		// Rebuild the cards so per-line gates apply, reusing cached results -
 		// but only when those results are for the CURRENT monster (a compute
@@ -957,8 +1175,55 @@ public class LoadoutLabPanel extends PluginPanel
 		return false;
 	}
 
-	/** A pick: collapse the dropdown, show the selection, clear the query. */
+	/** A pick: record it as a back/forward step, then apply. Selecting a
+	 * monster joins the same history as edits - the arrows are BACK and
+	 * FORWARD through everything you did, so searching Vorkath after
+	 * Zulrah means back lands on Zulrah (field request 2026-07-16). The
+	 * first pick of a session is not recorded: back never lands on a
+	 * blank panel. */
 	private void select(MonsterStats monster)
+	{
+		MonsterStats previous = selectedMonster;
+		if (historyControl == null || (previous == null && !hadSelection) || previous == monster)
+		{
+			applySelection(monster);
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applySelection(monster);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				// A pick made from a deliberately cleared panel goes back
+				// to the cleared state, not to a blank-page surprise.
+				if (previous != null)
+				{
+					applySelection(previous);
+				}
+				else
+				{
+					clearSelectionInternal();
+				}
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "vs " + monster.label();
+			}
+		});
+	}
+
+	/** The selection itself: collapse the dropdown, show it, recompute. */
+	private void applySelection(MonsterStats monster)
 	{
 		suppressSearchEvents = true;
 		try
@@ -972,11 +1237,11 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterModel.clear();
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
-		boolean wilderness = WildernessMonsters.isWilderness(monster)
-			&& displayOptions.wildyRisk;
-		lowRisk.setVisible(wilderness);
-		protectItem.setVisible(wilderness);
-		riskBudget.setVisible(wilderness);
+		hadSelection = true;
+		// Each monster starts OUT of the wilderness unless it lives nowhere
+		// else - the checkbox is a per-fight statement, not a preference.
+		inWilderness.setSelected(false);
+		refreshWildernessRows();
 		superAntifireAssumed = false; // each monster starts on gear protection
 		bankShown = null;
 		bankHighlighter.highlight(null);
@@ -1044,10 +1309,38 @@ public class LoadoutLabPanel extends PluginPanel
 	private void budgetEdited()
 	{
 		int parsed = parsedBudgetGp();
-		if (parsed != lastBudgetGp)
+		if (parsed == lastBudgetGp)
 		{
-			lastBudgetGp = parsed;
-			recompute();
+			return;
+		}
+		String oldText = lastBudgetText;
+		String newText = upgradeBudget.getText();
+		lastBudgetGp = parsed;
+		lastBudgetText = newText;
+		if (!replayingHistory)
+		{
+			recordStep(newText == null || newText.isEmpty()
+					? "Upgrade budget cleared" : "Upgrade budget " + newText,
+				() -> setBudgetTo(newText), () -> setBudgetTo(oldText));
+		}
+		recompute();
+	}
+
+	private void setBudgetTo(String text)
+	{
+		if (upgradeBudget.getText().equals(text))
+		{
+			return;
+		}
+		replayingHistory = true;
+		try
+		{
+			upgradeBudget.setText(text);
+			budgetEdited();
+		}
+		finally
+		{
+			replayingHistory = false;
 		}
 	}
 
@@ -1100,6 +1393,57 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int index = spellbook.getSelectedIndex();
 		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+	}
+
+	/** Test seams (package-private): controls and state for history tests. */
+	JComboBox<String> optimizeModeForTest()
+	{
+		return optimizeMode;
+	}
+
+	void clearSelectionForTest()
+	{
+		clearSelection();
+	}
+
+	MonsterStats selectedMonsterForTest()
+	{
+		return selectedMonster;
+	}
+
+	/** Wire the plugin's undo/redo stack in. Called once after construction. */
+	public void setHistoryControl(HistoryControl control)
+	{
+		this.historyControl = control;
+		refreshHistoryButtons();
+	}
+
+	/** Sync the header buttons' enabled state and peek tooltips. */
+	public void refreshHistoryButtons()
+	{
+		if (undoButton == null)
+		{
+			return;
+		}
+		boolean canUndo = historyControl != null && historyControl.canUndo();
+		boolean canRedo = historyControl != null && historyControl.canRedo();
+		undoButton.setEnabled(canUndo);
+		redoButton.setEnabled(canRedo);
+		undoButton.setToolTipText(canUndo ? "Back: " + historyControl.undoLabel() : "Nothing to go back to");
+		redoButton.setToolTipText(canRedo ? "Forward: " + historyControl.redoLabel() : "Nothing to go forward to");
+	}
+
+	/** After an undo/redo any store may have changed - refresh every
+	 * affordance that renders store state, then recompute. Each refresher
+	 * is null-guarded for the no-monster-selected case. */
+	private void refreshAfterHistory()
+	{
+		refreshExclusionsLabel();
+		refreshStoredLabel();
+		refreshPinnedLabel();
+		refreshNotePanel();
+		refreshHistoryButtons();
+		recompute();
 	}
 
 	private void refreshExclusionsLabel()
@@ -1880,6 +2224,72 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** Curved back/forward arrow, painted (Swing glyphs tofu on Tahoe): a
+	 * 3/4 arc opening downward with an arrowhead at the top - mirrored
+	 * (head upper-left) for back, plain (head upper-right) for forward.
+	 * Greys out with the button's enabled state. */
+	private static final class UndoArrowIcon implements javax.swing.Icon
+	{
+		private final int size;
+		private final boolean mirrored;
+
+		UndoArrowIcon(int size, boolean mirrored)
+		{
+			this.size = size;
+			this.mirrored = mirrored;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size + 2;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size + 2;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				Color color = c.isEnabled() ? new Color(180, 180, 220) : new Color(96, 96, 108);
+				int cx = x + getIconWidth() / 2;
+				int cy = y + getIconHeight() / 2 + 1;
+				int r = (size - 2) / 2 + 1;
+				if (mirrored)
+				{
+					g2.translate(2 * cx, 0);
+					g2.scale(-1, 1);
+				}
+				g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g2.setColor(color);
+				g2.drawArc(cx - r, cy - r, r * 2, r * 2, 60, 240);
+				// Arrowhead at the arc's start (60 degrees, upper right).
+				double a = Math.toRadians(60);
+				int hx = (int) Math.round(cx + r * Math.cos(a));
+				int hy = (int) Math.round(cy - r * Math.sin(a));
+				int hs = Math.max(3, size / 3);
+				java.awt.geom.Path2D head = new java.awt.geom.Path2D.Float();
+				head.moveTo(hx, hy);
+				head.lineTo(hx - hs, hy);
+				head.lineTo(hx, hy - hs);
+				head.closePath();
+				g2.fill(head);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
 	private static final class DotsIcon implements javax.swing.Icon
 	{
@@ -2028,7 +2438,7 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 		statusLabel.setText(" ");
 		computeHook.compute(selectedMonster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			spellbookLock(), riskCap(), selectedRiskBudget(),
+			effectiveWilderness(), spellbookLock(), riskCap(), selectedRiskBudget(),
 			superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster),
 			parsedBudgetGp(),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
@@ -2041,14 +2451,47 @@ public class LoadoutLabPanel extends PluginPanel
 		bankShown = null;
 		bankFiltered = null;
 		lastResults = null;
-		clearSelection();
+		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
 		refreshPinnedLabel();
 		refreshNotePanel();
 	}
 
+	/** The clear button: a recorded step whose back restores the mob. */
 	private void clearSelection()
+	{
+		MonsterStats previous = selectedMonster;
+		if (historyControl == null || previous == null)
+		{
+			clearSelectionInternal();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				clearSelectionInternal();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				applySelection(previous);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Clear - " + previous.getName();
+			}
+		});
+	}
+
+	private void clearSelectionInternal()
 	{
 		selectedMonster = null;
 		cardCollapsed.clear();
@@ -2147,17 +2590,29 @@ public class LoadoutLabPanel extends PluginPanel
 			? cardCollapsed.get(style)
 			: autoCollapsed.getOrDefault(style, false);
 
-		// Header row: collapse toggle + summary dps left, the set's own
-		// menu (per-set pins and bank-filter supplies) right.
-		JLabel header = new JLabel((collapsed ? "> " : "v ") + style
-			+ (hasSet
-				? String.format(" - %.2f DPS", result.owned.get(0).getDps())
-				: " - no set"));
-		header.setForeground(Color.WHITE);
-		header.setFont(header.getFont().deriveFont(Font.BOLD, 14f));
-		header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		// Header row: collapse toggle + the style's SKILL ICON (sprite, not a
+		// glyph - Tahoe tofu rule; the tooltip carries the word) + summary
+		// dps left, the set's own menu (per-set pins and supplies) right.
+		JLabel chevron = new JLabel(collapsed ? "> " : "v ");
+		JLabel styleIcon = new JLabel();
+		styleIcon.setToolTipText(String.valueOf(style));
+		attachSprite(styleIcon, AssumeIcons.styleSprite(style));
+		JLabel header = new JLabel(hasSet
+			? String.format("%.2f DPS", result.owned.get(0).getDps())
+			: "no set");
+		JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
+		headerLeft.setOpaque(false);
+		for (JLabel part : new JLabel[]{chevron, header})
+		{
+			part.setForeground(Color.WHITE);
+			part.setFont(part.getFont().deriveFont(Font.BOLD, 14f));
+		}
+		headerLeft.add(chevron);
+		headerLeft.add(styleIcon);
+		headerLeft.add(header);
+		headerLeft.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		header.setToolTipText(collapsed ? "Click to expand this set" : "Click to collapse this set");
-		header.addMouseListener(new MouseAdapter()
+		headerLeft.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
@@ -2173,7 +2628,7 @@ public class LoadoutLabPanel extends PluginPanel
 		headerRow.setOpaque(false);
 		headerRow.setAlignmentX(LEFT_ALIGNMENT);
 		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		headerRow.add(header, BorderLayout.WEST);
+		headerRow.add(headerLeft, BorderLayout.WEST);
 		JButton setMenu = new JButton(new DotsIcon(11));
 		setMenu.setToolTipText("Pins and bank-filter items for this set");
 		setMenu.setMargin(new Insets(1, 5, 1, 5));
@@ -2204,8 +2659,21 @@ public class LoadoutLabPanel extends PluginPanel
 		if (hasSet && displayOptions.assumes
 			&& result.boostLabel != null && !result.boostLabel.isEmpty())
 		{
+			// Engine-forced honesty flag (no protective shield owned) OR the
+			// user's own shield-cell flip - either way the chip must show.
+			String antifireTooltip = null;
+			if (result.owned != null && !result.owned.isEmpty()
+				&& result.owned.get(0).isAntifireAssumed())
+			{
+				antifireTooltip = "Assumes a super antifire - you own no"
+					+ " anti-dragon or dragonfire shield";
+			}
+			else if (superAntifireAssumed)
+			{
+				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
+			}
 			headerEast.add(assumesChips(result.boostLabel,
-				"Assumed prayer + boost (you own these)"));
+				"Assumed prayer + boost (you own these)", antifireTooltip));
 		}
 		headerEast.add(setMenu);
 		headerRow.add(headerEast, BorderLayout.EAST);
@@ -2365,7 +2833,9 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				if (displayOptions.assumes)
 				{
-					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game");
+					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game",
+						superAntifireAssumed
+							? "Super antifire (right-click the shield cell to flip back)" : null);
 				}
 				// Max hit + accuracy for the ceiling set - the header only
 				// carries its DPS, same as the owned card (each gated).
@@ -2582,7 +3052,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private void addRiskLine(JPanel card, DpsResult best, GearItem specWeapon)
 	{
-		if (!WildernessMonsters.isWilderness(selectedMonster))
+		if (!effectiveWilderness())
 		{
 			return;
 		}
@@ -2862,10 +3332,24 @@ public class LoadoutLabPanel extends PluginPanel
 			: "Assume a super antifire (drop the shield)");
 		flip.addActionListener(a ->
 		{
-			superAntifireAssumed = !superAntifireAssumed;
-			recompute();
+			boolean assume = !superAntifireAssumed;
+			recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
+				() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
+			if (historyControl == null)
+			{
+				setAntifireTo(assume); // no history wired: still flip
+			}
 		});
 		return List.of(flip);
+	}
+
+	private void setAntifireTo(boolean assume)
+	{
+		if (superAntifireAssumed != assume)
+		{
+			superAntifireAssumed = assume;
+			recompute();
+		}
 	}
 
 	/** The active set's item ids: gear + loaded dart + spec weapon. */
@@ -2987,7 +3471,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * potion/heart item icon; names live in the tooltips. Unmapped parts
 	 * (e.g. "Current boosted levels") stay as text.
 	 */
-	private void addAssumesRow(JPanel card, String label, String tooltip)
+	private void addAssumesRow(JPanel card, String label, String tooltip, String antifireTooltip)
 	{
 		if (label == null || label.isEmpty())
 		{
@@ -2997,21 +3481,21 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel prefix = line("Assumes:", MUTED);
 		prefix.setToolTipText(tooltip);
 		row.add(prefix);
-		row.add(assumesChips(label, tooltip));
+		row.add(assumesChips(label, tooltip, antifireTooltip));
 	}
 
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
 	 * inline with the style title to reclaim a whole row of vertical
 	 * space (field request); tooltips carry the words. */
-	private JPanel assumesChips(String label, String tooltip)
+	private JPanel assumesChips(String label, String tooltip, String antifireTooltip)
 	{
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
 		chips.setOpaque(false);
 		chips.setToolTipText(tooltip);
-		if (superAntifireAssumed && DragonfireRules.breathesFire(selectedMonster))
+		if (antifireTooltip != null && DragonfireRules.breathesFire(selectedMonster))
 		{
 			JLabel potion = new JLabel();
-			potion.setToolTipText("Super antifire (right-click the shield cell to flip back)");
+			potion.setToolTipText(antifireTooltip);
 			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
 			chips.add(potion);
 		}
@@ -3080,7 +3564,7 @@ public class LoadoutLabPanel extends PluginPanel
 		int cell = ICON_SIZE + 4;
 		// Wilderness: badge every cell with its death fate.
 		PvpRisk.Assessment fates = null;
-		if (markUnowned && WildernessMonsters.isWilderness(selectedMonster))
+		if (markUnowned && effectiveWilderness())
 		{
 			fates = PvpRisk.assess(result.getLoadout(), specWeapon,
 				protectItem.isSelected() ? 4 : 3);

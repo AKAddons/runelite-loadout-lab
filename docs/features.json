@@ -18,7 +18,7 @@
         "engine/LoadoutOptimizerTest.java"
       ],
       "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots."
+      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word."
     },
     {
       "id": "game-best",
@@ -224,10 +224,11 @@
       ],
       "tests": [
         "engine/RevenantConditionalsTest.java",
-        "engine/PvpRiskTest.java"
+        "engine/PvpRiskTest.java",
+        "engine/WildernessToggleTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card."
+      "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card. 2026-07-15: the +50% is gated by an \"In the Wilderness\" checkbox for shared-name monsters (Catacombs hellhounds no longer get buffed picks); wilderness-exclusive monsters are always in (WildernessToggleTest)."
     },
     {
       "id": "mob-profiles",
@@ -371,6 +372,29 @@
       "since": "0.1.0",
       "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
       "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
+    },
+    {
+      "id": "undo-redo",
+      "title": "Undo and redo",
+      "group": "Filters and tasks",
+      "anchor": "undo-and-redo",
+      "media": "docs/img/undo-redo.png",
+      "code": [
+        "command/Command.java",
+        "command/CommandHistory.java",
+        "command/CompositeCommand.java",
+        "command/Commands.java",
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "command/CommandHistoryTest.java",
+        "command/CommandsTest.java",
+        "ui/SelectionHistoryTest.java"
+      ],
+      "since": "0.2.4",
+      "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
+      "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
     }
   ]
 }

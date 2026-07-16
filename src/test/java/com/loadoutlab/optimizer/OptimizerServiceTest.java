@@ -203,7 +203,7 @@ public class OptimizerServiceTest
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			excludedByStyle, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+			false, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
 			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results ->
 			{
 				out.set(results);

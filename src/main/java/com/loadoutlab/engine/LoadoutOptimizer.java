@@ -402,6 +402,20 @@ public final class LoadoutOptimizer
 		List<DpsResult> results = new ArrayList<>();
 		Set<String> seen = new HashSet<>();
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
+		// Honesty rule (audit A3.2): with no protective shield in the pool the
+		// constraint cannot be satisfied - half-applying it banned every 2h
+		// weapon AND still returned an empty shield, while the neutral fill
+		// could not restore pure-damage items (Ultor, Avernic). All-or-nothing
+		// instead: fall back to the unconstrained hunt and FLAG the results,
+		// so the panel says "assumes a super antifire" rather than quietly
+		// recommending a worse set that protects nothing.
+		boolean antifireAssumed = false;
+		if (dragonShield
+			&& protectiveShieldsOnly(pools.slotCandidates.get(GearSlot.SHIELD)).isEmpty())
+		{
+			dragonShield = false;
+			antifireAssumed = true;
+		}
 		// The monster-side incoming constants for the D-4 beam objective,
 		// hoisted once per optimize (call-scoped, worker-thread confined).
 		IncomingDpsCalculator.Prepared incoming = request.getDefenseWeight() > 0
@@ -564,6 +578,10 @@ public final class LoadoutOptimizer
 			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
+		if (antifireAssumed)
+		{
+			results.replaceAll(r -> r.withAntifireAssumed(true));
+		}
 		return results.size() > request.getResultLimit() ? new ArrayList<>(results.subList(0, request.getResultLimit())) : results;
 	}
 
@@ -801,6 +819,19 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
+			// An uncharged/broken/locked WEAPON is never suggested for
+			// ACQUISITION: when the charged version is untradeable (wilderness
+			// weapons) the dead tradeable twin used to win the budget pool
+			// outright, priced and scored as if it could attack (audit A3.4).
+			// An OWNED uncharged twin stays: it stands in for the weapon you
+			// own - charge it before the trip (the Tumeken-uncharged rule).
+			// Armour keeps the dedupe tie-break instead of this filter: an
+			// inactive crystal piece is still legitimately wearable.
+			if (slot == GearSlot.WEAPON && badVersion(item)
+				&& !request.getOwnedItems().owns(item.getId()) && !request.isDream(item.getId()))
+			{
+				continue;
+			}
 			// Must come BEFORE the top-N cut: vyre weapons and halberds never
 			// win generic rough-score ranking, but vs tier-3 vampyres / flying
 			// monsters they are the only weapons that can deal damage at all.
@@ -946,12 +977,17 @@ public final class LoadoutOptimizer
 			{
 				score += 3_000.0;
 			}
+			// The battleaxe's +17.5% vs leafy lives in the DPS model, not its
+			// raw stats - without a boost the pool cut prunes it (pool lesson).
+			if (request.getMonster().hasAttribute("leafy") && name.contains("leaf-bladed battleaxe"))
+			{
+				score += 4_000.0;
+			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score
 			// prune removes them before they are ever evaluated.
-			if (com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster())
-				&& !badVersion(item) && isWildernessWeapon(name))
+			if (request.isInWilderness() && !badVersion(item) && isWildernessWeapon(name))
 			{
 				score += 6_000.0;
 			}

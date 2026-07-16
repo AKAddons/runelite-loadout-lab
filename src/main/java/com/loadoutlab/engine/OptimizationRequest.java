@@ -52,6 +52,11 @@ public final class OptimizationRequest
 	 * set that leaves one in the lost pile is vetoed (same as the salve-line
 	 * friction veto, but user-chosen). Empty = no such constraint. */
 	private final Set<Integer> protectOnlyItems;
+	/** True when the fight happens IN the Wilderness - gates the wilderness
+	 * weapon +50% passive. Defaults to whether the monster exists nowhere
+	 * else (revs, the boss ring); shared-name monsters (Catacombs
+	 * hellhounds...) take the user's panel toggle via the wither. */
+	private final boolean inWilderness;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -101,6 +106,7 @@ public final class OptimizationRequest
 		this.defenseWeight = 0;
 		this.pinnedItems = Collections.emptyMap();
 		this.protectOnlyItems = Collections.emptySet();
+		this.inWilderness = com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));
@@ -136,6 +142,7 @@ public final class OptimizationRequest
 		private double defenseWeight;
 		private Map<GearSlot, Integer> pinnedItems;
 		private Set<Integer> protectOnlyItems;
+		private boolean inWilderness;
 
 		private Copy(OptimizationRequest base)
 		{
@@ -160,6 +167,7 @@ public final class OptimizationRequest
 			defenseWeight = base.defenseWeight;
 			pinnedItems = base.pinnedItems;
 			protectOnlyItems = base.protectOnlyItems;
+			inWilderness = base.inWilderness;
 		}
 
 		private OptimizationRequest build()
@@ -191,6 +199,7 @@ public final class OptimizationRequest
 		this.defenseWeight = copy.defenseWeight;
 		this.pinnedItems = copy.pinnedItems == null ? Collections.emptyMap() : copy.pinnedItems;
 		this.protectOnlyItems = copy.protectOnlyItems == null ? Collections.emptySet() : copy.protectOnlyItems;
+		this.inWilderness = copy.inWilderness;
 	}
 
 	public Set<Integer> getExcludedItems()
@@ -424,6 +433,20 @@ public final class OptimizationRequest
 	{
 		Copy copy = new Copy(this);
 		copy.spell = spell;
+		return copy.build();
+	}
+
+	public boolean isInWilderness()
+	{
+		return inWilderness;
+	}
+
+	/** Override the wilderness default (the panel toggle for shared-name
+	 * monsters like Catacombs hellhounds). */
+	public OptimizationRequest withInWilderness(boolean inWilderness)
+	{
+		Copy copy = new Copy(this);
+		copy.inWilderness = inWilderness;
 		return copy.build();
 	}
 }

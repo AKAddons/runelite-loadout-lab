@@ -3,6 +3,8 @@ package com.loadoutlab;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
+import com.loadoutlab.command.CommandHistory;
+import com.loadoutlab.command.Commands;
 import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.DwmsImport;
 import com.loadoutlab.collection.DwmsLink;
@@ -130,6 +132,10 @@ public class LoadoutLabPlugin extends Plugin
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
+	/** Session-only undo/redo over deliberate store mutations. EDT-owned;
+	 * cleared on profile change (entries captured against another profile's
+	 * stores must never replay into this one). */
+	private final CommandHistory commandHistory = new CommandHistory();
 	private com.loadoutlab.collection.ProtectOnlyStore protectOnly;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
 	private volatile java.util.Set<Integer> bankHighlight;
@@ -332,15 +338,31 @@ public class LoadoutLabPlugin extends Plugin
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
 				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
-					exclusions::toggle, exclusions::snapshot,
+					id ->
+					{
+						exec(Commands.toggleExclusion(exclusions, id, itemLabel(id)));
+						return exclusions.isExcluded(id);
+					},
+					exclusions::snapshot,
 					protectOnlyView(),
-					dreams::toggle, dreams::snapshot,
-					manualOwned::toggle, manualOwned::snapshot,
+					id ->
+					{
+						exec(Commands.toggleDream(dreams, id, itemLabel(id)));
+						return dreams.isDreamed(id);
+					},
+					dreams::snapshot,
+					id ->
+					{
+						exec(Commands.toggleStored(manualOwned, id, itemLabel(id)));
+						return manualOwned.isStored(id);
+					},
+					manualOwned::snapshot,
 					locationHintView(),
 					mobProfileView(), itemSearchView(),
 					this::ownsCanonical,
 					this::setBankHighlight,
 					this::setBankFilter);
+				panel.setHistoryControl(historyControl());
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
 				panel.setDeveloperMode(developerMode);
@@ -504,6 +526,16 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			mobProfiles.reload();
 		}
+		// Undo entries captured against the previous profile's stores must
+		// never replay into this one. The stack is EDT-owned - hop over.
+		SwingUtilities.invokeLater(() ->
+		{
+			commandHistory.clear();
+			if (panel != null)
+			{
+				panel.refreshHistoryButtons();
+			}
+		});
 		resetForIdentityChange();
 	}
 
@@ -924,6 +956,74 @@ public class LoadoutLabPlugin extends Plugin
 		return byStyle;
 	}
 
+	/** Run a user mutation through the undo stack and sync the buttons. */
+	private boolean exec(com.loadoutlab.command.Command cmd)
+	{
+		boolean ok = commandHistory.execute(cmd);
+		if (panel != null)
+		{
+			panel.refreshHistoryButtons();
+		}
+		return ok;
+	}
+
+	/** Item label for command descriptions, from the gear corpus (EDT-safe -
+	 * never ItemManager, which is client-thread-only). */
+	private String itemLabel(int itemId)
+	{
+		com.loadoutlab.data.GearItem item = data == null ? null : data.getGear(itemId);
+		return item == null ? ("item " + itemId) : item.label();
+	}
+
+	/** Panel hook: the header undo/redo buttons over the command stack. */
+	private LoadoutLabPanel.HistoryControl historyControl()
+	{
+		return new LoadoutLabPanel.HistoryControl()
+		{
+			@Override
+			public boolean undo()
+			{
+				return commandHistory.undo();
+			}
+
+			@Override
+			public boolean redo()
+			{
+				return commandHistory.redo();
+			}
+
+			@Override
+			public boolean canUndo()
+			{
+				return commandHistory.canUndo();
+			}
+
+			@Override
+			public boolean canRedo()
+			{
+				return commandHistory.canRedo();
+			}
+
+			@Override
+			public String undoLabel()
+			{
+				return commandHistory.peekUndoDescription();
+			}
+
+			@Override
+			public String redoLabel()
+			{
+				return commandHistory.peekRedoDescription();
+			}
+
+			@Override
+			public boolean execute(com.loadoutlab.command.Command command)
+			{
+				return exec(command);
+			}
+		};
+	}
+
 	/** Panel hook: the "only bring if protected on death" flag store. */
 	private LoadoutLabPanel.ProtectOnlyToggle protectOnlyView()
 	{
@@ -932,7 +1032,12 @@ public class LoadoutLabPlugin extends Plugin
 			@Override
 			public boolean toggle(int itemId)
 			{
-				return protectOnly != null && protectOnly.toggle(itemId);
+				if (protectOnly == null)
+				{
+					return false;
+				}
+				exec(Commands.toggleProtectOnly(protectOnly, itemId, itemLabel(itemId)));
+				return protectOnly.isProtectOnly(itemId);
 			}
 
 			@Override
@@ -989,7 +1094,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.pin(monsterId, scope, slot, itemId);
+					exec(Commands.pin(mobProfiles, monsterId, scope, slot, itemId, itemLabel(itemId)));
 				}
 			}
 
@@ -998,7 +1103,11 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.unpin(monsterId, scope, slot);
+					Integer current = mobProfiles.allPins(monsterId)
+						.getOrDefault(scope, Map.of()).get(slot);
+					String label = current == null
+						? slot.name().toLowerCase() : itemLabel(current);
+					exec(Commands.unpin(mobProfiles, monsterId, scope, slot, label));
 				}
 			}
 
@@ -1013,7 +1122,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.setNote(monsterId, note);
+					exec(Commands.setNote(mobProfiles, monsterId, note));
 				}
 			}
 
@@ -1035,7 +1144,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.addFilterItem(monsterId, scope, itemId, name);
+					exec(Commands.addFilterItem(mobProfiles, monsterId, scope, itemId, name));
 				}
 			}
 
@@ -1044,7 +1153,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.removeFilterItem(monsterId, scope, itemId);
+					exec(Commands.removeFilterItem(mobProfiles, monsterId, scope, itemId));
 				}
 			}
 
@@ -1059,7 +1168,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.setPinnedSpell(monsterId, spellName);
+					exec(Commands.setPinnedSpell(mobProfiles, monsterId, spellName));
 				}
 			}
 
@@ -1074,7 +1183,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.exclude(monsterId, scope, itemId);
+					exec(Commands.excludeForMob(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
 				}
 			}
 
@@ -1083,7 +1192,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				if (mobProfiles != null)
 				{
-					mobProfiles.removeExclusion(monsterId, scope, itemId);
+					exec(Commands.removeMobExclusion(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
 				}
 			}
 		};
@@ -1326,7 +1435,7 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1362,7 +1471,7 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
-				dreams.snapshot(), upgradeBudgetGp, mode,
+				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->

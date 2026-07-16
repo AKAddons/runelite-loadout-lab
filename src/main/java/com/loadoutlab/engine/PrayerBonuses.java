@@ -61,32 +61,38 @@ public final class PrayerBonuses
 		}
 		else
 		{
+			// Every applied tier is NAMED - the assumes chip must never fold
+			// in a multiplier it does not admit to (audit A2.12).
 			java.util.List<String> parts = new java.util.ArrayList<>();
-			if (levels.getPrayer() >= 31)
+			if (levels.getPrayer() >= 34)
 			{
 				meleeAcc = 1.15;
 				parts.add("Incredible Reflexes");
 			}
-			else if (levels.getPrayer() >= 13)
+			else if (levels.getPrayer() >= 16)
 			{
 				meleeAcc = 1.10;
+				parts.add("Improved Reflexes");
 			}
 			else if (levels.getPrayer() >= 7)
 			{
 				meleeAcc = 1.05;
+				parts.add("Clarity of Thought");
 			}
 			if (levels.getPrayer() >= 31)
 			{
 				meleeStr = 1.15;
 				parts.add("Ultimate Strength");
 			}
-			else if (levels.getPrayer() >= 10)
+			else if (levels.getPrayer() >= 13)
 			{
 				meleeStr = 1.10;
+				parts.add("Superhuman Strength");
 			}
 			else if (levels.getPrayer() >= 4)
 			{
 				meleeStr = 1.05;
+				parts.add("Burst of Strength");
 			}
 			meleeName = String.join(" + ", parts);
 		}
@@ -104,10 +110,14 @@ public final class PrayerBonuses
 		PrayerBonuses result = new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
 		result.meleeName = meleeName;
 		result.rangedName = rigour ? "Rigour" : deadeye ? "Deadeye"
-			: levels.getPrayer() >= 44 ? "Eagle Eye" : "";
+			: levels.getPrayer() >= 44 ? "Eagle Eye"
+			: levels.getPrayer() >= 26 ? "Hawk Eye"
+			: levels.getPrayer() >= 8 ? "Sharp Eye" : "";
 		result.magicName = augury && vigour ? "Augury + Mystic Vigour"
 			: augury ? "Augury" : vigour ? "Mystic Vigour"
-			: levels.getPrayer() >= 45 ? "Mystic Might" : "";
+			: levels.getPrayer() >= 45 ? "Mystic Might"
+			: levels.getPrayer() >= 27 ? "Mystic Lore"
+			: levels.getPrayer() >= 9 ? "Mystic Will" : "";
 		return result;
 	}
 

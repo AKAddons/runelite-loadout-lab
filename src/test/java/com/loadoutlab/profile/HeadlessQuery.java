@@ -50,6 +50,7 @@ public final class HeadlessQuery
 		boolean slayer = false;
 		boolean f2p = false;
 		boolean antifirePotion = false;
+		boolean wilderness = false;
 		String spellbook = "";
 		int lowRisk = -1;
 		int riskBudget = com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -65,6 +66,7 @@ public final class HeadlessQuery
 				case "--slayer": slayer = true; break;
 				case "--f2p": f2p = true; break;
 				case "--antifire-potion": antifirePotion = true; break;
+				case "--wilderness": wilderness = true; break;
 				case "--spellbook": spellbook = args[++i]; break;
 				case "--low-risk": lowRisk = Integer.parseInt(args[++i]); break;
 				case "--risk-budget": riskBudget = Integer.parseInt(args[++i]); break;
@@ -97,11 +99,20 @@ public final class HeadlessQuery
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			java.util.Map<CombatStyle, java.util.Set<Integer>> excludedByStyle =
+				new java.util.EnumMap<>(CombatStyle.class);
+			for (CombatStyle style : CombatStyle.concreteValues())
+			{
+				excludedByStyle.put(style, excluded);
+			}
+			boolean inWilderness = wilderness
+				|| com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
 			service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
-				excluded, lowRisk, riskBudget, antifirePotion,
+				excludedByStyle, lowRisk, riskBudget, antifirePotion, inWilderness,
 				java.util.Collections.emptySet(), upgradeBudget, mode,
+				java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(),
 				results ->
 				{
 					out.set(results);

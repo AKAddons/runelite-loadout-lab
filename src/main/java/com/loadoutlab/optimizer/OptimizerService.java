@@ -250,8 +250,11 @@ public class OptimizerService
 		}
 		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			byStyle, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion,
+			// Headless/tests default: in the Wilderness only when the
+			// monster exists nowhere else (matches the request default).
+			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
+			dreamItems, upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell,
 			Collections.<Integer>emptySet(), callback);
 	}
 
@@ -270,6 +273,7 @@ public class OptimizerService
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
+		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		OptimizeMode mode,
@@ -288,8 +292,10 @@ public class OptimizerService
 			? Collections.emptySet() : protectOnlyItems;
 		final String lock = spellbookLock == null ? "" : spellbookLock;
 		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
-		final PrayerUnlocks unlocks = prayerUnlocks == null
-			? PrayerUnlocks.ALL : prayerUnlocks;
+		// A free world has no members prayers, whatever the account has
+		// unlocked - F2P mode caps the book at Mystic Might (audit A3.5).
+		final PrayerUnlocks unlocks = f2pOnly ? PrayerUnlocks.F2P
+			: prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
 		// The budget only matters when risk-constrained; pin it otherwise so
 		// flipping the dropdown with the cap off cannot split the cache.
 		final int riskBudget = maxTradeables >= 0
@@ -297,6 +303,7 @@ public class OptimizerService
 		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
 			+ "|" + onSlayerTask + "|" + lock + "|" + unlocks.key()
 			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
+			+ "|" + inWilderness
 			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
 			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
 			+ "|" + protectOnly.hashCode()
@@ -357,17 +364,17 @@ public class OptimizerService
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
-				BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned);
+				BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned, f2pOnly);
 				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
 				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
 					boost == BoostProfile.NONE ? null : boost.toString());
 				// The ceiling assumes the best prayers/boost in the GAME,
 				// not just what this player has unlocked or owns.
-				BoostProfile gameBoost = BoostSelector.ceilingFor(style);
+				BoostProfile gameBoost = BoostSelector.ceilingFor(style, f2pOnly);
 				PlayerLevels gameLevels = real.boosted(gameBoost, boostedLevels).max(boostedLevels);
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
-					PrayerUnlocks.ALL).nameFor(style);
+					f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
 				// Dreams are pretend-owned; a positive upgrade budget also
 				// admits anything buyable within it (total spend, tracked
@@ -380,6 +387,7 @@ public class OptimizerService
 					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
+					.withInWilderness(inWilderness)
 					.withDreamItems(dreams)
 					.withProtectOnlyItems(protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
@@ -424,6 +432,7 @@ public class OptimizerService
 					.withSpellbookLock(lock)
 					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
 					.withAntifirePotion(antifirePotion)
+					.withInWilderness(inWilderness)
 					.withProtectOnlyItems(protectOnly);
 				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
 				if (!gameBest.isEmpty())

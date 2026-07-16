@@ -11,6 +11,12 @@ public final class PrayerUnlocks
 	/** Everything unlocked - tests, harness, and the game-best ceiling. */
 	public static final PrayerUnlocks ALL = new PrayerUnlocks(true, true, true, true, true);
 
+	/** The free-to-play prayer book: everything through Mystic Might is
+	 * F2P; the unlock-gated prayers (Piety/Chivalry/Rigour/Deadeye/
+	 * Augury/Mystic Vigour) are exactly the members-only ones, so denying
+	 * them all IS the F2P ceiling (wiki-verified 2026-07-15). */
+	public static final PrayerUnlocks F2P = new PrayerUnlocks(false, false, false, false, false);
+
 	private final boolean kingsRansom;
 	private final boolean rigour;
 	private final boolean augury;

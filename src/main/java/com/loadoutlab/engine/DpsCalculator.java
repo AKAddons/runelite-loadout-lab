@@ -475,6 +475,13 @@ public final class DpsCalculator
 			counted("amulet of avarice", "+20% accuracy");
 			roll = multiply(roll, 6, 5);
 		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Named WITHOUT a space, unlike "salve amulet (e)" - a contains
+			// match on the (e) string misses it and demotes it a tier.
+			counted("salve amulet(ei)", "+20% accuracy");
+			roll = multiply(roll, 6, 5);
+		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
 		{
 			counted("salve amulet (e)", "+20% accuracy");
@@ -544,9 +551,21 @@ public final class DpsCalculator
 			counted("golembane weapon", "+15% damage");
 			maxHit = multiply(maxHit, 23, 20);
 		}
+		if (isLeafy(request) && wearing(loadout, "leaf-bladed battleaxe"))
+		{
+			// Damage only (accuracy untouched); stacks with the slayer helm.
+			counted("leaf-bladed battleaxe", "+17.5% damage vs leafy");
+			maxHit = multiply(maxHit, 47, 40);
+		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Spaceless name - see the accuracy chain note.
+			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
@@ -802,6 +821,18 @@ public final class DpsCalculator
 			counted("amulet of avarice", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// The magic damage path lacked a salve branch entirely (the
+			// accuracy path had one) - wiki: (ei) +20%, (i) +15% magic damage.
+			counted("salve amulet(ei)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
+		{
+			counted("salve amulet(i)", "+15% damage");
+			maxHit = multiply(maxHit, 23, 20);
+		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
 			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% damage");
@@ -854,12 +885,13 @@ public final class DpsCalculator
 	 * Wilderness weapon passive: +50% accuracy AND damage against monsters
 	 * in the Wilderness, CHARGED version only (wiki calc BaseCalc
 	 * .isRevWeaponBuffApplicable, applied after the avarice/salve/slayer
-	 * chain). Fighting a monster on the wilderness list is our "in the
-	 * Wilderness" signal.
+	 * chain). Keyed on the REQUEST's in-Wilderness flag - name membership
+	 * alone buffed Catacombs hellhounds and Taverley dungeon staples
+	 * (audit A3.1); wilderness-exclusive monsters default the flag on.
 	 */
 	static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons)
 	{
-		if (!com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster()))
+		if (!request.isInWilderness())
 		{
 			return false;
 		}
@@ -961,6 +993,11 @@ public final class DpsCalculator
 	private static boolean isGolem(OptimizationRequest request)
 	{
 		return request.getMonster().hasAttribute("golem");
+	}
+
+	private static boolean isLeafy(OptimizationRequest request)
+	{
+		return request.getMonster().hasAttribute("leafy");
 	}
 
 	private static boolean isSlayerTaskEligible(OptimizationRequest request)

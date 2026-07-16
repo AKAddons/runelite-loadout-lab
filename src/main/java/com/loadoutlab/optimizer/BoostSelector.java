@@ -22,6 +22,17 @@ public final class BoostSelector
 	/** The best boost in the GAME per style - the BiS ceiling assumption. */
 	public static BoostProfile ceilingFor(CombatStyle style)
 	{
+		return ceilingFor(style, false);
+	}
+
+	/** F2P mode: members consumables do not exist on a free world - the
+	 * only boosts are the attack/strength potion pair (audit A3.5). */
+	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p)
+	{
+		if (f2p)
+		{
+			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
+		}
 		switch (style)
 		{
 			case MELEE: return BoostProfile.SUPER_COMBAT;
@@ -33,6 +44,15 @@ public final class BoostSelector
 
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned)
 	{
+		return bestFor(style, owned, false);
+	}
+
+	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p)
+	{
+		if (f2p)
+		{
+			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
+		}
 		switch (style)
 		{
 			case MELEE:
