@@ -25,6 +25,14 @@ final class AssumeIcons
 		PRAYERS.put("Chivalry", SpriteID.Prayeron.CHIVALRY);
 		PRAYERS.put("Ultimate Strength", SpriteID.Prayeron.ULTIMATE_STRENGTH);
 		PRAYERS.put("Incredible Reflexes", SpriteID.Prayeron.INCREDIBLE_REFLEXES);
+		PRAYERS.put("Superhuman Strength", SpriteID.Prayeron.SUPERHUMAN_STRENGTH);
+		PRAYERS.put("Improved Reflexes", SpriteID.Prayeron.IMPROVED_REFLEXES);
+		PRAYERS.put("Burst of Strength", SpriteID.Prayeron.BURST_OF_STRENGTH);
+		PRAYERS.put("Clarity of Thought", SpriteID.Prayeron.CLARITY_OF_THOUGHT);
+		PRAYERS.put("Sharp Eye", SpriteID.Prayeron.SHARP_EYE);
+		PRAYERS.put("Hawk Eye", SpriteID.Prayeron.HAWK_EYE);
+		PRAYERS.put("Mystic Will", SpriteID.Prayeron.MYSTIC_WILL);
+		PRAYERS.put("Mystic Lore", SpriteID.Prayeron.MYSTIC_LORE);
 		PRAYERS.put("Rigour", SpriteID.Prayeron.RIGOUR);
 		PRAYERS.put("Deadeye", SpriteID.Prayeron.DEADEYE);
 		PRAYERS.put("Eagle Eye", SpriteID.Prayeron.EAGLE_EYE);
@@ -37,6 +45,7 @@ final class AssumeIcons
 
 		// BoostProfile labels -> the item the numbers assume you drink.
 		BOOST_ITEMS.put("Super combat", 12695);
+		BOOST_ITEMS.put("Attack & strength potions", 113); // strength potion(4)
 		BOOST_ITEMS.put("Ranging potion", 2444);
 		BOOST_ITEMS.put("Super ranging", 11722);
 		BOOST_ITEMS.put("Magic potion", 3040);

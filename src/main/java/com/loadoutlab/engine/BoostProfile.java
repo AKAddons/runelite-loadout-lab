@@ -5,6 +5,8 @@ public enum BoostProfile
 {
 	NONE("No boosts"),
 	LIVE_CURRENT("Current boosted levels"),
+	// Label deliberately avoids " + " - the assumes chips split on it.
+	F2P_COMBAT("Attack & strength potions"),
 	SUPER_COMBAT("Super combat"),
 	RANGING("Ranging potion"),
 	SUPER_RANGING("Super ranging"),
@@ -30,6 +32,14 @@ public enum BoostProfile
 		{
 			case LIVE_CURRENT:
 				return current == null ? source : current;
+			case F2P_COMBAT:
+				// The F2P pair: attack + strength potions, +3 plus 10% each.
+				return source.withBoosts(
+					boost(source.getAttack(), 3, 0.10),
+					boost(source.getStrength(), 3, 0.10),
+					0,
+					0,
+					0);
 			case SUPER_COMBAT:
 				return source.withBoosts(
 					boost(source.getAttack(), 5, 0.15),

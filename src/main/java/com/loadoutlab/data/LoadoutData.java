@@ -45,8 +45,12 @@ public final class LoadoutData
 	}
 
 	/**
-	 * A view of this dataset containing only free-to-play gear (monsters and
-	 * spells unchanged) - drives the non-members filter.
+	 * A view of this dataset containing only free-to-play gear and standard-
+	 * spellbook spells (monsters unchanged) - drives the non-members filter.
+	 * Ancient/Arceuus books are members-only wholesale; the F2P card was
+	 * recommending Arceuus Dark Demonbane (audit A3.5/A1.2). Members spells
+	 * WITHIN the standard book still pass - a finer F2P spell table can
+	 * tighten that later.
 	 */
 	public LoadoutData freeToPlayView()
 	{
@@ -60,7 +64,15 @@ public final class LoadoutData
 				byId.put(g.getId(), g);
 			}
 		}
-		return new LoadoutData(free, monsters, spells, byId, variantToBase);
+		java.util.List<SpellStats> freeSpells = new java.util.ArrayList<>();
+		for (SpellStats spell : spells)
+		{
+			if ("standard".equalsIgnoreCase(spell.getSpellbook()))
+			{
+				freeSpells.add(spell);
+			}
+		}
+		return new LoadoutData(free, monsters, freeSpells, byId, variantToBase);
 	}
 
 	/**
