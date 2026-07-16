@@ -21,11 +21,41 @@ monster, get your strongest owned set per combat style with exact DPS.
 | 7 | Specialized-weapon nuances | Gear-effect registry in the engine: slayer helm/salve (and their non-stacking), DHL/DHCB vs dragons, Tbow scaling, Shadow multiplier, Keris vs kalphites, Arclight/Emberlight vs demons, Inquisitor's, Void, set effects. The wiki calculator's coverage list is the checklist. |
 | 8 | Spec weapon in the best set | Model special attacks (damage/accuracy modifiers, spec cost/regen) and recommend a spec weapon alongside the main set when it beats the alternative use of that switch slot. |
 
-## v0.3 — the full trip plan
+## v0.3.0 — the multi-mob canvas (headline arc, decided 2026-07-16)
+
+The results area becomes a LIST of collapsible monster cards instead of
+a single result - the precursor for raids, multi-form bosses (all
+Zulrah forms at once), boss groups (Dagannoth Kings), and the way
+combat actually works: multiple mobs per trip. Style cards already
+collapse; this adds the level above. Design calls: top toggles stay
+GLOBAL as defaults, each card resolves them against its own monster
+(the applySelection gating, per card); monster cards collapse to a
+one-line best-style summary (vertical-budget rule); OptimizerService
+needs a page-scoped supersession ticket + progressive card fill-in.
+
+- **M-1 List refactor** - results area renders a list of monster
+  cards; a list of one is pixel-identical to today. Compute plumbing
+  takes a set. (M)
+- **M-2 Multi-add UX** - "add to view" on search hits, card close/
+  collapse/reorder, progressive loading, pages join back/forward
+  history. (M)
+- **M-3 Monster groups** - curated table ("Zulrah (all forms)",
+  "Dagannoth Kings", GWD rooms, Barrows) searchable as virtual hits
+  that expand into a page. MUST be built against LOADED rows, not raw
+  wiki names (the stat-key collapse merges some versions). (S-M)
+- **M-4 Group synthesis** - one carry set scored across the page
+  (weighted/min dps) + per-room switch suggestions; the raid and
+  slayer-task-planner foundation. (L)
+
+Favorites/save (the former 0.3.0 wishlist item) is subsumed: a saved
+PAGE ("my Zulrah setup", "DKs trip") replaces saved single loadouts.
+Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
+
+## v0.4 — the full trip plan
 
 | # | Requirement | Approach |
 |---|---|---|
-| 9 | "Full inventory" suggestion | Switches (the 2nd/3rd style set from the same optimizer), spec weapon, runes/ammo, then consumables. |
+| 9 | "Full inventory" suggestion | Switches (the 2nd/3rd style set from the same optimizer), spec weapon, runes/ammo, then consumables. Builds on M-4's carry-set synthesis. |
 | 9a | Potion vs food healing tiers | Config-selectable supply strategy (potion-heavy / balanced / food-heavy); explicitly deferred by design. |
 
 ## Decisions
