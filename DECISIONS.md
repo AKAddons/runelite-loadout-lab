@@ -195,3 +195,18 @@ then serialize (mobs + own params) cleanly.
 going to up the number of options from 3 to possibly 7... buttons/tabs
 with just the style + dps... a toggle that flips a single gear view...
 each mob should have its own parameter options per search."
+
+## 2026-07-16 (spec): the result card anatomy
+
+**Decision:** The card reads top-to-bottom: mob list (name + hp; rows are
+an informational LENS - one shared set per style optimized across the
+list, clicking a mob flips which mob's numbers display); per-result
+parameter zone (swaps, swappable items, best-prayer toggle default-on vs
+pick-a-prayer, boost toggle, spellbook, weight, max worn cost, budget,
+wilderness, antifire mode incl. detect-from-inventory, strategy); style
+dps tabs; Yours|BiS tab toggle; item view with info tiles; per-result
+bank show/filter. Simplifies M-4: the group answer is one set per style
+across mobs - kits/swaps layer on top via parameters, and mob rows only
+change the lens, never the set.
+
+**Context:** User UX spec after the M-2c tab/tile field test.
