@@ -487,6 +487,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private javax.swing.JComponent renderingChips;
 	/** Whether the card being rendered is the BiS side of the toggle. */
 	private boolean renderingBis;
+	/** The lensed mob's curated mechanics note for the stat panel's (i). */
+	private String renderingMechanicsNote;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -3661,12 +3663,13 @@ public class LoadoutLabPanel extends PluginPanel
 		// The default resolves from your OWNED dps regardless of the viewed
 		// side, so flipping the toggle never changes which tab is open.
 		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : defaultTab(entry);
-		column.add(styleTabs(entry, results, styleOrder, selected, bis));
-		// The mob list (card anatomy): between the tabs and the gear/stats,
-		// on EVERY result - a single mob still shows its row + the add
-		// affordance (field spec 2026-07-17).
+		// Card order (field spec 2026-07-17): mob list, then the gear/stat
+		// body, with the style tabs BETWEEN the gear view and Yours|BiS -
+		// the strip is built here (it needs the roster-wide order) and
+		// rides into the card body.
 		column.add(mobLensRows(entry));
-		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis));
+		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
+			styleTabs(entry, results, styleOrder, selected, bis)));
 		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
@@ -3864,10 +3867,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private JPanel styleCard(ResultEntry entry, CombatStyle style, StyleResult result,
-		boolean hasBis, boolean bis)
+		boolean hasBis, boolean bis, javax.swing.JComponent styleStrip)
 	{
 		renderingStyle = style;
 		renderingBis = bis;
+		renderingMechanicsNote = MonsterNotes.noteFor(entry.mob());
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -3984,6 +3988,8 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			card.add(Box.createVerticalStrut(6));
+			card.add(styleStrip);
 			if (hasBis)
 			{
 				card.add(Box.createVerticalStrut(4));
@@ -4043,22 +4049,8 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
-		// Curated mechanics note (recoil, finishing items, immunities) for
-		// the LENSED mob: a compact (i) beside the gear, the words in its
-		// tooltip (field spec - the paragraph was noise on every card).
-		String mechanicsNote = MonsterNotes.noteFor(entry.mob());
-		if (mechanicsNote != null)
-		{
-			JLabel noteLine = new JLabel("mechanics", new InfoIcon(12), SwingConstants.LEFT);
-			noteLine.setForeground(new Color(200, 170, 110));
-			noteLine.setFont(noteLine.getFont().deriveFont(11f));
-			noteLine.setIconTextGap(4);
-			noteLine.setAlignmentX(LEFT_ALIGNMENT);
-			noteLine.setToolTipText("<html><body style='width:220px'>"
-				+ mechanicsNote + "</body></html>");
-			card.add(Box.createVerticalStrut(4));
-			card.add(noteLine);
-		}
+		card.add(Box.createVerticalStrut(6));
+		card.add(styleStrip);
 		if (hasBis)
 		{
 			card.add(Box.createVerticalStrut(4));
@@ -4915,6 +4907,16 @@ public class LoadoutLabPanel extends PluginPanel
 			counting.setIcon(new BackedIcon(new PlusStarIcon(11)));
 			counting.setIconTextGap(3);
 			panel.add(counting);
+		}
+		if (renderingMechanicsNote != null)
+		{
+			// Curated mechanics (recoil, finishing items) for the lensed
+			// mob: a compact (i), the words in its tooltip (field spec -
+			// it lives in the stat panel with the other set facts).
+			JLabel noteLine = statLine("info",
+				"<html><body style='width:220px'>" + renderingMechanicsNote
+					+ "</body></html>", new Color(200, 170, 110), new InfoIcon(11));
+			panel.add(noteLine);
 		}
 		panel.add(Box.createVerticalGlue());
 		return panel;
