@@ -4168,7 +4168,10 @@ public class LoadoutLabPanel extends PluginPanel
 		String styleText = attackStyleText(result);
 		if (displayOptions.attackStyle && styleText != null)
 		{
-			panel.add(statLine("Style: " + styleText, "Use this attack style", INFO, null));
+			// Compact type on the line; the stance ("controlled" - Defence
+			// xp!) survives in the tooltip.
+			panel.add(statLine("Style: " + styleText,
+				"Use this attack style: " + result.getAttackType(), INFO, null));
 		}
 		String book = spellBookText(result);
 		if (displayOptions.attackStyle && book != null)
@@ -4293,8 +4296,14 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return type.contains("rapid") ? "Rapid" : "Accurate";
 		}
-		int dash = type.indexOf(" - ");
-		return capitalize(dash > 0 ? type.substring(0, dash) : type);
+		// Melee types read "stab (controlled)" or "slash - ..." - the line
+		// carries the bare type; the caller's tooltip keeps the stance.
+		int cut = type.indexOf(" (");
+		if (cut < 0)
+		{
+			cut = type.indexOf(" - ");
+		}
+		return capitalize(cut > 0 ? type.substring(0, cut) : type);
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */
