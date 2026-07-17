@@ -3702,6 +3702,39 @@ public class LoadoutLabPanel extends PluginPanel
 				"Protect Item keeps a 4th item (not while skulled)",
 				() -> asActive(entry, protectItem::doClick)));
 		}
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (fiery)
+		{
+			// Dragonfire protection mode (field spec): gear = a shield is
+			// required in the set; super = assume the potion, shield slot
+			// freed. Same recorded flip the shield cell offers.
+			boolean superAssumed = entry.superAntifireAssumed;
+			toggles.add(paramChip(superAssumed ? "Super antifire" : "Antifire: gear",
+				superAssumed, true,
+				superAssumed
+					? "Assuming a super antifire - the shield slot is free;"
+						+ " click to require a dragonfire shield instead"
+					: "A dragonfire shield is required in the set; click to"
+						+ " assume a super antifire and free the shield slot",
+				() -> asActive(entry, () ->
+				{
+					boolean assume = !entry.superAntifireAssumed;
+					recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
+						() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
+					if (historyControl == null)
+					{
+						setAntifireTo(assume);
+					}
+				})));
+		}
 		if (toggles.getComponentCount() > 0)
 		{
 			rows.add(toggles);
