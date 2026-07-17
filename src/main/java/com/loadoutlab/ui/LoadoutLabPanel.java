@@ -3690,21 +3690,26 @@ public class LoadoutLabPanel extends PluginPanel
 			return defaultTab(entry.results);
 		}
 		CombatStyle best = null;
-		double bestAvg = 0.0;
+		double bestScore = 0.0;
 		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 		{
 			double sum = 0;
-			for (Map<CombatStyle, StyleResult> perMob : entry.perMobResults)
+			for (int i = 0; i < entry.perMobResults.size(); i++)
 			{
+				Map<CombatStyle, StyleResult> perMob = entry.perMobResults.get(i);
 				StyleResult r = perMob == null ? null : perMob.get(style);
 				if (r != null && r.owned != null && !r.owned.isEmpty())
 				{
-					sum += r.owned.get(0).getDps();
+					// HP-weighted, mirroring the optimizer's objective -
+					// the default tab and the shared-set choice must agree.
+					int hp = i < entry.mobs.size()
+						? Math.max(1, entry.mobs.get(i).getHitpoints()) : 1;
+					sum += r.owned.get(0).getDps() * hp;
 				}
 			}
-			if (sum > bestAvg)
+			if (sum > bestScore)
 			{
-				bestAvg = sum;
+				bestScore = sum;
 				best = style;
 			}
 		}

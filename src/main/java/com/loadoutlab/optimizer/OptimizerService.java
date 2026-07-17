@@ -556,9 +556,14 @@ public class OptimizerService
 		}
 	}
 
-	/** Pick the set that maximises average dps across the roster. Candidate
-	 * pool = each mob's own best set; a compromise that is nobody's #1 is not
-	 * considered (heuristic - the union of per-mob bests is a strong pool). */
+	/** Pick the set that maximises the HP-WEIGHTED average dps across the
+	 * roster (field decision 2026-07-17, superseding the plain mean): a
+	 * 500-hp mob's needs outweigh a 50-hp mob's ten to one, because that is
+	 * where the trip's time goes. A mob the set cannot damage contributes
+	 * zero to every candidate regardless of its hp - so an unhittable big
+	 * mob drops out of the decision naturally ("unless you can't hit it").
+	 * Candidate pool = each mob's own best set; a compromise that is
+	 * nobody's #1 is not considered (heuristic). */
 	private Loadout chooseSharedLoadout(DpsCalculator calc,
 		List<List<DpsResult>> bests, List<OptimizationRequest> reqs)
 	{
@@ -571,19 +576,19 @@ public class OptimizerService
 			}
 		}
 		Loadout best = null;
-		double bestAvg = -1;
+		double bestScore = -1;
 		for (Loadout loadout : candidates)
 		{
 			double sum = 0;
 			for (OptimizationRequest req : reqs)
 			{
 				DpsResult r = calc.calculate(req, loadout);
-				sum += r == null ? 0 : r.getDps();
+				double hp = Math.max(1, req.getMonster().getHitpoints());
+				sum += (r == null ? 0 : r.getDps()) * hp;
 			}
-			double avg = sum / reqs.size();
-			if (avg > bestAvg + 1e-12)
+			if (sum > bestScore + 1e-9)
 			{
-				bestAvg = avg;
+				bestScore = sum;
 				best = loadout;
 			}
 		}

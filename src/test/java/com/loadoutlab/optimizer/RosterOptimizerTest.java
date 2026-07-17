@@ -1,6 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -200,6 +201,41 @@ public class RosterOptimizerTest
 			Assert.assertTrue("form dps must differ: " + dps,
 				Math.abs(dps.get(0) - dps.get(1)) > 1e-6
 					|| Math.abs(dps.get(1) - dps.get(2)) > 1e-6);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void bigHpMobDominatesTheSharedSetChoice() throws Exception
+	{
+		// HP-weighted objective (field decision 2026-07-17): Vorkath (~750hp,
+		// undead - salve territory) vs a goblin (5hp) - the shared melee
+		// neck must be the big mob's preference, the goblin along for the
+		// ride. (A mob the set cannot damage contributes zero everywhere,
+		// so an unhittable giant drops out of the choice naturally.)
+		LoadoutData data = new DataService().load();
+		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Assert.assertTrue("premise: vorkath dwarfs the goblin",
+			vorkath.getHitpoints() >= 10 * goblin.getHitpoints());
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12018, 1);  // salve amulet(ei)
+		owned.put(19553, 1);  // amulet of torture
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(vorkath, goblin), owned);
+			OptimizerService.StyleResult melee = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertNotNull(melee);
+			Assert.assertFalse(melee.owned.isEmpty());
+			GearItem neck = melee.owned.get(0).getLoadout().get(GearSlot.NECK);
+			Assert.assertNotNull(neck);
+			Assert.assertEquals("the 750hp undead's salve wins the shared neck",
+				"salve amulet(ei)", neck.getNameLower());
 		}
 		finally
 		{
