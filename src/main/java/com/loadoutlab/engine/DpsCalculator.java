@@ -230,10 +230,9 @@ public final class DpsCalculator
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
 		PlayerLevels levels = effectiveRequest.getLevels();
 		PrayerBonuses prayers = effectiveRequest.getPrayers();
-		// Two-step prayer floors (Augury then Mystic Vigour's 1.18 accuracy),
-		// +2 accurate stance, +9 - matches the official calc's effective level.
-		int effectiveAccuracy = (int) Math.floor(Math.floor(levels.getMagic() * prayers.getMagicAccuracy())
-			* prayers.getMagicAccuracySecondary()) + 2 + 9;
+		// Prayer floor, +2 accurate stance, +9 - matches the official
+		// calc's effective level.
+		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 2 + 9;
 		if (isWearingMagicVoid(loadout))
 		{
 			counted("void set", "+45% accuracy");

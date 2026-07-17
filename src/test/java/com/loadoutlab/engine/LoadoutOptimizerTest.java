@@ -649,8 +649,10 @@ public class LoadoutOptimizerTest
 		Assert.assertEquals(1.20, prayers.getRangedAccuracy(), 0.00001);
 		Assert.assertEquals(1.23, prayers.getRangedStrength(), 0.00001);
 		Assert.assertEquals(1.25, prayers.getMagicAccuracy(), 0.00001);
-		// Augury 4% + Mystic Vigour 3% stack (verified vs the official calc).
-		Assert.assertEquals(7.0, prayers.getMagicDamagePercent(), 0.00001);
+		// Augury alone - magic prayers share one prayer group in game, so
+		// Mystic Vigour can never stack on top (field report 2026-07-16).
+		Assert.assertEquals(4.0, prayers.getMagicDamagePercent(), 0.00001);
+		Assert.assertEquals("Augury", prayers.nameFor(CombatStyle.MAGIC));
 	}
 
 	@Test

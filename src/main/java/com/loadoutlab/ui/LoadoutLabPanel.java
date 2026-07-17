@@ -471,6 +471,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The rendering card's assume chips (prayer + boost icons), stashed by
 	 * styleCard for the stat panel (EDT-only render state). */
 	private javax.swing.JComponent renderingChips;
+	/** Whether the card being rendered is the BiS side of the toggle. */
+	private boolean renderingBis;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -3101,12 +3103,8 @@ public class LoadoutLabPanel extends PluginPanel
 			}));
 		}
 		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : styleOrder[0];
-		if (hasBis)
-		{
-			column.add(viewToggleRow(entry, results.get(selected), bis));
-		}
 		column.add(styleTabs(entry, results, styleOrder, selected, bis));
-		column.add(styleCard(selected, results.get(selected), bis));
+		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis));
 		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
@@ -3136,7 +3134,7 @@ public class LoadoutLabPanel extends PluginPanel
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 		chips.setOpaque(false);
 		chips.add(viewChip("Yours", !bis, () ->
@@ -3171,8 +3169,8 @@ public class LoadoutLabPanel extends PluginPanel
 		chip.setOpaque(selected);
 		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 12f));
-		chip.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
+		chip.setBorder(BorderFactory.createEmptyBorder(3, 12, 3, 12));
 		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		chip.setToolTipText(text.equals("BiS")
 			? "The game-wide best set at your levels" : "Your best owned set");
@@ -3233,9 +3231,11 @@ public class LoadoutLabPanel extends PluginPanel
 		return strip;
 	}
 
-	private JPanel styleCard(CombatStyle style, StyleResult result, boolean bis)
+	private JPanel styleCard(ResultEntry entry, CombatStyle style, StyleResult result,
+		boolean hasBis, boolean bis)
 	{
 		renderingStyle = style;
+		renderingBis = bis;
 		renderingIncoming = result == null || bis ? null : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -3282,10 +3282,10 @@ public class LoadoutLabPanel extends PluginPanel
 				for (int b = 0; b < spellbook.getItemCount(); b++)
 				{
 					final int index = b;
-					JMenuItem entry = new JMenuItem((index == spellbook.getSelectedIndex()
+					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
 						? "[x] " : "") + spellbook.getItemAt(b));
-					entry.addActionListener(ev -> spellbook.setSelectedIndex(index));
-					bookMenu.add(entry);
+					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
+					bookMenu.add(bookItem);
 				}
 				menu.add(bookMenu);
 			}
@@ -3352,23 +3352,21 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			if (hasBis)
+			{
+				card.add(Box.createVerticalStrut(4));
+				card.add(viewToggleRow(entry, result, bis));
+			}
 			return card;
 		}
 
 		DpsResult best = bis ? result.overallBest : result.owned.get(0);
 
-		if (style == CombatStyle.MAGIC && displayOptions.spellControls)
+		if (!bis && style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
-			if (bis)
-			{
-				// Read-only on the BiS side - the auto-pick control only
-				// steers YOUR search.
-				addSpellLine(card, style, best);
-			}
-			else
-			{
-				card.add(magicSpellRow(best));
-			}
+			// The BiS side's spell renders in the stat panel (field spec);
+			// the auto-pick control only steers YOUR search.
+			card.add(magicSpellRow(best));
 		}
 
 		// Max hit, accuracy, damage taken, style, prayer bonus and counted
@@ -3413,6 +3411,11 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		}
+		if (hasBis)
+		{
+			card.add(Box.createVerticalStrut(4));
+			card.add(viewToggleRow(entry, result, bis));
 		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
@@ -3524,56 +3527,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return "<html>" + headline
 			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note)
 			+ "<br>" + sustained + drain + "</html>";
-	}
-
-	/**
-	 * Magic only: name the spell and its spellbook explicitly - the weapon in
-	 * the grid below is autocast-legal for that book (engine-gated).
-	 */
-	private void addSpellLine(JPanel card, CombatStyle style, DpsResult result)
-	{
-		if (style != CombatStyle.MAGIC)
-		{
-			return;
-		}
-		if (result.getSpellName() == null)
-		{
-			// A magic result without an autocast spell is a powered staff -
-			// the weapon casts its own built-in spell.
-			JLabel builtIn = line("Built-in spell (powered staff)", INFO);
-			builtIn.setToolTipText("The staff casts its own spell");
-			GearItem weapon = result.getLoadout().getWeapon();
-			if (weapon != null)
-			{
-				attachItemIcon(builtIn, weapon.getId());
-				builtIn.setIconTextGap(4);
-			}
-			card.add(builtIn);
-			return;
-		}
-		String name = result.getSpellName();
-		String book = data.getSpells().stream()
-			.filter(s -> name.equals(s.getName()))
-			.map(s -> s.getSpellbook())
-			.findFirst().orElse("");
-		JPanel row = iconRow(card);
-		JLabel spell = line(name, INFO);
-		spell.setToolTipText(book.isEmpty() ? "Autocast this spell"
-			: "Autocast (" + capitalize(book) + " book)");
-		int sprite = AssumeIcons.spellSprite(name);
-		if (sprite >= 0)
-		{
-			attachSprite(spell, sprite);
-			spell.setIconTextGap(4);
-		}
-		row.add(spell);
-		if (name.contains("Demonbane"))
-		{
-			JLabel mod = new JLabel();
-			mod.setToolTipText("Assumes Mark of Darkness");
-			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
-			row.add(mod);
-		}
 	}
 
 	/**
@@ -4192,6 +4145,37 @@ public class LoadoutLabPanel extends PluginPanel
 			// xp!) survives in the tooltip.
 			panel.add(statLine("Style: " + styleText,
 				"Use this attack style: " + result.getAttackType(), INFO, null));
+		}
+		if (renderingBis && renderingStyle == CombatStyle.MAGIC
+			&& displayOptions.spellControls)
+		{
+			String spellName = result.getSpellName();
+			if (spellName == null)
+			{
+				// A magic set without an autocast spell is a powered staff.
+				JLabel builtIn = statLine("Built-in",
+					"Powered staff - casts its own spell", INFO, null);
+				GearItem weapon = result.getLoadout().getWeapon();
+				if (weapon != null)
+				{
+					attachItemIcon(builtIn, weapon.getId());
+					builtIn.setIconTextGap(3);
+				}
+				panel.add(builtIn);
+			}
+			else
+			{
+				JLabel spell = statLine(spellName,
+					"Autocast " + spellName + (spellName.contains("Demonbane")
+						? " - assumes Mark of Darkness" : ""), INFO, null);
+				int sprite = AssumeIcons.spellSprite(spellName);
+				if (sprite >= 0)
+				{
+					attachSprite(spell, sprite);
+					spell.setIconTextGap(3);
+				}
+				panel.add(spell);
+			}
 		}
 		String book = spellBookText(result);
 		if (displayOptions.attackStyle && book != null)

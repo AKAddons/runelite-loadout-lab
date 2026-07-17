@@ -33,10 +33,14 @@ public class PrayerUnlocksTest
 		Assert.assertEquals(1.18, noAugury.getMagicAccuracy(), 1e-9);
 		Assert.assertEquals(3.0, noAugury.getMagicDamagePercent(), 1e-9);
 
-		// Everything unlocked: unchanged from the always-assumed baseline.
+		// Everything unlocked: Augury WINS over Mystic Vigour, it never
+		// stacks with it - all magic prayers share one prayer group, so
+		// only one can be active (the wiki calc engine happily stacks
+		// illegal combos; the game does not).
 		PrayerBonuses all = PrayerBonuses.bestAvailable(maxed, PrayerUnlocks.ALL);
 		Assert.assertEquals(1.20, all.getMeleeAccuracy(), 1e-9);
 		Assert.assertEquals(1.25, all.getMagicAccuracy(), 1e-9);
-		Assert.assertEquals(7.0, all.getMagicDamagePercent(), 1e-9);
+		Assert.assertEquals(4.0, all.getMagicDamagePercent(), 1e-9);
+		Assert.assertEquals("Augury", all.nameFor(CombatStyle.MAGIC));
 	}
 }
