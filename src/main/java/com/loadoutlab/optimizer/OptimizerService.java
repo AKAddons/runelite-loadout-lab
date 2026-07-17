@@ -957,7 +957,9 @@ public class OptimizerService
 			{
 				continue;
 			}
-			SpecialAttack spec = SpecialAttack.match(item, style);
+			// ANY style's spec competes (field request: the spec swap is its
+			// own weapon switch - magic set + chally is a real play).
+			SpecialAttack spec = SpecialAttack.match(item);
 			if (spec == null || !request.getRequirementProfile().canEquip(item.getRequirements()))
 			{
 				continue;
@@ -978,7 +980,12 @@ public class OptimizerService
 			{
 				continue;
 			}
-			DpsResult base = calculator.calculate(request, loadout);
+			// A cross-style spec rolls under ITS OWN style's math - the
+			// assume-best-prayer model carries all three books' factors,
+			// matching the real play of flicking (e.g.) Piety for the spec.
+			OptimizationRequest baseRequest = spec.getStyle() == style
+				? request : request.withStyle(spec.getStyle());
+			DpsResult base = calculator.calculate(baseRequest, loadout);
 			if (base == null || base.getMaxHit() <= 0)
 			{
 				continue;
