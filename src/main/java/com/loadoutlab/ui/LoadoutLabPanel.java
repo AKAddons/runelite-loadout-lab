@@ -39,9 +39,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -3073,9 +3071,9 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** One result's card: the style TAB STRIP (skill icon + dps per tab,
-	 * strongest first and selected by default) over ONE flipping detail
-	 * body, then the source legend (M-2c: tabs replaced the stacked
-	 * style cards - hybrid/tribrid kits become more tabs at M-4). */
+	 * fixed melee/ranged/magic positions, strongest selected by default)
+	 * over ONE flipping detail body, then the source legend (M-2c: tabs
+	 * replaced the stacked style cards - kits become more tabs at M-4). */
 	private javax.swing.JComponent resultCard(ResultEntry entry)
 	{
 		Map<CombatStyle, StyleResult> results = entry.results;
@@ -3084,25 +3082,15 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
-		// Strongest style first: order the tabs by your best set's dps.
+		// Static tab positions (field spec): melee / ranged / magic always
+		// left to right, on both sides of the Yours|BiS toggle - the
+		// strongest style is the DEFAULT SELECTION, not the first slot.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
-		Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
-		{
-			StyleResult r = results.get(style);
-			return r == null || r.owned.isEmpty() ? 0.0 : -r.owned.get(0).getDps();
-		}));
 		boolean hasBis = displayOptions.gameBest && hasAnyGameBest(results);
 		boolean bis = hasBis && entry.viewingBis;
-		if (bis)
-		{
-			// Order the tabs by the BIS side's dps when viewing it.
-			Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
-			{
-				StyleResult r = results.get(style);
-				return r == null || r.overallBest == null ? 0.0 : -r.overallBest.getDps();
-			}));
-		}
-		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : styleOrder[0];
+		// The default resolves from your OWNED dps regardless of the viewed
+		// side, so flipping the toggle never changes which tab is open.
+		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : defaultTab(results);
 		column.add(styleTabs(entry, results, styleOrder, selected, bis));
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis));
 		column.add(Box.createVerticalStrut(6));
@@ -3112,6 +3100,38 @@ public class LoadoutLabPanel extends PluginPanel
 			column.add(legend);
 		}
 		return column;
+	}
+
+	/** The tab to open before the user has picked one: highest owned dps,
+	 * falling back to highest BiS dps when nothing is owned at all. */
+	private static CombatStyle defaultTab(Map<CombatStyle, StyleResult> results)
+	{
+		CombatStyle best = null;
+		double bestDps = 0.0;
+		for (Map.Entry<CombatStyle, StyleResult> e : results.entrySet())
+		{
+			StyleResult r = e.getValue();
+			if (r != null && r.owned != null && !r.owned.isEmpty()
+				&& r.owned.get(0).getDps() > bestDps)
+			{
+				bestDps = r.owned.get(0).getDps();
+				best = e.getKey();
+			}
+		}
+		if (best != null)
+		{
+			return best;
+		}
+		for (Map.Entry<CombatStyle, StyleResult> e : results.entrySet())
+		{
+			StyleResult r = e.getValue();
+			if (r != null && r.overallBest != null && r.overallBest.getDps() > bestDps)
+			{
+				bestDps = r.overallBest.getDps();
+				best = e.getKey();
+			}
+		}
+		return best != null ? best : CombatStyle.MELEE;
 	}
 
 	private static boolean hasAnyGameBest(Map<CombatStyle, StyleResult> results)
