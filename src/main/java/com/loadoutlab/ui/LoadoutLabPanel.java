@@ -3340,9 +3340,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (selectedMonster != null)
 		{
-			statusLabel.setText(page.size() > 1
-				? "Best owned sets - " + page.size() + " results"
-				: "Best owned sets vs " + selectedMonster.getName());
+			// No summary line under the results (field spec 2026-07-17):
+			// the cards carry their own identity now. The label keeps its
+			// empty-state prompt ("Search a monster to begin.") only.
+			statusLabel.setText(" ");
 		}
 		// Revalidate the PANEL, not just the results column: our new preferred
 		// height has to reach RuneLite's outer scroll pane so the sidebar grows
