@@ -370,6 +370,27 @@ public class SelectionHistoryTest
 	}
 
 	@Test
+	public void eachResultCarriesItsOwnParameterZone()
+	{
+		AtomicReference<MonsterStats> computed = new AtomicReference<>();
+		CommandHistory history = new CommandHistory();
+		LoadoutLabPanel panel = panel(computed);
+		panel.setHistoryControl(control(history));
+
+		Assert.assertTrue(panel.selectExternal("zulrah", null));
+		panel.optimizeModeForTest().setSelectedIndex(2);               // Zulrah: Tanky
+		Assert.assertEquals(2, panel.optimizeModeForTest().getSelectedIndex());
+
+		panel.addToView(data.searchMonsters("general graardor", 1).get(0));
+		Assert.assertEquals("the new result starts at its own defaults",
+			0, panel.optimizeModeForTest().getSelectedIndex());
+
+		panel.closeActiveResultForTest();
+		Assert.assertEquals("Zulrah's zone survives untouched - the controls repaint from it",
+			2, panel.optimizeModeForTest().getSelectedIndex());
+	}
+
+	@Test
 	public void repickingTheSameMonsterAddsNoHistoryStep()
 	{
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
