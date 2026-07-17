@@ -3488,7 +3488,6 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			addUpgradeLine(card, best);
 		}
-		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
 		// matches the game-best pick (gold); the BiS grid is the same
@@ -3581,24 +3580,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The set's total prayer bonus - just the prayer icon and the number. */
 	/** The attack style the numbers use: "Style: Slash (aggressive)". */
 	/** Blowpipes: name the loaded dart the numbers assume. */
-	private void addDartLine(JPanel card, DpsResult result)
-	{
-		String type = result.getAttackType();
-		int idx = type.indexOf(" - ");
-		if (idx < 0 || !type.startsWith("ranged"))
-		{
-			return;
-		}
-		JLabel dart = line("Loaded with: " + type.substring(idx + 3), INFO);
-		dart.setToolTipText("Dart included in the dps (right-click to exclude)");
-		GearItem dartItem = loadedDart(result);
-		if (dartItem != null)
-		{
-			attachExclusionMenu(dart, List.of(dartItem));
-		}
-		card.add(dart);
-	}
-
 	/** Everything the old spec line said, as the spec cell's tooltip. */
 	private static String specTooltip(SpecialAttack spec, double expectedDamage,
 		double drainValue, double replacedAutoExpected, String fallbackTooltip)
@@ -4251,6 +4232,28 @@ public class LoadoutLabPanel extends PluginPanel
 			// xp!) survives in the tooltip.
 			panel.add(statLine("Style: " + styleText,
 				"Use this attack style: " + result.getAttackType(), INFO, null));
+		}
+		String type = result.getAttackType();
+		int dartIdx = type.indexOf(" - ");
+		if (dartIdx >= 0 && type.startsWith("ranged"))
+		{
+			// The blowpipe's loaded dart (field spec: in the stat panel,
+			// wearing its item icon). The tier word alone fits the column;
+			// the tooltip keeps the full story and the right-click keeps
+			// the exclusion path.
+			String dartName = type.substring(dartIdx + 3);
+			String tier = dartName.toLowerCase().replace(" darts", "").replace(" dart", "");
+			JLabel dart = statLine(capitalize(tier),
+				"Loaded with " + dartName + " - included in the dps"
+					+ " (right-click to exclude)", INFO, null);
+			GearItem dartItem = loadedDart(result);
+			if (dartItem != null)
+			{
+				attachItemIcon(dart, dartItem.getId());
+				dart.setIconTextGap(3);
+				attachExclusionMenu(dart, List.of(dartItem));
+			}
+			panel.add(dart);
 		}
 		if (renderingBis && renderingStyle == CombatStyle.MAGIC
 			&& displayOptions.spellControls)

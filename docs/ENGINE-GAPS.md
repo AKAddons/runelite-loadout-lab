@@ -139,3 +139,27 @@ enhancing barrows set effects (Dharok's, Ahrim's, Guthan's...) - is NOT
 modeled; when set effects land in DpsCalculator, the damned will re-earn
 its slot through dps with full barrows worn, no special-casing needed.
 Until then it only surfaces when no glory is owned.
+
+## Moons of Peril sets (2026-07-17)
+
+All three set effects are modeled (broken pieces count, per the wiki):
+
+- **Bloodrager** (blood moon + dual macuahuitl): the weapon's two hits
+  are CHAINED (first rolls max/2, second remainder only when the first
+  lands) and the full set's expected attack interval is
+  `speed - (acc/3 + acc^2*2/9)` - both mirror the official calc.
+- **Eclipse** (eclipse moon + atlatl): the atlatl's BASE damage side is
+  official-mirrored (Strength level, worn melee strength bonuses, melee
+  salve/black-mask variants, ranged void kept; accuracy stays ranged).
+  The burn set effect goes BEYOND the official calc (it flags moon set
+  effects unsupported): wiki average of ~2 burn damage per landed hit,
+  added as `acc x 2` expected, gated on the corpus burn-immunity column
+  (Normal/Strong immunity blocks it, Weak does not).
+- **Frostweaver** (blue moon + spear): also beyond-official - Standard
+  binds and Ancient ice casts add a 20% (Arceuus grasps 50%) chance of
+  an instant spear hit, modeled as chance x the spear's plain melee
+  expectation with no melee prayer (you are on a magic prayer while
+  casting). Chips name all three effects.
+
+Not modeled: burn stack-cap/target-death truncation (the wiki's own
+average ignores it too), and Frostweaver's manual-trigger variants.

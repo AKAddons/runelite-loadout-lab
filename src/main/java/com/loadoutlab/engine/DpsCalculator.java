@@ -222,8 +222,24 @@ public final class DpsCalculator
 		}
 
 		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getRanged());
+		boolean atlatl = isEclipseAtlatl(loadout);
+		if (atlatl)
+		{
+			// Official calc: the atlatl swaps the DAMAGE side to melee -
+			// Strength level (ranged prayer factors and void still apply)
+			// and the worn MELEE strength bonuses - while accuracy stays
+			// pure ranged.
+			effectiveDamage = RollMath.effectiveLevel(levels.getStrength(),
+				prayers.getRangedStrength(), stanceBonus);
+			if (isWearingRangedVoid(loadout))
+			{
+				effectiveDamage = (int) Math.floor(effectiveDamage
+					* (isWearingEliteVoid(loadout) ? 1.125 : 1.10));
+			}
+		}
 		int maxHit = RollMath.maxHitFromEffective(effectiveDamage,
-			effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
+			atlatl ? loadout.getBonuses().getStrength()
+				: effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
@@ -232,6 +248,16 @@ public final class DpsCalculator
 		long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (isWearingEclipseMoonSet(loadout)
+			&& !request.getMonster().hasAttribute("burn_immune"))
+		{
+			// Eclipse (wiki): each successful hit has a 20% chance to apply
+			// a 10-damage burn - "roughly 2 burn damage per successful hit"
+			// sustained (their own average; the 5-stack cap and target
+			// death truncate a little in practice).
+			counted("eclipse set", "~2 burn damage per landed hit");
+			expected += accuracy * 2.0;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.RANGED);
 		if (rapid)
 		{
@@ -278,6 +304,12 @@ public final class DpsCalculator
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
+		double frostweaver = frostweaverBonus(effectiveRequest, loadout);
+		if (frostweaver > 0)
+		{
+			counted("frostweaver set", "chance of a free spear hit per cast");
+			expected += frostweaver;
+		}
 		String poweredName = spellName.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().getName() : "";
 		String attackType = spellName.isEmpty() ? poweredName.isEmpty() ? "magic" : "magic: " + poweredName : "magic: " + spellName;
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll, loadout.getCost(), spellName);
@@ -739,9 +771,27 @@ public final class DpsCalculator
 			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet (e)"))
+		{
+			// The atlatl's melee-side damage accepts the UNIMBUED melee
+			// salve variants (official calc scalesWithStr branches).
+			counted("salve amulet (e)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
 			counted("salve amulet(i)", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet"))
+		{
+			counted("salve amulet", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isSlayerTaskEligible(request) && isEclipseAtlatl(loadout)
+			&& wearing(loadout, "black mask") && imbuedSlayerHead(loadout) == null)
+		{
+			counted("black mask", "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
@@ -1064,6 +1114,75 @@ public final class DpsCalculator
 			&& wearing(loadout, "blood moon helm")
 			&& wearing(loadout, "blood moon chestplate")
 			&& wearing(loadout, "blood moon tassets");
+	}
+
+	private static boolean isEclipseAtlatl(Loadout loadout)
+	{
+		return wearing(loadout, "eclipse atlatl");
+	}
+
+	/** Eclipse: all three eclipse moon pieces + the atlatl (broken counts,
+	 * same as the other moon sets). */
+	private static boolean isWearingEclipseMoonSet(Loadout loadout)
+	{
+		return isEclipseAtlatl(loadout)
+			&& wearing(loadout, "eclipse moon helm")
+			&& wearing(loadout, "eclipse moon chestplate")
+			&& wearing(loadout, "eclipse moon tassets");
+	}
+
+	/** Frostweaver: all three blue moon pieces + the spear. */
+	private static boolean isWearingBlueMoonSet(Loadout loadout)
+	{
+		return wearing(loadout, "blue moon spear")
+			&& wearing(loadout, "blue moon helm")
+			&& wearing(loadout, "blue moon chestplate")
+			&& wearing(loadout, "blue moon tassets");
+	}
+
+	/**
+	 * Frostweaver (wiki): after casting a spell that binds, freezes or
+	 * roots, the spear has a chance to land an instant melee attack - 20%
+	 * for Standard-book binds and Ancient ice spells, 50% for Arceuus
+	 * grasps, "even if it does not bind a target". Expected bonus damage
+	 * per cast = chance x the spear's plain melee expected hit (stab, no
+	 * melee prayer - you are on a magic prayer while casting).
+	 */
+	private double frostweaverBonus(OptimizationRequest request, Loadout loadout)
+	{
+		com.loadoutlab.data.SpellStats spell = request.getSpell();
+		if (spell == null || !isWearingBlueMoonSet(loadout))
+		{
+			return 0;
+		}
+		String spellName = spell.getName();
+		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(java.util.Locale.ROOT);
+		double chance;
+		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
+		{
+			chance = 0.5;
+		}
+		else if ("ancient".equals(book) && "Ice".equalsIgnoreCase(spell.getNameFirstWord()))
+		{
+			chance = 0.2;
+		}
+		else if ("standard".equals(book) && ("Bind".equalsIgnoreCase(spellName)
+			|| "Snare".equalsIgnoreCase(spellName) || "Entangle".equalsIgnoreCase(spellName)))
+		{
+			chance = 0.2;
+		}
+		else
+		{
+			return 0;
+		}
+		PlayerLevels levels = request.getLevels();
+		int effAttack = RollMath.effectiveLevel(levels.getAttack(), 1.0, 0);
+		long meleeRoll = RollMath.attackRoll(effAttack, loadout.getOffensive().getAttackBonus("stab"));
+		int effStrength = RollMath.effectiveLevel(levels.getStrength(), 1.0, 0);
+		int meleeMax = RollMath.maxHitFromEffective(effStrength, loadout.getBonuses().getStrength());
+		long defenceRoll = npcDefenceRoll(request.getMonster(), "stab", loadout.getWeapon());
+		double meleeAccuracy = RollMath.normalAccuracy(meleeRoll, defenceRoll);
+		return chance * RollMath.normalExpectedHit(meleeAccuracy, meleeMax);
 	}
 
 	private static boolean isCrystalBow(Loadout loadout)
