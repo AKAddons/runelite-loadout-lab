@@ -481,8 +481,8 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		MonsterStats monster;
 		Map<CombatStyle, StyleResult> results;
-		/** Per-style expanded game-best (BiS) sections - hidden by default. */
-		final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
+		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
+		boolean viewingBis;
 		boolean noteCollapsed = true;
 		/** Dragonfire: gear protection by default; the shield cell flips
 		 * this result to an assumed super antifire (and back). */
@@ -928,11 +928,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
-	private Set<CombatStyle> gameBestExpanded()
-	{
-		return active == null ? EnumSet.noneOf(CombatStyle.class) : active.gameBestExpanded;
-	}
-
 	private boolean noteCollapsed()
 	{
 		return active == null || active.noteCollapsed;
@@ -1140,20 +1135,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private static String escapeHtml(String text)
 	{
 		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
-
-	/** "Max hit N - X% accuracy", either half omitted per the display gates;
-	 * "" when both are off. */
-	private String hitAccuracyText(int maxHit, double accuracy)
-	{
-		String hit = displayOptions.maxHit ? "Max hit " + maxHit : "";
-		String acc = displayOptions.accuracy
-			? String.format("%.0f%% accuracy", accuracy * 100) : "";
-		if (hit.isEmpty())
-		{
-			return acc;
-		}
-		return acc.isEmpty() ? hit : hit + " - " + acc;
 	}
 
 	/**
@@ -3108,9 +3089,24 @@ public class LoadoutLabPanel extends PluginPanel
 			StyleResult r = results.get(style);
 			return r == null || r.owned.isEmpty() ? 0.0 : -r.owned.get(0).getDps();
 		}));
+		boolean hasBis = displayOptions.gameBest && hasAnyGameBest(results);
+		boolean bis = hasBis && entry.viewingBis;
+		if (bis)
+		{
+			// Order the tabs by the BIS side's dps when viewing it.
+			Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
+			{
+				StyleResult r = results.get(style);
+				return r == null || r.overallBest == null ? 0.0 : -r.overallBest.getDps();
+			}));
+		}
 		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : styleOrder[0];
-		column.add(styleTabs(entry, results, styleOrder, selected));
-		column.add(styleCard(selected, results.get(selected)));
+		if (hasBis)
+		{
+			column.add(viewToggleRow(entry, results.get(selected), bis));
+		}
+		column.add(styleTabs(entry, results, styleOrder, selected, bis));
+		column.add(styleCard(selected, results.get(selected), bis));
 		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
@@ -3120,11 +3116,83 @@ public class LoadoutLabPanel extends PluginPanel
 		return column;
 	}
 
+	private static boolean hasAnyGameBest(Map<CombatStyle, StyleResult> results)
+	{
+		for (StyleResult r : results.values())
+		{
+			if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The Yours | BiS chip pair (field spec: the BiS view is the SAME card
+	 * through a toggle, not a separate section), with the gear-gap percent
+	 * for the selected style beside it. */
+	private javax.swing.JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		chips.setOpaque(false);
+		chips.add(viewChip("Yours", !bis, () ->
+		{
+			entry.viewingBis = false;
+			renderPage();
+		}));
+		chips.add(viewChip("BiS", bis, () ->
+		{
+			entry.viewingBis = true;
+			renderPage();
+		}));
+		row.add(chips, BorderLayout.WEST);
+		if (selected != null && selected.overallBest != null
+			&& selected.owned != null && !selected.owned.isEmpty()
+			&& selected.overallBest.getDps() > 0)
+		{
+			double pct = Math.min(100.0,
+				100.0 * selected.owned.get(0).getDps() / selected.overallBest.getDps());
+			JLabel gap = new JLabel(String.format("you are at %.0f%%", pct));
+			gap.setForeground(MUTED);
+			gap.setFont(gap.getFont().deriveFont(11f));
+			gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
+			row.add(gap, BorderLayout.EAST);
+		}
+		return row;
+	}
+
+	private javax.swing.JComponent viewChip(String text, boolean selected, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(selected);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 12f));
+		chip.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.setToolTipText(text.equals("BiS")
+			? "The game-wide best set at your levels" : "Your best owned set");
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				onClick.run();
+			}
+		});
+		return chip;
+	}
+
 	/** The tab strip: one equal-width tab per style - the skill sprite and
 	 * the best owned dps, nothing else. The selected tab wears the detail
 	 * card's background so the two read as one surface. */
 	private javax.swing.JComponent styleTabs(ResultEntry entry,
-		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected)
+		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected,
+		boolean bis)
 	{
 		JPanel strip = new JPanel(new java.awt.GridLayout(1, order.length, 2, 0));
 		strip.setOpaque(false);
@@ -3133,7 +3201,10 @@ public class LoadoutLabPanel extends PluginPanel
 		for (CombatStyle style : order)
 		{
 			StyleResult r = results.get(style);
-			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
+			DpsResult shown = r == null ? null
+				: bis ? r.overallBest
+				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+			boolean hasSet = shown != null && shown.getDps() > 0;
 			boolean isSelected = style == selected;
 			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
 			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -3141,7 +3212,7 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel icon = new JLabel();
 			attachSprite(icon, AssumeIcons.styleSprite(style));
 			JLabel dps = new JLabel(hasSet
-				? String.format("%.2f", r.owned.get(0).getDps()) : "-");
+				? String.format("%.2f", shown.getDps()) : "-");
 			dps.setForeground(isSelected ? Color.WHITE : new Color(160, 160, 160));
 			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
 			tab.add(icon);
@@ -3162,17 +3233,19 @@ public class LoadoutLabPanel extends PluginPanel
 		return strip;
 	}
 
-	private JPanel styleCard(CombatStyle style, StyleResult result)
+	private JPanel styleCard(CombatStyle style, StyleResult result, boolean bis)
 	{
 		renderingStyle = style;
-		renderingIncoming = result == null ? null : result.incoming;
+		renderingIncoming = result == null || bis ? null : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		card.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
 		card.setAlignmentX(LEFT_ALIGNMENT);
 
-		boolean hasSet = result != null && result.owned != null && !result.owned.isEmpty();
+		boolean hasSet = bis
+			? result != null && result.overallBest != null && result.overallBest.getDps() > 0
+			: result != null && result.owned != null && !result.owned.isEmpty();
 
 		// Detail header: the tab strip above carries style + dps, so this
 		// row is just the set's assume chips and its menu, right-aligned.
@@ -3223,8 +3296,10 @@ public class LoadoutLabPanel extends PluginPanel
 		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		headerEast.setOpaque(false);
 		renderingChips = null;
+		String chipLabel = result == null ? null
+			: bis ? result.gameBoostLabel : result.boostLabel;
 		if (hasSet && displayOptions.assumes
-			&& result.boostLabel != null && !result.boostLabel.isEmpty())
+			&& chipLabel != null && !chipLabel.isEmpty())
 		{
 			// Engine-forced honesty flag (no protective shield owned) OR the
 			// user's own shield-cell flip - either way the chip must show.
@@ -3240,14 +3315,15 @@ public class LoadoutLabPanel extends PluginPanel
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
 			}
 			// The chips render in the stat panel beside the gear, not here.
-			renderingChips = assumesChips(result.boostLabel,
-				"Assumed prayer + boost (you own these)", antifireTooltip);
+			renderingChips = assumesChips(chipLabel,
+				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
+				antifireTooltip);
 		}
 		headerEast.add(setMenu);
 		headerRow.add(headerEast, BorderLayout.EAST);
 		card.add(headerRow);
 
-		if (result == null || result.owned == null || result.owned.isEmpty())
+		if (!hasSet)
 		{
 			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");
 			boolean flying = style == CombatStyle.MELEE
@@ -3262,7 +3338,7 @@ public class LoadoutLabPanel extends PluginPanel
 				? "Needs leaf-bladed / broad / Magic Dart"
 				: flying
 					? "Flying - needs a halberd"
-					: "No usable owned set found.");
+					: bis ? "No usable set exists." : "No usable owned set found.");
 			none.setForeground(MUTED);
 			none.setAlignmentX(LEFT_ALIGNMENT);
 			if (vyre)
@@ -3279,109 +3355,75 @@ public class LoadoutLabPanel extends PluginPanel
 			return card;
 		}
 
-		DpsResult best = result.owned.get(0);
+		DpsResult best = bis ? result.overallBest : result.owned.get(0);
 
 		if (style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
-			card.add(magicSpellRow(best));
+			if (bis)
+			{
+				// Read-only on the BiS side - the auto-pick control only
+				// steers YOUR search.
+				addSpellLine(card, style, best);
+			}
+			else
+			{
+				card.add(magicSpellRow(best));
+			}
 		}
 
 		// Max hit, accuracy, damage taken, style, prayer bonus and counted
-		// bonuses live in the 5x5 grid's stat flank (field spec) - no text
-		// rows here.
-		if (result.modeTrade != null)
+		// bonuses live in the grid's stat panel (field spec) - no text rows.
+		if (!bis)
 		{
-			card.add(modeTradeRow(result.modeTrade));
+			if (result.modeTrade != null)
+			{
+				card.add(modeTradeRow(result.modeTrade));
+			}
+			else if (optimizeMode.getSelectedIndex() > 0)
+			{
+				// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
+				// mix-up (common when a monster's incoming damage barely varies
+				// with armour, or is not modeled).
+				JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
+				same.setFont(same.getFont().deriveFont(11f));
+				same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
+					+ " worth trading dps for at this monster");
+				card.add(same);
+			}
+			if (displayOptions.riskLine)
+			{
+				addRiskLine(card, best, result.specWeapon);
+			}
+			addUpgradeLine(card, best);
 		}
-		else if (optimizeMode.getSelectedIndex() > 0)
-		{
-			// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
-			// mix-up (common when a monster's incoming damage barely varies
-			// with armour, or is not modeled).
-			JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
-			same.setFont(same.getFont().deriveFont(11f));
-			same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
-				+ " worth trading dps for at this monster");
-			card.add(same);
-		}
-		if (displayOptions.riskLine)
-		{
-			addRiskLine(card, best, result.specWeapon);
-		}
-		addUpgradeLine(card, best);
 		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
-		// matches the game-best pick (gold).
-		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
-			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		// matches the game-best pick (gold); the BiS grid is the same
+		// renderer over the other answer (field spec - just a toggle).
+		if (bis)
+		{
+			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
+				result.gameSpecExpectedDamage, result.gameSpecDrainValue,
+				best.getExpectedHit(),
+				"Strongest special attack in the game vs this monster"));
+		}
+		else
+		{
+			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
+				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
+				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
 			JPanel bankRow = iconRow(card);
 			if (displayOptions.showInBank)
 			{
-				bankRow.add(bankButton(style, best, result.specWeapon));
+				bankRow.add(bankButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
 			if (displayOptions.filterBank)
 			{
-				bankRow.add(bankFilterButton(style, best, result.specWeapon));
-			}
-		}
-
-		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
-		// The header always shows the summary; clicking it shows/hides the rest.
-		if (displayOptions.gameBest && result.overallBest != null && result.overallBest.getDps() > 0)
-		{
-			card.add(Box.createVerticalStrut(6));
-			boolean expanded = gameBestExpanded().contains(style);
-			double pct = 100.0 * best.getDps() / result.overallBest.getDps();
-			JLabel ceiling = line(String.format("%s Game best: %.2f DPS - you are at %.0f%%",
-				expanded ? "v" : ">",
-				result.overallBest.getDps(), Math.min(100.0, pct)), MUTED);
-			ceiling.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			ceiling.setToolTipText(expanded ? "Click to hide the game-best set" : "Click to show the game-best set");
-			ceiling.addMouseListener(new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					if (!gameBestExpanded().remove(style))
-					{
-						gameBestExpanded().add(style);
-					}
-					if (selectedMonster != null && lastResults() != null)
-					{
-						showResults(selectedMonster, lastResults());
-					}
-				}
-			});
-			card.add(ceiling);
-			if (expanded)
-			{
-				if (displayOptions.assumes)
-				{
-					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game",
-						superAntifireAssumed()
-							? "Super antifire (right-click the shield cell to flip back)" : null);
-				}
-				// Max hit + accuracy for the ceiling set - the header only
-				// carries its DPS, same as the owned card (each gated).
-				String gameHitText = hitAccuracyText(result.overallBest.getMaxHit(),
-					result.overallBest.getAccuracy());
-				if (!gameHitText.isEmpty())
-				{
-					card.add(line(gameHitText, MUTED));
-				}
-				if (displayOptions.attackStyle)
-				{
-					addSpellLine(card, style, result.overallBest);
-				}
-				addDartLine(card, result.overallBest);
-				card.add(Box.createVerticalStrut(4));
-				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
-					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
-					"Strongest special attack in the game vs this monster"));
+				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
 		}
 		return card;
@@ -3930,24 +3972,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return row;
 	}
 
-	/**
-	 * The assumed prayer + boost as icons - prayer-book sprite plus the
-	 * potion/heart item icon; names live in the tooltips. Unmapped parts
-	 * (e.g. "Current boosted levels") stay as text.
-	 */
-	private void addAssumesRow(JPanel card, String label, String tooltip, String antifireTooltip)
-	{
-		if (label == null || label.isEmpty())
-		{
-			return;
-		}
-		JPanel row = iconRow(card);
-		JLabel prefix = line("Assumes:", MUTED);
-		prefix.setToolTipText(tooltip);
-		row.add(prefix);
-		row.add(assumesChips(label, tooltip, antifireTooltip));
-	}
-
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
 	 * inline with the style title to reclaim a whole row of vertical
 	 * space (field request); tooltips carry the words. */
@@ -4039,7 +4063,7 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
-			markUnowned, gameBest, specCell, markUnowned ? renderingIncoming : null));
+			markUnowned, gameBest, specCell, renderingIncoming));
 	}
 
 	/**
@@ -4083,9 +4107,9 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
 		// The item/stat view (field spec): the classic gear silhouette on
-		// the left, and - on the owned view - the right 2x5 FOOTPRINT as one
-		// CONNECTED stat panel, not boxed cells: stat blocks flow top-down
-		// with their own typography.
+		// the left, and the right 2x5 FOOTPRINT as one CONNECTED stat panel,
+		// not boxed cells: stat blocks flow top-down with their own
+		// typography. Both sides of the Yours|BiS toggle share this layout.
 		JPanel gear = new JPanel(new GridLayout(5, 3, 2, 2));
 		gear.setOpaque(false);
 		for (int i = 0; i < CLASSIC_ORDER.length; i++)
@@ -4106,10 +4130,6 @@ public class LoadoutLabPanel extends PluginPanel
 		int height = 5 * cell + 8;
 		gear.setPreferredSize(new Dimension(3 * cell + 4, height));
 		gear.setMaximumSize(new Dimension(3 * cell + 4, height));
-		if (!markUnowned)
-		{
-			return gear; // game best: the clean silhouette alone
-		}
 		JPanel combo = new JPanel(new BorderLayout(8, 0));
 		combo.setOpaque(false);
 		combo.setAlignmentX(LEFT_ALIGNMENT);
