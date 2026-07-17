@@ -303,14 +303,31 @@ public class OptimizerService
 		// flipping the dropdown with the cap off cannot split the cache.
 		final int riskBudget = maxTradeables >= 0
 			? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + lock + "|" + unlocks.key()
-			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
-			+ "|" + inWilderness
-			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
-			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
-			+ "|" + protectOnly.hashCode()
-			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
+		final OptimizeMode chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
+		final ComputeContext ctx = new ComputeContext();
+		ctx.dataset = f2pOnly ? f2pView() : data;
+		ctx.effectiveOwned = new OwnedItems(
+			ctx.dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
+		ctx.real = real;
+		ctx.boostedLevels = boostedLevels;
+		ctx.unlocks = unlocks;
+		ctx.requirements = requirements;
+		ctx.f2pOnly = f2pOnly;
+		ctx.onSlayerTask = onSlayerTask;
+		ctx.antifirePotion = antifirePotion;
+		ctx.inWilderness = inWilderness;
+		ctx.lock = lock;
+		ctx.maxTradeables = maxTradeables;
+		ctx.riskBudget = riskBudget;
+		ctx.upgradeBudgetGp = upgradeBudgetGp;
+		ctx.collectionFingerprint = collectionFingerprint;
+		ctx.dreams = dreams;
+		ctx.protectOnly = protectOnly;
+		ctx.chosenMode = chosenMode;
+		ctx.pins = pins;
+		ctx.excluded = excluded;
+		ctx.pinnedSpell = pinnedSpell;
+		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
 		{
@@ -330,7 +347,6 @@ public class OptimizerService
 			callback.accept(allCached);
 			return;
 		}
-		final OptimizeMode chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
 		{
@@ -339,22 +355,73 @@ public class OptimizerService
 				abandonedForTest++;
 				return; // superseded while queued
 			}
-			LoadoutData dataset = f2pOnly ? f2pView() : data;
-			// Owned ornament/locked variants count as their base item - the
-			// suggestion always shows the base version.
-			OwnedItems effectiveOwned = new OwnedItems(
-				dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
+			Map<CombatStyle, StyleResult> results = computeAllStyles(monster, ctx, ticket);
+			if (results == null || requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return; // superseded during or after the compute
+			}
+			callback.accept(results);
+		});
+	}
+
+	/** Every query-wide value the per-style compute needs, gathered once so
+	 * the roster path can run computeAllStyles for each mob. */
+	private static final class ComputeContext
+	{
+		LoadoutData dataset;
+		OwnedItems effectiveOwned;
+		PlayerLevels real;
+		PlayerLevels boostedLevels;
+		PrayerUnlocks unlocks;
+		RequirementProfile requirements;
+		boolean f2pOnly;
+		boolean onSlayerTask;
+		boolean antifirePotion;
+		boolean inWilderness;
+		String lock;
+		int maxTradeables;
+		int riskBudget;
+		int upgradeBudgetGp;
+		int collectionFingerprint;
+		Set<Integer> dreams;
+		Set<Integer> protectOnly;
+		OptimizeMode chosenMode;
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins;
+		Map<CombatStyle, Set<Integer>> excluded;
+		com.loadoutlab.data.SpellStats pinnedSpell;
+	}
+
+	/** The query-wide cache key for one monster (per-style state layered on
+	 * top by styleKey). Centralised so the fast path and computeAllStyles
+	 * can never drift into split/colliding cache buckets. */
+	private static String baseKeyFor(MonsterStats monster, ComputeContext ctx)
+	{
+		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
+			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
+			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion
+			+ "|" + ctx.inWilderness
+			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
+			+ "|" + ctx.chosenMode.name()
+			+ "|" + ctx.protectOnly.hashCode()
+			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
+	}
+
+	private Map<CombatStyle, StyleResult> computeAllStyles(
+		MonsterStats monster, ComputeContext ctx, long ticket)
+	{
+		String baseKey = baseKeyFor(monster, ctx);
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
 				if (requestSeq.get() != ticket)
 				{
 					abandonedForTest++;
-					return; // superseded mid-flight - abandon between styles
+					return null; // superseded mid-flight - abandon between styles
 				}
 				// Styles cache independently: a pin or per-set exclusion on
 				// one style leaves the other two answers standing.
-				String styleKey = styleKey(baseKey, style, pins, excluded, pinnedSpell);
+				String styleKey = styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell);
 				StyleResult cachedStyle;
 				synchronized (cache)
 				{
@@ -367,58 +434,58 @@ public class OptimizerService
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
-				BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned, f2pOnly);
-				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
-				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
+				BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly);
+				PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
+				String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
 					boost == BoostProfile.NONE ? null : boost.toString());
 				// The ceiling assumes the best prayers/boost in the GAME,
 				// not just what this player has unlocked or owns.
-				BoostProfile gameBoost = BoostSelector.ceilingFor(style, f2pOnly);
-				PlayerLevels gameLevels = real.boosted(gameBoost, boostedLevels).max(boostedLevels);
+				BoostProfile gameBoost = BoostSelector.ceilingFor(style, ctx.f2pOnly);
+				PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
-					f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
+					ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
 				// Dreams are pretend-owned; a positive upgrade budget also
 				// admits anything buyable within it (total spend, tracked
 				// by the beam).
 				OptimizationRequest ownedRequest = request(
-					monster, style, styleLevels, unlocks, requirements,
-					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
-					effectiveOwned, 3, onSlayerTask, Math.max(0, upgradeBudgetGp))
-					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
-					.withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
-					.withAntifirePotion(antifirePotion)
-					.withInWilderness(inWilderness)
-					.withDreamItems(dreams)
-					.withProtectOnlyItems(protectOnly)
+					monster, style, styleLevels, ctx.unlocks, ctx.requirements,
+					ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+					ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp))
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withDreamItems(ctx.dreams)
+					.withProtectOnlyItems(ctx.protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
-					.withPinnedItems(pins.getOrDefault(style, Collections.emptyMap()));
-				if (style == CombatStyle.MAGIC && pinnedSpell != null)
+					.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
+				if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
 				{
 					// The mob's pinned autocast spell: forced, the search
 					// optimizes the gear around it.
-					ownedRequest = ownedRequest.withSpell(pinnedSpell);
+					ownedRequest = ownedRequest.withSpell(ctx.pinnedSpell);
 				}
-				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
+				List<DpsResult> ownedBest = optimizer.optimize(ctx.dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
 					// The displayed set: top up DPS-neutral empty slots with
 					// prayer/defensive gear (verified not to change the DPS).
-					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
-					ownedBest.set(0, optimizer.ensureRequiredUtility(dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, ownedRequest, ownedBest.get(0)));
 				}
 				// D-4 frontier: when the mode wants safety, sweep defense
 				// weights, walk the (dps out, dps in) frontier, and swap the
 				// displayed set for the mode's pick. Every downstream number
 				// (spec, incoming, risk) then describes the chosen set.
 				ModeTrade modeTrade = null;
-				if (chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
+				if (ctx.chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
 				{
-					modeTrade = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
-						monster, real, ticket);
+					modeTrade = applyMode(ctx.dataset, ownedRequest, ownedBest, ctx.chosenMode,
+						monster, ctx.real, ticket);
 				}
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
@@ -430,31 +497,31 @@ public class OptimizerService
 				OptimizationRequest gameRequest = request(
 					monster, style, gameLevels, PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
-					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
-					.withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
-					.withAntifirePotion(antifirePotion)
-					.withInWilderness(inWilderness)
-					.withProtectOnlyItems(protectOnly);
-				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
+					CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withProtectOnlyItems(ctx.protectOnly);
+				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
-					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
-					gameBest.set(0, optimizer.ensureRequiredUtility(dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, gameRequest, gameBest.get(0)));
 				}
-				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
-				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
+				SpecPick spec = bestSpec(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned);
+				SpecPick gameSpec = bestSpec(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null);
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
 				IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
 					? null
 					: IncomingDpsCalculator.calculate(
-						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
+						monster, ownedBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
 				IncomingDpsCalculator.Result gameIncoming = gameBest.isEmpty()
 					? null
 					: IncomingDpsCalculator.calculate(
-						monster, gameBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
+						monster, gameBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
 				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming, gameIncoming, modeTrade);
@@ -466,13 +533,7 @@ public class OptimizerService
 				}
 				results.put(style, styleResult);
 			}
-			if (requestSeq.get() != ticket)
-			{
-				abandonedForTest++;
-				return; // finished stale - never deliver over the newer answer
-			}
-			callback.accept(results);
-		});
+		return results;
 	}
 
 	/** The per-style cache key: the query key minus per-style state, plus
