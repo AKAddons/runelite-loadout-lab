@@ -482,7 +482,7 @@ public class LoadoutLabPlugin extends Plugin
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"classicGearLayout", "loadingAnimation");
+		"loadingAnimation");
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
@@ -502,7 +502,6 @@ public class LoadoutLabPlugin extends Plugin
 			config.showWildyRisk(),
 			config.showInBankButton(),
 			config.showFilterBankButton(),
-			config.classicGearLayout(),
 			config.loadingAnimation());
 	}
 
