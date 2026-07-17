@@ -468,6 +468,9 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The rendering card's incoming-damage result (EDT-only render state) -
 	 * the classic grid's info corner reads it. Null on game-best grids. */
 	private IncomingDpsCalculator.Result renderingIncoming;
+	/** The rendering card's assume chips (prayer + boost icons), stashed by
+	 * styleCard for the stat panel (EDT-only render state). */
+	private javax.swing.JComponent renderingChips;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -2123,7 +2126,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * mob (the gear then optimizes around it - "I am casting Wind Bolt"),
 	 * with the spellbook lock shown only while the spell is on Auto.
 	 */
-	private JPanel magicSpellRow()
+	private JPanel magicSpellRow(DpsResult best)
 	{
 		JPanel wrap = new JPanel();
 		wrap.setLayout(new BoxLayout(wrap, BoxLayout.Y_AXIS));
@@ -2131,7 +2134,15 @@ public class LoadoutLabPanel extends PluginPanel
 		wrap.setAlignmentX(LEFT_ALIGNMENT);
 		String pinned = mobProfile.pinnedSpell(currentMonsterId());
 		JComboBox<String> spellPin = new JComboBox<>();
-		spellPin.addItem("Spell: Auto (best)");
+		// The control IS the display: unpinned, its first entry names the
+		// spell auto actually resolved to (field spec - the separate spell
+		// line is gone).
+		String resolved = best == null ? null : best.getSpellName();
+		spellPin.addItem(resolved != null && pinned.isEmpty()
+			? "Auto: " + resolved
+			: resolved == null && pinned.isEmpty() && best != null
+				? "Auto: staff built-in"
+				: "Spell: Auto (best)");
 		List<String> names = new ArrayList<>();
 		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
 		{
@@ -2156,10 +2167,6 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		});
 		wrap.add(spellPin);
-		if (pinned.isEmpty())
-		{
-			wrap.add(spellbook);
-		}
 		return wrap;
 	}
 
@@ -3194,12 +3201,28 @@ public class LoadoutLabPanel extends PluginPanel
 				+ filterScopeLabel(ALL_SETS) + " (search)...");
 			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
 			menu.add(filterAll);
+			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
+			{
+				// The spellbook lock moved off the card (field spec): the
+				// submenu drives the combo, which records + recomputes.
+				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
+				for (int b = 0; b < spellbook.getItemCount(); b++)
+				{
+					final int index = b;
+					JMenuItem entry = new JMenuItem((index == spellbook.getSelectedIndex()
+						? "[x] " : "") + spellbook.getItemAt(b));
+					entry.addActionListener(ev -> spellbook.setSelectedIndex(index));
+					bookMenu.add(entry);
+				}
+				menu.add(bookMenu);
+			}
 			menu.show(setMenu, 0, setMenu.getHeight());
 		});
 		// Assume icons ride the header (right, before the menu) - a whole
 		// row of vertical space reclaimed per card.
 		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 		headerEast.setOpaque(false);
+		renderingChips = null;
 		if (hasSet && displayOptions.assumes
 			&& result.boostLabel != null && !result.boostLabel.isEmpty())
 		{
@@ -3216,8 +3239,9 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
 			}
-			headerEast.add(assumesChips(result.boostLabel,
-				"Assumed prayer + boost (you own these)", antifireTooltip));
+			// The chips render in the stat panel beside the gear, not here.
+			renderingChips = assumesChips(result.boostLabel,
+				"Assumed prayer + boost (you own these)", antifireTooltip);
 		}
 		headerEast.add(setMenu);
 		headerRow.add(headerEast, BorderLayout.EAST);
@@ -3259,7 +3283,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 		if (style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
-			card.add(magicSpellRow());
+			card.add(magicSpellRow(best));
 		}
 
 		// Max hit, accuracy, damage taken, style, prayer bonus and counted
@@ -3285,10 +3309,6 @@ public class LoadoutLabPanel extends PluginPanel
 			addRiskLine(card, best, result.specWeapon);
 		}
 		addUpgradeLine(card, best);
-		if (displayOptions.attackStyle)
-		{
-			addSpellLine(card, style, best);
-		}
 		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
@@ -3402,8 +3422,8 @@ public class LoadoutLabPanel extends PluginPanel
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 		row.setToolTipText(String.format(
 			"This mode: %d%% less DPS for %d%% less damage taken", t.dpsLossPct, t.dmgCutPct));
-		row.add(tradeChip(SWORD_ICON, t.dpsLossPct + "%-"));
-		row.add(tradeChip(SHIELD_ICON, t.dmgCutPct + "%+"));
+		row.add(tradeChip(SWORD_ICON, "-" + t.dpsLossPct + "%"));
+		row.add(tradeChip(SHIELD_ICON, "+" + t.dmgCutPct + "%"));
 		return row;
 	}
 
@@ -4102,89 +4122,162 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The connected stat panel filling the grid's right 2x5 footprint:
-	 * caption-over-value blocks, top-down, each honouring its display
-	 * option. */
+	 * one line per stat (field format spec), the assume chips at the top,
+	 * each line honouring its display option. */
 	private JPanel statPanel(DpsResult result, IncomingDpsCalculator.Result incoming)
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setOpaque(false);
+		if (renderingChips != null)
+		{
+			renderingChips.setAlignmentX(LEFT_ALIGNMENT);
+			panel.add(renderingChips);
+			panel.add(Box.createVerticalStrut(4));
+		}
 		if (displayOptions.maxHit)
 		{
-			panel.add(statBlock("Max hit", String.valueOf(result.getMaxHit()),
-				"Max hit " + result.getMaxHit(), GOOD, -1));
+			panel.add(statLine("Max: " + result.getMaxHit(),
+				"Max hit " + result.getMaxHit(), GOOD, null));
 		}
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
-			panel.add(statBlock("Accuracy", acc, "Hit chance " + acc, GOOD, -1));
+			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, GOOD, null));
 		}
 		if (incoming != null && (incoming.totalDps > 0 || incoming.unprayedDps > 0)
 			&& displayOptions.damageTaken)
 		{
-			// A fully-blocked ~0.0 is the BEST news the block can carry -
-			// the sprite says what to pray, the zero says it works.
-			// The protect-prayer sprite IS the pray call; the value is the
-			// prayed cost; the tooltip carries the full threat table.
-			panel.add(statBlock("Taken", String.format("~%.1f", incoming.totalDps),
-				incomingTooltip(incoming), new Color(210, 140, 130),
-				incoming.protectPrayer != null
-					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -2));
+			// The protect-prayer sprite IS the pray call; a fully-blocked
+			// ~0.0 is the best news the line can carry.
+			JLabel taken = statLine(String.format("DTPS: ~%.1f", incoming.totalDps),
+				incomingTooltip(incoming), new Color(210, 140, 130), null);
+			int sprite = incoming.protectPrayer != null
+				? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
+			if (sprite >= 0)
+			{
+				attachSprite(taken, sprite);
+			}
+			else
+			{
+				taken.setIcon(NO_PRAYER_ICON);
+			}
+			taken.setIconTextGap(3);
+			panel.add(taken);
 		}
 		String styleText = attackStyleText(result);
 		if (displayOptions.attackStyle && styleText != null)
 		{
-			panel.add(statBlock("Style", styleText, "Use this attack style", INFO, -1));
+			panel.add(statLine("Style: " + styleText, "Use this attack style", INFO, null));
+		}
+		String book = spellBookText(result);
+		if (displayOptions.attackStyle && book != null)
+		{
+			panel.add(statLine("Book: " + book, "The autocast spell's spellbook", INFO, null));
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
 		if (displayOptions.prayerBonus && prayer != 0)
 		{
-			panel.add(statBlock("Prayer", String.format("%+d", prayer),
-				"Gear prayer bonus - slower prayer drain", MUTED, -1));
+			JLabel pray = statLine(String.format("%+d", prayer),
+				"Gear prayer bonus - slower prayer drain", MUTED, null);
+			if (PRAYER_ICON != null)
+			{
+				pray.setIcon(PRAYER_ICON);
+				pray.setIconTextGap(3);
+			}
+			panel.add(pray);
 		}
 		if (displayOptions.bonuses && !result.getCountedBonuses().isEmpty())
 		{
-			panel.add(statBlock("Counting", result.getCountedBonuses().size() + " bonuses",
+			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
 				"<html>Conditional bonuses applied:<br>"
-					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, -1));
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, null);
+			counting.setIcon(new PlusStarIcon(11));
+			counting.setIconTextGap(3);
+			panel.add(counting);
 		}
 		panel.add(Box.createVerticalGlue());
 		return panel;
 	}
 
-	/** One stat block: a muted caption over its value. spriteId -1 = none,
-	 * -2 = the no-prayer mark (unavoidable damage). */
-	private javax.swing.JComponent statBlock(String caption, String value, String tooltip,
-		Color valueColor, int spriteId)
+	/** One stat line: compact 12px, icon optional, tooltip carries the
+	 * sentence. */
+	private static JLabel statLine(String text, String tooltip, Color color, javax.swing.Icon icon)
 	{
-		JPanel block = new JPanel();
-		block.setLayout(new BoxLayout(block, BoxLayout.Y_AXIS));
-		block.setOpaque(false);
-		block.setAlignmentX(LEFT_ALIGNMENT);
-		block.setToolTipText(tooltip);
-		JLabel cap = new JLabel(caption);
-		cap.setForeground(MUTED);
-		cap.setFont(cap.getFont().deriveFont(10f));
-		cap.setAlignmentX(LEFT_ALIGNMENT);
-		JLabel val = new JLabel(value);
-		val.setForeground(valueColor);
-		val.setFont(val.getFont().deriveFont(Font.BOLD, 13f));
-		val.setAlignmentX(LEFT_ALIGNMENT);
-		val.setToolTipText(tooltip);
-		if (spriteId >= 0)
+		JLabel line = new JLabel(text);
+		line.setForeground(color);
+		line.setFont(line.getFont().deriveFont(Font.BOLD, 12f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setToolTipText(tooltip);
+		line.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+		if (icon != null)
 		{
-			attachSprite(val, spriteId);
-			val.setIconTextGap(3);
+			line.setIcon(icon);
+			line.setIconTextGap(3);
 		}
-		else if (spriteId == -2)
+		return line;
+	}
+
+	/** The amber plus-star (the mascots' signature), as a static icon for
+	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
+	private static final class PlusStarIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		PlusStarIcon(int size)
 		{
-			val.setIcon(NO_PRAYER_ICON);
-			val.setIconTextGap(3);
+			this.size = size;
 		}
-		block.add(cap);
-		block.add(val);
-		block.add(Box.createVerticalStrut(5));
-		return block;
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setColor(new Color(208, 178, 102));
+				int mid = size / 2;
+				int arm = Math.max(3, size / 3);
+				g2.fillRect(x + mid - 1, y + mid - arm, 3, 2 * arm + 1);
+				g2.fillRect(x + mid - arm, y + mid - 1, 2 * arm + 1, 3);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** The resolved autocast spell's book ("Standard"), or null when the
+	 * result has no autocast spell (melee/ranged/powered staves). */
+	private String spellBookText(DpsResult result)
+	{
+		String name = result.getSpellName();
+		if (name == null)
+		{
+			return null;
+		}
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			if (spell.getName().equalsIgnoreCase(name))
+			{
+				String book = spell.getSpellbook();
+				return book == null || book.isEmpty() ? null : capitalize(book);
+			}
+		}
+		return null;
 	}
 
 	/** The short attack-style word ("Rapid", "Aggressive"); null for magic
