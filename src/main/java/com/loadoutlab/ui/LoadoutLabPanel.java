@@ -40,6 +40,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -604,6 +605,40 @@ public class LoadoutLabPanel extends PluginPanel
 			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
 			addStored.addActionListener(ev -> showAddStoredDialog());
 			menu.add(addStored);
+			// Dream items were only reachable by right-clicking a green
+			// cell that happened to be on screen (field report) - this is
+			// the proactive entry point, plus the un-dream list so a
+			// dreamed item that never wins a slot stays reachable.
+			JMenuItem addDream = new JMenuItem("Dream an item (consider as owned)...");
+			addDream.addActionListener(ev -> showAddDreamDialog());
+			menu.add(addDream);
+			Set<Integer> dreamed = dreamView.snapshot();
+			if (!dreamed.isEmpty())
+			{
+				javax.swing.JMenu dreamMenu = new javax.swing.JMenu(
+					"Dream items (" + dreamed.size() + ")");
+				List<GearItem> dreamGear = new ArrayList<>();
+				for (int id : dreamed)
+				{
+					GearItem gear = data.getGear(id);
+					if (gear != null)
+					{
+						dreamGear.add(gear);
+					}
+				}
+				dreamGear.sort(Comparator.comparing(GearItem::label));
+				for (GearItem gear : dreamGear)
+				{
+					JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
+					undream.addActionListener(ev ->
+					{
+						dreamToggle.toggle(gear.getId());
+						recompute();
+					});
+					dreamMenu.add(undream);
+				}
+				menu.add(dreamMenu);
+			}
 			// Mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
@@ -2379,6 +2414,36 @@ public class LoadoutLabPanel extends PluginPanel
 				storedToggle.toggle(gear.getId());
 			}
 			refreshStoredLabel();
+			recompute();
+		});
+	}
+
+	/** Chatbox item search -> dream an unowned item into the owned pool
+	 * (same green-border language as the right-click path). */
+	private void showAddDreamDialog()
+	{
+		itemSearch.search("Dream an item (counts as owned)", (itemId, name) ->
+		{
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
+			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " affects the loadout search.",
+					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (ownedCheck.owns(gear.getId()))
+			{
+				JOptionPane.showMessageDialog(this,
+					"You already own " + gear.label() + " - no dream needed.",
+					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (!dreamView.snapshot().contains(gear.getId()))
+			{
+				dreamToggle.toggle(gear.getId());
+			}
 			recompute();
 		});
 	}
