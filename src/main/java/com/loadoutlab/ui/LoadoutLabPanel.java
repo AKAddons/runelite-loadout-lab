@@ -908,7 +908,9 @@ public class LoadoutLabPanel extends PluginPanel
 		notePanel.add(noteHeader);
 		notePanel.add(noteArea);
 		notePanel.setVisible(false);
-		top.add(notePanel);
+		// The note rides the ACTIVE result card's tail (under the bank
+		// buttons, field spec 2026-07-17) - re-parented per render, like
+		// the spellbook combo before it.
 
 		// Pinned items ("always bring") - click to manage.
 		pinnedLabel.setForeground(INFO);
@@ -4233,6 +4235,13 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
+		}
+		if (entry == active)
+		{
+			// The per-mob note under the bank buttons (field spec) - one
+			// shared component, so it renders on the active card only.
+			card.add(Box.createVerticalStrut(4));
+			card.add(notePanel);
 		}
 		return card;
 	}
