@@ -145,13 +145,12 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean wildyRisk;
 		final boolean showInBank;
 		final boolean filterBank;
-		final boolean classicLayout;
 		final boolean loadingAnimation;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank, boolean classicLayout,
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
 			boolean loadingAnimation)
 		{
 			this.maxHit = maxHit;
@@ -169,16 +168,13 @@ public class LoadoutLabPanel extends PluginPanel
 			this.wildyRisk = wildyRisk;
 			this.showInBank = showInBank;
 			this.filterBank = filterBank;
-			this.classicLayout = classicLayout;
 			this.loadingAnimation = loadingAnimation;
 		}
 
 		static DisplayOptions all()
 		{
-			// classicLayout defaults OFF - the compact grid is the default look;
-			// loadingAnimation defaults ON.
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, false, true);
+				true, true, true, true, true, true, true, true, true);
 		}
 	}
 
@@ -465,6 +461,9 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The style card currently being rendered (EDT-only render state) -
 	 * grid cells read it for per-style pin menus and tooltips. */
 	private CombatStyle renderingStyle;
+	/** The rendering card's incoming-damage result (EDT-only render state) -
+	 * the classic grid's info corner reads it. Null on game-best grids. */
+	private IncomingDpsCalculator.Result renderingIncoming;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -3020,6 +3019,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private JPanel styleCard(CombatStyle style, StyleResult result)
 	{
 		renderingStyle = style;
+		renderingIncoming = result == null ? null : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -3123,17 +3123,8 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(magicSpellRow());
 		}
 
-		// Max hit + accuracy for the shown set (each independently gated).
-		// Its DPS lives in the card header - the old "Yours: X DPS" prefix
-		// restated the same number one line apart (field report).
-		String hitText = hitAccuracyText(best.getMaxHit(), best.getAccuracy());
-		if (!hitText.isEmpty())
-		{
-			JLabel hitLine = new JLabel(hitText);
-			hitLine.setForeground(GOOD);
-			hitLine.setAlignmentX(LEFT_ALIGNMENT);
-			card.add(hitLine);
-		}
+		// Max hit, accuracy, and incoming damage render as info tiles in the
+		// classic grid's blank corners (field request) - no text rows here.
 		// Assurance: name the conditional bonuses the math actually counted
 		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
 		// +16.7% damage"). Entries carry commas, so sources join on ";".
@@ -3151,7 +3142,6 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (displayOptions.damageTaken)
 		{
-			addIncomingLine(card, result.incoming);
 		}
 		if (result.modeTrade != null)
 		{
@@ -3541,35 +3531,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** What the boss does back to you in this set, protection prayer up. */
-	private void addIncomingLine(JPanel card, IncomingDpsCalculator.Result incoming)
+	/** The incoming info tile's rich tooltip: the pray call, each style
+	 * threat, pierce notes, and the curated caveats. */
+	private static String incomingTooltip(IncomingDpsCalculator.Result incoming)
 	{
-		if (incoming == null || incoming.totalDps <= 0)
-		{
-			return;
-		}
 		boolean prayable = incoming.protectPrayer != null;
-		// The protect icon IS the pray call; the text is the cost - prayed,
-		// and what skipping the prayer would cost you. Unblockable bosses
-		// (dodge-based / typeless) still show the intake, with a no-prayer mark.
-		JLabel line = line(prayable
-			? String.format("~%.2f DPS to you (~%.2f unprayed)",
-				incoming.totalDps, incoming.unprayedDps)
-			: String.format("~%.2f DPS to you (unavoidable)", incoming.totalDps),
-			new Color(210, 140, 130));
-		if (prayable)
-		{
-			int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
-			if (sprite >= 0)
-			{
-				attachSprite(line, sprite);
-				line.setIconTextGap(4);
-			}
-		}
-		else
-		{
-			line.setIcon(NO_PRAYER_ICON);
-			line.setIconTextGap(4);
-		}
 		StringBuilder tip = new StringBuilder("<html>")
 			.append(prayable ? "Run " + incoming.protectPrayer + "."
 				: "No prayer reduces this damage.");
@@ -3599,8 +3565,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			tip.append("<br>Unmodeled attacks not counted - treat as a floor.");
 		}
-		line.setToolTipText(tip.append("</html>").toString());
-		card.add(line);
+		return tip.append("</html>").toString();
 	}
 
 	/** The wilderness death fates a grid cell can be badged with. */
@@ -3975,10 +3940,8 @@ public class LoadoutLabPanel extends PluginPanel
 			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
-		JPanel grid = displayOptions.classicLayout
-			? classicGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell)
-			: compactGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell);
-		return centerRow(grid);
+		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
+			markUnowned, gameBest, specCell, markUnowned ? null : renderingIncoming));
 	}
 
 	/**
@@ -4000,26 +3963,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return row;
 	}
 
-	/** Compact 3x4: the 11 slots in GRID_ORDER, then the spec cell. */
-	private JPanel compactGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
-	{
-		JPanel icons = new JPanel(new GridLayout(3, 4, 2, 2));
-		icons.setOpaque(false);
-		icons.setAlignmentX(LEFT_ALIGNMENT);
-		for (GearSlot slotType : GRID_ORDER)
-		{
-			icons.add(buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
-		}
-		icons.add(specCell);
-		// Stretch past the minimum so there is no dead right margin, but cap
-		// the width - unbounded stretch made cells balloon on wide layouts.
-		int height = 3 * cell + 4;
-		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
-		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
-		return icons;
-	}
-
 	/**
 	 * The in-game worn-equipment tab as a flat 5x3 order (read left-to-right,
 	 * top-to-bottom): null = a blank corner, CLASSIC_SPEC_INDEX = the spec
@@ -4038,7 +3981,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The in-game worn-equipment tab: 5 rows of 3, empty corners blank, spec
 	 * in the empty slot left of the legs. */
 	private JPanel classicGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
+		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
 		JPanel icons = new JPanel(new GridLayout(5, 3, 2, 2));
 		icons.setOpaque(false);
@@ -4051,13 +3995,87 @@ public class LoadoutLabPanel extends PluginPanel
 				continue;
 			}
 			GearSlot slotType = CLASSIC_ORDER[i];
-			icons.add(slotType == null ? blankCell(cell)
-				: buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
+			if (slotType != null)
+			{
+				icons.add(buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
+				continue;
+			}
+			// The classic layout's empty corners host the numbers that used
+			// to be text rows (field request): max hit top-left, accuracy
+			// top-right, incoming dps right of the legs.
+			if (i == 0 && displayOptions.maxHit)
+			{
+				icons.add(infoCell(cell, String.valueOf(result.getMaxHit()), "Max hit",
+					"Max hit " + result.getMaxHit(), GOOD));
+			}
+			else if (i == 2 && displayOptions.accuracy)
+			{
+				String acc = Math.round(result.getAccuracy() * 100) + "%";
+				icons.add(infoCell(cell, acc, "Accuracy",
+					"Hit chance " + acc, GOOD));
+			}
+			else if (i == 11 && incoming != null && incoming.totalDps > 0
+				&& displayOptions.damageTaken)
+			{
+				// The protect-prayer sprite IS the pray call; the number is
+				// the prayed cost; the tooltip carries the full threat table.
+				JLabel taken = new JLabel(String.format("~%.1f", incoming.totalDps));
+				taken.setForeground(new Color(210, 140, 130));
+				taken.setFont(taken.getFont().deriveFont(Font.BOLD, 12f));
+				int sprite = incoming.protectPrayer != null
+					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
+				if (sprite >= 0)
+				{
+					attachSprite(taken, sprite);
+				}
+				else
+				{
+					taken.setIcon(NO_PRAYER_ICON);
+				}
+				taken.setIconTextGap(3);
+				taken.setToolTipText(incomingTooltip(incoming));
+				JPanel tile = new JPanel(new java.awt.GridBagLayout());
+				tile.setOpaque(false);
+				tile.setPreferredSize(new Dimension(cell, cell));
+				tile.setToolTipText(incomingTooltip(incoming));
+				tile.add(taken);
+				icons.add(tile);
+			}
+			else
+			{
+				icons.add(blankCell(cell));
+			}
 		}
 		int height = 5 * cell + 8;
 		icons.setPreferredSize(new Dimension(3 * cell + 4, height));
 		icons.setMaximumSize(new Dimension(3 * (cell + 8) + 4, height));
 		return icons;
+	}
+
+	/** An info tile in a blank grid corner: a small caption over the value,
+	 * the full sentence in the tooltip. */
+	private static javax.swing.JComponent infoCell(int cell, String value, String caption,
+		String tooltip, Color valueColor)
+	{
+		JPanel tile = new JPanel();
+		tile.setLayout(new BoxLayout(tile, BoxLayout.Y_AXIS));
+		tile.setOpaque(false);
+		tile.setPreferredSize(new Dimension(cell, cell));
+		tile.setToolTipText(tooltip);
+		JLabel cap = new JLabel(caption);
+		cap.setForeground(MUTED);
+		cap.setFont(cap.getFont().deriveFont(10f));
+		cap.setAlignmentX(CENTER_ALIGNMENT);
+		JLabel val = new JLabel(value);
+		val.setForeground(valueColor);
+		val.setFont(val.getFont().deriveFont(Font.BOLD, 13f));
+		val.setAlignmentX(CENTER_ALIGNMENT);
+		val.setToolTipText(tooltip);
+		tile.add(Box.createVerticalGlue());
+		tile.add(cap);
+		tile.add(val);
+		tile.add(Box.createVerticalGlue());
+		return tile;
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */

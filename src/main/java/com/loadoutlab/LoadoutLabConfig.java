@@ -161,20 +161,6 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "classicGearLayout",
-		name = "Classic gear layout",
-		description = "Lay each set out like the in-game worn-equipment tab"
-			+ " (5 rows of 3) instead of the compact grid. The spec weapon"
-			+ " sits in the empty slot left of the legs.",
-		section = display,
-		position = 11
-	)
-	default boolean classicGearLayout()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = "loadingAnimation",
 		name = "Loading animation",
 		description = "Show the animated mascot while the optimizer computes a"
