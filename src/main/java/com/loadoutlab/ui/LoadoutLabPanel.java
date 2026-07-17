@@ -733,30 +733,15 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedLabel.setForeground(GOOD);
 		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
 		selectedLabel.setVerticalAlignment(SwingConstants.TOP);
+		// The name row + its reload/clear buttons are gone (field spec
+		// 2026-07-17): every result card carries the mob list and its own
+		// refresh/close in the chrome instead.
 		selectedRow.add(selectedLabel, BorderLayout.CENTER);
-		JButton reloadButton = new JButton(new ReloadIcon(12));
-		reloadButton.setMargin(new Insets(0, 6, 0, 6));
-		reloadButton.setToolTipText("Recompute every result on the page");
-		reloadButton.addActionListener(e -> recompute());
-		JButton clearSelection = new JButton("x");
-		clearSelection.setMargin(new Insets(0, 6, 0, 6));
-		clearSelection.setToolTipText("Clear the page (every result)");
-		clearSelection.addActionListener(e -> clearSelection());
-		JPanel selectedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-		selectedButtons.setOpaque(false);
-		selectedButtons.add(reloadButton);
-		selectedButtons.add(clearSelection);
-		selectedRow.add(selectedButtons, BorderLayout.EAST);
 		selectedRow.setVisible(false);
-		top.add(selectedRow);
 
 		// Curated mechanics note (finishing items, immunities) for the
 		// selected monster - so a correct suggestion doesn't look wrong.
-		monsterNote.setForeground(new Color(200, 170, 110));
-		monsterNote.setFont(monsterNote.getFont().deriveFont(13f));
-		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
 		monsterNote.setVisible(false);
-		top.add(monsterNote);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -1007,15 +992,6 @@ public class LoadoutLabPanel extends PluginPanel
 					? "Open" : "Add to view");
 				add.addActionListener(a -> addToView(hit));
 				menu.add(add);
-				if (active != null && !active.hasMob(hit.getId()))
-				{
-					// The multi-mob canvas: this mob JOINS the active
-					// result's roster - one shared set optimized across
-					// the list, the rows just flip whose numbers show.
-					JMenuItem join = new JMenuItem("Add to this result (shared set)");
-					join.addActionListener(a -> addMobToActive(hit));
-					menu.add(join);
-				}
 				menu.show(monsterList, e.getX(), e.getY());
 			}
 		});
@@ -1605,24 +1581,16 @@ public class LoadoutLabPanel extends PluginPanel
 			slayerTask.setEnabled(true);
 			slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		}
-		// html so a long name/level wraps to a second line instead of
-		// clipping to "..." in the fixed-width BorderLayout centre (the body
-		// width leaves room for the reload/close buttons beside it).
-		selectedLabel.setText("<html><body style='width:140px'>vs "
-			+ escapeHtml(monster.label()) + "</body></html>");
-		selectedLabel.setToolTipText(monster.label());
-		selectedRow.setVisible(true);
-		String note = MonsterNotes.noteFor(monster);
-		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
-		monsterNote.setVisible(note != null);
+		// The name row and the note moved onto the result card itself
+		// (mob list + per-card mechanics note) - nothing to paint here.
 	}
 
-	/** Join a mob to the ACTIVE result's roster (search-hit right-click):
-	 * the entry recomputes as ONE shared set across the list. A back step
-	 * restores the previous roster and its results intact. */
-	void addMobToActive(MonsterStats monster)
+	/** Join a mob to a result's roster (the + row's picker): the entry
+	 * recomputes as ONE shared set across the list. A back step restores
+	 * the previous roster and its results intact. */
+	void addMobToEntry(ResultEntry entry, MonsterStats monster)
 	{
-		final ResultEntry target = active;
+		final ResultEntry target = entry;
 		if (target == null)
 		{
 			addToView(monster);
@@ -1736,7 +1704,23 @@ public class LoadoutLabPanel extends PluginPanel
 	 * active, the given (or last remaining) entry's monster takes over. */
 	private void removeFromPage(int monsterId, MonsterStats nextActive)
 	{
-		page.removeIf(e -> e.hasMob(monsterId));
+		// Single-mob entries only: a roster containing this mob is its own
+		// result and must survive a namesake's removal (addToView's revert
+		// path; the X uses the entry-exact overload below).
+		page.removeIf(e -> e.mobs.size() == 1 && e.hasMob(monsterId));
+		removeFallout(nextActive);
+	}
+
+	/** Remove the EXACT entry (the X path) - a roster's close must remove
+	 * the roster itself, never a namesake single-mob result. */
+	private void removeFromPage(ResultEntry entry, MonsterStats nextActive)
+	{
+		page.remove(entry);
+		removeFallout(nextActive);
+	}
+
+	private void removeFallout(MonsterStats nextActive)
+	{
 		if (page.isEmpty())
 		{
 			clearSelectionInternal();
@@ -1781,7 +1765,7 @@ public class LoadoutLabPanel extends PluginPanel
 			&& selectedMonster.getId() == closing.getId() ? fallback : selectedMonster;
 		if (historyControl == null)
 		{
-			removeFromPage(closing.getId(), nextActive);
+			removeFromPage(entry, nextActive);
 			return;
 		}
 		final int index = page.indexOf(entry);
@@ -1790,7 +1774,7 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean apply()
 			{
-				removeFromPage(closing.getId(), nextActive);
+				removeFromPage(entry, nextActive);
 				return true;
 			}
 
@@ -3243,7 +3227,10 @@ public class LoadoutLabPanel extends PluginPanel
 	private void renderPage()
 	{
 		resultsPanel.removeAll();
-		boolean chrome = page.size() > 1;
+		// Chrome on every result (field spec 2026-07-17): the fold/title
+		// row now carries the per-result refresh + close, replacing the
+		// old global reload/clear buttons beside the monster name.
+		boolean chrome = true;
 		boolean mascotShown = false;
 		for (ResultEntry entry : page)
 		{
@@ -3328,11 +3315,26 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		});
 		row.add(title, BorderLayout.CENTER);
+		JButton reload = new JButton(new ReloadIcon(10));
+		reload.setToolTipText("Recompute this result");
+		reload.setMargin(new Insets(1, 5, 1, 5));
+		reload.addActionListener(e ->
+		{
+			entry.results = null;
+			entry.perMobResults = null;
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(entry);
+		});
 		JButton close = new JButton(new CloseIcon(9));
 		close.setToolTipText("Close this result");
 		close.setMargin(new Insets(1, 5, 1, 5));
 		close.addActionListener(e -> closeResult(entry));
-		row.add(close, BorderLayout.EAST);
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+		buttons.setOpaque(false);
+		buttons.add(reload);
+		buttons.add(close);
+		row.add(buttons, BorderLayout.EAST);
 		return row;
 	}
 
@@ -3376,18 +3378,25 @@ public class LoadoutLabPanel extends PluginPanel
 		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
 		rows.setOpaque(false);
 		rows.setAlignmentX(LEFT_ALIGNMENT);
+		rows.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		for (int i = 0; i < entry.mobs.size(); i++)
 		{
 			final int index = i;
 			MonsterStats mob = entry.mobs.get(i);
 			boolean lensed = i == entry.lensIndex;
 			JLabel row = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
-			row.setOpaque(lensed);
+			row.setOpaque(true);
 			row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			row.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			row.setFont(row.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
-			row.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+			// Bordered + padded so every row reads as clickable (field
+			// spec); the lensed row wears the bright edge like Yours|BiS.
+			row.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(lensed
+					? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
+				BorderFactory.createEmptyBorder(3, 8, 3, 8)));
 			row.setAlignmentX(LEFT_ALIGNMENT);
+			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			row.setToolTipText("Show this mob's numbers - the shared set stays");
 			row.addMouseListener(new MouseAdapter()
@@ -3399,9 +3408,128 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			});
 			rows.add(row);
+			rows.add(Box.createVerticalStrut(2));
 		}
+		// The growth affordance: add a mob straight to this result's roster.
+		JLabel add = new JLabel("+ Add mob");
+		add.setOpaque(true);
+		add.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		add.setForeground(new Color(150, 150, 150));
+		add.setFont(add.getFont().deriveFont(Font.BOLD, 12f));
+		add.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+		add.setAlignmentX(LEFT_ALIGNMENT);
+		add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		add.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		add.setToolTipText("Add a mob to this result - ONE shared set optimized across the list");
+		add.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showAddMobDialog(entry);
+			}
+		});
+		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** The + row's mob picker: incremental search, double-click/Enter adds
+	 * the hit to the entry's roster (same history step as before). */
+	private void showAddMobDialog(ResultEntry entry)
+	{
+		java.awt.Window owner = SwingUtilities.getWindowAncestor(this);
+		javax.swing.JDialog dialog = new javax.swing.JDialog(owner, "Add a mob to this result",
+			java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+		JPanel content = new JPanel(new BorderLayout(0, 4));
+		content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+		JTextField field = new JTextField();
+		DefaultListModel<MonsterStats> model = new DefaultListModel<>();
+		JList<MonsterStats> hits = new JList<>(model);
+		hits.setVisibleRowCount(8);
+		hits.setCellRenderer(new DefaultListCellRenderer()
+		{
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				setText(((MonsterStats) value).label());
+				return this;
+			}
+		});
+		Runnable refresh = () ->
+		{
+			model.clear();
+			String query = field.getText() == null ? "" : field.getText().trim();
+			if (!query.isEmpty())
+			{
+				for (MonsterStats hit : data.searchMonsters(query, 12))
+				{
+					if (!entry.hasMob(hit.getId()))
+					{
+						model.addElement(hit);
+					}
+				}
+			}
+			if (!model.isEmpty())
+			{
+				hits.setSelectedIndex(0);
+			}
+		};
+		field.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
+		{
+			@Override
+			public void insertUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+
+			@Override
+			public void removeUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+
+			@Override
+			public void changedUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+		});
+		Runnable pick = () ->
+		{
+			MonsterStats sel = hits.getSelectedValue();
+			if (sel != null)
+			{
+				dialog.dispose();
+				addMobToEntry(entry, sel);
+			}
+		};
+		field.addActionListener(e -> pick.run());
+		hits.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				if (e.getClickCount() >= 2)
+				{
+					pick.run();
+				}
+			}
+		});
+		content.add(field, BorderLayout.NORTH);
+		content.add(new JScrollPane(hits), BorderLayout.CENTER);
+		dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+			javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+			javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
+		dialog.setContentPane(content);
+		dialog.setSize(260, 240);
+		dialog.setLocationRelativeTo(this);
+		SwingUtilities.invokeLater(field::requestFocusInWindow);
+		dialog.setVisible(true);
 	}
 
 	/** One result's card: the style TAB STRIP (skill icon + dps per tab,
@@ -3416,10 +3544,6 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
-		if (entry.mobs.size() > 1)
-		{
-			column.add(mobLensRows(entry));
-		}
 		// Static tab positions (field spec): melee / ranged / magic always
 		// left to right, on both sides of the Yours|BiS toggle - the
 		// strongest style is the DEFAULT SELECTION, not the first slot.
@@ -3428,8 +3552,12 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean bis = hasBis && entry.viewingBis;
 		// The default resolves from your OWNED dps regardless of the viewed
 		// side, so flipping the toggle never changes which tab is open.
-		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : defaultTab(results);
+		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : defaultTab(entry);
 		column.add(styleTabs(entry, results, styleOrder, selected, bis));
+		// The mob list (card anatomy): between the tabs and the gear/stats,
+		// on EVERY result - a single mob still shows its row + the add
+		// affordance (field spec 2026-07-17).
+		column.add(mobLensRows(entry));
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis));
 		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
@@ -3438,6 +3566,38 @@ public class LoadoutLabPanel extends PluginPanel
 			column.add(legend);
 		}
 		return column;
+	}
+
+	/** Roster-aware default: the style whose SHARED set averages the best
+	 * owned dps across the whole mob list - stable under lens flips, so
+	 * clicking a mob row never changes which set you are looking at
+	 * (field report: it read as "different sets for different mobs"). */
+	private static CombatStyle defaultTab(ResultEntry entry)
+	{
+		if (entry.perMobResults == null || entry.perMobResults.size() < 2)
+		{
+			return defaultTab(entry.results);
+		}
+		CombatStyle best = null;
+		double bestAvg = 0.0;
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		{
+			double sum = 0;
+			for (Map<CombatStyle, StyleResult> perMob : entry.perMobResults)
+			{
+				StyleResult r = perMob == null ? null : perMob.get(style);
+				if (r != null && r.owned != null && !r.owned.isEmpty())
+				{
+					sum += r.owned.get(0).getDps();
+				}
+			}
+			if (sum > bestAvg)
+			{
+				bestAvg = sum;
+				best = style;
+			}
+		}
+		return best != null ? best : defaultTab(entry.results);
 	}
 
 	/** The tab to open before the user has picked one: highest owned dps,
@@ -3774,6 +3934,19 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		}
+		// Curated mechanics note (recoil, finishing items, immunities) for
+		// the LENSED mob - beside the gear it explains (field spec; this
+		// row replaced the note under the search box).
+		String mechanicsNote = MonsterNotes.noteFor(entry.mob());
+		if (mechanicsNote != null)
+		{
+			JLabel noteLine = new JLabel("<html>" + mechanicsNote + "</html>");
+			noteLine.setForeground(new Color(200, 170, 110));
+			noteLine.setFont(noteLine.getFont().deriveFont(12f));
+			noteLine.setAlignmentX(LEFT_ALIGNMENT);
+			card.add(Box.createVerticalStrut(4));
+			card.add(noteLine);
 		}
 		if (hasBis)
 		{
