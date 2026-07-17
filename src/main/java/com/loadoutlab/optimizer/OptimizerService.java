@@ -109,18 +109,21 @@ public class OptimizerService
 		public final String gameBoostLabel;
 		/** What the boss does back to you in the shown owned set (nullable). */
 		public final IncomingDpsCalculator.Result incoming;
+		/** Same, in the game-best set - the BiS side's DTPS (nullable). */
+		public final IncomingDpsCalculator.Result gameIncoming;
 		/** The frontier trade the chosen mode made: dps given up vs damage
 		 * cut, as whole percents (null on max dps / when no better trade). */
 		public final ModeTrade modeTrade;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming,
+			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
 			ModeTrade modeTrade)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
 			this.incoming = incoming;
+			this.gameIncoming = gameIncoming;
 			this.modeTrade = modeTrade;
 			this.owned = owned;
 			this.overallBest = overallBest;
@@ -448,9 +451,13 @@ public class OptimizerService
 					? null
 					: IncomingDpsCalculator.calculate(
 						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
+				IncomingDpsCalculator.Result gameIncoming = gameBest.isEmpty()
+					? null
+					: IncomingDpsCalculator.calculate(
+						monster, gameBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
 				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, modeTrade);
+					boostLabel, gameBoostLabel, incoming, gameIncoming, modeTrade);
 				// Store per style as computed - even a superseded job donates
 				// the styles it finished.
 				synchronized (cache)

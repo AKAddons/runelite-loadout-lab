@@ -3134,8 +3134,9 @@ public class LoadoutLabPanel extends PluginPanel
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+		row.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 		chips.setOpaque(false);
 		chips.add(viewChip("Yours", !bis, () ->
 		{
@@ -3241,7 +3242,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		renderingStyle = style;
 		renderingBis = bis;
-		renderingIncoming = result == null || bis ? null : result.incoming;
+		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
