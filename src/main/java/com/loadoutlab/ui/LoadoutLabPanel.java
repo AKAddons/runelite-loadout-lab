@@ -4058,6 +4058,56 @@ public class LoadoutLabPanel extends PluginPanel
 		set.run();
 	}
 
+	/** Like attachItemIcon, but on a CELL_BG plate - dark item sprites in
+	 * the stat panel need the same contrast lift as the gear cells. */
+	private void attachBackedItemIcon(JLabel label, int itemId)
+	{
+		AsyncBufferedImage img = itemManager.getImage(itemId);
+		Runnable set = () -> label.setIcon(new BackedIcon(new ImageIcon(
+			img.getScaledInstance(-1, 18, Image.SCALE_SMOOTH))));
+		img.onLoaded(() -> SwingUtilities.invokeLater(set));
+		set.run();
+	}
+
+	/** A small icon on a CELL_BG rounded plate (2px padding each side). */
+	private static final class BackedIcon implements javax.swing.Icon
+	{
+		private final javax.swing.Icon delegate;
+
+		BackedIcon(javax.swing.Icon delegate)
+		{
+			this.delegate = delegate;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return delegate.getIconWidth() + 4;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return delegate.getIconHeight() + 4;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setColor(CELL_BG);
+				g2.fillRoundRect(x, y, getIconWidth(), getIconHeight(), 4, 4);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+			delegate.paintIcon(c, g, x + 2, y + 2);
+		}
+	}
+
 	/**
 	 * The set as an equipment grid. Two layouts share one cell builder: the
 	 * compact 3x4 (11 slots + the amber spec cell as the 12th) for vertical
@@ -4249,7 +4299,7 @@ public class LoadoutLabPanel extends PluginPanel
 			GearItem dartItem = loadedDart(result);
 			if (dartItem != null)
 			{
-				attachItemIcon(dart, dartItem.getId());
+				attachBackedItemIcon(dart, dartItem.getId());
 				dart.setIconTextGap(3);
 				attachExclusionMenu(dart, List.of(dartItem));
 			}
@@ -4267,7 +4317,7 @@ public class LoadoutLabPanel extends PluginPanel
 				GearItem weapon = result.getLoadout().getWeapon();
 				if (weapon != null)
 				{
-					attachItemIcon(builtIn, weapon.getId());
+					attachBackedItemIcon(builtIn, weapon.getId());
 					builtIn.setIconTextGap(3);
 				}
 				panel.add(builtIn);
@@ -4298,7 +4348,7 @@ public class LoadoutLabPanel extends PluginPanel
 				"Gear prayer bonus - slower prayer drain", MUTED, null);
 			if (PRAYER_ICON != null)
 			{
-				pray.setIcon(PRAYER_ICON);
+				pray.setIcon(new BackedIcon(PRAYER_ICON));
 				pray.setIconTextGap(3);
 			}
 			panel.add(pray);
@@ -4308,7 +4358,7 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
 				"<html>Conditional bonuses applied:<br>"
 					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, null);
-			counting.setIcon(new PlusStarIcon(11));
+			counting.setIcon(new BackedIcon(new PlusStarIcon(11)));
 			counting.setIconTextGap(3);
 			panel.add(counting);
 		}
