@@ -4119,8 +4119,11 @@ public class LoadoutLabPanel extends PluginPanel
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
 			panel.add(statBlock("Accuracy", acc, "Hit chance " + acc, GOOD, -1));
 		}
-		if (incoming != null && incoming.totalDps > 0 && displayOptions.damageTaken)
+		if (incoming != null && (incoming.totalDps > 0 || incoming.unprayedDps > 0)
+			&& displayOptions.damageTaken)
 		{
+			// A fully-blocked ~0.0 is the BEST news the block can carry -
+			// the sprite says what to pray, the zero says it works.
 			// The protect-prayer sprite IS the pray call; the value is the
 			// prayed cost; the tooltip carries the full threat table.
 			panel.add(statBlock("Taken", String.format("~%.1f", incoming.totalDps),
