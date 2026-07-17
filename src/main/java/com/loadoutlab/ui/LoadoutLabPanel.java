@@ -99,6 +99,18 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
+
+		/** Roster compute: ONE shared set per style across the mobs, with
+		 * per-mob numbers delivered via showRosterResults. Default no-op
+		 * keeps the interface functional for test lambdas - the plugin's
+		 * production hook overrides it. */
+		default void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
+			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean antifirePotion, int upgradeBudgetGp,
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone)
+		{
+			onDone.run();
+		}
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -491,6 +503,9 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Which mob's numbers show beneath the shared set (the lens). */
 		int lensIndex;
 		Map<CombatStyle, StyleResult> results;
+		/** Roster answers, index-aligned with mobs; results above is the
+		 * LENSED element. Null while computing or for legacy single-mob. */
+		java.util.List<Map<CombatStyle, StyleResult>> perMobResults;
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
 		boolean noteCollapsed = true;
@@ -992,6 +1007,15 @@ public class LoadoutLabPanel extends PluginPanel
 					? "Open" : "Add to view");
 				add.addActionListener(a -> addToView(hit));
 				menu.add(add);
+				if (active != null && !active.hasMob(hit.getId()))
+				{
+					// The multi-mob canvas: this mob JOINS the active
+					// result's roster - one shared set optimized across
+					// the list, the rows just flip whose numbers show.
+					JMenuItem join = new JMenuItem("Add to this result (shared set)");
+					join.addActionListener(a -> addMobToActive(hit));
+					menu.add(join);
+				}
 				menu.show(monsterList, e.getX(), e.getY());
 			}
 		});
@@ -1471,7 +1495,9 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
-			page.removeIf(e -> e.hasMob(monster.getId()));
+			// Only a single-mob duplicate leaves; a ROSTER containing this
+			// mob survives (searching a member must not destroy the group).
+			page.removeIf(e -> e.mobs.size() == 1 && e.hasMob(monster.getId()));
 		}
 		active = new ResultEntry(monster);
 		// Seed the parameter zone from the monster's own gating: task-only
@@ -1589,6 +1615,83 @@ public class LoadoutLabPanel extends PluginPanel
 		String note = MonsterNotes.noteFor(monster);
 		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
 		monsterNote.setVisible(note != null);
+	}
+
+	/** Join a mob to the ACTIVE result's roster (search-hit right-click):
+	 * the entry recomputes as ONE shared set across the list. A back step
+	 * restores the previous roster and its results intact. */
+	void addMobToActive(MonsterStats monster)
+	{
+		final ResultEntry target = active;
+		if (target == null)
+		{
+			addToView(monster);
+			return;
+		}
+		if (target.hasMob(monster.getId()))
+		{
+			for (int i = 0; i < target.mobs.size(); i++)
+			{
+				if (target.mobs.get(i).getId() == monster.getId())
+				{
+					lensTo(target, i);
+					return;
+				}
+			}
+		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
+		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(target.mobs);
+		final Map<CombatStyle, StyleResult> resultsBefore = target.results;
+		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
+		final int lensBefore = target.lensIndex;
+		final Runnable applyAdd = () ->
+		{
+			// A single-mob duplicate leaves the page (the roster absorbs it).
+			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
+			target.addMob(monster);
+			target.lensIndex = target.mobs.size() - 1;
+			target.results = null;
+			target.perMobResults = null;
+			setActive(target);
+			selectedMonster = target.mob();
+			applyActiveMonsterUi(target.mob());
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(target);
+		};
+		if (historyControl == null)
+		{
+			applyAdd.run();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applyAdd.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				target.mobs.clear();
+				target.mobs.addAll(mobsBefore);
+				target.lensIndex = lensBefore;
+				target.results = resultsBefore;
+				target.perMobResults = perMobBefore;
+				restorePage(pageBefore, activeBefore);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Add " + monster.getName() + " to result";
+			}
+		});
 	}
 
 	/** Add a monster to the page as its own result (search-hit right-click).
@@ -2950,6 +3053,18 @@ public class LoadoutLabPanel extends PluginPanel
 	 * fact, not a preference). */
 	private void computeEntry(ResultEntry entry)
 	{
+		if (entry.mobs.size() > 1)
+		{
+			computeHook.computeRoster(new java.util.ArrayList<>(entry.mobs),
+				f2pOnly.isSelected(), entry.onSlayerTask,
+				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
+				RISK_STEPS[entry.riskBudgetIndex],
+				entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
+				parsedBudgetGp(entry.upgradeBudget),
+				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+				() -> statusLabel.setText(" "));
+			return;
+		}
 		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			RISK_STEPS[entry.riskBudgetIndex],
@@ -3041,14 +3156,84 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private ResultEntry entryFor(int monsterId)
 	{
+		// A mob can sit alone AND inside a roster: single-mob results must
+		// deliver to the single-mob entry, never overwrite the roster's map.
+		ResultEntry fallback = null;
 		for (ResultEntry entry : page)
 		{
 			if (entry.hasMob(monsterId))
 			{
-				return entry;
+				if (entry.mobs.size() == 1)
+				{
+					return entry;
+				}
+				if (fallback == null)
+				{
+					fallback = entry;
+				}
 			}
 		}
+		return fallback;
+	}
+
+	/** Roster results (EDT): routed by exact mob-id list match. */
+	public void showRosterResults(java.util.List<MonsterStats> mobs,
+		java.util.List<Map<CombatStyle, StyleResult>> perMob)
+	{
+		ResultEntry entry = entryForRoster(mobs);
+		if (entry == null || perMob == null || perMob.isEmpty())
+		{
+			return; // stale roster - the page moved on
+		}
+		entry.perMobResults = perMob;
+		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
+		entry.results = perMob.get(entry.lensIndex);
+		renderPage();
+	}
+
+	private ResultEntry entryForRoster(java.util.List<MonsterStats> mobs)
+	{
+		outer:
+		for (ResultEntry entry : page)
+		{
+			if (entry.mobs.size() != mobs.size())
+			{
+				continue;
+			}
+			for (int i = 0; i < mobs.size(); i++)
+			{
+				if (entry.mobs.get(i).getId() != mobs.get(i).getId())
+				{
+					continue outer;
+				}
+			}
+			return entry;
+		}
 		return null;
+	}
+
+	/** The mob-list LENS: flip whose numbers show - the shared set never
+	 * changes (card anatomy #1). View state, like the style tabs. */
+	private void lensTo(ResultEntry entry, int index)
+	{
+		if (index < 0 || index >= entry.mobs.size() || index == entry.lensIndex)
+		{
+			return;
+		}
+		entry.lensIndex = index;
+		if (entry.perMobResults != null && index < entry.perMobResults.size())
+		{
+			entry.results = entry.perMobResults.get(index);
+		}
+		if (entry == active)
+		{
+			selectedMonster = entry.mob();
+			applyActiveMonsterUi(entry.mob());
+			setNoteCollapsed(mobProfile.note(entry.mob().getId()).isEmpty());
+			refreshNotePanel();
+			refreshPinnedLabel();
+		}
+		renderPage();
 	}
 
 	/** Rebuild the results area from the page: one card per entry - chrome
@@ -3126,7 +3311,8 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		boolean isActive = entry == active;
 		JLabel title = new JLabel((entry.folded ? "> " : "v ") + "vs "
-			+ entry.mob().label() + summary);
+			+ entry.mob().label()
+			+ (entry.mobs.size() > 1 ? " +" + (entry.mobs.size() - 1) : "") + summary);
 		title.setForeground(isActive ? Color.WHITE : new Color(170, 170, 170));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -3171,12 +3357,51 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		// html so long monster names wrap instead of clipping at the edge
-		JLabel computing = new JLabel("<html>Optimizing vs " + entry.mob().getName() + "...</html>");
+		JLabel computing = new JLabel("<html>" + (entry.mobs.size() > 1
+			? "Optimizing one shared set vs " + entry.mobs.size() + " mobs..."
+			: "Optimizing vs " + entry.mob().getName() + "...") + "</html>");
 		computing.setForeground(MUTED);
 		computing.setAlignmentX(LEFT_ALIGNMENT);
 		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
 		column.add(computing);
 		return column;
+	}
+
+	/** The roster rows (card anatomy #1): name + hp per mob, an
+	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
+	 * the shared set never changes. */
+	private javax.swing.JComponent mobLensRows(ResultEntry entry)
+	{
+		JPanel rows = new JPanel();
+		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
+		rows.setOpaque(false);
+		rows.setAlignmentX(LEFT_ALIGNMENT);
+		for (int i = 0; i < entry.mobs.size(); i++)
+		{
+			final int index = i;
+			MonsterStats mob = entry.mobs.get(i);
+			boolean lensed = i == entry.lensIndex;
+			JLabel row = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
+			row.setOpaque(lensed);
+			row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			row.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
+			row.setFont(row.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
+			row.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
+			row.setAlignmentX(LEFT_ALIGNMENT);
+			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			row.setToolTipText("Show this mob's numbers - the shared set stays");
+			row.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					lensTo(entry, index);
+				}
+			});
+			rows.add(row);
+		}
+		rows.add(Box.createVerticalStrut(4));
+		return rows;
 	}
 
 	/** One result's card: the style TAB STRIP (skill icon + dps per tab,
@@ -3191,6 +3416,10 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
+		if (entry.mobs.size() > 1)
+		{
+			column.add(mobLensRows(entry));
+		}
 		// Static tab positions (field spec): melee / ranged / magic always
 		// left to right, on both sides of the Yours|BiS toggle - the
 		// strongest style is the DEFAULT SELECTION, not the first slot.
