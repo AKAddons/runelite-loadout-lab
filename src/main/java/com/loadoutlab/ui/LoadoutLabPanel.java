@@ -1585,6 +1585,73 @@ public class LoadoutLabPanel extends PluginPanel
 		// (mob list + per-card mechanics note) - nothing to paint here.
 	}
 
+	/** Remove one mob from a roster (the row's x): the entry recomputes
+	 * as the smaller shared set. A back step restores roster + results. */
+	void removeMobFromEntry(ResultEntry entry, int index)
+	{
+		if (entry.mobs.size() <= 1 || index < 0 || index >= entry.mobs.size())
+		{
+			return;
+		}
+		final MonsterStats removed = entry.mobs.get(index);
+		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(entry.mobs);
+		final Map<CombatStyle, StyleResult> resultsBefore = entry.results;
+		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
+		final int lensBefore = entry.lensIndex;
+		final Runnable applyRemove = () ->
+		{
+			entry.mobs.remove(index);
+			entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, entry.mobs.size() - 1));
+			entry.results = null;
+			entry.perMobResults = null;
+			if (entry == active)
+			{
+				selectedMonster = entry.mob();
+				applyActiveMonsterUi(entry.mob());
+			}
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(entry);
+		};
+		if (historyControl == null)
+		{
+			applyRemove.run();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applyRemove.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				entry.mobs.clear();
+				entry.mobs.addAll(mobsBefore);
+				entry.lensIndex = lensBefore;
+				entry.results = resultsBefore;
+				entry.perMobResults = perMobBefore;
+				if (entry == active)
+				{
+					selectedMonster = entry.mob();
+					applyActiveMonsterUi(entry.mob());
+				}
+				renderPage();
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Remove " + removed.getName() + " from result";
+			}
+		});
+	}
+
 	/** Join a mob to a result's roster (the + row's picker): the entry
 	 * recomputes as ONE shared set across the list. A back step restores
 	 * the previous roster and its results intact. */
@@ -3023,6 +3090,9 @@ public class LoadoutLabPanel extends PluginPanel
 		for (ResultEntry entry : page)
 		{
 			entry.results = null;
+			// Stale roster bundles must go too: a lens click during the
+			// pending window otherwise resurrects pre-recompute numbers.
+			entry.perMobResults = null;
 		}
 		renderPage();
 		statusLabel.setText(" ");
@@ -3133,6 +3203,16 @@ public class LoadoutLabPanel extends PluginPanel
 		if (entry == null)
 		{
 			return; // stale result for a monster the user moved away from
+		}
+		if (entry.mobs.size() > 1)
+		{
+			// A single-mob map must never overwrite a roster's lensed view
+			// (it detaches results from perMobResults and FREEZES the lens
+			// - field bug: every form showed the same dps). The roster's
+			// own delivery goes through showRosterResults; UI refresh
+			// paths just need the repaint.
+			renderPage();
+			return;
 		}
 		entry.results = results;
 		renderPage();
@@ -3359,6 +3439,10 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		// html so long monster names wrap instead of clipping at the edge
+		// The mob list renders while computing too (field spec): add or
+		// remove mobs mid-search instead of waiting - each edit supersedes
+		// the in-flight compute via the service ticket.
+		column.add(mobLensRows(entry));
 		JLabel computing = new JLabel("<html>" + (entry.mobs.size() > 1
 			? "Optimizing one shared set vs " + entry.mobs.size() + " mobs..."
 			: "Optimizing vs " + entry.mob().getName() + "...") + "</html>");
@@ -3384,11 +3468,9 @@ public class LoadoutLabPanel extends PluginPanel
 			final int index = i;
 			MonsterStats mob = entry.mobs.get(i);
 			boolean lensed = i == entry.lensIndex;
-			JLabel row = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
+			JPanel row = new JPanel(new BorderLayout(4, 0));
 			row.setOpaque(true);
 			row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-			row.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
-			row.setFont(row.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
 			// Bordered + padded so every row reads as clickable (field
 			// spec); the lensed row wears the bright edge like Yours|BiS.
 			row.setBorder(BorderFactory.createCompoundBorder(
@@ -3396,29 +3478,48 @@ public class LoadoutLabPanel extends PluginPanel
 					? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
 				BorderFactory.createEmptyBorder(3, 8, 3, 8)));
 			row.setAlignmentX(LEFT_ALIGNMENT);
-			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			row.setToolTipText("Show this mob's numbers - the shared set stays");
-			row.addMouseListener(new MouseAdapter()
+			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
+			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
+			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
+			row.add(name, BorderLayout.CENTER);
+			MouseAdapter lens = new MouseAdapter()
 			{
 				@Override
 				public void mouseClicked(MouseEvent e)
 				{
 					lensTo(entry, index);
 				}
-			});
+			};
+			row.addMouseListener(lens);
+			name.addMouseListener(lens);
+			if (entry.mobs.size() > 1)
+			{
+				// Each mob can leave the roster (field spec); the last one
+				// cannot - close the whole result via the chrome X instead.
+				JLabel remove = new JLabel(new CloseIcon(8));
+				remove.setToolTipText("Remove " + mob.getName() + " from this result");
+				remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				remove.addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e)
+					{
+						removeMobFromEntry(entry, index);
+					}
+				});
+				row.add(remove, BorderLayout.EAST);
+			}
 			rows.add(row);
 			rows.add(Box.createVerticalStrut(2));
 		}
 		// The growth affordance: add a mob straight to this result's roster.
 		JLabel add = new JLabel("+ Add mob");
-		add.setOpaque(true);
-		add.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		add.setForeground(new Color(150, 150, 150));
 		add.setFont(add.getFont().deriveFont(Font.BOLD, 12f));
-		add.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR),
-			BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+		add.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
 		add.setAlignmentX(LEFT_ALIGNMENT);
 		add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		add.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -3509,13 +3610,16 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		};
 		field.addActionListener(e -> pick.run());
+		// ONE click adds (field feedback: the double-click was hated).
 		hits.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				if (e.getClickCount() >= 2)
+				int idx = hits.locationToIndex(e.getPoint());
+				if (idx >= 0)
 				{
+					hits.setSelectedIndex(idx);
 					pick.run();
 				}
 			}

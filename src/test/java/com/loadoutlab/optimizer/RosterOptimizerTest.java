@@ -158,6 +158,55 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void zulrahFormsShareOneSetWithPerFormDps() throws Exception
+	{
+		// Field bug report 2026-07-17: all three forms showed the SAME dps.
+		// The corpus rows disagree hard (ranged def 300 / 50 / 0), so the
+		// shared ranged set MUST produce three different numbers.
+		LoadoutData data = new DataService().load();
+		List<MonsterStats> forms = new ArrayList<>();
+		for (MonsterStats hit : data.searchMonsters("zulrah", 10))
+		{
+			if ("Zulrah".equals(hit.getName()))
+			{
+				forms.add(hit);
+			}
+		}
+		Assert.assertEquals("corpus premise: three Zulrah forms", 3, forms.size());
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(11840, 1);  // dragon boots
+		owned.put(2503, 1);   // black d'hide body
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, forms, owned);
+			Assert.assertEquals(3, roster.result.perMob.size());
+			List<Double> dps = new ArrayList<>();
+			List<List<Integer>> sets = new ArrayList<>();
+			for (Map<CombatStyle, OptimizerService.StyleResult> perMob : roster.result.perMob)
+			{
+				OptimizerService.StyleResult ranged = perMob.get(CombatStyle.RANGED);
+				Assert.assertNotNull(ranged);
+				Assert.assertFalse(ranged.owned.isEmpty());
+				dps.add(ranged.owned.get(0).getDps());
+				sets.add(setIds(ranged.owned.get(0).getLoadout()));
+			}
+			// ONE set...
+			Assert.assertEquals(sets.get(0), sets.get(1));
+			Assert.assertEquals(sets.get(0), sets.get(2));
+			// ...three different numbers.
+			Assert.assertTrue("form dps must differ: " + dps,
+				Math.abs(dps.get(0) - dps.get(1)) > 1e-6
+					|| Math.abs(dps.get(1) - dps.get(2)) > 1e-6);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	/** Thin holder so the helper can return the typed roster result. */
 	private static final class RosterResultView
 	{
