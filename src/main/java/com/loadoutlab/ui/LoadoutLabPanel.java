@@ -4062,101 +4062,126 @@ public class LoadoutLabPanel extends PluginPanel
 		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
 		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
-		// The 5x5 item/stat view (field spec): the classic gear silhouette
-		// fills columns 0-2, and columns 3-4 are the STAT FLANK - every
-		// number that used to be a text row, next to the items it describes.
-		JPanel icons = new JPanel(new GridLayout(5, 5, 2, 2));
-		icons.setOpaque(false);
-		icons.setAlignmentX(LEFT_ALIGNMENT);
-		java.util.List<javax.swing.JComponent> stats =
-			markUnowned ? statFlank(cell, result, incoming)
-				: new java.util.ArrayList<>();
-		int statIndex = 0;
-		for (int row = 0; row < 5; row++)
+		// The item/stat view (field spec): the classic gear silhouette on
+		// the left, and - on the owned view - the right 2x5 FOOTPRINT as one
+		// CONNECTED stat panel, not boxed cells: stat blocks flow top-down
+		// with their own typography.
+		JPanel gear = new JPanel(new GridLayout(5, 3, 2, 2));
+		gear.setOpaque(false);
+		for (int i = 0; i < CLASSIC_ORDER.length; i++)
 		{
-			for (int col = 0; col < 3; col++)
+			if (i == CLASSIC_SPEC_INDEX)
 			{
-				int i = row * 3 + col;
-				if (i == CLASSIC_SPEC_INDEX)
-				{
-					icons.add(specCell);
-				}
-				else if (CLASSIC_ORDER[i] != null)
-				{
-					icons.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
-				}
-				else
-				{
-					icons.add(blankCell(cell));
-				}
+				gear.add(specCell);
 			}
-			for (int col = 0; col < 2; col++)
+			else if (CLASSIC_ORDER[i] != null)
 			{
-				icons.add(statIndex < stats.size() ? stats.get(statIndex) : blankCell(cell));
-				statIndex++;
-			}
-		}
-		int height = 5 * cell + 8;
-		icons.setPreferredSize(new Dimension(5 * cell + 8, height));
-		icons.setMaximumSize(new Dimension(5 * (cell + 6) + 8, height));
-		return icons;
-	}
-
-	/** The stat flank's cells, top-to-bottom pairs: max hit + accuracy,
-	 * damage taken + attack style, prayer bonus + counted bonuses, risk.
-	 * Each honours its display option (a skipped stat leaves a blank). */
-	private java.util.List<javax.swing.JComponent> statFlank(int cell, DpsResult result,
-		IncomingDpsCalculator.Result incoming)
-	{
-		java.util.List<javax.swing.JComponent> stats = new java.util.ArrayList<>();
-		stats.add(!displayOptions.maxHit ? blankCell(cell)
-			: infoCell(cell, String.valueOf(result.getMaxHit()), "Max hit",
-				"Max hit " + result.getMaxHit(), GOOD));
-		String acc = Math.round(result.getAccuracy() * 100) + "%";
-		stats.add(!displayOptions.accuracy ? blankCell(cell)
-			: infoCell(cell, acc, "Accuracy", "Hit chance " + acc, GOOD));
-		if (incoming != null && incoming.totalDps > 0 && displayOptions.damageTaken)
-		{
-			// The protect-prayer sprite IS the pray call; the number is the
-			// prayed cost; the tooltip carries the full threat table.
-			JLabel taken = new JLabel(String.format("~%.1f", incoming.totalDps));
-			taken.setForeground(new Color(210, 140, 130));
-			taken.setFont(taken.getFont().deriveFont(Font.BOLD, 12f));
-			int sprite = incoming.protectPrayer != null
-				? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
-			if (sprite >= 0)
-			{
-				attachSprite(taken, sprite);
+				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
 			}
 			else
 			{
-				taken.setIcon(NO_PRAYER_ICON);
+				gear.add(blankCell(cell));
 			}
-			taken.setIconTextGap(3);
-			taken.setToolTipText(incomingTooltip(incoming));
-			JPanel tile = new JPanel(new java.awt.GridBagLayout());
-			tile.setOpaque(false);
-			tile.setPreferredSize(new Dimension(cell, cell));
-			tile.setToolTipText(incomingTooltip(incoming));
-			tile.add(taken);
-			stats.add(tile);
 		}
-		else
+		int height = 5 * cell + 8;
+		gear.setPreferredSize(new Dimension(3 * cell + 4, height));
+		gear.setMaximumSize(new Dimension(3 * cell + 4, height));
+		if (!markUnowned)
 		{
-			stats.add(blankCell(cell));
+			return gear; // game best: the clean silhouette alone
+		}
+		JPanel combo = new JPanel(new BorderLayout(8, 0));
+		combo.setOpaque(false);
+		combo.setAlignmentX(LEFT_ALIGNMENT);
+		combo.add(gear, BorderLayout.WEST);
+		JPanel stat = statPanel(result, incoming);
+		stat.setPreferredSize(new Dimension(2 * cell + 6, height));
+		combo.add(stat, BorderLayout.CENTER);
+		combo.setMaximumSize(new Dimension(5 * cell + 24, height));
+		return combo;
+	}
+
+	/** The connected stat panel filling the grid's right 2x5 footprint:
+	 * caption-over-value blocks, top-down, each honouring its display
+	 * option. */
+	private JPanel statPanel(DpsResult result, IncomingDpsCalculator.Result incoming)
+	{
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setOpaque(false);
+		if (displayOptions.maxHit)
+		{
+			panel.add(statBlock("Max hit", String.valueOf(result.getMaxHit()),
+				"Max hit " + result.getMaxHit(), GOOD, -1));
+		}
+		if (displayOptions.accuracy)
+		{
+			String acc = Math.round(result.getAccuracy() * 100) + "%";
+			panel.add(statBlock("Accuracy", acc, "Hit chance " + acc, GOOD, -1));
+		}
+		if (incoming != null && incoming.totalDps > 0 && displayOptions.damageTaken)
+		{
+			// The protect-prayer sprite IS the pray call; the value is the
+			// prayed cost; the tooltip carries the full threat table.
+			panel.add(statBlock("Taken", String.format("~%.1f", incoming.totalDps),
+				incomingTooltip(incoming), new Color(210, 140, 130),
+				incoming.protectPrayer != null
+					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -2));
 		}
 		String styleText = attackStyleText(result);
-		stats.add(!displayOptions.attackStyle || styleText == null ? blankCell(cell)
-			: infoCell(cell, styleText, "Style", "Use this attack style", INFO));
+		if (displayOptions.attackStyle && styleText != null)
+		{
+			panel.add(statBlock("Style", styleText, "Use this attack style", INFO, -1));
+		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
-		stats.add(!displayOptions.prayerBonus || prayer == 0 ? blankCell(cell)
-			: infoCell(cell, String.format("%+d", prayer), "Prayer",
-				"Gear prayer bonus - slower prayer drain", MUTED));
-		stats.add(!displayOptions.bonuses || result.getCountedBonuses().isEmpty() ? blankCell(cell)
-			: infoCell(cell, String.valueOf(result.getCountedBonuses().size()), "Counting",
+		if (displayOptions.prayerBonus && prayer != 0)
+		{
+			panel.add(statBlock("Prayer", String.format("%+d", prayer),
+				"Gear prayer bonus - slower prayer drain", MUTED, -1));
+		}
+		if (displayOptions.bonuses && !result.getCountedBonuses().isEmpty())
+		{
+			panel.add(statBlock("Counting", result.getCountedBonuses().size() + " bonuses",
 				"<html>Conditional bonuses applied:<br>"
-					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO));
-		return stats;
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, -1));
+		}
+		panel.add(Box.createVerticalGlue());
+		return panel;
+	}
+
+	/** One stat block: a muted caption over its value. spriteId -1 = none,
+	 * -2 = the no-prayer mark (unavoidable damage). */
+	private javax.swing.JComponent statBlock(String caption, String value, String tooltip,
+		Color valueColor, int spriteId)
+	{
+		JPanel block = new JPanel();
+		block.setLayout(new BoxLayout(block, BoxLayout.Y_AXIS));
+		block.setOpaque(false);
+		block.setAlignmentX(LEFT_ALIGNMENT);
+		block.setToolTipText(tooltip);
+		JLabel cap = new JLabel(caption);
+		cap.setForeground(MUTED);
+		cap.setFont(cap.getFont().deriveFont(10f));
+		cap.setAlignmentX(LEFT_ALIGNMENT);
+		JLabel val = new JLabel(value);
+		val.setForeground(valueColor);
+		val.setFont(val.getFont().deriveFont(Font.BOLD, 13f));
+		val.setAlignmentX(LEFT_ALIGNMENT);
+		val.setToolTipText(tooltip);
+		if (spriteId >= 0)
+		{
+			attachSprite(val, spriteId);
+			val.setIconTextGap(3);
+		}
+		else if (spriteId == -2)
+		{
+			val.setIcon(NO_PRAYER_ICON);
+			val.setIconTextGap(3);
+		}
+		block.add(cap);
+		block.add(val);
+		block.add(Box.createVerticalStrut(5));
+		return block;
 	}
 
 	/** The short attack-style word ("Rapid", "Aggressive"); null for magic
@@ -4174,32 +4199,6 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int dash = type.indexOf(" - ");
 		return capitalize(dash > 0 ? type.substring(0, dash) : type);
-	}
-
-	/** An info tile in a blank grid corner: a small caption over the value,
-	 * the full sentence in the tooltip. */
-	private static javax.swing.JComponent infoCell(int cell, String value, String caption,
-		String tooltip, Color valueColor)
-	{
-		JPanel tile = new JPanel();
-		tile.setLayout(new BoxLayout(tile, BoxLayout.Y_AXIS));
-		tile.setOpaque(false);
-		tile.setPreferredSize(new Dimension(cell, cell));
-		tile.setToolTipText(tooltip);
-		JLabel cap = new JLabel(caption);
-		cap.setForeground(MUTED);
-		cap.setFont(cap.getFont().deriveFont(10f));
-		cap.setAlignmentX(CENTER_ALIGNMENT);
-		JLabel val = new JLabel(value);
-		val.setForeground(valueColor);
-		val.setFont(val.getFont().deriveFont(Font.BOLD, 13f));
-		val.setAlignmentX(CENTER_ALIGNMENT);
-		val.setToolTipText(tooltip);
-		tile.add(Box.createVerticalGlue());
-		tile.add(cap);
-		tile.add(val);
-		tile.add(Box.createVerticalGlue());
-		return tile;
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */
