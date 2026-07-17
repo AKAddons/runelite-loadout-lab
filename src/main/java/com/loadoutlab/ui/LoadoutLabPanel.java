@@ -483,7 +483,13 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	static final class ResultEntry
 	{
-		MonsterStats monster;
+		/** The roster this result answers: a shared set optimized ACROSS
+		 * these mobs, with the mob list acting as an informational lens
+		 * (Step C). Step A keeps it at exactly one mob, so a single-mob
+		 * result is pixel-identical to before. */
+		final java.util.List<MonsterStats> mobs = new java.util.ArrayList<>();
+		/** Which mob's numbers show beneath the shared set (the lens). */
+		int lensIndex;
 		Map<CombatStyle, StyleResult> results;
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
@@ -516,7 +522,42 @@ public class LoadoutLabPanel extends PluginPanel
 
 		ResultEntry(MonsterStats monster)
 		{
-			this.monster = monster;
+			this.mobs.add(monster);
+		}
+
+		/** The lensed mob - whose numbers the card shows, and (until the
+		 * roster optimizer lands at Step B) the only mob. Clamped so a
+		 * shrinking roster never dangles the lens. */
+		MonsterStats mob()
+		{
+			return mobs.get(Math.max(0, Math.min(lensIndex, mobs.size() - 1)));
+		}
+
+		/** Add a mob to this result's roster; false when already present. */
+		boolean addMob(MonsterStats candidate)
+		{
+			for (MonsterStats existing : mobs)
+			{
+				if (existing.getId() == candidate.getId())
+				{
+					return false;
+				}
+			}
+			mobs.add(candidate);
+			return true;
+		}
+
+		/** True when any mob in the roster carries this id (result routing). */
+		boolean hasMob(int monsterId)
+		{
+			for (MonsterStats m : mobs)
+			{
+				if (m.getId() == monsterId)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -1000,11 +1041,11 @@ public class LoadoutLabPanel extends PluginPanel
 	 * statement, resolved against its own monster (card anatomy spec). */
 	private boolean effectiveWilderness(ResultEntry entry)
 	{
-		if (!WildernessMonsters.isWilderness(entry.monster))
+		if (!WildernessMonsters.isWilderness(entry.mob()))
 		{
 			return false;
 		}
-		return WildernessMonsters.isExclusive(entry.monster) || entry.inWilderness;
+		return WildernessMonsters.isExclusive(entry.mob()) || entry.inWilderness;
 	}
 
 	/** Sync the wilderness checkbox + risk rows to the selected monster. */
@@ -1430,7 +1471,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
-			page.removeIf(e -> e.monster.getId() == monster.getId());
+			page.removeIf(e -> e.hasMob(monster.getId()));
 		}
 		active = new ResultEntry(monster);
 		// Seed the parameter zone from the monster's own gating: task-only
@@ -1592,7 +1633,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * active, the given (or last remaining) entry's monster takes over. */
 	private void removeFromPage(int monsterId, MonsterStats nextActive)
 	{
-		page.removeIf(e -> e.monster.getId() == monsterId);
+		page.removeIf(e -> e.hasMob(monsterId));
 		if (page.isEmpty())
 		{
 			clearSelectionInternal();
@@ -1612,8 +1653,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private void setActive(ResultEntry entry)
 	{
 		active = entry;
-		selectedMonster = entry.monster;
-		applyActiveMonsterUi(entry.monster);
+		selectedMonster = entry.mob();
+		applyActiveMonsterUi(entry.mob());
 		syncControlsFromActive();
 		refreshWildernessRows();
 		refreshNotePanel();
@@ -1624,13 +1665,13 @@ public class LoadoutLabPanel extends PluginPanel
 	 * results are not retained through a close). */
 	private void closeResult(ResultEntry entry)
 	{
-		MonsterStats closing = entry.monster;
+		MonsterStats closing = entry.mob();
 		MonsterStats fallback = null;
 		for (ResultEntry e : page)
 		{
 			if (e != entry)
 			{
-				fallback = e.monster; // the last other entry wins below anyway
+				fallback = e.mob(); // the last other entry wins below anyway
 			}
 		}
 		MonsterStats nextActive = selectedMonster != null
@@ -2909,10 +2950,10 @@ public class LoadoutLabPanel extends PluginPanel
 	 * fact, not a preference). */
 	private void computeEntry(ResultEntry entry)
 	{
-		computeHook.compute(entry.monster, f2pOnly.isSelected(), entry.onSlayerTask,
+		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			RISK_STEPS[entry.riskBudgetIndex],
-			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.monster),
+			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			() -> statusLabel.setText(" "));
@@ -3002,7 +3043,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		for (ResultEntry entry : page)
 		{
-			if (entry.monster.getId() == monsterId)
+			if (entry.hasMob(monsterId))
 			{
 				return entry;
 			}
@@ -3085,7 +3126,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		boolean isActive = entry == active;
 		JLabel title = new JLabel((entry.folded ? "> " : "v ") + "vs "
-			+ entry.monster.label() + summary);
+			+ entry.mob().label() + summary);
 		title.setForeground(isActive ? Color.WHITE : new Color(170, 170, 170));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -3130,7 +3171,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		// html so long monster names wrap instead of clipping at the edge
-		JLabel computing = new JLabel("<html>Optimizing vs " + entry.monster.getName() + "...</html>");
+		JLabel computing = new JLabel("<html>Optimizing vs " + entry.mob().getName() + "...</html>");
 		computing.setForeground(MUTED);
 		computing.setAlignmentX(LEFT_ALIGNMENT);
 		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
