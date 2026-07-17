@@ -3134,7 +3134,7 @@ public class LoadoutLabPanel extends PluginPanel
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
 		chips.setOpaque(false);
 		chips.add(viewChip("Yours", !bis, () ->
@@ -3170,7 +3170,12 @@ public class LoadoutLabPanel extends PluginPanel
 		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
 		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
-		chip.setBorder(BorderFactory.createEmptyBorder(3, 12, 3, 12));
+		// Bordered buttons (field request): the selected side wears a
+		// bright edge, the other stays a quiet outline.
+		chip.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(selected
+				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(5, 12, 5, 12)));
 		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		chip.setToolTipText(text.equals("BiS")
 			? "The game-wide best set at your levels" : "Your best owned set");
