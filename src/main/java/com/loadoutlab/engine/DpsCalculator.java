@@ -160,6 +160,16 @@ public final class DpsCalculator
 		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
 		double expected = RollMath.expectedHit(accuracy, minHit, maxHit);
+		if (isDualMacuahuitl(loadout))
+		{
+			// Two chained hits (official calc model): the first rolls half
+			// the max; the second (the remainder) only rolls when the
+			// first lands, with its own accuracy roll.
+			int firstMax = maxHit / 2;
+			int secondMax = maxHit - firstMax;
+			expected = RollMath.normalExpectedHit(accuracy, firstMax)
+				+ accuracy * RollMath.normalExpectedHit(accuracy, secondMax);
+		}
 		if (isScythe(loadout))
 		{
 			if (request.getMonster().getSize() >= 2)
@@ -172,8 +182,19 @@ public final class DpsCalculator
 			}
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
+		double effectiveSpeed = speed;
+		if (isWearingBloodMoonSet(loadout))
+		{
+			// Bloodrager (wiki): each successful macuahuitl hit has a 1/3
+			// chance to make the NEXT attack come one tick earlier; with
+			// the chained hits that is acc/3 + acc^2 * 2/9 per attack
+			// (matches the official calc's expected attack speed).
+			double proc = accuracy / 3.0 + accuracy * accuracy * 2.0 / 9.0;
+			counted("bloodrager set", String.format("%.2f ticks faster on average", proc));
+			effectiveSpeed = speed - proc;
+		}
 		String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
-		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
+		return new DpsResult(loadout, expected / (effectiveSpeed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout)
@@ -1027,6 +1048,22 @@ public final class DpsCalculator
 	private static boolean isScythe(Loadout loadout)
 	{
 		return wearing(loadout, "scythe of vitur");
+	}
+
+	private static boolean isDualMacuahuitl(Loadout loadout)
+	{
+		return wearing(loadout, "dual macuahuitl");
+	}
+
+	/** Bloodrager: all three blood moon pieces + the dual macuahuitl. The
+	 * wiki confirms the effect activates even on broken pieces, and every
+	 * New/Used/Broken variant shares the clean item name. */
+	private static boolean isWearingBloodMoonSet(Loadout loadout)
+	{
+		return isDualMacuahuitl(loadout)
+			&& wearing(loadout, "blood moon helm")
+			&& wearing(loadout, "blood moon chestplate")
+			&& wearing(loadout, "blood moon tassets");
 	}
 
 	private static boolean isCrystalBow(Loadout loadout)

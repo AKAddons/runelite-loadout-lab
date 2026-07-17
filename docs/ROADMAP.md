@@ -332,7 +332,13 @@ per-boss defensive thresholds. Phased:
   replace the damage term. Seeded: the 5 GWD/wildy boss pairs, Zulrah,
   Vorkath, Cerberus, Chaos Elemental, KBD, Hydra, Corp (17 bosses).
   Follow-ups: phase-aware rotations (Zulrah patterns, Hydra enrage),
-  antifire-aware dragonfire, spiderling prayer degradation.
+  antifire-aware dragonfire, spiderling prayer degradation. Kraken added
+  2026-07-17 (magic accuracy roll, prayer-piercing damage - wiki-quoted).
+  TODO (field request 2026-07-17): curate the Moons of Peril bosses -
+  Blood Moon, Blue Moon, Eclipse Moon (sheet styles are compound
+  "Typeless slash" with staged max hits "32 total 4+8+20", so the v1
+  model shows DTPS: ? today); parse each boss's wiki page and quote the
+  mechanic sentences in the entry notes.
 - **W-1 Wilderness low-risk sets (DONE 2026-07-07)** - for the curated
   wilderness boss list (WildernessMonsters), a "Low-risk" toggle caps the
   set to 3 tradeable items (4 with the Protect Item toggle) - exactly the
