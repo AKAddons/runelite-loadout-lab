@@ -158,12 +158,18 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean filterBank;
 		final boolean loadingAnimation;
 
+		/** Seeds for every NEW result's parameter zone (settings panel). */
+		public final String defaultUpgradeBudget;
+		public final String defaultRiskCap;
+
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
 			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation)
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
 		{
+			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
+			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
 			this.bonuses = bonuses;
@@ -185,7 +191,7 @@ public class LoadoutLabPanel extends PluginPanel
 		static DisplayOptions all()
 		{
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true);
+				true, true, true, true, true, true, true, true, true, "", "");
 		}
 	}
 
@@ -405,12 +411,17 @@ public class LoadoutLabPanel extends PluginPanel
 	 * for max. Empty or unparseable = off. */
 	private final JTextField upgradeBudget = new JTextField();
 	private int lastBudgetGp;
+	private int lastRiskGp;
+	private String lastRiskText = "";
+	private final JTextField riskCapField = new JTextField();
 	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
 	private final JLabel pinnedLabel = new JLabel();
 	/** The user's own note for the selected monster: a collapsible
 	 * post-it, edited inline (saves on focus loss - no edit button). */
 	private final JPanel notePanel = new JPanel();
+	private final JLabel excludeCountChip = new JLabel();
+	private final JLabel dreamCountChip = new JLabel();
 	private final JLabel noteHeader = new JLabel();
 	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
@@ -471,7 +482,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
 	/** Wilderness risk-cap dropdown values in gp; 75k is the default. */
-	private static final int[] RISK_STEPS = {0, 25_000, 75_000, 200_000, 1_000_000};
 	private final JComboBox<String> riskBudget = new JComboBox<>(
 		new String[]{"Risk cap: 0", "Risk cap: 25k", "Risk cap: 75k", "Risk cap: 200k", "Risk cap: 1M"});
 
@@ -489,6 +499,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private boolean renderingBis;
 	/** The lensed mob's curated mechanics note for the stat panel's (i). */
 	private String renderingMechanicsNote;
+	/** Protect Item assumed for this card (wilderness, field spec). */
+	private boolean renderingProtectItem;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -528,7 +540,10 @@ public class LoadoutLabPanel extends PluginPanel
 		int optimizeMode;
 		boolean lowRisk;
 		boolean protectItem;
-		int riskBudgetIndex = 2;
+		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
+		 * Non-empty IS the low-risk mode - the old toggle + step combo
+		 * merged into one value (field spec 2026-07-17). */
+		String riskCap = "";
 		String upgradeBudget = "";
 		int spellbookIndex;
 		/** Assume your best offensive prayer (default) - off computes
@@ -723,6 +738,43 @@ public class LoadoutLabPanel extends PluginPanel
 
 		searchField.setAlignmentX(LEFT_ALIGNMENT);
 		searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		// Exclusions (red -N) and dreams (green +N) live ABOVE the search
+		// bar (field spec 2026-07-17) - compact rounded chips; clicking
+		// manages the list. Counts refresh via refreshCountChips().
+		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		countRow.setOpaque(false);
+		countRow.setAlignmentX(LEFT_ALIGNMENT);
+		countRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		excludeCountChip.setOpaque(true);
+		excludeCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		excludeCountChip.setFont(excludeCountChip.getFont().deriveFont(Font.BOLD, 12f));
+		excludeCountChip.setToolTipText("Excluded items - click to manage");
+		excludeCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		excludeCountChip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showExclusionsMenu(e);
+			}
+		});
+		dreamCountChip.setOpaque(true);
+		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
+		dreamCountChip.setToolTipText("Dream items (considered as owned) - click to manage");
+		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		dreamCountChip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showDreamsMenu(e);
+			}
+		});
+		countRow.add(excludeCountChip);
+		countRow.add(dreamCountChip);
+		top.add(countRow);
+		top.add(Box.createVerticalStrut(4));
 		top.add(searchField);
 		top.add(Box.createVerticalStrut(4));
 
@@ -848,7 +900,6 @@ public class LoadoutLabPanel extends PluginPanel
 				showExclusionsMenu(e);
 			}
 		});
-		top.add(exclusionsLabel);
 		refreshExclusionsLabel();
 
 		// Stored-elsewhere items (manual owned: STASH, POH, UIM storages).
@@ -1477,6 +1528,9 @@ public class LoadoutLabPanel extends PluginPanel
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster);
+		active.upgradeBudget = displayOptions.upgradeBudget
+			? displayOptions.defaultUpgradeBudget : "";
+		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
 		page.add(active);
 		syncControlsFromActive();
 		refreshWildernessRows();
@@ -1519,7 +1573,8 @@ public class LoadoutLabPanel extends PluginPanel
 		active.optimizeMode = Math.max(0, optimizeMode.getSelectedIndex());
 		active.lowRisk = lowRisk.isSelected();
 		active.protectItem = protectItem.isSelected();
-		active.riskBudgetIndex = Math.max(0, riskBudget.getSelectedIndex());
+		active.riskCap = riskCapField.getText() == null ? "" : riskCapField.getText();
+		active.lowRisk = !active.riskCap.isEmpty();
 		active.upgradeBudget = upgradeBudget.getText() == null ? "" : upgradeBudget.getText();
 		active.spellbookIndex = Math.max(0, spellbook.getSelectedIndex());
 	}
@@ -1540,7 +1595,9 @@ public class LoadoutLabPanel extends PluginPanel
 			optimizeMode.setSelectedIndex(active.optimizeMode);
 			lowRisk.setSelected(active.lowRisk);
 			protectItem.setSelected(active.protectItem);
-			riskBudget.setSelectedIndex(active.riskBudgetIndex);
+			riskCapField.setText(active.riskCap);
+			lastRiskGp = parsedBudgetGp(active.riskCap);
+			lastRiskText = active.riskCap;
 			upgradeBudget.setText(active.upgradeBudget);
 			lastBudgetGp = parsedBudgetGp(active.upgradeBudget);
 			lastBudgetText = active.upgradeBudget;
@@ -1869,7 +1926,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The wilderness tradeable cap, or -1 when the mode is off/hidden. */
 	private int riskCap(ResultEntry entry)
 	{
-		if (!effectiveWilderness(entry) || !displayOptions.wildyRisk || !entry.lowRisk)
+		if (!effectiveWilderness(entry) || !displayOptions.wildyRisk
+			|| entry.riskCap == null || entry.riskCap.trim().isEmpty())
 		{
 			return -1;
 		}
@@ -1895,6 +1953,43 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> setBudgetTo(newText), () -> setBudgetTo(oldText));
 		}
 		recompute();
+	}
+
+	private void riskCapEdited()
+	{
+		int parsed = parsedBudgetGp(riskCapField.getText());
+		String newText = riskCapField.getText() == null ? "" : riskCapField.getText();
+		if (parsed == lastRiskGp && newText.equals(lastRiskText))
+		{
+			return;
+		}
+		String oldText = lastRiskText;
+		lastRiskGp = parsed;
+		lastRiskText = newText;
+		if (!replayingHistory)
+		{
+			recordStep(newText.isEmpty() ? "Risk cap cleared" : "Risk cap " + newText,
+				() -> setRiskCapTo(newText), () -> setRiskCapTo(oldText));
+		}
+		recompute();
+	}
+
+	private void setRiskCapTo(String text)
+	{
+		if (riskCapField.getText().equals(text))
+		{
+			return;
+		}
+		replayingHistory = true;
+		try
+		{
+			riskCapField.setText(text);
+			riskCapEdited();
+		}
+		finally
+		{
+			replayingHistory = false;
+		}
 	}
 
 	private void setBudgetTo(String text)
@@ -2040,6 +2135,60 @@ public class LoadoutLabPanel extends PluginPanel
 		int count = exclusionView.snapshot().size();
 		exclusionsLabel.setText(count == 0 ? "" : "Excluded items: " + count + " (click to manage)");
 		exclusionsLabel.setVisible(count > 0);
+		refreshCountChips();
+	}
+
+	/** The -N / +N chips above the search bar: red exclusions, green
+	 * dreams; zero counts render muted so the entry points stay visible. */
+	private void refreshCountChips()
+	{
+		int excluded = exclusionView.snapshot().size();
+		excludeCountChip.setText("-" + excluded);
+		excludeCountChip.setForeground(excluded > 0
+			? new Color(220, 120, 120) : new Color(140, 110, 110));
+		excludeCountChip.setBorder(new RoundedBorder(excluded > 0
+			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+		int dreams = dreamView.snapshot().size();
+		dreamCountChip.setText("+" + dreams);
+		dreamCountChip.setForeground(dreams > 0
+			? new Color(130, 200, 130) : new Color(110, 140, 110));
+		dreamCountChip.setBorder(new RoundedBorder(dreams > 0
+			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+	}
+
+	/** The dream chip's menu: each dream un-dreamable, plus the add entry. */
+	private void showDreamsMenu(MouseEvent e)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		java.util.List<GearItem> dreamGear = new ArrayList<>();
+		for (int id : dreamView.snapshot())
+		{
+			GearItem gear = data.getGear(id);
+			if (gear != null)
+			{
+				dreamGear.add(gear);
+			}
+		}
+		dreamGear.sort(Comparator.comparing(GearItem::label));
+		for (GearItem gear : dreamGear)
+		{
+			JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
+			undream.addActionListener(ev ->
+			{
+				dreamToggle.toggle(gear.getId());
+				refreshCountChips();
+				recompute();
+			});
+			menu.add(undream);
+		}
+		if (!dreamGear.isEmpty())
+		{
+			menu.addSeparator();
+		}
+		JMenuItem add = new JMenuItem("Dream an item (consider as owned)...");
+		add.addActionListener(ev -> showAddDreamDialog());
+		menu.add(add);
+		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
 	}
 
 	private void showExclusionsMenu(MouseEvent e)
@@ -3109,7 +3258,7 @@ public class LoadoutLabPanel extends PluginPanel
 			computeHook.computeRoster(new java.util.ArrayList<>(entry.mobs),
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
-				RISK_STEPS[entry.riskBudgetIndex],
+				parsedBudgetGp(entry.riskCap),
 				entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
@@ -3118,7 +3267,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
-			RISK_STEPS[entry.riskBudgetIndex],
+			parsedBudgetGp(entry.riskCap),
 			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
@@ -3303,6 +3452,8 @@ public class LoadoutLabPanel extends PluginPanel
 	 * Entries still computing render a placeholder (mascot on the first). */
 	private void renderPage()
 	{
+		// Every path that changes dreams/exclusions ends in a render.
+		refreshCountChips();
 		resultsPanel.removeAll();
 		// Chrome on every result (field spec 2026-07-17): the fold/title
 		// row now carries the per-result refresh + close, replacing the
@@ -3547,10 +3698,6 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean wild = (exclusive || (listed && entry.inWilderness)) && displayOptions.wildyRisk;
 		if (wild)
 		{
-			toggles.add(paramChip("Low risk", entry.lowRisk, true,
-				"Keep your 3 most valuable items (4 with Protect Item);"
-					+ " everything else must total under the risk cap",
-				() -> asActive(entry, lowRisk::doClick)));
 			toggles.add(paramChip("Protect item", entry.protectItem, true,
 				"Protect Item keeps a 4th item (not while skulled)",
 				() -> asActive(entry, protectItem::doClick)));
@@ -3577,11 +3724,13 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (wild)
 		{
-			String risk = String.valueOf(riskBudget.getItemAt(
-				Math.min(entry.riskBudgetIndex, riskBudget.getItemCount() - 1)));
-			values.add(paramChip("Risk: " + risk, true, true,
-				"Total gp the set may drop on a wilderness death - click to pick",
-				() -> pickFromCombo(entry, riskBudget, "Risk cap")));
+			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
+			values.add(paramChip(risk.isEmpty() ? "Risk: off" : "Risk: " + risk,
+				!risk.isEmpty(), true,
+				"Low-risk mode: keep your 3 most valuable items (4 with"
+					+ " Protect Item), everything else must total under this"
+					+ " gp cap (25k, 1m...) - empty = unconstrained",
+				() -> editRiskCap(entry)));
 		}
 		rows.add(values);
 		rows.add(Box.createVerticalStrut(4));
@@ -3608,10 +3757,8 @@ public class LoadoutLabPanel extends PluginPanel
 		chip.setForeground(!enabled ? new Color(150, 150, 150)
 			: selected ? Color.WHITE : new Color(170, 170, 170));
 		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
-		chip.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(selected
-				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
-			BorderFactory.createEmptyBorder(2, 7, 2, 7)));
+		chip.setBorder(new RoundedBorder(selected
+			? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
 		chip.setToolTipText(tooltip);
 		if (enabled && onClick != null)
 		{
@@ -3655,6 +3802,22 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
+	private void editRiskCap(ResultEntry entry)
+	{
+		String current = entry.riskCap == null ? "" : entry.riskCap;
+		String edited = (String) JOptionPane.showInputDialog(this,
+			"Wilderness risk cap in gp (25k, 1m...; empty = unconstrained):",
+			"Risk cap", JOptionPane.PLAIN_MESSAGE, null, null, current);
+		if (edited != null && !edited.equals(current))
+		{
+			asActive(entry, () ->
+			{
+				riskCapField.setText(edited);
+				riskCapEdited();
+			});
+		}
+	}
+
 	private void editBudget(ResultEntry entry)
 	{
 		String current = entry.upgradeBudget == null ? "" : entry.upgradeBudget;
@@ -3691,10 +3854,8 @@ public class LoadoutLabPanel extends PluginPanel
 			row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			// Bordered + padded so every row reads as clickable (field
 			// spec); the lensed row wears the bright edge like Yours|BiS.
-			row.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(lensed
-					? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
-				BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+			row.setBorder(new RoundedBorder(lensed
+				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 3, 8));
 			row.setAlignmentX(LEFT_ALIGNMENT);
 			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -4020,10 +4181,8 @@ public class LoadoutLabPanel extends PluginPanel
 		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
 		// Bordered buttons (field request): the selected side wears a
 		// bright edge, the other stays a quiet outline.
-		chip.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(selected
-				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
-			BorderFactory.createEmptyBorder(5, 12, 5, 12)));
+		chip.setBorder(new RoundedBorder(selected
+			? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
 		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		chip.setToolTipText(text.equals("BiS")
 			? "The game-wide best set at your levels" : "Your best owned set");
@@ -4090,6 +4249,8 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingStyle = style;
 		renderingBis = bis;
 		renderingMechanicsNote = MonsterNotes.noteFor(entry.mob());
+		renderingProtectItem = entry.protectItem && effectiveWilderness(entry)
+			&& displayOptions.wildyRisk;
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -4341,7 +4502,8 @@ public class LoadoutLabPanel extends PluginPanel
 			PvpRisk.assess(best.getLoadout(), specWeapon, keep);
 		JLabel line = line(String.format("Risk: %s gp (%d kept on death)",
 			PvpRisk.formatGp(risk.riskGp), keep),
-			active != null && risk.riskGp <= RISK_STEPS[active.riskBudgetIndex]
+			active != null && !active.riskCap.trim().isEmpty()
+				&& risk.riskGp <= parsedBudgetGp(active.riskCap)
 				? GOOD : new Color(220, 140, 120));
 		StringBuilder tip = new StringBuilder("<html>Kept on death:");
 		if (risk.kept.isEmpty())
@@ -4790,6 +4952,53 @@ public class LoadoutLabPanel extends PluginPanel
 		set.run();
 	}
 
+	/** A rounded outline + padding for the chip language (field spec:
+	 * soften the square corners) - one border instead of the old
+	 * line+empty compound. */
+	private static final class RoundedBorder extends javax.swing.border.AbstractBorder
+	{
+		private final Color color;
+		private final int vPad;
+		private final int hPad;
+
+		RoundedBorder(Color color, int vPad, int hPad)
+		{
+			this.color = color;
+			this.vPad = vPad;
+			this.hPad = hPad;
+		}
+
+		@Override
+		public void paintBorder(Component c, Graphics g, int x, int y, int width, int height)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(color);
+				g2.drawRoundRect(x, y, width - 1, height - 1, 8, 8);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+
+		@Override
+		public Insets getBorderInsets(Component c)
+		{
+			return new Insets(vPad + 1, hPad + 1, vPad + 1, hPad + 1);
+		}
+
+		@Override
+		public Insets getBorderInsets(Component c, Insets insets)
+		{
+			insets.set(vPad + 1, hPad + 1, vPad + 1, hPad + 1);
+			return insets;
+		}
+	}
+
 	/** A small icon on a CELL_BG rounded plate (2px padding each side). */
 	private static final class BackedIcon implements javax.swing.Icon
 	{
@@ -4995,6 +5204,16 @@ public class LoadoutLabPanel extends PluginPanel
 				taken.setIconTextGap(3);
 			}
 			panel.add(taken);
+		}
+		if (renderingProtectItem)
+		{
+			// Protect Item assumed (field spec): the prayer sprite beside
+			// the other defensive facts.
+			JLabel kept = statLine("kept: 4",
+				"Protect Item assumed - a 4th item is kept on death", MUTED, null);
+			attachSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
+			kept.setIconTextGap(3);
+			panel.add(kept);
 		}
 		String styleText = attackStyleText(result);
 		if (displayOptions.attackStyle && styleText != null)

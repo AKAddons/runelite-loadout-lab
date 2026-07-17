@@ -504,7 +504,7 @@ public class LoadoutLabPlugin extends Plugin
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"loadingAnimation");
+		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
@@ -524,7 +524,9 @@ public class LoadoutLabPlugin extends Plugin
 			config.showWildyRisk(),
 			config.showInBankButton(),
 			config.showFilterBankButton(),
-			config.loadingAnimation());
+			config.loadingAnimation(),
+			config.defaultUpgradeBudget(),
+			config.defaultRiskCap());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
