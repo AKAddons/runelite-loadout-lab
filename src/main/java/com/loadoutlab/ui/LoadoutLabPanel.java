@@ -3262,26 +3262,9 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(magicSpellRow());
 		}
 
-		// Max hit, accuracy, and incoming damage render as info tiles in the
-		// classic grid's blank corners (field request) - no text rows here.
-		// Assurance: name the conditional bonuses the math actually counted
-		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
-		// +16.7% damage"). Entries carry commas, so sources join on ";".
-		// html with a fixed body width so the now-longer line WRAPS (and
-		// reports a wrapped preferred HEIGHT - bare html labels still
-		// measure single-line). As a plain label its preferred width
-		// inflated every card past the sidebar edge.
-		if (displayOptions.bonuses && !best.getCountedBonuses().isEmpty())
-		{
-			JLabel counting = line("<html><body style='width: 185px'>Counting: "
-				+ String.join("; ", best.getCountedBonuses()) + "</body></html>", MUTED);
-			counting.setFont(counting.getFont().deriveFont(11f));
-			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
-			card.add(counting);
-		}
-		if (displayOptions.damageTaken)
-		{
-		}
+		// Max hit, accuracy, damage taken, style, prayer bonus and counted
+		// bonuses live in the 5x5 grid's stat flank (field spec) - no text
+		// rows here.
 		if (result.modeTrade != null)
 		{
 			card.add(modeTradeRow(result.modeTrade));
@@ -3302,13 +3285,8 @@ public class LoadoutLabPanel extends PluginPanel
 			addRiskLine(card, best, result.specWeapon);
 		}
 		addUpgradeLine(card, best);
-		if (displayOptions.prayerBonus)
-		{
-			addPrayerLine(card, best);
-		}
 		if (displayOptions.attackStyle)
 		{
-			addStyleLine(card, style, best);
 			addSpellLine(card, style, best);
 		}
 		addDartLine(card, best);
@@ -3442,46 +3420,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The set's total prayer bonus - just the prayer icon and the number. */
-	private void addPrayerLine(JPanel card, DpsResult result)
-	{
-		int prayer = result.getLoadout().getBonuses().getPrayer();
-		if (prayer == 0)
-		{
-			return;
-		}
-		JLabel line = line(PRAYER_ICON == null ? String.format("Prayer %+d", prayer)
-			: String.format("%+d", prayer), MUTED);
-		if (PRAYER_ICON != null)
-		{
-			line.setIcon(PRAYER_ICON);
-			line.setIconTextGap(4);
-		}
-		line.setToolTipText("Gear prayer bonus - slower prayer drain");
-		card.add(line);
-	}
-
 	/** The attack style the numbers use: "Style: Slash (aggressive)". */
-	private void addStyleLine(JPanel card, CombatStyle style, DpsResult result)
-	{
-		if (style == CombatStyle.MAGIC)
-		{
-			return; // the spell / powered-staff line already covers magic
-		}
-		String type = result.getAttackType();
-		String text;
-		if (style == CombatStyle.RANGED)
-		{
-			text = type.contains("rapid") ? "Rapid" : "Accurate";
-		}
-		else
-		{
-			text = capitalize(type);
-		}
-		JLabel line = line("Style: " + text, INFO);
-		line.setToolTipText("Use this attack style");
-		card.add(line);
-	}
-
 	/** Blowpipes: name the loaded dart the numbers assume. */
 	private void addDartLine(JPanel card, DpsResult result)
 	{
@@ -4080,7 +4019,7 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
-			markUnowned, gameBest, specCell, markUnowned ? null : renderingIncoming));
+			markUnowned, gameBest, specCell, markUnowned ? renderingIncoming : null));
 	}
 
 	/**
@@ -4123,72 +4062,118 @@ public class LoadoutLabPanel extends PluginPanel
 		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
 		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
-		JPanel icons = new JPanel(new GridLayout(5, 3, 2, 2));
+		// The 5x5 item/stat view (field spec): the classic gear silhouette
+		// fills columns 0-2, and columns 3-4 are the STAT FLANK - every
+		// number that used to be a text row, next to the items it describes.
+		JPanel icons = new JPanel(new GridLayout(5, 5, 2, 2));
 		icons.setOpaque(false);
 		icons.setAlignmentX(LEFT_ALIGNMENT);
-		for (int i = 0; i < CLASSIC_ORDER.length; i++)
+		java.util.List<javax.swing.JComponent> stats =
+			markUnowned ? statFlank(cell, result, incoming)
+				: new java.util.ArrayList<>();
+		int statIndex = 0;
+		for (int row = 0; row < 5; row++)
 		{
-			if (i == CLASSIC_SPEC_INDEX)
+			for (int col = 0; col < 3; col++)
 			{
-				icons.add(specCell);
-				continue;
-			}
-			GearSlot slotType = CLASSIC_ORDER[i];
-			if (slotType != null)
-			{
-				icons.add(buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
-				continue;
-			}
-			// The classic layout's empty corners host the numbers that used
-			// to be text rows (field request): max hit top-left, accuracy
-			// top-right, incoming dps right of the legs.
-			if (i == 0 && displayOptions.maxHit)
-			{
-				icons.add(infoCell(cell, String.valueOf(result.getMaxHit()), "Max hit",
-					"Max hit " + result.getMaxHit(), GOOD));
-			}
-			else if (i == 2 && displayOptions.accuracy)
-			{
-				String acc = Math.round(result.getAccuracy() * 100) + "%";
-				icons.add(infoCell(cell, acc, "Accuracy",
-					"Hit chance " + acc, GOOD));
-			}
-			else if (i == 11 && incoming != null && incoming.totalDps > 0
-				&& displayOptions.damageTaken)
-			{
-				// The protect-prayer sprite IS the pray call; the number is
-				// the prayed cost; the tooltip carries the full threat table.
-				JLabel taken = new JLabel(String.format("~%.1f", incoming.totalDps));
-				taken.setForeground(new Color(210, 140, 130));
-				taken.setFont(taken.getFont().deriveFont(Font.BOLD, 12f));
-				int sprite = incoming.protectPrayer != null
-					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
-				if (sprite >= 0)
+				int i = row * 3 + col;
+				if (i == CLASSIC_SPEC_INDEX)
 				{
-					attachSprite(taken, sprite);
+					icons.add(specCell);
+				}
+				else if (CLASSIC_ORDER[i] != null)
+				{
+					icons.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
 				}
 				else
 				{
-					taken.setIcon(NO_PRAYER_ICON);
+					icons.add(blankCell(cell));
 				}
-				taken.setIconTextGap(3);
-				taken.setToolTipText(incomingTooltip(incoming));
-				JPanel tile = new JPanel(new java.awt.GridBagLayout());
-				tile.setOpaque(false);
-				tile.setPreferredSize(new Dimension(cell, cell));
-				tile.setToolTipText(incomingTooltip(incoming));
-				tile.add(taken);
-				icons.add(tile);
 			}
-			else
+			for (int col = 0; col < 2; col++)
 			{
-				icons.add(blankCell(cell));
+				icons.add(statIndex < stats.size() ? stats.get(statIndex) : blankCell(cell));
+				statIndex++;
 			}
 		}
 		int height = 5 * cell + 8;
-		icons.setPreferredSize(new Dimension(3 * cell + 4, height));
-		icons.setMaximumSize(new Dimension(3 * (cell + 8) + 4, height));
+		icons.setPreferredSize(new Dimension(5 * cell + 8, height));
+		icons.setMaximumSize(new Dimension(5 * (cell + 6) + 8, height));
 		return icons;
+	}
+
+	/** The stat flank's cells, top-to-bottom pairs: max hit + accuracy,
+	 * damage taken + attack style, prayer bonus + counted bonuses, risk.
+	 * Each honours its display option (a skipped stat leaves a blank). */
+	private java.util.List<javax.swing.JComponent> statFlank(int cell, DpsResult result,
+		IncomingDpsCalculator.Result incoming)
+	{
+		java.util.List<javax.swing.JComponent> stats = new java.util.ArrayList<>();
+		stats.add(!displayOptions.maxHit ? blankCell(cell)
+			: infoCell(cell, String.valueOf(result.getMaxHit()), "Max hit",
+				"Max hit " + result.getMaxHit(), GOOD));
+		String acc = Math.round(result.getAccuracy() * 100) + "%";
+		stats.add(!displayOptions.accuracy ? blankCell(cell)
+			: infoCell(cell, acc, "Accuracy", "Hit chance " + acc, GOOD));
+		if (incoming != null && incoming.totalDps > 0 && displayOptions.damageTaken)
+		{
+			// The protect-prayer sprite IS the pray call; the number is the
+			// prayed cost; the tooltip carries the full threat table.
+			JLabel taken = new JLabel(String.format("~%.1f", incoming.totalDps));
+			taken.setForeground(new Color(210, 140, 130));
+			taken.setFont(taken.getFont().deriveFont(Font.BOLD, 12f));
+			int sprite = incoming.protectPrayer != null
+				? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
+			if (sprite >= 0)
+			{
+				attachSprite(taken, sprite);
+			}
+			else
+			{
+				taken.setIcon(NO_PRAYER_ICON);
+			}
+			taken.setIconTextGap(3);
+			taken.setToolTipText(incomingTooltip(incoming));
+			JPanel tile = new JPanel(new java.awt.GridBagLayout());
+			tile.setOpaque(false);
+			tile.setPreferredSize(new Dimension(cell, cell));
+			tile.setToolTipText(incomingTooltip(incoming));
+			tile.add(taken);
+			stats.add(tile);
+		}
+		else
+		{
+			stats.add(blankCell(cell));
+		}
+		String styleText = attackStyleText(result);
+		stats.add(!displayOptions.attackStyle || styleText == null ? blankCell(cell)
+			: infoCell(cell, styleText, "Style", "Use this attack style", INFO));
+		int prayer = result.getLoadout().getBonuses().getPrayer();
+		stats.add(!displayOptions.prayerBonus || prayer == 0 ? blankCell(cell)
+			: infoCell(cell, String.format("%+d", prayer), "Prayer",
+				"Gear prayer bonus - slower prayer drain", MUTED));
+		stats.add(!displayOptions.bonuses || result.getCountedBonuses().isEmpty() ? blankCell(cell)
+			: infoCell(cell, String.valueOf(result.getCountedBonuses().size()), "Counting",
+				"<html>Conditional bonuses applied:<br>"
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO));
+		return stats;
+	}
+
+	/** The short attack-style word ("Rapid", "Aggressive"); null for magic
+	 * (the spell line covers it). */
+	private static String attackStyleText(DpsResult result)
+	{
+		String type = result.getAttackType();
+		if (type == null || type.startsWith("magic"))
+		{
+			return null;
+		}
+		if (type.startsWith("ranged"))
+		{
+			return type.contains("rapid") ? "Rapid" : "Accurate";
+		}
+		int dash = type.indexOf(" - ");
+		return capitalize(dash > 0 ? type.substring(0, dash) : type);
 	}
 
 	/** An info tile in a blank grid corner: a small caption over the value,
