@@ -212,12 +212,13 @@
   "attacks": [
    {
     "maxHit": 28,
+    "prayable": false,
     "share": 1.0,
     "speedTicks": 4,
-    "style": "typeless magic"
+    "style": "magic"
    }
   ],
-  "note": "Wiki: both attacks are magic-based and typeless (always hit, no defence roll), max 28 at 4t; Protect from Magic blocks them entirely - the standard AFK setup."
+  "note": "Wiki: 'uses typeless Magic, and as such Protect from Magic does not provide any degree of damage reduction' but 'can hit very hard [28] with very poor accuracy' - so it DOES roll magic accuracy (magic defence gear is the mitigation), and prayer does nothing."
  },
  "kree'arra": {
   "attacks": [

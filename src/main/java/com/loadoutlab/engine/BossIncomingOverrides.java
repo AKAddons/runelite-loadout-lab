@@ -33,8 +33,7 @@ public final class BossIncomingOverrides
 	private static final String RESOURCE = "/com/loadoutlab/data/boss_incoming.json";
 
 	private static final Set<String> STYLES = new HashSet<>(Arrays.asList(
-		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless",
-		"typeless melee", "typeless ranged", "typeless magic"));
+		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless"));
 
 	/** One curated attack in the boss's rotation. */
 	public static final class Attack

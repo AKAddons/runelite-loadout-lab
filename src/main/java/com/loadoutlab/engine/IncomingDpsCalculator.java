@@ -191,7 +191,7 @@ public final class IncomingDpsCalculator
 				{
 					BossIncomingOverrides.Attack attack = attacks.get(i);
 					String style = attack.getStyle();
-					int kind = style.startsWith("typeless") ? KIND_TYPELESS : kindOf(style);
+					int kind = "typeless".equals(style) ? KIND_TYPELESS : kindOf(style);
 					kinds[i] = kind;
 					attackRolls[i] = kind == KIND_TYPELESS ? 0 : attackRollFor(kind, off);
 					maxHits[i] = attack.getMaxHit();
@@ -485,9 +485,7 @@ public final class IncomingDpsCalculator
 			BossIncomingOverrides.Attack attack = attacks.get(i);
 			String style = attack.getStyle();
 			// Typeless attacks have no defence roll: they always hit.
-			// Compound "typeless magic" etc. keep the always-hit accuracy;
-			// the qualifier only names the protection prayer (Kraken).
-			double accuracy = style.startsWith("typeless") ? 1.0
+			double accuracy = "typeless".equals(style) ? 1.0
 				: accuracyFor(style, off, def, defenceLevel, magicLevel);
 			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
 			dpsPer[i] = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
@@ -604,13 +602,6 @@ public final class IncomingDpsCalculator
 	private static String protectPrayerFor(String rawStyle)
 	{
 		String style = rawStyle.toLowerCase(Locale.ROOT);
-		// "typeless magic" (Kraken): always-hit damage, but the qualifier
-		// says which protection prayer applies. Bare "typeless" stays on
-		// the melee fallthrough - it is only reachable prayable=false.
-		if (style.startsWith("typeless "))
-		{
-			style = style.substring("typeless ".length());
-		}
 		if (style.equals("ranged") || style.equals("range"))
 		{
 			return "Protect from Missiles";

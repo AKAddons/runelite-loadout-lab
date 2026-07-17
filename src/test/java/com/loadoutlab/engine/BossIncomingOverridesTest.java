@@ -72,21 +72,26 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void krakenTypelessMagicAlwaysHitsButPraysToZero()
+	public void krakenRollsMagicAccuracyButPiercesPrayer()
 	{
-		// Heavy magic defence on purpose: typeless attacks skip the defence
-		// roll, so the armour must NOT reduce the unprayed number - only
-		// Protect from Magic (the qualifier's prayer) blocks it, entirely.
-		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
+		// Wiki: "uses typeless Magic, and as such Protect from Magic does
+		// not provide any degree of damage reduction", yet it "can hit very
+		// hard [28] but has very poor accuracy" - so the model is a normal
+		// magic ACCURACY roll (magic defence gear is the real mitigation)
+		// whose damage pierces prayer entirely (field report 2026-07-17).
+		IncomingDpsCalculator.Result tanky = IncomingDpsCalculator.calculate(
 			named("Kraken", Arrays.asList("Typeless Magic")),
 			armour(0, 0, 0, 400, 0), 99, 99);
-		Assert.assertTrue(result.fullyModeled);
-		Assert.assertEquals("Protect from Magic", result.protectPrayer);
-		// 28 max at 4t: (28/2) / (4 * 0.6s) - the curated speed, not the
-		// sheet's.
-		Assert.assertEquals(14.0 / 2.4, result.unprayedDps, 1e-9);
-		Assert.assertEquals(0.0, result.totalDps, 1e-9);
-		Assert.assertTrue(threat(result, "typeless magic").blocked);
+		Assert.assertTrue(tanky.fullyModeled);
+		Assert.assertNull(tanky.protectPrayer);
+		Assert.assertTrue(tanky.unprayedDps > 0);
+		Assert.assertEquals(tanky.unprayedDps, tanky.totalDps, 1e-9);
+		Assert.assertEquals(28, threat(tanky, "magic").maxHit);
+		// The accuracy roll is real: magic defence lowers the number.
+		IncomingDpsCalculator.Result naked = IncomingDpsCalculator.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 0, 0), 99, 99);
+		Assert.assertTrue(tanky.totalDps < naked.totalDps);
 	}
 
 	@Test
