@@ -333,5 +333,41 @@
    }
   ],
   "note": "Wiki: 41 ranged/magic across the serpentine and tanzanite forms (approximate phase mix); magma tail slam (30) is typeless and dodgeable; snakelings and venom unmodeled."
+ },
+ "zulrah|magma": {
+  "attacks": [
+   {
+    "maxHit": 30,
+    "prayable": false,
+    "share": 1.0,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki: 'red, it uses a typeless attack wherein it swings its tail... can be avoided by moving two tiles away' - heavy damage + stun, no prayer helps; modeled as unavoided."
+ },
+ "zulrah|serpentine": {
+  "attacks": [
+   {
+    "maxHit": 41,
+    "share": 1.0,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: 'green, it attacks with Ranged' (41); the green 'Jad phase' alternates Ranged and Magic - flick it, unmodeled here; snakelings and venom clouds unmodeled."
+ },
+ "zulrah|tanzanite": {
+  "attacks": [
+   {
+    "maxHit": 41,
+    "share": 0.5,
+    "style": "magic"
+   },
+   {
+    "maxHit": 41,
+    "share": 0.5,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: 'blue, it attacks with Ranged and Magic' (41s, even mix modeled; magic listed first so the tied prayer pick lands on Protect from Magic)."
  }
 }

@@ -188,6 +188,21 @@ public final class BossIncomingOverrides
 		{
 			return null;
 		}
+		// Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
+		// differently per form, and the roster lens shows one form at a
+		// time - each must carry ITS OWN attacks and protect prayer (field
+		// report 2026-07-17: every Zulrah form said pray mage). The bare
+		// name stays as the whole-fight fallback.
+		String version = monster.getVersion();
+		if (version != null && !version.isEmpty())
+		{
+			BossOverride byForm = OVERRIDES.get(
+				(monster.getNameLower() + "|" + version).toLowerCase(java.util.Locale.ROOT));
+			if (byForm != null)
+			{
+				return byForm;
+			}
+		}
 		return OVERRIDES.get(monster.getNameLower());
 	}
 

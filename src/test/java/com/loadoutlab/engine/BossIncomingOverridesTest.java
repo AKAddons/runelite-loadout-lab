@@ -27,7 +27,12 @@ public class BossIncomingOverridesTest
 
 	private static MonsterStats named(String name, List<String> styles)
 	{
-		return new MonsterStats(1, name, "", 600, 255, 4, 250, 80, 0,
+		return versioned(name, "", styles);
+	}
+
+	private static MonsterStats versioned(String name, String version, List<String> styles)
+	{
+		return new MonsterStats(1, name, version, 600, 255, 4, 250, 80, 0,
 			MonsterDefences.ZERO, offence(styles),
 			java.util.Collections.emptyList(), false, "", 0);
 	}
@@ -161,6 +166,48 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
+	public void zulrahFormsCarryTheirOwnAttacksAndPrayers()
+	{
+		// Field bug 2026-07-17: the name-keyed whole-fight entry told every
+		// form to pray mage. Version-keyed entries give each form ITS OWN
+		// protect prayer; the bare name stays as the whole-fight fallback.
+		IncomingDpsCalculator.Result serp = IncomingDpsCalculator.calculate(
+			versioned("Zulrah", "Serpentine", Arrays.asList("Ranged")),
+			armour(0, 0, 0, 0, 0), 99, 99);
+		Assert.assertEquals("Protect from Missiles", serp.protectPrayer);
+		Assert.assertEquals(0.0, serp.totalDps, 1e-9);
+
+		// The blue form carries BOTH books - the prayer pick maximizes
+		// savings for YOUR gear: heavy ranged defence leaves magic as the
+		// bigger threat (pray mage), heavy magic defence flips it. A
+		// symmetric offence isolates the armour-driven flip.
+		MonsterStats tanzanite = new MonsterStats(1, "Zulrah", "Tanzanite",
+			600, 255, 4, 250, 80, 0, MonsterDefences.ZERO,
+			new MonsterOffence(1, 1, 300, 300, 0, 0, 50, 0, 50, 0, 4,
+				Arrays.asList("Magic", "Ranged")),
+			java.util.Collections.emptyList(), false, "", 0);
+		IncomingDpsCalculator.Result tanzRangedTank = IncomingDpsCalculator.calculate(
+			tanzanite, armour(0, 0, 0, 0, 400), 99, 99);
+		Assert.assertEquals("Protect from Magic", tanzRangedTank.protectPrayer);
+		Assert.assertTrue("the unprayed half still lands", tanzRangedTank.totalDps > 0);
+		IncomingDpsCalculator.Result tanzMageTank = IncomingDpsCalculator.calculate(
+			tanzanite, armour(0, 0, 0, 400, 0), 99, 99);
+		Assert.assertEquals("Protect from Missiles", tanzMageTank.protectPrayer);
+
+		IncomingDpsCalculator.Result magma = IncomingDpsCalculator.calculate(
+			versioned("Zulrah", "Magma", Arrays.asList("Typeless")),
+			armour(0, 0, 0, 0, 0), 99, 99);
+		Assert.assertNull("no prayer helps the tail slam", magma.protectPrayer);
+		Assert.assertEquals(magma.unprayedDps, magma.totalDps, 1e-9);
+		Assert.assertEquals(30, threat(magma, "typeless").maxHit);
+
+		// The versionless fallback still answers (whole-fight mix).
+		Assert.assertNotNull(IncomingDpsCalculator.calculate(
+			named("Zulrah", Arrays.asList("Ranged", "Magic")),
+			armour(0, 0, 0, 0, 0), 99, 99).protectPrayer);
+	}
+
+	@Test
 	public void everySeededBossIsPresentAndItsSharesSumToAtMostOne()
 	{
 		List<String> expected = Arrays.asList(
@@ -168,7 +215,8 @@ public class BossIncomingOverridesTest
 			"commander zilyana", "zulrah", "vorkath", "cerberus", "callisto",
 			"artio", "vet'ion", "calvar'ion", "venenatis", "spindel",
 			"chaos elemental", "king black dragon", "alchemical hydra",
-			"corporeal beast", "kraken");
+			"corporeal beast", "kraken",
+			"zulrah|serpentine", "zulrah|tanzanite", "zulrah|magma");
 		for (String name : expected)
 		{
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
