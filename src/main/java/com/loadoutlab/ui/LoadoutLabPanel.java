@@ -3428,6 +3428,10 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
+		// The mob list leads (field spec): build or trim the roster while
+		// the optimizer runs - each edit supersedes the in-flight compute
+		// via the service ticket. The mascot performs BELOW the list.
+		column.add(mobLensRows(entry));
 		// The roster picks today's mood (weighted by season); see MascotRoster.
 		if (withMascot && page.size() == 1
 			&& displayOptions.loadingAnimation && MascotArt.available())
@@ -3438,11 +3442,6 @@ public class LoadoutLabPanel extends PluginPanel
 				column.add(mascot);
 			}
 		}
-		// html so long monster names wrap instead of clipping at the edge
-		// The mob list renders while computing too (field spec): add or
-		// remove mobs mid-search instead of waiting - each edit supersedes
-		// the in-flight compute via the service ticket.
-		column.add(mobLensRows(entry));
 		JLabel computing = new JLabel("<html>" + (entry.mobs.size() > 1
 			? "Optimizing one shared set vs " + entry.mobs.size() + " mobs..."
 			: "Optimizing vs " + entry.mob().getName() + "...") + "</html>");
