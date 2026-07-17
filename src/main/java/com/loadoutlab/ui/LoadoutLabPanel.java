@@ -356,6 +356,9 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color BORDER_BIS = new Color(168, 148, 88);
 	private static final Color BORDER_SPEC = new Color(120, 190, 240);
 	private static final Color BORDER_PLAIN = new Color(70, 70, 70);
+	/** Slot-cell interior - a step lighter than the card so dark item
+	 * sprites (black boots, dark capes) keep their silhouette. */
+	private static final Color CELL_BG = new Color(50, 50, 50);
 	private static final Color BORDER_EMPTY = new Color(50, 50, 50);
 
 	private final LoadoutData data;
@@ -4353,6 +4356,8 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel slot = new RiskDotLabel();
 		slot.setPreferredSize(new Dimension(cell, cell));
 		slot.setHorizontalAlignment(SwingConstants.CENTER);
+		slot.setOpaque(true);
+		slot.setBackground(CELL_BG);
 		List<JMenuItem> extras = slotType == GearSlot.SHIELD
 			? dragonfireMenuEntries() : Collections.emptyList();
 		if (item != null)
@@ -4471,6 +4476,8 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
+		specCell.setOpaque(true);
+		specCell.setBackground(CELL_BG);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
 			// Light sky blue, sampled from the in-game spec orb's gradient.
