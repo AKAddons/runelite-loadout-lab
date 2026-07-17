@@ -63,6 +63,26 @@ standalone win that pre-builds the M-1 assets).
   row keeps only what is truly global (search, back/forward, F2P,
   exclusions). Saved results serialize (mobs + own params) with no
   global state to untangle. (M-2c)
+THE RESULT CARD ANATOMY (user spec 2026-07-16 - the M-2c/M-3/M-4
+target, top to bottom):
+1. MOB LIST - name + hp per mob; rows are an INFORMATIONAL LENS:
+   clicking one flips which mob's numbers (dps, max hit, damage
+   taken...) display below. Multi-mob: ONE set per style, optimized
+   ACROSS the list ("the best melee set that works on both"), same
+   for ranged/magic - the set is shared, only the numbers flip.
+   Kits/swaps layer on top via the swap parameters.
+2. PARAMETER ZONE (per result): max swaps (0/1/2), swappable-item
+   count, best-prayer toggle (default on) vs pick-a-prayer, boost
+   assumption toggle, spellbook, weight cap, max worn cost, upgrade
+   budget, wilderness toggles, antifire mode (gear shield / assume
+   potion / DETECT from inventory via the ledger), optimization
+   strategy. Params that exist globally today move per-result.
+3. STYLE DPS TABS (as built) - icon + dps.
+4. YOURS | BIS toggle, tab-style, above the item view.
+5. ITEM VIEW/STATS - the classic grid + info tiles (bonuses, damage
+   done, damage taken).
+6. SHOW IN BANK / FILTER BANK per result.
+
 - **M-3 Monster groups** - curated table searchable as virtual hits
   that expand into a result. A group is the ROSTER of distinct mob
   types featured in the content, not the wave sequence. Flagship
