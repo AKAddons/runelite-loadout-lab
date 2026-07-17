@@ -208,6 +208,17 @@
   ],
   "note": "Wiki: melee 25; normal dragonfire 65 and shock/ice/poison dragonfire 50 vs an unprotected player - uniform across the five attacks; shield/antifire mitigation unmodeled."
  },
+ "kraken": {
+  "attacks": [
+   {
+    "maxHit": 28,
+    "share": 1.0,
+    "speedTicks": 4,
+    "style": "typeless magic"
+   }
+  ],
+  "note": "Wiki: both attacks are magic-based and typeless (always hit, no defence roll), max 28 at 4t; Protect from Magic blocks them entirely - the standard AFK setup."
+ },
  "kree'arra": {
   "attacks": [
    {

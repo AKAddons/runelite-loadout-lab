@@ -72,6 +72,24 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
+	public void krakenTypelessMagicAlwaysHitsButPraysToZero()
+	{
+		// Heavy magic defence on purpose: typeless attacks skip the defence
+		// roll, so the armour must NOT reduce the unprayed number - only
+		// Protect from Magic (the qualifier's prayer) blocks it, entirely.
+		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 400, 0), 99, 99);
+		Assert.assertTrue(result.fullyModeled);
+		Assert.assertEquals("Protect from Magic", result.protectPrayer);
+		// 28 max at 4t: (28/2) / (4 * 0.6s) - the curated speed, not the
+		// sheet's.
+		Assert.assertEquals(14.0 / 2.4, result.unprayedDps, 1e-9);
+		Assert.assertEquals(0.0, result.totalDps, 1e-9);
+		Assert.assertTrue(threat(result, "typeless magic").blocked);
+	}
+
+	@Test
 	public void partialPierceAttacksAlwaysContributeSomething()
 	{
 		// Corporeal Beast: magic carries TRUE max 65 with prayerFactor

@@ -4147,24 +4147,36 @@ public class LoadoutLabPanel extends PluginPanel
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
 			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, GOOD, null));
 		}
-		if (incoming != null && (incoming.totalDps > 0 || incoming.unprayedDps > 0)
-			&& displayOptions.damageTaken)
+		if (incoming != null && displayOptions.damageTaken)
 		{
-			// The protect-prayer sprite IS the pray call; a fully-blocked
-			// ~0.0 is the best news the line can carry.
-			JLabel taken = statLine(String.format("DTPS: ~%.1f", incoming.totalDps),
-				incomingTooltip(incoming), new Color(210, 140, 130), null);
-			int sprite = incoming.protectPrayer != null
-				? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
-			if (sprite >= 0)
+			// The line always renders (field spec). A fully-blocked ~0.0 is
+			// the best news it can carry - but a monster whose attacks are
+			// beyond the model shows "?": silence must read as unknown,
+			// not safe.
+			boolean unmodeled = !incoming.fullyModeled
+				&& incoming.totalDps <= 0 && incoming.unprayedDps <= 0;
+			JLabel taken = statLine(
+				unmodeled ? "DTPS: ?" : String.format("DTPS: ~%.1f", incoming.totalDps),
+				unmodeled
+					? "This monster's attacks are beyond the stat-sheet model"
+						+ " - unknown, not zero"
+					: incomingTooltip(incoming),
+				new Color(210, 140, 130), null);
+			if (!unmodeled)
 			{
-				attachSprite(taken, sprite);
+				// The protect-prayer sprite IS the pray call.
+				int sprite = incoming.protectPrayer != null
+					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
+				if (sprite >= 0)
+				{
+					attachSprite(taken, sprite);
+				}
+				else
+				{
+					taken.setIcon(NO_PRAYER_ICON);
+				}
+				taken.setIconTextGap(3);
 			}
-			else
-			{
-				taken.setIcon(NO_PRAYER_ICON);
-			}
-			taken.setIconTextGap(3);
 			panel.add(taken);
 		}
 		String styleText = attackStyleText(result);
