@@ -3377,9 +3377,13 @@ public class LoadoutLabPanel extends PluginPanel
 			summary = best > 0 ? String.format(" - %.2f DPS", best) : " - no set";
 		}
 		boolean isActive = entry == active;
-		JLabel title = new JLabel((entry.folded ? "> " : "v ") + "vs "
-			+ entry.mob().label()
-			+ (entry.mobs.size() > 1 ? " +" + (entry.mobs.size() - 1) : "") + summary);
+		// Expanded cards drop the redundant name (the mob list right below
+		// carries it - field spec); folded cards keep the one-line summary,
+		// otherwise a folded result is unidentifiable.
+		JLabel title = new JLabel(entry.folded
+			? "> vs " + entry.mob().label()
+				+ (entry.mobs.size() > 1 ? " +" + (entry.mobs.size() - 1) : "") + summary
+			: "v");
 		title.setForeground(isActive ? Color.WHITE : new Color(170, 170, 170));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -4039,15 +4043,18 @@ public class LoadoutLabPanel extends PluginPanel
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		// Curated mechanics note (recoil, finishing items, immunities) for
-		// the LENSED mob - beside the gear it explains (field spec; this
-		// row replaced the note under the search box).
+		// the LENSED mob: a compact (i) beside the gear, the words in its
+		// tooltip (field spec - the paragraph was noise on every card).
 		String mechanicsNote = MonsterNotes.noteFor(entry.mob());
 		if (mechanicsNote != null)
 		{
-			JLabel noteLine = new JLabel("<html>" + mechanicsNote + "</html>");
+			JLabel noteLine = new JLabel("mechanics", new InfoIcon(12), SwingConstants.LEFT);
 			noteLine.setForeground(new Color(200, 170, 110));
-			noteLine.setFont(noteLine.getFont().deriveFont(12f));
+			noteLine.setFont(noteLine.getFont().deriveFont(11f));
+			noteLine.setIconTextGap(4);
 			noteLine.setAlignmentX(LEFT_ALIGNMENT);
+			noteLine.setToolTipText("<html><body style='width:220px'>"
+				+ mechanicsNote + "</body></html>");
 			card.add(Box.createVerticalStrut(4));
 			card.add(noteLine);
 		}
@@ -4928,6 +4935,50 @@ public class LoadoutLabPanel extends PluginPanel
 			line.setIconTextGap(3);
 		}
 		return line;
+	}
+
+	/** A painted circled-i for the mechanics note - amber like the note
+	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
+	private static final class InfoIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		InfoIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(200, 170, 110));
+				g2.drawOval(x, y, size - 1, size - 1);
+				int cx = x + size / 2;
+				g2.fillRect(cx - 1, y + 3, 2, 2);
+				g2.fillRect(cx - 1, y + 6, 2, size - 9);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
 	}
 
 	/** The amber plus-star (the mascots' signature), as a static icon for
