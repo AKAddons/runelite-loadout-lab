@@ -198,8 +198,15 @@ public class BossIncomingOverridesTest
 			versioned("Zulrah", "Magma", Arrays.asList("Typeless")),
 			armour(0, 0, 0, 0, 0), 99, 99);
 		Assert.assertNull("no prayer helps the tail slam", magma.protectPrayer);
-		Assert.assertEquals(magma.unprayedDps, magma.totalDps, 1e-9);
-		Assert.assertEquals(30, threat(magma, "typeless").maxHit);
+		// Avoidable (field report: 'all of his attacks are dodgeable') -
+		// the standard play takes zero; the tooltip keeps the undodged
+		// value for context.
+		Assert.assertEquals(0.0, magma.totalDps, 1e-9);
+		Assert.assertEquals(0.0, magma.unprayedDps, 1e-9);
+		IncomingDpsCalculator.StyleThreat slam =
+			threat(magma, "typeless (avoidable - assumed dodged)");
+		Assert.assertEquals(30, slam.maxHit);
+		Assert.assertTrue("the undodged dps stays visible", slam.dps > 0);
 
 		// The versionless fallback still answers (whole-fight mix).
 		Assert.assertNotNull(IncomingDpsCalculator.calculate(

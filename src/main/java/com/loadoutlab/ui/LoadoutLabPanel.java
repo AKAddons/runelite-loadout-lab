@@ -3355,6 +3355,55 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
+	/** The per-set "..." menu (pins, bank filters, spellbook lock), now
+	 * riding the result chrome beside reload/close (field spec). Scopes
+	 * follow the SELECTED style tab. */
+	private JButton setMenuButton(ResultEntry entry)
+	{
+		CombatStyle style = entry.selectedTab != null ? entry.selectedTab
+			: entry.results == null && entry.perMobResults == null
+				? CombatStyle.MELEE : defaultTab(entry);
+		JButton setMenu = new JButton(new DotsIcon(11));
+		setMenu.setToolTipText("Pins and bank-filter items for this set");
+		setMenu.setMargin(new Insets(1, 5, 1, 5));
+		setMenu.addActionListener(e ->
+		{
+			JPopupMenu menu = new JPopupMenu();
+			JMenuItem pinThis = new JMenuItem("Pin an item - "
+				+ scopeLabel(style.name()) + " only (search)...");
+			pinThis.addActionListener(ev -> searchAndPin(style.name()));
+			menu.add(pinThis);
+			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
+			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
+			menu.add(pinAll);
+			JMenuItem filterThis = new JMenuItem("Bank filter - "
+				+ scopeLabel(style.name()) + " only (search)...");
+			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
+			menu.add(filterThis);
+			JMenuItem filterAll = new JMenuItem("Bank filter - "
+				+ filterScopeLabel(ALL_SETS) + " (search)...");
+			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
+			menu.add(filterAll);
+			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
+			{
+				// The spellbook lock: the submenu drives the combo, which
+				// records + recomputes.
+				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
+				for (int b = 0; b < spellbook.getItemCount(); b++)
+				{
+					final int index = b;
+					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
+						? "[x] " : "") + spellbook.getItemAt(b));
+					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
+					bookMenu.add(bookItem);
+				}
+				menu.add(bookMenu);
+			}
+			menu.show(setMenu, 0, setMenu.getHeight());
+		});
+		return setMenu;
+	}
+
 	/** A result's header row: fold chevron + "vs <name>" (+ one-line best
 	 * summary when folded) filling the row, close (X) right. The title sits
 	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
@@ -3419,6 +3468,7 @@ public class LoadoutLabPanel extends PluginPanel
 		close.addActionListener(e -> closeResult(entry));
 		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 		buttons.setOpaque(false);
+		buttons.add(setMenuButton(entry));
 		buttons.add(reload);
 		buttons.add(close);
 		row.add(buttons, BorderLayout.EAST);
@@ -3888,54 +3938,8 @@ public class LoadoutLabPanel extends PluginPanel
 			? result != null && result.overallBest != null && result.overallBest.getDps() > 0
 			: result != null && result.owned != null && !result.owned.isEmpty();
 
-		// Detail header: the tab strip above carries style + dps, so this
-		// row is just the set's assume chips and its menu, right-aligned.
-		JPanel headerRow = new JPanel(new BorderLayout());
-		headerRow.setOpaque(false);
-		headerRow.setAlignmentX(LEFT_ALIGNMENT);
-		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		JButton setMenu = new JButton(new DotsIcon(11));
-		setMenu.setToolTipText("Pins and bank-filter items for this set");
-		setMenu.setMargin(new Insets(1, 5, 1, 5));
-		setMenu.addActionListener(e ->
-		{
-			JPopupMenu menu = new JPopupMenu();
-			JMenuItem pinThis = new JMenuItem("Pin an item - "
-				+ scopeLabel(style.name()) + " only (search)...");
-			pinThis.addActionListener(ev -> searchAndPin(style.name()));
-			menu.add(pinThis);
-			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
-			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
-			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank filter - "
-				+ scopeLabel(style.name()) + " only (search)...");
-			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
-			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank filter - "
-				+ filterScopeLabel(ALL_SETS) + " (search)...");
-			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
-			menu.add(filterAll);
-			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
-			{
-				// The spellbook lock moved off the card (field spec): the
-				// submenu drives the combo, which records + recomputes.
-				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
-				for (int b = 0; b < spellbook.getItemCount(); b++)
-				{
-					final int index = b;
-					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
-						? "[x] " : "") + spellbook.getItemAt(b));
-					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
-					bookMenu.add(bookItem);
-				}
-				menu.add(bookMenu);
-			}
-			menu.show(setMenu, 0, setMenu.getHeight());
-		});
-		// Assume icons ride the header (right, before the menu) - a whole
-		// row of vertical space reclaimed per card.
-		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-		headerEast.setOpaque(false);
+		// The set menu moved into the result chrome (field spec) - this
+		// section now only STAGES the assume chips for the stat panel.
 		renderingChips = null;
 		String chipLabel = result == null ? null
 			: bis ? result.gameBoostLabel : result.boostLabel;
@@ -3960,10 +3964,6 @@ public class LoadoutLabPanel extends PluginPanel
 				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
 				antifireTooltip);
 		}
-		headerEast.add(setMenu);
-		headerRow.add(headerEast, BorderLayout.EAST);
-		card.add(headerRow);
-
 		if (!hasSet)
 		{
 			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");

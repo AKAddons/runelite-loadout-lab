@@ -42,6 +42,11 @@ public final class BossIncomingOverrides
 		private final int maxHit;
 		private final double share;
 		private final boolean prayable;
+		/** Dodgeable by design (Zulrah's magma slam): the standard play
+		 * takes zero, so the attack is excluded from both dps totals and
+		 * kept in the threat list for the tooltip - the same philosophy as
+		 * assuming the protection prayer is up. */
+		private final boolean avoidable;
 		/** Fraction of damage that gets THROUGH the matching protection
 		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
 		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
@@ -51,12 +56,23 @@ public final class BossIncomingOverrides
 
 		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks)
 		{
+			this(style, maxHit, share, prayable, prayerFactor, speedTicks, false);
+		}
+
+		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks, boolean avoidable)
+		{
 			this.style = style;
 			this.maxHit = maxHit;
 			this.share = share;
 			this.prayable = prayable;
 			this.prayerFactor = prayerFactor;
 			this.speedTicks = speedTicks;
+			this.avoidable = avoidable;
+		}
+
+		public boolean isAvoidable()
+		{
+			return avoidable;
 		}
 
 		public double getPrayerFactor()
@@ -154,6 +170,7 @@ public final class BossIncomingOverrides
 				throw new IllegalStateException(name + ": prayerFactor out of range");
 			}
 			int speedTicks = a.has("speedTicks") ? a.get("speedTicks").getAsInt() : 0;
+			boolean avoidable = a.has("avoidable") && a.get("avoidable").getAsBoolean();
 			if (!STYLES.contains(style))
 			{
 				throw new IllegalStateException(name + ": unknown style " + style);
@@ -167,7 +184,7 @@ public final class BossIncomingOverrides
 				throw new IllegalStateException(name + ": bad attack values");
 			}
 			shareSum += share;
-			attacks.add(new Attack(style, maxHit, share, prayable, prayerFactor, speedTicks));
+			attacks.add(new Attack(style, maxHit, share, prayable, prayerFactor, speedTicks, avoidable));
 		}
 		if (attacks.isEmpty() || shareSum > 1.0 + 1e-9)
 		{

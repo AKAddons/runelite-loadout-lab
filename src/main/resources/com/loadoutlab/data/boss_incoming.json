@@ -337,13 +337,14 @@
  "zulrah|magma": {
   "attacks": [
    {
+    "avoidable": true,
     "maxHit": 30,
     "prayable": false,
     "share": 1.0,
     "style": "typeless"
    }
   ],
-  "note": "Wiki: 'red, it uses a typeless attack wherein it swings its tail... can be avoided by moving two tiles away' - heavy damage + stun, no prayer helps; modeled as unavoided."
+  "note": "Wiki: 'red, it uses a typeless attack wherein it swings its tail... can be avoided by moving two tiles away' - the standard play dodges it, so it counts zero (shown in the tooltip at its undodged value); snakelings/venom unmodeled."
  },
  "zulrah|serpentine": {
   "attacks": [
