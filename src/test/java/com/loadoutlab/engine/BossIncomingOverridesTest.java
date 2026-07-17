@@ -163,7 +163,7 @@ public class BossIncomingOverridesTest
 			"commander zilyana", "zulrah", "vorkath", "cerberus", "callisto",
 			"artio", "vet'ion", "calvar'ion", "venenatis", "spindel",
 			"chaos elemental", "king black dragon", "alchemical hydra",
-			"corporeal beast");
+			"corporeal beast", "kraken");
 		for (String name : expected)
 		{
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
