@@ -1311,23 +1311,39 @@ public class LoadoutLabPanel extends PluginPanel
 			applySelection(monster);
 			return;
 		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
+			private java.util.List<ResultEntry> pageAfter;
+			private ResultEntry activeAfter;
+
 			@Override
 			public boolean apply()
 			{
-				applySelection(monster);
+				if (pageAfter == null)
+				{
+					applySelection(monster);
+					pageAfter = new java.util.ArrayList<>(page);
+					activeAfter = active;
+				}
+				else
+				{
+					// Redo reinstates the SAME entries - their parameter
+					// zones and computed results survive the round trip.
+					restorePage(pageAfter, activeAfter);
+				}
 				return true;
 			}
 
 			@Override
 			public boolean revert()
 			{
-				// A pick made from a deliberately cleared panel goes back
-				// to the cleared state, not to a blank-page surprise.
-				if (previous != null)
+				// Back reinstates the replaced entries intact; a pick made
+				// from a deliberately cleared panel goes back to cleared.
+				if (activeBefore != null)
 				{
-					applySelection(previous);
+					restorePage(pageBefore, activeBefore);
 				}
 				else
 				{
@@ -1342,6 +1358,24 @@ public class LoadoutLabPanel extends PluginPanel
 				return "vs " + monster.label();
 			}
 		});
+	}
+
+	/** Reinstate a captured page (entry OBJECTS - parameters and results
+	 * intact); entries whose results were never computed recompute. */
+	private void restorePage(java.util.List<ResultEntry> entries, ResultEntry newActive)
+	{
+		page.clear();
+		page.addAll(entries);
+		hadSelection = true;
+		setActive(newActive);
+		renderPage();
+		for (ResultEntry entry : page)
+		{
+			if (entry.results == null)
+			{
+				computeEntry(entry);
+			}
+		}
 	}
 
 	/** The selection itself: collapse the dropdown, show it, recompute. */
@@ -1584,6 +1618,7 @@ public class LoadoutLabPanel extends PluginPanel
 			removeFromPage(closing.getId(), nextActive);
 			return;
 		}
+		final int index = page.indexOf(entry);
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
 			@Override
@@ -1596,7 +1631,16 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean revert()
 			{
-				applySelection(closing, false);
+				// Re-insert the SAME entry where it was - parameters and
+				// results intact, no recompute needed.
+				page.add(Math.min(Math.max(0, index), page.size()), entry);
+				hadSelection = true;
+				setActive(entry);
+				renderPage();
+				if (entry.results == null)
+				{
+					computeEntry(entry);
+				}
 				return true;
 			}
 
@@ -2839,6 +2883,8 @@ public class LoadoutLabPanel extends PluginPanel
 			clearSelectionInternal();
 			return;
 		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
 			@Override
@@ -2851,7 +2897,7 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean revert()
 			{
-				applySelection(previous);
+				restorePage(pageBefore, activeBefore);
 				return true;
 			}
 
