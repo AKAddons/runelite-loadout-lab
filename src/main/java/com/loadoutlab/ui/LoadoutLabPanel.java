@@ -770,7 +770,6 @@ public class LoadoutLabPanel extends PluginPanel
 		top.add(f2pOnly);
 
 		initToggle(slayerTask, "On task: slayer helmet bonuses apply");
-		top.add(slayerTask);
 
 		// Shown only for monsters that ALSO live outside the Wilderness:
 		// checked = wilderness weapons get their +50% and the risk options
@@ -779,17 +778,14 @@ public class LoadoutLabPanel extends PluginPanel
 			+ " wilderness weapons get their +50% and the risk options apply");
 		inWilderness.setVisible(false);
 		inWilderness.addActionListener(e -> refreshWildernessRows());
-		top.add(inWilderness);
 
 		// Wilderness only: cap the set to the items death mechanics keep.
 		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
 			+ " everything else must total under the risk cap");
 		lowRisk.setVisible(false);
-		top.add(lowRisk);
 
 		initToggle(protectItem, "Protect Item keeps a 4th item (not while skulled)");
 		protectItem.setVisible(false);
-		top.add(protectItem);
 
 		// How much gp the set may drop on a wilderness death; 0 = nothing
 		// droppable and no fees at all.
@@ -800,7 +796,6 @@ public class LoadoutLabPanel extends PluginPanel
 		riskBudget.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(riskBudget, "Risk cap");
 		riskBudget.setVisible(false);
-		top.add(riskBudget);
 
 
 		// Spellbook lock lives ON the magic card (vertical space) - the
@@ -832,7 +827,6 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		});
 		budgetRow.add(upgradeBudget, BorderLayout.CENTER);
-		top.add(budgetRow);
 
 		// D-4: pick the offense/defense frontier point (sweep is slower).
 		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
@@ -840,7 +834,6 @@ public class LoadoutLabPanel extends PluginPanel
 		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
 		optimizeMode.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(optimizeMode, "Optimize");
-		top.add(optimizeMode);
 
 		// Excluded items ("protected" from suggestions) - click to manage.
 		exclusionsLabel.setForeground(new Color(200, 140, 140));
@@ -3489,6 +3482,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// the optimizer runs - each edit supersedes the in-flight compute
 		// via the service ticket. The mascot performs BELOW the list.
 		column.add(mobLensRows(entry));
+		column.add(paramChipRow(entry));
 		// The roster picks today's mood (weighted by season); see MascotRoster.
 		if (withMascot && page.size() == 1
 			&& displayOptions.loadingAnimation && MascotArt.available())
@@ -3507,6 +3501,172 @@ public class LoadoutLabPanel extends PluginPanel
 		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
 		column.add(computing);
 		return column;
+	}
+
+	/** The per-result PARAMETER ZONE (card anatomy #2, field spec
+	 * 2026-07-17): compact chips between the mob list and the gear that
+	 * READ the entry's own settings and DRIVE the hidden legacy controls
+	 * - which still own recording (back/forward), write-through, and
+	 * recompute - after focusing this entry. Two wrap rows: toggles,
+	 * then pick-a-value chips. */
+	private javax.swing.JComponent paramChipRow(ResultEntry entry)
+	{
+		MonsterStats mob = entry.mob();
+		JPanel rows = new JPanel();
+		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
+		rows.setOpaque(false);
+		rows.setAlignmentX(LEFT_ALIGNMENT);
+		JPanel toggles = chipFlowRow();
+		if (SlayerLockedMonsters.isTaskOnly(mob))
+		{
+			toggles.add(paramChip("On task", true, false,
+				"Task-only boss - always on", null));
+		}
+		else if (mob.isSlayerMonster())
+		{
+			toggles.add(paramChip("On task", entry.onSlayerTask, true,
+				"On task: slayer helmet bonuses apply",
+				() -> asActive(entry, slayerTask::doClick)));
+		}
+		boolean listed = WildernessMonsters.isWilderness(mob);
+		boolean exclusive = WildernessMonsters.isExclusive(mob);
+		if (exclusive)
+		{
+			toggles.add(paramChip("Wildy", true, false,
+				"Wilderness-exclusive - always in", null));
+		}
+		else if (listed)
+		{
+			toggles.add(paramChip("Wildy", entry.inWilderness, true,
+				"Fighting inside the Wilderness: wilderness weapons +50%,"
+					+ " risk options apply",
+				() -> asActive(entry, inWilderness::doClick)));
+		}
+		boolean wild = (exclusive || (listed && entry.inWilderness)) && displayOptions.wildyRisk;
+		if (wild)
+		{
+			toggles.add(paramChip("Low risk", entry.lowRisk, true,
+				"Keep your 3 most valuable items (4 with Protect Item);"
+					+ " everything else must total under the risk cap",
+				() -> asActive(entry, lowRisk::doClick)));
+			toggles.add(paramChip("Protect item", entry.protectItem, true,
+				"Protect Item keeps a 4th item (not while skulled)",
+				() -> asActive(entry, protectItem::doClick)));
+		}
+		if (toggles.getComponentCount() > 0)
+		{
+			rows.add(toggles);
+		}
+		JPanel values = chipFlowRow();
+		String modeText = String.valueOf(optimizeMode.getItemAt(
+			Math.min(entry.optimizeMode, optimizeMode.getItemCount() - 1)));
+		values.add(paramChip(modeText.replace("Optimize: ", ""),
+			entry.optimizeMode > 0, true,
+			"Balanced/Tanky trade dps for less damage taken - click to pick",
+			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
+		if (displayOptions.upgradeBudget)
+		{
+			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
+			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
+				!budget.isEmpty(), true,
+				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
+					+ " empty = owned gear only",
+				() -> editBudget(entry)));
+		}
+		if (wild)
+		{
+			String risk = String.valueOf(riskBudget.getItemAt(
+				Math.min(entry.riskBudgetIndex, riskBudget.getItemCount() - 1)));
+			values.add(paramChip("Risk: " + risk, true, true,
+				"Total gp the set may drop on a wilderness death - click to pick",
+				() -> pickFromCombo(entry, riskBudget, "Risk cap")));
+		}
+		rows.add(values);
+		rows.add(Box.createVerticalStrut(4));
+		return rows;
+	}
+
+	private static JPanel chipFlowRow()
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		return row;
+	}
+
+	/** One parameter chip: the Yours|BiS border language - orange edge
+	 * when ON, quiet outline when off, muted + inert when forced. */
+	private javax.swing.JComponent paramChip(String text, boolean selected,
+		boolean enabled, String tooltip, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(!enabled ? new Color(150, 150, 150)
+			: selected ? Color.WHITE : new Color(170, 170, 170));
+		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
+		chip.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(selected
+				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(2, 7, 2, 7)));
+		chip.setToolTipText(tooltip);
+		if (enabled && onClick != null)
+		{
+			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			chip.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					onClick.run();
+				}
+			});
+		}
+		return chip;
+	}
+
+	/** Chip actions drive the hidden controls for THIS entry: focusing it
+	 * first (no recompute) so the write-through, recording, and recompute
+	 * listeners aim at the right card. */
+	private void asActive(ResultEntry entry, Runnable action)
+	{
+		if (entry != active)
+		{
+			setActive(entry);
+		}
+		action.run();
+	}
+
+	private void pickFromCombo(ResultEntry entry, JComboBox<String> combo, String what)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		for (int i = 0; i < combo.getItemCount(); i++)
+		{
+			final int index = i;
+			JMenuItem item = new JMenuItem((i == combo.getSelectedIndex() ? "[x] " : "")
+				+ combo.getItemAt(i));
+			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
+			menu.add(item);
+		}
+		java.awt.Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	private void editBudget(ResultEntry entry)
+	{
+		String current = entry.upgradeBudget == null ? "" : entry.upgradeBudget;
+		String edited = (String) JOptionPane.showInputDialog(this,
+			"Buyable-gear budget (750k, 1m, 1.5b; - = unlimited; empty = off):",
+			"Upgrade budget", JOptionPane.PLAIN_MESSAGE, null, null, current);
+		if (edited != null && !edited.equals(current))
+		{
+			asActive(entry, () ->
+			{
+				upgradeBudget.setText(edited);
+				budgetEdited();
+			});
+		}
 	}
 
 	/** The roster rows (card anatomy #1): name + hp per mob, an
@@ -3718,6 +3878,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// the strip is built here (it needs the roster-wide order) and
 		// rides into the card body.
 		column.add(mobLensRows(entry));
+		column.add(paramChipRow(entry));
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
 			styleTabs(entry, results, styleOrder, selected, bis)));
 		column.add(Box.createVerticalStrut(6));
