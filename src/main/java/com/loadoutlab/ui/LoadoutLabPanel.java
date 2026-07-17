@@ -682,14 +682,14 @@ public class LoadoutLabPanel extends PluginPanel
 			// cell that happened to be on screen (field report) - this is
 			// the proactive entry point, plus the un-dream list so a
 			// dreamed item that never wins a slot stays reachable.
-			JMenuItem addDream = new JMenuItem("Dream an item (consider as owned)...");
+			JMenuItem addDream = new JMenuItem("Sim an item (consider as owned)...");
 			addDream.addActionListener(ev -> showAddDreamDialog());
 			menu.add(addDream);
 			Set<Integer> dreamed = dreamView.snapshot();
 			if (!dreamed.isEmpty())
 			{
 				javax.swing.JMenu dreamMenu = new javax.swing.JMenu(
-					"Dream items (" + dreamed.size() + ")");
+					"Simmed items (" + dreamed.size() + ")");
 				List<GearItem> dreamGear = new ArrayList<>();
 				for (int id : dreamed)
 				{
@@ -702,7 +702,7 @@ public class LoadoutLabPanel extends PluginPanel
 				dreamGear.sort(Comparator.comparing(GearItem::label));
 				for (GearItem gear : dreamGear)
 				{
-					JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
+					JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
 					undream.addActionListener(ev ->
 					{
 						dreamToggle.toggle(gear.getId());
@@ -741,7 +741,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Exclusions (red -N) and dreams (green +N) live ABOVE the search
 		// bar (field spec 2026-07-17) - compact rounded chips; clicking
 		// manages the list. Counts refresh via refreshCountChips().
-		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		countRow.setOpaque(false);
 		countRow.setAlignmentX(LEFT_ALIGNMENT);
 		countRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
@@ -761,7 +761,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamCountChip.setOpaque(true);
 		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
-		dreamCountChip.setToolTipText("Dream items (considered as owned) - click to manage");
+		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
 		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		dreamCountChip.addMouseListener(new MouseAdapter()
 		{
@@ -2147,13 +2147,13 @@ public class LoadoutLabPanel extends PluginPanel
 		excludeCountChip.setForeground(excluded > 0
 			? new Color(220, 120, 120) : new Color(140, 110, 110));
 		excludeCountChip.setBorder(new RoundedBorder(excluded > 0
-			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 		int dreams = dreamView.snapshot().size();
 		dreamCountChip.setText("+" + dreams);
 		dreamCountChip.setForeground(dreams > 0
 			? new Color(130, 200, 130) : new Color(110, 140, 110));
 		dreamCountChip.setBorder(new RoundedBorder(dreams > 0
-			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 	}
 
 	/** The dream chip's menu: each dream un-dreamable, plus the add entry. */
@@ -2172,7 +2172,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamGear.sort(Comparator.comparing(GearItem::label));
 		for (GearItem gear : dreamGear)
 		{
-			JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
+			JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
 			undream.addActionListener(ev ->
 			{
 				dreamToggle.toggle(gear.getId());
@@ -2185,7 +2185,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			menu.addSeparator();
 		}
-		JMenuItem add = new JMenuItem("Dream an item (consider as owned)...");
+		JMenuItem add = new JMenuItem("Sim an item (consider as owned)...");
 		add.addActionListener(ev -> showAddDreamDialog());
 		menu.add(add);
 		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
@@ -2763,7 +2763,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * (same green-border language as the right-click path). */
 	private void showAddDreamDialog()
 	{
-		itemSearch.search("Dream an item (counts as owned)", (itemId, name) ->
+		itemSearch.search("Sim an item (counts as owned)", (itemId, name) ->
 		{
 			GearItem gear = data.getGear(itemId);
 			if (gear == null)
@@ -2771,14 +2771,14 @@ public class LoadoutLabPanel extends PluginPanel
 				JOptionPane.showMessageDialog(this,
 					name + " is not combat gear in the dataset - only equipment"
 						+ " affects the loadout search.",
-					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
 			if (ownedCheck.owns(gear.getId()))
 			{
 				JOptionPane.showMessageDialog(this,
-					"You already own " + gear.label() + " - no dream needed.",
-					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+					"You already own " + gear.label() + " - no sim needed.",
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
 			if (!dreamView.snapshot().contains(gear.getId()))
@@ -2902,8 +2902,8 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
 						JMenuItem dream = new JMenuItem(dreamed
-							? "Stop dreaming of " + item.label()
-							: "Dream: consider " + item.label() + " as owned");
+							? "Stop simming " + item.label()
+							: "Sim: consider " + item.label() + " as owned");
 						dream.addActionListener(a ->
 						{
 							dreamToggle.toggle(item.getId());
@@ -3634,7 +3634,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// The mob list leads (field spec): build or trim the roster while
 		// the optimizer runs - each edit supersedes the in-flight compute
 		// via the service ticket. The mascot performs BELOW the list.
-		column.add(mobLensRows(entry));
+		column.add(mobLensRows(entry, null, false));
 		column.add(paramChipRow(entry));
 		// The roster picks today's mood (weighted by season); see MascotRoster.
 		if (withMascot && page.size() == 1
@@ -3837,7 +3837,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The roster rows (card anatomy #1): name + hp per mob, an
 	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
 	 * the shared set never changes. */
-	private javax.swing.JComponent mobLensRows(ResultEntry entry)
+	private javax.swing.JComponent mobLensRows(ResultEntry entry,
+		CombatStyle viewedStyle, boolean bis)
 	{
 		JPanel rows = new JPanel();
 		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
@@ -3864,6 +3865,20 @@ public class LoadoutLabPanel extends PluginPanel
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
 			row.add(name, BorderLayout.CENTER);
+			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+			east.setOpaque(false);
+			// The chosen set's dps vs THIS mob (field spec): the viewed
+			// style + Yours|BiS side, flipping with the tabs and toggle.
+			double rowDps = mobRowDps(entry, index, viewedStyle, bis);
+			if (rowDps > 0)
+			{
+				JLabel dps = new JLabel(String.format("%.2f", rowDps));
+				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
+				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
+				dps.setToolTipText("The shared set's dps against this mob"
+					+ (bis ? " (BiS view)" : ""));
+				east.add(dps);
+			}
 			MouseAdapter lens = new MouseAdapter()
 			{
 				@Override
@@ -3889,7 +3904,11 @@ public class LoadoutLabPanel extends PluginPanel
 						removeMobFromEntry(entry, index);
 					}
 				});
-				row.add(remove, BorderLayout.EAST);
+				east.add(remove);
+			}
+			if (east.getComponentCount() > 0)
+			{
+				row.add(east, BorderLayout.EAST);
 			}
 			rows.add(row);
 			rows.add(Box.createVerticalStrut(2));
@@ -3914,6 +3933,33 @@ public class LoadoutLabPanel extends PluginPanel
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** The viewed side's dps against one mob of the roster: the per-mob
+	 * bundle when present (roster), the live map for the lensed single. */
+	private double mobRowDps(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	{
+		if (style == null)
+		{
+			return 0;
+		}
+		Map<CombatStyle, StyleResult> map = null;
+		if (entry.perMobResults != null && index < entry.perMobResults.size())
+		{
+			map = entry.perMobResults.get(index);
+		}
+		else if (entry.mobs.size() == 1)
+		{
+			map = entry.results;
+		}
+		StyleResult r = map == null ? null : map.get(style);
+		if (r == null)
+		{
+			return 0;
+		}
+		DpsResult shown = bis ? r.overallBest
+			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+		return shown == null ? 0 : shown.getDps();
 	}
 
 	/** The + row's mob picker: incremental search, double-click/Enter adds
@@ -4040,7 +4086,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// body, with the style tabs BETWEEN the gear view and Yours|BiS -
 		// the strip is built here (it needs the roster-wide order) and
 		// rides into the card body.
-		column.add(mobLensRows(entry));
+		column.add(mobLensRows(entry, selected, bis));
 		column.add(paramChipRow(entry));
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
 			styleTabs(entry, results, styleOrder, selected, bis)));

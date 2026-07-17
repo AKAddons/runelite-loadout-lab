@@ -29,7 +29,7 @@ equipment.
   stays under an adjustable gp risk cap, with per-item death fates
   (halo = protected, skull = lost, coins = repair fee) and honest gp
   totals including untradeable repair/mangle fees.
-- **Dream items and upgrade budgets**: consider unowned gear ("what if I
+- **Simulated items and upgrade budgets**: consider unowned gear ("what if I
   had a tbow?") or let a gp budget suggest buyable upgrades - quest
   rewards join free with their source quest named.
 - **Bank tools**: "Show in bank" outlines the set's items; "Filter bank"
@@ -50,7 +50,7 @@ equipment.
 
 1. Open your bank once so the plugin can learn what you own.
 2. Search a monster in the sidebar panel and pick a style card.
-3. Right-click items for exclusions, dream items, and stored-elsewhere
+3. Right-click items for exclusions, simmed items, and stored-elsewhere
    marks; use the toggles for slayer tasks, spellbook locks, wilderness
    risk, and optimize modes.
 
@@ -171,15 +171,16 @@ spellbook to your setup and the suggested spell and set adjust to match.
 
 ![Spell and spellbook recommendation](docs/img/spellbook.png)
 
-### Dream items
+### Simulated items
 
 Right-click any suggestion you do not own ("what if I had a tbow?") to
-highlight it as an aspirational pick and see the set it would build.
-Any item can be dreamed proactively from the header "..." menu ("Dream
-an item"), which also lists your current dreams so one that never wins
-a slot can still be un-dreamed.
+sim it - considered as owned - and see the set it would build. Any item
+can be simmed proactively from the green + chip above the search bar or
+the header "..." menu ("Sim an item"), both of which also list your
+current simmed items so one that never wins a slot can still be
+removed.
 
-![Dream items](docs/img/dream-items.png)
+![Simulated items](docs/img/dream-items.png)
 
 ### Upgrade budget
 
@@ -332,7 +333,7 @@ flip the slayer toggle, search Vorkath - back, back, back retraces
 each of those in turn. Steps cover: monster selections; the toggles
 (F2P, slayer task, wilderness, low-risk, Protect Item); the optimize
 mode, spellbook and risk-cap dropdowns; the upgrade budget; the
-antifire flip; and every edit (exclusions, pins, notes, dream items,
+antifire flip; and every edit (exclusions, pins, notes, simmed items,
 stored-elsewhere marks, protect-only flags, pinned spells, trip
 supplies). Hover for exactly what's next ("Back: Optimize: Balanced").
 Scan-driven changes (bank snapshots, storage captures) are never
