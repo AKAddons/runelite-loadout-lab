@@ -427,6 +427,10 @@ public class LoadoutLabPanel extends PluginPanel
 	/** True while back/forward replays a step - the control listeners must
 	 * apply effects (recompute) without recording a second step. */
 	private boolean replayingHistory;
+	/** True while painting the controls FROM the active entry (an active-
+	 * result switch): effects must not recompute and recorders must not
+	 * record - the controls are being told, not telling. */
+	private boolean syncingControls;
 	/** True once any monster has been selected this session - a pick after
 	 * a deliberate CLEAR records (back returns to the cleared state), while
 	 * the session's true first pick stays unrecorded. */
@@ -484,6 +488,24 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean folded;
 		/** The style tab in view; null = strongest owned set (the default). */
 		CombatStyle selectedTab;
+
+		// ---- the per-result PARAMETER ZONE (card anatomy spec) ----------
+		// Owned here so every result carries its own query settings; the
+		// controls write through to the ACTIVE entry (M-2c-2 step 1) until
+		// the per-card chip row lands (step 2).
+		boolean onSlayerTask;
+		boolean inWilderness;
+		int optimizeMode;
+		boolean lowRisk;
+		boolean protectItem;
+		int riskBudgetIndex = 2;
+		String upgradeBudget = "";
+		int spellbookIndex;
+		/** Assume your best offensive prayer (default) - off computes
+		 * prayerless, the number you do while camping a protection prayer. */
+		boolean assumeBestPrayer = true;
+		/** Assume potion boosts (default) - off computes unboosted. */
+		boolean assumeBoosts = true;
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -691,7 +713,7 @@ public class LoadoutLabPanel extends PluginPanel
 		riskBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
 		riskBudget.setSelectedIndex(2);
-		riskBudget.addActionListener(e -> recompute());
+		riskBudget.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(riskBudget, "Risk cap");
 		riskBudget.setVisible(false);
 		top.add(riskBudget);
@@ -702,7 +724,7 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
-		spellbook.addActionListener(e -> recompute());
+		spellbook.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(spellbook, "Spellbook");
 
 		// Buyable upgrades within a total gp budget join the consideration
@@ -732,7 +754,7 @@ public class LoadoutLabPanel extends PluginPanel
 		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
 		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
-		optimizeMode.addActionListener(e -> recompute());
+		optimizeMode.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(optimizeMode, "Optimize");
 		top.add(optimizeMode);
 
@@ -938,15 +960,15 @@ public class LoadoutLabPanel extends PluginPanel
 		return active != null && effectiveWilderness(active);
 	}
 
-	/** Per-entry resolution: the checkbox is a page-level statement, each
-	 * entry resolves it against its own monster (canvas design call). */
+	/** Per-entry resolution: each entry carries its own in-Wilderness
+	 * statement, resolved against its own monster (card anatomy spec). */
 	private boolean effectiveWilderness(ResultEntry entry)
 	{
 		if (!WildernessMonsters.isWilderness(entry.monster))
 		{
 			return false;
 		}
-		return WildernessMonsters.isExclusive(entry.monster) || inWilderness.isSelected();
+		return WildernessMonsters.isExclusive(entry.monster) || entry.inWilderness;
 	}
 
 	/** Sync the wilderness checkbox + risk rows to the selected monster. */
@@ -973,7 +995,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// recorder skips itself during a replay.
 		box.addActionListener(e ->
 		{
-			if (replayingHistory)
+			if (replayingHistory || syncingControls)
 			{
 				return;
 			}
@@ -1043,10 +1065,22 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 	}
 
-	/** Re-select the monster a step was taken on before replaying it. */
+	/** Re-select the monster a step was taken on before replaying it. An
+	 * entry still on the page is switched to IN PLACE (its parameters and
+	 * results survive); only a monster no longer on the page re-selects. */
 	private void restoreContext(MonsterStats at)
 	{
-		if (at != null && selectedMonster != at)
+		if (at == null || selectedMonster == at)
+		{
+			return;
+		}
+		ResultEntry existing = entryFor(at.getId());
+		if (existing != null)
+		{
+			setActive(existing);
+			renderPage();
+		}
+		else
 		{
 			applySelection(at);
 		}
@@ -1060,7 +1094,7 @@ public class LoadoutLabPanel extends PluginPanel
 		combo.addActionListener(e ->
 		{
 			int now = combo.getSelectedIndex();
-			if (replayingHistory || historyControl == null || now == last[0] || now < 0)
+			if (replayingHistory || syncingControls || historyControl == null || now == last[0] || now < 0)
 			{
 				last[0] = now;
 				return;
@@ -1343,10 +1377,12 @@ public class LoadoutLabPanel extends PluginPanel
 			page.removeIf(e -> e.monster.getId() == monster.getId());
 		}
 		active = new ResultEntry(monster);
+		// Seed the parameter zone from the monster's own gating: task-only
+		// bosses fight on-task; everything else starts at the defaults
+		// (out of the wilderness - a per-fight statement, not a preference).
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster);
 		page.add(active);
-		// Each monster starts OUT of the wilderness unless it lives nowhere
-		// else - the checkbox is a per-fight statement, not a preference.
-		inWilderness.setSelected(false);
+		syncControlsFromActive();
 		refreshWildernessRows();
 		bankShown = null;
 		bankHighlighter.highlight(null);
@@ -1370,6 +1406,53 @@ public class LoadoutLabPanel extends PluginPanel
 			renderPage();
 			statusLabel.setText(" ");
 			computeEntry(active);
+		}
+	}
+
+	/** The user changed a control: copy the control values into the ACTIVE
+	 * entry's parameter zone. Other entries keep their own settings - a
+	 * recompute re-runs them with unchanged params (cache hits). */
+	private void syncActiveFromControls()
+	{
+		if (active == null)
+		{
+			return;
+		}
+		active.onSlayerTask = slayerTask.isSelected();
+		active.inWilderness = inWilderness.isSelected();
+		active.optimizeMode = Math.max(0, optimizeMode.getSelectedIndex());
+		active.lowRisk = lowRisk.isSelected();
+		active.protectItem = protectItem.isSelected();
+		active.riskBudgetIndex = Math.max(0, riskBudget.getSelectedIndex());
+		active.upgradeBudget = upgradeBudget.getText() == null ? "" : upgradeBudget.getText();
+		active.spellbookIndex = Math.max(0, spellbook.getSelectedIndex());
+	}
+
+	/** The active result changed: paint the controls from ITS parameter
+	 * zone, without recomputing or recording (syncingControls guard). */
+	private void syncControlsFromActive()
+	{
+		if (active == null)
+		{
+			return;
+		}
+		syncingControls = true;
+		try
+		{
+			slayerTask.setSelected(active.onSlayerTask);
+			inWilderness.setSelected(active.inWilderness);
+			optimizeMode.setSelectedIndex(active.optimizeMode);
+			lowRisk.setSelected(active.lowRisk);
+			protectItem.setSelected(active.protectItem);
+			riskBudget.setSelectedIndex(active.riskBudgetIndex);
+			upgradeBudget.setText(active.upgradeBudget);
+			lastBudgetGp = parsedBudgetGp(active.upgradeBudget);
+			lastBudgetText = active.upgradeBudget;
+			spellbook.setSelectedIndex(active.spellbookIndex);
+		}
+		finally
+		{
+			syncingControls = false;
 		}
 	}
 
@@ -1464,13 +1547,21 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			next = page.get(page.size() - 1);
 		}
-		active = next;
-		selectedMonster = next.monster;
-		applyActiveMonsterUi(next.monster);
+		setActive(next);
+		renderPage();
+	}
+
+	/** Switch which existing entry the controls describe - no recompute
+	 * (its results are still valid), no new entry. */
+	private void setActive(ResultEntry entry)
+	{
+		active = entry;
+		selectedMonster = entry.monster;
+		applyActiveMonsterUi(entry.monster);
+		syncControlsFromActive();
 		refreshWildernessRows();
 		refreshNotePanel();
 		refreshPinnedLabel();
-		renderPage();
 	}
 
 	/** The header X: a recorded step - back re-adds the result (recomputed;
@@ -1518,19 +1609,13 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The wilderness tradeable cap, or -1 when the mode is off/hidden. */
-	private int riskCap()
+	private int riskCap(ResultEntry entry)
 	{
-		if (!lowRisk.isVisible() || !lowRisk.isSelected())
+		if (!effectiveWilderness(entry) || !displayOptions.wildyRisk || !entry.lowRisk)
 		{
 			return -1;
 		}
-		return protectItem.isSelected() ? 4 : 3;
-	}
-
-	/** The selected wilderness risk budget in gp. */
-	private int selectedRiskBudget()
-	{
-		return RISK_STEPS[riskBudget.getSelectedIndex()];
+		return entry.protectItem ? 4 : 3;
 	}
 
 	/** Recompute only when the parsed budget actually changed. */
@@ -1578,13 +1663,18 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private int parsedBudgetGp()
 	{
+		return parsedBudgetGp(upgradeBudget.getText());
+	}
+
+	private int parsedBudgetGp(String text)
+	{
 		// Hidden control -> no budget (owned gear only), so a hidden field
 		// cannot keep buying upgrades the user can no longer see or clear.
 		if (!displayOptions.upgradeBudget)
 		{
 			return 0;
 		}
-		String raw = upgradeBudget.getText() == null ? "" : upgradeBudget.getText().trim().toLowerCase();
+		String raw = text == null ? "" : text.trim().toLowerCase();
 		if (raw.isEmpty())
 		{
 			return 0;
@@ -1610,7 +1700,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	private String spellbookLock()
+	private String spellbookLock(ResultEntry entry)
 	{
 		// Hidden control -> no lock (its combo lives only on the magic card's
 		// spell row, which displayOptions.spellControls can remove). Matches
@@ -1619,8 +1709,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return "";
 		}
-		int index = spellbook.getSelectedIndex();
-		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+		return entry.spellbookIndex <= 0 ? ""
+			: spellbook.getItemAt(entry.spellbookIndex).toLowerCase();
 	}
 
 	/** Test seams (package-private): controls and state for history tests. */
@@ -2701,6 +2791,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
+		syncActiveFromControls();
 		for (ResultEntry entry : page)
 		{
 			entry.results = null;
@@ -2713,15 +2804,17 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** One entry's compute: parameters are the global defaults resolved
-	 * against THIS entry's monster (wilderness exclusivity, antifire). */
+	/** One entry's compute: every parameter comes from THE ENTRY's own
+	 * parameter zone (card anatomy spec) - F2P stays global (a world
+	 * fact, not a preference). */
 	private void computeEntry(ResultEntry entry)
 	{
-		computeHook.compute(entry.monster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			effectiveWilderness(entry), spellbookLock(), riskCap(), selectedRiskBudget(),
+		computeHook.compute(entry.monster, f2pOnly.isSelected(), entry.onSlayerTask,
+			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
+			RISK_STEPS[entry.riskBudgetIndex],
 			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.monster),
-			parsedBudgetGp(),
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
+			parsedBudgetGp(entry.upgradeBudget),
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			() -> statusLabel.setText(" "));
 	}
 
@@ -3452,7 +3545,7 @@ public class LoadoutLabPanel extends PluginPanel
 			PvpRisk.assess(best.getLoadout(), specWeapon, keep);
 		JLabel line = line(String.format("Risk: %s gp (%d kept on death)",
 			PvpRisk.formatGp(risk.riskGp), keep),
-			risk.riskGp <= selectedRiskBudget()
+			active != null && risk.riskGp <= RISK_STEPS[active.riskBudgetIndex]
 				? GOOD : new Color(220, 140, 120));
 		StringBuilder tip = new StringBuilder("<html>Kept on death:");
 		if (risk.kept.isEmpty())
