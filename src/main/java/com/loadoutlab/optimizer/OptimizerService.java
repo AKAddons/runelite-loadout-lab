@@ -679,23 +679,35 @@ public class OptimizerService
 			}
 			Loadout sharedOwned = chooseSharedLoadout(calc, ownedBests, ownedReqs);
 			Loadout sharedGame = chooseSharedLoadout(calc, gameBests, gameReqs);
+			// The spec weapon is PART of the carried set (field decision
+			// 2026-07-17): with zero swaps a roster brings ONE spec weapon,
+			// so the pick is shared - HP-weighted like the worn set - and
+			// only its per-mob numbers flip. Swapping per mob is M-4
+			// swap-budget territory.
+			List<List<DpsResult>> shownOwned = new ArrayList<>();
+			List<DpsResult> shownGame = new ArrayList<>();
 			for (int j = 0; j < n; j++)
 			{
-				MonsterStats mob = mobs.get(j);
 				List<DpsResult> ownedList = new ArrayList<>();
 				if (sharedOwned != null)
 				{
 					ownedList.add(calc.calculate(ownedReqs.get(j), sharedOwned));
 				}
-				DpsResult gameShown = sharedGame == null ? null
-					: calc.calculate(gameReqs.get(j), sharedGame);
-				SpecPick spec = ownedList.isEmpty() ? null
-					: bestSpec(ctx.dataset, ownedReqs.get(j), new ArrayList<>(ownedList),
-						style, mob, styleLevels, ctx.effectiveOwned);
-				SpecPick gameSpec = gameShown == null ? null
-					: bestSpec(ctx.dataset, gameReqs.get(j),
-						new ArrayList<>(java.util.Collections.singletonList(gameShown)),
-						style, mob, gameLevels, null);
+				shownOwned.add(ownedList);
+				shownGame.add(sharedGame == null ? null
+					: calc.calculate(gameReqs.get(j), sharedGame));
+			}
+			SpecPick[] specs = chooseSharedSpec(ctx, style, mobs, ownedReqs,
+				shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame);
+			SpecPick[] gameSpecs = chooseSharedSpec(ctx, style, mobs, gameReqs,
+				shownOwned, gameLevels, null, true, shownGame);
+			for (int j = 0; j < n; j++)
+			{
+				MonsterStats mob = mobs.get(j);
+				List<DpsResult> ownedList = shownOwned.get(j);
+				DpsResult gameShown = shownGame.get(j);
+				SpecPick spec = specs[j];
+				SpecPick gameSpec = gameSpecs[j];
 				IncomingDpsCalculator.Result incoming = sharedOwned == null ? null
 					: IncomingDpsCalculator.calculate(mob, sharedOwned,
 						ctx.real.getDefence(), ctx.real.getMagic());
@@ -920,6 +932,79 @@ public class OptimizerService
 	 * (requirement #7/#8); with null, everything standard counts - the
 	 * game-best spec.
 	 */
+	/** One shared spec weapon for the whole roster: candidates are each
+	 * mob's free pick; the winner maximizes the HP-weighted expected value
+	 * (expected + drain), a mob it cannot roll against contributing zero.
+	 * Returns the winner's per-mob SpecPicks (null where it cannot spec). */
+	private SpecPick[] chooseSharedSpec(ComputeContext ctx, CombatStyle style,
+		List<MonsterStats> mobs, List<OptimizationRequest> reqs,
+		List<List<DpsResult>> shownOwned, PlayerLevels levels, OwnedItems owned,
+		boolean game, List<DpsResult> shownGame)
+	{
+		int n = mobs.size();
+		SpecPick[] picks = new SpecPick[n];
+		java.util.LinkedHashSet<Integer> candidates = new java.util.LinkedHashSet<>();
+		for (int j = 0; j < n; j++)
+		{
+			List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
+			if (base == null)
+			{
+				continue;
+			}
+			SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
+				mobs.get(j), levels, owned, null);
+			if (free != null && free.weapon != null)
+			{
+				candidates.add(free.weapon.getId());
+			}
+		}
+		if (candidates.isEmpty())
+		{
+			return picks;
+		}
+		Integer bestId = null;
+		double bestScore = -1;
+		SpecPick[] bestPerMob = null;
+		for (Integer id : candidates)
+		{
+			SpecPick[] perMob = new SpecPick[n];
+			double score = 0;
+			for (int j = 0; j < n; j++)
+			{
+				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
+				if (base == null)
+				{
+					continue;
+				}
+				perMob[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
+					mobs.get(j), levels, owned, java.util.Collections.singleton(id));
+				if (perMob[j] != null)
+				{
+					score += (perMob[j].expectedDamage + perMob[j].drainValue)
+						* Math.max(1, mobs.get(j).getHitpoints());
+				}
+			}
+			if (score > bestScore + 1e-9)
+			{
+				bestScore = score;
+				bestId = id;
+				bestPerMob = perMob;
+			}
+		}
+		return bestPerMob != null ? bestPerMob : picks;
+	}
+
+	private static List<DpsResult> baseFor(boolean game, List<DpsResult> owned, DpsResult gameShown)
+	{
+		if (game)
+		{
+			return gameShown == null ? null
+				: new ArrayList<>(java.util.Collections.singletonList(gameShown));
+		}
+		return owned == null || owned.isEmpty() || owned.get(0) == null ? null
+			: new ArrayList<>(owned);
+	}
+
 	SpecPick bestSpec(
 		LoadoutData dataset,
 		OptimizationRequest request,
@@ -928,6 +1013,21 @@ public class OptimizerService
 		MonsterStats monster,
 		PlayerLevels levels,
 		OwnedItems owned)
+	{
+		return bestSpec(dataset, request, baseResults, style, monster, levels, owned, null);
+	}
+
+	/** restrictTo non-null: only these weapon ids are scanned - the roster
+	 * path uses it to evaluate ONE shared spec weapon per mob. */
+	SpecPick bestSpec(
+		LoadoutData dataset,
+		OptimizationRequest request,
+		List<DpsResult> baseResults,
+		CombatStyle style,
+		MonsterStats monster,
+		PlayerLevels levels,
+		OwnedItems owned,
+		Set<Integer> restrictTo)
 	{
 		if (baseResults == null || baseResults.isEmpty())
 		{
@@ -951,6 +1051,10 @@ public class OptimizerService
 		// every other slot), so only the weapon partition needs scanning.
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
 		{
+			if (restrictTo != null && !restrictTo.contains(item.getId()))
+			{
+				continue;
+			}
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
 				|| request.isExcluded(item.getId())
 				|| (owned != null && !owned.owns(item.getId())))

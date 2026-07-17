@@ -243,6 +243,43 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void rosterSharesOneSpecWeaponAcrossMobs() throws Exception
+	{
+		// Solo, Graardor picks the warhammer (drain pays off over 255hp)
+		// and a goblin picks the dagger (raw burst) - proven by
+		// OptimizerServiceTest. With ZERO swaps the spec weapon is part of
+		// the carried set (field decision 2026-07-17): the roster brings
+		// ONE, HP-weighted like the worn set - Graardor's warhammer wins.
+		LoadoutData data = new DataService().load();
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip
+		owned.put(1215, 1);   // dragon dagger
+		owned.put(13576, 1);  // dragon warhammer
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(graardor, goblin), owned);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(m0.specWeapon);
+			Assert.assertNotNull(m1.specWeapon);
+			Assert.assertEquals("one spec weapon for the whole trip",
+				m0.specWeapon.getId(), m1.specWeapon.getId());
+			Assert.assertEquals("the 255hp boss's warhammer wins the slot",
+				13576, m0.specWeapon.getId());
+			// The numbers still flip per mob.
+			Assert.assertTrue(m0.specExpectedDamage > 0);
+			Assert.assertTrue(m1.specExpectedDamage > 0);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	/** Thin holder so the helper can return the typed roster result. */
 	private static final class RosterResultView
 	{
