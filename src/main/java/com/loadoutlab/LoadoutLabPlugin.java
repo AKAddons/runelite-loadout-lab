@@ -1508,6 +1508,23 @@ public class LoadoutLabPlugin extends Plugin
 			log.debug("skill snapshot looked uninitialized, retrying on next compute");
 			return;
 		}
+		// Stronger canary: stats stream in Skill-ordinal order at login, so a
+		// fast first search can catch attack/str/def/hp populated while
+		// ranged/prayer/magic still read 1 - and the HP check above passes.
+		// The client's own total level is authoritative: a partial snapshot
+		// always sums BELOW it (field report: ranged/magic/prayer poisoned
+		// at 1 -> blisterwood-stake ranged picks and Wind Strike autocasts).
+		int summed = 0;
+		for (int level : real.values())
+		{
+			summed += level;
+		}
+		if (summed < client.getTotalLevel())
+		{
+			log.debug("skill snapshot partial ({} < total {}), retrying on next compute",
+				summed, client.getTotalLevel());
+			return;
+		}
 		Set<String> quests = new HashSet<>();
 		for (Quest quest : Quest.values())
 		{
