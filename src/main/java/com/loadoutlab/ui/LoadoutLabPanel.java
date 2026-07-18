@@ -3980,11 +3980,6 @@ public class LoadoutLabPanel extends PluginPanel
 			invGroup.add(invLabel);
 			invGroup.add(invSlider);
 			invRow.add(invGroup);
-			JLabel breakpoints = breakpointLabel(entry);
-			if (breakpoints != null)
-			{
-				invRow.add(breakpoints);
-			}
 			rows.add(invRow);
 		}
 		rows.add(Box.createVerticalStrut(4));
@@ -4223,7 +4218,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assumed consumables ride along for FREE (field spec 2026-07-18):
 		// the boost potion and the antifire - never a swap slot, muted
 		// border so they read as supplies rather than gear.
-		for (int consumableId : consumableIds(entry, bis))
+		for (int consumableId : consumableIds(entry, result, bis))
 		{
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
@@ -4419,40 +4414,44 @@ public class LoadoutLabPanel extends PluginPanel
 		return 0;
 	}
 
-	/** Assumed consumables for the WHOLE trip (field spec 2026-07-18):
-	 * the union across every mob's shown answers - the melee rooms'
-	 * super combat, the ranged rooms' ranging potion and the mage rooms'
-	 * heart all ride the same inventory, whichever row is lensed - plus
-	 * the antifire mode's potion. Ids gameval-verified. */
-	private java.util.List<Integer> consumableIds(ResultEntry entry, boolean bis)
+	/** Assumed consumables (field spec 2026-07-18, refined): a SINGLE
+	 * mob shows the potion behind the VIEWED tab (flip to ranged, the
+	 * ranging potion replaces it); a roster shows the union across each
+	 * mob's BEST answer - a melee/ranged plan carries both potions. The
+	 * antifire mode's potion always rides along. */
+	private java.util.List<Integer> consumableIds(ResultEntry entry, StyleResult viewed, boolean bis)
 	{
 		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
-		java.util.List<Map<CombatStyle, StyleResult>> maps;
-		if (entry.perMobResults != null && !entry.perMobResults.isEmpty())
+		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
 		{
-			maps = entry.perMobResults;
-		}
-		else if (entry.results != null)
-		{
-			maps = java.util.Collections.singletonList(entry.results);
+			if (viewed != null)
+			{
+				addBoostConsumables(bis ? viewed.gameBoostLabel : viewed.boostLabel, ids);
+			}
 		}
 		else
 		{
-			maps = java.util.Collections.emptyList();
-		}
-		for (Map<CombatStyle, StyleResult> map : maps)
-		{
-			for (StyleResult r : map.values())
+			for (Map<CombatStyle, StyleResult> map : entry.perMobResults)
 			{
-				if (r == null)
+				StyleResult best = null;
+				double bestDps = -1;
+				for (StyleResult r : map.values())
 				{
-					continue;
+					if (r == null)
+					{
+						continue;
+					}
+					DpsResult shown = bis ? r.overallBest
+						: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+					if (shown != null && shown.getDps() > bestDps)
+					{
+						bestDps = shown.getDps();
+						best = r;
+					}
 				}
-				boolean shown = bis ? r.overallBest != null
-					: r.owned != null && !r.owned.isEmpty();
-				if (shown)
+				if (best != null)
 				{
-					addBoostConsumables(bis ? r.gameBoostLabel : r.boostLabel, ids);
+					addBoostConsumables(bis ? best.gameBoostLabel : best.boostLabel, ids);
 				}
 			}
 		}
@@ -5003,7 +5002,7 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingRiskConsumables = result == null || bis
-			? java.util.Collections.emptyList() : consumableIds(entry, false);
+			? java.util.Collections.emptyList() : consumableIds(entry, result, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -5086,6 +5085,20 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			// The Gauntlet groups are tagged in the RESULTS (field spec
+			// 2026-07-18), not the search list: the raid-crafted tier
+			// modeling is still being tuned.
+			if (entry.mobs.stream().allMatch(
+				m -> com.loadoutlab.engine.GauntletRules.family(m) != null))
+			{
+				JLabel soon = new JLabel("Gauntlet support is coming soon.");
+				soon.setForeground(MUTED);
+				soon.setFont(soon.getFont().deriveFont(Font.ITALIC, 12f));
+				soon.setAlignmentX(LEFT_ALIGNMENT);
+				soon.setToolTipText("Fights inside use raid-crafted gear tiers -"
+					+ " the tier modeling is still being tuned");
+				card.add(soon);
+			}
 			if (entry == active)
 			{
 				// Keep the toggles, clear the bank displays - this style
@@ -5155,7 +5168,7 @@ public class LoadoutLabPanel extends PluginPanel
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
-			|| !consumableIds(entry, bis).isEmpty()))
+			|| !consumableIds(entry, result, bis).isEmpty()))
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
 			// but not worn against the lensed mob, plus the assumed
@@ -5708,7 +5721,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (r != null)
 		{
-			ids.addAll(consumableIds(active, active.viewingBis));
+			ids.addAll(consumableIds(active, r, active.viewingBis));
 		}
 		return ids;
 	}

@@ -76,12 +76,11 @@ public final class MonsterGroups
 			return comingSoon;
 		}
 
-		/** "Fight Caves - 7 mobs" for list rows; a group still being
-		 * tuned wears its "coming soon" tag right in the label. */
+		/** "Fight Caves - 7 mobs" for list rows (the coming-soon note
+		 * renders in the RESULT card, not here - field spec 2026-07-18). */
 		public String label()
 		{
-			return name + " - " + mobs.size() + " mobs"
-				+ (comingSoon ? " (coming soon)" : "");
+			return name + " - " + mobs.size() + " mobs";
 		}
 	}
 
