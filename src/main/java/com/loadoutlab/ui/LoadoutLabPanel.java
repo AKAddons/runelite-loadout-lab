@@ -5269,9 +5269,8 @@ public class LoadoutLabPanel extends PluginPanel
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
-			JLabel accLine = statLine("Acc: " + acc, "Hit chance " + acc, statText, null);
-			attachStatSprite(accLine, net.runelite.api.gameval.SpriteID.Staticons.ATTACK);
-			panel.add(accLine);
+			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, statText,
+				new FixedWidthIcon(new CrosshairIcon(13))));
 		}
 		if (incoming != null && displayOptions.damageTaken)
 		{
@@ -5471,6 +5470,54 @@ int sprite = incoming.protectPrayer != null
 				g,
 				x + Math.max(0, (WIDTH - delegate.getIconWidth()) / 2),
 				y + Math.max(0, (getIconHeight() - delegate.getIconHeight()) / 2));
+		}
+	}
+
+	/** A painted crosshair for the accuracy line (glyph-safe) - the
+	 * Attack staticon read as the same sword as the style icon. */
+	private static final class CrosshairIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		CrosshairIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(200, 170, 90));
+				int pad = 2;
+				g2.drawOval(x + pad, y + pad, size - 2 * pad - 1, size - 2 * pad - 1);
+				int mid = size / 2;
+				g2.drawLine(x + mid, y, x + mid, y + 3);
+				g2.drawLine(x + mid, y + size - 4, x + mid, y + size - 1);
+				g2.drawLine(x, y + mid, x + 3, y + mid);
+				g2.drawLine(x + size - 4, y + mid, x + size - 1, y + mid);
+				g2.fillOval(x + mid - 1, y + mid - 1, 3, 3);
+			}
+			finally
+			{
+				g2.dispose();
+			}
 		}
 	}
 
