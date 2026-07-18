@@ -3413,6 +3413,16 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			entry.results = entry.perMobResults.get(index);
 		}
+		if (!entry.viewingBis)
+		{
+			// Follow the row (field spec 2026-07-17): the kit can answer
+			// this mob in another style - the viewed tab switches with it.
+			DpsResult rowBest = mobRowResult(entry, index, entry.selectedTab, false);
+			if (rowBest != null)
+			{
+				entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
+			}
+		}
 		if (entry == active)
 		{
 			selectedMonster = entry.mob();
@@ -3740,18 +3750,17 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.optimizeMode > 0, true,
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
-		String[] benchTips = {
-			"Bench: 0 - strictly one worn set, no spec swap carried",
-			"Bench: 1 - room for the spec weapon (the default)",
-			"Bench: 2 - spec + one per-mob swap item",
-			"Bench: 3 - spec + two per-mob swap items"};
+		String benchTip = entry.maxSwaps == 0
+			? "Bench: 0 - strictly one worn set, no spec swap carried"
+			: "Bench: " + entry.maxSwaps + " - up to " + entry.maxSwaps
+				+ " carried swap item" + (entry.maxSwaps == 1 ? "" : "s")
+				+ ", cross-style included; the spec weapon rides free";
 		values.add(paramChip("Bench: " + entry.maxSwaps, entry.maxSwaps != 1, true,
-			benchTips[Math.min(entry.maxSwaps, 3)]
-				+ " - carried items beyond the worn set; click to pick",
+			benchTip + "; click to pick",
 			() ->
 		{
 			JPopupMenu menu = new JPopupMenu();
-			for (int i = 0; i <= 3; i++)
+			for (int i = 0; i <= 20; i++)
 			{
 				final int pick = i;
 				JMenuItem item = new JMenuItem((i == entry.maxSwaps ? "[x] " : "")
@@ -3946,7 +3955,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private javax.swing.JComponent benchRow(StyleResult result, DpsResult wornBest)
+	private javax.swing.JComponent benchRow(StyleResult result)
 	{
 		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 		row.setOpaque(false);
@@ -3955,33 +3964,21 @@ public class LoadoutLabPanel extends PluginPanel
 		JLabel prefix = new JLabel("Bench:");
 		prefix.setForeground(MUTED);
 		prefix.setFont(prefix.getFont().deriveFont(11f));
-		prefix.setToolTipText("Carried items beyond the worn set (the Bench chip sets how many)");
+		prefix.setToolTipText("The backpack vs this mob - carried items not currently worn"
+			+ " (the Bench chip sets the swap budget)");
 		row.add(prefix);
-		java.util.Set<Integer> wornIds = new java.util.HashSet<>();
-		if (wornBest != null)
-		{
-			for (GearItem item : wornBest.getLoadout().getGear().values())
-			{
-				if (item != null)
-				{
-					wornIds.add(item.getId());
-				}
-			}
-		}
 		int specId = result.specWeapon != null ? result.specWeapon.getId() : -1;
 		for (GearItem item : result.bench)
 		{
-			boolean worn = wornIds.contains(item.getId());
 			boolean isSpec = item.getId() == specId;
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
 			cell.setBackground(CELL_BG);
-			cell.setBorder(new RoundedBorder(worn ? ACCENT
-				: isSpec ? BORDER_SPEC : ColorScheme.MEDIUM_GRAY_COLOR, 2, 2));
+			cell.setBorder(new RoundedBorder(
+				isSpec ? BORDER_SPEC : ColorScheme.MEDIUM_GRAY_COLOR, 2, 2));
 			cell.setToolTipText(item.label()
-				+ (worn ? " - WORN vs this mob"
-					: isSpec ? " - the special attack swap"
-					: " - benched vs this mob (worn where it gains)"));
+				+ (isSpec ? " - the special attack swap"
+					: " - in the backpack vs this mob"));
 			AsyncBufferedImage img = itemManager.getImage(item.getId());
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
@@ -4025,10 +4022,10 @@ public class LoadoutLabPanel extends PluginPanel
 			row.add(name, BorderLayout.CENTER);
 			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			east.setOpaque(false);
-			// The chosen set's dps vs THIS mob (field spec): the viewed
-			// style + Yours|BiS side, flipping with the tabs and toggle.
-			// A carried cross-style swap can flip a mob to another style -
-			// the icon follows the style the result actually attacks with.
+			// The kit's BEST dps vs THIS mob (field spec): the carried
+			// swaps can answer different mobs with different styles - the
+			// icon shows the style this mob's answer attacks with, and
+			// lensing the row follows it to that style's tab.
 			DpsResult rowResult = mobRowResult(entry, index, viewedStyle, bis);
 			double rowDps = rowResult == null ? 0 : rowResult.getDps();
 			if (rowDps > 0)
@@ -4037,9 +4034,10 @@ public class LoadoutLabPanel extends PluginPanel
 				JLabel dps = new JLabel(String.format("%.2f", rowDps));
 				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
 				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
-				dps.setToolTipText("The shared set's dps against this mob"
-					+ (bis ? " (BiS view)" : "") + " - " + rowStyle.toString().toLowerCase()
-					+ (rowStyle != viewedStyle ? " via a bench swap" : ""));
+				dps.setToolTipText((bis
+					? "The BiS ceiling against this mob - "
+					: "The carried kit's best dps against this mob - ")
+					+ rowStyle.toString().toLowerCase());
 				attachSprite(dps, AssumeIcons.styleSprite(rowStyle));
 				dps.setIconTextGap(3);
 				east.add(dps);
@@ -4100,14 +4098,11 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** The viewed side's result against one mob of the roster: the per-mob
-	 * bundle when present (roster), the live map for the lensed single. */
+	/** One mob's row result: on the Yours side, the kit's BEST answer
+	 * across ALL styles (the carried swaps can answer different mobs with
+	 * different styles); on the BiS side, the viewed style's ceiling. */
 	private DpsResult mobRowResult(ResultEntry entry, int index, CombatStyle style, boolean bis)
 	{
-		if (style == null)
-		{
-			return null;
-		}
 		Map<CombatStyle, StyleResult> map = null;
 		if (entry.perMobResults != null && index < entry.perMobResults.size())
 		{
@@ -4117,13 +4112,26 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			map = entry.results;
 		}
-		StyleResult r = map == null ? null : map.get(style);
-		if (r == null)
+		if (map == null)
 		{
 			return null;
 		}
-		return bis ? r.overallBest
-			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+		if (bis)
+		{
+			StyleResult r = style == null ? null : map.get(style);
+			return r == null ? null : r.overallBest;
+		}
+		DpsResult best = null;
+		for (StyleResult r : map.values())
+		{
+			DpsResult shown = r == null || r.owned == null || r.owned.isEmpty()
+				? null : r.owned.get(0);
+			if (shown != null && (best == null || shown.getDps() > best.getDps()))
+			{
+				best = shown;
+			}
+		}
+		return best;
 	}
 
 	/** The combat style a shown result actually attacks with - a carried
@@ -4642,10 +4650,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (!bis && result != null && !result.bench.isEmpty())
 		{
-			// The BENCH (field spec): the carried items below the gear -
-			// the lensed mob's worn swaps wear the accent.
+			// The BENCH (field spec): the backpack below the gear - what
+			// is carried but not worn against the lensed mob.
 			card.add(Box.createVerticalStrut(4));
-			card.add(benchRow(result, best));
+			card.add(benchRow(result));
 		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);

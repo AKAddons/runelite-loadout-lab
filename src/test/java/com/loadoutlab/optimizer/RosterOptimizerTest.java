@@ -6,6 +6,7 @@ import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
@@ -332,38 +333,54 @@ public class RosterOptimizerTest
 		{
 			RosterResultView roster = run(service, tds.getMobs(), owned);
 			Assert.assertEquals(3, roster.result.perMob.size());
-			// Exactly one style tab answers all three phases - the kit tab.
-			CombatStyle kitStyle = null;
-			for (CombatStyle style : CombatStyle.values())
-			{
-				boolean complete = true;
-				for (int j = 0; j < 3; j++)
-				{
-					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
-					complete &= r != null && !r.owned.isEmpty() && r.owned.get(0).getDps() > 0;
-				}
-				if (complete)
-				{
-					Assert.assertNull("only the kit tab is hole-free", kitStyle);
-					kitStyle = style;
-				}
-			}
-			Assert.assertNotNull("some tab must answer every phase", kitStyle);
-			// Phase order matches the immunity order: melee, ranged, magic.
+			// Every phase has a best-across-styles answer that respects its
+			// shield (phase order matches the immunity order).
 			CombatStyle[] immuneTo = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
-			List<GearItem> bench = null;
 			for (int j = 0; j < 3; j++)
 			{
-				OptimizerService.StyleResult r = roster.result.perMob.get(j).get(kitStyle);
-				Assert.assertNotEquals("phase " + j + " must not attack into its shield",
-					immuneTo[j], styleOfAttack(r.owned.get(0).getAttackType()));
-				if (bench == null)
+				DpsResult best = null;
+				for (CombatStyle style : CombatStyle.values())
 				{
-					bench = r.bench;
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					DpsResult shown = r == null || r.owned.isEmpty() ? null : r.owned.get(0);
+					if (shown != null && (best == null || shown.getDps() > best.getDps()))
+					{
+						best = shown;
+					}
 				}
-				Assert.assertEquals("one bench across the roster", bench, r.bench);
+				Assert.assertNotNull("phase " + j + " has a kit answer", best);
+				Assert.assertTrue(best.getDps() > 0);
+				Assert.assertNotEquals("phase " + j + " must not attack into its shield",
+					immuneTo[j], styleOfAttack(best.getAttackType()));
 			}
-			Assert.assertFalse("the kit carries the cross-style weapon", bench.isEmpty());
+			// Each tab stays honest about its own immunity even in the kit.
+			OptimizerService.StyleResult meleeVsMeleeImmune =
+				roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertTrue("no melee roll into the melee shield",
+				meleeVsMeleeImmune == null || meleeVsMeleeImmune.owned.isEmpty());
+			OptimizerService.StyleResult rangedVsRangedImmune =
+				roster.result.perMob.get(1).get(CombatStyle.RANGED);
+			Assert.assertTrue("no ranged roll into the ranged shield",
+				rangedVsRangedImmune == null || rangedVsRangedImmune.owned.isEmpty());
+			// The backpack view never duplicates: vs the melee-immune phase
+			// the ranged answer WEARS the blowpipe and benches the whip.
+			OptimizerService.StyleResult rangedKit = roster.result.perMob.get(0).get(CombatStyle.RANGED);
+			Assert.assertNotNull(rangedKit);
+			Assert.assertFalse(rangedKit.owned.isEmpty());
+			Assert.assertEquals("the carried blowpipe answers the melee shield",
+				12926, rangedKit.owned.get(0).getLoadout().getWeapon().getId());
+			Assert.assertTrue("the displaced whip rides the bench",
+				rangedKit.bench.stream().anyMatch(i -> i.getId() == 4151));
+			Assert.assertTrue("the worn blowpipe never duplicates into the bench",
+				rangedKit.bench.stream().noneMatch(i -> i.getId() == 12926));
+			// ...and vs the ranged-immune phase the melee answer flips it.
+			OptimizerService.StyleResult meleeKit = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(meleeKit);
+			Assert.assertFalse(meleeKit.owned.isEmpty());
+			Assert.assertEquals(4151, meleeKit.owned.get(0).getLoadout().getWeapon().getId());
+			Assert.assertTrue("the benched blowpipe waits in the backpack",
+				meleeKit.bench.stream().anyMatch(i -> i.getId() == 12926));
+			Assert.assertTrue(meleeKit.bench.stream().noneMatch(i -> i.getId() == 4151));
 		}
 		finally
 		{
@@ -419,10 +436,15 @@ public class RosterOptimizerTest
 				"salve amulet(ei)", vorkathNeck.getNameLower());
 			Assert.assertEquals("the goblin wears the benched torture",
 				"amulet of torture", goblinNeck.getNameLower());
-			Assert.assertTrue("the torture rides the bench",
-				vsGoblin.bench.stream().anyMatch(i -> i.getId() == 19553));
-			Assert.assertEquals("one bench across the roster",
-				vsVorkath.bench, vsGoblin.bench);
+			// The bench is a per-mob BACKPACK: it holds what is NOT worn -
+			// the torture waits vs Vorkath, the displaced salve vs the
+			// goblin, and a worn item never duplicates into it.
+			Assert.assertTrue("the torture waits on the bench vs Vorkath",
+				vsVorkath.bench.stream().anyMatch(i -> i.getId() == 19553));
+			Assert.assertTrue(vsVorkath.bench.stream().noneMatch(i -> i.getId() == 12018));
+			Assert.assertTrue("the displaced salve rides the bench vs the goblin",
+				vsGoblin.bench.stream().anyMatch(i -> i.getId() == 12018));
+			Assert.assertTrue(vsGoblin.bench.stream().noneMatch(i -> i.getId() == 19553));
 		}
 		finally
 		{

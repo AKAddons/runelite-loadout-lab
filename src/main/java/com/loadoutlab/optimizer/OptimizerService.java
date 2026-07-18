@@ -707,6 +707,52 @@ public class OptimizerService
 		return sum;
 	}
 
+	/** The backpack while fighting ONE mob: every carried item (the spec
+	 * weapon, the swap items, and any base piece a worn swap displaced)
+	 * that is NOT currently worn - a worn swap never duplicates into the
+	 * bench (field fix 2026-07-17). */
+	private static List<GearItem> benchFor(Loadout base, GearItem specCarried,
+		List<GearItem> carried, Loadout worn)
+	{
+		Set<Integer> wornIds = new java.util.HashSet<>();
+		if (worn != null)
+		{
+			for (GearItem item : worn.getGear().values())
+			{
+				if (item != null)
+				{
+					wornIds.add(item.getId());
+				}
+			}
+		}
+		List<GearItem> bench = new ArrayList<>();
+		Set<Integer> benched = new java.util.HashSet<>();
+		if (specCarried != null && !wornIds.contains(specCarried.getId())
+			&& benched.add(specCarried.getId()))
+		{
+			bench.add(specCarried);
+		}
+		for (GearItem item : carried)
+		{
+			if (!wornIds.contains(item.getId()) && benched.add(item.getId()))
+			{
+				bench.add(item);
+			}
+		}
+		if (base != null)
+		{
+			for (GearItem item : base.getGear().values())
+			{
+				if (item != null && !wornIds.contains(item.getId())
+					&& benched.add(item.getId()))
+				{
+					bench.add(item);
+				}
+			}
+		}
+		return bench;
+	}
+
 	/** A cross-style carry: another style's weapon (+ its ammo when the
 	 * weapon needs slot ammo), worn INTO the primary base set and rolled
 	 * under its OWN style's request - "bring a blowpipe in your melee
@@ -1181,10 +1227,11 @@ public class OptimizerService
 				? chooseSharedSpec(ctx, style, mobs, gameReqs,
 					shownOwned, gameLevels, null, true, shownGame)
 				: new SpecPick[n];
-			// The BENCH: the spec weapon occupies a slot when carried; the
-			// rest go to per-mob swap items chosen greedily by HP-weighted
-			// marginal gain. Each mob then WEARS its best combination of
-			// base + carried swaps - that is what its card shows.
+			// The BENCH: the swap budget counts SWAP ITEMS only - the spec
+			// weapon rides free (field decision 2026-07-17; Bench 0 still
+			// means strictly one worn set, no spec carried). Swaps are
+			// chosen greedily by HP-weighted marginal gain; each mob then
+			// WEARS its best combination of base + carried swaps.
 			GearItem specCarried = null;
 			for (SpecPick pick : specs)
 			{
@@ -1196,7 +1243,7 @@ public class OptimizerService
 					break;
 				}
 			}
-			int benchForSwaps = Math.max(0, ctx.maxSwaps - (specCarried != null ? 1 : 0));
+			int benchForSwaps = ctx.maxSwaps;
 			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			if (sharedOwned != null)
@@ -1212,12 +1259,6 @@ public class OptimizerService
 					specCarriedByStyle.put(style, specCarried);
 				}
 			}
-			List<GearItem> bench = new ArrayList<>();
-			if (specCarried != null)
-			{
-				bench.add(specCarried);
-			}
-			bench.addAll(swaps);
 			if (sharedOwned != null && !swaps.isEmpty())
 			{
 				// Re-show each mob wearing its best base+swaps combination.
@@ -1246,6 +1287,13 @@ public class OptimizerService
 				IncomingDpsCalculator.Result gameIncoming = sharedGame == null ? null
 					: IncomingDpsCalculator.calculate(mob, sharedGame,
 						ctx.real.getDefence(), ctx.real.getMagic());
+				// The bench is a per-mob BACKPACK view: what is carried but
+				// not worn against THIS mob (a worn swap shows the base item
+				// it displaced instead of duplicating).
+				Loadout worn = ownedList.isEmpty() ? sharedOwned
+					: ownedList.get(0).getLoadout();
+				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
+					: benchFor(sharedOwned, specCarried, swaps, worn);
 				// Mode-trade is not applied per-mob in the roster v1.
 				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming, gameIncoming, null, bench);
@@ -1272,12 +1320,11 @@ public class OptimizerService
 					return null;
 				}
 				Loadout base = sharedByStyle.get(primary);
-				GearItem specCarried = specCarriedByStyle.get(primary);
-				int slots = Math.max(0, ctx.maxSwaps - (specCarried != null ? 1 : 0));
 				KitAnswer kit = chooseKit(calc, base, primary,
 					swapCandidates(base, bestsByStyle.get(primary)),
-					bundleCandidates(primary, base, specCarried, sharedByStyle, bestsByStyle),
-					reqsByStyle, mobs, slots);
+					bundleCandidates(primary, base, specCarriedByStyle.get(primary),
+						sharedByStyle, bestsByStyle),
+					reqsByStyle, mobs, ctx.maxSwaps);
 				if (bestKit == null || kit.total > bestKit.total + 1e-9)
 				{
 					bestKit = kit;
@@ -1286,40 +1333,87 @@ public class OptimizerService
 			}
 			if (bestKit != null && !bestKit.bundles.isEmpty())
 			{
+				// Distribute the kit across the style tabs (field spec
+				// 2026-07-17): each tab shows what the CARRIED kit does in
+				// that style vs each mob - the primary tab wears the base,
+				// a bundled style wears its weapon into the base armor, and
+				// an owned-but-not-carried style shows nothing on the Yours
+				// side (no set you cannot assemble mid-trip). The bench is
+				// the per-mob backpack: carried plus displaced, minus worn.
 				Loadout base = sharedByStyle.get(bestPrimary);
 				GearItem specCarried = specCarriedByStyle.get(bestPrimary);
-				List<GearItem> bench = new ArrayList<>();
-				if (specCarried != null)
-				{
-					bench.add(specCarried);
-				}
-				bench.addAll(bestKit.singles);
+				List<GearItem> carried = new ArrayList<>(bestKit.singles);
 				for (SwapBundle bundle : bestKit.bundles)
 				{
 					for (GearItem item : bundle.items)
 					{
-						if (bench.stream().noneMatch(i -> i.getId() == item.getId()))
+						if (carried.stream().noneMatch(i -> i.getId() == item.getId()))
 						{
-							bench.add(item);
+							carried.add(item);
 						}
 					}
 				}
+				Set<CombatStyle> kitStyles = java.util.EnumSet.of(bestPrimary);
+				for (SwapBundle bundle : bestKit.bundles)
+				{
+					kitStyles.add(bundle.style);
+				}
 				SpecPick[] specs = specsByStyle.get(bestPrimary);
-				SpecPick[] gameSpecs = gameSpecsByStyle.get(bestPrimary);
 				for (int j = 0; j < n; j++)
 				{
-					KitShown shown = kitBest(calc, base, bestPrimary,
-						bestKit.singles, bestKit.bundles, reqsByStyle, j);
-					List<DpsResult> ownedList = new ArrayList<>();
-					if (shown.result != null)
+					for (CombatStyle s : sharedByStyle.keySet())
 					{
-						ownedList.add(shown.result);
+						StyleResult old = perMob.get(j).get(s);
+						SpecPick[] gameSpecs = gameSpecsByStyle.get(s);
+						if (!kitStyles.contains(s))
+						{
+							perMob.get(j).put(s, new StyleResult(new ArrayList<>(),
+								old.overallBest, null, gameSpecs[j], old.boostLabel,
+								old.gameBoostLabel, null, old.gameIncoming, null,
+								benchFor(base, specCarried, carried, base)));
+							continue;
+						}
+						DpsResult result = null;
+						OptimizationRequest req = reqsByStyle.get(s).get(j);
+						if (s == bestPrimary)
+						{
+							result = calc.calculate(req,
+								bestWorn(calc, req, base, bestKit.singles));
+						}
+						else
+						{
+							for (SwapBundle bundle : bestKit.bundles)
+							{
+								if (bundle.style != s)
+								{
+									continue;
+								}
+								Loadout seeded = applyBundle(base, bundle);
+								if (seeded == null)
+								{
+									continue;
+								}
+								DpsResult r = calc.calculate(req,
+									bestWorn(calc, req, seeded, bestKit.singles));
+								if (r != null && (result == null || r.getDps() > result.getDps()))
+								{
+									result = r;
+								}
+							}
+						}
+						List<DpsResult> ownedList = new ArrayList<>();
+						if (result != null)
+						{
+							ownedList.add(result);
+						}
+						Loadout worn = result != null ? result.getLoadout() : base;
+						IncomingDpsCalculator.Result incoming = IncomingDpsCalculator.calculate(
+							mobs.get(j), worn, ctx.real.getDefence(), ctx.real.getMagic());
+						perMob.get(j).put(s, new StyleResult(ownedList, old.overallBest,
+							specs[j], gameSpecs[j], boostLabelByStyle.get(s),
+							old.gameBoostLabel, incoming, old.gameIncoming, null,
+							benchFor(base, specCarried, carried, worn)));
 					}
-					StyleResult old = perMob.get(j).get(bestPrimary);
-					String label = boostLabelByStyle.getOrDefault(shown.style, old.boostLabel);
-					perMob.get(j).put(bestPrimary, new StyleResult(ownedList, old.overallBest,
-						specs[j], gameSpecs[j], label, old.gameBoostLabel,
-						old.incoming, old.gameIncoming, null, bench));
 				}
 			}
 		}
