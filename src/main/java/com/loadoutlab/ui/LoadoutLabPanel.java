@@ -591,6 +591,9 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean inventoryTouched;
 		/** Nullable: the owned kit's inventory breakpoint curve. */
 		OptimizerService.KitCurve kitCurve;
+		/** True once the curve auto-tuned this entry's budget (once per
+		 * roster shape - add/remove mob re-arms it). */
+		boolean inventoryAutoTuned;
 
 		/** Re-seed the roster default (a group preset raises the floor):
 		 * never shrinks, never overrides an explicit choice. */
@@ -1682,6 +1685,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * as the smaller shared set. A back step restores roster + results. */
 	void removeMobFromEntry(ResultEntry entry, int index)
 	{
+		entry.inventoryAutoTuned = false;
 		if (entry.mobs.size() <= 1 || index < 0 || index >= entry.mobs.size())
 		{
 			return;
@@ -1778,6 +1782,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// A single-mob duplicate leaves the page (the roster absorbs it).
 			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
 			target.addMob(monster);
+			target.inventoryAutoTuned = false;
 			target.seedInventoryDefault(0);
 			target.lensIndex = target.mobs.size() - 1;
 			target.results = null;
@@ -3431,6 +3436,29 @@ public class LoadoutLabPanel extends PluginPanel
 			return; // stale roster - the page moved on
 		}
 		entry.kitCurve = curve;
+		// CURVE-DRIVEN DEFAULT (field spec 2026-07-18): seed the budget at
+		// the roster's own last major breakpoint (never below viability),
+		// once per roster shape - and never over an explicit user choice.
+		// The re-run rides the warm optimize cache, so it is cheap.
+		if (curve != null && !entry.inventoryTouched && !entry.inventoryAutoTuned)
+		{
+			entry.inventoryAutoTuned = true;
+			int recommended = recommendedInventory(curve);
+			if (recommended > 0)
+			{
+				entry.inventoryDefault = recommended;
+				if (recommended != entry.maxSwaps)
+				{
+					entry.maxSwaps = recommended;
+					entry.perMobResults = perMob;
+					entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
+					entry.results = perMob.get(entry.lensIndex);
+					renderPage();
+					computeEntry(entry);
+					return;
+				}
+			}
+		}
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
@@ -4360,6 +4388,41 @@ public class LoadoutLabPanel extends PluginPanel
 			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
 			+ " slots stop paying - the percent is this budget vs the max");
 		return label;
+	}
+
+	/** The curve's recommended budget: the last major breakpoint, never
+	 * below the viability point, floored at 1 (a flat curve means the
+	 * roster needs no swaps - one slot keeps room for the spec). */
+	private static int recommendedInventory(OptimizerService.KitCurve curve)
+	{
+		if (curve == null || curve.points.size() < 2)
+		{
+			return 0;
+		}
+		java.util.List<double[]> points = curve.points;
+		double gainRange = points.get(points.size() - 1)[1] - points.get(0)[1];
+		int maxViable = 0;
+		for (double[] p : points)
+		{
+			maxViable = Math.max(maxViable, (int) p[2]);
+		}
+		int viability = (int) points.get(0)[2] >= maxViable ? (int) points.get(0)[0] : -1;
+		int lastMajor = -1;
+		for (int i = 1; i < points.size(); i++)
+		{
+			double gain = points.get(i)[1] - points.get(i - 1)[1];
+			int cost = (int) points.get(i)[0];
+			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
+			{
+				viability = cost;
+			}
+			if (gainRange > 0 && gain >= 0.10 * gainRange)
+			{
+				lastMajor = cost;
+			}
+		}
+		int recommended = Math.max(1, Math.max(viability, lastMajor));
+		return Math.min(recommended, 20);
 	}
 
 	/** One mob's row result: the side's kit BEST across ALL styles - the
