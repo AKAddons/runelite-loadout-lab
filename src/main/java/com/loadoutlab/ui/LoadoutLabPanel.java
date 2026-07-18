@@ -19,6 +19,7 @@ import com.loadoutlab.engine.MonsterMechanics;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
+import com.loadoutlab.optimizer.OptimizerService;
 import com.loadoutlab.optimizer.OptimizerService.ModeTrade;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BasicStroke;
@@ -588,6 +589,8 @@ public class LoadoutLabPanel extends PluginPanel
 		/** True once the user picked an Inventory value - the roster
 		 * default never overrides an explicit choice. */
 		boolean inventoryTouched;
+		/** Nullable: the owned kit's inventory breakpoint curve. */
+		OptimizerService.KitCurve kitCurve;
 
 		/** Re-seed the roster default (a group preset raises the floor):
 		 * never shrinks, never overrides an explicit choice. */
@@ -3415,11 +3418,19 @@ public class LoadoutLabPanel extends PluginPanel
 	public void showRosterResults(java.util.List<MonsterStats> mobs,
 		java.util.List<Map<CombatStyle, StyleResult>> perMob)
 	{
+		showRosterResults(mobs, perMob, null);
+	}
+
+	public void showRosterResults(java.util.List<MonsterStats> mobs,
+		java.util.List<Map<CombatStyle, StyleResult>> perMob,
+		OptimizerService.KitCurve curve)
+	{
 		ResultEntry entry = entryForRoster(mobs);
 		if (entry == null || perMob == null || perMob.isEmpty())
 		{
 			return; // stale roster - the page moved on
 		}
+		entry.kitCurve = curve;
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
@@ -3851,6 +3862,11 @@ public class LoadoutLabPanel extends PluginPanel
 			});
 			values.add(invLabel);
 			values.add(invSlider);
+			JLabel breakpoints = breakpointLabel(entry);
+			if (breakpoints != null)
+			{
+				values.add(breakpoints);
+			}
 		}
 		if (displayOptions.upgradeBudget)
 		{
@@ -4258,6 +4274,92 @@ public class LoadoutLabPanel extends PluginPanel
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** The inventory breakpoint summary (field spec 2026-07-18): the
+	 * minimum-viability point (every mob answerable), the major
+	 * breakpoints (picks worth >= 10% of the whole curve's gain), the
+	 * final breakpoint (more slots stop paying), and where the current
+	 * budget sits as a percent of max. */
+	private JLabel breakpointLabel(ResultEntry entry)
+	{
+		OptimizerService.KitCurve curve = entry.kitCurve;
+		if (curve == null || curve.points.size() < 2)
+		{
+			return null;
+		}
+		java.util.List<double[]> points = curve.points;
+		double baseTotal = points.get(0)[1];
+		double finalTotal = points.get(points.size() - 1)[1];
+		double gainRange = finalTotal - baseTotal;
+		int maxViable = 0;
+		for (double[] p : points)
+		{
+			maxViable = Math.max(maxViable, (int) p[2]);
+		}
+		int viability = -1;
+		int finalCost = (int) points.get(0)[0];
+		java.util.List<Integer> majors = new java.util.ArrayList<>();
+		for (int i = 1; i < points.size(); i++)
+		{
+			double gain = points.get(i)[1] - points.get(i - 1)[1];
+			int cost = (int) points.get(i)[0];
+			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
+			{
+				viability = cost;
+			}
+			if (gain > 1e-6)
+			{
+				finalCost = cost;
+				if (gainRange > 0 && gain >= 0.10 * gainRange && !majors.contains(cost))
+				{
+					majors.add(cost);
+				}
+			}
+		}
+		if (viability < 0 && (int) points.get(0)[2] >= maxViable)
+		{
+			viability = (int) points.get(0)[0];
+		}
+		// Where the CURRENT budget lands on the curve, as percent of max.
+		double atBudget = baseTotal;
+		for (double[] p : points)
+		{
+			if (p[0] <= entry.maxSwaps)
+			{
+				atBudget = Math.max(atBudget, p[1]);
+			}
+		}
+		int pct = finalTotal > 0 ? (int) Math.round(atBudget * 100.0 / finalTotal) : 100;
+		StringBuilder text = new StringBuilder();
+		if (viability > 0)
+		{
+			text.append("min ").append(viability);
+		}
+		if (!majors.isEmpty())
+		{
+			if (text.length() > 0)
+			{
+				text.append(" | ");
+			}
+			text.append("gains at ");
+			for (int i = 0; i < majors.size(); i++)
+			{
+				text.append(i > 0 ? ", " : "").append(majors.get(i));
+			}
+		}
+		if (text.length() > 0)
+		{
+			text.append(" | ");
+		}
+		text.append("max ").append(finalCost).append(" - at ").append(pct).append("%");
+		JLabel label = new JLabel(text.toString());
+		label.setForeground(MUTED);
+		label.setFont(label.getFont().deriveFont(11f));
+		label.setToolTipText("Inventory breakpoints: 'min' answers every mob,"
+			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
+			+ " slots stop paying - the percent is this budget vs the max");
+		return label;
 	}
 
 	/** One mob's row result: the side's kit BEST across ALL styles - the

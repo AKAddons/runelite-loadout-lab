@@ -674,6 +674,44 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void breakpointCurveReadsTheBudget() throws Exception
+	{
+		// THE BREAKPOINT CURVE (field spec 2026-07-18): totals never fall
+		// as slots grow, the empty kit cannot answer the melee-immune TD
+		// phase, and some budget answers all three - the UI reads the
+		// viability/major/final breakpoints straight off these points.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(29594, 1);  // purging staff
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned, 3);
+			OptimizerService.KitCurve curve = roster.result.curve;
+			Assert.assertNotNull("rosters carry a breakpoint curve", curve);
+			Assert.assertTrue(curve.points.size() >= 2);
+			double previous = -1;
+			for (double[] point : curve.points)
+			{
+				Assert.assertTrue("totals never fall as slots grow",
+					point[1] >= previous - 1e-9);
+				previous = point[1];
+			}
+			Assert.assertTrue("the empty kit cannot answer every phase",
+				curve.points.get(0)[2] < 3);
+			Assert.assertTrue("some budget answers every phase",
+				curve.points.stream().anyMatch(p -> p[2] >= 3));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	private static com.loadoutlab.data.MonsterGroups.MonsterGroup tdGroup(LoadoutData data)
 	{
 		return com.loadoutlab.data.MonsterGroups.load(data).stream()

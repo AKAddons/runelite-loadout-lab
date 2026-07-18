@@ -735,6 +735,29 @@ public class OptimizerService
 		return ctx;
 	}
 
+	/** The inventory BREAKPOINT CURVE (field spec 2026-07-18): one greedy
+	 * run to exhaustion for the winning kit configuration, recording after
+	 * every pick how many slots are spent, the HP-weighted total, and how
+	 * many mobs have a nonzero answer. The UI reads the minimum-viability
+	 * point, the major/minor breakpoints, and the final breakpoint (where
+	 * more slots stop paying) straight off the points. */
+	public static final class KitCurve
+	{
+		/** Each point: {slots spent, hpWeighted total, viable mob count}.
+		 * The first point is the empty kit; points are pick-ordered. */
+		public final List<double[]> points;
+		public final int mobCount;
+		/** True when the first slot carries the spec weapon. */
+		public final boolean specFirst;
+
+		KitCurve(List<double[]> points, int mobCount, boolean specFirst)
+		{
+			this.points = Collections.unmodifiableList(points);
+			this.mobCount = mobCount;
+			this.specFirst = specFirst;
+		}
+	}
+
 	/** The roster answer: one shared set per style, chosen for the best
 	 * AVERAGE dps across the mobs (field decision 2026-07-17), with a per-mob
 	 * display bundle for that set (index-aligned with the mob list). */
@@ -742,11 +765,20 @@ public class OptimizerService
 	{
 		public final List<MonsterStats> mobs;
 		public final List<Map<CombatStyle, StyleResult>> perMob;
+		/** Nullable: the owned side's inventory breakpoint curve. */
+		public final KitCurve curve;
 
 		RosterResult(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob)
 		{
+			this(mobs, perMob, null);
+		}
+
+		RosterResult(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob,
+			KitCurve curve)
+		{
 			this.mobs = mobs;
 			this.perMob = perMob;
+			this.curve = curve;
 		}
 	}
 
@@ -1156,6 +1188,17 @@ public class OptimizerService
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
 		List<MonsterStats> mobs, int slots, Map<String, Double> memo)
 	{
+		return chooseKit(calc, base, primary, singleCandidates, bundleCandidates,
+			reqsByStyle, bestsByStyle, mobs, slots, memo, null);
+	}
+
+	private KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
+		java.util.Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates,
+		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
+		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
+		List<MonsterStats> mobs, int slots, Map<String, Double> memo,
+		List<double[]> curveOut)
+	{
 		List<GearItem> allNeeded = new ArrayList<>();
 		double idealTotal = 0;
 		for (int j = 0; j < mobs.size(); j++)
@@ -1189,7 +1232,10 @@ public class OptimizerService
 				}
 			}
 		}
-		if (!allNeeded.isEmpty() && allNeeded.size() <= slots)
+		// A curve run wants the full pick-by-pick sequence - the greedy
+		// converges to the same totals (coverage challenge), so the ideal
+		// shortcut only serves the non-curve path.
+		if (curveOut == null && !allNeeded.isEmpty() && allNeeded.size() <= slots)
 		{
 			// The ideal fits: every mob wears its own best, exactly (the
 			// coverage challenge in kitBest reproduces each winner).
@@ -1243,6 +1289,10 @@ public class OptimizerService
 			mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles,
 				baseBundlesKey, reqsByStyle, bestsByStyle, relevantByMob.get(j), j, memo);
 			current += mobDps[j] * hp[j];
+		}
+		if (curveOut != null)
+		{
+			curveOut.add(new double[]{used, current, viableCount(mobDps)});
 		}
 		while (true)
 		{
@@ -1323,9 +1373,26 @@ public class OptimizerService
 				mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles,
 					appliedKey, reqsByStyle, bestsByStyle, relevantByMob.get(j), j, memo);
 			}
+			if (curveOut != null)
+			{
+				curveOut.add(new double[]{used, current, viableCount(mobDps)});
+			}
 		}
 		kit.total = current;
 		return kit;
+	}
+
+	private static int viableCount(double[] mobDps)
+	{
+		int viable = 0;
+		for (double dps : mobDps)
+		{
+			if (dps > 1e-9)
+			{
+				viable++;
+			}
+		}
+		return viable;
 	}
 
 	/**
@@ -1459,7 +1526,7 @@ public class OptimizerService
 	 * StyleResult around the shared sets (that mob's own dps/incoming/spec).
 	 * Returns null if the request was superseded mid-compute. */
 	private List<Map<CombatStyle, StyleResult>> computeStyleAcross(
-		List<MonsterStats> mobs, ComputeContext ctx, long ticket)
+		List<MonsterStats> mobs, ComputeContext ctx, long ticket, KitCurve[] curveOut)
 	{
 		int n = mobs.size();
 		long tStart = System.nanoTime();
@@ -1773,19 +1840,23 @@ public class OptimizerService
 		long tKitStart = System.nanoTime();
 		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
-				bestsByStyle, specsByStyle, specCarriedByStyle, "owned")
+				bestsByStyle, specsByStyle, specCarriedByStyle, "owned", true)
 			: null;
 		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
 		long tGameKitStart = System.nanoTime();
 		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
-				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle, "BiS")
+				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle, "BiS", false)
 			: null;
 		long tGameKitMs = (System.nanoTime() - tGameKitStart) / 1_000_000;
 		if (requestSeq.get() != ticket)
 		{
 			abandonedForTest++;
 			return null;
+		}
+		if (curveOut != null)
+		{
+			curveOut[0] = ownedView == null ? null : ownedView.curve;
 		}
 		if (ownedView != null || gameView != null)
 		{
@@ -1873,10 +1944,12 @@ public class OptimizerService
 		final SpecPick[] specs;
 		final List<Map<CombatStyle, DpsResult>> shownByMob;
 		final LinkedHashMap<Integer, GearItem> plan;
+		/** Nullable: the breakpoint curve (owned side only). */
+		final KitCurve curve;
 
 		KitView(Set<CombatStyle> styles, Loadout base, GearItem specCarried,
 			SpecPick[] specs, List<Map<CombatStyle, DpsResult>> shownByMob,
-			LinkedHashMap<Integer, GearItem> plan)
+			LinkedHashMap<Integer, GearItem> plan, KitCurve curve)
 		{
 			this.styles = styles;
 			this.base = base;
@@ -1884,6 +1957,7 @@ public class OptimizerService
 			this.specs = specs;
 			this.shownByMob = shownByMob;
 			this.plan = plan;
+			this.curve = curve;
 		}
 	}
 
@@ -1902,7 +1976,7 @@ public class OptimizerService
 		Map<CombatStyle, Loadout> sharedByStyle,
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
 		Map<CombatStyle, SpecPick[]> specsByStyle,
-		Map<CombatStyle, GearItem> specCarriedByStyle, String side)
+		Map<CombatStyle, GearItem> specCarriedByStyle, String side, boolean wantCurve)
 	{
 		int n = mobs.size();
 		// A quiver never costs a swap slot (field fix 2026-07-17): the
@@ -2120,6 +2194,48 @@ public class OptimizerService
 		GearItem specCarried = bestSpecKept ? specCarriedByStyle.get(bestPrimary) : null;
 		SpecPick[] specs = bestSpecKept ? specsByStyle.get(bestPrimary) : null;
 		List<GearItem> carried = carriedOf(bestKit);
+		// THE BREAKPOINT CURVE (field spec 2026-07-18): one more greedy to
+		// exhaustion for the winning configuration - with warm machinery
+		// this is cheap - recording (slots, total, viable mobs) at every
+		// pick. The UI reads viability/major/final breakpoints off it.
+		KitCurve curve = null;
+		if (wantCurve)
+		{
+			List<GearItem> curvePool =
+				new ArrayList<>(swapCandidates(base, bestsByStyle.get(bestPrimary)));
+			for (CombatStyle s : sharedByStyle.keySet())
+			{
+				if (s == bestPrimary)
+				{
+					continue;
+				}
+				for (GearItem item : swapCandidates(base, bestsByStyle.get(s)))
+				{
+					if (item.getSlot() != GearSlot.WEAPON
+						&& curvePool.stream().noneMatch(i -> i.getId() == item.getId()))
+					{
+						curvePool.add(item);
+					}
+				}
+			}
+			List<double[]> raw = new ArrayList<>();
+			chooseKit(calc, base, bestPrimary, curvePool,
+				bundleCandidates(bestPrimary, base, specCarried, sharedByStyle, bestsByStyle),
+				reqsByStyle, bestsByStyle, mobs,
+				Math.max(0, 20 - (specCarried != null ? 1 : 0)),
+				new java.util.HashMap<>(), raw);
+			if (specCarried != null && !raw.isEmpty())
+			{
+				// The spec spends the first slot: shift every point past it
+				// and keep a cost-0 baseline copy in front.
+				for (double[] point : raw)
+				{
+					point[0] += 1;
+				}
+				raw.add(0, new double[]{0, raw.get(0)[1], raw.get(0)[2]});
+			}
+			curve = new KitCurve(raw, n, specCarried != null);
+		}
 		// Every (mob, style) answer, and the trip PLAN: the union of each
 		// mob's best worn set. The primary wears the base, a bundled style
 		// wears its weapon into the base armor, and ANY style whose free
@@ -2196,7 +2312,7 @@ public class OptimizerService
 				carriedNames, String.format("%.0f", bestScore));
 		}
 		return new KitView(java.util.EnumSet.copyOf(sharedByStyle.keySet()),
-			base, specCarried, specs, shownByMob, plan);
+			base, specCarried, specs, shownByMob, plan, curve);
 	}
 
 	private static List<GearItem> carriedOf(KitAnswer kit)
@@ -2323,13 +2439,14 @@ public class OptimizerService
 				abandonedForTest++;
 				return;
 			}
-			List<Map<CombatStyle, StyleResult>> perMob = computeStyleAcross(roster, ctx, ticket);
+			KitCurve[] curveOut = new KitCurve[1];
+			List<Map<CombatStyle, StyleResult>> perMob = computeStyleAcross(roster, ctx, ticket, curveOut);
 			if (perMob == null || requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
 				return;
 			}
-			callback.accept(new RosterResult(roster, perMob));
+			callback.accept(new RosterResult(roster, perMob, curveOut[0]));
 		});
 	}
 

@@ -1556,7 +1556,7 @@ public class LoadoutLabPlugin extends Plugin
 				{
 					if (panel != null)
 					{
-						panel.showRosterResults(roster.mobs, roster.perMob);
+						panel.showRosterResults(roster.mobs, roster.perMob, roster.curve);
 					}
 					onDone.run();
 				}));
