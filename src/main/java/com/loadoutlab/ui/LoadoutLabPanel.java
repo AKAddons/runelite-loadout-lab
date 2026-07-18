@@ -997,6 +997,9 @@ public class LoadoutLabPanel extends PluginPanel
 		add(resultsPanel, BorderLayout.CENTER);
 
 		statusLabel.setForeground(MUTED);
+		// The empty-state prompt reads as a caption: centered, italic.
+		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		statusLabel.setFont(statusLabel.getFont().deriveFont(Font.ITALIC));
 		add(statusLabel, BorderLayout.SOUTH);
 
 		searchDebounce = new Timer(SEARCH_DEBOUNCE_MS, e -> runSearch());
