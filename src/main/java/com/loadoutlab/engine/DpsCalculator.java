@@ -272,6 +272,18 @@ public final class DpsCalculator
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
 	}
 
+	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
+	 * only (wiki excludes Strike and Surge explicitly). */
+	private static boolean twinflameDoubles(SpellStats spell)
+	{
+		if (spell.getElement() == null || spell.getElement().isEmpty())
+		{
+			return false;
+		}
+		String name = spell.getName().toLowerCase(java.util.Locale.ROOT);
+		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
+	}
+
 	private DpsResult calculateMagic(OptimizationRequest request, Loadout loadout)
 	{
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
@@ -305,11 +317,29 @@ public final class DpsCalculator
 			counted("void set", "+2.5% damage");
 			maxHit = (int) Math.floor(maxHit * 1.025);
 		}
+		// Twinflame staff (wiki, verified 2026-07-18): +10% accuracy and
+		// damage on standard-spellbook spells, and Bolt/Blast/Wave
+		// elementals fire a SECOND hit at 40% of the first (no extra
+		// runes) - Strike and Surge spells do not double.
+		SpellStats twinflameSpell = effectiveRequest.getSpell();
+		boolean twinflame = wearing(loadout, "twinflame") && twinflameSpell != null
+			&& "standard".equalsIgnoreCase(twinflameSpell.getSpellbook());
+		if (twinflame)
+		{
+			counted("twinflame staff", "+10% accuracy and damage on standard spells");
+			attackRoll = (long) Math.floor(attackRoll * 1.10);
+			maxHit = (int) Math.floor(maxHit * 1.10);
+		}
 		maxHit = applyFlatArmour(effectiveRequest, maxHit);
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (twinflame && twinflameDoubles(twinflameSpell))
+		{
+			counted("twinflame staff", "second hit at 40% (Bolt/Blast/Wave)");
+			expected *= 1.4;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
 		double frostweaver = frostweaverBonus(effectiveRequest, loadout);
@@ -502,7 +532,10 @@ public final class DpsCalculator
 			// speed (upstream billed autocasts at the wand's 4 ticks - a
 			// 25% dps overstatement). Harmonised nightmare staff: 4 ticks
 			// on standard spells.
-			return name(weapon).contains("harmonised") ? 4 : 5;
+			// Twinflame casts at 6 ticks (wiki: "attack and cast speed of
+			// 6") - its damage bonuses more than pay the tick back.
+			return name(weapon).contains("harmonised") ? 4
+				: name(weapon).contains("twinflame") ? 6 : 5;
 		}
 		return Math.max(1, weapon.getSpeed());
 	}
