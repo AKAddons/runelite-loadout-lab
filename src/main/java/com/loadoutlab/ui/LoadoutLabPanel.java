@@ -5075,9 +5075,11 @@ public class LoadoutLabPanel extends PluginPanel
 	 * column so every line's text starts on the same edge. */
 	private void attachStatSprite(JLabel label, int spriteId)
 	{
+		// 13px tall: wide sprites (stance swords) keep real side margins
+		// inside the fixed 20px column instead of filling it flush-left.
 		spriteManager.getSpriteAsync(spriteId, 0, img ->
 			SwingUtilities.invokeLater(() -> label.setIcon(new FixedWidthIcon(
-				new ImageIcon(img.getScaledInstance(-1, 15, Image.SCALE_SMOOTH))))));
+				new ImageIcon(img.getScaledInstance(-1, 13, Image.SCALE_SMOOTH))))));
 		label.setIconTextGap(4);
 	}
 
@@ -5295,14 +5297,14 @@ public class LoadoutLabPanel extends PluginPanel
 		Color statText = new Color(200, 200, 200);
 		if (displayOptions.maxHit)
 		{
-			panel.add(statLine("Max: " + result.getMaxHit(),
+			panel.add(statLine(String.valueOf(result.getMaxHit()),
 				"Max hit " + result.getMaxHit(), statText,
 				new FixedWidthIcon(new HitsplatIcon(12))));
 		}
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
-			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, statText,
+			panel.add(statLine(acc, "Hit chance " + acc, statText,
 				new FixedWidthIcon(new CrosshairIcon(13))));
 		}
 		if (incoming != null && displayOptions.damageTaken)
@@ -5351,7 +5353,7 @@ int sprite = incoming.protectPrayer != null
 		{
 			// Compact type on the line; the stance ("controlled" - Defence
 			// xp!) survives in the tooltip.
-			JLabel styleLine = statLine("Style: " + styleText,
+			JLabel styleLine = statLine(styleText,
 				"Use this attack style: " + result.getAttackType(), statText, null);
 			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
 			panel.add(styleLine);
@@ -5423,7 +5425,8 @@ int sprite = incoming.protectPrayer != null
 				"Gear prayer bonus - slower prayer drain", statText, null);
 			if (PRAYER_ICON != null)
 			{
-				pray.setIcon(new FixedWidthIcon(new BackedIcon(PRAYER_ICON)));
+				pray.setIcon(new FixedWidthIcon(new BackedIcon(new ImageIcon(
+					PRAYER_ICON.getImage().getScaledInstance(-1, 12, Image.SCALE_SMOOTH)))));
 				pray.setIconTextGap(4);
 			}
 			panel.add(pray);
