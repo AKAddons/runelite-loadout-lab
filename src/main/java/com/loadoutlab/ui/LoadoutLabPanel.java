@@ -5457,7 +5457,7 @@ int sprite = incoming.protectPrayer != null
 			// xp!) survives in the tooltip.
 			JLabel styleLine = statLine(styleText,
 				"Use this attack style: " + result.getAttackType(), statText, null);
-			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
+			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.SideIcons.COMBAT);
 			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
