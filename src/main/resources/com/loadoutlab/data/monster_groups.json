@@ -538,7 +538,7 @@
    "xeric",
    "olm"
   ],
-  "note": "The common combat rooms and Olm (head + both claws). Rooms roll per raid - treat the roster as the pool."
+  "note": "The common combat rooms and Olm (head + both claws). A Vanguard's label is its OWN attack style - each is weak to the next step of the combat triangle (mage Vanguard to ranged, melee to magic, ranged to melee). Rooms roll per raid - treat the roster as the pool."
  },
  {
   "name": "Fortis Colosseum",
