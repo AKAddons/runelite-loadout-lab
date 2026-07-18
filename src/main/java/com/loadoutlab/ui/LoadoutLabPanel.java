@@ -5214,24 +5214,6 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(Box.createVerticalStrut(4));
 			card.add(viewToggleRow(entry, result, bis));
 		}
-		if (displayOptions.showInBank || displayOptions.filterBank)
-		{
-			// Centred like the exclude/sim chips (field spec); the green
-			// toggle border carries the on state - the labels stay put.
-			JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
-			bankRow.setOpaque(false);
-			bankRow.setAlignmentX(LEFT_ALIGNMENT);
-			bankRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-			if (displayOptions.showInBank)
-			{
-				bankRow.add(bankButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
-			}
-			if (displayOptions.filterBank)
-			{
-				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
-			}
-			card.add(bankRow);
-		}
 		if (!bis)
 		{
 			// LOCAL excludes/sims (field spec 2026-07-18): the per-mob
@@ -5263,6 +5245,24 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
 			card.add(Box.createVerticalStrut(4));
 			card.add(localRow);
+		}
+		if (displayOptions.showInBank || displayOptions.filterBank)
+		{
+			// Centred like the exclude/sim chips (field spec); the green
+			// toggle border carries the on state - the labels stay put.
+			JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			bankRow.setOpaque(false);
+			bankRow.setAlignmentX(LEFT_ALIGNMENT);
+			bankRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+			if (displayOptions.showInBank)
+			{
+				bankRow.add(bankButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
+			}
+			if (displayOptions.filterBank)
+			{
+				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
+			}
+			card.add(bankRow);
 		}
 		if (entry == active)
 		{
