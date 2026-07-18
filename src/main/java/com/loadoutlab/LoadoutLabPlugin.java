@@ -119,6 +119,11 @@ public class LoadoutLabPlugin extends Plugin
 	private SpriteManager spriteManager;
 
 	@Inject
+	private okhttp3.OkHttpClient okHttpClient;
+
+	private com.loadoutlab.ui.MonsterIcons monsterIcons;
+
+	@Inject
 	private net.runelite.client.game.chatbox.ChatboxItemSearch chatboxItemSearch;
 
 	@Inject
@@ -388,6 +393,8 @@ public class LoadoutLabPlugin extends Plugin
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
 				panel.setDeveloperMode(developerMode);
+				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
+				panel.setMonsterIcons(monsterIcons);
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
@@ -406,6 +413,11 @@ public class LoadoutLabPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		if (monsterIcons != null)
+		{
+			monsterIcons.shutdown();
+			monsterIcons = null;
+		}
 		if (bankOverlay != null)
 		{
 			overlayManager.remove(bankOverlay);

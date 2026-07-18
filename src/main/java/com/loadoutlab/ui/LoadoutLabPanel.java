@@ -627,6 +627,14 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The entry the panel-global affordances (toggles, notes, bank tools)
 	 * act on. With a one-entry page this is always page.get(0). */
 	private ResultEntry active;
+	/** Async wiki thumbnails for the mob rows (null in tests - rows keep
+	 * their text-only look). */
+	private MonsterIcons monsterIcons;
+
+	public void setMonsterIcons(MonsterIcons monsterIcons)
+	{
+		this.monsterIcons = monsterIcons;
+	}
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -4063,6 +4071,26 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
+			if (monsterIcons != null)
+			{
+				// The mob's wiki render rides the row; text-only until it
+				// loads (or when the wiki has no picture for it).
+				ImageIcon mobIcon = monsterIcons.get(mob.getName(), 20, () ->
+				{
+					ImageIcon ready = monsterIcons.get(mob.getName(), 20, null);
+					if (ready != null)
+					{
+						name.setIcon(ready);
+						name.setIconTextGap(6);
+						name.revalidate();
+					}
+				});
+				if (mobIcon != null)
+				{
+					name.setIcon(mobIcon);
+					name.setIconTextGap(6);
+				}
+			}
 			row.add(name, BorderLayout.CENTER);
 			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			east.setOpaque(false);
