@@ -540,6 +540,22 @@ public class LoadoutLabPanel extends PluginPanel
 	 * flag = no risk line (not wilderness / option off / BiS view). */
 	private boolean renderingRiskLine;
 	private java.util.List<Integer> renderingRiskConsumables = java.util.Collections.emptyList();
+
+	/** Every id consumableIds() can emit - the plugin prefetches their GE
+	 * prices ON THE CLIENT THREAD per compute (ItemManager.getItemPrice
+	 * resolves compositions and asserts off-thread; field crash
+	 * 2026-07-18) and hands the panel this cache for EDT rendering. */
+	public static final int[] CONSUMABLE_PRICE_IDS = {
+		20996, 20992, 12695, 2428, 113, 11722, 2444, 11726, 3040,
+		27641, 20724, 2452, 21978};
+	private volatile java.util.Map<Integer, Long> consumablePrices =
+		java.util.Collections.emptyMap();
+
+	public void setConsumablePrices(java.util.Map<Integer, Long> prices)
+	{
+		this.consumablePrices = prices == null
+			? java.util.Collections.emptyMap() : prices;
+	}
 	/** The upgrade-cost line renders in the stat panel (Yours view). */
 	private boolean renderingUpgradeLine;
 	private GearItem renderingRiskSpecWeapon;
@@ -5212,7 +5228,7 @@ public class LoadoutLabPanel extends PluginPanel
 		long consumableRisk = 0;
 		for (int id : renderingRiskConsumables)
 		{
-			consumableRisk += Math.max(0, itemManager.getItemPrice(id));
+			consumableRisk += Math.max(0, consumablePrices.getOrDefault(id, 0L));
 		}
 		long totalRisk = risk.riskGp + consumableRisk;
 		JLabel line = statLine(PvpRisk.formatGp(totalRisk),
@@ -5257,7 +5273,7 @@ public class LoadoutLabPanel extends PluginPanel
 			tip.append("<br>Assumed consumables (risked, not ranked for protection):");
 			for (int id : renderingRiskConsumables)
 			{
-				long price = Math.max(0, itemManager.getItemPrice(id));
+				long price = Math.max(0, consumablePrices.getOrDefault(id, 0L));
 				if (price > 0)
 				{
 					tip.append("<br>- ").append(PvpRisk.formatGp(price)).append(" gp");

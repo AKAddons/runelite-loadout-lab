@@ -1526,6 +1526,22 @@ public class LoadoutLabPlugin extends Plugin
 	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
 	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
 	 * v1 - roster-wide per-mob preferences come later. */
+	/** Consumable GE prices, resolved ON the client thread (compositions
+	 * assert off-thread) and handed to the panel for EDT rendering. */
+	private void refreshConsumablePrices()
+	{
+		if (panel == null)
+		{
+			return;
+		}
+		Map<Integer, Long> prices = new java.util.HashMap<>();
+		for (int id : LoadoutLabPanel.CONSUMABLE_PRICE_IDS)
+		{
+			prices.put(id, (long) itemManager.getItemPrice(id));
+		}
+		panel.setConsumablePrices(prices);
+	}
+
 	private void computeForRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
@@ -1534,6 +1550,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				snapshotProfileIfNeeded();
 			}
+			refreshConsumablePrices();
 			if (config.useDwmsData())
 			{
 				dwmsImport.reload();
@@ -1573,6 +1590,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				snapshotProfileIfNeeded();
 			}
+			refreshConsumablePrices();
 			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
 			// re-read keeps imported storages as fresh as they can be. The
 			// PluginMessage re-request refreshes the live snapshot the same
