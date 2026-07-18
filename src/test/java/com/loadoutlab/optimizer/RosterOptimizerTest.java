@@ -428,6 +428,14 @@ public class RosterOptimizerTest
 			}
 			Assert.assertEquals("Bench 20 must equal optimizing the phase alone",
 				soloBest, rosterBest, 1e-6);
+			// The weapon swap must be visible in the inventory view: vs the
+			// ranged-immune phase (worn melee) the carried blowpipe waits
+			// in the backpack (field bug: it vanished into a clipped row).
+			OptimizerService.StyleResult meleeVsRangedImmune =
+				roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(meleeVsRangedImmune);
+			Assert.assertTrue("the carried cross weapon rides the inventory",
+				meleeVsRangedImmune.bench.stream().anyMatch(i -> i.getId() == 12926));
 		}
 		finally
 		{

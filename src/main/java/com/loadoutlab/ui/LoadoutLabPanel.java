@@ -3750,13 +3750,13 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.optimizeMode > 0, true,
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
-		String benchTip = entry.maxSwaps == 0
-			? "Bench: 0 - strictly one worn set, no spec swap carried"
-			: "Bench: " + entry.maxSwaps + " - up to " + entry.maxSwaps
+		String invTip = entry.maxSwaps == 0
+			? "Inventory: 0 - strictly one worn set, no spec swap carried"
+			: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
 				+ " carried swap item" + (entry.maxSwaps == 1 ? "" : "s")
 				+ ", cross-style included; the spec weapon rides free";
-		values.add(paramChip("Bench: " + entry.maxSwaps, entry.maxSwaps != 1, true,
-			benchTip + "; click to pick",
+		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != 1, true,
+			invTip + "; click to pick",
 			() ->
 		{
 			JPopupMenu menu = new JPopupMenu();
@@ -3764,7 +3764,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				final int pick = i;
 				JMenuItem item = new JMenuItem((i == entry.maxSwaps ? "[x] " : "")
-					+ "Bench: " + i);
+					+ "Inventory: " + i);
 				item.addActionListener(ev -> asActive(entry, () ->
 				{
 					int prev = entry.maxSwaps;
@@ -3772,7 +3772,7 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						return;
 					}
-					recordStep("Bench " + pick,
+					recordStep("Inventory " + pick,
 						() -> setMaxSwaps(pick), () -> setMaxSwaps(prev));
 					if (historyControl == null)
 					{
@@ -3955,37 +3955,52 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private javax.swing.JComponent benchRow(StyleResult result)
+	private javax.swing.JComponent inventoryRow(StyleResult result)
 	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		// A wrapping grid, NOT a single flow line: at Inventory 20 the
+		// carried items overflow one row, and a clipped weapon swap reads
+		// as missing (field bug). Height follows the row count.
+		JPanel row = new JPanel(new BorderLayout(4, 0))
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-		JLabel prefix = new JLabel("Bench:");
+		JLabel prefix = new JLabel("Inventory:");
 		prefix.setForeground(MUTED);
 		prefix.setFont(prefix.getFont().deriveFont(11f));
-		prefix.setToolTipText("The backpack vs this mob - carried items not currently worn"
-			+ " (the Bench chip sets the swap budget)");
-		row.add(prefix);
+		prefix.setVerticalAlignment(JLabel.TOP);
+		prefix.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+		prefix.setToolTipText("Carried items not currently worn vs this mob"
+			+ " (the Inventory chip sets the swap budget)");
+		row.add(prefix, BorderLayout.WEST);
+		JPanel cells = new JPanel(new java.awt.GridLayout(0, 6, 3, 3));
+		cells.setOpaque(false);
 		int specId = result.specWeapon != null ? result.specWeapon.getId() : -1;
 		for (GearItem item : result.bench)
 		{
 			boolean isSpec = item.getId() == specId;
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
+			cell.setHorizontalAlignment(JLabel.CENTER);
 			cell.setBackground(CELL_BG);
 			cell.setBorder(new RoundedBorder(
 				isSpec ? BORDER_SPEC : ColorScheme.MEDIUM_GRAY_COLOR, 2, 2));
 			cell.setToolTipText(item.label()
 				+ (isSpec ? " - the special attack swap"
-					: " - in the backpack vs this mob"));
+					: " - in the inventory vs this mob"));
 			AsyncBufferedImage img = itemManager.getImage(item.getId());
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
 			img.onLoaded(() -> SwingUtilities.invokeLater(set));
 			set.run();
-			row.add(cell);
+			cells.add(cell);
 		}
+		row.add(cells, BorderLayout.CENTER);
 		return row;
 	}
 
@@ -4650,10 +4665,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (!bis && result != null && !result.bench.isEmpty())
 		{
-			// The BENCH (field spec): the backpack below the gear - what
-			// is carried but not worn against the lensed mob.
+			// The INVENTORY (field spec): below the gear - what is carried
+			// but not worn against the lensed mob.
 			card.add(Box.createVerticalStrut(4));
-			card.add(benchRow(result));
+			card.add(inventoryRow(result));
 		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
