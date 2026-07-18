@@ -2235,6 +2235,21 @@ public class OptimizerService
 				raw.add(0, new double[]{0, raw.get(0)[1], raw.get(0)[2]});
 			}
 			curve = new KitCurve(raw, n, specCarried != null);
+			if (log.isDebugEnabled() && !raw.isEmpty())
+			{
+				StringBuilder line = new StringBuilder();
+				double finalTotal = raw.get(raw.size() - 1)[1];
+				for (int i = 0; i < raw.size(); i++)
+				{
+					double gain = i == 0 ? 0 : raw.get(i)[1] - raw.get(i - 1)[1];
+					line.append((int) raw.get(i)[0]).append(':')
+						.append(String.format("%.0f", raw.get(i)[1]))
+						.append(i == 0 ? "" : String.format("(+%.1f%%)",
+							finalTotal > 0 ? gain * 100.0 / finalTotal : 0))
+						.append('v').append((int) raw.get(i)[2]).append(' ');
+				}
+				log.debug("curve[{}]: {}", side, line);
+			}
 		}
 		// Every (mob, style) answer, and the trip PLAN: the union of each
 		// mob's best worn set. The primary wears the base, a bundled style

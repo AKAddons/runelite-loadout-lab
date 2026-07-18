@@ -4344,7 +4344,11 @@ public class LoadoutLabPanel extends PluginPanel
 			if (gain > 1e-6)
 			{
 				finalCost = cost;
-				if (gainRange > 0 && gain >= 0.10 * gainRange && !majors.contains(cost))
+				// Significant = the pick moves the ROSTER's dps, not just
+				// the curve's own range (field fix 2026-07-18: a slow-decay
+				// tail kept clearing a range-relative bar deep into the
+				// curve). 3% of the final total is a real jump.
+				if (finalTotal > 0 && gain >= 0.03 * finalTotal && !majors.contains(cost))
 				{
 					majors.add(cost);
 				}
@@ -4405,7 +4409,7 @@ public class LoadoutLabPanel extends PluginPanel
 			return 0;
 		}
 		java.util.List<double[]> points = curve.points;
-		double gainRange = points.get(points.size() - 1)[1] - points.get(0)[1];
+		double finalTotal = points.get(points.size() - 1)[1];
 		int maxViable = 0;
 		for (double[] p : points)
 		{
@@ -4421,7 +4425,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				viability = cost;
 			}
-			if (gainRange > 0 && gain >= 0.10 * gainRange)
+			if (finalTotal > 0 && gain >= 0.03 * finalTotal)
 			{
 				lastMajor = cost;
 			}
