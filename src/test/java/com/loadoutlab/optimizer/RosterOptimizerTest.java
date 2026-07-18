@@ -430,8 +430,12 @@ public class RosterOptimizerTest
 					rosterBest = Math.max(rosterBest, r.owned.get(0).getDps());
 				}
 			}
-			Assert.assertEquals("Bench 20 must equal optimizing the phase alone",
-				soloBest, rosterBest, 1e-6);
+			// Slot unification may trade up to 0.5% per-mob dps for fewer
+			// carried items (field decision 2026-07-18) - the convergence
+			// guarantee is now 99.5% of the solo answer.
+			Assert.assertTrue("Bench 20 must reach at least 99.5% of the solo answer:"
+					+ " solo=" + soloBest + " roster=" + rosterBest,
+				rosterBest >= soloBest * 0.995 - 1e-9);
 			// The weapon swap must be visible in the inventory view: vs the
 			// ranged-immune phase (worn melee) the carried blowpipe waits
 			// in the backpack (field bug: it vanished into a clipped row).

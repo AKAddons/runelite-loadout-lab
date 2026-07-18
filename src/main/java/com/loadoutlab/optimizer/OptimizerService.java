@@ -1979,6 +1979,69 @@ public class OptimizerService
 		Map<CombatStyle, GearItem> specCarriedByStyle, String side, boolean wantCurve)
 	{
 		int n = mobs.size();
+		// SLOT UNIFICATION (field insight 2026-07-18: a tribrid answer
+		// should not pay one carried slot per near-identical variant):
+		// per style and slot, the roster's most-worn item absorbs any
+		// per-mob variant whose dps cost is under 0.5%. The per-mob bests
+		// converge onto shared pieces, the diffs shrink, and the
+		// significant breakpoints arrive with far fewer items - the
+		// mage/tribrid answers assemble early instead of fragmenting.
+		for (Map.Entry<CombatStyle, List<List<DpsResult>>> unifyEntry : bestsByStyle.entrySet())
+		{
+			List<OptimizationRequest> unifyReqs = reqsByStyle.get(unifyEntry.getKey());
+			for (GearSlot slot : GearSlot.values())
+			{
+				Map<Integer, Integer> counts = new java.util.HashMap<>();
+				Map<Integer, GearItem> itemsById = new java.util.HashMap<>();
+				for (List<DpsResult> best : unifyEntry.getValue())
+				{
+					if (best == null || best.isEmpty() || best.get(0) == null)
+					{
+						continue;
+					}
+					GearItem item = best.get(0).getLoadout().get(slot);
+					if (item != null)
+					{
+						counts.merge(item.getId(), 1, Integer::sum);
+						itemsById.put(item.getId(), item);
+					}
+				}
+				if (counts.size() < 2)
+				{
+					continue;
+				}
+				int canonicalId = -1;
+				int canonicalCount = -1;
+				for (Map.Entry<Integer, Integer> count : counts.entrySet())
+				{
+					if (count.getValue() > canonicalCount)
+					{
+						canonicalCount = count.getValue();
+						canonicalId = count.getKey();
+					}
+				}
+				GearItem canonical = itemsById.get(canonicalId);
+				for (int j = 0; j < n; j++)
+				{
+					List<DpsResult> best = unifyEntry.getValue().get(j);
+					if (best == null || best.isEmpty() || best.get(0) == null)
+					{
+						continue;
+					}
+					GearItem worn = best.get(0).getLoadout().get(slot);
+					if (worn == null || worn.getId() == canonicalId)
+					{
+						continue;
+					}
+					DpsResult unified = calcRespecting(calc, unifyReqs.get(j),
+						withSlot(best.get(0).getLoadout(), slot, canonical));
+					if (unified != null && unified.getDps() >= best.get(0).getDps() * 0.995)
+					{
+						best.set(0, unified);
+					}
+				}
+			}
+		}
 		// A quiver never costs a swap slot (field fix 2026-07-17): the
 		// ammo slot does nothing for melee, so every ammo-NEUTRAL answer
 		// wears the ammo the mob's caring answer rolls with (the ranged
