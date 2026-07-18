@@ -348,20 +348,22 @@ public class LoadoutLabPlugin extends Plugin
 				public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 					boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 					boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, int maxSwaps, Runnable onDone)
+					OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 				{
 					computeForMonster(monster, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps, onDone);
+						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps,
+						raidBoost, onDone);
 				}
 
 				@Override
 				public void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly,
 					boolean onSlayerTask, boolean inWilderness, String spellbookLock,
 					int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, int maxSwaps, Runnable onDone)
+					OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 				{
 					computeForRoster(mobs, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps, onDone);
+						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps,
+						raidBoost, onDone);
 				}
 			};
 			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, hook,
@@ -1542,7 +1544,7 @@ public class LoadoutLabPlugin extends Plugin
 		panel.setConsumablePrices(prices);
 	}
 
-	private void computeForRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, Runnable onDone)
+	private void computeForRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1569,7 +1571,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, perMobExclusions(mobs),
-				pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
+				raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{
@@ -1582,7 +1584,7 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, Runnable onDone)
+	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1619,7 +1621,7 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps,
+				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, raidBoost,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->

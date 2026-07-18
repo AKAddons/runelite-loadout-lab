@@ -100,7 +100,7 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
-			Runnable onDone);
+			boolean raidBoost, Runnable onDone);
 
 		/** Roster compute: ONE shared set per style across the mobs, with
 		 * per-mob numbers delivered via showRosterResults. Default no-op
@@ -110,7 +110,7 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
-			Runnable onDone)
+			boolean raidBoost, Runnable onDone)
 		{
 			onDone.run();
 		}
@@ -622,6 +622,9 @@ public class LoadoutLabPanel extends PluginPanel
 		/** True once the user picked an Inventory value - the roster
 		 * default never overrides an explicit choice. */
 		boolean inventoryTouched;
+		/** Assume the raid-supplied boost (CoX overload+, ToA salts);
+		 * off = the bank's own potions as a backup. */
+		boolean raidBoost = true;
 		/** Nullable: the owned kit's inventory breakpoint curve. */
 		OptimizerService.KitCurve kitCurve;
 
@@ -3327,7 +3330,7 @@ public class LoadoutLabPanel extends PluginPanel
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
-				entry.maxSwaps,
+				entry.maxSwaps, entry.raidBoost,
 				() -> statusLabel.setText(" "));
 			return;
 		}
@@ -3337,7 +3340,7 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
-			entry.maxSwaps,
+			entry.maxSwaps, entry.raidBoost,
 			() -> statusLabel.setText(" "));
 	}
 
@@ -3796,6 +3799,37 @@ public class LoadoutLabPanel extends PluginPanel
 			toggles.add(paramChip("Protect item", entry.protectItem, true,
 				"Protect Item keeps a 4th item (not while skulled)",
 				() -> asActive(entry, protectItem::doClick)));
+		}
+		// Raid-supplied boost toggle (field spec 2026-07-18): overloads/
+		// salts are the raid norm but not a promise - off falls back to
+		// the bank's own potions.
+		com.loadoutlab.engine.BoostProfile supplied =
+			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		for (MonsterStats m : entry.mobs)
+		{
+			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			{
+				supplied = null;
+				break;
+			}
+		}
+		if (supplied != null)
+		{
+			String suppliedLabel = supplied.toString();
+			toggles.add(paramChip(suppliedLabel, entry.raidBoost, true,
+				entry.raidBoost
+					? "Assuming the raid's " + suppliedLabel + " - click to use your own potions instead"
+					: "Using your own potions - click to assume the raid's " + suppliedLabel,
+				() -> asActive(entry, () ->
+			{
+				boolean prev = entry.raidBoost;
+				recordStep(prev ? "No raid boost" : "Raid boost",
+					() -> setRaidBoost(!prev), () -> setRaidBoost(prev));
+				if (historyControl == null)
+				{
+					setRaidBoost(!prev);
+				}
+			})));
 		}
 		boolean fiery = false;
 		for (MonsterStats m : entry.mobs)
@@ -5626,6 +5660,15 @@ public class LoadoutLabPanel extends PluginPanel
 	private void setAntifireTo(boolean assume)
 	{
 		setAntifireMode(assume ? 2 : 0);
+	}
+
+	private void setRaidBoost(boolean assume)
+	{
+		if (active != null && active.raidBoost != assume)
+		{
+			active.raidBoost = assume;
+			recompute();
+		}
 	}
 
 	private void setMaxSwaps(int swaps)

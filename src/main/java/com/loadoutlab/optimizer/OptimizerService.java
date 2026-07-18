@@ -370,10 +370,46 @@ public class OptimizerService
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
+		bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements, owned,
+			collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
+			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems,
+			upgradeBudgetGp, mode, maxSwaps, true, pinnedByStyle, pinnedSpell,
+			protectOnlyItems, callback);
+	}
+
+	/** raidBoostAssumed=false falls back to the bank's own potions even
+	 * inside a raid. */
+	public void bestPerStyle(
+		MonsterStats monster,
+		PlayerLevels realLevels,
+		PlayerLevels boostedLevels,
+		PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements,
+		OwnedItems owned,
+		int collectionFingerprint,
+		boolean f2pOnly,
+		boolean onSlayerTask,
+		String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle,
+		int maxTradeables,
+		int riskBudgetGp,
+		boolean antifirePotion,
+		boolean inWilderness,
+		Set<Integer> dreamItems,
+		int upgradeBudgetGp,
+		OptimizeMode mode,
+		int maxSwaps,
+		boolean raidBoostAssumed,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell,
+		Set<Integer> protectOnlyItems,
+		Consumer<Map<CombatStyle, StyleResult>> callback)
+	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
+		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
@@ -439,6 +475,9 @@ public class OptimizerService
 		int maxSwaps = 1;
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins;
 		Map<CombatStyle, Set<Integer>> excluded;
+		/** Assume the raid-supplied boost (CoX overload+, ToA salts) when
+		 * fighting inside - OFF falls back to the bank's own potions. */
+		boolean raidBoostAssumed = true;
 		/** PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
 		 * (field decision 2026-07-17): each mob's request carries its own
 		 * exclusions on top of the global set - the group may still use the
@@ -468,7 +507,7 @@ public class OptimizerService
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.inWilderness
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
-			+ "|" + ctx.protectOnly.hashCode()
+			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
 			+ "|" + ctx.pins.getOrDefault(style, Collections.emptyMap()).hashCode()
@@ -536,7 +575,7 @@ public class OptimizerService
 			+ "|" + ctx.inWilderness
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.chosenMode.name() + "|" + ctx.maxSwaps
-			+ "|" + ctx.protectOnly.hashCode()
+			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
 	}
 
@@ -568,7 +607,8 @@ public class OptimizerService
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live - unless the
 				// RAID supplies its own (CoX overload+, ToA salts).
-				BoostProfile supplied = com.loadoutlab.engine.RaidBoosts.suppliedBoost(monster);
+				BoostProfile supplied = ctx.raidBoostAssumed
+					? com.loadoutlab.engine.RaidBoosts.suppliedBoost(monster) : null;
 				BoostProfile boost = supplied != null ? supplied
 					: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
 						ctx.inWilderness && ctx.maxTradeables >= 0);
@@ -1578,7 +1618,8 @@ public class OptimizerService
 			// boost and labels depend on style + owned + real, not the mob).
 			// The roster assumes the raid's own boost when EVERY mob is
 			// inside the same raid (CoX overload+, ToA salts).
-			BoostProfile supplied = com.loadoutlab.engine.RaidBoosts.suppliedBoost(mobs.get(0));
+			BoostProfile supplied = ctx.raidBoostAssumed
+				? com.loadoutlab.engine.RaidBoosts.suppliedBoost(mobs.get(0)) : null;
 			for (MonsterStats mob : mobs)
 			{
 				if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob) != supplied)
@@ -2489,6 +2530,29 @@ public class OptimizerService
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
 	{
+		bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
+			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob, true,
+			pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
+	}
+
+	/** raidBoostAssumed=false falls back to the bank's own potions even
+	 * inside a raid (field spec 2026-07-18: overloads/salts are a
+	 * toggle, not a promise). */
+	public void bestPerStyleAcross(
+		List<MonsterStats> mobs,
+		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
+		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		OptimizeMode mode, int maxSwaps,
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob, boolean raidBoostAssumed,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
+		Consumer<RosterResult> callback)
+	{
 		if (mobs == null || mobs.isEmpty())
 		{
 			return;
@@ -2518,7 +2582,7 @@ public class OptimizerService
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
 				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
-				mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems,
+				mode, maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
@@ -2526,6 +2590,7 @@ public class OptimizerService
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
+		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);
 		final long ticket = requestSeq.incrementAndGet();
@@ -2866,9 +2931,14 @@ public class OptimizerService
 			}
 			double expected = spec.expectedDamage(base, monster, levels);
 			double drainValue = drainValue(calculator, spec, base, expected, request, baseResults.get(0), monster);
-			double total = expected + drainValue;
-			double bestTotal = best == null
-				? Double.NEGATIVE_INFINITY : best.expectedDamage + best.drainValue;
+			// Rank by damage per FULL SPECIAL BAR, not per use (field fix
+			// 2026-07-18: a 55%-bar dark bow nuke outranked a 25% dagger
+			// that fires four times) - the drain lands once regardless.
+			int uses = Math.max(1, 100 / Math.max(1, spec.getEnergyCost()));
+			double total = expected * uses + drainValue;
+			double bestTotal = best == null ? Double.NEGATIVE_INFINITY
+				: best.expectedDamage * Math.max(1, 100 / Math.max(1, best.spec.getEnergyCost()))
+					+ best.drainValue;
 			// Ties (identical stats across poison tiers) prefer the higher
 			// tier - the venom is free spec damage the model does not price.
 			if (best == null || total > bestTotal + 1e-9
