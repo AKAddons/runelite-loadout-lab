@@ -211,6 +211,22 @@ public final class Commands
 			() -> { store.exclude(monsterId, scope, itemId); return true; });
 	}
 
+	public static Command simForMob(MonsterProfileStore store, int monsterId,
+		int itemId, String label)
+	{
+		return of("Sim here: " + label,
+			() -> { store.addSim(monsterId, itemId, label); return true; },
+			() -> { store.removeSim(monsterId, itemId); return true; });
+	}
+
+	public static Command removeMobSim(MonsterProfileStore store, int monsterId,
+		int itemId, String label)
+	{
+		return of("Unsim here: " + label,
+			() -> { store.removeSim(monsterId, itemId); return true; },
+			() -> { store.addSim(monsterId, itemId, label); return true; });
+	}
+
 	public static Command addFilterItem(MonsterProfileStore store, int monsterId, String scope,
 		int itemId, String name)
 	{

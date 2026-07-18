@@ -334,6 +334,21 @@ public class LoadoutLabPanel extends PluginPanel
 		default void removeMobExclusion(int monsterId, String scope, int itemId)
 		{
 		}
+
+		/** Per-mob sims (id -> add-time name): counted as owned for THIS
+		 * mob only - the local twin of the global simmed items. */
+		default Map<Integer, String> allMobSims(int monsterId)
+		{
+			return Map.of();
+		}
+
+		default void simForMob(int monsterId, int itemId, String name)
+		{
+		}
+
+		default void removeMobSim(int monsterId, int itemId)
+		{
+		}
 	}
 
 	/** Open the native chatbox item search; the pick (id, name) returns
@@ -5213,6 +5228,34 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			card.add(bankRow);
 		}
+		if (!bis)
+		{
+			// LOCAL excludes/sims (field spec 2026-07-18): the per-mob
+			// twins of the global exclude/sim tools, scoped to the lensed
+			// mob - between the bank buttons and the note.
+			JPanel localRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			localRow.setOpaque(false);
+			localRow.setAlignmentX(LEFT_ALIGNMENT);
+			localRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+			int lensedProfileId = entry.mob().profileId();
+			String mobName = entry.mob().getName();
+			int excludedCount = 0;
+			for (Set<Integer> scoped : mobProfile.allMobExclusions(lensedProfileId).values())
+			{
+				excludedCount += scoped.size();
+			}
+			int simCount = mobProfile.allMobSims(lensedProfileId).size();
+			localRow.add(paramChip(excludedCount > 0 ? "Exclude here: " + excludedCount : "Exclude here",
+				excludedCount > 0, true,
+				"Never use an item vs " + mobName + " (this mob only) - click to add or manage",
+				() -> asActive(entry, () -> manageLocalExclusions(entry, lensedProfileId, mobName))));
+			localRow.add(paramChip(simCount > 0 ? "Sim here: " + simCount : "Sim here",
+				simCount > 0, true,
+				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
+				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
+			card.add(Box.createVerticalStrut(4));
+			card.add(localRow);
+		}
 		if (entry == active)
 		{
 			// The per-mob note under the bank buttons (field spec) - one
@@ -5221,6 +5264,75 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(notePanel);
 		}
 		return card;
+	}
+
+	/** The local exclusions manager: current entries with click-to-allow,
+	 * plus the add-by-search entry point. */
+	private void manageLocalExclusions(ResultEntry entry, int profileId, String mobName)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem add = new JMenuItem("Exclude an item vs " + mobName + "...");
+		add.addActionListener(e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
+		{
+			mobProfile.excludeForMob(profileId, ALL_SETS, itemId);
+			recompute();
+		}));
+		menu.add(add);
+		Map<String, Set<Integer>> scopes = mobProfile.allMobExclusions(profileId);
+		if (!scopes.isEmpty())
+		{
+			menu.addSeparator();
+			for (Map.Entry<String, Set<Integer>> scope : scopes.entrySet())
+			{
+				for (int itemId : scope.getValue())
+				{
+					GearItem item = data.getGear(itemId);
+					JMenuItem remove = new JMenuItem("Allow: "
+						+ (item != null ? item.label() : "item " + itemId)
+						+ " (" + scopeLabel(scope.getKey()) + ")");
+					remove.addActionListener(e ->
+					{
+						mobProfile.removeMobExclusion(profileId, scope.getKey(), itemId);
+						recompute();
+					});
+					menu.add(remove);
+				}
+			}
+		}
+		java.awt.Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	/** The local sims manager: the per-mob twin of the global simmed
+	 * items - counted as owned vs this mob only. */
+	private void manageLocalSims(ResultEntry entry, int profileId, String mobName)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem add = new JMenuItem("Sim an item vs " + mobName + "...");
+		add.addActionListener(e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
+			(itemId, name) ->
+		{
+			mobProfile.simForMob(profileId, itemId, name);
+			recompute();
+		}));
+		menu.add(add);
+		Map<Integer, String> sims = mobProfile.allMobSims(profileId);
+		if (!sims.isEmpty())
+		{
+			menu.addSeparator();
+			for (Map.Entry<Integer, String> sim : sims.entrySet())
+			{
+				JMenuItem remove = new JMenuItem("Unsim: " + sim.getValue());
+				remove.addActionListener(e ->
+				{
+					mobProfile.removeMobSim(profileId, sim.getKey());
+					recompute();
+				});
+				menu.add(remove);
+			}
+		}
+		java.awt.Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();

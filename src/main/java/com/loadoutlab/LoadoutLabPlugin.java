@@ -1146,6 +1146,41 @@ public class LoadoutLabPlugin extends Plugin
 		return byMob;
 	}
 
+	/** The lensed mob's local sims join the global simmed set for a
+	 * single-mob compute (field spec 2026-07-18). */
+	private java.util.Set<Integer> dreamsWithMobSims(MonsterStats monster)
+	{
+		java.util.Set<Integer> global = dreams.snapshot();
+		java.util.Set<Integer> local = mobProfiles == null
+			? java.util.Collections.emptySet() : mobProfiles.simsFor(monster.profileId());
+		if (local.isEmpty())
+		{
+			return global;
+		}
+		java.util.Set<Integer> merged = new java.util.HashSet<>(global);
+		merged.addAll(local);
+		return merged;
+	}
+
+	/** Per-mob sims for a roster, keyed by profileId. */
+	private Map<Integer, java.util.Set<Integer>> perMobSims(java.util.List<MonsterStats> mobs)
+	{
+		Map<Integer, java.util.Set<Integer>> byMob = new java.util.HashMap<>();
+		if (mobProfiles == null)
+		{
+			return byMob;
+		}
+		for (MonsterStats mob : mobs)
+		{
+			java.util.Set<Integer> sims = mobProfiles.simsFor(mob.profileId());
+			if (!sims.isEmpty())
+			{
+				byMob.put(mob.profileId(), sims);
+			}
+		}
+		return byMob;
+	}
+
 	/** The global exclusion set for every style - the roster path's base
 	 * map; per-mob exclusions layer on top inside the optimizer. */
 	private Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> globalExcludedByStyle()
@@ -1282,6 +1317,30 @@ public class LoadoutLabPlugin extends Plugin
 				if (mobProfiles != null)
 				{
 					exec(Commands.removeMobExclusion(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
+				}
+			}
+
+			@Override
+			public Map<Integer, String> allMobSims(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.allSims(monsterId);
+			}
+
+			@Override
+			public void simForMob(int monsterId, int itemId, String name)
+			{
+				if (mobProfiles != null)
+				{
+					exec(Commands.simForMob(mobProfiles, monsterId, itemId, name));
+				}
+			}
+
+			@Override
+			public void removeMobSim(int monsterId, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					exec(Commands.removeMobSim(mobProfiles, monsterId, itemId, itemLabel(itemId)));
 				}
 			}
 		};
@@ -1571,7 +1630,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, perMobExclusions(mobs),
-				raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
+				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{
@@ -1621,7 +1680,7 @@ public class LoadoutLabPlugin extends Plugin
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, raidBoost,
+				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, mode, maxSwaps, raidBoost,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->

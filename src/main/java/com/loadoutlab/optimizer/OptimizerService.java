@@ -483,6 +483,9 @@ public class OptimizerService
 		 * exclusions on top of the global set - the group may still use the
 		 * item, the excluding mob's answer never does. */
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob = Collections.emptyMap();
+		/** PER-MOB sims (profileId -> ids): counted as owned for that mob
+		 * only - the local twin of the global dream items. */
+		Map<Integer, Set<Integer>> dreamsByMob = Collections.emptyMap();
 		com.loadoutlab.data.SpellStats pinnedSpell;
 	}
 
@@ -506,7 +509,7 @@ public class OptimizerService
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.inWilderness
-			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
+			+ "|" + dreamsFor(ctx, mob).hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
@@ -547,6 +550,19 @@ public class OptimizerService
 			optimizeCache.put(key, new ArrayList<>(best));
 		}
 		return best;
+	}
+
+	/** The dream items for ONE mob: global sims plus that mob's own. */
+	private static Set<Integer> dreamsFor(ComputeContext ctx, MonsterStats mob)
+	{
+		Set<Integer> local = ctx.dreamsByMob.get(mob.profileId());
+		if (local == null || local.isEmpty())
+		{
+			return ctx.dreams;
+		}
+		Set<Integer> merged = new java.util.HashSet<>(ctx.dreams);
+		merged.addAll(local);
+		return merged;
 	}
 
 	/** The style's exclusions for ONE mob: global plus that mob's own. */
@@ -636,7 +652,7 @@ public class OptimizerService
 					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 					.withAntifirePotion(ctx.antifirePotion)
 					.withInWilderness(ctx.inWilderness)
-					.withDreamItems(ctx.dreams)
+					.withDreamItems(dreamsFor(ctx, monster))
 					.withProtectOnlyItems(ctx.protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
@@ -1660,7 +1676,7 @@ public class OptimizerService
 					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 					.withAntifirePotion(ctx.antifirePotion)
 					.withInWilderness(ctx.inWilderness)
-					.withDreamItems(ctx.dreams)
+					.withDreamItems(dreamsFor(ctx, mob))
 					.withProtectOnlyItems(ctx.protectOnly)
 					.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
 				if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
@@ -2558,7 +2574,8 @@ public class OptimizerService
 		bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
-			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob, true,
+			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob,
+			Collections.emptyMap(), true,
 			pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
 
@@ -2573,7 +2590,8 @@ public class OptimizerService
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
-		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob, boolean raidBoostAssumed,
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
+		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
@@ -2604,9 +2622,19 @@ public class OptimizerService
 					merged.put(e.getKey(), union);
 				}
 			}
+			Set<Integer> mergedDreams = dreamItems == null
+				? new java.util.HashSet<>() : new java.util.HashSet<>(dreamItems);
+			if (dreamsByMob != null)
+			{
+				Set<Integer> localSims = dreamsByMob.get(mobs.get(0).profileId());
+				if (localSims != null)
+				{
+					mergedDreams.addAll(localSims);
+				}
+			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
+				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, mergedDreams, upgradeBudgetGp,
 				mode, maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
@@ -2617,6 +2645,7 @@ public class OptimizerService
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
+		ctx.dreamsByMob = dreamsByMob == null ? Collections.emptyMap() : dreamsByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
