@@ -431,8 +431,8 @@ public class LoadoutLabPanel extends PluginPanel
 	private DisplayOptions displayOptions = DisplayOptions.all();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
 	private JPanel budgetRow;
-	private static final Color POSTIT_BG = new Color(222, 212, 150);
-	private static final Color POSTIT_FG = new Color(55, 50, 25);
+	private static final Color POSTIT_BG = new Color(78, 72, 50);
+	private static final Color POSTIT_FG = new Color(215, 205, 160);
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
@@ -4509,7 +4509,12 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
-			JPanel bankRow = iconRow(card);
+			// Centred like the exclude/sim chips (field spec); the green
+			// toggle border carries the on state - the labels stay put.
+			JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			bankRow.setOpaque(false);
+			bankRow.setAlignmentX(LEFT_ALIGNMENT);
+			bankRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			if (displayOptions.showInBank)
 			{
 				bankRow.add(bankButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
@@ -4518,6 +4523,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
+			card.add(bankRow);
 		}
 		if (entry == active)
 		{
@@ -4922,7 +4928,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		boolean filtering = bankFiltered == style;
-		return paramChip(filtering ? "Unfilter bank" : "Filter bank", filtering, true,
+		return paramChip("Filter bank", filtering, true,
 			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
 		{
 			if (bankFiltered == style)
@@ -4952,7 +4958,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		boolean showing = bankShown == style;
-		return paramChip(showing ? "Stop showing" : "Show in bank", showing, true,
+		return paramChip("Show in bank", showing, true,
 			"Outline this set's items in the bank", () ->
 		{
 			if (bankShown == style)
