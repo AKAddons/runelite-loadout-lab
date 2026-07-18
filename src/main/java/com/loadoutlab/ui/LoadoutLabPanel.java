@@ -504,6 +504,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private String renderingMechanicsNote;
 	/** Protect Item assumed for this card (wilderness, field spec). */
 	private boolean renderingProtectItem;
+	/** Wilderness risk staging for the stat panel's skull line: the spec
+	 * weapon competing for kept slots, and how many are kept. Null spec
+	 * flag = no risk line (not wilderness / option off / BiS view). */
+	private boolean renderingRiskLine;
+	private GearItem renderingRiskSpecWeapon;
+	private int renderingRiskKeep;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -4367,6 +4373,11 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingMechanicsNote = MonsterNotes.noteFor(entry.mob());
 		renderingProtectItem = entry.protectItem && effectiveWilderness(entry)
 			&& displayOptions.wildyRisk;
+		// The risk skull describes YOUR set's death mechanics - Yours view
+		// only, like the old full-width line it replaces.
+		renderingRiskLine = !bis && displayOptions.riskLine && effectiveWilderness(entry);
+		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
+		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -4476,10 +4487,6 @@ public class LoadoutLabPanel extends PluginPanel
 				same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
 					+ " worth trading dps for at this monster");
 				card.add(same);
-			}
-			if (displayOptions.riskLine)
-			{
-				addRiskLine(card, best, result.specWeapon);
 			}
 			addUpgradeLine(card, best);
 		}
@@ -4619,21 +4626,23 @@ public class LoadoutLabPanel extends PluginPanel
 	 * tradeables plus the carried spec weapon compete for the kept-on-
 	 * death slots by value; everything past them is the risk.
 	 */
-	private void addRiskLine(JPanel card, DpsResult best, GearItem specWeapon)
+	/** The wilderness risk as a stat-panel skull line (field spec): the
+	 * gp at stake compact on the line, the kept/lost/fees story in the
+	 * tooltip. Green when under the entry's risk cap. */
+	private void addRiskStatLine(JPanel panel, DpsResult best)
 	{
-		if (!effectiveWilderness())
-		{
-			return;
-		}
-		int keep = protectItem.isSelected() ? 4 : 3;
 		PvpRisk.Assessment risk =
-			PvpRisk.assess(best.getLoadout(), specWeapon, keep);
-		JLabel line = line(String.format("Risk: %s gp (%d kept on death)",
-			PvpRisk.formatGp(risk.riskGp), keep),
+			PvpRisk.assess(best.getLoadout(), renderingRiskSpecWeapon, renderingRiskKeep);
+		JLabel line = statLine(PvpRisk.formatGp(risk.riskGp),
+			"placeholder",
 			active != null && !active.riskCap.trim().isEmpty()
 				&& risk.riskGp <= parsedBudgetGp(active.riskCap)
-				? GOOD : new Color(220, 140, 120));
-		StringBuilder tip = new StringBuilder("<html>Kept on death:");
+				? GOOD : new Color(220, 140, 120),
+			new FixedWidthIcon(new SkullIcon()));
+		int keep = renderingRiskKeep;
+		StringBuilder tip = new StringBuilder("<html>Risk: "
+			+ PvpRisk.formatGp(risk.riskGp) + " gp - " + keep
+			+ " kept on death.<br>Kept:");
 		if (risk.kept.isEmpty())
 		{
 			tip.append(" (none - all untradeable)");
@@ -4664,7 +4673,46 @@ public class LoadoutLabPanel extends PluginPanel
 		tip.append("<br>Skulled: keep 0-1.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
-		card.add(line);
+		panel.add(line);
+	}
+
+	/** The death skull as a standalone icon - the grid badge's drawing at
+	 * line size (glyph-safe). */
+	private static final class SkullIcon implements javax.swing.Icon
+	{
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 14;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.translate(x, y);
+				g2.setColor(new Color(235, 235, 225));
+				g2.fillOval(2, 1, 9, 8);
+				g2.fillRect(4, 8, 5, 3);
+				g2.setColor(new Color(40, 40, 40));
+				g2.fillOval(4, 4, 2, 2);
+				g2.fillOval(7, 4, 2, 2);
+				g2.drawLine(5, 9, 5, 10);
+				g2.drawLine(7, 9, 7, 10);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
 	}
 
 	/**
@@ -5344,6 +5392,10 @@ int sprite = incoming.protectPrayer != null
 				}
 			}
 			panel.add(taken);
+		}
+		if (renderingRiskLine)
+		{
+			addRiskStatLine(panel, result);
 		}
 		if (renderingProtectItem)
 		{
