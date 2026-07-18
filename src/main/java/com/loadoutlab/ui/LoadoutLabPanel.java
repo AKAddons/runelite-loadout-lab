@@ -3886,11 +3886,23 @@ public class LoadoutLabPanel extends PluginPanel
 		if (displayOptions.upgradeBudget)
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
-			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
+			boolean unlimited = budget.equals("-") || budget.equalsIgnoreCase("max");
+			javax.swing.JComponent budgetChip = paramChip(
+				budget.isEmpty() ? "Budget: off" : unlimited ? "Budget: " : "Budget: " + budget,
 				!budget.isEmpty(), true,
 				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
 					+ " empty = owned gear only",
-				() -> editBudget(entry)));
+				() -> editBudget(entry));
+			if (unlimited && budgetChip instanceof JLabel)
+			{
+				// A painted infinity sign - a Unicode glyph risks tofu on
+				// macOS Tahoe (the glyph gate would reject it anyway).
+				JLabel label = (JLabel) budgetChip;
+				label.setIcon(new InfinityIcon(label.getForeground()));
+				label.setHorizontalTextPosition(JLabel.LEFT);
+				label.setIconTextGap(2);
+			}
+			values.add(budgetChip);
 		}
 		if (wild)
 		{
@@ -6259,6 +6271,43 @@ int sprite = incoming.protectPrayer != null
 			line.setIconTextGap(3);
 		}
 		return line;
+	}
+
+	/** A tiny painted infinity sign for the unlimited-budget chip
+	 * (field spec 2026-07-18) - drawn, never a Unicode glyph. */
+	private static final class InfinityIcon implements javax.swing.Icon
+	{
+		private final Color color;
+
+		InfinityIcon(Color color)
+		{
+			this.color = color;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 10;
+		}
+
+		@Override
+		public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y)
+		{
+			java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+			g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+				java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			g2.setStroke(new java.awt.BasicStroke(1.6f));
+			g2.drawOval(x, y + 2, 6, 6);
+			g2.drawOval(x + 7, y + 2, 6, 6);
+			g2.dispose();
+		}
 	}
 
 	/** A fixed-width box that centres its delegate - every stat-panel

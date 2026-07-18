@@ -1594,6 +1594,7 @@ public class OptimizerService
 		Map<CombatStyle, SpecPick[]> specsByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, SpecPick[]> gameSpecsByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, GearItem> specCarriedByStyle = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, GearItem> specAmmoByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, GearItem> gameSpecCarriedByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, String> boostLabelByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, String> gameBoostLabelByStyle = new EnumMap<>(CombatStyle.class);
@@ -1778,6 +1779,7 @@ public class OptimizerService
 			// Swaps are chosen greedily by HP-weighted marginal gain; each
 			// mob then WEARS its best combination of base + carried swaps.
 			GearItem specCarried = null;
+			GearItem specAmmoCarried = null;
 			for (SpecPick pick : specs)
 			{
 				if (pick != null && pick.weapon != null && sharedOwned != null
@@ -1785,6 +1787,10 @@ public class OptimizerService
 						|| sharedOwned.getWeapon().getId() != pick.weapon.getId()))
 				{
 					specCarried = pick.weapon;
+					// A dark bow needs its arrows carried too - the spec
+					// spends TWO slots when the base quiver cannot feed it
+					// (field spec 2026-07-18).
+					specAmmoCarried = pick.ammo;
 					break;
 				}
 			}
@@ -1799,7 +1805,8 @@ public class OptimizerService
 					break;
 				}
 			}
-			int benchForSwaps = Math.max(0, ctx.maxSwaps - (specCarried != null ? 1 : 0));
+			int benchForSwaps = Math.max(0, ctx.maxSwaps
+				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0));
 			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			specsByStyle.put(style, specs);
@@ -1814,6 +1821,10 @@ public class OptimizerService
 				if (specCarried != null)
 				{
 					specCarriedByStyle.put(style, specCarried);
+				}
+				if (specAmmoCarried != null)
+				{
+					specAmmoByStyle.put(style, specAmmoCarried);
 				}
 			}
 			if (sharedGame != null)
@@ -1881,6 +1892,10 @@ public class OptimizerService
 						ctx.real.getDefence(), ctx.real.getMagic());
 				Loadout worn = ownedList.isEmpty() ? sharedOwned
 					: ownedList.get(0).getLoadout();
+				if (specAmmoCarried != null)
+				{
+					plan.putIfAbsent(specAmmoCarried.getId(), specAmmoCarried);
+				}
 				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
 					: inventoryFor(plan.values(), specCarried, worn);
 				List<GearItem> gameBench = gameSpecCarried == null
@@ -1900,13 +1915,14 @@ public class OptimizerService
 		long tKitStart = System.nanoTime();
 		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
-				bestsByStyle, specsByStyle, specCarriedByStyle, "owned", true)
+				bestsByStyle, specsByStyle, specCarriedByStyle, specAmmoByStyle, "owned", true)
 			: null;
 		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
 		long tGameKitStart = System.nanoTime();
 		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
-				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle, "BiS", false)
+				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle,
+				new EnumMap<>(CombatStyle.class), "BiS", false)
 			: null;
 		long tGameKitMs = (System.nanoTime() - tGameKitStart) / 1_000_000;
 		if (requestSeq.get() != ticket)
@@ -2036,7 +2052,8 @@ public class OptimizerService
 		Map<CombatStyle, Loadout> sharedByStyle,
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
 		Map<CombatStyle, SpecPick[]> specsByStyle,
-		Map<CombatStyle, GearItem> specCarriedByStyle, String side, boolean wantCurve)
+		Map<CombatStyle, GearItem> specCarriedByStyle,
+		Map<CombatStyle, GearItem> specAmmoByStyle, String side, boolean wantCurve)
 	{
 		int n = mobs.size();
 		// SLOT UNIFICATION (field insight 2026-07-18: a tribrid answer
@@ -2223,6 +2240,8 @@ public class OptimizerService
 					}
 				}
 				GearItem primarySpec = specCarriedByStyle.get(primary);
+				GearItem primarySpecAmmo = specAmmoByStyle.get(primary);
+				int specSlots = (primarySpec != null ? 1 : 0) + (primarySpecAmmo != null ? 1 : 0);
 				SpecPick[] specs = specsByStyle.get(primary);
 				// One memo per primary base, shared by the spec-compete
 				// pair - the evaluations match either side of the spec.
@@ -2242,7 +2261,7 @@ public class OptimizerService
 				{
 					KitAnswer kitSpec = chooseKit(localCalc, base, primary, singlePool,
 						bundleCandidates(primary, base, primarySpec, sharedByStyle, bestsByStyle),
-						reqsByStyle, bestsByStyle, mobs, Math.max(0, ctx.maxSwaps - 1), memo);
+						reqsByStyle, bestsByStyle, mobs, Math.max(0, ctx.maxSwaps - specSlots), memo);
 					double specValue = 0;
 					List<GearItem> carriedSpec = carriedOf(kitSpec);
 					for (int j = 0; j < n; j++)
@@ -2315,6 +2334,7 @@ public class OptimizerService
 		}
 		Loadout base = sharedByStyle.get(bestPrimary);
 		GearItem specCarried = bestSpecKept ? specCarriedByStyle.get(bestPrimary) : null;
+		GearItem specAmmo = bestSpecKept ? specAmmoByStyle.get(bestPrimary) : null;
 		SpecPick[] specs = bestSpecKept ? specsByStyle.get(bestPrimary) : null;
 		List<GearItem> carried = carriedOf(bestKit);
 		// THE BREAKPOINT CURVE (field spec 2026-07-18): one more greedy to
@@ -2342,18 +2362,19 @@ public class OptimizerService
 				}
 			}
 			List<double[]> raw = new ArrayList<>();
+			int curveSpecSlots = (specCarried != null ? 1 : 0) + (specAmmo != null ? 1 : 0);
 			chooseKit(calc, base, bestPrimary, curvePool,
 				bundleCandidates(bestPrimary, base, specCarried, sharedByStyle, bestsByStyle),
 				reqsByStyle, bestsByStyle, mobs,
-				Math.max(0, 20 - (specCarried != null ? 1 : 0)),
+				Math.max(0, 20 - curveSpecSlots),
 				new java.util.HashMap<>(), raw);
-			if (specCarried != null && !raw.isEmpty())
+			if (curveSpecSlots > 0 && !raw.isEmpty())
 			{
-				// The spec spends the first slot: shift every point past it
-				// and keep a cost-0 baseline copy in front.
+				// The spec (and its ammo) spend the first slots: shift every
+				// point past them and keep a cost-0 baseline copy in front.
 				for (double[] point : raw)
 				{
-					point[0] += 1;
+					point[0] += curveSpecSlots;
 				}
 				raw.add(0, new double[]{0, raw.get(0)[1], raw.get(0)[2]});
 			}
@@ -2436,6 +2457,10 @@ public class OptimizerService
 					}
 				}
 			}
+		}
+		if (specAmmo != null)
+		{
+			plan.putIfAbsent(specAmmo.getId(), specAmmo);
 		}
 		if (log.isDebugEnabled())
 		{
@@ -2749,13 +2774,18 @@ public class OptimizerService
 		final GearItem weapon;
 		final double expectedDamage;
 		final double drainValue;
+		/** Non-null when the spec needs its own ammo carried (a dark bow
+		 * next to a chargebow base needs arrows - an extra slot). */
+		final GearItem ammo;
 
-		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage, double drainValue)
+		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage, double drainValue,
+			GearItem ammo)
 		{
 			this.spec = spec;
 			this.weapon = weapon;
 			this.expectedDamage = expectedDamage;
 			this.drainValue = drainValue;
+			this.ammo = ammo;
 		}
 	}
 
@@ -2914,7 +2944,8 @@ public class OptimizerService
 			{
 				continue;
 			}
-			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned, request);
+			GearItem[] ammoOut = new GearItem[1];
+			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned, request, ammoOut);
 			if (loadout == null)
 			{
 				continue;
@@ -2944,7 +2975,7 @@ public class OptimizerService
 			if (best == null || total > bestTotal + 1e-9
 				|| (total > bestTotal - 1e-9 && item.poisonTier() > best.weapon.poisonTier()))
 			{
-				best = new SpecPick(spec, item, expected, drainValue);
+				best = new SpecPick(spec, item, expected, drainValue, ammoOut[0]);
 			}
 		}
 		return best;
@@ -2993,7 +3024,8 @@ public class OptimizerService
 
 	/** The base set with the spec weapon swapped in, or null if unusable.
 	 * owned == null -> any standard ammo may be picked (game-best spec). */
-	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned, OptimizationRequest request)
+	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned, OptimizationRequest request,
+		GearItem[] ammoOut)
 	{
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.putAll(baseSet.getGear());
@@ -3024,6 +3056,10 @@ public class OptimizerService
 			if (replacement != null)
 			{
 				gear.put(GearSlot.AMMO, replacement);
+				if (ammoOut != null)
+				{
+					ammoOut[0] = replacement;
+				}
 			}
 			else
 			{
