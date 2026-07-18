@@ -591,9 +591,6 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean inventoryTouched;
 		/** Nullable: the owned kit's inventory breakpoint curve. */
 		OptimizerService.KitCurve kitCurve;
-		/** True once the curve auto-tuned this entry's budget (once per
-		 * roster shape - add/remove mob re-arms it). */
-		boolean inventoryAutoTuned;
 
 		/** Re-seed the roster default (a group preset raises the floor):
 		 * never shrinks, never overrides an explicit choice. */
@@ -1685,7 +1682,6 @@ public class LoadoutLabPanel extends PluginPanel
 	 * as the smaller shared set. A back step restores roster + results. */
 	void removeMobFromEntry(ResultEntry entry, int index)
 	{
-		entry.inventoryAutoTuned = false;
 		if (entry.mobs.size() <= 1 || index < 0 || index >= entry.mobs.size())
 		{
 			return;
@@ -1782,7 +1778,6 @@ public class LoadoutLabPanel extends PluginPanel
 			// A single-mob duplicate leaves the page (the roster absorbs it).
 			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
 			target.addMob(monster);
-			target.inventoryAutoTuned = false;
 			target.seedInventoryDefault(0);
 			target.lensIndex = target.mobs.size() - 1;
 			target.results = null;
@@ -3436,29 +3431,6 @@ public class LoadoutLabPanel extends PluginPanel
 			return; // stale roster - the page moved on
 		}
 		entry.kitCurve = curve;
-		// CURVE-DRIVEN DEFAULT (field spec 2026-07-18): seed the budget at
-		// the roster's own last major breakpoint (never below viability),
-		// once per roster shape - and never over an explicit user choice.
-		// The re-run rides the warm optimize cache, so it is cheap.
-		if (curve != null && !entry.inventoryTouched && !entry.inventoryAutoTuned)
-		{
-			entry.inventoryAutoTuned = true;
-			int recommended = recommendedInventory(curve);
-			if (recommended > 0)
-			{
-				entry.inventoryDefault = recommended;
-				if (recommended != entry.maxSwaps)
-				{
-					entry.maxSwaps = recommended;
-					entry.perMobResults = perMob;
-					entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
-					entry.results = perMob.get(entry.lensIndex);
-					renderPage();
-					computeEntry(entry);
-					return;
-				}
-			}
-		}
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
@@ -3844,11 +3816,54 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.optimizeMode > 0, true,
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
-		// The INVENTORY control is a slider, rosters only (field spec
-		// 2026-07-18): a single mob has nothing to swap between - it
-		// keeps the default budget of 1 (room for the spec) silently.
+		if (displayOptions.upgradeBudget)
+		{
+			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
+			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
+				!budget.isEmpty(), true,
+				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
+					+ " empty = owned gear only",
+				() -> editBudget(entry)));
+		}
+		if (wild)
+		{
+			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
+			values.add(paramChip(risk.isEmpty() ? "Risk: off" : "Risk: " + risk,
+				!risk.isEmpty(), true,
+				"Low-risk mode: keep your 3 most valuable items (4 with"
+					+ " Protect Item), everything else must total under this"
+					+ " gp cap (25k, 1m...) - empty = unconstrained",
+				() -> editRiskCap(entry)));
+		}
+		int pinCount = 0;
+		int filterCount = 0;
+		int lensedId = entry.mob().getId();
+		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
+			: mobProfile.allPins(lensedId).values())
+		{
+			pinCount += scoped.size();
+		}
+		for (Map<Integer, String> scoped : mobProfile.allFilterItems(lensedId).values())
+		{
+			filterCount += scoped.size();
+		}
+		if (pinCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Pins: " + pinCount,
+				"Pinned items for this mob - click to manage"));
+		}
+		if (filterCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Filters: " + filterCount,
+				"Bank-filter supplies for this mob - click to manage"));
+		}
+		rows.add(values);
+		// The INVENTORY control is a slider on its OWN row below the
+		// chips (field spec 2026-07-18), rosters only - a single mob has
+		// nothing to swap between and keeps the default budget of 1.
 		if (entry.mobs.size() > 1)
 		{
+			JPanel invRow = chipFlowRow();
 			String invTip = entry.maxSwaps == 0
 				? "Inventory: 0 - strictly one worn set, no spec weapon recommended"
 				: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
@@ -3894,55 +3909,14 @@ public class LoadoutLabPanel extends PluginPanel
 			invGroup.setOpaque(false);
 			invGroup.add(invLabel);
 			invGroup.add(invSlider);
-			values.add(invGroup);
+			invRow.add(invGroup);
 			JLabel breakpoints = breakpointLabel(entry);
 			if (breakpoints != null)
 			{
-				values.add(breakpoints);
+				invRow.add(breakpoints);
 			}
+			rows.add(invRow);
 		}
-		if (displayOptions.upgradeBudget)
-		{
-			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
-			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
-				!budget.isEmpty(), true,
-				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
-					+ " empty = owned gear only",
-				() -> editBudget(entry)));
-		}
-		if (wild)
-		{
-			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
-			values.add(paramChip(risk.isEmpty() ? "Risk: off" : "Risk: " + risk,
-				!risk.isEmpty(), true,
-				"Low-risk mode: keep your 3 most valuable items (4 with"
-					+ " Protect Item), everything else must total under this"
-					+ " gp cap (25k, 1m...) - empty = unconstrained",
-				() -> editRiskCap(entry)));
-		}
-		int pinCount = 0;
-		int filterCount = 0;
-		int lensedId = entry.mob().getId();
-		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
-			: mobProfile.allPins(lensedId).values())
-		{
-			pinCount += scoped.size();
-		}
-		for (Map<Integer, String> scoped : mobProfile.allFilterItems(lensedId).values())
-		{
-			filterCount += scoped.size();
-		}
-		if (pinCount > 0)
-		{
-			values.add(pinFilterChip(entry, "Pins: " + pinCount,
-				"Pinned items for this mob - click to manage"));
-		}
-		if (filterCount > 0)
-		{
-			values.add(pinFilterChip(entry, "Filters: " + filterCount,
-				"Bank-filter supplies for this mob - click to manage"));
-		}
-		rows.add(values);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
 	}
@@ -4397,41 +4371,6 @@ public class LoadoutLabPanel extends PluginPanel
 			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
 			+ " slots stop paying - the percent is this budget vs the max");
 		return label;
-	}
-
-	/** The curve's recommended budget: the last major breakpoint, never
-	 * below the viability point, floored at 1 (a flat curve means the
-	 * roster needs no swaps - one slot keeps room for the spec). */
-	private static int recommendedInventory(OptimizerService.KitCurve curve)
-	{
-		if (curve == null || curve.points.size() < 2)
-		{
-			return 0;
-		}
-		java.util.List<double[]> points = curve.points;
-		double finalTotal = points.get(points.size() - 1)[1];
-		int maxViable = 0;
-		for (double[] p : points)
-		{
-			maxViable = Math.max(maxViable, (int) p[2]);
-		}
-		int viability = (int) points.get(0)[2] >= maxViable ? (int) points.get(0)[0] : -1;
-		int lastMajor = -1;
-		for (int i = 1; i < points.size(); i++)
-		{
-			double gain = points.get(i)[1] - points.get(i - 1)[1];
-			int cost = (int) points.get(i)[0];
-			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
-			{
-				viability = cost;
-			}
-			if (finalTotal > 0 && gain >= 0.03 * finalTotal)
-			{
-				lastMajor = cost;
-			}
-		}
-		int recommended = Math.max(1, Math.max(viability, lastMajor));
-		return Math.min(recommended, 20);
 	}
 
 	/** One mob's row result: the side's kit BEST across ALL styles - the
