@@ -283,18 +283,13 @@ public class RosterOptimizerTest
 	@Test
 	public void tormentedDemonPhasesHonorTheShieldInTheRoster() throws Exception
 	{
-		// The TD group's synthetic phases (M-3): the melee-immune phase must
-		// return NO melee set, while the two hittable phases share one.
+		// The TD group's synthetic phases (M-3): with MELEE-ONLY gear (no
+		// cross-style kit possible) the melee-immune phase must return NO
+		// melee set, while the two hittable phases share one.
 		LoadoutData data = new DataService().load();
-		java.util.List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups =
-			com.loadoutlab.data.MonsterGroups.load(data);
-		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = groups.stream()
-			.filter(g -> g.getName().equals("Tormented Demons"))
-			.findFirst().orElseThrow(() -> new AssertionError("no TD group"));
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip (also bypasses the TD reduction)
-		owned.put(12926, 1);  // toxic blowpipe
-		owned.put(11907, 1);  // trident of the seas
 		OptimizerService service = new OptimizerService(data);
 		try
 		{
@@ -316,6 +311,85 @@ public class RosterOptimizerTest
 		{
 			service.shutdown();
 		}
+	}
+
+	@Test
+	public void crossStyleKitAnswersEveryShieldPhase() throws Exception
+	{
+		// THE CROSS-STYLE KIT (field decision 2026-07-17): owning weapons
+		// of several styles, the bench carries another style's weapon, so
+		// ONE kit answers every TD shield phase - each phase's shown result
+		// attacks with a style the phase is NOT immune to, and exactly one
+		// tab (the kit's primary style) has no immune hole.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(11907, 1);  // trident of the seas
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned);
+			Assert.assertEquals(3, roster.result.perMob.size());
+			// Exactly one style tab answers all three phases - the kit tab.
+			CombatStyle kitStyle = null;
+			for (CombatStyle style : CombatStyle.values())
+			{
+				boolean complete = true;
+				for (int j = 0; j < 3; j++)
+				{
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					complete &= r != null && !r.owned.isEmpty() && r.owned.get(0).getDps() > 0;
+				}
+				if (complete)
+				{
+					Assert.assertNull("only the kit tab is hole-free", kitStyle);
+					kitStyle = style;
+				}
+			}
+			Assert.assertNotNull("some tab must answer every phase", kitStyle);
+			// Phase order matches the immunity order: melee, ranged, magic.
+			CombatStyle[] immuneTo = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
+			List<GearItem> bench = null;
+			for (int j = 0; j < 3; j++)
+			{
+				OptimizerService.StyleResult r = roster.result.perMob.get(j).get(kitStyle);
+				Assert.assertNotEquals("phase " + j + " must not attack into its shield",
+					immuneTo[j], styleOfAttack(r.owned.get(0).getAttackType()));
+				if (bench == null)
+				{
+					bench = r.bench;
+				}
+				Assert.assertEquals("one bench across the roster", bench, r.bench);
+			}
+			Assert.assertFalse("the kit carries the cross-style weapon", bench.isEmpty());
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	private static com.loadoutlab.data.MonsterGroups.MonsterGroup tdGroup(LoadoutData data)
+	{
+		return com.loadoutlab.data.MonsterGroups.load(data).stream()
+			.filter(g -> g.getName().equals("Tormented Demons"))
+			.findFirst().orElseThrow(() -> new AssertionError("no TD group"));
+	}
+
+	/** The style a result's attack-type string rolls under. */
+	private static CombatStyle styleOfAttack(String attackType)
+	{
+		if (attackType != null && attackType.startsWith("ranged"))
+		{
+			return CombatStyle.RANGED;
+		}
+		if (attackType != null && attackType.startsWith("magic"))
+		{
+			return CombatStyle.MAGIC;
+		}
+		return CombatStyle.MELEE;
 	}
 
 	@Test

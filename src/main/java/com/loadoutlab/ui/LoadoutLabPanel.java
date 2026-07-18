@@ -4027,17 +4027,20 @@ public class LoadoutLabPanel extends PluginPanel
 			east.setOpaque(false);
 			// The chosen set's dps vs THIS mob (field spec): the viewed
 			// style + Yours|BiS side, flipping with the tabs and toggle.
-			double rowDps = mobRowDps(entry, index, viewedStyle, bis);
+			// A carried cross-style swap can flip a mob to another style -
+			// the icon follows the style the result actually attacks with.
+			DpsResult rowResult = mobRowResult(entry, index, viewedStyle, bis);
+			double rowDps = rowResult == null ? 0 : rowResult.getDps();
 			if (rowDps > 0)
 			{
+				CombatStyle rowStyle = resultStyle(rowResult, viewedStyle);
 				JLabel dps = new JLabel(String.format("%.2f", rowDps));
 				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
 				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
 				dps.setToolTipText("The shared set's dps against this mob"
-					+ (bis ? " (BiS view)" : "") + " - " + viewedStyle.toString().toLowerCase());
-				// The viewed style's skill sprite rides the number (field
-				// spec) - same icon language as the tabs.
-				attachSprite(dps, AssumeIcons.styleSprite(viewedStyle));
+					+ (bis ? " (BiS view)" : "") + " - " + rowStyle.toString().toLowerCase()
+					+ (rowStyle != viewedStyle ? " via a bench swap" : ""));
+				attachSprite(dps, AssumeIcons.styleSprite(rowStyle));
 				dps.setIconTextGap(3);
 				east.add(dps);
 			}
@@ -4097,13 +4100,13 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** The viewed side's dps against one mob of the roster: the per-mob
+	/** The viewed side's result against one mob of the roster: the per-mob
 	 * bundle when present (roster), the live map for the lensed single. */
-	private double mobRowDps(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	private DpsResult mobRowResult(ResultEntry entry, int index, CombatStyle style, boolean bis)
 	{
 		if (style == null)
 		{
-			return 0;
+			return null;
 		}
 		Map<CombatStyle, StyleResult> map = null;
 		if (entry.perMobResults != null && index < entry.perMobResults.size())
@@ -4117,11 +4120,29 @@ public class LoadoutLabPanel extends PluginPanel
 		StyleResult r = map == null ? null : map.get(style);
 		if (r == null)
 		{
-			return 0;
+			return null;
 		}
-		DpsResult shown = bis ? r.overallBest
+		return bis ? r.overallBest
 			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-		return shown == null ? 0 : shown.getDps();
+	}
+
+	/** The combat style a shown result actually attacks with - a carried
+	 * cross-style swap can flip one mob off the viewed tab's style. */
+	private static CombatStyle resultStyle(DpsResult result, CombatStyle fallback)
+	{
+		if (result == null || result.getAttackType() == null)
+		{
+			return fallback;
+		}
+		if (result.getAttackType().startsWith("ranged"))
+		{
+			return CombatStyle.RANGED;
+		}
+		if (result.getAttackType().startsWith("magic"))
+		{
+			return CombatStyle.MAGIC;
+		}
+		return CombatStyle.MELEE;
 	}
 
 	/** The + row's mob picker: incremental search, double-click/Enter adds
