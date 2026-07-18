@@ -76,6 +76,10 @@ class MonsterGroupsTest
 		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
 		assertEquals(4, byName("The Gauntlet").getMobs().size());
 		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());
+		// The gauntlets are tagged until the crystal-cost tiering lands.
+		assertTrue(byName("The Gauntlet").label().contains("coming soon"));
+		assertTrue(byName("Corrupted Gauntlet").label().contains("coming soon"));
+		assertFalse(byName("Fight Caves").label().contains("coming soon"));
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());

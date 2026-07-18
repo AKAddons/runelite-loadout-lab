@@ -599,7 +599,8 @@
    "gauntlet",
    "hunllef"
   ],
-  "note": "Gear inside is limited to the raid-crafted crystal tiers - the recommendations use only those (perfected assumed for now)."
+  "note": "Gear inside is limited to the raid-crafted crystal tiers - the recommendations use only those (perfected assumed for now).",
+  "comingSoon": true
  },
  {
   "name": "Corrupted Gauntlet",
@@ -621,7 +622,8 @@
    "cg",
    "corrupted gauntlet"
   ],
-  "note": "Gear inside is limited to the raid-crafted corrupted tiers - the recommendations use only those (perfected assumed for now)."
+  "note": "Gear inside is limited to the raid-crafted corrupted tiers - the recommendations use only those (perfected assumed for now).",
+  "comingSoon": true
  },
  {
   "name": "Grotesque Guardians",

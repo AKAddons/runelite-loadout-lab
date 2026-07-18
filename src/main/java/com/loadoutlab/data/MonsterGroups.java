@@ -36,10 +36,12 @@ public final class MonsterGroups
 		private final List<MonsterStats> mobs;
 		private final List<String> aliases;
 		private final int inventory;
+		private final boolean comingSoon;
 
 		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases,
-			int inventory)
+			int inventory, boolean comingSoon)
 		{
+			this.comingSoon = comingSoon;
 			this.name = name;
 			this.note = note;
 			this.mobs = Collections.unmodifiableList(mobs);
@@ -69,10 +71,17 @@ public final class MonsterGroups
 			return mobs;
 		}
 
-		/** "Fight Caves - 7 mobs" for list rows. */
+		public boolean isComingSoon()
+		{
+			return comingSoon;
+		}
+
+		/** "Fight Caves - 7 mobs" for list rows; a group still being
+		 * tuned wears its "coming soon" tag right in the label. */
 		public String label()
 		{
-			return name + " - " + mobs.size() + " mobs";
+			return name + " - " + mobs.size() + " mobs"
+				+ (comingSoon ? " (coming soon)" : "");
 		}
 	}
 
@@ -162,7 +171,8 @@ public final class MonsterGroups
 				if (!mobs.isEmpty())
 				{
 					int inventory = row.has("inventory") ? row.get("inventory").getAsInt() : 0;
-					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory));
+					boolean comingSoon = row.has("comingSoon") && row.get("comingSoon").getAsBoolean();
+					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory, comingSoon));
 				}
 			}
 		}
