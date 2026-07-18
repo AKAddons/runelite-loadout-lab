@@ -280,7 +280,8 @@ public final class DpsCalculator
 		// Prayer floor, +2 accurate stance, +9 - matches the official
 		// calc's effective level.
 		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 2 + 9;
-		if (isWearingMagicVoid(loadout))
+		boolean magicVoid = isWearingMagicVoid(loadout);
+		if (magicVoid)
 		{
 			counted("void set", "+45% accuracy");
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
@@ -297,6 +298,13 @@ public final class DpsCalculator
 		int maxHit = magicMaxHit(effectiveRequest, loadout);
 		attackRoll = applyMagicAccuracyBonuses(effectiveRequest, loadout, attackRoll);
 		maxHit = applyMagicDamageBonuses(effectiveRequest, loadout, maxHit);
+		if (magicVoid && isWearingEliteVoid(loadout))
+		{
+			// Elite magic void: +2.5% magic damage (was missing - the set
+			// only got its accuracy; wiki-standard values).
+			counted("void set", "+2.5% damage");
+			maxHit = (int) Math.floor(maxHit * 1.025);
+		}
 		maxHit = applyFlatArmour(effectiveRequest, maxHit);
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());

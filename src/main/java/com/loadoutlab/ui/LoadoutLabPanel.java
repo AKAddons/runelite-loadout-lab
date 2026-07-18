@@ -508,6 +508,8 @@ public class LoadoutLabPanel extends PluginPanel
 	 * weapon competing for kept slots, and how many are kept. Null spec
 	 * flag = no risk line (not wilderness / option off / BiS view). */
 	private boolean renderingRiskLine;
+	/** The upgrade-cost line renders in the stat panel (Yours view). */
+	private boolean renderingUpgradeLine;
 	private GearItem renderingRiskSpecWeapon;
 	private int renderingRiskKeep;
 	/**
@@ -4378,6 +4380,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// The risk skull describes YOUR set's death mechanics - Yours view
 		// only, like the old full-width line it replaces.
 		renderingRiskLine = !bis && displayOptions.riskLine && effectiveWilderness(entry);
+		renderingUpgradeLine = !bis;
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
@@ -4500,7 +4503,6 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " worth trading dps for at this monster");
 				card.add(same);
 			}
-			addUpgradeLine(card, best);
 		}
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
@@ -4733,7 +4735,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * listed by source quest in the tooltip instead; a set whose only
 	 * unowned pieces are quest rewards shows a compact quest-only line.
 	 */
-	private void addUpgradeLine(JPanel card, DpsResult best)
+	private void addUpgradeStatLine(JPanel panel, DpsResult best)
 	{
 		long cost = 0;
 		boolean questRewards = false;
@@ -4762,11 +4764,54 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		JLabel line = line(cost > 0
-			? String.format("Upgrade cost: ~%s gp", PvpRisk.formatGp(cost))
-			: "Upgrade: quest rewards", UNOWNED);
+		JLabel line = statLine(cost > 0
+			? "~" + PvpRisk.formatGp(cost)
+			: "quests",
+			cost > 0 ? "Upgrade cost of the unowned pieces" : "Unowned quest rewards",
+			UNOWNED, new FixedWidthIcon(new CoinsIcon()));
 		line.setToolTipText(tip.append("</html>").toString());
-		card.add(line);
+		panel.add(line);
+	}
+
+	/** The grid badge's gp pile as a standalone icon (glyph-safe). */
+	private static final class CoinsIcon implements javax.swing.Icon
+	{
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 14;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.translate(x, y);
+				paintCoin(g2, 3, 8);
+				paintCoin(g2, 2, 5);
+				paintCoin(g2, 3, 2);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+
+		private static void paintCoin(Graphics2D g2, int x, int y)
+		{
+			g2.setColor(new Color(140, 100, 25));
+			g2.fillOval(x, y, 9, 5);
+			g2.setColor(new Color(255, 200, 60));
+			g2.fillOval(x + 1, y + 1, 7, 3);
+		}
 	}
 
 	/** What the boss does back to you in this set, protection prayer up. */
@@ -5521,6 +5566,12 @@ int sprite = incoming.protectPrayer != null
 					+ "</body></html>", new Color(200, 170, 110),
 				new FixedWidthIcon(new InfoIcon(11)));
 			panel.add(noteLine);
+		}
+		if (renderingUpgradeLine)
+		{
+			// Upgrade cost with the gp pile (field spec) - just above the
+			// wildy skull, money beside money.
+			addUpgradeStatLine(panel, result);
 		}
 		if (renderingRiskLine)
 		{

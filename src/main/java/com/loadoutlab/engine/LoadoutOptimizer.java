@@ -1023,6 +1023,21 @@ public final class LoadoutOptimizer
 		{
 			score += 2_500.0;
 		}
+		// Void: the whole set's value lives in the DPS model, the pieces
+		// carry ~zero raw stats - without a boost the zero-score prune
+		// drops the helm/gloves outright and a stocked bank's top-N cut
+		// drops the top/robe, so the set could NEVER assemble for a
+		// well-geared account (field question 2026-07-17 - it only worked
+		// when you owned little else). The style's own helm gates entry.
+		if (name.contains("void knight top") || name.contains("elite void top")
+			|| name.contains("void knight robe") || name.contains("elite void robe")
+			|| name.contains("void knight gloves")
+			|| (request.getStyle() == CombatStyle.RANGED && name.contains("void ranger helm"))
+			|| (request.getStyle() == CombatStyle.MAGIC && name.contains("void mage helm"))
+			|| (request.getStyle() == CombatStyle.MELEE && name.contains("void melee helm")))
+		{
+			score += 2_500.0;
+		}
 		if (request.getStyle() == CombatStyle.MELEE && (name.contains("obsidian helmet") || name.contains("obsidian platebody") || name.contains("obsidian platelegs") || name.contains("berserker necklace") || isTzhaarWeapon(name)))
 		{
 			score += 2_000.0;
