@@ -419,9 +419,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private int lastRiskGp;
 	private String lastRiskText = "";
 	private final JTextField riskCapField = new JTextField();
-	private final JLabel exclusionsLabel = new JLabel();
 	private final JLabel storedLabel = new JLabel();
-	private final JLabel pinnedLabel = new JLabel();
 	/** The user's own note for the selected monster: a collapsible
 	 * post-it, edited inline (saves on focus loss - no edit button). */
 	private final JPanel notePanel = new JPanel();
@@ -440,9 +438,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
 	private final JList<MonsterStats> monsterList = new JList<>(monsterModel);
 	private final JScrollPane monsterScroll;
-	private final JPanel selectedRow = new JPanel(new BorderLayout(4, 0));
-	private final JLabel selectedLabel = new JLabel();
-	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
 	/** Shared-name wilderness monsters (Catacombs hellhounds...): the user
@@ -484,11 +479,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Guards against programmatic search-field changes re-opening the list. */
 	private boolean suppressSearchEvents;
 
-	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
 	/** Wilderness risk-cap dropdown values in gp; 75k is the default. */
-	private final JComboBox<String> riskBudget = new JComboBox<>(
-		new String[]{"Risk cap: 0", "Risk cap: 25k", "Risk cap: 75k", "Risk cap: 200k", "Risk cap: 1M"});
 
 	private MonsterStats selectedMonster;
 	/** The style card currently being rendered (EDT-only render state) -
@@ -553,7 +545,6 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean onSlayerTask;
 		boolean inWilderness;
 		int optimizeMode;
-		boolean lowRisk;
 		boolean protectItem;
 		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
 		 * Non-empty IS the low-risk mode - the old toggle + step combo
@@ -758,24 +749,8 @@ public class LoadoutLabPanel extends PluginPanel
 		top.add(searchField);
 		top.add(Box.createVerticalStrut(4));
 
-		// Selected-monster row: replaces the dropdown once a pick is made.
-		selectedRow.setOpaque(false);
-		selectedRow.setAlignmentX(LEFT_ALIGNMENT);
-		// Height follows content: a long monster name wraps to a second line
-		// rather than clipping (was capped at one 26px row).
-		selectedRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-		selectedLabel.setForeground(GOOD);
-		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
-		selectedLabel.setVerticalAlignment(SwingConstants.TOP);
-		// The name row + its reload/clear buttons are gone (field spec
-		// 2026-07-17): every result card carries the mob list and its own
-		// refresh/close in the chrome instead.
-		selectedRow.add(selectedLabel, BorderLayout.CENTER);
-		selectedRow.setVisible(false);
-
 		// Curated mechanics note (finishing items, immunities) for the
 		// selected monster - so a correct suggestion doesn't look wrong.
-		monsterNote.setVisible(false);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -809,25 +784,10 @@ public class LoadoutLabPanel extends PluginPanel
 		initToggle(inWilderness, "Fighting this monster inside the Wilderness:"
 			+ " wilderness weapons get their +50% and the risk options apply");
 		inWilderness.setVisible(false);
-		inWilderness.addActionListener(e -> refreshWildernessRows());
 
-		// Wilderness only: cap the set to the items death mechanics keep.
-		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
-			+ " everything else must total under the risk cap");
-		lowRisk.setVisible(false);
 
 		initToggle(protectItem, "Protect Item keeps a 4th item (not while skulled)");
 		protectItem.setVisible(false);
-
-		// How much gp the set may drop on a wilderness death; 0 = nothing
-		// droppable and no fees at all.
-		riskBudget.setAlignmentX(LEFT_ALIGNMENT);
-		riskBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
-		riskBudget.setSelectedIndex(2);
-		riskBudget.addActionListener(e -> { if (!syncingControls) recompute(); });
-		recordCombo(riskBudget, "Risk cap");
-		riskBudget.setVisible(false);
 
 
 		// Spellbook lock lives ON the magic card (vertical space) - the
@@ -867,19 +827,6 @@ public class LoadoutLabPanel extends PluginPanel
 		optimizeMode.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(optimizeMode, "Optimize");
 
-		// Excluded items ("protected" from suggestions) - click to manage.
-		exclusionsLabel.setForeground(new Color(200, 140, 140));
-		exclusionsLabel.setFont(exclusionsLabel.getFont().deriveFont(13f));
-		exclusionsLabel.setAlignmentX(LEFT_ALIGNMENT);
-		exclusionsLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		exclusionsLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showExclusionsMenu(e);
-			}
-		});
 		refreshExclusionsLabel();
 
 		// Stored-elsewhere items (manual owned: STASH, POH, UIM storages).
@@ -946,7 +893,6 @@ public class LoadoutLabPanel extends PluginPanel
 		// Pinned items ("always bring") - click to manage.
 		// The old "This mob: N pins..." label retired (field spec) - pins
 		// and filter items surface as count chips in the parameter zone.
-		refreshPinnedLabel();
 
 		add(top, BorderLayout.NORTH);
 
@@ -1037,17 +983,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Sync the wilderness checkbox + risk rows to the selected monster. */
-	private void refreshWildernessRows()
-	{
-		boolean listed = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
-		boolean exclusive = selectedMonster != null && WildernessMonsters.isExclusive(selectedMonster);
-		inWilderness.setVisible(listed && !exclusive);
-		boolean wild = effectiveWilderness() && displayOptions.wildyRisk;
-		lowRisk.setVisible(wild);
-		protectItem.setVisible(wild);
-		riskBudget.setVisible(wild);
-	}
-
 	private void initToggle(JCheckBox box, String tooltip)
 	{
 		box.setOpaque(false);
@@ -1199,11 +1134,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Minimal HTML escape for text going into an html-rendered JLabel. */
-	private static String escapeHtml(String text)
-	{
-		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
-
 	/**
 	 * Set by the plugin on login. On a non-members world the filter appears
 	 * and defaults on; on a members world it is hidden and forced off - the
@@ -1236,7 +1166,6 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			budgetRow.setVisible(options.upgradeBudget);
 		}
-		refreshWildernessRows();
 		refreshNotePanel();
 		// Rebuild the cards so per-line gates apply, reusing cached results -
 		// but only when those results are for the CURRENT monster (a compute
@@ -1473,7 +1402,6 @@ public class LoadoutLabPanel extends PluginPanel
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
 		page.add(active);
 		syncControlsFromActive();
-		refreshWildernessRows();
 		bankShowing = false;
 		bankFiltering = false;
 		lastHighlightIds = null;
@@ -1485,7 +1413,6 @@ public class LoadoutLabPanel extends PluginPanel
 		// A new mob: its own note state.
 		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
 		refreshNotePanel();
-		refreshPinnedLabel();
 		revalidate();
 		repaint();
 		if (replacePage)
@@ -1513,10 +1440,8 @@ public class LoadoutLabPanel extends PluginPanel
 		active.onSlayerTask = slayerTask.isSelected();
 		active.inWilderness = inWilderness.isSelected();
 		active.optimizeMode = Math.max(0, optimizeMode.getSelectedIndex());
-		active.lowRisk = lowRisk.isSelected();
 		active.protectItem = protectItem.isSelected();
 		active.riskCap = riskCapField.getText() == null ? "" : riskCapField.getText();
-		active.lowRisk = !active.riskCap.isEmpty();
 		active.upgradeBudget = upgradeBudget.getText() == null ? "" : upgradeBudget.getText();
 		active.spellbookIndex = Math.max(0, spellbook.getSelectedIndex());
 	}
@@ -1535,7 +1460,6 @@ public class LoadoutLabPanel extends PluginPanel
 			slayerTask.setSelected(active.onSlayerTask);
 			inWilderness.setSelected(active.inWilderness);
 			optimizeMode.setSelectedIndex(active.optimizeMode);
-			lowRisk.setSelected(active.lowRisk);
 			protectItem.setSelected(active.protectItem);
 			riskCapField.setText(active.riskCap);
 			lastRiskGp = parsedBudgetGp(active.riskCap);
@@ -1806,9 +1730,7 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = entry.mob();
 		applyActiveMonsterUi(entry.mob());
 		syncControlsFromActive();
-		refreshWildernessRows();
 		refreshNotePanel();
-		refreshPinnedLabel();
 	}
 
 	/** The header X: a recorded step - back re-adds the result (recomputed;
@@ -2066,7 +1988,6 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		refreshExclusionsLabel();
 		refreshStoredLabel();
-		refreshPinnedLabel();
 		refreshNotePanel();
 		refreshHistoryButtons();
 		recompute();
@@ -2074,9 +1995,6 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void refreshExclusionsLabel()
 	{
-		int count = exclusionView.snapshot().size();
-		exclusionsLabel.setText(count == 0 ? "" : "Excluded items: " + count + " (click to manage)");
-		exclusionsLabel.setVisible(count > 0);
 		refreshCountChips();
 	}
 
@@ -2258,54 +2176,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return scope.toLowerCase(java.util.Locale.ROOT) + " set";
 	}
 
-	private void refreshPinnedLabel()
-	{
-		if (selectedMonster == null)
-		{
-			pinnedLabel.setVisible(false);
-			return;
-		}
-		int monsterId = currentMonsterId();
-		int pins = 0;
-		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
-			: mobProfile.allPins(monsterId).values())
-		{
-			pins += scoped.size();
-		}
-		int filters = 0;
-		for (Map<Integer, String> scoped : mobProfile.allFilterItems(monsterId).values())
-		{
-			filters += scoped.size();
-		}
-		int excluded = 0;
-		for (Set<Integer> scoped : mobProfile.allMobExclusions(monsterId).values())
-		{
-			excluded += scoped.size();
-		}
-		if (pins == 0 && filters == 0 && excluded == 0)
-		{
-			pinnedLabel.setVisible(false);
-			return;
-		}
-		StringBuilder text = new StringBuilder("This mob:");
-		if (pins > 0)
-		{
-			text.append(" ").append(pins).append(pins == 1 ? " pin" : " pins");
-		}
-		if (filters > 0)
-		{
-			text.append(pins > 0 ? "," : "").append(" ")
-				.append(filters).append(" filter item").append(filters == 1 ? "" : "s");
-		}
-		if (excluded > 0)
-		{
-			text.append(pins > 0 || filters > 0 ? "," : "").append(" ")
-				.append(excluded).append(" excluded");
-		}
-		pinnedLabel.setText(text + " (click to manage)");
-		pinnedLabel.setVisible(true);
-	}
-
 	private void saveNoteIfChanged()
 	{
 		if (selectedMonster == null)
@@ -2380,8 +2250,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.unpin(monsterId, scope, slot);
-					refreshPinnedLabel();
-					recompute();
+								recompute();
 				});
 				menu.add(row);
 			}
@@ -2398,8 +2267,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
-					refreshPinnedLabel();
-					reapplyBankViews();
+								reapplyBankViews();
 				});
 				menu.add(row);
 			}
@@ -2417,8 +2285,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.removeMobExclusion(monsterId, scope, itemId);
-					refreshPinnedLabel();
-					recompute();
+								recompute();
 				});
 				menu.add(row);
 			}
@@ -2503,8 +2370,7 @@ public class LoadoutLabPanel extends PluginPanel
 			thisSet.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(thisSet);
 		}
@@ -2515,8 +2381,7 @@ public class LoadoutLabPanel extends PluginPanel
 			allSets.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(allSets);
 		}
@@ -2529,8 +2394,7 @@ public class LoadoutLabPanel extends PluginPanel
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(un);
 		}
@@ -2542,8 +2406,7 @@ public class LoadoutLabPanel extends PluginPanel
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, ALL_SETS, slot);
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(un);
 		}
@@ -2580,8 +2443,7 @@ public class LoadoutLabPanel extends PluginPanel
 				return;
 			}
 			mobProfile.pin(monsterId, scope, gear.getSlot(), gear.getId());
-			refreshPinnedLabel();
-			recompute();
+				recompute();
 		});
 	}
 
@@ -2598,8 +2460,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// Filter items never touch the optimizer: NO recompute here or
 			// anywhere in the filter paths - only the id-set views refresh.
 			mobProfile.addFilterItem(monsterId, scope, itemId, name);
-			refreshPinnedLabel();
-			reapplyBankViews();
+				reapplyBankViews();
 		});
 	}
 
@@ -2853,8 +2714,7 @@ public class LoadoutLabPanel extends PluginPanel
 						thisMob.addActionListener(a ->
 						{
 							mobProfile.excludeForMob(monsterId, ALL_SETS, item.getId());
-							refreshPinnedLabel();
-							recompute();
+												recompute();
 						});
 						excludeMenu.add(thisMob);
 						if (pinStyle != null)
@@ -2864,8 +2724,7 @@ public class LoadoutLabPanel extends PluginPanel
 							thisSet.addActionListener(a ->
 							{
 								mobProfile.excludeForMob(monsterId, pinStyle.name(), item.getId());
-								refreshPinnedLabel();
-								recompute();
+														recompute();
 							});
 							excludeMenu.add(thisSet);
 						}
@@ -3278,7 +3137,6 @@ public class LoadoutLabPanel extends PluginPanel
 		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
-		refreshPinnedLabel();
 		refreshNotePanel();
 	}
 
@@ -3322,12 +3180,7 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = null;
 		page.clear();
 		active = null;
-		selectedRow.setVisible(false);
-		selectedLabel.setText("");
-		monsterNote.setText("");
-		monsterNote.setVisible(false);
 		refreshNotePanel();
-		refreshPinnedLabel();
 		resultsPanel.removeAll();
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
@@ -3437,8 +3290,7 @@ public class LoadoutLabPanel extends PluginPanel
 			applyActiveMonsterUi(entry.mob());
 			setNoteCollapsed(mobProfile.note(entry.mob().getId()).isEmpty());
 			refreshNotePanel();
-			refreshPinnedLabel();
-		}
+			}
 		renderPage();
 	}
 
@@ -5086,17 +4938,6 @@ public class LoadoutLabPanel extends PluginPanel
 			applyBankViews(style, best, specWeapon);
 			renderPage();
 		});
-	}
-
-	/** A left-aligned, height-capped flow row added to the card. */
-	private JPanel iconRow(JPanel card)
-	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-		row.setOpaque(false);
-		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-		card.add(row);
-		return row;
 	}
 
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
