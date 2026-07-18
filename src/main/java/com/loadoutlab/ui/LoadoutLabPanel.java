@@ -523,9 +523,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
 		boolean noteCollapsed = true;
-		/** Dragonfire: gear protection by default; the shield cell flips
-		 * this result to an assumed super antifire (and back). */
-		boolean superAntifireAssumed;
+		/** Dragonfire mode: 0 = gear (a shield is required in the set),
+		 * 1 = regular antifire assumed (shield STILL required - only the
+		 * combo fully blocks; the honesty rule refuses half-protection),
+		 * 2 = super antifire assumed (shield slot freed). */
+		int antifireMode;
 		/** Whole-result fold: collapsed to the header's one-line summary. */
 		boolean folded;
 		/** The style tab in view; null = strongest owned set (the default). */
@@ -1073,7 +1075,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private boolean superAntifireAssumed()
 	{
-		return active != null && active.superAntifireAssumed;
+		return active != null && active.antifireMode == 2;
 	}
 
 	private Map<CombatStyle, StyleResult> lastResults()
@@ -3273,7 +3275,7 @@ public class LoadoutLabPanel extends PluginPanel
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
-				entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
+				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 				() -> statusLabel.setText(" "));
@@ -3282,7 +3284,7 @@ public class LoadoutLabPanel extends PluginPanel
 		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
-			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
+			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			() -> statusLabel.setText(" "));
@@ -3727,25 +3729,35 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (fiery)
 		{
-			// Dragonfire protection mode (field spec): gear = a shield is
-			// required in the set; super = assume the potion, shield slot
-			// freed. Same recorded flip the shield cell offers.
-			boolean superAssumed = entry.superAntifireAssumed;
-			toggles.add(paramChip(superAssumed ? "Super antifire" : "Antifire: gear",
-				superAssumed, true,
-				superAssumed
-					? "Assuming a super antifire - the shield slot is free;"
-						+ " click to require a dragonfire shield instead"
-					: "A dragonfire shield is required in the set; click to"
-						+ " assume a super antifire and free the shield slot",
+			// Dragonfire protection mode (field spec), cycling gear ->
+			// regular -> super. Regular keeps the shield REQUIRED (only
+			// the combo fully blocks - the honesty rule refuses half
+			// protection); its dps effect lands with antifire-aware
+			// incoming, the chips admit the potion today. Super frees
+			// the shield slot.
+			int mode = entry.antifireMode;
+			String[] antifireLabels = {"Antifire: gear", "Antifire: regular", "Super antifire"};
+			String[] antifireTips = {
+				"A dragonfire shield is required in the set; click to also"
+					+ " assume a regular antifire (shield + potion = immune)",
+				"Regular antifire assumed WITH the required shield - the"
+					+ " combo fully blocks dragonfire; click for super"
+					+ " antifire (no shield needed)",
+				"Super antifire assumed - the shield slot is free; click to"
+					+ " require the shield alone again"};
+			String[] antifireSteps = {"Require dragonfire shield",
+				"Assume regular antifire", "Assume super antifire"};
+			toggles.add(paramChip(antifireLabels[mode], mode > 0, true,
+				antifireTips[mode],
 				() -> asActive(entry, () ->
 				{
-					boolean assume = !entry.superAntifireAssumed;
-					recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
-						() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
+					int next = (entry.antifireMode + 1) % 3;
+					int prev = entry.antifireMode;
+					recordStep(antifireSteps[next],
+						() -> setAntifireMode(next), () -> setAntifireMode(prev));
 					if (historyControl == null)
 					{
-						setAntifireTo(assume);
+						setAntifireMode(next);
 					}
 				})));
 		}
@@ -4376,6 +4388,12 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
 			}
+			else if (active != null && active.antifireMode == 1
+				&& DragonfireRules.breathesFire(entry.mob()))
+			{
+				antifireTooltip = "Regular antifire assumed - with the"
+					+ " required shield, dragonfire is fully blocked";
+			}
 			// The chips render in the stat panel beside the gear, not here.
 			renderingChips = assumesChips(chipLabel,
 				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
@@ -4855,9 +4873,14 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void setAntifireTo(boolean assume)
 	{
-		if (active != null && active.superAntifireAssumed != assume)
+		setAntifireMode(assume ? 2 : 0);
+	}
+
+	private void setAntifireMode(int mode)
+	{
+		if (active != null && active.antifireMode != mode)
 		{
-			active.superAntifireAssumed = assume;
+			active.antifireMode = mode;
 			recompute();
 		}
 	}
@@ -5256,15 +5279,19 @@ public class LoadoutLabPanel extends PluginPanel
 			panel.add(renderingChips);
 			panel.add(Box.createVerticalStrut(4));
 		}
+		Color statText = new Color(200, 200, 200);
 		if (displayOptions.maxHit)
 		{
 			panel.add(statLine("Max: " + result.getMaxHit(),
-				"Max hit " + result.getMaxHit(), GOOD, null));
+				"Max hit " + result.getMaxHit(), statText, new HitsplatIcon(12)));
 		}
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
-			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, GOOD, null));
+			JLabel accLine = statLine("Acc: " + acc, "Hit chance " + acc, statText, null);
+			attachSprite(accLine, net.runelite.api.gameval.SpriteID.Staticons.ATTACK);
+			accLine.setIconTextGap(3);
+			panel.add(accLine);
 		}
 		if (incoming != null && displayOptions.damageTaken)
 		{
@@ -5280,7 +5307,7 @@ public class LoadoutLabPanel extends PluginPanel
 					? "This monster's attacks are beyond the stat-sheet model"
 						+ " - unknown, not zero"
 					: incomingTooltip(incoming),
-				new Color(210, 140, 130), null);
+				statText, null);
 			if (!unmodeled)
 			{
 				// The protect-prayer sprite IS the pray call.
@@ -5303,7 +5330,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// Protect Item assumed (field spec): the prayer sprite beside
 			// the other defensive facts.
 			JLabel kept = statLine("kept: 4",
-				"Protect Item assumed - a 4th item is kept on death", MUTED, null);
+				"Protect Item assumed - a 4th item is kept on death", statText, null);
 			attachSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
 			kept.setIconTextGap(3);
 			panel.add(kept);
@@ -5313,8 +5340,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			// Compact type on the line; the stance ("controlled" - Defence
 			// xp!) survives in the tooltip.
-			panel.add(statLine("Style: " + styleText,
-				"Use this attack style: " + result.getAttackType(), INFO, null));
+			JLabel styleLine = statLine("Style: " + styleText,
+				"Use this attack style: " + result.getAttackType(), statText, null);
+			attachSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
+			styleLine.setIconTextGap(3);
+			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
 		int dartIdx = type.indexOf(" - ");
@@ -5328,7 +5358,7 @@ public class LoadoutLabPanel extends PluginPanel
 			String tier = dartName.toLowerCase().replace(" darts", "").replace(" dart", "");
 			JLabel dart = statLine(capitalize(tier),
 				"Loaded with " + dartName + " - included in the dps"
-					+ " (right-click to exclude)", INFO, null);
+					+ " (right-click to exclude)", statText, null);
 			GearItem dartItem = loadedDart(result);
 			if (dartItem != null)
 			{
@@ -5346,7 +5376,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// A magic set without an autocast spell is a powered staff.
 				JLabel builtIn = statLine("Built-in",
-					"Powered staff - casts its own spell", INFO, null);
+					"Powered staff - casts its own spell", statText, null);
 				GearItem weapon = result.getLoadout().getWeapon();
 				if (weapon != null)
 				{
@@ -5359,7 +5389,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				JLabel spell = statLine(spellName,
 					"Autocast " + spellName + (spellName.contains("Demonbane")
-						? " - assumes Mark of Darkness" : ""), INFO, null);
+						? " - assumes Mark of Darkness" : ""), statText, null);
 				int sprite = AssumeIcons.spellSprite(spellName);
 				if (sprite >= 0)
 				{
@@ -5372,13 +5402,17 @@ public class LoadoutLabPanel extends PluginPanel
 		String book = spellBookText(result);
 		if (displayOptions.attackStyle && book != null)
 		{
-			panel.add(statLine("Book: " + book, "The autocast spell's spellbook", INFO, null));
+			JLabel bookLine = statLine("Book: " + book,
+				"The autocast spell's spellbook", statText, null);
+			attachSprite(bookLine, net.runelite.api.gameval.SpriteID.Staticons.MAGIC);
+			bookLine.setIconTextGap(3);
+			panel.add(bookLine);
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
 		if (displayOptions.prayerBonus && prayer != 0)
 		{
 			JLabel pray = statLine(String.format("%+d", prayer),
-				"Gear prayer bonus - slower prayer drain", MUTED, null);
+				"Gear prayer bonus - slower prayer drain", statText, null);
 			if (PRAYER_ICON != null)
 			{
 				pray.setIcon(new BackedIcon(PRAYER_ICON));
@@ -5390,7 +5424,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
 				"<html>Conditional bonuses applied:<br>"
-					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, null);
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", statText, null);
 			counting.setIcon(new BackedIcon(new PlusStarIcon(11)));
 			counting.setIconTextGap(3);
 			panel.add(counting);
@@ -5425,6 +5459,48 @@ public class LoadoutLabPanel extends PluginPanel
 			line.setIconTextGap(3);
 		}
 		return line;
+	}
+
+	/** A painted red hitsplat for the max-hit line (glyph-safe). */
+	private static final class HitsplatIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		HitsplatIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(150, 30, 30));
+				g2.fillRoundRect(x, y + 1, size - 1, size - 2, 5, 5);
+				g2.setColor(new Color(200, 60, 60));
+				g2.drawRoundRect(x, y + 1, size - 2, size - 3, 5, 5);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
 	}
 
 	/** A painted circled-i for the mechanics note - amber like the note
