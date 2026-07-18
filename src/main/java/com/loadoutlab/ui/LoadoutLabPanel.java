@@ -3620,13 +3620,21 @@ public class LoadoutLabPanel extends PluginPanel
 				column.add(mascot);
 			}
 		}
+		// A caption like the empty-state prompt: centered, italic (the
+		// centerRow wrapper dodges the mixed-alignment BoxLayout gotcha).
 		JLabel computing = new JLabel("<html>" + (entry.mobs.size() > 1
 			? "Optimizing one shared set vs " + entry.mobs.size() + " mobs..."
 			: "Optimizing vs " + entry.mob().getName() + "...") + "</html>");
 		computing.setForeground(MUTED);
-		computing.setAlignmentX(LEFT_ALIGNMENT);
+		computing.setFont(computing.getFont().deriveFont(Font.ITALIC));
 		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
-		column.add(computing);
+		JPanel computingRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		computingRow.setOpaque(false);
+		computingRow.setAlignmentX(LEFT_ALIGNMENT);
+		computingRow.add(computing);
+		computingRow.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+			computingRow.getPreferredSize().height));
+		column.add(computingRow);
 		return column;
 	}
 
