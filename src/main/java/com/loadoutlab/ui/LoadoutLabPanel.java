@@ -5027,14 +5027,25 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Like attachItemIcon, but on a CELL_BG plate - dark item sprites in
-	 * the stat panel need the same contrast lift as the gear cells. */
+	 * the stat panel need the same contrast lift as the gear cells - and
+	 * inside the fixed stat column. */
 	private void attachBackedItemIcon(JLabel label, int itemId)
 	{
 		AsyncBufferedImage img = itemManager.getImage(itemId);
-		Runnable set = () -> label.setIcon(new BackedIcon(new ImageIcon(
-			img.getScaledInstance(-1, 18, Image.SCALE_SMOOTH))));
+		Runnable set = () -> label.setIcon(new FixedWidthIcon(new BackedIcon(new ImageIcon(
+			img.getScaledInstance(-1, 14, Image.SCALE_SMOOTH)))));
 		img.onLoaded(() -> SwingUtilities.invokeLater(set));
 		set.run();
+	}
+
+	/** attachSprite for the stat panel: the sprite rides the fixed-width
+	 * column so every line's text starts on the same edge. */
+	private void attachStatSprite(JLabel label, int spriteId)
+	{
+		spriteManager.getSpriteAsync(spriteId, 0, img ->
+			SwingUtilities.invokeLater(() -> label.setIcon(new FixedWidthIcon(
+				new ImageIcon(img.getScaledInstance(-1, 15, Image.SCALE_SMOOTH))))));
+		label.setIconTextGap(4);
 	}
 
 	/** A rounded outline + padding for the chip language (field spec:
@@ -5252,14 +5263,14 @@ public class LoadoutLabPanel extends PluginPanel
 		if (displayOptions.maxHit)
 		{
 			panel.add(statLine("Max: " + result.getMaxHit(),
-				"Max hit " + result.getMaxHit(), statText, new HitsplatIcon(12)));
+				"Max hit " + result.getMaxHit(), statText,
+				new FixedWidthIcon(new HitsplatIcon(12))));
 		}
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
 			JLabel accLine = statLine("Acc: " + acc, "Hit chance " + acc, statText, null);
-			attachSprite(accLine, net.runelite.api.gameval.SpriteID.Staticons.ATTACK);
-			accLine.setIconTextGap(3);
+			attachStatSprite(accLine, net.runelite.api.gameval.SpriteID.Staticons.ATTACK);
 			panel.add(accLine);
 		}
 		if (incoming != null && displayOptions.damageTaken)
@@ -5280,17 +5291,17 @@ public class LoadoutLabPanel extends PluginPanel
 			if (!unmodeled)
 			{
 				// The protect-prayer sprite IS the pray call.
-				int sprite = incoming.protectPrayer != null
+int sprite = incoming.protectPrayer != null
 					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
 				if (sprite >= 0)
 				{
-					attachSprite(taken, sprite);
+					attachStatSprite(taken, sprite);
 				}
 				else
 				{
-					taken.setIcon(NO_PRAYER_ICON);
+					taken.setIcon(new FixedWidthIcon(NO_PRAYER_ICON));
+					taken.setIconTextGap(4);
 				}
-				taken.setIconTextGap(3);
 			}
 			panel.add(taken);
 		}
@@ -5300,8 +5311,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// the other defensive facts.
 			JLabel kept = statLine("kept: 4",
 				"Protect Item assumed - a 4th item is kept on death", statText, null);
-			attachSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
-			kept.setIconTextGap(3);
+			attachStatSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
 			panel.add(kept);
 		}
 		String styleText = attackStyleText(result);
@@ -5311,8 +5321,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// xp!) survives in the tooltip.
 			JLabel styleLine = statLine("Style: " + styleText,
 				"Use this attack style: " + result.getAttackType(), statText, null);
-			attachSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
-			styleLine.setIconTextGap(3);
+			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
 			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
@@ -5332,7 +5341,7 @@ public class LoadoutLabPanel extends PluginPanel
 			if (dartItem != null)
 			{
 				attachBackedItemIcon(dart, dartItem.getId());
-				dart.setIconTextGap(3);
+				dart.setIconTextGap(4);
 				attachExclusionMenu(dart, List.of(dartItem));
 			}
 			panel.add(dart);
@@ -5350,7 +5359,7 @@ public class LoadoutLabPanel extends PluginPanel
 				if (weapon != null)
 				{
 					attachBackedItemIcon(builtIn, weapon.getId());
-					builtIn.setIconTextGap(3);
+					builtIn.setIconTextGap(4);
 				}
 				panel.add(builtIn);
 			}
@@ -5362,8 +5371,7 @@ public class LoadoutLabPanel extends PluginPanel
 				int sprite = AssumeIcons.spellSprite(spellName);
 				if (sprite >= 0)
 				{
-					attachSprite(spell, sprite);
-					spell.setIconTextGap(3);
+					attachStatSprite(spell, sprite);
 				}
 				panel.add(spell);
 			}
@@ -5373,8 +5381,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			JLabel bookLine = statLine("Book: " + book,
 				"The autocast spell's spellbook", statText, null);
-			attachSprite(bookLine, net.runelite.api.gameval.SpriteID.Staticons.MAGIC);
-			bookLine.setIconTextGap(3);
+			attachStatSprite(bookLine, net.runelite.api.gameval.SpriteID.Staticons.MAGIC);
 			panel.add(bookLine);
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
@@ -5384,8 +5391,8 @@ public class LoadoutLabPanel extends PluginPanel
 				"Gear prayer bonus - slower prayer drain", statText, null);
 			if (PRAYER_ICON != null)
 			{
-				pray.setIcon(new BackedIcon(PRAYER_ICON));
-				pray.setIconTextGap(3);
+				pray.setIcon(new FixedWidthIcon(new BackedIcon(PRAYER_ICON)));
+				pray.setIconTextGap(4);
 			}
 			panel.add(pray);
 		}
@@ -5394,8 +5401,8 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
 				"<html>Conditional bonuses applied:<br>"
 					+ String.join("<br>", result.getCountedBonuses()) + "</html>", statText, null);
-			counting.setIcon(new BackedIcon(new PlusStarIcon(11)));
-			counting.setIconTextGap(3);
+			counting.setIcon(new FixedWidthIcon(new BackedIcon(new PlusStarIcon(11))));
+			counting.setIconTextGap(4);
 			panel.add(counting);
 		}
 		if (renderingMechanicsNote != null)
@@ -5405,7 +5412,8 @@ public class LoadoutLabPanel extends PluginPanel
 			// it lives in the stat panel with the other set facts).
 			JLabel noteLine = statLine("info",
 				"<html><body style='width:220px'>" + renderingMechanicsNote
-					+ "</body></html>", new Color(200, 170, 110), new InfoIcon(11));
+					+ "</body></html>", new Color(200, 170, 110),
+				new FixedWidthIcon(new InfoIcon(11)));
 			panel.add(noteLine);
 		}
 		panel.add(Box.createVerticalGlue());
@@ -5428,6 +5436,42 @@ public class LoadoutLabPanel extends PluginPanel
 			line.setIconTextGap(3);
 		}
 		return line;
+	}
+
+	/** A fixed-width box that centres its delegate - every stat-panel
+	 * line's icon occupies the SAME column width, so the values start on
+	 * one hard left edge (field spec: a strong visual column). */
+	private static final class FixedWidthIcon implements javax.swing.Icon
+	{
+		static final int WIDTH = 20;
+		static final int HEIGHT = 16;
+		private final javax.swing.Icon delegate;
+
+		FixedWidthIcon(javax.swing.Icon delegate)
+		{
+			this.delegate = delegate;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return WIDTH;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return Math.max(HEIGHT, delegate.getIconHeight());
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			delegate.paintIcon(c,
+				g,
+				x + Math.max(0, (WIDTH - delegate.getIconWidth()) / 2),
+				y + Math.max(0, (getIconHeight() - delegate.getIconHeight()) / 2));
+		}
 	}
 
 	/** A painted red hitsplat for the max-hit line (glyph-safe). */
