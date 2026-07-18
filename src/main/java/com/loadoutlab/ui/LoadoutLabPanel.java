@@ -4081,9 +4081,9 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// The mob's wiki render rides the row; text-only until it
 				// loads (or when the wiki has no picture for it).
-				ImageIcon mobIcon = monsterIcons.get(mob.getName(), 20, () ->
+				ImageIcon mobIcon = monsterIcons.get(mob.getName(), mob.getVersion(), 20, () ->
 				{
-					ImageIcon ready = monsterIcons.get(mob.getName(), 20, null);
+					ImageIcon ready = monsterIcons.get(mob.getName(), mob.getVersion(), 20, null);
 					if (ready != null)
 					{
 						name.setIcon(ready);

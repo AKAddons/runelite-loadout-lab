@@ -62,10 +62,12 @@ public final class MonsterIcons
 	 * The monster's icon at the given height, or null while it loads (or
 	 * after it failed). When null, onReady fires later on the EDT once
 	 * the icon is available - call get() again there for the cache hit.
+	 * The version narrows the wiki file when a per-form image exists
+	 * ("Vanguard (melee).png"); fallbacks strip it and any parenthetical.
 	 */
-	public ImageIcon get(String name, int height, Runnable onReady)
+	public ImageIcon get(String name, String version, int height, Runnable onReady)
 	{
-		String lower = name.toLowerCase(Locale.ROOT);
+		String lower = (name + "|" + (version == null ? "" : version)).toLowerCase(Locale.ROOT);
 		String key = lower + "@" + height;
 		ImageIcon hit = cache.get(key);
 		if (hit != null)
@@ -98,7 +100,7 @@ public final class MonsterIcons
 		{
 			try
 			{
-				BufferedImage img = load(name, lower);
+				BufferedImage img = load(name, version, lower);
 				if (img == null)
 				{
 					failed.add(lower);
@@ -130,7 +132,7 @@ public final class MonsterIcons
 		return null;
 	}
 
-	private BufferedImage load(String name, String lower) throws IOException
+	private BufferedImage load(String name, String version, String lower) throws IOException
 	{
 		File file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
 		if (file.isFile())
@@ -141,7 +143,40 @@ public final class MonsterIcons
 				return disk;
 			}
 		}
-		String encoded = URLEncoder.encode(name + ".png", "UTF-8").replace("+", "%20");
+		// Wiki file-name candidates, most specific first: the per-form
+		// image ("Vanguard (melee).png"), the plain name, and the name
+		// with any corpus parenthetical stripped ("Lizardman shaman
+		// (Chambers of Xeric)" -> "Lizardman shaman.png").
+		List<String> candidates = new ArrayList<>();
+		if (version != null && !version.isEmpty())
+		{
+			candidates.add(name + " (" + version.toLowerCase(Locale.ROOT) + ")");
+		}
+		candidates.add(name);
+		int paren = name.indexOf(" (");
+		if (paren > 0)
+		{
+			candidates.add(name.substring(0, paren));
+		}
+		for (String candidate : candidates)
+		{
+			BufferedImage img = fetch(candidate);
+			if (img != null)
+			{
+				try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream())
+				{
+					ImageIO.write(img, "png", out);
+					Files.write(file.toPath(), out.toByteArray());
+				}
+				return img;
+			}
+		}
+		return null;
+	}
+
+	private BufferedImage fetch(String fileName) throws IOException
+	{
+		String encoded = URLEncoder.encode(fileName + ".png", "UTF-8").replace("+", "%20");
 		Request request = new Request.Builder()
 			.url(WIKI + encoded + "?width=96")
 			.build();
@@ -151,13 +186,7 @@ public final class MonsterIcons
 			{
 				return null;
 			}
-			byte[] bytes = response.body().bytes();
-			BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-			if (img != null)
-			{
-				Files.write(file.toPath(), bytes);
-			}
-			return img;
+			return ImageIO.read(new ByteArrayInputStream(response.body().bytes()));
 		}
 	}
 
