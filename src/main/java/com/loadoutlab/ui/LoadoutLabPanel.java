@@ -5440,19 +5440,8 @@ int sprite = incoming.protectPrayer != null
 		if (renderingStyle == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
 			String spellName = result.getSpellName();
-			if (!renderingBis && spellName != null)
-			{
-				// Yours view: the spell's own sprite in the column (field
-				// spec) - the combo above already carries the name.
-				JLabel spellIcon = statLine("", "Autocast " + spellName, statText, null);
-				int sprite = AssumeIcons.spellSprite(spellName);
-				if (sprite >= 0)
-				{
-					attachStatSprite(spellIcon, sprite);
-					panel.add(spellIcon);
-				}
-			}
-			if (renderingBis && spellName == null)
+			String book = spellBookText(result);
+			if (spellName == null && renderingBis)
 			{
 				// A magic set without an autocast spell is a powered staff.
 				JLabel builtIn = statLine("Built-in",
@@ -5465,28 +5454,40 @@ int sprite = incoming.protectPrayer != null
 				}
 				panel.add(builtIn);
 			}
-			else if (renderingBis)
+			else if (spellName != null)
 			{
-				JLabel spell = statLine(spellName,
-					"Autocast " + spellName + (spellName.contains("Demonbane")
-						? " - assumes Mark of Darkness" : ""), statText, null);
+				// ONE row: <spellbook icon> <spell icon> (field spec), the
+				// game's real book art; the BiS view appends the name (no
+				// combo carries it there).
+				JPanel spellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+				spellRow.setOpaque(false);
+				spellRow.setAlignmentX(LEFT_ALIGNMENT);
+				spellRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+				if (book != null)
+				{
+					JLabel bookIcon = new JLabel();
+					bookIcon.setToolTipText(book + " spellbook - the autocast spell's book");
+					attachStatSprite(bookIcon, spellbookSprite(book));
+					spellRow.add(bookIcon);
+				}
+				JLabel spellIcon = new JLabel();
+				spellIcon.setToolTipText("Autocast " + spellName
+					+ (spellName.contains("Demonbane") ? " - assumes Mark of Darkness" : ""));
 				int sprite = AssumeIcons.spellSprite(spellName);
 				if (sprite >= 0)
 				{
-					attachStatSprite(spell, sprite);
+					attachStatSprite(spellIcon, sprite);
+					spellRow.add(spellIcon);
 				}
-				panel.add(spell);
+				if (renderingBis)
+				{
+					JLabel name = new JLabel(spellName);
+					name.setForeground(statText);
+					name.setFont(name.getFont().deriveFont(Font.BOLD, 12f));
+					spellRow.add(name);
+				}
+				panel.add(spellRow);
 			}
-		}
-		String book = spellBookText(result);
-		if (displayOptions.attackStyle && book != null)
-		{
-			// Icon-only (field spec): a painted tome tinted per book, the
-			// name in the tooltip.
-			JLabel bookLine = statLine("",
-				book + " spellbook - the autocast spell's book", statText,
-				new FixedWidthIcon(new BookIcon(bookTint(book))));
-			panel.add(bookLine);
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
 		if (displayOptions.prayerBonus && prayer != 0)
@@ -5632,64 +5633,20 @@ int sprite = incoming.protectPrayer != null
 		}
 	}
 
-	/** The spellbook tint: standard blue, ancient purple, lunar pale,
-	 * arceuus green - the tooltip carries the name. */
-	private static Color bookTint(String book)
+	/** The game's own spellbook icons (SideIcons): standard = the magic
+	 * tab star, the other books their dedicated sidebar art. */
+	private static int spellbookSprite(String book)
 	{
 		switch (book.toLowerCase(java.util.Locale.ROOT))
 		{
-			case "ancient": return new Color(150, 95, 210);
-			case "lunar": return new Color(175, 185, 205);
-			case "arceuus": return new Color(110, 190, 130);
-			default: return new Color(95, 135, 220);
-		}
-	}
-
-	/** A painted closed tome for the spellbook line (glyph-safe). */
-	private static final class BookIcon implements javax.swing.Icon
-	{
-		private final Color tint;
-
-		BookIcon(Color tint)
-		{
-			this.tint = tint;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return 13;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return 14;
-		}
-
-		@Override
-		public void paintIcon(Component c, Graphics g, int x, int y)
-		{
-			Graphics2D g2 = (Graphics2D) g.create();
-			try
-			{
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-					RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.translate(x, y);
-				g2.setColor(tint.darker());
-				g2.fillRoundRect(0, 1, 12, 12, 3, 3);
-				g2.setColor(tint);
-				g2.fillRoundRect(1, 2, 10, 10, 3, 3);
-				g2.setColor(tint.darker().darker());
-				g2.drawLine(3, 2, 3, 11);
-				g2.setColor(new Color(235, 230, 210));
-				g2.fillRect(6, 5, 4, 1);
-				g2.fillRect(6, 8, 4, 1);
-			}
-			finally
-			{
-				g2.dispose();
-			}
+			case "ancient":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
+			case "lunar":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_LUNAR;
+			case "arceuus":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
+			default:
+				return net.runelite.api.gameval.SpriteID.SideIcons.MAGIC;
 		}
 	}
 
