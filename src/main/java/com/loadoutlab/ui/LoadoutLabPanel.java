@@ -3935,7 +3935,11 @@ public class LoadoutLabPanel extends PluginPanel
 				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
 				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
 				dps.setToolTipText("The shared set's dps against this mob"
-					+ (bis ? " (BiS view)" : ""));
+					+ (bis ? " (BiS view)" : "") + " - " + viewedStyle.toString().toLowerCase());
+				// The viewed style's skill sprite rides the number (field
+				// spec) - same icon language as the tabs.
+				attachSprite(dps, AssumeIcons.styleSprite(viewedStyle));
+				dps.setIconTextGap(3);
 				east.add(dps);
 			}
 			MouseAdapter lens = new MouseAdapter()
