@@ -567,7 +567,8 @@ public class OptimizerService
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
-				BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly);
+				BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
+					ctx.inWilderness && ctx.maxTradeables >= 0);
 				PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 				String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
@@ -1571,7 +1572,8 @@ public class OptimizerService
 		{
 			// Mob-independent plan - MUST mirror computeAllStyles (levels,
 			// boost and labels depend on style + owned + real, not the mob).
-			BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly);
+			BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
+					ctx.inWilderness && ctx.maxTradeables >= 0);
 			PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 			String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 			String boostLabel = joinAssumes(prayerName,

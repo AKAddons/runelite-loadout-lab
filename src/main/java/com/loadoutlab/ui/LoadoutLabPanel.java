@@ -539,6 +539,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * weapon competing for kept slots, and how many are kept. Null spec
 	 * flag = no risk line (not wilderness / option off / BiS view). */
 	private boolean renderingRiskLine;
+	private java.util.List<Integer> renderingRiskConsumables = java.util.Collections.emptyList();
 	/** The upgrade-cost line renders in the stat panel (Yours view). */
 	private boolean renderingUpgradeLine;
 	private GearItem renderingRiskSpecWeapon;
@@ -4917,6 +4918,8 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingUpgradeLine = !bis;
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
+		renderingRiskConsumables = result == null || bis
+			? java.util.Collections.emptyList() : consumableIds(entry, result, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -5202,15 +5205,25 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		PvpRisk.Assessment risk =
 			PvpRisk.assess(best.getLoadout(), renderingRiskSpecWeapon, renderingRiskKeep);
-		JLabel line = statLine(PvpRisk.formatGp(risk.riskGp),
+		// Assumed consumables are RISKED in the wilderness too (field spec
+		// 2026-07-18: a heart is NOT a safe item) - live GE prices, added
+		// on top of the worn set's risk. Protection ranking is not applied
+		// to them (v1 approximation, called out in the tooltip).
+		long consumableRisk = 0;
+		for (int id : renderingRiskConsumables)
+		{
+			consumableRisk += Math.max(0, itemManager.getItemPrice(id));
+		}
+		long totalRisk = risk.riskGp + consumableRisk;
+		JLabel line = statLine(PvpRisk.formatGp(totalRisk),
 			"placeholder",
 			active != null && !active.riskCap.trim().isEmpty()
-				&& risk.riskGp <= parsedBudgetGp(active.riskCap)
+				&& totalRisk <= parsedBudgetGp(active.riskCap)
 				? GOOD : new Color(220, 140, 120),
 			new FixedWidthIcon(new SkullIcon()));
 		int keep = renderingRiskKeep;
 		StringBuilder tip = new StringBuilder("<html>Risk: "
-			+ PvpRisk.formatGp(risk.riskGp) + " gp - " + keep
+			+ PvpRisk.formatGp(totalRisk) + " gp - " + keep
 			+ " kept on death.<br>Kept:");
 		if (risk.kept.isEmpty())
 		{
@@ -5237,6 +5250,18 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				tip.append("<br>- ").append(charge.item.label())
 					.append(" (").append(PvpRisk.formatGp(charge.costGp)).append(")");
+			}
+		}
+		if (consumableRisk > 0)
+		{
+			tip.append("<br>Assumed consumables (risked, not ranked for protection):");
+			for (int id : renderingRiskConsumables)
+			{
+				long price = Math.max(0, itemManager.getItemPrice(id));
+				if (price > 0)
+				{
+					tip.append("<br>- ").append(PvpRisk.formatGp(price)).append(" gp");
+				}
 			}
 		}
 		tip.append("<br>Skulled: keep 0-1.");
