@@ -176,6 +176,16 @@ public final class MonsterIcons
 				}
 			}
 		}
+		// Last resort: form-switching bosses file per combat style
+		// ("Nylocas Vasilias (melee).png", verified live 2026-07-18).
+		for (String suffix : new String[]{" (melee)", " (ranged)", " (magic)"})
+		{
+			String variant = (paren > 0 ? name.substring(0, paren) : name) + suffix;
+			if (!candidates.contains(variant))
+			{
+				candidates.add(variant);
+			}
+		}
 		for (String candidate : candidates)
 		{
 			BufferedImage img = fetch(candidate);
