@@ -1,0 +1,161 @@
+[
+ {
+  "name": "Fight Caves",
+  "members": [
+   {
+    "name": "Tz-Kih"
+   },
+   {
+    "name": "Tz-Kek",
+    "version": "Level 45"
+   },
+   {
+    "name": "Tok-Xil"
+   },
+   {
+    "name": "Yt-MejKot"
+   },
+   {
+    "name": "Ket-Zek"
+   },
+   {
+    "name": "Yt-HurKot",
+    "version": "Level 108"
+   },
+   {
+    "name": "TzTok-Jad"
+   }
+  ],
+  "note": "The full wave roster - healers included (you attack them on Jad).",
+  "aliases": [
+   "jad",
+   "fight cave",
+   "fire cape"
+  ]
+ },
+ {
+  "name": "Inferno",
+  "members": [
+   {
+    "name": "Jal-Nib"
+   },
+   {
+    "name": "Jal-MejRah"
+   },
+   {
+    "name": "Jal-Ak",
+    "version": ""
+   },
+   {
+    "name": "Jal-ImKot"
+   },
+   {
+    "name": "Jal-Xil"
+   },
+   {
+    "name": "Jal-Zek"
+   },
+   {
+    "name": "Jal-MejJak"
+   },
+   {
+    "name": "JalTok-Jad"
+   },
+   {
+    "name": "TzKal-Zuk"
+   }
+  ],
+  "note": "The full wave roster incl. Jad-phase healers; Zuk at his normal phase.",
+  "aliases": [
+   "zuk",
+   "infernal cape"
+  ]
+ },
+ {
+  "name": "Zulrah (all forms)",
+  "members": [
+   {
+    "name": "Zulrah",
+    "version": "Serpentine"
+   },
+   {
+    "name": "Zulrah",
+    "version": "Magma"
+   },
+   {
+    "name": "Zulrah",
+    "version": "Tanzanite"
+   }
+  ],
+  "note": "One set judged across all three forms.",
+  "aliases": [
+   "zulrah"
+  ]
+ },
+ {
+  "name": "Dagannoth Kings",
+  "members": [
+   {
+    "name": "Dagannoth Rex"
+   },
+   {
+    "name": "Dagannoth Prime"
+   },
+   {
+    "name": "Dagannoth Supreme"
+   }
+  ],
+  "note": "The trio - one set for the whole trip.",
+  "aliases": [
+   "dks",
+   "dagannoth"
+  ]
+ },
+ {
+  "name": "Barrows",
+  "members": [
+   {
+    "name": "Ahrim the Blighted"
+   },
+   {
+    "name": "Dharok the Wretched"
+   },
+   {
+    "name": "Guthan the Infested"
+   },
+   {
+    "name": "Karil the Tainted"
+   },
+   {
+    "name": "Torag the Corrupted"
+   },
+   {
+    "name": "Verac the Defiled"
+   }
+  ],
+  "note": "All six brothers.",
+  "aliases": [
+   "brothers"
+  ]
+ },
+ {
+  "name": "Moons of Peril",
+  "members": [
+   {
+    "name": "Blood Moon"
+   },
+   {
+    "name": "Blue Moon"
+   },
+   {
+    "name": "Eclipse Moon",
+    "version": "Regular"
+   }
+  ],
+  "note": "The lunar trio.",
+  "aliases": [
+   "lunar",
+   "perilous moons"
+  ]
+ }
+]
