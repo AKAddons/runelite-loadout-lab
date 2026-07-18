@@ -271,13 +271,14 @@ public interface LoadoutLabConfig extends Config
 		keyName = "defaultRiskCap",
 		name = "Default wilderness risk cap",
 		description = "Seed every new result's wilderness risk cap in gp"
-			+ " (25k, 1m...; empty = unconstrained)",
+			+ " (25k, 1m...; empty = unconstrained). Defaults to 75k so a"
+			+ " wilderness search starts low-risk out of the box.",
 		section = controls,
 		position = 91
 	)
 	default String defaultRiskCap()
 	{
-		return "";
+		return "75k";
 	}
 
 	// --- Connections -----------------------------------------------------
