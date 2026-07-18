@@ -436,6 +436,49 @@ public class RosterOptimizerTest
 			Assert.assertNotNull(meleeVsRangedImmune);
 			Assert.assertTrue("the carried cross weapon rides the inventory",
 				meleeVsRangedImmune.bench.stream().anyMatch(i -> i.getId() == 12926));
+			// NO JUNK (field report): the inventory is the trip PLAN - every
+			// item is worn by some mob's best answer (or is the spec swap).
+			java.util.Set<Integer> planned = new java.util.HashSet<>();
+			for (int j = 0; j < 3; j++)
+			{
+				DpsResult best = null;
+				for (CombatStyle style : CombatStyle.values())
+				{
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					if (r != null && !r.owned.isEmpty()
+						&& (best == null || r.owned.get(0).getDps() > best.getDps()))
+					{
+						best = r.owned.get(0);
+					}
+				}
+				if (best != null)
+				{
+					for (GearItem item : best.getLoadout().getGear().values())
+					{
+						if (item != null)
+						{
+							planned.add(item.getId());
+						}
+					}
+				}
+			}
+			for (int j = 0; j < 3; j++)
+			{
+				for (CombatStyle style : CombatStyle.values())
+				{
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					if (r == null)
+					{
+						continue;
+					}
+					for (GearItem item : r.bench)
+					{
+						Assert.assertTrue("inventory item outside the plan: " + item.label(),
+							planned.contains(item.getId())
+								|| (r.specWeapon != null && item.getId() == r.specWeapon.getId()));
+					}
+				}
+			}
 		}
 		finally
 		{

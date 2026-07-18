@@ -707,12 +707,14 @@ public class OptimizerService
 		return sum;
 	}
 
-	/** The backpack while fighting ONE mob: every carried item (the spec
-	 * weapon, the swap items, and any base piece a worn swap displaced)
-	 * that is NOT currently worn - a worn swap never duplicates into the
-	 * bench (field fix 2026-07-17). */
-	private static List<GearItem> benchFor(Loadout base, GearItem specCarried,
-		List<GearItem> carried, Loadout worn)
+	/** The trip inventory while fighting ONE mob: the roster PLAN (the
+	 * union of what the mobs actually WEAR in their best answers, plus
+	 * the spec weapon) minus what is worn right now. Gear no mob wears
+	 * is not brought at all (field fix 2026-07-17: base-compromise and
+	 * candidate leftovers read as junk at Inventory 20), and a worn item
+	 * never duplicates into the view. */
+	private static List<GearItem> inventoryFor(java.util.Collection<GearItem> plan,
+		GearItem specCarried, Loadout worn)
 	{
 		Set<Integer> wornIds = new java.util.HashSet<>();
 		if (worn != null)
@@ -725,32 +727,21 @@ public class OptimizerService
 				}
 			}
 		}
-		List<GearItem> bench = new ArrayList<>();
-		Set<Integer> benched = new java.util.HashSet<>();
+		List<GearItem> inventory = new ArrayList<>();
+		Set<Integer> packed = new java.util.HashSet<>();
 		if (specCarried != null && !wornIds.contains(specCarried.getId())
-			&& benched.add(specCarried.getId()))
+			&& packed.add(specCarried.getId()))
 		{
-			bench.add(specCarried);
+			inventory.add(specCarried);
 		}
-		for (GearItem item : carried)
+		for (GearItem item : plan)
 		{
-			if (!wornIds.contains(item.getId()) && benched.add(item.getId()))
+			if (!wornIds.contains(item.getId()) && packed.add(item.getId()))
 			{
-				bench.add(item);
+				inventory.add(item);
 			}
 		}
-		if (base != null)
-		{
-			for (GearItem item : base.getGear().values())
-			{
-				if (item != null && !wornIds.contains(item.getId())
-					&& benched.add(item.getId()))
-				{
-					bench.add(item);
-				}
-			}
-		}
-		return bench;
+		return inventory;
 	}
 
 	/** A cross-style carry: another style's weapon (+ its ammo when the
@@ -1374,6 +1365,24 @@ public class OptimizerService
 					shownOwned.set(j, ownedList);
 				}
 			}
+			// The trip PLAN for this style: the union of what the mobs
+			// actually wear across the roster - the inventory view shows
+			// plan-minus-worn, so displaced pieces no mob uses drop out.
+			LinkedHashMap<Integer, GearItem> plan = new LinkedHashMap<>();
+			for (List<DpsResult> ownedList : shownOwned)
+			{
+				if (ownedList.isEmpty())
+				{
+					continue;
+				}
+				for (GearItem item : ownedList.get(0).getLoadout().getGear().values())
+				{
+					if (item != null)
+					{
+						plan.putIfAbsent(item.getId(), item);
+					}
+				}
+			}
 			for (int j = 0; j < n; j++)
 			{
 				MonsterStats mob = mobs.get(j);
@@ -1387,13 +1396,10 @@ public class OptimizerService
 				IncomingDpsCalculator.Result gameIncoming = sharedGame == null ? null
 					: IncomingDpsCalculator.calculate(mob, sharedGame,
 						ctx.real.getDefence(), ctx.real.getMagic());
-				// The bench is a per-mob BACKPACK view: what is carried but
-				// not worn against THIS mob (a worn swap shows the base item
-				// it displaced instead of duplicating).
 				Loadout worn = ownedList.isEmpty() ? sharedOwned
 					: ownedList.get(0).getLoadout();
 				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
-					: benchFor(sharedOwned, specCarried, swaps, worn);
+					: inventoryFor(plan.values(), specCarried, worn);
 				// Mode-trade is not applied per-mob in the roster v1.
 				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming, gameIncoming, null, bench);
@@ -1477,18 +1483,21 @@ public class OptimizerService
 					}
 				}
 				SpecPick[] specs = specsByStyle.get(bestPrimary);
+				// Pass 1 - every (mob, style) answer, and the trip PLAN:
+				// the union of each mob's best worn set. The style's kit
+				// answer: the primary wears the base, a bundled style
+				// wears its weapon into the base armor, and ANY style
+				// whose free best the kit can fully assemble shows it
+				// exactly. A style the kit cannot reach shows nothing on
+				// the Yours side - no set you cannot assemble mid-trip.
+				List<Map<CombatStyle, DpsResult>> shownByMob = new ArrayList<>();
+				LinkedHashMap<Integer, GearItem> plan = new LinkedHashMap<>();
 				for (int j = 0; j < n; j++)
 				{
+					Map<CombatStyle, DpsResult> shown = new EnumMap<>(CombatStyle.class);
+					DpsResult mobBest = null;
 					for (CombatStyle s : sharedByStyle.keySet())
 					{
-						StyleResult old = perMob.get(j).get(s);
-						SpecPick[] gameSpecs = gameSpecsByStyle.get(s);
-						// The style's kit answer: the primary wears the
-						// base, a bundled style wears its weapon into the
-						// base armor, and ANY style whose free best the
-						// kit can fully assemble shows it exactly. A style
-						// the kit cannot reach shows nothing on the Yours
-						// side - no set you cannot assemble mid-trip.
 						DpsResult result = null;
 						OptimizationRequest req = reqsByStyle.get(s).get(j);
 						if (s == bestPrimary)
@@ -1521,6 +1530,35 @@ public class OptimizerService
 						{
 							result = covered;
 						}
+						if (result != null)
+						{
+							shown.put(s, result);
+							if (mobBest == null || result.getDps() > mobBest.getDps())
+							{
+								mobBest = result;
+							}
+						}
+					}
+					shownByMob.add(shown);
+					if (mobBest != null)
+					{
+						for (GearItem item : mobBest.getLoadout().getGear().values())
+						{
+							if (item != null)
+							{
+								plan.putIfAbsent(item.getId(), item);
+							}
+						}
+					}
+				}
+				// Pass 2 - rebuild the tabs; inventory = plan minus worn.
+				for (int j = 0; j < n; j++)
+				{
+					for (CombatStyle s : sharedByStyle.keySet())
+					{
+						StyleResult old = perMob.get(j).get(s);
+						SpecPick[] gameSpecs = gameSpecsByStyle.get(s);
+						DpsResult result = shownByMob.get(j).get(s);
 						List<DpsResult> ownedList = new ArrayList<>();
 						if (result != null)
 						{
@@ -1534,7 +1572,7 @@ public class OptimizerService
 							ownedList.isEmpty() ? null : specs[j], gameSpecs[j],
 							boostLabelByStyle.get(s), old.gameBoostLabel,
 							incoming, old.gameIncoming, null,
-							benchFor(base, specCarried, carried, worn)));
+							inventoryFor(plan.values(), specCarried, worn)));
 					}
 				}
 			}
