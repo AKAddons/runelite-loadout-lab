@@ -51,6 +51,13 @@ public class RosterOptimizerTest
 	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
 		Map<Integer, Integer> owned, int maxSwaps) throws Exception
 	{
+		return run(service, mobs, owned, maxSwaps, Collections.emptyMap());
+	}
+
+	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
+		Map<Integer, Integer> owned, int maxSwaps,
+		Map<Integer, Map<CombatStyle, java.util.Set<Integer>>> excludedByMob) throws Exception
+	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 		service.bestPerStyleAcross(
@@ -58,7 +65,7 @@ public class RosterOptimizerTest
 			new OwnedItems(owned, true), 1, false, false, "",
 			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 			false, false, Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-			maxSwaps, Collections.emptyMap(), null, Collections.emptySet(),
+			maxSwaps, excludedByMob, Collections.emptyMap(), null, Collections.emptySet(),
 			roster ->
 			{
 				out.set(roster);
@@ -624,6 +631,42 @@ public class RosterOptimizerTest
 					immuneTo[j], styleOfAttack(best.getAttackType()));
 			}
 			Assert.assertTrue("the BiS kit shows an inventory", anyInventory);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void exclusionsScopeToTheirMob() throws Exception
+	{
+		// FIELD FIX (2026-07-17): excluding an item for ONE mob keeps it
+		// usable for the rest of the roster - the excluding mob's answer
+		// just never wears it, even when the shared set carries it.
+		LoadoutData data = new DataService().load();
+		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12018, 1);  // salve amulet(ei)
+		Map<Integer, Map<CombatStyle, java.util.Set<Integer>>> excludedByMob =
+			Collections.singletonMap(goblin.profileId(), Collections.singletonMap(
+				CombatStyle.MELEE, Collections.singleton(4151)));
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service,
+				Arrays.asList(vorkath, goblin), owned, 1, excludedByMob);
+			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertNotNull(vsVorkath);
+			Assert.assertFalse("the roster still uses the whip", vsVorkath.owned.isEmpty());
+			Assert.assertEquals(4151, vsVorkath.owned.get(0).getLoadout().getWeapon().getId());
+			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			boolean goblinWearsWhip = vsGoblin != null && !vsGoblin.owned.isEmpty()
+				&& vsGoblin.owned.get(0).getLoadout().getWeapon() != null
+				&& vsGoblin.owned.get(0).getLoadout().getWeapon().getId() == 4151;
+			Assert.assertFalse("the excluding mob never wears its excluded item", goblinWearsWhip);
 		}
 		finally
 		{

@@ -414,7 +414,27 @@ public class OptimizerService
 		int maxSwaps = 1;
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins;
 		Map<CombatStyle, Set<Integer>> excluded;
+		/** PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
+		 * (field decision 2026-07-17): each mob's request carries its own
+		 * exclusions on top of the global set - the group may still use the
+		 * item, the excluding mob's answer never does. */
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob = Collections.emptyMap();
 		com.loadoutlab.data.SpellStats pinnedSpell;
+	}
+
+	/** The style's exclusions for ONE mob: global plus that mob's own. */
+	private static Set<Integer> excludedFor(ComputeContext ctx, CombatStyle style, MonsterStats mob)
+	{
+		Set<Integer> global = ctx.excluded.getOrDefault(style, Collections.emptySet());
+		Map<CombatStyle, Set<Integer>> byMob = ctx.excludedByMob.get(mob.profileId());
+		Set<Integer> per = byMob == null ? null : byMob.get(style);
+		if (per == null || per.isEmpty())
+		{
+			return global;
+		}
+		Set<Integer> merged = new java.util.HashSet<>(global);
+		merged.addAll(per);
+		return merged;
 	}
 
 	/** The query-wide cache key for one monster (per-style state layered on
@@ -714,10 +734,31 @@ public class OptimizerService
 		double sum = 0;
 		for (int j = 0; j < reqs.size(); j++)
 		{
-			DpsResult worn = calc.calculate(reqs.get(j), bestWorn(calc, reqs.get(j), base, carried));
+			DpsResult worn = calcRespecting(calc, reqs.get(j), bestWorn(calc, reqs.get(j), base, carried));
 			sum += (worn == null ? 0 : worn.getDps()) * Math.max(1, mobs.get(j).getHitpoints());
 		}
 		return sum;
+	}
+
+	/** calculate(), refusing a loadout that wears an item EXCLUDED for
+	 * this mob's request (field decision 2026-07-17: exclusions are
+	 * per-mob - the kit may carry the scythe for the roster, but the
+	 * excluding mob's shown answer never wears it). */
+	private static DpsResult calcRespecting(DpsCalculator calc,
+		OptimizationRequest req, Loadout loadout)
+	{
+		Set<Integer> excluded = req.getExcludedItems();
+		if (loadout != null && excluded != null && !excluded.isEmpty())
+		{
+			for (GearItem item : loadout.getGear().values())
+			{
+				if (item != null && excluded.contains(item.getId()))
+				{
+					return null;
+				}
+			}
+		}
+		return calc.calculate(req, loadout);
 	}
 
 	/** The trip inventory while fighting ONE mob: the roster PLAN (the
@@ -913,7 +954,7 @@ public class OptimizerService
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle, int mobIndex)
 	{
 		OptimizationRequest primaryReq = reqsByStyle.get(primary).get(mobIndex);
-		DpsResult best = calc.calculate(primaryReq, bestWorn(calc, primaryReq, base, singles));
+		DpsResult best = calcRespecting(calc, primaryReq, bestWorn(calc, primaryReq, base, singles));
 		for (SwapBundle bundle : bundles)
 		{
 			List<OptimizationRequest> reqs = reqsByStyle.get(bundle.style);
@@ -923,7 +964,7 @@ public class OptimizerService
 				continue;
 			}
 			OptimizationRequest req = reqs.get(mobIndex);
-			DpsResult challenger = calc.calculate(req, bestWorn(calc, req, seeded, singles));
+			DpsResult challenger = calcRespecting(calc, req, bestWorn(calc, req, seeded, singles));
 			if (challenger != null && (best == null || challenger.getDps() > best.getDps()))
 			{
 				best = challenger;
@@ -1099,7 +1140,7 @@ public class OptimizerService
 		Loadout base, List<GearItem> carried)
 	{
 		Loadout worn = base;
-		DpsResult wornResult = calc.calculate(req, worn);
+		DpsResult wornResult = calcRespecting(calc, req, worn);
 		double wornDps = wornResult == null ? 0 : wornResult.getDps();
 		boolean improved = true;
 		java.util.Set<Integer> applied = new java.util.HashSet<>();
@@ -1120,7 +1161,7 @@ public class OptimizerService
 				{
 					continue;
 				}
-				DpsResult r = calc.calculate(req, trial);
+				DpsResult r = calcRespecting(calc, req, trial);
 				double dps = r == null ? 0 : r.getDps();
 				if (dps > bestDps + 1e-9)
 				{
@@ -1201,7 +1242,7 @@ public class OptimizerService
 			double sum = 0;
 			for (OptimizationRequest req : reqs)
 			{
-				DpsResult r = calc.calculate(req, loadout);
+				DpsResult r = calcRespecting(calc, req, loadout);
 				double hp = Math.max(1, req.getMonster().getHitpoints());
 				sum += (r == null ? 0 : r.getDps()) * hp;
 			}
@@ -1272,7 +1313,7 @@ public class OptimizerService
 					mob, style, styleLevels, ctx.unlocks, ctx.requirements,
 					ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
 					ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp))
-					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withExcludedItems(excludedFor(ctx, style, mob))
 					.withSpellbookLock(ctx.lock)
 					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 					.withAntifirePotion(ctx.antifirePotion)
@@ -1293,7 +1334,7 @@ public class OptimizerService
 				OptimizationRequest gameRequest = request(
 					mob, style, gameLevels, PrayerUnlocks.ALL, RequirementProfile.MAXED,
 					CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
-					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withExcludedItems(excludedFor(ctx, style, mob))
 					.withSpellbookLock(ctx.lock)
 					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 					.withAntifirePotion(ctx.antifirePotion)
@@ -1327,7 +1368,7 @@ public class OptimizerService
 					// calculate() returns null vs an immune mob (the TD
 					// shield phases) - an honest empty list, never a null
 					// element the card would trip over.
-					DpsResult shown = calc.calculate(ownedReqs.get(j), sharedOwned);
+					DpsResult shown = calcRespecting(calc, ownedReqs.get(j), sharedOwned);
 					if (shown != null)
 					{
 						ownedList.add(shown);
@@ -1335,7 +1376,7 @@ public class OptimizerService
 				}
 				shownOwned.add(ownedList);
 				shownGame.add(sharedGame == null ? null
-					: calc.calculate(gameReqs.get(j), sharedGame));
+					: calcRespecting(calc, gameReqs.get(j), sharedGame));
 			}
 			SpecPick[] specs = ctx.maxSwaps >= 1
 				? chooseSharedSpec(ctx, style, mobs, ownedReqs,
@@ -1407,7 +1448,7 @@ public class OptimizerService
 				for (int j = 0; j < n; j++)
 				{
 					Loadout worn = bestWorn(calc, ownedReqs.get(j), sharedOwned, swaps);
-					DpsResult shown = calc.calculate(ownedReqs.get(j), worn);
+					DpsResult shown = calcRespecting(calc, ownedReqs.get(j), worn);
 					DpsResult covered = coverableBest(ownedBests.get(j), sharedOwned, swaps);
 					if (covered != null && (shown == null || covered.getDps() > shown.getDps()))
 					{
@@ -1614,7 +1655,7 @@ public class OptimizerService
 				{
 					continue;
 				}
-				DpsResult without = calc.calculate(reqsByStyle.get(s).get(j),
+				DpsResult without = calcRespecting(calc, reqsByStyle.get(s).get(j),
 					withSlot(r.getLoadout(), GearSlot.AMMO, null));
 				if (without == null || without.getDps() < r.getDps() - 1e-9)
 				{
@@ -1643,7 +1684,7 @@ public class OptimizerService
 				{
 					continue;
 				}
-				DpsResult unified = calc.calculate(reqsByStyle.get(s).get(j),
+				DpsResult unified = calcRespecting(calc, reqsByStyle.get(s).get(j),
 					withSlot(r.getLoadout(), GearSlot.AMMO, needed));
 				if (unified != null && unified.getDps() >= r.getDps() - 1e-9)
 				{
@@ -1666,8 +1707,8 @@ public class OptimizerService
 				List<OptimizationRequest> reqs = reqsByStyle.get(entry.getKey());
 				for (int j = 0; j < n && neutral; j++)
 				{
-					DpsResult before = calc.calculate(reqs.get(j), b);
-					DpsResult after = calc.calculate(reqs.get(j), unifiedBase);
+					DpsResult before = calcRespecting(calc, reqs.get(j), b);
+					DpsResult after = calcRespecting(calc, reqs.get(j), unifiedBase);
 					neutral = (after == null ? 0 : after.getDps())
 						>= (before == null ? 0 : before.getDps()) - 1e-9;
 				}
@@ -1782,7 +1823,7 @@ public class OptimizerService
 				OptimizationRequest req = reqsByStyle.get(s).get(j);
 				if (s == bestPrimary)
 				{
-					result = calc.calculate(req,
+					result = calcRespecting(calc, req,
 						bestWorn(calc, req, base, bestKit.singles));
 				}
 				for (SwapBundle bundle : bestKit.bundles)
@@ -1796,7 +1837,7 @@ public class OptimizerService
 					{
 						continue;
 					}
-					DpsResult r = calc.calculate(req,
+					DpsResult r = calcRespecting(calc, req,
 						bestWorn(calc, req, seeded, bestKit.singles));
 					if (r != null && (result == null || r.getDps() > result.getDps()))
 					{
@@ -1886,14 +1927,58 @@ public class OptimizerService
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
 	{
+		bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements, owned,
+			collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
+			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
+			mode, maxSwaps, Collections.emptyMap(), pinnedByStyle, pinnedSpell,
+			protectOnlyItems, callback);
+	}
+
+	/** Per-mob exclusions overload (field decision 2026-07-17): each mob's
+	 * request carries its own exclusions (keyed by profileId) on top of
+	 * the global set - the roster may still use the item, the excluding
+	 * mob's answer never wears it. */
+	public void bestPerStyleAcross(
+		List<MonsterStats> mobs,
+		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
+		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		OptimizeMode mode, int maxSwaps,
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
+		Consumer<RosterResult> callback)
+	{
 		if (mobs == null || mobs.isEmpty())
 		{
 			return;
 		}
 		if (mobs.size() == 1)
 		{
+			// The single-mob fast path merges the mob's own exclusions into
+			// the style map - one request, same semantics. (EnumMap's copy
+			// constructor rejects an empty plain map - build then putAll.)
+			Map<CombatStyle, Set<Integer>> merged = new EnumMap<>(CombatStyle.class);
+			if (excludedByStyle != null)
+			{
+				merged.putAll(excludedByStyle);
+			}
+			Map<CombatStyle, Set<Integer>> perMobExcl = excludedByMob == null ? null
+				: excludedByMob.get(mobs.get(0).profileId());
+			if (perMobExcl != null)
+			{
+				for (Map.Entry<CombatStyle, Set<Integer>> e : perMobExcl.entrySet())
+				{
+					Set<Integer> union = new java.util.HashSet<>(
+						merged.getOrDefault(e.getKey(), Collections.emptySet()));
+					union.addAll(e.getValue());
+					merged.put(e.getKey(), union);
+				}
+			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
-				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
+				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
 				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
 				mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
@@ -1903,6 +1988,7 @@ public class OptimizerService
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
+		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->

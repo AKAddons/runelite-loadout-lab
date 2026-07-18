@@ -1106,34 +1106,51 @@ public class LoadoutLabPlugin extends Plugin
 		return byStyle;
 	}
 
-	/** Roster exclusions are TRANSITIVE (field decision 2026-07-17): each
-	 * member mob brings its own per-monster exclusions, and the union
-	 * applies to the whole group - "never scythe vs Ket-Zek" holds when
-	 * Ket-Zek rides along in the Fight Caves. Synthetic phase variants
-	 * (TD shields) map back to their real monster's profile. */
-	private Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> excludedByStyle(
+	/** Roster exclusions travel PER MOB (field decision 2026-07-17,
+	 * refining the same-day union: "never scythe vs Ket-Zek" means the
+	 * Fight Caves KIT may still carry the scythe, but Ket-Zek's own
+	 * answer never wears it). Global exclusions ride the style map; each
+	 * mob's own exclusions ride this per-profileId map, so synthetic
+	 * phase variants (TD shields) inherit their real monster's profile. */
+	private Map<Integer, Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>>> perMobExclusions(
 		java.util.List<MonsterStats> mobs)
 	{
-		java.util.Set<Integer> global = exclusions.snapshot();
-		EnumMap<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> byStyle =
-			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		Map<Integer, Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>>> byMob =
+			new java.util.HashMap<>();
+		for (MonsterStats mob : mobs)
 		{
-			java.util.Set<Integer> merged = null;
-			for (MonsterStats mob : mobs)
+			EnumMap<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> byStyle = null;
+			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
 			{
 				java.util.Set<Integer> per = mobProfiles.exclusionsFor(mob.profileId(), style.name());
 				if (per.isEmpty())
 				{
 					continue;
 				}
-				if (merged == null)
+				if (byStyle == null)
 				{
-					merged = new java.util.HashSet<>(global);
+					byStyle = new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
 				}
-				merged.addAll(per);
+				byStyle.put(style, per);
 			}
-			byStyle.put(style, merged == null ? global : merged);
+			if (byStyle != null)
+			{
+				byMob.put(mob.profileId(), byStyle);
+			}
+		}
+		return byMob;
+	}
+
+	/** The global exclusion set for every style - the roster path's base
+	 * map; per-mob exclusions layer on top inside the optimizer. */
+	private Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> globalExcludedByStyle()
+	{
+		java.util.Set<Integer> global = exclusions.snapshot();
+		EnumMap<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> byStyle =
+			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		{
+			byStyle.put(style, global);
 		}
 		return byStyle;
 	}
@@ -1530,8 +1547,8 @@ public class LoadoutLabPlugin extends Plugin
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			MonsterStats anchor = mobs.get(0);
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(mobs), maxTradeables, riskBudgetGp, antifirePotion,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps,
+				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion,
+				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, perMobExclusions(mobs),
 				pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
