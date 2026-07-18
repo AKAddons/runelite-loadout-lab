@@ -66,7 +66,7 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(10, groups.size());
+		assertEquals(11, groups.size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
@@ -133,6 +133,17 @@ class MonsterGroupsTest
 		// Search reaches it by player vocabulary.
 		assertEquals("Tormented Demons",
 			MonsterGroups.search(groups, "td", 5).get(0).getName());
+		// The gorillas rotate protection prayers the same way - three
+		// synthetic style-immune phases of one sheet, demon attribute kept.
+		MonsterGroups.MonsterGroup gorillas = byName("Demonic gorillas");
+		assertEquals(3, gorillas.getMobs().size());
+		for (MonsterStats phase : gorillas.getMobs())
+		{
+			assertEquals("Demonic gorilla", phase.getName());
+			assertTrue(phase.hasAttribute("demon"));
+		}
+		assertEquals("Demonic gorillas",
+			MonsterGroups.search(groups, "demonics", 5).get(0).getName());
 		// A synthetic phase's profile id maps back to its real monster,
 		// so pins/exclusions/notes set on the plain mob follow it into
 		// the group (transitive exclusions).

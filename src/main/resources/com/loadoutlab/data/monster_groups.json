@@ -182,6 +182,29 @@
   "note": "One phase per shielded style - the demon's shield locks out one style at a time, so each row shows the best answer while that shield is up."
  },
  {
+  "name": "Demonic gorillas",
+  "members": [
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "melee"
+   },
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "ranged"
+   },
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "magic"
+   }
+  ],
+  "aliases": [
+   "demonics",
+   "gorillas",
+   "demonic"
+  ],
+  "note": "One phase per protection prayer - after enough damage from a style the gorilla prays it away, so each row shows the best answer while that prayer is up."
+ },
+ {
   "name": "Theatre of Blood",
   "inventory": 8,
   "members": [
