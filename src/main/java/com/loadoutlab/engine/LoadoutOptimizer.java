@@ -513,9 +513,11 @@ public final class LoadoutOptimizer
 						// stay within budget. Monotone (adding items never
 						// lowers risk), so pruning partial states is safe.
 						long riskGp = 0;
+						long potentialRiskGp = 0;
 						if (request.isRiskConstrained())
 						{
 							riskGp = PvpRisk.riskGp(loadout, null, request.getMaxTradeables());
+							potentialRiskGp = PvpRisk.riskGp(loadout, null, 0);
 							// A rebuild-burdened item (salve line, imbued
 							// gear) may never ride UNPROTECTED in a low-risk
 							// set, no matter the cap (field request) -
@@ -539,7 +541,7 @@ public final class LoadoutOptimizer
 						// pure cost tie-break picked snakeskin boots over
 						// pegasians. Never outweighs a real DPS difference.
 						next.add(new SearchState(gear, cost,
-							weightedScore(request, score, loadout, incoming), riskGp));
+							weightedScore(request, score, loadout, incoming), riskGp, potentialRiskGp));
 					}
 				}
 				// On DPS ties prefer less risk (an untradeable that crumbles
@@ -945,10 +947,19 @@ public final class LoadoutOptimizer
 		{
 			return new ArrayList<>(next.subList(0, BEAM_WIDTH));
 		}
-		List<SearchState> kept = new ArrayList<>(next.subList(0, BEAM_WIDTH - RISK_RESERVE));
-		List<SearchState> rest = new ArrayList<>(next.subList(BEAM_WIDTH - RISK_RESERVE, next.size()));
-		rest.sort(Comparator.comparingLong(SearchState::getRiskGp));
-		kept.addAll(rest.subList(0, RISK_RESERVE));
+		// The reserve rides ON TOP of the score cut (96 + 8) rather than
+		// displacing its tail: swapping out ranks 89-96 measurably cost
+		// dps on lines whose winner grew from a mid-rank seed.
+		List<SearchState> kept = new ArrayList<>(next.subList(0, BEAM_WIDTH));
+		List<SearchState> rest = new ArrayList<>(next.subList(BEAM_WIDTH, next.size()));
+		// Reserve by TOTAL droppable value, not current unprotected risk:
+		// early partials all tie at riskGp 0 (everything worn so far rides
+		// the kept slots), and a riskGp sort re-kept the score leaders -
+		// the genuinely cheap line still starved (field follow-up
+		// 2026-07-18: KBD magic offered ancient staff while the compliant
+		// dragon hunter wand + cheap-robes line was beam-pruned).
+		rest.sort(Comparator.comparingLong(SearchState::getPotentialRiskGp));
+		kept.addAll(rest.subList(0, Math.min(RISK_RESERVE, rest.size())));
 		return kept;
 	}
 
@@ -1485,18 +1496,25 @@ public final class LoadoutOptimizer
 		private final int cost;
 		private final double score;
 		private final long riskGp;
+		// Total droppable value with NOTHING protected. The RISK_RESERVE
+		// sorts on this, not riskGp: early partials all tie at riskGp 0
+		// (the first worn items ride the kept slots), so a riskGp reserve
+		// just re-kept the score leaders and the cheap line still starved.
+		private final long potentialRiskGp;
 
 		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost)
 		{
-			this(gear, cost, 0.0, 0L);
+			this(gear, cost, 0.0, 0L, 0L);
 		}
 
-		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score, long riskGp)
+		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score, long riskGp,
+			long potentialRiskGp)
 		{
 			this.gear = gear;
 			this.cost = cost;
 			this.score = score;
 			this.riskGp = riskGp;
+			this.potentialRiskGp = potentialRiskGp;
 		}
 
 		private int getCost()
@@ -1512,6 +1530,11 @@ public final class LoadoutOptimizer
 		private long getRiskGp()
 		{
 			return riskGp;
+		}
+
+		private long getPotentialRiskGp()
+		{
+			return potentialRiskGp;
 		}
 	}
 }
