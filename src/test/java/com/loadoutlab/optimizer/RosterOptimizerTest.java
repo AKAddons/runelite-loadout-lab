@@ -153,12 +153,9 @@ public class RosterOptimizerTest
 			Assert.assertTrue("same set, different mobs -> different dps",
 				Math.abs(dps0 - dps1) > 1e-6);
 
-			// The shared game (BiS) set is also single across the roster.
-			if (m0.overallBest != null && m1.overallBest != null)
-			{
-				Assert.assertEquals("the roster shares a single BiS set",
-					setIds(m0.overallBest.getLoadout()), setIds(m1.overallBest.getLoadout()));
-			}
+			// (The old "one shared BiS set" assertion is retired: the BiS
+			// side runs the same kit pass now, so per-mob answers may
+			// legitimately differ within the inventory budget.)
 		}
 		finally
 		{
@@ -525,6 +522,108 @@ public class RosterOptimizerTest
 						r.bench.stream().noneMatch(i -> i.getSlot() == GearSlot.AMMO));
 				}
 			}
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void specCompetesWithSwapsForTheLastSlot() throws Exception
+	{
+		// FIELD FIX (2026-07-17): a spec weapon must not lock the budget
+		// when a cross-style weapon would answer an immune phase. Strong
+		// melee bank + scorching bow + dragon dagger at Inventory 1: the
+		// bow (a whole phase's dps) outbids the dagger's spec - the spec
+		// is DROPPED, the bow rides the inventory.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(29589, 1);  // emberlight (demonbane melee)
+		owned.put(19553, 1);  // amulet of torture
+		owned.put(13239, 1);  // primordial boots
+		owned.put(22981, 1);  // ferocious gloves
+		owned.put(11832, 1);  // bandos chestplate
+		owned.put(11834, 1);  // bandos tassets
+		owned.put(21295, 1);  // infernal cape
+		owned.put(29591, 1);  // scorching bow (demonbane ranged, 2h)
+		owned.put(21326, 1);  // amethyst arrow
+		owned.put(1215, 1);   // dragon dagger (the spec that must lose)
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned, 1);
+			// The melee-immune phase gets the bow's answer.
+			DpsResult phase0 = null;
+			for (CombatStyle style : CombatStyle.values())
+			{
+				OptimizerService.StyleResult r = roster.result.perMob.get(0).get(style);
+				if (r != null && !r.owned.isEmpty()
+					&& (phase0 == null || r.owned.get(0).getDps() > phase0.getDps()))
+				{
+					phase0 = r.owned.get(0);
+				}
+			}
+			Assert.assertNotNull("the melee-immune phase has an answer", phase0);
+			Assert.assertEquals("the carried bow answers the melee shield",
+				29591, phase0.getLoadout().getWeapon().getId());
+			// The spec lost its seat, and the dagger stays home.
+			OptimizerService.StyleResult melee = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(melee);
+			Assert.assertFalse(melee.owned.isEmpty());
+			Assert.assertNull("the spec is dropped for the bow", melee.specWeapon);
+			Assert.assertTrue("the bow rides the inventory",
+				melee.bench.stream().anyMatch(i -> i.getId() == 29591));
+			Assert.assertTrue("the dagger stays home",
+				melee.bench.stream().noneMatch(i -> i.getId() == 1215));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void bisSideRunsTheSameKit() throws Exception
+	{
+		// FIELD REPORT (2026-07-17): the BiS view lagged the Yours view -
+		// no swaps, no inventory, immune holes. The BiS side now runs the
+		// SAME kit pass under the same budget: every phase has a best
+		// answer that respects its shield, and the BiS inventory shows.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // owned gear is irrelevant to the BiS side
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned, 1);
+			CombatStyle[] immuneTo = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
+			boolean anyInventory = false;
+			for (int j = 0; j < 3; j++)
+			{
+				DpsResult best = null;
+				for (CombatStyle style : CombatStyle.values())
+				{
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					if (r == null)
+					{
+						continue;
+					}
+					anyInventory |= !r.gameBench.isEmpty();
+					if (r.overallBest != null
+						&& (best == null || r.overallBest.getDps() > best.getDps()))
+					{
+						best = r.overallBest;
+					}
+				}
+				Assert.assertNotNull("BiS phase " + j + " has a kit answer", best);
+				Assert.assertTrue(best.getDps() > 0);
+				Assert.assertNotEquals("BiS phase " + j + " must not attack into its shield",
+					immuneTo[j], styleOfAttack(best.getAttackType()));
+			}
+			Assert.assertTrue("the BiS kit shows an inventory", anyInventory);
 		}
 		finally
 		{

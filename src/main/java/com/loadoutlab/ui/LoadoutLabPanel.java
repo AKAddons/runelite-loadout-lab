@@ -3379,17 +3379,15 @@ public class LoadoutLabPanel extends PluginPanel
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
-		if (!entry.viewingBis)
+		// Land on the RECOMMENDED tab (field spec 2026-07-17): the kit can
+		// answer the lensed mob in any style - never open on a tab where
+		// it is immune. One shared set per style is no longer the rule
+		// once swaps are involved.
+		DpsResult rowBest = mobRowResult(entry, entry.lensIndex,
+			entry.selectedTab, entry.viewingBis);
+		if (rowBest != null)
 		{
-			// Land on the RECOMMENDED tab (field spec 2026-07-17): the kit
-			// can answer the lensed mob in any style - never open on a tab
-			// where it is immune. One shared set per style is no longer
-			// the rule once swaps are involved.
-			DpsResult rowBest = mobRowResult(entry, entry.lensIndex, entry.selectedTab, false);
-			if (rowBest != null)
-			{
-				entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
-			}
+			entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
 		}
 		renderPage();
 	}
@@ -3428,15 +3426,13 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			entry.results = entry.perMobResults.get(index);
 		}
-		if (!entry.viewingBis)
+		// Follow the row (field spec 2026-07-17): the kit can answer this
+		// mob in another style - the viewed tab switches with it, on the
+		// Yours and BiS side alike.
+		DpsResult rowBest = mobRowResult(entry, index, entry.selectedTab, entry.viewingBis);
+		if (rowBest != null)
 		{
-			// Follow the row (field spec 2026-07-17): the kit can answer
-			// this mob in another style - the viewed tab switches with it.
-			DpsResult rowBest = mobRowResult(entry, index, entry.selectedTab, false);
-			if (rowBest != null)
-			{
-				entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
-			}
+			entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
 		}
 		if (entry == active)
 		{
@@ -3970,7 +3966,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private javax.swing.JComponent inventoryRow(StyleResult result)
+	private javax.swing.JComponent inventoryRow(StyleResult result, boolean bis)
 	{
 		// A wrapping grid, NOT a single flow line: at Inventory 20 the
 		// carried items overflow one row, and a clipped weapon swap reads
@@ -3995,8 +3991,9 @@ public class LoadoutLabPanel extends PluginPanel
 		row.add(prefix, BorderLayout.WEST);
 		JPanel cells = new JPanel(new java.awt.GridLayout(0, 6, 3, 3));
 		cells.setOpaque(false);
-		int specId = result.specWeapon != null ? result.specWeapon.getId() : -1;
-		for (GearItem item : result.bench)
+		GearItem specWeapon = bis ? result.gameSpecWeapon : result.specWeapon;
+		int specId = specWeapon != null ? specWeapon.getId() : -1;
+		for (GearItem item : bis ? result.gameBench : result.bench)
 		{
 			boolean isSpec = item.getId() == specId;
 			JLabel cell = new JLabel();
@@ -4128,9 +4125,9 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** One mob's row result: on the Yours side, the kit's BEST answer
-	 * across ALL styles (the carried swaps can answer different mobs with
-	 * different styles); on the BiS side, the viewed style's ceiling. */
+	/** One mob's row result: the side's kit BEST across ALL styles - the
+	 * carried swaps can answer different mobs with different styles, on
+	 * the Yours and the BiS side alike. */
 	private DpsResult mobRowResult(ResultEntry entry, int index, CombatStyle style, boolean bis)
 	{
 		Map<CombatStyle, StyleResult> map = null;
@@ -4146,16 +4143,12 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return null;
 		}
-		if (bis)
-		{
-			StyleResult r = style == null ? null : map.get(style);
-			return r == null ? null : r.overallBest;
-		}
 		DpsResult best = null;
 		for (StyleResult r : map.values())
 		{
-			DpsResult shown = r == null || r.owned == null || r.owned.isEmpty()
-				? null : r.owned.get(0);
+			DpsResult shown = r == null ? null
+				: bis ? r.overallBest
+				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
 			if (shown != null && (best == null || shown.getDps() > best.getDps()))
 			{
 				best = shown;
@@ -4678,12 +4671,12 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
-		if (!bis && result != null && !result.bench.isEmpty())
+		if (result != null && !(bis ? result.gameBench : result.bench).isEmpty())
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
-			// but not worn against the lensed mob.
+			// but not worn against the lensed mob. Both sides have a kit.
 			card.add(Box.createVerticalStrut(4));
-			card.add(inventoryRow(result));
+			card.add(inventoryRow(result, bis));
 		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
@@ -5185,17 +5178,19 @@ public class LoadoutLabPanel extends PluginPanel
 	 * show/filter treats carried swaps exactly like worn gear. */
 	private Set<Integer> inventoryIds(CombatStyle style)
 	{
-		if (active == null || active.results == null || active.viewingBis)
+		if (active == null || active.results == null)
 		{
 			return Collections.emptySet();
 		}
 		StyleResult r = active.results.get(style);
-		if (r == null || r.bench.isEmpty())
+		List<GearItem> inv = r == null ? Collections.emptyList()
+			: active.viewingBis ? r.gameBench : r.bench;
+		if (inv.isEmpty())
 		{
 			return Collections.emptySet();
 		}
 		Set<Integer> ids = new java.util.HashSet<>();
-		for (GearItem item : r.bench)
+		for (GearItem item : inv)
 		{
 			ids.add(item.getId());
 		}
