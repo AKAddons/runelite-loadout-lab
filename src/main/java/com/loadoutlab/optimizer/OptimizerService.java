@@ -566,16 +566,20 @@ public class OptimizerService
 					continue;
 				}
 				// Assume the best boost the player OWNS (drink what you
-				// bring), never below what is already live.
-				BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
-					ctx.inWilderness && ctx.maxTradeables >= 0);
+				// bring), never below what is already live - unless the
+				// RAID supplies its own (CoX overload+, ToA salts).
+				BoostProfile supplied = com.loadoutlab.engine.RaidBoosts.suppliedBoost(monster);
+				BoostProfile boost = supplied != null ? supplied
+					: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
+						ctx.inWilderness && ctx.maxTradeables >= 0);
 				PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 				String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
 					boost == BoostProfile.NONE ? null : boost.toString());
 				// The ceiling assumes the best prayers/boost in the GAME,
 				// not just what this player has unlocked or owns.
-				BoostProfile gameBoost = BoostSelector.ceilingFor(style, ctx.f2pOnly);
+				BoostProfile gameBoost = supplied != null ? supplied
+					: BoostSelector.ceilingFor(style, ctx.f2pOnly);
 				PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
 					ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
@@ -1572,13 +1576,26 @@ public class OptimizerService
 		{
 			// Mob-independent plan - MUST mirror computeAllStyles (levels,
 			// boost and labels depend on style + owned + real, not the mob).
-			BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
+			// The roster assumes the raid's own boost when EVERY mob is
+			// inside the same raid (CoX overload+, ToA salts).
+			BoostProfile supplied = com.loadoutlab.engine.RaidBoosts.suppliedBoost(mobs.get(0));
+			for (MonsterStats mob : mobs)
+			{
+				if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob) != supplied)
+				{
+					supplied = null;
+					break;
+				}
+			}
+			BoostProfile boost = supplied != null ? supplied
+				: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
 					ctx.inWilderness && ctx.maxTradeables >= 0);
 			PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 			String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 			String boostLabel = joinAssumes(prayerName,
 				boost == BoostProfile.NONE ? null : boost.toString());
-			BoostProfile gameBoost = BoostSelector.ceilingFor(style, ctx.f2pOnly);
+			BoostProfile gameBoost = supplied != null ? supplied
+				: BoostSelector.ceilingFor(style, ctx.f2pOnly);
 			PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
 			String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
 				ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
