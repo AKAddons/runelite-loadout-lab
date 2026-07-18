@@ -230,6 +230,33 @@
   "note": "Both forms - the crawling form prays away magic and ranged, the airborne form prays away melee."
  },
  {
+  "name": "Abyssal Sire",
+  "members": [
+   {
+    "name": "Respiratory system"
+   },
+   {
+    "name": "Abyssal Sire",
+    "version": "Phase 1"
+   },
+   {
+    "name": "Abyssal Sire",
+    "version": "Phase 3 (stage 2)"
+   },
+   {
+    "name": "Spawn"
+   },
+   {
+    "name": "Scion"
+   }
+  ],
+  "aliases": [
+   "sire",
+   "abyssal"
+  ],
+  "note": "The whole fight: respiratory systems (phase 1), the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1), and the spawn/scion adds."
+ },
+ {
   "name": "Theatre of Blood (Entry)",
   "inventory": 8,
   "members": [
@@ -382,7 +409,28 @@
     "name": "Agile Scarab"
    },
    {
-    "name": "Akkha"
+    "name": "Akkha",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Melee only"
+   },
+   {
+    "name": "Akkha",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Ranged only"
+   },
+   {
+    "name": "Akkha",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Magic only"
    },
    {
     "name": "Zebak"
@@ -423,7 +471,7 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
  },
  {
   "name": "Chambers of Xeric",

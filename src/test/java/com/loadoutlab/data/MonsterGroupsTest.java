@@ -66,13 +66,14 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(13, groups.size());
+		assertEquals(14, groups.size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
-		assertEquals(11, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(5, byName("Abyssal Sire").getMobs().size());
 		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
 		// The Jad in the Fight Caves roster is the real one, not the
 		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
@@ -199,6 +200,25 @@ class MonsterGroupsTest
 			crawling, com.loadoutlab.engine.CombatStyle.RANGED));
 		assertEquals("Kalphite Queen",
 			MonsterGroups.search(groups, "kq", 5).get(0).getName());
+		// Akkha cycles prayers leaving exactly ONE style live per phase.
+		java.util.List<MonsterStats> akkha = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> m.getName().equals("Akkha"))
+			.collect(java.util.stream.Collectors.toList());
+		assertEquals(3, akkha.size());
+		for (MonsterStats phase : akkha)
+		{
+			int immune = 0;
+			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+			{
+				if (com.loadoutlab.engine.MonsterMechanics.styleImmune(phase, style))
+				{
+					immune++;
+				}
+			}
+			assertEquals(2, immune, phase.getVersion() + " must leave exactly one style live");
+		}
+		assertEquals("Abyssal Sire",
+			MonsterGroups.search(groups, "sire", 5).get(0).getName());
 		// Olm is head plus both claws.
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());
