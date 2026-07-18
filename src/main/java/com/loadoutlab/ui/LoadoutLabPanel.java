@@ -3874,7 +3874,9 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		String current = entry.riskCap == null ? "" : entry.riskCap;
 		String edited = (String) JOptionPane.showInputDialog(this,
-			"Wilderness risk cap in gp (25k, 1m...; empty = unconstrained):",
+			"<html>Wilderness risk cap in gp (25k, 1m...; empty ="
+				+ " unconstrained).<br>The default for new searches can be"
+				+ " changed in the plugin settings panel.</html>",
 			"Risk cap", JOptionPane.PLAIN_MESSAGE, null, null, current);
 		if (edited != null && !edited.equals(current))
 		{
