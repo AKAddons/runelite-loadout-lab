@@ -205,7 +205,98 @@
   "note": "One phase per protection prayer - after enough damage from a style the gorilla prays it away, so each row shows the best answer while that prayer is up."
  },
  {
-  "name": "Theatre of Blood",
+  "name": "Kalphite Queen",
+  "members": [
+   {
+    "name": "Kalphite Queen",
+    "version": "Crawling",
+    "immuneTo": [
+     "magic",
+     "ranged"
+    ],
+    "label": "Crawling (melee only)"
+   },
+   {
+    "name": "Kalphite Queen",
+    "version": "Airborne",
+    "immuneTo": "melee",
+    "label": "Airborne (no melee)"
+   }
+  ],
+  "aliases": [
+   "kq",
+   "kalphite"
+  ],
+  "note": "Both forms - the crawling form prays away magic and ranged, the airborne form prays away melee."
+ },
+ {
+  "name": "Theatre of Blood (Entry)",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "The Maiden of Sugadinti",
+    "version": "Entry Mode"
+   },
+   {
+    "name": "Pestilent Bloat",
+    "version": "Entry"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Entry - Melee form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Entry - Ranged form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Entry - Magic form"
+   },
+   {
+    "name": "Sotetseg",
+    "version": "Entry"
+   },
+   {
+    "name": "Xarpus",
+    "version": "Entry mode"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 1"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 2"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 3"
+   }
+  ],
+  "aliases": [
+   "tob entry",
+   "entry mode tob"
+  ],
+  "note": "Entry-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style."
+ },
+ {
+  "name": "Theatre of Blood (Hard)",
   "inventory": 8,
   "members": [
    {
@@ -218,7 +309,30 @@
    },
    {
     "name": "Nylocas Vasilias",
-    "version": "Hard"
+    "version": "Hard",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Hard - Melee form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Hard - Ranged form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Hard - Magic form"
    },
    {
     "name": "Sotetseg",
@@ -226,7 +340,7 @@
    },
    {
     "name": "Xarpus",
-    "version": "Normal mode"
+    "version": "Hard mode"
    },
    {
     "name": "Verzik Vitur",
@@ -245,9 +359,10 @@
    "tob",
    "theatre",
    "theater",
-   "verzik"
+   "verzik",
+   "hmt"
   ],
-  "note": "The six rooms of the Theatre. The corpus merges normal-mode stat rows under the hard-mode labels, so these rows cover the regular raid."
+  "note": "Hard-mode rows for all six rooms; the corpus merges normal-mode stats into these labels, so this is also the closest fit for the regular raid. Each Nylocas Vasilias form takes damage only from its own style."
  },
  {
   "name": "Tombs of Amascut",
@@ -261,18 +376,45 @@
     "version": "Shielded"
    },
    {
+    "name": "Arcane Scarab"
+   },
+   {
+    "name": "Agile Scarab"
+   },
+   {
     "name": "Akkha"
    },
    {
     "name": "Zebak"
    },
    {
+    "name": "Obelisk (Tombs of Amascut)"
+   },
+   {
     "name": "Elidinis' Warden",
-    "version": "Damaged"
+    "version": "Damaged",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "P2 (magic only)"
    },
    {
     "name": "Tumeken's Warden",
-    "version": "Damaged"
+    "version": "Damaged",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "P2 (ranged only)"
+   },
+   {
+    "name": "Elidinis' Warden",
+    "version": "Enraged"
+   },
+   {
+    "name": "Tumeken's Warden",
+    "version": "Enraged"
    }
   ],
   "aliases": [
@@ -281,7 +423,7 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths and the Wardens (phase-3 damaged forms)."
+  "note": "The four paths (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
  },
  {
   "name": "Chambers of Xeric",

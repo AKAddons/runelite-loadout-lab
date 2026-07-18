@@ -66,12 +66,13 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(11, groups.size());
+		assertEquals(13, groups.size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
-		assertEquals(8, byName("Theatre of Blood").getMobs().size());
-		assertEquals(6, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
+		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
+		assertEquals(11, byName("Tombs of Amascut").getMobs().size());
 		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
 		// The Jad in the Fight Caves roster is the real one, not the
 		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
@@ -160,20 +161,50 @@ class MonsterGroupsTest
 	@DisplayName("the raid groups resolve and answer to player vocabulary")
 	void raidGroups()
 	{
-		assertEquals("Theatre of Blood",
-			MonsterGroups.search(groups, "tob", 5).get(0).getName());
+		assertTrue(MonsterGroups.search(groups, "tob", 5).get(0).getName()
+			.startsWith("Theatre of Blood"));
 		assertEquals("Tombs of Amascut",
 			MonsterGroups.search(groups, "toa", 5).get(0).getName());
 		assertEquals("Chambers of Xeric",
 			MonsterGroups.search(groups, "cox", 5).get(0).getName());
-		// Verzik's three phases ride the ToB roster.
-		assertEquals(3, byName("Theatre of Blood").getMobs().stream()
-			.filter(m -> m.getName().equals("Verzik Vitur")).count());
+		// Verzik's three phases and Vasilias's three forms ride each mode.
+		for (String mode : new String[]{"Theatre of Blood (Entry)", "Theatre of Blood (Hard)"})
+		{
+			assertEquals(3, byName(mode).getMobs().stream()
+				.filter(m -> m.getName().equals("Verzik Vitur")).count());
+			assertEquals(3, byName(mode).getMobs().stream()
+				.filter(m -> m.getName().equals("Nylocas Vasilias")).count());
+		}
+		// A Vasilias form takes damage ONLY from its own style.
+		MonsterStats meleeForm = byName("Theatre of Blood (Hard)").getMobs().stream()
+			.filter(m -> m.getVersion().contains("Melee form")).findFirst().orElseThrow(AssertionError::new);
+		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			meleeForm, com.loadoutlab.engine.CombatStyle.MELEE));
+		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			meleeForm, com.loadoutlab.engine.CombatStyle.RANGED));
+		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			meleeForm, com.loadoutlab.engine.CombatStyle.MAGIC));
+		// The P2 Wardens are single-style; KQ crawling is melee-only.
+		MonsterStats elidinis = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> m.getVersion().contains("magic only")).findFirst().orElseThrow(AssertionError::new);
+		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			elidinis, com.loadoutlab.engine.CombatStyle.MELEE));
+		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			elidinis, com.loadoutlab.engine.CombatStyle.MAGIC));
+		MonsterStats crawling = byName("Kalphite Queen").getMobs().stream()
+			.filter(m -> m.getVersion().contains("melee only")).findFirst().orElseThrow(AssertionError::new);
+		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			crawling, com.loadoutlab.engine.CombatStyle.MELEE));
+		assertTrue(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			crawling, com.loadoutlab.engine.CombatStyle.RANGED));
+		assertEquals("Kalphite Queen",
+			MonsterGroups.search(groups, "kq", 5).get(0).getName());
 		// Olm is head plus both claws.
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());
 		// Raids preset a bigger Inventory default; other groups do not.
-		assertEquals(8, byName("Theatre of Blood").getInventory());
+		assertEquals(8, byName("Theatre of Blood (Entry)").getInventory());
+		assertEquals(8, byName("Theatre of Blood (Hard)").getInventory());
 		assertEquals(8, byName("Tombs of Amascut").getInventory());
 		assertEquals(8, byName("Chambers of Xeric").getInventory());
 		assertEquals(0, byName("Fight Caves").getInventory());

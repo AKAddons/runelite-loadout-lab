@@ -110,14 +110,44 @@ public final class MonsterGroups
 					}
 					if (member.has("immuneTo"))
 					{
-						// A synthetic per-phase variant (TD shield rotation):
-						// same sheet, new id + label, immunity attribute.
-						String style = member.get("immuneTo").getAsString().toLowerCase(Locale.ROOT);
-						String label = Character.toUpperCase(style.charAt(0)) + style.substring(1)
-							+ " immune";
+						// A synthetic per-phase variant (TD shields, KQ
+						// forms, Nylocas forms, Warden P2): same sheet, new
+						// id + label, one or SEVERAL immunity attributes.
+						// The id ordinal is the style bitmask (melee 1,
+						// ranged 2, magic 4) so every combo stays distinct.
+						List<String> styles = new ArrayList<>();
+						JsonElement immuneTo = member.get("immuneTo");
+						if (immuneTo.isJsonArray())
+						{
+							for (JsonElement e : immuneTo.getAsJsonArray())
+							{
+								styles.add(e.getAsString().toLowerCase(Locale.ROOT));
+							}
+						}
+						else
+						{
+							styles.add(immuneTo.getAsString().toLowerCase(Locale.ROOT));
+						}
+						int mask = 0;
+						List<String> attributes = new ArrayList<>();
+						StringBuilder joined = new StringBuilder();
+						for (String style : styles)
+						{
+							mask |= styleBit(style);
+							attributes.add("immune_" + style);
+							if (joined.length() > 0)
+							{
+								joined.append(" + ");
+							}
+							joined.append(Character.toUpperCase(style.charAt(0)))
+								.append(style.substring(1));
+						}
+						String label = member.has("label")
+							? member.get("label").getAsString()
+							: joined + " immune";
 						resolved = resolved.immuneVariant(
-							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + styleOrdinal(style),
-							label, "immune_" + style);
+							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + mask,
+							label, attributes);
 					}
 					mobs.add(resolved);
 				}
@@ -144,13 +174,13 @@ public final class MonsterGroups
 		return groups;
 	}
 
-	private static int styleOrdinal(String style)
+	private static int styleBit(String style)
 	{
 		switch (style)
 		{
-			case "melee": return 0;
-			case "ranged": return 1;
-			default: return 2; // magic
+			case "melee": return 1;
+			case "ranged": return 2;
+			default: return 4; // magic
 		}
 	}
 

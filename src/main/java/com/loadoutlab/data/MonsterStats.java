@@ -102,8 +102,18 @@ public final class MonsterStats
 	 */
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
 	{
+		return immuneVariant(syntheticId, versionLabel,
+			java.util.Collections.singletonList(immuneAttribute));
+	}
+
+	/** Multi-immunity variant: a phase can lock out SEVERAL styles at
+	 * once (Kalphite Queen's first form prays off magic AND ranged; a
+	 * Nylocas form takes only its own style). */
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel,
+		java.util.List<String> immuneAttributes)
+	{
 		java.util.List<String> extended = new java.util.ArrayList<>(attributes);
-		extended.add(immuneAttribute);
+		extended.addAll(immuneAttributes);
 		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
 			size, defence, magic, offensiveMagic, defensive, offence, extended,
 			slayerMonster, weaknessElement, weaknessSeverity);
