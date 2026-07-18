@@ -5437,11 +5437,22 @@ int sprite = incoming.protectPrayer != null
 			}
 			panel.add(dart);
 		}
-		if (renderingBis && renderingStyle == CombatStyle.MAGIC
-			&& displayOptions.spellControls)
+		if (renderingStyle == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
 			String spellName = result.getSpellName();
-			if (spellName == null)
+			if (!renderingBis && spellName != null)
+			{
+				// Yours view: the spell's own sprite in the column (field
+				// spec) - the combo above already carries the name.
+				JLabel spellIcon = statLine("", "Autocast " + spellName, statText, null);
+				int sprite = AssumeIcons.spellSprite(spellName);
+				if (sprite >= 0)
+				{
+					attachStatSprite(spellIcon, sprite);
+					panel.add(spellIcon);
+				}
+			}
+			if (renderingBis && spellName == null)
 			{
 				// A magic set without an autocast spell is a powered staff.
 				JLabel builtIn = statLine("Built-in",
@@ -5454,7 +5465,7 @@ int sprite = incoming.protectPrayer != null
 				}
 				panel.add(builtIn);
 			}
-			else
+			else if (renderingBis)
 			{
 				JLabel spell = statLine(spellName,
 					"Autocast " + spellName + (spellName.contains("Demonbane")
