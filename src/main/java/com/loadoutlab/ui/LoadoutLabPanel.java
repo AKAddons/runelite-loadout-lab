@@ -435,8 +435,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color POSTIT_FG = new Color(215, 205, 160);
 
 	private final JTextField searchField = new JTextField();
-	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
-	private final JList<MonsterStats> monsterList = new JList<>(monsterModel);
+	/** Search hits: MonsterStats rows and MonsterGroups.MonsterGroup rows
+	 * (M-3) share the list - the renderer and selection handler branch. */
+	private final DefaultListModel<Object> monsterModel = new DefaultListModel<>();
+	private final JList<Object> monsterList = new JList<>(monsterModel);
+	private final java.util.List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
 	private final JScrollPane monsterScroll;
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
@@ -617,6 +620,7 @@ public class LoadoutLabPanel extends PluginPanel
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
+		this.groups = com.loadoutlab.data.MonsterGroups.load(data);
 		this.bankFilter = bankFilter;
 		this.protectOnlyToggle = protectOnlyToggle;
 		this.data = data;
@@ -761,7 +765,17 @@ public class LoadoutLabPanel extends PluginPanel
 				int index, boolean isSelected, boolean cellHasFocus)
 			{
 				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				setText(((MonsterStats) value).label());
+				if (value instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				{
+					// Group hits wear the accent - they expand into a
+					// whole roster, not a single mob.
+					setText(((com.loadoutlab.data.MonsterGroups.MonsterGroup) value).label());
+					setForeground(isSelected ? Color.WHITE : ACCENT);
+				}
+				else
+				{
+					setText(((MonsterStats) value).label());
+				}
 				return this;
 			}
 		});
@@ -933,7 +947,13 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
 			{
-				select(monsterList.getSelectedValue());
+				Object hit = monsterList.getSelectedValue();
+				if (hit instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				{
+					selectGroup((com.loadoutlab.data.MonsterGroups.MonsterGroup) hit);
+					return;
+				}
+				select((MonsterStats) hit);
 			}
 		});
 
@@ -1227,6 +1247,11 @@ public class LoadoutLabPanel extends PluginPanel
 			revalidate();
 			return;
 		}
+		for (com.loadoutlab.data.MonsterGroups.MonsterGroup group
+			: com.loadoutlab.data.MonsterGroups.search(groups, query, 3))
+		{
+			monsterModel.addElement(group);
+		}
 		for (MonsterStats m : data.searchMonsters(query, SEARCH_LIMIT))
 		{
 			monsterModel.addElement(m);
@@ -1356,6 +1381,102 @@ public class LoadoutLabPanel extends PluginPanel
 				computeEntry(entry);
 			}
 		}
+	}
+
+	/** A group pick (M-3): the roster expands into ONE multi-mob result -
+	 * recorded as a back/forward step exactly like a monster pick. */
+	private void selectGroup(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	{
+		if (historyControl == null || (selectedMonster == null && !hadSelection))
+		{
+			applyGroupSelection(group);
+			return;
+		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			private java.util.List<ResultEntry> pageAfter;
+			private ResultEntry activeAfter;
+
+			@Override
+			public boolean apply()
+			{
+				if (pageAfter == null)
+				{
+					applyGroupSelection(group);
+					pageAfter = new java.util.ArrayList<>(page);
+					activeAfter = active;
+				}
+				else
+				{
+					// Redo reinstates the SAME entries - results intact.
+					restorePage(pageAfter, activeAfter);
+				}
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				restorePage(pageBefore, activeBefore);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "vs " + group.getName();
+			}
+		});
+	}
+
+	/** The group expansion: a fresh page holding one roster entry. */
+	private void applyGroupSelection(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	{
+		suppressSearchEvents = true;
+		try
+		{
+			searchField.setText("");
+		}
+		finally
+		{
+			suppressSearchEvents = false;
+		}
+		monsterModel.clear();
+		monsterScroll.setVisible(false);
+		hadSelection = true;
+		page.clear();
+		MonsterStats first = group.getMobs().get(0);
+		selectedMonster = first;
+		active = new ResultEntry(first);
+		for (int i = 1; i < group.getMobs().size(); i++)
+		{
+			active.addMob(group.getMobs().get(i));
+		}
+		// Parameter seeding mirrors a single pick, anchored on the first
+		// mob (the roster compute anchors exclusions/pins there too).
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first);
+		active.upgradeBudget = displayOptions.upgradeBudget
+			? displayOptions.defaultUpgradeBudget : "";
+		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
+		page.add(active);
+		syncControlsFromActive();
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
+		bankHighlighter.highlight(null);
+		bankFilter.filter(null);
+		applyActiveMonsterUi(first);
+		usageLog.record(group.getName());
+		setNoteCollapsed(mobProfile.note(first.getId()).isEmpty());
+		refreshNotePanel();
+		revalidate();
+		repaint();
+		renderPage();
+		statusLabel.setText(" ");
+		computeEntry(active);
 	}
 
 	/** The selection itself: collapse the dropdown, show it, recompute. */
