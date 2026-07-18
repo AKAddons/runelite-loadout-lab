@@ -5102,9 +5102,20 @@ public class LoadoutLabPanel extends PluginPanel
 				? "Needs leaf-bladed / broad / Magic Dart"
 				: flying
 					? "Flying - needs a halberd"
-					: bis ? "No usable set exists." : "No usable owned set found.");
+					: bis ? "No usable set exists."
+					: effectiveWilderness(entry) && riskCap(entry) >= 0
+						? "No owned set fits the risk cap."
+						: "No usable owned set found.");
 			none.setForeground(MUTED);
 			none.setAlignmentX(LEFT_ALIGNMENT);
+			if (!bis && effectiveWilderness(entry) && riskCap(entry) >= 0)
+			{
+				none.setToolTipText("Every combination for this style busts the"
+					+ " wilderness risk cap - protecting a pricey required item"
+					+ " (a dragonfire shield...) can evict another valuable from"
+					+ " the kept slots. Raise the Risk cap, enable Protect item,"
+					+ " or allow the excluded cheap alternative");
+			}
 			if (vyre)
 			{
 				none.setToolTipText("Only the Ivandis flail, blisterwood weapons,"
