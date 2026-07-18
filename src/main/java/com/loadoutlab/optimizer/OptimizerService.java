@@ -691,7 +691,14 @@ public class OptimizerService
 				List<DpsResult> ownedList = new ArrayList<>();
 				if (sharedOwned != null)
 				{
-					ownedList.add(calc.calculate(ownedReqs.get(j), sharedOwned));
+					// calculate() returns null vs an immune mob (the TD
+					// shield phases) - an honest empty list, never a null
+					// element the card would trip over.
+					DpsResult shown = calc.calculate(ownedReqs.get(j), sharedOwned);
+					if (shown != null)
+					{
+						ownedList.add(shown);
+					}
 				}
 				shownOwned.add(ownedList);
 				shownGame.add(sharedGame == null ? null

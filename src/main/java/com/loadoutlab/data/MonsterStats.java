@@ -92,6 +92,23 @@ public final class MonsterStats
 		this.revenant = this.nameLower.startsWith("revenant");
 	}
 
+	/**
+	 * A synthetic per-phase variant (M-3 groups): the same stat sheet under
+	 * a new id + version label, with an immunity attribute the engine
+	 * honors ("immune_melee"...). Tormented demons' shield rotation is the
+	 * flagship: one variant per shielded style, so a roster shows the best
+	 * set for each phase. The NAME is preserved - name-keyed rules (the
+	 * TD damage reduction, boss overrides) keep applying.
+	 */
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
+	{
+		java.util.List<String> extended = new java.util.ArrayList<>(attributes);
+		extended.add(immuneAttribute);
+		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, extended,
+			slayerMonster, weaknessElement, weaknessSeverity);
+	}
+
 	/** Lowercased monster name, cached (per-trial engine gates). */
 	public String getNameLower()
 	{

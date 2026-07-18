@@ -280,6 +280,44 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void tormentedDemonPhasesHonorTheShieldInTheRoster() throws Exception
+	{
+		// The TD group's synthetic phases (M-3): the melee-immune phase must
+		// return NO melee set, while the two hittable phases share one.
+		LoadoutData data = new DataService().load();
+		java.util.List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups =
+			com.loadoutlab.data.MonsterGroups.load(data);
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = groups.stream()
+			.filter(g -> g.getName().equals("Tormented Demons"))
+			.findFirst().orElseThrow(() -> new AssertionError("no TD group"));
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip (also bypasses the TD reduction)
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(11907, 1);  // trident of the seas
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned);
+			Assert.assertEquals(3, roster.result.perMob.size());
+			// Phase order in the curation: melee, ranged, magic immune.
+			OptimizerService.StyleResult meleeVsMeleeImmune =
+				roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertTrue("no melee set vs the melee-shielded phase",
+				meleeVsMeleeImmune == null || meleeVsMeleeImmune.owned.isEmpty());
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m2 = roster.result.perMob.get(2).get(CombatStyle.MELEE);
+			Assert.assertFalse("hittable phases carry the shared melee set", m1.owned.isEmpty());
+			Assert.assertFalse(m2.owned.isEmpty());
+			Assert.assertEquals("one shared set across the hittable phases",
+				setIds(m1.owned.get(0).getLoadout()), setIds(m2.owned.get(0).getLoadout()));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	/** Thin holder so the helper can return the typed roster result. */
 	private static final class RosterResultView
 	{

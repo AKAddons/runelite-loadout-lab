@@ -157,5 +157,28 @@
    "lunar",
    "perilous moons"
   ]
+ },
+ {
+  "name": "Tormented Demons",
+  "members": [
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "melee"
+   },
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "ranged"
+   },
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "magic"
+   }
+  ],
+  "aliases": [
+   "td",
+   "tds",
+   "tormented"
+  ],
+  "note": "One phase per shielded style - the demon's shield locks out one style at a time, so each row shows the best answer while that shield is up."
  }
 ]

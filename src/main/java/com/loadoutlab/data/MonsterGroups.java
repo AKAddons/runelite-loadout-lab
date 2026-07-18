@@ -94,10 +94,22 @@ public final class MonsterGroups
 					MonsterStats resolved = resolve(data,
 						member.get("name").getAsString(),
 						member.has("version") ? member.get("version").getAsString() : null);
-					if (resolved != null)
+					if (resolved == null)
 					{
-						mobs.add(resolved);
+						continue;
 					}
+					if (member.has("immuneTo"))
+					{
+						// A synthetic per-phase variant (TD shield rotation):
+						// same sheet, new id + label, immunity attribute.
+						String style = member.get("immuneTo").getAsString().toLowerCase(Locale.ROOT);
+						String label = Character.toUpperCase(style.charAt(0)) + style.substring(1)
+							+ " immune";
+						resolved = resolved.immuneVariant(
+							9_000_000 + resolved.getId() * 10 + styleOrdinal(style),
+							label, "immune_" + style);
+					}
+					mobs.add(resolved);
 				}
 				List<String> aliases = new ArrayList<>();
 				if (row.has("aliases"))
@@ -119,6 +131,16 @@ public final class MonsterGroups
 			return groups;
 		}
 		return groups;
+	}
+
+	private static int styleOrdinal(String style)
+	{
+		switch (style)
+		{
+			case "melee": return 0;
+			case "ranged": return 1;
+			default: return 2; // magic
+		}
 	}
 
 	/** Exact-name match; version disambiguates when given, otherwise the

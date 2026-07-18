@@ -66,7 +66,7 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(6, groups.size());
+		assertEquals(7, groups.size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
@@ -96,6 +96,40 @@ class MonsterGroupsTest
 			MonsterGroups.search(groups, "zuk", 5).get(0).getName());
 		assertEquals("Dagannoth Kings",
 			MonsterGroups.search(groups, "dks", 5).get(0).getName());
+	}
+
+	@Test
+	@DisplayName("tormented demon phases are synthetic style-immune variants of one sheet")
+	void tormentedDemonPhases()
+	{
+		MonsterGroups.MonsterGroup tds = byName("Tormented Demons");
+		assertEquals(3, tds.getMobs().size());
+		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		for (MonsterStats phase : tds.getMobs())
+		{
+			assertTrue(ids.add(phase.getId()), "synthetic ids must be distinct");
+			assertEquals("Tormented Demon", phase.getName(),
+				"the NAME survives - name-keyed TD rules keep applying");
+			assertEquals(600, phase.getHitpoints());
+			assertTrue(phase.hasAttribute("demon"));
+		}
+		// Each phase is immune to exactly its shielded style.
+		com.loadoutlab.engine.CombatStyle[] styles = {
+			com.loadoutlab.engine.CombatStyle.MELEE,
+			com.loadoutlab.engine.CombatStyle.RANGED,
+			com.loadoutlab.engine.CombatStyle.MAGIC};
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				assertEquals(i == j, com.loadoutlab.engine.MonsterMechanics
+						.styleImmune(tds.getMobs().get(i), styles[j]),
+					tds.getMobs().get(i).getVersion() + " vs " + styles[j]);
+			}
+		}
+		// Search reaches it by player vocabulary.
+		assertEquals("Tormented Demons",
+			MonsterGroups.search(groups, "td", 5).get(0).getName());
 	}
 
 	private static MonsterGroups.MonsterGroup byName(String name)

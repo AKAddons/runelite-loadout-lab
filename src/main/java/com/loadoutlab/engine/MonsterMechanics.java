@@ -83,6 +83,12 @@ public final class MonsterMechanics
 		{
 			return false;
 		}
+		// Data-driven immunity (synthetic group variants - the tormented
+		// demon shield phases): the attribute wins before the id lists.
+		if (monster.hasAttribute("immune_" + style.name().toLowerCase(java.util.Locale.ROOT)))
+		{
+			return true;
+		}
 		switch (style)
 		{
 			case MAGIC: return IMMUNE_MAGIC.contains(monster.getId());
@@ -98,6 +104,12 @@ public final class MonsterMechanics
 		if (monster == null)
 		{
 			return false;
+		}
+		// Data-driven immunity (synthetic group variants) gates the
+		// calculator too - no loadout reaches a shielded style.
+		if (monster.hasAttribute("immune_" + style.name().toLowerCase(java.util.Locale.ROOT)))
+		{
+			return true;
 		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();
