@@ -214,6 +214,50 @@ public class OptimizerServiceTest
 	}
 
 	@Test
+	public void crossStyleSpecWeaponsCompeteOnEverySet() throws Exception
+	{
+		// Field request 2026-07-17: "sometimes you want to use magic +
+		// chally" - the spec swap is its own weapon switch, so a MELEE
+		// spec weapon must surface on the MAGIC set when it is the best
+		// special owned. Owned: a trident (the magic set) + a dragon
+		// dagger (melee spec) and nothing else spec-worthy.
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("ankou", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(11907, 1);  // trident of the seas
+		owned.put(1215, 1);   // dragon dagger
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+				new OwnedItems(owned, true), 1, false, false, "",
+				java.util.Collections.emptySet(), -1,
+				OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+				false, java.util.Collections.emptySet(), 0,
+				OptimizerService.OptimizeMode.MAX_DPS,
+				java.util.Collections.emptyMap(), null, results ->
+				{
+					out.set(results);
+					done.countDown();
+				});
+			Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+			OptimizerService.StyleResult magic = out.get().get(CombatStyle.MAGIC);
+			Assert.assertNotNull(magic);
+			Assert.assertFalse("premise: the trident set exists", magic.owned.isEmpty());
+			Assert.assertNotNull("the melee dagger specs for the magic set", magic.spec);
+			Assert.assertEquals(1215, magic.specWeapon.getId());
+			Assert.assertTrue(magic.specExpectedDamage > 0);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
 	{
 		LoadoutData data = new DataService().load();
@@ -248,6 +292,11 @@ public class OptimizerServiceTest
 			Assert.assertNotNull(melee.gameSpec);
 			Assert.assertNotNull(melee.gameSpecWeapon);
 			Assert.assertTrue(melee.gameSpecExpectedDamage >= melee.specExpectedDamage);
+			// Both sides of the Yours|BiS toggle carry their own defensive
+			// story - the BiS DTPS is computed vs the BiS armour, not yours.
+			Assert.assertNotNull(melee.incoming);
+			Assert.assertNotNull(melee.gameIncoming);
+			Assert.assertTrue(melee.gameIncoming.unprayedDps > 0);
 		}
 		finally
 		{

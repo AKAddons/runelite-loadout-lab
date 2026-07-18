@@ -17,7 +17,7 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigSection(
 		name = "Controls",
-		description = "Which input controls appear above the results",
+		description = "Which parameter chips and buttons each result card offers",
 		position = 1
 	)
 	String controls = "controls";
@@ -161,20 +161,6 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "classicGearLayout",
-		name = "Classic gear layout",
-		description = "Lay each set out like the in-game worn-equipment tab"
-			+ " (5 rows of 3) instead of the compact grid. The spec weapon"
-			+ " sits in the empty slot left of the legs.",
-		section = display,
-		position = 11
-	)
-	default boolean classicGearLayout()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = "loadingAnimation",
 		name = "Loading animation",
 		description = "Show the animated mascot while the optimizer computes a"
@@ -266,6 +252,33 @@ public interface LoadoutLabConfig extends Config
 	default boolean npcRightClickEntry()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "defaultUpgradeBudget",
+		name = "Default upgrade budget",
+		description = "Seed every new result's upgrade budget (750k, 1m, 1.5b;"
+			+ " - = unlimited; empty = owned gear only)",
+		section = controls,
+		position = 90
+	)
+	default String defaultUpgradeBudget()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "defaultRiskCap",
+		name = "Default wilderness risk cap",
+		description = "Seed every new result's wilderness risk cap in gp"
+			+ " (25k, 1m...; empty = unconstrained). Defaults to 75k so a"
+			+ " wilderness search starts low-risk out of the box.",
+		section = controls,
+		position = 91
+	)
+	default String defaultRiskCap()
+	{
+		return "75k";
 	}
 
 	// --- Connections -----------------------------------------------------

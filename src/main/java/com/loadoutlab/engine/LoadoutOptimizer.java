@@ -279,6 +279,21 @@ public final class LoadoutOptimizer
 		return loadout.getBonuses().getPrayer() * 1000L + defenceSum;
 	}
 
+	/**
+	 * TERTIARY DPS-tie breaker, after setUtility: the set's damage bonuses
+	 * across ALL styles. Field bug: the Avernic treads ornament variants
+	 * tie exactly on the magic tab (same magic damage, same defence, zero
+	 * prayer), so the (et) kit could displace the strictly-dominating
+	 * (max) - data order decided. When everything the style cares about
+	 * ties, prefer the set that is better everywhere else.
+	 */
+	private static long setCrossStyleDamage(Loadout loadout)
+	{
+		return loadout.getBonuses().getStrength()
+			+ loadout.getBonuses().getRangedStrength()
+			+ loadout.getBonuses().getMagicDamage();
+	}
+
 	public List<DpsResult> optimize(LoadoutData data, OptimizationRequest request)
 	{
 		if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null)
@@ -335,6 +350,7 @@ public final class LoadoutOptimizer
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
 			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
+			.thenComparingLong(r -> -setCrossStyleDamage(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return merged.size() > request.getResultLimit()
 			? new ArrayList<>(merged.subList(0, request.getResultLimit())) : merged;
@@ -577,6 +593,7 @@ public final class LoadoutOptimizer
 			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
 			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
+			.thenComparingLong(r -> -setCrossStyleDamage(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		if (antifireAssumed)
 		{
@@ -756,6 +773,7 @@ public final class LoadoutOptimizer
 		}
 		merged.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
 			.thenComparingLong(r -> -setUtility(r.getLoadout()))
+			.thenComparingLong(r -> -setCrossStyleDamage(r.getLoadout()))
 			.thenComparingInt(DpsResult::getPurchaseCost));
 		return merged.size() > request.getResultLimit() ? new ArrayList<>(merged.subList(0, request.getResultLimit())) : merged;
 	}
@@ -1002,6 +1020,21 @@ public final class LoadoutOptimizer
 			}
 		}
 		if (request.getStyle() == CombatStyle.RANGED && (name.contains("crystal helm") || name.contains("crystal body") || name.contains("crystal legs") || name.contains("bow of faerdhinen") || name.contains("crystal bow")))
+		{
+			score += 2_500.0;
+		}
+		// Void: the whole set's value lives in the DPS model, the pieces
+		// carry ~zero raw stats - without a boost the zero-score prune
+		// drops the helm/gloves outright and a stocked bank's top-N cut
+		// drops the top/robe, so the set could NEVER assemble for a
+		// well-geared account (field question 2026-07-17 - it only worked
+		// when you owned little else). The style's own helm gates entry.
+		if (name.contains("void knight top") || name.contains("elite void top")
+			|| name.contains("void knight robe") || name.contains("elite void robe")
+			|| name.contains("void knight gloves")
+			|| (request.getStyle() == CombatStyle.RANGED && name.contains("void ranger helm"))
+			|| (request.getStyle() == CombatStyle.MAGIC && name.contains("void mage helm"))
+			|| (request.getStyle() == CombatStyle.MELEE && name.contains("void melee helm")))
 		{
 			score += 2_500.0;
 		}

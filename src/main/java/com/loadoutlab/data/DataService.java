@@ -239,6 +239,17 @@ public final class DataService
 					attributes.add(attr.getAsString());
 				}
 			}
+			// Burn immunity rides the attribute list as a synthetic marker
+			// (no MonsterStats signature churn): the eclipse/scorching burn
+			// class is a NORMAL burn, blocked by Normal or Strong immunity
+			// (official calc isImmuneToNormalBurns; Weak does not block it).
+			JsonObject immunities = row.has("immunities") && row.get("immunities").isJsonObject()
+				? row.getAsJsonObject("immunities") : null;
+			String burn = immunities == null ? "" : string(immunities, "burn");
+			if ("normal".equalsIgnoreCase(burn) || "strong".equalsIgnoreCase(burn))
+			{
+				attributes.add("burn_immune");
+			}
 
 			result.add(new MonsterStats(
 				integer(row, "id", -1),

@@ -180,6 +180,15 @@ public final class SpecialAttack
 	/** The definition for this weapon at this combat style, or null. */
 	public static SpecialAttack match(GearItem item, CombatStyle style)
 	{
+		SpecialAttack spec = match(item);
+		return spec != null && spec.style == style ? spec : null;
+	}
+
+	/** Style-free match: the spec swap is its own weapon switch, so every
+	 * spec weapon is a candidate for ANY set (field request 2026-07-17 -
+	 * "sometimes you want to use magic + chally"). */
+	public static SpecialAttack match(GearItem item)
+	{
 		if (item == null || item.getSlot() != GearSlot.WEAPON)
 		{
 			return null;
@@ -187,10 +196,6 @@ public final class SpecialAttack
 		String name = item.getNameLower();
 		for (SpecialAttack spec : REGISTRY)
 		{
-			if (spec.style != style)
-			{
-				continue;
-			}
 			for (String prefix : spec.namePrefixes)
 			{
 				if (name.startsWith(prefix))

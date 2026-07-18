@@ -18,7 +18,7 @@
         "engine/LoadoutOptimizerTest.java"
       ],
       "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word."
+      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."
     },
     {
       "id": "game-best",
@@ -96,9 +96,9 @@
     },
     {
       "id": "dream-items",
-      "title": "Dream items",
+      "title": "Simulated items",
       "group": "Gear sources",
-      "anchor": "dream-items",
+      "anchor": "simulated-items",
       "media": "docs/img/dream-items.png",
       "code": [
         "collection/DreamStore.java",
@@ -110,7 +110,7 @@
         "engine/DreamAndBudgetTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot."
+      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list."
     },
     {
       "id": "upgrade-budget",

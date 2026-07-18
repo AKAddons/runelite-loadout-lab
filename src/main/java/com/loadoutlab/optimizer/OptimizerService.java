@@ -109,18 +109,21 @@ public class OptimizerService
 		public final String gameBoostLabel;
 		/** What the boss does back to you in the shown owned set (nullable). */
 		public final IncomingDpsCalculator.Result incoming;
+		/** Same, in the game-best set - the BiS side's DTPS (nullable). */
+		public final IncomingDpsCalculator.Result gameIncoming;
 		/** The frontier trade the chosen mode made: dps given up vs damage
 		 * cut, as whole percents (null on max dps / when no better trade). */
 		public final ModeTrade modeTrade;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming,
+			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
 			ModeTrade modeTrade)
 		{
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
 			this.incoming = incoming;
+			this.gameIncoming = gameIncoming;
 			this.modeTrade = modeTrade;
 			this.owned = owned;
 			this.overallBest = overallBest;
@@ -282,38 +285,17 @@ public class OptimizerService
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
-		final Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins =
-			pinnedByStyle == null ? Collections.emptyMap() : pinnedByStyle;
-		final Map<CombatStyle, Set<Integer>> excluded = excludedByStyle == null
-			? Collections.emptyMap() : excludedByStyle;
-		final Set<Integer> dreams = dreamItems == null
-			? Collections.emptySet() : dreamItems;
-		final Set<Integer> protectOnly = protectOnlyItems == null
-			? Collections.emptySet() : protectOnlyItems;
-		final String lock = spellbookLock == null ? "" : spellbookLock;
-		final PlayerLevels real = realLevels == null ? boostedLevels : realLevels;
-		// A free world has no members prayers, whatever the account has
-		// unlocked - F2P mode caps the book at Mystic Might (audit A3.5).
-		final PrayerUnlocks unlocks = f2pOnly ? PrayerUnlocks.F2P
-			: prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
-		// The budget only matters when risk-constrained; pin it otherwise so
-		// flipping the dropdown with the cap off cannot split the cache.
-		final int riskBudget = maxTradeables >= 0
-			? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-		final String baseKey = collectionFingerprint + "|" + monster.getId() + "|" + f2pOnly
-			+ "|" + onSlayerTask + "|" + lock + "|" + unlocks.key()
-			+ "|" + maxTradeables + "|" + riskBudget + "|" + antifirePotion
-			+ "|" + inWilderness
-			+ "|" + dreams.hashCode() + "|" + upgradeBudgetGp
-			+ "|" + (mode == null ? OptimizeMode.MAX_DPS : mode).name()
-			+ "|" + protectOnly.hashCode()
-			+ "|" + levelKey(real) + "|" + levelKey(boostedLevels);
+		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
+			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			dreamItems, upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell, protectOnlyItems);
+		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
 		{
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
-				StyleResult hit = cache.get(styleKey(baseKey, style, pins, excluded, pinnedSpell));
+				StyleResult hit = cache.get(styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell));
 				if (hit == null)
 				{
 					allCached = null;
@@ -327,7 +309,6 @@ public class OptimizerService
 			callback.accept(allCached);
 			return;
 		}
-		final OptimizeMode chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
 		{
@@ -336,22 +317,73 @@ public class OptimizerService
 				abandonedForTest++;
 				return; // superseded while queued
 			}
-			LoadoutData dataset = f2pOnly ? f2pView() : data;
-			// Owned ornament/locked variants count as their base item - the
-			// suggestion always shows the base version.
-			OwnedItems effectiveOwned = new OwnedItems(
-				dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
+			Map<CombatStyle, StyleResult> results = computeAllStyles(monster, ctx, ticket);
+			if (results == null || requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return; // superseded during or after the compute
+			}
+			callback.accept(results);
+		});
+	}
+
+	/** Every query-wide value the per-style compute needs, gathered once so
+	 * the roster path can run computeAllStyles for each mob. */
+	private static final class ComputeContext
+	{
+		LoadoutData dataset;
+		OwnedItems effectiveOwned;
+		PlayerLevels real;
+		PlayerLevels boostedLevels;
+		PrayerUnlocks unlocks;
+		RequirementProfile requirements;
+		boolean f2pOnly;
+		boolean onSlayerTask;
+		boolean antifirePotion;
+		boolean inWilderness;
+		String lock;
+		int maxTradeables;
+		int riskBudget;
+		int upgradeBudgetGp;
+		int collectionFingerprint;
+		Set<Integer> dreams;
+		Set<Integer> protectOnly;
+		OptimizeMode chosenMode;
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins;
+		Map<CombatStyle, Set<Integer>> excluded;
+		com.loadoutlab.data.SpellStats pinnedSpell;
+	}
+
+	/** The query-wide cache key for one monster (per-style state layered on
+	 * top by styleKey). Centralised so the fast path and computeAllStyles
+	 * can never drift into split/colliding cache buckets. */
+	private static String baseKeyFor(MonsterStats monster, ComputeContext ctx)
+	{
+		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
+			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
+			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion
+			+ "|" + ctx.inWilderness
+			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
+			+ "|" + ctx.chosenMode.name()
+			+ "|" + ctx.protectOnly.hashCode()
+			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
+	}
+
+	private Map<CombatStyle, StyleResult> computeAllStyles(
+		MonsterStats monster, ComputeContext ctx, long ticket)
+	{
+		String baseKey = baseKeyFor(monster, ctx);
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 			{
 				if (requestSeq.get() != ticket)
 				{
 					abandonedForTest++;
-					return; // superseded mid-flight - abandon between styles
+					return null; // superseded mid-flight - abandon between styles
 				}
 				// Styles cache independently: a pin or per-set exclusion on
 				// one style leaves the other two answers standing.
-				String styleKey = styleKey(baseKey, style, pins, excluded, pinnedSpell);
+				String styleKey = styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell);
 				StyleResult cachedStyle;
 				synchronized (cache)
 				{
@@ -364,58 +396,58 @@ public class OptimizerService
 				}
 				// Assume the best boost the player OWNS (drink what you
 				// bring), never below what is already live.
-				BoostProfile boost = BoostSelector.bestFor(style, effectiveOwned, f2pOnly);
-				PlayerLevels styleLevels = real.boosted(boost, boostedLevels).max(boostedLevels);
-				String prayerName = PrayerBonuses.bestAvailable(styleLevels, unlocks).nameFor(style);
+				BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly);
+				PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
+				String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
 				String boostLabel = joinAssumes(prayerName,
 					boost == BoostProfile.NONE ? null : boost.toString());
 				// The ceiling assumes the best prayers/boost in the GAME,
 				// not just what this player has unlocked or owns.
-				BoostProfile gameBoost = BoostSelector.ceilingFor(style, f2pOnly);
-				PlayerLevels gameLevels = real.boosted(gameBoost, boostedLevels).max(boostedLevels);
+				BoostProfile gameBoost = BoostSelector.ceilingFor(style, ctx.f2pOnly);
+				PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
 				String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
-					f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
+					ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
 				String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
 				// Dreams are pretend-owned; a positive upgrade budget also
 				// admits anything buyable within it (total spend, tracked
 				// by the beam).
 				OptimizationRequest ownedRequest = request(
-					monster, style, styleLevels, unlocks, requirements,
-					upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
-					effectiveOwned, 3, onSlayerTask, Math.max(0, upgradeBudgetGp))
-					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
-					.withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
-					.withAntifirePotion(antifirePotion)
-					.withInWilderness(inWilderness)
-					.withDreamItems(dreams)
-					.withProtectOnlyItems(protectOnly)
+					monster, style, styleLevels, ctx.unlocks, ctx.requirements,
+					ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+					ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp))
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withDreamItems(ctx.dreams)
+					.withProtectOnlyItems(ctx.protectOnly)
 					// Pins shape YOUR set only; game best stays the pure
 					// ceiling so the cost of the preference is visible.
-					.withPinnedItems(pins.getOrDefault(style, Collections.emptyMap()));
-				if (style == CombatStyle.MAGIC && pinnedSpell != null)
+					.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
+				if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
 				{
 					// The mob's pinned autocast spell: forced, the search
 					// optimizes the gear around it.
-					ownedRequest = ownedRequest.withSpell(pinnedSpell);
+					ownedRequest = ownedRequest.withSpell(ctx.pinnedSpell);
 				}
-				List<DpsResult> ownedBest = optimizer.optimize(dataset, ownedRequest);
+				List<DpsResult> ownedBest = optimizer.optimize(ctx.dataset, ownedRequest);
 				if (!ownedBest.isEmpty())
 				{
 					// The displayed set: top up DPS-neutral empty slots with
 					// prayer/defensive gear (verified not to change the DPS).
-					ownedBest.set(0, optimizer.fillDpsNeutralSlots(dataset, ownedRequest, ownedBest.get(0)));
-					ownedBest.set(0, optimizer.ensureRequiredUtility(dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, ownedRequest, ownedBest.get(0)));
 				}
 				// D-4 frontier: when the mode wants safety, sweep defense
 				// weights, walk the (dps out, dps in) frontier, and swap the
 				// displayed set for the mode's pick. Every downstream number
 				// (spec, incoming, risk) then describes the chosen set.
 				ModeTrade modeTrade = null;
-				if (chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
+				if (ctx.chosenMode != OptimizeMode.MAX_DPS && !ownedBest.isEmpty())
 				{
-					modeTrade = applyMode(dataset, ownedRequest, ownedBest, chosenMode,
-						monster, real, ticket);
+					modeTrade = applyMode(ctx.dataset, ownedRequest, ownedBest, ctx.chosenMode,
+						monster, ctx.real, ticket);
 				}
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
@@ -427,30 +459,34 @@ public class OptimizerService
 				OptimizationRequest gameRequest = request(
 					monster, style, gameLevels, PrayerUnlocks.ALL,
 					RequirementProfile.MAXED,
-					CandidateMode.ALL_STANDARD, effectiveOwned, 1, onSlayerTask, 0)
-					.withExcludedItems(excluded.getOrDefault(style, Collections.emptySet()))
-					.withSpellbookLock(lock)
-					.withMaxTradeables(maxTradeables).withRiskBudgetGp(riskBudget)
-					.withAntifirePotion(antifirePotion)
-					.withInWilderness(inWilderness)
-					.withProtectOnlyItems(protectOnly);
-				List<DpsResult> gameBest = optimizer.optimize(dataset, gameRequest);
+					CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withProtectOnlyItems(ctx.protectOnly);
+				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
 				if (!gameBest.isEmpty())
 				{
-					gameBest.set(0, optimizer.fillDpsNeutralSlots(dataset, gameRequest, gameBest.get(0)));
-					gameBest.set(0, optimizer.ensureRequiredUtility(dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, gameRequest, gameBest.get(0)));
 				}
-				SpecPick spec = bestSpec(dataset, ownedRequest, ownedBest, style, monster, styleLevels, effectiveOwned);
-				SpecPick gameSpec = bestSpec(dataset, gameRequest, gameBest, style, monster, gameLevels, null);
+				SpecPick spec = bestSpec(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned);
+				SpecPick gameSpec = bestSpec(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null);
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
 				IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
 					? null
 					: IncomingDpsCalculator.calculate(
-						monster, ownedBest.get(0).getLoadout(), real.getDefence(), real.getMagic());
+						monster, ownedBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
+				IncomingDpsCalculator.Result gameIncoming = gameBest.isEmpty()
+					? null
+					: IncomingDpsCalculator.calculate(
+						monster, gameBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
 				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, modeTrade);
+					boostLabel, gameBoostLabel, incoming, gameIncoming, modeTrade);
 				// Store per style as computed - even a superseded job donates
 				// the styles it finished.
 				synchronized (cache)
@@ -459,12 +495,285 @@ public class OptimizerService
 				}
 				results.put(style, styleResult);
 			}
+		return results;
+	}
+
+	/** Gather the query-wide state one compute needs. Shared by the single-
+	 * mob (bestPerStyle) and roster (bestPerStyleAcross) entry points so the
+	 * two can never disagree on levels, cache keys, or candidate eligibility. */
+	private ComputeContext buildContext(
+		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
+		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		OptimizeMode mode, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
+	{
+		ComputeContext ctx = new ComputeContext();
+		ctx.pins = pinnedByStyle == null ? Collections.emptyMap() : pinnedByStyle;
+		ctx.excluded = excludedByStyle == null ? Collections.emptyMap() : excludedByStyle;
+		ctx.dreams = dreamItems == null ? Collections.emptySet() : dreamItems;
+		ctx.protectOnly = protectOnlyItems == null ? Collections.emptySet() : protectOnlyItems;
+		ctx.lock = spellbookLock == null ? "" : spellbookLock;
+		ctx.real = realLevels == null ? boostedLevels : realLevels;
+		ctx.boostedLevels = boostedLevels;
+		// A free world has no members prayers - F2P caps the book (audit A3.5).
+		ctx.unlocks = f2pOnly ? PrayerUnlocks.F2P
+			: prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
+		// The budget only matters when risk-constrained; pin it otherwise so
+		// flipping the dropdown with the cap off cannot split the cache.
+		ctx.riskBudget = maxTradeables >= 0 ? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+		ctx.chosenMode = mode == null ? OptimizeMode.MAX_DPS : mode;
+		ctx.dataset = f2pOnly ? f2pView() : data;
+		// Owned ornament/locked variants count as their base item.
+		ctx.effectiveOwned = new OwnedItems(
+			ctx.dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
+		ctx.requirements = requirements;
+		ctx.f2pOnly = f2pOnly;
+		ctx.onSlayerTask = onSlayerTask;
+		ctx.antifirePotion = antifirePotion;
+		ctx.inWilderness = inWilderness;
+		ctx.maxTradeables = maxTradeables;
+		ctx.upgradeBudgetGp = upgradeBudgetGp;
+		ctx.collectionFingerprint = collectionFingerprint;
+		ctx.pinnedSpell = pinnedSpell;
+		return ctx;
+	}
+
+	/** The roster answer: one shared set per style, chosen for the best
+	 * AVERAGE dps across the mobs (field decision 2026-07-17), with a per-mob
+	 * display bundle for that set (index-aligned with the mob list). */
+	public static final class RosterResult
+	{
+		public final List<MonsterStats> mobs;
+		public final List<Map<CombatStyle, StyleResult>> perMob;
+
+		RosterResult(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob)
+		{
+			this.mobs = mobs;
+			this.perMob = perMob;
+		}
+	}
+
+	/** Pick the set that maximises the HP-WEIGHTED average dps across the
+	 * roster (field decision 2026-07-17, superseding the plain mean): a
+	 * 500-hp mob's needs outweigh a 50-hp mob's ten to one, because that is
+	 * where the trip's time goes. A mob the set cannot damage contributes
+	 * zero to every candidate regardless of its hp - so an unhittable big
+	 * mob drops out of the decision naturally ("unless you can't hit it").
+	 * Candidate pool = each mob's own best set; a compromise that is
+	 * nobody's #1 is not considered (heuristic). */
+	private Loadout chooseSharedLoadout(DpsCalculator calc,
+		List<List<DpsResult>> bests, List<OptimizationRequest> reqs)
+	{
+		List<Loadout> candidates = new ArrayList<>();
+		for (List<DpsResult> b : bests)
+		{
+			if (b != null && !b.isEmpty() && b.get(0) != null)
+			{
+				candidates.add(b.get(0).getLoadout());
+			}
+		}
+		Loadout best = null;
+		double bestScore = -1;
+		for (Loadout loadout : candidates)
+		{
+			double sum = 0;
+			for (OptimizationRequest req : reqs)
+			{
+				DpsResult r = calc.calculate(req, loadout);
+				double hp = Math.max(1, req.getMonster().getHitpoints());
+				sum += (r == null ? 0 : r.getDps()) * hp;
+			}
+			if (sum > bestScore + 1e-9)
+			{
+				bestScore = sum;
+				best = loadout;
+			}
+		}
+		return best;
+	}
+
+	/** Per style: optimise each mob independently, choose ONE shared owned
+	 * set and ONE shared game set by average dps, then rebuild every mob's
+	 * StyleResult around the shared sets (that mob's own dps/incoming/spec).
+	 * Returns null if the request was superseded mid-compute. */
+	private List<Map<CombatStyle, StyleResult>> computeStyleAcross(
+		List<MonsterStats> mobs, ComputeContext ctx, long ticket)
+	{
+		int n = mobs.size();
+		List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
+		for (int j = 0; j < n; j++)
+		{
+			perMob.add(new EnumMap<>(CombatStyle.class));
+		}
+		DpsCalculator calc = new DpsCalculator();
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		{
 			if (requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
-				return; // finished stale - never deliver over the newer answer
+				return null;
 			}
-			callback.accept(results);
+			// Mob-independent plan - MUST mirror computeAllStyles (levels,
+			// boost and labels depend on style + owned + real, not the mob).
+			BoostProfile boost = BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly);
+			PlayerLevels styleLevels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
+			String prayerName = PrayerBonuses.bestAvailable(styleLevels, ctx.unlocks).nameFor(style);
+			String boostLabel = joinAssumes(prayerName,
+				boost == BoostProfile.NONE ? null : boost.toString());
+			BoostProfile gameBoost = BoostSelector.ceilingFor(style, ctx.f2pOnly);
+			PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
+			String gamePrayerName = PrayerBonuses.bestAvailable(gameLevels,
+				ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style);
+			String gameBoostLabel = joinAssumes(gamePrayerName, gameBoost.toString());
+
+			List<OptimizationRequest> ownedReqs = new ArrayList<>();
+			List<OptimizationRequest> gameReqs = new ArrayList<>();
+			List<List<DpsResult>> ownedBests = new ArrayList<>();
+			List<List<DpsResult>> gameBests = new ArrayList<>();
+			for (MonsterStats mob : mobs)
+			{
+				OptimizationRequest ownedRequest = request(
+					mob, style, styleLevels, ctx.unlocks, ctx.requirements,
+					ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+					ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp))
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withDreamItems(ctx.dreams)
+					.withProtectOnlyItems(ctx.protectOnly)
+					.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
+				if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
+				{
+					ownedRequest = ownedRequest.withSpell(ctx.pinnedSpell);
+				}
+				List<DpsResult> ownedBest = optimizer.optimize(ctx.dataset, ownedRequest);
+				if (!ownedBest.isEmpty())
+				{
+					ownedBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, ownedRequest, ownedBest.get(0)));
+					ownedBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, ownedRequest, ownedBest.get(0)));
+				}
+				OptimizationRequest gameRequest = request(
+					mob, style, gameLevels, PrayerUnlocks.ALL, RequirementProfile.MAXED,
+					CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
+					.withExcludedItems(ctx.excluded.getOrDefault(style, Collections.emptySet()))
+					.withSpellbookLock(ctx.lock)
+					.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+					.withAntifirePotion(ctx.antifirePotion)
+					.withInWilderness(ctx.inWilderness)
+					.withProtectOnlyItems(ctx.protectOnly);
+				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
+				if (!gameBest.isEmpty())
+				{
+					gameBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, gameRequest, gameBest.get(0)));
+					gameBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, gameRequest, gameBest.get(0)));
+				}
+				ownedReqs.add(ownedRequest);
+				gameReqs.add(gameRequest);
+				ownedBests.add(ownedBest);
+				gameBests.add(gameBest);
+			}
+			Loadout sharedOwned = chooseSharedLoadout(calc, ownedBests, ownedReqs);
+			Loadout sharedGame = chooseSharedLoadout(calc, gameBests, gameReqs);
+			// The spec weapon is PART of the carried set (field decision
+			// 2026-07-17): with zero swaps a roster brings ONE spec weapon,
+			// so the pick is shared - HP-weighted like the worn set - and
+			// only its per-mob numbers flip. Swapping per mob is M-4
+			// swap-budget territory.
+			List<List<DpsResult>> shownOwned = new ArrayList<>();
+			List<DpsResult> shownGame = new ArrayList<>();
+			for (int j = 0; j < n; j++)
+			{
+				List<DpsResult> ownedList = new ArrayList<>();
+				if (sharedOwned != null)
+				{
+					ownedList.add(calc.calculate(ownedReqs.get(j), sharedOwned));
+				}
+				shownOwned.add(ownedList);
+				shownGame.add(sharedGame == null ? null
+					: calc.calculate(gameReqs.get(j), sharedGame));
+			}
+			SpecPick[] specs = chooseSharedSpec(ctx, style, mobs, ownedReqs,
+				shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame);
+			SpecPick[] gameSpecs = chooseSharedSpec(ctx, style, mobs, gameReqs,
+				shownOwned, gameLevels, null, true, shownGame);
+			for (int j = 0; j < n; j++)
+			{
+				MonsterStats mob = mobs.get(j);
+				List<DpsResult> ownedList = shownOwned.get(j);
+				DpsResult gameShown = shownGame.get(j);
+				SpecPick spec = specs[j];
+				SpecPick gameSpec = gameSpecs[j];
+				IncomingDpsCalculator.Result incoming = sharedOwned == null ? null
+					: IncomingDpsCalculator.calculate(mob, sharedOwned,
+						ctx.real.getDefence(), ctx.real.getMagic());
+				IncomingDpsCalculator.Result gameIncoming = sharedGame == null ? null
+					: IncomingDpsCalculator.calculate(mob, sharedGame,
+						ctx.real.getDefence(), ctx.real.getMagic());
+				// Mode-trade is not applied per-mob in the roster v1.
+				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
+					boostLabel, gameBoostLabel, incoming, gameIncoming, null);
+				perMob.get(j).put(style, sr);
+			}
+		}
+		return perMob;
+	}
+
+	/**
+	 * Optimise ONE shared set per style across a roster of mobs. Single-mob
+	 * rosters take the exact bestPerStyle path (wrapped as a 1-mob answer);
+	 * multi-mob rosters choose the shared set by average dps and deliver a
+	 * per-mob display bundle. Parameters mirror bestPerStyle (result-level
+	 * params shared across the roster; exclusions/pins apply uniformly).
+	 */
+	public void bestPerStyleAcross(
+		List<MonsterStats> mobs,
+		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
+		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
+		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
+		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
+		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		OptimizeMode mode, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
+		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
+		Consumer<RosterResult> callback)
+	{
+		if (mobs == null || mobs.isEmpty())
+		{
+			return;
+		}
+		if (mobs.size() == 1)
+		{
+			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
+				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
+				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
+				mode, pinnedByStyle, pinnedSpell, protectOnlyItems,
+				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
+			return;
+		}
+		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
+			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			dreamItems, upgradeBudgetGp, mode, pinnedByStyle, pinnedSpell, protectOnlyItems);
+		final List<MonsterStats> roster = new ArrayList<>(mobs);
+		final long ticket = requestSeq.incrementAndGet();
+		worker.execute(() ->
+		{
+			if (requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return;
+			}
+			List<Map<CombatStyle, StyleResult>> perMob = computeStyleAcross(roster, ctx, ticket);
+			if (perMob == null || requestSeq.get() != ticket)
+			{
+				abandonedForTest++;
+				return;
+			}
+			callback.accept(new RosterResult(roster, perMob));
 		});
 	}
 
@@ -623,6 +932,79 @@ public class OptimizerService
 	 * (requirement #7/#8); with null, everything standard counts - the
 	 * game-best spec.
 	 */
+	/** One shared spec weapon for the whole roster: candidates are each
+	 * mob's free pick; the winner maximizes the HP-weighted expected value
+	 * (expected + drain), a mob it cannot roll against contributing zero.
+	 * Returns the winner's per-mob SpecPicks (null where it cannot spec). */
+	private SpecPick[] chooseSharedSpec(ComputeContext ctx, CombatStyle style,
+		List<MonsterStats> mobs, List<OptimizationRequest> reqs,
+		List<List<DpsResult>> shownOwned, PlayerLevels levels, OwnedItems owned,
+		boolean game, List<DpsResult> shownGame)
+	{
+		int n = mobs.size();
+		SpecPick[] picks = new SpecPick[n];
+		java.util.LinkedHashSet<Integer> candidates = new java.util.LinkedHashSet<>();
+		for (int j = 0; j < n; j++)
+		{
+			List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
+			if (base == null)
+			{
+				continue;
+			}
+			SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
+				mobs.get(j), levels, owned, null);
+			if (free != null && free.weapon != null)
+			{
+				candidates.add(free.weapon.getId());
+			}
+		}
+		if (candidates.isEmpty())
+		{
+			return picks;
+		}
+		Integer bestId = null;
+		double bestScore = -1;
+		SpecPick[] bestPerMob = null;
+		for (Integer id : candidates)
+		{
+			SpecPick[] perMob = new SpecPick[n];
+			double score = 0;
+			for (int j = 0; j < n; j++)
+			{
+				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
+				if (base == null)
+				{
+					continue;
+				}
+				perMob[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
+					mobs.get(j), levels, owned, java.util.Collections.singleton(id));
+				if (perMob[j] != null)
+				{
+					score += (perMob[j].expectedDamage + perMob[j].drainValue)
+						* Math.max(1, mobs.get(j).getHitpoints());
+				}
+			}
+			if (score > bestScore + 1e-9)
+			{
+				bestScore = score;
+				bestId = id;
+				bestPerMob = perMob;
+			}
+		}
+		return bestPerMob != null ? bestPerMob : picks;
+	}
+
+	private static List<DpsResult> baseFor(boolean game, List<DpsResult> owned, DpsResult gameShown)
+	{
+		if (game)
+		{
+			return gameShown == null ? null
+				: new ArrayList<>(java.util.Collections.singletonList(gameShown));
+		}
+		return owned == null || owned.isEmpty() || owned.get(0) == null ? null
+			: new ArrayList<>(owned);
+	}
+
 	SpecPick bestSpec(
 		LoadoutData dataset,
 		OptimizationRequest request,
@@ -631,6 +1013,21 @@ public class OptimizerService
 		MonsterStats monster,
 		PlayerLevels levels,
 		OwnedItems owned)
+	{
+		return bestSpec(dataset, request, baseResults, style, monster, levels, owned, null);
+	}
+
+	/** restrictTo non-null: only these weapon ids are scanned - the roster
+	 * path uses it to evaluate ONE shared spec weapon per mob. */
+	SpecPick bestSpec(
+		LoadoutData dataset,
+		OptimizationRequest request,
+		List<DpsResult> baseResults,
+		CombatStyle style,
+		MonsterStats monster,
+		PlayerLevels levels,
+		OwnedItems owned,
+		Set<Integer> restrictTo)
 	{
 		if (baseResults == null || baseResults.isEmpty())
 		{
@@ -654,13 +1051,19 @@ public class OptimizerService
 		// every other slot), so only the weapon partition needs scanning.
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
 		{
+			if (restrictTo != null && !restrictTo.contains(item.getId()))
+			{
+				continue;
+			}
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
 				|| request.isExcluded(item.getId())
 				|| (owned != null && !owned.owns(item.getId())))
 			{
 				continue;
 			}
-			SpecialAttack spec = SpecialAttack.match(item, style);
+			// ANY style's spec competes (field request: the spec swap is its
+			// own weapon switch - magic set + chally is a real play).
+			SpecialAttack spec = SpecialAttack.match(item);
 			if (spec == null || !request.getRequirementProfile().canEquip(item.getRequirements()))
 			{
 				continue;
@@ -681,7 +1084,12 @@ public class OptimizerService
 			{
 				continue;
 			}
-			DpsResult base = calculator.calculate(request, loadout);
+			// A cross-style spec rolls under ITS OWN style's math - the
+			// assume-best-prayer model carries all three books' factors,
+			// matching the real play of flicking (e.g.) Piety for the spec.
+			OptimizationRequest baseRequest = spec.getStyle() == style
+				? request : request.withStyle(spec.getStyle());
+			DpsResult base = calculator.calculate(baseRequest, loadout);
 			if (base == null || base.getMaxHit() <= 0)
 			{
 				continue;

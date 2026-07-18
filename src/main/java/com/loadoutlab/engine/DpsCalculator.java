@@ -160,6 +160,16 @@ public final class DpsCalculator
 		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
 		double expected = RollMath.expectedHit(accuracy, minHit, maxHit);
+		if (isDualMacuahuitl(loadout))
+		{
+			// Two chained hits (official calc model): the first rolls half
+			// the max; the second (the remainder) only rolls when the
+			// first lands, with its own accuracy roll.
+			int firstMax = maxHit / 2;
+			int secondMax = maxHit - firstMax;
+			expected = RollMath.normalExpectedHit(accuracy, firstMax)
+				+ accuracy * RollMath.normalExpectedHit(accuracy, secondMax);
+		}
 		if (isScythe(loadout))
 		{
 			if (request.getMonster().getSize() >= 2)
@@ -172,8 +182,19 @@ public final class DpsCalculator
 			}
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
+		double effectiveSpeed = speed;
+		if (isWearingBloodMoonSet(loadout))
+		{
+			// Bloodrager (wiki): each successful macuahuitl hit has a 1/3
+			// chance to make the NEXT attack come one tick earlier; with
+			// the chained hits that is acc/3 + acc^2 * 2/9 per attack
+			// (matches the official calc's expected attack speed).
+			double proc = accuracy / 3.0 + accuracy * accuracy * 2.0 / 9.0;
+			counted("bloodrager set", String.format("%.2f ticks faster on average", proc));
+			effectiveSpeed = speed - proc;
+		}
 		String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
-		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
+		return new DpsResult(loadout, expected / (effectiveSpeed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout)
@@ -201,8 +222,24 @@ public final class DpsCalculator
 		}
 
 		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getRanged());
+		boolean atlatl = isEclipseAtlatl(loadout);
+		if (atlatl)
+		{
+			// Official calc: the atlatl swaps the DAMAGE side to melee -
+			// Strength level (ranged prayer factors and void still apply)
+			// and the worn MELEE strength bonuses - while accuracy stays
+			// pure ranged.
+			effectiveDamage = RollMath.effectiveLevel(levels.getStrength(),
+				prayers.getRangedStrength(), stanceBonus);
+			if (isWearingRangedVoid(loadout))
+			{
+				effectiveDamage = (int) Math.floor(effectiveDamage
+					* (isWearingEliteVoid(loadout) ? 1.125 : 1.10));
+			}
+		}
 		int maxHit = RollMath.maxHitFromEffective(effectiveDamage,
-			effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
+			atlatl ? loadout.getBonuses().getStrength()
+				: effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
@@ -211,6 +248,16 @@ public final class DpsCalculator
 		long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (isWearingEclipseMoonSet(loadout)
+			&& !request.getMonster().hasAttribute("burn_immune"))
+		{
+			// Eclipse (wiki): each successful hit has a 20% chance to apply
+			// a 10-damage burn - "roughly 2 burn damage per successful hit"
+			// sustained (their own average; the 5-stack cap and target
+			// death truncate a little in practice).
+			counted("eclipse set", "~2 burn damage per landed hit");
+			expected += accuracy * 2.0;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.RANGED);
 		if (rapid)
 		{
@@ -230,11 +277,11 @@ public final class DpsCalculator
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
 		PlayerLevels levels = effectiveRequest.getLevels();
 		PrayerBonuses prayers = effectiveRequest.getPrayers();
-		// Two-step prayer floors (Augury then Mystic Vigour's 1.18 accuracy),
-		// +2 accurate stance, +9 - matches the official calc's effective level.
-		int effectiveAccuracy = (int) Math.floor(Math.floor(levels.getMagic() * prayers.getMagicAccuracy())
-			* prayers.getMagicAccuracySecondary()) + 2 + 9;
-		if (isWearingMagicVoid(loadout))
+		// Prayer floor, +2 accurate stance, +9 - matches the official
+		// calc's effective level.
+		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 2 + 9;
+		boolean magicVoid = isWearingMagicVoid(loadout);
+		if (magicVoid)
 		{
 			counted("void set", "+45% accuracy");
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
@@ -251,6 +298,13 @@ public final class DpsCalculator
 		int maxHit = magicMaxHit(effectiveRequest, loadout);
 		attackRoll = applyMagicAccuracyBonuses(effectiveRequest, loadout, attackRoll);
 		maxHit = applyMagicDamageBonuses(effectiveRequest, loadout, maxHit);
+		if (magicVoid && isWearingEliteVoid(loadout))
+		{
+			// Elite magic void: +2.5% magic damage (was missing - the set
+			// only got its accuracy; wiki-standard values).
+			counted("void set", "+2.5% damage");
+			maxHit = (int) Math.floor(maxHit * 1.025);
+		}
 		maxHit = applyFlatArmour(effectiveRequest, maxHit);
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
@@ -258,6 +312,12 @@ public final class DpsCalculator
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
+		double frostweaver = frostweaverBonus(effectiveRequest, loadout);
+		if (frostweaver > 0)
+		{
+			counted("frostweaver set", "chance of a free spear hit per cast");
+			expected += frostweaver;
+		}
 		String poweredName = spellName.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().getName() : "";
 		String attackType = spellName.isEmpty() ? poweredName.isEmpty() ? "magic" : "magic: " + poweredName : "magic: " + spellName;
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll, loadout.getCost(), spellName);
@@ -719,9 +779,27 @@ public final class DpsCalculator
 			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet (e)"))
+		{
+			// The atlatl's melee-side damage accepts the UNIMBUED melee
+			// salve variants (official calc scalesWithStr branches).
+			counted("salve amulet (e)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
 			counted("salve amulet(i)", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet"))
+		{
+			counted("salve amulet", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isSlayerTaskEligible(request) && isEclipseAtlatl(loadout)
+			&& wearing(loadout, "black mask") && imbuedSlayerHead(loadout) == null)
+		{
+			counted("black mask", "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
@@ -1028,6 +1106,91 @@ public final class DpsCalculator
 	private static boolean isScythe(Loadout loadout)
 	{
 		return wearing(loadout, "scythe of vitur");
+	}
+
+	private static boolean isDualMacuahuitl(Loadout loadout)
+	{
+		return wearing(loadout, "dual macuahuitl");
+	}
+
+	/** Bloodrager: all three blood moon pieces + the dual macuahuitl. The
+	 * wiki confirms the effect activates even on broken pieces, and every
+	 * New/Used/Broken variant shares the clean item name. */
+	private static boolean isWearingBloodMoonSet(Loadout loadout)
+	{
+		return isDualMacuahuitl(loadout)
+			&& wearing(loadout, "blood moon helm")
+			&& wearing(loadout, "blood moon chestplate")
+			&& wearing(loadout, "blood moon tassets");
+	}
+
+	private static boolean isEclipseAtlatl(Loadout loadout)
+	{
+		return wearing(loadout, "eclipse atlatl");
+	}
+
+	/** Eclipse: all three eclipse moon pieces + the atlatl (broken counts,
+	 * same as the other moon sets). */
+	private static boolean isWearingEclipseMoonSet(Loadout loadout)
+	{
+		return isEclipseAtlatl(loadout)
+			&& wearing(loadout, "eclipse moon helm")
+			&& wearing(loadout, "eclipse moon chestplate")
+			&& wearing(loadout, "eclipse moon tassets");
+	}
+
+	/** Frostweaver: all three blue moon pieces + the spear. */
+	private static boolean isWearingBlueMoonSet(Loadout loadout)
+	{
+		return wearing(loadout, "blue moon spear")
+			&& wearing(loadout, "blue moon helm")
+			&& wearing(loadout, "blue moon chestplate")
+			&& wearing(loadout, "blue moon tassets");
+	}
+
+	/**
+	 * Frostweaver (wiki): after casting a spell that binds, freezes or
+	 * roots, the spear has a chance to land an instant melee attack - 20%
+	 * for Standard-book binds and Ancient ice spells, 50% for Arceuus
+	 * grasps, "even if it does not bind a target". Expected bonus damage
+	 * per cast = chance x the spear's plain melee expected hit (stab, no
+	 * melee prayer - you are on a magic prayer while casting).
+	 */
+	private double frostweaverBonus(OptimizationRequest request, Loadout loadout)
+	{
+		com.loadoutlab.data.SpellStats spell = request.getSpell();
+		if (spell == null || !isWearingBlueMoonSet(loadout))
+		{
+			return 0;
+		}
+		String spellName = spell.getName();
+		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(java.util.Locale.ROOT);
+		double chance;
+		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
+		{
+			chance = 0.5;
+		}
+		else if ("ancient".equals(book) && "Ice".equalsIgnoreCase(spell.getNameFirstWord()))
+		{
+			chance = 0.2;
+		}
+		else if ("standard".equals(book) && ("Bind".equalsIgnoreCase(spellName)
+			|| "Snare".equalsIgnoreCase(spellName) || "Entangle".equalsIgnoreCase(spellName)))
+		{
+			chance = 0.2;
+		}
+		else
+		{
+			return 0;
+		}
+		PlayerLevels levels = request.getLevels();
+		int effAttack = RollMath.effectiveLevel(levels.getAttack(), 1.0, 0);
+		long meleeRoll = RollMath.attackRoll(effAttack, loadout.getOffensive().getAttackBonus("stab"));
+		int effStrength = RollMath.effectiveLevel(levels.getStrength(), 1.0, 0);
+		int meleeMax = RollMath.maxHitFromEffective(effStrength, loadout.getBonuses().getStrength());
+		long defenceRoll = npcDefenceRoll(request.getMonster(), "stab", loadout.getWeapon());
+		double meleeAccuracy = RollMath.normalAccuracy(meleeRoll, defenceRoll);
+		return chance * RollMath.normalExpectedHit(meleeAccuracy, meleeMax);
 	}
 
 	private static boolean isCrystalBow(Loadout loadout)

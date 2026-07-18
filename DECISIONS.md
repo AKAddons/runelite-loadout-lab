@@ -177,3 +177,36 @@ panel parameter.
 **Context:** User: "in the parameter area for search we should be able to
 specify max swaps: 0/1/2 and then in the options we should be able to
 hide this option (lock in 0 for every search)."
+
+## 2026-07-16 (redesign): style tabs + per-result parameters (M-2c)
+
+**Decision:** (a) The stacked, individually-collapsible style cards become
+a TAB STRIP (skill icon + dps per tab, best selected by default) over one
+flipping detail body; assume chips and the set menu move into the detail
+header; auto-collapse is removed. The same strip renders kits at M-4 -
+hybrid/tribrid can push the option count to ~7, which stacked cards cannot
+carry. (b) Parameters move from the global row into each result: a compact
+per-card chip row (on-task, wilderness, optimize mode; risk/budget behind
+the card menu), owned by ResultEntry and read by computeEntry; the global
+row keeps only search, back/forward, F2P and exclusions. Saved results
+then serialize (mobs + own params) cleanly.
+
+**Context:** First multi-result field look: "with tribrid/hybrid this is
+going to up the number of options from 3 to possibly 7... buttons/tabs
+with just the style + dps... a toggle that flips a single gear view...
+each mob should have its own parameter options per search."
+
+## 2026-07-16 (spec): the result card anatomy
+
+**Decision:** The card reads top-to-bottom: mob list (name + hp; rows are
+an informational LENS - one shared set per style optimized across the
+list, clicking a mob flips which mob's numbers display); per-result
+parameter zone (swaps, swappable items, best-prayer toggle default-on vs
+pick-a-prayer, boost toggle, spellbook, weight, max worn cost, budget,
+wilderness, antifire mode incl. detect-from-inventory, strategy); style
+dps tabs; Yours|BiS tab toggle; item view with info tiles; per-result
+bank show/filter. Simplifies M-4: the group answer is one set per style
+across mobs - kits/swaps layer on top via parameters, and mob rows only
+change the lens, never the set.
+
+**Context:** User UX spec after the M-2c tab/tile field test.

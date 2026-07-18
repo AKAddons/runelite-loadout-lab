@@ -49,6 +49,40 @@ standalone win that pre-builds the M-1 assets).
 - **M-2 Multi-add UX** - "add to view" on search hits (new result vs
   add-mob-to-result), result close/collapse/reorder + Save,
   progressive loading, pages join back/forward history. (M)
+  REDESIGN (field-driven 2026-07-16, after the first multi-result
+  build): (a) STYLE TABS replace the stacked style cards - a tab is
+  just the skill icon + dps, best tab selected by default, ONE detail
+  body flips beneath; assume chips + the set menu move into the
+  detail header; auto-collapse dies (tabs subsume it); the BiS
+  section lives per tab. At M-4 kits are simply more tabs - with
+  hybrid/tribrid the option count can reach 7, which stacked cards
+  cannot carry. (b) PARAMETERS BECOME PER-RESULT: each card carries a
+  compact param chip row (on-task, wilderness, optimize mode;
+  risk/budget behind the card menu), seeded from defaults at add
+  time and owned by ResultEntry; computeEntry reads them; the global
+  row keeps only what is truly global (search, back/forward, F2P,
+  exclusions). Saved results serialize (mobs + own params) with no
+  global state to untangle. (M-2c)
+THE RESULT CARD ANATOMY (user spec 2026-07-16 - the M-2c/M-3/M-4
+target, top to bottom):
+1. MOB LIST - name + hp per mob; rows are an INFORMATIONAL LENS:
+   clicking one flips which mob's numbers (dps, max hit, damage
+   taken...) display below. Multi-mob: ONE set per style, optimized
+   ACROSS the list ("the best melee set that works on both"), same
+   for ranged/magic - the set is shared, only the numbers flip.
+   Kits/swaps layer on top via the swap parameters.
+2. PARAMETER ZONE (per result): max swaps (0/1/2), swappable-item
+   count, best-prayer toggle (default on) vs pick-a-prayer, boost
+   assumption toggle, spellbook, weight cap, max worn cost, upgrade
+   budget, wilderness toggles, antifire mode (gear shield / assume
+   potion / DETECT from inventory via the ledger), optimization
+   strategy. Params that exist globally today move per-result.
+3. STYLE DPS TABS (as built) - icon + dps.
+4. YOURS | BIS toggle, tab-style, above the item view.
+5. ITEM VIEW/STATS - the classic grid + info tiles (bonuses, damage
+   done, damage taken).
+6. SHOW IN BANK / FILTER BANK per result.
+
 - **M-3 Monster groups** - curated table searchable as virtual hits
   that expand into a result. A group is the ROSTER of distinct mob
   types featured in the content, not the wave sequence. Flagship
@@ -298,7 +332,13 @@ per-boss defensive thresholds. Phased:
   replace the damage term. Seeded: the 5 GWD/wildy boss pairs, Zulrah,
   Vorkath, Cerberus, Chaos Elemental, KBD, Hydra, Corp (17 bosses).
   Follow-ups: phase-aware rotations (Zulrah patterns, Hydra enrage),
-  antifire-aware dragonfire, spiderling prayer degradation.
+  antifire-aware dragonfire, spiderling prayer degradation. Kraken added
+  2026-07-17 (magic accuracy roll, prayer-piercing damage - wiki-quoted).
+  TODO (field request 2026-07-17): curate the Moons of Peril bosses -
+  Blood Moon, Blue Moon, Eclipse Moon (sheet styles are compound
+  "Typeless slash" with staged max hits "32 total 4+8+20", so the v1
+  model shows DTPS: ? today); parse each boss's wiki page and quote the
+  mechanic sentences in the entry notes.
 - **W-1 Wilderness low-risk sets (DONE 2026-07-07)** - for the curated
   wilderness boss list (WildernessMonsters), a "Low-risk" toggle caps the
   set to 3 tradeable items (4 with the Protect Item toggle) - exactly the

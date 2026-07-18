@@ -39,7 +39,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -100,6 +99,18 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
+
+		/** Roster compute: ONE shared set per style across the mobs, with
+		 * per-mob numbers delivered via showRosterResults. Default no-op
+		 * keeps the interface functional for test lambdas - the plugin's
+		 * production hook overrides it. */
+		default void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
+			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean antifirePotion, int upgradeBudgetGp,
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone)
+		{
+			onDone.run();
+		}
 	}
 
 	/** Toggle an item's excluded state; returns true when now excluded. */
@@ -145,15 +156,20 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean wildyRisk;
 		final boolean showInBank;
 		final boolean filterBank;
-		final boolean classicLayout;
 		final boolean loadingAnimation;
+
+		/** Seeds for every NEW result's parameter zone (settings panel). */
+		public final String defaultUpgradeBudget;
+		public final String defaultRiskCap;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank, boolean classicLayout,
-			boolean loadingAnimation)
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
 		{
+			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
+			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
 			this.maxHit = maxHit;
 			this.accuracy = accuracy;
 			this.bonuses = bonuses;
@@ -169,16 +185,13 @@ public class LoadoutLabPanel extends PluginPanel
 			this.wildyRisk = wildyRisk;
 			this.showInBank = showInBank;
 			this.filterBank = filterBank;
-			this.classicLayout = classicLayout;
 			this.loadingAnimation = loadingAnimation;
 		}
 
 		static DisplayOptions all()
 		{
-			// classicLayout defaults OFF - the compact grid is the default look;
-			// loadingAnimation defaults ON.
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, false, true);
+				true, true, true, true, true, true, true, true, true, "", "");
 		}
 	}
 
@@ -362,6 +375,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color BORDER_BIS = new Color(168, 148, 88);
 	private static final Color BORDER_SPEC = new Color(120, 190, 240);
 	private static final Color BORDER_PLAIN = new Color(70, 70, 70);
+	/** Slot-cell interior - a step lighter than the card so dark item
+	 * sprites (black boots, dark capes) keep their silhouette. */
+	private static final Color CELL_BG = new Color(50, 50, 50);
+	/** The toggle/selected border across the chip language - the mascots'
+	 * limb green (field spec: match the legs). */
+	private static final Color ACCENT = MascotArt.LIMB;
 	private static final Color BORDER_EMPTY = new Color(50, 50, 50);
 
 	private final LoadoutData data;
@@ -385,9 +404,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
 	/** Which style's set is filtering the bank (null = none). */
-	private CombatStyle bankFiltered;
+	private boolean bankFiltering;
+	private Set<Integer> lastFilterIds;
 	/** Which style's set is currently glowing in the bank (null = none). */
-	private CombatStyle bankShown;
+	private boolean bankShowing;
+	private Set<Integer> lastHighlightIds;
 	/** D-4: which frontier point to recommend per style. */
 	private final JComboBox<String> optimizeMode = new JComboBox<>(
 		new String[]{"Optimize: Max DPS", "Optimize: Balanced", "Optimize: Tanky"});
@@ -395,28 +416,28 @@ public class LoadoutLabPanel extends PluginPanel
 	 * for max. Empty or unparseable = off. */
 	private final JTextField upgradeBudget = new JTextField();
 	private int lastBudgetGp;
-	private final JLabel exclusionsLabel = new JLabel();
+	private int lastRiskGp;
+	private String lastRiskText = "";
+	private final JTextField riskCapField = new JTextField();
 	private final JLabel storedLabel = new JLabel();
-	private final JLabel pinnedLabel = new JLabel();
 	/** The user's own note for the selected monster: a collapsible
 	 * post-it, edited inline (saves on focus loss - no edit button). */
 	private final JPanel notePanel = new JPanel();
+	private final JLabel excludeCountChip = new JLabel();
+	private final JLabel dreamCountChip = new JLabel();
 	private final JLabel noteHeader = new JLabel();
 	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
 	private DisplayOptions displayOptions = DisplayOptions.all();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
 	private JPanel budgetRow;
-	private static final Color POSTIT_BG = new Color(222, 212, 150);
-	private static final Color POSTIT_FG = new Color(55, 50, 25);
+	private static final Color POSTIT_BG = new Color(78, 72, 50);
+	private static final Color POSTIT_FG = new Color(215, 205, 160);
 
 	private final JTextField searchField = new JTextField();
 	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
 	private final JList<MonsterStats> monsterList = new JList<>(monsterModel);
 	private final JScrollPane monsterScroll;
-	private final JPanel selectedRow = new JPanel(new BorderLayout(4, 0));
-	private final JLabel selectedLabel = new JLabel();
-	private final JLabel monsterNote = new JLabel();
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
 	/** Shared-name wilderness monsters (Catacombs hellhounds...): the user
@@ -431,6 +452,10 @@ public class LoadoutLabPanel extends PluginPanel
 	/** True while back/forward replays a step - the control listeners must
 	 * apply effects (recompute) without recording a second step. */
 	private boolean replayingHistory;
+	/** True while painting the controls FROM the active entry (an active-
+	 * result switch): effects must not recompute and recorders must not
+	 * record - the controls are being told, not telling. */
+	private boolean syncingControls;
 	/** True once any monster has been selected this session - a pick after
 	 * a deliberate CLEAR records (back returns to the cleared state), while
 	 * the session's true first pick stays unrecorded. */
@@ -454,17 +479,33 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Guards against programmatic search-field changes re-opening the list. */
 	private boolean suppressSearchEvents;
 
-	private final JCheckBox lowRisk = new JCheckBox("Low-risk (wilderness)");
 	private final JCheckBox protectItem = new JCheckBox("Protect Item (keep 4)");
 	/** Wilderness risk-cap dropdown values in gp; 75k is the default. */
-	private static final int[] RISK_STEPS = {0, 25_000, 75_000, 200_000, 1_000_000};
-	private final JComboBox<String> riskBudget = new JComboBox<>(
-		new String[]{"Risk cap: 0", "Risk cap: 25k", "Risk cap: 75k", "Risk cap: 200k", "Risk cap: 1M"});
 
 	private MonsterStats selectedMonster;
 	/** The style card currently being rendered (EDT-only render state) -
 	 * grid cells read it for per-style pin menus and tooltips. */
 	private CombatStyle renderingStyle;
+	/** The rendering card's incoming-damage result (EDT-only render state) -
+	 * the classic grid's info corner reads it. Null on game-best grids. */
+	private IncomingDpsCalculator.Result renderingIncoming;
+	/** The rendering card's assume chips (prayer + boost icons), stashed by
+	 * styleCard for the stat panel (EDT-only render state). */
+	private javax.swing.JComponent renderingChips;
+	/** Whether the card being rendered is the BiS side of the toggle. */
+	private boolean renderingBis;
+	/** The lensed mob's curated mechanics note for the stat panel's (i). */
+	private String renderingMechanicsNote;
+	/** Protect Item assumed for this card (wilderness, field spec). */
+	private boolean renderingProtectItem;
+	/** Wilderness risk staging for the stat panel's skull line: the spec
+	 * weapon competing for kept slots, and how many are kept. Null spec
+	 * flag = no risk line (not wilderness / option off / BiS view). */
+	private boolean renderingRiskLine;
+	/** The upgrade-cost line renders in the stat panel (Yours view). */
+	private boolean renderingUpgradeLine;
+	private GearItem renderingRiskSpecWeapon;
+	private int renderingRiskKeep;
 	/**
 	 * One RESULT on the page: a query's monster plus its computed style
 	 * results and every piece of view state that belongs to THIS result
@@ -473,21 +514,88 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	static final class ResultEntry
 	{
-		MonsterStats monster;
+		/** The roster this result answers: a shared set optimized ACROSS
+		 * these mobs, with the mob list acting as an informational lens
+		 * (Step C). Step A keeps it at exactly one mob, so a single-mob
+		 * result is pixel-identical to before. */
+		final java.util.List<MonsterStats> mobs = new java.util.ArrayList<>();
+		/** Which mob's numbers show beneath the shared set (the lens). */
+		int lensIndex;
 		Map<CombatStyle, StyleResult> results;
-		/** Per-style collapse: the user's override, and the derived default. */
-		final Map<CombatStyle, Boolean> cardCollapsed = new EnumMap<>(CombatStyle.class);
-		final Map<CombatStyle, Boolean> autoCollapsed = new EnumMap<>(CombatStyle.class);
-		/** Per-style expanded game-best (BiS) sections - hidden by default. */
-		final Set<CombatStyle> gameBestExpanded = EnumSet.noneOf(CombatStyle.class);
+		/** Roster answers, index-aligned with mobs; results above is the
+		 * LENSED element. Null while computing or for legacy single-mob. */
+		java.util.List<Map<CombatStyle, StyleResult>> perMobResults;
+		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
+		boolean viewingBis;
 		boolean noteCollapsed = true;
-		/** Dragonfire: gear protection by default; the shield cell flips
-		 * this result to an assumed super antifire (and back). */
-		boolean superAntifireAssumed;
+		/** Dragonfire mode: 0 = gear (a shield is required in the set),
+		 * 1 = regular antifire assumed (shield STILL required - only the
+		 * combo fully blocks; the honesty rule refuses half-protection),
+		 * 2 = super antifire assumed (shield slot freed). */
+		int antifireMode;
+		/** Whole-result fold: collapsed to the header's one-line summary. */
+		boolean folded;
+		/** The style tab in view; null = strongest owned set (the default). */
+		CombatStyle selectedTab;
+
+		// ---- the per-result PARAMETER ZONE (card anatomy spec) ----------
+		// Owned here so every result carries its own query settings; the
+		// controls write through to the ACTIVE entry (M-2c-2 step 1) until
+		// the per-card chip row lands (step 2).
+		boolean onSlayerTask;
+		boolean inWilderness;
+		int optimizeMode;
+		boolean protectItem;
+		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
+		 * Non-empty IS the low-risk mode - the old toggle + step combo
+		 * merged into one value (field spec 2026-07-17). */
+		String riskCap = "";
+		String upgradeBudget = "";
+		int spellbookIndex;
+		/** Assume your best offensive prayer (default) - off computes
+		 * prayerless, the number you do while camping a protection prayer. */
+		boolean assumeBestPrayer = true;
+		/** Assume potion boosts (default) - off computes unboosted. */
+		boolean assumeBoosts = true;
 
 		ResultEntry(MonsterStats monster)
 		{
-			this.monster = monster;
+			this.mobs.add(monster);
+		}
+
+		/** The lensed mob - whose numbers the card shows, and (until the
+		 * roster optimizer lands at Step B) the only mob. Clamped so a
+		 * shrinking roster never dangles the lens. */
+		MonsterStats mob()
+		{
+			return mobs.get(Math.max(0, Math.min(lensIndex, mobs.size() - 1)));
+		}
+
+		/** Add a mob to this result's roster; false when already present. */
+		boolean addMob(MonsterStats candidate)
+		{
+			for (MonsterStats existing : mobs)
+			{
+				if (existing.getId() == candidate.getId())
+				{
+					return false;
+				}
+			}
+			mobs.add(candidate);
+			return true;
+		}
+
+		/** True when any mob in the roster carries this id (result routing). */
+		boolean hasMob(int monsterId)
+		{
+			for (MonsterStats m : mobs)
+			{
+				if (m.getId() == monsterId)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -573,10 +681,9 @@ public class LoadoutLabPanel extends PluginPanel
 			JPopupMenu menu = new JPopupMenu();
 			// Entry point for the first stored-elsewhere item (before any
 			// exists there is no label or right-click row to reach it from).
-			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
-			addStored.addActionListener(ev -> showAddStoredDialog());
-			menu.add(addStored);
-			// Mob-specific actions live on the style cards and the
+			// Stored-elsewhere and simmed items moved to their own entry
+			// points (the stored label's menu + the green +N chip); the
+			// mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
@@ -602,42 +709,48 @@ public class LoadoutLabPanel extends PluginPanel
 
 		searchField.setAlignmentX(LEFT_ALIGNMENT);
 		searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		// Exclusions (red -N) and dreams (green +N) live ABOVE the search
+		// bar (field spec 2026-07-17) - compact rounded chips; clicking
+		// manages the list. Counts refresh via refreshCountChips().
+		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+		countRow.setOpaque(false);
+		countRow.setAlignmentX(LEFT_ALIGNMENT);
+		countRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		excludeCountChip.setOpaque(true);
+		excludeCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		excludeCountChip.setFont(excludeCountChip.getFont().deriveFont(Font.BOLD, 12f));
+		excludeCountChip.setToolTipText("Excluded items - click to manage");
+		excludeCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		excludeCountChip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showExclusionsMenu(e);
+			}
+		});
+		dreamCountChip.setOpaque(true);
+		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
+		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
+		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		dreamCountChip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showDreamsMenu(e);
+			}
+		});
+		countRow.add(excludeCountChip);
+		countRow.add(dreamCountChip);
+		top.add(countRow);
+		top.add(Box.createVerticalStrut(4));
 		top.add(searchField);
 		top.add(Box.createVerticalStrut(4));
 
-		// Selected-monster row: replaces the dropdown once a pick is made.
-		selectedRow.setOpaque(false);
-		selectedRow.setAlignmentX(LEFT_ALIGNMENT);
-		// Height follows content: a long monster name wraps to a second line
-		// rather than clipping (was capped at one 26px row).
-		selectedRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-		selectedLabel.setForeground(GOOD);
-		selectedLabel.setFont(selectedLabel.getFont().deriveFont(Font.BOLD, 14f));
-		selectedLabel.setVerticalAlignment(SwingConstants.TOP);
-		selectedRow.add(selectedLabel, BorderLayout.CENTER);
-		JButton reloadButton = new JButton(new ReloadIcon(12));
-		reloadButton.setMargin(new Insets(0, 6, 0, 6));
-		reloadButton.setToolTipText("Re-run the search for this monster");
-		reloadButton.addActionListener(e -> recompute());
-		JButton clearSelection = new JButton("x");
-		clearSelection.setMargin(new Insets(0, 6, 0, 6));
-		clearSelection.setToolTipText("Choose a different monster");
-		clearSelection.addActionListener(e -> clearSelection());
-		JPanel selectedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-		selectedButtons.setOpaque(false);
-		selectedButtons.add(reloadButton);
-		selectedButtons.add(clearSelection);
-		selectedRow.add(selectedButtons, BorderLayout.EAST);
-		selectedRow.setVisible(false);
-		top.add(selectedRow);
-
 		// Curated mechanics note (finishing items, immunities) for the
 		// selected monster - so a correct suggestion doesn't look wrong.
-		monsterNote.setForeground(new Color(200, 170, 110));
-		monsterNote.setFont(monsterNote.getFont().deriveFont(13f));
-		monsterNote.setAlignmentX(LEFT_ALIGNMENT);
-		monsterNote.setVisible(false);
-		top.add(monsterNote);
 
 		monsterList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		monsterList.setVisibleRowCount(6);
@@ -664,7 +777,6 @@ public class LoadoutLabPanel extends PluginPanel
 		top.add(f2pOnly);
 
 		initToggle(slayerTask, "On task: slayer helmet bonuses apply");
-		top.add(slayerTask);
 
 		// Shown only for monsters that ALSO live outside the Wilderness:
 		// checked = wilderness weapons get their +50% and the risk options
@@ -672,29 +784,10 @@ public class LoadoutLabPanel extends PluginPanel
 		initToggle(inWilderness, "Fighting this monster inside the Wilderness:"
 			+ " wilderness weapons get their +50% and the risk options apply");
 		inWilderness.setVisible(false);
-		inWilderness.addActionListener(e -> refreshWildernessRows());
-		top.add(inWilderness);
 
-		// Wilderness only: cap the set to the items death mechanics keep.
-		initToggle(lowRisk, "Keep your 3 most valuable items (4 with Protect Item);"
-			+ " everything else must total under the risk cap");
-		lowRisk.setVisible(false);
-		top.add(lowRisk);
 
 		initToggle(protectItem, "Protect Item keeps a 4th item (not while skulled)");
 		protectItem.setVisible(false);
-		top.add(protectItem);
-
-		// How much gp the set may drop on a wilderness death; 0 = nothing
-		// droppable and no fees at all.
-		riskBudget.setAlignmentX(LEFT_ALIGNMENT);
-		riskBudget.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		riskBudget.setToolTipText("Total gp the set may drop on a wilderness death");
-		riskBudget.setSelectedIndex(2);
-		riskBudget.addActionListener(e -> recompute());
-		recordCombo(riskBudget, "Risk cap");
-		riskBudget.setVisible(false);
-		top.add(riskBudget);
 
 
 		// Spellbook lock lives ON the magic card (vertical space) - the
@@ -702,7 +795,7 @@ public class LoadoutLabPanel extends PluginPanel
 		spellbook.setAlignmentX(LEFT_ALIGNMENT);
 		spellbook.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellbook.setToolTipText("Limit spells to one spellbook (powered staves always considered)");
-		spellbook.addActionListener(e -> recompute());
+		spellbook.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(spellbook, "Spellbook");
 
 		// Buyable upgrades within a total gp budget join the consideration
@@ -726,30 +819,14 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		});
 		budgetRow.add(upgradeBudget, BorderLayout.CENTER);
-		top.add(budgetRow);
 
 		// D-4: pick the offense/defense frontier point (sweep is slower).
 		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
 		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
-		optimizeMode.addActionListener(e -> recompute());
+		optimizeMode.addActionListener(e -> { if (!syncingControls) recompute(); });
 		recordCombo(optimizeMode, "Optimize");
-		top.add(optimizeMode);
 
-		// Excluded items ("protected" from suggestions) - click to manage.
-		exclusionsLabel.setForeground(new Color(200, 140, 140));
-		exclusionsLabel.setFont(exclusionsLabel.getFont().deriveFont(13f));
-		exclusionsLabel.setAlignmentX(LEFT_ALIGNMENT);
-		exclusionsLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		exclusionsLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showExclusionsMenu(e);
-			}
-		});
-		top.add(exclusionsLabel);
 		refreshExclusionsLabel();
 
 		// Stored-elsewhere items (manual owned: STASH, POH, UIM storages).
@@ -809,23 +886,13 @@ public class LoadoutLabPanel extends PluginPanel
 		notePanel.add(noteHeader);
 		notePanel.add(noteArea);
 		notePanel.setVisible(false);
-		top.add(notePanel);
+		// The note rides the ACTIVE result card's tail (under the bank
+		// buttons, field spec 2026-07-17) - re-parented per render, like
+		// the spellbook combo before it.
 
 		// Pinned items ("always bring") - click to manage.
-		pinnedLabel.setForeground(INFO);
-		pinnedLabel.setFont(pinnedLabel.getFont().deriveFont(13f));
-		pinnedLabel.setAlignmentX(LEFT_ALIGNMENT);
-		pinnedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		pinnedLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showPinnedMenu(e);
-			}
-		});
-		top.add(pinnedLabel);
-		refreshPinnedLabel();
+		// The old "This mob: N pins..." label retired (field spec) - pins
+		// and filter items surface as count chips in the parameter zone.
 
 		add(top, BorderLayout.NORTH);
 
@@ -845,6 +912,9 @@ public class LoadoutLabPanel extends PluginPanel
 		add(resultsPanel, BorderLayout.CENTER);
 
 		statusLabel.setForeground(MUTED);
+		// The empty-state prompt reads as a caption: centered, italic.
+		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		statusLabel.setFont(statusLabel.getFont().deriveFont(Font.ITALIC));
 		add(statusLabel, BorderLayout.SOUTH);
 
 		searchDebounce = new Timer(SEARCH_DEBOUNCE_MS, e -> runSearch());
@@ -855,6 +925,10 @@ public class LoadoutLabPanel extends PluginPanel
 			public void removeUpdate(DocumentEvent e) { onSearchEdited(); }
 			public void changedUpdate(DocumentEvent e) { onSearchEdited(); }
 		});
+		// The search-hit right-click ("Add to view" - a SECOND result on
+		// the page) left this release: the + Add mob row grows a roster on
+		// the card, and a plain click opens a fresh result. The addToView
+		// machinery stays for the group expansion to come (M-3).
 		monsterList.addListSelectionListener(e ->
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
@@ -867,23 +941,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Shared checkbox chrome; every toggle recomputes on change. */
-	/** The active result's per-style collapse override map (never null -
-	 * an empty page yields a throwaway map so render paths stay simple). */
-	private Map<CombatStyle, Boolean> cardCollapsed()
-	{
-		return active == null ? new EnumMap<>(CombatStyle.class) : active.cardCollapsed;
-	}
-
-	private Map<CombatStyle, Boolean> autoCollapsed()
-	{
-		return active == null ? new EnumMap<>(CombatStyle.class) : active.autoCollapsed;
-	}
-
-	private Set<CombatStyle> gameBestExpanded()
-	{
-		return active == null ? EnumSet.noneOf(CombatStyle.class) : active.gameBestExpanded;
-	}
-
 	private boolean noteCollapsed()
 	{
 		return active == null || active.noteCollapsed;
@@ -899,7 +956,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private boolean superAntifireAssumed()
 	{
-		return active != null && active.superAntifireAssumed;
+		return active != null && active.antifireMode == 2;
 	}
 
 	private Map<CombatStyle, StyleResult> lastResults()
@@ -911,25 +968,21 @@ public class LoadoutLabPanel extends PluginPanel
 	 * shared-name wilderness monsters only when the user checked the box. */
 	private boolean effectiveWilderness()
 	{
-		if (selectedMonster == null || !WildernessMonsters.isWilderness(selectedMonster))
+		return active != null && effectiveWilderness(active);
+	}
+
+	/** Per-entry resolution: each entry carries its own in-Wilderness
+	 * statement, resolved against its own monster (card anatomy spec). */
+	private boolean effectiveWilderness(ResultEntry entry)
+	{
+		if (!WildernessMonsters.isWilderness(entry.mob()))
 		{
 			return false;
 		}
-		return WildernessMonsters.isExclusive(selectedMonster) || inWilderness.isSelected();
+		return WildernessMonsters.isExclusive(entry.mob()) || entry.inWilderness;
 	}
 
 	/** Sync the wilderness checkbox + risk rows to the selected monster. */
-	private void refreshWildernessRows()
-	{
-		boolean listed = selectedMonster != null && WildernessMonsters.isWilderness(selectedMonster);
-		boolean exclusive = selectedMonster != null && WildernessMonsters.isExclusive(selectedMonster);
-		inWilderness.setVisible(listed && !exclusive);
-		boolean wild = effectiveWilderness() && displayOptions.wildyRisk;
-		lowRisk.setVisible(wild);
-		protectItem.setVisible(wild);
-		riskBudget.setVisible(wild);
-	}
-
 	private void initToggle(JCheckBox box, String tooltip)
 	{
 		box.setOpaque(false);
@@ -942,7 +995,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// recorder skips itself during a replay.
 		box.addActionListener(e ->
 		{
-			if (replayingHistory)
+			if (replayingHistory || syncingControls)
 			{
 				return;
 			}
@@ -1012,10 +1065,22 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 	}
 
-	/** Re-select the monster a step was taken on before replaying it. */
+	/** Re-select the monster a step was taken on before replaying it. An
+	 * entry still on the page is switched to IN PLACE (its parameters and
+	 * results survive); only a monster no longer on the page re-selects. */
 	private void restoreContext(MonsterStats at)
 	{
-		if (at != null && selectedMonster != at)
+		if (at == null || selectedMonster == at)
+		{
+			return;
+		}
+		ResultEntry existing = entryFor(at.getId());
+		if (existing != null)
+		{
+			setActive(existing);
+			renderPage();
+		}
+		else
 		{
 			applySelection(at);
 		}
@@ -1029,7 +1094,7 @@ public class LoadoutLabPanel extends PluginPanel
 		combo.addActionListener(e ->
 		{
 			int now = combo.getSelectedIndex();
-			if (replayingHistory || historyControl == null || now == last[0] || now < 0)
+			if (replayingHistory || syncingControls || historyControl == null || now == last[0] || now < 0)
 			{
 				last[0] = now;
 				return;
@@ -1069,25 +1134,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Minimal HTML escape for text going into an html-rendered JLabel. */
-	private static String escapeHtml(String text)
-	{
-		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-	}
-
-	/** "Max hit N - X% accuracy", either half omitted per the display gates;
-	 * "" when both are off. */
-	private String hitAccuracyText(int maxHit, double accuracy)
-	{
-		String hit = displayOptions.maxHit ? "Max hit " + maxHit : "";
-		String acc = displayOptions.accuracy
-			? String.format("%.0f%% accuracy", accuracy * 100) : "";
-		if (hit.isEmpty())
-		{
-			return acc;
-		}
-		return acc.isEmpty() ? hit : hit + " - " + acc;
-	}
-
 	/**
 	 * Set by the plugin on login. On a non-members world the filter appears
 	 * and defaults on; on a members world it is hidden and forced off - the
@@ -1120,7 +1166,6 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			budgetRow.setVisible(options.upgradeBudget);
 		}
-		refreshWildernessRows();
 		refreshNotePanel();
 		// Rebuild the cards so per-line gates apply, reusing cached results -
 		// but only when those results are for the CURRENT monster (a compute
@@ -1246,23 +1291,39 @@ public class LoadoutLabPanel extends PluginPanel
 			applySelection(monster);
 			return;
 		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
+			private java.util.List<ResultEntry> pageAfter;
+			private ResultEntry activeAfter;
+
 			@Override
 			public boolean apply()
 			{
-				applySelection(monster);
+				if (pageAfter == null)
+				{
+					applySelection(monster);
+					pageAfter = new java.util.ArrayList<>(page);
+					activeAfter = active;
+				}
+				else
+				{
+					// Redo reinstates the SAME entries - their parameter
+					// zones and computed results survive the round trip.
+					restorePage(pageAfter, activeAfter);
+				}
 				return true;
 			}
 
 			@Override
 			public boolean revert()
 			{
-				// A pick made from a deliberately cleared panel goes back
-				// to the cleared state, not to a blank-page surprise.
-				if (previous != null)
+				// Back reinstates the replaced entries intact; a pick made
+				// from a deliberately cleared panel goes back to cleared.
+				if (activeBefore != null)
 				{
-					applySelection(previous);
+					restorePage(pageBefore, activeBefore);
 				}
 				else
 				{
@@ -1279,8 +1340,34 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 	}
 
+	/** Reinstate a captured page (entry OBJECTS - parameters and results
+	 * intact); entries whose results were never computed recompute. */
+	private void restorePage(java.util.List<ResultEntry> entries, ResultEntry newActive)
+	{
+		page.clear();
+		page.addAll(entries);
+		hadSelection = true;
+		setActive(newActive);
+		renderPage();
+		for (ResultEntry entry : page)
+		{
+			if (entry.results == null)
+			{
+				computeEntry(entry);
+			}
+		}
+	}
+
 	/** The selection itself: collapse the dropdown, show it, recompute. */
 	private void applySelection(MonsterStats monster)
+	{
+		applySelection(monster, true);
+	}
+
+	/** The selection itself. replacePage: the classic pick (page becomes
+	 * this monster alone); otherwise the monster JOINS the page as a new
+	 * result and becomes active (multi-add, M-2). */
+	private void applySelection(MonsterStats monster, boolean replacePage)
 	{
 		suppressSearchEvents = true;
 		try
@@ -1295,19 +1382,104 @@ public class LoadoutLabPanel extends PluginPanel
 		monsterScroll.setVisible(false);
 		selectedMonster = monster;
 		hadSelection = true;
-		// M-1 page-of-one: selecting replaces the page with this monster's
-		// entry; selectedMonster stays the active entry's mob by contract.
-		page.clear();
+		if (replacePage)
+		{
+			page.clear();
+		}
+		else
+		{
+			// Only a single-mob duplicate leaves; a ROSTER containing this
+			// mob survives (searching a member must not destroy the group).
+			page.removeIf(e -> e.mobs.size() == 1 && e.hasMob(monster.getId()));
+		}
 		active = new ResultEntry(monster);
+		// Seed the parameter zone from the monster's own gating: task-only
+		// bosses fight on-task; everything else starts at the defaults
+		// (out of the wilderness - a per-fight statement, not a preference).
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster);
+		active.upgradeBudget = displayOptions.upgradeBudget
+			? displayOptions.defaultUpgradeBudget : "";
+		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
 		page.add(active);
-		// Each monster starts OUT of the wilderness unless it lives nowhere
-		// else - the checkbox is a per-fight statement, not a preference.
-		inWilderness.setSelected(false);
-		refreshWildernessRows();
-		bankShown = null;
+		syncControlsFromActive();
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
 		bankHighlighter.highlight(null);
-		bankFiltered = null;
 		bankFilter.filter(null);
+		applyActiveMonsterUi(monster);
+		usageLog.record(monster.label());
+		// A new mob: its own note state.
+		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
+		refreshNotePanel();
+		revalidate();
+		repaint();
+		if (replacePage)
+		{
+			recompute();
+		}
+		else
+		{
+			// Existing results stay; only the newcomer computes.
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(active);
+		}
+	}
+
+	/** The user changed a control: copy the control values into the ACTIVE
+	 * entry's parameter zone. Other entries keep their own settings - a
+	 * recompute re-runs them with unchanged params (cache hits). */
+	private void syncActiveFromControls()
+	{
+		if (active == null)
+		{
+			return;
+		}
+		active.onSlayerTask = slayerTask.isSelected();
+		active.inWilderness = inWilderness.isSelected();
+		active.optimizeMode = Math.max(0, optimizeMode.getSelectedIndex());
+		active.protectItem = protectItem.isSelected();
+		active.riskCap = riskCapField.getText() == null ? "" : riskCapField.getText();
+		active.upgradeBudget = upgradeBudget.getText() == null ? "" : upgradeBudget.getText();
+		active.spellbookIndex = Math.max(0, spellbook.getSelectedIndex());
+	}
+
+	/** The active result changed: paint the controls from ITS parameter
+	 * zone, without recomputing or recording (syncingControls guard). */
+	private void syncControlsFromActive()
+	{
+		if (active == null)
+		{
+			return;
+		}
+		syncingControls = true;
+		try
+		{
+			slayerTask.setSelected(active.onSlayerTask);
+			inWilderness.setSelected(active.inWilderness);
+			optimizeMode.setSelectedIndex(active.optimizeMode);
+			protectItem.setSelected(active.protectItem);
+			riskCapField.setText(active.riskCap);
+			lastRiskGp = parsedBudgetGp(active.riskCap);
+			lastRiskText = active.riskCap;
+			upgradeBudget.setText(active.upgradeBudget);
+			lastBudgetGp = parsedBudgetGp(active.upgradeBudget);
+			lastBudgetText = active.upgradeBudget;
+			spellbook.setSelectedIndex(active.spellbookIndex);
+		}
+		finally
+		{
+			syncingControls = false;
+		}
+	}
+
+	/** The affordances keyed to the ACTIVE monster: slayer-toggle gating,
+	 * the selected row, and the curated monster note. Shared by selection
+	 * and by active-entry changes when a result closes. */
+	private void applyActiveMonsterUi(MonsterStats monster)
+	{
 		// The slayer toggle has three states by monster: task-only bosses
 		// (Hydra, Araxxor, Sire...) force it ON - you cannot fight them
 		// off-task; unassignable monsters (raid bosses) force it OFF; and
@@ -1329,41 +1501,301 @@ public class LoadoutLabPanel extends PluginPanel
 			slayerTask.setEnabled(true);
 			slayerTask.setToolTipText("On task: slayer helmet bonuses apply");
 		}
-		usageLog.record(monster.label());
-		// html so a long name/level wraps to a second line instead of
-		// clipping to "..." in the fixed-width BorderLayout centre (the body
-		// width leaves room for the reload/close buttons beside it).
-		selectedLabel.setText("<html><body style='width:140px'>vs "
-			+ escapeHtml(monster.label()) + "</body></html>");
-		selectedLabel.setToolTipText(monster.label());
-		selectedRow.setVisible(true);
-		String note = MonsterNotes.noteFor(monster);
-		monsterNote.setText(note == null ? "" : "<html>" + note + "</html>");
-		monsterNote.setVisible(note != null);
-		// A new mob: fresh collapse defaults, its own note state.
-		cardCollapsed().clear();
-		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
+		// The name row and the note moved onto the result card itself
+		// (mob list + per-card mechanics note) - nothing to paint here.
+	}
+
+	/** Remove one mob from a roster (the row's x): the entry recomputes
+	 * as the smaller shared set. A back step restores roster + results. */
+	void removeMobFromEntry(ResultEntry entry, int index)
+	{
+		if (entry.mobs.size() <= 1 || index < 0 || index >= entry.mobs.size())
+		{
+			return;
+		}
+		final MonsterStats removed = entry.mobs.get(index);
+		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(entry.mobs);
+		final Map<CombatStyle, StyleResult> resultsBefore = entry.results;
+		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
+		final int lensBefore = entry.lensIndex;
+		final Runnable applyRemove = () ->
+		{
+			entry.mobs.remove(index);
+			entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, entry.mobs.size() - 1));
+			entry.results = null;
+			entry.perMobResults = null;
+			if (entry == active)
+			{
+				selectedMonster = entry.mob();
+				applyActiveMonsterUi(entry.mob());
+			}
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(entry);
+		};
+		if (historyControl == null)
+		{
+			applyRemove.run();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applyRemove.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				entry.mobs.clear();
+				entry.mobs.addAll(mobsBefore);
+				entry.lensIndex = lensBefore;
+				entry.results = resultsBefore;
+				entry.perMobResults = perMobBefore;
+				if (entry == active)
+				{
+					selectedMonster = entry.mob();
+					applyActiveMonsterUi(entry.mob());
+				}
+				renderPage();
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Remove " + removed.getName() + " from result";
+			}
+		});
+	}
+
+	/** Join a mob to a result's roster (the + row's picker): the entry
+	 * recomputes as ONE shared set across the list. A back step restores
+	 * the previous roster and its results intact. */
+	void addMobToEntry(ResultEntry entry, MonsterStats monster)
+	{
+		final ResultEntry target = entry;
+		if (target == null)
+		{
+			addToView(monster);
+			return;
+		}
+		if (target.hasMob(monster.getId()))
+		{
+			for (int i = 0; i < target.mobs.size(); i++)
+			{
+				if (target.mobs.get(i).getId() == monster.getId())
+				{
+					lensTo(target, i);
+					return;
+				}
+			}
+		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
+		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(target.mobs);
+		final Map<CombatStyle, StyleResult> resultsBefore = target.results;
+		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
+		final int lensBefore = target.lensIndex;
+		final Runnable applyAdd = () ->
+		{
+			// A single-mob duplicate leaves the page (the roster absorbs it).
+			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
+			target.addMob(monster);
+			target.lensIndex = target.mobs.size() - 1;
+			target.results = null;
+			target.perMobResults = null;
+			setActive(target);
+			selectedMonster = target.mob();
+			applyActiveMonsterUi(target.mob());
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(target);
+		};
+		if (historyControl == null)
+		{
+			applyAdd.run();
+			return;
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applyAdd.run();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				target.mobs.clear();
+				target.mobs.addAll(mobsBefore);
+				target.lensIndex = lensBefore;
+				target.results = resultsBefore;
+				target.perMobResults = perMobBefore;
+				restorePage(pageBefore, activeBefore);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Add " + monster.getName() + " to result";
+			}
+		});
+	}
+
+	/** Add a monster to the page as its own result (search-hit right-click).
+	 * A back/forward step: back removes it and restores the previous active. */
+	void addToView(MonsterStats monster)
+	{
+		MonsterStats previousActive = selectedMonster;
+		if (historyControl == null || previousActive == null)
+		{
+			applySelection(monster, previousActive != null);
+			return;
+		}
+		if (previousActive.getId() == monster.getId())
+		{
+			return; // already the active result
+		}
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				applySelection(monster, false);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				removeFromPage(monster.getId(), previousActive);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "+ vs " + monster.label();
+			}
+		});
+	}
+
+	/** Close a result (the X or a step revert): drop the entry; if it was
+	 * active, the given (or last remaining) entry's monster takes over. */
+	private void removeFromPage(int monsterId, MonsterStats nextActive)
+	{
+		// Single-mob entries only: a roster containing this mob is its own
+		// result and must survive a namesake's removal (addToView's revert
+		// path; the X uses the entry-exact overload below).
+		page.removeIf(e -> e.mobs.size() == 1 && e.hasMob(monsterId));
+		removeFallout(nextActive);
+	}
+
+	/** Remove the EXACT entry (the X path) - a roster's close must remove
+	 * the roster itself, never a namesake single-mob result. */
+	private void removeFromPage(ResultEntry entry, MonsterStats nextActive)
+	{
+		page.remove(entry);
+		removeFallout(nextActive);
+	}
+
+	private void removeFallout(MonsterStats nextActive)
+	{
+		if (page.isEmpty())
+		{
+			clearSelectionInternal();
+			return;
+		}
+		ResultEntry next = nextActive != null ? entryFor(nextActive.getId()) : null;
+		if (next == null)
+		{
+			next = page.get(page.size() - 1);
+		}
+		setActive(next);
+		renderPage();
+	}
+
+	/** Switch which existing entry the controls describe - no recompute
+	 * (its results are still valid), no new entry. */
+	private void setActive(ResultEntry entry)
+	{
+		active = entry;
+		selectedMonster = entry.mob();
+		applyActiveMonsterUi(entry.mob());
+		syncControlsFromActive();
 		refreshNotePanel();
-		refreshPinnedLabel();
-		revalidate();
-		repaint();
-		recompute();
+	}
+
+	/** The header X: a recorded step - back re-adds the result (recomputed;
+	 * results are not retained through a close). */
+	private void closeResult(ResultEntry entry)
+	{
+		MonsterStats closing = entry.mob();
+		MonsterStats fallback = null;
+		for (ResultEntry e : page)
+		{
+			if (e != entry)
+			{
+				fallback = e.mob(); // the last other entry wins below anyway
+			}
+		}
+		MonsterStats nextActive = selectedMonster != null
+			&& selectedMonster.getId() == closing.getId() ? fallback : selectedMonster;
+		if (historyControl == null)
+		{
+			removeFromPage(entry, nextActive);
+			return;
+		}
+		final int index = page.indexOf(entry);
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				removeFromPage(entry, nextActive);
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				// Re-insert the SAME entry where it was - parameters and
+				// results intact, no recompute needed.
+				page.add(Math.min(Math.max(0, index), page.size()), entry);
+				hadSelection = true;
+				setActive(entry);
+				renderPage();
+				if (entry.results == null)
+				{
+					computeEntry(entry);
+				}
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "Close - " + closing.getName();
+			}
+		});
 	}
 
 	/** The wilderness tradeable cap, or -1 when the mode is off/hidden. */
-	private int riskCap()
+	private int riskCap(ResultEntry entry)
 	{
-		if (!lowRisk.isVisible() || !lowRisk.isSelected())
+		if (!effectiveWilderness(entry) || !displayOptions.wildyRisk
+			|| entry.riskCap == null || entry.riskCap.trim().isEmpty())
 		{
 			return -1;
 		}
-		return protectItem.isSelected() ? 4 : 3;
-	}
-
-	/** The selected wilderness risk budget in gp. */
-	private int selectedRiskBudget()
-	{
-		return RISK_STEPS[riskBudget.getSelectedIndex()];
+		return entry.protectItem ? 4 : 3;
 	}
 
 	/** Recompute only when the parsed budget actually changed. */
@@ -1385,6 +1817,43 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> setBudgetTo(newText), () -> setBudgetTo(oldText));
 		}
 		recompute();
+	}
+
+	private void riskCapEdited()
+	{
+		int parsed = parsedBudgetGp(riskCapField.getText());
+		String newText = riskCapField.getText() == null ? "" : riskCapField.getText();
+		if (parsed == lastRiskGp && newText.equals(lastRiskText))
+		{
+			return;
+		}
+		String oldText = lastRiskText;
+		lastRiskGp = parsed;
+		lastRiskText = newText;
+		if (!replayingHistory)
+		{
+			recordStep(newText.isEmpty() ? "Risk cap cleared" : "Risk cap " + newText,
+				() -> setRiskCapTo(newText), () -> setRiskCapTo(oldText));
+		}
+		recompute();
+	}
+
+	private void setRiskCapTo(String text)
+	{
+		if (riskCapField.getText().equals(text))
+		{
+			return;
+		}
+		replayingHistory = true;
+		try
+		{
+			riskCapField.setText(text);
+			riskCapEdited();
+		}
+		finally
+		{
+			replayingHistory = false;
+		}
 	}
 
 	private void setBudgetTo(String text)
@@ -1411,13 +1880,18 @@ public class LoadoutLabPanel extends PluginPanel
 	 */
 	private int parsedBudgetGp()
 	{
+		return parsedBudgetGp(upgradeBudget.getText());
+	}
+
+	private int parsedBudgetGp(String text)
+	{
 		// Hidden control -> no budget (owned gear only), so a hidden field
 		// cannot keep buying upgrades the user can no longer see or clear.
 		if (!displayOptions.upgradeBudget)
 		{
 			return 0;
 		}
-		String raw = upgradeBudget.getText() == null ? "" : upgradeBudget.getText().trim().toLowerCase();
+		String raw = text == null ? "" : text.trim().toLowerCase();
 		if (raw.isEmpty())
 		{
 			return 0;
@@ -1443,7 +1917,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	private String spellbookLock()
+	private String spellbookLock(ResultEntry entry)
 	{
 		// Hidden control -> no lock (its combo lives only on the magic card's
 		// spell row, which displayOptions.spellControls can remove). Matches
@@ -1452,8 +1926,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return "";
 		}
-		int index = spellbook.getSelectedIndex();
-		return index <= 0 ? "" : ((String) spellbook.getSelectedItem()).toLowerCase();
+		return entry.spellbookIndex <= 0 ? ""
+			: spellbook.getItemAt(entry.spellbookIndex).toLowerCase();
 	}
 
 	/** Test seams (package-private): controls and state for history tests. */
@@ -1465,6 +1939,19 @@ public class LoadoutLabPanel extends PluginPanel
 	void clearSelectionForTest()
 	{
 		clearSelection();
+	}
+
+	int pageSizeForTest()
+	{
+		return page.size();
+	}
+
+	void closeActiveResultForTest()
+	{
+		if (active != null)
+		{
+			closeResult(active);
+		}
 	}
 
 	MonsterStats selectedMonsterForTest()
@@ -1501,7 +1988,6 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		refreshExclusionsLabel();
 		refreshStoredLabel();
-		refreshPinnedLabel();
 		refreshNotePanel();
 		refreshHistoryButtons();
 		recompute();
@@ -1509,9 +1995,60 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void refreshExclusionsLabel()
 	{
-		int count = exclusionView.snapshot().size();
-		exclusionsLabel.setText(count == 0 ? "" : "Excluded items: " + count + " (click to manage)");
-		exclusionsLabel.setVisible(count > 0);
+		refreshCountChips();
+	}
+
+	/** The -N / +N chips above the search bar: red exclusions, green
+	 * dreams; zero counts render muted so the entry points stay visible. */
+	private void refreshCountChips()
+	{
+		int excluded = exclusionView.snapshot().size();
+		excludeCountChip.setText("-" + excluded);
+		excludeCountChip.setForeground(excluded > 0
+			? new Color(220, 120, 120) : new Color(140, 110, 110));
+		excludeCountChip.setBorder(new RoundedBorder(excluded > 0
+			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
+		int dreams = dreamView.snapshot().size();
+		dreamCountChip.setText("+" + dreams);
+		dreamCountChip.setForeground(dreams > 0
+			? new Color(130, 200, 130) : new Color(110, 140, 110));
+		dreamCountChip.setBorder(new RoundedBorder(dreams > 0
+			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
+	}
+
+	/** The dream chip's menu: each dream un-dreamable, plus the add entry. */
+	private void showDreamsMenu(MouseEvent e)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		java.util.List<GearItem> dreamGear = new ArrayList<>();
+		for (int id : dreamView.snapshot())
+		{
+			GearItem gear = data.getGear(id);
+			if (gear != null)
+			{
+				dreamGear.add(gear);
+			}
+		}
+		dreamGear.sort(Comparator.comparing(GearItem::label));
+		for (GearItem gear : dreamGear)
+		{
+			JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
+			undream.addActionListener(ev ->
+			{
+				dreamToggle.toggle(gear.getId());
+				refreshCountChips();
+				recompute();
+			});
+			menu.add(undream);
+		}
+		if (!dreamGear.isEmpty())
+		{
+			menu.addSeparator();
+		}
+		JMenuItem add = new JMenuItem("Sim an item (consider as owned)...");
+		add.addActionListener(ev -> showAddDreamDialog());
+		menu.add(add);
+		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
 	}
 
 	private void showExclusionsMenu(MouseEvent e)
@@ -1530,7 +2067,18 @@ public class LoadoutLabPanel extends PluginPanel
 			});
 			menu.add(entry);
 		}
-		menu.show(exclusionsLabel, e.getX(), e.getY());
+		if (menu.getComponentCount() > 0)
+		{
+			menu.addSeparator();
+		}
+		JMenuItem addExclusion = new JMenuItem("Exclude an item (search)...");
+		addExclusion.addActionListener(a -> showAddExclusionDialog());
+		menu.add(addExclusion);
+		// Anchor to the CLICKED component - the old label left the layout
+		// when the -N chip replaced it (field bug: dead click; show() on a
+		// non-displayable component throws).
+		Component source = (Component) e.getSource();
+		menu.show(source, 0, source.getHeight());
 	}
 
 	private void refreshStoredLabel()
@@ -1628,54 +2176,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return scope.toLowerCase(java.util.Locale.ROOT) + " set";
 	}
 
-	private void refreshPinnedLabel()
-	{
-		if (selectedMonster == null)
-		{
-			pinnedLabel.setVisible(false);
-			return;
-		}
-		int monsterId = currentMonsterId();
-		int pins = 0;
-		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
-			: mobProfile.allPins(monsterId).values())
-		{
-			pins += scoped.size();
-		}
-		int filters = 0;
-		for (Map<Integer, String> scoped : mobProfile.allFilterItems(monsterId).values())
-		{
-			filters += scoped.size();
-		}
-		int excluded = 0;
-		for (Set<Integer> scoped : mobProfile.allMobExclusions(monsterId).values())
-		{
-			excluded += scoped.size();
-		}
-		if (pins == 0 && filters == 0 && excluded == 0)
-		{
-			pinnedLabel.setVisible(false);
-			return;
-		}
-		StringBuilder text = new StringBuilder("This mob:");
-		if (pins > 0)
-		{
-			text.append(" ").append(pins).append(pins == 1 ? " pin" : " pins");
-		}
-		if (filters > 0)
-		{
-			text.append(pins > 0 ? "," : "").append(" ")
-				.append(filters).append(" filter item").append(filters == 1 ? "" : "s");
-		}
-		if (excluded > 0)
-		{
-			text.append(pins > 0 || filters > 0 ? "," : "").append(" ")
-				.append(excluded).append(" excluded");
-		}
-		pinnedLabel.setText(text + " (click to manage)");
-		pinnedLabel.setVisible(true);
-	}
-
 	private void saveNoteIfChanged()
 	{
 		if (selectedMonster == null)
@@ -1750,8 +2250,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.unpin(monsterId, scope, slot);
-					refreshPinnedLabel();
-					recompute();
+								recompute();
 				});
 				menu.add(row);
 			}
@@ -1768,8 +2267,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
-					refreshPinnedLabel();
-					reapplyBankViews();
+								reapplyBankViews();
 				});
 				menu.add(row);
 			}
@@ -1787,8 +2285,7 @@ public class LoadoutLabPanel extends PluginPanel
 				row.addActionListener(a ->
 				{
 					mobProfile.removeMobExclusion(monsterId, scope, itemId);
-					refreshPinnedLabel();
-					recompute();
+								recompute();
 				});
 				menu.add(row);
 			}
@@ -1801,7 +2298,8 @@ public class LoadoutLabPanel extends PluginPanel
 			+ filterScopeLabel(ALL_SETS) + " (search)...");
 		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
 		menu.add(addFilter);
-		menu.show(pinnedLabel, e.getX(), e.getY());
+		Component pinSource = (Component) e.getSource();
+		menu.show(pinSource, 0, pinSource.getHeight());
 	}
 
 	/**
@@ -1809,7 +2307,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * mob (the gear then optimizes around it - "I am casting Wind Bolt"),
 	 * with the spellbook lock shown only while the spell is on Auto.
 	 */
-	private JPanel magicSpellRow()
+	private JPanel magicSpellRow(DpsResult best)
 	{
 		JPanel wrap = new JPanel();
 		wrap.setLayout(new BoxLayout(wrap, BoxLayout.Y_AXIS));
@@ -1817,7 +2315,15 @@ public class LoadoutLabPanel extends PluginPanel
 		wrap.setAlignmentX(LEFT_ALIGNMENT);
 		String pinned = mobProfile.pinnedSpell(currentMonsterId());
 		JComboBox<String> spellPin = new JComboBox<>();
-		spellPin.addItem("Spell: Auto (best)");
+		// The control IS the display: unpinned, its first entry names the
+		// spell auto actually resolved to (field spec - the separate spell
+		// line is gone).
+		String resolved = best == null ? null : best.getSpellName();
+		spellPin.addItem(resolved != null && pinned.isEmpty()
+			? "Auto: " + resolved
+			: resolved == null && pinned.isEmpty() && best != null
+				? "Auto: staff built-in"
+				: "Spell: Auto (best)");
 		List<String> names = new ArrayList<>();
 		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
 		{
@@ -1842,10 +2348,6 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		});
 		wrap.add(spellPin);
-		if (pinned.isEmpty())
-		{
-			wrap.add(spellbook);
-		}
 		return wrap;
 	}
 
@@ -1868,8 +2370,7 @@ public class LoadoutLabPanel extends PluginPanel
 			thisSet.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(thisSet);
 		}
@@ -1880,8 +2381,7 @@ public class LoadoutLabPanel extends PluginPanel
 			allSets.addActionListener(a ->
 			{
 				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(allSets);
 		}
@@ -1894,8 +2394,7 @@ public class LoadoutLabPanel extends PluginPanel
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(un);
 		}
@@ -1907,8 +2406,7 @@ public class LoadoutLabPanel extends PluginPanel
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, ALL_SETS, slot);
-				refreshPinnedLabel();
-				recompute();
+						recompute();
 			});
 			pinMenu.add(un);
 		}
@@ -1945,8 +2443,7 @@ public class LoadoutLabPanel extends PluginPanel
 				return;
 			}
 			mobProfile.pin(monsterId, scope, gear.getSlot(), gear.getId());
-			refreshPinnedLabel();
-			recompute();
+				recompute();
 		});
 	}
 
@@ -1963,60 +2460,74 @@ public class LoadoutLabPanel extends PluginPanel
 			// Filter items never touch the optimizer: NO recompute here or
 			// anywhere in the filter paths - only the id-set views refresh.
 			mobProfile.addFilterItem(monsterId, scope, itemId, name);
-			refreshPinnedLabel();
-			reapplyBankViews();
+				reapplyBankViews();
 		});
 	}
 
 	/**
 	 * Re-apply an active Show/Filter after the profile's filter items
-	 * change: a pure id-set rebuild from the LAST results - never an
-	 * optimizer recompute (filter items do not affect the math).
+	 * change: clear the change guards and re-render - the styleCard apply
+	 * hook rebuilds the id sets from the viewed style (never an optimizer
+	 * recompute; filter items do not affect the math).
 	 */
 	private void reapplyBankViews()
 	{
-		if (lastResults() == null || selectedMonster == null)
+		lastHighlightIds = null;
+		lastFilterIds = null;
+		renderPage();
+	}
+
+	/**
+	 * The bank views FOLLOW the viewed style (field spec 2026-07-17):
+	 * toggled once, Show/Filter stay on across melee/ranged/magic and
+	 * Yours|BiS flips, retargeting to the newly viewed set. Null best
+	 * clears the displays but keeps the toggles. Guarded by id-set
+	 * equality so renders do not spam the bank APIs.
+	 */
+	private void applyBankViews(CombatStyle style, DpsResult best, GearItem specWeapon)
+	{
+		Set<Integer> highlightIds = null;
+		Set<Integer> filterIds = null;
+		if (best != null)
 		{
-			return;
-		}
-		if (bankFiltered != null)
-		{
-			StyleResult r = lastResults().get(bankFiltered);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
+			if (bankShowing)
 			{
-				DpsResult best = r.owned.get(0);
-				Set<Integer> ids = new java.util.HashSet<>(
-					setItemIds(best, r.specWeapon, loadedDart(best)));
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankFiltered));
-				bankFilter.filter(ids);
-			}
-		}
-		if (bankShown != null)
-		{
-			StyleResult r = lastResults().get(bankShown);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
-			{
-				DpsResult best = r.owned.get(0);
-				Set<Integer> ids = new java.util.HashSet<>();
+				highlightIds = new java.util.HashSet<>();
 				for (GearItem item : best.getLoadout().getGear().values())
 				{
 					if (item != null)
 					{
-						ids.add(item.getId());
+						highlightIds.add(item.getId());
 					}
 				}
 				GearItem dart = loadedDart(best);
 				if (dart != null)
 				{
-					ids.add(dart.getId());
+					highlightIds.add(dart.getId());
 				}
-				if (r.specWeapon != null)
+				if (specWeapon != null)
 				{
-					ids.add(r.specWeapon.getId());
+					highlightIds.add(specWeapon.getId());
 				}
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankShown));
-				bankHighlighter.highlight(ids);
+				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
+			if (bankFiltering)
+			{
+				filterIds = new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				// The mob profile's supplies (food, antidotes...) join the
+				// filtered bank view - they are part of THIS trip.
+				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+			}
+		}
+		if (!java.util.Objects.equals(highlightIds, lastHighlightIds))
+		{
+			lastHighlightIds = highlightIds;
+			bankHighlighter.highlight(highlightIds);
+		}
+		if (!java.util.Objects.equals(filterIds, lastFilterIds))
+		{
+			lastFilterIds = filterIds;
+			bankFilter.filter(filterIds);
 		}
 	}
 
@@ -2074,6 +2585,61 @@ public class LoadoutLabPanel extends PluginPanel
 				storedToggle.toggle(gear.getId());
 			}
 			refreshStoredLabel();
+			recompute();
+		});
+	}
+
+	/** Chatbox item search -> exclude any item from every suggestion
+	 * (the chip's add path - right-clicking a suggested cell still works
+	 * for items already on screen). */
+	private void showAddExclusionDialog()
+	{
+		itemSearch.search("Exclude an item", (itemId, name) ->
+		{
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
+			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " joins the loadout search.",
+					"Exclude an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (!exclusionView.snapshot().contains(gear.getId()))
+			{
+				exclusionToggle.toggle(gear.getId());
+			}
+			refreshExclusionsLabel();
+			recompute();
+		});
+	}
+
+	/** Chatbox item search -> dream an unowned item into the owned pool
+	 * (same green-border language as the right-click path). */
+	private void showAddDreamDialog()
+	{
+		itemSearch.search("Sim an item (counts as owned)", (itemId, name) ->
+		{
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
+			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " affects the loadout search.",
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (ownedCheck.owns(gear.getId()))
+			{
+				JOptionPane.showMessageDialog(this,
+					"You already own " + gear.label() + " - no sim needed.",
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (!dreamView.snapshot().contains(gear.getId()))
+			{
+				dreamToggle.toggle(gear.getId());
+			}
 			recompute();
 		});
 	}
@@ -2148,8 +2714,7 @@ public class LoadoutLabPanel extends PluginPanel
 						thisMob.addActionListener(a ->
 						{
 							mobProfile.excludeForMob(monsterId, ALL_SETS, item.getId());
-							refreshPinnedLabel();
-							recompute();
+												recompute();
 						});
 						excludeMenu.add(thisMob);
 						if (pinStyle != null)
@@ -2159,8 +2724,7 @@ public class LoadoutLabPanel extends PluginPanel
 							thisSet.addActionListener(a ->
 							{
 								mobProfile.excludeForMob(monsterId, pinStyle.name(), item.getId());
-								refreshPinnedLabel();
-								recompute();
+														recompute();
 							});
 							excludeMenu.add(thisSet);
 						}
@@ -2191,8 +2755,8 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
 						JMenuItem dream = new JMenuItem(dreamed
-							? "Stop dreaming of " + item.label()
-							: "Dream: consider " + item.label() + " as owned");
+							? "Stop simming " + item.label()
+							: "Sim: consider " + item.label() + " as owned");
 						dream.addActionListener(a ->
 						{
 							dreamToggle.toggle(item.getId());
@@ -2351,6 +2915,48 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
+	private static final class CloseIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		CloseIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+				g2.setColor(c.isEnabled() ? new Color(180, 180, 220) : new Color(96, 96, 108));
+				g2.drawLine(x + 1, y + 1, x + size - 1, y + size - 1);
+				g2.drawLine(x + size - 1, y + 1, x + 1, y + size - 1);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
 	private static final class DotsIcon implements javax.swing.Icon
 	{
@@ -2470,56 +3076,67 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** Parameters changed: every entry on the page is stale - drop results
+	 * (a previous answer under new settings reads as this one's), render
+	 * the placeholders, and recompute each entry. */
 	private void recompute()
 	{
 		if (selectedMonster == null)
 		{
 			return;
 		}
-		// Clear stale results immediately - showing the previous monster's
-		// sets while the optimizer runs reads as an answer for this one.
-		resultsPanel.removeAll();
-		// The roster picks today's mood (weighted by season); see MascotRoster.
-		if (displayOptions.loadingAnimation && MascotArt.available())
-		{
-			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
-			if (mascot != null)
-			{
-				resultsPanel.add(mascot);
-			}
-		}
-		// html so long monster names wrap instead of clipping at the edge
-		JLabel computing = new JLabel("<html>Optimizing vs " + selectedMonster.getName() + "...</html>");
-		computing.setForeground(MUTED);
-		computing.setAlignmentX(LEFT_ALIGNMENT);
-		computing.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-		resultsPanel.add(computing);
-		resultsPanel.revalidate();
-		revalidate();
-		repaint();
-		statusLabel.setText(" ");
-		// Compute every entry on the page (M-1: exactly one). Each result
-		// routes back through showResults into its entry and re-renders.
+		syncActiveFromControls();
 		for (ResultEntry entry : page)
 		{
-			computeHook.compute(entry.monster, f2pOnly.isSelected(), slayerTask.isSelected(),
-			effectiveWilderness(), spellbookLock(), riskCap(), selectedRiskBudget(),
-			superAntifireAssumed() && DragonfireRules.breathesFire(selectedMonster),
-			parsedBudgetGp(),
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[optimizeMode.getSelectedIndex()],
-				() -> statusLabel.setText(" "));
+			entry.results = null;
+			// Stale roster bundles must go too: a lens click during the
+			// pending window otherwise resurrects pre-recompute numbers.
+			entry.perMobResults = null;
 		}
+		renderPage();
+		statusLabel.setText(" ");
+		for (ResultEntry entry : page)
+		{
+			computeEntry(entry);
+		}
+	}
+
+	/** One entry's compute: every parameter comes from THE ENTRY's own
+	 * parameter zone (card anatomy spec) - F2P stays global (a world
+	 * fact, not a preference). */
+	private void computeEntry(ResultEntry entry)
+	{
+		if (entry.mobs.size() > 1)
+		{
+			computeHook.computeRoster(new java.util.ArrayList<>(entry.mobs),
+				f2pOnly.isSelected(), entry.onSlayerTask,
+				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
+				parsedBudgetGp(entry.riskCap),
+				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
+				parsedBudgetGp(entry.upgradeBudget),
+				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+				() -> statusLabel.setText(" "));
+			return;
+		}
+		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
+			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
+			parsedBudgetGp(entry.riskCap),
+			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
+			parsedBudgetGp(entry.upgradeBudget),
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+			() -> statusLabel.setText(" "));
 	}
 
 	/** Account or profile switched: nothing on screen may survive. */
 	public void resetForIdentityChange()
 	{
-		bankShown = null;
-		bankFiltered = null;
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
 		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
-		refreshPinnedLabel();
 		refreshNotePanel();
 	}
 
@@ -2532,6 +3149,8 @@ public class LoadoutLabPanel extends PluginPanel
 			clearSelectionInternal();
 			return;
 		}
+		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
 			@Override
@@ -2544,7 +3163,7 @@ public class LoadoutLabPanel extends PluginPanel
 			@Override
 			public boolean revert()
 			{
-				applySelection(previous);
+				restorePage(pageBefore, activeBefore);
 				return true;
 			}
 
@@ -2561,13 +3180,7 @@ public class LoadoutLabPanel extends PluginPanel
 		selectedMonster = null;
 		page.clear();
 		active = null;
-		cardCollapsed().clear();
-		selectedRow.setVisible(false);
-		selectedLabel.setText("");
-		monsterNote.setText("");
-		monsterNote.setVisible(false);
 		refreshNotePanel();
-		refreshPinnedLabel();
 		resultsPanel.removeAll();
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
@@ -2586,37 +3199,147 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return; // stale result for a monster the user moved away from
 		}
+		if (entry.mobs.size() > 1)
+		{
+			// A single-mob map must never overwrite a roster's lensed view
+			// (it detaches results from perMobResults and FREEZES the lens
+			// - field bug: every form showed the same dps). The roster's
+			// own delivery goes through showRosterResults; UI refresh
+			// paths just need the repaint.
+			renderPage();
+			return;
+		}
 		entry.results = results;
 		renderPage();
 	}
 
 	private ResultEntry entryFor(int monsterId)
 	{
+		// A mob can sit alone AND inside a roster: single-mob results must
+		// deliver to the single-mob entry, never overwrite the roster's map.
+		ResultEntry fallback = null;
 		for (ResultEntry entry : page)
 		{
-			if (entry.monster.getId() == monsterId)
+			if (entry.hasMob(monsterId))
 			{
-				return entry;
+				if (entry.mobs.size() == 1)
+				{
+					return entry;
+				}
+				if (fallback == null)
+				{
+					fallback = entry;
+				}
 			}
+		}
+		return fallback;
+	}
+
+	/** Roster results (EDT): routed by exact mob-id list match. */
+	public void showRosterResults(java.util.List<MonsterStats> mobs,
+		java.util.List<Map<CombatStyle, StyleResult>> perMob)
+	{
+		ResultEntry entry = entryForRoster(mobs);
+		if (entry == null || perMob == null || perMob.isEmpty())
+		{
+			return; // stale roster - the page moved on
+		}
+		entry.perMobResults = perMob;
+		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
+		entry.results = perMob.get(entry.lensIndex);
+		renderPage();
+	}
+
+	private ResultEntry entryForRoster(java.util.List<MonsterStats> mobs)
+	{
+		outer:
+		for (ResultEntry entry : page)
+		{
+			if (entry.mobs.size() != mobs.size())
+			{
+				continue;
+			}
+			for (int i = 0; i < mobs.size(); i++)
+			{
+				if (entry.mobs.get(i).getId() != mobs.get(i).getId())
+				{
+					continue outer;
+				}
+			}
+			return entry;
 		}
 		return null;
 	}
 
-	/** Rebuild the results area from the page: one card per entry. With a
-	 * one-entry page this renders exactly the old single-result layout. */
+	/** The mob-list LENS: flip whose numbers show - the shared set never
+	 * changes (card anatomy #1). View state, like the style tabs. */
+	private void lensTo(ResultEntry entry, int index)
+	{
+		if (index < 0 || index >= entry.mobs.size() || index == entry.lensIndex)
+		{
+			return;
+		}
+		entry.lensIndex = index;
+		if (entry.perMobResults != null && index < entry.perMobResults.size())
+		{
+			entry.results = entry.perMobResults.get(index);
+		}
+		if (entry == active)
+		{
+			selectedMonster = entry.mob();
+			applyActiveMonsterUi(entry.mob());
+			setNoteCollapsed(mobProfile.note(entry.mob().getId()).isEmpty());
+			refreshNotePanel();
+			}
+		renderPage();
+	}
+
+	/** Rebuild the results area from the page: one card per entry - chrome
+	 * (header with fold + close) only appears once the page holds more than
+	 * one result, so the single view stays pixel-identical to 0.2.4.
+	 * Entries still computing render a placeholder (mascot on the first). */
 	private void renderPage()
 	{
+		// Every path that changes dreams/exclusions ends in a render.
+		refreshCountChips();
 		resultsPanel.removeAll();
+		// Chrome on every result (field spec 2026-07-17): the fold/title
+		// row now carries the per-result refresh + close, replacing the
+		// old global reload/clear buttons beside the monster name.
+		boolean chrome = true;
+		boolean mascotShown = false;
 		for (ResultEntry entry : page)
 		{
+			if (chrome)
+			{
+				resultsPanel.add(resultChrome(entry));
+				resultsPanel.add(Box.createVerticalStrut(4));
+			}
+			if (chrome && entry.folded)
+			{
+				resultsPanel.add(Box.createVerticalStrut(4));
+				continue;
+			}
 			if (entry.results != null)
 			{
 				resultsPanel.add(resultCard(entry));
 			}
+			else
+			{
+				resultsPanel.add(pendingCard(entry, !mascotShown));
+				mascotShown = true;
+			}
+			if (chrome)
+			{
+				resultsPanel.add(Box.createVerticalStrut(8));
+			}
 		}
 		if (selectedMonster != null)
 		{
-			statusLabel.setText("Best owned sets vs " + selectedMonster.getName());
+			// No summary line under the results (field spec 2026-07-17):
+			// the cards carry their own identity now. The label keeps its
+			// empty-state prompt ("Search a monster to begin.") only.
+			statusLabel.setText(" ");
 		}
 		// Revalidate the PANEL, not just the results column: our new preferred
 		// height has to reach RuneLite's outer scroll pane so the sidebar grows
@@ -2626,9 +3349,671 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
-	/** One result's card: the entry's style cards and source legend in a
-	 * transparent column (M-1: no chrome - headers/Save/X arrive with the
-	 * multi-add UX). */
+	/** The per-set "..." menu (pins, bank filters, spellbook lock), now
+	 * riding the result chrome beside reload/close (field spec). Scopes
+	 * follow the SELECTED style tab. */
+	private JButton setMenuButton(ResultEntry entry)
+	{
+		CombatStyle style = entry.selectedTab != null ? entry.selectedTab
+			: entry.results == null && entry.perMobResults == null
+				? CombatStyle.MELEE : defaultTab(entry);
+		JButton setMenu = new JButton(new DotsIcon(11));
+		setMenu.setToolTipText("Pins and bank-filter items for this set");
+		setMenu.setMargin(new Insets(1, 5, 1, 5));
+		setMenu.addActionListener(e ->
+		{
+			JPopupMenu menu = new JPopupMenu();
+			// Compact labels (field spec - the long forms truncated in the
+			// popup): the scope pair is "<style> set" vs "this result".
+			JMenuItem pinThis = new JMenuItem("Pin item - " + scopeLabel(style.name()));
+			pinThis.addActionListener(ev -> searchAndPin(style.name()));
+			menu.add(pinThis);
+			JMenuItem pinAll = new JMenuItem("Pin item - this result");
+			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
+			menu.add(pinAll);
+			JMenuItem filterThis = new JMenuItem("Bank filter - " + scopeLabel(style.name()));
+			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
+			menu.add(filterThis);
+			JMenuItem filterAll = new JMenuItem("Bank filter - this result");
+			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
+			menu.add(filterAll);
+			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
+			{
+				// The spellbook lock: the submenu drives the combo, which
+				// records + recomputes.
+				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
+				for (int b = 0; b < spellbook.getItemCount(); b++)
+				{
+					final int index = b;
+					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
+						? "[x] " : "") + spellbook.getItemAt(b));
+					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
+					bookMenu.add(bookItem);
+				}
+				menu.add(bookMenu);
+			}
+			menu.show(setMenu, 0, setMenu.getHeight());
+		});
+		return setMenu;
+	}
+
+	/** A result's header row: fold chevron + "vs <name>" (+ one-line best
+	 * summary when folded) filling the row, close (X) right. The title sits
+	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
+	 * result (the one the global search affordances act on) renders white; the others
+	 * muted. Only rendered on multi-result pages. */
+	private javax.swing.JComponent resultChrome(ResultEntry entry)
+	{
+		JPanel row = new JPanel(new BorderLayout(4, 0));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+		String summary = "";
+		if (entry.folded && entry.results != null)
+		{
+			double best = 0;
+			for (StyleResult r : entry.results.values())
+			{
+				if (r != null && r.owned != null && !r.owned.isEmpty())
+				{
+					best = Math.max(best, r.owned.get(0).getDps());
+				}
+			}
+			summary = best > 0 ? String.format(" - %.2f DPS", best) : " - no set";
+		}
+		boolean isActive = entry == active;
+		// Expanded cards drop the redundant name (the mob list right below
+		// carries it - field spec); folded cards keep the one-line summary,
+		// otherwise a folded result is unidentifiable.
+		JLabel title = new JLabel(entry.folded
+			? "> vs " + entry.mob().label()
+				+ (entry.mobs.size() > 1 ? " +" + (entry.mobs.size() - 1) : "") + summary
+			: "v");
+		title.setForeground(isActive ? Color.WHITE : new Color(170, 170, 170));
+		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
+		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		title.setToolTipText((entry.folded ? "Click to expand" : "Click to fold")
+			+ (isActive ? " - the active result" : ""));
+		title.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				entry.folded = !entry.folded;
+				renderPage();
+			}
+		});
+		row.add(title, BorderLayout.CENTER);
+		JButton reload = new JButton(new ReloadIcon(10));
+		reload.setToolTipText("Recompute this result");
+		reload.setMargin(new Insets(1, 5, 1, 5));
+		reload.addActionListener(e ->
+		{
+			entry.results = null;
+			entry.perMobResults = null;
+			renderPage();
+			statusLabel.setText(" ");
+			computeEntry(entry);
+		});
+		JButton close = new JButton(new CloseIcon(9));
+		close.setToolTipText("Close this result");
+		close.setMargin(new Insets(1, 5, 1, 5));
+		close.addActionListener(e -> closeResult(entry));
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+		buttons.setOpaque(false);
+		buttons.add(setMenuButton(entry));
+		buttons.add(reload);
+		buttons.add(close);
+		row.add(buttons, BorderLayout.EAST);
+		return row;
+	}
+
+	/** The still-computing placeholder. The mascot performs only on a
+	 * SINGLE-result page (the classic loading experience); on a multi-
+	 * result page a pending entry is one compact line so the rendered
+	 * results around it stay put. */
+	private javax.swing.JComponent pendingCard(ResultEntry entry, boolean withMascot)
+	{
+		JPanel column = new JPanel();
+		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
+		column.setOpaque(false);
+		column.setAlignmentX(LEFT_ALIGNMENT);
+		// The mob list leads (field spec): build or trim the roster while
+		// the optimizer runs - each edit supersedes the in-flight compute
+		// via the service ticket. The mascot performs BELOW the list.
+		column.add(mobLensRows(entry, null, false));
+		column.add(paramChipRow(entry));
+		// The roster picks today's mood (weighted by season); see MascotRoster.
+		if (withMascot && page.size() == 1
+			&& displayOptions.loadingAnimation && MascotArt.available())
+		{
+			Mascot mascot = MascotRoster.pick(java.time.LocalDate.now(), MASCOT_MOOD);
+			if (mascot != null)
+			{
+				column.add(mascot);
+			}
+		}
+		// A caption like the empty-state prompt: centered, italic (the
+		// centerRow wrapper dodges the mixed-alignment BoxLayout gotcha).
+		JLabel computing = new JLabel("<html>" + (entry.mobs.size() > 1
+			? "Optimizing one shared set vs " + entry.mobs.size() + " mobs..."
+			: "Optimizing vs " + entry.mob().getName() + "...") + "</html>");
+		computing.setForeground(MUTED);
+		computing.setFont(computing.getFont().deriveFont(Font.ITALIC));
+		computing.setBorder(BorderFactory.createEmptyBorder(page.size() == 1 ? 8 : 2, 0, 0, 0));
+		JPanel computingRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		computingRow.setOpaque(false);
+		computingRow.setAlignmentX(LEFT_ALIGNMENT);
+		computingRow.add(computing);
+		computingRow.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+			computingRow.getPreferredSize().height));
+		column.add(computingRow);
+		return column;
+	}
+
+	/** The per-result PARAMETER ZONE (card anatomy #2, field spec
+	 * 2026-07-17): compact chips between the mob list and the gear that
+	 * READ the entry's own settings and DRIVE the hidden legacy controls
+	 * - which still own recording (back/forward), write-through, and
+	 * recompute - after focusing this entry. Two wrap rows: toggles,
+	 * then pick-a-value chips. */
+	private javax.swing.JComponent paramChipRow(ResultEntry entry)
+	{
+		MonsterStats mob = entry.mob();
+		JPanel rows = new JPanel();
+		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
+		rows.setOpaque(false);
+		rows.setAlignmentX(LEFT_ALIGNMENT);
+		JPanel toggles = chipFlowRow();
+		if (SlayerLockedMonsters.isTaskOnly(mob))
+		{
+			toggles.add(paramChip("On task", true, false,
+				"Task-only boss - always on", null));
+		}
+		else if (mob.isSlayerMonster())
+		{
+			toggles.add(paramChip("On task", entry.onSlayerTask, true,
+				"On task: slayer helmet bonuses apply",
+				() -> asActive(entry, slayerTask::doClick)));
+		}
+		boolean listed = WildernessMonsters.isWilderness(mob);
+		boolean exclusive = WildernessMonsters.isExclusive(mob);
+		if (exclusive)
+		{
+			toggles.add(paramChip("Wildy", true, false,
+				"Wilderness-exclusive - always in", null));
+		}
+		else if (listed)
+		{
+			toggles.add(paramChip("Wildy", entry.inWilderness, true,
+				"Fighting inside the Wilderness: wilderness weapons +50%,"
+					+ " risk options apply",
+				() -> asActive(entry, inWilderness::doClick)));
+		}
+		boolean wild = (exclusive || (listed && entry.inWilderness)) && displayOptions.wildyRisk;
+		if (wild)
+		{
+			toggles.add(paramChip("Protect item", entry.protectItem, true,
+				"Protect Item keeps a 4th item (not while skulled)",
+				() -> asActive(entry, protectItem::doClick)));
+		}
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (fiery)
+		{
+			// Dragonfire protection mode (field spec), cycling gear ->
+			// regular -> super. Regular keeps the shield REQUIRED (only
+			// the combo fully blocks - the honesty rule refuses half
+			// protection); its dps effect lands with antifire-aware
+			// incoming, the chips admit the potion today. Super frees
+			// the shield slot.
+			int mode = entry.antifireMode;
+			String[] antifireLabels = {"Antifire: gear", "Antifire: regular", "Super antifire"};
+			String[] antifireTips = {
+				"A dragonfire shield is required in the set; click to also"
+					+ " assume a regular antifire (shield + potion = immune)",
+				"Regular antifire assumed WITH the required shield - the"
+					+ " combo fully blocks dragonfire; click for super"
+					+ " antifire (no shield needed)",
+				"Super antifire assumed - the shield slot is free; click to"
+					+ " require the shield alone again"};
+			String[] antifireSteps = {"Require dragonfire shield",
+				"Assume regular antifire", "Assume super antifire"};
+			toggles.add(paramChip(antifireLabels[mode], mode > 0, true,
+				antifireTips[mode],
+				() -> asActive(entry, () ->
+				{
+					int next = (entry.antifireMode + 1) % 3;
+					int prev = entry.antifireMode;
+					recordStep(antifireSteps[next],
+						() -> setAntifireMode(next), () -> setAntifireMode(prev));
+					if (historyControl == null)
+					{
+						setAntifireMode(next);
+					}
+				})));
+		}
+		if (toggles.getComponentCount() > 0)
+		{
+			rows.add(toggles);
+		}
+		JPanel values = chipFlowRow();
+		String modeText = String.valueOf(optimizeMode.getItemAt(
+			Math.min(entry.optimizeMode, optimizeMode.getItemCount() - 1)));
+		values.add(paramChip(modeText.replace("Optimize: ", ""),
+			entry.optimizeMode > 0, true,
+			"Balanced/Tanky trade dps for less damage taken - click to pick",
+			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
+		if (displayOptions.upgradeBudget)
+		{
+			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
+			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
+				!budget.isEmpty(), true,
+				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
+					+ " empty = owned gear only",
+				() -> editBudget(entry)));
+		}
+		if (wild)
+		{
+			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
+			values.add(paramChip(risk.isEmpty() ? "Risk: off" : "Risk: " + risk,
+				!risk.isEmpty(), true,
+				"Low-risk mode: keep your 3 most valuable items (4 with"
+					+ " Protect Item), everything else must total under this"
+					+ " gp cap (25k, 1m...) - empty = unconstrained",
+				() -> editRiskCap(entry)));
+		}
+		int pinCount = 0;
+		int filterCount = 0;
+		int lensedId = entry.mob().getId();
+		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
+			: mobProfile.allPins(lensedId).values())
+		{
+			pinCount += scoped.size();
+		}
+		for (Map<Integer, String> scoped : mobProfile.allFilterItems(lensedId).values())
+		{
+			filterCount += scoped.size();
+		}
+		if (pinCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Pins: " + pinCount,
+				"Pinned items for this mob - click to manage"));
+		}
+		if (filterCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Filters: " + filterCount,
+				"Bank-filter supplies for this mob - click to manage"));
+		}
+		rows.add(values);
+		rows.add(Box.createVerticalStrut(4));
+		return rows;
+	}
+
+	/** A pins/filters count chip: opens the manage menu anchored on the
+	 * chip (the retired label's menu, source-anchored). */
+	private javax.swing.JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(Color.WHITE);
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
+		chip.setBorder(new RoundedBorder(ACCENT, 2, 7));
+		chip.setToolTipText(tooltip);
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				asActive(entry, () -> showPinnedMenu(e));
+			}
+		});
+		return chip;
+	}
+
+	private static JPanel chipFlowRow()
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		return row;
+	}
+
+	/** One parameter chip: the Yours|BiS border language - orange edge
+	 * when ON, quiet outline when off, muted + inert when forced. */
+	private javax.swing.JComponent paramChip(String text, boolean selected,
+		boolean enabled, String tooltip, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(!enabled ? new Color(150, 150, 150)
+			: selected ? Color.WHITE : new Color(170, 170, 170));
+		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
+		chip.setBorder(new RoundedBorder(selected
+			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
+		chip.setToolTipText(tooltip);
+		if (enabled && onClick != null)
+		{
+			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			chip.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					onClick.run();
+				}
+			});
+		}
+		return chip;
+	}
+
+	/** Chip actions drive the hidden controls for THIS entry: focusing it
+	 * first (no recompute) so the write-through, recording, and recompute
+	 * listeners aim at the right card. */
+	private void asActive(ResultEntry entry, Runnable action)
+	{
+		if (entry != active)
+		{
+			setActive(entry);
+		}
+		action.run();
+	}
+
+	private void pickFromCombo(ResultEntry entry, JComboBox<String> combo, String what)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		for (int i = 0; i < combo.getItemCount(); i++)
+		{
+			final int index = i;
+			JMenuItem item = new JMenuItem((i == combo.getSelectedIndex() ? "[x] " : "")
+				+ combo.getItemAt(i));
+			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
+			menu.add(item);
+		}
+		java.awt.Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	private void editRiskCap(ResultEntry entry)
+	{
+		String current = entry.riskCap == null ? "" : entry.riskCap;
+		String edited = (String) JOptionPane.showInputDialog(this,
+			"<html>Wilderness risk cap in gp (25k, 1m...; empty ="
+				+ " unconstrained).<br>The default for new searches can be"
+				+ " changed in the plugin settings panel.</html>",
+			"Risk cap", JOptionPane.PLAIN_MESSAGE, null, null, current);
+		if (edited != null && !edited.equals(current))
+		{
+			asActive(entry, () ->
+			{
+				riskCapField.setText(edited);
+				riskCapEdited();
+			});
+		}
+	}
+
+	private void editBudget(ResultEntry entry)
+	{
+		String current = entry.upgradeBudget == null ? "" : entry.upgradeBudget;
+		String edited = (String) JOptionPane.showInputDialog(this,
+			"Buyable-gear budget (750k, 1m, 1.5b; - = unlimited; empty = off):",
+			"Upgrade budget", JOptionPane.PLAIN_MESSAGE, null, null, current);
+		if (edited != null && !edited.equals(current))
+		{
+			asActive(entry, () ->
+			{
+				upgradeBudget.setText(edited);
+				budgetEdited();
+			});
+		}
+	}
+
+	/** The roster rows (card anatomy #1): name + hp per mob, an
+	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
+	 * the shared set never changes. */
+	private javax.swing.JComponent mobLensRows(ResultEntry entry,
+		CombatStyle viewedStyle, boolean bis)
+	{
+		JPanel rows = new JPanel();
+		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
+		rows.setOpaque(false);
+		rows.setAlignmentX(LEFT_ALIGNMENT);
+		rows.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
+		for (int i = 0; i < entry.mobs.size(); i++)
+		{
+			final int index = i;
+			MonsterStats mob = entry.mobs.get(i);
+			boolean lensed = i == entry.lensIndex;
+			JPanel row = new JPanel(new BorderLayout(4, 0));
+			row.setOpaque(true);
+			row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			// Bordered + padded so every row reads as clickable (field
+			// spec); the lensed row wears the bright edge like Yours|BiS.
+			row.setBorder(new RoundedBorder(lensed
+				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 3, 8));
+			row.setAlignmentX(LEFT_ALIGNMENT);
+			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			row.setToolTipText("Show this mob's numbers - the shared set stays");
+			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
+			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
+			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
+			row.add(name, BorderLayout.CENTER);
+			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+			east.setOpaque(false);
+			// The chosen set's dps vs THIS mob (field spec): the viewed
+			// style + Yours|BiS side, flipping with the tabs and toggle.
+			double rowDps = mobRowDps(entry, index, viewedStyle, bis);
+			if (rowDps > 0)
+			{
+				JLabel dps = new JLabel(String.format("%.2f", rowDps));
+				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
+				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
+				dps.setToolTipText("The shared set's dps against this mob"
+					+ (bis ? " (BiS view)" : "") + " - " + viewedStyle.toString().toLowerCase());
+				// The viewed style's skill sprite rides the number (field
+				// spec) - same icon language as the tabs.
+				attachSprite(dps, AssumeIcons.styleSprite(viewedStyle));
+				dps.setIconTextGap(3);
+				east.add(dps);
+			}
+			MouseAdapter lens = new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					lensTo(entry, index);
+				}
+			};
+			row.addMouseListener(lens);
+			name.addMouseListener(lens);
+			if (entry.mobs.size() > 1)
+			{
+				// Each mob can leave the roster (field spec); the last one
+				// cannot - close the whole result via the chrome X instead.
+				JLabel remove = new JLabel(new CloseIcon(8));
+				remove.setToolTipText("Remove " + mob.getName() + " from this result");
+				remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				remove.addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e)
+					{
+						removeMobFromEntry(entry, index);
+					}
+				});
+				east.add(remove);
+			}
+			if (east.getComponentCount() > 0)
+			{
+				row.add(east, BorderLayout.EAST);
+			}
+			rows.add(row);
+			rows.add(Box.createVerticalStrut(2));
+		}
+		// The growth affordance: add a mob straight to this result's roster.
+		JLabel add = new JLabel("+ Add mob");
+		add.setForeground(new Color(150, 150, 150));
+		add.setFont(add.getFont().deriveFont(Font.BOLD, 12f));
+		add.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
+		add.setAlignmentX(LEFT_ALIGNMENT);
+		add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		add.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		add.setToolTipText("Add a mob to this result - ONE shared set optimized across the list");
+		add.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				showAddMobDialog(entry);
+			}
+		});
+		rows.add(add);
+		rows.add(Box.createVerticalStrut(4));
+		return rows;
+	}
+
+	/** The viewed side's dps against one mob of the roster: the per-mob
+	 * bundle when present (roster), the live map for the lensed single. */
+	private double mobRowDps(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	{
+		if (style == null)
+		{
+			return 0;
+		}
+		Map<CombatStyle, StyleResult> map = null;
+		if (entry.perMobResults != null && index < entry.perMobResults.size())
+		{
+			map = entry.perMobResults.get(index);
+		}
+		else if (entry.mobs.size() == 1)
+		{
+			map = entry.results;
+		}
+		StyleResult r = map == null ? null : map.get(style);
+		if (r == null)
+		{
+			return 0;
+		}
+		DpsResult shown = bis ? r.overallBest
+			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+		return shown == null ? 0 : shown.getDps();
+	}
+
+	/** The + row's mob picker: incremental search, double-click/Enter adds
+	 * the hit to the entry's roster (same history step as before). */
+	private void showAddMobDialog(ResultEntry entry)
+	{
+		java.awt.Window owner = SwingUtilities.getWindowAncestor(this);
+		javax.swing.JDialog dialog = new javax.swing.JDialog(owner, "Add a mob to this result",
+			java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+		JPanel content = new JPanel(new BorderLayout(0, 4));
+		content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+		JTextField field = new JTextField();
+		DefaultListModel<MonsterStats> model = new DefaultListModel<>();
+		JList<MonsterStats> hits = new JList<>(model);
+		hits.setVisibleRowCount(8);
+		hits.setCellRenderer(new DefaultListCellRenderer()
+		{
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				setText(((MonsterStats) value).label());
+				return this;
+			}
+		});
+		Runnable refresh = () ->
+		{
+			model.clear();
+			String query = field.getText() == null ? "" : field.getText().trim();
+			if (!query.isEmpty())
+			{
+				for (MonsterStats hit : data.searchMonsters(query, 12))
+				{
+					if (!entry.hasMob(hit.getId()))
+					{
+						model.addElement(hit);
+					}
+				}
+			}
+			if (!model.isEmpty())
+			{
+				hits.setSelectedIndex(0);
+			}
+		};
+		field.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
+		{
+			@Override
+			public void insertUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+
+			@Override
+			public void removeUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+
+			@Override
+			public void changedUpdate(javax.swing.event.DocumentEvent e)
+			{
+				refresh.run();
+			}
+		});
+		Runnable pick = () ->
+		{
+			MonsterStats sel = hits.getSelectedValue();
+			if (sel != null)
+			{
+				dialog.dispose();
+				addMobToEntry(entry, sel);
+			}
+		};
+		field.addActionListener(e -> pick.run());
+		// ONE click adds (field feedback: the double-click was hated).
+		hits.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				int idx = hits.locationToIndex(e.getPoint());
+				if (idx >= 0)
+				{
+					hits.setSelectedIndex(idx);
+					pick.run();
+				}
+			}
+		});
+		content.add(field, BorderLayout.NORTH);
+		content.add(new JScrollPane(hits), BorderLayout.CENTER);
+		dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
+			javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+			javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
+		dialog.setContentPane(content);
+		dialog.setSize(260, 240);
+		dialog.setLocationRelativeTo(this);
+		SwingUtilities.invokeLater(field::requestFocusInWindow);
+		dialog.setVisible(true);
+	}
+
+	/** One result's card: the style TAB STRIP (skill icon + dps per tab,
+	 * fixed melee/ranged/magic positions, strongest selected by default)
+	 * over ONE flipping detail body, then the source legend (M-2c: tabs
+	 * replaced the stacked style cards - kits become more tabs at M-4). */
 	private javax.swing.JComponent resultCard(ResultEntry entry)
 	{
 		Map<CombatStyle, StyleResult> results = entry.results;
@@ -2637,48 +4022,24 @@ public class LoadoutLabPanel extends PluginPanel
 		column.setOpaque(false);
 		column.setAlignmentX(LEFT_ALIGNMENT);
 		usedSources.clear();
-		// Default collapse: a set a full standard deviation under the best
-		// dps (or with no usable set at all) starts folded to its header.
-		entry.autoCollapsed.clear();
-		double bestDps = 0;
-		double sum = 0;
-		double sumSquares = 0;
-		int usable = 0;
-		for (CombatStyle style : CombatStyle.values())
-		{
-			StyleResult r = results.get(style);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
-			{
-				double d = r.owned.get(0).getDps();
-				bestDps = Math.max(bestDps, d);
-				sum += d;
-				sumSquares += d * d;
-				usable++;
-			}
-		}
-		double stdev = usable > 1
-			? Math.sqrt(Math.max(0, sumSquares / usable - (sum / usable) * (sum / usable)))
-			: 0;
-		for (CombatStyle style : CombatStyle.values())
-		{
-			StyleResult r = results.get(style);
-			boolean hasSet = r != null && r.owned != null && !r.owned.isEmpty();
-			entry.autoCollapsed.put(style, !hasSet
-				|| (usable > 1 && stdev > 0.01
-					&& r.owned.get(0).getDps() < bestDps - stdev));
-		}
-		// Strongest style first: order the cards by your best set's dps.
+		// Static tab positions (field spec): melee / ranged / magic always
+		// left to right, on both sides of the Yours|BiS toggle - the
+		// strongest style is the DEFAULT SELECTION, not the first slot.
 		CombatStyle[] styleOrder = {CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC};
-		Arrays.sort(styleOrder, Comparator.comparingDouble(style ->
-		{
-			StyleResult r = results.get(style);
-			return r == null || r.owned.isEmpty() ? 0.0 : -r.owned.get(0).getDps();
-		}));
-		for (CombatStyle style : styleOrder)
-		{
-			column.add(styleCard(style, results.get(style)));
-			column.add(Box.createVerticalStrut(6));
-		}
+		boolean hasBis = displayOptions.gameBest && hasAnyGameBest(results);
+		boolean bis = hasBis && entry.viewingBis;
+		// The default resolves from your OWNED dps regardless of the viewed
+		// side, so flipping the toggle never changes which tab is open.
+		CombatStyle selected = entry.selectedTab != null ? entry.selectedTab : defaultTab(entry);
+		// Card order (field spec 2026-07-17): mob list, then the gear/stat
+		// body, with the style tabs BETWEEN the gear view and Yours|BiS -
+		// the strip is built here (it needs the roster-wide order) and
+		// rides into the card body.
+		column.add(mobLensRows(entry, selected, bis));
+		column.add(paramChipRow(entry));
+		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
+			styleTabs(entry, results, styleOrder, selected, bis)));
+		column.add(Box.createVerticalStrut(6));
 		javax.swing.JComponent legend = buildSourceLegend();
 		if (legend != null)
 		{
@@ -2687,88 +4048,232 @@ public class LoadoutLabPanel extends PluginPanel
 		return column;
 	}
 
-	private JPanel styleCard(CombatStyle style, StyleResult result)
+	/** Roster-aware default: the style whose SHARED set averages the best
+	 * owned dps across the whole mob list - stable under lens flips, so
+	 * clicking a mob row never changes which set you are looking at
+	 * (field report: it read as "different sets for different mobs"). */
+	private static CombatStyle defaultTab(ResultEntry entry)
+	{
+		if (entry.perMobResults == null || entry.perMobResults.size() < 2)
+		{
+			return defaultTab(entry.results);
+		}
+		CombatStyle best = null;
+		double bestScore = 0.0;
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		{
+			double sum = 0;
+			for (int i = 0; i < entry.perMobResults.size(); i++)
+			{
+				Map<CombatStyle, StyleResult> perMob = entry.perMobResults.get(i);
+				StyleResult r = perMob == null ? null : perMob.get(style);
+				if (r != null && r.owned != null && !r.owned.isEmpty())
+				{
+					// HP-weighted, mirroring the optimizer's objective -
+					// the default tab and the shared-set choice must agree.
+					int hp = i < entry.mobs.size()
+						? Math.max(1, entry.mobs.get(i).getHitpoints()) : 1;
+					sum += r.owned.get(0).getDps() * hp;
+				}
+			}
+			if (sum > bestScore)
+			{
+				bestScore = sum;
+				best = style;
+			}
+		}
+		return best != null ? best : defaultTab(entry.results);
+	}
+
+	/** The tab to open before the user has picked one: highest owned dps,
+	 * falling back to highest BiS dps when nothing is owned at all. */
+	private static CombatStyle defaultTab(Map<CombatStyle, StyleResult> results)
+	{
+		CombatStyle best = null;
+		double bestDps = 0.0;
+		for (Map.Entry<CombatStyle, StyleResult> e : results.entrySet())
+		{
+			StyleResult r = e.getValue();
+			if (r != null && r.owned != null && !r.owned.isEmpty()
+				&& r.owned.get(0).getDps() > bestDps)
+			{
+				bestDps = r.owned.get(0).getDps();
+				best = e.getKey();
+			}
+		}
+		if (best != null)
+		{
+			return best;
+		}
+		for (Map.Entry<CombatStyle, StyleResult> e : results.entrySet())
+		{
+			StyleResult r = e.getValue();
+			if (r != null && r.overallBest != null && r.overallBest.getDps() > bestDps)
+			{
+				bestDps = r.overallBest.getDps();
+				best = e.getKey();
+			}
+		}
+		return best != null ? best : CombatStyle.MELEE;
+	}
+
+	private static boolean hasAnyGameBest(Map<CombatStyle, StyleResult> results)
+	{
+		for (StyleResult r : results.values())
+		{
+			if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The Yours | BiS chip pair (field spec: the BiS view is the SAME card
+	 * through a toggle, not a separate section), with the gear-gap percent
+	 * for the selected style beside it. */
+	private javax.swing.JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
+	{
+		JPanel row = new JPanel(new BorderLayout());
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+		chips.setOpaque(false);
+		chips.add(viewChip("Yours", !bis, () ->
+		{
+			entry.viewingBis = false;
+			renderPage();
+		}));
+		chips.add(viewChip("BiS", bis, () ->
+		{
+			entry.viewingBis = true;
+			renderPage();
+		}));
+		row.add(chips, BorderLayout.WEST);
+		if (selected != null && selected.overallBest != null
+			&& selected.owned != null && !selected.owned.isEmpty()
+			&& selected.overallBest.getDps() > 0)
+		{
+			double pct = Math.min(100.0,
+				100.0 * selected.owned.get(0).getDps() / selected.overallBest.getDps());
+			JLabel gap = new JLabel(String.format("you are at %.0f%%", pct));
+			gap.setForeground(MUTED);
+			gap.setFont(gap.getFont().deriveFont(11f));
+			gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
+			row.add(gap, BorderLayout.EAST);
+		}
+		return row;
+	}
+
+	private javax.swing.JComponent viewChip(String text, boolean selected, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(selected);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
+		// Bordered buttons (field request): the selected side wears a
+		// bright edge, the other stays a quiet outline.
+		chip.setBorder(new RoundedBorder(selected
+			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.setToolTipText(text.equals("BiS")
+			? "The game-wide best set at your levels" : "Your best owned set");
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				onClick.run();
+			}
+		});
+		return chip;
+	}
+
+	/** The tab strip: one equal-width tab per style - the skill sprite and
+	 * the best owned dps, nothing else. The selected tab wears the detail
+	 * card's background so the two read as one surface. */
+	private javax.swing.JComponent styleTabs(ResultEntry entry,
+		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected,
+		boolean bis)
+	{
+		JPanel strip = new JPanel(new java.awt.GridLayout(1, order.length, 2, 0));
+		strip.setOpaque(false);
+		strip.setAlignmentX(LEFT_ALIGNMENT);
+		strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
+		for (CombatStyle style : order)
+		{
+			StyleResult r = results.get(style);
+			DpsResult shown = r == null ? null
+				: bis ? r.overallBest
+				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+			boolean hasSet = shown != null && shown.getDps() > 0;
+			boolean isSelected = style == selected;
+			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
+			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			tab.setOpaque(isSelected);
+			// The pick was background-only and read as subtle (field
+			// report): the chip language's border makes it unmissable.
+			tab.setBorder(new RoundedBorder(isSelected
+				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 1, 2));
+			JLabel icon = new JLabel();
+			attachSprite(icon, AssumeIcons.styleSprite(style));
+			JLabel dps = new JLabel(hasSet
+				? String.format("%.2f", shown.getDps()) : "-");
+			dps.setForeground(isSelected ? Color.WHITE : new Color(160, 160, 160));
+			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
+			tab.add(icon);
+			tab.add(dps);
+			tab.setToolTipText(style + (hasSet ? " - " + dps.getText() + " DPS" : " - no set"));
+			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			tab.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					entry.selectedTab = style;
+					renderPage();
+				}
+			});
+			strip.add(tab);
+		}
+		return strip;
+	}
+
+	private JPanel styleCard(ResultEntry entry, CombatStyle style, StyleResult result,
+		boolean hasBis, boolean bis, javax.swing.JComponent styleStrip)
 	{
 		renderingStyle = style;
+		renderingBis = bis;
+		renderingMechanicsNote = MonsterNotes.noteFor(entry.mob());
+		renderingProtectItem = entry.protectItem && effectiveWilderness(entry)
+			&& displayOptions.wildyRisk;
+		// The risk skull describes YOUR set's death mechanics - Yours view
+		// only, like the old full-width line it replaces.
+		renderingRiskLine = !bis && displayOptions.riskLine && effectiveWilderness(entry);
+		renderingUpgradeLine = !bis;
+		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
+		renderingRiskKeep = entry.protectItem ? 4 : 3;
+		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		card.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
 		card.setAlignmentX(LEFT_ALIGNMENT);
 
-		boolean hasSet = result != null && result.owned != null && !result.owned.isEmpty();
-		boolean collapsed = cardCollapsed().containsKey(style)
-			? cardCollapsed().get(style)
-			: autoCollapsed().getOrDefault(style, false);
+		boolean hasSet = bis
+			? result != null && result.overallBest != null && result.overallBest.getDps() > 0
+			: result != null && result.owned != null && !result.owned.isEmpty();
 
-		// Header row: collapse toggle + the style's SKILL ICON (sprite, not a
-		// glyph - Tahoe tofu rule; the tooltip carries the word) + summary
-		// dps left, the set's own menu (per-set pins and supplies) right.
-		JLabel chevron = new JLabel(collapsed ? "> " : "v ");
-		JLabel styleIcon = new JLabel();
-		styleIcon.setToolTipText(String.valueOf(style));
-		attachSprite(styleIcon, AssumeIcons.styleSprite(style));
-		JLabel header = new JLabel(hasSet
-			? String.format("%.2f DPS", result.owned.get(0).getDps())
-			: "no set");
-		JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
-		headerLeft.setOpaque(false);
-		for (JLabel part : new JLabel[]{chevron, header})
-		{
-			part.setForeground(Color.WHITE);
-			part.setFont(part.getFont().deriveFont(Font.BOLD, 14f));
-		}
-		headerLeft.add(chevron);
-		headerLeft.add(styleIcon);
-		headerLeft.add(header);
-		headerLeft.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		header.setToolTipText(collapsed ? "Click to expand this set" : "Click to collapse this set");
-		headerLeft.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				cardCollapsed().put(style, !collapsed);
-				if (selectedMonster != null && lastResults() != null)
-				{
-					showResults(selectedMonster, lastResults());
-				}
-			}
-		});
-		JPanel headerRow = new JPanel(new BorderLayout());
-		headerRow.setOpaque(false);
-		headerRow.setAlignmentX(LEFT_ALIGNMENT);
-		headerRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		headerRow.add(headerLeft, BorderLayout.WEST);
-		JButton setMenu = new JButton(new DotsIcon(11));
-		setMenu.setToolTipText("Pins and bank-filter items for this set");
-		setMenu.setMargin(new Insets(1, 5, 1, 5));
-		setMenu.addActionListener(e ->
-		{
-			JPopupMenu menu = new JPopupMenu();
-			JMenuItem pinThis = new JMenuItem("Pin an item - "
-				+ scopeLabel(style.name()) + " only (search)...");
-			pinThis.addActionListener(ev -> searchAndPin(style.name()));
-			menu.add(pinThis);
-			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
-			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
-			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank filter - "
-				+ scopeLabel(style.name()) + " only (search)...");
-			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
-			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank filter - "
-				+ filterScopeLabel(ALL_SETS) + " (search)...");
-			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
-			menu.add(filterAll);
-			menu.show(setMenu, 0, setMenu.getHeight());
-		});
-		// Assume icons ride the header (right, before the menu) - a whole
-		// row of vertical space reclaimed per card.
-		JPanel headerEast = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-		headerEast.setOpaque(false);
+		// The set menu moved into the result chrome (field spec) - this
+		// section now only STAGES the assume chips for the stat panel.
+		renderingChips = null;
+		String chipLabel = result == null ? null
+			: bis ? result.gameBoostLabel : result.boostLabel;
 		if (hasSet && displayOptions.assumes
-			&& result.boostLabel != null && !result.boostLabel.isEmpty())
+			&& chipLabel != null && !chipLabel.isEmpty())
 		{
 			// Engine-forced honesty flag (no protective shield owned) OR the
 			// user's own shield-cell flip - either way the chip must show.
@@ -2783,18 +4288,28 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
 			}
-			headerEast.add(assumesChips(result.boostLabel,
-				"Assumed prayer + boost (you own these)", antifireTooltip));
+			else if (active != null && active.antifireMode == 1
+				&& DragonfireRules.breathesFire(entry.mob()))
+			{
+				antifireTooltip = "Regular antifire assumed - with the"
+					+ " required shield, dragonfire is fully blocked";
+			}
+			// The chips render in the stat panel beside the gear, not here.
+			JPanel chips = assumesChips(chipLabel,
+				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
+				antifireTooltip);
+			renderingChips = chips;
+			if (renderingProtectItem)
+			{
+				// Protect Item rides the assume chips (field spec) - it is
+				// an assumption like the prayers beside it.
+				JLabel keepChip = new JLabel();
+				keepChip.setToolTipText("Protect Item assumed - a 4th item is kept on death");
+				attachSprite(keepChip, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
+				chips.add(keepChip);
+			}
 		}
-		headerEast.add(setMenu);
-		headerRow.add(headerEast, BorderLayout.EAST);
-		card.add(headerRow);
-		if (collapsed)
-		{
-			return card;
-		}
-
-		if (result == null || result.owned == null || result.owned.isEmpty())
+		if (!hasSet)
 		{
 			boolean vyre = selectedMonster != null && selectedMonster.hasAttribute("vampyre3");
 			boolean flying = style == CombatStyle.MELEE
@@ -2809,7 +4324,7 @@ public class LoadoutLabPanel extends PluginPanel
 				? "Needs leaf-bladed / broad / Magic Dart"
 				: flying
 					? "Flying - needs a halberd"
-					: "No usable owned set found.");
+					: bis ? "No usable set exists." : "No usable owned set found.");
 			none.setForeground(MUTED);
 			none.setAlignmentX(LEFT_ALIGNMENT);
 			if (vyre)
@@ -2823,149 +4338,105 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			if (entry == active)
+			{
+				// Keep the toggles, clear the bank displays - this style
+				// has no set to show.
+				applyBankViews(style, null, null);
+			}
+			card.add(Box.createVerticalStrut(6));
+			card.add(styleStrip);
+			if (hasBis)
+			{
+				card.add(Box.createVerticalStrut(4));
+				card.add(viewToggleRow(entry, result, bis));
+			}
 			return card;
 		}
 
-		DpsResult best = result.owned.get(0);
-
-		if (style == CombatStyle.MAGIC && displayOptions.spellControls)
+		DpsResult best = bis ? result.overallBest : result.owned.get(0);
+		if (entry == active)
 		{
-			card.add(magicSpellRow());
+			// The bank views follow the viewed style/side (field spec) -
+			// switching tabs or the Yours|BiS toggle retargets them.
+			applyBankViews(style, best, bis ? result.gameSpecWeapon : result.specWeapon);
 		}
 
-		// Max hit + accuracy for the shown set (each independently gated).
-		// Its DPS lives in the card header - the old "Yours: X DPS" prefix
-		// restated the same number one line apart (field report).
-		String hitText = hitAccuracyText(best.getMaxHit(), best.getAccuracy());
-		if (!hitText.isEmpty())
+		if (!bis && style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
-			JLabel hitLine = new JLabel(hitText);
-			hitLine.setForeground(GOOD);
-			hitLine.setAlignmentX(LEFT_ALIGNMENT);
-			card.add(hitLine);
+			// The BiS side's spell renders in the stat panel (field spec);
+			// the auto-pick control only steers YOUR search.
+			card.add(magicSpellRow(best));
 		}
-		// Assurance: name the conditional bonuses the math actually counted
-		// WITH their exact numbers ("slayer helmet: +16.7% accuracy,
-		// +16.7% damage"). Entries carry commas, so sources join on ";".
-		// html with a fixed body width so the now-longer line WRAPS (and
-		// reports a wrapped preferred HEIGHT - bare html labels still
-		// measure single-line). As a plain label its preferred width
-		// inflated every card past the sidebar edge.
-		if (displayOptions.bonuses && !best.getCountedBonuses().isEmpty())
+
+		// Max hit, accuracy, damage taken, style, prayer bonus and counted
+		// bonuses live in the grid's stat panel (field spec) - no text rows.
+		if (!bis)
 		{
-			JLabel counting = line("<html><body style='width: 185px'>Counting: "
-				+ String.join("; ", best.getCountedBonuses()) + "</body></html>", MUTED);
-			counting.setFont(counting.getFont().deriveFont(11f));
-			counting.setToolTipText("Conditional bonuses applied to this set's numbers");
-			card.add(counting);
+			if (result.modeTrade != null)
+			{
+				card.add(modeTradeRow(result.modeTrade));
+			}
+			else if (optimizeMode.getSelectedIndex() > 0)
+			{
+				// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
+				// mix-up (common when a monster's incoming damage barely varies
+				// with armour, or is not modeled).
+				JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
+				same.setFont(same.getFont().deriveFont(11f));
+				same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
+					+ " worth trading dps for at this monster");
+				card.add(same);
+			}
 		}
-		if (displayOptions.damageTaken)
-		{
-			addIncomingLine(card, result.incoming);
-		}
-		if (result.modeTrade != null)
-		{
-			card.add(modeTradeRow(result.modeTrade));
-		}
-		else if (optimizeMode.getSelectedIndex() > 0)
-		{
-			// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
-			// mix-up (common when a monster's incoming damage barely varies
-			// with armour, or is not modeled).
-			JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
-			same.setFont(same.getFont().deriveFont(11f));
-			same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
-				+ " worth trading dps for at this monster");
-			card.add(same);
-		}
-		if (displayOptions.riskLine)
-		{
-			addRiskLine(card, best, result.specWeapon);
-		}
-		addUpgradeLine(card, best);
-		if (displayOptions.prayerBonus)
-		{
-			addPrayerLine(card, best);
-		}
-		if (displayOptions.attackStyle)
-		{
-			addStyleLine(card, style, best);
-			addSpellLine(card, style, best);
-		}
-		addDartLine(card, best);
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
-		// matches the game-best pick (gold).
-		card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-			result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
-			true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		// matches the game-best pick (gold); the BiS grid is the same
+		// renderer over the other answer (field spec - just a toggle).
+		if (bis)
+		{
+			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
+				result.gameSpecExpectedDamage, result.gameSpecDrainValue,
+				best.getExpectedHit(),
+				"Strongest special attack in the game vs this monster"));
+		}
+		else
+		{
+			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
+				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
+				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+		}
+		card.add(Box.createVerticalStrut(6));
+		card.add(styleStrip);
+		if (hasBis)
+		{
+			card.add(Box.createVerticalStrut(4));
+			card.add(viewToggleRow(entry, result, bis));
+		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
-			JPanel bankRow = iconRow(card);
+			// Centred like the exclude/sim chips (field spec); the green
+			// toggle border carries the on state - the labels stay put.
+			JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			bankRow.setOpaque(false);
+			bankRow.setAlignmentX(LEFT_ALIGNMENT);
+			bankRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			if (displayOptions.showInBank)
 			{
-				bankRow.add(bankButton(style, best, result.specWeapon));
+				bankRow.add(bankButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
 			if (displayOptions.filterBank)
 			{
-				bankRow.add(bankFilterButton(style, best, result.specWeapon));
+				bankRow.add(bankFilterButton(style, best, bis ? result.gameSpecWeapon : result.specWeapon));
 			}
+			card.add(bankRow);
 		}
-
-		// The ceiling: the game-wide best set, so "off" numbers are inspectable.
-		// The header always shows the summary; clicking it shows/hides the rest.
-		if (displayOptions.gameBest && result.overallBest != null && result.overallBest.getDps() > 0)
+		if (entry == active)
 		{
-			card.add(Box.createVerticalStrut(6));
-			boolean expanded = gameBestExpanded().contains(style);
-			double pct = 100.0 * best.getDps() / result.overallBest.getDps();
-			JLabel ceiling = line(String.format("%s Game best: %.2f DPS - you are at %.0f%%",
-				expanded ? "v" : ">",
-				result.overallBest.getDps(), Math.min(100.0, pct)), MUTED);
-			ceiling.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			ceiling.setToolTipText(expanded ? "Click to hide the game-best set" : "Click to show the game-best set");
-			ceiling.addMouseListener(new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					if (!gameBestExpanded().remove(style))
-					{
-						gameBestExpanded().add(style);
-					}
-					if (selectedMonster != null && lastResults() != null)
-					{
-						showResults(selectedMonster, lastResults());
-					}
-				}
-			});
-			card.add(ceiling);
-			if (expanded)
-			{
-				if (displayOptions.assumes)
-				{
-					addAssumesRow(card, result.gameBoostLabel, "Best prayers + boost in the game",
-						superAntifireAssumed()
-							? "Super antifire (right-click the shield cell to flip back)" : null);
-				}
-				// Max hit + accuracy for the ceiling set - the header only
-				// carries its DPS, same as the owned card (each gated).
-				String gameHitText = hitAccuracyText(result.overallBest.getMaxHit(),
-					result.overallBest.getAccuracy());
-				if (!gameHitText.isEmpty())
-				{
-					card.add(line(gameHitText, MUTED));
-				}
-				if (displayOptions.attackStyle)
-				{
-					addSpellLine(card, style, result.overallBest);
-				}
-				addDartLine(card, result.overallBest);
-				card.add(Box.createVerticalStrut(4));
-				card.add(iconGrid(result.overallBest, result.gameSpec, result.gameSpecWeapon, result.gameSpecExpectedDamage,
-					result.gameSpecDrainValue, result.overallBest.getExpectedHit(),
-					"Strongest special attack in the game vs this monster"));
-			}
+			// The per-mob note under the bank buttons (field spec) - one
+			// shared component, so it renders on the active card only.
+			card.add(Box.createVerticalStrut(4));
+			card.add(notePanel);
 		}
 		return card;
 	}
@@ -3005,8 +4476,8 @@ public class LoadoutLabPanel extends PluginPanel
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 		row.setToolTipText(String.format(
 			"This mode: %d%% less DPS for %d%% less damage taken", t.dpsLossPct, t.dmgCutPct));
-		row.add(tradeChip(SWORD_ICON, t.dpsLossPct + "%-"));
-		row.add(tradeChip(SHIELD_ICON, t.dmgCutPct + "%+"));
+		row.add(tradeChip(SWORD_ICON, "-" + t.dpsLossPct + "%"));
+		row.add(tradeChip(SHIELD_ICON, "+" + t.dmgCutPct + "%"));
 		return row;
 	}
 
@@ -3023,65 +4494,8 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The set's total prayer bonus - just the prayer icon and the number. */
-	private void addPrayerLine(JPanel card, DpsResult result)
-	{
-		int prayer = result.getLoadout().getBonuses().getPrayer();
-		if (prayer == 0)
-		{
-			return;
-		}
-		JLabel line = line(PRAYER_ICON == null ? String.format("Prayer %+d", prayer)
-			: String.format("%+d", prayer), MUTED);
-		if (PRAYER_ICON != null)
-		{
-			line.setIcon(PRAYER_ICON);
-			line.setIconTextGap(4);
-		}
-		line.setToolTipText("Gear prayer bonus - slower prayer drain");
-		card.add(line);
-	}
-
 	/** The attack style the numbers use: "Style: Slash (aggressive)". */
-	private void addStyleLine(JPanel card, CombatStyle style, DpsResult result)
-	{
-		if (style == CombatStyle.MAGIC)
-		{
-			return; // the spell / powered-staff line already covers magic
-		}
-		String type = result.getAttackType();
-		String text;
-		if (style == CombatStyle.RANGED)
-		{
-			text = type.contains("rapid") ? "Rapid" : "Accurate";
-		}
-		else
-		{
-			text = capitalize(type);
-		}
-		JLabel line = line("Style: " + text, INFO);
-		line.setToolTipText("Use this attack style");
-		card.add(line);
-	}
-
 	/** Blowpipes: name the loaded dart the numbers assume. */
-	private void addDartLine(JPanel card, DpsResult result)
-	{
-		String type = result.getAttackType();
-		int idx = type.indexOf(" - ");
-		if (idx < 0 || !type.startsWith("ranged"))
-		{
-			return;
-		}
-		JLabel dart = line("Loaded with: " + type.substring(idx + 3), INFO);
-		dart.setToolTipText("Dart included in the dps (right-click to exclude)");
-		GearItem dartItem = loadedDart(result);
-		if (dartItem != null)
-		{
-			attachExclusionMenu(dart, List.of(dartItem));
-		}
-		card.add(dart);
-	}
-
 	/** Everything the old spec line said, as the spec cell's tooltip. */
 	private static String specTooltip(SpecialAttack spec, double expectedDamage,
 		double drainValue, double replacedAutoExpected, String fallbackTooltip)
@@ -3107,74 +4521,27 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/**
-	 * Magic only: name the spell and its spellbook explicitly - the weapon in
-	 * the grid below is autocast-legal for that book (engine-gated).
-	 */
-	private void addSpellLine(JPanel card, CombatStyle style, DpsResult result)
-	{
-		if (style != CombatStyle.MAGIC)
-		{
-			return;
-		}
-		if (result.getSpellName() == null)
-		{
-			// A magic result without an autocast spell is a powered staff -
-			// the weapon casts its own built-in spell.
-			JLabel builtIn = line("Built-in spell (powered staff)", INFO);
-			builtIn.setToolTipText("The staff casts its own spell");
-			GearItem weapon = result.getLoadout().getWeapon();
-			if (weapon != null)
-			{
-				attachItemIcon(builtIn, weapon.getId());
-				builtIn.setIconTextGap(4);
-			}
-			card.add(builtIn);
-			return;
-		}
-		String name = result.getSpellName();
-		String book = data.getSpells().stream()
-			.filter(s -> name.equals(s.getName()))
-			.map(s -> s.getSpellbook())
-			.findFirst().orElse("");
-		JPanel row = iconRow(card);
-		JLabel spell = line(name, INFO);
-		spell.setToolTipText(book.isEmpty() ? "Autocast this spell"
-			: "Autocast (" + capitalize(book) + " book)");
-		int sprite = AssumeIcons.spellSprite(name);
-		if (sprite >= 0)
-		{
-			attachSprite(spell, sprite);
-			spell.setIconTextGap(4);
-		}
-		row.add(spell);
-		if (name.contains("Demonbane"))
-		{
-			JLabel mod = new JLabel();
-			mod.setToolTipText("Assumes Mark of Darkness");
-			attachSprite(mod, AssumeIcons.MARK_OF_DARKNESS);
-			row.add(mod);
-		}
-	}
-
-	/**
 	 * Wilderness: what a PvP death costs in gp for this set. Worn
 	 * tradeables plus the carried spec weapon compete for the kept-on-
 	 * death slots by value; everything past them is the risk.
 	 */
-	private void addRiskLine(JPanel card, DpsResult best, GearItem specWeapon)
+	/** The wilderness risk as a stat-panel skull line (field spec): the
+	 * gp at stake compact on the line, the kept/lost/fees story in the
+	 * tooltip. Green when under the entry's risk cap. */
+	private void addRiskStatLine(JPanel panel, DpsResult best)
 	{
-		if (!effectiveWilderness())
-		{
-			return;
-		}
-		int keep = protectItem.isSelected() ? 4 : 3;
 		PvpRisk.Assessment risk =
-			PvpRisk.assess(best.getLoadout(), specWeapon, keep);
-		JLabel line = line(String.format("Risk: %s gp (%d kept on death)",
-			PvpRisk.formatGp(risk.riskGp), keep),
-			risk.riskGp <= selectedRiskBudget()
-				? GOOD : new Color(220, 140, 120));
-		StringBuilder tip = new StringBuilder("<html>Kept on death:");
+			PvpRisk.assess(best.getLoadout(), renderingRiskSpecWeapon, renderingRiskKeep);
+		JLabel line = statLine(PvpRisk.formatGp(risk.riskGp),
+			"placeholder",
+			active != null && !active.riskCap.trim().isEmpty()
+				&& risk.riskGp <= parsedBudgetGp(active.riskCap)
+				? GOOD : new Color(220, 140, 120),
+			new FixedWidthIcon(new SkullIcon()));
+		int keep = renderingRiskKeep;
+		StringBuilder tip = new StringBuilder("<html>Risk: "
+			+ PvpRisk.formatGp(risk.riskGp) + " gp - " + keep
+			+ " kept on death.<br>Kept:");
 		if (risk.kept.isEmpty())
 		{
 			tip.append(" (none - all untradeable)");
@@ -3205,7 +4572,46 @@ public class LoadoutLabPanel extends PluginPanel
 		tip.append("<br>Skulled: keep 0-1.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
-		card.add(line);
+		panel.add(line);
+	}
+
+	/** The death skull as a standalone icon - the grid badge's drawing at
+	 * line size (glyph-safe). */
+	private static final class SkullIcon implements javax.swing.Icon
+	{
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 14;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.translate(x, y);
+				g2.setColor(new Color(235, 235, 225));
+				g2.fillOval(2, 1, 9, 8);
+				g2.fillRect(4, 8, 5, 3);
+				g2.setColor(new Color(40, 40, 40));
+				g2.fillOval(4, 4, 2, 2);
+				g2.fillOval(7, 4, 2, 2);
+				g2.drawLine(5, 9, 5, 10);
+				g2.drawLine(7, 9, 7, 10);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
 	}
 
 	/**
@@ -3214,7 +4620,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * listed by source quest in the tooltip instead; a set whose only
 	 * unowned pieces are quest rewards shows a compact quest-only line.
 	 */
-	private void addUpgradeLine(JPanel card, DpsResult best)
+	private void addUpgradeStatLine(JPanel panel, DpsResult best)
 	{
 		long cost = 0;
 		boolean questRewards = false;
@@ -3243,43 +4649,62 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		JLabel line = line(cost > 0
-			? String.format("Upgrade cost: ~%s gp", PvpRisk.formatGp(cost))
-			: "Upgrade: quest rewards", UNOWNED);
+		JLabel line = statLine(cost > 0
+			? "~" + PvpRisk.formatGp(cost)
+			: "quests",
+			cost > 0 ? "Upgrade cost of the unowned pieces" : "Unowned quest rewards",
+			UNOWNED, new FixedWidthIcon(new CoinsIcon()));
 		line.setToolTipText(tip.append("</html>").toString());
-		card.add(line);
+		panel.add(line);
+	}
+
+	/** The grid badge's gp pile as a standalone icon (glyph-safe). */
+	private static final class CoinsIcon implements javax.swing.Icon
+	{
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 14;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.translate(x, y);
+				paintCoin(g2, 3, 8);
+				paintCoin(g2, 2, 5);
+				paintCoin(g2, 3, 2);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+
+		private static void paintCoin(Graphics2D g2, int x, int y)
+		{
+			g2.setColor(new Color(140, 100, 25));
+			g2.fillOval(x, y, 9, 5);
+			g2.setColor(new Color(255, 200, 60));
+			g2.fillOval(x + 1, y + 1, 7, 3);
+		}
 	}
 
 	/** What the boss does back to you in this set, protection prayer up. */
-	private void addIncomingLine(JPanel card, IncomingDpsCalculator.Result incoming)
+	/** The incoming info tile's rich tooltip: the pray call, each style
+	 * threat, pierce notes, and the curated caveats. */
+	private static String incomingTooltip(IncomingDpsCalculator.Result incoming)
 	{
-		if (incoming == null || incoming.totalDps <= 0)
-		{
-			return;
-		}
 		boolean prayable = incoming.protectPrayer != null;
-		// The protect icon IS the pray call; the text is the cost - prayed,
-		// and what skipping the prayer would cost you. Unblockable bosses
-		// (dodge-based / typeless) still show the intake, with a no-prayer mark.
-		JLabel line = line(prayable
-			? String.format("~%.2f DPS to you (~%.2f unprayed)",
-				incoming.totalDps, incoming.unprayedDps)
-			: String.format("~%.2f DPS to you (unavoidable)", incoming.totalDps),
-			new Color(210, 140, 130));
-		if (prayable)
-		{
-			int sprite = AssumeIcons.prayerSprite(incoming.protectPrayer);
-			if (sprite >= 0)
-			{
-				attachSprite(line, sprite);
-				line.setIconTextGap(4);
-			}
-		}
-		else
-		{
-			line.setIcon(NO_PRAYER_ICON);
-			line.setIconTextGap(4);
-		}
 		StringBuilder tip = new StringBuilder("<html>")
 			.append(prayable ? "Run " + incoming.protectPrayer + "."
 				: "No prayer reduces this damage.");
@@ -3309,8 +4734,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			tip.append("<br>Unmodeled attacks not counted - treat as a floor.");
 		}
-		line.setToolTipText(tip.append("</html>").toString());
-		card.add(line);
+		return tip.append("</html>").toString();
 	}
 
 	/** The wilderness death fates a grid cell can be badged with. */
@@ -3456,9 +4880,14 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void setAntifireTo(boolean assume)
 	{
-		if (active != null && active.superAntifireAssumed != assume)
+		setAntifireMode(assume ? 2 : 0);
+	}
+
+	private void setAntifireMode(int mode)
+	{
+		if (active != null && active.antifireMode != mode)
 		{
-			active.superAntifireAssumed = assume;
+			active.antifireMode = mode;
 			recompute();
 		}
 	}
@@ -3485,114 +4914,30 @@ public class LoadoutLabPanel extends PluginPanel
 		return ids;
 	}
 
-	/** "Filter bank": a virtual bank tag showing only this set's items. */
-	private JButton bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	/** "Filter bank": a virtual bank tag showing only this set's items.
+	 * The toggle follows the viewed style - applyBankViews retargets. */
+	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
-		boolean filtering = bankFiltered == style;
-		JButton button = new JButton(filtering ? "Unfilter bank" : "Filter bank");
-		button.setFont(button.getFont().deriveFont(13f));
-		button.setMargin(new Insets(1, 6, 1, 6));
-		button.setToolTipText("Show only this set's items in the bank (needs Bank Tags enabled)");
-		button.addActionListener(e ->
+		return paramChip("Filter bank", bankFiltering, true,
+			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
 		{
-			if (bankFiltered == style)
-			{
-				bankFiltered = null;
-				bankFilter.filter(null);
-			}
-			else
-			{
-				bankFiltered = style;
-				Set<Integer> filterIds =
-					new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
-				// The mob profile's supplies (food, antidotes...) join the
-				// filtered bank view - they are part of THIS trip; ALL-sets
-				// items plus this style's own (ranged pot on the ranged set).
-				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
-				bankFilter.filter(filterIds);
-			}
-			if (selectedMonster != null && lastResults() != null)
-			{
-				showResults(selectedMonster, lastResults());
-			}
+			bankFiltering = !bankFiltering;
+			applyBankViews(style, best, specWeapon);
+			renderPage();
 		});
-		return button;
 	}
 
-	/** "Show in bank": outline this set's items while the bank is open. */
-	private JButton bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	/** "Show in bank": outline this set's items while the bank is open.
+	 * The toggle follows the viewed style - applyBankViews retargets. */
+	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
-		boolean showing = bankShown == style;
-		JButton button = new JButton(showing ? "Stop showing in bank" : "Show in bank");
-		button.setAlignmentX(LEFT_ALIGNMENT);
-		button.setFont(button.getFont().deriveFont(13f));
-		button.setMargin(new Insets(1, 6, 1, 6));
-		button.setToolTipText("Outline this set's items in the bank");
-		button.addActionListener(e ->
+		return paramChip("Show in bank", bankShowing, true,
+			"Outline this set's items in the bank", () ->
 		{
-			if (bankShown == style)
-			{
-				bankShown = null;
-				bankHighlighter.highlight(null);
-			}
-			else
-			{
-				Set<Integer> ids = new java.util.HashSet<>();
-				for (GearItem item : best.getLoadout().getGear().values())
-				{
-					if (item != null)
-					{
-						ids.add(item.getId());
-					}
-				}
-				GearItem dart = loadedDart(best);
-				if (dart != null)
-				{
-					ids.add(dart.getId());
-				}
-				if (specWeapon != null)
-				{
-					ids.add(specWeapon.getId());
-				}
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), style));
-				bankShown = style;
-				bankHighlighter.highlight(ids);
-			}
-			if (selectedMonster != null && lastResults() != null)
-			{
-				showResults(selectedMonster, lastResults()); // refresh button labels
-			}
+			bankShowing = !bankShowing;
+			applyBankViews(style, best, specWeapon);
+			renderPage();
 		});
-		return button;
-	}
-
-	/** A left-aligned, height-capped flow row added to the card. */
-	private JPanel iconRow(JPanel card)
-	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-		row.setOpaque(false);
-		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-		card.add(row);
-		return row;
-	}
-
-	/**
-	 * The assumed prayer + boost as icons - prayer-book sprite plus the
-	 * potion/heart item icon; names live in the tooltips. Unmapped parts
-	 * (e.g. "Current boosted levels") stay as text.
-	 */
-	private void addAssumesRow(JPanel card, String label, String tooltip, String antifireTooltip)
-	{
-		if (label == null || label.isEmpty())
-		{
-			return;
-		}
-		JPanel row = iconRow(card);
-		JLabel prefix = line("Assumes:", MUTED);
-		prefix.setToolTipText(tooltip);
-		row.add(prefix);
-		row.add(assumesChips(label, tooltip, antifireTooltip));
 	}
 
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
@@ -3653,6 +4998,116 @@ public class LoadoutLabPanel extends PluginPanel
 		set.run();
 	}
 
+	/** Like attachItemIcon, but on a CELL_BG plate - dark item sprites in
+	 * the stat panel need the same contrast lift as the gear cells - and
+	 * inside the fixed stat column. */
+	private void attachBackedItemIcon(JLabel label, int itemId)
+	{
+		AsyncBufferedImage img = itemManager.getImage(itemId);
+		Runnable set = () -> label.setIcon(new FixedWidthIcon(new BackedIcon(new ImageIcon(
+			img.getScaledInstance(-1, 14, Image.SCALE_SMOOTH)))));
+		img.onLoaded(() -> SwingUtilities.invokeLater(set));
+		set.run();
+	}
+
+	/** attachSprite for the stat panel: the sprite rides the fixed-width
+	 * column so every line's text starts on the same edge. */
+	private void attachStatSprite(JLabel label, int spriteId)
+	{
+		// 13px tall: wide sprites (stance swords) keep real side margins
+		// inside the fixed 20px column instead of filling it flush-left.
+		spriteManager.getSpriteAsync(spriteId, 0, img ->
+			SwingUtilities.invokeLater(() -> label.setIcon(new FixedWidthIcon(
+				new ImageIcon(img.getScaledInstance(-1, 13, Image.SCALE_SMOOTH))))));
+		label.setIconTextGap(4);
+	}
+
+	/** A rounded outline + padding for the chip language (field spec:
+	 * soften the square corners) - one border instead of the old
+	 * line+empty compound. */
+	private static final class RoundedBorder extends javax.swing.border.AbstractBorder
+	{
+		private final Color color;
+		private final int vPad;
+		private final int hPad;
+
+		RoundedBorder(Color color, int vPad, int hPad)
+		{
+			this.color = color;
+			this.vPad = vPad;
+			this.hPad = hPad;
+		}
+
+		@Override
+		public void paintBorder(Component c, Graphics g, int x, int y, int width, int height)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(color);
+				g2.drawRoundRect(x, y, width - 1, height - 1, 8, 8);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+
+		@Override
+		public Insets getBorderInsets(Component c)
+		{
+			return new Insets(vPad + 1, hPad + 1, vPad + 1, hPad + 1);
+		}
+
+		@Override
+		public Insets getBorderInsets(Component c, Insets insets)
+		{
+			insets.set(vPad + 1, hPad + 1, vPad + 1, hPad + 1);
+			return insets;
+		}
+	}
+
+	/** A small icon on a CELL_BG rounded plate (2px padding each side). */
+	private static final class BackedIcon implements javax.swing.Icon
+	{
+		private final javax.swing.Icon delegate;
+
+		BackedIcon(javax.swing.Icon delegate)
+		{
+			this.delegate = delegate;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return delegate.getIconWidth() + 4;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return delegate.getIconHeight() + 4;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setColor(CELL_BG);
+				g2.fillRoundRect(x, y, getIconWidth(), getIconHeight(), 4, 4);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+			delegate.paintIcon(c, g, x + 2, y + 2);
+		}
+	}
+
 	/**
 	 * The set as an equipment grid. Two layouts share one cell builder: the
 	 * compact 3x4 (11 slots + the amber spec cell as the 12th) for vertical
@@ -3685,10 +5140,8 @@ public class LoadoutLabPanel extends PluginPanel
 			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
-		JPanel grid = displayOptions.classicLayout
-			? classicGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell)
-			: compactGrid(cell, result, fates, pinnedSlots, markUnowned, gameBest, specCell);
-		return centerRow(grid);
+		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
+			markUnowned, gameBest, specCell, renderingIncoming));
 	}
 
 	/**
@@ -3710,26 +5163,6 @@ public class LoadoutLabPanel extends PluginPanel
 		return row;
 	}
 
-	/** Compact 3x4: the 11 slots in GRID_ORDER, then the spec cell. */
-	private JPanel compactGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
-	{
-		JPanel icons = new JPanel(new GridLayout(3, 4, 2, 2));
-		icons.setOpaque(false);
-		icons.setAlignmentX(LEFT_ALIGNMENT);
-		for (GearSlot slotType : GRID_ORDER)
-		{
-			icons.add(buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
-		}
-		icons.add(specCell);
-		// Stretch past the minimum so there is no dead right margin, but cap
-		// the width - unbounded stretch made cells balloon on wide layouts.
-		int height = 3 * cell + 4;
-		icons.setPreferredSize(new Dimension(4 * cell + 6, height));
-		icons.setMaximumSize(new Dimension(4 * (cell + 8) + 6, height));
-		return icons;
-	}
-
 	/**
 	 * The in-game worn-equipment tab as a flat 5x3 order (read left-to-right,
 	 * top-to-bottom): null = a blank corner, CLASSIC_SPEC_INDEX = the spec
@@ -3748,26 +5181,523 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The in-game worn-equipment tab: 5 rows of 3, empty corners blank, spec
 	 * in the empty slot left of the legs. */
 	private JPanel classicGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, RiskDotLabel specCell)
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
+		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
-		JPanel icons = new JPanel(new GridLayout(5, 3, 2, 2));
-		icons.setOpaque(false);
-		icons.setAlignmentX(LEFT_ALIGNMENT);
+		// The item/stat view (field spec): the classic gear silhouette on
+		// the left, and the right 2x5 FOOTPRINT as one CONNECTED stat panel,
+		// not boxed cells: stat blocks flow top-down with their own
+		// typography. Both sides of the Yours|BiS toggle share this layout.
+		JPanel gear = new JPanel(new GridLayout(5, 3, 2, 2));
+		gear.setOpaque(false);
 		for (int i = 0; i < CLASSIC_ORDER.length; i++)
 		{
 			if (i == CLASSIC_SPEC_INDEX)
 			{
-				icons.add(specCell);
-				continue;
+				gear.add(specCell);
 			}
-			GearSlot slotType = CLASSIC_ORDER[i];
-			icons.add(slotType == null ? blankCell(cell)
-				: buildSlotCell(slotType, result, cell, fates, pinnedSlots, markUnowned, gameBest));
+			else if (CLASSIC_ORDER[i] != null)
+			{
+				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
+			}
+			else
+			{
+				gear.add(blankCell(cell));
+			}
 		}
 		int height = 5 * cell + 8;
-		icons.setPreferredSize(new Dimension(3 * cell + 4, height));
-		icons.setMaximumSize(new Dimension(3 * (cell + 8) + 4, height));
-		return icons;
+		gear.setPreferredSize(new Dimension(3 * cell + 4, height));
+		gear.setMaximumSize(new Dimension(3 * cell + 4, height));
+		JPanel combo = new JPanel(new BorderLayout(8, 0));
+		combo.setOpaque(false);
+		combo.setAlignmentX(LEFT_ALIGNMENT);
+		combo.add(gear, BorderLayout.WEST);
+		JPanel stat = statPanel(result, incoming);
+		stat.setPreferredSize(new Dimension(2 * cell + 6, height));
+		combo.add(stat, BorderLayout.CENTER);
+		combo.setMaximumSize(new Dimension(5 * cell + 24, height));
+		return combo;
+	}
+
+	/** The connected stat panel filling the grid's right 2x5 footprint:
+	 * one line per stat (field format spec), the assume chips at the top,
+	 * each line honouring its display option. */
+	private JPanel statPanel(DpsResult result, IncomingDpsCalculator.Result incoming)
+	{
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setOpaque(false);
+		if (renderingChips != null)
+		{
+			renderingChips.setAlignmentX(LEFT_ALIGNMENT);
+			panel.add(renderingChips);
+			panel.add(Box.createVerticalStrut(4));
+		}
+		Color statText = new Color(200, 200, 200);
+		if (displayOptions.maxHit)
+		{
+			panel.add(statLine(String.valueOf(result.getMaxHit()),
+				"Max hit " + result.getMaxHit(), statText,
+				new FixedWidthIcon(new HitsplatIcon(12))));
+		}
+		if (displayOptions.accuracy)
+		{
+			String acc = Math.round(result.getAccuracy() * 100) + "%";
+			panel.add(statLine(acc, "Hit chance " + acc, statText,
+				new FixedWidthIcon(new CrosshairIcon(13))));
+		}
+		if (incoming != null && displayOptions.damageTaken)
+		{
+			// The line always renders (field spec). A fully-blocked ~0.0 is
+			// the best news it can carry - but a monster whose attacks are
+			// beyond the model shows "?": silence must read as unknown,
+			// not safe.
+			boolean unmodeled = !incoming.fullyModeled
+				&& incoming.totalDps <= 0 && incoming.unprayedDps <= 0;
+			JLabel taken = statLine(
+				unmodeled ? "DTPS: ?" : String.format("DTPS: ~%.1f", incoming.totalDps),
+				unmodeled
+					? "This monster's attacks are beyond the stat-sheet model"
+						+ " - unknown, not zero"
+					: incomingTooltip(incoming),
+				statText, null);
+			if (!unmodeled)
+			{
+				// The protect-prayer sprite IS the pray call.
+int sprite = incoming.protectPrayer != null
+					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
+				if (sprite >= 0)
+				{
+					attachStatSprite(taken, sprite);
+				}
+				else
+				{
+					taken.setIcon(new FixedWidthIcon(NO_PRAYER_ICON));
+					taken.setIconTextGap(4);
+				}
+			}
+			panel.add(taken);
+		}
+		String styleText = attackStyleText(result);
+		if (displayOptions.attackStyle && styleText != null)
+		{
+			// Compact type on the line; the stance ("controlled" - Defence
+			// xp!) survives in the tooltip.
+			JLabel styleLine = statLine(styleText,
+				"Use this attack style: " + result.getAttackType(), statText, null);
+			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.SideIcons.COMBAT);
+			panel.add(styleLine);
+		}
+		String type = result.getAttackType();
+		int dartIdx = type.indexOf(" - ");
+		if (dartIdx >= 0 && type.startsWith("ranged"))
+		{
+			// The blowpipe's loaded dart (field spec: in the stat panel,
+			// wearing its item icon). The tier word alone fits the column;
+			// the tooltip keeps the full story and the right-click keeps
+			// the exclusion path.
+			String dartName = type.substring(dartIdx + 3);
+			String tier = dartName.toLowerCase().replace(" darts", "").replace(" dart", "");
+			JLabel dart = statLine(capitalize(tier),
+				"Loaded with " + dartName + " - included in the dps"
+					+ " (right-click to exclude)", statText, null);
+			GearItem dartItem = loadedDart(result);
+			if (dartItem != null)
+			{
+				attachBackedItemIcon(dart, dartItem.getId());
+				dart.setIconTextGap(4);
+				attachExclusionMenu(dart, List.of(dartItem));
+			}
+			panel.add(dart);
+		}
+		if (renderingStyle == CombatStyle.MAGIC && displayOptions.spellControls)
+		{
+			String spellName = result.getSpellName();
+			String book = spellBookText(result);
+			if (spellName == null && renderingBis)
+			{
+				// A magic set without an autocast spell is a powered staff.
+				JLabel builtIn = statLine("Built-in",
+					"Powered staff - casts its own spell", statText, null);
+				GearItem weapon = result.getLoadout().getWeapon();
+				if (weapon != null)
+				{
+					attachBackedItemIcon(builtIn, weapon.getId());
+					builtIn.setIconTextGap(4);
+				}
+				panel.add(builtIn);
+			}
+			else if (spellName != null)
+			{
+				// ONE row: <spellbook icon> <spell icon> (field spec), the
+				// game's real book art; the BiS view appends the name (no
+				// combo carries it there).
+				JPanel spellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+				spellRow.setOpaque(false);
+				spellRow.setAlignmentX(LEFT_ALIGNMENT);
+				spellRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+				if (book != null)
+				{
+					JLabel bookIcon = new JLabel();
+					bookIcon.setToolTipText(book + " spellbook - the autocast spell's book");
+					attachStatSprite(bookIcon, spellbookSprite(book));
+					spellRow.add(bookIcon);
+				}
+				JLabel spellIcon = new JLabel();
+				spellIcon.setToolTipText("Autocast " + spellName
+					+ (spellName.contains("Demonbane") ? " - assumes Mark of Darkness" : ""));
+				int sprite = AssumeIcons.spellSprite(spellName);
+				if (sprite >= 0)
+				{
+					attachStatSprite(spellIcon, sprite);
+					spellRow.add(spellIcon);
+				}
+				if (renderingBis)
+				{
+					JLabel name = new JLabel(spellName);
+					name.setForeground(statText);
+					name.setFont(name.getFont().deriveFont(Font.BOLD, 12f));
+					spellRow.add(name);
+				}
+				panel.add(spellRow);
+			}
+		}
+		int prayer = result.getLoadout().getBonuses().getPrayer();
+		if (displayOptions.prayerBonus && prayer != 0)
+		{
+			JLabel pray = statLine(String.format("%+d", prayer),
+				"Gear prayer bonus - slower prayer drain", statText, null);
+			if (PRAYER_ICON != null)
+			{
+				pray.setIcon(new FixedWidthIcon(new BackedIcon(new ImageIcon(
+					PRAYER_ICON.getImage().getScaledInstance(-1, 12, Image.SCALE_SMOOTH)))));
+				pray.setIconTextGap(4);
+			}
+			panel.add(pray);
+		}
+		if (displayOptions.bonuses && !result.getCountedBonuses().isEmpty())
+		{
+			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
+				"<html>Conditional bonuses applied:<br>"
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", statText, null);
+			counting.setIcon(new FixedWidthIcon(new BackedIcon(new PlusStarIcon(11))));
+			counting.setIconTextGap(4);
+			panel.add(counting);
+		}
+		if (renderingMechanicsNote != null)
+		{
+			// Curated mechanics (recoil, finishing items) for the lensed
+			// mob: a compact (i), the words in its tooltip (field spec -
+			// it lives in the stat panel with the other set facts).
+			JLabel noteLine = statLine("info",
+				"<html><body style='width:220px'>" + renderingMechanicsNote
+					+ "</body></html>", new Color(200, 170, 110),
+				new FixedWidthIcon(new InfoIcon(11)));
+			panel.add(noteLine);
+		}
+		if (renderingUpgradeLine)
+		{
+			// Upgrade cost with the gp pile (field spec) - just above the
+			// wildy skull, money beside money.
+			addUpgradeStatLine(panel, result);
+		}
+		if (renderingRiskLine)
+		{
+			// The wildy row sits last in the list (field spec).
+			addRiskStatLine(panel, result);
+		}
+		panel.add(Box.createVerticalGlue());
+		return panel;
+	}
+
+	/** One stat line: compact 12px, icon optional, tooltip carries the
+	 * sentence. */
+	private static JLabel statLine(String text, String tooltip, Color color, javax.swing.Icon icon)
+	{
+		JLabel line = new JLabel(text);
+		line.setForeground(color);
+		line.setFont(line.getFont().deriveFont(Font.BOLD, 12f));
+		line.setAlignmentX(LEFT_ALIGNMENT);
+		line.setToolTipText(tooltip);
+		line.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+		if (icon != null)
+		{
+			line.setIcon(icon);
+			line.setIconTextGap(3);
+		}
+		return line;
+	}
+
+	/** A fixed-width box that centres its delegate - every stat-panel
+	 * line's icon occupies the SAME column width, so the values start on
+	 * one hard left edge (field spec: a strong visual column). */
+	private static final class FixedWidthIcon implements javax.swing.Icon
+	{
+		static final int WIDTH = 20;
+		static final int HEIGHT = 16;
+		private final javax.swing.Icon delegate;
+
+		FixedWidthIcon(javax.swing.Icon delegate)
+		{
+			this.delegate = delegate;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return WIDTH;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return Math.max(HEIGHT, delegate.getIconHeight());
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			delegate.paintIcon(c,
+				g,
+				x + Math.max(0, (WIDTH - delegate.getIconWidth()) / 2),
+				y + Math.max(0, (getIconHeight() - delegate.getIconHeight()) / 2));
+		}
+	}
+
+	/** A painted crosshair for the accuracy line (glyph-safe) - the
+	 * Attack staticon read as the same sword as the style icon. */
+	private static final class CrosshairIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		CrosshairIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(200, 170, 90));
+				int pad = 2;
+				g2.drawOval(x + pad, y + pad, size - 2 * pad - 1, size - 2 * pad - 1);
+				int mid = size / 2;
+				g2.drawLine(x + mid, y, x + mid, y + 3);
+				g2.drawLine(x + mid, y + size - 4, x + mid, y + size - 1);
+				g2.drawLine(x, y + mid, x + 3, y + mid);
+				g2.drawLine(x + size - 4, y + mid, x + size - 1, y + mid);
+				g2.fillOval(x + mid - 1, y + mid - 1, 3, 3);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** The game's own spellbook icons (SideIcons): standard = the magic
+	 * tab star, the other books their dedicated sidebar art. */
+	private static int spellbookSprite(String book)
+	{
+		switch (book.toLowerCase(java.util.Locale.ROOT))
+		{
+			case "ancient":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
+			case "lunar":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_LUNAR;
+			case "arceuus":
+				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
+			default:
+				return net.runelite.api.gameval.SpriteID.SideIcons.MAGIC;
+		}
+	}
+
+	/** A painted red hitsplat for the max-hit line (glyph-safe). */
+	private static final class HitsplatIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		HitsplatIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(150, 30, 30));
+				g2.fillRoundRect(x, y + 1, size - 1, size - 2, 5, 5);
+				g2.setColor(new Color(200, 60, 60));
+				g2.drawRoundRect(x, y + 1, size - 2, size - 3, 5, 5);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** A painted circled-i for the mechanics note - amber like the note
+	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
+	private static final class InfoIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		InfoIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(200, 170, 110));
+				g2.drawOval(x, y, size - 1, size - 1);
+				int cx = x + size / 2;
+				g2.fillRect(cx - 1, y + 3, 2, 2);
+				g2.fillRect(cx - 1, y + 6, 2, size - 9);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** The amber plus-star (the mascots' signature), as a static icon for
+	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
+	private static final class PlusStarIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		PlusStarIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setColor(new Color(208, 178, 102));
+				int mid = size / 2;
+				int arm = Math.max(3, size / 3);
+				g2.fillRect(x + mid - 1, y + mid - arm, 3, 2 * arm + 1);
+				g2.fillRect(x + mid - arm, y + mid - 1, 2 * arm + 1, 3);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** The resolved autocast spell's book ("Standard"), or null when the
+	 * result has no autocast spell (melee/ranged/powered staves). */
+	private String spellBookText(DpsResult result)
+	{
+		String name = result.getSpellName();
+		if (name == null)
+		{
+			return null;
+		}
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			if (spell.getName().equalsIgnoreCase(name))
+			{
+				String book = spell.getSpellbook();
+				return book == null || book.isEmpty() ? null : capitalize(book);
+			}
+		}
+		return null;
+	}
+
+	/** The short attack-style word ("Rapid", "Aggressive"); null for magic
+	 * (the spell line covers it). */
+	private static String attackStyleText(DpsResult result)
+	{
+		String type = result.getAttackType();
+		if (type == null || type.startsWith("magic"))
+		{
+			return null;
+		}
+		if (type.startsWith("ranged"))
+		{
+			return type.contains("rapid") ? "Rapid" : "Accurate";
+		}
+		// Melee types read "stab (controlled)" or "slash - ..." - the line
+		// carries the bare type; the caller's tooltip keeps the stance.
+		int cut = type.indexOf(" (");
+		if (cut < 0)
+		{
+			cut = type.indexOf(" - ");
+		}
+		return capitalize(cut > 0 ? type.substring(0, cut) : type);
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */
@@ -3787,6 +5717,8 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel slot = new RiskDotLabel();
 		slot.setPreferredSize(new Dimension(cell, cell));
 		slot.setHorizontalAlignment(SwingConstants.CENTER);
+		slot.setOpaque(true);
+		slot.setBackground(CELL_BG);
 		List<JMenuItem> extras = slotType == GearSlot.SHIELD
 			? dragonfireMenuEntries() : Collections.emptyList();
 		if (item != null)
@@ -3905,6 +5837,8 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
 		specCell.setHorizontalAlignment(SwingConstants.CENTER);
+		specCell.setOpaque(true);
+		specCell.setBackground(CELL_BG);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
 			// Light sky blue, sampled from the in-game spec orb's gradient.

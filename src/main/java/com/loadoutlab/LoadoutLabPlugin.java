@@ -337,7 +337,29 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this::computeForMonster,
+				LoadoutLabPanel.ComputeHook hook = new LoadoutLabPanel.ComputeHook()
+			{
+				@Override
+				public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
+					boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
+					boolean antifirePotion, int upgradeBudgetGp,
+					OptimizerService.OptimizeMode mode, Runnable onDone)
+				{
+					computeForMonster(monster, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
+						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, onDone);
+				}
+
+				@Override
+				public void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly,
+					boolean onSlayerTask, boolean inWilderness, String spellbookLock,
+					int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp,
+					OptimizerService.OptimizeMode mode, Runnable onDone)
+				{
+					computeForRoster(mobs, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
+						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, onDone);
+				}
+			};
+			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, hook,
 					id ->
 					{
 						exec(Commands.toggleExclusion(exclusions, id, itemLabel(id)));
@@ -482,7 +504,7 @@ public class LoadoutLabPlugin extends Plugin
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"classicGearLayout", "loadingAnimation");
+		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
@@ -502,8 +524,9 @@ public class LoadoutLabPlugin extends Plugin
 			config.showWildyRisk(),
 			config.showInBankButton(),
 			config.showFilterBankButton(),
-			config.classicGearLayout(),
-			config.loadingAnimation());
+			config.loadingAnimation(),
+			config.defaultUpgradeBudget(),
+			config.defaultRiskCap());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
@@ -1435,6 +1458,49 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
+	/** Roster mirror of computeForMonster: same client-thread staging, then
+	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
+	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
+	 * v1 - roster-wide per-mob preferences come later. */
+	private void computeForRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
+	{
+		clientThread.invokeLater(() ->
+		{
+			if (client.getGameState() == GameState.LOGGED_IN)
+			{
+				snapshotProfileIfNeeded();
+			}
+			if (config.useDwmsData())
+			{
+				dwmsImport.reload();
+				requestDwmsStorages();
+			}
+			RequirementProfile profile = requirementProfile != null
+				? requirementProfile : RequirementProfile.MAXED;
+			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			Map<Integer, Integer> mergedOwned = ownedItems();
+			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
+			int fingerprint = owned.presenceFingerprint();
+			PrayerUnlocks unlocks = prayerUnlocks != null
+				? prayerUnlocks : PrayerUnlocks.ALL;
+			MonsterStats anchor = mobs.get(0);
+			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
+				onSlayerTask, spellbookLock, excludedByStyle(anchor.getId()), maxTradeables, riskBudgetGp, antifirePotion,
+				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode,
+				pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
+				protectOnly.snapshot(),
+				roster -> SwingUtilities.invokeLater(() ->
+				{
+					if (panel != null)
+					{
+						panel.showRosterResults(roster.mobs, roster.perMob);
+					}
+					onDone.run();
+				}));
+		});
+	}
+
 	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
@@ -1506,6 +1572,23 @@ public class LoadoutLabPlugin extends Plugin
 		if (real.getOrDefault(Skill.HITPOINTS, 0) < 10)
 		{
 			log.debug("skill snapshot looked uninitialized, retrying on next compute");
+			return;
+		}
+		// Stronger canary: stats stream in Skill-ordinal order at login, so a
+		// fast first search can catch attack/str/def/hp populated while
+		// ranged/prayer/magic still read 1 - and the HP check above passes.
+		// The client's own total level is authoritative: a partial snapshot
+		// always sums BELOW it (field report: ranged/magic/prayer poisoned
+		// at 1 -> blisterwood-stake ranged picks and Wind Strike autocasts).
+		int summed = 0;
+		for (int level : real.values())
+		{
+			summed += level;
+		}
+		if (summed < client.getTotalLevel())
+		{
+			log.debug("skill snapshot partial ({} < total {}), retrying on next compute",
+				summed, client.getTotalLevel());
 			return;
 		}
 		Set<String> quests = new HashSet<>();
