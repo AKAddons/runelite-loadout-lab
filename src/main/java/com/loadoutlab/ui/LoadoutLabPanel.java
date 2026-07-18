@@ -404,9 +404,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private final BankHighlighter bankHighlighter;
 	private final BankFilter bankFilter;
 	/** Which style's set is filtering the bank (null = none). */
-	private CombatStyle bankFiltered;
+	private boolean bankFiltering;
+	private Set<Integer> lastFilterIds;
 	/** Which style's set is currently glowing in the bank (null = none). */
-	private CombatStyle bankShown;
+	private boolean bankShowing;
+	private Set<Integer> lastHighlightIds;
 	/** D-4: which frontier point to recommend per style. */
 	private final JComboBox<String> optimizeMode = new JComboBox<>(
 		new String[]{"Optimize: Max DPS", "Optimize: Balanced", "Optimize: Tanky"});
@@ -1472,9 +1474,11 @@ public class LoadoutLabPanel extends PluginPanel
 		page.add(active);
 		syncControlsFromActive();
 		refreshWildernessRows();
-		bankShown = null;
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
 		bankHighlighter.highlight(null);
-		bankFiltered = null;
 		bankFilter.filter(null);
 		applyActiveMonsterUi(monster);
 		usageLog.record(monster.label());
@@ -2601,53 +2605,68 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/**
 	 * Re-apply an active Show/Filter after the profile's filter items
-	 * change: a pure id-set rebuild from the LAST results - never an
-	 * optimizer recompute (filter items do not affect the math).
+	 * change: clear the change guards and re-render - the styleCard apply
+	 * hook rebuilds the id sets from the viewed style (never an optimizer
+	 * recompute; filter items do not affect the math).
 	 */
 	private void reapplyBankViews()
 	{
-		if (lastResults() == null || selectedMonster == null)
+		lastHighlightIds = null;
+		lastFilterIds = null;
+		renderPage();
+	}
+
+	/**
+	 * The bank views FOLLOW the viewed style (field spec 2026-07-17):
+	 * toggled once, Show/Filter stay on across melee/ranged/magic and
+	 * Yours|BiS flips, retargeting to the newly viewed set. Null best
+	 * clears the displays but keeps the toggles. Guarded by id-set
+	 * equality so renders do not spam the bank APIs.
+	 */
+	private void applyBankViews(CombatStyle style, DpsResult best, GearItem specWeapon)
+	{
+		Set<Integer> highlightIds = null;
+		Set<Integer> filterIds = null;
+		if (best != null)
 		{
-			return;
-		}
-		if (bankFiltered != null)
-		{
-			StyleResult r = lastResults().get(bankFiltered);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
+			if (bankShowing)
 			{
-				DpsResult best = r.owned.get(0);
-				Set<Integer> ids = new java.util.HashSet<>(
-					setItemIds(best, r.specWeapon, loadedDart(best)));
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankFiltered));
-				bankFilter.filter(ids);
-			}
-		}
-		if (bankShown != null)
-		{
-			StyleResult r = lastResults().get(bankShown);
-			if (r != null && r.owned != null && !r.owned.isEmpty())
-			{
-				DpsResult best = r.owned.get(0);
-				Set<Integer> ids = new java.util.HashSet<>();
+				highlightIds = new java.util.HashSet<>();
 				for (GearItem item : best.getLoadout().getGear().values())
 				{
 					if (item != null)
 					{
-						ids.add(item.getId());
+						highlightIds.add(item.getId());
 					}
 				}
 				GearItem dart = loadedDart(best);
 				if (dart != null)
 				{
-					ids.add(dart.getId());
+					highlightIds.add(dart.getId());
 				}
-				if (r.specWeapon != null)
+				if (specWeapon != null)
 				{
-					ids.add(r.specWeapon.getId());
+					highlightIds.add(specWeapon.getId());
 				}
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), bankShown));
-				bankHighlighter.highlight(ids);
+				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
+			if (bankFiltering)
+			{
+				filterIds = new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				// The mob profile's supplies (food, antidotes...) join the
+				// filtered bank view - they are part of THIS trip.
+				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+			}
+		}
+		if (!java.util.Objects.equals(highlightIds, lastHighlightIds))
+		{
+			lastHighlightIds = highlightIds;
+			bankHighlighter.highlight(highlightIds);
+		}
+		if (!java.util.Objects.equals(filterIds, lastFilterIds))
+		{
+			lastFilterIds = filterIds;
+			bankFilter.filter(filterIds);
 		}
 	}
 
@@ -3252,8 +3271,10 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Account or profile switched: nothing on screen may survive. */
 	public void resetForIdentityChange()
 	{
-		bankShown = null;
-		bankFiltered = null;
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
 		clearSelectionInternal();
 		refreshExclusionsLabel();
 		refreshStoredLabel();
@@ -4465,6 +4486,12 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			if (entry == active)
+			{
+				// Keep the toggles, clear the bank displays - this style
+				// has no set to show.
+				applyBankViews(style, null, null);
+			}
 			card.add(Box.createVerticalStrut(6));
 			card.add(styleStrip);
 			if (hasBis)
@@ -4476,6 +4503,12 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 
 		DpsResult best = bis ? result.overallBest : result.owned.get(0);
+		if (entry == active)
+		{
+			// The bank views follow the viewed style/side (field spec) -
+			// switching tabs or the Yours|BiS toggle retargets them.
+			applyBankViews(style, best, bis ? result.gameSpecWeapon : result.specWeapon);
+		}
 
 		if (!bis && style == CombatStyle.MAGIC && displayOptions.spellControls)
 		{
@@ -5029,75 +5062,29 @@ public class LoadoutLabPanel extends PluginPanel
 		return ids;
 	}
 
-	/** "Filter bank": a virtual bank tag showing only this set's items. */
+	/** "Filter bank": a virtual bank tag showing only this set's items.
+	 * The toggle follows the viewed style - applyBankViews retargets. */
 	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
-		boolean filtering = bankFiltered == style;
-		return paramChip("Filter bank", filtering, true,
+		return paramChip("Filter bank", bankFiltering, true,
 			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
 		{
-			if (bankFiltered == style)
-			{
-				bankFiltered = null;
-				bankFilter.filter(null);
-			}
-			else
-			{
-				bankFiltered = style;
-				Set<Integer> filterIds =
-					new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
-				// The mob profile's supplies (food, antidotes...) join the
-				// filtered bank view - they are part of THIS trip; ALL-sets
-				// items plus this style's own (ranged pot on the ranged set).
-				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
-				bankFilter.filter(filterIds);
-			}
-			if (selectedMonster != null && lastResults() != null)
-			{
-				showResults(selectedMonster, lastResults());
-			}
+			bankFiltering = !bankFiltering;
+			applyBankViews(style, best, specWeapon);
+			renderPage();
 		});
 	}
 
-	/** "Show in bank": outline this set's items while the bank is open. */
+	/** "Show in bank": outline this set's items while the bank is open.
+	 * The toggle follows the viewed style - applyBankViews retargets. */
 	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
-		boolean showing = bankShown == style;
-		return paramChip("Show in bank", showing, true,
+		return paramChip("Show in bank", bankShowing, true,
 			"Outline this set's items in the bank", () ->
 		{
-			if (bankShown == style)
-			{
-				bankShown = null;
-				bankHighlighter.highlight(null);
-			}
-			else
-			{
-				Set<Integer> ids = new java.util.HashSet<>();
-				for (GearItem item : best.getLoadout().getGear().values())
-				{
-					if (item != null)
-					{
-						ids.add(item.getId());
-					}
-				}
-				GearItem dart = loadedDart(best);
-				if (dart != null)
-				{
-					ids.add(dart.getId());
-				}
-				if (specWeapon != null)
-				{
-					ids.add(specWeapon.getId());
-				}
-				ids.addAll(mobProfile.filterItems(currentMonsterId(), style));
-				bankShown = style;
-				bankHighlighter.highlight(ids);
-			}
-			if (selectedMonster != null && lastResults() != null)
-			{
-				showResults(selectedMonster, lastResults()); // refresh chip labels
-			}
+			bankShowing = !bankShowing;
+			applyBankViews(style, best, specWeapon);
+			renderPage();
 		});
 	}
 
