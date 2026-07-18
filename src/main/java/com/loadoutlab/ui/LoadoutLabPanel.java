@@ -3489,19 +3489,18 @@ public class LoadoutLabPanel extends PluginPanel
 		setMenu.addActionListener(e ->
 		{
 			JPopupMenu menu = new JPopupMenu();
-			JMenuItem pinThis = new JMenuItem("Pin an item - "
-				+ scopeLabel(style.name()) + " only (search)...");
+			// Compact labels (field spec - the long forms truncated in the
+			// popup): the scope pair is "<style> set" vs "this result".
+			JMenuItem pinThis = new JMenuItem("Pin item - " + scopeLabel(style.name()));
 			pinThis.addActionListener(ev -> searchAndPin(style.name()));
 			menu.add(pinThis);
-			JMenuItem pinAll = new JMenuItem("Pin an item - all sets (search)...");
+			JMenuItem pinAll = new JMenuItem("Pin item - this result");
 			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
 			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank filter - "
-				+ scopeLabel(style.name()) + " only (search)...");
+			JMenuItem filterThis = new JMenuItem("Bank filter - " + scopeLabel(style.name()));
 			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
 			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank filter - "
-				+ filterScopeLabel(ALL_SETS) + " (search)...");
+			JMenuItem filterAll = new JMenuItem("Bank filter - this result");
 			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
 			menu.add(filterAll);
 			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
