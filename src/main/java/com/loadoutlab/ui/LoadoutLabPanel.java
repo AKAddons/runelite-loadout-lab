@@ -977,42 +977,10 @@ public class LoadoutLabPanel extends PluginPanel
 			public void removeUpdate(DocumentEvent e) { onSearchEdited(); }
 			public void changedUpdate(DocumentEvent e) { onSearchEdited(); }
 		});
-		// Right-click a search hit: add it to the page WITHOUT dropping the
-		// current results (multi-mob canvas M-2). Plain click still replaces.
-		monsterList.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				maybePopup(e);
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e)
-			{
-				maybePopup(e);
-			}
-
-			private void maybePopup(MouseEvent e)
-			{
-				if (!e.isPopupTrigger())
-				{
-					return;
-				}
-				int idx = monsterList.locationToIndex(e.getPoint());
-				if (idx < 0)
-				{
-					return;
-				}
-				MonsterStats hit = monsterModel.get(idx);
-				JPopupMenu menu = new JPopupMenu();
-				JMenuItem add = new JMenuItem(selectedMonster == null
-					? "Open" : "Add to view");
-				add.addActionListener(a -> addToView(hit));
-				menu.add(add);
-				menu.show(monsterList, e.getX(), e.getY());
-			}
-		});
+		// The search-hit right-click ("Add to view" - a SECOND result on
+		// the page) left this release: the + Add mob row grows a roster on
+		// the card, and a plain click opens a fresh result. The addToView
+		// machinery stays for the group expansion to come (M-3).
 		monsterList.addListSelectionListener(e ->
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
