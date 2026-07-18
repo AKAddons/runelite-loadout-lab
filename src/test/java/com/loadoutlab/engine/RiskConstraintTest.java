@@ -83,6 +83,74 @@ public class RiskConstraintTest
 	}
 
 	@Test
+	public void aRichBankNeverStarvesTheBeamOfCheapCompliantSets()
+	{
+		// Field bug 2026-07-18: KBD magic, wildy 75k cap, anti-dragon shield
+		// excluded. The bank's expensive magic gear filled the score-cut
+		// beam with partials that all bust the cap once the forced
+		// protective shield lands, and the compute returned NO set while a
+		// cheap compliant mystic/battlestaff line existed. The RISK_RESERVE
+		// low-risk tail keeps such a line alive. (The precise starvation
+		// needed the field bank's mid-tier breadth - this bank guards the
+		// invariant: rich flood + tiny cap must still yield a set.)
+		MonsterStats kbd = data.searchMonsters("king black dragon", 1).get(0);
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		// The cheap compliant line...
+		for (String name : new String[]{"mystic hat", "mystic robe top", "mystic robe bottom",
+			"mystic gloves", "mystic boots", "battlestaff", "ancient wyvern shield",
+			"anti-dragon shield"})
+		{
+			owned.put(gear(name).getId(), 1);
+		}
+		// ...buried under the expensive flood that dominates the beam. The
+		// head/body/legs breadth matters: with >= 5 pricey options in each,
+		// the all-expensive partial combinations alone overflow the beam
+		// width, so a score-only cut carries not a single cheap line to the
+		// forced-shield slot (where every all-expensive line dies).
+		for (String name : new String[]{"virtus mask", "virtus robe top", "virtus robe bottom",
+			"ancestral hat", "ancestral robe top", "ancestral robe bottom",
+			"ahrim's hood", "ahrim's robetop", "ahrim's robeskirt",
+			"blue moon helm", "blue moon chestplate", "blue moon tassets",
+			"infinity hat", "infinity top", "infinity bottoms",
+			"dagon'hai hat", "dagon'hai robe top", "dagon'hai robe bottom",
+			"occult necklace", "amulet of torture", "amulet of fury",
+			"tormented bracelet", "eternal boots", "magus ring",
+			"kodai wand", "nightmare staff", "dragon hunter wand"})
+		{
+			owned.put(gear(name).getId(), 1);
+		}
+		// No prayer: augury saturates magic accuracy vs KBD, ties the
+		// expensive partials with the cheap ones, and the less-risk
+		// tie-break would rescue the cheap line on its own. Bare accuracy
+		// keeps the ordering strict - the shape that starved the field beam.
+		OptimizationRequest request = new OptimizationRequest(kbd, CombatStyle.MAGIC,
+			PlayerLevels.MAXED, PrayerBonuses.NONE,
+			null, 0, CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(owned, true), RequirementProfile.MAXED, 1)
+			.withMaxTradeables(3).withRiskBudgetGp(75_000).withInWilderness(true)
+			.withExcludedItems(java.util.Set.of(gear("anti-dragon shield").getId()));
+		List<DpsResult> best = new LoadoutOptimizer().optimize(data, request);
+		Assert.assertFalse("a compliant cheap set exists - the beam must find one", best.isEmpty());
+		Loadout found = best.get(0).getLoadout();
+		Assert.assertEquals("ancient wyvern shield",
+			found.get(com.loadoutlab.data.GearSlot.SHIELD).getName().toLowerCase());
+		Assert.assertTrue("found set must respect the cap",
+			PvpRisk.riskGp(found, null, 3) <= 75_000);
+	}
+
+	private static com.loadoutlab.data.GearItem gear(String name)
+	{
+		for (com.loadoutlab.data.GearItem item : data.getGearItems())
+		{
+			if (name.equalsIgnoreCase(item.getName()))
+			{
+				return item;
+			}
+		}
+		throw new AssertionError("no such gear: " + name);
+	}
+
+	@Test
 	public void realUntradeablesCarryTheirWikiDeathFees()
 	{
 		Assert.assertEquals(500_000, costOf("infernal cape"));

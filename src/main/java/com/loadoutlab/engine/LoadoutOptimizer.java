@@ -22,6 +22,13 @@ public final class LoadoutOptimizer
 	private static final int SLOT_LIMIT = 10;
 	private static final int WEAPON_LIMIT = 24;
 	private static final int BEAM_WIDTH = 96;
+	// Risk-capped hunts reserve beam slots for the LOWEST-RISK partials:
+	// score-only pruning kept only expensive high-dps lines, all of which
+	// bust the cap once the late slots land, and the beam died returning
+	// no set at all while a cheap compliant one existed (field bug
+	// 2026-07-18: KBD magic went empty after excluding the anti-dragon
+	// shield - the mystic/battlestaff line was pruned at slot two).
+	private static final int RISK_RESERVE = 8;
 	/**
 	 * Beam evaluation order: high-impact slots first so pruning is informed,
 	 * and BODY immediately before LEGS so paired set bonuses (crystal armour
@@ -544,7 +551,7 @@ public final class LoadoutOptimizer
 				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed()
 					.thenComparingLong(SearchState::getRiskGp)
 					.thenComparingInt(SearchState::getCost));
-				states = next.size() > BEAM_WIDTH ? new ArrayList<>(next.subList(0, BEAM_WIDTH)) : next;
+				states = cutBeam(next, request.isRiskConstrained());
 				if (states.isEmpty())
 				{
 					break;
@@ -920,6 +927,29 @@ public final class LoadoutOptimizer
 			rows.add(0, null);
 		}
 		return rows;
+	}
+
+	/** Beam cut. Risk-capped hunts swap the tail of the score cut for the
+	 * lowest-risk survivors: risk grows monotonically as slots fill, so a
+	 * beam of pure score-leaders can march everyone past the cap and die
+	 * even though a cheap compliant set exists. The reserve guarantees a
+	 * low-risk line reaches the last slot. Ties keep score order (next is
+	 * score-sorted and the sort is stable). */
+	private static List<SearchState> cutBeam(List<SearchState> next, boolean riskConstrained)
+	{
+		if (next.size() <= BEAM_WIDTH)
+		{
+			return next;
+		}
+		if (!riskConstrained)
+		{
+			return new ArrayList<>(next.subList(0, BEAM_WIDTH));
+		}
+		List<SearchState> kept = new ArrayList<>(next.subList(0, BEAM_WIDTH - RISK_RESERVE));
+		List<SearchState> rest = new ArrayList<>(next.subList(BEAM_WIDTH - RISK_RESERVE, next.size()));
+		rest.sort(Comparator.comparingLong(SearchState::getRiskGp));
+		kept.addAll(rest.subList(0, RISK_RESERVE));
+		return kept;
 	}
 
 	/** Dragonfire gear mode: the shield MUST protect (no empty slot). */
