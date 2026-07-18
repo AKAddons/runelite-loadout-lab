@@ -486,6 +486,52 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void quiverNeverCostsASwapSlot() throws Exception
+	{
+		// FIELD FIX (2026-07-17): the ammo slot does nothing for melee, so
+		// the melee answers WEAR the ranged answer's bolts instead of the
+		// kit carrying an "ammo swap" - no inventory item is ever an
+		// ammo-slot item in a one-ranged-set roster.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(9185, 1);   // rune crossbow
+		owned.put(9144, 1);   // runite bolts
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned, 4);
+			// The melee answer vs the ranged-immune phase wears the bolts.
+			OptimizerService.StyleResult melee =
+				roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(melee);
+			Assert.assertFalse(melee.owned.isEmpty());
+			GearItem wornAmmo = melee.owned.get(0).getLoadout().get(GearSlot.AMMO);
+			Assert.assertNotNull("the melee set wears the ranged ammo", wornAmmo);
+			Assert.assertEquals(9144, wornAmmo.getId());
+			// ...and no inventory list carries an ammo-slot item.
+			for (int j = 0; j < 3; j++)
+			{
+				for (CombatStyle style : CombatStyle.values())
+				{
+					OptimizerService.StyleResult r = roster.result.perMob.get(j).get(style);
+					if (r == null)
+					{
+						continue;
+					}
+					Assert.assertTrue("ammo never rides the inventory: " + r.bench,
+						r.bench.stream().noneMatch(i -> i.getSlot() == GearSlot.AMMO));
+				}
+			}
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	private static com.loadoutlab.data.MonsterGroups.MonsterGroup tdGroup(LoadoutData data)
 	{
 		return com.loadoutlab.data.MonsterGroups.load(data).stream()

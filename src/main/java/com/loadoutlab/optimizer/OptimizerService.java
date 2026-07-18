@@ -1127,6 +1127,21 @@ public class OptimizerService
 		return worn;
 	}
 
+	private static Loadout withSlot(Loadout base, GearSlot slot, GearItem item)
+	{
+		java.util.EnumMap<GearSlot, GearItem> gear = new java.util.EnumMap<>(GearSlot.class);
+		gear.putAll(base.getGear());
+		if (item == null)
+		{
+			gear.remove(slot);
+		}
+		else
+		{
+			gear.put(slot, item);
+		}
+		return new Loadout(gear);
+	}
+
 	private static Loadout withSwap(Loadout base, GearItem swap)
 	{
 		com.loadoutlab.data.GearSlot slot = swap.getSlot();
@@ -1311,11 +1326,11 @@ public class OptimizerService
 				? chooseSharedSpec(ctx, style, mobs, gameReqs,
 					shownOwned, gameLevels, null, true, shownGame)
 				: new SpecPick[n];
-			// The BENCH: the swap budget counts SWAP ITEMS only - the spec
-			// weapon rides free (field decision 2026-07-17; Bench 0 still
-			// means strictly one worn set, no spec carried). Swaps are
-			// chosen greedily by HP-weighted marginal gain; each mob then
-			// WEARS its best combination of base + carried swaps.
+			// The INVENTORY budget counts every carried item INCLUDING the
+			// spec weapon (field decision 2026-07-17, reversing same-day:
+			// Inventory 0 = strictly one worn set, NO spec recommended).
+			// Swaps are chosen greedily by HP-weighted marginal gain; each
+			// mob then WEARS its best combination of base + carried swaps.
 			GearItem specCarried = null;
 			for (SpecPick pick : specs)
 			{
@@ -1327,7 +1342,7 @@ public class OptimizerService
 					break;
 				}
 			}
-			int benchForSwaps = ctx.maxSwaps;
+			int benchForSwaps = Math.max(0, ctx.maxSwaps - (specCarried != null ? 1 : 0));
 			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			if (sharedOwned != null)
@@ -1416,6 +1431,91 @@ public class OptimizerService
 		// with the matching assumptions. The other tabs stay pure-style.
 		if (ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2)
 		{
+			// A quiver never costs a swap slot (field fix 2026-07-17): the
+			// ammo slot does nothing for melee, so every ammo-NEUTRAL
+			// answer wears the ammo the mob's caring answer rolls with
+			// (the ranged bolts ride in the melee set), and the shared
+			// bases follow suit - no more "ammo swaps".
+			GearItem rosterAmmo = null;
+			for (int j = 0; j < n; j++)
+			{
+				GearItem needed = null;
+				for (CombatStyle s : sharedByStyle.keySet())
+				{
+					List<DpsResult> best = bestsByStyle.get(s).get(j);
+					if (best == null || best.isEmpty() || best.get(0) == null)
+					{
+						continue;
+					}
+					DpsResult r = best.get(0);
+					GearItem ammo = r.getLoadout().get(GearSlot.AMMO);
+					if (ammo == null)
+					{
+						continue;
+					}
+					DpsResult without = calc.calculate(reqsByStyle.get(s).get(j),
+						withSlot(r.getLoadout(), GearSlot.AMMO, null));
+					if (without == null || without.getDps() < r.getDps() - 1e-9)
+					{
+						needed = ammo;
+						break;
+					}
+				}
+				if (needed == null)
+				{
+					continue;
+				}
+				if (rosterAmmo == null)
+				{
+					rosterAmmo = needed;
+				}
+				for (CombatStyle s : sharedByStyle.keySet())
+				{
+					List<DpsResult> best = bestsByStyle.get(s).get(j);
+					if (best == null || best.isEmpty() || best.get(0) == null)
+					{
+						continue;
+					}
+					DpsResult r = best.get(0);
+					GearItem ammo = r.getLoadout().get(GearSlot.AMMO);
+					if (ammo != null && ammo.getId() == needed.getId())
+					{
+						continue;
+					}
+					DpsResult unified = calc.calculate(reqsByStyle.get(s).get(j),
+						withSlot(r.getLoadout(), GearSlot.AMMO, needed));
+					if (unified != null && unified.getDps() >= r.getDps() - 1e-9)
+					{
+						best.set(0, unified);
+					}
+				}
+			}
+			if (rosterAmmo != null)
+			{
+				for (Map.Entry<CombatStyle, Loadout> entry : sharedByStyle.entrySet())
+				{
+					Loadout b = entry.getValue();
+					GearItem ammo = b.get(GearSlot.AMMO);
+					if (ammo != null && ammo.getId() == rosterAmmo.getId())
+					{
+						continue;
+					}
+					Loadout unifiedBase = withSlot(b, GearSlot.AMMO, rosterAmmo);
+					boolean neutral = true;
+					List<OptimizationRequest> reqs = reqsByStyle.get(entry.getKey());
+					for (int j = 0; j < n && neutral; j++)
+					{
+						DpsResult before = calc.calculate(reqs.get(j), b);
+						DpsResult after = calc.calculate(reqs.get(j), unifiedBase);
+						neutral = (after == null ? 0 : after.getDps())
+							>= (before == null ? 0 : before.getDps()) - 1e-9;
+					}
+					if (neutral)
+					{
+						entry.setValue(unifiedBase);
+					}
+				}
+			}
 			CombatStyle bestPrimary = null;
 			KitAnswer bestKit = null;
 			for (CombatStyle primary : sharedByStyle.keySet())
@@ -1447,10 +1547,13 @@ public class OptimizerService
 						}
 					}
 				}
+				// The spec weapon spends a slot of the inventory budget.
+				GearItem primarySpec = specCarriedByStyle.get(primary);
+				int slots = Math.max(0, ctx.maxSwaps - (primarySpec != null ? 1 : 0));
 				KitAnswer kit = chooseKit(calc, base, primary, singlePool,
-					bundleCandidates(primary, base, specCarriedByStyle.get(primary),
+					bundleCandidates(primary, base, primarySpec,
 						sharedByStyle, bestsByStyle),
-					reqsByStyle, bestsByStyle, mobs, ctx.maxSwaps);
+					reqsByStyle, bestsByStyle, mobs, slots);
 				if (bestKit == null || kit.total > bestKit.total + 1e-9)
 				{
 					bestKit = kit;

@@ -2636,11 +2636,14 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					highlightIds.add(specWeapon.getId());
 				}
+				// The inventory items are part of this trip's kit too.
+				highlightIds.addAll(inventoryIds(style));
 				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
 			if (bankFiltering)
 			{
 				filterIds = new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				filterIds.addAll(inventoryIds(style));
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
@@ -3376,6 +3379,18 @@ public class LoadoutLabPanel extends PluginPanel
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
+		if (!entry.viewingBis)
+		{
+			// Land on the RECOMMENDED tab (field spec 2026-07-17): the kit
+			// can answer the lensed mob in any style - never open on a tab
+			// where it is immune. One shared set per style is no longer
+			// the rule once swaps are involved.
+			DpsResult rowBest = mobRowResult(entry, entry.lensIndex, entry.selectedTab, false);
+			if (rowBest != null)
+			{
+				entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
+			}
+		}
 		renderPage();
 	}
 
@@ -3751,10 +3766,10 @@ public class LoadoutLabPanel extends PluginPanel
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
 		String invTip = entry.maxSwaps == 0
-			? "Inventory: 0 - strictly one worn set, no spec swap carried"
+			? "Inventory: 0 - strictly one worn set, no spec weapon recommended"
 			: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
-				+ " carried swap item" + (entry.maxSwaps == 1 ? "" : "s")
-				+ ", cross-style included; the spec weapon rides free";
+				+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
+				+ " including the spec weapon, cross-style included";
 		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != 1, true,
 			invTip + "; click to pick",
 			() ->
@@ -5166,6 +5181,27 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The active set's item ids: gear + loaded dart + spec weapon. */
+	/** The lensed result's inventory item ids for the viewed style - bank
+	 * show/filter treats carried swaps exactly like worn gear. */
+	private Set<Integer> inventoryIds(CombatStyle style)
+	{
+		if (active == null || active.results == null || active.viewingBis)
+		{
+			return Collections.emptySet();
+		}
+		StyleResult r = active.results.get(style);
+		if (r == null || r.bench.isEmpty())
+		{
+			return Collections.emptySet();
+		}
+		Set<Integer> ids = new java.util.HashSet<>();
+		for (GearItem item : r.bench)
+		{
+			ids.add(item.getId());
+		}
+		return ids;
+	}
+
 	private static Set<Integer> setItemIds(DpsResult best, GearItem specWeapon, GearItem dart)
 	{
 		Set<Integer> ids = new java.util.HashSet<>();
