@@ -98,7 +98,8 @@ public class LoadoutLabPanel extends PluginPanel
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			Runnable onDone);
 
 		/** Roster compute: ONE shared set per style across the mobs, with
 		 * per-mob numbers delivered via showRosterResults. Default no-op
@@ -107,7 +108,8 @@ public class LoadoutLabPanel extends PluginPanel
 		default void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone)
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			Runnable onDone)
 		{
 			onDone.run();
 		}
@@ -560,6 +562,10 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean assumeBestPrayer = true;
 		/** Assume potion boosts (default) - off computes unboosted. */
 		boolean assumeBoosts = true;
+		/** The BENCH: how many carried items beyond the worn set (the spec
+		 * weapon occupies a slot when it differs from the worn weapon).
+		 * 1 = today's behavior (room for the spec); 0 = strictly one set. */
+		int maxSwaps = 1;
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -3236,6 +3242,7 @@ public class LoadoutLabPanel extends PluginPanel
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+				entry.maxSwaps,
 				() -> statusLabel.setText(" "));
 			return;
 		}
@@ -3245,6 +3252,7 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+			entry.maxSwaps,
 			() -> statusLabel.setText(" "));
 	}
 
@@ -3732,6 +3740,41 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.optimizeMode > 0, true,
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
+		String[] benchTips = {
+			"Bench: 0 - strictly one worn set, no spec swap carried",
+			"Bench: 1 - room for the spec weapon (the default)",
+			"Bench: 2 - spec + one per-mob swap item",
+			"Bench: 3 - spec + two per-mob swap items"};
+		values.add(paramChip("Bench: " + entry.maxSwaps, entry.maxSwaps != 1, true,
+			benchTips[Math.min(entry.maxSwaps, 3)]
+				+ " - carried items beyond the worn set; click to pick",
+			() ->
+		{
+			JPopupMenu menu = new JPopupMenu();
+			for (int i = 0; i <= 3; i++)
+			{
+				final int pick = i;
+				JMenuItem item = new JMenuItem((i == entry.maxSwaps ? "[x] " : "")
+					+ "Bench: " + i);
+				item.addActionListener(ev -> asActive(entry, () ->
+				{
+					int prev = entry.maxSwaps;
+					if (pick == prev)
+					{
+						return;
+					}
+					recordStep("Bench " + pick,
+						() -> setMaxSwaps(pick), () -> setMaxSwaps(prev));
+					if (historyControl == null)
+					{
+						setMaxSwaps(pick);
+					}
+				}));
+				menu.add(item);
+			}
+			java.awt.Point at = getMousePosition();
+			menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+		}));
 		if (displayOptions.upgradeBudget)
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
@@ -3898,6 +3941,55 @@ public class LoadoutLabPanel extends PluginPanel
 				budgetEdited();
 			});
 		}
+	}
+
+	/** The bench/backpack row: the carried items beyond the worn set -
+	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
+	 * wears the accent border; the rest sit quietly on the bench. */
+	private javax.swing.JComponent benchRow(StyleResult result, DpsResult wornBest)
+	{
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+		JLabel prefix = new JLabel("Bench:");
+		prefix.setForeground(MUTED);
+		prefix.setFont(prefix.getFont().deriveFont(11f));
+		prefix.setToolTipText("Carried items beyond the worn set (the Bench chip sets how many)");
+		row.add(prefix);
+		java.util.Set<Integer> wornIds = new java.util.HashSet<>();
+		if (wornBest != null)
+		{
+			for (GearItem item : wornBest.getLoadout().getGear().values())
+			{
+				if (item != null)
+				{
+					wornIds.add(item.getId());
+				}
+			}
+		}
+		int specId = result.specWeapon != null ? result.specWeapon.getId() : -1;
+		for (GearItem item : result.bench)
+		{
+			boolean worn = wornIds.contains(item.getId());
+			boolean isSpec = item.getId() == specId;
+			JLabel cell = new JLabel();
+			cell.setOpaque(true);
+			cell.setBackground(CELL_BG);
+			cell.setBorder(new RoundedBorder(worn ? ACCENT
+				: isSpec ? BORDER_SPEC : ColorScheme.MEDIUM_GRAY_COLOR, 2, 2));
+			cell.setToolTipText(item.label()
+				+ (worn ? " - WORN vs this mob"
+					: isSpec ? " - the special attack swap"
+					: " - benched vs this mob (worn where it gains)"));
+			AsyncBufferedImage img = itemManager.getImage(item.getId());
+			Runnable set = () -> cell.setIcon(new ImageIcon(
+				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
+			img.onLoaded(() -> SwingUtilities.invokeLater(set));
+			set.run();
+			row.add(cell);
+		}
+		return row;
 	}
 
 	/** The roster rows (card anatomy #1): name + hp per mob, an
@@ -4527,6 +4619,13 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
+		if (!bis && result != null && !result.bench.isEmpty())
+		{
+			// The BENCH (field spec): the carried items below the gear -
+			// the lensed mob's worn swaps wear the accent.
+			card.add(Box.createVerticalStrut(4));
+			card.add(benchRow(result, best));
+		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
 		if (hasBis)
@@ -5002,6 +5101,15 @@ public class LoadoutLabPanel extends PluginPanel
 	private void setAntifireTo(boolean assume)
 	{
 		setAntifireMode(assume ? 2 : 0);
+	}
+
+	private void setMaxSwaps(int swaps)
+	{
+		if (active != null && active.maxSwaps != swaps)
+		{
+			active.maxSwaps = swaps;
+			recompute();
+		}
 	}
 
 	private void setAntifireMode(int mode)

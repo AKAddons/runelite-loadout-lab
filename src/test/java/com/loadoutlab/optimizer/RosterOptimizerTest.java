@@ -318,6 +318,44 @@ public class RosterOptimizerTest
 		}
 	}
 
+	@Test
+	public void benchCarriesThePerMobSwap() throws Exception
+	{
+		// The bench (default 1, no spec weapon owned -> a free swap slot):
+		// Vorkath (750hp, undead) anchors the shared neck to the salve;
+		// the goblin's better neck (torture) should ride the BENCH and be
+		// WORN only against the goblin - per-mob combinations over one
+		// carried kit.
+		LoadoutData data = new DataService().load();
+		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12018, 1);  // salve amulet(ei)
+		owned.put(19553, 1);  // amulet of torture
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(vorkath, goblin), owned);
+			OptimizerService.StyleResult vsVorkath = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult vsGoblin = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			GearItem vorkathNeck = vsVorkath.owned.get(0).getLoadout().get(GearSlot.NECK);
+			GearItem goblinNeck = vsGoblin.owned.get(0).getLoadout().get(GearSlot.NECK);
+			Assert.assertEquals("the 750hp undead anchors the salve",
+				"salve amulet(ei)", vorkathNeck.getNameLower());
+			Assert.assertEquals("the goblin wears the benched torture",
+				"amulet of torture", goblinNeck.getNameLower());
+			Assert.assertTrue("the torture rides the bench",
+				vsGoblin.bench.stream().anyMatch(i -> i.getId() == 19553));
+			Assert.assertEquals("one bench across the roster",
+				vsVorkath.bench, vsGoblin.bench);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
 	/** Thin holder so the helper can return the typed roster result. */
 	private static final class RosterResultView
 	{
