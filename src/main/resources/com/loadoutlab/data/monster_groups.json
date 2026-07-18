@@ -744,5 +744,29 @@
    "eldric"
   ],
   "note": "The duo and their elementals."
+ },
+ {
+  "name": "Yama",
+  "members": [
+   {
+    "name": "Yama",
+    "version": "Normal"
+   },
+   {
+    "name": "Yama",
+    "version": "Phase 3"
+   },
+   {
+    "name": "Judge of Yama"
+   },
+   {
+    "name": "Void Flare"
+   }
+  ],
+  "aliases": [
+   "yama",
+   "judge"
+  ],
+  "note": "The phases, the mid-fight Judge duel, and the void flare adds."
  }
 ]
