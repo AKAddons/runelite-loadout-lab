@@ -3888,8 +3888,13 @@ public class LoadoutLabPanel extends PluginPanel
 					}
 				});
 			});
-			values.add(invLabel);
-			values.add(invSlider);
+			// Label + slider travel as ONE unit so the wrap can never
+			// split them across lines (field bug).
+			JPanel invGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+			invGroup.setOpaque(false);
+			invGroup.add(invLabel);
+			invGroup.add(invSlider);
+			values.add(invGroup);
 			JLabel breakpoints = breakpointLabel(entry);
 			if (breakpoints != null)
 			{
