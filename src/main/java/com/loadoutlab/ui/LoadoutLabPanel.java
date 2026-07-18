@@ -677,44 +677,9 @@ public class LoadoutLabPanel extends PluginPanel
 			JPopupMenu menu = new JPopupMenu();
 			// Entry point for the first stored-elsewhere item (before any
 			// exists there is no label or right-click row to reach it from).
-			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
-			addStored.addActionListener(ev -> showAddStoredDialog());
-			menu.add(addStored);
-			// Dream items were only reachable by right-clicking a green
-			// cell that happened to be on screen (field report) - this is
-			// the proactive entry point, plus the un-dream list so a
-			// dreamed item that never wins a slot stays reachable.
-			JMenuItem addDream = new JMenuItem("Sim an item (consider as owned)...");
-			addDream.addActionListener(ev -> showAddDreamDialog());
-			menu.add(addDream);
-			Set<Integer> dreamed = dreamView.snapshot();
-			if (!dreamed.isEmpty())
-			{
-				javax.swing.JMenu dreamMenu = new javax.swing.JMenu(
-					"Simmed items (" + dreamed.size() + ")");
-				List<GearItem> dreamGear = new ArrayList<>();
-				for (int id : dreamed)
-				{
-					GearItem gear = data.getGear(id);
-					if (gear != null)
-					{
-						dreamGear.add(gear);
-					}
-				}
-				dreamGear.sort(Comparator.comparing(GearItem::label));
-				for (GearItem gear : dreamGear)
-				{
-					JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
-					undream.addActionListener(ev ->
-					{
-						dreamToggle.toggle(gear.getId());
-						recompute();
-					});
-					dreamMenu.add(undream);
-				}
-				menu.add(dreamMenu);
-			}
-			// Mob-specific actions live on the style cards and the
+			// Stored-elsewhere and simmed items moved to their own entry
+			// points (the stored label's menu + the green +N chip); the
+			// mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
