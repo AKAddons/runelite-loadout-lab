@@ -100,6 +100,15 @@ public final class MonsterStats
 	 * set for each phase. The NAME is preserved - name-keyed rules (the
 	 * TD damage reduction, boss overrides) keep applying.
 	 */
+	/** Same sheet under a different version label (load-time
+	 * normalization of quest/post-quest noise). */
+	public MonsterStats withVersion(String newVersion)
+	{
+		return new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, attributes,
+			slayerMonster, weaknessElement, weaknessSeverity);
+	}
+
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
 	{
 		return immuneVariant(syntheticId, versionLabel,

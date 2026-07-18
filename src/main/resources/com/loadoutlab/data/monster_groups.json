@@ -539,5 +539,88 @@
    "olm"
   ],
   "note": "The common combat rooms and Olm (head + both claws). Rooms roll per raid - treat the roster as the pool."
+ },
+ {
+  "name": "Fortis Colosseum",
+  "members": [
+   {
+    "name": "Fremennik warband archer"
+   },
+   {
+    "name": "Fremennik warband seer"
+   },
+   {
+    "name": "Fremennik warband berserker"
+   },
+   {
+    "name": "Serpent shaman"
+   },
+   {
+    "name": "Javelin Colossus"
+   },
+   {
+    "name": "Manticore"
+   },
+   {
+    "name": "Shockwave Colossus"
+   },
+   {
+    "name": "Minotaur (Fortis Colosseum)"
+   },
+   {
+    "name": "Sol Heredit"
+   }
+  ],
+  "aliases": [
+   "colosseum",
+   "sol",
+   "heredit",
+   "fortis"
+  ],
+  "note": "The full wave roster through Sol Heredit."
+ },
+ {
+  "name": "The Gauntlet",
+  "members": [
+   {
+    "name": "Crystalline Hunllef"
+   },
+   {
+    "name": "Crystalline Bear"
+   },
+   {
+    "name": "Crystalline Dragon"
+   },
+   {
+    "name": "Crystalline Dark Beast"
+   }
+  ],
+  "aliases": [
+   "gauntlet",
+   "hunllef"
+  ],
+  "note": "Gear inside is limited to the raid-crafted crystal tiers - the recommendations use only those (perfected assumed for now)."
+ },
+ {
+  "name": "Corrupted Gauntlet",
+  "members": [
+   {
+    "name": "Corrupted Hunllef"
+   },
+   {
+    "name": "Corrupted Bear"
+   },
+   {
+    "name": "Corrupted Dragon"
+   },
+   {
+    "name": "Corrupted Dark Beast"
+   }
+  ],
+  "aliases": [
+   "cg",
+   "corrupted gauntlet"
+  ],
+  "note": "Gear inside is limited to the raid-crafted corrupted tiers - the recommendations use only those (perfected assumed for now)."
  }
 ]

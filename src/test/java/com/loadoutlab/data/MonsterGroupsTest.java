@@ -66,7 +66,10 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(14, groups.size());
+		assertEquals(17, groups.size());
+		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
+		assertEquals(4, byName("The Gauntlet").getMobs().size());
+		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
@@ -219,6 +222,10 @@ class MonsterGroupsTest
 		}
 		assertEquals("Abyssal Sire",
 			MonsterGroups.search(groups, "sire", 5).get(0).getName());
+		assertEquals("Fortis Colosseum",
+			MonsterGroups.search(groups, "colosseum", 5).get(0).getName());
+		assertEquals("Corrupted Gauntlet",
+			MonsterGroups.search(groups, "cg", 5).get(0).getName());
 		// Olm is head plus both claws.
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());

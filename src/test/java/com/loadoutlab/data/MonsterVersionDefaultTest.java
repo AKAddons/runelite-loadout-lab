@@ -36,10 +36,10 @@ class MonsterVersionDefaultTest
 	@DisplayName("bare boss names default to the everyday version, not quest/awakened/enraged")
 	void everydayVersionsWin()
 	{
-		assertEquals("Post-quest", defaultVersion("vorkath"));
-		assertEquals("Post-quest", defaultVersion("vardorvis"));
-		assertEquals("Post-quest", defaultVersion("the whisperer"));
-		assertEquals("Post-quest", defaultVersion("the leviathan"));
+		assertEquals("", defaultVersion("vorkath"));
+		assertEquals("", defaultVersion("vardorvis"));
+		assertEquals("", defaultVersion("the whisperer"));
+		assertEquals("", defaultVersion("the leviathan"));
 		// Normal and Enraged Zuk share a stat block, so the loader collapses
 		// them into one unversioned row - either label would compute the same.
 		assertEquals("", defaultVersion("tzkal-zuk"));

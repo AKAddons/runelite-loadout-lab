@@ -1192,6 +1192,14 @@ public final class LoadoutOptimizer
 
 	private static boolean allowedByMode(OptimizationRequest request, GearItem item)
 	{
+		// THE GAUNTLET (field spec 2026-07-18): fights inside are locked
+		// to the raid-crafted tiers - mainland gear never enters, and
+		// ownership is irrelevant because everything is made in the run.
+		String gauntlet = GauntletRules.family(request.getMonster());
+		if (gauntlet != null)
+		{
+			return GauntletRules.allowed(gauntlet, item);
+		}
 		if (!item.isTradeable())
 		{
 			return canUseUntradeable(request, item);
