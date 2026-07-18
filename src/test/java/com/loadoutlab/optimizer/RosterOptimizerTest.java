@@ -45,6 +45,12 @@ public class RosterOptimizerTest
 	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
 		Map<Integer, Integer> owned) throws Exception
 	{
+		return run(service, mobs, owned, 1);
+	}
+
+	private static RosterResultView run(OptimizerService service, List<MonsterStats> mobs,
+		Map<Integer, Integer> owned, int maxSwaps) throws Exception
+	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 		service.bestPerStyleAcross(
@@ -52,7 +58,7 @@ public class RosterOptimizerTest
 			new OwnedItems(owned, true), 1, false, false, "",
 			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 			false, false, Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-			Collections.emptyMap(), null, Collections.emptySet(),
+			maxSwaps, Collections.emptyMap(), null, Collections.emptySet(),
 			roster ->
 			{
 				out.set(roster);
@@ -381,6 +387,47 @@ public class RosterOptimizerTest
 			Assert.assertTrue("the benched blowpipe waits in the backpack",
 				meleeKit.bench.stream().anyMatch(i -> i.getId() == 12926));
 			Assert.assertTrue(meleeKit.bench.stream().noneMatch(i -> i.getId() == 4151));
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void bigBenchConvergesToEachMobsOwnBest() throws Exception
+	{
+		// FIELD INSIGHT (2026-07-17): a bigger bench is an EASIER problem -
+		// at the limit every mob simply wears its own best owned set. With
+		// Bench 20 the melee-immune TD phase must get the FULL ranged best
+		// (d'hide and all, not just a blowpipe in melee armor): the exact
+		// dps of optimizing that phase alone.
+		LoadoutData data = new DataService().load();
+		com.loadoutlab.data.MonsterGroups.MonsterGroup tds = tdGroup(data);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(2503, 1);   // black d'hide body - the ranged best differs
+		owned.put(2497, 1);   // black d'hide chaps      from the melee base
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, tds.getMobs(), owned, 20);
+			RosterResultView solo = run(service,
+				Collections.singletonList(tds.getMobs().get(0)), owned, 20);
+			double soloBest = solo.result.perMob.get(0)
+				.get(CombatStyle.RANGED).owned.get(0).getDps();
+			double rosterBest = 0;
+			for (CombatStyle style : CombatStyle.values())
+			{
+				OptimizerService.StyleResult r = roster.result.perMob.get(0).get(style);
+				if (r != null && !r.owned.isEmpty())
+				{
+					rosterBest = Math.max(rosterBest, r.owned.get(0).getDps());
+				}
+			}
+			Assert.assertEquals("Bench 20 must equal optimizing the phase alone",
+				soloBest, rosterBest, 1e-6);
 		}
 		finally
 		{

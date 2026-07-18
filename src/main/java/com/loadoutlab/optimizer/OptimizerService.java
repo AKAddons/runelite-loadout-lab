@@ -780,18 +780,37 @@ public class OptimizerService
 		double total;
 	}
 
-	/** One mob's best answer under a kit: the result and the style that
-	 * actually attacks (labels/prayers follow it). */
-	private static final class KitShown
+	/** The mob's own free best, when the kit can actually assemble it -
+	 * every worn item present in the base or carried. This is what makes
+	 * a BIG bench an EASY problem (field insight 2026-07-17): at the
+	 * limit every mob simply wears its own best owned set, exactly. */
+	private static DpsResult coverableBest(List<DpsResult> freeBest,
+		Loadout base, List<GearItem> carried)
 	{
-		final DpsResult result;
-		final CombatStyle style;
-
-		KitShown(DpsResult result, CombatStyle style)
+		if (freeBest == null || freeBest.isEmpty() || freeBest.get(0) == null)
 		{
-			this.result = result;
-			this.style = style;
+			return null;
 		}
+		Set<Integer> have = new java.util.HashSet<>();
+		for (GearItem item : base.getGear().values())
+		{
+			if (item != null)
+			{
+				have.add(item.getId());
+			}
+		}
+		for (GearItem item : carried)
+		{
+			have.add(item.getId());
+		}
+		for (GearItem item : freeBest.get(0).getLoadout().getGear().values())
+		{
+			if (item != null && !have.contains(item.getId()))
+			{
+				return null;
+			}
+		}
+		return freeBest.get(0);
 	}
 
 	/** Wear a bundle into the base set; null when it cannot be worn
@@ -882,14 +901,15 @@ public class OptimizerService
 	}
 
 	/** One mob's best answer given the kit: the primary base + singles,
-	 * challenged by every carried bundle rolled under its own style. */
-	private KitShown kitBest(DpsCalculator calc, Loadout base, CombatStyle primary,
-		List<GearItem> singles, List<SwapBundle> bundles,
-		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle, int mobIndex)
+	 * challenged by every carried bundle rolled under its own style, and
+	 * by any style's FREE BEST the kit can fully assemble. */
+	private DpsResult kitBest(DpsCalculator calc, Loadout base, CombatStyle primary,
+		List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried,
+		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
+		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle, int mobIndex)
 	{
 		OptimizationRequest primaryReq = reqsByStyle.get(primary).get(mobIndex);
 		DpsResult best = calc.calculate(primaryReq, bestWorn(calc, primaryReq, base, singles));
-		CombatStyle bestStyle = primary;
 		for (SwapBundle bundle : bundles)
 		{
 			List<OptimizationRequest> reqs = reqsByStyle.get(bundle.style);
@@ -903,36 +923,107 @@ public class OptimizerService
 			if (challenger != null && (best == null || challenger.getDps() > best.getDps()))
 			{
 				best = challenger;
-				bestStyle = bundle.style;
 			}
 		}
-		return new KitShown(best, bestStyle);
+		for (List<List<DpsResult>> bests : bestsByStyle.values())
+		{
+			DpsResult covered = coverableBest(bests.get(mobIndex), base, carried);
+			if (covered != null && (best == null || covered.getDps() > best.getDps()))
+			{
+				best = covered;
+			}
+		}
+		return best;
 	}
 
 	private double kitTotal(DpsCalculator calc, Loadout base, CombatStyle primary,
 		List<GearItem> singles, List<SwapBundle> bundles,
-		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle, List<MonsterStats> mobs)
+		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
+		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle, List<MonsterStats> mobs)
 	{
+		List<GearItem> carried = new ArrayList<>(singles);
+		for (SwapBundle bundle : bundles)
+		{
+			for (GearItem item : bundle.items)
+			{
+				if (carried.stream().noneMatch(i -> i.getId() == item.getId()))
+				{
+					carried.add(item);
+				}
+			}
+		}
 		double sum = 0;
 		for (int j = 0; j < mobs.size(); j++)
 		{
-			KitShown shown = kitBest(calc, base, primary, singles, bundles, reqsByStyle, j);
-			sum += (shown.result == null ? 0 : shown.result.getDps())
+			DpsResult shown = kitBest(calc, base, primary, singles, bundles,
+				carried, reqsByStyle, bestsByStyle, j);
+			sum += (shown == null ? 0 : shown.getDps())
 				* Math.max(1, mobs.get(j).getHitpoints());
 		}
 		return sum;
 	}
 
-	/** Greedy kit selection over singles (cost 1) and bundles (their slot
-	 * cost) by HP-weighted marginal gain; cost-0 bundles (the spec weapon
-	 * doubling as the other style's weapon) fit even a full bench. */
+	/** Kit selection. A BIGGER bench is an EASIER problem (field insight
+	 * 2026-07-17): the ceiling is each mob wearing its own winning free
+	 * best, so first test that ideal - the union of every mob's winning
+	 * diff vs the base; when it fits the budget, carry exactly that with
+	 * NO search. Only a LIMITED budget ranks the diff items: greedy over
+	 * singles (cost 1) and bundles (their slot cost) by HP-weighted
+	 * marginal gain - "the most valuable swap item, then the 2nd" -
+	 * with cost-0 bundles (the spec weapon doubling as the other style's
+	 * weapon) fitting even a full bench. */
 	private KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
 		java.util.Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates,
-		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle, List<MonsterStats> mobs, int slots)
+		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
+		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
+		List<MonsterStats> mobs, int slots)
 	{
+		List<GearItem> allNeeded = new ArrayList<>();
+		double idealTotal = 0;
+		for (int j = 0; j < mobs.size(); j++)
+		{
+			List<DpsResult> winner = null;
+			for (List<List<DpsResult>> bests : bestsByStyle.values())
+			{
+				List<DpsResult> best = bests.get(j);
+				if (best == null || best.isEmpty() || best.get(0) == null)
+				{
+					continue;
+				}
+				if (winner == null || best.get(0).getDps() > winner.get(0).getDps())
+				{
+					winner = best;
+				}
+			}
+			if (winner == null)
+			{
+				continue;
+			}
+			idealTotal += winner.get(0).getDps() * Math.max(1, mobs.get(j).getHitpoints());
+			for (GearItem item : winner.get(0).getLoadout().getGear().values())
+			{
+				GearItem baseItem = item == null ? null : base.get(item.getSlot());
+				if (item != null
+					&& (baseItem == null || baseItem.getId() != item.getId())
+					&& allNeeded.stream().noneMatch(i -> i.getId() == item.getId()))
+				{
+					allNeeded.add(item);
+				}
+			}
+		}
+		if (!allNeeded.isEmpty() && allNeeded.size() <= slots)
+		{
+			// The ideal fits: every mob wears its own best, exactly (the
+			// coverage challenge in kitBest reproduces each winner).
+			KitAnswer kit = new KitAnswer();
+			kit.singles.addAll(allNeeded);
+			kit.total = idealTotal;
+			return kit;
+		}
 		KitAnswer kit = new KitAnswer();
 		int used = 0;
-		kit.total = kitTotal(calc, base, primary, kit.singles, kit.bundles, reqsByStyle, mobs);
+		kit.total = kitTotal(calc, base, primary, kit.singles, kit.bundles,
+			reqsByStyle, bestsByStyle, mobs);
 		while (true)
 		{
 			GearItem bestSingle = null;
@@ -946,7 +1037,8 @@ public class OptimizerService
 					continue;
 				}
 				kit.singles.add(candidate);
-				double total = kitTotal(calc, base, primary, kit.singles, kit.bundles, reqsByStyle, mobs);
+				double total = kitTotal(calc, base, primary, kit.singles, kit.bundles,
+					reqsByStyle, bestsByStyle, mobs);
 				kit.singles.remove(kit.singles.size() - 1);
 				if (total > bestTotal + 1e-9)
 				{
@@ -963,7 +1055,8 @@ public class OptimizerService
 					continue;
 				}
 				kit.bundles.add(candidate);
-				double total = kitTotal(calc, base, primary, kit.singles, kit.bundles, reqsByStyle, mobs);
+				double total = kitTotal(calc, base, primary, kit.singles, kit.bundles,
+					reqsByStyle, bestsByStyle, mobs);
 				kit.bundles.remove(kit.bundles.size() - 1);
 				if (total > bestTotal + 1e-9)
 				{
@@ -1261,12 +1354,19 @@ public class OptimizerService
 			}
 			if (sharedOwned != null && !swaps.isEmpty())
 			{
-				// Re-show each mob wearing its best base+swaps combination.
+				// Re-show each mob wearing its best base+swaps combination;
+				// when the carried kit can fully assemble the mob's own
+				// free best, show THAT exactly (big bench = easy problem).
 				for (int j = 0; j < n; j++)
 				{
 					Loadout worn = bestWorn(calc, ownedReqs.get(j), sharedOwned, swaps);
-					List<DpsResult> ownedList = new ArrayList<>();
 					DpsResult shown = calc.calculate(ownedReqs.get(j), worn);
+					DpsResult covered = coverableBest(ownedBests.get(j), sharedOwned, swaps);
+					if (covered != null && (shown == null || covered.getDps() > shown.getDps()))
+					{
+						shown = covered;
+					}
+					List<DpsResult> ownedList = new ArrayList<>();
 					if (shown != null)
 					{
 						ownedList.add(shown);
@@ -1320,18 +1420,41 @@ public class OptimizerService
 					return null;
 				}
 				Loadout base = sharedByStyle.get(primary);
-				KitAnswer kit = chooseKit(calc, base, primary,
-					swapCandidates(base, bestsByStyle.get(primary)),
+				// Singles: the primary's diff items PLUS the other carried
+				// styles' non-weapon pieces - the diff between the per-mob
+				// BiS sets IS the candidate list, so a generous budget can
+				// assemble the other style's FULL set, not just its weapon.
+				List<GearItem> singlePool =
+					new ArrayList<>(swapCandidates(base, bestsByStyle.get(primary)));
+				for (CombatStyle s : sharedByStyle.keySet())
+				{
+					if (s == primary)
+					{
+						continue;
+					}
+					for (GearItem item : swapCandidates(base, bestsByStyle.get(s)))
+					{
+						if (item.getSlot() != GearSlot.WEAPON
+							&& singlePool.stream().noneMatch(i -> i.getId() == item.getId()))
+						{
+							singlePool.add(item);
+						}
+					}
+				}
+				KitAnswer kit = chooseKit(calc, base, primary, singlePool,
 					bundleCandidates(primary, base, specCarriedByStyle.get(primary),
 						sharedByStyle, bestsByStyle),
-					reqsByStyle, mobs, ctx.maxSwaps);
+					reqsByStyle, bestsByStyle, mobs, ctx.maxSwaps);
 				if (bestKit == null || kit.total > bestKit.total + 1e-9)
 				{
 					bestKit = kit;
 					bestPrimary = primary;
 				}
 			}
-			if (bestKit != null && !bestKit.bundles.isEmpty())
+			// Rebuild when the kit actually crosses styles: a carried
+			// bundle, or an ideal-fit kit whose singles include a weapon.
+			if (bestKit != null && (!bestKit.bundles.isEmpty()
+				|| bestKit.singles.stream().anyMatch(i -> i.getSlot() == GearSlot.WEAPON)))
 			{
 				// Distribute the kit across the style tabs (field spec
 				// 2026-07-17): each tab shows what the CARRIED kit does in
@@ -1353,11 +1476,6 @@ public class OptimizerService
 						}
 					}
 				}
-				Set<CombatStyle> kitStyles = java.util.EnumSet.of(bestPrimary);
-				for (SwapBundle bundle : bestKit.bundles)
-				{
-					kitStyles.add(bundle.style);
-				}
 				SpecPick[] specs = specsByStyle.get(bestPrimary);
 				for (int j = 0; j < n; j++)
 				{
@@ -1365,14 +1483,12 @@ public class OptimizerService
 					{
 						StyleResult old = perMob.get(j).get(s);
 						SpecPick[] gameSpecs = gameSpecsByStyle.get(s);
-						if (!kitStyles.contains(s))
-						{
-							perMob.get(j).put(s, new StyleResult(new ArrayList<>(),
-								old.overallBest, null, gameSpecs[j], old.boostLabel,
-								old.gameBoostLabel, null, old.gameIncoming, null,
-								benchFor(base, specCarried, carried, base)));
-							continue;
-						}
+						// The style's kit answer: the primary wears the
+						// base, a bundled style wears its weapon into the
+						// base armor, and ANY style whose free best the
+						// kit can fully assemble shows it exactly. A style
+						// the kit cannot reach shows nothing on the Yours
+						// side - no set you cannot assemble mid-trip.
 						DpsResult result = null;
 						OptimizationRequest req = reqsByStyle.get(s).get(j);
 						if (s == bestPrimary)
@@ -1380,26 +1496,30 @@ public class OptimizerService
 							result = calc.calculate(req,
 								bestWorn(calc, req, base, bestKit.singles));
 						}
-						else
+						for (SwapBundle bundle : bestKit.bundles)
 						{
-							for (SwapBundle bundle : bestKit.bundles)
+							if (bundle.style != s)
 							{
-								if (bundle.style != s)
-								{
-									continue;
-								}
-								Loadout seeded = applyBundle(base, bundle);
-								if (seeded == null)
-								{
-									continue;
-								}
-								DpsResult r = calc.calculate(req,
-									bestWorn(calc, req, seeded, bestKit.singles));
-								if (r != null && (result == null || r.getDps() > result.getDps()))
-								{
-									result = r;
-								}
+								continue;
 							}
+							Loadout seeded = applyBundle(base, bundle);
+							if (seeded == null)
+							{
+								continue;
+							}
+							DpsResult r = calc.calculate(req,
+								bestWorn(calc, req, seeded, bestKit.singles));
+							if (r != null && (result == null || r.getDps() > result.getDps()))
+							{
+								result = r;
+							}
+						}
+						DpsResult covered = coverableBest(
+							bestsByStyle.get(s).get(j), base, carried);
+						if (covered != null
+							&& (result == null || covered.getDps() > result.getDps()))
+						{
+							result = covered;
 						}
 						List<DpsResult> ownedList = new ArrayList<>();
 						if (result != null)
@@ -1407,11 +1527,13 @@ public class OptimizerService
 							ownedList.add(result);
 						}
 						Loadout worn = result != null ? result.getLoadout() : base;
-						IncomingDpsCalculator.Result incoming = IncomingDpsCalculator.calculate(
-							mobs.get(j), worn, ctx.real.getDefence(), ctx.real.getMagic());
+						IncomingDpsCalculator.Result incoming = result == null ? null
+							: IncomingDpsCalculator.calculate(mobs.get(j), worn,
+								ctx.real.getDefence(), ctx.real.getMagic());
 						perMob.get(j).put(s, new StyleResult(ownedList, old.overallBest,
-							specs[j], gameSpecs[j], boostLabelByStyle.get(s),
-							old.gameBoostLabel, incoming, old.gameIncoming, null,
+							ownedList.isEmpty() ? null : specs[j], gameSpecs[j],
+							boostLabelByStyle.get(s), old.gameBoostLabel,
+							incoming, old.gameIncoming, null,
 							benchFor(base, specCarried, carried, worn)));
 					}
 				}
