@@ -147,19 +147,34 @@ public final class MonsterIcons
 			}
 		}
 		// Wiki file-name candidates, most specific first: the per-form
-		// image ("Vanguard (melee).png"), the plain name, and the name
-		// with any corpus parenthetical stripped ("Lizardman shaman
-		// (Chambers of Xeric)" -> "Lizardman shaman.png").
-		List<String> candidates = new ArrayList<>();
+		// image ("Vanguard (melee).png"), the plain name, then the wiki's
+		// multi-version conventions verified live 2026-07-18 - sentence
+		// case and a " (1)" suffix ("Skeletal mystic (1).png",
+		// "Lizardman shaman (1).png") - and the corpus parenthetical
+		// stripped ("Lizardman shaman (Chambers of Xeric)" -> base name).
+		List<String> forms = new ArrayList<>();
 		if (version != null && !version.isEmpty())
 		{
-			candidates.add(name + " (" + version.toLowerCase(Locale.ROOT) + ")");
+			forms.add(name + " (" + version.toLowerCase(Locale.ROOT) + ")");
 		}
-		candidates.add(name);
+		forms.add(name);
 		int paren = name.indexOf(" (");
 		if (paren > 0)
 		{
-			candidates.add(name.substring(0, paren));
+			forms.add(name.substring(0, paren));
+		}
+		List<String> candidates = new ArrayList<>();
+		for (String form : forms)
+		{
+			String sentence = form.length() > 1
+				? form.charAt(0) + form.substring(1).toLowerCase(Locale.ROOT) : form;
+			for (String variant : new String[]{form, form + " (1)", sentence, sentence + " (1)"})
+			{
+				if (!candidates.contains(variant))
+				{
+					candidates.add(variant);
+				}
+			}
 		}
 		for (String candidate : candidates)
 		{
