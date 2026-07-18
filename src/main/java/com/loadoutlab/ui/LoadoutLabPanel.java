@@ -5245,12 +5245,16 @@ public class LoadoutLabPanel extends PluginPanel
 				excludedCount += scoped.size();
 			}
 			int simCount = mobProfile.allMobSims(lensedProfileId).size();
-			localRow.add(paramChip(excludedCount > 0 ? "Exclude here: " + excludedCount : "Exclude here",
+			// Same color language as the global -N/+N chips above the
+			// search bar: red for exclusions, green for sims.
+			localRow.add(localCountChip(
+				excludedCount > 0 ? "Exclude here: " + excludedCount : "Exclude here",
 				excludedCount > 0, true,
 				"Never use an item vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalExclusions(entry, lensedProfileId, mobName))));
-			localRow.add(paramChip(simCount > 0 ? "Sim here: " + simCount : "Sim here",
-				simCount > 0, true,
+			localRow.add(localCountChip(
+				simCount > 0 ? "Sim here: " + simCount : "Sim here",
+				simCount > 0, false,
 				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
 			card.add(Box.createVerticalStrut(4));
@@ -5264,6 +5268,34 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(notePanel);
 		}
 		return card;
+	}
+
+	/** A local exclude/sim chip in the GLOBAL chips' color language:
+	 * red for exclusions, green for sims, muted when empty. */
+	private javax.swing.JComponent localCountChip(String text, boolean active, boolean red,
+		String tooltip, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(red
+			? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
+			: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)));
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
+		chip.setBorder(new RoundedBorder(active
+			? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
+			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
+		chip.setToolTipText(tooltip);
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				onClick.run();
+			}
+		});
+		return chip;
 	}
 
 	/** The local exclusions manager: current entries with click-to-allow,
