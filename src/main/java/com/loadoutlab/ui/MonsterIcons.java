@@ -33,6 +33,9 @@ import okhttp3.Response;
  */
 public final class MonsterIcons
 {
+	private static final org.slf4j.Logger log =
+		org.slf4j.LoggerFactory.getLogger(MonsterIcons.class);
+
 	private static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
 	private static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
 	private static final int MAX_WIDTH = 28;
@@ -171,6 +174,7 @@ public final class MonsterIcons
 				return img;
 			}
 		}
+		log.debug("no wiki image for '{}' (tried {})", name, candidates);
 		return null;
 	}
 

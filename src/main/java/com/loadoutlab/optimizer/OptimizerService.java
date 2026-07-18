@@ -52,8 +52,18 @@ import java.util.function.Consumer;
  */
 public class OptimizerService
 {
+	private static final org.slf4j.Logger log =
+		org.slf4j.LoggerFactory.getLogger(OptimizerService.class);
+
 	/** Per-STYLE entries (a monster query stores three). */
 	private static final int CACHE_MAX = 192;
+
+	/** Roster optimize-cache traffic, cumulative - the per-compute debug
+	 * line logs the deltas so a field log shows warm vs cold plainly. */
+	private final java.util.concurrent.atomic.AtomicLong optimizeHits =
+		new java.util.concurrent.atomic.AtomicLong();
+	private final java.util.concurrent.atomic.AtomicLong optimizeMisses =
+		new java.util.concurrent.atomic.AtomicLong();
 
 	/** D-4: which point of the offense/defense frontier to recommend. */
 	public enum OptimizeMode
@@ -477,9 +487,11 @@ public class OptimizerService
 			List<DpsResult> cached = optimizeCache.get(key);
 			if (cached != null)
 			{
+				optimizeHits.incrementAndGet();
 				return new ArrayList<>(cached);
 			}
 		}
+		optimizeMisses.incrementAndGet();
 		if (requestSeq.get() != ticket)
 		{
 			return null; // superseded - stop burning cores
@@ -1441,6 +1453,9 @@ public class OptimizerService
 		List<MonsterStats> mobs, ComputeContext ctx, long ticket)
 	{
 		int n = mobs.size();
+		long tStart = System.nanoTime();
+		long hitsBefore = optimizeHits.get();
+		long missesBefore = optimizeMisses.get();
 		List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
 		for (int j = 0; j < n; j++)
 		{
@@ -1553,6 +1568,7 @@ public class OptimizerService
 				});
 			}
 		}
+		long tFanStart = System.nanoTime();
 		try
 		{
 			rosterPool.invokeAll(optimizeTasks);
@@ -1567,6 +1583,7 @@ public class OptimizerService
 			abandonedForTest++;
 			return null;
 		}
+		long tFanMs = (System.nanoTime() - tFanStart) / 1_000_000;
 		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
 		{
 			PlayerLevels styleLevels = styleLevelsBy.get(style);
@@ -1741,14 +1758,18 @@ public class OptimizerService
 		// style-immune phase (TD shields) with a genuine style switch. The
 		// pass runs for BOTH sides - the Yours kit over your bank and the
 		// BiS kit over the whole game, under the same inventory budget.
+		long tKitStart = System.nanoTime();
 		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
-				bestsByStyle, specsByStyle, specCarriedByStyle)
+				bestsByStyle, specsByStyle, specCarriedByStyle, "owned")
 			: null;
+		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
+		long tGameKitStart = System.nanoTime();
 		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
-				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle)
+				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle, "BiS")
 			: null;
+		long tGameKitMs = (System.nanoTime() - tGameKitStart) / 1_000_000;
 		if (requestSeq.get() != ticket)
 		{
 			abandonedForTest++;
@@ -1822,6 +1843,11 @@ public class OptimizerService
 				}
 			}
 		}
+		log.debug("roster compute: {} mobs @ inventory {} - fanout {}ms"
+			+ " ({} cache hits, {} misses), owned kit {}ms, BiS kit {}ms, total {}ms",
+			n, ctx.maxSwaps, tFanMs,
+			optimizeHits.get() - hitsBefore, optimizeMisses.get() - missesBefore,
+			tOwnedKitMs, tGameKitMs, (System.nanoTime() - tStart) / 1_000_000);
 		return perMob;
 	}
 
@@ -1864,7 +1890,7 @@ public class OptimizerService
 		Map<CombatStyle, Loadout> sharedByStyle,
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
 		Map<CombatStyle, SpecPick[]> specsByStyle,
-		Map<CombatStyle, GearItem> specCarriedByStyle)
+		Map<CombatStyle, GearItem> specCarriedByStyle, String side)
 	{
 		int n = mobs.size();
 		// A quiver never costs a swap slot (field fix 2026-07-17): the
@@ -2144,6 +2170,18 @@ public class OptimizerService
 					}
 				}
 			}
+		}
+		if (log.isDebugEnabled())
+		{
+			StringBuilder carriedNames = new StringBuilder();
+			for (GearItem item : carried)
+			{
+				carriedNames.append(item.getNameLower()).append(", ");
+			}
+			log.debug("kit[{}]: primary={} specKept={} spec={} carried=[{}] score={}",
+				side, bestPrimary, bestSpecKept,
+				specCarried == null ? "-" : specCarried.getNameLower(),
+				carriedNames, String.format("%.0f", bestScore));
 		}
 		return new KitView(java.util.EnumSet.copyOf(sharedByStyle.keySet()),
 			base, specCarried, specs, shownByMob, plan);
