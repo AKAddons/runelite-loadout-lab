@@ -4052,9 +4052,13 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			synchronized (target.getTreeLock())
 			{
+				// A fresh card has no width yet - falling back to unlimited
+				// meant one endless row, clipped after a few chips (field
+				// bug: parameters "disappearing" mid-compute). Assume the
+				// plugin panel's width until the real one exists.
 				int targetWidth = target.getWidth() > 0 ? target.getWidth()
 					: (target.getParent() != null && target.getParent().getWidth() > 0
-						? target.getParent().getWidth() : Integer.MAX_VALUE);
+						? target.getParent().getWidth() : 220);
 				java.awt.Insets insets = target.getInsets();
 				int maxWidth = targetWidth - insets.left - insets.right - getHgap() * 2;
 				int x = 0;
