@@ -4419,9 +4419,19 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " required shield, dragonfire is fully blocked";
 			}
 			// The chips render in the stat panel beside the gear, not here.
-			renderingChips = assumesChips(chipLabel,
+			JPanel chips = assumesChips(chipLabel,
 				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
 				antifireTooltip);
+			renderingChips = chips;
+			if (renderingProtectItem)
+			{
+				// Protect Item rides the assume chips (field spec) - it is
+				// an assumption like the prayers beside it.
+				JLabel keepChip = new JLabel();
+				keepChip.setToolTipText("Protect Item assumed - a 4th item is kept on death");
+				attachSprite(keepChip, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
+				chips.add(keepChip);
+			}
 		}
 		if (!hasSet)
 		{
@@ -5395,19 +5405,6 @@ int sprite = incoming.protectPrayer != null
 			}
 			panel.add(taken);
 		}
-		if (renderingRiskLine)
-		{
-			addRiskStatLine(panel, result);
-		}
-		if (renderingProtectItem)
-		{
-			// Protect Item assumed (field spec): the prayer sprite beside
-			// the other defensive facts.
-			JLabel kept = statLine("kept: 4",
-				"Protect Item assumed - a 4th item is kept on death", statText, null);
-			attachStatSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
-			panel.add(kept);
-		}
 		String styleText = attackStyleText(result);
 		if (displayOptions.attackStyle && styleText != null)
 		{
@@ -5473,9 +5470,11 @@ int sprite = incoming.protectPrayer != null
 		String book = spellBookText(result);
 		if (displayOptions.attackStyle && book != null)
 		{
-			JLabel bookLine = statLine("Book: " + book,
-				"The autocast spell's spellbook", statText, null);
-			attachStatSprite(bookLine, net.runelite.api.gameval.SpriteID.Staticons.MAGIC);
+			// Icon-only (field spec): a painted tome tinted per book, the
+			// name in the tooltip.
+			JLabel bookLine = statLine("",
+				book + " spellbook - the autocast spell's book", statText,
+				new FixedWidthIcon(new BookIcon(bookTint(book))));
 			panel.add(bookLine);
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
@@ -5510,6 +5509,11 @@ int sprite = incoming.protectPrayer != null
 					+ "</body></html>", new Color(200, 170, 110),
 				new FixedWidthIcon(new InfoIcon(11)));
 			panel.add(noteLine);
+		}
+		if (renderingRiskLine)
+		{
+			// The wildy row sits last in the list (field spec).
+			addRiskStatLine(panel, result);
 		}
 		panel.add(Box.createVerticalGlue());
 		return panel;
@@ -5609,6 +5613,67 @@ int sprite = incoming.protectPrayer != null
 				g2.drawLine(x, y + mid, x + 3, y + mid);
 				g2.drawLine(x + size - 4, y + mid, x + size - 1, y + mid);
 				g2.fillOval(x + mid - 1, y + mid - 1, 3, 3);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
+	}
+
+	/** The spellbook tint: standard blue, ancient purple, lunar pale,
+	 * arceuus green - the tooltip carries the name. */
+	private static Color bookTint(String book)
+	{
+		switch (book.toLowerCase(java.util.Locale.ROOT))
+		{
+			case "ancient": return new Color(150, 95, 210);
+			case "lunar": return new Color(175, 185, 205);
+			case "arceuus": return new Color(110, 190, 130);
+			default: return new Color(95, 135, 220);
+		}
+	}
+
+	/** A painted closed tome for the spellbook line (glyph-safe). */
+	private static final class BookIcon implements javax.swing.Icon
+	{
+		private final Color tint;
+
+		BookIcon(Color tint)
+		{
+			this.tint = tint;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return 13;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 14;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.translate(x, y);
+				g2.setColor(tint.darker());
+				g2.fillRoundRect(0, 1, 12, 12, 3, 3);
+				g2.setColor(tint);
+				g2.fillRoundRect(1, 2, 10, 10, 3, 3);
+				g2.setColor(tint.darker().darker());
+				g2.drawLine(3, 2, 3, 11);
+				g2.setColor(new Color(235, 230, 210));
+				g2.fillRect(6, 5, 4, 1);
+				g2.fillRect(6, 8, 4, 1);
 			}
 			finally
 			{
