@@ -3400,7 +3400,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** A result's header row: fold chevron + "vs <name>" (+ one-line best
 	 * summary when folded) filling the row, close (X) right. The title sits
 	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
-	 * result (the one the toggles above apply to) renders white; the others
+	 * result (the one the global search affordances act on) renders white; the others
 	 * muted. Only rendered on multi-result pages. */
 	private javax.swing.JComponent resultChrome(ResultEntry entry)
 	{
@@ -3433,7 +3433,7 @@ public class LoadoutLabPanel extends PluginPanel
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		title.setToolTipText((entry.folded ? "Click to expand" : "Click to fold")
-			+ (isActive ? " - the toggles above apply to this result" : ""));
+			+ (isActive ? " - the active result" : ""));
 		title.addMouseListener(new MouseAdapter()
 		{
 			@Override

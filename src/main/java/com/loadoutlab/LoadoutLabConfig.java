@@ -17,7 +17,7 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigSection(
 		name = "Controls",
-		description = "Which input controls appear above the results",
+		description = "Which parameter chips and buttons each result card offers",
 		position = 1
 	)
 	String controls = "controls";
