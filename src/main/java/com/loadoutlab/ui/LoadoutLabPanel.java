@@ -4331,6 +4331,10 @@ public class LoadoutLabPanel extends PluginPanel
 			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
 			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			tab.setOpaque(isSelected);
+			// The pick was background-only and read as subtle (field
+			// report): the chip language's border makes it unmissable.
+			tab.setBorder(new RoundedBorder(isSelected
+				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 1, 2));
 			JLabel icon = new JLabel();
 			attachSprite(icon, AssumeIcons.styleSprite(style));
 			JLabel dps = new JLabel(hasSet
