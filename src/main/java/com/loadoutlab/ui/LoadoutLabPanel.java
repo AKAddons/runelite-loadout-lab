@@ -165,6 +165,8 @@ public class LoadoutLabPanel extends PluginPanel
 		public final String defaultUpgradeBudget;
 		public final String defaultRiskCap;
 		public final boolean defaultOnTask;
+		/** -1 = detect from the collection, else the antifire mode. */
+		public final int defaultAntifireMode;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
@@ -175,7 +177,7 @@ public class LoadoutLabPanel extends PluginPanel
 			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
 				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
 				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
-				defaultRiskCap, false);
+				defaultRiskCap, false, -1);
 		}
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
@@ -185,6 +187,20 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
 			boolean defaultOnTask)
 		{
+			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
+				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
+				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
+				defaultRiskCap, defaultOnTask, -1);
+		}
+
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
+			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
+			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
+			boolean defaultOnTask, int defaultAntifireMode)
+		{
+			this.defaultAntifireMode = defaultAntifireMode;
 			this.defaultOnTask = defaultOnTask;
 			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
 			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
@@ -1509,6 +1525,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first) || displayOptions.defaultOnTask;
+		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
@@ -1570,6 +1587,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
+		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
@@ -3805,11 +3823,9 @@ public class LoadoutLabPanel extends PluginPanel
 					}
 				})));
 		}
-		if (toggles.getComponentCount() > 0)
-		{
-			rows.add(toggles);
-		}
-		JPanel values = chipFlowRow();
+		// One continuous wrap row for ALL chips (field fix 2026-07-18:
+		// the split rows left orphaned chips floating awkwardly).
+		JPanel values = toggles;
 		String modeText = String.valueOf(optimizeMode.getItemAt(
 			Math.min(entry.optimizeMode, optimizeMode.getItemCount() - 1)));
 		values.add(paramChip(modeText.replace("Optimize: ", ""),
@@ -3857,7 +3873,10 @@ public class LoadoutLabPanel extends PluginPanel
 			values.add(pinFilterChip(entry, "Filters: " + filterCount,
 				"Bank-filter supplies for this mob - click to manage"));
 		}
-		rows.add(values);
+		if (values.getComponentCount() > 0)
+		{
+			rows.add(values);
+		}
 		// The INVENTORY control is a slider on its OWN row below the
 		// chips (field spec 2026-07-18), rosters only - a single mob has
 		// nothing to swap between and keeps the default budget of 1.
@@ -4104,7 +4123,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private javax.swing.JComponent inventoryRow(StyleResult result, boolean bis)
+	private javax.swing.JComponent inventoryRow(ResultEntry entry, StyleResult result, boolean bis)
 	{
 		// A wrapping grid, NOT a single flow line: at Inventory 20 the
 		// carried items overflow one row, and a clipped weapon swap reads
@@ -4144,6 +4163,24 @@ public class LoadoutLabPanel extends PluginPanel
 				+ (isSpec ? " - the special attack swap"
 					: " - in the inventory vs this mob"));
 			AsyncBufferedImage img = itemManager.getImage(item.getId());
+			Runnable set = () -> cell.setIcon(new ImageIcon(
+				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
+			img.onLoaded(() -> SwingUtilities.invokeLater(set));
+			set.run();
+			cells.add(cell);
+		}
+		// Assumed consumables ride along for FREE (field spec 2026-07-18):
+		// the boost potion and the antifire - never a swap slot, muted
+		// border so they read as supplies rather than gear.
+		for (int consumableId : consumableIds(entry, result, bis))
+		{
+			JLabel cell = new JLabel();
+			cell.setOpaque(true);
+			cell.setHorizontalAlignment(JLabel.CENTER);
+			cell.setBackground(CELL_BG);
+			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
+			cell.setToolTipText("Assumed consumable - carried free, never a swap slot");
+			AsyncBufferedImage img = itemManager.getImage(consumableId);
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
 			img.onLoaded(() -> SwingUtilities.invokeLater(set));
@@ -4281,6 +4318,117 @@ public class LoadoutLabPanel extends PluginPanel
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** Antifire potion doses, best first (gameval-verified 2026-07-18:
+	 * super 21978.., extended super 22209.., regular 2452.., extended
+	 * 11951..; classic 2-step dose spacing). */
+	private static final int[] SUPER_ANTIFIRE_IDS = {
+		21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
+	private static final int[] REGULAR_ANTIFIRE_IDS = {
+		2452, 2454, 2456, 2458, 11951, 11953, 11955, 11957};
+
+	/** The default antifire mode for a fresh result (field spec
+	 * 2026-07-18): only meaningful when the roster breathes fire;
+	 * Detect scans the collection for the best potion you have. */
+	private int resolveDefaultAntifire(ResultEntry entry)
+	{
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (!fiery)
+		{
+			return 0;
+		}
+		int mode = displayOptions.defaultAntifireMode;
+		if (mode >= 0)
+		{
+			return Math.min(2, mode);
+		}
+		for (int id : SUPER_ANTIFIRE_IDS)
+		{
+			if (ownedCheck.owns(id))
+			{
+				return 2;
+			}
+		}
+		for (int id : REGULAR_ANTIFIRE_IDS)
+		{
+			if (ownedCheck.owns(id))
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}
+
+	/** Assumed consumables for the viewed result (field spec 2026-07-18):
+	 * the boost potion behind the assumes chips and the antifire mode's
+	 * potion - carried FREE (never a swap slot), shown in the inventory
+	 * row and the bank views. Ids gameval-verified 2026-07-18. */
+	private java.util.List<Integer> consumableIds(ResultEntry entry, StyleResult result, boolean bis)
+	{
+		java.util.List<Integer> ids = new java.util.ArrayList<>();
+		String label = result == null ? null : (bis ? result.gameBoostLabel : result.boostLabel);
+		if (label != null)
+		{
+			if (label.contains("Overload (+)"))
+			{
+				ids.add(20996);
+			}
+			else if (label.contains("Overload"))
+			{
+				ids.add(20992);
+			}
+			else if (label.contains("Super combat"))
+			{
+				ids.add(12695);
+			}
+			else if (label.contains("Attack & strength"))
+			{
+				ids.add(2428);
+				ids.add(113);
+			}
+			else if (label.contains("Super ranging"))
+			{
+				ids.add(11722);
+			}
+			else if (label.contains("Ranging potion"))
+			{
+				ids.add(2444);
+			}
+			else if (label.contains("Super magic"))
+			{
+				ids.add(11726);
+			}
+			else if (label.contains("Magic potion"))
+			{
+				ids.add(3040);
+			}
+			else if (label.contains("Saturated heart"))
+			{
+				ids.add(27641);
+			}
+			else if (label.contains("Imbued heart"))
+			{
+				ids.add(20724);
+			}
+		}
+		if (entry.antifireMode == 1)
+		{
+			ids.add(2452);
+		}
+		else if (entry.antifireMode == 2)
+		{
+			ids.add(21978);
+		}
+		return ids;
 	}
 
 	/** The inventory breakpoint summary (field spec 2026-07-18): the
@@ -4919,12 +5067,14 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
-		if (result != null && !(bis ? result.gameBench : result.bench).isEmpty())
+		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
+			|| !consumableIds(entry, result, bis).isEmpty()))
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
-			// but not worn against the lensed mob. Both sides have a kit.
+			// but not worn against the lensed mob, plus the assumed
+			// consumables. Both sides have a kit.
 			card.add(Box.createVerticalStrut(4));
-			card.add(inventoryRow(result, bis));
+			card.add(inventoryRow(entry, result, bis));
 		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
@@ -5433,14 +5583,14 @@ public class LoadoutLabPanel extends PluginPanel
 		StyleResult r = active.results.get(style);
 		List<GearItem> inv = r == null ? Collections.emptyList()
 			: active.viewingBis ? r.gameBench : r.bench;
-		if (inv.isEmpty())
-		{
-			return Collections.emptySet();
-		}
 		Set<Integer> ids = new java.util.HashSet<>();
 		for (GearItem item : inv)
 		{
 			ids.add(item.getId());
+		}
+		if (r != null)
+		{
+			ids.addAll(consumableIds(active, r, active.viewingBis));
 		}
 		return ids;
 	}

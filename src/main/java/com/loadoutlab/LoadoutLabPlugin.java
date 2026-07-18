@@ -539,7 +539,9 @@ public class LoadoutLabPlugin extends Plugin
 			config.loadingAnimation(),
 			config.defaultUpgradeBudget(),
 			config.defaultRiskCap(),
-			config.defaultOnTask());
+			config.defaultOnTask(),
+			config.defaultAntifire() == LoadoutLabConfig.AntifireDefault.DETECT ? -1
+				: config.defaultAntifire().ordinal() - 1);
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
