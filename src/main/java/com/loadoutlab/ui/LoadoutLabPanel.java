@@ -2212,13 +2212,13 @@ public class LoadoutLabPanel extends PluginPanel
 			});
 			menu.add(entry);
 		}
-		if (menu.getComponentCount() == 0)
+		if (menu.getComponentCount() > 0)
 		{
-			JMenuItem none = new JMenuItem("No excluded items - right-click a"
-				+ " suggested item to exclude it");
-			none.setEnabled(false);
-			menu.add(none);
+			menu.addSeparator();
 		}
+		JMenuItem addExclusion = new JMenuItem("Exclude an item (search)...");
+		addExclusion.addActionListener(a -> showAddExclusionDialog());
+		menu.add(addExclusion);
 		// Anchor to the CLICKED component - the old label left the layout
 		// when the -N chip replaced it (field bug: dead click; show() on a
 		// non-displayable component throws).
@@ -2771,6 +2771,31 @@ public class LoadoutLabPanel extends PluginPanel
 				storedToggle.toggle(gear.getId());
 			}
 			refreshStoredLabel();
+			recompute();
+		});
+	}
+
+	/** Chatbox item search -> exclude any item from every suggestion
+	 * (the chip's add path - right-clicking a suggested cell still works
+	 * for items already on screen). */
+	private void showAddExclusionDialog()
+	{
+		itemSearch.search("Exclude an item", (itemId, name) ->
+		{
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
+			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " joins the loadout search.",
+					"Exclude an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (!exclusionView.snapshot().contains(gear.getId()))
+			{
+				exclusionToggle.toggle(gear.getId());
+			}
+			refreshExclusionsLabel();
 			recompute();
 		});
 	}
