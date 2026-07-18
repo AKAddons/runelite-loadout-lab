@@ -563,20 +563,26 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Assume potion boosts (default) - off computes unboosted. */
 		boolean assumeBoosts = true;
 		/** The INVENTORY budget: carried items beyond the worn set, the
-		 * spec weapon included. Defaults to 1 for singles/pairs and 3 for
-		 * rosters of 3+ mobs (field decision 2026-07-17). */
+		 * spec weapon included. Defaults to 1 for singles/pairs, 3 for
+		 * rosters of 3+ mobs, and a group's own preset (raids: 8) when it
+		 * has one (field decisions 2026-07-17). */
 		int maxSwaps = 1;
+		/** What this entry's default currently is - the chip highlights
+		 * only a value that differs from it. */
+		int inventoryDefault = 1;
 		/** True once the user picked an Inventory value - the roster
 		 * default never overrides an explicit choice. */
 		boolean inventoryTouched;
 
-		/** Re-seed the roster default: 3+ mobs get Inventory 3 unless the
-		 * user chose a value. Never shrinks. */
-		void seedInventoryDefault()
+		/** Re-seed the roster default (a group preset raises the floor):
+		 * never shrinks, never overrides an explicit choice. */
+		void seedInventoryDefault(int preset)
 		{
-			if (!inventoryTouched && mobs.size() >= 3 && maxSwaps < 3)
+			inventoryDefault = Math.max(inventoryDefault,
+				Math.max(preset, mobs.size() >= 3 ? 3 : 1));
+			if (!inventoryTouched && maxSwaps < inventoryDefault)
 			{
-				maxSwaps = 3;
+				maxSwaps = inventoryDefault;
 			}
 		}
 
@@ -1481,7 +1487,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			active.addMob(group.getMobs().get(i));
 		}
-		active.seedInventoryDefault();
+		active.seedInventoryDefault(group.getInventory());
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first);
@@ -1754,7 +1760,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// A single-mob duplicate leaves the page (the roster absorbs it).
 			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
 			target.addMob(monster);
-			target.seedInventoryDefault();
+			target.seedInventoryDefault(0);
 			target.lensIndex = target.mobs.size() - 1;
 			target.results = null;
 			target.perMobResults = null;
@@ -3789,7 +3795,7 @@ public class LoadoutLabPanel extends PluginPanel
 			: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
 				+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
 				+ " including the spec weapon, cross-style included";
-		int invDefault = entry.mobs.size() >= 3 ? 3 : 1;
+		int invDefault = entry.inventoryDefault;
 		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != invDefault, true,
 			invTip + "; click to pick",
 			() ->

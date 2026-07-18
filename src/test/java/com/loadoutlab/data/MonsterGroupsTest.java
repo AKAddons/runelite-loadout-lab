@@ -161,6 +161,11 @@ class MonsterGroupsTest
 		// Olm is head plus both claws.
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());
+		// Raids preset a bigger Inventory default; other groups do not.
+		assertEquals(8, byName("Theatre of Blood").getInventory());
+		assertEquals(8, byName("Tombs of Amascut").getInventory());
+		assertEquals(8, byName("Chambers of Xeric").getInventory());
+		assertEquals(0, byName("Fight Caves").getInventory());
 	}
 
 	private static MonsterGroups.MonsterGroup byName(String name)

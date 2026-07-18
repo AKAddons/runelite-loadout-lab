@@ -35,13 +35,23 @@ public final class MonsterGroups
 		private final String note;
 		private final List<MonsterStats> mobs;
 		private final List<String> aliases;
+		private final int inventory;
 
-		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases)
+		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases,
+			int inventory)
 		{
 			this.name = name;
 			this.note = note;
 			this.mobs = Collections.unmodifiableList(mobs);
 			this.aliases = Collections.unmodifiableList(aliases);
+			this.inventory = inventory;
+		}
+
+		/** The curated Inventory default for this group (0 = none - the
+		 * roster-size default applies). Raids preset 8. */
+		public int getInventory()
+		{
+			return inventory;
 		}
 
 		public String getName()
@@ -121,7 +131,8 @@ public final class MonsterGroups
 				}
 				if (!mobs.isEmpty())
 				{
-					groups.add(new MonsterGroup(name, note, mobs, aliases));
+					int inventory = row.has("inventory") ? row.get("inventory").getAsInt() : 0;
+					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory));
 				}
 			}
 		}
