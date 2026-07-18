@@ -106,7 +106,7 @@ public final class MonsterGroups
 						String label = Character.toUpperCase(style.charAt(0)) + style.substring(1)
 							+ " immune";
 						resolved = resolved.immuneVariant(
-							9_000_000 + resolved.getId() * 10 + styleOrdinal(style),
+							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + styleOrdinal(style),
 							label, "immune_" + style);
 					}
 					mobs.add(resolved);

@@ -180,5 +180,148 @@
    "tormented"
   ],
   "note": "One phase per shielded style - the demon's shield locks out one style at a time, so each row shows the best answer while that shield is up."
+ },
+ {
+  "name": "Theatre of Blood",
+  "members": [
+   {
+    "name": "The Maiden of Sugadinti",
+    "version": "Hard Mode"
+   },
+   {
+    "name": "Pestilent Bloat",
+    "version": "Hard"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard"
+   },
+   {
+    "name": "Sotetseg",
+    "version": "Hard"
+   },
+   {
+    "name": "Xarpus",
+    "version": "Normal mode"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 1"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 2"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 3"
+   }
+  ],
+  "aliases": [
+   "tob",
+   "theatre",
+   "theater",
+   "verzik"
+  ],
+  "note": "The six rooms of the Theatre. The corpus merges normal-mode stat rows under the hard-mode labels, so these rows cover the regular raid."
+ },
+ {
+  "name": "Tombs of Amascut",
+  "members": [
+   {
+    "name": "Ba-Ba"
+   },
+   {
+    "name": "Kephri",
+    "version": "Shielded"
+   },
+   {
+    "name": "Akkha"
+   },
+   {
+    "name": "Zebak"
+   },
+   {
+    "name": "Elidinis' Warden",
+    "version": "Damaged"
+   },
+   {
+    "name": "Tumeken's Warden",
+    "version": "Damaged"
+   }
+  ],
+  "aliases": [
+   "toa",
+   "tombs",
+   "amascut",
+   "wardens"
+  ],
+  "note": "The four paths and the Wardens (phase-3 damaged forms)."
+ },
+ {
+  "name": "Chambers of Xeric",
+  "members": [
+   {
+    "name": "Tekton",
+    "version": "Normal"
+   },
+   {
+    "name": "Vasa Nistirio"
+   },
+   {
+    "name": "Vespula"
+   },
+   {
+    "name": "Muttadile",
+    "version": "Large"
+   },
+   {
+    "name": "Muttadile",
+    "version": "Small"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Magic"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Melee"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Ranged"
+   },
+   {
+    "name": "Skeletal Mystic"
+   },
+   {
+    "name": "Ice demon"
+   },
+   {
+    "name": "Lizardman shaman (Chambers of Xeric)"
+   },
+   {
+    "name": "Guardian (Chambers of Xeric)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Head (Normal)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Left claw (Normal)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Right claw (Normal)"
+   }
+  ],
+  "aliases": [
+   "cox",
+   "chambers",
+   "xeric",
+   "olm"
+  ],
+  "note": "The common combat rooms and Olm (head + both claws). Rooms roll per raid - treat the roster as the pool."
  }
 ]

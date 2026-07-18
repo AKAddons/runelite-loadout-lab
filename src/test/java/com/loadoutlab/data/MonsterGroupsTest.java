@@ -66,10 +66,13 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(7, groups.size());
+		assertEquals(10, groups.size());
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
+		assertEquals(8, byName("Theatre of Blood").getMobs().size());
+		assertEquals(6, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
 		// The Jad in the Fight Caves roster is the real one, not the
 		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
 		// not the Construction target dummy.
@@ -130,6 +133,34 @@ class MonsterGroupsTest
 		// Search reaches it by player vocabulary.
 		assertEquals("Tormented Demons",
 			MonsterGroups.search(groups, "td", 5).get(0).getName());
+		// A synthetic phase's profile id maps back to its real monster,
+		// so pins/exclusions/notes set on the plain mob follow it into
+		// the group (transitive exclusions).
+		for (MonsterStats phase : tds.getMobs())
+		{
+			assertTrue(phase.getId() >= MonsterStats.SYNTHETIC_ID_BASE);
+			assertTrue(phase.profileId() < MonsterStats.SYNTHETIC_ID_BASE);
+			assertEquals(MonsterGroups.resolve(data, "Tormented Demon", null).getId(),
+				phase.profileId());
+		}
+	}
+
+	@Test
+	@DisplayName("the raid groups resolve and answer to player vocabulary")
+	void raidGroups()
+	{
+		assertEquals("Theatre of Blood",
+			MonsterGroups.search(groups, "tob", 5).get(0).getName());
+		assertEquals("Tombs of Amascut",
+			MonsterGroups.search(groups, "toa", 5).get(0).getName());
+		assertEquals("Chambers of Xeric",
+			MonsterGroups.search(groups, "cox", 5).get(0).getName());
+		// Verzik's three phases ride the ToB roster.
+		assertEquals(3, byName("Theatre of Blood").getMobs().stream()
+			.filter(m -> m.getName().equals("Verzik Vitur")).count());
+		// Olm is head plus both claws.
+		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
+			.filter(m -> m.getName().equals("Great Olm")).count());
 	}
 
 	private static MonsterGroups.MonsterGroup byName(String name)

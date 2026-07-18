@@ -176,6 +176,18 @@ public final class MonsterStats
 		return id;
 	}
 
+	/** Synthetic phase-variant ids live above this base (M-3 groups):
+	 * base + realId * 10 + styleOrdinal. */
+	public static final int SYNTHETIC_ID_BASE = 9_000_000;
+
+	/** The id user-profile data (pins, exclusions, notes) attaches to -
+	 * a synthetic phase variant maps back to its real monster, so a
+	 * profile set on the plain mob follows it into groups. */
+	public int profileId()
+	{
+		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
+	}
+
 	public String getName()
 	{
 		return name;
