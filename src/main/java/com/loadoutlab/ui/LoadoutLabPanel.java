@@ -2207,7 +2207,18 @@ public class LoadoutLabPanel extends PluginPanel
 			});
 			menu.add(entry);
 		}
-		menu.show(exclusionsLabel, e.getX(), e.getY());
+		if (menu.getComponentCount() == 0)
+		{
+			JMenuItem none = new JMenuItem("No excluded items - right-click a"
+				+ " suggested item to exclude it");
+			none.setEnabled(false);
+			menu.add(none);
+		}
+		// Anchor to the CLICKED component - the old label left the layout
+		// when the -N chip replaced it (field bug: dead click; show() on a
+		// non-displayable component throws).
+		Component source = (Component) e.getSource();
+		menu.show(source, 0, source.getHeight());
 	}
 
 	private void refreshStoredLabel()
