@@ -4196,7 +4196,7 @@ public class LoadoutLabPanel extends PluginPanel
 			cell.setHorizontalAlignment(JLabel.CENTER);
 			cell.setBackground(CELL_BG);
 			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
-			cell.setToolTipText("Assumed consumable - carried free, never a swap slot");
+			cell.setToolTipText("Potion the numbers assume - does not use an Inventory slot");
 			AsyncBufferedImage img = itemManager.getImage(consumableId);
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
