@@ -378,6 +378,9 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Slot-cell interior - a step lighter than the card so dark item
 	 * sprites (black boots, dark capes) keep their silhouette. */
 	private static final Color CELL_BG = new Color(50, 50, 50);
+	/** The toggle/selected border across the chip language - the mascots'
+	 * limb green (field spec: match the legs). */
+	private static final Color ACCENT = MascotArt.LIMB;
 	private static final Color BORDER_EMPTY = new Color(50, 50, 50);
 
 	private final LoadoutData data;
@@ -931,19 +934,8 @@ public class LoadoutLabPanel extends PluginPanel
 		// the spellbook combo before it.
 
 		// Pinned items ("always bring") - click to manage.
-		pinnedLabel.setForeground(INFO);
-		pinnedLabel.setFont(pinnedLabel.getFont().deriveFont(13f));
-		pinnedLabel.setAlignmentX(LEFT_ALIGNMENT);
-		pinnedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		pinnedLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showPinnedMenu(e);
-			}
-		});
-		top.add(pinnedLabel);
+		// The old "This mob: N pins..." label retired (field spec) - pins
+		// and filter items surface as count chips in the parameter zone.
 		refreshPinnedLabel();
 
 		add(top, BorderLayout.NORTH);
@@ -2427,7 +2419,8 @@ public class LoadoutLabPanel extends PluginPanel
 			+ filterScopeLabel(ALL_SETS) + " (search)...");
 		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
 		menu.add(addFilter);
-		menu.show(pinnedLabel, e.getX(), e.getY());
+		Component pinSource = (Component) e.getSource();
+		menu.show(pinSource, 0, pinSource.getHeight());
 	}
 
 	/**
@@ -3756,9 +3749,54 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " gp cap (25k, 1m...) - empty = unconstrained",
 				() -> editRiskCap(entry)));
 		}
+		int pinCount = 0;
+		int filterCount = 0;
+		int lensedId = entry.mob().getId();
+		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
+			: mobProfile.allPins(lensedId).values())
+		{
+			pinCount += scoped.size();
+		}
+		for (Map<Integer, String> scoped : mobProfile.allFilterItems(lensedId).values())
+		{
+			filterCount += scoped.size();
+		}
+		if (pinCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Pins: " + pinCount,
+				"Pinned items for this mob - click to manage"));
+		}
+		if (filterCount > 0)
+		{
+			values.add(pinFilterChip(entry, "Filters: " + filterCount,
+				"Bank-filter supplies for this mob - click to manage"));
+		}
 		rows.add(values);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** A pins/filters count chip: opens the manage menu anchored on the
+	 * chip (the retired label's menu, source-anchored). */
+	private javax.swing.JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(Color.WHITE);
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
+		chip.setBorder(new RoundedBorder(ACCENT, 2, 7));
+		chip.setToolTipText(tooltip);
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				asActive(entry, () -> showPinnedMenu(e));
+			}
+		});
+		return chip;
 	}
 
 	private static JPanel chipFlowRow()
@@ -3782,7 +3820,7 @@ public class LoadoutLabPanel extends PluginPanel
 			: selected ? Color.WHITE : new Color(170, 170, 170));
 		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
 		chip.setBorder(new RoundedBorder(selected
-			? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
+			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
 		chip.setToolTipText(tooltip);
 		if (enabled && onClick != null)
 		{
@@ -3880,7 +3918,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// Bordered + padded so every row reads as clickable (field
 			// spec); the lensed row wears the bright edge like Yours|BiS.
 			row.setBorder(new RoundedBorder(lensed
-				? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 3, 8));
+				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 3, 8));
 			row.setAlignmentX(LEFT_ALIGNMENT);
 			row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -4256,7 +4294,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Bordered buttons (field request): the selected side wears a
 		// bright edge, the other stays a quiet outline.
 		chip.setBorder(new RoundedBorder(selected
-			? ColorScheme.BRAND_ORANGE : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
+			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
 		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		chip.setToolTipText(text.equals("BiS")
 			? "The game-wide best set at your levels" : "Your best owned set");
@@ -4877,14 +4915,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** "Filter bank": a virtual bank tag showing only this set's items. */
-	private JButton bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		boolean filtering = bankFiltered == style;
-		JButton button = new JButton(filtering ? "Unfilter bank" : "Filter bank");
-		button.setFont(button.getFont().deriveFont(13f));
-		button.setMargin(new Insets(1, 6, 1, 6));
-		button.setToolTipText("Show only this set's items in the bank (needs Bank Tags enabled)");
-		button.addActionListener(e ->
+		return paramChip(filtering ? "Unfilter bank" : "Filter bank", filtering, true,
+			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
 		{
 			if (bankFiltered == style)
 			{
@@ -4907,19 +4942,14 @@ public class LoadoutLabPanel extends PluginPanel
 				showResults(selectedMonster, lastResults());
 			}
 		});
-		return button;
 	}
 
 	/** "Show in bank": outline this set's items while the bank is open. */
-	private JButton bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		boolean showing = bankShown == style;
-		JButton button = new JButton(showing ? "Stop showing in bank" : "Show in bank");
-		button.setAlignmentX(LEFT_ALIGNMENT);
-		button.setFont(button.getFont().deriveFont(13f));
-		button.setMargin(new Insets(1, 6, 1, 6));
-		button.setToolTipText("Outline this set's items in the bank");
-		button.addActionListener(e ->
+		return paramChip(showing ? "Stop showing" : "Show in bank", showing, true,
+			"Outline this set's items in the bank", () ->
 		{
 			if (bankShown == style)
 			{
@@ -4951,10 +4981,9 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			if (selectedMonster != null && lastResults() != null)
 			{
-				showResults(selectedMonster, lastResults()); // refresh button labels
+				showResults(selectedMonster, lastResults()); // refresh chip labels
 			}
 		});
-		return button;
 	}
 
 	/** A left-aligned, height-capped flow row added to the card. */
