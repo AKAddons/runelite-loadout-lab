@@ -562,10 +562,23 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean assumeBestPrayer = true;
 		/** Assume potion boosts (default) - off computes unboosted. */
 		boolean assumeBoosts = true;
-		/** The BENCH: how many carried items beyond the worn set (the spec
-		 * weapon occupies a slot when it differs from the worn weapon).
-		 * 1 = today's behavior (room for the spec); 0 = strictly one set. */
+		/** The INVENTORY budget: carried items beyond the worn set, the
+		 * spec weapon included. Defaults to 1 for singles/pairs and 3 for
+		 * rosters of 3+ mobs (field decision 2026-07-17). */
 		int maxSwaps = 1;
+		/** True once the user picked an Inventory value - the roster
+		 * default never overrides an explicit choice. */
+		boolean inventoryTouched;
+
+		/** Re-seed the roster default: 3+ mobs get Inventory 3 unless the
+		 * user chose a value. Never shrinks. */
+		void seedInventoryDefault()
+		{
+			if (!inventoryTouched && mobs.size() >= 3 && maxSwaps < 3)
+			{
+				maxSwaps = 3;
+			}
+		}
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -1460,6 +1473,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			active.addMob(group.getMobs().get(i));
 		}
+		active.seedInventoryDefault();
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first);
@@ -1732,6 +1746,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// A single-mob duplicate leaves the page (the roster absorbs it).
 			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
 			target.addMob(monster);
+			target.seedInventoryDefault();
 			target.lensIndex = target.mobs.size() - 1;
 			target.results = null;
 			target.perMobResults = null;
@@ -3766,7 +3781,8 @@ public class LoadoutLabPanel extends PluginPanel
 			: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
 				+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
 				+ " including the spec weapon, cross-style included";
-		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != 1, true,
+		int invDefault = entry.mobs.size() >= 3 ? 3 : 1;
+		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != invDefault, true,
 			invTip + "; click to pick",
 			() ->
 		{
@@ -3778,6 +3794,7 @@ public class LoadoutLabPanel extends PluginPanel
 					+ "Inventory: " + i);
 				item.addActionListener(ev -> asActive(entry, () ->
 				{
+					entry.inventoryTouched = true;
 					int prev = entry.maxSwaps;
 					if (pick == prev)
 					{
