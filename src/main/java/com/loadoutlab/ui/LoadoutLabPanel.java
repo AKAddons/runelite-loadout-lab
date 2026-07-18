@@ -4189,7 +4189,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assumed consumables ride along for FREE (field spec 2026-07-18):
 		// the boost potion and the antifire - never a swap slot, muted
 		// border so they read as supplies rather than gear.
-		for (int consumableId : consumableIds(entry, result, bis))
+		for (int consumableId : consumableIds(entry, bis))
 		{
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
@@ -4385,56 +4385,41 @@ public class LoadoutLabPanel extends PluginPanel
 		return 0;
 	}
 
-	/** Assumed consumables for the viewed result (field spec 2026-07-18):
-	 * the boost potion behind the assumes chips and the antifire mode's
-	 * potion - carried FREE (never a swap slot), shown in the inventory
-	 * row and the bank views. Ids gameval-verified 2026-07-18. */
-	private java.util.List<Integer> consumableIds(ResultEntry entry, StyleResult result, boolean bis)
+	/** Assumed consumables for the WHOLE trip (field spec 2026-07-18):
+	 * the union across every mob's shown answers - the melee rooms'
+	 * super combat, the ranged rooms' ranging potion and the mage rooms'
+	 * heart all ride the same inventory, whichever row is lensed - plus
+	 * the antifire mode's potion. Ids gameval-verified. */
+	private java.util.List<Integer> consumableIds(ResultEntry entry, boolean bis)
 	{
-		java.util.List<Integer> ids = new java.util.ArrayList<>();
-		String label = result == null ? null : (bis ? result.gameBoostLabel : result.boostLabel);
-		if (label != null)
+		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
+		java.util.List<Map<CombatStyle, StyleResult>> maps;
+		if (entry.perMobResults != null && !entry.perMobResults.isEmpty())
 		{
-			if (label.contains("Overload (+)"))
+			maps = entry.perMobResults;
+		}
+		else if (entry.results != null)
+		{
+			maps = java.util.Collections.singletonList(entry.results);
+		}
+		else
+		{
+			maps = java.util.Collections.emptyList();
+		}
+		for (Map<CombatStyle, StyleResult> map : maps)
+		{
+			for (StyleResult r : map.values())
 			{
-				ids.add(20996);
-			}
-			else if (label.contains("Overload"))
-			{
-				ids.add(20992);
-			}
-			else if (label.contains("Super combat"))
-			{
-				ids.add(12695);
-			}
-			else if (label.contains("Attack & strength"))
-			{
-				ids.add(2428);
-				ids.add(113);
-			}
-			else if (label.contains("Super ranging"))
-			{
-				ids.add(11722);
-			}
-			else if (label.contains("Ranging potion"))
-			{
-				ids.add(2444);
-			}
-			else if (label.contains("Super magic"))
-			{
-				ids.add(11726);
-			}
-			else if (label.contains("Magic potion"))
-			{
-				ids.add(3040);
-			}
-			else if (label.contains("Saturated heart"))
-			{
-				ids.add(27641);
-			}
-			else if (label.contains("Imbued heart"))
-			{
-				ids.add(20724);
+				if (r == null)
+				{
+					continue;
+				}
+				boolean shown = bis ? r.overallBest != null
+					: r.owned != null && !r.owned.isEmpty();
+				if (shown)
+				{
+					addBoostConsumables(bis ? r.gameBoostLabel : r.boostLabel, ids);
+				}
 			}
 		}
 		if (entry.antifireMode == 1)
@@ -4445,7 +4430,56 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(21978);
 		}
-		return ids;
+		return new java.util.ArrayList<>(ids);
+	}
+
+	private static void addBoostConsumables(String label, java.util.Set<Integer> ids)
+	{
+		if (label == null)
+		{
+			return;
+		}
+		if (label.contains("Overload (+)"))
+		{
+			ids.add(20996);
+		}
+		else if (label.contains("Overload"))
+		{
+			ids.add(20992);
+		}
+		else if (label.contains("Super combat"))
+		{
+			ids.add(12695);
+		}
+		else if (label.contains("Attack & strength"))
+		{
+			ids.add(2428);
+			ids.add(113);
+		}
+		else if (label.contains("Super ranging"))
+		{
+			ids.add(11722);
+		}
+		else if (label.contains("Ranging potion"))
+		{
+			ids.add(2444);
+		}
+		else if (label.contains("Super magic"))
+		{
+			ids.add(11726);
+		}
+		else if (label.contains("Magic potion"))
+		{
+			ids.add(3040);
+		}
+		else if (label.contains("Saturated heart"))
+		{
+			ids.add(27641);
+		}
+		else if (label.contains("Imbued heart"))
+		{
+			ids.add(20724);
+		}
 	}
 
 	/** The inventory breakpoint summary (field spec 2026-07-18): the
@@ -4935,7 +4969,7 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingRiskConsumables = result == null || bis
-			? java.util.Collections.emptyList() : consumableIds(entry, result, false);
+			? java.util.Collections.emptyList() : consumableIds(entry, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -5087,7 +5121,7 @@ public class LoadoutLabPanel extends PluginPanel
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
-			|| !consumableIds(entry, result, bis).isEmpty()))
+			|| !consumableIds(entry, bis).isEmpty()))
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
 			// but not worn against the lensed mob, plus the assumed
@@ -5631,7 +5665,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (r != null)
 		{
-			ids.addAll(consumableIds(active, r, active.viewingBis));
+			ids.addAll(consumableIds(active, active.viewingBis));
 		}
 		return ids;
 	}
