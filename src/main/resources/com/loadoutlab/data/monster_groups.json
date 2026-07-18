@@ -622,5 +622,127 @@
    "corrupted gauntlet"
   ],
   "note": "Gear inside is limited to the raid-crafted corrupted tiers - the recommendations use only those (perfected assumed for now)."
+ },
+ {
+  "name": "Grotesque Guardians",
+  "members": [
+   {
+    "name": "Dawn"
+   },
+   {
+    "name": "Dusk",
+    "version": "First form"
+   },
+   {
+    "name": "Dusk",
+    "version": "Second form"
+   }
+  ],
+  "aliases": [
+   "gg",
+   "grotesque",
+   "guardians",
+   "dawn",
+   "dusk"
+  ],
+  "note": "Dawn and both of Dusk's forms."
+ },
+ {
+  "name": "The Hueycoatl",
+  "members": [
+   {
+    "name": "The Hueycoatl",
+    "version": "Normal"
+   },
+   {
+    "name": "The Hueycoatl",
+    "version": "Body"
+   },
+   {
+    "name": "The Hueycoatl",
+    "version": "Tail"
+   }
+  ],
+  "aliases": [
+   "huey",
+   "hueycoatl"
+  ],
+  "note": "Head, body and tail segments."
+ },
+ {
+  "name": "Phantom Muspah",
+  "members": [
+   {
+    "name": "Phantom Muspah",
+    "version": "Ranged"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Melee"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Shielded"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Post-shield"
+   }
+  ],
+  "aliases": [
+   "muspah",
+   "pm"
+  ],
+  "note": "All four forms of the fight."
+ },
+ {
+  "name": "Nex",
+  "members": [
+   {
+    "name": "Nex"
+   },
+   {
+    "name": "Fumus"
+   },
+   {
+    "name": "Umbra"
+   },
+   {
+    "name": "Cruor"
+   },
+   {
+    "name": "Glacies"
+   }
+  ],
+  "aliases": [
+   "nex",
+   "zaros",
+   "ancient prison"
+  ],
+  "note": "Nex and her four minions."
+ },
+ {
+  "name": "Royal Titans",
+  "members": [
+   {
+    "name": "Branda the Fire Queen"
+   },
+   {
+    "name": "Eldric the Ice King"
+   },
+   {
+    "name": "Fire elemental (Royal Titans)"
+   },
+   {
+    "name": "Ice elemental (Royal Titans)"
+   }
+  ],
+  "aliases": [
+   "royal titans",
+   "titans",
+   "branda",
+   "eldric"
+  ],
+  "note": "The duo and their elementals."
  }
 ]

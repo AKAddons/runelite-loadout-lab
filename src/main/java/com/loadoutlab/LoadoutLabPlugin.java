@@ -538,7 +538,8 @@ public class LoadoutLabPlugin extends Plugin
 			config.showFilterBankButton(),
 			config.loadingAnimation(),
 			config.defaultUpgradeBudget(),
-			config.defaultRiskCap());
+			config.defaultRiskCap(),
+			config.defaultOnTask());
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */

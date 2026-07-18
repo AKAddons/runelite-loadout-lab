@@ -281,6 +281,19 @@ public interface LoadoutLabConfig extends Config
 		return "75k";
 	}
 
+	@ConfigItem(
+		keyName = "defaultOnTask",
+		name = "Default searches to On task",
+		description = "Seed every new result with the On task toggle enabled"
+			+ " (slayer-only monsters always start on-task regardless)",
+		section = controls,
+		position = 92
+	)
+	default boolean defaultOnTask()
+	{
+		return false;
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

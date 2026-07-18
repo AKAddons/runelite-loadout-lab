@@ -66,7 +66,12 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(17, groups.size());
+		assertEquals(22, groups.size());
+		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
+		assertEquals(3, byName("The Hueycoatl").getMobs().size());
+		assertEquals(4, byName("Phantom Muspah").getMobs().size());
+		assertEquals(5, byName("Nex").getMobs().size());
+		assertEquals(4, byName("Royal Titans").getMobs().size());
 		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
 		assertEquals(4, byName("The Gauntlet").getMobs().size());
 		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());

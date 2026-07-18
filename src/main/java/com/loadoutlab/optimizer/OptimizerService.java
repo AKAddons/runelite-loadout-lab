@@ -667,9 +667,18 @@ public class OptimizerService
 				{
 					bench.add(spec.weapon);
 				}
+				// The BiS side's inventory mirrors it (field fix 2026-07-18:
+				// a single mob's BiS view showed no carried spec).
+				List<GearItem> gameBench = new ArrayList<>();
+				if (gameSpec != null && gameSpec.weapon != null && !gameBest.isEmpty()
+					&& (gameBest.get(0).getLoadout().getWeapon() == null
+						|| gameBest.get(0).getLoadout().getWeapon().getId() != gameSpec.weapon.getId()))
+				{
+					gameBench.add(gameSpec.weapon);
+				}
 				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, modeTrade, bench);
+					boostLabel, gameBoostLabel, incoming, gameIncoming, modeTrade, bench, gameBench);
 				// Store per style as computed - even a superseded job donates
 				// the styles it finished.
 				synchronized (cache)
@@ -1747,9 +1756,12 @@ public class OptimizerService
 					: ownedList.get(0).getLoadout();
 				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
 					: inventoryFor(plan.values(), specCarried, worn);
+				List<GearItem> gameBench = gameSpecCarried == null
+					? Collections.emptyList()
+					: Collections.singletonList(gameSpecCarried);
 				// Mode-trade is not applied per-mob in the roster v1.
 				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, null, bench);
+					boostLabel, gameBoostLabel, incoming, gameIncoming, null, bench, gameBench);
 				perMob.get(j).put(style, sr);
 			}
 		}

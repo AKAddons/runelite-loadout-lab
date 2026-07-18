@@ -163,6 +163,7 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Seeds for every NEW result's parameter zone (settings panel). */
 		public final String defaultUpgradeBudget;
 		public final String defaultRiskCap;
+		public final boolean defaultOnTask;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
@@ -170,6 +171,20 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean wildyRisk, boolean showInBank, boolean filterBank,
 			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
 		{
+			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
+				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
+				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
+				defaultRiskCap, false);
+		}
+
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
+			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
+			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
+			boolean defaultOnTask)
+		{
+			this.defaultOnTask = defaultOnTask;
 			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
 			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
 			this.maxHit = maxHit;
@@ -1490,7 +1505,7 @@ public class LoadoutLabPanel extends PluginPanel
 		active.seedInventoryDefault(group.getInventory());
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
-		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first);
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first) || displayOptions.defaultOnTask;
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
@@ -1551,7 +1566,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Seed the parameter zone from the monster's own gating: task-only
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
-		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster);
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
@@ -3790,23 +3805,35 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.optimizeMode > 0, true,
 			"Balanced/Tanky trade dps for less damage taken - click to pick",
 			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
-		String invTip = entry.maxSwaps == 0
-			? "Inventory: 0 - strictly one worn set, no spec weapon recommended"
-			: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
-				+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
-				+ " including the spec weapon, cross-style included";
-		int invDefault = entry.inventoryDefault;
-		values.add(paramChip("Inventory: " + entry.maxSwaps, entry.maxSwaps != invDefault, true,
-			invTip + "; click to pick",
-			() ->
+		// The INVENTORY control is a slider, rosters only (field spec
+		// 2026-07-18): a single mob has nothing to swap between - it
+		// keeps the default budget of 1 (room for the spec) silently.
+		if (entry.mobs.size() > 1)
 		{
-			JPopupMenu menu = new JPopupMenu();
-			for (int i = 0; i <= 20; i++)
+			String invTip = entry.maxSwaps == 0
+				? "Inventory: 0 - strictly one worn set, no spec weapon recommended"
+				: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
+					+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
+					+ " including the spec weapon, cross-style included";
+			JLabel invLabel = new JLabel("Inventory: " + entry.maxSwaps);
+			invLabel.setForeground(entry.maxSwaps != entry.inventoryDefault
+				? Color.WHITE : new Color(170, 170, 170));
+			invLabel.setFont(invLabel.getFont().deriveFont(
+				entry.maxSwaps != entry.inventoryDefault ? Font.BOLD : Font.PLAIN, 11f));
+			invLabel.setToolTipText(invTip);
+			javax.swing.JSlider invSlider = new javax.swing.JSlider(0, 20, entry.maxSwaps);
+			invSlider.setOpaque(false);
+			invSlider.setPreferredSize(new Dimension(110, 22));
+			invSlider.setToolTipText(invTip);
+			invSlider.addChangeListener(ev ->
 			{
-				final int pick = i;
-				JMenuItem item = new JMenuItem((i == entry.maxSwaps ? "[x] " : "")
-					+ "Inventory: " + i);
-				item.addActionListener(ev -> asActive(entry, () ->
+				invLabel.setText("Inventory: " + invSlider.getValue());
+				if (invSlider.getValueIsAdjusting())
+				{
+					return;
+				}
+				final int pick = invSlider.getValue();
+				asActive(entry, () ->
 				{
 					entry.inventoryTouched = true;
 					int prev = entry.maxSwaps;
@@ -3820,12 +3847,11 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						setMaxSwaps(pick);
 					}
-				}));
-				menu.add(item);
-			}
-			java.awt.Point at = getMousePosition();
-			menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
-		}));
+				});
+			});
+			values.add(invLabel);
+			values.add(invSlider);
+		}
 		if (displayOptions.upgradeBudget)
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
@@ -3895,12 +3921,70 @@ public class LoadoutLabPanel extends PluginPanel
 		return chip;
 	}
 
+	/** FlowLayout whose preferred height accounts for wrapping at the
+	 * current width - a plain FlowLayout reports one-row height, so a
+	 * fourth chip silently wrapped into clipped space (field bug: the
+	 * Risk chip vanished on wilderness cards). */
+	private static final class WrapLayout extends FlowLayout
+	{
+		WrapLayout(int align, int hgap, int vgap)
+		{
+			super(align, hgap, vgap);
+		}
+
+		@Override
+		public Dimension preferredLayoutSize(java.awt.Container target)
+		{
+			synchronized (target.getTreeLock())
+			{
+				int targetWidth = target.getWidth() > 0 ? target.getWidth()
+					: (target.getParent() != null && target.getParent().getWidth() > 0
+						? target.getParent().getWidth() : Integer.MAX_VALUE);
+				java.awt.Insets insets = target.getInsets();
+				int maxWidth = targetWidth - insets.left - insets.right - getHgap() * 2;
+				int x = 0;
+				int rowHeight = 0;
+				Dimension dim = new Dimension(0, insets.top + getVgap());
+				for (int i = 0; i < target.getComponentCount(); i++)
+				{
+					java.awt.Component c = target.getComponent(i);
+					if (!c.isVisible())
+					{
+						continue;
+					}
+					Dimension d = c.getPreferredSize();
+					if (x == 0 || x + getHgap() + d.width <= maxWidth)
+					{
+						x += (x > 0 ? getHgap() : 0) + d.width;
+						rowHeight = Math.max(rowHeight, d.height);
+					}
+					else
+					{
+						dim.width = Math.max(dim.width, x);
+						dim.height += rowHeight + getVgap();
+						x = d.width;
+						rowHeight = d.height;
+					}
+				}
+				dim.width = Math.max(dim.width, x) + insets.left + insets.right + getHgap() * 2;
+				dim.height += rowHeight + getVgap() + insets.bottom;
+				return dim;
+			}
+		}
+	}
+
 	private static JPanel chipFlowRow()
 	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+		JPanel row = new JPanel(new WrapLayout(FlowLayout.LEFT, 4, 2))
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		return row;
 	}
 
