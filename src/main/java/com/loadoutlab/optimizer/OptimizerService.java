@@ -771,12 +771,26 @@ public class OptimizerService
 	private static DpsResult calcRespecting(DpsCalculator calc,
 		OptimizationRequest req, Loadout loadout)
 	{
-		Set<Integer> excluded = req.getExcludedItems();
-		if (loadout != null && excluded != null && !excluded.isEmpty())
+		if (loadout != null)
 		{
+			Set<Integer> excluded = req.getExcludedItems();
+			// A per-mob SIM is pretend-owned for THAT mob only (field bug
+			// 2026-07-18: a rapier simmed vs one group member leaked into
+			// every mob's shared answer) - on the owned side, a loadout may
+			// only wear what this request's bank or dreams grant.
+			boolean ownedOnly = req.getCandidateMode() == CandidateMode.OWNED_ONLY;
 			for (GearItem item : loadout.getGear().values())
 			{
-				if (item != null && excluded.contains(item.getId()))
+				if (item == null)
+				{
+					continue;
+				}
+				if (excluded != null && excluded.contains(item.getId()))
+				{
+					return null;
+				}
+				if (ownedOnly && !req.getOwnedItems().owns(item.getId())
+					&& !req.isDream(item.getId()))
 				{
 					return null;
 				}
