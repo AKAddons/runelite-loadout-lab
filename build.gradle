@@ -119,6 +119,17 @@ task golden(type: JavaExec) {
 	mainClass = 'com.loadoutlab.profile.QueryGolden'
 }
 
+// Golden-output capture for the ROSTER path (see RosterGolden) - the
+// multi-mob answers, shared kit and breakpoint curve that `golden` (single
+// mob only) never exercises:
+//   ./gradlew -q rosterGolden > roster-golden.txt
+task rosterGolden(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Print roster/group results for the group matrix (golden diffing)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.profile.RosterGolden'
+}
+
 // Headless query runner - the mock environment (see HeadlessQuery):
 //   ./gradlew query -Pargs="vorkath --maxed"
 task query(type: JavaExec) {
