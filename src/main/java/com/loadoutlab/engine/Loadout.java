@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.StatBlock;
@@ -11,9 +12,13 @@ import java.util.Map;
 public final class Loadout
 {
 	private final EnumMap<GearSlot, GearItem> gear;
+	@Getter
 	private final StatBlock offensive;
+	@Getter
 	private final StatBlock defensive;
+	@Getter
 	private final StatBlock bonuses;
+	@Getter
 	private final int cost;
 	/** All worn item names, lowercased and newline-joined - so the engine's
 	 * name-fragment checks ("salve amulet", "void knight top"...) are one
@@ -116,26 +121,6 @@ public final class Loadout
 	public Map<GearSlot, GearItem> getGear()
 	{
 		return Collections.unmodifiableMap(gear);
-	}
-
-	public StatBlock getOffensive()
-	{
-		return offensive;
-	}
-
-	public StatBlock getDefensive()
-	{
-		return defensive;
-	}
-
-	public StatBlock getBonuses()
-	{
-		return bonuses;
-	}
-
-	public int getCost()
-	{
-		return cost;
 	}
 
 	/** Lowercased worn item names, newline-joined (see field doc). */

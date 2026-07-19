@@ -1,5 +1,6 @@
 package com.loadoutlab.collection;
 
+import lombok.Getter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,8 @@ public class DwmsLink
 	static final String SOURCE = "Loadout Lab";
 
 	private volatile Map<Integer, Integer> items = Collections.emptyMap();
+	/** True once DWMS has answered for the current identity. */
+	@Getter
 	private volatile boolean live;
 
 	/** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
@@ -103,12 +106,6 @@ public class DwmsLink
 		}
 		into.merge(itemId, (int) Math.min(amount, Integer.MAX_VALUE),
 			(a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
-	}
-
-	/** True once DWMS has answered for the current identity. */
-	public boolean isLive()
-	{
-		return live;
 	}
 
 	/** A different account/profile: nothing from the previous one survives. */

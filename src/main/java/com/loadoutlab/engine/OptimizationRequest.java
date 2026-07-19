@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
@@ -28,52 +29,74 @@ import java.util.Set;
  */
 public final class OptimizationRequest implements Cloneable
 {
+	@Getter
 	private MonsterStats monster;
+	@Getter
 	private CombatStyle style;
+	@Getter
 	private PlayerLevels levels;
+	@Getter
 	private PrayerBonuses prayers;
+	@Getter
 	private SpellStats spell;
+	@Getter
 	private int budget;
+	@Getter
 	private CandidateMode candidateMode;
+	@Getter
 	private boolean includeUntradeables;
+	@Getter
 	private boolean onSlayerTask;
+	@Getter
 	private OwnedItems ownedItems;
+	@Getter
 	private RequirementProfile requirementProfile;
+	@Getter
 	private int resultLimit;
 	/** Item ids the player has excluded ("protect my dragon darts") -
 	 * never suggested in any slot, ammo pick, dart tier, or spec. */
+	@Getter
 	private Set<Integer> excludedItems;
 	/** Lock auto-spell selection to one spellbook ("standard"/"ancient"/
 	 * "arceuus"); empty = any. Powered staves are unaffected. */
+	@Getter
 	private String spellbookLock;
 	/** Wilderness risk cap: at most this many tradeable items in the set
 	 * (they become the items kept on death); -1 = unconstrained. */
+	@Getter
 	private int maxTradeables;
 	/** Wilderness risk budget in gp for THIS request (see
 	 * DEFAULT_RISK_BUDGET_GP for the semantics); only consulted when
 	 * risk-constrained. */
+	@Getter
 	private int riskBudgetGp;
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
+	@Getter
 	private boolean antifirePotion;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
 	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
 	 * 0 = pure offense (default), higher trades damage for safety. */
+	@Getter
 	private double defenseWeight;
 	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
 	 * of slaughter class - value the model cannot price). A pinned slot
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
 	 * vetoes all yield to the pin, while risk totals stay honest. */
+	@Getter
 	private Map<GearSlot, Integer> pinnedItems;
 	/** Items the player will bring ONLY if protected on death - a low-risk
 	 * set that leaves one in the lost pile is vetoed (same as the salve-line
 	 * friction veto, but user-chosen). Empty = no such constraint. */
+	/** Items to bring only when protected on death (see the field doc). */
+	@Getter
 	private Set<Integer> protectOnlyItems;
 	/** True when the fight happens IN the Wilderness - gates the wilderness
 	 * weapon +50% passive. Defaults to whether the monster exists nowhere
 	 * else (revs, the boss ring); shared-name monsters (Catacombs
 	 * hellhounds...) take the user's panel toggle via the wither. */
+	@Getter
 	private boolean inWilderness;
 
 	public OptimizationRequest(
@@ -141,17 +164,6 @@ public final class OptimizationRequest implements Cloneable
 		return set == null ? Collections.emptySet() : set;
 	}
 
-	public Set<Integer> getExcludedItems()
-	{
-		return excludedItems;
-	}
-
-	/** Items to bring only when protected on death (see the field doc). */
-	public Set<Integer> getProtectOnlyItems()
-	{
-		return protectOnlyItems;
-	}
-
 	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids)
 	{
 		OptimizationRequest c = copy();
@@ -171,11 +183,6 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public String getSpellbookLock()
-	{
-		return spellbookLock;
-	}
-
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
 		OptimizationRequest c = copy();
@@ -183,21 +190,11 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public boolean isAntifirePotion()
-	{
-		return antifirePotion;
-	}
-
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
 		OptimizationRequest c = copy();
 		c.antifirePotion = antifirePotion;
 		return c;
-	}
-
-	public int getMaxTradeables()
-	{
-		return maxTradeables;
 	}
 
 	public boolean isRiskConstrained()
@@ -215,11 +212,6 @@ public final class OptimizationRequest implements Cloneable
 	 * no fees at all: kept-slot items plus free untradeables only.
 	 */
 	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
-
-	public int getRiskBudgetGp()
-	{
-		return riskBudgetGp;
-	}
 
 	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
 	{
@@ -247,11 +239,6 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public Map<GearSlot, Integer> getPinnedItems()
-	{
-		return pinnedItems;
-	}
-
 	/** The pinned item id for this slot, or null when unpinned. */
 	public Integer pinnedFor(GearSlot slot)
 	{
@@ -270,11 +257,6 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public double getDefenseWeight()
-	{
-		return defenseWeight;
-	}
-
 	public OptimizationRequest withDefenseWeight(double defenseWeight)
 	{
 		OptimizationRequest c = copy();
@@ -282,69 +264,9 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public MonsterStats getMonster()
-	{
-		return monster;
-	}
-
-	public CombatStyle getStyle()
-	{
-		return style;
-	}
-
-	public PlayerLevels getLevels()
-	{
-		return levels;
-	}
-
-	public PrayerBonuses getPrayers()
-	{
-		return prayers;
-	}
-
-	public SpellStats getSpell()
-	{
-		return spell;
-	}
-
 	public boolean isAutoSpell()
 	{
 		return spell == null;
-	}
-
-	public int getBudget()
-	{
-		return budget;
-	}
-
-	public CandidateMode getCandidateMode()
-	{
-		return candidateMode;
-	}
-
-	public boolean isIncludeUntradeables()
-	{
-		return includeUntradeables;
-	}
-
-	public boolean isOnSlayerTask()
-	{
-		return onSlayerTask;
-	}
-
-	public OwnedItems getOwnedItems()
-	{
-		return ownedItems;
-	}
-
-	public RequirementProfile getRequirementProfile()
-	{
-		return requirementProfile;
-	}
-
-	public int getResultLimit()
-	{
-		return resultLimit;
 	}
 
 	public OptimizationRequest withStyle(CombatStyle style)
@@ -375,11 +297,6 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-
-	public boolean isInWilderness()
-	{
-		return inWilderness;
-	}
 
 	/** Override the wilderness default (the panel toggle for shared-name
 	 * monsters like Catacombs hellhounds). */

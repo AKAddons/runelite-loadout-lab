@@ -1,8 +1,10 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 public final class MonsterDefences
 {
 	public static final MonsterDefences ZERO = new MonsterDefences(0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -21,19 +23,6 @@ public final class MonsterDefences
 	public MonsterDefences(int stab, int slash, int crush, int magic, int ranged, int light, int standard, int heavy)
 	{
 		this(stab, slash, crush, magic, ranged, 0, light, standard, heavy);
-	}
-
-	public MonsterDefences(int stab, int slash, int crush, int magic, int ranged, int flatArmour, int light, int standard, int heavy)
-	{
-		this.stab = stab;
-		this.slash = slash;
-		this.crush = crush;
-		this.magic = magic;
-		this.ranged = ranged;
-		this.flatArmour = flatArmour;
-		this.light = light;
-		this.standard = standard;
-		this.heavy = heavy;
 	}
 
 	public int get(String type)

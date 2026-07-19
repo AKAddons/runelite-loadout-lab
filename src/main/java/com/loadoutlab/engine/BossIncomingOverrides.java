@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.MonsterStats;
@@ -29,20 +30,28 @@ public final class BossIncomingOverrides
 	/** One curated attack in the boss's rotation. */
 	public static final class Attack
 	{
+		@Getter
 		private final String style;
+		@Getter
 		private final int maxHit;
+		@Getter
 		private final double share;
+		@Getter
 		private final boolean prayable;
 		/** Dodgeable by design (Zulrah's magma slam): the standard play
 		 * takes zero, so the attack is excluded from both dps totals and
 		 * kept in the threat list for the tooltip - the same philosophy as
 		 * assuming the protection prayer is up. */
+		@Getter
 		private final boolean avoidable;
 		/** Fraction of damage that gets THROUGH the matching protection
 		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
 		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
 		 * unprayed value. */
+		@Getter
 		private final double prayerFactor;
+		/** 0 means "use the stat sheet's attack speed". */
+		@Getter
 		private final int speedTicks;
 
 		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks)
@@ -60,64 +69,20 @@ public final class BossIncomingOverrides
 			this.speedTicks = speedTicks;
 			this.avoidable = avoidable;
 		}
-
-		public boolean isAvoidable()
-		{
-			return avoidable;
-		}
-
-		public double getPrayerFactor()
-		{
-			return prayerFactor;
-		}
-
-		public String getStyle()
-		{
-			return style;
-		}
-
-		public int getMaxHit()
-		{
-			return maxHit;
-		}
-
-		public double getShare()
-		{
-			return share;
-		}
-
-		public boolean isPrayable()
-		{
-			return prayable;
-		}
-
-		/** 0 means "use the stat sheet's attack speed". */
-		public int getSpeedTicks()
-		{
-			return speedTicks;
-		}
 	}
 
 	/** The full curated picture for one boss. */
 	public static final class BossOverride
 	{
+		@Getter
 		private final List<Attack> attacks;
+		@Getter
 		private final String note;
 
 		BossOverride(List<Attack> attacks, String note)
 		{
 			this.attacks = Collections.unmodifiableList(attacks);
 			this.note = note;
-		}
-
-		public List<Attack> getAttacks()
-		{
-			return attacks;
-		}
-
-		public String getNote()
-		{
-			return note;
 		}
 	}
 

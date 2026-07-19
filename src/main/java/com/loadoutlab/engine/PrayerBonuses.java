@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -8,14 +9,20 @@ public final class PrayerBonuses
 {
 	public static final PrayerBonuses NONE = new PrayerBonuses(1.0, 1.0, 1.0, 1.0, 1.0, 0.0);
 
+	@Getter
 	private final double meleeAccuracy;
+	@Getter
 	private final double meleeStrength;
+	@Getter
 	private final double rangedAccuracy;
+	@Getter
 	private final double rangedStrength;
+	@Getter
 	private final double magicAccuracy;
 	private String meleeName = "";
 	private String rangedName = "";
 	private String magicName = "";
+	@Getter
 	private final double magicDamagePercent;
 
 	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy)
@@ -128,35 +135,5 @@ public final class PrayerBonuses
 			case MAGIC: return magicName;
 			default: return meleeName;
 		}
-	}
-
-	public double getMeleeAccuracy()
-	{
-		return meleeAccuracy;
-	}
-
-	public double getMeleeStrength()
-	{
-		return meleeStrength;
-	}
-
-	public double getRangedAccuracy()
-	{
-		return rangedAccuracy;
-	}
-
-	public double getRangedStrength()
-	{
-		return rangedStrength;
-	}
-
-	public double getMagicAccuracy()
-	{
-		return magicAccuracy;
-	}
-
-	public double getMagicDamagePercent()
-	{
-		return magicDamagePercent;
 	}
 }

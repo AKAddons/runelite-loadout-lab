@@ -1,5 +1,7 @@
 package com.loadoutlab.optimizer;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import com.loadoutlab.engine.BoostProfile;
 import com.loadoutlab.engine.CandidateMode;
 import com.loadoutlab.engine.CombatStyle;
@@ -92,16 +94,11 @@ public class OptimizerService
 
 	/** The frontier trade a non-max mode made: dps given up vs damage cut,
 	 * both as whole percents relative to the max-dps set. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class ModeTrade
 	{
 		public final int dpsLossPct;
 		public final int dmgCutPct;
-
-		ModeTrade(int dpsLossPct, int dmgCutPct)
-		{
-			this.dpsLossPct = dpsLossPct;
-			this.dmgCutPct = dmgCutPct;
-		}
 	}
 
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
@@ -823,18 +820,12 @@ public class OptimizerService
 	 * under its OWN style's request - "bring a blowpipe in your melee
 	 * gear". Cost = bench slots consumed; a weapon the bench already
 	 * carries as the spec weapon costs nothing extra. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	private static final class SwapBundle
 	{
 		final CombatStyle style;
 		final List<GearItem> items;
 		final int cost;
-
-		SwapBundle(CombatStyle style, List<GearItem> items, int cost)
-		{
-			this.style = style;
-			this.items = items;
-			this.cost = cost;
-		}
 	}
 
 	/** The chosen kit: same-style single swaps + cross-style bundles. */
@@ -2517,6 +2508,7 @@ public class OptimizerService
 	}
 
 	/** Package-private: SpecPoisonTest pins the spec tie-break. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	static final class SpecPick
 	{
 		final SpecialAttack spec;
@@ -2526,16 +2518,6 @@ public class OptimizerService
 		/** Non-null when the spec needs its own ammo carried (a dark bow
 		 * next to a chargebow base needs arrows - an extra slot). */
 		final GearItem ammo;
-
-		SpecPick(SpecialAttack spec, GearItem weapon, double expectedDamage, double drainValue,
-			GearItem ammo)
-		{
-			this.spec = spec;
-			this.weapon = weapon;
-			this.expectedDamage = expectedDamage;
-			this.drainValue = drainValue;
-			this.ammo = ammo;
-		}
 	}
 
 	/**
@@ -2822,20 +2804,13 @@ public class OptimizerService
 	 * the game-ceiling versions. Shared by the single-mob and roster paths
 	 * (they MUST agree - levels and labels depend on style + owned + real,
 	 * never the mob). */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	private static final class StylePlan
 	{
 		final PlayerLevels levels;
 		final String label;
 		final PlayerLevels gameLevels;
 		final String gameLabel;
-
-		StylePlan(PlayerLevels levels, String label, PlayerLevels gameLevels, String gameLabel)
-		{
-			this.levels = levels;
-			this.label = label;
-			this.gameLevels = gameLevels;
-			this.gameLabel = gameLabel;
-		}
 	}
 
 	private static StylePlan stylePlan(ComputeContext ctx, CombatStyle style, BoostProfile supplied)

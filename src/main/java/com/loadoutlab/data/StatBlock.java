@@ -1,8 +1,10 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@AllArgsConstructor
 public final class StatBlock
 {
 	public static final StatBlock ZERO = new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -25,28 +27,6 @@ public final class StatBlock
 	private final int magicDamage;
 	@Getter
 	private final int prayer;
-
-	public StatBlock(
-		int stab,
-		int slash,
-		int crush,
-		int magic,
-		int ranged,
-		int strength,
-		int rangedStrength,
-		int magicDamage,
-		int prayer)
-	{
-		this.stab = stab;
-		this.slash = slash;
-		this.crush = crush;
-		this.magic = magic;
-		this.ranged = ranged;
-		this.strength = strength;
-		this.rangedStrength = rangedStrength;
-		this.magicDamage = magicDamage;
-		this.prayer = prayer;
-	}
 
 	public int getAttackBonus(String type)
 	{

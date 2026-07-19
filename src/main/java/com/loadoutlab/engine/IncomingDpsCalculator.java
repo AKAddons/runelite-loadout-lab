@@ -1,5 +1,7 @@
 package com.loadoutlab.engine;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import com.loadoutlab.data.MonsterOffence;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.StatBlock;
@@ -38,6 +40,7 @@ import java.util.LinkedHashMap;
 public final class IncomingDpsCalculator
 {
 	/** One attack style's threat: its dps if it attacked every cycle. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class StyleThreat
 	{
 		public final String style;
@@ -54,18 +57,6 @@ public final class IncomingDpsCalculator
 		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked, double share)
 		{
 			this(style, dps, maxHit, modeled, blocked, share, blocked ? 0.0 : 1.0);
-		}
-
-		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked,
-			double share, double prayerFactor)
-		{
-			this.style = style;
-			this.dps = dps;
-			this.maxHit = maxHit;
-			this.modeled = modeled;
-			this.blocked = blocked;
-			this.share = share;
-			this.prayerFactor = prayerFactor;
 		}
 	}
 
