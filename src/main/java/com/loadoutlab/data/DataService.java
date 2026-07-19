@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+import java.util.Collections;
 
 public final class DataService
 {
@@ -183,7 +184,7 @@ public final class DataService
 
 	private static GearRequirements requirementsFor(int id, String name, String version, Map<Integer, Map<String, Integer>> skillRequirements)
 	{
-		Map<String, Integer> skills = skillRequirements.getOrDefault(id, java.util.Collections.emptyMap());
+		Map<String, Integer> skills = skillRequirements.getOrDefault(id, Collections.emptyMap());
 		Set<String> quests = new LinkedHashSet<>(QuestUnlocks.forItem(id, name, version));
 		return skills.isEmpty() && quests.isEmpty() ? GearRequirements.NONE : new GearRequirements(skills, quests);
 	}
@@ -197,7 +198,7 @@ public final class DataService
 	 * anything containing "quest" to the bottom of a bare-name search. */
 	static List<MonsterStats> normalizeQuestVersions(List<MonsterStats> monsters)
 	{
-		Map<String, List<MonsterStats>> byName = new java.util.LinkedHashMap<>();
+		Map<String, List<MonsterStats>> byName = new LinkedHashMap<>();
 		for (MonsterStats monster : monsters)
 		{
 			byName.computeIfAbsent(monster.getNameLower(), k -> new ArrayList<>()).add(monster);
@@ -206,7 +207,7 @@ public final class DataService
 		for (List<MonsterStats> group : byName.values())
 		{
 			boolean pairWithPostQuest = group.size() == 2 && group.stream()
-				.anyMatch(m -> m.getVersion().toLowerCase(java.util.Locale.ROOT).contains("post-quest"));
+				.anyMatch(m -> m.getVersion().toLowerCase(Locale.ROOT).contains("post-quest"));
 			for (MonsterStats monster : group)
 			{
 				String version = monster.getVersion();
@@ -231,7 +232,7 @@ public final class DataService
 					kept.add(token);
 				}
 				if (pairWithPostQuest && !quest
-					&& !version.toLowerCase(java.util.Locale.ROOT).contains("post-quest"))
+					&& !version.toLowerCase(Locale.ROOT).contains("post-quest"))
 				{
 					// The non-post-quest half of the pair IS the quest fight.
 					quest = true;
@@ -664,7 +665,7 @@ public final class DataService
 
 	private static boolean knownSlayerMonster(String name)
 	{
-		String normalized = name == null ? "" : name.toLowerCase(java.util.Locale.ROOT);
+		String normalized = name == null ? "" : name.toLowerCase(Locale.ROOT);
 		return normalized.contains("aberrant spectre")
 			|| normalized.contains("abyssal demon")
 			|| normalized.contains("banshee")

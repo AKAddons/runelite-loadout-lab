@@ -2,11 +2,7 @@ package com.loadoutlab.engine;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.loadoutlab.data.MonsterStats;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,19 +130,17 @@ public final class BossIncomingOverrides
 
 	static
 	{
-		try (InputStream stream = BossIncomingOverrides.class.getResourceAsStream(RESOURCE);
-			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
+		JsonObject root = com.loadoutlab.data.JsonResources.object(RESOURCE);
+		if (root == null)
 		{
-			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
+			throw new IllegalStateException("Could not load " + RESOURCE);
+		}
+		{
 			for (Map.Entry<String, JsonElement> entry : root.entrySet())
 			{
 				String name = entry.getKey().toLowerCase(Locale.ROOT);
 				OVERRIDES.put(name, parse(name, entry.getValue().getAsJsonObject()));
 			}
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("Could not load " + RESOURCE, ex);
 		}
 	}
 
@@ -214,7 +208,7 @@ public final class BossIncomingOverrides
 		if (version != null && !version.isEmpty())
 		{
 			BossOverride byForm = OVERRIDES.get(
-				(monster.getNameLower() + "|" + version).toLowerCase(java.util.Locale.ROOT));
+				(monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
 			if (byForm != null)
 			{
 				return byForm;

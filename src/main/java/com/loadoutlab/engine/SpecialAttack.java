@@ -3,8 +3,9 @@ package com.loadoutlab.engine;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterStats;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  * Special-attack definitions and expected-damage math.
@@ -89,93 +90,43 @@ public final class SpecialAttack
 		this.note = note;
 	}
 
-	/** Order matters: more specific prefixes (e.g. "magic shortbow (i)") come first. */
-	private static final List<SpecialAttack> REGISTRY = Arrays.asList(
-		// Melee
-		new SpecialAttack(p("dragon dagger"), "Dragon dagger", CombatStyle.MELEE,
-			Kind.DOUBLE_INDEPENDENT, 25, 1.15, 1.15, ""),
-		new SpecialAttack(p("abyssal dagger"), "Abyssal dagger", CombatStyle.MELEE,
-			Kind.LINKED_DOUBLE, 25, 1.25, 0.85, "second hit shares the first's accuracy roll"),
-		new SpecialAttack(p("dragon claws"), "Dragon claws", CombatStyle.MELEE,
-			Kind.CLAWS, 50, 1.0, 1.0, ""),
-		new SpecialAttack(p("voidwaker"), "Voidwaker", CombatStyle.MELEE,
-			Kind.VOIDWAKER, 50, 1.0, 1.0, "guaranteed hit"),
-		new SpecialAttack(p("armadyl godsword"), "Armadyl godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.375, ""),
-		new SpecialAttack(p("bandos godsword"), "Bandos godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.21, "drains combat stats by damage dealt", 0, true),
-		new SpecialAttack(p("saradomin godsword"), "Saradomin godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.10, "heals HP 50% / Prayer 25% of damage"),
-		new SpecialAttack(p("ancient godsword"), "Ancient godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.10, "plus 25 delayed blood-sacrifice damage"),
-		new SpecialAttack(p("dragon warhammer"), "Dragon warhammer", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 1.0, 1.50, "lowers Defence 30% on a damaging hit", 0.30, false),
-		new SpecialAttack(p("elder maul"), "Elder maul", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 1.25, 1.0, "lowers Defence 35% on a damaging hit", 0.35, false),
-		new SpecialAttack(p("dragon mace"), "Dragon mace", CombatStyle.MELEE,
-			Kind.SINGLE, 25, 1.25, 1.50, "Shatter: rolls against the target's crush defence"),
-		// "granite maul (or" (ornate handle) is more specific: it must come first.
-		new SpecialAttack(p("granite maul (or"), "Granite maul", CombatStyle.MELEE,
-			Kind.EXTRA_ATTACK, 50, 1.0, 1.0, "instant extra attack"),
-		new SpecialAttack(p("granite maul"), "Granite maul", CombatStyle.MELEE,
-			Kind.EXTRA_ATTACK, 60, 1.0, 1.0, "instant extra attack"),
-		new SpecialAttack(p("crystal halberd", "dragon halberd"), "Halberd sweep", CombatStyle.MELEE,
-			Kind.HALBERD_SWEEP, 30, 1.0, 1.10, "second hit only vs large (2x2+) monsters"),
-		new SpecialAttack(p("sunspear"), "Sunspear", CombatStyle.MELEE,
-			Kind.FIXED_FRACTION, 50, 1.0, 0.70, "Seeking Lunge: always exactly 70% of max on a hit"),
-		new SpecialAttack(p("crimson kisten"), "Crimson kisten", CombatStyle.MELEE,
-			Kind.MULTI_ROLL_TIERED, 50, 1.0, 1.0, "Brutal Swing: four rolls; damage tier scales with hits landed; rolls crush defence"),
-		new SpecialAttack(p("burning claws"), "Burning claws", CombatStyle.MELEE,
-			Kind.CASCADE_CLAWS, 30, 1.0, 1.0, "plus a burn (10 per stack) not counted here"),
-		new SpecialAttack(p("zamorak godsword"), "Zamorak godsword", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.10, "freezes the target for 20 seconds"),
-		new SpecialAttack(p("arkan blade"), "Arkan blade", CombatStyle.MELEE,
-			Kind.SINGLE, 30, 1.5, 1.50, "plus a 10 damage burn over 24s, not counted here"),
-		new SpecialAttack(p("ursine chainmace"), "Ursine chainmace", CombatStyle.MELEE,
-			Kind.SINGLE, 50, 2.0, 1.0, "wilderness weapon; damage-over-time rider not counted"),
-		new SpecialAttack(p("dragon sword"), "Dragon sword", CombatStyle.MELEE,
-			Kind.SINGLE, 40, 1.25, 1.25, "ignores Protect from Melee"),
-		new SpecialAttack(p("dragon longsword"), "Dragon longsword", CombatStyle.MELEE,
-			Kind.SINGLE, 25, 1.0, 1.25, ""),
-		new SpecialAttack(p("saradomin sword"), "Saradomin sword", CombatStyle.MELEE,
-			Kind.SINGLE, 100, 1.0, 1.10, "plus 1-16 magic damage rolled separately, not counted"),
-		new SpecialAttack(p("bone dagger"), "Bone dagger", CombatStyle.MELEE,
-			Kind.SINGLE, 75, 1.0, 1.0, "drains Defence by damage dealt", 0, true),
-		// Ranged
-		new SpecialAttack(p("dark bow"), "Dark bow", CombatStyle.RANGED,
-			Kind.DARK_BOW, 55, 1.0, 1.30, "with dragon arrows: +50% damage, min 8 per hit"),
-		new SpecialAttack(p("magic shortbow (i)"), "Magic shortbow (i)", CombatStyle.RANGED,
-			Kind.MSB_SNAPSHOT, 50, 10.0 / 7.0, 1.0, "max hit ignores prayers and void"),
-		new SpecialAttack(p("magic shortbow"), "Magic shortbow", CombatStyle.RANGED,
-			Kind.MSB_SNAPSHOT, 55, 10.0 / 7.0, 1.0, "max hit ignores prayers and void"),
-		new SpecialAttack(p("dragon knife"), "Dragon knife", CombatStyle.RANGED,
-			Kind.DOUBLE_INDEPENDENT, 25, 1.0, 1.0, ""),
-		new SpecialAttack(p("toxic blowpipe"), "Toxic blowpipe", CombatStyle.RANGED,
-			Kind.SINGLE, 50, 2.0, 1.50, "heals 50% of damage dealt"),
-		new SpecialAttack(p("zaryte crossbow"), "Zaryte crossbow", CombatStyle.RANGED,
-			Kind.SINGLE, 75, 2.0, 1.0, "guaranteed bolt proc on hit (proc damage not modeled)"),
-		new SpecialAttack(p("armadyl crossbow"), "Armadyl crossbow", CombatStyle.RANGED,
-			Kind.SINGLE, 50, 2.0, 1.0, "doubles enchanted bolt proc chance, not modeled"),
-		new SpecialAttack(p("rosewood blowpipe"), "Rosewood blowpipe", CombatStyle.RANGED,
-			Kind.DOUBLE_INDEPENDENT, 25, 0.8, 1.10, ""),
-		new SpecialAttack(p("dragon crossbow"), "Dragon crossbow", CombatStyle.RANGED,
-			Kind.SINGLE, 60, 1.0, 1.20, ""),
-		new SpecialAttack(p("heavy ballista", "light ballista"), "Ballista", CombatStyle.RANGED,
-			Kind.SINGLE, 65, 1.25, 1.25, "fires 2.4s slower than normal"),
-		new SpecialAttack(p("dorgeshuun crossbow"), "Dorgeshuun crossbow", CombatStyle.RANGED,
-			Kind.SINGLE, 75, 1.0, 1.0, "drains Defence by damage dealt", 0, true),
-		// Magic
-		new SpecialAttack(p("volatile nightmare staff"), "Volatile nightmare staff", CombatStyle.MAGIC,
-			Kind.VOLATILE, 55, 1.5, 1.0, "rune-free; damage scales with Magic level"),
-		new SpecialAttack(p("accursed sceptre"), "Accursed sceptre", CombatStyle.MAGIC,
-			Kind.SINGLE, 50, 1.5, 1.5, "lowers target Defence and Magic 15%"),
-		new SpecialAttack(p("eye of ayak"), "Eye of ayak", CombatStyle.MAGIC,
-			Kind.SINGLE, 50, 2.0, 1.30, "drains magic defence bonus by damage dealt, not modeled"));
+	/** Wiki-verified entries live in special_attacks.json (hub token cap:
+	 * data rides resources, not source). Order matters: more specific
+	 * prefixes ("magic shortbow (i)") come first in the file. */
+	private static final List<SpecialAttack> REGISTRY = loadRegistry();
 
-	private static String[] p(String... prefixes)
+	private static List<SpecialAttack> loadRegistry()
 	{
-		return prefixes;
+		List<SpecialAttack> specs = new ArrayList<>();
+		try
+		{
+			for (com.google.gson.JsonElement element : com.loadoutlab.data.JsonResources.array(
+				"/com/loadoutlab/data/special_attacks.json"))
+			{
+				com.google.gson.JsonObject row = element.getAsJsonObject();
+				List<String> prefixes = new ArrayList<>();
+				com.loadoutlab.data.JsonResources.strings(row, "prefixes", prefixes);
+				specs.add(new SpecialAttack(prefixes.toArray(new String[0]),
+					row.get("name").getAsString(),
+					CombatStyle.valueOf(row.get("style").getAsString()),
+					Kind.valueOf(row.get("kind").getAsString()),
+					row.get("cost").getAsInt(),
+					row.get("accuracy").getAsDouble(),
+					row.get("damage").getAsDouble(),
+					row.get("note").getAsString(),
+					row.get("drainFraction").getAsDouble(),
+					row.get("drainsByDamage").getAsBoolean()));
+			}
+		}
+		catch (Exception e)
+		{
+			// A malformed table must never take the client down; the spec
+			// tests fail loudly on an empty registry instead.
+			return Collections.emptyList();
+		}
+		return specs;
 	}
+
 
 	/** The definition for this weapon at this combat style, or null. */
 	public static SpecialAttack match(GearItem item, CombatStyle style)

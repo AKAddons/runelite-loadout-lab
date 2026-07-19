@@ -1,8 +1,10 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.MonsterStats;
 import java.util.Locale;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Raids SUPPLY their own boosts (field spec 2026-07-18): Chambers of
@@ -13,33 +15,16 @@ import java.util.Set;
  */
 public final class RaidBoosts
 {
-	private static final Set<String> XERIC = Set.of(
-		"tekton",
-		"vasa nistirio",
-		"vespula",
-		"abyssal portal",
-		"muttadile",
-		"vanguard",
-		"skeletal mystic",
-		"ice demon",
-		"lizardman shaman (chambers of xeric)",
-		"guardian (chambers of xeric)",
-		"great olm",
-		"deathly ranger",
-		"deathly mage");
+	/** Rosters live in raid_boosts.json (hub token cap). */
+	private static final Set<String> XERIC = new HashSet<>();
+	private static final Set<String> AMASCUT = new HashSet<>();
 
-	private static final Set<String> AMASCUT = Set.of(
-		"ba-ba",
-		"kephri",
-		"akkha",
-		"akkha's shadow",
-		"zebak",
-		"obelisk (tombs of amascut)",
-		"elidinis' warden",
-		"tumeken's warden",
-		"arcane scarab",
-		"agile scarab",
-		"scarab (tombs of amascut)");
+	static
+	{
+		com.google.gson.JsonObject root = JsonResources.object("/com/loadoutlab/data/raid_boosts.json");
+		JsonResources.strings(root, "xeric", XERIC);
+		JsonResources.strings(root, "amascut", AMASCUT);
+	}
 
 	private RaidBoosts()
 	{

@@ -38,7 +38,7 @@ public class OptimizeModeTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				OwnedItems.EMPTY, 1, false, false, "",
 				java.util.Collections.emptySet(), -1,

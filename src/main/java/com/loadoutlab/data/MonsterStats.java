@@ -4,6 +4,9 @@ package com.loadoutlab.data;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 
 public final class MonsterStats
 {
@@ -19,7 +22,7 @@ public final class MonsterStats
 	private final MonsterDefences defensive;
 	private final MonsterOffence offence;
 	private final List<String> attributes;
-	private final java.util.Set<String> attributesLower;
+	private final Set<String> attributesLower;
 	private final boolean slayerMonster;
 	private final String weaknessElement;
 	private final int weaknessSeverity;
@@ -76,7 +79,7 @@ public final class MonsterStats
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
-		java.util.HashSet<String> lower = new java.util.HashSet<>();
+		HashSet<String> lower = new HashSet<>();
 		for (String value : this.attributes)
 		{
 			if (value != null)
@@ -112,16 +115,16 @@ public final class MonsterStats
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
 	{
 		return immuneVariant(syntheticId, versionLabel,
-			java.util.Collections.singletonList(immuneAttribute));
+			Collections.singletonList(immuneAttribute));
 	}
 
 	/** Multi-immunity variant: a phase can lock out SEVERAL styles at
 	 * once (Kalphite Queen's first form prays off magic AND ranged; a
 	 * Nylocas form takes only its own style). */
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel,
-		java.util.List<String> immuneAttributes)
+		List<String> immuneAttributes)
 	{
-		java.util.List<String> extended = new java.util.ArrayList<>(attributes);
+		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(immuneAttributes);
 		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
 			size, defence, magic, offensiveMagic, defensive, offence, extended,

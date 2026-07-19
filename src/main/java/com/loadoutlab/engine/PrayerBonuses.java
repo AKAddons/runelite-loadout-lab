@@ -3,6 +3,8 @@ package com.loadoutlab.engine;
 
 import java.util.Set;
 import net.runelite.api.Prayer;
+import java.util.List;
+import java.util.ArrayList;
 
 public final class PrayerBonuses
 {
@@ -59,7 +61,7 @@ public final class PrayerBonuses
 		{
 			// Every applied tier is NAMED - the assumes chip must never fold
 			// in a multiplier it does not admit to (audit A2.12).
-			java.util.List<String> parts = new java.util.ArrayList<>();
+			List<String> parts = new ArrayList<>();
 			if (levels.getPrayer() >= 34)
 			{
 				meleeAcc = 1.15;

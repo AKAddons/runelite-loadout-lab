@@ -1,12 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,15 +87,9 @@ public final class MonsterGroups
 	public static List<MonsterGroup> load(LoadoutData data)
 	{
 		List<MonsterGroup> groups = new ArrayList<>();
-		try (InputStream in = MonsterGroups.class.getResourceAsStream(RESOURCE))
+		try
 		{
-			if (in == null)
-			{
-				return groups;
-			}
-			JsonArray rows = new JsonParser().parse(
-				new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonArray();
-			for (JsonElement element : rows)
+			for (JsonElement element : JsonResources.array(RESOURCE))
 			{
 				JsonObject row = element.getAsJsonObject();
 				String name = row.get("name").getAsString();

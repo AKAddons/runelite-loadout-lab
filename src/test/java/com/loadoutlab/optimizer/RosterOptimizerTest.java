@@ -60,7 +60,7 @@ public class RosterOptimizerTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
-		service.bestPerStyleAcross(
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyleAcross(service, 
 			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
@@ -108,7 +108,7 @@ public class RosterOptimizerTest
 			// via the direct single-mob path
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(ankou, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, ankou, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,

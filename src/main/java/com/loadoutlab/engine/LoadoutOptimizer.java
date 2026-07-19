@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 
 public final class LoadoutOptimizer
 {
@@ -1114,11 +1115,11 @@ public final class LoadoutOptimizer
 			: PvpRisk.riskGp(Loadout.adopting(gear), null, request.getMaxTradeables());
 	}
 
-	private static java.util.Set<Integer> pinnedIds(OptimizationRequest request)
+	private static Set<Integer> pinnedIds(OptimizationRequest request)
 	{
 		return request.getPinnedItems().isEmpty()
-			? java.util.Collections.emptySet()
-			: new java.util.HashSet<>(request.getPinnedItems().values());
+			? Collections.emptySet()
+			: new HashSet<>(request.getPinnedItems().values());
 	}
 
 	/** Test seam: RevenantPoolTest pins the conditional pool boosts. */
@@ -1364,7 +1365,7 @@ public final class LoadoutOptimizer
 				item.getDefensive().getRanged(),
 			};
 			this.hash = (category.hashCode() * 31 + (twoHanded ? 1 : 0)) * 31
-				+ java.util.Arrays.hashCode(stats);
+				+ Arrays.hashCode(stats);
 		}
 
 		@Override
@@ -1376,7 +1377,7 @@ public final class LoadoutOptimizer
 			}
 			StatKey that = (StatKey) other;
 			return hash == that.hash && twoHanded == that.twoHanded
-				&& category.equals(that.category) && java.util.Arrays.equals(stats, that.stats);
+				&& category.equals(that.category) && Arrays.equals(stats, that.stats);
 		}
 
 		@Override

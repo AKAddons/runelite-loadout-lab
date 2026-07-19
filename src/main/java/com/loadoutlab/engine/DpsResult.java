@@ -1,5 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
+import java.util.List;
+import java.util.Collections;
 
 public final class DpsResult
 {
@@ -17,7 +19,7 @@ public final class DpsResult
 	/** Conditional bonuses the calculator actually counted for this set
 	 * (salve, wilderness weapon, crystal set...) - user assurance that
 	 * the situational math is happening. */
-	private final java.util.List<String> countedBonuses;
+	private final List<String> countedBonuses;
 	/** True when the optimizer could not satisfy a dragonfire shield
 	 * constraint (no protective shield in the pool) and fell back to the
 	 * unconstrained set - the panel must say "assumes a super antifire". */
@@ -51,7 +53,7 @@ public final class DpsResult
 		String spellName)
 	{
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
-			attackRoll, defenceRoll, purchaseCost, spellName, java.util.Collections.emptyList(), false);
+			attackRoll, defenceRoll, purchaseCost, spellName, Collections.emptyList(), false);
 	}
 
 	private DpsResult(
@@ -66,7 +68,7 @@ public final class DpsResult
 		long defenceRoll,
 		int purchaseCost,
 		String spellName,
-		java.util.List<String> countedBonuses,
+		List<String> countedBonuses,
 		boolean antifireAssumed)
 	{
 		this.loadout = loadout;
@@ -81,20 +83,20 @@ public final class DpsResult
 		this.purchaseCost = Math.max(0, purchaseCost);
 		this.spellName = spellName == null ? "" : spellName;
 		this.countedBonuses = countedBonuses == null
-			? java.util.Collections.emptyList() : countedBonuses;
+			? Collections.emptyList() : countedBonuses;
 		this.antifireAssumed = antifireAssumed;
 	}
 
-	public java.util.List<String> getCountedBonuses()
+	public List<String> getCountedBonuses()
 	{
 		return countedBonuses;
 	}
 
-	public DpsResult withCountedBonuses(java.util.List<String> bonuses)
+	public DpsResult withCountedBonuses(List<String> bonuses)
 	{
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
-			java.util.List.copyOf(bonuses), antifireAssumed);
+			List.copyOf(bonuses), antifireAssumed);
 	}
 
 	public boolean isAntifireAssumed()

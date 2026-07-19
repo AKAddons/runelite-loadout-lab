@@ -56,12 +56,12 @@ public class OptimizerServiceTest
 			CountDownLatch fresh = new CountDownLatch(1);
 			java.util.concurrent.atomic.AtomicInteger staleDelivered = new java.util.concurrent.atomic.AtomicInteger();
 			// Stale request (off-task), immediately superseded by the toggle.
-			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, false, "",
 				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> staleDelivered.incrementAndGet());
 			// The toggle: same monster, on-task, fired before the stale run ends.
-			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, true, "",
 				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> fresh.countDown());
@@ -81,7 +81,7 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
 			{
 				out.set(results);
@@ -133,7 +133,7 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
@@ -199,7 +199,7 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			excludedByStyle, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
@@ -231,7 +231,7 @@ public class OptimizerServiceTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), 1, false, false, "",
 				java.util.Collections.emptySet(), -1,
@@ -270,7 +270,7 @@ public class OptimizerServiceTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
 				{
 					out.set(results);

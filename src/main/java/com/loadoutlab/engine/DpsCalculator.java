@@ -7,6 +7,10 @@ import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
 import java.util.Locale;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 public final class DpsCalculator
 {
@@ -17,8 +21,8 @@ public final class DpsCalculator
 	 * attached to the result for user assurance (single-threaded use,
 	 * matching how the optimizer drives this class). Melee tries several
 	 * stance variants per calculate; the part set dedupes the re-adds. */
-	private final java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> counted =
-		new java.util.LinkedHashMap<>();
+	private final LinkedHashMap<String, LinkedHashSet<String>> counted =
+		new LinkedHashMap<>();
 	/** The beam turns collection off: only results that can reach the panel
 	 * (final rescore, fill, spec) need the bonus list, and the map churn +
 	 * per-result copy is pure waste across beam trials. */
@@ -35,15 +39,15 @@ public final class DpsCalculator
 	{
 		if (collectCounted)
 		{
-			counted.computeIfAbsent(source, s -> new java.util.LinkedHashSet<>()).add(part);
+			counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part);
 		}
 	}
 
 	/** The assurance lines: "source: +X% accuracy, +Y% damage" per source. */
-	private java.util.List<String> countedLines()
+	private List<String> countedLines()
 	{
-		java.util.List<String> lines = new java.util.ArrayList<>(counted.size());
-		for (java.util.Map.Entry<String, java.util.LinkedHashSet<String>> entry : counted.entrySet())
+		List<String> lines = new ArrayList<>(counted.size());
+		for (Map.Entry<String, LinkedHashSet<String>> entry : counted.entrySet())
 		{
 			lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
 		}
@@ -280,7 +284,7 @@ public final class DpsCalculator
 		{
 			return false;
 		}
-		String name = spell.getName().toLowerCase(java.util.Locale.ROOT);
+		String name = spell.getName().toLowerCase(Locale.ROOT);
 		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
 	}
 
@@ -1197,7 +1201,7 @@ public final class DpsCalculator
 			return 0;
 		}
 		String spellName = spell.getName();
-		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(java.util.Locale.ROOT);
+		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(Locale.ROOT);
 		double chance;
 		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
 		{

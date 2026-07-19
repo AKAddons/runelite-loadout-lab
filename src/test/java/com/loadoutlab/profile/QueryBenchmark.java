@@ -140,7 +140,7 @@ public final class QueryBenchmark
 		MonsterStats monster = data.searchMonsters("revenant demon", 1).get(0);
 		CountDownLatch done = new CountDownLatch(1);
 		long start = System.nanoTime();
-		service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
 			profile.prayerUnlocks, profile.requirements,
 			new com.loadoutlab.engine.OwnedItems(owned, true),
 			fingerprint[0]++, false, false, "",
@@ -165,7 +165,7 @@ public final class QueryBenchmark
 		long start = System.nanoTime();
 		// A fresh fingerprint per run defeats the result cache, so every
 		// run measures a full computation.
-		service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
 			profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 			fingerprint[0]++, false, false, "",
 			Collections.emptySet(), lowRisk,

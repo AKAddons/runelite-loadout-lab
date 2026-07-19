@@ -42,8 +42,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,6 +76,24 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.api.gameval.SpriteID;
+import javax.swing.KeyStroke;
+import javax.swing.JTextArea;
+import javax.swing.JSlider;
+import javax.swing.JMenu;
+import javax.swing.JDialog;
+import javax.swing.JComponent;
+import javax.swing.Icon;
+import java.util.Random;
+import java.util.Objects;
+import java.util.Locale;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.awt.Window;
+import java.awt.Point;
+import java.awt.Dialog;
+import java.awt.Container;
 
 /**
  * v0.1 panel: search a monster, see your best OWNED set per combat style -
@@ -106,7 +122,7 @@ public class LoadoutLabPanel extends PluginPanel
 		 * per-mob numbers delivered via showRosterResults. Default no-op
 		 * keeps the interface functional for test lambdas - the plugin's
 		 * production hook overrides it. */
-		default void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
+		default void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
@@ -404,7 +420,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * At-hand sources (equipped/inventory/bank) are deliberately absent:
 	 * no palette entry = no dot and no legend row - only gear needing a
 	 * fetch trip gets marked, so the grid stays quiet for bank-only sets. */
-	private static final Map<String, Color> SOURCE_COLORS = new java.util.LinkedHashMap<>();
+	private static final Map<String, Color> SOURCE_COLORS = new LinkedHashMap<>();
 	static
 	{
 		SOURCE_COLORS.put("looting bag", new Color(180, 130, 80));
@@ -417,7 +433,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Sources that appear in the CURRENT results - the legend shows
 	 * exactly these, never the full palette. */
-	private final Set<String> usedSources = new java.util.LinkedHashSet<>();
+	private final Set<String> usedSources = new LinkedHashSet<>();
 
 	/** Cell border language: gold = your item IS the game best, blue = the
 	 * spec cell (matches the in-game spec orb), grey = owned/empty. */
@@ -475,7 +491,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel excludeCountChip = new JLabel();
 	private final JLabel dreamCountChip = new JLabel();
 	private final JLabel noteHeader = new JLabel();
-	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
+	private final JTextArea noteArea = new JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
 	private DisplayOptions displayOptions = DisplayOptions.all();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
@@ -488,7 +504,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * (M-3) share the list - the renderer and selection handler branch. */
 	private final DefaultListModel<Object> monsterModel = new DefaultListModel<>();
 	private final JList<Object> monsterList = new JList<>(monsterModel);
-	private final java.util.List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
+	private final List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
 	private final JScrollPane monsterScroll;
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
@@ -523,7 +539,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	/** The weighted-random source the roster draws each compute's mood from. */
-	private static final java.util.Random MASCOT_MOOD = new java.util.Random();
+	private static final Random MASCOT_MOOD = new Random();
 	/** RuneLite developer mode: unlocks the resting animation gallery. */
 	private boolean developerMode;
 	private final Timer searchDebounce;
@@ -543,7 +559,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private IncomingDpsCalculator.Result renderingIncoming;
 	/** The rendering card's assume chips (prayer + boost icons), stashed by
 	 * styleCard for the stat panel (EDT-only render state). */
-	private javax.swing.JComponent renderingChips;
+	private JComponent renderingChips;
 	/** Whether the card being rendered is the BiS side of the toggle. */
 	private boolean renderingBis;
 	/** The lensed mob's curated mechanics note for the stat panel's (i). */
@@ -554,7 +570,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * weapon competing for kept slots, and how many are kept. Null spec
 	 * flag = no risk line (not wilderness / option off / BiS view). */
 	private boolean renderingRiskLine;
-	private java.util.List<Integer> renderingRiskConsumables = java.util.Collections.emptyList();
+	private List<Integer> renderingRiskConsumables = Collections.emptyList();
 
 	/** Every id consumableIds() can emit - the plugin prefetches their GE
 	 * prices ON THE CLIENT THREAD per compute (ItemManager.getItemPrice
@@ -563,13 +579,13 @@ public class LoadoutLabPanel extends PluginPanel
 	public static final int[] CONSUMABLE_PRICE_IDS = {
 		20996, 20992, 12695, 2428, 113, 11722, 2444, 11726, 3040,
 		27641, 20724, 2452, 21978};
-	private volatile java.util.Map<Integer, Long> consumablePrices =
-		java.util.Collections.emptyMap();
+	private volatile Map<Integer, Long> consumablePrices =
+		Collections.emptyMap();
 
-	public void setConsumablePrices(java.util.Map<Integer, Long> prices)
+	public void setConsumablePrices(Map<Integer, Long> prices)
 	{
 		this.consumablePrices = prices == null
-			? java.util.Collections.emptyMap() : prices;
+			? Collections.emptyMap() : prices;
 	}
 	/** The upgrade-cost line renders in the stat panel (Yours view). */
 	private boolean renderingUpgradeLine;
@@ -587,13 +603,13 @@ public class LoadoutLabPanel extends PluginPanel
 		 * these mobs, with the mob list acting as an informational lens
 		 * (Step C). Step A keeps it at exactly one mob, so a single-mob
 		 * result is pixel-identical to before. */
-		final java.util.List<MonsterStats> mobs = new java.util.ArrayList<>();
+		final List<MonsterStats> mobs = new ArrayList<>();
 		/** Which mob's numbers show beneath the shared set (the lens). */
 		int lensIndex;
 		Map<CombatStyle, StyleResult> results;
 		/** Roster answers, index-aligned with mobs; results above is the
 		 * LENSED element. Null while computing or for legacy single-mob. */
-		java.util.List<Map<CombatStyle, StyleResult>> perMobResults;
+		List<Map<CombatStyle, StyleResult>> perMobResults;
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
 		boolean noteCollapsed = true;
@@ -698,7 +714,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The page: an ordered list of results. M-1 keeps it at 0..1 entries -
 	 * a single-mob page renders pixel-identical to the old single view. */
-	private final java.util.List<ResultEntry> page = new java.util.ArrayList<>();
+	private final List<ResultEntry> page = new ArrayList<>();
 	/** The entry the panel-global affordances (toggles, notes, bank tools)
 	 * act on. With a one-entry page this is always page.get(0). */
 	private ResultEntry active;
@@ -803,7 +819,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
-		JPanel headerButtons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 2, 0));
+		JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 		headerButtons.setOpaque(false);
 		headerButtons.add(undoButton);
 		headerButtons.add(redoButton);
@@ -1418,11 +1434,11 @@ public class LoadoutLabPanel extends PluginPanel
 			applySelection(monster);
 			return;
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
-			private java.util.List<ResultEntry> pageAfter;
+			private List<ResultEntry> pageAfter;
 			private ResultEntry activeAfter;
 
 			@Override
@@ -1431,7 +1447,7 @@ public class LoadoutLabPanel extends PluginPanel
 				if (pageAfter == null)
 				{
 					applySelection(monster);
-					pageAfter = new java.util.ArrayList<>(page);
+					pageAfter = new ArrayList<>(page);
 					activeAfter = active;
 				}
 				else
@@ -1469,7 +1485,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Reinstate a captured page (entry OBJECTS - parameters and results
 	 * intact); entries whose results were never computed recompute. */
-	private void restorePage(java.util.List<ResultEntry> entries, ResultEntry newActive)
+	private void restorePage(List<ResultEntry> entries, ResultEntry newActive)
 	{
 		page.clear();
 		page.addAll(entries);
@@ -1494,11 +1510,11 @@ public class LoadoutLabPanel extends PluginPanel
 			applyGroupSelection(group);
 			return;
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
-			private java.util.List<ResultEntry> pageAfter;
+			private List<ResultEntry> pageAfter;
 			private ResultEntry activeAfter;
 
 			@Override
@@ -1507,7 +1523,7 @@ public class LoadoutLabPanel extends PluginPanel
 				if (pageAfter == null)
 				{
 					applyGroupSelection(group);
-					pageAfter = new java.util.ArrayList<>(page);
+					pageAfter = new ArrayList<>(page);
 					activeAfter = active;
 				}
 				else
@@ -1740,9 +1756,9 @@ public class LoadoutLabPanel extends PluginPanel
 			return;
 		}
 		final MonsterStats removed = entry.mobs.get(index);
-		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(entry.mobs);
+		final List<MonsterStats> mobsBefore = new ArrayList<>(entry.mobs);
 		final Map<CombatStyle, StyleResult> resultsBefore = entry.results;
-		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
+		final List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
 		final int lensBefore = entry.lensIndex;
 		final Runnable applyRemove = () ->
 		{
@@ -1820,11 +1836,11 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			}
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
-		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(target.mobs);
+		final List<MonsterStats> mobsBefore = new ArrayList<>(target.mobs);
 		final Map<CombatStyle, StyleResult> resultsBefore = target.results;
-		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
+		final List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
 		final int lensBefore = target.lensIndex;
 		final Runnable applyAdd = () ->
 		{
@@ -2247,7 +2263,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private void showDreamsMenu(MouseEvent e)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		java.util.List<GearItem> dreamGear = new ArrayList<>();
+		List<GearItem> dreamGear = new ArrayList<>();
 		for (int id : dreamView.snapshot())
 		{
 			GearItem gear = data.getGear(id);
@@ -2317,7 +2333,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Legend for the source dots - EXACTLY the sources in the current
 	 * results, in palette order; null when nothing has a known source. */
-	private javax.swing.JComponent buildSourceLegend()
+	private JComponent buildSourceLegend()
 	{
 		if (usedSources.isEmpty())
 		{
@@ -2347,7 +2363,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The small filled circle used by legend entries. */
-	private static final class SourceDotIcon implements javax.swing.Icon
+	private static final class SourceDotIcon implements Icon
 	{
 		private final Color color;
 
@@ -2357,7 +2373,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 
 		@Override
-		public void paintIcon(java.awt.Component c, Graphics g, int x, int y)
+		public void paintIcon(Component c, Graphics g, int x, int y)
 		{
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -2389,7 +2405,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private static String scopeLabel(String scope)
 	{
 		return ALL_SETS.equals(scope) ? "all sets"
-			: scope.toLowerCase(java.util.Locale.ROOT) + " set";
+			: scope.toLowerCase(Locale.ROOT) + " set";
 	}
 
 	/** Filter-scope label: the MOB'S NAME for all-sets ("bank filter -
@@ -2400,7 +2416,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return selectedMonster == null ? "this mob" : selectedMonster.getName();
 		}
-		return scope.toLowerCase(java.util.Locale.ROOT) + " set";
+		return scope.toLowerCase(Locale.ROOT) + " set";
 	}
 
 	private void saveNoteIfChanged()
@@ -2580,11 +2596,11 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
 	 * all sets, or chatbox-search ANOTHER item into the pin. */
-	private javax.swing.JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
+	private JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
 		CombatStyle style)
 	{
 		int monsterId = currentMonsterId();
-		javax.swing.JMenu pinMenu = new javax.swing.JMenu("Pin " + item.label());
+		JMenu pinMenu = new JMenu("Pin " + item.label());
 		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> raw = mobProfile.allPins(monsterId);
 		Integer styleScoped = raw.getOrDefault(style.name(), Collections.emptyMap()).get(slot);
 		Integer allScoped = raw.getOrDefault(ALL_SETS, Collections.emptyMap()).get(slot);
@@ -2617,7 +2633,7 @@ public class LoadoutLabPanel extends PluginPanel
 			GearItem pinned = data.getGear(styleScoped);
 			JMenuItem un = new JMenuItem("Unpin "
 				+ (pinned == null ? "item" : pinned.label())
-				+ " (" + style.name().toLowerCase(java.util.Locale.ROOT) + " set)");
+				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)");
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
@@ -2719,7 +2735,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			if (bankShowing)
 			{
-				highlightIds = new java.util.HashSet<>();
+				highlightIds = new HashSet<>();
 				for (GearItem item : best.getLoadout().getGear().values())
 				{
 					if (item != null)
@@ -2742,19 +2758,19 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			if (bankFiltering)
 			{
-				filterIds = new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				filterIds = new HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
 				filterIds.addAll(inventoryIds(style));
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
 		}
-		if (!java.util.Objects.equals(highlightIds, lastHighlightIds))
+		if (!Objects.equals(highlightIds, lastHighlightIds))
 		{
 			lastHighlightIds = highlightIds;
 			bankHighlighter.highlight(highlightIds);
 		}
-		if (!java.util.Objects.equals(filterIds, lastFilterIds))
+		if (!Objects.equals(filterIds, lastFilterIds))
 		{
 			lastFilterIds = filterIds;
 			bankFilter.filter(filterIds);
@@ -2928,7 +2944,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					// Exclusion scopes (field request): everywhere, this mob,
 					// or this mob + this set only.
-					javax.swing.JMenu excludeMenu = new javax.swing.JMenu("Exclude " + item.label());
+					JMenu excludeMenu = new JMenu("Exclude " + item.label());
 					JMenuItem everywhere = new JMenuItem("All mobs");
 					everywhere.addActionListener(a ->
 					{
@@ -3038,7 +3054,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
 	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
-	private static final class NoPrayerIcon implements javax.swing.Icon
+	private static final class NoPrayerIcon implements Icon
 	{
 		private final int size;
 
@@ -3083,7 +3099,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * 3/4 arc opening downward with an arrowhead at the top - mirrored
 	 * (head upper-left) for back, plain (head upper-right) for forward.
 	 * Greys out with the button's enabled state. */
-	private static final class UndoArrowIcon implements javax.swing.Icon
+	private static final class UndoArrowIcon implements Icon
 	{
 		private final int size;
 		private final boolean mirrored;
@@ -3146,7 +3162,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
-	private static final class CloseIcon implements javax.swing.Icon
+	private static final class CloseIcon implements Icon
 	{
 		private final int size;
 
@@ -3188,7 +3204,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
-	private static final class DotsIcon implements javax.swing.Icon
+	private static final class DotsIcon implements Icon
 	{
 		private final int size;
 
@@ -3232,7 +3248,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * reload symbols tofu in Swing on macOS Tahoe, so we draw it. Inherits
 	 * the host button's foreground colour.
 	 */
-	private static final class ReloadIcon implements javax.swing.Icon
+	private static final class ReloadIcon implements Icon
 	{
 		private final int size;
 
@@ -3338,7 +3354,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		if (entry.mobs.size() > 1)
 		{
-			computeHook.computeRoster(new java.util.ArrayList<>(entry.mobs),
+			computeHook.computeRoster(new ArrayList<>(entry.mobs),
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
@@ -3381,7 +3397,7 @@ public class LoadoutLabPanel extends PluginPanel
 			clearSelectionInternal();
 			return;
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
@@ -3468,14 +3484,14 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Roster results (EDT): routed by exact mob-id list match. */
-	public void showRosterResults(java.util.List<MonsterStats> mobs,
-		java.util.List<Map<CombatStyle, StyleResult>> perMob)
+	public void showRosterResults(List<MonsterStats> mobs,
+		List<Map<CombatStyle, StyleResult>> perMob)
 	{
 		showRosterResults(mobs, perMob, null);
 	}
 
-	public void showRosterResults(java.util.List<MonsterStats> mobs,
-		java.util.List<Map<CombatStyle, StyleResult>> perMob,
+	public void showRosterResults(List<MonsterStats> mobs,
+		List<Map<CombatStyle, StyleResult>> perMob,
 		OptimizerService.KitCurve curve)
 	{
 		ResultEntry entry = entryForRoster(mobs);
@@ -3500,7 +3516,7 @@ public class LoadoutLabPanel extends PluginPanel
 		renderPage();
 	}
 
-	private ResultEntry entryForRoster(java.util.List<MonsterStats> mobs)
+	private ResultEntry entryForRoster(List<MonsterStats> mobs)
 	{
 		outer:
 		for (ResultEntry entry : page)
@@ -3639,7 +3655,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// The spellbook lock: the submenu drives the combo, which
 				// records + recomputes.
-				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
+				JMenu bookMenu = new JMenu("Spellbook lock");
 				for (int b = 0; b < spellbook.getItemCount(); b++)
 				{
 					final int index = b;
@@ -3660,7 +3676,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
 	 * result (the one the global search affordances act on) renders white; the others
 	 * muted. Only rendered on multi-result pages. */
-	private javax.swing.JComponent resultChrome(ResultEntry entry)
+	private JComponent resultChrome(ResultEntry entry)
 	{
 		JPanel row = new JPanel(new BorderLayout(4, 0));
 		row.setOpaque(false);
@@ -3730,7 +3746,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * SINGLE-result page (the classic loading experience); on a multi-
 	 * result page a pending entry is one compact line so the rendered
 	 * results around it stay put. */
-	private javax.swing.JComponent pendingCard(ResultEntry entry, boolean withMascot)
+	private JComponent pendingCard(ResultEntry entry, boolean withMascot)
 	{
 		JPanel column = new JPanel();
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
@@ -3775,7 +3791,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * - which still own recording (back/forward), write-through, and
 	 * recompute - after focusing this entry. Two wrap rows: toggles,
 	 * then pick-a-value chips. */
-	private javax.swing.JComponent paramChipRow(ResultEntry entry)
+	private JComponent paramChipRow(ResultEntry entry)
 	{
 		MonsterStats mob = entry.mob();
 		JPanel rows = new JPanel();
@@ -3902,7 +3918,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
 			boolean unlimited = budget.equals("-") || budget.equalsIgnoreCase("max");
-			javax.swing.JComponent budgetChip = paramChip(
+			JComponent budgetChip = paramChip(
 				budget.isEmpty() ? "Budget: off" : unlimited ? "Budget: " : "Budget: " + budget,
 				!budget.isEmpty(), true,
 				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
@@ -3972,7 +3988,7 @@ public class LoadoutLabPanel extends PluginPanel
 			invLabel.setFont(invLabel.getFont().deriveFont(
 				entry.maxSwaps != entry.inventoryDefault ? Font.BOLD : Font.PLAIN, 11f));
 			invLabel.setToolTipText(invTip);
-			javax.swing.JSlider invSlider = new javax.swing.JSlider(0, 20, entry.maxSwaps);
+			JSlider invSlider = new JSlider(0, 20, entry.maxSwaps);
 			invSlider.setOpaque(false);
 			invSlider.setPreferredSize(new Dimension(110, 22));
 			invSlider.setToolTipText(invTip);
@@ -4015,7 +4031,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** A pins/filters count chip: opens the manage menu anchored on the
 	 * chip (the retired label's menu, source-anchored). */
-	private javax.swing.JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
 	{
 		JLabel chip = new JLabel(text);
 		chip.setOpaque(true);
@@ -4048,7 +4064,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 
 		@Override
-		public Dimension preferredLayoutSize(java.awt.Container target)
+		public Dimension preferredLayoutSize(Container target)
 		{
 			synchronized (target.getTreeLock())
 			{
@@ -4059,14 +4075,14 @@ public class LoadoutLabPanel extends PluginPanel
 				int targetWidth = target.getWidth() > 0 ? target.getWidth()
 					: (target.getParent() != null && target.getParent().getWidth() > 0
 						? target.getParent().getWidth() : 220);
-				java.awt.Insets insets = target.getInsets();
+				Insets insets = target.getInsets();
 				int maxWidth = targetWidth - insets.left - insets.right - getHgap() * 2;
 				int x = 0;
 				int rowHeight = 0;
 				Dimension dim = new Dimension(0, insets.top + getVgap());
 				for (int i = 0; i < target.getComponentCount(); i++)
 				{
-					java.awt.Component c = target.getComponent(i);
+					Component c = target.getComponent(i);
 					if (!c.isVisible())
 					{
 						continue;
@@ -4109,7 +4125,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** One parameter chip: the Yours|BiS border language - orange edge
 	 * when ON, quiet outline when off, muted + inert when forced. */
-	private javax.swing.JComponent paramChip(String text, boolean selected,
+	private JComponent paramChip(String text, boolean selected,
 		boolean enabled, String tooltip, Runnable onClick)
 	{
 		JLabel chip = new JLabel(text);
@@ -4159,7 +4175,7 @@ public class LoadoutLabPanel extends PluginPanel
 			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
 			menu.add(item);
 		}
-		java.awt.Point at = getMousePosition();
+		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
@@ -4200,7 +4216,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private javax.swing.JComponent inventoryRow(ResultEntry entry, StyleResult result, boolean bis)
+	private JComponent inventoryRow(ResultEntry entry, StyleResult result, boolean bis)
 	{
 		// A wrapping grid, NOT a single flow line: at Inventory 20 the
 		// carried items overflow one row, and a clipped weapon swap reads
@@ -4223,7 +4239,7 @@ public class LoadoutLabPanel extends PluginPanel
 		prefix.setToolTipText("Carried items not currently worn vs this mob"
 			+ " (the Inventory chip sets the swap budget)");
 		row.add(prefix, BorderLayout.WEST);
-		JPanel cells = new JPanel(new java.awt.GridLayout(0, 6, 3, 3));
+		JPanel cells = new JPanel(new GridLayout(0, 6, 3, 3));
 		cells.setOpaque(false);
 		GearItem specWeapon = bis ? result.gameSpecWeapon : result.specWeapon;
 		int specId = specWeapon != null ? specWeapon.getId() : -1;
@@ -4271,7 +4287,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The roster rows (card anatomy #1): name + hp per mob, an
 	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
 	 * the shared set never changes. */
-	private javax.swing.JComponent mobLensRows(ResultEntry entry,
+	private JComponent mobLensRows(ResultEntry entry,
 		CombatStyle viewedStyle, boolean bis)
 	{
 		JPanel rows = new JPanel();
@@ -4450,9 +4466,9 @@ public class LoadoutLabPanel extends PluginPanel
 	 * ranging potion replaces it); a roster shows the union across each
 	 * mob's BEST answer - a melee/ranged plan carries both potions. The
 	 * antifire mode's potion always rides along. */
-	private java.util.List<Integer> consumableIds(ResultEntry entry, StyleResult viewed, boolean bis)
+	private List<Integer> consumableIds(ResultEntry entry, StyleResult viewed, boolean bis)
 	{
-		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
+		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
 		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
 		{
 			if (viewed != null)
@@ -4494,10 +4510,10 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(21978);
 		}
-		return new java.util.ArrayList<>(ids);
+		return new ArrayList<>(ids);
 	}
 
-	private static void addBoostConsumables(String label, java.util.Set<Integer> ids)
+	private static void addBoostConsumables(String label, Set<Integer> ids)
 	{
 		if (label == null)
 		{
@@ -4558,7 +4574,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return null;
 		}
-		java.util.List<double[]> points = curve.points;
+		List<double[]> points = curve.points;
 		double baseTotal = points.get(0)[1];
 		double finalTotal = points.get(points.size() - 1)[1];
 		double gainRange = finalTotal - baseTotal;
@@ -4569,7 +4585,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int viability = -1;
 		int finalCost = (int) points.get(0)[0];
-		java.util.List<Integer> majors = new java.util.ArrayList<>();
+		List<Integer> majors = new ArrayList<>();
 		for (int i = 1; i < points.size(); i++)
 		{
 			double gain = points.get(i)[1] - points.get(i - 1)[1];
@@ -4691,9 +4707,9 @@ public class LoadoutLabPanel extends PluginPanel
 	 * the hit to the entry's roster (same history step as before). */
 	private void showAddMobDialog(ResultEntry entry)
 	{
-		java.awt.Window owner = SwingUtilities.getWindowAncestor(this);
-		javax.swing.JDialog dialog = new javax.swing.JDialog(owner, "Add a mob to this result",
-			java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+		Window owner = SwingUtilities.getWindowAncestor(this);
+		JDialog dialog = new JDialog(owner, "Add a mob to this result",
+			Dialog.ModalityType.APPLICATION_MODAL);
 		JPanel content = new JPanel(new BorderLayout(0, 4));
 		content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 		JTextField field = new JTextField();
@@ -4777,8 +4793,8 @@ public class LoadoutLabPanel extends PluginPanel
 		content.add(field, BorderLayout.NORTH);
 		content.add(new JScrollPane(hits), BorderLayout.CENTER);
 		dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
-			javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
-			javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
+			KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+			JComponent.WHEN_IN_FOCUSED_WINDOW);
 		dialog.setContentPane(content);
 		dialog.setSize(260, 240);
 		dialog.setLocationRelativeTo(this);
@@ -4790,7 +4806,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * fixed melee/ranged/magic positions, strongest selected by default)
 	 * over ONE flipping detail body, then the source legend (M-2c: tabs
 	 * replaced the stacked style cards - kits become more tabs at M-4). */
-	private javax.swing.JComponent resultCard(ResultEntry entry)
+	private JComponent resultCard(ResultEntry entry)
 	{
 		Map<CombatStyle, StyleResult> results = entry.results;
 		JPanel column = new JPanel();
@@ -4816,7 +4832,7 @@ public class LoadoutLabPanel extends PluginPanel
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
 			styleTabs(entry, results, styleOrder, selected, bis)));
 		column.add(Box.createVerticalStrut(6));
-		javax.swing.JComponent legend = buildSourceLegend();
+		JComponent legend = buildSourceLegend();
 		if (legend != null)
 		{
 			column.add(legend);
@@ -4908,7 +4924,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The Yours | BiS chip pair (field spec: the BiS view is the SAME card
 	 * through a toggle, not a separate section), with the gear-gap percent
 	 * for the selected style beside it. */
-	private javax.swing.JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
+	private JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
 	{
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -4943,7 +4959,7 @@ public class LoadoutLabPanel extends PluginPanel
 		return row;
 	}
 
-	private javax.swing.JComponent viewChip(String text, boolean selected, Runnable onClick)
+	private JComponent viewChip(String text, boolean selected, Runnable onClick)
 	{
 		JLabel chip = new JLabel(text);
 		chip.setOpaque(selected);
@@ -4971,11 +4987,11 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The tab strip: one equal-width tab per style - the skill sprite and
 	 * the best owned dps, nothing else. The selected tab wears the detail
 	 * card's background so the two read as one surface. */
-	private javax.swing.JComponent styleTabs(ResultEntry entry,
+	private JComponent styleTabs(ResultEntry entry,
 		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected,
 		boolean bis)
 	{
-		JPanel strip = new JPanel(new java.awt.GridLayout(1, order.length, 2, 0));
+		JPanel strip = new JPanel(new GridLayout(1, order.length, 2, 0));
 		strip.setOpaque(false);
 		strip.setAlignmentX(LEFT_ALIGNMENT);
 		strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
@@ -5019,7 +5035,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private JPanel styleCard(ResultEntry entry, CombatStyle style, StyleResult result,
-		boolean hasBis, boolean bis, javax.swing.JComponent styleStrip)
+		boolean hasBis, boolean bis, JComponent styleStrip)
 	{
 		renderingStyle = style;
 		renderingBis = bis;
@@ -5033,7 +5049,7 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingRiskConsumables = result == null || bis
-			? java.util.Collections.emptyList() : consumableIds(entry, result, false);
+			? Collections.emptyList() : consumableIds(entry, result, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -5083,7 +5099,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// an assumption like the prayers beside it.
 				JLabel keepChip = new JLabel();
 				keepChip.setToolTipText("Protect Item assumed - a 4th item is kept on death");
-				attachSprite(keepChip, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
+				attachSprite(keepChip, SpriteID.Prayeron.PROTECT_ITEM);
 				chips.add(keepChip);
 			}
 		}
@@ -5287,7 +5303,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** A local exclude/sim chip in the GLOBAL chips' color language:
 	 * red for exclusions, green for sims, muted when empty. */
-	private javax.swing.JComponent localCountChip(String text, boolean active, boolean red,
+	private JComponent localCountChip(String text, boolean active, boolean red,
 		String tooltip, Runnable onClick)
 	{
 		JLabel chip = new JLabel(text);
@@ -5346,7 +5362,7 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			}
 		}
-		java.awt.Point at = getMousePosition();
+		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
@@ -5378,14 +5394,14 @@ public class LoadoutLabPanel extends PluginPanel
 				menu.add(remove);
 			}
 		}
-		java.awt.Point at = getMousePosition();
+		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
 	private static final ImageIcon SWORD_ICON = loadSkillIcon("attack");
 	private static final ImageIcon SHIELD_ICON = loadSkillIcon("defence");
-	private static final javax.swing.Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
+	private static final Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
 
 	private static ImageIcon loadPrayerIcon()
 	{
@@ -5540,7 +5556,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The death skull as a standalone icon - the grid badge's drawing at
 	 * line size (glyph-safe). */
-	private static final class SkullIcon implements javax.swing.Icon
+	private static final class SkullIcon implements Icon
 	{
 		@Override
 		public int getIconWidth()
@@ -5622,7 +5638,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The grid badge's gp pile as a standalone icon (glyph-safe). */
-	private static final class CoinsIcon implements javax.swing.Icon
+	private static final class CoinsIcon implements Icon
 	{
 		@Override
 		public int getIconWidth()
@@ -5885,7 +5901,7 @@ public class LoadoutLabPanel extends PluginPanel
 		StyleResult r = active.results.get(style);
 		List<GearItem> inv = r == null ? Collections.emptyList()
 			: active.viewingBis ? r.gameBench : r.bench;
-		Set<Integer> ids = new java.util.HashSet<>();
+		Set<Integer> ids = new HashSet<>();
 		for (GearItem item : inv)
 		{
 			ids.add(item.getId());
@@ -5899,7 +5915,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private static Set<Integer> setItemIds(DpsResult best, GearItem specWeapon, GearItem dart)
 	{
-		Set<Integer> ids = new java.util.HashSet<>();
+		Set<Integer> ids = new HashSet<>();
 		for (GearItem item : best.getLoadout().getGear().values())
 		{
 			if (item != null)
@@ -5920,7 +5936,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "Filter bank": a virtual bank tag showing only this set's items.
 	 * The toggle follows the viewed style - applyBankViews retargets. */
-	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		return paramChip("Filter bank", bankFiltering, true,
 			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
@@ -5933,7 +5949,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "Show in bank": outline this set's items while the bank is open.
 	 * The toggle follows the viewed style - applyBankViews retargets. */
-	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		return paramChip("Show in bank", bankShowing, true,
 			"Outline this set's items in the bank", () ->
@@ -6074,11 +6090,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small icon on a CELL_BG rounded plate (2px padding each side). */
-	private static final class BackedIcon implements javax.swing.Icon
+	private static final class BackedIcon implements Icon
 	{
-		private final javax.swing.Icon delegate;
+		private final Icon delegate;
 
-		BackedIcon(javax.swing.Icon delegate)
+		BackedIcon(Icon delegate)
 		{
 			this.delegate = delegate;
 		}
@@ -6289,7 +6305,7 @@ int sprite = incoming.protectPrayer != null
 			// xp!) survives in the tooltip.
 			JLabel styleLine = statLine(styleText,
 				"Use this attack style: " + result.getAttackType(), statText, null);
-			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.SideIcons.COMBAT);
+			attachStatSprite(styleLine, SpriteID.SideIcons.COMBAT);
 			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
@@ -6416,7 +6432,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** One stat line: compact 12px, icon optional, tooltip carries the
 	 * sentence. */
-	private static JLabel statLine(String text, String tooltip, Color color, javax.swing.Icon icon)
+	private static JLabel statLine(String text, String tooltip, Color color, Icon icon)
 	{
 		JLabel line = new JLabel(text);
 		line.setForeground(color);
@@ -6434,7 +6450,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** A tiny painted infinity sign for the unlimited-budget chip
 	 * (field spec 2026-07-18) - drawn, never a Unicode glyph. */
-	private static final class InfinityIcon implements javax.swing.Icon
+	private static final class InfinityIcon implements Icon
 	{
 		private final Color color;
 
@@ -6456,13 +6472,13 @@ int sprite = incoming.protectPrayer != null
 		}
 
 		@Override
-		public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y)
+		public void paintIcon(Component c, Graphics g, int x, int y)
 		{
-			java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-			g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-				java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
 			g2.setColor(color);
-			g2.setStroke(new java.awt.BasicStroke(1.6f));
+			g2.setStroke(new BasicStroke(1.6f));
 			g2.drawOval(x, y + 2, 6, 6);
 			g2.drawOval(x + 7, y + 2, 6, 6);
 			g2.dispose();
@@ -6472,13 +6488,13 @@ int sprite = incoming.protectPrayer != null
 	/** A fixed-width box that centres its delegate - every stat-panel
 	 * line's icon occupies the SAME column width, so the values start on
 	 * one hard left edge (field spec: a strong visual column). */
-	private static final class FixedWidthIcon implements javax.swing.Icon
+	private static final class FixedWidthIcon implements Icon
 	{
 		static final int WIDTH = 20;
 		static final int HEIGHT = 16;
-		private final javax.swing.Icon delegate;
+		private final Icon delegate;
 
-		FixedWidthIcon(javax.swing.Icon delegate)
+		FixedWidthIcon(Icon delegate)
 		{
 			this.delegate = delegate;
 		}
@@ -6507,7 +6523,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted crosshair for the accuracy line (glyph-safe) - the
 	 * Attack staticon read as the same sword as the style icon. */
-	private static final class CrosshairIcon implements javax.swing.Icon
+	private static final class CrosshairIcon implements Icon
 	{
 		private final int size;
 
@@ -6557,21 +6573,21 @@ int sprite = incoming.protectPrayer != null
 	 * tab star, the other books their dedicated sidebar art. */
 	private static int spellbookSprite(String book)
 	{
-		switch (book.toLowerCase(java.util.Locale.ROOT))
+		switch (book.toLowerCase(Locale.ROOT))
 		{
 			case "ancient":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
+				return SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
 			case "lunar":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_LUNAR;
+				return SpriteID.SideIcons.SPELLBOOK_LUNAR;
 			case "arceuus":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
+				return SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
 			default:
-				return net.runelite.api.gameval.SpriteID.SideIcons.MAGIC;
+				return SpriteID.SideIcons.MAGIC;
 		}
 	}
 
 	/** A painted red hitsplat for the max-hit line (glyph-safe). */
-	private static final class HitsplatIcon implements javax.swing.Icon
+	private static final class HitsplatIcon implements Icon
 	{
 		private final int size;
 
@@ -6614,7 +6630,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted circled-i for the mechanics note - amber like the note
 	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
-	private static final class InfoIcon implements javax.swing.Icon
+	private static final class InfoIcon implements Icon
 	{
 		private final int size;
 
@@ -6658,7 +6674,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** The amber plus-star (the mascots' signature), as a static icon for
 	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
-	private static final class PlusStarIcon implements javax.swing.Icon
+	private static final class PlusStarIcon implements Icon
 	{
 		private final int size;
 
@@ -6742,7 +6758,7 @@ int sprite = incoming.protectPrayer != null
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */
-	private static javax.swing.JComponent blankCell(int cell)
+	private static JComponent blankCell(int cell)
 	{
 		JLabel blank = new JLabel();
 		blank.setPreferredSize(new Dimension(cell, cell));

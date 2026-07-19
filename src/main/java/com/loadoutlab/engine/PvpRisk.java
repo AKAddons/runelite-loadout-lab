@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * What a PvP death actually costs in a given set. Mechanics
@@ -189,7 +190,7 @@ public final class PvpRisk
 	 */
 	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
-		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, java.util.Collections.emptySet());
+		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, Collections.emptySet());
 	}
 
 	/** Pin-aware variant: a PINNED friction item is the player's explicit
@@ -205,10 +206,10 @@ public final class PvpRisk
 	 * order (count of strictly-greater values, plus equal values earlier
 	 * in pool order). */
 	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
-		java.util.Set<Integer> pinnedIds)
+		Set<Integer> pinnedIds)
 	{
 		return risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
-			java.util.Collections.emptySet());
+			Collections.emptySet());
 	}
 
 	/**
@@ -222,7 +223,7 @@ public final class PvpRisk
 	 * risksRebuild in PvpRiskTest for the no-flag case.
 	 */
 	public static boolean risksUnprotected(Loadout loadout, GearItem carriedSpecWeapon,
-		int keptSlots, java.util.Set<Integer> pinnedIds, java.util.Set<Integer> protectOnlyIds)
+		int keptSlots, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds)
 	{
 		boolean anyProtected = mustProtect(carriedSpecWeapon, pinnedIds, protectOnlyIds);
 		for (GearSlot slot : GearSlot.values())
@@ -286,8 +287,8 @@ public final class PvpRisk
 
 	/** An unpinned item the set is required to protect - engine friction
 	 * (salve line) OR the player's protect-only flag. */
-	private static boolean mustProtect(GearItem item, java.util.Set<Integer> pinnedIds,
-		java.util.Set<Integer> protectOnlyIds)
+	private static boolean mustProtect(GearItem item, Set<Integer> pinnedIds,
+		Set<Integer> protectOnlyIds)
 	{
 		if (item == null || pinnedIds.contains(item.getId()))
 		{
@@ -305,7 +306,7 @@ public final class PvpRisk
 	 * (0 = not poolable, contributes nothing).
 	 */
 	private static int offerRebuild(GearItem item, long[] values, int count,
-		java.util.Set<Integer> pinnedIds, java.util.Set<Integer> protectOnlyIds)
+		Set<Integer> pinnedIds, Set<Integer> protectOnlyIds)
 	{
 		if (item == null)
 		{
