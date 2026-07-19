@@ -1,18 +1,29 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
+import lombok.Getter;
+
 public final class StatBlock
 {
 	public static final StatBlock ZERO = new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
+	@Getter
 	private final int stab;
+	@Getter
 	private final int slash;
+	@Getter
 	private final int crush;
+	@Getter
 	private final int magic;
+	@Getter
 	private final int ranged;
+	@Getter
 	private final int strength;
+	@Getter
 	private final int rangedStrength;
+	@Getter
 	private final int magicDamage;
+	@Getter
 	private final int prayer;
 
 	public StatBlock(
@@ -70,48 +81,12 @@ public final class StatBlock
 		}
 	}
 
-	public int getStab()
-	{
-		return stab;
-	}
 
-	public int getSlash()
-	{
-		return slash;
-	}
 
-	public int getCrush()
-	{
-		return crush;
-	}
 
-	public int getMagic()
-	{
-		return magic;
-	}
 
-	public int getRanged()
-	{
-		return ranged;
-	}
 
-	public int getStrength()
-	{
-		return strength;
-	}
 
-	public int getRangedStrength()
-	{
-		return rangedStrength;
-	}
 
-	public int getMagicDamage()
-	{
-		return magicDamage;
-	}
 
-	public int getPrayer()
-	{
-		return prayer;
-	}
 }

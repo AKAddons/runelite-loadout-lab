@@ -12,10 +12,15 @@ import java.util.EnumMap;
 import java.util.Comparator;
 import java.util.ArrayList;
 
+import lombok.Getter;
+
 public final class LoadoutData
 {
+	@Getter
 	private final List<GearItem> gearItems;
+	@Getter
 	private final List<MonsterStats> monsters;
+	@Getter
 	private final List<SpellStats> spells;
 	private final Map<Integer, GearItem> gearById;
 	private final Map<Integer, Integer> variantToBase;
@@ -289,10 +294,6 @@ public final class LoadoutData
 		return gearById.get(id);
 	}
 
-	public List<GearItem> getGearItems()
-	{
-		return gearItems;
-	}
 
 	/** The corpus items for one equip slot, in getGearItems() order. */
 	public List<GearItem> getGearItems(GearSlot slot)
@@ -300,13 +301,5 @@ public final class LoadoutData
 		return gearBySlot.get(slot);
 	}
 
-	public List<MonsterStats> getMonsters()
-	{
-		return monsters;
-	}
 
-	public List<SpellStats> getSpells()
-	{
-		return spells;
-	}
 }

@@ -1,6 +1,8 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
+import lombok.Getter;
+
 public final class MonsterDefences
 {
 	public static final MonsterDefences ZERO = new MonsterDefences(0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -10,6 +12,7 @@ public final class MonsterDefences
 	private final int crush;
 	private final int magic;
 	private final int ranged;
+	@Getter
 	private final int flatArmour;
 	private final int light;
 	private final int standard;
@@ -58,8 +61,4 @@ public final class MonsterDefences
 		}
 	}
 
-	public int getFlatArmour()
-	{
-		return flatArmour;
-	}
 }

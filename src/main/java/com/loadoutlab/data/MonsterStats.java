@@ -8,24 +8,42 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 
+import lombok.Getter;
+
 public final class MonsterStats
 {
+	@Getter
 	private final int id;
+	@Getter
 	private final String name;
+	@Getter
 	private final String version;
+	@Getter
 	private final int combatLevel;
+	@Getter
 	private final int hitpoints;
+	@Getter
 	private final int size;
+	@Getter
 	private final int defence;
+	@Getter
 	private final int magic;
+	@Getter
 	private final int offensiveMagic;
+	@Getter
 	private final MonsterDefences defensive;
+	@Getter
 	private final MonsterOffence offence;
+	@Getter
 	private final List<String> attributes;
 	private final Set<String> attributesLower;
+	@Getter
 	private final boolean slayerMonster;
+	@Getter
 	private final String weaknessElement;
+	@Getter
 	private final int weaknessSeverity;
+	@Getter
 	private final String nameLower;
 	private final boolean wilderness;
 	private final boolean revenant;
@@ -132,10 +150,6 @@ public final class MonsterStats
 	}
 
 	/** Lowercased monster name, cached (per-trial engine gates). */
-	public String getNameLower()
-	{
-		return nameLower;
-	}
 
 	/** Fought in the Wilderness (see WildernessMonsters) - cached, the
 	 * wilderness-weapon gate asks several times per DPS trial. */
@@ -193,10 +207,6 @@ public final class MonsterStats
 		return sb.toString();
 	}
 
-	public int getId()
-	{
-		return id;
-	}
 
 	/** Synthetic phase-variant ids live above this base (M-3 groups):
 	 * base + realId * 10 + styleOrdinal. */
@@ -210,73 +220,17 @@ public final class MonsterStats
 		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
 	}
 
-	public String getName()
-	{
-		return name;
-	}
 
-	public String getVersion()
-	{
-		return version;
-	}
 
-	public int getCombatLevel()
-	{
-		return combatLevel;
-	}
 
-	public int getHitpoints()
-	{
-		return hitpoints;
-	}
 
-	public int getSize()
-	{
-		return size;
-	}
 
-	public int getDefence()
-	{
-		return defence;
-	}
 
-	public int getMagic()
-	{
-		return magic;
-	}
 
-	public int getOffensiveMagic()
-	{
-		return offensiveMagic;
-	}
 
-	public MonsterDefences getDefensive()
-	{
-		return defensive;
-	}
 
-	public MonsterOffence getOffence()
-	{
-		return offence;
-	}
 
-	public List<String> getAttributes()
-	{
-		return attributes;
-	}
 
-	public boolean isSlayerMonster()
-	{
-		return slayerMonster;
-	}
 
-	public String getWeaknessElement()
-	{
-		return weaknessElement;
-	}
 
-	public int getWeaknessSeverity()
-	{
-		return weaknessSeverity;
-	}
 }
