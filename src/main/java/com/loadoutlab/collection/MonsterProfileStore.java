@@ -381,11 +381,16 @@ public class MonsterProfileStore
 			{
 				profile.exclusions.values().removeIf(s -> s == null || s.isEmpty());
 			}
+			// EVERY field participates (field bug 2026-07-18: sims was
+			// missing here, so a sims-only profile was judged empty and the
+			// retainAll below erased the sim in the same call that added it
+			// - "Sim here" appeared to do nothing).
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
 				&& (profile.filterItems == null || profile.filterItems.isEmpty())
-				&& (profile.exclusions == null || profile.exclusions.isEmpty());
+				&& (profile.exclusions == null || profile.exclusions.isEmpty())
+				&& (profile.sims == null || profile.sims.isEmpty());
 			if (!empty)
 			{
 				out.put(entry.getKey(), profile);

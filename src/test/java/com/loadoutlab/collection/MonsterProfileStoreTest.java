@@ -171,4 +171,25 @@ class MonsterProfileStoreTest
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
 		assertEquals("", fresh.noteFor(415));
 	}
+
+	@Test
+	@DisplayName("a sims-only profile survives the save (the Sim here field bug)")
+	void simsOnlyProfilePersists()
+	{
+		// Field bug 2026-07-18: save()'s empty-profile prune did not count
+		// sims, so a profile holding ONLY a sim was erased by the very call
+		// that added it - "Sim here" appeared to do nothing.
+		store.addSim(239, 22324, "Ghrazi rapier");
+		assertEquals(Map.of(22324, "Ghrazi rapier"), store.allSims(239));
+		assertEquals(Set.of(22324), store.simsFor(239));
+
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals(Map.of(22324, "Ghrazi rapier"), reloaded.allSims(239),
+			"the sim survives a config round-trip");
+
+		store.removeSim(239, 22324);
+		assertTrue(store.allSims(239).isEmpty());
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", "monsterProfiles"),
+			"an emptied sims profile prunes back to nothing");
+	}
 }
