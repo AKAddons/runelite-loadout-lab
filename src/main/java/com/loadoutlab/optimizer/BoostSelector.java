@@ -19,13 +19,8 @@ public final class BoostSelector
 	{
 	}
 
-	/** The best boost in the GAME per style - the BiS ceiling assumption. */
-	public static BoostProfile ceilingFor(CombatStyle style)
-	{
-		return ceilingFor(style, false);
-	}
-
-	/** F2P mode: members consumables do not exist on a free world - the
+	/** The best boost in the GAME per style - the BiS ceiling assumption.
+	 * F2P mode: members consumables do not exist on a free world - the
 	 * only boosts are the attack/strength potion pair (audit A3.5). */
 	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p)
 	{
@@ -42,17 +37,8 @@ public final class BoostSelector
 		}
 	}
 
-	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned)
-	{
-		return bestFor(style, owned, false);
-	}
-
-	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p)
-	{
-		return bestFor(style, owned, f2p, false);
-	}
-
-	/** Risk-capped wilderness searches never assume a heart (field spec
+	/** The best boost you can actually assume per style, given what you own.
+	 * Risk-capped wilderness searches never assume a heart (field spec
 	 * 2026-07-18): both hearts are tradeable and worth far more than any
 	 * sane risk cap, so the assumption falls back to the magic potion. */
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p,

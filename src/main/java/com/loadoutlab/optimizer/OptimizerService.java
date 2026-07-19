@@ -138,24 +138,6 @@ public class OptimizerService
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
 			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
-			ModeTrade modeTrade)
-		{
-			this(owned, overallBest, spec, gameSpec, boostLabel, gameBoostLabel,
-				incoming, gameIncoming, modeTrade, Collections.emptyList());
-		}
-
-		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
-			ModeTrade modeTrade, List<GearItem> bench)
-		{
-			this(owned, overallBest, spec, gameSpec, boostLabel, gameBoostLabel,
-				incoming, gameIncoming, modeTrade, bench, Collections.emptyList());
-		}
-
-		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
 			ModeTrade modeTrade, List<GearItem> bench, List<GearItem> gameBench)
 		{
 			this.bench = bench == null ? Collections.emptyList()
@@ -286,7 +268,7 @@ public class OptimizerService
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
 		{
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+			for (CombatStyle style : CombatStyle.concreteValues())
 			{
 				StyleResult hit = cache.get(styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell));
 				if (hit == null)
@@ -472,7 +454,7 @@ public class OptimizerService
 	{
 		String baseKey = baseKeyFor(monster, ctx);
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+			for (CombatStyle style : CombatStyle.concreteValues())
 			{
 				if (requestSeq.get() != ticket)
 				{
@@ -1082,6 +1064,36 @@ public class OptimizerService
 		return String.join(";", parts);
 	}
 
+	/** The cross-style single-swap candidate pool for a kit search: the
+	 * primary style's diff items PLUS the other carried styles' non-weapon
+	 * pieces, deduped by id - the diff between the per-mob BiS sets IS the
+	 * candidate list, so a generous budget can assemble the other style's
+	 * FULL set, not just its weapon. The other styles' weapons are excluded
+	 * because a weapon swap is a bundle, not a single. Shared by the kit
+	 * pass and the breakpoint-curve pass, which need the identical pool. */
+	private static List<GearItem> crossStylePool(Loadout base, CombatStyle primary,
+		Map<CombatStyle, Loadout> sharedByStyle,
+		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle)
+	{
+		List<GearItem> pool = new ArrayList<>(swapCandidates(base, bestsByStyle.get(primary)));
+		for (CombatStyle s : sharedByStyle.keySet())
+		{
+			if (s == primary)
+			{
+				continue;
+			}
+			for (GearItem item : swapCandidates(base, bestsByStyle.get(s)))
+			{
+				if (item.getSlot() != GearSlot.WEAPON
+					&& pool.stream().noneMatch(i -> i.getId() == item.getId()))
+				{
+					pool.add(item);
+				}
+			}
+		}
+		return pool;
+	}
+
 	/** Kit selection. A BIGGER bench is an EASIER problem (field insight
 	 * 2026-07-17): the ceiling is each mob wearing its own winning free
 	 * best, so first test that ideal - the union of every mob's winning
@@ -1091,16 +1103,6 @@ public class OptimizerService
 	 * marginal gain - "the most valuable swap item, then the 2nd" -
 	 * with cost-0 bundles (the spec weapon doubling as the other style's
 	 * weapon) fitting even a full bench. */
-	private KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
-		Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates,
-		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
-		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
-		List<MonsterStats> mobs, int slots, Map<String, Double> memo)
-	{
-		return chooseKit(calc, base, primary, singleCandidates, bundleCandidates,
-			reqsByStyle, bestsByStyle, mobs, slots, memo, null);
-	}
-
 	private KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
 		Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates,
 		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
@@ -1477,7 +1479,7 @@ public class OptimizerService
 		Map<CombatStyle, List<DpsResult>[]> ownedArrBy = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, List<DpsResult>[]> gameArrBy = new EnumMap<>(CombatStyle.class);
 		List<java.util.concurrent.Callable<Void>> optimizeTasks = new ArrayList<>();
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			// Mob-independent plan - MUST mirror computeAllStyles (levels,
 			// boost and labels depend on style + owned + real, not the mob).
@@ -1550,7 +1552,7 @@ public class OptimizerService
 			return null;
 		}
 		long tFanMs = (System.nanoTime() - tFanStart) / 1_000_000;
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			PlayerLevels styleLevels = styleLevelsBy.get(style);
 			PlayerLevels gameLevels = gameLevelsBy.get(style);
@@ -2047,27 +2049,8 @@ public class OptimizerService
 				}
 				DpsCalculator localCalc = new DpsCalculator();
 				Loadout base = sharedByStyle.get(primary);
-				// Singles: the primary's diff items PLUS the other carried
-				// styles' non-weapon pieces - the diff between the per-mob
-				// BiS sets IS the candidate list, so a generous budget can
-				// assemble the other style's FULL set, not just its weapon.
 				List<GearItem> singlePool =
-					new ArrayList<>(swapCandidates(base, bestsByStyle.get(primary)));
-				for (CombatStyle s : sharedByStyle.keySet())
-				{
-					if (s == primary)
-					{
-						continue;
-					}
-					for (GearItem item : swapCandidates(base, bestsByStyle.get(s)))
-					{
-						if (item.getSlot() != GearSlot.WEAPON
-							&& singlePool.stream().noneMatch(i -> i.getId() == item.getId()))
-						{
-							singlePool.add(item);
-						}
-					}
-				}
+					crossStylePool(base, primary, sharedByStyle, bestsByStyle);
 				GearItem primarySpec = specCarriedByStyle.get(primary);
 				GearItem primarySpecAmmo = specAmmoByStyle.get(primary);
 				int specSlots = (primarySpec != null ? 1 : 0) + (primarySpecAmmo != null ? 1 : 0);
@@ -2082,7 +2065,7 @@ public class OptimizerService
 				// same HP-weighted currency as the kit total.
 				KitAnswer kitFree = chooseKit(localCalc, base, primary, singlePool,
 					bundleCandidates(primary, base, null, sharedByStyle, bestsByStyle),
-					reqsByStyle, bestsByStyle, mobs, ctx.maxSwaps, memo);
+					reqsByStyle, bestsByStyle, mobs, ctx.maxSwaps, memo, null);
 				KitAnswer kit = kitFree;
 				boolean specKept = false;
 				double score = kitFree.total;
@@ -2090,7 +2073,8 @@ public class OptimizerService
 				{
 					KitAnswer kitSpec = chooseKit(localCalc, base, primary, singlePool,
 						bundleCandidates(primary, base, primarySpec, sharedByStyle, bestsByStyle),
-						reqsByStyle, bestsByStyle, mobs, Math.max(0, ctx.maxSwaps - specSlots), memo);
+						reqsByStyle, bestsByStyle, mobs, Math.max(0, ctx.maxSwaps - specSlots),
+						memo, null);
 					double specValue = 0;
 					List<GearItem> carriedSpec = carriedOf(kitSpec);
 					for (int j = 0; j < n; j++)
@@ -2174,22 +2158,7 @@ public class OptimizerService
 		if (wantCurve)
 		{
 			List<GearItem> curvePool =
-				new ArrayList<>(swapCandidates(base, bestsByStyle.get(bestPrimary)));
-			for (CombatStyle s : sharedByStyle.keySet())
-			{
-				if (s == bestPrimary)
-				{
-					continue;
-				}
-				for (GearItem item : swapCandidates(base, bestsByStyle.get(s)))
-				{
-					if (item.getSlot() != GearSlot.WEAPON
-						&& curvePool.stream().noneMatch(i -> i.getId() == item.getId()))
-					{
-						curvePool.add(item);
-					}
-				}
-			}
+				crossStylePool(base, bestPrimary, sharedByStyle, bestsByStyle);
 			List<double[]> raw = new ArrayList<>();
 			int curveSpecSlots = (specCarried != null ? 1 : 0) + (specAmmo != null ? 1 : 0);
 			chooseKit(calc, base, bestPrimary, curvePool,
