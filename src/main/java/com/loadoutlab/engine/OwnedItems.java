@@ -4,6 +4,7 @@ package com.loadoutlab.engine;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 
 public final class OwnedItems
 {
@@ -57,7 +58,7 @@ public final class OwnedItems
 				ids[count++] = entry.getKey();
 			}
 		}
-		java.util.Arrays.sort(ids, 0, count);
+		Arrays.sort(ids, 0, count);
 		int hash = count;
 		for (int i = 0; i < count; i++)
 		{

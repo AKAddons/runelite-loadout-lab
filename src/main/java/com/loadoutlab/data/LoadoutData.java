@@ -4,6 +4,13 @@ package com.loadoutlab.data;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Locale;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Comparator;
+import java.util.ArrayList;
 
 public final class LoadoutData
 {
@@ -28,10 +35,10 @@ public final class LoadoutData
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
 		this.variantToBase = Collections.unmodifiableMap(variantToBase);
-		java.util.EnumMap<GearSlot, List<GearItem>> bySlot = new java.util.EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, List<GearItem>> bySlot = new EnumMap<>(GearSlot.class);
 		for (GearSlot slot : GearSlot.values())
 		{
-			bySlot.put(slot, new java.util.ArrayList<>());
+			bySlot.put(slot, new ArrayList<>());
 		}
 		for (GearItem item : this.gearItems)
 		{
@@ -54,8 +61,8 @@ public final class LoadoutData
 	 */
 	public LoadoutData freeToPlayView()
 	{
-		java.util.List<GearItem> free = new java.util.ArrayList<>();
-		java.util.Map<Integer, GearItem> byId = new java.util.HashMap<>();
+		List<GearItem> free = new ArrayList<>();
+		Map<Integer, GearItem> byId = new HashMap<>();
 		for (GearItem g : gearItems)
 		{
 			if (!g.isMembers())
@@ -64,7 +71,7 @@ public final class LoadoutData
 				byId.put(g.getId(), g);
 			}
 		}
-		java.util.List<SpellStats> freeSpells = new java.util.ArrayList<>();
+		List<SpellStats> freeSpells = new ArrayList<>();
 		for (SpellStats spell : spells)
 		{
 			if ("standard".equalsIgnoreCase(spell.getSpellbook()))
@@ -90,7 +97,7 @@ public final class LoadoutData
 	 */
 	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned)
 	{
-		java.util.Map<Integer, Integer> result = new java.util.HashMap<>(owned);
+		Map<Integer, Integer> result = new HashMap<>(owned);
 		for (Map.Entry<Integer, Integer> entry : owned.entrySet())
 		{
 			Integer base = variantToBase.get(entry.getKey());
@@ -140,9 +147,9 @@ public final class LoadoutData
 			return Collections.emptyList();
 		}
 
-		java.util.ArrayList<MonsterStats> exact = new java.util.ArrayList<>();
-		java.util.ArrayList<MonsterStats> prefix = new java.util.ArrayList<>();
-		java.util.ArrayList<MonsterStats> contains = new java.util.ArrayList<>();
+		ArrayList<MonsterStats> exact = new ArrayList<>();
+		ArrayList<MonsterStats> prefix = new ArrayList<>();
+		ArrayList<MonsterStats> contains = new ArrayList<>();
 		for (MonsterStats monster : monsters)
 		{
 			String name = MonsterStats.normalizeQuery(monster.getName());
@@ -166,9 +173,9 @@ public final class LoadoutData
 		// and used to be the silent default for vorkath, the DT2 four, zuk
 		// and verzik). Stable sort - corpus order breaks ties, and every
 		// version stays reachable further down the hit list.
-		exact.sort(java.util.Comparator.comparingInt(m -> versionTier(m.getVersion())));
+		exact.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
 
-		java.util.ArrayList<MonsterStats> result = new java.util.ArrayList<>(limit);
+		ArrayList<MonsterStats> result = new ArrayList<>(limit);
 		addLimited(result, exact, limit);
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
@@ -182,7 +189,7 @@ public final class LoadoutData
 		{
 			return 1;
 		}
-		String v = version.toLowerCase(java.util.Locale.ROOT);
+		String v = version.toLowerCase(Locale.ROOT);
 		if (v.contains("post-quest"))
 		{
 			return 0;   // the everyday fight
@@ -210,15 +217,15 @@ public final class LoadoutData
 	 */
 	public List<GearItem> searchGear(String query, int limit)
 	{
-		String text = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
+		String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
 		if (text.isEmpty())
 		{
 			return Collections.emptyList();
 		}
 
-		java.util.ArrayList<GearItem> exact = new java.util.ArrayList<>();
-		java.util.ArrayList<GearItem> prefix = new java.util.ArrayList<>();
-		java.util.ArrayList<GearItem> contains = new java.util.ArrayList<>();
+		ArrayList<GearItem> exact = new ArrayList<>();
+		ArrayList<GearItem> prefix = new ArrayList<>();
+		ArrayList<GearItem> contains = new ArrayList<>();
 		for (GearItem item : gearItems)
 		{
 			String label = item.labelLower();
@@ -237,7 +244,7 @@ public final class LoadoutData
 			}
 		}
 
-		java.util.ArrayList<GearItem> result = new java.util.ArrayList<>(limit);
+		ArrayList<GearItem> result = new ArrayList<>(limit);
 		addLimited(result, exact, limit);
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
@@ -261,10 +268,10 @@ public final class LoadoutData
 	 * base plus every variant that canonicalizes to it - so a bank
 	 * highlight for "Abyssal whip" also lights the (or) version.
 	 */
-	public java.util.Set<Integer> equivalentIds(int itemId)
+	public Set<Integer> equivalentIds(int itemId)
 	{
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
-		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		Set<Integer> ids = new HashSet<>();
 		ids.add(itemId);
 		ids.add(base);
 		for (Map.Entry<Integer, Integer> entry : variantToBase.entrySet())

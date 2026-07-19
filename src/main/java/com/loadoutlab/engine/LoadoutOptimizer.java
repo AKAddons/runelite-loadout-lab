@@ -16,12 +16,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 
 public final class LoadoutOptimizer
 {
 	private static final int SLOT_LIMIT = 10;
 	private static final int WEAPON_LIMIT = 24;
 	private static final int BEAM_WIDTH = 96;
+	// Risk-capped hunts reserve beam slots for the LOWEST-RISK partials:
+	// score-only pruning kept only expensive high-dps lines, all of which
+	// bust the cap once the late slots land, and the beam died returning
+	// no set at all while a cheap compliant one existed (field bug
+	// 2026-07-18: KBD magic went empty after excluding the anti-dragon
+	// shield - the mystic/battlestaff line was pruned at slot two).
+	private static final int RISK_RESERVE = 8;
 	/**
 	 * Beam evaluation order: high-impact slots first so pruning is informed,
 	 * and BODY immediately before LEGS so paired set bonuses (crystal armour
@@ -506,9 +514,11 @@ public final class LoadoutOptimizer
 						// stay within budget. Monotone (adding items never
 						// lowers risk), so pruning partial states is safe.
 						long riskGp = 0;
+						long potentialRiskGp = 0;
 						if (request.isRiskConstrained())
 						{
 							riskGp = PvpRisk.riskGp(loadout, null, request.getMaxTradeables());
+							potentialRiskGp = PvpRisk.riskGp(loadout, null, 0);
 							// A rebuild-burdened item (salve line, imbued
 							// gear) may never ride UNPROTECTED in a low-risk
 							// set, no matter the cap (field request) -
@@ -532,7 +542,7 @@ public final class LoadoutOptimizer
 						// pure cost tie-break picked snakeskin boots over
 						// pegasians. Never outweighs a real DPS difference.
 						next.add(new SearchState(gear, cost,
-							weightedScore(request, score, loadout, incoming), riskGp));
+							weightedScore(request, score, loadout, incoming), riskGp, potentialRiskGp));
 					}
 				}
 				// On DPS ties prefer less risk (an untradeable that crumbles
@@ -544,7 +554,7 @@ public final class LoadoutOptimizer
 				next.sort(Comparator.comparingDouble(SearchState::getScore).reversed()
 					.thenComparingLong(SearchState::getRiskGp)
 					.thenComparingInt(SearchState::getCost));
-				states = next.size() > BEAM_WIDTH ? new ArrayList<>(next.subList(0, BEAM_WIDTH)) : next;
+				states = cutBeam(next, request.isRiskConstrained());
 				if (states.isEmpty())
 				{
 					break;
@@ -922,6 +932,38 @@ public final class LoadoutOptimizer
 		return rows;
 	}
 
+	/** Beam cut. Risk-capped hunts swap the tail of the score cut for the
+	 * lowest-risk survivors: risk grows monotonically as slots fill, so a
+	 * beam of pure score-leaders can march everyone past the cap and die
+	 * even though a cheap compliant set exists. The reserve guarantees a
+	 * low-risk line reaches the last slot. Ties keep score order (next is
+	 * score-sorted and the sort is stable). */
+	private static List<SearchState> cutBeam(List<SearchState> next, boolean riskConstrained)
+	{
+		if (next.size() <= BEAM_WIDTH)
+		{
+			return next;
+		}
+		if (!riskConstrained)
+		{
+			return new ArrayList<>(next.subList(0, BEAM_WIDTH));
+		}
+		// The reserve rides ON TOP of the score cut (96 + 8) rather than
+		// displacing its tail: swapping out ranks 89-96 measurably cost
+		// dps on lines whose winner grew from a mid-rank seed.
+		List<SearchState> kept = new ArrayList<>(next.subList(0, BEAM_WIDTH));
+		List<SearchState> rest = new ArrayList<>(next.subList(BEAM_WIDTH, next.size()));
+		// Reserve by TOTAL droppable value, not current unprotected risk:
+		// early partials all tie at riskGp 0 (everything worn so far rides
+		// the kept slots), and a riskGp sort re-kept the score leaders -
+		// the genuinely cheap line still starved (field follow-up
+		// 2026-07-18: KBD magic offered ancient staff while the compliant
+		// dragon hunter wand + cheap-robes line was beam-pruned).
+		rest.sort(Comparator.comparingLong(SearchState::getPotentialRiskGp));
+		kept.addAll(rest.subList(0, Math.min(RISK_RESERVE, rest.size())));
+		return kept;
+	}
+
 	/** Dragonfire gear mode: the shield MUST protect (no empty slot). */
 	private static List<GearItem> protectiveShieldsOnly(List<GearItem> candidates)
 	{
@@ -1073,11 +1115,11 @@ public final class LoadoutOptimizer
 			: PvpRisk.riskGp(Loadout.adopting(gear), null, request.getMaxTradeables());
 	}
 
-	private static java.util.Set<Integer> pinnedIds(OptimizationRequest request)
+	private static Set<Integer> pinnedIds(OptimizationRequest request)
 	{
 		return request.getPinnedItems().isEmpty()
-			? java.util.Collections.emptySet()
-			: new java.util.HashSet<>(request.getPinnedItems().values());
+			? Collections.emptySet()
+			: new HashSet<>(request.getPinnedItems().values());
 	}
 
 	/** Test seam: RevenantPoolTest pins the conditional pool boosts. */
@@ -1192,6 +1234,14 @@ public final class LoadoutOptimizer
 
 	private static boolean allowedByMode(OptimizationRequest request, GearItem item)
 	{
+		// THE GAUNTLET (field spec 2026-07-18): fights inside are locked
+		// to the raid-crafted tiers - mainland gear never enters, and
+		// ownership is irrelevant because everything is made in the run.
+		String gauntlet = GauntletRules.family(request.getMonster());
+		if (gauntlet != null)
+		{
+			return GauntletRules.allowed(gauntlet, item);
+		}
 		if (!item.isTradeable())
 		{
 			return canUseUntradeable(request, item);
@@ -1315,7 +1365,7 @@ public final class LoadoutOptimizer
 				item.getDefensive().getRanged(),
 			};
 			this.hash = (category.hashCode() * 31 + (twoHanded ? 1 : 0)) * 31
-				+ java.util.Arrays.hashCode(stats);
+				+ Arrays.hashCode(stats);
 		}
 
 		@Override
@@ -1327,7 +1377,7 @@ public final class LoadoutOptimizer
 			}
 			StatKey that = (StatKey) other;
 			return hash == that.hash && twoHanded == that.twoHanded
-				&& category.equals(that.category) && java.util.Arrays.equals(stats, that.stats);
+				&& category.equals(that.category) && Arrays.equals(stats, that.stats);
 		}
 
 		@Override
@@ -1447,18 +1497,25 @@ public final class LoadoutOptimizer
 		private final int cost;
 		private final double score;
 		private final long riskGp;
+		// Total droppable value with NOTHING protected. The RISK_RESERVE
+		// sorts on this, not riskGp: early partials all tie at riskGp 0
+		// (the first worn items ride the kept slots), so a riskGp reserve
+		// just re-kept the score leaders and the cheap line still starved.
+		private final long potentialRiskGp;
 
 		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost)
 		{
-			this(gear, cost, 0.0, 0L);
+			this(gear, cost, 0.0, 0L, 0L);
 		}
 
-		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score, long riskGp)
+		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost, double score, long riskGp,
+			long potentialRiskGp)
 		{
 			this.gear = gear;
 			this.cost = cost;
 			this.score = score;
 			this.riskGp = riskGp;
+			this.potentialRiskGp = potentialRiskGp;
 		}
 
 		private int getCost()
@@ -1474,6 +1531,11 @@ public final class LoadoutOptimizer
 		private long getRiskGp()
 		{
 			return riskGp;
+		}
+
+		private long getPotentialRiskGp()
+		{
+			return potentialRiskGp;
 		}
 	}
 }

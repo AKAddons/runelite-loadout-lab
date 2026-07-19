@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import net.runelite.client.config.ConfigManager;
+import java.util.Collections;
 
 /**
  * The persistent "what I own" ledger - Loadout Lab's first differentiator.
@@ -148,7 +149,7 @@ public class CollectionLedger
 	/** One source's current snapshot, read-only (itemId → quantity). */
 	public Map<Integer, Integer> snapshot(Source source)
 	{
-		return java.util.Collections.unmodifiableMap(snapshots.get(source));
+		return Collections.unmodifiableMap(snapshots.get(source));
 	}
 
 	/** Merged itemId → total quantity across all sources. */

@@ -4,6 +4,9 @@ package com.loadoutlab.data;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 
 public final class MonsterStats
 {
@@ -19,7 +22,7 @@ public final class MonsterStats
 	private final MonsterDefences defensive;
 	private final MonsterOffence offence;
 	private final List<String> attributes;
-	private final java.util.Set<String> attributesLower;
+	private final Set<String> attributesLower;
 	private final boolean slayerMonster;
 	private final String weaknessElement;
 	private final int weaknessSeverity;
@@ -76,7 +79,7 @@ public final class MonsterStats
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
-		java.util.HashSet<String> lower = new java.util.HashSet<>();
+		HashSet<String> lower = new HashSet<>();
 		for (String value : this.attributes)
 		{
 			if (value != null)
@@ -90,6 +93,42 @@ public final class MonsterStats
 		this.nameLower = this.name.toLowerCase(Locale.ROOT);
 		this.wilderness = WildernessMonsters.containsName(this.nameLower);
 		this.revenant = this.nameLower.startsWith("revenant");
+	}
+
+	/**
+	 * A synthetic per-phase variant (M-3 groups): the same stat sheet under
+	 * a new id + version label, with an immunity attribute the engine
+	 * honors ("immune_melee"...). Tormented demons' shield rotation is the
+	 * flagship: one variant per shielded style, so a roster shows the best
+	 * set for each phase. The NAME is preserved - name-keyed rules (the
+	 * TD damage reduction, boss overrides) keep applying.
+	 */
+	/** Same sheet under a different version label (load-time
+	 * normalization of quest/post-quest noise). */
+	public MonsterStats withVersion(String newVersion)
+	{
+		return new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, attributes,
+			slayerMonster, weaknessElement, weaknessSeverity);
+	}
+
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
+	{
+		return immuneVariant(syntheticId, versionLabel,
+			Collections.singletonList(immuneAttribute));
+	}
+
+	/** Multi-immunity variant: a phase can lock out SEVERAL styles at
+	 * once (Kalphite Queen's first form prays off magic AND ranged; a
+	 * Nylocas form takes only its own style). */
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel,
+		List<String> immuneAttributes)
+	{
+		List<String> extended = new ArrayList<>(attributes);
+		extended.addAll(immuneAttributes);
+		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, extended,
+			slayerMonster, weaknessElement, weaknessSeverity);
 	}
 
 	/** Lowercased monster name, cached (per-trial engine gates). */
@@ -157,6 +196,18 @@ public final class MonsterStats
 	public int getId()
 	{
 		return id;
+	}
+
+	/** Synthetic phase-variant ids live above this base (M-3 groups):
+	 * base + realId * 10 + styleOrdinal. */
+	public static final int SYNTHETIC_ID_BASE = 9_000_000;
+
+	/** The id user-profile data (pins, exclusions, notes) attaches to -
+	 * a synthetic phase variant maps back to its real monster, so a
+	 * profile set on the plain mob follows it into groups. */
+	public int profileId()
+	{
+		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
 	}
 
 	public String getName()

@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
 import static com.loadoutlab.ui.MascotArt.JUICE;
-import static com.loadoutlab.ui.MascotArt.LIMB;
 import static com.loadoutlab.ui.MascotArt.SCALE;
 
 /**

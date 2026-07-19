@@ -281,6 +281,41 @@ public interface LoadoutLabConfig extends Config
 		return "75k";
 	}
 
+	@ConfigItem(
+		keyName = "defaultOnTask",
+		name = "Default searches to On task",
+		description = "Seed every new result with the On task toggle enabled"
+			+ " (slayer-only monsters always start on-task regardless)",
+		section = controls,
+		position = 92
+	)
+	default boolean defaultOnTask()
+	{
+		return false;
+	}
+
+	enum AntifireDefault
+	{
+		DETECT,
+		NONE,
+		REGULAR,
+		SUPER
+	}
+
+	@ConfigItem(
+		keyName = "defaultAntifire",
+		name = "Default antifire",
+		description = "Seed dragonfire searches with this antifire mode:"
+			+ " Detect picks the best potion your collection has, None"
+			+ " computes gear-only protection",
+		section = controls,
+		position = 93
+	)
+	default AntifireDefault defaultAntifire()
+	{
+		return AntifireDefault.DETECT;
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+import java.util.Collections;
 
 public final class DataService
 {
@@ -32,7 +33,7 @@ public final class DataService
 	public LoadoutData load()
 	{
 		List<GearItem> gear = loadGear();
-		List<MonsterStats> monsters = loadMonsters();
+		List<MonsterStats> monsters = normalizeQuestVersions(loadMonsters());
 		List<SpellStats> spells = loadSpells();
 		Map<Integer, GearItem> gearById = new HashMap<>();
 		for (GearItem item : gear)
@@ -183,9 +184,69 @@ public final class DataService
 
 	private static GearRequirements requirementsFor(int id, String name, String version, Map<Integer, Map<String, Integer>> skillRequirements)
 	{
-		Map<String, Integer> skills = skillRequirements.getOrDefault(id, java.util.Collections.emptyMap());
+		Map<String, Integer> skills = skillRequirements.getOrDefault(id, Collections.emptyMap());
 		Set<String> quests = new LinkedHashSet<>(QuestUnlocks.forItem(id, name, version));
 		return skills.isEmpty() && quests.isEmpty() ? GearRequirements.NONE : new GearRequirements(skills, quests);
+	}
+
+	/** Version-label normalization (field spec 2026-07-18): the noise
+	 * tokens go ("Awake"; "Post-quest" becomes the bare name - the
+	 * everyday fight owns it), quest-only rows read "QUEST" loudly
+	 * (either the literal Quest token, or - for a two-row pair like
+	 * Vorkath's 'Dragon Slayer II' next to 'Post-quest' - the sibling
+	 * that is not the post-quest fight). versionTier already sorts
+	 * anything containing "quest" to the bottom of a bare-name search. */
+	static List<MonsterStats> normalizeQuestVersions(List<MonsterStats> monsters)
+	{
+		Map<String, List<MonsterStats>> byName = new LinkedHashMap<>();
+		for (MonsterStats monster : monsters)
+		{
+			byName.computeIfAbsent(monster.getNameLower(), k -> new ArrayList<>()).add(monster);
+		}
+		List<MonsterStats> out = new ArrayList<>(monsters.size());
+		for (List<MonsterStats> group : byName.values())
+		{
+			boolean pairWithPostQuest = group.size() == 2 && group.stream()
+				.anyMatch(m -> m.getVersion().toLowerCase(Locale.ROOT).contains("post-quest"));
+			for (MonsterStats monster : group)
+			{
+				String version = monster.getVersion();
+				if (version == null || version.isEmpty())
+				{
+					out.add(monster);
+					continue;
+				}
+				List<String> kept = new ArrayList<>();
+				boolean quest = false;
+				for (String token : version.split(",\\s*"))
+				{
+					if (token.equalsIgnoreCase("awake") || token.equalsIgnoreCase("post-quest"))
+					{
+						continue;
+					}
+					if (token.equalsIgnoreCase("quest"))
+					{
+						quest = true;
+						continue;
+					}
+					kept.add(token);
+				}
+				if (pairWithPostQuest && !quest
+					&& !version.toLowerCase(Locale.ROOT).contains("post-quest"))
+				{
+					// The non-post-quest half of the pair IS the quest fight.
+					quest = true;
+					kept.clear();
+				}
+				String normalized = String.join(", ", kept);
+				if (quest)
+				{
+					normalized = normalized.isEmpty() ? "QUEST" : normalized + ", QUEST";
+				}
+				out.add(normalized.equals(version) ? monster : monster.withVersion(normalized));
+			}
+		}
+		return out;
 	}
 
 	private List<MonsterStats> loadMonsters()
@@ -604,7 +665,7 @@ public final class DataService
 
 	private static boolean knownSlayerMonster(String name)
 	{
-		String normalized = name == null ? "" : name.toLowerCase(java.util.Locale.ROOT);
+		String normalized = name == null ? "" : name.toLowerCase(Locale.ROOT);
 		return normalized.contains("aberrant spectre")
 			|| normalized.contains("abyssal demon")
 			|| normalized.contains("banshee")

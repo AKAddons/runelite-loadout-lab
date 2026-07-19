@@ -2,7 +2,6 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.MonsterStats;
-import java.util.Locale;
 import java.util.Set;
 
 /**

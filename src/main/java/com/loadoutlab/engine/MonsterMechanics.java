@@ -1,6 +1,5 @@
 package com.loadoutlab.engine;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.loadoutlab.data.GearItem;
@@ -12,7 +11,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
@@ -44,16 +42,16 @@ public final class MonsterMechanics
 			InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
 		{
 			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			fill(root, "immuneMagic", IMMUNE_MAGIC);
-			fill(root, "immuneRanged", IMMUNE_RANGED);
-			fill(root, "immuneMelee", IMMUNE_MELEE);
-			fill(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
-			fill(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
-			fill(root, "zulrah", ZULRAH);
-			fill(root, "vespula", VESPULA);
-			fill(root, "guardians", GUARDIANS);
-			fill(root, "tekton", TEKTON);
-			fill(root, "iceDemon", ICE_DEMON);
+			com.loadoutlab.data.JsonResources.ints(root, "immuneMagic", IMMUNE_MAGIC);
+			com.loadoutlab.data.JsonResources.ints(root, "immuneRanged", IMMUNE_RANGED);
+			com.loadoutlab.data.JsonResources.ints(root, "immuneMelee", IMMUNE_MELEE);
+			com.loadoutlab.data.JsonResources.ints(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
+			com.loadoutlab.data.JsonResources.ints(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
+			com.loadoutlab.data.JsonResources.ints(root, "zulrah", ZULRAH);
+			com.loadoutlab.data.JsonResources.ints(root, "vespula", VESPULA);
+			com.loadoutlab.data.JsonResources.ints(root, "guardians", GUARDIANS);
+			com.loadoutlab.data.JsonResources.ints(root, "tekton", TEKTON);
+			com.loadoutlab.data.JsonResources.ints(root, "iceDemon", ICE_DEMON);
 		}
 		catch (Exception ex)
 		{
@@ -61,16 +59,6 @@ public final class MonsterMechanics
 		}
 	}
 
-	private static void fill(JsonObject root, String key, Set<Integer> target)
-	{
-		if (root.has(key))
-		{
-			for (JsonElement e : root.getAsJsonArray(key))
-			{
-				target.add(e.getAsInt());
-			}
-		}
-	}
 
 	private MonsterMechanics()
 	{
@@ -82,6 +70,12 @@ public final class MonsterMechanics
 		if (monster == null)
 		{
 			return false;
+		}
+		// Data-driven immunity (synthetic group variants - the tormented
+		// demon shield phases): the attribute wins before the id lists.
+		if (monster.hasAttribute("immune_" + style.name().toLowerCase(Locale.ROOT)))
+		{
+			return true;
 		}
 		switch (style)
 		{
@@ -98,6 +92,12 @@ public final class MonsterMechanics
 		if (monster == null)
 		{
 			return false;
+		}
+		// Data-driven immunity (synthetic group variants) gates the
+		// calculator too - no loadout reaches a shielded style.
+		if (monster.hasAttribute("immune_" + style.name().toLowerCase(Locale.ROOT)))
+		{
+			return true;
 		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();

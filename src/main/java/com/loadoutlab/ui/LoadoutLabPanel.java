@@ -19,6 +19,7 @@ import com.loadoutlab.engine.MonsterMechanics;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
+import com.loadoutlab.optimizer.OptimizerService;
 import com.loadoutlab.optimizer.OptimizerService.ModeTrade;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BasicStroke;
@@ -41,8 +42,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +76,24 @@ import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.util.LinkBrowser;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.api.gameval.SpriteID;
+import javax.swing.KeyStroke;
+import javax.swing.JTextArea;
+import javax.swing.JSlider;
+import javax.swing.JMenu;
+import javax.swing.JDialog;
+import javax.swing.JComponent;
+import javax.swing.Icon;
+import java.util.Random;
+import java.util.Objects;
+import java.util.Locale;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.awt.Window;
+import java.awt.Point;
+import java.awt.Dialog;
+import java.awt.Container;
 
 /**
  * v0.1 panel: search a monster, see your best OWNED set per combat style -
@@ -98,16 +115,18 @@ public class LoadoutLabPanel extends PluginPanel
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone);
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			boolean raidBoost, Runnable onDone);
 
 		/** Roster compute: ONE shared set per style across the mobs, with
 		 * per-mob numbers delivered via showRosterResults. Default no-op
 		 * keeps the interface functional for test lambdas - the plugin's
 		 * production hook overrides it. */
-		default void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
+		default void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, Runnable onDone)
+			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			boolean raidBoost, Runnable onDone)
 		{
 			onDone.run();
 		}
@@ -161,6 +180,9 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Seeds for every NEW result's parameter zone (settings panel). */
 		public final String defaultUpgradeBudget;
 		public final String defaultRiskCap;
+		public final boolean defaultOnTask;
+		/** -1 = detect from the collection, else the antifire mode. */
+		public final int defaultAntifireMode;
 
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
@@ -168,6 +190,34 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean wildyRisk, boolean showInBank, boolean filterBank,
 			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
 		{
+			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
+				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
+				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
+				defaultRiskCap, false, -1);
+		}
+
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
+			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
+			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
+			boolean defaultOnTask)
+		{
+			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
+				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
+				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
+				defaultRiskCap, defaultOnTask, -1);
+		}
+
+		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
+			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
+			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
+			boolean wildyRisk, boolean showInBank, boolean filterBank,
+			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
+			boolean defaultOnTask, int defaultAntifireMode)
+		{
+			this.defaultAntifireMode = defaultAntifireMode;
+			this.defaultOnTask = defaultOnTask;
 			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
 			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
 			this.maxHit = maxHit;
@@ -300,6 +350,39 @@ public class LoadoutLabPanel extends PluginPanel
 		default void removeMobExclusion(int monsterId, String scope, int itemId)
 		{
 		}
+
+		/** Per-mob sims (id -> add-time name): counted as owned for THIS
+		 * mob only - the local twin of the global simmed items. */
+		default Map<Integer, String> allMobSims(int monsterId)
+		{
+			return Map.of();
+		}
+
+		default void simForMob(int monsterId, int itemId, String name)
+		{
+		}
+
+		default void removeMobSim(int monsterId, int itemId)
+		{
+		}
+
+		/** Whole-group twins (field request 2026-07-18): the same write on
+		 * every group member, undoable as ONE action. */
+		default void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
+		{
+			for (int id : monsterIds)
+			{
+				excludeForMob(id, scope, itemId);
+			}
+		}
+
+		default void simForMobs(java.util.List<Integer> monsterIds, int itemId, String name)
+		{
+			for (int id : monsterIds)
+			{
+				simForMob(id, itemId, name);
+			}
+		}
 	}
 
 	/** Open the native chatbox item search; the pick (id, name) returns
@@ -355,7 +438,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * At-hand sources (equipped/inventory/bank) are deliberately absent:
 	 * no palette entry = no dot and no legend row - only gear needing a
 	 * fetch trip gets marked, so the grid stays quiet for bank-only sets. */
-	private static final Map<String, Color> SOURCE_COLORS = new java.util.LinkedHashMap<>();
+	private static final Map<String, Color> SOURCE_COLORS = new LinkedHashMap<>();
 	static
 	{
 		SOURCE_COLORS.put("looting bag", new Color(180, 130, 80));
@@ -368,7 +451,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Sources that appear in the CURRENT results - the legend shows
 	 * exactly these, never the full palette. */
-	private final Set<String> usedSources = new java.util.LinkedHashSet<>();
+	private final Set<String> usedSources = new LinkedHashSet<>();
 
 	/** Cell border language: gold = your item IS the game best, blue = the
 	 * spec cell (matches the in-game spec orb), grey = owned/empty. */
@@ -426,7 +509,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel excludeCountChip = new JLabel();
 	private final JLabel dreamCountChip = new JLabel();
 	private final JLabel noteHeader = new JLabel();
-	private final javax.swing.JTextArea noteArea = new javax.swing.JTextArea();
+	private final JTextArea noteArea = new JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
 	private DisplayOptions displayOptions = DisplayOptions.all();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
@@ -435,8 +518,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final Color POSTIT_FG = new Color(215, 205, 160);
 
 	private final JTextField searchField = new JTextField();
-	private final DefaultListModel<MonsterStats> monsterModel = new DefaultListModel<>();
-	private final JList<MonsterStats> monsterList = new JList<>(monsterModel);
+	/** Search hits: MonsterStats rows and MonsterGroups.MonsterGroup rows
+	 * (M-3) share the list - the renderer and selection handler branch. */
+	private final DefaultListModel<Object> monsterModel = new DefaultListModel<>();
+	private final JList<Object> monsterList = new JList<>(monsterModel);
+	private final List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
 	private final JScrollPane monsterScroll;
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
@@ -471,7 +557,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JPanel resultsPanel = new JPanel();
 	private final JLabel statusLabel = new JLabel(" ");
 	/** The weighted-random source the roster draws each compute's mood from. */
-	private static final java.util.Random MASCOT_MOOD = new java.util.Random();
+	private static final Random MASCOT_MOOD = new Random();
 	/** RuneLite developer mode: unlocks the resting animation gallery. */
 	private boolean developerMode;
 	private final Timer searchDebounce;
@@ -491,7 +577,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private IncomingDpsCalculator.Result renderingIncoming;
 	/** The rendering card's assume chips (prayer + boost icons), stashed by
 	 * styleCard for the stat panel (EDT-only render state). */
-	private javax.swing.JComponent renderingChips;
+	private JComponent renderingChips;
 	/** Whether the card being rendered is the BiS side of the toggle. */
 	private boolean renderingBis;
 	/** The lensed mob's curated mechanics note for the stat panel's (i). */
@@ -502,6 +588,23 @@ public class LoadoutLabPanel extends PluginPanel
 	 * weapon competing for kept slots, and how many are kept. Null spec
 	 * flag = no risk line (not wilderness / option off / BiS view). */
 	private boolean renderingRiskLine;
+	private List<Integer> renderingRiskConsumables = Collections.emptyList();
+
+	/** Every id consumableIds() can emit - the plugin prefetches their GE
+	 * prices ON THE CLIENT THREAD per compute (ItemManager.getItemPrice
+	 * resolves compositions and asserts off-thread; field crash
+	 * 2026-07-18) and hands the panel this cache for EDT rendering. */
+	public static final int[] CONSUMABLE_PRICE_IDS = {
+		20996, 20992, 12695, 2428, 113, 11722, 2444, 11726, 3040,
+		27641, 20724, 2452, 21978};
+	private volatile Map<Integer, Long> consumablePrices =
+		Collections.emptyMap();
+
+	public void setConsumablePrices(Map<Integer, Long> prices)
+	{
+		this.consumablePrices = prices == null
+			? Collections.emptyMap() : prices;
+	}
 	/** The upgrade-cost line renders in the stat panel (Yours view). */
 	private boolean renderingUpgradeLine;
 	private GearItem renderingRiskSpecWeapon;
@@ -518,13 +621,13 @@ public class LoadoutLabPanel extends PluginPanel
 		 * these mobs, with the mob list acting as an informational lens
 		 * (Step C). Step A keeps it at exactly one mob, so a single-mob
 		 * result is pixel-identical to before. */
-		final java.util.List<MonsterStats> mobs = new java.util.ArrayList<>();
+		final List<MonsterStats> mobs = new ArrayList<>();
 		/** Which mob's numbers show beneath the shared set (the lens). */
 		int lensIndex;
 		Map<CombatStyle, StyleResult> results;
 		/** Roster answers, index-aligned with mobs; results above is the
 		 * LENSED element. Null while computing or for legacy single-mob. */
-		java.util.List<Map<CombatStyle, StyleResult>> perMobResults;
+		List<Map<CombatStyle, StyleResult>> perMobResults;
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
 		boolean noteCollapsed = true;
@@ -557,6 +660,34 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean assumeBestPrayer = true;
 		/** Assume potion boosts (default) - off computes unboosted. */
 		boolean assumeBoosts = true;
+		/** The INVENTORY budget: carried items beyond the worn set, the
+		 * spec weapon included. Defaults to 1 for singles/pairs, 3 for
+		 * rosters of 3+ mobs, and a group's own preset (raids: 8) when it
+		 * has one (field decisions 2026-07-17). */
+		int maxSwaps = 1;
+		/** What this entry's default currently is - the chip highlights
+		 * only a value that differs from it. */
+		int inventoryDefault = 1;
+		/** True once the user picked an Inventory value - the roster
+		 * default never overrides an explicit choice. */
+		boolean inventoryTouched;
+		/** Assume the raid-supplied boost (CoX overload+, ToA salts);
+		 * off = the bank's own potions as a backup. */
+		boolean raidBoost = true;
+		/** Nullable: the owned kit's inventory breakpoint curve. */
+		OptimizerService.KitCurve kitCurve;
+
+		/** Re-seed the roster default (a group preset raises the floor):
+		 * never shrinks, never overrides an explicit choice. */
+		void seedInventoryDefault(int preset)
+		{
+			inventoryDefault = Math.max(inventoryDefault,
+				Math.max(preset, mobs.size() >= 3 ? 3 : 1));
+			if (!inventoryTouched && maxSwaps < inventoryDefault)
+			{
+				maxSwaps = inventoryDefault;
+			}
+		}
 
 		ResultEntry(MonsterStats monster)
 		{
@@ -601,10 +732,18 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The page: an ordered list of results. M-1 keeps it at 0..1 entries -
 	 * a single-mob page renders pixel-identical to the old single view. */
-	private final java.util.List<ResultEntry> page = new java.util.ArrayList<>();
+	private final List<ResultEntry> page = new ArrayList<>();
 	/** The entry the panel-global affordances (toggles, notes, bank tools)
 	 * act on. With a one-entry page this is always page.get(0). */
 	private ResultEntry active;
+	/** Async wiki thumbnails for the mob rows (null in tests - rows keep
+	 * their text-only look). */
+	private MonsterIcons monsterIcons;
+
+	public void setMonsterIcons(MonsterIcons monsterIcons)
+	{
+		this.monsterIcons = monsterIcons;
+	}
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -617,6 +756,7 @@ public class LoadoutLabPanel extends PluginPanel
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
+		this.groups = com.loadoutlab.data.MonsterGroups.load(data);
 		this.bankFilter = bankFilter;
 		this.protectOnlyToggle = protectOnlyToggle;
 		this.data = data;
@@ -697,7 +837,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
-		JPanel headerButtons = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 2, 0));
+		JPanel headerButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 		headerButtons.setOpaque(false);
 		headerButtons.add(undoButton);
 		headerButtons.add(redoButton);
@@ -761,7 +901,17 @@ public class LoadoutLabPanel extends PluginPanel
 				int index, boolean isSelected, boolean cellHasFocus)
 			{
 				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				setText(((MonsterStats) value).label());
+				if (value instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				{
+					// Group hits wear the accent - they expand into a
+					// whole roster, not a single mob.
+					setText(((com.loadoutlab.data.MonsterGroups.MonsterGroup) value).label());
+					setForeground(isSelected ? Color.WHITE : ACCENT);
+				}
+				else
+				{
+					setText(((MonsterStats) value).label());
+				}
 				return this;
 			}
 		});
@@ -933,7 +1083,13 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
 			{
-				select(monsterList.getSelectedValue());
+				Object hit = monsterList.getSelectedValue();
+				if (hit instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				{
+					selectGroup((com.loadoutlab.data.MonsterGroups.MonsterGroup) hit);
+					return;
+				}
+				select((MonsterStats) hit);
 			}
 		});
 
@@ -1227,6 +1383,11 @@ public class LoadoutLabPanel extends PluginPanel
 			revalidate();
 			return;
 		}
+		for (com.loadoutlab.data.MonsterGroups.MonsterGroup group
+			: com.loadoutlab.data.MonsterGroups.search(groups, query, 3))
+		{
+			monsterModel.addElement(group);
+		}
 		for (MonsterStats m : data.searchMonsters(query, SEARCH_LIMIT))
 		{
 			monsterModel.addElement(m);
@@ -1291,11 +1452,11 @@ public class LoadoutLabPanel extends PluginPanel
 			applySelection(monster);
 			return;
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
-			private java.util.List<ResultEntry> pageAfter;
+			private List<ResultEntry> pageAfter;
 			private ResultEntry activeAfter;
 
 			@Override
@@ -1304,7 +1465,7 @@ public class LoadoutLabPanel extends PluginPanel
 				if (pageAfter == null)
 				{
 					applySelection(monster);
-					pageAfter = new java.util.ArrayList<>(page);
+					pageAfter = new ArrayList<>(page);
 					activeAfter = active;
 				}
 				else
@@ -1342,7 +1503,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Reinstate a captured page (entry OBJECTS - parameters and results
 	 * intact); entries whose results were never computed recompute. */
-	private void restorePage(java.util.List<ResultEntry> entries, ResultEntry newActive)
+	private void restorePage(List<ResultEntry> entries, ResultEntry newActive)
 	{
 		page.clear();
 		page.addAll(entries);
@@ -1356,6 +1517,104 @@ public class LoadoutLabPanel extends PluginPanel
 				computeEntry(entry);
 			}
 		}
+	}
+
+	/** A group pick (M-3): the roster expands into ONE multi-mob result -
+	 * recorded as a back/forward step exactly like a monster pick. */
+	private void selectGroup(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	{
+		if (historyControl == null || (selectedMonster == null && !hadSelection))
+		{
+			applyGroupSelection(group);
+			return;
+		}
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
+		final ResultEntry activeBefore = active;
+		historyControl.execute(new com.loadoutlab.command.Command()
+		{
+			private List<ResultEntry> pageAfter;
+			private ResultEntry activeAfter;
+
+			@Override
+			public boolean apply()
+			{
+				if (pageAfter == null)
+				{
+					applyGroupSelection(group);
+					pageAfter = new ArrayList<>(page);
+					activeAfter = active;
+				}
+				else
+				{
+					// Redo reinstates the SAME entries - results intact.
+					restorePage(pageAfter, activeAfter);
+				}
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				restorePage(pageBefore, activeBefore);
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "vs " + group.getName();
+			}
+		});
+	}
+
+	/** The group expansion: a fresh page holding one roster entry. */
+	private void applyGroupSelection(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	{
+		suppressSearchEvents = true;
+		try
+		{
+			searchField.setText("");
+		}
+		finally
+		{
+			suppressSearchEvents = false;
+		}
+		monsterModel.clear();
+		monsterScroll.setVisible(false);
+		hadSelection = true;
+		page.clear();
+		MonsterStats first = group.getMobs().get(0);
+		selectedMonster = first;
+		active = new ResultEntry(first);
+		for (int i = 1; i < group.getMobs().size(); i++)
+		{
+			active.addMob(group.getMobs().get(i));
+		}
+		active.seedInventoryDefault(group.getInventory());
+		// Parameter seeding mirrors a single pick, anchored on the first
+		// mob (the roster compute anchors exclusions/pins there too).
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first) || displayOptions.defaultOnTask;
+		active.antifireMode = resolveDefaultAntifire(active);
+		active.upgradeBudget = displayOptions.upgradeBudget
+			? displayOptions.defaultUpgradeBudget : "";
+		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
+		page.add(active);
+		syncControlsFromActive();
+		bankShowing = false;
+		bankFiltering = false;
+		lastHighlightIds = null;
+		lastFilterIds = null;
+		bankHighlighter.highlight(null);
+		bankFilter.filter(null);
+		applyActiveMonsterUi(first);
+		usageLog.record(group.getName());
+		setNoteCollapsed(mobProfile.note(first.getId()).isEmpty());
+		refreshNotePanel();
+		revalidate();
+		repaint();
+		renderPage();
+		statusLabel.setText(" ");
+		computeEntry(active);
 	}
 
 	/** The selection itself: collapse the dropdown, show it, recompute. */
@@ -1396,7 +1655,8 @@ public class LoadoutLabPanel extends PluginPanel
 		// Seed the parameter zone from the monster's own gating: task-only
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
-		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster);
+		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
+		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
 		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
@@ -1514,9 +1774,9 @@ public class LoadoutLabPanel extends PluginPanel
 			return;
 		}
 		final MonsterStats removed = entry.mobs.get(index);
-		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(entry.mobs);
+		final List<MonsterStats> mobsBefore = new ArrayList<>(entry.mobs);
 		final Map<CombatStyle, StyleResult> resultsBefore = entry.results;
-		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
+		final List<Map<CombatStyle, StyleResult>> perMobBefore = entry.perMobResults;
 		final int lensBefore = entry.lensIndex;
 		final Runnable applyRemove = () ->
 		{
@@ -1594,17 +1854,18 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			}
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
-		final java.util.List<MonsterStats> mobsBefore = new java.util.ArrayList<>(target.mobs);
+		final List<MonsterStats> mobsBefore = new ArrayList<>(target.mobs);
 		final Map<CombatStyle, StyleResult> resultsBefore = target.results;
-		final java.util.List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
+		final List<Map<CombatStyle, StyleResult>> perMobBefore = target.perMobResults;
 		final int lensBefore = target.lensIndex;
 		final Runnable applyAdd = () ->
 		{
 			// A single-mob duplicate leaves the page (the roster absorbs it).
 			page.removeIf(e -> e != target && e.mobs.size() == 1 && e.hasMob(monster.getId()));
 			target.addMob(monster);
+			target.seedInventoryDefault(0);
 			target.lensIndex = target.mobs.size() - 1;
 			target.results = null;
 			target.perMobResults = null;
@@ -2020,7 +2281,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private void showDreamsMenu(MouseEvent e)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		java.util.List<GearItem> dreamGear = new ArrayList<>();
+		List<GearItem> dreamGear = new ArrayList<>();
 		for (int id : dreamView.snapshot())
 		{
 			GearItem gear = data.getGear(id);
@@ -2090,7 +2351,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** Legend for the source dots - EXACTLY the sources in the current
 	 * results, in palette order; null when nothing has a known source. */
-	private javax.swing.JComponent buildSourceLegend()
+	private JComponent buildSourceLegend()
 	{
 		if (usedSources.isEmpty())
 		{
@@ -2120,7 +2381,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The small filled circle used by legend entries. */
-	private static final class SourceDotIcon implements javax.swing.Icon
+	private static final class SourceDotIcon implements Icon
 	{
 		private final Color color;
 
@@ -2130,7 +2391,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 
 		@Override
-		public void paintIcon(java.awt.Component c, Graphics g, int x, int y)
+		public void paintIcon(Component c, Graphics g, int x, int y)
 		{
 			Graphics2D g2 = (Graphics2D) g.create();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -2162,7 +2423,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private static String scopeLabel(String scope)
 	{
 		return ALL_SETS.equals(scope) ? "all sets"
-			: scope.toLowerCase(java.util.Locale.ROOT) + " set";
+			: scope.toLowerCase(Locale.ROOT) + " set";
 	}
 
 	/** Filter-scope label: the MOB'S NAME for all-sets ("bank filter -
@@ -2173,7 +2434,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return selectedMonster == null ? "this mob" : selectedMonster.getName();
 		}
-		return scope.toLowerCase(java.util.Locale.ROOT) + " set";
+		return scope.toLowerCase(Locale.ROOT) + " set";
 	}
 
 	private void saveNoteIfChanged()
@@ -2353,11 +2614,11 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
 	 * all sets, or chatbox-search ANOTHER item into the pin. */
-	private javax.swing.JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
+	private JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
 		CombatStyle style)
 	{
 		int monsterId = currentMonsterId();
-		javax.swing.JMenu pinMenu = new javax.swing.JMenu("Pin " + item.label());
+		JMenu pinMenu = new JMenu("Pin " + item.label());
 		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> raw = mobProfile.allPins(monsterId);
 		Integer styleScoped = raw.getOrDefault(style.name(), Collections.emptyMap()).get(slot);
 		Integer allScoped = raw.getOrDefault(ALL_SETS, Collections.emptyMap()).get(slot);
@@ -2390,7 +2651,7 @@ public class LoadoutLabPanel extends PluginPanel
 			GearItem pinned = data.getGear(styleScoped);
 			JMenuItem un = new JMenuItem("Unpin "
 				+ (pinned == null ? "item" : pinned.label())
-				+ " (" + style.name().toLowerCase(java.util.Locale.ROOT) + " set)");
+				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)");
 			un.addActionListener(a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
@@ -2492,7 +2753,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			if (bankShowing)
 			{
-				highlightIds = new java.util.HashSet<>();
+				highlightIds = new HashSet<>();
 				for (GearItem item : best.getLoadout().getGear().values())
 				{
 					if (item != null)
@@ -2509,22 +2770,25 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					highlightIds.add(specWeapon.getId());
 				}
+				// The inventory items are part of this trip's kit too.
+				highlightIds.addAll(inventoryIds(style));
 				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
 			if (bankFiltering)
 			{
-				filterIds = new java.util.HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				filterIds = new HashSet<>(setItemIds(best, specWeapon, loadedDart(best)));
+				filterIds.addAll(inventoryIds(style));
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
 			}
 		}
-		if (!java.util.Objects.equals(highlightIds, lastHighlightIds))
+		if (!Objects.equals(highlightIds, lastHighlightIds))
 		{
 			lastHighlightIds = highlightIds;
 			bankHighlighter.highlight(highlightIds);
 		}
-		if (!java.util.Objects.equals(filterIds, lastFilterIds))
+		if (!Objects.equals(filterIds, lastFilterIds))
 		{
 			lastFilterIds = filterIds;
 			bankFilter.filter(filterIds);
@@ -2698,7 +2962,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					// Exclusion scopes (field request): everywhere, this mob,
 					// or this mob + this set only.
-					javax.swing.JMenu excludeMenu = new javax.swing.JMenu("Exclude " + item.label());
+					JMenu excludeMenu = new JMenu("Exclude " + item.label());
 					JMenuItem everywhere = new JMenuItem("All mobs");
 					everywhere.addActionListener(a ->
 					{
@@ -2808,7 +3072,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
 	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
-	private static final class NoPrayerIcon implements javax.swing.Icon
+	private static final class NoPrayerIcon implements Icon
 	{
 		private final int size;
 
@@ -2853,7 +3117,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * 3/4 arc opening downward with an arrowhead at the top - mirrored
 	 * (head upper-left) for back, plain (head upper-right) for forward.
 	 * Greys out with the button's enabled state. */
-	private static final class UndoArrowIcon implements javax.swing.Icon
+	private static final class UndoArrowIcon implements Icon
 	{
 		private final int size;
 		private final boolean mirrored;
@@ -2916,7 +3180,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
-	private static final class CloseIcon implements javax.swing.Icon
+	private static final class CloseIcon implements Icon
 	{
 		private final int size;
 
@@ -2958,7 +3222,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
-	private static final class DotsIcon implements javax.swing.Icon
+	private static final class DotsIcon implements Icon
 	{
 		private final int size;
 
@@ -3002,7 +3266,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * reload symbols tofu in Swing on macOS Tahoe, so we draw it. Inherits
 	 * the host button's foreground colour.
 	 */
-	private static final class ReloadIcon implements javax.swing.Icon
+	private static final class ReloadIcon implements Icon
 	{
 		private final int size;
 
@@ -3108,13 +3372,14 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		if (entry.mobs.size() > 1)
 		{
-			computeHook.computeRoster(new java.util.ArrayList<>(entry.mobs),
+			computeHook.computeRoster(new ArrayList<>(entry.mobs),
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+				entry.maxSwaps, entry.raidBoost,
 				() -> statusLabel.setText(" "));
 			return;
 		}
@@ -3124,6 +3389,7 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
+			entry.maxSwaps, entry.raidBoost,
 			() -> statusLabel.setText(" "));
 	}
 
@@ -3149,7 +3415,7 @@ public class LoadoutLabPanel extends PluginPanel
 			clearSelectionInternal();
 			return;
 		}
-		final java.util.List<ResultEntry> pageBefore = new java.util.ArrayList<>(page);
+		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
@@ -3236,21 +3502,39 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Roster results (EDT): routed by exact mob-id list match. */
-	public void showRosterResults(java.util.List<MonsterStats> mobs,
-		java.util.List<Map<CombatStyle, StyleResult>> perMob)
+	public void showRosterResults(List<MonsterStats> mobs,
+		List<Map<CombatStyle, StyleResult>> perMob)
+	{
+		showRosterResults(mobs, perMob, null);
+	}
+
+	public void showRosterResults(List<MonsterStats> mobs,
+		List<Map<CombatStyle, StyleResult>> perMob,
+		OptimizerService.KitCurve curve)
 	{
 		ResultEntry entry = entryForRoster(mobs);
 		if (entry == null || perMob == null || perMob.isEmpty())
 		{
 			return; // stale roster - the page moved on
 		}
+		entry.kitCurve = curve;
 		entry.perMobResults = perMob;
 		entry.lensIndex = Math.max(0, Math.min(entry.lensIndex, perMob.size() - 1));
 		entry.results = perMob.get(entry.lensIndex);
+		// Land on the RECOMMENDED tab (field spec 2026-07-17): the kit can
+		// answer the lensed mob in any style - never open on a tab where
+		// it is immune. One shared set per style is no longer the rule
+		// once swaps are involved.
+		DpsResult rowBest = mobRowResult(entry, entry.lensIndex,
+			entry.selectedTab, entry.viewingBis);
+		if (rowBest != null)
+		{
+			entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
+		}
 		renderPage();
 	}
 
-	private ResultEntry entryForRoster(java.util.List<MonsterStats> mobs)
+	private ResultEntry entryForRoster(List<MonsterStats> mobs)
 	{
 		outer:
 		for (ResultEntry entry : page)
@@ -3283,6 +3567,14 @@ public class LoadoutLabPanel extends PluginPanel
 		if (entry.perMobResults != null && index < entry.perMobResults.size())
 		{
 			entry.results = entry.perMobResults.get(index);
+		}
+		// Follow the row (field spec 2026-07-17): the kit can answer this
+		// mob in another style - the viewed tab switches with it, on the
+		// Yours and BiS side alike.
+		DpsResult rowBest = mobRowResult(entry, index, entry.selectedTab, entry.viewingBis);
+		if (rowBest != null)
+		{
+			entry.selectedTab = resultStyle(rowBest, entry.selectedTab);
 		}
 		if (entry == active)
 		{
@@ -3381,7 +3673,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// The spellbook lock: the submenu drives the combo, which
 				// records + recomputes.
-				javax.swing.JMenu bookMenu = new javax.swing.JMenu("Spellbook lock");
+				JMenu bookMenu = new JMenu("Spellbook lock");
 				for (int b = 0; b < spellbook.getItemCount(); b++)
 				{
 					final int index = b;
@@ -3402,7 +3694,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * in CENTER so it ellipsizes instead of running under the X. The ACTIVE
 	 * result (the one the global search affordances act on) renders white; the others
 	 * muted. Only rendered on multi-result pages. */
-	private javax.swing.JComponent resultChrome(ResultEntry entry)
+	private JComponent resultChrome(ResultEntry entry)
 	{
 		JPanel row = new JPanel(new BorderLayout(4, 0));
 		row.setOpaque(false);
@@ -3472,7 +3764,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * SINGLE-result page (the classic loading experience); on a multi-
 	 * result page a pending entry is one compact line so the rendered
 	 * results around it stay put. */
-	private javax.swing.JComponent pendingCard(ResultEntry entry, boolean withMascot)
+	private JComponent pendingCard(ResultEntry entry, boolean withMascot)
 	{
 		JPanel column = new JPanel();
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
@@ -3517,7 +3809,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * - which still own recording (back/forward), write-through, and
 	 * recompute - after focusing this entry. Two wrap rows: toggles,
 	 * then pick-a-value chips. */
-	private javax.swing.JComponent paramChipRow(ResultEntry entry)
+	private JComponent paramChipRow(ResultEntry entry)
 	{
 		MonsterStats mob = entry.mob();
 		JPanel rows = new JPanel();
@@ -3556,6 +3848,37 @@ public class LoadoutLabPanel extends PluginPanel
 			toggles.add(paramChip("Protect item", entry.protectItem, true,
 				"Protect Item keeps a 4th item (not while skulled)",
 				() -> asActive(entry, protectItem::doClick)));
+		}
+		// Raid-supplied boost toggle (field spec 2026-07-18): overloads/
+		// salts are the raid norm but not a promise - off falls back to
+		// the bank's own potions.
+		com.loadoutlab.engine.BoostProfile supplied =
+			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		for (MonsterStats m : entry.mobs)
+		{
+			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			{
+				supplied = null;
+				break;
+			}
+		}
+		if (supplied != null)
+		{
+			String suppliedLabel = supplied.toString();
+			toggles.add(paramChip(suppliedLabel, entry.raidBoost, true,
+				entry.raidBoost
+					? "Assuming the raid's " + suppliedLabel + " - click to use your own potions instead"
+					: "Using your own potions - click to assume the raid's " + suppliedLabel,
+				() -> asActive(entry, () ->
+			{
+				boolean prev = entry.raidBoost;
+				recordStep(prev ? "No raid boost" : "Raid boost",
+					() -> setRaidBoost(!prev), () -> setRaidBoost(prev));
+				if (historyControl == null)
+				{
+					setRaidBoost(!prev);
+				}
+			})));
 		}
 		boolean fiery = false;
 		for (MonsterStats m : entry.mobs)
@@ -3600,11 +3923,9 @@ public class LoadoutLabPanel extends PluginPanel
 					}
 				})));
 		}
-		if (toggles.getComponentCount() > 0)
-		{
-			rows.add(toggles);
-		}
-		JPanel values = chipFlowRow();
+		// One continuous wrap row for ALL chips (field fix 2026-07-18:
+		// the split rows left orphaned chips floating awkwardly).
+		JPanel values = toggles;
 		String modeText = String.valueOf(optimizeMode.getItemAt(
 			Math.min(entry.optimizeMode, optimizeMode.getItemCount() - 1)));
 		values.add(paramChip(modeText.replace("Optimize: ", ""),
@@ -3614,11 +3935,23 @@ public class LoadoutLabPanel extends PluginPanel
 		if (displayOptions.upgradeBudget)
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
-			values.add(paramChip(budget.isEmpty() ? "Budget: off" : "Budget: " + budget,
+			boolean unlimited = budget.equals("-") || budget.equalsIgnoreCase("max");
+			JComponent budgetChip = paramChip(
+				budget.isEmpty() ? "Budget: off" : unlimited ? "Budget: " : "Budget: " + budget,
 				!budget.isEmpty(), true,
 				"Buyable-gear budget: 750k, 1m, 1.5b; - sets unlimited;"
 					+ " empty = owned gear only",
-				() -> editBudget(entry)));
+				() -> editBudget(entry));
+			if (unlimited && budgetChip instanceof JLabel)
+			{
+				// A painted infinity sign - a Unicode glyph risks tofu on
+				// macOS Tahoe (the glyph gate would reject it anyway).
+				JLabel label = (JLabel) budgetChip;
+				label.setIcon(new InfinityIcon(label.getForeground()));
+				label.setHorizontalTextPosition(JLabel.LEFT);
+				label.setIconTextGap(2);
+			}
+			values.add(budgetChip);
 		}
 		if (wild)
 		{
@@ -3652,14 +3985,71 @@ public class LoadoutLabPanel extends PluginPanel
 			values.add(pinFilterChip(entry, "Filters: " + filterCount,
 				"Bank-filter supplies for this mob - click to manage"));
 		}
-		rows.add(values);
+		if (values.getComponentCount() > 0)
+		{
+			rows.add(values);
+		}
+		// The INVENTORY control is a slider on its OWN row below the
+		// chips (field spec 2026-07-18), rosters only - a single mob has
+		// nothing to swap between and keeps the default budget of 1.
+		if (entry.mobs.size() > 1)
+		{
+			JPanel invRow = chipFlowRow();
+			String invTip = entry.maxSwaps == 0
+				? "Inventory: 0 - strictly one worn set, no spec weapon recommended"
+				: "Inventory: " + entry.maxSwaps + " - up to " + entry.maxSwaps
+					+ " carried item" + (entry.maxSwaps == 1 ? "" : "s")
+					+ " including the spec weapon, cross-style included";
+			JLabel invLabel = new JLabel("Inventory: " + entry.maxSwaps);
+			invLabel.setForeground(entry.maxSwaps != entry.inventoryDefault
+				? Color.WHITE : new Color(170, 170, 170));
+			invLabel.setFont(invLabel.getFont().deriveFont(
+				entry.maxSwaps != entry.inventoryDefault ? Font.BOLD : Font.PLAIN, 11f));
+			invLabel.setToolTipText(invTip);
+			JSlider invSlider = new JSlider(0, 20, entry.maxSwaps);
+			invSlider.setOpaque(false);
+			invSlider.setPreferredSize(new Dimension(110, 22));
+			invSlider.setToolTipText(invTip);
+			invSlider.addChangeListener(ev ->
+			{
+				invLabel.setText("Inventory: " + invSlider.getValue());
+				if (invSlider.getValueIsAdjusting())
+				{
+					return;
+				}
+				final int pick = invSlider.getValue();
+				asActive(entry, () ->
+				{
+					entry.inventoryTouched = true;
+					int prev = entry.maxSwaps;
+					if (pick == prev)
+					{
+						return;
+					}
+					recordStep("Inventory " + pick,
+						() -> setMaxSwaps(pick), () -> setMaxSwaps(prev));
+					if (historyControl == null)
+					{
+						setMaxSwaps(pick);
+					}
+				});
+			});
+			// Label + slider travel as ONE unit so the wrap can never
+			// split them across lines (field bug).
+			JPanel invGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+			invGroup.setOpaque(false);
+			invGroup.add(invLabel);
+			invGroup.add(invSlider);
+			invRow.add(invGroup);
+			rows.add(invRow);
+		}
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
 	}
 
 	/** A pins/filters count chip: opens the manage menu anchored on the
 	 * chip (the retired label's menu, source-anchored). */
-	private javax.swing.JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
 	{
 		JLabel chip = new JLabel(text);
 		chip.setOpaque(true);
@@ -3680,18 +4070,80 @@ public class LoadoutLabPanel extends PluginPanel
 		return chip;
 	}
 
+	/** FlowLayout whose preferred height accounts for wrapping at the
+	 * current width - a plain FlowLayout reports one-row height, so a
+	 * fourth chip silently wrapped into clipped space (field bug: the
+	 * Risk chip vanished on wilderness cards). */
+	private static final class WrapLayout extends FlowLayout
+	{
+		WrapLayout(int align, int hgap, int vgap)
+		{
+			super(align, hgap, vgap);
+		}
+
+		@Override
+		public Dimension preferredLayoutSize(Container target)
+		{
+			synchronized (target.getTreeLock())
+			{
+				// A fresh card has no width yet - falling back to unlimited
+				// meant one endless row, clipped after a few chips (field
+				// bug: parameters "disappearing" mid-compute). Assume the
+				// plugin panel's width until the real one exists.
+				int targetWidth = target.getWidth() > 0 ? target.getWidth()
+					: (target.getParent() != null && target.getParent().getWidth() > 0
+						? target.getParent().getWidth() : 220);
+				Insets insets = target.getInsets();
+				int maxWidth = targetWidth - insets.left - insets.right - getHgap() * 2;
+				int x = 0;
+				int rowHeight = 0;
+				Dimension dim = new Dimension(0, insets.top + getVgap());
+				for (int i = 0; i < target.getComponentCount(); i++)
+				{
+					Component c = target.getComponent(i);
+					if (!c.isVisible())
+					{
+						continue;
+					}
+					Dimension d = c.getPreferredSize();
+					if (x == 0 || x + getHgap() + d.width <= maxWidth)
+					{
+						x += (x > 0 ? getHgap() : 0) + d.width;
+						rowHeight = Math.max(rowHeight, d.height);
+					}
+					else
+					{
+						dim.width = Math.max(dim.width, x);
+						dim.height += rowHeight + getVgap();
+						x = d.width;
+						rowHeight = d.height;
+					}
+				}
+				dim.width = Math.max(dim.width, x) + insets.left + insets.right + getHgap() * 2;
+				dim.height += rowHeight + getVgap() + insets.bottom;
+				return dim;
+			}
+		}
+	}
+
 	private static JPanel chipFlowRow()
 	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+		JPanel row = new JPanel(new WrapLayout(FlowLayout.LEFT, 4, 2))
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
 		row.setOpaque(false);
 		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		return row;
 	}
 
 	/** One parameter chip: the Yours|BiS border language - orange edge
 	 * when ON, quiet outline when off, muted + inert when forced. */
-	private javax.swing.JComponent paramChip(String text, boolean selected,
+	private JComponent paramChip(String text, boolean selected,
 		boolean enabled, String tooltip, Runnable onClick)
 	{
 		JLabel chip = new JLabel(text);
@@ -3741,7 +4193,7 @@ public class LoadoutLabPanel extends PluginPanel
 			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
 			menu.add(item);
 		}
-		java.awt.Point at = getMousePosition();
+		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
@@ -3779,10 +4231,81 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** The bench/backpack row: the carried items beyond the worn set -
+	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
+	 * wears the accent border; the rest sit quietly on the bench. */
+	private JComponent inventoryRow(ResultEntry entry, StyleResult result, boolean bis)
+	{
+		// A wrapping grid, NOT a single flow line: at Inventory 20 the
+		// carried items overflow one row, and a clipped weapon swap reads
+		// as missing (field bug). Height follows the row count.
+		JPanel row = new JPanel(new BorderLayout(4, 0))
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
+		row.setOpaque(false);
+		row.setAlignmentX(LEFT_ALIGNMENT);
+		JLabel prefix = new JLabel("Inventory:");
+		prefix.setForeground(MUTED);
+		prefix.setFont(prefix.getFont().deriveFont(11f));
+		prefix.setVerticalAlignment(JLabel.TOP);
+		prefix.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+		prefix.setToolTipText("Carried items not currently worn vs this mob"
+			+ " (the Inventory chip sets the swap budget)");
+		row.add(prefix, BorderLayout.WEST);
+		JPanel cells = new JPanel(new GridLayout(0, 6, 3, 3));
+		cells.setOpaque(false);
+		GearItem specWeapon = bis ? result.gameSpecWeapon : result.specWeapon;
+		int specId = specWeapon != null ? specWeapon.getId() : -1;
+		for (GearItem item : bis ? result.gameBench : result.bench)
+		{
+			boolean isSpec = item.getId() == specId;
+			JLabel cell = new JLabel();
+			cell.setOpaque(true);
+			cell.setHorizontalAlignment(JLabel.CENTER);
+			cell.setBackground(CELL_BG);
+			cell.setBorder(new RoundedBorder(
+				isSpec ? BORDER_SPEC : ColorScheme.MEDIUM_GRAY_COLOR, 2, 2));
+			cell.setToolTipText(item.label()
+				+ (isSpec ? " - the special attack swap"
+					: " - in the inventory vs this mob"));
+			AsyncBufferedImage img = itemManager.getImage(item.getId());
+			Runnable set = () -> cell.setIcon(new ImageIcon(
+				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
+			img.onLoaded(() -> SwingUtilities.invokeLater(set));
+			set.run();
+			cells.add(cell);
+		}
+		// Assumed consumables ride along for FREE (field spec 2026-07-18):
+		// the boost potion and the antifire - never a swap slot, muted
+		// border so they read as supplies rather than gear.
+		for (int consumableId : consumableIds(entry, result, bis))
+		{
+			JLabel cell = new JLabel();
+			cell.setOpaque(true);
+			cell.setHorizontalAlignment(JLabel.CENTER);
+			cell.setBackground(CELL_BG);
+			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
+			cell.setToolTipText("Potion the numbers assume - does not use an Inventory slot");
+			AsyncBufferedImage img = itemManager.getImage(consumableId);
+			Runnable set = () -> cell.setIcon(new ImageIcon(
+				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
+			img.onLoaded(() -> SwingUtilities.invokeLater(set));
+			set.run();
+			cells.add(cell);
+		}
+		row.add(cells, BorderLayout.CENTER);
+		return row;
+	}
+
 	/** The roster rows (card anatomy #1): name + hp per mob, an
 	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
 	 * the shared set never changes. */
-	private javax.swing.JComponent mobLensRows(ResultEntry entry,
+	private JComponent mobLensRows(ResultEntry entry,
 		CombatStyle viewedStyle, boolean bis)
 	{
 		JPanel rows = new JPanel();
@@ -3809,22 +4332,46 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
+			if (monsterIcons != null)
+			{
+				// The mob's wiki render rides the row; text-only until it
+				// loads (or when the wiki has no picture for it).
+				ImageIcon mobIcon = monsterIcons.get(mob.getName(), mob.getVersion(), 20, () ->
+				{
+					ImageIcon ready = monsterIcons.get(mob.getName(), mob.getVersion(), 20, null);
+					if (ready != null)
+					{
+						name.setIcon(ready);
+						name.setIconTextGap(6);
+						name.revalidate();
+					}
+				});
+				if (mobIcon != null)
+				{
+					name.setIcon(mobIcon);
+					name.setIconTextGap(6);
+				}
+			}
 			row.add(name, BorderLayout.CENTER);
 			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			east.setOpaque(false);
-			// The chosen set's dps vs THIS mob (field spec): the viewed
-			// style + Yours|BiS side, flipping with the tabs and toggle.
-			double rowDps = mobRowDps(entry, index, viewedStyle, bis);
+			// The kit's BEST dps vs THIS mob (field spec): the carried
+			// swaps can answer different mobs with different styles - the
+			// icon shows the style this mob's answer attacks with, and
+			// lensing the row follows it to that style's tab.
+			DpsResult rowResult = mobRowResult(entry, index, viewedStyle, bis);
+			double rowDps = rowResult == null ? 0 : rowResult.getDps();
 			if (rowDps > 0)
 			{
+				CombatStyle rowStyle = resultStyle(rowResult, viewedStyle);
 				JLabel dps = new JLabel(String.format("%.2f", rowDps));
 				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
 				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
-				dps.setToolTipText("The shared set's dps against this mob"
-					+ (bis ? " (BiS view)" : "") + " - " + viewedStyle.toString().toLowerCase());
-				// The viewed style's skill sprite rides the number (field
-				// spec) - same icon language as the tabs.
-				attachSprite(dps, AssumeIcons.styleSprite(viewedStyle));
+				dps.setToolTipText((bis
+					? "The BiS ceiling against this mob - "
+					: "The carried kit's best dps against this mob - ")
+					+ rowStyle.toString().toLowerCase());
+				attachSprite(dps, AssumeIcons.styleSprite(rowStyle));
 				dps.setIconTextGap(3);
 				east.add(dps);
 			}
@@ -3884,14 +4431,250 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** The viewed side's dps against one mob of the roster: the per-mob
-	 * bundle when present (roster), the live map for the lensed single. */
-	private double mobRowDps(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	/** Antifire potion doses, best first (gameval-verified 2026-07-18:
+	 * super 21978.., extended super 22209.., regular 2452.., extended
+	 * 11951..; classic 2-step dose spacing). */
+	private static final int[] SUPER_ANTIFIRE_IDS = {
+		21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
+	private static final int[] REGULAR_ANTIFIRE_IDS = {
+		2452, 2454, 2456, 2458, 11951, 11953, 11955, 11957};
+
+	/** The default antifire mode for a fresh result (field spec
+	 * 2026-07-18): only meaningful when the roster breathes fire;
+	 * Detect scans the collection for the best potion you have. */
+	private int resolveDefaultAntifire(ResultEntry entry)
 	{
-		if (style == null)
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (!fiery)
 		{
 			return 0;
 		}
+		int mode = displayOptions.defaultAntifireMode;
+		if (mode >= 0)
+		{
+			return Math.min(2, mode);
+		}
+		for (int id : SUPER_ANTIFIRE_IDS)
+		{
+			if (ownedCheck.owns(id))
+			{
+				return 2;
+			}
+		}
+		for (int id : REGULAR_ANTIFIRE_IDS)
+		{
+			if (ownedCheck.owns(id))
+			{
+				return 1;
+			}
+		}
+		return 0;
+	}
+
+	/** Assumed consumables (field spec 2026-07-18, refined): a SINGLE
+	 * mob shows the potion behind the VIEWED tab (flip to ranged, the
+	 * ranging potion replaces it); a roster shows the union across each
+	 * mob's BEST answer - a melee/ranged plan carries both potions. The
+	 * antifire mode's potion always rides along. */
+	private List<Integer> consumableIds(ResultEntry entry, StyleResult viewed, boolean bis)
+	{
+		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
+		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
+		{
+			if (viewed != null)
+			{
+				addBoostConsumables(bis ? viewed.gameBoostLabel : viewed.boostLabel, ids);
+			}
+		}
+		else
+		{
+			for (Map<CombatStyle, StyleResult> map : entry.perMobResults)
+			{
+				StyleResult best = null;
+				double bestDps = -1;
+				for (StyleResult r : map.values())
+				{
+					if (r == null)
+					{
+						continue;
+					}
+					DpsResult shown = bis ? r.overallBest
+						: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+					if (shown != null && shown.getDps() > bestDps)
+					{
+						bestDps = shown.getDps();
+						best = r;
+					}
+				}
+				if (best != null)
+				{
+					addBoostConsumables(bis ? best.gameBoostLabel : best.boostLabel, ids);
+				}
+			}
+		}
+		if (entry.antifireMode == 1)
+		{
+			ids.add(2452);
+		}
+		else if (entry.antifireMode == 2)
+		{
+			ids.add(21978);
+		}
+		return new ArrayList<>(ids);
+	}
+
+	private static void addBoostConsumables(String label, Set<Integer> ids)
+	{
+		if (label == null)
+		{
+			return;
+		}
+		if (label.contains("Overload (+)"))
+		{
+			ids.add(20996);
+		}
+		else if (label.contains("Overload"))
+		{
+			ids.add(20992);
+		}
+		else if (label.contains("Super combat"))
+		{
+			ids.add(12695);
+		}
+		else if (label.contains("Attack & strength"))
+		{
+			ids.add(2428);
+			ids.add(113);
+		}
+		else if (label.contains("Super ranging"))
+		{
+			ids.add(11722);
+		}
+		else if (label.contains("Ranging potion"))
+		{
+			ids.add(2444);
+		}
+		else if (label.contains("Super magic"))
+		{
+			ids.add(11726);
+		}
+		else if (label.contains("Magic potion"))
+		{
+			ids.add(3040);
+		}
+		else if (label.contains("Saturated heart"))
+		{
+			ids.add(27641);
+		}
+		else if (label.contains("Imbued heart"))
+		{
+			ids.add(20724);
+		}
+	}
+
+	/** The inventory breakpoint summary (field spec 2026-07-18): the
+	 * minimum-viability point (every mob answerable), the major
+	 * breakpoints (picks worth >= 10% of the whole curve's gain), the
+	 * final breakpoint (more slots stop paying), and where the current
+	 * budget sits as a percent of max. */
+	private JLabel breakpointLabel(ResultEntry entry)
+	{
+		OptimizerService.KitCurve curve = entry.kitCurve;
+		if (curve == null || curve.points.size() < 2)
+		{
+			return null;
+		}
+		List<double[]> points = curve.points;
+		double baseTotal = points.get(0)[1];
+		double finalTotal = points.get(points.size() - 1)[1];
+		double gainRange = finalTotal - baseTotal;
+		int maxViable = 0;
+		for (double[] p : points)
+		{
+			maxViable = Math.max(maxViable, (int) p[2]);
+		}
+		int viability = -1;
+		int finalCost = (int) points.get(0)[0];
+		List<Integer> majors = new ArrayList<>();
+		for (int i = 1; i < points.size(); i++)
+		{
+			double gain = points.get(i)[1] - points.get(i - 1)[1];
+			int cost = (int) points.get(i)[0];
+			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
+			{
+				viability = cost;
+			}
+			if (gain > 1e-6)
+			{
+				finalCost = cost;
+				// Significant = the pick moves the ROSTER's dps, not just
+				// the curve's own range (field fix 2026-07-18: a slow-decay
+				// tail kept clearing a range-relative bar deep into the
+				// curve). 3% of the final total is a real jump.
+				if (finalTotal > 0 && gain >= 0.03 * finalTotal && !majors.contains(cost))
+				{
+					majors.add(cost);
+				}
+			}
+		}
+		if (viability < 0 && (int) points.get(0)[2] >= maxViable)
+		{
+			viability = (int) points.get(0)[0];
+		}
+		// Where the CURRENT budget lands on the curve, as percent of max.
+		double atBudget = baseTotal;
+		for (double[] p : points)
+		{
+			if (p[0] <= entry.maxSwaps)
+			{
+				atBudget = Math.max(atBudget, p[1]);
+			}
+		}
+		int pct = finalTotal > 0 ? (int) Math.round(atBudget * 100.0 / finalTotal) : 100;
+		StringBuilder text = new StringBuilder();
+		if (viability > 0)
+		{
+			text.append("min ").append(viability);
+		}
+		if (!majors.isEmpty())
+		{
+			if (text.length() > 0)
+			{
+				text.append(" | ");
+			}
+			text.append("gains at ");
+			for (int i = 0; i < majors.size(); i++)
+			{
+				text.append(i > 0 ? ", " : "").append(majors.get(i));
+			}
+		}
+		if (text.length() > 0)
+		{
+			text.append(" | ");
+		}
+		text.append("max ").append(finalCost).append(" - at ").append(pct).append("%");
+		JLabel label = new JLabel(text.toString());
+		label.setForeground(MUTED);
+		label.setFont(label.getFont().deriveFont(11f));
+		label.setToolTipText("Inventory breakpoints: 'min' answers every mob,"
+			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
+			+ " slots stop paying - the percent is this budget vs the max");
+		return label;
+	}
+
+	/** One mob's row result: the side's kit BEST across ALL styles - the
+	 * carried swaps can answer different mobs with different styles, on
+	 * the Yours and the BiS side alike. */
+	private DpsResult mobRowResult(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	{
 		Map<CombatStyle, StyleResult> map = null;
 		if (entry.perMobResults != null && index < entry.perMobResults.size())
 		{
@@ -3901,23 +4684,50 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			map = entry.results;
 		}
-		StyleResult r = map == null ? null : map.get(style);
-		if (r == null)
+		if (map == null)
 		{
-			return 0;
+			return null;
 		}
-		DpsResult shown = bis ? r.overallBest
-			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-		return shown == null ? 0 : shown.getDps();
+		DpsResult best = null;
+		for (StyleResult r : map.values())
+		{
+			DpsResult shown = r == null ? null
+				: bis ? r.overallBest
+				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+			if (shown != null && (best == null || shown.getDps() > best.getDps()))
+			{
+				best = shown;
+			}
+		}
+		return best;
+	}
+
+	/** The combat style a shown result actually attacks with - a carried
+	 * cross-style swap can flip one mob off the viewed tab's style. */
+	private static CombatStyle resultStyle(DpsResult result, CombatStyle fallback)
+	{
+		if (result == null || result.getAttackType() == null)
+		{
+			return fallback;
+		}
+		if (result.getAttackType().startsWith("ranged"))
+		{
+			return CombatStyle.RANGED;
+		}
+		if (result.getAttackType().startsWith("magic"))
+		{
+			return CombatStyle.MAGIC;
+		}
+		return CombatStyle.MELEE;
 	}
 
 	/** The + row's mob picker: incremental search, double-click/Enter adds
 	 * the hit to the entry's roster (same history step as before). */
 	private void showAddMobDialog(ResultEntry entry)
 	{
-		java.awt.Window owner = SwingUtilities.getWindowAncestor(this);
-		javax.swing.JDialog dialog = new javax.swing.JDialog(owner, "Add a mob to this result",
-			java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+		Window owner = SwingUtilities.getWindowAncestor(this);
+		JDialog dialog = new JDialog(owner, "Add a mob to this result",
+			Dialog.ModalityType.APPLICATION_MODAL);
 		JPanel content = new JPanel(new BorderLayout(0, 4));
 		content.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 		JTextField field = new JTextField();
@@ -4001,8 +4811,8 @@ public class LoadoutLabPanel extends PluginPanel
 		content.add(field, BorderLayout.NORTH);
 		content.add(new JScrollPane(hits), BorderLayout.CENTER);
 		dialog.getRootPane().registerKeyboardAction(e -> dialog.dispose(),
-			javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
-			javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
+			KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+			JComponent.WHEN_IN_FOCUSED_WINDOW);
 		dialog.setContentPane(content);
 		dialog.setSize(260, 240);
 		dialog.setLocationRelativeTo(this);
@@ -4014,7 +4824,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * fixed melee/ranged/magic positions, strongest selected by default)
 	 * over ONE flipping detail body, then the source legend (M-2c: tabs
 	 * replaced the stacked style cards - kits become more tabs at M-4). */
-	private javax.swing.JComponent resultCard(ResultEntry entry)
+	private JComponent resultCard(ResultEntry entry)
 	{
 		Map<CombatStyle, StyleResult> results = entry.results;
 		JPanel column = new JPanel();
@@ -4040,7 +4850,7 @@ public class LoadoutLabPanel extends PluginPanel
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
 			styleTabs(entry, results, styleOrder, selected, bis)));
 		column.add(Box.createVerticalStrut(6));
-		javax.swing.JComponent legend = buildSourceLegend();
+		JComponent legend = buildSourceLegend();
 		if (legend != null)
 		{
 			column.add(legend);
@@ -4132,7 +4942,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The Yours | BiS chip pair (field spec: the BiS view is the SAME card
 	 * through a toggle, not a separate section), with the gear-gap percent
 	 * for the selected style beside it. */
-	private javax.swing.JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
+	private JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
 	{
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -4167,7 +4977,7 @@ public class LoadoutLabPanel extends PluginPanel
 		return row;
 	}
 
-	private javax.swing.JComponent viewChip(String text, boolean selected, Runnable onClick)
+	private JComponent viewChip(String text, boolean selected, Runnable onClick)
 	{
 		JLabel chip = new JLabel(text);
 		chip.setOpaque(selected);
@@ -4195,11 +5005,11 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The tab strip: one equal-width tab per style - the skill sprite and
 	 * the best owned dps, nothing else. The selected tab wears the detail
 	 * card's background so the two read as one surface. */
-	private javax.swing.JComponent styleTabs(ResultEntry entry,
+	private JComponent styleTabs(ResultEntry entry,
 		Map<CombatStyle, StyleResult> results, CombatStyle[] order, CombatStyle selected,
 		boolean bis)
 	{
-		JPanel strip = new JPanel(new java.awt.GridLayout(1, order.length, 2, 0));
+		JPanel strip = new JPanel(new GridLayout(1, order.length, 2, 0));
 		strip.setOpaque(false);
 		strip.setAlignmentX(LEFT_ALIGNMENT);
 		strip.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
@@ -4243,7 +5053,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private JPanel styleCard(ResultEntry entry, CombatStyle style, StyleResult result,
-		boolean hasBis, boolean bis, javax.swing.JComponent styleStrip)
+		boolean hasBis, boolean bis, JComponent styleStrip)
 	{
 		renderingStyle = style;
 		renderingBis = bis;
@@ -4256,6 +5066,8 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingUpgradeLine = !bis;
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
+		renderingRiskConsumables = result == null || bis
+			? Collections.emptyList() : consumableIds(entry, result, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -4305,7 +5117,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// an assumption like the prayers beside it.
 				JLabel keepChip = new JLabel();
 				keepChip.setToolTipText("Protect Item assumed - a 4th item is kept on death");
-				attachSprite(keepChip, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
+				attachSprite(keepChip, SpriteID.Prayeron.PROTECT_ITEM);
 				chips.add(keepChip);
 			}
 		}
@@ -4324,9 +5136,20 @@ public class LoadoutLabPanel extends PluginPanel
 				? "Needs leaf-bladed / broad / Magic Dart"
 				: flying
 					? "Flying - needs a halberd"
-					: bis ? "No usable set exists." : "No usable owned set found.");
+					: bis ? "No usable set exists."
+					: effectiveWilderness(entry) && riskCap(entry) >= 0
+						? "No owned set fits the risk cap."
+						: "No usable owned set found.");
 			none.setForeground(MUTED);
 			none.setAlignmentX(LEFT_ALIGNMENT);
+			if (!bis && effectiveWilderness(entry) && riskCap(entry) >= 0)
+			{
+				none.setToolTipText("Every combination for this style busts the"
+					+ " wilderness risk cap - protecting a pricey required item"
+					+ " (a dragonfire shield...) can evict another valuable from"
+					+ " the kept slots. Raise the Risk cap, enable Protect item,"
+					+ " or allow the excluded cheap alternative");
+			}
 			if (vyre)
 			{
 				none.setToolTipText("Only the Ivandis flail, blisterwood weapons,"
@@ -4338,6 +5161,20 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " except with halberds or salamanders");
 			}
 			card.add(none);
+			// The Gauntlet groups are tagged in the RESULTS (field spec
+			// 2026-07-18), not the search list: the raid-crafted tier
+			// modeling is still being tuned.
+			if (entry.mobs.stream().allMatch(
+				m -> com.loadoutlab.engine.GauntletRules.family(m) != null))
+			{
+				JLabel soon = new JLabel("Gauntlet support is coming soon.");
+				soon.setForeground(MUTED);
+				soon.setFont(soon.getFont().deriveFont(Font.ITALIC, 12f));
+				soon.setAlignmentX(LEFT_ALIGNMENT);
+				soon.setToolTipText("Fights inside use raid-crafted gear tiers -"
+					+ " the tier modeling is still being tuned");
+				card.add(soon);
+			}
 			if (entry == active)
 			{
 				// Keep the toggles, clear the bank displays - this style
@@ -4406,12 +5243,53 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
+		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
+			|| !consumableIds(entry, result, bis).isEmpty()))
+		{
+			// The INVENTORY (field spec): below the gear - what is carried
+			// but not worn against the lensed mob, plus the assumed
+			// consumables. Both sides have a kit.
+			card.add(Box.createVerticalStrut(4));
+			card.add(inventoryRow(entry, result, bis));
+		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
 		if (hasBis)
 		{
 			card.add(Box.createVerticalStrut(4));
 			card.add(viewToggleRow(entry, result, bis));
+		}
+		if (!bis)
+		{
+			// LOCAL excludes/sims (field spec 2026-07-18): the per-mob
+			// twins of the global exclude/sim tools, scoped to the lensed
+			// mob - between the bank buttons and the note.
+			JPanel localRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			localRow.setOpaque(false);
+			localRow.setAlignmentX(LEFT_ALIGNMENT);
+			localRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+			int lensedProfileId = entry.mob().profileId();
+			String mobName = entry.mob().getName();
+			int excludedCount = 0;
+			for (Set<Integer> scoped : mobProfile.allMobExclusions(lensedProfileId).values())
+			{
+				excludedCount += scoped.size();
+			}
+			int simCount = mobProfile.allMobSims(lensedProfileId).size();
+			// Same color language as the global -N/+N chips above the
+			// search bar: red for exclusions, green for sims.
+			localRow.add(localCountChip(
+				excludedCount > 0 ? "Exclude here: " + excludedCount : "Exclude here",
+				excludedCount > 0, true,
+				"Never use an item vs " + mobName + " (this mob only) - click to add or manage",
+				() -> asActive(entry, () -> manageLocalExclusions(entry, lensedProfileId, mobName))));
+			localRow.add(localCountChip(
+				simCount > 0 ? "Sim here: " + simCount : "Sim here",
+				simCount > 0, false,
+				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
+				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
+			card.add(Box.createVerticalStrut(4));
+			card.add(localRow);
 		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
@@ -4441,10 +5319,145 @@ public class LoadoutLabPanel extends PluginPanel
 		return card;
 	}
 
+	/** The roster's distinct profile ids in mob order - synthetic phase
+	 * variants (TD shields, KQ forms) collapse onto their real mob, so a
+	 * whole-group write touches each underlying profile once. */
+	private static java.util.List<Integer> groupProfileIds(ResultEntry entry)
+	{
+		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
+		for (MonsterStats mob : entry.mobs)
+		{
+			ids.add(mob.profileId());
+		}
+		return new java.util.ArrayList<>(ids);
+	}
+
+	/** A local exclude/sim chip in the GLOBAL chips' color language:
+	 * red for exclusions, green for sims, muted when empty. */
+	private JComponent localCountChip(String text, boolean active, boolean red,
+		String tooltip, Runnable onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(true);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(red
+			? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
+			: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)));
+		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
+		chip.setBorder(new RoundedBorder(active
+			? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
+			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
+		chip.setToolTipText(tooltip);
+		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		chip.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				onClick.run();
+			}
+		});
+		return chip;
+	}
+
+	/** The local exclusions manager: current entries with click-to-allow,
+	 * plus the add-by-search entry point. */
+	private void manageLocalExclusions(ResultEntry entry, int profileId, String mobName)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem add = new JMenuItem("Exclude an item vs " + mobName + "...");
+		add.addActionListener(e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
+		{
+			mobProfile.excludeForMob(profileId, ALL_SETS, itemId);
+			recompute();
+		}));
+		menu.add(add);
+		java.util.List<Integer> group = groupProfileIds(entry);
+		if (group.size() > 1)
+		{
+			// Whole-group write (field request 2026-07-18): the same local
+			// exclusion lands on EVERY member, one undo entry.
+			JMenuItem addAll = new JMenuItem("Exclude an item vs the whole group...");
+			addAll.addActionListener(e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
+			{
+				mobProfile.excludeForMobs(group, ALL_SETS, itemId);
+				recompute();
+			}));
+			menu.add(addAll);
+		}
+		Map<String, Set<Integer>> scopes = mobProfile.allMobExclusions(profileId);
+		if (!scopes.isEmpty())
+		{
+			menu.addSeparator();
+			for (Map.Entry<String, Set<Integer>> scope : scopes.entrySet())
+			{
+				for (int itemId : scope.getValue())
+				{
+					GearItem item = data.getGear(itemId);
+					JMenuItem remove = new JMenuItem("Allow: "
+						+ (item != null ? item.label() : "item " + itemId)
+						+ " (" + scopeLabel(scope.getKey()) + ")");
+					remove.addActionListener(e ->
+					{
+						mobProfile.removeMobExclusion(profileId, scope.getKey(), itemId);
+						recompute();
+					});
+					menu.add(remove);
+				}
+			}
+		}
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	/** The local sims manager: the per-mob twin of the global simmed
+	 * items - counted as owned vs this mob only. */
+	private void manageLocalSims(ResultEntry entry, int profileId, String mobName)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem add = new JMenuItem("Sim an item vs " + mobName + "...");
+		add.addActionListener(e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
+			(itemId, name) ->
+		{
+			mobProfile.simForMob(profileId, itemId, name);
+			recompute();
+		}));
+		menu.add(add);
+		java.util.List<Integer> group = groupProfileIds(entry);
+		if (group.size() > 1)
+		{
+			JMenuItem addAll = new JMenuItem("Sim an item vs the whole group...");
+			addAll.addActionListener(e -> itemSearch.search("Sim vs the whole group (counts as owned)",
+				(itemId, name) ->
+			{
+				mobProfile.simForMobs(group, itemId, name);
+				recompute();
+			}));
+			menu.add(addAll);
+		}
+		Map<Integer, String> sims = mobProfile.allMobSims(profileId);
+		if (!sims.isEmpty())
+		{
+			menu.addSeparator();
+			for (Map.Entry<Integer, String> sim : sims.entrySet())
+			{
+				JMenuItem remove = new JMenuItem("Unsim: " + sim.getValue());
+				remove.addActionListener(e ->
+				{
+					mobProfile.removeMobSim(profileId, sim.getKey());
+					recompute();
+				});
+				menu.add(remove);
+			}
+		}
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
 	private static final ImageIcon SWORD_ICON = loadSkillIcon("attack");
 	private static final ImageIcon SHIELD_ICON = loadSkillIcon("defence");
-	private static final javax.swing.Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
+	private static final Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
 
 	private static ImageIcon loadPrayerIcon()
 	{
@@ -4532,15 +5545,25 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		PvpRisk.Assessment risk =
 			PvpRisk.assess(best.getLoadout(), renderingRiskSpecWeapon, renderingRiskKeep);
-		JLabel line = statLine(PvpRisk.formatGp(risk.riskGp),
+		// Assumed consumables are RISKED in the wilderness too (field spec
+		// 2026-07-18: a heart is NOT a safe item) - live GE prices, added
+		// on top of the worn set's risk. Protection ranking is not applied
+		// to them (v1 approximation, called out in the tooltip).
+		long consumableRisk = 0;
+		for (int id : renderingRiskConsumables)
+		{
+			consumableRisk += Math.max(0, consumablePrices.getOrDefault(id, 0L));
+		}
+		long totalRisk = risk.riskGp + consumableRisk;
+		JLabel line = statLine(PvpRisk.formatGp(totalRisk),
 			"placeholder",
 			active != null && !active.riskCap.trim().isEmpty()
-				&& risk.riskGp <= parsedBudgetGp(active.riskCap)
+				&& totalRisk <= parsedBudgetGp(active.riskCap)
 				? GOOD : new Color(220, 140, 120),
 			new FixedWidthIcon(new SkullIcon()));
 		int keep = renderingRiskKeep;
 		StringBuilder tip = new StringBuilder("<html>Risk: "
-			+ PvpRisk.formatGp(risk.riskGp) + " gp - " + keep
+			+ PvpRisk.formatGp(totalRisk) + " gp - " + keep
 			+ " kept on death.<br>Kept:");
 		if (risk.kept.isEmpty())
 		{
@@ -4569,6 +5592,18 @@ public class LoadoutLabPanel extends PluginPanel
 					.append(" (").append(PvpRisk.formatGp(charge.costGp)).append(")");
 			}
 		}
+		if (consumableRisk > 0)
+		{
+			tip.append("<br>Assumed consumables (risked, not ranked for protection):");
+			for (int id : renderingRiskConsumables)
+			{
+				long price = Math.max(0, consumablePrices.getOrDefault(id, 0L));
+				if (price > 0)
+				{
+					tip.append("<br>- ").append(PvpRisk.formatGp(price)).append(" gp");
+				}
+			}
+		}
 		tip.append("<br>Skulled: keep 0-1.");
 		tip.append("</html>");
 		line.setToolTipText(tip.toString());
@@ -4577,7 +5612,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The death skull as a standalone icon - the grid badge's drawing at
 	 * line size (glyph-safe). */
-	private static final class SkullIcon implements javax.swing.Icon
+	private static final class SkullIcon implements Icon
 	{
 		@Override
 		public int getIconWidth()
@@ -4659,7 +5694,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The grid badge's gp pile as a standalone icon (glyph-safe). */
-	private static final class CoinsIcon implements javax.swing.Icon
+	private static final class CoinsIcon implements Icon
 	{
 		@Override
 		public int getIconWidth()
@@ -4883,6 +5918,24 @@ public class LoadoutLabPanel extends PluginPanel
 		setAntifireMode(assume ? 2 : 0);
 	}
 
+	private void setRaidBoost(boolean assume)
+	{
+		if (active != null && active.raidBoost != assume)
+		{
+			active.raidBoost = assume;
+			recompute();
+		}
+	}
+
+	private void setMaxSwaps(int swaps)
+	{
+		if (active != null && active.maxSwaps != swaps)
+		{
+			active.maxSwaps = swaps;
+			recompute();
+		}
+	}
+
 	private void setAntifireMode(int mode)
 	{
 		if (active != null && active.antifireMode != mode)
@@ -4893,9 +5946,32 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The active set's item ids: gear + loaded dart + spec weapon. */
+	/** The lensed result's inventory item ids for the viewed style - bank
+	 * show/filter treats carried swaps exactly like worn gear. */
+	private Set<Integer> inventoryIds(CombatStyle style)
+	{
+		if (active == null || active.results == null)
+		{
+			return Collections.emptySet();
+		}
+		StyleResult r = active.results.get(style);
+		List<GearItem> inv = r == null ? Collections.emptyList()
+			: active.viewingBis ? r.gameBench : r.bench;
+		Set<Integer> ids = new HashSet<>();
+		for (GearItem item : inv)
+		{
+			ids.add(item.getId());
+		}
+		if (r != null)
+		{
+			ids.addAll(consumableIds(active, r, active.viewingBis));
+		}
+		return ids;
+	}
+
 	private static Set<Integer> setItemIds(DpsResult best, GearItem specWeapon, GearItem dart)
 	{
-		Set<Integer> ids = new java.util.HashSet<>();
+		Set<Integer> ids = new HashSet<>();
 		for (GearItem item : best.getLoadout().getGear().values())
 		{
 			if (item != null)
@@ -4916,7 +5992,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "Filter bank": a virtual bank tag showing only this set's items.
 	 * The toggle follows the viewed style - applyBankViews retargets. */
-	private javax.swing.JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private JComponent bankFilterButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		return paramChip("Filter bank", bankFiltering, true,
 			"Show only this set's items in the bank (needs Bank Tags enabled)", () ->
@@ -4929,7 +6005,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** "Show in bank": outline this set's items while the bank is open.
 	 * The toggle follows the viewed style - applyBankViews retargets. */
-	private javax.swing.JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
+	private JComponent bankButton(CombatStyle style, DpsResult best, GearItem specWeapon)
 	{
 		return paramChip("Show in bank", bankShowing, true,
 			"Outline this set's items in the bank", () ->
@@ -5070,11 +6146,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small icon on a CELL_BG rounded plate (2px padding each side). */
-	private static final class BackedIcon implements javax.swing.Icon
+	private static final class BackedIcon implements Icon
 	{
-		private final javax.swing.Icon delegate;
+		private final Icon delegate;
 
-		BackedIcon(javax.swing.Icon delegate)
+		BackedIcon(Icon delegate)
 		{
 			this.delegate = delegate;
 		}
@@ -5285,7 +6361,7 @@ int sprite = incoming.protectPrayer != null
 			// xp!) survives in the tooltip.
 			JLabel styleLine = statLine(styleText,
 				"Use this attack style: " + result.getAttackType(), statText, null);
-			attachStatSprite(styleLine, net.runelite.api.gameval.SpriteID.SideIcons.COMBAT);
+			attachStatSprite(styleLine, SpriteID.SideIcons.COMBAT);
 			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
@@ -5412,7 +6488,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** One stat line: compact 12px, icon optional, tooltip carries the
 	 * sentence. */
-	private static JLabel statLine(String text, String tooltip, Color color, javax.swing.Icon icon)
+	private static JLabel statLine(String text, String tooltip, Color color, Icon icon)
 	{
 		JLabel line = new JLabel(text);
 		line.setForeground(color);
@@ -5428,16 +6504,53 @@ int sprite = incoming.protectPrayer != null
 		return line;
 	}
 
+	/** A tiny painted infinity sign for the unlimited-budget chip
+	 * (field spec 2026-07-18) - drawn, never a Unicode glyph. */
+	private static final class InfinityIcon implements Icon
+	{
+		private final Color color;
+
+		InfinityIcon(Color color)
+		{
+			this.color = color;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return 15;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return 10;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+				RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			g2.setStroke(new BasicStroke(1.6f));
+			g2.drawOval(x, y + 2, 6, 6);
+			g2.drawOval(x + 7, y + 2, 6, 6);
+			g2.dispose();
+		}
+	}
+
 	/** A fixed-width box that centres its delegate - every stat-panel
 	 * line's icon occupies the SAME column width, so the values start on
 	 * one hard left edge (field spec: a strong visual column). */
-	private static final class FixedWidthIcon implements javax.swing.Icon
+	private static final class FixedWidthIcon implements Icon
 	{
 		static final int WIDTH = 20;
 		static final int HEIGHT = 16;
-		private final javax.swing.Icon delegate;
+		private final Icon delegate;
 
-		FixedWidthIcon(javax.swing.Icon delegate)
+		FixedWidthIcon(Icon delegate)
 		{
 			this.delegate = delegate;
 		}
@@ -5466,7 +6579,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted crosshair for the accuracy line (glyph-safe) - the
 	 * Attack staticon read as the same sword as the style icon. */
-	private static final class CrosshairIcon implements javax.swing.Icon
+	private static final class CrosshairIcon implements Icon
 	{
 		private final int size;
 
@@ -5516,21 +6629,21 @@ int sprite = incoming.protectPrayer != null
 	 * tab star, the other books their dedicated sidebar art. */
 	private static int spellbookSprite(String book)
 	{
-		switch (book.toLowerCase(java.util.Locale.ROOT))
+		switch (book.toLowerCase(Locale.ROOT))
 		{
 			case "ancient":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
+				return SpriteID.SideIcons.SPELLBOOK_ANCIENT_MAGICKS;
 			case "lunar":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_LUNAR;
+				return SpriteID.SideIcons.SPELLBOOK_LUNAR;
 			case "arceuus":
-				return net.runelite.api.gameval.SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
+				return SpriteID.SideIcons.SPELLBOOK_ARCEUUS;
 			default:
-				return net.runelite.api.gameval.SpriteID.SideIcons.MAGIC;
+				return SpriteID.SideIcons.MAGIC;
 		}
 	}
 
 	/** A painted red hitsplat for the max-hit line (glyph-safe). */
-	private static final class HitsplatIcon implements javax.swing.Icon
+	private static final class HitsplatIcon implements Icon
 	{
 		private final int size;
 
@@ -5573,7 +6686,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted circled-i for the mechanics note - amber like the note
 	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
-	private static final class InfoIcon implements javax.swing.Icon
+	private static final class InfoIcon implements Icon
 	{
 		private final int size;
 
@@ -5617,7 +6730,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** The amber plus-star (the mascots' signature), as a static icon for
 	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
-	private static final class PlusStarIcon implements javax.swing.Icon
+	private static final class PlusStarIcon implements Icon
 	{
 		private final int size;
 
@@ -5701,7 +6814,7 @@ int sprite = incoming.protectPrayer != null
 	}
 
 	/** A transparent placeholder holding a grid corner open (classic layout). */
-	private static javax.swing.JComponent blankCell(int cell)
+	private static JComponent blankCell(int cell)
 	{
 		JLabel blank = new JLabel();
 		blank.setPreferredSize(new Dimension(cell, cell));

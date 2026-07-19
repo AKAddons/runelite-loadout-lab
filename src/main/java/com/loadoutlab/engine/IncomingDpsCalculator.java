@@ -4,11 +4,11 @@ import com.loadoutlab.data.MonsterOffence;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.StatBlock;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.LinkedHashMap;
 
 /**
  * The other direction: how hard the monster hits YOU in a given set.
@@ -479,7 +479,7 @@ public final class IncomingDpsCalculator
 		// Callisto melee) save less than their raw size suggests.
 		// Insertion-ordered so tied savings resolve deterministically
 		// (attack order in the curated data wins).
-		Map<String, Double> savedByPrayer = new java.util.LinkedHashMap<>();
+		Map<String, Double> savedByPrayer = new LinkedHashMap<>();
 		for (int i = 0; i < attacks.size(); i++)
 		{
 			BossIncomingOverrides.Attack attack = attacks.get(i);

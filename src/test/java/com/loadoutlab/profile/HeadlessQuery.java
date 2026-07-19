@@ -107,7 +107,7 @@ public final class HeadlessQuery
 			}
 			boolean inWilderness = wilderness
 				|| com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
-			service.bestPerStyle(monster, profile.realLevels, profile.boostedLevels,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, profile.realLevels, profile.boostedLevels,
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
 				excludedByStyle, lowRisk, riskBudget, antifirePotion, inWilderness,

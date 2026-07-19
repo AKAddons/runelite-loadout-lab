@@ -2,6 +2,7 @@
 package com.loadoutlab.engine;
 
 import net.runelite.api.Skill;
+import java.util.Map;
 
 public final class PlayerLevels
 {
@@ -42,7 +43,7 @@ public final class PlayerLevels
 			profile.level(Skill.HITPOINTS));
 	}
 
-	public static PlayerLevels from(java.util.Map<Skill, Integer> levels)
+	public static PlayerLevels from(Map<Skill, Integer> levels)
 	{
 		if (levels == null || levels.isEmpty())
 		{

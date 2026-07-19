@@ -49,6 +49,15 @@ public final class BoostSelector
 
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p)
 	{
+		return bestFor(style, owned, f2p, false);
+	}
+
+	/** Risk-capped wilderness searches never assume a heart (field spec
+	 * 2026-07-18): both hearts are tradeable and worth far more than any
+	 * sane risk cap, so the assumption falls back to the magic potion. */
+	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p,
+		boolean noHearts)
+	{
 		if (f2p)
 		{
 			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
@@ -60,11 +69,11 @@ public final class BoostSelector
 			case RANGED:
 				return BoostProfile.RANGING;
 			case MAGIC:
-				if (owned.owns(SATURATED_HEART))
+				if (!noHearts && owned.owns(SATURATED_HEART))
 				{
 					return BoostProfile.SATURATED_HEART;
 				}
-				if (owned.owns(IMBUED_HEART))
+				if (!noHearts && owned.owns(IMBUED_HEART))
 				{
 					return BoostProfile.IMBUED_HEART;
 				}

@@ -7,6 +7,10 @@ import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
 import java.util.Locale;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 public final class DpsCalculator
 {
@@ -17,8 +21,8 @@ public final class DpsCalculator
 	 * attached to the result for user assurance (single-threaded use,
 	 * matching how the optimizer drives this class). Melee tries several
 	 * stance variants per calculate; the part set dedupes the re-adds. */
-	private final java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> counted =
-		new java.util.LinkedHashMap<>();
+	private final LinkedHashMap<String, LinkedHashSet<String>> counted =
+		new LinkedHashMap<>();
 	/** The beam turns collection off: only results that can reach the panel
 	 * (final rescore, fill, spec) need the bonus list, and the map churn +
 	 * per-result copy is pure waste across beam trials. */
@@ -35,15 +39,15 @@ public final class DpsCalculator
 	{
 		if (collectCounted)
 		{
-			counted.computeIfAbsent(source, s -> new java.util.LinkedHashSet<>()).add(part);
+			counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part);
 		}
 	}
 
 	/** The assurance lines: "source: +X% accuracy, +Y% damage" per source. */
-	private java.util.List<String> countedLines()
+	private List<String> countedLines()
 	{
-		java.util.List<String> lines = new java.util.ArrayList<>(counted.size());
-		for (java.util.Map.Entry<String, java.util.LinkedHashSet<String>> entry : counted.entrySet())
+		List<String> lines = new ArrayList<>(counted.size());
+		for (Map.Entry<String, LinkedHashSet<String>> entry : counted.entrySet())
 		{
 			lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
 		}
@@ -272,6 +276,18 @@ public final class DpsCalculator
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
 	}
 
+	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
+	 * only (wiki excludes Strike and Surge explicitly). */
+	private static boolean twinflameDoubles(SpellStats spell)
+	{
+		if (spell.getElement() == null || spell.getElement().isEmpty())
+		{
+			return false;
+		}
+		String name = spell.getName().toLowerCase(Locale.ROOT);
+		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
+	}
+
 	private DpsResult calculateMagic(OptimizationRequest request, Loadout loadout)
 	{
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
@@ -305,11 +321,29 @@ public final class DpsCalculator
 			counted("void set", "+2.5% damage");
 			maxHit = (int) Math.floor(maxHit * 1.025);
 		}
+		// Twinflame staff (wiki, verified 2026-07-18): +10% accuracy and
+		// damage on standard-spellbook spells, and Bolt/Blast/Wave
+		// elementals fire a SECOND hit at 40% of the first (no extra
+		// runes) - Strike and Surge spells do not double.
+		SpellStats twinflameSpell = effectiveRequest.getSpell();
+		boolean twinflame = wearing(loadout, "twinflame") && twinflameSpell != null
+			&& "standard".equalsIgnoreCase(twinflameSpell.getSpellbook());
+		if (twinflame)
+		{
+			counted("twinflame staff", "+10% accuracy and damage on standard spells");
+			attackRoll = (long) Math.floor(attackRoll * 1.10);
+			maxHit = (int) Math.floor(maxHit * 1.10);
+		}
 		maxHit = applyFlatArmour(effectiveRequest, maxHit);
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (twinflame && twinflameDoubles(twinflameSpell))
+		{
+			counted("twinflame staff", "second hit at 40% (Bolt/Blast/Wave)");
+			expected *= 1.4;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
 		double frostweaver = frostweaverBonus(effectiveRequest, loadout);
@@ -502,7 +536,10 @@ public final class DpsCalculator
 			// speed (upstream billed autocasts at the wand's 4 ticks - a
 			// 25% dps overstatement). Harmonised nightmare staff: 4 ticks
 			// on standard spells.
-			return name(weapon).contains("harmonised") ? 4 : 5;
+			// Twinflame casts at 6 ticks (wiki: "attack and cast speed of
+			// 6") - its damage bonuses more than pay the tick back.
+			return name(weapon).contains("harmonised") ? 4
+				: name(weapon).contains("twinflame") ? 6 : 5;
 		}
 		return Math.max(1, weapon.getSpeed());
 	}
@@ -1164,7 +1201,7 @@ public final class DpsCalculator
 			return 0;
 		}
 		String spellName = spell.getName();
-		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(java.util.Locale.ROOT);
+		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(Locale.ROOT);
 		double chance;
 		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
 		{

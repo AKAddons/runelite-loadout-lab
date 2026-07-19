@@ -3,6 +3,8 @@ package com.loadoutlab.command;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * In-memory undo / redo stack for {@link Command} entries.
@@ -41,7 +43,7 @@ public class CommandHistory
 	/** When non-null, execute() appends to this buffer instead of
 	 *  pushing to undoStack. endCompound() collapses the buffer into a single
 	 *  CompositeCommand and pushes it. */
-	private java.util.List<Command> compoundBuffer = null;
+	private List<Command> compoundBuffer = null;
 	private String compoundDescription = null;
 	/** Nesting depth counter for begin/endCompound. Without ref-counting,
 	 *  an inner endCompound prematurely closes the outer compound. */
@@ -90,7 +92,7 @@ public class CommandHistory
 	{
 		compoundDepth++;
 		if (compoundBuffer != null) return; // already in a compound - just bump the depth
-		compoundBuffer = new java.util.ArrayList<>();
+		compoundBuffer = new ArrayList<>();
 		compoundDescription = description;
 	}
 
@@ -110,7 +112,7 @@ public class CommandHistory
 		if (compoundDepth > 0) compoundDepth--;
 		if (compoundDepth > 0) return; // still inside a nested compound
 		if (compoundBuffer == null) return;
-		java.util.List<Command> buf = compoundBuffer;
+		List<Command> buf = compoundBuffer;
 		String desc = compoundDescription;
 		compoundBuffer = null;
 		compoundDescription = null;

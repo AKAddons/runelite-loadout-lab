@@ -2,12 +2,8 @@ package com.loadoutlab.engine;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.StatBlock;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -53,10 +49,12 @@ public final class UntradeableDeathCosts
 
 	static
 	{
-		try (InputStream stream = UntradeableDeathCosts.class.getResourceAsStream(RESOURCE);
-			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
+		JsonObject root = com.loadoutlab.data.JsonResources.object(RESOURCE);
+		if (root == null)
 		{
-			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
+			throw new IllegalStateException("Could not load " + RESOURCE);
+		}
+		{
 			for (Map.Entry<String, JsonElement> entry : root.entrySet())
 			{
 				JsonObject row = entry.getValue().getAsJsonObject();
@@ -68,10 +66,6 @@ public final class UntradeableDeathCosts
 					FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong());
 				}
 			}
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("Could not load " + RESOURCE, ex);
 		}
 	}
 

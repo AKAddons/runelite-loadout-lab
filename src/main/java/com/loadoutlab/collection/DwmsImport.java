@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.runelite.client.config.ConfigManager;
+import java.util.LinkedHashMap;
 
 /**
  * Best-effort import of gear tracked by the "Dude, Where's My Stuff?"
@@ -45,7 +46,7 @@ public class DwmsImport
 	/** Re-read the current RSProfile's DWMS data (cheap; called per compute). */
 	public void reload()
 	{
-		Map<String, Map<Integer, Integer>> nextFamilies = new java.util.LinkedHashMap<>();
+		Map<String, Map<Integer, Integer>> nextFamilies = new LinkedHashMap<>();
 		Map<Integer, Integer> next = new HashMap<>();
 		String profileKey = configManager.getRSProfileKey();
 		if (profileKey != null)
