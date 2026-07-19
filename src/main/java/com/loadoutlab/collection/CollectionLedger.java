@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.config.ConfigManager;
 import java.util.Collections;
 
@@ -37,30 +38,67 @@ public class CollectionLedger
 	/** Ledger sources, each persisted under its own key. */
 	public enum Source
 	{
-		EQUIPMENT("equipment"),
-		INVENTORY("inventory"),
-		BANK("bank"),
-		/** Seen when the bag is opened or checked; vital for UIM accounts. */
-		LOOTING_BAG("lootingBag"),
+		EQUIPMENT("equipment", net.runelite.api.InventoryID.EQUIPMENT.getId()),
+		INVENTORY("inventory", net.runelite.api.InventoryID.INVENTORY.getId()),
+		BANK("bank", net.runelite.api.InventoryID.BANK.getId()),
+		/** Seen when the bag is opened or checked; vital for UIM accounts.
+		 * The classic InventoryID enum lacks the newer containers; the
+		 * gameval ids are the authoritative modern constants. */
+		LOOTING_BAG("lootingBag", InventoryID.LOOTING_BAG),
 		/** POH costume storage: one shared container covering the armour
 		 * case, wardrobes, treasure chest, and cape rack, seen when a
 		 * costume storage interface is opened. */
-		POH_COSTUMES("pohCostumes"),
+		POH_COSTUMES("pohCostumes", InventoryID.POH_COSTUMES),
 		/** Not container-backed: filled units' default items, read from
-		 * the STASH chart (see LoadoutLabPlugin.scanStashChart). */
-		STASH("stash"),
+		 * the STASH chart (see LoadoutLabPlugin.scanStashChart). The -1
+		 * container sentinel makes the per-tick drain's null-container
+		 * check clear a stray dirty flag, and keeps STASH out of the
+		 * {@link #forContainer} reverse lookup. */
+		STASH("stash", -1),
 		/** Sailing boat cargo holds, one container per boat slot. */
-		CARGO_HOLD_1("cargoHold1"),
-		CARGO_HOLD_2("cargoHold2"),
-		CARGO_HOLD_3("cargoHold3"),
-		CARGO_HOLD_4("cargoHold4"),
-		CARGO_HOLD_5("cargoHold5");
+		CARGO_HOLD_1("cargoHold1", InventoryID.SAILING_BOAT_1_CARGOHOLD),
+		CARGO_HOLD_2("cargoHold2", InventoryID.SAILING_BOAT_2_CARGOHOLD),
+		CARGO_HOLD_3("cargoHold3", InventoryID.SAILING_BOAT_3_CARGOHOLD),
+		CARGO_HOLD_4("cargoHold4", InventoryID.SAILING_BOAT_4_CARGOHOLD),
+		CARGO_HOLD_5("cargoHold5", InventoryID.SAILING_BOAT_5_CARGOHOLD);
 
 		private final String key;
+		private final int containerId;
 
-		Source(String key)
+		Source(String key, int containerId)
 		{
 			this.key = key;
+			this.containerId = containerId;
+		}
+
+		/** The item-container id this source is scanned from, or -1 when
+		 * the source is not container-backed (STASH). */
+		public int containerId()
+		{
+			return containerId;
+		}
+
+		/**
+		 * Reverse lookup: the source scanned from {@code containerId}, or
+		 * null when no source uses it. Callers pass an UNMASKED container
+		 * id (the 0x8000 modified-container bit already stripped).
+		 */
+		public static Source forContainer(int containerId)
+		{
+			// Guard the STASH sentinel: without it, -1 would resolve to
+			// STASH instead of "no such container".
+			if (containerId < 0)
+			{
+				return null;
+			}
+			for (Source s : values())
+			{
+				if (s.containerId == containerId)
+				{
+					return s;
+				}
+			}
+			return null;
 		}
 
 		/** The persisted config-key segment; also the storage name in the

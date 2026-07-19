@@ -98,7 +98,7 @@ import java.util.ArrayList;
 	description = "Best-in-slot sets from the gear you own, per enemy and combat style, with exact DPS",
 	tags = {"gear", "bis", "dps", "loadout", "equipment"}
 )
-public class LoadoutLabPlugin extends Plugin
+public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeHook
 {
 	@Inject
 	private Client client;
@@ -361,31 +361,9 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				LoadoutLabPanel.ComputeHook hook = new LoadoutLabPanel.ComputeHook()
-			{
-				@Override
-				public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-					boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-					boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
-				{
-					computeForMonster(monster, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps,
-						raidBoost, onDone);
-				}
-
-				@Override
-				public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly,
-					boolean onSlayerTask, boolean inWilderness, String spellbookLock,
-					int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
-				{
-					computeForRoster(mobs, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, maxSwaps,
-						raidBoost, onDone);
-				}
-			};
-			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, hook,
+			// The plugin IS the compute hook (see compute/computeRoster
+			// below) - no delegating anonymous class needed.
+			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,
 					id ->
 					{
 						exec(Commands.toggleExclusion(exclusions, id, itemLabel(id)));
@@ -698,7 +676,9 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		else
 		{
-			CollectionLedger.Source source = storageSourceFor(id);
+			// EQUIPMENT/INVENTORY/BANK are consumed by the branches above,
+			// so this only ever resolves storage-style containers.
+			CollectionLedger.Source source = CollectionLedger.Source.forContainer(id);
 			if (source != null)
 			{
 				// These containers may not be re-fetchable later under the
@@ -731,43 +711,9 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-	/** Storage containers scanned from the event rather than re-fetched. */
-	private static CollectionLedger.Source storageSourceFor(int containerId)
-	{
-		switch (containerId)
-		{
-			case net.runelite.api.gameval.InventoryID.LOOTING_BAG:
-				// Fires when the bag is opened or checked - the only times
-				// the client learns its contents. Vital for UIM.
-				return CollectionLedger.Source.LOOTING_BAG;
-			case net.runelite.api.gameval.InventoryID.POH_COSTUMES:
-				// One shared container for every costume-room storage; fires
-				// when a case/wardrobe/chest interface is opened in the POH.
-				return CollectionLedger.Source.POH_COSTUMES;
-			default:
-				return cargoSourceFor(containerId);
-		}
-	}
-
-	/** Sailing cargo holds: one container per boat slot. */
-	private static CollectionLedger.Source cargoSourceFor(int containerId)
-	{
-		switch (containerId)
-		{
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_1;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_2;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_3;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_4;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_5;
-			default:
-				return null;
-		}
-	}
+	// The container id per source (looting bag, POH costume storage, the
+	// five sailing cargo holds) now lives on CollectionLedger.Source, so
+	// both directions of the mapping come from one table there.
 
 	@Subscribe
 	public void onGameTick(GameTick event)
@@ -795,7 +741,7 @@ public class LoadoutLabPlugin extends Plugin
 				dirtySources.remove(source);
 				continue;
 			}
-			ItemContainer c = client.getItemContainer(containerFor(source));
+			ItemContainer c = client.getItemContainer(source.containerId());
 			if (c == null)
 			{
 				dirtySources.remove(source);
@@ -1641,7 +1587,7 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	/** Roster mirror of computeForMonster: same client-thread staging, then
+	/** Roster mirror of compute: same client-thread staging, then
 	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
 	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
 	 * v1 - roster-wide per-mob preferences come later. */
@@ -1661,7 +1607,8 @@ public class LoadoutLabPlugin extends Plugin
 		panel.setConsumablePrices(prices);
 	}
 
-	private void computeForRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
+	@Override
+	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1701,7 +1648,8 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
+	@Override
+	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1832,28 +1780,6 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		return client.getGameState() == GameState.LOGGED_IN
 			&& !client.getWorldType().contains(WorldType.MEMBERS);
-	}
-
-	private static int containerFor(CollectionLedger.Source source)
-	{
-		switch (source)
-		{
-			case EQUIPMENT: return InventoryID.EQUIPMENT.getId();
-			case INVENTORY: return InventoryID.INVENTORY.getId();
-			case BANK: return InventoryID.BANK.getId();
-			// The classic InventoryID enum lacks the newer containers; the
-			// gameval ids are the authoritative modern constants.
-			case LOOTING_BAG: return net.runelite.api.gameval.InventoryID.LOOTING_BAG;
-			case POH_COSTUMES: return net.runelite.api.gameval.InventoryID.POH_COSTUMES;
-			case CARGO_HOLD_1: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD;
-			case CARGO_HOLD_2: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD;
-			case CARGO_HOLD_3: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD;
-			case CARGO_HOLD_4: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD;
-			case CARGO_HOLD_5: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD;
-			// STASH is chart-driven, never container-scanned; -1 makes the
-			// per-tick drain's null-container check clear a stray dirty flag.
-			default: return -1;
-		}
 	}
 
 	/** Bundled sidebar icon (see scripts/generate_icons.py), drawn fallback if absent. */
