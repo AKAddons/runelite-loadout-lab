@@ -1,0 +1,311 @@
+{
+ "spellLevels": {
+  "Wind Strike": 1,
+  "Water Strike": 5,
+  "Earth Strike": 9,
+  "Fire Strike": 13,
+  "Wind Bolt": 17,
+  "Water Bolt": 23,
+  "Earth Bolt": 29,
+  "Fire Bolt": 35,
+  "Crumble Undead": 39,
+  "Wind Blast": 41,
+  "Water Blast": 47,
+  "Iban Blast": 50,
+  "Magic Dart": 50,
+  "Earth Blast": 53,
+  "Fire Blast": 59,
+  "Saradomin Strike": 60,
+  "Claws of Guthix": 60,
+  "Flames of Zamorak": 60,
+  "Wind Wave": 62,
+  "Water Wave": 65,
+  "Earth Wave": 70,
+  "Fire Wave": 75,
+  "Wind Surge": 81,
+  "Water Surge": 85,
+  "Earth Surge": 90,
+  "Fire Surge": 95,
+  "Smoke Rush": 50,
+  "Shadow Rush": 52,
+  "Blood Rush": 56,
+  "Ice Rush": 58,
+  "Smoke Burst": 62,
+  "Shadow Burst": 64,
+  "Blood Burst": 68,
+  "Ice Burst": 70,
+  "Smoke Blitz": 74,
+  "Shadow Blitz": 76,
+  "Blood Blitz": 80,
+  "Ice Blitz": 82,
+  "Smoke Barrage": 86,
+  "Shadow Barrage": 88,
+  "Blood Barrage": 92,
+  "Ice Barrage": 94,
+  "Ghostly Grasp": 35,
+  "Skeletal Grasp": 56,
+  "Undead Grasp": 79,
+  "Inferior Demonbane": 44,
+  "Superior Demonbane": 62,
+  "Dark Demonbane": 82
+ },
+ "slayerContains": [
+  "aberrant spectre",
+  "abyssal demon",
+  "banshee",
+  "basilisk",
+  "bloodveld",
+  "cave crawler",
+  "cave horror",
+  "crawling hand",
+  "dust devil",
+  "gargoyle",
+  "kurask",
+  "nechryael",
+  "rockslug",
+  "skeletal wyvern",
+  "smoke devil",
+  "turoth",
+  "wyrm",
+  "drake",
+  "hydra",
+  "tzkal-zuk",
+  "tztok-jad",
+  "jaltok-jad",
+  "tzhaar",
+  "tok-xil",
+  "yt-mejkot",
+  "yt-hurkot",
+  "ket-zek",
+  "tz-kih",
+  "tz-kek"
+ ],
+ "slayerStartsWith": [
+  "jal-"
+ ],
+ "questRules": [
+  {
+   "terms": [
+    "ava's attractor",
+    "ava's accumulator"
+   ],
+   "quest": "ANIMAL_MAGNETISM"
+  },
+  {
+   "terms": [
+    "ava's assembler"
+   ],
+   "quest": "DRAGON_SLAYER_II"
+  },
+  {
+   "terms": [
+    "dragon scimitar"
+   ],
+   "quest": "MONKEY_MADNESS_I"
+  },
+  {
+   "terms": [
+    "heavy ballista",
+    "light ballista"
+   ],
+   "quest": "MONKEY_MADNESS_II"
+  },
+  {
+   "terms": [
+    "dragon halberd"
+   ],
+   "quest": "REGICIDE"
+  },
+  {
+   "terms": [
+    "dragon battleaxe",
+    "dragon mace"
+   ],
+   "quest": "HEROES_QUEST"
+  },
+  {
+   "terms": [
+    "rune platebody",
+    "d'hide body"
+   ],
+   "quest": "DRAGON_SLAYER_I"
+  },
+  {
+   "terms": [
+    "helm of neitiznot"
+   ],
+   "quest": "THE_FREMENNIK_ISLES"
+  },
+  {
+   "terms": [
+    "neitiznot faceguard"
+   ],
+   "quest": "THE_FREMENNIK_EXILES"
+  },
+  {
+   "terms": [
+    "berserker helm",
+    "archer helm",
+    "farseer helm",
+    "warrior helm"
+   ],
+   "quest": "THE_FREMENNIK_TRIALS"
+  },
+  {
+   "terms": [
+    "barrows gloves"
+   ],
+   "quest": "RECIPE_FOR_DISASTER__CULINAROMANCER"
+  },
+  {
+   "terms": [
+    "dragon gloves"
+   ],
+   "quest": "RECIPE_FOR_DISASTER__KING_AWOWOGEI"
+  },
+  {
+   "terms": [
+    "rune gloves"
+   ],
+   "quest": "RECIPE_FOR_DISASTER__SIR_AMIK_VARZE"
+  },
+  {
+   "terms": [
+    "adamant gloves"
+   ],
+   "quest": "RECIPE_FOR_DISASTER__SKRACH_UGLOGWEE"
+  },
+  {
+   "terms": [
+    "mithril gloves"
+   ],
+   "quest": "RECIPE_FOR_DISASTER__LUMBRIDGE_GUIDE"
+  },
+  {
+   "terms": [
+    "ancient staff"
+   ],
+   "quest": "DESERT_TREASURE_I"
+  },
+  {
+   "terms": [
+    "keris partisan"
+   ],
+   "quest": "BENEATH_CURSED_SANDS"
+  },
+  {
+   "terms": [
+    "lunar"
+   ],
+   "quest": "LUNAR_DIPLOMACY"
+  },
+  {
+   "terms": [
+    "crystal bow",
+    "crystal shield"
+   ],
+   "quest": "ROVING_ELVES"
+  },
+  {
+   "terms": [
+    "bow of faerdhinen",
+    "crystal helm",
+    "crystal body",
+    "crystal legs"
+   ],
+   "quest": "SONG_OF_THE_ELVES"
+  },
+  {
+   "terms": [
+    "mythical cape"
+   ],
+   "quest": "DRAGON_SLAYER_II"
+  },
+  {
+   "terms": [
+    "legends' cape"
+   ],
+   "quest": "LEGENDS_QUEST"
+  },
+  {
+   "terms": [
+    "salve amulet"
+   ],
+   "quest": "HAUNTED_MINE"
+  },
+  {
+   "terms": [
+    "barrelchest anchor"
+   ],
+   "quest": "THE_GREAT_BRAIN_ROBBERY"
+  },
+  {
+   "terms": [
+    "darklight",
+    "arclight"
+   ],
+   "quest": "SHADOW_OF_THE_STORM"
+  },
+  {
+   "terms": [
+    "silverlight"
+   ],
+   "quest": "DEMON_SLAYER"
+  },
+  {
+   "terms": [
+    "wolfbane"
+   ],
+   "quest": "PRIEST_IN_PERIL"
+  },
+  {
+   "terms": [
+    "ivandis flail"
+   ],
+   "quest": "IN_AID_OF_THE_MYREQUE"
+  },
+  {
+   "terms": [
+    "blisterwood flail"
+   ],
+   "quest": "SINS_OF_THE_FATHER"
+  },
+  {
+   "terms": [
+    "bearhead"
+   ],
+   "quest": "MOUNTAIN_DAUGHTER"
+  },
+  {
+   "terms": [
+    "dwarven helmet"
+   ],
+   "quest": "BETWEEN_A_ROCK"
+  },
+  {
+   "terms": [
+    "initiate"
+   ],
+   "quest": "RECRUITMENT_DRIVE"
+  },
+  {
+   "terms": [
+    "proselyte"
+   ],
+   "quest": "THE_SLUG_MENACE"
+  },
+  {
+   "terms": [
+    "dorgeshuun",
+    "bone crossbow"
+   ],
+   "quest": "THE_LOST_TRIBE"
+  },
+  {
+   "terms": [
+    "gadderhammer"
+   ],
+   "quest": "IN_AID_OF_THE_MYREQUE"
+  }
+ ]
+}

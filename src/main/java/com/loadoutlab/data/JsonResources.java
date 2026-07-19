@@ -90,6 +90,19 @@ public final class JsonResources
 		}
 	}
 
+	/** Copy the {"name": int} object at root[key] into the map. */
+	public static void stringIntMap(JsonObject root, String key, Map<String, Integer> into)
+	{
+		if (root == null || !root.has(key))
+		{
+			return;
+		}
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject(key).entrySet())
+		{
+			into.put(e.getKey(), e.getValue().getAsInt());
+		}
+	}
+
 	/** Copy the {"id": int} object at root[key] into the map. */
 	public static void intMap(JsonObject root, String key, Map<Integer, Integer> into)
 	{
