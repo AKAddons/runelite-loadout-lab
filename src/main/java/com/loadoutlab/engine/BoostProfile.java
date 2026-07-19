@@ -1,94 +1,71 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+/**
+ * A potion/prayer-free stat boost applied on top of the base levels.
+ *
+ * <p>Every non-live profile is the same shape - floor(flat + level * factor)
+ * added to a fixed set of skills - so each constant just carries its flat
+ * term, its factor, and which skills it touches as letters over the alphabet
+ * a(ttack) s(trength) d(efence) r(anged) m(agic). Magic potion's flat +4 is
+ * encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
+ */
 public enum BoostProfile
 {
-	NONE("No boosts"),
-	LIVE_CURRENT("Current boosted levels"),
+	NONE("No boosts", 0, 0, ""),
+	LIVE_CURRENT("Current boosted levels", 0, 0, ""),
 	// Label deliberately avoids " + " - the assumes chips split on it.
-	F2P_COMBAT("Attack & strength potions"),
-	SUPER_COMBAT("Super combat"),
-	RANGING("Ranging potion"),
-	SUPER_RANGING("Super ranging"),
-	SATURATED_HEART("Saturated heart"),
-	IMBUED_HEART("Imbued heart"),
-	MAGIC("Magic potion"),
-	SUPER_MAGIC("Super magic"),
-	OVERLOAD("Overload"),
-	OVERLOAD_PLUS("Overload (+)"),
-	SMELLING_SALTS("Smelling salts");
+	F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"),
+	SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
+	RANGING("Ranging potion", 4, 0.10, "r"),
+	SUPER_RANGING("Super ranging", 5, 0.15, "r"),
+	SATURATED_HEART("Saturated heart", 4, 0.10, "m"),
+	IMBUED_HEART("Imbued heart", 1, 0.10, "m"),
+	MAGIC("Magic potion", 4, 0.0, "m"),
+	SUPER_MAGIC("Super magic", 5, 0.15, "m"),
+	OVERLOAD("Overload", 5, 0.13, "asdrm"),
+	OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"),
+	SMELLING_SALTS("Smelling salts", 11, 0.16, "asdrm");
 
 	private final String label;
+	private final int flat;
+	private final double factor;
+	/** Which skills this profile boosts, as letters from "asdrm". */
+	private final String skills;
 
-	BoostProfile(String label)
+	BoostProfile(String label, int flat, double factor, String skills)
 	{
 		this.label = label;
+		this.flat = flat;
+		this.factor = factor;
+		this.skills = skills;
 	}
 
 	PlayerLevels apply(PlayerLevels base, PlayerLevels current)
 	{
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-		switch (this)
+		if (this == LIVE_CURRENT)
 		{
-			case LIVE_CURRENT:
-				return current == null ? source : current;
-			case F2P_COMBAT:
-				// The F2P pair: attack + strength potions, +3 plus 10% each.
-				return source.withBoosts(
-					boost(source.getAttack(), 3, 0.10),
-					boost(source.getStrength(), 3, 0.10),
-					0,
-					0,
-					0);
-			case SUPER_COMBAT:
-				return source.withBoosts(
-					boost(source.getAttack(), 5, 0.15),
-					boost(source.getStrength(), 5, 0.15),
-					boost(source.getDefence(), 5, 0.15),
-					0,
-					0);
-			case RANGING:
-				return source.withBoosts(0, 0, 0, boost(source.getRanged(), 4, 0.10), 0);
-			case SUPER_RANGING:
-				return source.withBoosts(0, 0, 0, boost(source.getRanged(), 5, 0.15), 0);
-			case SATURATED_HEART:
-				return source.withBoosts(0, 0, 0, 0, boost(source.getMagic(), 4, 0.10));
-			case IMBUED_HEART:
-				return source.withBoosts(0, 0, 0, 0, boost(source.getMagic(), 1, 0.10));
-			case MAGIC:
-				return source.withBoosts(0, 0, 0, 0, 4);
-			case SUPER_MAGIC:
-				return source.withBoosts(0, 0, 0, 0, boost(source.getMagic(), 5, 0.15));
-			case OVERLOAD:
-				return source.withBoosts(
-					boost(source.getAttack(), 5, 0.13),
-					boost(source.getStrength(), 5, 0.13),
-					boost(source.getDefence(), 5, 0.13),
-					boost(source.getRanged(), 5, 0.13),
-					boost(source.getMagic(), 5, 0.13));
-			case OVERLOAD_PLUS:
-				return source.withBoosts(
-					boost(source.getAttack(), 6, 0.16),
-					boost(source.getStrength(), 6, 0.16),
-					boost(source.getDefence(), 6, 0.16),
-					boost(source.getRanged(), 6, 0.16),
-					boost(source.getMagic(), 6, 0.16));
-			case SMELLING_SALTS:
-				return source.withBoosts(
-					boost(source.getAttack(), 11, 0.16),
-					boost(source.getStrength(), 11, 0.16),
-					boost(source.getDefence(), 11, 0.16),
-					boost(source.getRanged(), 11, 0.16),
-					boost(source.getMagic(), 11, 0.16));
-			case NONE:
-			default:
-				return source;
+			return current == null ? source : current;
 		}
+		// NONE boosts nothing and must hand back the SAME instance: the
+		// general path below always allocates a fresh PlayerLevels.
+		if (skills.isEmpty())
+		{
+			return source;
+		}
+		return source.withBoosts(
+			boostIf('a', source.getAttack()),
+			boostIf('s', source.getStrength()),
+			boostIf('d', source.getDefence()),
+			boostIf('r', source.getRanged()),
+			boostIf('m', source.getMagic()));
 	}
 
-	private static int boost(int level, int base, double factor)
+	/** floor(flat + level * factor), or 0 when this profile skips the skill. */
+	private int boostIf(char skill, int level)
 	{
-		return (int) Math.floor(base + level * factor);
+		return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
 	}
 
 	@Override
