@@ -36,6 +36,7 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -45,6 +46,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -184,31 +186,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** -1 = detect from the collection, else the antifire mode. */
 		public final int defaultAntifireMode;
 
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
-			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
-			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
-		{
-			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
-				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
-				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
-				defaultRiskCap, false, -1);
-		}
-
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
-			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
-			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
-			boolean defaultOnTask)
-		{
-			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
-				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
-				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
-				defaultRiskCap, defaultOnTask, -1);
-		}
-
+		/**
+		 * The one canonical constructor. Callers that used to rely on the
+		 * 18-/19-arg telescoping forms now pass the trailing defaults
+		 * explicitly (defaultOnTask=false, defaultAntifireMode=-1).
+		 */
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
@@ -241,7 +223,7 @@ public class LoadoutLabPanel extends PluginPanel
 		static DisplayOptions all()
 		{
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true, "", "");
+				true, true, true, true, true, true, true, true, true, "", "", false, -1);
 		}
 	}
 
@@ -825,15 +807,11 @@ public class LoadoutLabPanel extends PluginPanel
 			// points (the stored label's menu + the green +N chip); the
 			// mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
-			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
-			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
-			menu.add(joinDiscord);
+			menuItem(menu, "Join our Discord", ev -> LinkBrowser.browse(DISCORD_URL));
 			// Developer-mode only: reopen the live gallery of every mood.
 			if (developerMode)
 			{
-				JMenuItem gallery = new JMenuItem("Preview loading animations");
-				gallery.addActionListener(ev -> showGallery());
-				menu.add(gallery);
+				menuItem(menu, "Preview loading animations", ev -> showGallery());
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
@@ -861,27 +839,13 @@ public class LoadoutLabPanel extends PluginPanel
 		excludeCountChip.setFont(excludeCountChip.getFont().deriveFont(Font.BOLD, 12f));
 		excludeCountChip.setToolTipText("Excluded items - click to manage");
 		excludeCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		excludeCountChip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showExclusionsMenu(e);
-			}
-		});
+		onClick(excludeCountChip, e -> showExclusionsMenu(e));
 		dreamCountChip.setOpaque(true);
 		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
 		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
 		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		dreamCountChip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showDreamsMenu(e);
-			}
-		});
+		onClick(dreamCountChip, e -> showDreamsMenu(e));
 		countRow.add(excludeCountChip);
 		countRow.add(dreamCountChip);
 		top.add(countRow);
@@ -984,14 +948,7 @@ public class LoadoutLabPanel extends PluginPanel
 		storedLabel.setFont(storedLabel.getFont().deriveFont(13f));
 		storedLabel.setAlignmentX(LEFT_ALIGNMENT);
 		storedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		storedLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showStoredMenu(e);
-			}
-		});
+		onClick(storedLabel, e -> showStoredMenu(e));
 		top.add(storedLabel);
 		refreshStoredLabel();
 
@@ -1005,15 +962,11 @@ public class LoadoutLabPanel extends PluginPanel
 		noteHeader.setFont(noteHeader.getFont().deriveFont(Font.BOLD, 12f));
 		noteHeader.setAlignmentX(LEFT_ALIGNMENT);
 		noteHeader.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		noteHeader.addMouseListener(new MouseAdapter()
+		onClick(noteHeader, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				saveNoteIfChanged();
-				setNoteCollapsed(!noteCollapsed());
-				refreshNotePanel();
-			}
+			saveNoteIfChanged();
+			setNoteCollapsed(!noteCollapsed());
+			refreshNotePanel();
 		});
 		noteArea.setLineWrap(true);
 		noteArea.setWrapStyleWord(true);
@@ -2288,22 +2241,18 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamGear.sort(Comparator.comparing(GearItem::label));
 		for (GearItem gear : dreamGear)
 		{
-			JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
-			undream.addActionListener(ev ->
+			menuItem(menu, "Stop simming " + gear.label(), ev ->
 			{
 				dreamToggle.toggle(gear.getId());
 				refreshCountChips();
 				recompute();
 			});
-			menu.add(undream);
 		}
 		if (!dreamGear.isEmpty())
 		{
 			menu.addSeparator();
 		}
-		JMenuItem add = new JMenuItem("Sim an item (consider as owned)...");
-		add.addActionListener(ev -> showAddDreamDialog());
-		menu.add(add);
+		menuItem(menu, "Sim an item (consider as owned)...", ev -> showAddDreamDialog());
 		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
 	}
 
@@ -2314,22 +2263,18 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			GearItem item = data.getGear(id);
 			String label = item == null ? ("item " + id) : item.label();
-			JMenuItem entry = new JMenuItem("Allow again: " + label);
-			entry.addActionListener(a ->
+			menuItem(menu, "Allow again: " + label, a ->
 			{
 				exclusionToggle.toggle(id);
 				refreshExclusionsLabel();
 				recompute();
 			});
-			menu.add(entry);
 		}
 		if (menu.getComponentCount() > 0)
 		{
 			menu.addSeparator();
 		}
-		JMenuItem addExclusion = new JMenuItem("Exclude an item (search)...");
-		addExclusion.addActionListener(a -> showAddExclusionDialog());
-		menu.add(addExclusion);
+		menuItem(menu, "Exclude an item (search)...", a -> showAddExclusionDialog());
 		// Anchor to the CLICKED component - the old label left the layout
 		// when the -N chip replaced it (field bug: dead click; show() on a
 		// non-displayable component throws).
@@ -2500,15 +2445,15 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				GearItem item = data.getGear(entry.getValue());
 				String label = item == null ? ("item " + entry.getValue()) : item.label();
-				JMenuItem row = new JMenuItem(
-					"Unpin " + label + " (" + scopeLabel(scope) + ")");
+				// Hoisted above the item so the whole construct is one
+				// menuItem(...) call; the lambda still captures it.
 				com.loadoutlab.data.GearSlot slot = entry.getKey();
-				row.addActionListener(a ->
+				menuItem(menu,
+					"Unpin " + label + " (" + scopeLabel(scope) + ")", a ->
 				{
 					mobProfile.unpin(monsterId, scope, slot);
 								recompute();
 				});
-				menu.add(row);
 			}
 		}
 		for (Map.Entry<String, Map<Integer, String>> scoped
@@ -2517,15 +2462,15 @@ public class LoadoutLabPanel extends PluginPanel
 			String scope = scoped.getKey();
 			for (Map.Entry<Integer, String> entry : scoped.getValue().entrySet())
 			{
-				JMenuItem row = new JMenuItem("Remove filter item " + entry.getValue()
-					+ " (" + filterScopeLabel(scope) + ")");
+				// Hoisted above the item (see above) so the construct
+				// collapses to a single menuItem(...) call.
 				int itemId = entry.getKey();
-				row.addActionListener(a ->
+				menuItem(menu, "Remove filter item " + entry.getValue()
+					+ " (" + filterScopeLabel(scope) + ")", a ->
 				{
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
 								reapplyBankViews();
 				});
-				menu.add(row);
 			}
 		}
 		for (Map.Entry<String, Set<Integer>> scoped
@@ -2536,24 +2481,18 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				GearItem item = data.getGear(itemId);
 				String label = item == null ? ("item " + itemId) : item.label();
-				JMenuItem row = new JMenuItem("Allow " + label + " again ("
-					+ scopeLabel(scope) + ")");
-				row.addActionListener(a ->
+				menuItem(menu, "Allow " + label + " again ("
+					+ scopeLabel(scope) + ")", a ->
 				{
 					mobProfile.removeMobExclusion(monsterId, scope, itemId);
 								recompute();
 				});
-				menu.add(row);
 			}
 		}
 		menu.addSeparator();
-		JMenuItem addPin = new JMenuItem("Pin an item - all sets (search)...");
-		addPin.addActionListener(a -> searchAndPin(ALL_SETS));
-		menu.add(addPin);
-		JMenuItem addFilter = new JMenuItem("Bank filter - "
-			+ filterScopeLabel(ALL_SETS) + " (search)...");
-		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
-		menu.add(addFilter);
+		menuItem(menu, "Pin an item - all sets (search)...", a -> searchAndPin(ALL_SETS));
+		menuItem(menu, "Bank filter - "
+			+ filterScopeLabel(ALL_SETS) + " (search)...", a -> searchAndAddFilter(ALL_SETS));
 		Component pinSource = (Component) e.getSource();
 		menu.show(pinSource, 0, pinSource.getHeight());
 	}
@@ -2607,6 +2546,28 @@ public class LoadoutLabPanel extends PluginPanel
 		return wrap;
 	}
 
+	/**
+	 * Build a menu row, wire its action and append it to the popup, all in
+	 * one call. The item is added AT CALL TIME, so call order is menu order
+	 * exactly as the hand-written construct/listen/add triples were.
+	 */
+	private static JMenuItem menuItem(JPopupMenu menu, String text, ActionListener onPick)
+	{
+		JMenuItem item = new JMenuItem(text);
+		item.addActionListener(onPick);
+		menu.add(item);
+		return item;
+	}
+
+	/** JMenu twin of {@link #menuItem(JPopupMenu, String, ActionListener)}. */
+	private static JMenuItem menuItem(JMenu menu, String text, ActionListener onPick)
+	{
+		JMenuItem item = new JMenuItem(text);
+		item.addActionListener(onPick);
+		menu.add(item);
+		return item;
+	}
+
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
 	 * all sets, or chatbox-search ANOTHER item into the pin. */
 	private JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
@@ -2622,59 +2583,47 @@ public class LoadoutLabPanel extends PluginPanel
 		// set only" / "...for all sets".
 		if (styleScoped == null || styleScoped != item.getId())
 		{
-			JMenuItem thisSet = new JMenuItem("For the " + scopeLabel(style.name()) + " only");
-			thisSet.addActionListener(a ->
+			menuItem(pinMenu, "For the " + scopeLabel(style.name()) + " only", a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
 						recompute();
 			});
-			pinMenu.add(thisSet);
 		}
 		if (allScoped == null || allScoped != item.getId())
 		{
-			JMenuItem allSets = new JMenuItem("For all sets");
 			// (all-sets pins keep their name - the mob is implicit)
-			allSets.addActionListener(a ->
+			menuItem(pinMenu, "For all sets", a ->
 			{
 				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
 						recompute();
 			});
-			pinMenu.add(allSets);
 		}
 		if (styleScoped != null)
 		{
 			GearItem pinned = data.getGear(styleScoped);
-			JMenuItem un = new JMenuItem("Unpin "
+			menuItem(pinMenu, "Unpin "
 				+ (pinned == null ? "item" : pinned.label())
-				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)");
-			un.addActionListener(a ->
+				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)", a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
 						recompute();
 			});
-			pinMenu.add(un);
 		}
 		if (allScoped != null)
 		{
 			GearItem pinned = data.getGear(allScoped);
-			JMenuItem un = new JMenuItem("Unpin "
-				+ (pinned == null ? "item" : pinned.label()) + " (all sets)");
-			un.addActionListener(a ->
+			menuItem(pinMenu, "Unpin "
+				+ (pinned == null ? "item" : pinned.label()) + " (all sets)", a ->
 			{
 				mobProfile.unpin(monsterId, ALL_SETS, slot);
 						recompute();
 			});
-			pinMenu.add(un);
 		}
 		pinMenu.addSeparator();
 		// Pin a DIFFERENT item into this slot (chatbox search), scoped.
-		JMenuItem searchThis = new JMenuItem("Pin a different item (for the "
-			+ scopeLabel(style.name()) + ")...");
-		searchThis.addActionListener(a -> searchAndPin(style.name()));
-		pinMenu.add(searchThis);
-		JMenuItem searchAll = new JMenuItem("Pin a different item (for all sets)...");
-		searchAll.addActionListener(a -> searchAndPin(ALL_SETS));
-		pinMenu.add(searchAll);
+		menuItem(pinMenu, "Pin a different item (for the "
+			+ scopeLabel(style.name()) + ")...", a -> searchAndPin(style.name()));
+		menuItem(pinMenu, "Pin a different item (for all sets)...", a -> searchAndPin(ALL_SETS));
 		return pinMenu;
 	}
 
@@ -2804,19 +2753,15 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			GearItem item = data.getGear(id);
 			String label = item == null ? ("item " + id) : item.label();
-			JMenuItem entry = new JMenuItem("No longer stored elsewhere: " + label);
-			entry.addActionListener(a ->
+			menuItem(menu, "No longer stored elsewhere: " + label, a ->
 			{
 				storedToggle.toggle(id);
 				refreshStoredLabel();
 				recompute();
 			});
-			menu.add(entry);
 		}
 		menu.addSeparator();
-		JMenuItem add = new JMenuItem("Add a stored-elsewhere item...");
-		add.addActionListener(a -> showAddStoredDialog());
-		menu.add(add);
+		menuItem(menu, "Add a stored-elsewhere item...", a -> showAddStoredDialog());
 		menu.show(storedLabel, e.getX(), e.getY());
 	}
 
@@ -2958,34 +2903,28 @@ public class LoadoutLabPanel extends PluginPanel
 					// Exclusion scopes (field request): everywhere, this mob,
 					// or this mob + this set only.
 					JMenu excludeMenu = new JMenu("Exclude " + item.label());
-					JMenuItem everywhere = new JMenuItem("All mobs");
-					everywhere.addActionListener(a ->
+					menuItem(excludeMenu, "All mobs", a ->
 					{
 						exclusionToggle.toggle(item.getId());
 						refreshExclusionsLabel();
 						recompute();
 					});
-					excludeMenu.add(everywhere);
 					if (selectedMonster != null)
 					{
 						int monsterId = currentMonsterId();
-						JMenuItem thisMob = new JMenuItem("Vs " + selectedMonster.getName() + " (all sets)");
-						thisMob.addActionListener(a ->
+						menuItem(excludeMenu, "Vs " + selectedMonster.getName() + " (all sets)", a ->
 						{
 							mobProfile.excludeForMob(monsterId, ALL_SETS, item.getId());
 												recompute();
 						});
-						excludeMenu.add(thisMob);
 						if (pinStyle != null)
 						{
-							JMenuItem thisSet = new JMenuItem("Vs " + selectedMonster.getName()
-								+ " (" + scopeLabel(pinStyle.name()) + " only)");
-							thisSet.addActionListener(a ->
+							menuItem(excludeMenu, "Vs " + selectedMonster.getName()
+								+ " (" + scopeLabel(pinStyle.name()) + " only)", a ->
 							{
 								mobProfile.excludeForMob(monsterId, pinStyle.name(), item.getId());
 														recompute();
 							});
-							excludeMenu.add(thisSet);
 						}
 					}
 					menu.add(excludeMenu);
@@ -2997,15 +2936,13 @@ public class LoadoutLabPanel extends PluginPanel
 						&& protectOnlyToggle.isProtectOnly(item.getId());
 					if (protectOnlyToggle != null && (lostIds.contains(item.getId()) || flagged))
 					{
-						JMenuItem protect = new JMenuItem(flagged
+						menuItem(menu, flagged
 							? "Allow " + item.label() + " unprotected again"
-							: "Only bring " + item.label() + " if protected on death");
-						protect.addActionListener(a ->
+							: "Only bring " + item.label() + " if protected on death", a ->
 						{
 							protectOnlyToggle.toggle(item.getId());
 							recompute();
 						});
-						menu.add(protect);
 					}
 					// Unowned items can be dreamed into the owned pool
 					// (and undreamed).
@@ -3013,15 +2950,13 @@ public class LoadoutLabPanel extends PluginPanel
 					if (!ownedCheck.owns(item.getId()))
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
-						JMenuItem dream = new JMenuItem(dreamed
+						menuItem(menu, dreamed
 							? "Stop simming " + item.label()
-							: "Sim: consider " + item.label() + " as owned");
-						dream.addActionListener(a ->
+							: "Sim: consider " + item.label() + " as owned", a ->
 						{
 							dreamToggle.toggle(item.getId());
 							recompute();
 						});
-						menu.add(dream);
 					}
 					// Stored elsewhere: STASH, POH costume room, UIM cold or
 					// nest storage - genuinely owned, just invisible to the
@@ -3029,16 +2964,14 @@ public class LoadoutLabPanel extends PluginPanel
 					// entry is what keeps the state reachable.
 					if (stored || !ownedCheck.owns(item.getId()))
 					{
-						JMenuItem storeToggle = new JMenuItem(stored
+						menuItem(menu, stored
 							? "No longer stored elsewhere: " + item.label()
-							: "Stored elsewhere: count " + item.label() + " as owned");
-						storeToggle.addActionListener(a ->
+							: "Stored elsewhere: count " + item.label() + " as owned", a ->
 						{
 							storedToggle.toggle(item.getId());
 							refreshStoredLabel();
 							recompute();
 						});
-						menu.add(storeToggle);
 					}
 					// Pin: user preference wins the slot outright - for
 					// THIS monster, scoped to this set or all sets.
@@ -3652,18 +3585,10 @@ public class LoadoutLabPanel extends PluginPanel
 			JPopupMenu menu = new JPopupMenu();
 			// Compact labels (field spec - the long forms truncated in the
 			// popup): the scope pair is "<style> set" vs "this result".
-			JMenuItem pinThis = new JMenuItem("Pin item - " + scopeLabel(style.name()));
-			pinThis.addActionListener(ev -> searchAndPin(style.name()));
-			menu.add(pinThis);
-			JMenuItem pinAll = new JMenuItem("Pin item - this result");
-			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
-			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank filter - " + scopeLabel(style.name()));
-			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
-			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank filter - this result");
-			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
-			menu.add(filterAll);
+			menuItem(menu, "Pin item - " + scopeLabel(style.name()), ev -> searchAndPin(style.name()));
+			menuItem(menu, "Pin item - this result", ev -> searchAndPin(ALL_SETS));
+			menuItem(menu, "Bank filter - " + scopeLabel(style.name()), ev -> searchAndAddFilter(style.name()));
+			menuItem(menu, "Bank filter - this result", ev -> searchAndAddFilter(ALL_SETS));
 			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
 			{
 				// The spellbook lock: the submenu drives the combo, which
@@ -3672,10 +3597,8 @@ public class LoadoutLabPanel extends PluginPanel
 				for (int b = 0; b < spellbook.getItemCount(); b++)
 				{
 					final int index = b;
-					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
-						? "[x] " : "") + spellbook.getItemAt(b));
-					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
-					bookMenu.add(bookItem);
+					menuItem(bookMenu, (index == spellbook.getSelectedIndex()
+						? "[x] " : "") + spellbook.getItemAt(b), ev -> spellbook.setSelectedIndex(index));
 				}
 				menu.add(bookMenu);
 			}
@@ -3721,14 +3644,10 @@ public class LoadoutLabPanel extends PluginPanel
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		title.setToolTipText((entry.folded ? "Click to expand" : "Click to fold")
 			+ (isActive ? " - the active result" : ""));
-		title.addMouseListener(new MouseAdapter()
+		onClick(title, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				entry.folded = !entry.folded;
-				renderPage();
-			}
+			entry.folded = !entry.folded;
+			renderPage();
 		});
 		row.add(title, BorderLayout.CENTER);
 		JButton reload = new JButton(new ReloadIcon(10));
@@ -4042,27 +3961,58 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** A pins/filters count chip: opens the manage menu anchored on the
-	 * chip (the retired label's menu, source-anchored). */
-	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	/**
+	 * Attach a click-only mouse listener. The handler takes the MouseEvent
+	 * because some callers anchor a popup on the click point.
+	 */
+	private static void onClick(Component target, Consumer<MouseEvent> handler)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(Color.WHITE);
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
-		chip.setBorder(new RoundedBorder(ACCENT, 2, 7));
-		chip.setToolTipText(tooltip);
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.addMouseListener(new MouseAdapter()
+		target.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				asActive(entry, () -> showPinnedMenu(e));
+				handler.accept(e);
 			}
 		});
+	}
+
+	/**
+	 * The one chip body behind pinFilterChip/paramChip/viewChip/
+	 * localCountChip. Every colour, font and border decision stays in the
+	 * thin wrappers below - this only assembles the label.
+	 *
+	 * NOTE: three of the old hand-written chips set the HAND cursor
+	 * unconditionally; here it keys off onClick. That is unreachable in
+	 * current code - all four wrappers pass a non-null handler whenever
+	 * they used to set the cursor - so behaviour is unchanged.
+	 */
+	private static JLabel chip(String text, boolean opaque, Color foreground, int fontStyle,
+		float fontSize, Color borderColor, int padding, int arc, String tooltip,
+		Consumer<MouseEvent> onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(opaque);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(foreground);
+		chip.setFont(chip.getFont().deriveFont(fontStyle, fontSize));
+		chip.setBorder(new RoundedBorder(borderColor, padding, arc));
+		chip.setToolTipText(tooltip);
+		if (onClick != null)
+		{
+			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			onClick(chip, onClick);
+		}
 		return chip;
+	}
+
+	/** A pins/filters count chip: opens the manage menu anchored on the
+	 * chip (the retired label's menu, source-anchored). */
+	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	{
+		return chip(text, true, Color.WHITE, Font.BOLD, 11f,
+			ACCENT, 2, 7, tooltip,
+			e -> asActive(entry, () -> showPinnedMenu(e)));
 	}
 
 	/** FlowLayout whose preferred height accounts for wrapping at the
@@ -4141,28 +4091,14 @@ public class LoadoutLabPanel extends PluginPanel
 	private JComponent paramChip(String text, boolean selected,
 		boolean enabled, String tooltip, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(!enabled ? new Color(150, 150, 150)
-			: selected ? Color.WHITE : new Color(170, 170, 170));
-		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
-		chip.setBorder(new RoundedBorder(selected
-			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
-		chip.setToolTipText(tooltip);
-		if (enabled && onClick != null)
-		{
-			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			chip.addMouseListener(new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					onClick.run();
-				}
-			});
-		}
-		return chip;
+		// A forced (disabled) chip stays inert: no cursor, no listener -
+		// expressed here as a null handler.
+		return chip(text, true,
+			!enabled ? new Color(150, 150, 150)
+				: selected ? Color.WHITE : new Color(170, 170, 170),
+			selected ? Font.BOLD : Font.PLAIN, 11f,
+			selected ? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
+			enabled && onClick != null ? e -> onClick.run() : null);
 	}
 
 	/** Chip actions drive the hidden controls for THIS entry: focusing it
@@ -4183,10 +4119,8 @@ public class LoadoutLabPanel extends PluginPanel
 		for (int i = 0; i < combo.getItemCount(); i++)
 		{
 			final int index = i;
-			JMenuItem item = new JMenuItem((i == combo.getSelectedIndex() ? "[x] " : "")
-				+ combo.getItemAt(i));
-			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
-			menu.add(item);
+			menuItem(menu, (i == combo.getSelectedIndex() ? "[x] " : "")
+				+ combo.getItemAt(i), e -> asActive(entry, () -> combo.setSelectedIndex(index)));
 		}
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
@@ -4387,14 +4321,7 @@ public class LoadoutLabPanel extends PluginPanel
 				JLabel remove = new JLabel(new CloseIcon(8));
 				remove.setToolTipText("Remove " + mob.getName() + " from this result");
 				remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				remove.addMouseListener(new MouseAdapter()
-				{
-					@Override
-					public void mouseClicked(MouseEvent e)
-					{
-						removeMobFromEntry(entry, index);
-					}
-				});
+				onClick(remove, e -> removeMobFromEntry(entry, index));
 				east.add(remove);
 			}
 			if (east.getComponentCount() > 0)
@@ -4413,14 +4340,7 @@ public class LoadoutLabPanel extends PluginPanel
 		add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		add.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		add.setToolTipText("Add a mob to this result - ONE shared set optimized across the list");
-		add.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showAddMobDialog(entry);
-			}
-		});
+		onClick(add, e -> showAddMobDialog(entry));
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
@@ -4700,17 +4620,13 @@ public class LoadoutLabPanel extends PluginPanel
 		};
 		field.addActionListener(e -> pick.run());
 		// ONE click adds (field feedback: the double-click was hated).
-		hits.addMouseListener(new MouseAdapter()
+		onClick(hits, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
+			int idx = hits.locationToIndex(e.getPoint());
+			if (idx >= 0)
 			{
-				int idx = hits.locationToIndex(e.getPoint());
-				if (idx >= 0)
-				{
-					hits.setSelectedIndex(idx);
-					pick.run();
-				}
+				hits.setSelectedIndex(idx);
+				pick.run();
 			}
 		});
 		content.add(field, BorderLayout.NORTH);
@@ -4775,7 +4691,9 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		CombatStyle best = null;
 		double bestScore = 0.0;
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		// concreteValues() is the same MELEE/RANGED/MAGIC triple and hands
+		// back a fresh array per call, so there is no aliasing hazard.
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			double sum = 0;
 			for (int i = 0; i < entry.perMobResults.size(); i++)
@@ -4884,27 +4802,16 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private JComponent viewChip(String text, boolean selected, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(selected);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
 		// Bordered buttons (field request): the selected side wears a
-		// bright edge, the other stays a quiet outline.
-		chip.setBorder(new RoundedBorder(selected
-			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.setToolTipText(text.equals("BiS")
-			? "The game-wide best set at your levels" : "Your best owned set");
-		chip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				onClick.run();
-			}
-		});
-		return chip;
+		// bright edge, the other stays a quiet outline. Note the opaque
+		// flag tracks `selected` here, unlike the other three chips.
+		return chip(text, selected,
+			selected ? Color.WHITE : new Color(150, 150, 150),
+			Font.BOLD, 14f,
+			selected ? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12,
+			text.equals("BiS")
+				? "The game-wide best set at your levels" : "Your best owned set",
+			e -> onClick.run());
 	}
 
 	/** The tab strip: one equal-width tab per style - the skill sprite and
@@ -4943,14 +4850,10 @@ public class LoadoutLabPanel extends PluginPanel
 			tab.add(dps);
 			tab.setToolTipText(style + (hasSet ? " - " + dps.getText() + " DPS" : " - no set"));
 			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			tab.addMouseListener(new MouseAdapter()
+			onClick(tab, e ->
 			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					entry.selectedTab = style;
-					renderPage();
-				}
+				entry.selectedTab = style;
+				renderPage();
 			});
 			strip.add(tab);
 		}
@@ -5242,27 +5145,15 @@ public class LoadoutLabPanel extends PluginPanel
 	private JComponent localCountChip(String text, boolean active, boolean red,
 		String tooltip, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(red
-			? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
-			: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)));
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
-		chip.setBorder(new RoundedBorder(active
-			? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
-			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
-		chip.setToolTipText(tooltip);
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				onClick.run();
-			}
-		});
-		return chip;
+		return chip(text, true,
+			red
+				? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
+				: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)),
+			Font.BOLD, 11f,
+			active
+				? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
+				: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
+			e -> onClick.run());
 	}
 
 	/** The local exclusions manager: current entries with click-to-allow,
@@ -5270,25 +5161,23 @@ public class LoadoutLabPanel extends PluginPanel
 	private void manageLocalExclusions(ResultEntry entry, int profileId, String mobName)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem add = new JMenuItem("Exclude an item vs " + mobName + "...");
-		add.addActionListener(e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
+		menuItem(menu, "Exclude an item vs " + mobName + "...",
+			e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
 		{
 			mobProfile.excludeForMob(profileId, ALL_SETS, itemId);
 			recompute();
 		}));
-		menu.add(add);
 		java.util.List<Integer> group = groupProfileIds(entry);
 		if (group.size() > 1)
 		{
 			// Whole-group write (field request 2026-07-18): the same local
 			// exclusion lands on EVERY member, one undo entry.
-			JMenuItem addAll = new JMenuItem("Exclude an item vs the whole group...");
-			addAll.addActionListener(e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
+			menuItem(menu, "Exclude an item vs the whole group...",
+				e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
 			{
 				mobProfile.excludeForMobs(group, ALL_SETS, itemId);
 				recompute();
 			}));
-			menu.add(addAll);
 		}
 		Map<String, Set<Integer>> scopes = mobProfile.allMobExclusions(profileId);
 		if (!scopes.isEmpty())
@@ -5299,15 +5188,13 @@ public class LoadoutLabPanel extends PluginPanel
 				for (int itemId : scope.getValue())
 				{
 					GearItem item = data.getGear(itemId);
-					JMenuItem remove = new JMenuItem("Allow: "
+					menuItem(menu, "Allow: "
 						+ (item != null ? item.label() : "item " + itemId)
-						+ " (" + scopeLabel(scope.getKey()) + ")");
-					remove.addActionListener(e ->
+						+ " (" + scopeLabel(scope.getKey()) + ")", e ->
 					{
 						mobProfile.removeMobExclusion(profileId, scope.getKey(), itemId);
 						recompute();
 					});
-					menu.add(remove);
 				}
 			}
 		}
@@ -5320,25 +5207,23 @@ public class LoadoutLabPanel extends PluginPanel
 	private void manageLocalSims(ResultEntry entry, int profileId, String mobName)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem add = new JMenuItem("Sim an item vs " + mobName + "...");
-		add.addActionListener(e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
+		menuItem(menu, "Sim an item vs " + mobName + "...",
+			e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
 			(itemId, name) ->
 		{
 			mobProfile.simForMob(profileId, itemId, name);
 			recompute();
 		}));
-		menu.add(add);
 		java.util.List<Integer> group = groupProfileIds(entry);
 		if (group.size() > 1)
 		{
-			JMenuItem addAll = new JMenuItem("Sim an item vs the whole group...");
-			addAll.addActionListener(e -> itemSearch.search("Sim vs the whole group (counts as owned)",
+			menuItem(menu, "Sim an item vs the whole group...",
+				e -> itemSearch.search("Sim vs the whole group (counts as owned)",
 				(itemId, name) ->
 			{
 				mobProfile.simForMobs(group, itemId, name);
 				recompute();
 			}));
-			menu.add(addAll);
 		}
 		Map<Integer, String> sims = mobProfile.allMobSims(profileId);
 		if (!sims.isEmpty())
@@ -5346,13 +5231,11 @@ public class LoadoutLabPanel extends PluginPanel
 			menu.addSeparator();
 			for (Map.Entry<Integer, String> sim : sims.entrySet())
 			{
-				JMenuItem remove = new JMenuItem("Unsim: " + sim.getValue());
-				remove.addActionListener(e ->
+				menuItem(menu, "Unsim: " + sim.getValue(), e ->
 				{
 					mobProfile.removeMobSim(profileId, sim.getKey());
 					recompute();
 				});
-				menu.add(remove);
 			}
 		}
 		Point at = getMousePosition();
