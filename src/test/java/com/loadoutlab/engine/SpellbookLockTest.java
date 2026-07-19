@@ -89,7 +89,7 @@ public class SpellbookLockTest
 		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
 		com.loadoutlab.data.MonsterStats zulrah = data.searchMonsters("zulrah", 1).get(0);
 		java.util.Map<Integer, Integer> owned = java.util.Map.of(31113, 1); // eye of ayak (charged)
-		OptimizationRequest req = new OptimizationRequest(zulrah, CombatStyle.MAGIC,
+		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.MAGIC,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new com.loadoutlab.engine.OwnedItems(data.canonicalizeOwned(owned), true), 1);

@@ -78,7 +78,7 @@ public class OptimizeModeTest
 		owned.put(892, 500);  // rune arrows
 		owned.put(11771, 1);  // archers ring (i)
 		owned.put(19710, 1);  // ring of suffering (i)
-		com.loadoutlab.engine.OptimizationRequest base = new com.loadoutlab.engine.OptimizationRequest(
+		com.loadoutlab.engine.OptimizationRequest base = com.loadoutlab.engine.TestRequests.of(
 			graardor, CombatStyle.RANGED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, com.loadoutlab.engine.CandidateMode.OWNED_ONLY, true, false,
