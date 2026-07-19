@@ -1,6 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.GearSearchTestSupport;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -33,7 +34,7 @@ public class GroupSimScopingTest
 		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		int whip = 4151;
-		int rapier = data.searchGear("ghrazi rapier", 1).get(0).getId();
+		int rapier = GearSearchTestSupport.searchGear(data, "ghrazi rapier", 1).get(0).getId();
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(whip, 1);
 		// Sim the rapier for the GOBLIN only.

@@ -71,13 +71,6 @@ public final class PlayerProfile
 		return new OwnedItems(owned, bankScanned);
 	}
 
-	/** A maxed account that owns nothing - game-best queries only. */
-	public static PlayerProfile maxed()
-	{
-		return new PlayerProfile(PlayerLevels.MAXED, PlayerLevels.MAXED,
-			PrayerUnlocks.ALL, RequirementProfile.MAXED, Map.of(), true);
-	}
-
 	public String toJson()
 	{
 		JsonObject root = new JsonObject();

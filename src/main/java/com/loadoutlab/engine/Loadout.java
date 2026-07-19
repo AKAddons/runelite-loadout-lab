@@ -149,18 +149,4 @@ public final class Loadout
 	{
 		return activeNamesLower;
 	}
-
-	/** Items in this set you would risk in PvP (tradeables). */
-	public int tradeableCount()
-	{
-		int count = 0;
-		for (GearItem item : gear.values())
-		{
-			if (item != null && item.isTradeable())
-			{
-				count++;
-			}
-		}
-		return count;
-	}
 }

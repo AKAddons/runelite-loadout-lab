@@ -263,7 +263,7 @@ public class RiskConstraintTest
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		double three = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
 		List<DpsResult> four = optimizer.optimize(data, request(CombatStyle.MELEE, 4));
-		Assert.assertTrue(four.get(0).getLoadout().tradeableCount() <= 4);
+		Assert.assertTrue(LoadoutTestSupport.tradeableCount(four.get(0).getLoadout()) <= 4);
 		Assert.assertTrue(four.get(0).getDps() >= three - 1e-9);
 	}
 

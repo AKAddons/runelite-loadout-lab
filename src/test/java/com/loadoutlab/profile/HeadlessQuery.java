@@ -83,7 +83,7 @@ public final class HeadlessQuery
 				default: monsterName.append(monsterName.length() > 0 ? " " : "").append(args[i]);
 			}
 		}
-		PlayerProfile profile = maxed ? PlayerProfile.maxed()
+		PlayerProfile profile = maxed ? PlayerProfileTestSupport.maxed()
 			: PlayerProfile.fromJson(Files.readString(profilePath));
 
 		LoadoutData data = new DataService().load();
