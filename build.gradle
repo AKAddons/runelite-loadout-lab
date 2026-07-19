@@ -96,6 +96,17 @@ tasks.register('mascotPreview', JavaExec) {
 	systemProperty 'java.awt.headless', 'true'
 }
 
+// Pixel-exact mascot golden (see MascotFrameHash) - the gate any rewrite
+// of the animations must keep green:
+//   ./gradlew -q mascotFrameHash > mascot-hashes.txt
+tasks.register('mascotFrameHash', JavaExec) {
+	group = 'loadout lab'
+	description = 'Print a SHA-256 per mascot mood over every rendered frame'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.ui.MascotFrameHash'
+	systemProperty 'java.awt.headless', 'true'
+}
+
 // Optimizer wall-clock benchmark over a fixed monster/mode/risk matrix
 // (see QueryBenchmark): ./gradlew benchmark
 task benchmark(type: JavaExec) {
