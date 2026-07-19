@@ -365,6 +365,24 @@ public class LoadoutLabPanel extends PluginPanel
 		default void removeMobSim(int monsterId, int itemId)
 		{
 		}
+
+		/** Whole-group twins (field request 2026-07-18): the same write on
+		 * every group member, undoable as ONE action. */
+		default void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
+		{
+			for (int id : monsterIds)
+			{
+				excludeForMob(id, scope, itemId);
+			}
+		}
+
+		default void simForMobs(java.util.List<Integer> monsterIds, int itemId, String name)
+		{
+			for (int id : monsterIds)
+			{
+				simForMob(id, itemId, name);
+			}
+		}
 	}
 
 	/** Open the native chatbox item search; the pick (id, name) returns
@@ -5301,6 +5319,19 @@ public class LoadoutLabPanel extends PluginPanel
 		return card;
 	}
 
+	/** The roster's distinct profile ids in mob order - synthetic phase
+	 * variants (TD shields, KQ forms) collapse onto their real mob, so a
+	 * whole-group write touches each underlying profile once. */
+	private static java.util.List<Integer> groupProfileIds(ResultEntry entry)
+	{
+		java.util.LinkedHashSet<Integer> ids = new java.util.LinkedHashSet<>();
+		for (MonsterStats mob : entry.mobs)
+		{
+			ids.add(mob.profileId());
+		}
+		return new java.util.ArrayList<>(ids);
+	}
+
 	/** A local exclude/sim chip in the GLOBAL chips' color language:
 	 * red for exclusions, green for sims, muted when empty. */
 	private JComponent localCountChip(String text, boolean active, boolean red,
@@ -5341,6 +5372,19 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		}));
 		menu.add(add);
+		java.util.List<Integer> group = groupProfileIds(entry);
+		if (group.size() > 1)
+		{
+			// Whole-group write (field request 2026-07-18): the same local
+			// exclusion lands on EVERY member, one undo entry.
+			JMenuItem addAll = new JMenuItem("Exclude an item vs the whole group...");
+			addAll.addActionListener(e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
+			{
+				mobProfile.excludeForMobs(group, ALL_SETS, itemId);
+				recompute();
+			}));
+			menu.add(addAll);
+		}
 		Map<String, Set<Integer>> scopes = mobProfile.allMobExclusions(profileId);
 		if (!scopes.isEmpty())
 		{
@@ -5379,6 +5423,18 @@ public class LoadoutLabPanel extends PluginPanel
 			recompute();
 		}));
 		menu.add(add);
+		java.util.List<Integer> group = groupProfileIds(entry);
+		if (group.size() > 1)
+		{
+			JMenuItem addAll = new JMenuItem("Sim an item vs the whole group...");
+			addAll.addActionListener(e -> itemSearch.search("Sim vs the whole group (counts as owned)",
+				(itemId, name) ->
+			{
+				mobProfile.simForMobs(group, itemId, name);
+				recompute();
+			}));
+			menu.add(addAll);
+		}
 		Map<Integer, String> sims = mobProfile.allMobSims(profileId);
 		if (!sims.isEmpty())
 		{

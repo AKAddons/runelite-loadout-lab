@@ -1362,6 +1362,45 @@ public class LoadoutLabPlugin extends Plugin
 					exec(Commands.removeMobSim(mobProfiles, monsterId, itemId, itemLabel(itemId)));
 				}
 			}
+
+			@Override
+			public void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
+			{
+				if (mobProfiles == null)
+				{
+					return;
+				}
+				// One undo entry for the whole group (field request 2026-07-18).
+				commandHistory.beginCompound("Exclude for the whole group: " + itemLabel(itemId));
+				for (int id : monsterIds)
+				{
+					exec(Commands.excludeForMob(mobProfiles, id, scope, itemId, itemLabel(itemId)));
+				}
+				commandHistory.endCompound();
+				if (panel != null)
+				{
+					panel.refreshHistoryButtons();
+				}
+			}
+
+			@Override
+			public void simForMobs(java.util.List<Integer> monsterIds, int itemId, String name)
+			{
+				if (mobProfiles == null)
+				{
+					return;
+				}
+				commandHistory.beginCompound("Sim for the whole group: " + name);
+				for (int id : monsterIds)
+				{
+					exec(Commands.simForMob(mobProfiles, id, itemId, name));
+				}
+				commandHistory.endCompound();
+				if (panel != null)
+				{
+					panel.refreshHistoryButtons();
+				}
+			}
 		};
 	}
 
