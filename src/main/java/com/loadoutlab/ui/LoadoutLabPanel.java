@@ -2998,13 +2998,19 @@ public class LoadoutLabPanel extends PluginPanel
 		return dartId == null ? null : data.getGear(dartId);
 	}
 
-	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
-	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
-	private static final class NoPrayerIcon implements Icon
+	/**
+	 * Shared shape for the square painted icons: they all carry a single
+	 * pixel size used as both width and height. Subclasses keep only their
+	 * paintIcon body. Deliberately sets NO rendering hints - antialiasing
+	 * stays exactly where each subclass sets it today, because some painted
+	 * icons in this file draw aliased on purpose.
+	 */
+	private abstract static class SizedIcon implements Icon
 	{
-		private final int size;
+		/** Icon edge length in pixels; readable by subclass paint code. */
+		protected final int size;
 
-		NoPrayerIcon(int size)
+		SizedIcon(int size)
 		{
 			this.size = size;
 		}
@@ -3019,6 +3025,16 @@ public class LoadoutLabPanel extends PluginPanel
 		public int getIconHeight()
 		{
 			return size;
+		}
+	}
+
+	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
+	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
+	private static final class NoPrayerIcon extends SizedIcon
+	{
+		NoPrayerIcon(int size)
+		{
+			super(size);
 		}
 
 		@Override
@@ -3108,25 +3124,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
-	private static final class CloseIcon implements Icon
+	private static final class CloseIcon extends SizedIcon
 	{
-		private final int size;
-
 		CloseIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -3150,25 +3152,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
-	private static final class DotsIcon implements Icon
+	private static final class DotsIcon extends SizedIcon
 	{
-		private final int size;
-
 		DotsIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -3194,25 +3182,11 @@ public class LoadoutLabPanel extends PluginPanel
 	 * reload symbols tofu in Swing on macOS Tahoe, so we draw it. Inherits
 	 * the host button's foreground colour.
 	 */
-	private static final class ReloadIcon implements Icon
+	private static final class ReloadIcon extends SizedIcon
 	{
-		private final int size;
-
 		ReloadIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6367,25 +6341,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted crosshair for the accuracy line (glyph-safe) - the
 	 * Attack staticon read as the same sword as the style icon. */
-	private static final class CrosshairIcon implements Icon
+	private static final class CrosshairIcon extends SizedIcon
 	{
-		private final int size;
-
 		CrosshairIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6431,25 +6391,11 @@ int sprite = incoming.protectPrayer != null
 	}
 
 	/** A painted red hitsplat for the max-hit line (glyph-safe). */
-	private static final class HitsplatIcon implements Icon
+	private static final class HitsplatIcon extends SizedIcon
 	{
-		private final int size;
-
 		HitsplatIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6474,25 +6420,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted circled-i for the mechanics note - amber like the note
 	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
-	private static final class InfoIcon implements Icon
+	private static final class InfoIcon extends SizedIcon
 	{
-		private final int size;
-
 		InfoIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6518,25 +6450,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** The amber plus-star (the mascots' signature), as a static icon for
 	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
-	private static final class PlusStarIcon implements Icon
+	private static final class PlusStarIcon extends SizedIcon
 	{
-		private final int size;
-
 		PlusStarIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
