@@ -161,8 +161,8 @@ public final class HeadlessQuery
 				}
 				if (result.specWeapon != null)
 				{
-					sb.append(String.format("    spec    %s (avg %.0f dmg)%n",
-						result.specWeapon.label(), result.specExpectedDamage));
+					sb.append(String.format("    spec    %s (adds ~%.2f dps, avg %.0f dmg)%n",
+						result.specWeapon.label(), result.specDpsAdded, result.specExpectedDamage));
 				}
 				if (result.incoming != null && result.incoming.protectPrayer != null)
 				{

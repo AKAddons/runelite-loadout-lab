@@ -110,11 +110,11 @@ public class OptimizerService
 		public final SpecialAttack spec;
 		public final GearItem specWeapon;
 		public final double specExpectedDamage;
-		public final double specDrainValue;
+		public final double specDpsAdded;
 		public final SpecialAttack gameSpec;
 		public final GearItem gameSpecWeapon;
 		public final double gameSpecExpectedDamage;
-		public final double gameSpecDrainValue;
+		public final double gameSpecDpsAdded;
 		/** The prayers/boost YOUR numbers assume ("Deadeye + Ranging potion"). */
 		public final String boostLabel;
 		/** The ceiling assumption for game best ("Rigour + Ranging potion"). */
@@ -151,11 +151,11 @@ public class OptimizerService
 			this.spec = spec == null ? null : spec.spec;
 			this.specWeapon = spec == null ? null : spec.weapon;
 			this.specExpectedDamage = spec == null ? 0 : spec.expectedDamage;
-			this.specDrainValue = spec == null ? 0 : spec.drainValue;
+			this.specDpsAdded = spec == null ? 0 : spec.dpsAdded;
 			this.gameSpec = gameSpec == null ? null : gameSpec.spec;
 			this.gameSpecWeapon = gameSpec == null ? null : gameSpec.weapon;
 			this.gameSpecExpectedDamage = gameSpec == null ? 0 : gameSpec.expectedDamage;
-			this.gameSpecDrainValue = gameSpec == null ? 0 : gameSpec.drainValue;
+			this.gameSpecDpsAdded = gameSpec == null ? 0 : gameSpec.dpsAdded;
 		}
 	}
 
@@ -2514,7 +2514,9 @@ public class OptimizerService
 		final SpecialAttack spec;
 		final GearItem weapon;
 		final double expectedDamage;
-		final double drainValue;
+		/** The DPS this spec ADDS to the kill over just attacking - the
+		 * win-over-replacement value the card shows and the ranking key. */
+		final double dpsAdded;
 		/** Non-null when the spec needs its own ammo carried (a dark bow
 		 * next to a chargebow base needs arrows - an extra slot). */
 		final GearItem ammo;
@@ -2576,8 +2578,7 @@ public class OptimizerService
 					mobs.get(j), levels, owned, Collections.singleton(id));
 				if (perMob[j] != null)
 				{
-					score += (perMob[j].expectedDamage + perMob[j].drainValue)
-						* Math.max(1, mobs.get(j).getHitpoints());
+					score += perMob[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
 				}
 			}
 			if (score > bestScore + 1e-9)
@@ -2643,6 +2644,10 @@ public class OptimizerService
 				? Collections.emptySet()
 				: new HashSet<>(request.getPinnedItems().values());
 		}
+		// A Lightbearer in the set doubles special-energy regen (10%/15s vs
+		// 10%/30s), so more specs fit the kill - detected by ring name, no id.
+		GearItem ring = baseResults.get(0).getLoadout().get(GearSlot.RING);
+		boolean lightbearer = ring != null && ring.getNameLower().contains("lightbearer");
 		// Spec weapons are weapons by definition (SpecialAttack.match rejects
 		// every other slot), so only the weapon partition needs scanning.
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
@@ -2692,21 +2697,23 @@ public class OptimizerService
 				continue;
 			}
 			double expected = spec.expectedDamage(base, monster, levels);
-			double drainValue = drainValue(calculator, spec, base, expected, request, baseResults.get(0), monster);
-			// Rank by damage per FULL SPECIAL BAR, not per use (field fix
-			// 2026-07-18: a 55%-bar dark bow nuke outranked a 25% dagger
-			// that fires four times) - the drain lands once regardless.
-			int uses = Math.max(1, 100 / Math.max(1, spec.getEnergyCost()));
-			double total = expected * uses + drainValue;
-			double bestTotal = best == null ? Double.NEGATIVE_INFINITY
-				: best.expectedDamage * Math.max(1, 100 / Math.max(1, best.spec.getEnergyCost()))
-					+ best.drainValue;
+			// Rank by the DPS the spec ADDS over just attacking - marginal
+			// (every spec fired gives up a main-hand hit), regen-aware over the
+			// fight, and drain-inclusive for every style (field direction
+			// 2026-07-19). A spec that adds nothing loses to carrying no slot.
+			double added = specDpsAdded(calculator, spec, base, expected,
+				request, baseResults.get(0), monster, lightbearer);
+			if (added <= 1e-4)
+			{
+				continue;
+			}
+			double bestAdded = best == null ? Double.NEGATIVE_INFINITY : best.dpsAdded;
 			// Ties (identical stats across poison tiers) prefer the higher
 			// tier - the venom is free spec damage the model does not price.
-			if (best == null || total > bestTotal + 1e-9
-				|| (total > bestTotal - 1e-9 && item.poisonTier() > best.weapon.poisonTier()))
+			if (best == null || added > bestAdded + 1e-9
+				|| (added > bestAdded - 1e-9 && item.poisonTier() > best.weapon.poisonTier()))
 			{
-				best = new SpecPick(spec, item, expected, drainValue, ammoOut[0]);
+				best = new SpecPick(spec, item, expected, added, ammoOut[0]);
 			}
 		}
 		return best;
@@ -2720,37 +2727,83 @@ public class OptimizerService
 	 * drains shine on high-HP, high-defence targets and are pointless on
 	 * throwaway mobs.
 	 */
-	private double drainValue(
+	/**
+	 * The DPS this spec ADDS to the kill over just attacking with the main
+	 * set - its win-over-replacement value, the ranking key and the number
+	 * the card shows (field direction 2026-07-19). Three ingredients:
+	 *
+	 * <ul>
+	 * <li><b>Marginal.</b> Every spec fired gives up a main-hand attack, so
+	 *     the per-use win is {@code specDamage - replacedAuto}, never the raw
+	 *     spec damage.</li>
+	 * <li><b>Regen-aware over the fight.</b> The opening 100% bar
+	 *     ({@code 100/cost} uses) amortises across the kill length, on top of
+	 *     the sustained regen-fed rate (10%/30s, doubled by a Lightbearer) -
+	 *     a longer kill fits more specs.</li>
+	 * <li><b>Drain, for every style.</b> A landed defence-drain lowers the
+	 *     Defence LEVEL, which ranged and magic roll against too, not only
+	 *     melee (v0.3.1 valued the drain for melee main-hands only). The one
+	 *     spec spent landing it is charged against the kill.</li>
+	 * </ul>
+	 *
+	 * A weapon is used the better of the two ways (damage or drain), so the
+	 * value is their max, not their sum - a small undercount for a spec that
+	 * genuinely does both at once (BGS), accepted for v1.
+	 */
+	private double specDpsAdded(
 		DpsCalculator calculator,
 		SpecialAttack spec,
 		DpsResult specBase,
-		double specExpectedDamage,
+		double expected,
 		OptimizationRequest request,
 		DpsResult mainResult,
-		MonsterStats monster)
+		MonsterStats monster,
+		boolean lightbearer)
 	{
-		if (!spec.drainsDefence() || request.getStyle() != CombatStyle.MELEE)
-		{
-			return 0;
-		}
 		double mainDps = mainResult.getDps();
 		if (mainDps <= 0.01)
 		{
 			return 0;
 		}
-		int drainedDefence = spec.drainedDefence(monster.getDefence(), specExpectedDamage);
-		if (drainedDefence >= monster.getDefence())
+		double ttkSeconds = Math.min(600, Math.max(0.6, monster.getHitpoints() / mainDps));
+		double replacedAuto = mainResult.getExpectedHit();
+		double specCycle = Math.max(0.6, specBase.getAttackSpeed() * 0.6);
+
+		// How many specs actually fire over the kill: the opening bar plus regen
+		// (10%/30s, doubled by a Lightbearer), but never more than the fight has
+		// time for - so a mob that dies in one hit gets no spec value, and a
+		// long fight fits more. Fully TTK-consistent, no short-kill blow-up.
+		double regenPerSec = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
+		double energyOverKill = 100.0 + regenPerSec * ttkSeconds;
+		double usesByEnergy = Math.floor(energyOverKill / Math.max(1, spec.getEnergyCost()));
+		double usesByTime = Math.floor(ttkSeconds / specCycle);
+		double uses = Math.max(0, Math.min(usesByEnergy, usesByTime));
+
+		// DAMAGE use: each spec fired wins its damage over the main-hand hit it
+		// replaces, amortised across the kill.
+		double marginal = Math.max(0, expected - replacedAuto);
+		double damageDps = uses * marginal / ttkSeconds;
+
+		// DRAIN use: one landed drain lifts the whole set's dps for the rest of
+		// the fight - for EVERY style, since the drop is to the Defence LEVEL
+		// (v0.3.1 valued this for melee main-hands only). The one spec spent
+		// landing it costs its replaced auto, amortised.
+		double drainDps = 0;
+		if (spec.drainsDefence() && usesByTime >= 1)
 		{
-			return 0;
+			int drained = spec.drainedDefence(monster.getDefence(), expected);
+			if (drained < monster.getDefence())
+			{
+				DpsResult after = calculator.calculate(
+					request.withMonster(monster.withDefence(drained)), mainResult.getLoadout());
+				if (after != null && after.getDps() > mainDps)
+				{
+					drainDps = spec.landChance(specBase) * (after.getDps() - mainDps)
+						- replacedAuto / ttkSeconds;
+				}
+			}
 		}
-		DpsResult drained = calculator.calculate(
-			request.withMonster(monster.withDefence(drainedDefence)), mainResult.getLoadout());
-		if (drained == null || drained.getDps() <= mainDps)
-		{
-			return 0;
-		}
-		double fightSeconds = Math.min(600, monster.getHitpoints() / mainDps);
-		return spec.landChance(specBase) * (drained.getDps() - mainDps) * fightSeconds;
+		return Math.max(damageDps, drainDps);
 	}
 
 	/** The base set with the spec weapon swapped in, or null if unusable.

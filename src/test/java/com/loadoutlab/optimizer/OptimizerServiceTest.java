@@ -23,9 +23,13 @@ public class OptimizerServiceTest
 	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception
 	{
 		LoadoutData data = new DataService().load();
-		// General Graardor: 250 defence, 255 hp - a drain pays off for the
-		// whole kill. Against a goblin the dagger's raw burst should win.
+		// General Graardor (250 defence, 255 hp): a drain pays off over the
+		// whole kill, so the warhammer wins. A fire giant (120 defence, 130
+		// hp) dies before a drain earns back its lost hits, so the dagger's
+		// burst wins. A goblin dies in one attack - no spec beats just
+		// attacking, so none is carried (value-over-replacement).
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip - main weapon
@@ -35,7 +39,9 @@ public class OptimizerServiceTest
 		try
 		{
 			Assert.assertEquals("Dragon warhammer", specPick(service, graardor, owned));
-			Assert.assertEquals("Dragon dagger", specPick(service, goblin, owned));
+			Assert.assertEquals("Dragon dagger", specPick(service, fireGiant, owned));
+			Assert.assertNull("a one-hit kill is not worth a spec slot",
+				specPick(service, goblin, owned));
 		}
 		finally
 		{
@@ -88,7 +94,10 @@ public class OptimizerServiceTest
 				done.countDown();
 			});
 		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.MELEE).spec.getDisplayName();
+		OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+		// A spec that adds nothing over just attacking is not carried (the
+		// value-over-replacement model): null means "no spec worth a slot".
+		return melee == null || melee.spec == null ? null : melee.spec.getDisplayName();
 	}
 
 	@Test
@@ -261,7 +270,9 @@ public class OptimizerServiceTest
 	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
 	{
 		LoadoutData data = new DataService().load();
-		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		// A fire giant, not a goblin: enough HP that a spec earns its slot
+		// (a goblin dies in one hit, so the value model carries no spec).
+		MonsterStats monster = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip - the sustained-DPS weapon
 		owned.put(1215, 1);   // dragon dagger - the spec weapon
@@ -287,6 +298,9 @@ public class OptimizerServiceTest
 			Assert.assertEquals("Dragon dagger", melee.spec.getDisplayName());
 			Assert.assertEquals(1215, melee.specWeapon.getId());
 			Assert.assertTrue(melee.specExpectedDamage > 0);
+			// The win-over-replacement value is surfaced and positive.
+			Assert.assertTrue("the spec must add positive dps to be carried",
+				melee.specDpsAdded > 0);
 			// The game-best section carries its own spec - the strongest
 			// special attack that exists, regardless of ownership.
 			Assert.assertNotNull(melee.gameSpec);

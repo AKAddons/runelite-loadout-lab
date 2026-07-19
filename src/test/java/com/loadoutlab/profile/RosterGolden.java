@@ -158,8 +158,8 @@ public final class RosterGolden
 				}
 				if (result.specWeapon != null)
 				{
-					sb.append(String.format("      spec: %s (avg %.2f)%n",
-						result.specWeapon.label(), result.specExpectedDamage));
+					sb.append(String.format("      spec: %s (adds ~%.3f dps, avg %.2f)%n",
+						result.specWeapon.label(), result.specDpsAdded, result.specExpectedDamage));
 				}
 				sb.append("      inventory:");
 				for (GearItem carried : result.bench == null ? List.<GearItem>of() : result.bench)
