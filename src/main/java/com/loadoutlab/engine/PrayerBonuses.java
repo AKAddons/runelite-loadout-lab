@@ -1,8 +1,6 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
-import java.util.Set;
-import net.runelite.api.Prayer;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -130,94 +128,6 @@ public final class PrayerBonuses
 			case MAGIC: return magicName;
 			default: return meleeName;
 		}
-	}
-
-	public static PrayerBonuses fromActive(Set<Prayer> active)
-	{
-		if (active == null || active.isEmpty())
-		{
-			return NONE;
-		}
-		double meleeAccuracy = 1.0;
-		double meleeStrength = 1.0;
-		double rangedAccuracy = 1.0;
-		double rangedStrength = 1.0;
-		double magicAccuracy = 1.0;
-		double magicDamage = 0.0;
-		for (Prayer prayer : active)
-		{
-			switch (prayer)
-			{
-				case BURST_OF_STRENGTH:
-					meleeStrength = Math.max(meleeStrength, 1.05);
-					break;
-				case CLARITY_OF_THOUGHT:
-					meleeAccuracy = Math.max(meleeAccuracy, 1.05);
-					break;
-				case SUPERHUMAN_STRENGTH:
-					meleeStrength = Math.max(meleeStrength, 1.10);
-					break;
-				case IMPROVED_REFLEXES:
-					meleeAccuracy = Math.max(meleeAccuracy, 1.10);
-					break;
-				case ULTIMATE_STRENGTH:
-					meleeStrength = Math.max(meleeStrength, 1.15);
-					break;
-				case INCREDIBLE_REFLEXES:
-					meleeAccuracy = Math.max(meleeAccuracy, 1.15);
-					break;
-				case CHIVALRY:
-					meleeAccuracy = Math.max(meleeAccuracy, 1.15);
-					meleeStrength = Math.max(meleeStrength, 1.18);
-					break;
-				case PIETY:
-					meleeAccuracy = Math.max(meleeAccuracy, 1.20);
-					meleeStrength = Math.max(meleeStrength, 1.23);
-					break;
-				case SHARP_EYE:
-					rangedAccuracy = Math.max(rangedAccuracy, 1.05);
-					rangedStrength = Math.max(rangedStrength, 1.05);
-					break;
-				case HAWK_EYE:
-					rangedAccuracy = Math.max(rangedAccuracy, 1.10);
-					rangedStrength = Math.max(rangedStrength, 1.10);
-					break;
-				case EAGLE_EYE:
-					rangedAccuracy = Math.max(rangedAccuracy, 1.15);
-					rangedStrength = Math.max(rangedStrength, 1.15);
-					break;
-				case DEADEYE:
-					rangedAccuracy = Math.max(rangedAccuracy, 1.18);
-					rangedStrength = Math.max(rangedStrength, 1.18);
-					break;
-				case RIGOUR:
-					rangedAccuracy = Math.max(rangedAccuracy, 1.20);
-					rangedStrength = Math.max(rangedStrength, 1.23);
-					break;
-				case MYSTIC_WILL:
-					magicAccuracy = Math.max(magicAccuracy, 1.05);
-					break;
-				case MYSTIC_LORE:
-					magicAccuracy = Math.max(magicAccuracy, 1.10);
-					magicDamage = Math.max(magicDamage, 1.0);
-					break;
-				case MYSTIC_MIGHT:
-					magicAccuracy = Math.max(magicAccuracy, 1.15);
-					magicDamage = Math.max(magicDamage, 2.0);
-					break;
-				case MYSTIC_VIGOUR:
-					magicAccuracy = Math.max(magicAccuracy, 1.18);
-					magicDamage = Math.max(magicDamage, 3.0);
-					break;
-				case AUGURY:
-					magicAccuracy = Math.max(magicAccuracy, 1.25);
-					magicDamage = Math.max(magicDamage, 4.0);
-					break;
-				default:
-					break;
-			}
-		}
-		return new PrayerBonuses(meleeAccuracy, meleeStrength, rangedAccuracy, rangedStrength, magicAccuracy, magicDamage);
 	}
 
 	public double getMeleeAccuracy()

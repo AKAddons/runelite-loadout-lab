@@ -48,20 +48,6 @@ public final class StatBlock
 		this.prayer = prayer;
 	}
 
-	public StatBlock plus(StatBlock other)
-	{
-		return new StatBlock(
-			stab + other.stab,
-			slash + other.slash,
-			crush + other.crush,
-			magic + other.magic,
-			ranged + other.ranged,
-			strength + other.strength,
-			rangedStrength + other.rangedStrength,
-			magicDamage + other.magicDamage,
-			prayer + other.prayer);
-	}
-
 	public int getAttackBonus(String type)
 	{
 		switch (type)

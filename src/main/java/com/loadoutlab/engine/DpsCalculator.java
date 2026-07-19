@@ -14,8 +14,6 @@ import java.util.ArrayList;
 
 public final class DpsCalculator
 {
-	private static final String[] MELEE_TYPES = {"stab", "slash", "crush"};
-
 	/** Conditional bonuses counted during the CURRENT calculate() call -
 	 * source -> exact parts ("+16.7% accuracy"), both insertion-ordered,
 	 * attached to the result for user assurance (single-threaded use,

@@ -349,8 +349,7 @@
       "code": [
         "profile/PlayerProfile.java",
         "collection/CollectionLedger.java",
-        "engine/OwnedItems.java",
-        "engine/ProfileSnapshot.java"
+        "engine/OwnedItems.java"
       ],
       "tests": [
         "profile/PlayerProfileTest.java",

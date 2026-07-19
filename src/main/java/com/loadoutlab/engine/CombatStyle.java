@@ -20,11 +20,6 @@ public enum CombatStyle
 		return label;
 	}
 
-	public boolean isConcrete()
-	{
-		return this != ANY;
-	}
-
 	public static CombatStyle[] concreteValues()
 	{
 		return new CombatStyle[]{MELEE, RANGED, MAGIC};

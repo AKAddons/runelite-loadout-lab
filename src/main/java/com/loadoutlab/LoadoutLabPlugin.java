@@ -1885,12 +1885,6 @@ public class LoadoutLabPlugin extends Plugin
 		return img;
 	}
 
-	/** The player's owned-items ledger (persistent across sessions). */
-	public CollectionLedger getLedger()
-	{
-		return ledger;
-	}
-
 	@Provides
 	LoadoutLabConfig provideConfig(ConfigManager configManager)
 	{

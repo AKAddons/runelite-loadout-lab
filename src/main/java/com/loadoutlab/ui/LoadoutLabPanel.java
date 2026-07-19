@@ -1360,11 +1360,6 @@ public class LoadoutLabPanel extends PluginPanel
 		repaint();
 	}
 
-	public boolean isF2pOnly()
-	{
-		return f2pOnly.isSelected();
-	}
-
 	private void onSearchEdited()
 	{
 		if (!suppressSearchEvents)
@@ -4578,96 +4573,6 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(20724);
 		}
-	}
-
-	/** The inventory breakpoint summary (field spec 2026-07-18): the
-	 * minimum-viability point (every mob answerable), the major
-	 * breakpoints (picks worth >= 10% of the whole curve's gain), the
-	 * final breakpoint (more slots stop paying), and where the current
-	 * budget sits as a percent of max. */
-	private JLabel breakpointLabel(ResultEntry entry)
-	{
-		OptimizerService.KitCurve curve = entry.kitCurve;
-		if (curve == null || curve.points.size() < 2)
-		{
-			return null;
-		}
-		List<double[]> points = curve.points;
-		double baseTotal = points.get(0)[1];
-		double finalTotal = points.get(points.size() - 1)[1];
-		double gainRange = finalTotal - baseTotal;
-		int maxViable = 0;
-		for (double[] p : points)
-		{
-			maxViable = Math.max(maxViable, (int) p[2]);
-		}
-		int viability = -1;
-		int finalCost = (int) points.get(0)[0];
-		List<Integer> majors = new ArrayList<>();
-		for (int i = 1; i < points.size(); i++)
-		{
-			double gain = points.get(i)[1] - points.get(i - 1)[1];
-			int cost = (int) points.get(i)[0];
-			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
-			{
-				viability = cost;
-			}
-			if (gain > 1e-6)
-			{
-				finalCost = cost;
-				// Significant = the pick moves the ROSTER's dps, not just
-				// the curve's own range (field fix 2026-07-18: a slow-decay
-				// tail kept clearing a range-relative bar deep into the
-				// curve). 3% of the final total is a real jump.
-				if (finalTotal > 0 && gain >= 0.03 * finalTotal && !majors.contains(cost))
-				{
-					majors.add(cost);
-				}
-			}
-		}
-		if (viability < 0 && (int) points.get(0)[2] >= maxViable)
-		{
-			viability = (int) points.get(0)[0];
-		}
-		// Where the CURRENT budget lands on the curve, as percent of max.
-		double atBudget = baseTotal;
-		for (double[] p : points)
-		{
-			if (p[0] <= entry.maxSwaps)
-			{
-				atBudget = Math.max(atBudget, p[1]);
-			}
-		}
-		int pct = finalTotal > 0 ? (int) Math.round(atBudget * 100.0 / finalTotal) : 100;
-		StringBuilder text = new StringBuilder();
-		if (viability > 0)
-		{
-			text.append("min ").append(viability);
-		}
-		if (!majors.isEmpty())
-		{
-			if (text.length() > 0)
-			{
-				text.append(" | ");
-			}
-			text.append("gains at ");
-			for (int i = 0; i < majors.size(); i++)
-			{
-				text.append(i > 0 ? ", " : "").append(majors.get(i));
-			}
-		}
-		if (text.length() > 0)
-		{
-			text.append(" | ");
-		}
-		text.append("max ").append(finalCost).append(" - at ").append(pct).append("%");
-		JLabel label = new JLabel(text.toString());
-		label.setForeground(MUTED);
-		label.setFont(label.getFont().deriveFont(11f));
-		label.setToolTipText("Inventory breakpoints: 'min' answers every mob,"
-			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
-			+ " slots stop paying - the percent is this budget vs the max");
-		return label;
 	}
 
 	/** One mob's row result: the side's kit BEST across ALL styles - the
