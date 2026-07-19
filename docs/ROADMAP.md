@@ -388,3 +388,46 @@ Weapons the audit surfaced that need engine work beyond a registry row:
 - Soulreaper axe - stack-based (spec power scales with built-up stacks).
 - Magic longbow Powershot - guaranteed-hit normal roll (accuracy skipped,
   normal damage roll).
+
+## Spec value: win-over-replacement (shipped 2026-07-19, refines v0.2 #8)
+
+The spec recommendation was re-modelled from gross output to the DPS a
+spec ADDS to the kill over just attacking - marginal (each spec fired
+gives up a main-hand hit), regen-aware over the fight length (10%/30s,
+doubled by a Lightbearer), and drain-inclusive for every style (a defence
+drain lowers the Defence LEVEL that ranged and magic roll against too, not
+just melee). The card shows "adds ~X.XX dps" per spec; a spec that adds
+nothing is not carried. This is the Max DPS view of a spec's value, and it
+is calibrated: at General Graardor our game-best specs are dragon claws
+(1.60) ~ voidwaker (1.56), matching the wiki's top pair, with the
+warhammer correctly mid-tier.
+
+## Future: "Smart" mode - model sustain, not just raw DPS
+
+**The gap it fills.** Max DPS (and its spec value-over-replacement) is
+correct by construction to ignore healing: a heal is not damage. But the
+wiki's real-play recommendations lean on survivability the DPS number
+can't see - the Saradomin godsword is wiki-#2 at Graardor for its heal,
+and the toxic blowpipe is brought "for healing off the minions." Under a
+pure-DPS metric those rank far too low. This is a deliberate limitation of
+Max DPS, not a bug (see ENGINE-GAPS.md), and the fix is a distinct mode,
+not a weight tweak - forcing sustain into the DPS number would move Max
+DPS AWAY from the wiki (verified 2026-07-19), where it currently agrees.
+
+**Distinct from Tanky.** Tanky/Balanced already trade DPS for LESS DAMAGE
+TAKEN (avoidance - lower incoming DTPS). Smart mode is about RECOVERY:
+turning HP restored into offensive-equivalent value, plus the realistic
+play that raw DPS ignores.
+
+**Proposed model (sketch, to design when built):**
+- A heal-on-hit / heal-spec is worth the food-and-time it saves. The
+  cleanest unit: HP restored per second -> equivalent DPS at THIS mob's
+  incoming DTPS, so a heal is worth a lot at a hard-hitting boss and
+  ~nothing at a mob that never lands. (SGS ~16.7% HP + 33% prayer on hit,
+  blowpipe/Sara sword heals, guthan's, etc.)
+- Realistic-play factors the same mode could fold in: food/brew inventory
+  slots saved (freeing them for more supplies or a longer trip), the spec
+  bar spent on sustain rather than burst, and prayer upkeep.
+- Surface as a fourth OptimizeMode next to Max DPS / Balanced / Tanky, or
+  as a sustain overlay on the existing frontier. Own branch off main, its
+  own golden re-baseline, like the spec-value work.

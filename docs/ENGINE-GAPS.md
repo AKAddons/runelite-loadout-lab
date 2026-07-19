@@ -163,3 +163,17 @@ All three set effects are modeled (broken pieces count, per the wiki):
 
 Not modeled: burn stack-cap/target-death truncation (the wiki's own
 average ignores it too), and Frostweaver's manual-trigger variants.
+
+## Sustain / healing not modelled (DELIBERATE - Max DPS limitation, 2026-07-19)
+
+The engine models raw DPS and, since 2026-07-19, a spec's DPS added over
+just attacking. It models ZERO survivability value: a heal-on-hit or a
+heal-spec (Saradomin godsword, toxic blowpipe, Saradomin sword, Guthan's)
+is worth nothing under Max DPS. This is CORRECT for a pure-DPS metric - a
+heal is not damage - and it is why our spec/weapon picks match the wiki on
+Graardor for the top DPS options while the wiki also lists SGS (heal) and
+the blowpipe (heal off minions), which we rank low. It is NOT a bug; do
+not "fix" it by crediting healing inside Max DPS - that was verified to
+move the ranking away from the wiki. The proper home is the roadmapped
+"Smart" mode (see ROADMAP.md), which values HP restored as offensive-
+equivalent DPS scaled by the mob's incoming DTPS.
