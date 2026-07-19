@@ -17,22 +17,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MascotRosterTest
 {
-	private static final LocalDate IN_WORLD_CUP = LocalDate.of(2026, 7, 1);
-	private static final LocalDate AFTER_WORLD_CUP = LocalDate.of(2026, 9, 1);
+	private static final LocalDate SUMMER = LocalDate.of(2026, 7, 1);
+	private static final LocalDate SEPTEMBER = LocalDate.of(2026, 9, 1);
 
 	@Test
-	@DisplayName("evergreen moods are eligible every day; the World Cup only in its window")
+	@DisplayName("evergreen moods are eligible every day")
 	void eligibility()
 	{
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.WORKOUT));
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.CHEF));
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.WORLD_CUP));
-
-		assertTrue(MascotRoster.activeOn(AFTER_WORLD_CUP).contains(MascotRoster.WORKOUT));
-		assertFalse(MascotRoster.activeOn(AFTER_WORLD_CUP).contains(MascotRoster.WORLD_CUP),
-			"the striker retires after the final");
-		// A one-off dated window does not recur the year after.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2031, 7, 1)).contains(MascotRoster.WORLD_CUP));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.WORKOUT));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.CHEF));
+		assertTrue(MascotRoster.activeOn(SEPTEMBER).contains(MascotRoster.WORKOUT));
 	}
 
 	@Test
@@ -40,7 +34,7 @@ class MascotRosterTest
 	void weightedMix()
 	{
 		int draws = 120_000;
-		for (LocalDate date : new LocalDate[]{IN_WORLD_CUP, AFTER_WORLD_CUP})
+		for (LocalDate date : new LocalDate[]{SUMMER, SEPTEMBER})
 		{
 			java.util.List<MascotRoster> active = MascotRoster.activeOn(date);
 			int total = active.stream().mapToInt(MascotRoster::weight).sum();
@@ -54,11 +48,11 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("a dormant mood is never picked (the striker is gone out of season)")
+	@DisplayName("a dormant mood is never picked (the cauldron outside October)")
 	void dormantNeverPicked()
 	{
-		Map<Class<?>, Integer> counts = sample(AFTER_WORLD_CUP, 90_000);
-		assertEquals(0, counts.getOrDefault(MascotStriker.class, 0),
+		Map<Class<?>, Integer> counts = sample(SEPTEMBER, 90_000);
+		assertEquals(0, counts.getOrDefault(MascotCauldron.class, 0),
 			"a dormant mood must never be picked");
 	}
 
@@ -100,20 +94,21 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("the World Cup covers June-July of 2026 and 2030 and nothing in between")
-	void worldCupWindow()
+	@DisplayName("dated windows are one-off spans; anyOf unions them (2030 striker restore path)")
+	void datedWindows()
 	{
-		// 2026 tournament.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 5, 31)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 6, 1)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 7, 31)).contains(MascotRoster.WORLD_CUP));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 8, 1)).contains(MascotRoster.WORLD_CUP));
-		// Dark in the years between tournaments.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2028, 7, 1)).contains(MascotRoster.WORLD_CUP));
-		// 2030 tournament.
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2030, 6, 1)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2030, 7, 31)).contains(MascotRoster.WORLD_CUP));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2030, 8, 1)).contains(MascotRoster.WORLD_CUP));
+		// The striker retired to the attic still needs these on restore.
+		MascotRoster.Window cups = MascotRoster.Window.anyOf(
+			MascotRoster.Window.dates(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 31)),
+			MascotRoster.Window.dates(LocalDate.of(2030, 6, 1), LocalDate.of(2030, 7, 31)));
+		assertFalse(cups.active(LocalDate.of(2026, 5, 31)));
+		assertTrue(cups.active(LocalDate.of(2026, 6, 1)));
+		assertTrue(cups.active(LocalDate.of(2026, 7, 31)));
+		assertFalse(cups.active(LocalDate.of(2026, 8, 1)));
+		// Dark between the spans; a dated window never recurs.
+		assertFalse(cups.active(LocalDate.of(2028, 7, 1)));
+		assertTrue(cups.active(LocalDate.of(2030, 6, 1)));
+		assertFalse(cups.active(LocalDate.of(2030, 8, 1)));
 	}
 
 	@Test

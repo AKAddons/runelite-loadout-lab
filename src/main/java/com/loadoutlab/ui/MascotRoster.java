@@ -26,8 +26,9 @@ import java.util.function.Supplier;
  *     Halloween (weight 6) - so October is the cauldron's headline month.
  *   - Classroom (weight 1) runs only the school terms: Jan-May and Sep-Nov
  *     (dark over summer break Jun-Aug and the December holidays).
- *   - World Cup (weight 6) fires for June-July of 2026 and 2030 (the two real
- *     tournaments); dark every other year.
+ *   - The World Cup striker (weight 6, June-July of tournament years) is
+ *     RETIRED to ~/Development/loadout-lab-attic after the 2026 final -
+ *     restore per that repo's README for 2030 (Window.dates/anyOf remain).
  */
 enum MascotRoster
 {
@@ -41,10 +42,6 @@ enum MascotRoster
 
 	// Seasonal / event - eligible only inside their window, where the big
 	// weight makes them the headline act.
-	WORLD_CUP(Window.anyOf(
-		Window.dates(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 31)),
-		Window.dates(LocalDate.of(2030, 6, 1), LocalDate.of(2030, 7, 31))),
-		6, MascotStriker::new),
 	HALLOWEEN(Window.months(10), 6, MascotCauldron::new);
 
 	private final Window window;
