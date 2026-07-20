@@ -430,6 +430,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		bankHighlight = null;
 		bankFilter = null;
 		layoutManager.removeLayout(BANK_TAG);
+		configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
 		tagManager.unregisterTag(BANK_TAG);
 		if (navButton != null)
 		{
@@ -1574,6 +1575,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					bankTagsService.closeBankTag();
 				}
 				layoutManager.removeLayout(BANK_TAG);
+				configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
 				tagManager.unregisterTag(BANK_TAG);
 			});
 			return;
@@ -1594,15 +1596,59 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			if (layout != null)
 			{
 				layoutManager.saveLayout(new Layout(BANK_TAG, layout));
+				mirrorLayoutForBankTagLayouts(layout);
 				bankTagsService.openBankTag(BANK_TAG, 0);
 			}
 			else
 			{
 				layoutManager.removeLayout(BANK_TAG);
+				configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
 				bankTagsService.openBankTag(BANK_TAG,
 					BankTagsService.OPTION_NO_LAYOUT);
 			}
 		});
+	}
+
+	/** The hub "Bank Tag Layouts" plugin's config coordinates. It stores its
+	 * own layout per tag and applies it on every bank rebuild, WINNING over
+	 * the core bank-tags layout for our virtual tag (its defer-to-core check
+	 * requires a real tag TAB, which a virtual tag never has - field-found
+	 * 2026-07-20: our cross rendered flat under its stale packed layout). */
+	private static final String BTL_GROUP = "banktaglayouts";
+	private static final String BTL_LAYOUT_KEY = "layout_" + BANK_TAG;
+
+	/** When Bank Tag Layouts is running, write OUR arrangement in its format
+	 * ("itemId:pos,..." - verified against its source and a live config) so
+	 * whichever layout engine draws, the bank shows the same shape. Scoped
+	 * strictly to our own tag's key; absent the plugin we write nothing. */
+	private void mirrorLayoutForBankTagLayouts(int[] layout)
+	{
+		boolean present = false;
+		for (Plugin p : pluginManager.getPlugins())
+		{
+			if ("Bank Tag Layouts".equals(p.getName()) && pluginManager.isPluginEnabled(p))
+			{
+				present = true;
+				break;
+			}
+		}
+		if (!present)
+		{
+			return;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (int pos = 0; pos < layout.length; pos++)
+		{
+			if (layout[pos] != -1)
+			{
+				if (sb.length() > 0)
+				{
+					sb.append(',');
+				}
+				sb.append(layout[pos]).append(':').append(pos);
+			}
+		}
+		configManager.setConfiguration(BTL_GROUP, BTL_LAYOUT_KEY, sb.toString());
 	}
 
 	/** Roster mirror of compute: same client-thread staging, then
