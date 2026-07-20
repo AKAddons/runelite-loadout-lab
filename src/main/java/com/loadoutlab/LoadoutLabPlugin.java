@@ -45,11 +45,14 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
+import net.runelite.api.ScriptID;
 import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -64,12 +67,15 @@ import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.BankTagsService;
 import net.runelite.client.plugins.banktags.tabs.Layout;
 import net.runelite.client.plugins.banktags.tabs.LayoutManager;
+import net.runelite.client.plugins.banktags.tabs.TabManager;
+import net.runelite.client.plugins.banktags.tabs.TagTab;
 import net.runelite.client.game.chatbox.ChatboxItemSearch;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.ConfigChanged;
@@ -138,6 +144,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	@Inject
 	private LayoutManager layoutManager;
+
+	@Inject
+	private TabManager tabManager;
 
 	@Inject
 	private SpriteManager spriteManager;
@@ -341,6 +350,22 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
+		// Bank-tag hygiene: drop the layout Bank Tag Layouts auto-enabled on
+		// our tag before the real-tab fix existed, any core layout a crash
+		// left behind, and our tab name if a user tab-edit ever persisted
+		// the in-memory tab into the tagtabs CSV (we never save it ourselves).
+		configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
+		layoutManager.removeLayout(BANK_TAG);
+		String tagtabs = configManager.getConfiguration("banktags", "tagtabs");
+		if (tagtabs != null && tagtabs.contains(BANK_TAG))
+		{
+			List<String> names = new ArrayList<>(Text.fromCSV(tagtabs));
+			if (names.remove(BANK_TAG))
+			{
+				configManager.setConfiguration("banktags", "tagtabs", Text.toCSV(names));
+				configManager.unsetConfiguration("banktags", "icon_" + BANK_TAG);
+			}
+		}
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
@@ -430,7 +455,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		bankHighlight = null;
 		bankFilter = null;
 		layoutManager.removeLayout(BANK_TAG);
-		configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
+		removeBankTagTab();
 		tagManager.unregisterTag(BANK_TAG);
 		if (navButton != null)
 		{
@@ -1575,7 +1600,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					bankTagsService.closeBankTag();
 				}
 				layoutManager.removeLayout(BANK_TAG);
-				configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
+				removeBankTagTab();
 				tagManager.unregisterTag(BANK_TAG);
 			});
 			return;
@@ -1596,59 +1621,109 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			if (layout != null)
 			{
 				layoutManager.saveLayout(new Layout(BANK_TAG, layout));
-				mirrorLayoutForBankTagLayouts(layout);
+				ensureBankTagTab();
 				bankTagsService.openBankTag(BANK_TAG, 0);
 			}
 			else
 			{
 				layoutManager.removeLayout(BANK_TAG);
-				configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
+				removeBankTagTab();
 				bankTagsService.openBankTag(BANK_TAG,
 					BankTagsService.OPTION_NO_LAYOUT);
 			}
 		});
 	}
 
-	/** The hub "Bank Tag Layouts" plugin's config coordinates. It stores its
-	 * own layout per tag and applies it on every bank rebuild, WINNING over
-	 * the core bank-tags layout for our virtual tag (its defer-to-core check
-	 * requires a real tag TAB, which a virtual tag never has - field-found
-	 * 2026-07-20: our cross rendered flat under its stale packed layout). */
+	/** The hub "Bank Tag Layouts" plugin's config coordinates - kept only to
+	 * clean up the layout its auto-enable wrote for our tag before the
+	 * real-tab fix below existed. */
 	private static final String BTL_GROUP = "banktaglayouts";
 	private static final String BTL_LAYOUT_KEY = "layout_" + BANK_TAG;
+	/** The filter tab's icon in the bank's tag strip (rune scimitar). */
+	private static final int BANK_TAB_ICON = 1333;
 
-	/** When Bank Tag Layouts is running, write OUR arrangement in its format
-	 * ("itemId:pos,..." - verified against its source and a live config) so
-	 * whichever layout engine draws, the bank shows the same shape. Scoped
-	 * strictly to our own tag's key; absent the plugin we write nothing. */
-	private void mirrorLayoutForBankTagLayouts(int[] layout)
+	private boolean bankTagLayoutsActive()
 	{
-		boolean present = false;
 		for (Plugin p : pluginManager.getPlugins())
 		{
 			if ("Bank Tag Layouts".equals(p.getName()) && pluginManager.isPluginEnabled(p))
 			{
-				present = true;
-				break;
+				return true;
 			}
 		}
-		if (!present)
+		return false;
+	}
+
+	/** With Bank Tag Layouts running, our tag must exist as a REAL tag tab
+	 * while the filter is on: BTL only defers to the core bank-tags layout
+	 * for a tab it can find (isVanillaLayoutEnabled = a TagTab AND a core
+	 * layout), and with "layout enabled by default" on it auto-enables its
+	 * own flat layout over any purely virtual tag every bank rebuild
+	 * (field-found 2026-07-20: the cross rendered flat under it; a config
+	 * mirror lost the write war). Inventory Setups escapes via a hardcoded
+	 * _invsetup_ prefix exemption; a real tab is the road for everyone else.
+	 *
+	 * IN-MEMORY ONLY - deliberately no TabManager.save(): save() rewrites
+	 * the user's whole tagtabs config from the in-memory list, which would
+	 * WIPE their real tabs if the list isn't loaded yet. BTL's find() and
+	 * the tab strip both read the live list, so persistence buys nothing;
+	 * the bank-build hook below re-adds it whenever core reloads the list. */
+	private void ensureBankTagTab()
+	{
+		if (!bankTagLayoutsActive())
 		{
+			log.debug("bank tab: Bank Tag Layouts not active, skipping");
 			return;
 		}
-		StringBuilder sb = new StringBuilder();
-		for (int pos = 0; pos < layout.length; pos++)
+		if (tabManager.find(BANK_TAG) != null)
 		{
-			if (layout[pos] != -1)
-			{
-				if (sb.length() > 0)
-				{
-					sb.append(',');
-				}
-				sb.append(layout[pos]).append(':').append(pos);
-			}
+			log.debug("bank tab: already present");
+			return;
 		}
-		configManager.setConfiguration(BTL_GROUP, BTL_LAYOUT_KEY, sb.toString());
+		TagTab tab = new TagTab();
+		tab.setTag(BANK_TAG);
+		tab.setIconItemId(BANK_TAB_ICON);
+		tabManager.add(tab);
+		log.debug("bank tab: added (find now = {})", tabManager.find(BANK_TAG) != null);
+	}
+
+	private void removeBankTagTab()
+	{
+		if (tabManager.find(BANK_TAG) != null)
+		{
+			tabManager.remove(BANK_TAG);
+		}
+	}
+
+	/** Re-assert the real tab on every bank build while the filter is on.
+	 * Two hooks because BTL applies its layout at PostFired(BANKMAIN_BUILD,
+	 * priority -1): the PostFired hook at -0.5 slots BETWEEN core's handlers
+	 * (0) and BTL's apply (-1) - the decisive ordering on the first build
+	 * after a bank open, where core's BANKMAIN_INIT reload has just wiped
+	 * the in-memory list. The FINISHBUILDING hook covers rebuild variants.
+	 * (Priority-after-core precedent: Inventory Setups.) */
+	@Subscribe(priority = -1)
+	public void onScriptPreFired(ScriptPreFired event)
+	{
+		if (event.getScriptId() == ScriptID.BANKMAIN_FINISHBUILDING
+			&& bankFilter != null
+			&& BANK_TAG.equals(bankTagsService.getActiveTag()))
+		{
+			log.debug("bank tab: FINISHBUILDING prefired, ensuring tab");
+			ensureBankTagTab();
+		}
+	}
+
+	@Subscribe(priority = -0.5f)
+	public void onScriptPostFired(ScriptPostFired event)
+	{
+		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD
+			&& bankFilter != null
+			&& BANK_TAG.equals(bankTagsService.getActiveTag()))
+		{
+			log.debug("bank tab: BANKMAIN_BUILD postfired, ensuring tab");
+			ensureBankTagTab();
+		}
 	}
 
 	/** Roster mirror of compute: same client-thread staging, then
