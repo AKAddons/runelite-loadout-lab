@@ -316,18 +316,6 @@ public final class SpecialAttack
 		return maxHit / 2.0;
 	}
 
-	/**
-	 * Sustained DPS added by weaving this spec on cooldown: net gain per
-	 * spec (the spec replaces one normal attack) times specs per second
-	 * from energy regen - 10% per 30s, doubled by the Lightbearer.
-	 */
-	public double sustainedDpsBonus(double specExpectedDamage, double replacedAutoExpected, boolean lightbearer)
-	{
-		double regenPercentPerSecond = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
-		double specsPerSecond = regenPercentPerSecond / energyCost;
-		return Math.max(0, specExpectedDamage - replacedAutoExpected) * specsPerSecond;
-	}
-
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */
 	public double landChance(DpsResult base)
 	{

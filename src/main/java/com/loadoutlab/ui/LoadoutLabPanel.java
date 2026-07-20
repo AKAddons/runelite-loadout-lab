@@ -5016,13 +5016,12 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
 				result.gameSpecExpectedDamage, result.gameSpecDpsAdded,
-				best.getExpectedHit(),
 				"Strongest special attack in the game vs this monster"));
 		}
 		else
 		{
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-				result.specDpsAdded, best.getExpectedHit(), "Swap in for the special attack",
+				result.specDpsAdded, "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
@@ -5273,22 +5272,17 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Blowpipes: name the loaded dart the numbers assume. */
 	/** Everything the old spec line said, as the spec cell's tooltip. */
 	private static String specTooltip(SpecialAttack spec, double expectedDamage,
-		double dpsAdded, double replacedAutoExpected, String fallbackTooltip)
+		double dpsAdded, String fallbackTooltip)
 	{
 		// The headline is the win-over-replacement: the DPS this spec adds to
 		// the kill over just attacking (marginal, regen-aware, drain-inclusive).
+		// The note explains the mechanism (e.g. the defence drain), so no
+		// separate throughput line - it read as +0.00 for drain specs.
 		String headline = String.format("Spec: %s - adds ~%.2f dps (avg %.0f dmg, %d%% energy)",
 			spec.getDisplayName(), dpsAdded, expectedDamage, spec.getEnergyCost());
 		String note = spec.getNote();
-		// How the number is built: the marginal per-use win, weaved on cooldown
-		// (energy regen 10% per 30s; the Lightbearer doubles it).
-		String sustained = String.format("Sustained on cooldown: about +%.2f dps"
-				+ " (+%.2f with a Lightbearer)",
-			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, false),
-			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, true));
 		return "<html>" + headline
-			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note)
-			+ "<br>" + sustained + "</html>";
+			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note) + "</html>";
 	}
 
 	/**
@@ -5951,14 +5945,14 @@ public class LoadoutLabPanel extends PluginPanel
 	 * height is always right (the old wrapping grid clipped its second row).
 	 */
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDpsAdded, double replacedAutoExpected, String specFallbackTooltip)
+		double specDpsAdded, String specFallbackTooltip)
 	{
 		return iconGrid(result, spec, specWeapon, specExpected, specDpsAdded,
-			replacedAutoExpected, specFallbackTooltip, false, null);
+			specFallbackTooltip, false, null);
 	}
 
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDpsAdded, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned,
+		double specDpsAdded, String specFallbackTooltip, boolean markUnowned,
 		Loadout gameBest)
 	{
 		int cell = ICON_SIZE + 4;
@@ -5973,7 +5967,7 @@ public class LoadoutLabPanel extends PluginPanel
 		Map<GearSlot, Integer> pinnedSlots = renderingStyle == null
 			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
-			specDpsAdded, replacedAutoExpected, specFallbackTooltip, fates);
+			specDpsAdded, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
 			markUnowned, gameBest, specCell, renderingIncoming));
 	}
@@ -6647,7 +6641,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** The special-attack weapon to swap in, amber-bordered - or an empty box. */
 	private RiskDotLabel buildSpecCell(int cell, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDpsAdded, double replacedAutoExpected, String specFallbackTooltip, PvpRisk.Assessment fates)
+		double specDpsAdded, String specFallbackTooltip, PvpRisk.Assessment fates)
 	{
 		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
@@ -6685,7 +6679,7 @@ int sprite = incoming.protectPrayer != null
 				}
 			}
 			String specTip = specTooltip(spec, specExpected,
-				specDpsAdded, replacedAutoExpected, specFallbackTooltip);
+				specDpsAdded, specFallbackTooltip);
 			specCell.setToolTipText(specFate.isEmpty() ? specTip
 				: specTip.replace("</html>", specFate + "</html>"));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
