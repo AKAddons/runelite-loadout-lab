@@ -44,7 +44,7 @@ tasks.named('test', Test) {
 }
 
 group = 'com.loadoutlab'
-version = '0.3.0'
+version = '0.3.2'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
