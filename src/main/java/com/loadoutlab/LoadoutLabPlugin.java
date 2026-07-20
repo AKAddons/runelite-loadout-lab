@@ -1351,6 +1351,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			}
 
 			@Override
+			public Map<String, String> supplyOverrides(int monsterId)
+			{
+				return mobProfiles.supplies(monsterId);
+			}
+
+			@Override
+			public void setSupplyOverride(int monsterId, String category, String choice)
+			{
+				mobProfiles.setSupply(monsterId, category, choice);
+			}
+
+			@Override
 			public void removeMobSim(int monsterId, int itemId)
 			{
 				if (mobProfiles != null)

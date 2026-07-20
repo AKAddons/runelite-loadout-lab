@@ -65,6 +65,7 @@ import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -422,10 +423,13 @@ public class LoadoutLabPanel extends PluginPanel
 			return Collections.emptyList();
 		}
 		List<TripSupplies.Option> picks = new ArrayList<>();
+		// Per-mob overrides (the exclude/sim pattern) overlay the wrench-
+		// panel defaults, keyed by the lensed mob's profile.
+		Map<String, String> overrides = mobProfile.supplyOverrides(entry.mob().profileId());
 		for (Map.Entry<String, String> e : supplyDefaults.entrySet())
 		{
 			String category = e.getKey();
-			String mode = e.getValue();
+			String mode = overrides.getOrDefault(category, e.getValue());
 			if ("NONE".equals(mode))
 			{
 				continue;
@@ -5579,6 +5583,12 @@ public class LoadoutLabPanel extends PluginPanel
 				simCount > 0, false,
 				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
+			int supplyOverrides = mobProfile.supplyOverrides(lensedProfileId).size();
+			localRow.add(localCountChip(
+				supplyOverrides > 0 ? "Supplies: " + supplyOverrides : "Supplies",
+				supplyOverrides > 0, false,
+				"Trip supplies vs " + mobName + " (this mob only) - override the config defaults",
+				() -> asActive(entry, () -> manageSupplyOverrides(entry, lensedProfileId, mobName))));
 			card.add(Box.createVerticalStrut(4));
 			card.add(localRow);
 		}
@@ -5723,6 +5733,54 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	/** The per-mob supply override menu (field spec 2026-07-20: works like
+	 * the exclude/sim locals): one submenu per category - Default (wrench
+	 * panel) / Detect best / None / each tier - the checked entry showing
+	 * what THIS mob currently uses. Overrides persist in the mob profile. */
+	private void manageSupplyOverrides(ResultEntry entry, int profileId, String mobName)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		String[][] categories = {
+			{TripSupplies.FOOD, "Food"},
+			{TripSupplies.FAST_FOOD, "Fast food"},
+			{TripSupplies.PRAYER_RESTORE, "Prayer restore"},
+			{TripSupplies.SURGE, "Surge potion"},
+			{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
+			{TripSupplies.ANTIVENOM, "Anti-venom"}};
+		Map<String, String> overrides = mobProfile.supplyOverrides(profileId);
+		for (String[] cat : categories)
+		{
+			String current = overrides.get(cat[0]);
+			JMenu sub = new JMenu(cat[1] + (current != null ? " (custom)" : ""));
+			supplyChoice(sub, entry, profileId, cat[0], null,
+				"Default (config)", current == null);
+			supplyChoice(sub, entry, profileId, cat[0], "DETECT_BEST",
+				"Detect best", "DETECT_BEST".equals(current));
+			supplyChoice(sub, entry, profileId, cat[0], "NONE",
+				"None", "NONE".equals(current));
+			for (TripSupplies.Option option : TripSupplies.options(cat[0]))
+			{
+				supplyChoice(sub, entry, profileId, cat[0], option.key,
+					option.name, option.key.equals(current));
+			}
+			menu.add(sub);
+		}
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	private void supplyChoice(JMenu sub, ResultEntry entry, int profileId,
+		String category, String choice, String label, boolean selected)
+	{
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		item.addActionListener(a -> asActive(entry, () ->
+		{
+			mobProfile.setSupplyOverride(profileId, category, choice);
+			renderPage();
+		}));
+		sub.add(item);
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
