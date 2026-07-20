@@ -2792,7 +2792,9 @@ public class LoadoutLabPanel extends PluginPanel
 				}
 			}
 		}
-		// The inventory grid (4-wide, two rows below the cross) holds EVERY
+		// The inventory grid rides BESIDE the cross (field spec 2026-07-20:
+		// the bank view is a fixed 8 wide, so cols 4-7 are free column
+		// space): 4-wide from the top row, col 3 the gutter. It holds EVERY
 		// remaining tag member: carried swaps first (bench order), then the
 		// assumed consumables and the mob's supplies. Laying out all of them
 		// is deliberate - an unplaced member gets shoved into the cross's
@@ -2806,7 +2808,7 @@ public class LoadoutLabPanel extends PluginPanel
 		int k = 0;
 		for (int id : inv)
 		{
-			place.put((6 + k / 4) * 8 + (k % 4), id);
+			place.put((k / 4) * 8 + 4 + (k % 4), id);
 			k++;
 		}
 		int maxPos = 0;
