@@ -44,7 +44,7 @@ tasks.named('test', Test) {
 }
 
 group = 'com.loadoutlab'
-version = '0.3.0'
+version = '0.3.2'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
@@ -96,6 +96,17 @@ tasks.register('mascotPreview', JavaExec) {
 	systemProperty 'java.awt.headless', 'true'
 }
 
+// Pixel-exact mascot golden (see MascotFrameHash) - the gate any rewrite
+// of the animations must keep green:
+//   ./gradlew -q mascotFrameHash > mascot-hashes.txt
+tasks.register('mascotFrameHash', JavaExec) {
+	group = 'loadout lab'
+	description = 'Print a SHA-256 per mascot mood over every rendered frame'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.ui.MascotFrameHash'
+	systemProperty 'java.awt.headless', 'true'
+}
+
 // Optimizer wall-clock benchmark over a fixed monster/mode/risk matrix
 // (see QueryBenchmark): ./gradlew benchmark
 task benchmark(type: JavaExec) {
@@ -117,6 +128,17 @@ task golden(type: JavaExec) {
 	description = 'Print HeadlessQuery output for the benchmark matrix (golden diffing)'
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = 'com.loadoutlab.profile.QueryGolden'
+}
+
+// Golden-output capture for the ROSTER path (see RosterGolden) - the
+// multi-mob answers, shared kit and breakpoint curve that `golden` (single
+// mob only) never exercises:
+//   ./gradlew -q rosterGolden > roster-golden.txt
+task rosterGolden(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Print roster/group results for the group matrix (golden diffing)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.profile.RosterGolden'
 }
 
 // Headless query runner - the mock environment (see HeadlessQuery):

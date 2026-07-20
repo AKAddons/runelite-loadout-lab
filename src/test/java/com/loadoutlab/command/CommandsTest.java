@@ -76,7 +76,7 @@ class CommandsTest
 		store.toggle(FANG);
 		store.toggle(11230);
 
-		assertTrue(history.execute(Commands.clearExclusions(store)));
+		assertTrue(history.execute(TestCommands.clearExclusions(store)));
 		assertTrue(store.snapshot().isEmpty());
 		assertEquals(1, history.undoSize());
 
@@ -94,7 +94,7 @@ class CommandsTest
 	void clearEmptyNoop()
 	{
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
-		assertFalse(history.execute(Commands.clearExclusions(store)));
+		assertFalse(history.execute(TestCommands.clearExclusions(store)));
 		assertFalse(history.canUndo());
 	}
 

@@ -1,5 +1,7 @@
 package com.loadoutlab.engine;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import com.loadoutlab.data.MonsterOffence;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.StatBlock;
@@ -38,6 +40,7 @@ import java.util.LinkedHashMap;
 public final class IncomingDpsCalculator
 {
 	/** One attack style's threat: its dps if it attacked every cycle. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class StyleThreat
 	{
 		public final String style;
@@ -54,18 +57,6 @@ public final class IncomingDpsCalculator
 		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked, double share)
 		{
 			this(style, dps, maxHit, modeled, blocked, share, blocked ? 0.0 : 1.0);
-		}
-
-		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked,
-			double share, double prayerFactor)
-		{
-			this.style = style;
-			this.dps = dps;
-			this.maxHit = maxHit;
-			this.modeled = modeled;
-			this.blocked = blocked;
-			this.share = share;
-			this.prayerFactor = prayerFactor;
 		}
 	}
 
@@ -148,7 +139,7 @@ public final class IncomingDpsCalculator
 		{
 			this.revenant = monster.isRevenantMonster();
 			this.defenceLevel = defenceLevel;
-			this.magicEffective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
+			this.magicEffective = magicEffectiveLevel(defenceLevel, magicLevel);
 			MonsterOffence off = monster.getOffence();
 			this.overridden = override != null;
 			if (override == null)
@@ -234,7 +225,7 @@ public final class IncomingDpsCalculator
 					{
 						continue;
 					}
-					dps[i] = accuracyOf(kinds[i], attackRolls[i], def)
+					dps[i] = accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective)
 						* (maxHits[i] / 2.0) / (speedTicks * 0.6);
 					if (dps[i] > bestBlockableDps)
 					{
@@ -258,7 +249,7 @@ public final class IncomingDpsCalculator
 			for (int i = 0; i < kinds.length; i++)
 			{
 				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
-					: accuracyOf(kinds[i], attackRolls[i], def);
+					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
 				dpsPer[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
 				double saving = dpsPer[i] * shares[i] * (1 - prayerFactors[i]);
 				if (saving > 0)
@@ -284,33 +275,6 @@ public final class IncomingDpsCalculator
 				total += dpsPer[i] * shares[i] * (prayedClass ? prayerFactors[i] : 1);
 			}
 			return total;
-		}
-
-		private double accuracyOf(int kind, int attackRoll, StatBlock def)
-		{
-			long defenceRoll;
-			switch (kind)
-			{
-				case KIND_STAB:
-					defenceRoll = (long) (defenceLevel + 9) * (def.getStab() + 64);
-					break;
-				case KIND_SLASH:
-					defenceRoll = (long) (defenceLevel + 9) * (def.getSlash() + 64);
-					break;
-				case KIND_CRUSH:
-					defenceRoll = (long) (defenceLevel + 9) * (def.getCrush() + 64);
-					break;
-				case KIND_MELEE_GENERIC:
-					defenceRoll = (long) (defenceLevel + 9)
-						* (Math.min(def.getStab(), Math.min(def.getSlash(), def.getCrush())) + 64);
-					break;
-				case KIND_RANGED:
-					defenceRoll = (long) (defenceLevel + 9) * (def.getRanged() + 64);
-					break;
-				default:
-					defenceRoll = (long) magicEffective * (def.getMagic() + 64);
-			}
-			return accuracy(attackRoll, defenceRoll);
 		}
 	}
 
@@ -373,6 +337,43 @@ public final class IncomingDpsCalculator
 			default:
 				return 0;
 		}
+	}
+
+	/** Player magic defence level term: 70% Magic + 30% (Defence+9). */
+	private static int magicEffectiveLevel(int defenceLevel, int magicLevel)
+	{
+		return (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
+	}
+
+	/** The defensive bonus a KIND_* attack rolls against. */
+	private static int defenceBonusOf(int kind, StatBlock def)
+	{
+		switch (kind)
+		{
+			case KIND_STAB: return def.getStab();
+			case KIND_SLASH: return def.getSlash();
+			case KIND_CRUSH: return def.getCrush();
+			case KIND_MELEE_GENERIC:
+				// Generic "Melee": assume the boss hits your weakest side.
+				return Math.min(def.getStab(), Math.min(def.getSlash(), def.getCrush()));
+			case KIND_RANGED: return def.getRanged();
+			default: return def.getMagic();
+		}
+	}
+
+	/**
+	 * The monster's chance to hit with this KIND_* vs the loadout - the ONE
+	 * accuracy path, shared by the display calculate() and the beam's
+	 * Prepared. The level-term guard must stay an explicit STAB..RANGED range
+	 * check: KIND_UNMODELED is -1, so a "kind < KIND_RANGED" test would hand
+	 * it the melee (Defence+9) term instead of the magic term the old
+	 * string-keyed else-branch gave it.
+	 */
+	private static double accuracyOfKind(int kind, int attackRoll, StatBlock def,
+		int defenceLevel, int magicEffective)
+	{
+		long level = kind >= KIND_STAB && kind <= KIND_RANGED ? defenceLevel + 9 : magicEffective;
+		return accuracy(attackRoll, level * (defenceBonusOf(kind, def) + 64));
 	}
 
 	public static Result calculate(MonsterStats monster, Loadout loadout,
@@ -484,9 +485,11 @@ public final class IncomingDpsCalculator
 		{
 			BossIncomingOverrides.Attack attack = attacks.get(i);
 			String style = attack.getStyle();
+			int kind = kindOf(style);
 			// Typeless attacks have no defence roll: they always hit.
 			double accuracy = "typeless".equals(style) ? 1.0
-				: accuracyFor(style, off, def, defenceLevel, magicLevel);
+				: accuracyOfKind(kind, attackRollFor(kind, off), def,
+					defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
 			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
 			dpsPer[i] = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
 			if (attack.isAvoidable())
@@ -547,69 +550,19 @@ public final class IncomingDpsCalculator
 	private static StyleThreat threatFor(String rawStyle, MonsterOffence off,
 		StatBlock def, int defenceLevel, int magicLevel, double share)
 	{
-		String style = rawStyle.toLowerCase(Locale.ROOT);
-		int maxHit;
-		if (style.equals("stab") || style.equals("slash") || style.equals("crush") || style.equals("melee"))
-		{
-			maxHit = npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus());
-		}
-		else if (style.equals("ranged") || style.equals("range"))
-		{
-			maxHit = npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus());
-		}
-		else if (style.equals("magic") || style.equals("magical ranged") || style.equals("magical melee"))
-		{
-			maxHit = npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus());
-		}
-		else
+		// kindOf() is case-INSENSITIVE where the old string chain lowercased
+		// by hand; the override path feeds it styles that BossIncomingOverrides
+		// already lowercases at load, so both callers see the same mapping.
+		int kind = kindOf(rawStyle);
+		if (kind == KIND_UNMODELED)
 		{
 			return new StyleThreat(rawStyle, 0, 0, false, false, share);
 		}
-
-		double accuracy = accuracyFor(style, off, def, defenceLevel, magicLevel);
+		int maxHit = maxHitFor(kind, off);
+		double accuracy = accuracyOfKind(kind, attackRollFor(kind, off), def,
+			defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
 		double dps = accuracy * (maxHit / 2.0) / (off.getSpeedTicks() * 0.6);
 		return new StyleThreat(rawStyle, dps, maxHit, true, false, share);
-	}
-
-	/** The monster's chance to hit with this style vs the loadout - shared
-	 * by the v1 sheet model and the curated overrides (which keep the sheet
-	 * accuracy and only replace the damage term). */
-	private static double accuracyFor(String style, MonsterOffence off,
-		StatBlock def, int defenceLevel, int magicLevel)
-	{
-		int attackRoll;
-		long defenceRoll;
-		if (style.equals("stab") || style.equals("slash") || style.equals("crush") || style.equals("melee"))
-		{
-			attackRoll = npcRoll(off.getAttackLevel(), off.getAttackBonus());
-			defenceRoll = (long) (defenceLevel + 9) * (meleeDefBonus(style, def) + 64);
-		}
-		else if (style.equals("ranged") || style.equals("range"))
-		{
-			attackRoll = npcRoll(off.getRangedLevel(), off.getRangedBonus());
-			defenceRoll = (long) (defenceLevel + 9) * (def.getRanged() + 64);
-		}
-		else
-		{
-			attackRoll = npcRoll(off.getMagicLevel(), off.getMagicBonus());
-			// Player magic defence: 70% Magic + 30% Defence for the level term.
-			int effective = (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
-			defenceRoll = (long) effective * (def.getMagic() + 64);
-		}
-		return accuracy(attackRoll, defenceRoll);
-	}
-
-	private static int meleeDefBonus(String style, StatBlock def)
-	{
-		switch (style)
-		{
-			case "stab": return def.getStab();
-			case "slash": return def.getSlash();
-			case "crush": return def.getCrush();
-			default:
-				// Generic "Melee": assume the boss hits your weakest side.
-				return Math.min(def.getStab(), Math.min(def.getSlash(), def.getCrush()));
-		}
 	}
 
 	private static String protectPrayerFor(String rawStyle)

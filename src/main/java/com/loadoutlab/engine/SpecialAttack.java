@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterStats;
@@ -55,12 +56,17 @@ public final class SpecialAttack
 	private static final int DARK_BOW_CAP = 48;
 
 	private final String[] namePrefixes;
+	@Getter
 	private final String displayName;
+	@Getter
 	private final CombatStyle style;
+	@Getter
 	private final Kind kind;
+	@Getter
 	private final int energyCost;
 	private final double accuracyMultiplier;
 	private final double damageMultiplier;
+	@Getter
 	private final String note;
 	/** Defence drained on a damaging hit, as a fraction of CURRENT defence
 	 * (DWH 0.30, elder maul 0.35); 0 for non-drain specs. BGS drains by
@@ -308,43 +314,6 @@ public final class SpecialAttack
 	private static double mean(int maxHit)
 	{
 		return maxHit / 2.0;
-	}
-
-	/**
-	 * Sustained DPS added by weaving this spec on cooldown: net gain per
-	 * spec (the spec replaces one normal attack) times specs per second
-	 * from energy regen - 10% per 30s, doubled by the Lightbearer.
-	 */
-	public double sustainedDpsBonus(double specExpectedDamage, double replacedAutoExpected, boolean lightbearer)
-	{
-		double regenPercentPerSecond = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
-		double specsPerSecond = regenPercentPerSecond / energyCost;
-		return Math.max(0, specExpectedDamage - replacedAutoExpected) * specsPerSecond;
-	}
-
-	public String getDisplayName()
-	{
-		return displayName;
-	}
-
-	public CombatStyle getStyle()
-	{
-		return style;
-	}
-
-	public int getEnergyCost()
-	{
-		return energyCost;
-	}
-
-	public String getNote()
-	{
-		return note;
-	}
-
-	public Kind getKind()
-	{
-		return kind;
 	}
 
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */

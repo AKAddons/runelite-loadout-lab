@@ -31,7 +31,7 @@ public class DreamAndBudgetTest
 
 	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp)
 	{
-		return new OptimizationRequest(zulrah, CombatStyle.RANGED, PlayerLevels.MAXED,
+		return TestRequests.of(zulrah, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
 			budgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,

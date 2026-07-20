@@ -83,7 +83,7 @@ public final class HeadlessQuery
 				default: monsterName.append(monsterName.length() > 0 ? " " : "").append(args[i]);
 			}
 		}
-		PlayerProfile profile = maxed ? PlayerProfile.maxed()
+		PlayerProfile profile = maxed ? PlayerProfileTestSupport.maxed()
 			: PlayerProfile.fromJson(Files.readString(profilePath));
 
 		LoadoutData data = new DataService().load();
@@ -161,8 +161,8 @@ public final class HeadlessQuery
 				}
 				if (result.specWeapon != null)
 				{
-					sb.append(String.format("    spec    %s (avg %.0f dmg)%n",
-						result.specWeapon.label(), result.specExpectedDamage));
+					sb.append(String.format("    spec    %s (adds ~%.2f dps, avg %.0f dmg)%n",
+						result.specWeapon.label(), result.specDpsAdded, result.specExpectedDamage));
 				}
 				if (result.incoming != null && result.incoming.protectPrayer != null)
 				{

@@ -23,7 +23,7 @@ public class RiskConstraintTest
 
 	private static OptimizationRequest request(CombatStyle style, int maxTradeables)
 	{
-		return new OptimizationRequest(callisto, style, PlayerLevels.MAXED,
+		return TestRequests.of(callisto, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1)
 			.withMaxTradeables(maxTradeables);
@@ -223,7 +223,7 @@ public class RiskConstraintTest
 		owned.put(4151, 1);  // abyssal whip
 		owned.put(1712, 1);  // amulet of glory (4)
 		owned.put(12851, 1); // amulet of the damned (full)
-		OptimizationRequest req = new OptimizationRequest(callisto, CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(callisto, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(owned), true), 1).withMaxTradeables(3);
@@ -244,7 +244,7 @@ public class RiskConstraintTest
 		owned.put(1712, 1);
 		owned.put(12851, 1);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
-		OptimizationRequest req = new OptimizationRequest(goblin, CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(goblin, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(owned), true), 1);
@@ -263,7 +263,7 @@ public class RiskConstraintTest
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		double three = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
 		List<DpsResult> four = optimizer.optimize(data, request(CombatStyle.MELEE, 4));
-		Assert.assertTrue(four.get(0).getLoadout().tradeableCount() <= 4);
+		Assert.assertTrue(LoadoutTestSupport.tradeableCount(four.get(0).getLoadout()) <= 4);
 		Assert.assertTrue(four.get(0).getDps() >= three - 1e-9);
 	}
 

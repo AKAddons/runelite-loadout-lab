@@ -210,3 +210,20 @@ across mobs - kits/swaps layer on top via parameters, and mob rows only
 change the lens, never the set.
 
 **Context:** User UX spec after the M-2c tab/tile field test.
+
+## 2026-07-18 (impl): OptimizationRequest copies by clone, fields non-final
+
+**Decision:** The 14 with- helpers on `OptimizationRequest` now copy via a
+single `Object.clone()` instead of a hand-written mirror class, which
+required dropping `final` from the 22 fields. That forfeits the Java Memory
+Model's final-field safe-publication guarantee. Cleared as safe today:
+requests are built on the coordinating thread and reach worker threads only
+through `ExecutorService.invokeAll` or a single-thread executor, both of
+which establish happens-before, and src/main contains no `parallelStream`,
+ForkJoin, or `CompletableFuture`. **This constraint becomes load-bearing the
+moment the optimizer adopts parallel streams or any other publication path
+without a happens-before edge** - at that point the fields must go back to
+final and the mirror (or a real builder) comes back.
+
+**Context:** Plugin Hub main-source token cap (200k, tiktoken o200k_base,
+comments stripped). The mirror was O(number of fields); clone is O(1).

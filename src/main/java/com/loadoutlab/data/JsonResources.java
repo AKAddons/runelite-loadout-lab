@@ -34,6 +34,22 @@ public final class JsonResources
 		}
 	}
 
+	/**
+	 * The parsed root object, or an IllegalStateException when the resource is
+	 * missing or malformed. For tables where an empty map would silently
+	 * change results (rather than merely degrade a display), which is the one
+	 * case the fail-soft object() above must not be used for.
+	 */
+	public static JsonObject objectOrThrow(String resource)
+	{
+		JsonObject root = object(resource);
+		if (root == null)
+		{
+			throw new IllegalStateException("Could not load " + resource);
+		}
+		return root;
+	}
+
 	/** The parsed root array, or an empty one when missing/malformed. */
 	public static com.google.gson.JsonArray array(String resource)
 	{
@@ -71,6 +87,19 @@ public final class JsonResources
 		for (JsonElement e : root.getAsJsonArray(key))
 		{
 			into.add(e.getAsInt());
+		}
+	}
+
+	/** Copy the {"name": int} object at root[key] into the map. */
+	public static void stringIntMap(JsonObject root, String key, Map<String, Integer> into)
+	{
+		if (root == null || !root.has(key))
+		{
+			return;
+		}
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject(key).entrySet())
+		{
+			into.put(e.getKey(), e.getValue().getAsInt());
 		}
 	}
 

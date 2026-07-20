@@ -93,49 +93,6 @@ class MascotRosterTest
 		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 11, 1)).contains(MascotRoster.CHEF));
 	}
 
-	@Test
-	@DisplayName("dated windows are one-off spans; anyOf unions them (2030 striker restore path)")
-	void datedWindows()
-	{
-		// The striker retired to the attic still needs these on restore.
-		MascotRoster.Window cups = MascotRoster.Window.anyOf(
-			MascotRoster.Window.dates(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 31)),
-			MascotRoster.Window.dates(LocalDate.of(2030, 6, 1), LocalDate.of(2030, 7, 31)));
-		assertFalse(cups.active(LocalDate.of(2026, 5, 31)));
-		assertTrue(cups.active(LocalDate.of(2026, 6, 1)));
-		assertTrue(cups.active(LocalDate.of(2026, 7, 31)));
-		assertFalse(cups.active(LocalDate.of(2026, 8, 1)));
-		// Dark between the spans; a dated window never recurs.
-		assertFalse(cups.active(LocalDate.of(2028, 7, 1)));
-		assertTrue(cups.active(LocalDate.of(2030, 6, 1)));
-		assertFalse(cups.active(LocalDate.of(2030, 8, 1)));
-	}
-
-	@Test
-	@DisplayName("annual windows recur every year and wrap the year boundary")
-	void annualWindowWraps()
-	{
-		MascotRoster.Window winter = MascotRoster.Window.annual(12, 15, 1, 2);
-		assertTrue(winter.active(LocalDate.of(2026, 12, 20)));
-		assertTrue(winter.active(LocalDate.of(2027, 1, 1)), "wraps into the new year");
-		assertFalse(winter.active(LocalDate.of(2027, 1, 10)));
-		assertTrue(winter.active(LocalDate.of(2030, 12, 31)), "recurs, unlike a dated window");
-
-		MascotRoster.Window fall = MascotRoster.Window.annual(10, 20, 11, 1);
-		assertTrue(fall.active(LocalDate.of(2026, 10, 25)));
-		assertFalse(fall.active(LocalDate.of(2026, 11, 5)));
-	}
-
-	@Test
-	@DisplayName("an anchored window spills across the year boundary by its radius")
-	void aroundWindowSpills()
-	{
-		MascotRoster.Window newYear = MascotRoster.Window.around(12, 31, 2);
-		assertTrue(newYear.active(LocalDate.of(2026, 12, 30)));
-		assertTrue(newYear.active(LocalDate.of(2027, 1, 2)), "two days into January");
-		assertFalse(newYear.active(LocalDate.of(2027, 1, 5)));
-	}
-
 	private static Map<Class<?>, Integer> sample(LocalDate date, int draws)
 	{
 		Random rng = new Random(1234);

@@ -12,10 +12,15 @@ import java.util.EnumMap;
 import java.util.Comparator;
 import java.util.ArrayList;
 
+import lombok.Getter;
+
 public final class LoadoutData
 {
+	@Getter
 	private final List<GearItem> gearItems;
+	@Getter
 	private final List<MonsterStats> monsters;
+	@Getter
 	private final List<SpellStats> spells;
 	private final Map<Integer, GearItem> gearById;
 	private final Map<Integer, Integer> variantToBase;
@@ -210,47 +215,6 @@ public final class LoadoutData
 		return 2;
 	}
 
-	/**
-	 * Item-name search for the stored-elsewhere picker: exact label/name
-	 * (or id) first, then prefix, then substring - same ranking shape as
-	 * {@link #searchMonsters}.
-	 */
-	public List<GearItem> searchGear(String query, int limit)
-	{
-		String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-		if (text.isEmpty())
-		{
-			return Collections.emptyList();
-		}
-
-		ArrayList<GearItem> exact = new ArrayList<>();
-		ArrayList<GearItem> prefix = new ArrayList<>();
-		ArrayList<GearItem> contains = new ArrayList<>();
-		for (GearItem item : gearItems)
-		{
-			String label = item.labelLower();
-			if (label.equals(text) || item.getNameLower().equals(text)
-				|| String.valueOf(item.getId()).equals(text))
-			{
-				exact.add(item);
-			}
-			else if (label.startsWith(text))
-			{
-				prefix.add(item);
-			}
-			else if (label.contains(text))
-			{
-				contains.add(item);
-			}
-		}
-
-		ArrayList<GearItem> result = new ArrayList<>(limit);
-		addLimited(result, exact, limit);
-		addLimited(result, prefix, limit);
-		addLimited(result, contains, limit);
-		return result;
-	}
-
 	private static <T> void addLimited(List<T> target, List<T> source, int limit)
 	{
 		for (T entry : source)
@@ -289,10 +253,6 @@ public final class LoadoutData
 		return gearById.get(id);
 	}
 
-	public List<GearItem> getGearItems()
-	{
-		return gearItems;
-	}
 
 	/** The corpus items for one equip slot, in getGearItems() order. */
 	public List<GearItem> getGearItems(GearSlot slot)
@@ -300,13 +260,5 @@ public final class LoadoutData
 		return gearBySlot.get(slot);
 	}
 
-	public List<MonsterStats> getMonsters()
-	{
-		return monsters;
-	}
 
-	public List<SpellStats> getSpells()
-	{
-		return spells;
-	}
 }

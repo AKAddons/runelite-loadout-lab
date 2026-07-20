@@ -39,6 +39,38 @@ WIKI_MAPPING = "https://prices.runescape.wiki/api/v1/osrs/mapping"
 WIKI_LATEST = "https://prices.runescape.wiki/api/v1/osrs/latest"
 USER_AGENT = "loadout-lab data refresh (github.com/AKAddons; RuneLite plugin)"
 
+# Monster stat corrections applied AFTER fetching weirdgloop. weirdgloop
+# encodes a boss's HP-scaling combat stats as 0 (the wiki DPS calc applies the
+# scaling itself); we don't yet (task #14), so a scaling Defence reads as 0,
+# which makes the player 98% accurate and silently flips melee BiS from
+# Oathplate to Torva. Substitute the FULL-HP Defence level (wiki-verified) so
+# accuracy and gear picks are right at the start of the fight - the
+# conservative, highest-Defence end. When task #14 models the scaling, this
+# table shrinks. Keyed by (name, version); each dict overrides skills fields.
+MONSTER_STAT_OVERRIDES = {
+    # Vardorvis' Defence AND Strength scale 215 -> 145 with remaining HP
+    # (wiki: General/Vardorvis). Only Defence affects our output (accuracy);
+    # full-HP Defence is 215 for every version. Awakened is harder via HP and
+    # damage, so >= 215 only strengthens the Oathplate call - 215 is safe.
+    ("Vardorvis", "Post-quest"): {"def": 215},
+    ("Vardorvis", "Awakened"): {"def": 215},
+    ("Vardorvis", "Quest"): {"def": 215},
+}
+
+
+def apply_monster_overrides(monsters):
+    keyed = {(m.get("name"), m.get("version", "")): m for m in monsters}
+    applied = 0
+    for (name, version), fields in MONSTER_STAT_OVERRIDES.items():
+        row = keyed.get((name, version))
+        if row is None:
+            print("  WARN override miss: %s [%s]" % (name, version))
+            continue
+        row.setdefault("skills", {}).update(fields)
+        applied += 1
+    print("monster stat overrides applied: %d/%d" % (applied, len(MONSTER_STAT_OVERRIDES)))
+    return monsters
+
 RES_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "src", "main", "resources", "com", "loadoutlab", "data")
@@ -226,7 +258,7 @@ def main():
         print("  ... and %d more" % (len(new_ids) - 40))
 
     write_gz("gear_prices.json.gz", gear)
-    write_gz("monsters.json.gz", wg_monsters)
+    write_gz("monsters.json.gz", apply_monster_overrides(wg_monsters))
     write_gz("spells.json.gz", wg_spells)
     write_gz("equipment_aliases.json.gz",
              supplement_aliases(wg_aliases, wg_equipment))

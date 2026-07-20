@@ -24,7 +24,7 @@ public class AnalogTest
 
 	private static GearItem headPick(int ownedCoif)
 	{
-		OptimizationRequest req = new OptimizationRequest(callisto, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(callisto, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(ownedCoif, 1)), true), 1)
@@ -80,7 +80,7 @@ public class AnalogTest
 		owned.put(20235, 1);  // ancient blessing (+1, tradeable)
 		owned.put(22947, 1);  // rada's blessing 4 (+2, untradeable)
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
-		OptimizationRequest req = new OptimizationRequest(goblin, CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(goblin, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(owned), true), 1);

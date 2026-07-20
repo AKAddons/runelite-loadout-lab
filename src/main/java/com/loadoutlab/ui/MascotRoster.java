@@ -1,9 +1,6 @@
 package com.loadoutlab.ui;
 
 import java.time.LocalDate;
-import java.time.MonthDay;
-import java.time.Year;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -28,7 +25,10 @@ import java.util.function.Supplier;
  *     (dark over summer break Jun-Aug and the December holidays).
  *   - The World Cup striker (weight 6, June-July of tournament years) is
  *     RETIRED to ~/Development/loadout-lab-attic after the 2026 final -
- *     restore per that repo's README for 2030 (Window.dates/anyOf remain).
+ *     restore per that repo's README for 2030. The dated-window factories
+ *     it needed (Window.dates/anyOf, plus annual/around) were retired with
+ *     it once nothing called them; their BODIES are pasted verbatim into
+ *     that README, so a restore is copy-paste, not archaeology.
  */
 enum MascotRoster
 {
@@ -118,30 +118,6 @@ enum MascotRoster
 		/** Every day of every year. */
 		Window ALWAYS = date -> true;
 
-		/** A one-off, fully-dated span (inclusive) - for specific-year
-		 * events like a World Cup or an Olympics that do not recur annually. */
-		static Window dates(LocalDate start, LocalDate end)
-		{
-			return date -> !date.isBefore(start) && !date.isAfter(end);
-		}
-
-		/** Active when ANY of the given windows is - for an event that lands in
-		 * several distinct spans (e.g. the World Cup's separate tournament years). */
-		static Window anyOf(Window... windows)
-		{
-			return date ->
-			{
-				for (Window w : windows)
-				{
-					if (w.active(date))
-					{
-						return true;
-					}
-				}
-				return false;
-			};
-		}
-
 		/** An annual set of whole calendar months (1-12): active every year in
 		 * any of the listed months. For school-term or single-month seasons. */
 		static Window months(int... months)
@@ -152,42 +128,6 @@ enum MascotRoster
 				active[m] = true;
 			}
 			return date -> active[date.getMonthValue()];
-		}
-
-		/** An annual month/day span (inclusive) that recurs every year;
-		 * wraps the year boundary when start is after end (e.g. Dec 15 to
-		 * Jan 2). For holidays that land on the same dates each year. */
-		static Window annual(int startMonth, int startDay, int endMonth, int endDay)
-		{
-			MonthDay start = MonthDay.of(startMonth, startDay);
-			MonthDay end = MonthDay.of(endMonth, endDay);
-			boolean wraps = start.isAfter(end);
-			return date ->
-			{
-				MonthDay md = MonthDay.from(date);
-				return wraps
-					? !md.isBefore(start) || !md.isAfter(end)
-					: !md.isBefore(start) && !md.isAfter(end);
-			};
-		}
-
-		/** Within radiusDays of an annual anchor date, spilling correctly
-		 * across the year boundary (e.g. Dec 31 +/- 2 reaching into Jan). */
-		static Window around(int month, int day, int radiusDays)
-		{
-			return date ->
-			{
-				for (int yr = date.getYear() - 1; yr <= date.getYear() + 1; yr++)
-				{
-					int d = (month == 2 && day == 29 && !Year.isLeap(yr)) ? 28 : day;
-					LocalDate anchor = LocalDate.of(yr, month, d);
-					if (Math.abs(ChronoUnit.DAYS.between(anchor, date)) <= radiusDays)
-					{
-						return true;
-					}
-				}
-				return false;
-			};
 		}
 	}
 }

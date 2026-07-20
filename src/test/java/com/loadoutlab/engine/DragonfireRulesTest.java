@@ -39,7 +39,7 @@ public class DragonfireRulesTest
 	@Test
 	public void gearModeForcesAProtectiveShieldAndBansTwoHanders()
 	{
-		OptimizationRequest req = new OptimizationRequest(monster("vorkath"), CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(monster("vorkath"), CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
@@ -54,7 +54,7 @@ public class DragonfireRulesTest
 	@Test
 	public void thePotionToggleLiftsTheConstraintAndNeverCostsDps()
 	{
-		OptimizationRequest gear = new OptimizationRequest(monster("green dragon"), CombatStyle.MELEE,
+		OptimizationRequest gear = TestRequests.of(monster("green dragon"), CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		double shielded = new LoadoutOptimizer().optimize(data, gear).get(0).getDps();
@@ -65,7 +65,7 @@ public class DragonfireRulesTest
 	@Test
 	public void nonDragonsAreUnaffectedByTheShieldRule()
 	{
-		OptimizationRequest req = new OptimizationRequest(monster("general graardor"), CombatStyle.MELEE,
+		OptimizationRequest req = TestRequests.of(monster("general graardor"), CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);

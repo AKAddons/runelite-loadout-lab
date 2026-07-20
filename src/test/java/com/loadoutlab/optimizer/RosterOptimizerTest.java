@@ -257,14 +257,17 @@ public class RosterOptimizerTest
 	@Test
 	public void rosterSharesOneSpecWeaponAcrossMobs() throws Exception
 	{
-		// Solo, Graardor picks the warhammer (drain pays off over 255hp)
-		// and a goblin picks the dagger (raw burst) - proven by
-		// OptimizerServiceTest. With ZERO swaps the spec weapon is part of
-		// the carried set (field decision 2026-07-17): the roster brings
-		// ONE, HP-weighted like the worn set - Graardor's warhammer wins.
+		// With ZERO swaps the spec weapon is part of the carried set (field
+		// decision 2026-07-17): the roster brings exactly ONE, chosen for the
+		// most DPS added across the WHOLE trip (value-over-replacement, HP-
+		// weighted). Here the dragon dagger wins the shared slot: it earns
+		// its slot strongly at the fire giant (a burst spec on a low-defence
+		// mob), while the warhammer's drain barely pays off even at Graardor
+		// with this bare 3-item set - so the trip-wide value picks the dagger,
+		// not the heaviest mob's local preference.
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip
 		owned.put(1215, 1);   // dragon dagger
@@ -272,15 +275,15 @@ public class RosterOptimizerTest
 		OptimizerService service = new OptimizerService(data);
 		try
 		{
-			RosterResultView roster = run(service, Arrays.asList(graardor, goblin), owned);
+			RosterResultView roster = run(service, Arrays.asList(graardor, fireGiant), owned);
 			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
 			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
 			Assert.assertNotNull(m0.specWeapon);
 			Assert.assertNotNull(m1.specWeapon);
 			Assert.assertEquals("one spec weapon for the whole trip",
 				m0.specWeapon.getId(), m1.specWeapon.getId());
-			Assert.assertEquals("the 255hp boss's warhammer wins the slot",
-				13576, m0.specWeapon.getId());
+			Assert.assertEquals("the trip-wide best spec wins the shared slot",
+				1215, m0.specWeapon.getId());
 			// The numbers still flip per mob.
 			Assert.assertTrue(m0.specExpectedDamage > 0);
 			Assert.assertTrue(m1.specExpectedDamage > 0);

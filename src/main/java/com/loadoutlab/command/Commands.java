@@ -6,10 +6,10 @@ import com.loadoutlab.collection.ManualOwnedStore;
 import com.loadoutlab.collection.MonsterProfileStore;
 import com.loadoutlab.collection.ProtectOnlyStore;
 import com.loadoutlab.data.GearSlot;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 
 /**
  * Factories building a reversible {@link Command} for every deliberate user
@@ -33,7 +33,7 @@ public final class Commands
 	}
 
 	/** A Command from two lambdas plus a label - the shape every factory returns. */
-	private static Command of(String description, BooleanSupplier apply, BooleanSupplier revert)
+	static Command of(String description, BooleanSupplier apply, BooleanSupplier revert)
 	{
 		return new Command()
 		{
@@ -47,67 +47,52 @@ public final class Commands
 
 	public static Command toggleExclusion(ExclusionStore store, int itemId, String label)
 	{
-		boolean turnOn = !store.isExcluded(itemId);
-		return of((turnOn ? "Exclude " : "Include ") + label,
-			() -> setExcluded(store, itemId, turnOn),
-			() -> setExcluded(store, itemId, !turnOn));
+		return toggleFlag(store::isExcluded, store::toggle, itemId, "Exclude ", "Include ", label);
 	}
 
 	public static Command toggleDream(DreamStore store, int itemId, String label)
 	{
-		boolean turnOn = !store.isDreamed(itemId);
-		return of((turnOn ? "Sim item " : "Stop simming ") + label,
-			() -> { if (store.isDreamed(itemId) != turnOn) store.toggle(itemId); return true; },
-			() -> { if (store.isDreamed(itemId) == turnOn) store.toggle(itemId); return true; });
+		return toggleFlag(store::isDreamed, store::toggle, itemId, "Sim item ", "Stop simming ", label);
 	}
 
 	public static Command toggleStored(ManualOwnedStore store, int itemId, String label)
 	{
-		boolean turnOn = !store.isStored(itemId);
-		return of((turnOn ? "Mark stored elsewhere: " : "Unmark stored elsewhere: ") + label,
-			() -> { if (store.isStored(itemId) != turnOn) store.toggle(itemId); return true; },
-			() -> { if (store.isStored(itemId) == turnOn) store.toggle(itemId); return true; });
+		return toggleFlag(store::isStored, store::toggle, itemId,
+			"Mark stored elsewhere: ", "Unmark stored elsewhere: ", label);
 	}
 
 	public static Command toggleProtectOnly(ProtectOnlyStore store, int itemId, String label)
 	{
-		boolean turnOn = !store.isProtectOnly(itemId);
-		return of((turnOn ? "Only bring protected: " : "Bring even unprotected: ") + label,
-			() -> { if (store.isProtectOnly(itemId) != turnOn) store.toggle(itemId); return true; },
-			() -> { if (store.isProtectOnly(itemId) == turnOn) store.toggle(itemId); return true; });
+		return toggleFlag(store::isProtectOnly, store::toggle, itemId,
+			"Only bring protected: ", "Bring even unprotected: ", label);
 	}
 
-	private static boolean setExcluded(ExclusionStore store, int itemId, boolean want)
+	/**
+	 * Shared body for the four global item-flag toggles. The stores each name
+	 * their state predicate differently (isExcluded/isDreamed/...), so the
+	 * caller hands it in as a method reference alongside the store's flip
+	 * method; the public factories keep their concrete store types so call
+	 * sites are unaffected. {@code toggle} returns a boolean that is
+	 * deliberately discarded - set-to-target semantics only care about the
+	 * resulting state.
+	 */
+	private static Command toggleFlag(IntPredicate isOn, IntConsumer toggle, int itemId,
+		String onPrefix, String offPrefix, String label)
 	{
-		if (store.isExcluded(itemId) != want)
+		boolean turnOn = !isOn.test(itemId);
+		return of((turnOn ? onPrefix : offPrefix) + label,
+			() -> setFlag(isOn, toggle, itemId, turnOn),
+			() -> setFlag(isOn, toggle, itemId, !turnOn));
+	}
+
+	/** Drives the flag to {@code want}, flipping only when it is not already there. */
+	static boolean setFlag(IntPredicate isOn, IntConsumer toggle, int itemId, boolean want)
+	{
+		if (isOn.test(itemId) != want)
 		{
-			store.toggle(itemId);
+			toggle.accept(itemId);
 		}
 		return true;
-	}
-
-	/** Wipe the global exclusion list as ONE undo entry; undo restores every id. */
-	public static Command clearExclusions(ExclusionStore store)
-	{
-		Set<Integer> before = new LinkedHashSet<>(store.snapshot());
-		return of("Clear exclusions (" + before.size() + ")",
-			() ->
-			{
-				if (store.snapshot().isEmpty())
-				{
-					return false; // nothing to clear - stay off the stack
-				}
-				store.clear();
-				return true;
-			},
-			() ->
-			{
-				for (int id : before)
-				{
-					setExcluded(store, id, true);
-				}
-				return true;
-			});
 	}
 
 	// ---- per-monster profile mutations --------------------------------

@@ -1,6 +1,8 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
@@ -1494,13 +1496,17 @@ public final class LoadoutOptimizer
 	private static final class SearchState
 	{
 		private final EnumMap<GearSlot, GearItem> gear;
+		@Getter(AccessLevel.PRIVATE)
 		private final int cost;
+		@Getter(AccessLevel.PRIVATE)
 		private final double score;
+		@Getter(AccessLevel.PRIVATE)
 		private final long riskGp;
 		// Total droppable value with NOTHING protected. The RISK_RESERVE
 		// sorts on this, not riskGp: early partials all tie at riskGp 0
 		// (the first worn items ride the kept slots), so a riskGp reserve
 		// just re-kept the score leaders and the cheap line still starved.
+		@Getter(AccessLevel.PRIVATE)
 		private final long potentialRiskGp;
 
 		private SearchState(EnumMap<GearSlot, GearItem> gear, int cost)
@@ -1516,26 +1522,6 @@ public final class LoadoutOptimizer
 			this.score = score;
 			this.riskGp = riskGp;
 			this.potentialRiskGp = potentialRiskGp;
-		}
-
-		private int getCost()
-		{
-			return cost;
-		}
-
-		private double getScore()
-		{
-			return score;
-		}
-
-		private long getRiskGp()
-		{
-			return riskGp;
-		}
-
-		private long getPotentialRiskGp()
-		{
-			return potentialRiskGp;
 		}
 	}
 }

@@ -36,6 +36,9 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -45,6 +48,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -184,31 +188,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** -1 = detect from the collection, else the antifire mode. */
 		public final int defaultAntifireMode;
 
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
-			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
-			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap)
-		{
-			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
-				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
-				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
-				defaultRiskCap, false, -1);
-		}
-
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
-			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
-			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
-			boolean defaultOnTask)
-		{
-			this(maxHit, accuracy, bonuses, assumes, damageTaken, riskLine, prayerBonus,
-				attackStyle, gameBest, notes, spellControls, upgradeBudget, wildyRisk,
-				showInBank, filterBank, loadingAnimation, defaultUpgradeBudget,
-				defaultRiskCap, defaultOnTask, -1);
-		}
-
+		/**
+		 * The one canonical constructor. Callers that used to rely on the
+		 * 18-/19-arg telescoping forms now pass the trailing defaults
+		 * explicitly (defaultOnTask=false, defaultAntifireMode=-1).
+		 */
 		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
@@ -241,7 +225,7 @@ public class LoadoutLabPanel extends PluginPanel
 		static DisplayOptions all()
 		{
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true, "", "");
+				true, true, true, true, true, true, true, true, true, "", "", false, -1);
 		}
 	}
 
@@ -418,6 +402,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final int ICON_SIZE = 32;
 	/** Discord invite for the plugin's community; opened from the header. */
 	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
+	/** Stamped into the copy-report text so a Discord report names its build.
+	 * Keep in sync with the version in runelite-plugin.properties on release. */
+	private static final String PLUGIN_VERSION = "0.3.2";
+	/** Resting label of the copy-report chip; the flash reverts to exactly
+	 * this, so a rapid double-click can't strand it on "Copied!". */
+	private static final String COPY_REPORT_LABEL = "Copy report";
 	/** Grid display order: weapon beside shield, body beside legs. */
 	static final GearSlot[] GRID_ORDER = {
 		GearSlot.HEAD, GearSlot.CAPE, GearSlot.NECK, GearSlot.AMMO,
@@ -825,15 +815,11 @@ public class LoadoutLabPanel extends PluginPanel
 			// points (the stored label's menu + the green +N chip); the
 			// mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
-			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
-			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
-			menu.add(joinDiscord);
+			menuItem(menu, "Join our Discord", ev -> LinkBrowser.browse(DISCORD_URL));
 			// Developer-mode only: reopen the live gallery of every mood.
 			if (developerMode)
 			{
-				JMenuItem gallery = new JMenuItem("Preview loading animations");
-				gallery.addActionListener(ev -> showGallery());
-				menu.add(gallery);
+				menuItem(menu, "Preview loading animations", ev -> showGallery());
 			}
 			menu.show(optionsButton, 0, optionsButton.getHeight());
 		});
@@ -861,27 +847,13 @@ public class LoadoutLabPanel extends PluginPanel
 		excludeCountChip.setFont(excludeCountChip.getFont().deriveFont(Font.BOLD, 12f));
 		excludeCountChip.setToolTipText("Excluded items - click to manage");
 		excludeCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		excludeCountChip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showExclusionsMenu(e);
-			}
-		});
+		onClick(excludeCountChip, e -> showExclusionsMenu(e));
 		dreamCountChip.setOpaque(true);
 		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
 		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
 		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		dreamCountChip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showDreamsMenu(e);
-			}
-		});
+		onClick(dreamCountChip, e -> showDreamsMenu(e));
 		countRow.add(excludeCountChip);
 		countRow.add(dreamCountChip);
 		top.add(countRow);
@@ -984,14 +956,7 @@ public class LoadoutLabPanel extends PluginPanel
 		storedLabel.setFont(storedLabel.getFont().deriveFont(13f));
 		storedLabel.setAlignmentX(LEFT_ALIGNMENT);
 		storedLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		storedLabel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showStoredMenu(e);
-			}
-		});
+		onClick(storedLabel, e -> showStoredMenu(e));
 		top.add(storedLabel);
 		refreshStoredLabel();
 
@@ -1005,15 +970,11 @@ public class LoadoutLabPanel extends PluginPanel
 		noteHeader.setFont(noteHeader.getFont().deriveFont(Font.BOLD, 12f));
 		noteHeader.setAlignmentX(LEFT_ALIGNMENT);
 		noteHeader.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		noteHeader.addMouseListener(new MouseAdapter()
+		onClick(noteHeader, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				saveNoteIfChanged();
-				setNoteCollapsed(!noteCollapsed());
-				refreshNotePanel();
-			}
+			saveNoteIfChanged();
+			setNoteCollapsed(!noteCollapsed());
+			refreshNotePanel();
 		});
 		noteArea.setLineWrap(true);
 		noteArea.setWrapStyleWord(true);
@@ -1358,11 +1319,6 @@ public class LoadoutLabPanel extends PluginPanel
 		resultsPanel.revalidate();
 		revalidate();
 		repaint();
-	}
-
-	public boolean isF2pOnly()
-	{
-		return f2pOnly.isSelected();
 	}
 
 	private void onSearchEdited()
@@ -2293,22 +2249,18 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamGear.sort(Comparator.comparing(GearItem::label));
 		for (GearItem gear : dreamGear)
 		{
-			JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
-			undream.addActionListener(ev ->
+			menuItem(menu, "Stop simming " + gear.label(), ev ->
 			{
 				dreamToggle.toggle(gear.getId());
 				refreshCountChips();
 				recompute();
 			});
-			menu.add(undream);
 		}
 		if (!dreamGear.isEmpty())
 		{
 			menu.addSeparator();
 		}
-		JMenuItem add = new JMenuItem("Sim an item (consider as owned)...");
-		add.addActionListener(ev -> showAddDreamDialog());
-		menu.add(add);
+		menuItem(menu, "Sim an item (consider as owned)...", ev -> showAddDreamDialog());
 		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
 	}
 
@@ -2319,22 +2271,18 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			GearItem item = data.getGear(id);
 			String label = item == null ? ("item " + id) : item.label();
-			JMenuItem entry = new JMenuItem("Allow again: " + label);
-			entry.addActionListener(a ->
+			menuItem(menu, "Allow again: " + label, a ->
 			{
 				exclusionToggle.toggle(id);
 				refreshExclusionsLabel();
 				recompute();
 			});
-			menu.add(entry);
 		}
 		if (menu.getComponentCount() > 0)
 		{
 			menu.addSeparator();
 		}
-		JMenuItem addExclusion = new JMenuItem("Exclude an item (search)...");
-		addExclusion.addActionListener(a -> showAddExclusionDialog());
-		menu.add(addExclusion);
+		menuItem(menu, "Exclude an item (search)...", a -> showAddExclusionDialog());
 		// Anchor to the CLICKED component - the old label left the layout
 		// when the -N chip replaced it (field bug: dead click; show() on a
 		// non-displayable component throws).
@@ -2505,15 +2453,15 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				GearItem item = data.getGear(entry.getValue());
 				String label = item == null ? ("item " + entry.getValue()) : item.label();
-				JMenuItem row = new JMenuItem(
-					"Unpin " + label + " (" + scopeLabel(scope) + ")");
+				// Hoisted above the item so the whole construct is one
+				// menuItem(...) call; the lambda still captures it.
 				com.loadoutlab.data.GearSlot slot = entry.getKey();
-				row.addActionListener(a ->
+				menuItem(menu,
+					"Unpin " + label + " (" + scopeLabel(scope) + ")", a ->
 				{
 					mobProfile.unpin(monsterId, scope, slot);
 								recompute();
 				});
-				menu.add(row);
 			}
 		}
 		for (Map.Entry<String, Map<Integer, String>> scoped
@@ -2522,15 +2470,15 @@ public class LoadoutLabPanel extends PluginPanel
 			String scope = scoped.getKey();
 			for (Map.Entry<Integer, String> entry : scoped.getValue().entrySet())
 			{
-				JMenuItem row = new JMenuItem("Remove filter item " + entry.getValue()
-					+ " (" + filterScopeLabel(scope) + ")");
+				// Hoisted above the item (see above) so the construct
+				// collapses to a single menuItem(...) call.
 				int itemId = entry.getKey();
-				row.addActionListener(a ->
+				menuItem(menu, "Remove filter item " + entry.getValue()
+					+ " (" + filterScopeLabel(scope) + ")", a ->
 				{
 					mobProfile.removeFilterItem(monsterId, scope, itemId);
 								reapplyBankViews();
 				});
-				menu.add(row);
 			}
 		}
 		for (Map.Entry<String, Set<Integer>> scoped
@@ -2541,24 +2489,18 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				GearItem item = data.getGear(itemId);
 				String label = item == null ? ("item " + itemId) : item.label();
-				JMenuItem row = new JMenuItem("Allow " + label + " again ("
-					+ scopeLabel(scope) + ")");
-				row.addActionListener(a ->
+				menuItem(menu, "Allow " + label + " again ("
+					+ scopeLabel(scope) + ")", a ->
 				{
 					mobProfile.removeMobExclusion(monsterId, scope, itemId);
 								recompute();
 				});
-				menu.add(row);
 			}
 		}
 		menu.addSeparator();
-		JMenuItem addPin = new JMenuItem("Pin an item - all sets (search)...");
-		addPin.addActionListener(a -> searchAndPin(ALL_SETS));
-		menu.add(addPin);
-		JMenuItem addFilter = new JMenuItem("Bank filter - "
-			+ filterScopeLabel(ALL_SETS) + " (search)...");
-		addFilter.addActionListener(a -> searchAndAddFilter(ALL_SETS));
-		menu.add(addFilter);
+		menuItem(menu, "Pin an item - all sets (search)...", a -> searchAndPin(ALL_SETS));
+		menuItem(menu, "Bank filter - "
+			+ filterScopeLabel(ALL_SETS) + " (search)...", a -> searchAndAddFilter(ALL_SETS));
 		Component pinSource = (Component) e.getSource();
 		menu.show(pinSource, 0, pinSource.getHeight());
 	}
@@ -2612,6 +2554,28 @@ public class LoadoutLabPanel extends PluginPanel
 		return wrap;
 	}
 
+	/**
+	 * Build a menu row, wire its action and append it to the popup, all in
+	 * one call. The item is added AT CALL TIME, so call order is menu order
+	 * exactly as the hand-written construct/listen/add triples were.
+	 */
+	private static JMenuItem menuItem(JPopupMenu menu, String text, ActionListener onPick)
+	{
+		JMenuItem item = new JMenuItem(text);
+		item.addActionListener(onPick);
+		menu.add(item);
+		return item;
+	}
+
+	/** JMenu twin of {@link #menuItem(JPopupMenu, String, ActionListener)}. */
+	private static JMenuItem menuItem(JMenu menu, String text, ActionListener onPick)
+	{
+		JMenuItem item = new JMenuItem(text);
+		item.addActionListener(onPick);
+		menu.add(item);
+		return item;
+	}
+
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
 	 * all sets, or chatbox-search ANOTHER item into the pin. */
 	private JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
@@ -2627,59 +2591,47 @@ public class LoadoutLabPanel extends PluginPanel
 		// set only" / "...for all sets".
 		if (styleScoped == null || styleScoped != item.getId())
 		{
-			JMenuItem thisSet = new JMenuItem("For the " + scopeLabel(style.name()) + " only");
-			thisSet.addActionListener(a ->
+			menuItem(pinMenu, "For the " + scopeLabel(style.name()) + " only", a ->
 			{
 				mobProfile.pin(monsterId, style.name(), slot, item.getId());
 						recompute();
 			});
-			pinMenu.add(thisSet);
 		}
 		if (allScoped == null || allScoped != item.getId())
 		{
-			JMenuItem allSets = new JMenuItem("For all sets");
 			// (all-sets pins keep their name - the mob is implicit)
-			allSets.addActionListener(a ->
+			menuItem(pinMenu, "For all sets", a ->
 			{
 				mobProfile.pin(monsterId, ALL_SETS, slot, item.getId());
 						recompute();
 			});
-			pinMenu.add(allSets);
 		}
 		if (styleScoped != null)
 		{
 			GearItem pinned = data.getGear(styleScoped);
-			JMenuItem un = new JMenuItem("Unpin "
+			menuItem(pinMenu, "Unpin "
 				+ (pinned == null ? "item" : pinned.label())
-				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)");
-			un.addActionListener(a ->
+				+ " (" + style.name().toLowerCase(Locale.ROOT) + " set)", a ->
 			{
 				mobProfile.unpin(monsterId, style.name(), slot);
 						recompute();
 			});
-			pinMenu.add(un);
 		}
 		if (allScoped != null)
 		{
 			GearItem pinned = data.getGear(allScoped);
-			JMenuItem un = new JMenuItem("Unpin "
-				+ (pinned == null ? "item" : pinned.label()) + " (all sets)");
-			un.addActionListener(a ->
+			menuItem(pinMenu, "Unpin "
+				+ (pinned == null ? "item" : pinned.label()) + " (all sets)", a ->
 			{
 				mobProfile.unpin(monsterId, ALL_SETS, slot);
 						recompute();
 			});
-			pinMenu.add(un);
 		}
 		pinMenu.addSeparator();
 		// Pin a DIFFERENT item into this slot (chatbox search), scoped.
-		JMenuItem searchThis = new JMenuItem("Pin a different item (for the "
-			+ scopeLabel(style.name()) + ")...");
-		searchThis.addActionListener(a -> searchAndPin(style.name()));
-		pinMenu.add(searchThis);
-		JMenuItem searchAll = new JMenuItem("Pin a different item (for all sets)...");
-		searchAll.addActionListener(a -> searchAndPin(ALL_SETS));
-		pinMenu.add(searchAll);
+		menuItem(pinMenu, "Pin a different item (for the "
+			+ scopeLabel(style.name()) + ")...", a -> searchAndPin(style.name()));
+		menuItem(pinMenu, "Pin a different item (for all sets)...", a -> searchAndPin(ALL_SETS));
 		return pinMenu;
 	}
 
@@ -2809,19 +2761,15 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			GearItem item = data.getGear(id);
 			String label = item == null ? ("item " + id) : item.label();
-			JMenuItem entry = new JMenuItem("No longer stored elsewhere: " + label);
-			entry.addActionListener(a ->
+			menuItem(menu, "No longer stored elsewhere: " + label, a ->
 			{
 				storedToggle.toggle(id);
 				refreshStoredLabel();
 				recompute();
 			});
-			menu.add(entry);
 		}
 		menu.addSeparator();
-		JMenuItem add = new JMenuItem("Add a stored-elsewhere item...");
-		add.addActionListener(a -> showAddStoredDialog());
-		menu.add(add);
+		menuItem(menu, "Add a stored-elsewhere item...", a -> showAddStoredDialog());
 		menu.show(storedLabel, e.getX(), e.getY());
 	}
 
@@ -2963,34 +2911,28 @@ public class LoadoutLabPanel extends PluginPanel
 					// Exclusion scopes (field request): everywhere, this mob,
 					// or this mob + this set only.
 					JMenu excludeMenu = new JMenu("Exclude " + item.label());
-					JMenuItem everywhere = new JMenuItem("All mobs");
-					everywhere.addActionListener(a ->
+					menuItem(excludeMenu, "All mobs", a ->
 					{
 						exclusionToggle.toggle(item.getId());
 						refreshExclusionsLabel();
 						recompute();
 					});
-					excludeMenu.add(everywhere);
 					if (selectedMonster != null)
 					{
 						int monsterId = currentMonsterId();
-						JMenuItem thisMob = new JMenuItem("Vs " + selectedMonster.getName() + " (all sets)");
-						thisMob.addActionListener(a ->
+						menuItem(excludeMenu, "Vs " + selectedMonster.getName() + " (all sets)", a ->
 						{
 							mobProfile.excludeForMob(monsterId, ALL_SETS, item.getId());
 												recompute();
 						});
-						excludeMenu.add(thisMob);
 						if (pinStyle != null)
 						{
-							JMenuItem thisSet = new JMenuItem("Vs " + selectedMonster.getName()
-								+ " (" + scopeLabel(pinStyle.name()) + " only)");
-							thisSet.addActionListener(a ->
+							menuItem(excludeMenu, "Vs " + selectedMonster.getName()
+								+ " (" + scopeLabel(pinStyle.name()) + " only)", a ->
 							{
 								mobProfile.excludeForMob(monsterId, pinStyle.name(), item.getId());
 														recompute();
 							});
-							excludeMenu.add(thisSet);
 						}
 					}
 					menu.add(excludeMenu);
@@ -3002,15 +2944,13 @@ public class LoadoutLabPanel extends PluginPanel
 						&& protectOnlyToggle.isProtectOnly(item.getId());
 					if (protectOnlyToggle != null && (lostIds.contains(item.getId()) || flagged))
 					{
-						JMenuItem protect = new JMenuItem(flagged
+						menuItem(menu, flagged
 							? "Allow " + item.label() + " unprotected again"
-							: "Only bring " + item.label() + " if protected on death");
-						protect.addActionListener(a ->
+							: "Only bring " + item.label() + " if protected on death", a ->
 						{
 							protectOnlyToggle.toggle(item.getId());
 							recompute();
 						});
-						menu.add(protect);
 					}
 					// Unowned items can be dreamed into the owned pool
 					// (and undreamed).
@@ -3018,15 +2958,13 @@ public class LoadoutLabPanel extends PluginPanel
 					if (!ownedCheck.owns(item.getId()))
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
-						JMenuItem dream = new JMenuItem(dreamed
+						menuItem(menu, dreamed
 							? "Stop simming " + item.label()
-							: "Sim: consider " + item.label() + " as owned");
-						dream.addActionListener(a ->
+							: "Sim: consider " + item.label() + " as owned", a ->
 						{
 							dreamToggle.toggle(item.getId());
 							recompute();
 						});
-						menu.add(dream);
 					}
 					// Stored elsewhere: STASH, POH costume room, UIM cold or
 					// nest storage - genuinely owned, just invisible to the
@@ -3034,16 +2972,14 @@ public class LoadoutLabPanel extends PluginPanel
 					// entry is what keeps the state reachable.
 					if (stored || !ownedCheck.owns(item.getId()))
 					{
-						JMenuItem storeToggle = new JMenuItem(stored
+						menuItem(menu, stored
 							? "No longer stored elsewhere: " + item.label()
-							: "Stored elsewhere: count " + item.label() + " as owned");
-						storeToggle.addActionListener(a ->
+							: "Stored elsewhere: count " + item.label() + " as owned", a ->
 						{
 							storedToggle.toggle(item.getId());
 							refreshStoredLabel();
 							recompute();
 						});
-						menu.add(storeToggle);
 					}
 					// Pin: user preference wins the slot outright - for
 					// THIS monster, scoped to this set or all sets.
@@ -3070,13 +3006,19 @@ public class LoadoutLabPanel extends PluginPanel
 		return dartId == null ? null : data.getGear(dartId);
 	}
 
-	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
-	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
-	private static final class NoPrayerIcon implements Icon
+	/**
+	 * Shared shape for the square painted icons: they all carry a single
+	 * pixel size used as both width and height. Subclasses keep only their
+	 * paintIcon body. Deliberately sets NO rendering hints - antialiasing
+	 * stays exactly where each subclass sets it today, because some painted
+	 * icons in this file draw aliased on purpose.
+	 */
+	private abstract static class SizedIcon implements Icon
 	{
-		private final int size;
+		/** Icon edge length in pixels; readable by subclass paint code. */
+		protected final int size;
 
-		NoPrayerIcon(int size)
+		SizedIcon(int size)
 		{
 			this.size = size;
 		}
@@ -3091,6 +3033,16 @@ public class LoadoutLabPanel extends PluginPanel
 		public int getIconHeight()
 		{
 			return size;
+		}
+	}
+
+	/** "No prayer helps" mark: a prohibition sign (circle + slash), painted so
+	 * it inherits the incoming line's colour (glyphs tofu on macOS Tahoe). */
+	private static final class NoPrayerIcon extends SizedIcon
+	{
+		NoPrayerIcon(int size)
+		{
+			super(size);
 		}
 
 		@Override
@@ -3180,25 +3132,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** A small painted X - the close affordance (glyphs tofu on Tahoe). */
-	private static final class CloseIcon implements Icon
+	private static final class CloseIcon extends SizedIcon
 	{
-		private final int size;
-
 		CloseIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -3222,25 +3160,11 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Three-dots "more options" glyph, painted (Swing glyphs tofu on Tahoe). */
-	private static final class DotsIcon implements Icon
+	private static final class DotsIcon extends SizedIcon
 	{
-		private final int size;
-
 		DotsIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -3266,25 +3190,11 @@ public class LoadoutLabPanel extends PluginPanel
 	 * reload symbols tofu in Swing on macOS Tahoe, so we draw it. Inherits
 	 * the host button's foreground colour.
 	 */
-	private static final class ReloadIcon implements Icon
+	private static final class ReloadIcon extends SizedIcon
 	{
-		private final int size;
-
 		ReloadIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -3657,18 +3567,10 @@ public class LoadoutLabPanel extends PluginPanel
 			JPopupMenu menu = new JPopupMenu();
 			// Compact labels (field spec - the long forms truncated in the
 			// popup): the scope pair is "<style> set" vs "this result".
-			JMenuItem pinThis = new JMenuItem("Pin item - " + scopeLabel(style.name()));
-			pinThis.addActionListener(ev -> searchAndPin(style.name()));
-			menu.add(pinThis);
-			JMenuItem pinAll = new JMenuItem("Pin item - this result");
-			pinAll.addActionListener(ev -> searchAndPin(ALL_SETS));
-			menu.add(pinAll);
-			JMenuItem filterThis = new JMenuItem("Bank filter - " + scopeLabel(style.name()));
-			filterThis.addActionListener(ev -> searchAndAddFilter(style.name()));
-			menu.add(filterThis);
-			JMenuItem filterAll = new JMenuItem("Bank filter - this result");
-			filterAll.addActionListener(ev -> searchAndAddFilter(ALL_SETS));
-			menu.add(filterAll);
+			menuItem(menu, "Pin item - " + scopeLabel(style.name()), ev -> searchAndPin(style.name()));
+			menuItem(menu, "Pin item - this result", ev -> searchAndPin(ALL_SETS));
+			menuItem(menu, "Bank filter - " + scopeLabel(style.name()), ev -> searchAndAddFilter(style.name()));
+			menuItem(menu, "Bank filter - this result", ev -> searchAndAddFilter(ALL_SETS));
 			if (style == CombatStyle.MAGIC && displayOptions.spellControls)
 			{
 				// The spellbook lock: the submenu drives the combo, which
@@ -3677,10 +3579,8 @@ public class LoadoutLabPanel extends PluginPanel
 				for (int b = 0; b < spellbook.getItemCount(); b++)
 				{
 					final int index = b;
-					JMenuItem bookItem = new JMenuItem((index == spellbook.getSelectedIndex()
-						? "[x] " : "") + spellbook.getItemAt(b));
-					bookItem.addActionListener(ev -> spellbook.setSelectedIndex(index));
-					bookMenu.add(bookItem);
+					menuItem(bookMenu, (index == spellbook.getSelectedIndex()
+						? "[x] " : "") + spellbook.getItemAt(b), ev -> spellbook.setSelectedIndex(index));
 				}
 				menu.add(bookMenu);
 			}
@@ -3726,14 +3626,10 @@ public class LoadoutLabPanel extends PluginPanel
 		title.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		title.setToolTipText((entry.folded ? "Click to expand" : "Click to fold")
 			+ (isActive ? " - the active result" : ""));
-		title.addMouseListener(new MouseAdapter()
+		onClick(title, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				entry.folded = !entry.folded;
-				renderPage();
-			}
+			entry.folded = !entry.folded;
+			renderPage();
 		});
 		row.add(title, BorderLayout.CENTER);
 		JButton reload = new JButton(new ReloadIcon(10));
@@ -4047,27 +3943,58 @@ public class LoadoutLabPanel extends PluginPanel
 		return rows;
 	}
 
-	/** A pins/filters count chip: opens the manage menu anchored on the
-	 * chip (the retired label's menu, source-anchored). */
-	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	/**
+	 * Attach a click-only mouse listener. The handler takes the MouseEvent
+	 * because some callers anchor a popup on the click point.
+	 */
+	private static void onClick(Component target, Consumer<MouseEvent> handler)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(Color.WHITE);
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
-		chip.setBorder(new RoundedBorder(ACCENT, 2, 7));
-		chip.setToolTipText(tooltip);
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.addMouseListener(new MouseAdapter()
+		target.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				asActive(entry, () -> showPinnedMenu(e));
+				handler.accept(e);
 			}
 		});
+	}
+
+	/**
+	 * The one chip body behind pinFilterChip/paramChip/viewChip/
+	 * localCountChip. Every colour, font and border decision stays in the
+	 * thin wrappers below - this only assembles the label.
+	 *
+	 * NOTE: three of the old hand-written chips set the HAND cursor
+	 * unconditionally; here it keys off onClick. That is unreachable in
+	 * current code - all four wrappers pass a non-null handler whenever
+	 * they used to set the cursor - so behaviour is unchanged.
+	 */
+	private static JLabel chip(String text, boolean opaque, Color foreground, int fontStyle,
+		float fontSize, Color borderColor, int padding, int arc, String tooltip,
+		Consumer<MouseEvent> onClick)
+	{
+		JLabel chip = new JLabel(text);
+		chip.setOpaque(opaque);
+		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		chip.setForeground(foreground);
+		chip.setFont(chip.getFont().deriveFont(fontStyle, fontSize));
+		chip.setBorder(new RoundedBorder(borderColor, padding, arc));
+		chip.setToolTipText(tooltip);
+		if (onClick != null)
+		{
+			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			onClick(chip, onClick);
+		}
 		return chip;
+	}
+
+	/** A pins/filters count chip: opens the manage menu anchored on the
+	 * chip (the retired label's menu, source-anchored). */
+	private JComponent pinFilterChip(ResultEntry entry, String text, String tooltip)
+	{
+		return chip(text, true, Color.WHITE, Font.BOLD, 11f,
+			ACCENT, 2, 7, tooltip,
+			e -> asActive(entry, () -> showPinnedMenu(e)));
 	}
 
 	/** FlowLayout whose preferred height accounts for wrapping at the
@@ -4146,28 +4073,14 @@ public class LoadoutLabPanel extends PluginPanel
 	private JComponent paramChip(String text, boolean selected,
 		boolean enabled, String tooltip, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(!enabled ? new Color(150, 150, 150)
-			: selected ? Color.WHITE : new Color(170, 170, 170));
-		chip.setFont(chip.getFont().deriveFont(selected ? Font.BOLD : Font.PLAIN, 11f));
-		chip.setBorder(new RoundedBorder(selected
-			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
-		chip.setToolTipText(tooltip);
-		if (enabled && onClick != null)
-		{
-			chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			chip.addMouseListener(new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					onClick.run();
-				}
-			});
-		}
-		return chip;
+		// A forced (disabled) chip stays inert: no cursor, no listener -
+		// expressed here as a null handler.
+		return chip(text, true,
+			!enabled ? new Color(150, 150, 150)
+				: selected ? Color.WHITE : new Color(170, 170, 170),
+			selected ? Font.BOLD : Font.PLAIN, 11f,
+			selected ? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
+			enabled && onClick != null ? e -> onClick.run() : null);
 	}
 
 	/** Chip actions drive the hidden controls for THIS entry: focusing it
@@ -4188,10 +4101,8 @@ public class LoadoutLabPanel extends PluginPanel
 		for (int i = 0; i < combo.getItemCount(); i++)
 		{
 			final int index = i;
-			JMenuItem item = new JMenuItem((i == combo.getSelectedIndex() ? "[x] " : "")
-				+ combo.getItemAt(i));
-			item.addActionListener(e -> asActive(entry, () -> combo.setSelectedIndex(index)));
-			menu.add(item);
+			menuItem(menu, (i == combo.getSelectedIndex() ? "[x] " : "")
+				+ combo.getItemAt(i), e -> asActive(entry, () -> combo.setSelectedIndex(index)));
 		}
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
@@ -4392,14 +4303,7 @@ public class LoadoutLabPanel extends PluginPanel
 				JLabel remove = new JLabel(new CloseIcon(8));
 				remove.setToolTipText("Remove " + mob.getName() + " from this result");
 				remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				remove.addMouseListener(new MouseAdapter()
-				{
-					@Override
-					public void mouseClicked(MouseEvent e)
-					{
-						removeMobFromEntry(entry, index);
-					}
-				});
+				onClick(remove, e -> removeMobFromEntry(entry, index));
 				east.add(remove);
 			}
 			if (east.getComponentCount() > 0)
@@ -4418,14 +4322,7 @@ public class LoadoutLabPanel extends PluginPanel
 		add.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		add.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		add.setToolTipText("Add a mob to this result - ONE shared set optimized across the list");
-		add.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				showAddMobDialog(entry);
-			}
-		});
+		onClick(add, e -> showAddMobDialog(entry));
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
@@ -4580,96 +4477,6 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** The inventory breakpoint summary (field spec 2026-07-18): the
-	 * minimum-viability point (every mob answerable), the major
-	 * breakpoints (picks worth >= 10% of the whole curve's gain), the
-	 * final breakpoint (more slots stop paying), and where the current
-	 * budget sits as a percent of max. */
-	private JLabel breakpointLabel(ResultEntry entry)
-	{
-		OptimizerService.KitCurve curve = entry.kitCurve;
-		if (curve == null || curve.points.size() < 2)
-		{
-			return null;
-		}
-		List<double[]> points = curve.points;
-		double baseTotal = points.get(0)[1];
-		double finalTotal = points.get(points.size() - 1)[1];
-		double gainRange = finalTotal - baseTotal;
-		int maxViable = 0;
-		for (double[] p : points)
-		{
-			maxViable = Math.max(maxViable, (int) p[2]);
-		}
-		int viability = -1;
-		int finalCost = (int) points.get(0)[0];
-		List<Integer> majors = new ArrayList<>();
-		for (int i = 1; i < points.size(); i++)
-		{
-			double gain = points.get(i)[1] - points.get(i - 1)[1];
-			int cost = (int) points.get(i)[0];
-			if (viability < 0 && (int) points.get(i)[2] >= maxViable)
-			{
-				viability = cost;
-			}
-			if (gain > 1e-6)
-			{
-				finalCost = cost;
-				// Significant = the pick moves the ROSTER's dps, not just
-				// the curve's own range (field fix 2026-07-18: a slow-decay
-				// tail kept clearing a range-relative bar deep into the
-				// curve). 3% of the final total is a real jump.
-				if (finalTotal > 0 && gain >= 0.03 * finalTotal && !majors.contains(cost))
-				{
-					majors.add(cost);
-				}
-			}
-		}
-		if (viability < 0 && (int) points.get(0)[2] >= maxViable)
-		{
-			viability = (int) points.get(0)[0];
-		}
-		// Where the CURRENT budget lands on the curve, as percent of max.
-		double atBudget = baseTotal;
-		for (double[] p : points)
-		{
-			if (p[0] <= entry.maxSwaps)
-			{
-				atBudget = Math.max(atBudget, p[1]);
-			}
-		}
-		int pct = finalTotal > 0 ? (int) Math.round(atBudget * 100.0 / finalTotal) : 100;
-		StringBuilder text = new StringBuilder();
-		if (viability > 0)
-		{
-			text.append("min ").append(viability);
-		}
-		if (!majors.isEmpty())
-		{
-			if (text.length() > 0)
-			{
-				text.append(" | ");
-			}
-			text.append("gains at ");
-			for (int i = 0; i < majors.size(); i++)
-			{
-				text.append(i > 0 ? ", " : "").append(majors.get(i));
-			}
-		}
-		if (text.length() > 0)
-		{
-			text.append(" | ");
-		}
-		text.append("max ").append(finalCost).append(" - at ").append(pct).append("%");
-		JLabel label = new JLabel(text.toString());
-		label.setForeground(MUTED);
-		label.setFont(label.getFont().deriveFont(11f));
-		label.setToolTipText("Inventory breakpoints: 'min' answers every mob,"
-			+ " 'gains at' are the slots worth a big jump, 'max' is where more"
-			+ " slots stop paying - the percent is this budget vs the max");
-		return label;
-	}
-
 	/** One mob's row result: the side's kit BEST across ALL styles - the
 	 * carried swaps can answer different mobs with different styles, on
 	 * the Yours and the BiS side alike. */
@@ -4795,17 +4602,13 @@ public class LoadoutLabPanel extends PluginPanel
 		};
 		field.addActionListener(e -> pick.run());
 		// ONE click adds (field feedback: the double-click was hated).
-		hits.addMouseListener(new MouseAdapter()
+		onClick(hits, e ->
 		{
-			@Override
-			public void mouseClicked(MouseEvent e)
+			int idx = hits.locationToIndex(e.getPoint());
+			if (idx >= 0)
 			{
-				int idx = hits.locationToIndex(e.getPoint());
-				if (idx >= 0)
-				{
-					hits.setSelectedIndex(idx);
-					pick.run();
-				}
+				hits.setSelectedIndex(idx);
+				pick.run();
 			}
 		});
 		content.add(field, BorderLayout.NORTH);
@@ -4855,7 +4658,298 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			column.add(legend);
 		}
+		column.add(Box.createVerticalStrut(6));
+		column.add(guidanceNote(entry, selected, bis));
 		return column;
+	}
+
+	/** A soft, muted footnote under EVERY result: a wrapped caption then two
+	 * centered chips - "Copy report" drops a pre-filled issue report (target,
+	 * active parameters, the shown sets + dps) on the clipboard, "Discord"
+	 * opens the invite to paste it into. The caption is a non-editable
+	 * wrapping JTextArea (the notes-editor pattern) so it wraps to the REAL
+	 * panel width - an HTML pixel width was ignored here and clipped the
+	 * sentence on both sides. */
+	private JComponent guidanceNote(ResultEntry entry, CombatStyle selected, boolean bis)
+	{
+		JPanel note = new JPanel();
+		note.setLayout(new BoxLayout(note, BoxLayout.Y_AXIS));
+		note.setOpaque(false);
+		note.setAlignmentX(LEFT_ALIGNMENT);
+
+		JTextArea text = new JTextArea(
+			"Aiming to be comprehensive - cross-check the official calculator "
+				+ "and a guide, then report anything off:");
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
+		text.setEditable(false);
+		text.setFocusable(false);
+		text.setOpaque(false);
+		text.setForeground(MUTED);
+		// JTextArea defaults to a monospaced font; borrow the UI label font so
+		// the caption matches the rest of the panel. One size up (11f) per
+		// field request.
+		text.setFont(new JLabel().getFont().deriveFont(11f));
+		// A row floor so the wrapped lines are never clipped on first paint;
+		// it grows if a narrow panel needs a 5th line (getPreferredSize maxes
+		// content vs rows).
+		text.setRows(4);
+		text.setBorder(BorderFactory.createEmptyBorder(2, 0, 4, 0));
+		text.setAlignmentX(LEFT_ALIGNMENT);
+		note.add(text);
+
+		JLabel copyChip = actionChip(COPY_REPORT_LABEL,
+			"Copy a pre-filled issue report to paste in the Discord", null);
+		copyChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		onClick(copyChip, e -> copyIssueReport(entry, selected, bis, copyChip));
+		JLabel discordChip = actionChip("Discord", "Open the Loadout Lab Discord",
+			() -> LinkBrowser.browse(DISCORD_URL));
+
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+		actions.setOpaque(false);
+		actions.setAlignmentX(LEFT_ALIGNMENT);
+		actions.add(copyChip);
+		actions.add(discordChip);
+		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+			actions.getPreferredSize().height));
+		note.add(actions);
+		return note;
+	}
+
+	/** A quiet outlined action chip (gray text + edge, non-opaque) for the
+	 * guidance footnote's Discord / Copy report actions. */
+	private static JLabel actionChip(String text, String tooltip, Runnable onClick)
+	{
+		return chip(text, false, new Color(170, 170, 170), Font.PLAIN, 10f,
+			ColorScheme.MEDIUM_GRAY_COLOR, 3, 8, tooltip,
+			onClick == null ? null : e -> onClick.run());
+	}
+
+	/** Put the issue report on the system clipboard and flash the chip so the
+	 * user knows it landed (EDT-only; the click arrives on the EDT). */
+	private void copyIssueReport(ResultEntry entry, CombatStyle selected, boolean bis,
+		JLabel chip)
+	{
+		try
+		{
+			Toolkit.getDefaultToolkit().getSystemClipboard()
+				.setContents(new StringSelection(buildIssueReport(entry, selected, bis)), null);
+		}
+		catch (IllegalStateException busy)
+		{
+			// Another app owns the clipboard this instant - leave the label
+			// alone so the user can just click again.
+			return;
+		}
+		chip.setText("Copied!");
+		Timer revert = new Timer(1500, ev -> chip.setText(COPY_REPORT_LABEL));
+		revert.setRepeats(false);
+		revert.start();
+	}
+
+	/** The clipboard payload. Two parts: a reporter-fills-in section at the
+	 * top (bold prompts with an obvious &lt;FILL IN HERE&gt;), then the plugin's
+	 * context (target, the active query parameters, and the shown style's
+	 * Yours/BiS sets with items + dps + boost + spec) fenced off under a "do
+	 * not modify" note. The markers are Discord markdown - bold and a code
+	 * fence - so it renders there; pasted raw elsewhere they still read as
+	 * clear section breaks. All ASCII so it survives any paste target. */
+	private String buildIssueReport(ResultEntry entry, CombatStyle selected, boolean bis)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("**What did I expect?**\n");
+		sb.append("**<FILL IN HERE>**\n\n");
+		sb.append("**What did I see?**\n");
+		sb.append("**<FILL IN HERE>**\n\n");
+		sb.append("*The block below is filled in by Loadout Lab - please do not modify it.*\n");
+		sb.append("```\n");
+		sb.append("Loadout Lab data (v").append(PLUGIN_VERSION).append(")\n");
+
+		sb.append("Target: ");
+		if (entry.mobs.size() > 1)
+		{
+			List<String> labels = new ArrayList<>();
+			for (MonsterStats m : entry.mobs)
+			{
+				labels.add(m.label());
+			}
+			sb.append(entry.mobs.size()).append(" mobs - ")
+				.append(String.join(", ", labels)).append('\n');
+		}
+		else
+		{
+			MonsterStats m = entry.mob();
+			sb.append(m.label()).append(" - ").append(m.getHitpoints()).append(" hp\n");
+		}
+		sb.append("Viewing: ").append(selected).append(" / ")
+			.append(bis ? "Best in game" : "Yours").append('\n');
+
+		appendActiveParams(sb, entry);
+
+		StyleResult r = entry.results.get(selected);
+		sb.append("\n-- ").append(selected).append(" --\n");
+		if (r != null && r.owned != null && !r.owned.isEmpty())
+		{
+			appendSet(sb, "Yours", r.owned.get(0), r.spec, r.specDpsAdded, r.boostLabel);
+		}
+		else
+		{
+			sb.append("Yours: no set\n");
+		}
+		if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
+		{
+			appendSet(sb, "Best in game", r.overallBest, r.gameSpec, r.gameSpecDpsAdded,
+				r.gameBoostLabel);
+		}
+
+		sb.append("\nOther styles (your best dps):");
+		for (CombatStyle s : CombatStyle.concreteValues())
+		{
+			if (s == selected)
+			{
+				continue;
+			}
+			StyleResult sr = entry.results.get(s);
+			double dps = sr != null && sr.owned != null && !sr.owned.isEmpty()
+				? sr.owned.get(0).getDps() : 0;
+			sb.append(' ').append(s).append(' ')
+				.append(dps > 0 ? String.format("%.2f", dps) : "-").append(';');
+		}
+		sb.append("\n```");
+		return sb.toString();
+	}
+
+	/** The active query parameters, mirroring the card's chip row so a report
+	 * says whether it was on task, what upgrade budget/risk cap was set, etc.
+	 * Only the parameters that actually apply to this mob/result are listed,
+	 * same as the chips. */
+	private void appendActiveParams(StringBuilder sb, ResultEntry entry)
+	{
+		MonsterStats mob = entry.mob();
+		List<String> params = new ArrayList<>();
+
+		String[] modeNames = {"Max DPS", "Balanced", "Tanky"};
+		params.add("Optimize: " + modeNames[Math.max(0,
+			Math.min(entry.optimizeMode, modeNames.length - 1))]);
+
+		if (SlayerLockedMonsters.isTaskOnly(mob))
+		{
+			params.add("On task: yes (task-only boss)");
+		}
+		else if (mob.isSlayerMonster())
+		{
+			params.add("On task: " + (entry.onSlayerTask ? "yes" : "no"));
+		}
+
+		boolean exclusive = WildernessMonsters.isExclusive(mob);
+		boolean listed = WildernessMonsters.isWilderness(mob);
+		boolean wild = (exclusive || (listed && entry.inWilderness)) && displayOptions.wildyRisk;
+		if (exclusive)
+		{
+			params.add("Wilderness: yes (exclusive)");
+		}
+		else if (listed)
+		{
+			params.add("Wilderness: " + (entry.inWilderness ? "yes" : "no"));
+		}
+		if (wild)
+		{
+			params.add("Protect item: " + (entry.protectItem ? "yes" : "no"));
+			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
+			params.add("Risk cap: " + (risk.isEmpty() ? "off" : risk));
+		}
+
+		com.loadoutlab.engine.BoostProfile supplied =
+			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		for (MonsterStats m : entry.mobs)
+		{
+			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			{
+				supplied = null;
+				break;
+			}
+		}
+		if (supplied != null)
+		{
+			params.add(supplied + ": " + (entry.raidBoost ? "assumed" : "own potions"));
+		}
+
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (fiery)
+		{
+			String[] antifire = {"Antifire: gear only", "Antifire: regular assumed",
+				"Antifire: super assumed"};
+			params.add(antifire[Math.max(0, Math.min(entry.antifireMode, antifire.length - 1))]);
+		}
+
+		if (displayOptions.upgradeBudget)
+		{
+			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
+			boolean unlimited = budget.equals("-") || budget.equalsIgnoreCase("max");
+			params.add("Budget: " + (budget.isEmpty() ? "owned gear only"
+				: unlimited ? "unlimited" : budget));
+		}
+
+		if (entry.mobs.size() > 1)
+		{
+			params.add("Inventory: " + entry.maxSwaps);
+		}
+		if (!entry.assumeBestPrayer)
+		{
+			params.add("Prayer: off (prayerless)");
+		}
+		if (!entry.assumeBoosts)
+		{
+			params.add("Boosts: off (unboosted)");
+		}
+
+		sb.append("Parameters:\n");
+		for (String p : params)
+		{
+			sb.append("  ").append(p).append('\n');
+		}
+	}
+
+	/** One set block in the issue report: dps, the worn items in slot order,
+	 * the prayer/boost the numbers assume, and the carried spec if any. */
+	private static void appendSet(StringBuilder sb, String label, DpsResult set,
+		SpecialAttack spec, double specDpsAdded, String boostLabel)
+	{
+		sb.append(label).append(": ").append(String.format("%.2f", set.getDps()))
+			.append(" dps\n");
+		List<String> items = new ArrayList<>();
+		for (GearItem item : set.getLoadout().getGear().values())
+		{
+			if (item != null)
+			{
+				items.add(item.getName());
+			}
+		}
+		if (!items.isEmpty())
+		{
+			sb.append("  ").append(String.join(", ", items)).append('\n');
+		}
+		if (boostLabel != null && !boostLabel.isEmpty())
+		{
+			sb.append("  Assumes: ").append(boostLabel).append('\n');
+		}
+		if (spec != null)
+		{
+			sb.append("  Spec: ").append(spec.getDisplayName());
+			if (specDpsAdded > 0)
+			{
+				sb.append(String.format(" (adds ~%.2f dps)", specDpsAdded));
+			}
+			sb.append('\n');
+		}
 	}
 
 	/** Roster-aware default: the style whose SHARED set averages the best
@@ -4870,7 +4964,9 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		CombatStyle best = null;
 		double bestScore = 0.0;
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
+		// concreteValues() is the same MELEE/RANGED/MAGIC triple and hands
+		// back a fresh array per call, so there is no aliasing hazard.
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			double sum = 0;
 			for (int i = 0; i < entry.perMobResults.size(); i++)
@@ -4979,27 +5075,16 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private JComponent viewChip(String text, boolean selected, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(selected);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 14f));
 		// Bordered buttons (field request): the selected side wears a
-		// bright edge, the other stays a quiet outline.
-		chip.setBorder(new RoundedBorder(selected
-			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.setToolTipText(text.equals("BiS")
-			? "The game-wide best set at your levels" : "Your best owned set");
-		chip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				onClick.run();
-			}
-		});
-		return chip;
+		// bright edge, the other stays a quiet outline. Note the opaque
+		// flag tracks `selected` here, unlike the other three chips.
+		return chip(text, selected,
+			selected ? Color.WHITE : new Color(150, 150, 150),
+			Font.BOLD, 14f,
+			selected ? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12,
+			text.equals("BiS")
+				? "The game-wide best set at your levels" : "Your best owned set",
+			e -> onClick.run());
 	}
 
 	/** The tab strip: one equal-width tab per style - the skill sprite and
@@ -5038,14 +5123,10 @@ public class LoadoutLabPanel extends PluginPanel
 			tab.add(dps);
 			tab.setToolTipText(style + (hasSet ? " - " + dps.getText() + " DPS" : " - no set"));
 			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			tab.addMouseListener(new MouseAdapter()
+			onClick(tab, e ->
 			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					entry.selectedTab = style;
-					renderPage();
-				}
+				entry.selectedTab = style;
+				renderPage();
 			});
 			strip.add(tab);
 		}
@@ -5233,14 +5314,13 @@ public class LoadoutLabPanel extends PluginPanel
 		if (bis)
 		{
 			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
-				result.gameSpecExpectedDamage, result.gameSpecDrainValue,
-				best.getExpectedHit(),
+				result.gameSpecExpectedDamage, result.gameSpecDpsAdded,
 				"Strongest special attack in the game vs this monster"));
 		}
 		else
 		{
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
-				result.specDrainValue, best.getExpectedHit(), "Swap in for the special attack",
+				result.specDpsAdded, "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
@@ -5337,27 +5417,15 @@ public class LoadoutLabPanel extends PluginPanel
 	private JComponent localCountChip(String text, boolean active, boolean red,
 		String tooltip, Runnable onClick)
 	{
-		JLabel chip = new JLabel(text);
-		chip.setOpaque(true);
-		chip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		chip.setForeground(red
-			? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
-			: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)));
-		chip.setFont(chip.getFont().deriveFont(Font.BOLD, 11f));
-		chip.setBorder(new RoundedBorder(active
-			? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
-			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7));
-		chip.setToolTipText(tooltip);
-		chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-		chip.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				onClick.run();
-			}
-		});
-		return chip;
+		return chip(text, true,
+			red
+				? (active ? new Color(220, 120, 120) : new Color(140, 110, 110))
+				: (active ? new Color(130, 200, 130) : new Color(110, 140, 110)),
+			Font.BOLD, 11f,
+			active
+				? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
+				: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
+			e -> onClick.run());
 	}
 
 	/** The local exclusions manager: current entries with click-to-allow,
@@ -5365,25 +5433,23 @@ public class LoadoutLabPanel extends PluginPanel
 	private void manageLocalExclusions(ResultEntry entry, int profileId, String mobName)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem add = new JMenuItem("Exclude an item vs " + mobName + "...");
-		add.addActionListener(e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
+		menuItem(menu, "Exclude an item vs " + mobName + "...",
+			e -> itemSearch.search("Exclude vs " + mobName, (itemId, name) ->
 		{
 			mobProfile.excludeForMob(profileId, ALL_SETS, itemId);
 			recompute();
 		}));
-		menu.add(add);
 		java.util.List<Integer> group = groupProfileIds(entry);
 		if (group.size() > 1)
 		{
 			// Whole-group write (field request 2026-07-18): the same local
 			// exclusion lands on EVERY member, one undo entry.
-			JMenuItem addAll = new JMenuItem("Exclude an item vs the whole group...");
-			addAll.addActionListener(e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
+			menuItem(menu, "Exclude an item vs the whole group...",
+				e -> itemSearch.search("Exclude vs the whole group", (itemId, name) ->
 			{
 				mobProfile.excludeForMobs(group, ALL_SETS, itemId);
 				recompute();
 			}));
-			menu.add(addAll);
 		}
 		Map<String, Set<Integer>> scopes = mobProfile.allMobExclusions(profileId);
 		if (!scopes.isEmpty())
@@ -5394,15 +5460,13 @@ public class LoadoutLabPanel extends PluginPanel
 				for (int itemId : scope.getValue())
 				{
 					GearItem item = data.getGear(itemId);
-					JMenuItem remove = new JMenuItem("Allow: "
+					menuItem(menu, "Allow: "
 						+ (item != null ? item.label() : "item " + itemId)
-						+ " (" + scopeLabel(scope.getKey()) + ")");
-					remove.addActionListener(e ->
+						+ " (" + scopeLabel(scope.getKey()) + ")", e ->
 					{
 						mobProfile.removeMobExclusion(profileId, scope.getKey(), itemId);
 						recompute();
 					});
-					menu.add(remove);
 				}
 			}
 		}
@@ -5415,25 +5479,23 @@ public class LoadoutLabPanel extends PluginPanel
 	private void manageLocalSims(ResultEntry entry, int profileId, String mobName)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		JMenuItem add = new JMenuItem("Sim an item vs " + mobName + "...");
-		add.addActionListener(e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
+		menuItem(menu, "Sim an item vs " + mobName + "...",
+			e -> itemSearch.search("Sim vs " + mobName + " (counts as owned)",
 			(itemId, name) ->
 		{
 			mobProfile.simForMob(profileId, itemId, name);
 			recompute();
 		}));
-		menu.add(add);
 		java.util.List<Integer> group = groupProfileIds(entry);
 		if (group.size() > 1)
 		{
-			JMenuItem addAll = new JMenuItem("Sim an item vs the whole group...");
-			addAll.addActionListener(e -> itemSearch.search("Sim vs the whole group (counts as owned)",
+			menuItem(menu, "Sim an item vs the whole group...",
+				e -> itemSearch.search("Sim vs the whole group (counts as owned)",
 				(itemId, name) ->
 			{
 				mobProfile.simForMobs(group, itemId, name);
 				recompute();
 			}));
-			menu.add(addAll);
 		}
 		Map<Integer, String> sims = mobProfile.allMobSims(profileId);
 		if (!sims.isEmpty())
@@ -5441,13 +5503,11 @@ public class LoadoutLabPanel extends PluginPanel
 			menu.addSeparator();
 			for (Map.Entry<Integer, String> sim : sims.entrySet())
 			{
-				JMenuItem remove = new JMenuItem("Unsim: " + sim.getValue());
-				remove.addActionListener(e ->
+				menuItem(menu, "Unsim: " + sim.getValue(), e ->
 				{
 					mobProfile.removeMobSim(profileId, sim.getKey());
 					recompute();
 				});
-				menu.add(remove);
 			}
 		}
 		Point at = getMousePosition();
@@ -5511,26 +5571,17 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Blowpipes: name the loaded dart the numbers assume. */
 	/** Everything the old spec line said, as the spec cell's tooltip. */
 	private static String specTooltip(SpecialAttack spec, double expectedDamage,
-		double drainValue, double replacedAutoExpected, String fallbackTooltip)
+		double dpsAdded, String fallbackTooltip)
 	{
-		String headline = drainValue > 0.5
-			? String.format("Spec: %s - %.0f dmg + drain ~%.0f (%d%% energy)",
-				spec.getDisplayName(), expectedDamage, drainValue, spec.getEnergyCost())
-			: String.format("Spec: %s - avg %.0f dmg (%d%% energy)",
-				spec.getDisplayName(), expectedDamage, spec.getEnergyCost());
+		// The headline is the win-over-replacement: the DPS this spec adds to
+		// the kill over just attacking (marginal, regen-aware, drain-inclusive).
+		// The note explains the mechanism (e.g. the defence drain), so no
+		// separate throughput line - it read as +0.00 for drain specs.
+		String headline = String.format("Spec: %s - adds ~%.2f dps (avg %.0f dmg, %d%% energy)",
+			spec.getDisplayName(), dpsAdded, expectedDamage, spec.getEnergyCost());
 		String note = spec.getNote();
-		// Spec throughput: weaving this spec on cooldown adds sustained dps
-		// (energy regen 10% per 30s; the Lightbearer doubles it).
-		String sustained = String.format("Weaving on cooldown: about +%.2f dps"
-				+ " (+%.2f with a Lightbearer)",
-			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, false),
-			spec.sustainedDpsBonus(expectedDamage, replacedAutoExpected, true));
-		String drain = drainValue > 0.5
-			? String.format("<br>Drain worth ~%.0f extra damage over the kill.", drainValue)
-			: "";
 		return "<html>" + headline
-			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note)
-			+ "<br>" + sustained + drain + "</html>";
+			+ "<br>" + (note.isEmpty() ? fallbackTooltip : note) + "</html>";
 	}
 
 	/**
@@ -6193,14 +6244,14 @@ public class LoadoutLabPanel extends PluginPanel
 	 * height is always right (the old wrapping grid clipped its second row).
 	 */
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip)
+		double specDpsAdded, String specFallbackTooltip)
 	{
-		return iconGrid(result, spec, specWeapon, specExpected, specDrainValue,
-			replacedAutoExpected, specFallbackTooltip, false, null);
+		return iconGrid(result, spec, specWeapon, specExpected, specDpsAdded,
+			specFallbackTooltip, false, null);
 	}
 
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, boolean markUnowned,
+		double specDpsAdded, String specFallbackTooltip, boolean markUnowned,
 		Loadout gameBest)
 	{
 		int cell = ICON_SIZE + 4;
@@ -6215,7 +6266,7 @@ public class LoadoutLabPanel extends PluginPanel
 		Map<GearSlot, Integer> pinnedSlots = renderingStyle == null
 			? Collections.emptyMap() : mobProfile.pins(currentMonsterId(), renderingStyle);
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
-			specDrainValue, replacedAutoExpected, specFallbackTooltip, fates);
+			specDpsAdded, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
 			markUnowned, gameBest, specCell, renderingIncoming));
 	}
@@ -6579,25 +6630,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted crosshair for the accuracy line (glyph-safe) - the
 	 * Attack staticon read as the same sword as the style icon. */
-	private static final class CrosshairIcon implements Icon
+	private static final class CrosshairIcon extends SizedIcon
 	{
-		private final int size;
-
 		CrosshairIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6643,25 +6680,11 @@ int sprite = incoming.protectPrayer != null
 	}
 
 	/** A painted red hitsplat for the max-hit line (glyph-safe). */
-	private static final class HitsplatIcon implements Icon
+	private static final class HitsplatIcon extends SizedIcon
 	{
-		private final int size;
-
 		HitsplatIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6686,25 +6709,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** A painted circled-i for the mechanics note - amber like the note
 	 * text it summarizes; painted, not a glyph (Tahoe tofu). */
-	private static final class InfoIcon implements Icon
+	private static final class InfoIcon extends SizedIcon
 	{
-		private final int size;
-
 		InfoIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6730,25 +6739,11 @@ int sprite = incoming.protectPrayer != null
 
 	/** The amber plus-star (the mascots' signature), as a static icon for
 	 * the counted-bonuses line. Painted - glyphs tofu on Tahoe. */
-	private static final class PlusStarIcon implements Icon
+	private static final class PlusStarIcon extends SizedIcon
 	{
-		private final int size;
-
 		PlusStarIcon(int size)
 		{
-			this.size = size;
-		}
-
-		@Override
-		public int getIconWidth()
-		{
-			return size;
-		}
-
-		@Override
-		public int getIconHeight()
-		{
-			return size;
+			super(size);
 		}
 
 		@Override
@@ -6945,7 +6940,7 @@ int sprite = incoming.protectPrayer != null
 
 	/** The special-attack weapon to swap in, amber-bordered - or an empty box. */
 	private RiskDotLabel buildSpecCell(int cell, SpecialAttack spec, GearItem specWeapon, double specExpected,
-		double specDrainValue, double replacedAutoExpected, String specFallbackTooltip, PvpRisk.Assessment fates)
+		double specDpsAdded, String specFallbackTooltip, PvpRisk.Assessment fates)
 	{
 		RiskDotLabel specCell = new RiskDotLabel();
 		specCell.setPreferredSize(new Dimension(cell, cell));
@@ -6983,7 +6978,7 @@ int sprite = incoming.protectPrayer != null
 				}
 			}
 			String specTip = specTooltip(spec, specExpected,
-				specDrainValue, replacedAutoExpected, specFallbackTooltip);
+				specDpsAdded, specFallbackTooltip);
 			specCell.setToolTipText(specFate.isEmpty() ? specTip
 				: specTip.replace("</html>", specFate + "</html>"));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);

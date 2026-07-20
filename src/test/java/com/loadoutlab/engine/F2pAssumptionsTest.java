@@ -30,12 +30,12 @@ class F2pAssumptionsTest
 	@DisplayName("F2P boosts: attack+strength potions for melee, nothing for ranged/magic")
 	void f2pBoosts()
 	{
-		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, true));
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.RANGED, OwnedItems.EMPTY, true));
-		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MAGIC, OwnedItems.EMPTY, true));
+		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, true, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.RANGED, OwnedItems.EMPTY, true, false));
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MAGIC, OwnedItems.EMPTY, true, false));
 		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.ceilingFor(CombatStyle.MELEE, true));
 		// Members behaviour untouched.
-		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, false));
+		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, false, false));
 	}
 
 	@Test

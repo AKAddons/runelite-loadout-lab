@@ -113,19 +113,6 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void sustainedSpecDpsScalesWithRegenAndCost()
-	{
-		SpecialAttack dds = SpecialAttack.match(byName("Dragon dagger"), CombatStyle.MELEE);
-		Assert.assertNotNull(dds);
-		// Net 20 damage per spec at 25% cost: 10%/30s regen = 1 spec per 75s.
-		Assert.assertEquals(20.0 / 75.0, dds.sustainedDpsBonus(30, 10, false), 1e-9);
-		// Lightbearer doubles the regen.
-		Assert.assertEquals(2 * 20.0 / 75.0, dds.sustainedDpsBonus(30, 10, true), 1e-9);
-		// A spec weaker than the auto it replaces adds nothing.
-		Assert.assertEquals(0.0, dds.sustainedDpsBonus(5, 10, false), 1e-9);
-	}
-
-	@Test
 	public void specWeaponsOnlyMatchTheirOwnStyle()
 	{
 		Assert.assertNull(SpecialAttack.match(byName("Dragon dagger"), CombatStyle.RANGED));

@@ -179,48 +179,24 @@ public final class PvpRisk
 	}
 
 	/**
-	 * True when this set would put a rebuild-burdened item (curated
-	 * frictionGp: the salve line, imbued rings/masks) at risk - i.e. the
-	 * item is NOT protected by a kept slot. Risk-constrained optimization
-	 * rejects such sets outright (field request: never suggest something
-	 * that needs a re-imbue as a risked item). Protected is fine: a kept
-	 * slayer helmet is standard wilderness practice. Monotone-bad: adding
-	 * items can only push a friction item OUT of the kept slots, never
-	 * back in, so pruning partial states is safe.
-	 */
-	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
-	{
-		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, Collections.emptySet());
-	}
-
-	/** Pin-aware variant: a PINNED friction item is the player's explicit
-	 * choice and never vetoes the set (its risk still counts).
-	 *
-	 * <p>Lean on purpose - the beam calls this per candidate set, and the
-	 * assess()-based version built and sorted the full kept/lost profile
-	 * per trial (the risk path's dominant cost whenever a salve was in the
-	 * pool). Same semantics, asserted against assess() in PvpRiskTest:
-	 * a non-poolable friction item is a Charge no matter what is protected;
-	 * a poolable (convertible) one risks its rebuild only when it ranks
-	 * OUTSIDE the kept slots under assess()'s stable value-descending
-	 * order (count of strictly-greater values, plus equal values earlier
-	 * in pool order). */
-	public static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
-		Set<Integer> pinnedIds)
-	{
-		return risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
-			Collections.emptySet());
-	}
-
-	/**
 	 * True when this set would leave a MUST-PROTECT item unprotected (in the
 	 * lost pile / paying a fee). Must-protect covers two sources, unified in
-	 * one pass: engine friction (the salve line, imbued gear - see
-	 * risksRebuild's contract) and the player's own "only bring if protected
-	 * on death" flag (protectOnlyIds - a plain tradeable they refuse to
-	 * risk). A PINNED item is the player's explicit pick and never vetoes.
-	 * Same lean ranking as the friction-only path, asserted against
-	 * risksRebuild in PvpRiskTest for the no-flag case.
+	 * one pass: engine friction (curated frictionGp - the salve line, imbued
+	 * rings/masks, which risk-constrained optimization rejects outright
+	 * unless a kept slot protects them) and the player's own "only bring if
+	 * protected on death" flag (protectOnlyIds - a plain tradeable they
+	 * refuse to risk). A PINNED item is the player's explicit pick and never
+	 * vetoes the set (its risk still counts).
+	 *
+	 * <p>Lean on purpose - the beam calls this per candidate set, and an
+	 * assess()-based version would build and sort the full kept/lost profile
+	 * per trial. Same semantics, asserted against assess() in PvpRiskTest:
+	 * a non-poolable must-protect item is a Charge no matter what is
+	 * protected; a poolable (convertible) one is at risk only when it ranks
+	 * OUTSIDE the kept slots under assess()'s stable value-descending order
+	 * (count of strictly-greater values, plus equal values earlier in pool
+	 * order). The friction-only no-flag case is the old risksRebuild(), now
+	 * a test-local delegate in PvpRiskTest.
 	 */
 	public static boolean risksUnprotected(Loadout loadout, GearItem carriedSpecWeapon,
 		int keptSlots, Set<Integer> pinnedIds, Set<Integer> protectOnlyIds)

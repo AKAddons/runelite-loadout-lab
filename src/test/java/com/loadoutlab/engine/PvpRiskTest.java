@@ -10,6 +10,21 @@ import org.junit.Test;
 
 public class PvpRiskTest
 {
+	/** The retired risksRebuild() overloads: the friction-only case
+	 * of risksUnprotected(), i.e. no protect-only flags. They had no
+	 * production callers, so they live here as delegates instead. */
+	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
+	{
+		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, java.util.Collections.emptySet());
+	}
+
+	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
+		java.util.Set<Integer> pinnedIds)
+	{
+		return PvpRisk.risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
+			java.util.Collections.emptySet());
+	}
+
 	private static GearItem item(int id, GearSlot slot, boolean tradeable, int price)
 	{
 		return new GearItem(id, "Item" + id, "", slot, "", 0, false, true,
@@ -97,14 +112,14 @@ public class PvpRiskTest
 		Loadout salve = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(2, "salve amulet(ei)", GearSlot.NECK, SOME_DEFENCE));
-		Assert.assertTrue(PvpRisk.risksRebuild(salve, null, 3));
+		Assert.assertTrue(risksRebuild(salve, null, 3));
 
 		// Warrior ring (i) with cheap tradeables: it ranks into the kept
 		// slots - protected, so no risked rebuild.
 		Loadout protectedRing = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE));
-		Assert.assertFalse(PvpRisk.risksRebuild(protectedRing, null, 3));
+		Assert.assertFalse(risksRebuild(protectedRing, null, 3));
 
 		// The same ring displaced from the kept slots by pricier gear IS
 		// a risked rebuild.
@@ -113,11 +128,11 @@ public class PvpRiskTest
 			item(2, GearSlot.BODY, true, 50_000_000),
 			item(4, GearSlot.LEGS, true, 20_000_000),
 			untradeable(3, "warrior ring (i)", GearSlot.RING, SOME_DEFENCE));
-		Assert.assertTrue(PvpRisk.risksRebuild(displacedRing, null, 3));
+		Assert.assertTrue(risksRebuild(displacedRing, null, 3));
 
 		// No friction anywhere: cheap early exit, never flagged.
 		Loadout plain = worn(item(1, GearSlot.WEAPON, true, 100));
-		Assert.assertFalse(PvpRisk.risksRebuild(plain, null, 3));
+		Assert.assertFalse(risksRebuild(plain, null, 3));
 	}
 
 	@Test
@@ -375,7 +390,7 @@ public class PvpRiskTest
 						Assert.assertEquals(
 							"kept=" + kept + " pins=" + pins,
 							rebuildViaAssess(loadout, spec, kept, pins),
-							PvpRisk.risksRebuild(loadout, spec, kept, pins));
+							risksRebuild(loadout, spec, kept, pins));
 					}
 				}
 			}
@@ -432,7 +447,7 @@ public class PvpRiskTest
 		// The lean protect-only path must agree with risksRebuild for the
 		// pure-friction case (no user flags).
 		Assert.assertEquals(
-			PvpRisk.risksRebuild(salveSet, null, 3, noPins),
+			risksRebuild(salveSet, null, 3, noPins),
 			PvpRisk.risksUnprotected(salveSet, null, 3, noPins, noPins));
 	}
 

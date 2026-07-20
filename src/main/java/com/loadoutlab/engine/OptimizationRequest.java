@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
@@ -8,71 +9,95 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public final class OptimizationRequest
+/**
+ * An optimizer request. Effectively immutable: the with- helpers never
+ * mutate a live instance, they clone and overwrite one field on the fresh
+ * copy before it escapes.
+ *
+ * <p>THREAD SAFETY: the fields are deliberately non-final so that
+ * {@link #copy()} (a single {@code Object.clone()}) can serve all 14
+ * with- helpers in O(1) instead of an O(fields) hand-written mirror.
+ * Dropping {@code final} forfeits the JMM's final-field safe-publication
+ * guarantee, so publication must be established some other way. It is:
+ * requests are always built on the coordinating thread and reach worker
+ * threads through {@code ExecutorService.invokeAll} or a single-thread
+ * executor, both of which establish happens-before between the submitting
+ * and the executing thread. There is no {@code parallelStream}, ForkJoin,
+ * or {@code CompletableFuture} anywhere in src/main. If the optimizer
+ * ever adopts those, this constraint becomes load-bearing and the fields
+ * must go back to final (see DECISIONS.md).
+ */
+public final class OptimizationRequest implements Cloneable
 {
-	private final MonsterStats monster;
-	private final CombatStyle style;
-	private final PlayerLevels levels;
-	private final PrayerBonuses prayers;
-	private final SpellStats spell;
-	private final int budget;
-	private final CandidateMode candidateMode;
-	private final boolean includeUntradeables;
-	private final boolean onSlayerTask;
-	private final OwnedItems ownedItems;
-	private final RequirementProfile requirementProfile;
-	private final int resultLimit;
+	@Getter
+	private MonsterStats monster;
+	@Getter
+	private CombatStyle style;
+	@Getter
+	private PlayerLevels levels;
+	@Getter
+	private PrayerBonuses prayers;
+	@Getter
+	private SpellStats spell;
+	@Getter
+	private int budget;
+	@Getter
+	private CandidateMode candidateMode;
+	@Getter
+	private boolean includeUntradeables;
+	@Getter
+	private boolean onSlayerTask;
+	@Getter
+	private OwnedItems ownedItems;
+	@Getter
+	private RequirementProfile requirementProfile;
+	@Getter
+	private int resultLimit;
 	/** Item ids the player has excluded ("protect my dragon darts") -
 	 * never suggested in any slot, ammo pick, dart tier, or spec. */
-	private final Set<Integer> excludedItems;
+	@Getter
+	private Set<Integer> excludedItems;
 	/** Lock auto-spell selection to one spellbook ("standard"/"ancient"/
 	 * "arceuus"); empty = any. Powered staves are unaffected. */
-	private final String spellbookLock;
+	@Getter
+	private String spellbookLock;
 	/** Wilderness risk cap: at most this many tradeable items in the set
 	 * (they become the items kept on death); -1 = unconstrained. */
-	private final int maxTradeables;
+	@Getter
+	private int maxTradeables;
 	/** Wilderness risk budget in gp for THIS request (see
 	 * DEFAULT_RISK_BUDGET_GP for the semantics); only consulted when
 	 * risk-constrained. */
-	private final int riskBudgetGp;
+	@Getter
+	private int riskBudgetGp;
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
-	private final boolean antifirePotion;
+	@Getter
+	private boolean antifirePotion;
 	/** Dream items: unowned gear considered as owned. */
-	private final Set<Integer> dreamItems;
+	private Set<Integer> dreamItems;
 	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
 	 * 0 = pure offense (default), higher trades damage for safety. */
-	private final double defenseWeight;
+	@Getter
+	private double defenseWeight;
 	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
 	 * of slaughter class - value the model cannot price). A pinned slot
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
 	 * vetoes all yield to the pin, while risk totals stay honest. */
-	private final Map<GearSlot, Integer> pinnedItems;
+	@Getter
+	private Map<GearSlot, Integer> pinnedItems;
 	/** Items the player will bring ONLY if protected on death - a low-risk
 	 * set that leaves one in the lost pile is vetoed (same as the salve-line
 	 * friction veto, but user-chosen). Empty = no such constraint. */
-	private final Set<Integer> protectOnlyItems;
+	/** Items to bring only when protected on death (see the field doc). */
+	@Getter
+	private Set<Integer> protectOnlyItems;
 	/** True when the fight happens IN the Wilderness - gates the wilderness
 	 * weapon +50% passive. Defaults to whether the monster exists nowhere
 	 * else (revs, the boss ring); shared-name monsters (Catacombs
 	 * hellhounds...) take the user's panel toggle via the wither. */
-	private final boolean inWilderness;
-
-	public OptimizationRequest(
-		MonsterStats monster,
-		CombatStyle style,
-		PlayerLevels levels,
-		PrayerBonuses prayers,
-		SpellStats spell,
-		int budget,
-		CandidateMode candidateMode,
-		boolean includeUntradeables,
-		boolean onSlayerTask,
-		OwnedItems ownedItems,
-		int resultLimit)
-	{
-		this(monster, style, levels, prayers, spell, budget, candidateMode, includeUntradeables, onSlayerTask, ownedItems, RequirementProfile.MAXED, resultLimit);
-	}
+	@Getter
+	private boolean inWilderness;
 
 	public OptimizationRequest(
 		MonsterStats monster,
@@ -113,111 +138,37 @@ public final class OptimizationRequest
 	}
 
 	/**
-	 * Copy-on-write core for the with- helpers: a Copy captures every
-	 * field of a base request, the helper overwrites the one it changes,
-	 * and build() re-normalizes exactly what the old copy constructor
-	 * normalized (null lock/sets). Adding a field means one line here and
-	 * one in the constructor below - not re-threading every helper.
+	 * Copy-on-write core for the with- helpers: clone captures every field
+	 * at once, the helper overwrites the one it changes, and the fresh
+	 * instance is what escapes. Adding a field costs nothing here.
 	 */
-	private static final class Copy
+	private OptimizationRequest copy()
 	{
-		private MonsterStats monster;
-		private CombatStyle style;
-		private PlayerLevels levels;
-		private PrayerBonuses prayers;
-		private SpellStats spell;
-		private int budget;
-		private CandidateMode candidateMode;
-		private boolean includeUntradeables;
-		private boolean onSlayerTask;
-		private OwnedItems ownedItems;
-		private RequirementProfile requirementProfile;
-		private int resultLimit;
-		private Set<Integer> excludedItems;
-		private String spellbookLock;
-		private int maxTradeables;
-		private int riskBudgetGp;
-		private boolean antifirePotion;
-		private Set<Integer> dreamItems;
-		private double defenseWeight;
-		private Map<GearSlot, Integer> pinnedItems;
-		private Set<Integer> protectOnlyItems;
-		private boolean inWilderness;
-
-		private Copy(OptimizationRequest base)
+		try
 		{
-			monster = base.monster;
-			style = base.style;
-			levels = base.levels;
-			prayers = base.prayers;
-			spell = base.spell;
-			budget = base.budget;
-			candidateMode = base.candidateMode;
-			includeUntradeables = base.includeUntradeables;
-			onSlayerTask = base.onSlayerTask;
-			ownedItems = base.ownedItems;
-			requirementProfile = base.requirementProfile;
-			resultLimit = base.resultLimit;
-			excludedItems = base.excludedItems;
-			spellbookLock = base.spellbookLock;
-			maxTradeables = base.maxTradeables;
-			riskBudgetGp = base.riskBudgetGp;
-			antifirePotion = base.antifirePotion;
-			dreamItems = base.dreamItems;
-			defenseWeight = base.defenseWeight;
-			pinnedItems = base.pinnedItems;
-			protectOnlyItems = base.protectOnlyItems;
-			inWilderness = base.inWilderness;
+			return (OptimizationRequest) super.clone();
 		}
-
-		private OptimizationRequest build()
+		catch (CloneNotSupportedException e)
 		{
-			return new OptimizationRequest(this);
+			// Unreachable: the class implements Cloneable.
+			throw new AssertionError(e);
 		}
 	}
 
-	private OptimizationRequest(Copy copy)
+	/** Null-normalisation for the set-valued withers (a null argument from
+	 * the panel means "no constraint", never a null field). Both public
+	 * constructors already set these non-null, so the withers are the only
+	 * door a null can come through. */
+	private static <T> Set<T> orEmpty(Set<T> set)
 	{
-		this.monster = copy.monster;
-		this.style = copy.style;
-		this.levels = copy.levels;
-		this.prayers = copy.prayers;
-		this.spell = copy.spell;
-		this.budget = copy.budget;
-		this.candidateMode = copy.candidateMode;
-		this.includeUntradeables = copy.includeUntradeables;
-		this.onSlayerTask = copy.onSlayerTask;
-		this.ownedItems = copy.ownedItems;
-		this.requirementProfile = copy.requirementProfile;
-		this.resultLimit = copy.resultLimit;
-		this.excludedItems = copy.excludedItems == null ? Collections.emptySet() : copy.excludedItems;
-		this.spellbookLock = copy.spellbookLock == null ? "" : copy.spellbookLock;
-		this.maxTradeables = copy.maxTradeables;
-		this.riskBudgetGp = copy.riskBudgetGp;
-		this.antifirePotion = copy.antifirePotion;
-		this.dreamItems = copy.dreamItems == null ? Collections.emptySet() : copy.dreamItems;
-		this.defenseWeight = copy.defenseWeight;
-		this.pinnedItems = copy.pinnedItems == null ? Collections.emptyMap() : copy.pinnedItems;
-		this.protectOnlyItems = copy.protectOnlyItems == null ? Collections.emptySet() : copy.protectOnlyItems;
-		this.inWilderness = copy.inWilderness;
-	}
-
-	public Set<Integer> getExcludedItems()
-	{
-		return excludedItems;
-	}
-
-	/** Items to bring only when protected on death (see the field doc). */
-	public Set<Integer> getProtectOnlyItems()
-	{
-		return protectOnlyItems;
+		return set == null ? Collections.emptySet() : set;
 	}
 
 	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids)
 	{
-		Copy copy = new Copy(this);
-		copy.protectOnlyItems = ids;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.protectOnlyItems = orEmpty(ids);
+		return c;
 	}
 
 	public boolean isExcluded(int itemId)
@@ -227,38 +178,23 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withExcludedItems(Set<Integer> excluded)
 	{
-		Copy copy = new Copy(this);
-		copy.excludedItems = excluded;
-		return copy.build();
-	}
-
-	public String getSpellbookLock()
-	{
-		return spellbookLock;
+		OptimizationRequest c = copy();
+		c.excludedItems = orEmpty(excluded);
+		return c;
 	}
 
 	public OptimizationRequest withSpellbookLock(String spellbook)
 	{
-		Copy copy = new Copy(this);
-		copy.spellbookLock = spellbook;
-		return copy.build();
-	}
-
-	public boolean isAntifirePotion()
-	{
-		return antifirePotion;
+		OptimizationRequest c = copy();
+		c.spellbookLock = spellbook == null ? "" : spellbook;
+		return c;
 	}
 
 	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
 	{
-		Copy copy = new Copy(this);
-		copy.antifirePotion = antifirePotion;
-		return copy.build();
-	}
-
-	public int getMaxTradeables()
-	{
-		return maxTradeables;
+		OptimizationRequest c = copy();
+		c.antifirePotion = antifirePotion;
+		return c;
 	}
 
 	public boolean isRiskConstrained()
@@ -277,23 +213,18 @@ public final class OptimizationRequest
 	 */
 	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
 
-	public int getRiskBudgetGp()
-	{
-		return riskBudgetGp;
-	}
-
 	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
 	{
-		Copy copy = new Copy(this);
-		copy.riskBudgetGp = riskBudgetGp;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.riskBudgetGp = riskBudgetGp;
+		return c;
 	}
 
 	public OptimizationRequest withMaxTradeables(int maxTradeables)
 	{
-		Copy copy = new Copy(this);
-		copy.maxTradeables = maxTradeables;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.maxTradeables = maxTradeables;
+		return c;
 	}
 
 	public boolean isDream(int itemId)
@@ -303,14 +234,9 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
 	{
-		Copy copy = new Copy(this);
-		copy.dreamItems = dreamItems;
-		return copy.build();
-	}
-
-	public Map<GearSlot, Integer> getPinnedItems()
-	{
-		return pinnedItems;
+		OptimizationRequest c = copy();
+		c.dreamItems = orEmpty(dreamItems);
+		return c;
 	}
 
 	/** The pinned item id for this slot, or null when unpinned. */
@@ -326,46 +252,16 @@ public final class OptimizationRequest
 
 	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems)
 	{
-		Copy copy = new Copy(this);
-		copy.pinnedItems = pinnedItems;
-		return copy.build();
-	}
-
-	public double getDefenseWeight()
-	{
-		return defenseWeight;
+		OptimizationRequest c = copy();
+		c.pinnedItems = pinnedItems == null ? Collections.emptyMap() : pinnedItems;
+		return c;
 	}
 
 	public OptimizationRequest withDefenseWeight(double defenseWeight)
 	{
-		Copy copy = new Copy(this);
-		copy.defenseWeight = defenseWeight;
-		return copy.build();
-	}
-
-	public MonsterStats getMonster()
-	{
-		return monster;
-	}
-
-	public CombatStyle getStyle()
-	{
-		return style;
-	}
-
-	public PlayerLevels getLevels()
-	{
-		return levels;
-	}
-
-	public PrayerBonuses getPrayers()
-	{
-		return prayers;
-	}
-
-	public SpellStats getSpell()
-	{
-		return spell;
+		OptimizationRequest c = copy();
+		c.defenseWeight = defenseWeight;
+		return c;
 	}
 
 	public boolean isAutoSpell()
@@ -373,81 +269,41 @@ public final class OptimizationRequest
 		return spell == null;
 	}
 
-	public int getBudget()
-	{
-		return budget;
-	}
-
-	public CandidateMode getCandidateMode()
-	{
-		return candidateMode;
-	}
-
-	public boolean isIncludeUntradeables()
-	{
-		return includeUntradeables;
-	}
-
-	public boolean isOnSlayerTask()
-	{
-		return onSlayerTask;
-	}
-
-	public OwnedItems getOwnedItems()
-	{
-		return ownedItems;
-	}
-
-	public RequirementProfile getRequirementProfile()
-	{
-		return requirementProfile;
-	}
-
-	public int getResultLimit()
-	{
-		return resultLimit;
-	}
-
 	public OptimizationRequest withStyle(CombatStyle style)
 	{
-		Copy copy = new Copy(this);
-		copy.style = style;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.style = style;
+		return c;
 	}
 
 	public OptimizationRequest withMonster(MonsterStats monster)
 	{
-		Copy copy = new Copy(this);
-		copy.monster = monster;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.monster = monster;
+		return c;
 	}
 
 	public OptimizationRequest withSlayerTask(boolean onSlayerTask)
 	{
-		Copy copy = new Copy(this);
-		copy.onSlayerTask = onSlayerTask;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.onSlayerTask = onSlayerTask;
+		return c;
 	}
 
 	public OptimizationRequest withSpell(SpellStats spell)
 	{
-		Copy copy = new Copy(this);
-		copy.spell = spell;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.spell = spell;
+		return c;
 	}
 
-
-	public boolean isInWilderness()
-	{
-		return inWilderness;
-	}
 
 	/** Override the wilderness default (the panel toggle for shared-name
 	 * monsters like Catacombs hellhounds). */
 	public OptimizationRequest withInWilderness(boolean inWilderness)
 	{
-		Copy copy = new Copy(this);
-		copy.inWilderness = inWilderness;
-		return copy.build();
+		OptimizationRequest c = copy();
+		c.inWilderness = inWilderness;
+		return c;
 	}
 }
