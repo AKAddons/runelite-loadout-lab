@@ -36,6 +36,8 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -400,6 +402,12 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final int ICON_SIZE = 32;
 	/** Discord invite for the plugin's community; opened from the header. */
 	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
+	/** Stamped into the copy-report text so a Discord report names its build.
+	 * Keep in sync with the version in runelite-plugin.properties on release. */
+	private static final String PLUGIN_VERSION = "0.3.1";
+	/** Resting label of the copy-report chip; the flash reverts to exactly
+	 * this, so a rapid double-click can't strand it on "Copied!". */
+	private static final String COPY_REPORT_LABEL = "Copy report";
 	/** Grid display order: weapon beside shield, body beside legs. */
 	static final GearSlot[] GRID_ORDER = {
 		GearSlot.HEAD, GearSlot.CAPE, GearSlot.NECK, GearSlot.AMMO,
@@ -4650,7 +4658,298 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			column.add(legend);
 		}
+		column.add(Box.createVerticalStrut(6));
+		column.add(guidanceNote(entry, selected, bis));
 		return column;
+	}
+
+	/** A soft, muted footnote under EVERY result: a wrapped caption then two
+	 * centered chips - "Copy report" drops a pre-filled issue report (target,
+	 * active parameters, the shown sets + dps) on the clipboard, "Discord"
+	 * opens the invite to paste it into. The caption is a non-editable
+	 * wrapping JTextArea (the notes-editor pattern) so it wraps to the REAL
+	 * panel width - an HTML pixel width was ignored here and clipped the
+	 * sentence on both sides. */
+	private JComponent guidanceNote(ResultEntry entry, CombatStyle selected, boolean bis)
+	{
+		JPanel note = new JPanel();
+		note.setLayout(new BoxLayout(note, BoxLayout.Y_AXIS));
+		note.setOpaque(false);
+		note.setAlignmentX(LEFT_ALIGNMENT);
+
+		JTextArea text = new JTextArea(
+			"Aiming to be comprehensive - cross-check the official calculator "
+				+ "and a guide, then report anything off:");
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
+		text.setEditable(false);
+		text.setFocusable(false);
+		text.setOpaque(false);
+		text.setForeground(MUTED);
+		// JTextArea defaults to a monospaced font; borrow the UI label font so
+		// the caption matches the rest of the panel. One size up (11f) per
+		// field request.
+		text.setFont(new JLabel().getFont().deriveFont(11f));
+		// A row floor so the wrapped lines are never clipped on first paint;
+		// it grows if a narrow panel needs a 5th line (getPreferredSize maxes
+		// content vs rows).
+		text.setRows(4);
+		text.setBorder(BorderFactory.createEmptyBorder(2, 0, 4, 0));
+		text.setAlignmentX(LEFT_ALIGNMENT);
+		note.add(text);
+
+		JLabel copyChip = actionChip(COPY_REPORT_LABEL,
+			"Copy a pre-filled issue report to paste in the Discord", null);
+		copyChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		onClick(copyChip, e -> copyIssueReport(entry, selected, bis, copyChip));
+		JLabel discordChip = actionChip("Discord", "Open the Loadout Lab Discord",
+			() -> LinkBrowser.browse(DISCORD_URL));
+
+		JPanel actions = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+		actions.setOpaque(false);
+		actions.setAlignmentX(LEFT_ALIGNMENT);
+		actions.add(copyChip);
+		actions.add(discordChip);
+		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+			actions.getPreferredSize().height));
+		note.add(actions);
+		return note;
+	}
+
+	/** A quiet outlined action chip (gray text + edge, non-opaque) for the
+	 * guidance footnote's Discord / Copy report actions. */
+	private static JLabel actionChip(String text, String tooltip, Runnable onClick)
+	{
+		return chip(text, false, new Color(170, 170, 170), Font.PLAIN, 10f,
+			ColorScheme.MEDIUM_GRAY_COLOR, 3, 8, tooltip,
+			onClick == null ? null : e -> onClick.run());
+	}
+
+	/** Put the issue report on the system clipboard and flash the chip so the
+	 * user knows it landed (EDT-only; the click arrives on the EDT). */
+	private void copyIssueReport(ResultEntry entry, CombatStyle selected, boolean bis,
+		JLabel chip)
+	{
+		try
+		{
+			Toolkit.getDefaultToolkit().getSystemClipboard()
+				.setContents(new StringSelection(buildIssueReport(entry, selected, bis)), null);
+		}
+		catch (IllegalStateException busy)
+		{
+			// Another app owns the clipboard this instant - leave the label
+			// alone so the user can just click again.
+			return;
+		}
+		chip.setText("Copied!");
+		Timer revert = new Timer(1500, ev -> chip.setText(COPY_REPORT_LABEL));
+		revert.setRepeats(false);
+		revert.start();
+	}
+
+	/** The clipboard payload. Two parts: a reporter-fills-in section at the
+	 * top (bold prompts with an obvious &lt;FILL IN HERE&gt;), then the plugin's
+	 * context (target, the active query parameters, and the shown style's
+	 * Yours/BiS sets with items + dps + boost + spec) fenced off under a "do
+	 * not modify" note. The markers are Discord markdown - bold and a code
+	 * fence - so it renders there; pasted raw elsewhere they still read as
+	 * clear section breaks. All ASCII so it survives any paste target. */
+	private String buildIssueReport(ResultEntry entry, CombatStyle selected, boolean bis)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("**What did I expect?**\n");
+		sb.append("**<FILL IN HERE>**\n\n");
+		sb.append("**What did I see?**\n");
+		sb.append("**<FILL IN HERE>**\n\n");
+		sb.append("*The block below is filled in by Loadout Lab - please do not modify it.*\n");
+		sb.append("```\n");
+		sb.append("Loadout Lab data (v").append(PLUGIN_VERSION).append(")\n");
+
+		sb.append("Target: ");
+		if (entry.mobs.size() > 1)
+		{
+			List<String> labels = new ArrayList<>();
+			for (MonsterStats m : entry.mobs)
+			{
+				labels.add(m.label());
+			}
+			sb.append(entry.mobs.size()).append(" mobs - ")
+				.append(String.join(", ", labels)).append('\n');
+		}
+		else
+		{
+			MonsterStats m = entry.mob();
+			sb.append(m.label()).append(" - ").append(m.getHitpoints()).append(" hp\n");
+		}
+		sb.append("Viewing: ").append(selected).append(" / ")
+			.append(bis ? "Best in game" : "Yours").append('\n');
+
+		appendActiveParams(sb, entry);
+
+		StyleResult r = entry.results.get(selected);
+		sb.append("\n-- ").append(selected).append(" --\n");
+		if (r != null && r.owned != null && !r.owned.isEmpty())
+		{
+			appendSet(sb, "Yours", r.owned.get(0), r.spec, r.specDpsAdded, r.boostLabel);
+		}
+		else
+		{
+			sb.append("Yours: no set\n");
+		}
+		if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
+		{
+			appendSet(sb, "Best in game", r.overallBest, r.gameSpec, r.gameSpecDpsAdded,
+				r.gameBoostLabel);
+		}
+
+		sb.append("\nOther styles (your best dps):");
+		for (CombatStyle s : CombatStyle.concreteValues())
+		{
+			if (s == selected)
+			{
+				continue;
+			}
+			StyleResult sr = entry.results.get(s);
+			double dps = sr != null && sr.owned != null && !sr.owned.isEmpty()
+				? sr.owned.get(0).getDps() : 0;
+			sb.append(' ').append(s).append(' ')
+				.append(dps > 0 ? String.format("%.2f", dps) : "-").append(';');
+		}
+		sb.append("\n```");
+		return sb.toString();
+	}
+
+	/** The active query parameters, mirroring the card's chip row so a report
+	 * says whether it was on task, what upgrade budget/risk cap was set, etc.
+	 * Only the parameters that actually apply to this mob/result are listed,
+	 * same as the chips. */
+	private void appendActiveParams(StringBuilder sb, ResultEntry entry)
+	{
+		MonsterStats mob = entry.mob();
+		List<String> params = new ArrayList<>();
+
+		String[] modeNames = {"Max DPS", "Balanced", "Tanky"};
+		params.add("Optimize: " + modeNames[Math.max(0,
+			Math.min(entry.optimizeMode, modeNames.length - 1))]);
+
+		if (SlayerLockedMonsters.isTaskOnly(mob))
+		{
+			params.add("On task: yes (task-only boss)");
+		}
+		else if (mob.isSlayerMonster())
+		{
+			params.add("On task: " + (entry.onSlayerTask ? "yes" : "no"));
+		}
+
+		boolean exclusive = WildernessMonsters.isExclusive(mob);
+		boolean listed = WildernessMonsters.isWilderness(mob);
+		boolean wild = (exclusive || (listed && entry.inWilderness)) && displayOptions.wildyRisk;
+		if (exclusive)
+		{
+			params.add("Wilderness: yes (exclusive)");
+		}
+		else if (listed)
+		{
+			params.add("Wilderness: " + (entry.inWilderness ? "yes" : "no"));
+		}
+		if (wild)
+		{
+			params.add("Protect item: " + (entry.protectItem ? "yes" : "no"));
+			String risk = entry.riskCap == null ? "" : entry.riskCap.trim();
+			params.add("Risk cap: " + (risk.isEmpty() ? "off" : risk));
+		}
+
+		com.loadoutlab.engine.BoostProfile supplied =
+			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		for (MonsterStats m : entry.mobs)
+		{
+			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			{
+				supplied = null;
+				break;
+			}
+		}
+		if (supplied != null)
+		{
+			params.add(supplied + ": " + (entry.raidBoost ? "assumed" : "own potions"));
+		}
+
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (fiery)
+		{
+			String[] antifire = {"Antifire: gear only", "Antifire: regular assumed",
+				"Antifire: super assumed"};
+			params.add(antifire[Math.max(0, Math.min(entry.antifireMode, antifire.length - 1))]);
+		}
+
+		if (displayOptions.upgradeBudget)
+		{
+			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
+			boolean unlimited = budget.equals("-") || budget.equalsIgnoreCase("max");
+			params.add("Budget: " + (budget.isEmpty() ? "owned gear only"
+				: unlimited ? "unlimited" : budget));
+		}
+
+		if (entry.mobs.size() > 1)
+		{
+			params.add("Inventory: " + entry.maxSwaps);
+		}
+		if (!entry.assumeBestPrayer)
+		{
+			params.add("Prayer: off (prayerless)");
+		}
+		if (!entry.assumeBoosts)
+		{
+			params.add("Boosts: off (unboosted)");
+		}
+
+		sb.append("Parameters:\n");
+		for (String p : params)
+		{
+			sb.append("  ").append(p).append('\n');
+		}
+	}
+
+	/** One set block in the issue report: dps, the worn items in slot order,
+	 * the prayer/boost the numbers assume, and the carried spec if any. */
+	private static void appendSet(StringBuilder sb, String label, DpsResult set,
+		SpecialAttack spec, double specDpsAdded, String boostLabel)
+	{
+		sb.append(label).append(": ").append(String.format("%.2f", set.getDps()))
+			.append(" dps\n");
+		List<String> items = new ArrayList<>();
+		for (GearItem item : set.getLoadout().getGear().values())
+		{
+			if (item != null)
+			{
+				items.add(item.getName());
+			}
+		}
+		if (!items.isEmpty())
+		{
+			sb.append("  ").append(String.join(", ", items)).append('\n');
+		}
+		if (boostLabel != null && !boostLabel.isEmpty())
+		{
+			sb.append("  Assumes: ").append(boostLabel).append('\n');
+		}
+		if (spec != null)
+		{
+			sb.append("  Spec: ").append(spec.getDisplayName());
+			if (specDpsAdded > 0)
+			{
+				sb.append(String.format(" (adds ~%.2f dps)", specDpsAdded));
+			}
+			sb.append('\n');
+		}
 	}
 
 	/** Roster-aware default: the style whose SHARED set averages the best
