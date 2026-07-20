@@ -400,6 +400,28 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean owns(int itemId);
 	}
 
+	/** The grey member of the exclude/sim/filter trio at the GLOBAL level:
+	 * the always-filter item list plus panel-side edits of the wrench
+	 * supply defaults (the config write loops back as a normal refresh). */
+	public interface GlobalFilters
+	{
+		Map<Integer, String> alwaysFiltered();
+
+		void addAlwaysFiltered(int itemId, String name);
+
+		void removeAlwaysFiltered(int itemId);
+
+		void setSupplyDefault(String category, String enumName);
+	}
+
+	private GlobalFilters globalFilters;
+
+	public void setGlobalFilters(GlobalFilters filters)
+	{
+		globalFilters = filters;
+		refreshCountChips();
+	}
+
 	/** The persistent trip-supply defaults (config enum names keyed by
 	 * TripSupplies category); resolved per result in activeSupplies. */
 	private Map<String, String> supplyDefaults = Collections.emptyMap();
@@ -577,6 +599,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JPanel notePanel = new JPanel();
 	private final JLabel excludeCountChip = new JLabel();
 	private final JLabel dreamCountChip = new JLabel();
+	private final JLabel filterCountChip = new JLabel();
 	private final JLabel noteHeader = new JLabel();
 	private final JTextArea noteArea = new JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
@@ -933,8 +956,16 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
 		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		onClick(dreamCountChip, e -> showDreamsMenu(e));
+		filterCountChip.setOpaque(true);
+		filterCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		filterCountChip.setFont(filterCountChip.getFont().deriveFont(Font.BOLD, 12f));
+		filterCountChip.setToolTipText("Bank filters: supply defaults +"
+			+ " always-filtered items - click to manage");
+		filterCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		onClick(filterCountChip, e -> showGlobalFiltersMenu(e));
 		countRow.add(excludeCountChip);
 		countRow.add(dreamCountChip);
+		countRow.add(filterCountChip);
 		top.add(countRow);
 		top.add(Box.createVerticalStrut(4));
 		top.add(searchField);
@@ -2310,6 +2341,14 @@ public class LoadoutLabPanel extends PluginPanel
 			? new Color(130, 200, 130) : new Color(110, 140, 110));
 		dreamCountChip.setBorder(new RoundedBorder(dreams > 0
 			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
+		// The grey member of the trio (field spec 2026-07-20): the always-
+		// filter count; the menu also edits the supply defaults.
+		int filtered = globalFilters == null ? 0 : globalFilters.alwaysFiltered().size();
+		filterCountChip.setText("~" + filtered);
+		filterCountChip.setForeground(filtered > 0
+			? new Color(190, 190, 190) : new Color(130, 130, 130));
+		filterCountChip.setBorder(new RoundedBorder(filtered > 0
+			? new Color(150, 150, 150) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 	}
 
 	/** The dream chip's menu: each dream un-dreamable, plus the add entry. */
@@ -2811,6 +2850,10 @@ public class LoadoutLabPanel extends PluginPanel
 				// The inventory items are part of this trip's kit too.
 				highlightIds.addAll(inventoryIds(style));
 				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+				if (globalFilters != null)
+				{
+					highlightIds.addAll(globalFilters.alwaysFiltered().keySet());
+				}
 				for (TripSupplies.Option supply : supplies)
 				{
 					for (int id : supply.ids)
@@ -2826,6 +2869,12 @@ public class LoadoutLabPanel extends PluginPanel
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+				// The global always-filter list (teleport capes...) joins
+				// every filtered view - the grey trio's global level.
+				if (globalFilters != null)
+				{
+					filterIds.addAll(globalFilters.alwaysFiltered().keySet());
+				}
 				for (TripSupplies.Option supply : supplies)
 				{
 					for (int id : supply.ids)
@@ -4068,27 +4117,19 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> editRiskCap(entry)));
 		}
 		int pinCount = 0;
-		int filterCount = 0;
 		int lensedId = entry.mob().getId();
 		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
 			: mobProfile.allPins(lensedId).values())
 		{
 			pinCount += scoped.size();
 		}
-		for (Map<Integer, String> scoped : mobProfile.allFilterItems(lensedId).values())
-		{
-			filterCount += scoped.size();
-		}
 		if (pinCount > 0)
 		{
 			values.add(pinFilterChip(entry, "Pins: " + pinCount,
 				"Pinned items for this mob - click to manage"));
 		}
-		if (filterCount > 0)
-		{
-			values.add(pinFilterChip(entry, "Filters: " + filterCount,
-				"Bank-filter supplies for this mob - click to manage"));
-		}
+		// The Filters chip retired 2026-07-20: filter items are managed by
+		// the card's grey "Filter here" chip (the exclude/sim/filter trio).
 		if (values.getComponentCount() > 0)
 		{
 			rows.add(values);
@@ -5583,11 +5624,17 @@ public class LoadoutLabPanel extends PluginPanel
 				simCount > 0, false,
 				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
-			int supplyOverrides = mobProfile.supplyOverrides(lensedProfileId).size();
-			localRow.add(localCountChip(
-				supplyOverrides > 0 ? "Supplies: " + supplyOverrides : "Supplies",
-				supplyOverrides > 0, false,
-				"Trip supplies vs " + mobName + " (this mob only) - override the config defaults",
+			int filterHere = mobProfile.supplyOverrides(lensedProfileId).size();
+			for (Map<Integer, String> scopedItems
+				: mobProfile.allFilterItems(lensedProfileId).values())
+			{
+				filterHere += scopedItems.size();
+			}
+			localRow.add(localGreyChip(
+				filterHere > 0 ? "Filter here: " + filterHere : "Filter here",
+				filterHere > 0,
+				"Bank filters vs " + mobName + " (this mob only) - supply"
+					+ " overrides and always-at-hand items",
 				() -> asActive(entry, () -> manageSupplyOverrides(entry, lensedProfileId, mobName))));
 			card.add(Box.createVerticalStrut(4));
 			card.add(localRow);
@@ -5647,6 +5694,17 @@ public class LoadoutLabPanel extends PluginPanel
 				? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
 				: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
 			e -> onClick.run());
+	}
+
+	/** The grey twin of localCountChip for the trio's filter member. */
+	private JComponent localGreyChip(String text, boolean active,
+		String tooltip, Runnable onClick)
+	{
+		return chip(text, true,
+			active ? new Color(190, 190, 190) : new Color(130, 130, 130),
+			Font.BOLD, 11f,
+			active ? new Color(150, 150, 150) : ColorScheme.MEDIUM_GRAY_COLOR,
+			2, 7, tooltip, e -> onClick.run());
 	}
 
 	/** The local exclusions manager: current entries with click-to-allow,
@@ -5735,22 +5793,78 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
-	/** The per-mob supply override menu (field spec 2026-07-20: works like
-	 * the exclude/sim locals): one submenu per category - Default (wrench
-	 * panel) / Detect best / None / each tier - the checked entry showing
-	 * what THIS mob currently uses. Overrides persist in the mob profile. */
+	/** The supply categories in menu order (shared by the global chip and
+	 * the per-mob Filter here menus). */
+	private static final String[][] SUPPLY_CATEGORIES = {
+		{TripSupplies.FOOD, "Food"},
+		{TripSupplies.FAST_FOOD, "Fast food"},
+		{TripSupplies.PRAYER_RESTORE, "Prayer restore"},
+		{TripSupplies.SURGE, "Surge potion"},
+		{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
+		{TripSupplies.ANTIVENOM, "Anti-venom"}};
+
+	/** The GLOBAL grey chip's menu: the six supply defaults (writing the
+	 * wrench config directly - the change loops back as a normal config
+	 * refresh) plus the always-filter item list. */
+	private void showGlobalFiltersMenu(MouseEvent e)
+	{
+		if (globalFilters == null)
+		{
+			return;
+		}
+		JPopupMenu menu = new JPopupMenu();
+		for (String[] cat : SUPPLY_CATEGORIES)
+		{
+			String current = supplyDefaults.get(cat[0]);
+			JMenu sub = new JMenu(cat[1]);
+			supplyDefaultChoice(sub, cat[0], "DETECT_BEST",
+				"Detect best", ("DETECT_BEST".equals(current) || "DETECT".equals(current)));
+			supplyDefaultChoice(sub, cat[0], "NONE", "None", "NONE".equals(current));
+			for (TripSupplies.Option option : TripSupplies.options(cat[0]))
+			{
+				supplyDefaultChoice(sub, cat[0], option.key, option.name,
+					option.key.equals(current));
+			}
+			menu.add(sub);
+		}
+		menu.addSeparator();
+		menuItem(menu, "Always filter an item...", ev ->
+			itemSearch.search("Always filter (every bank view)", (itemId, name) ->
+		{
+			globalFilters.addAlwaysFiltered(itemId, name);
+			refreshCountChips();
+			reapplyBankViews();
+		}));
+		Map<Integer, String> always = globalFilters.alwaysFiltered();
+		for (Map.Entry<Integer, String> item : always.entrySet())
+		{
+			menuItem(menu, "Stop filtering: " + item.getValue(), ev ->
+			{
+				globalFilters.removeAlwaysFiltered(item.getKey());
+				refreshCountChips();
+				reapplyBankViews();
+			});
+		}
+		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
+	}
+
+	private void supplyDefaultChoice(JMenu sub, String category, String enumName,
+		String label, boolean selected)
+	{
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		item.addActionListener(a -> globalFilters.setSupplyDefault(category, enumName));
+		sub.add(item);
+	}
+
+	/** The per-mob grey menu (field spec 2026-07-20: the trio's third
+	 * member, "works exactly like exclude/sim here"): supply overrides per
+	 * category - Default (config) / Detect best / None / each tier - plus
+	 * the free-form filter items for this mob. */
 	private void manageSupplyOverrides(ResultEntry entry, int profileId, String mobName)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		String[][] categories = {
-			{TripSupplies.FOOD, "Food"},
-			{TripSupplies.FAST_FOOD, "Fast food"},
-			{TripSupplies.PRAYER_RESTORE, "Prayer restore"},
-			{TripSupplies.SURGE, "Surge potion"},
-			{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
-			{TripSupplies.ANTIVENOM, "Anti-venom"}};
 		Map<String, String> overrides = mobProfile.supplyOverrides(profileId);
-		for (String[] cat : categories)
+		for (String[] cat : SUPPLY_CATEGORIES)
 		{
 			String current = overrides.get(cat[0]);
 			JMenu sub = new JMenu(cat[1] + (current != null ? " (custom)" : ""));
@@ -5766,6 +5880,26 @@ public class LoadoutLabPanel extends PluginPanel
 					option.name, option.key.equals(current));
 			}
 			menu.add(sub);
+		}
+		menu.addSeparator();
+		menuItem(menu, "Filter an item vs " + mobName + "...",
+			e -> itemSearch.search("Filter vs " + mobName + " (this mob's bank view)",
+			(itemId, name) ->
+		{
+			mobProfile.addFilterItem(profileId, ALL_SETS, itemId, name);
+			reapplyBankViews();
+		}));
+		Map<String, Map<Integer, String>> scoped = mobProfile.allFilterItems(profileId);
+		for (Map.Entry<String, Map<Integer, String>> scope : scoped.entrySet())
+		{
+			for (Map.Entry<Integer, String> item : scope.getValue().entrySet())
+			{
+				menuItem(menu, "Stop filtering: " + item.getValue(), ev ->
+				{
+					mobProfile.removeFilterItem(profileId, scope.getKey(), item.getKey());
+					reapplyBankViews();
+				});
+			}
 		}
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);

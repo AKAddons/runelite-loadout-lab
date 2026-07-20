@@ -353,9 +353,13 @@ it. Uses the core Bank Tags plugin.
 
 ### Trip supplies
 
-Persistent defaults for the food, fast food, prayer restore, surge
-potion, spellbook-swap cape and anti-venom every trip brings (wrench
-panel, Controls section). Detect best picks the highest tier your
+Excludes, sims and bank filters form a trio - red, green and grey - at
+two levels: global chips above the search bar, and per-mob "here" chips
+on every card that override the global level. The grey member manages
+the trip kit: persistent defaults for the food, fast food, prayer
+restore, surge potion, spellbook-swap cape and anti-venom every trip
+brings, plus an always-filter list for items like teleport capes that
+belong in every bank view. Detect best picks the highest tier your
 collection has; anti-venom only joins the kit against monsters that can
 actually inflict venom (Zulrah, Araxxor, Vorkath and friends). Chosen
 supplies ride the result card's consumable cells, the bank filter (every

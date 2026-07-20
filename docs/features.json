@@ -403,15 +403,20 @@
    "media": "docs/img/trip-supplies.png",
    "code": [
     "data/TripSupplies.java",
-    "LoadoutLabConfig.java",
+    "collection/SupplyDefaultsStore.java",
+    "collection/AlwaysFilterStore.java",
+    "collection/MonsterProfileStore.java",
     "LoadoutLabPlugin.java",
     "ui/LoadoutLabPanel.java"
    ],
    "tests": [
-    "data/TripSuppliesTest.java"
+    "data/TripSuppliesTest.java",
+    "collection/AlwaysFilterStoreTest.java",
+    "collection/SupplyDefaultsStoreTest.java",
+    "collection/MonsterProfileStoreTest.java"
    ],
    "since": "0.3.3",
-   "capture": "Wrench panel Controls section showing the five supply dropdowns (Food: Detect best...), beside a result card whose consumable cells show the detected food + prayer restore. Single PNG screenshot."
+   "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot."
   }
  ]
 }

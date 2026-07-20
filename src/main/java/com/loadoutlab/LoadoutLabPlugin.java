@@ -187,6 +187,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
 	private com.loadoutlab.collection.MonsterProfileStore mobProfiles;
+	private com.loadoutlab.collection.AlwaysFilterStore alwaysFilter;
+	private com.loadoutlab.collection.SupplyDefaultsStore supplyDefaults;
 	private DwmsImport dwmsImport;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
@@ -346,6 +348,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
+		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
+		supplyDefaults = new com.loadoutlab.collection.SupplyDefaultsStore(configManager, gson);
 		dwmsImport = new DwmsImport(configManager);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
@@ -422,6 +426,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
 				panel.setSupplyDefaults(buildSupplyDefaults());
+				panel.setGlobalFilters(globalFiltersView());
 				panel.setDeveloperMode(developerMode);
 				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
 				panel.setMonsterIcons(monsterIcons);
@@ -549,21 +554,67 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap",
-		"supplyFood", "supplyFastFood", "supplyPrayerRestore", "supplySurge",
-		"supplySpellbookCape", "supplyAntivenom");
+		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
 
-	/** The persistent trip-supply defaults (config enum names keyed by
-	 * TripSupplies category) - the panel resolves them per result. */
+	/** The panel's grey-trio hook: the global always-filter list plus
+	 * wrench-panel supply defaults editable straight from the chip menu
+	 * (the config write loops back through PANEL_CONFIG_KEYS, so the
+	 * panel refreshes exactly like a wrench edit). */
+	private LoadoutLabPanel.GlobalFilters globalFiltersView()
+	{
+		return new LoadoutLabPanel.GlobalFilters()
+		{
+			@Override
+			public Map<Integer, String> alwaysFiltered()
+			{
+				return alwaysFilter == null ? Map.of() : alwaysFilter.all();
+			}
+
+			@Override
+			public void addAlwaysFiltered(int itemId, String name)
+			{
+				alwaysFilter.add(itemId, name);
+			}
+
+			@Override
+			public void removeAlwaysFiltered(int itemId)
+			{
+				alwaysFilter.remove(itemId);
+			}
+
+			@Override
+			public void setSupplyDefault(String category, String enumName)
+			{
+				supplyDefaults.setChoice(category, enumName);
+				SwingUtilities.invokeLater(() ->
+				{
+					if (panel != null)
+					{
+						panel.setSupplyDefaults(buildSupplyDefaults());
+					}
+				});
+			}
+		};
+	}
+
+	/** The persistent trip-supply defaults (choice keys by TripSupplies
+	 * category) - store-backed, every category DETECT_BEST until the grey
+	 * chip's menu changes it. The panel resolves them per result. */
 	private Map<String, String> buildSupplyDefaults()
 	{
 		Map<String, String> defaults = new LinkedHashMap<>();
-		defaults.put(com.loadoutlab.data.TripSupplies.FOOD, config.supplyFood().name());
-		defaults.put(com.loadoutlab.data.TripSupplies.FAST_FOOD, config.supplyFastFood().name());
-		defaults.put(com.loadoutlab.data.TripSupplies.PRAYER_RESTORE, config.supplyPrayerRestore().name());
-		defaults.put(com.loadoutlab.data.TripSupplies.SURGE, config.supplySurge().name());
-		defaults.put(com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE, config.supplySpellbookCape().name());
-		defaults.put(com.loadoutlab.data.TripSupplies.ANTIVENOM, config.supplyAntivenom().name());
+		for (String category : new String[]{
+			com.loadoutlab.data.TripSupplies.FOOD,
+			com.loadoutlab.data.TripSupplies.FAST_FOOD,
+			com.loadoutlab.data.TripSupplies.PRAYER_RESTORE,
+			com.loadoutlab.data.TripSupplies.SURGE,
+			com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE,
+			com.loadoutlab.data.TripSupplies.ANTIVENOM})
+		{
+			defaults.put(category, supplyDefaults == null
+				? com.loadoutlab.collection.SupplyDefaultsStore.DETECT_BEST
+				: supplyDefaults.choice(category));
+		}
 		return defaults;
 	}
 
@@ -612,6 +663,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		if (mobProfiles != null)
 		{
 			mobProfiles.reload();
+		}
+		if (alwaysFilter != null)
+		{
+			alwaysFilter.reload();
+		}
+		if (supplyDefaults != null)
+		{
+			supplyDefaults.reload();
 		}
 		// Undo entries captured against the previous profile's stores must
 		// never replay into this one. The stack is EDT-owned - hop over.
