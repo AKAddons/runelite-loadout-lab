@@ -136,7 +136,7 @@ public class LinkInTest
 			(prompt, onPicked) -> { },
 			itemId -> true,
 			ids -> { },
-			ids -> { });
+			(ids, layout) -> { });
 	}
 
 	@Test

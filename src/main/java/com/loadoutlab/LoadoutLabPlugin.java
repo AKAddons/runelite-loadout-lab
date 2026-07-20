@@ -68,6 +68,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.plugins.banktags.TagManager;
 import net.runelite.client.plugins.banktags.BankTagsService;
+import net.runelite.client.plugins.banktags.tabs.Layout;
+import net.runelite.client.plugins.banktags.tabs.LayoutManager;
 import net.runelite.client.game.chatbox.ChatboxItemSearch;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.events.ConfigChanged;
@@ -133,6 +135,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	@Inject
 	private TagManager tagManager;
+
+	@Inject
+	private LayoutManager layoutManager;
 
 	@Inject
 	private SpriteManager spriteManager;
@@ -424,6 +429,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		}
 		bankHighlight = null;
 		bankFilter = null;
+		layoutManager.removeLayout(BANK_TAG);
 		tagManager.unregisterTag(BANK_TAG);
 		if (navButton != null)
 		{
@@ -1553,8 +1559,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		bankHighlight = expanded;
 	}
 
-	/** Panel hook: filter the open bank to these ids via a virtual tag. */
-	private void setBankFilter(Set<Integer> itemIds)
+	/** Panel hook: filter the open bank to these ids via a virtual tag, and -
+	 * when {@code layout} is non-null - arrange the set in the bank in the
+	 * equipment + inventory shape (a bank-tag layout position array). */
+	private void setBankFilter(Set<Integer> itemIds, int[] layout)
 	{
 		if (itemIds == null || itemIds.isEmpty() || data == null)
 		{
@@ -1565,6 +1573,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				{
 					bankTagsService.closeBankTag();
 				}
+				layoutManager.removeLayout(BANK_TAG);
 				tagManager.unregisterTag(BANK_TAG);
 			});
 			return;
@@ -1582,8 +1591,17 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				Set<Integer> ids = bankFilter;
 				return ids != null && ids.contains(itemId);
 			});
-			bankTagsService.openBankTag(BANK_TAG,
-				BankTagsService.OPTION_NO_LAYOUT);
+			if (layout != null)
+			{
+				layoutManager.saveLayout(new Layout(BANK_TAG, layout));
+				bankTagsService.openBankTag(BANK_TAG, 0);
+			}
+			else
+			{
+				layoutManager.removeLayout(BANK_TAG);
+				bankTagsService.openBankTag(BANK_TAG,
+					BankTagsService.OPTION_NO_LAYOUT);
+			}
 		});
 	}
 

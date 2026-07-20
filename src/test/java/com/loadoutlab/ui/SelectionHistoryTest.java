@@ -143,7 +143,7 @@ public class SelectionHistoryTest
 			(prompt, onPicked) -> { },
 			itemId -> true,
 			ids -> { },
-			ids -> { });
+			(ids, layout) -> { });
 	}
 
 	/** A HistoryControl over a real CommandHistory - the plugin's wiring. */

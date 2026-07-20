@@ -43,6 +43,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -391,10 +392,12 @@ public class LoadoutLabPanel extends PluginPanel
 		void highlight(Set<Integer> itemIds);
 	}
 
-	/** "Filter bank": show only these item ids in the bank (null clears). */
+	/** "Filter bank": show only these item ids in the bank (null clears), laid
+	 * out in the set's shape when {@code layout} is non-null - a bank-tag
+	 * position array (index = bank slot, value = item id, -1 = empty). */
 	public interface BankFilter
 	{
-		void filter(Set<Integer> itemIds);
+		void filter(Set<Integer> itemIds, int[] layout);
 	}
 
 	private static final int SEARCH_DEBOUNCE_MS = 150;
@@ -1561,7 +1564,7 @@ public class LoadoutLabPanel extends PluginPanel
 		lastHighlightIds = null;
 		lastFilterIds = null;
 		bankHighlighter.highlight(null);
-		bankFilter.filter(null);
+		bankFilter.filter(null, null);
 		applyActiveMonsterUi(first);
 		usageLog.record(group.getName());
 		setNoteCollapsed(mobProfile.note(first.getId()).isEmpty());
@@ -1623,7 +1626,7 @@ public class LoadoutLabPanel extends PluginPanel
 		lastHighlightIds = null;
 		lastFilterIds = null;
 		bankHighlighter.highlight(null);
-		bankFilter.filter(null);
+		bankFilter.filter(null, null);
 		applyActiveMonsterUi(monster);
 		usageLog.record(monster.label());
 		// A new mob: its own note state.
@@ -2701,6 +2704,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		Set<Integer> highlightIds = null;
 		Set<Integer> filterIds = null;
+		int[] filterLayout = null;
 		if (best != null)
 		{
 			if (bankShowing)
@@ -2733,6 +2737,11 @@ public class LoadoutLabPanel extends PluginPanel
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+				// Arrange the set in the bank like the in-game equipment +
+				// inventory tabs. Pass the full membership so EVERY filtered
+				// item is placed (an unplaced member would be shoved into the
+				// cross's blank corners by the bank-tag layout).
+				filterLayout = buildBankLayout(style, best, specWeapon, filterIds);
 			}
 		}
 		if (!Objects.equals(highlightIds, lastHighlightIds))
@@ -2743,8 +2752,100 @@ public class LoadoutLabPanel extends PluginPanel
 		if (!Objects.equals(filterIds, lastFilterIds))
 		{
 			lastFilterIds = filterIds;
-			bankFilter.filter(filterIds);
+			bankFilter.filter(filterIds, filterLayout);
 		}
+	}
+
+	/** The set's bank-tag layout: the equipment cross (CLASSIC_ORDER on the
+	 * 8-wide bank grid, cols 0-2, spec weapon in its slot) and the carried
+	 * inventory 4-wide below a gap row, mirroring the in-game equipment and
+	 * inventory tabs. Positions RuneLite doesn't fill stay -1 (blank). The
+	 * matcher maps owned variants; unowned pieces render as faded placeholders. */
+	private int[] buildBankLayout(CombatStyle style, DpsResult best, GearItem specWeapon,
+		Set<Integer> members)
+	{
+		int specId = specWeapon != null ? specWeapon.getId() : -1;
+		Map<Integer, Integer> place = new LinkedHashMap<>();
+		Set<Integer> crossIds = new HashSet<>();
+		for (int i = 0; i < CLASSIC_ORDER.length; i++)
+		{
+			int pos = (i / 3) * 8 + (i % 3);
+			if (i == CLASSIC_SPEC_INDEX)
+			{
+				if (specId != -1)
+				{
+					place.put(pos, specId);
+					crossIds.add(specId);
+				}
+			}
+			else if (CLASSIC_ORDER[i] != null)
+			{
+				GearItem worn = best.getLoadout().get(CLASSIC_ORDER[i]);
+				if (worn == null && CLASSIC_ORDER[i] == GearSlot.AMMO)
+				{
+					worn = loadedDart(best);
+				}
+				if (worn != null)
+				{
+					place.put(pos, worn.getId());
+					crossIds.add(worn.getId());
+				}
+			}
+		}
+		// The inventory grid (4-wide, two rows below the cross) holds EVERY
+		// remaining tag member: carried swaps first (bench order), then the
+		// assumed consumables and the mob's supplies. Laying out all of them
+		// is deliberate - an unplaced member gets shoved into the cross's
+		// blank corners by RuneLite's bank-tag layout.
+		LinkedHashSet<Integer> inv = new LinkedHashSet<>(orderedInventoryIds(style, specId));
+		if (members != null)
+		{
+			inv.addAll(members);
+		}
+		inv.removeAll(crossIds);
+		int k = 0;
+		for (int id : inv)
+		{
+			place.put((6 + k / 4) * 8 + (k % 4), id);
+			k++;
+		}
+		int maxPos = 0;
+		for (int pos : place.keySet())
+		{
+			maxPos = Math.max(maxPos, pos);
+		}
+		int[] arr = new int[maxPos + 1];
+		Arrays.fill(arr, -1);
+		for (Map.Entry<Integer, Integer> e : place.entrySet())
+		{
+			arr[e.getKey()] = e.getValue();
+		}
+		return arr;
+	}
+
+	/** The carried inventory ids for the layout, in bench order then
+	 * consumables, skipping the spec weapon (it sits in the equipment cross). */
+	private List<Integer> orderedInventoryIds(CombatStyle style, int excludeId)
+	{
+		List<Integer> ids = new ArrayList<>();
+		if (active == null || active.results == null)
+		{
+			return ids;
+		}
+		StyleResult r = active.results.get(style);
+		if (r == null)
+		{
+			return ids;
+		}
+		for (GearItem item : active.viewingBis ? r.gameBench : r.bench)
+		{
+			if (item.getId() != excludeId)
+			{
+				ids.add(item.getId());
+			}
+		}
+		ids.addAll(consumableIds(active, r, active.viewingBis));
+		return ids;
 	}
 
 	/** Recompute the selected monster (the Connections toggle changes
