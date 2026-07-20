@@ -316,6 +316,121 @@ public interface LoadoutLabConfig extends Config
 		return AntifireDefault.DETECT;
 	}
 
+	// --- Trip supplies (keys match TripSupplies option keys) --------------
+
+	enum FoodDefault
+	{
+		DETECT_BEST, NONE, MOONLIGHT_ANTELOPE, MARLIN, DASHING_KEBBIT,
+		ANGLERFISH, DARK_CRAB, MANTA_RAY, TUNA_POTATO, SHARK
+	}
+
+	@ConfigItem(
+		keyName = "supplyFood",
+		name = "Food",
+		description = "The food every trip brings: Detect best picks the"
+			+ " highest-healing food your collection has",
+		section = controls,
+		position = 94
+	)
+	default FoodDefault supplyFood()
+	{
+		return FoodDefault.DETECT_BEST;
+	}
+
+	enum FastFoodDefault
+	{
+		DETECT_BEST, NONE, KARAMBWAN, HALIBUT
+	}
+
+	@ConfigItem(
+		keyName = "supplyFastFood",
+		name = "Fast food",
+		description = "The combo/fast food every trip brings (karambwan"
+			+ " combo-eats, halibut eats without delay after other food)",
+		section = controls,
+		position = 95
+	)
+	default FastFoodDefault supplyFastFood()
+	{
+		return FastFoodDefault.DETECT_BEST;
+	}
+
+	enum PrayerRestoreDefault
+	{
+		DETECT_BEST, NONE, SUPER_RESTORE, SANFEW_SERUM, PRAYER_POTION,
+		PRAYER_REGENERATION
+	}
+
+	@ConfigItem(
+		keyName = "supplyPrayerRestore",
+		name = "Prayer restore",
+		description = "The prayer restore every trip brings: Detect best"
+			+ " prefers super restore, then sanfew, then prayer potion",
+		section = controls,
+		position = 96
+	)
+	default PrayerRestoreDefault supplyPrayerRestore()
+	{
+		return PrayerRestoreDefault.DETECT_BEST;
+	}
+
+	enum SurgeDefault
+	{
+		NONE, DETECT
+	}
+
+	@ConfigItem(
+		keyName = "supplySurge",
+		name = "Surge potion",
+		description = "Bring a surge potion (special attack restore) when"
+			+ " your collection has one",
+		section = controls,
+		position = 97
+	)
+	default SurgeDefault supplySurge()
+	{
+		return SurgeDefault.NONE;
+	}
+
+	enum SpellbookCapeDefault
+	{
+		NONE, DETECT_BEST, MAX_CAPE, MAGIC_CAPE
+	}
+
+	@ConfigItem(
+		keyName = "supplySpellbookCape",
+		name = "Spellbook swap cape",
+		description = "Bring a max or magic cape for its spellbook-swap"
+			+ " perk (up to five swaps a day): Detect best prefers the max"
+			+ " cape when your collection has one",
+		section = controls,
+		position = 99
+	)
+	default SpellbookCapeDefault supplySpellbookCape()
+	{
+		return SpellbookCapeDefault.NONE;
+	}
+
+	enum AntivenomDefault
+	{
+		DETECT_BEST, NONE, EXTENDED_ANTIVENOM, ANTIVENOM_PLUS, ANTIVENOM,
+		ANTIDOTE_PP
+	}
+
+	@ConfigItem(
+		keyName = "supplyAntivenom",
+		name = "Anti-venom",
+		description = "The venom protection brought against venomous"
+			+ " monsters (Zulrah, Araxxor, Vorkath...): Detect best picks"
+			+ " the strongest your collection has",
+		section = controls,
+		position = 98
+	)
+	default AntivenomDefault supplyAntivenom()
+	{
+		return AntivenomDefault.DETECT_BEST;
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

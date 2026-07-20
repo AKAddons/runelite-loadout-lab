@@ -1,0 +1,40 @@
+{
+  "_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely).",
+  "food": [
+    {"key": "MOONLIGHT_ANTELOPE", "name": "Cooked moonlight antelope", "ids": [29143]},
+    {"key": "MARLIN", "name": "Marlin", "ids": [32352]},
+    {"key": "DASHING_KEBBIT", "name": "Cooked dashing kebbit", "ids": [29134]},
+    {"key": "ANGLERFISH", "name": "Anglerfish", "ids": [13441]},
+    {"key": "DARK_CRAB", "name": "Dark crab", "ids": [11936]},
+    {"key": "MANTA_RAY", "name": "Manta ray", "ids": [391]},
+    {"key": "TUNA_POTATO", "name": "Tuna potato", "ids": [7060]},
+    {"key": "SHARK", "name": "Shark", "ids": [385]}
+  ],
+  "fastFood": [
+    {"key": "KARAMBWAN", "name": "Cooked karambwan", "ids": [3144]},
+    {"key": "HALIBUT", "name": "Halibut", "ids": [32336]}
+  ],
+  "prayerRestore": [
+    {"key": "SUPER_RESTORE", "name": "Super restore", "ids": [3024, 3026, 3028, 3030]},
+    {"key": "SANFEW_SERUM", "name": "Sanfew serum", "ids": [10925, 10927, 10929, 10931]},
+    {"key": "PRAYER_POTION", "name": "Prayer potion", "ids": [2434, 139, 141, 143]},
+    {"key": "PRAYER_REGENERATION", "name": "Prayer regeneration potion", "ids": [30125, 30128, 30131, 30134], "detect": false}
+  ],
+  "surge": [
+    {"key": "SURGE_POTION", "name": "Surge potion", "ids": [30875, 30878, 30881, 30884]}
+  ],
+  "spellbookCape": [
+    {"key": "MAX_CAPE", "name": "Max cape", "ids": [13280]},
+    {"key": "MAGIC_CAPE", "name": "Magic cape", "ids": [9762, 9763]}
+  ],
+  "antivenom": [
+    {"key": "EXTENDED_ANTIVENOM", "name": "Extended anti-venom+", "ids": [29824, 29827, 29830, 29833]},
+    {"key": "ANTIVENOM_PLUS", "name": "Anti-venom+", "ids": [12913, 12915, 12917, 12919]},
+    {"key": "ANTIVENOM", "name": "Anti-venom", "ids": [12905, 12907, 12909, 12911]},
+    {"key": "ANTIDOTE_PP", "name": "Antidote++", "ids": [5952, 5954, 5956, 5958]}
+  ],
+  "venomousMonsters": [
+    "zulrah", "snakeling", "vorkath", "araxxor", "araxyte",
+    "doom of mokhaiotl", "cursed baboon", "manticore"
+  ]
+}

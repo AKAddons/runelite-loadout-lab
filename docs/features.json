@@ -1,399 +1,417 @@
 {
-  "$comment": "Central feature registry. One entry per user-facing feature. Every code change that adds/alters a feature updates its entry (and the README feature guide + CHANGELOG) in the same PR. `./gradlew checkDocs` audits this file against README.md, docs/img/, and the source tree, and prints the documentation-gap report. `code`/`tests` paths are relative to src/main/java/com/loadoutlab and src/test/java/com/loadoutlab respectively; `anchor` must equal the slugified '### ' heading of the feature's section in the README '# Feature guide'.",
-  "features": [
-    {
-      "id": "owned-bis",
-      "title": "Best owned set per style",
-      "group": "Owned-gear optimizer",
-      "anchor": "best-owned-set-per-style",
-      "code": [
-        "optimizer/OptimizerService.java",
-        "engine/LoadoutOptimizer.java",
-        "engine/DpsCalculator.java",
-        "engine/DpsResult.java",
-        "engine/Loadout.java"
-      ],
-      "tests": [
-        "optimizer/OptimizerServiceTest.java",
-        "engine/LoadoutOptimizerTest.java"
-      ],
-      "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."
-    },
-    {
-      "id": "game-best",
-      "title": "Game-best ceiling comparison",
-      "group": "Owned-gear optimizer",
-      "anchor": "game-best-ceiling-comparison",
-      "media": "docs/img/game-best.png",
-      "code": [
-        "engine/LoadoutOptimizer.java",
-        "optimizer/OptimizerService.java",
-        "engine/OwnedItems.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "engine/LoadoutOptimizerTest.java",
-        "engine/AnalogTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot."
-    },
-    {
-      "id": "optimize-modes",
-      "title": "Optimize modes",
-      "group": "Owned-gear optimizer",
-      "anchor": "optimize-modes",
-      "media": "docs/img/optimize-modes.png",
-      "code": [
-        "optimizer/OptimizerService.java",
-        "engine/CandidateMode.java",
-        "engine/OptimizationRequest.java",
-        "engine/IncomingDpsCalculator.java"
-      ],
-      "tests": [
-        "optimizer/OptimizeModeTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Tanky selected; frame the card with the sword/shield trade row visible under the DPS line. Single PNG screenshot."
-    },
-    {
-      "id": "incoming-damage",
-      "title": "Incoming damage and protection prayer",
-      "group": "Combat readiness",
-      "anchor": "incoming-damage-and-protection-prayer",
-      "media": "docs/img/incoming-damage.png",
-      "code": [
-        "engine/IncomingDpsCalculator.java",
-        "engine/BossIncomingOverrides.java",
-        "data/MonsterOffence.java",
-        "ui/AssumeIcons.java"
-      ],
-      "tests": [
-        "engine/IncomingDpsCalculatorTest.java",
-        "engine/BossIncomingOverridesTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot."
-    },
-    {
-      "id": "spellbook",
-      "title": "Spell and spellbook recommendation",
-      "group": "Combat readiness",
-      "anchor": "spell-and-spellbook-recommendation",
-      "media": "docs/img/spellbook.png",
-      "code": [
-        "data/SpellStats.java",
-        "engine/DpsCalculator.java",
-        "optimizer/OptimizerService.java",
-        "ui/AssumeIcons.java"
-      ],
-      "tests": [
-        "engine/SpellbookLockTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot."
-    },
-    {
-      "id": "dream-items",
-      "title": "Simulated items",
-      "group": "Gear sources",
-      "anchor": "simulated-items",
-      "media": "docs/img/dream-items.png",
-      "code": [
-        "collection/DreamStore.java",
-        "engine/OptimizationRequest.java",
-        "engine/LoadoutOptimizer.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "engine/DreamAndBudgetTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list."
-    },
-    {
-      "id": "upgrade-budget",
-      "title": "Upgrade budget",
-      "group": "Gear sources",
-      "anchor": "upgrade-budget",
-      "media": "docs/img/upgrade-budget.png",
-      "code": [
-        "engine/OptimizationRequest.java",
-        "engine/LoadoutOptimizer.java",
-        "engine/QuestRewardItems.java",
-        "optimizer/OptimizerService.java"
-      ],
-      "tests": [
-        "engine/DreamAndBudgetTest.java",
-        "engine/QuestRewardItemsTest.java",
-        "engine/QuestRewardPoolTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Budget field showing e.g. 50m with a buyable upgrade line visible under a card. Single PNG screenshot."
-    },
-    {
-      "id": "stored-elsewhere",
-      "title": "Stored elsewhere (manual owned items)",
-      "group": "Gear sources",
-      "anchor": "stored-elsewhere-manual-owned-items",
-      "media": "docs/img/stored-elsewhere.png",
-      "code": [
-        "collection/ManualOwnedStore.java",
-        "collection/CollectionLedger.java",
-        "data/LoadoutData.java",
-        "ui/LoadoutLabPanel.java",
-        "LoadoutLabPlugin.java"
-      ],
-      "tests": [
-        "collection/ManualOwnedStoreTest.java",
-        "collection/CollectionLedgerTest.java",
-        "data/GearSearchTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source.",
-      "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
-    },
-    {
-      "id": "dwms-import",
-      "title": "Dude, Where's My Stuff import",
-      "group": "Bank and integrations",
-      "anchor": "dude-wheres-my-stuff-import",
-      "media": "docs/img/dwms-import.png",
-      "code": [
-        "collection/DwmsImport.java",
-        "collection/DwmsLink.java",
-        "LoadoutLabPlugin.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "collection/DwmsImportTest.java",
-        "collection/DwmsLinkTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "Two tiers. Preferred: the storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream) - exact canonical id+qty per storage, panel line shows '(live)'. Fallback for older DWMS: best-effort read of its persisted ConfigManager data (public API, no reflection; works with DWMS disabled), strictly defensive parsing - an upstream format change drops items rather than miscounting.",
-      "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
-    },
-    {
-      "id": "native-storages",
-      "title": "STASH, POH costume room, and cargo hold tracking",
-      "group": "Gear sources",
-      "anchor": "stash-poh-costume-room-and-cargo-hold-tracking",
-      "media": "docs/img/native-storages.png",
-      "code": [
-        "collection/CollectionLedger.java",
-        "data/StashUnits.java",
-        "LoadoutLabPlugin.java"
-      ],
-      "tests": [
-        "data/StashUnitsTest.java",
-        "collection/CollectionLedgerTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap.",
-      "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
-    },
-    {
-      "id": "location-hints",
-      "title": "Where your gear is (location hints)",
-      "group": "Gear sources",
-      "anchor": "where-your-gear-is-location-hints",
-      "media": "docs/img/location-hints.png",
-      "code": [
-        "collection/ItemLocations.java",
-        "collection/CollectionLedger.java",
-        "ui/LoadoutLabPanel.java",
-        "LoadoutLabPlugin.java"
-      ],
-      "tests": [
-        "collection/ItemLocationsTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "Per-source provenance kept end-to-end: ledger source snapshots + manual list + DWMS families feed a variant-aware lookup. Only fetch-trip sources get a bottom-right cell dot (at-hand equipped/inventory/bank stay unmarked - no palette entry = no dot); the 'Stored:' legend under the cards lists EXACTLY the sources present in the current results. Tooltips add the 'stored in ...' clause for the same cells. profile.json gains an optional ownedBySource breakdown.",
-      "capture": "A result mixing bank gear with a STASH or POH item: dots only on the fetch-trip cells, and the 'Stored:' legend under the cards showing only those entries. Single PNG screenshot."
-    },
-    {
-      "id": "revenant-conditionals",
-      "title": "Revenant and wilderness gear conditionals",
-      "group": "Wilderness and risk",
-      "anchor": "revenant-and-wilderness-gear-conditionals",
-      "code": [
-        "engine/DpsCalculator.java",
-        "engine/IncomingDpsCalculator.java",
-        "engine/PvpRisk.java"
-      ],
-      "tests": [
-        "engine/RevenantConditionalsTest.java",
-        "engine/PvpRiskTest.java",
-        "engine/WildernessToggleTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card. 2026-07-15: the +50% is gated by an \"In the Wilderness\" checkbox for shared-name monsters (Catacombs hellhounds no longer get buffed picks); wilderness-exclusive monsters are always in (WildernessToggleTest)."
-    },
-    {
-      "id": "mob-profiles",
-      "title": "Mob profiles: pins, notes, and bank-filter items",
-      "group": "Gear sources",
-      "anchor": "mob-profiles-pins-notes-and-bank-filter-items",
-      "media": "docs/img/mob-profiles.png",
-      "code": [
-        "collection/MonsterProfileStore.java",
-        "engine/OptimizationRequest.java",
-        "engine/LoadoutOptimizer.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "engine/PinTest.java",
-        "collection/MonsterProfileStoreTest.java"
-      ],
-      "since": "0.2.0",
-      "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it).",
-      "capture": "A mob with a style-scoped pin, the post-it note expanded, one card auto-collapsed to its dps header, and the filtered bank showing a per-set supply. Single PNG screenshot."
-    },
-    {
-      "id": "wilderness-risk",
-      "title": "Wilderness low-risk sets",
-      "group": "Wilderness and risk",
-      "anchor": "wilderness-low-risk-sets",
-      "media": "docs/img/wilderness-risk.png",
-      "code": [
-        "engine/PvpRisk.java",
-        "engine/UntradeableDeathCosts.java",
-        "data/WildernessMonsters.java",
-        "engine/OptimizationRequest.java"
-      ],
-      "tests": [
-        "engine/PvpRiskTest.java",
-        "engine/RiskConstraintTest.java",
-        "engine/UntradeableDeathCostsTest.java"
-      ],
-      "since": "0.1.0",
-      "notes": "0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp and convert pool values, and low-risk sets NEVER put a friction item at risk (PvpRisk.risksUnprotected rejects unprotected ones outright, any cap; protected kept-slot rides stay legal). Tooltips say 'breaks on death (rebuild errand ~X)'.",
-      "capture": "Calvar'ion low-risk card: halo/skull/coins fates on the grid plus the risk gp line. Single PNG screenshot."
-    },
-    {
-      "id": "slayer-toggle",
-      "title": "Slayer task toggle",
-      "group": "Filters and tasks",
-      "anchor": "slayer-task-toggle",
-      "media": "docs/img/slayer-toggle.png",
-      "code": [
-        "data/SlayerLockedMonsters.java",
-        "engine/OptimizationRequest.java",
-        "optimizer/OptimizerService.java",
-        "data/DataService.java"
-      ],
-      "tests": [
-        "engine/SlayerInvariantTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot."
-    },
-    {
-      "id": "exclusions",
-      "title": "Exclude items from suggestions",
-      "group": "Filters and tasks",
-      "anchor": "exclude-items-from-suggestions",
-      "media": "docs/img/exclusions.png",
-      "code": [
-        "collection/ExclusionStore.java",
-        "engine/LoadoutOptimizer.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "collection/ExclusionStoreTest.java",
-        "engine/ExclusionTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Right-click menu open on a suggested item showing 'Exclude ... from suggestions' (or the excluded-items count line). Single PNG screenshot."
-    },
-    {
-      "id": "bank-tools",
-      "title": "Bank tools: show and filter",
-      "group": "Bank and integrations",
-      "anchor": "bank-tools-show-and-filter",
-      "media": "docs/img/bank-tools.png",
-      "code": [
-        "ui/BankHighlightOverlay.java",
-        "ui/LoadoutLabPanel.java",
-        "LoadoutLabPlugin.java"
-      ],
-      "tests": [],
-      "since": "0.1.0",
-      "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
-      "capture": "Bank open with 'Show in bank' outlining the set (or 'Filter bank' active); Show/Filter buttons visible in the card. Same capture moment can also serve owned-ledger. Single PNG screenshot."
-    },
-    {
-      "id": "link-in",
-      "title": "Search in Loadout Lab (cross-plugin)",
-      "group": "Bank and integrations",
-      "anchor": "search-in-loadout-lab-cross-plugin",
-      "code": [
-        "LoadoutLabPlugin.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "ui/LinkInTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "In-world right-click menu open on a known monster showing 'Search in Loadout Lab'. Single PNG screenshot.",
-      "media": "docs/img/link-in.png",
-      "notes": "onMenuOpened wiring is client-bound (no automated coverage) - verified in-client; the resolution+compute path it calls is covered by LinkInTest."
-    },
-    {
-      "id": "owned-ledger",
-      "title": "Owned-gear ledger (profile-aware)",
-      "group": "Owned-gear optimizer",
-      "anchor": "owned-gear-ledger-profile-aware",
-      "media": "docs/img/owned-ledger.png",
-      "code": [
-        "profile/PlayerProfile.java",
-        "collection/CollectionLedger.java",
-        "engine/OwnedItems.java"
-      ],
-      "tests": [
-        "profile/PlayerProfileTest.java",
-        "collection/CollectionLedgerTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "With a set computed, click 'Filter bank' and frame the bank: it shows exactly the recommended items - the ledger's knowledge of what you own, on screen. Same capture moment as bank-tools; save a second copy/crop under this name. Single PNG screenshot."
-    },
-    {
-      "id": "discord",
-      "title": "Community Discord",
-      "group": "Bank and integrations",
-      "anchor": "community-discord",
-      "media": "docs/img/discord.png",
-      "code": [
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [],
-      "since": "0.1.0",
-      "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
-      "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
-    },
-    {
-      "id": "undo-redo",
-      "title": "Undo and redo",
-      "group": "Filters and tasks",
-      "anchor": "undo-and-redo",
-      "media": "docs/img/undo-redo.png",
-      "code": [
-        "command/Command.java",
-        "command/CommandHistory.java",
-        "command/CompositeCommand.java",
-        "command/Commands.java",
-        "LoadoutLabPlugin.java",
-        "ui/LoadoutLabPanel.java"
-      ],
-      "tests": [
-        "command/CommandHistoryTest.java",
-        "command/CommandsTest.java",
-        "ui/SelectionHistoryTest.java"
-      ],
-      "since": "0.2.4",
-      "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
-      "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
-    }
-  ]
+ "$comment": "Central feature registry. One entry per user-facing feature. Every code change that adds/alters a feature updates its entry (and the README feature guide + CHANGELOG) in the same PR. `./gradlew checkDocs` audits this file against README.md, docs/img/, and the source tree, and prints the documentation-gap report. `code`/`tests` paths are relative to src/main/java/com/loadoutlab and src/test/java/com/loadoutlab respectively; `anchor` must equal the slugified '### ' heading of the feature's section in the README '# Feature guide'.",
+ "features": [
+  {
+   "id": "owned-bis",
+   "title": "Best owned set per style",
+   "group": "Owned-gear optimizer",
+   "anchor": "best-owned-set-per-style",
+   "code": [
+    "optimizer/OptimizerService.java",
+    "engine/LoadoutOptimizer.java",
+    "engine/DpsCalculator.java",
+    "engine/DpsResult.java",
+    "engine/Loadout.java"
+   ],
+   "tests": [
+    "optimizer/OptimizerServiceTest.java",
+    "engine/LoadoutOptimizerTest.java"
+   ],
+   "since": "0.1.0",
+   "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."
+  },
+  {
+   "id": "game-best",
+   "title": "Game-best ceiling comparison",
+   "group": "Owned-gear optimizer",
+   "anchor": "game-best-ceiling-comparison",
+   "media": "docs/img/game-best.png",
+   "code": [
+    "engine/LoadoutOptimizer.java",
+    "optimizer/OptimizerService.java",
+    "engine/OwnedItems.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "engine/LoadoutOptimizerTest.java",
+    "engine/AnalogTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot."
+  },
+  {
+   "id": "optimize-modes",
+   "title": "Optimize modes",
+   "group": "Owned-gear optimizer",
+   "anchor": "optimize-modes",
+   "media": "docs/img/optimize-modes.png",
+   "code": [
+    "optimizer/OptimizerService.java",
+    "engine/CandidateMode.java",
+    "engine/OptimizationRequest.java",
+    "engine/IncomingDpsCalculator.java"
+   ],
+   "tests": [
+    "optimizer/OptimizeModeTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Tanky selected; frame the card with the sword/shield trade row visible under the DPS line. Single PNG screenshot."
+  },
+  {
+   "id": "incoming-damage",
+   "title": "Incoming damage and protection prayer",
+   "group": "Combat readiness",
+   "anchor": "incoming-damage-and-protection-prayer",
+   "media": "docs/img/incoming-damage.png",
+   "code": [
+    "engine/IncomingDpsCalculator.java",
+    "engine/BossIncomingOverrides.java",
+    "data/MonsterOffence.java",
+    "ui/AssumeIcons.java"
+   ],
+   "tests": [
+    "engine/IncomingDpsCalculatorTest.java",
+    "engine/BossIncomingOverridesTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot."
+  },
+  {
+   "id": "spellbook",
+   "title": "Spell and spellbook recommendation",
+   "group": "Combat readiness",
+   "anchor": "spell-and-spellbook-recommendation",
+   "media": "docs/img/spellbook.png",
+   "code": [
+    "data/SpellStats.java",
+    "engine/DpsCalculator.java",
+    "optimizer/OptimizerService.java",
+    "ui/AssumeIcons.java"
+   ],
+   "tests": [
+    "engine/SpellbookLockTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot."
+  },
+  {
+   "id": "dream-items",
+   "title": "Simulated items",
+   "group": "Gear sources",
+   "anchor": "simulated-items",
+   "media": "docs/img/dream-items.png",
+   "code": [
+    "collection/DreamStore.java",
+    "engine/OptimizationRequest.java",
+    "engine/LoadoutOptimizer.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "engine/DreamAndBudgetTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list."
+  },
+  {
+   "id": "upgrade-budget",
+   "title": "Upgrade budget",
+   "group": "Gear sources",
+   "anchor": "upgrade-budget",
+   "media": "docs/img/upgrade-budget.png",
+   "code": [
+    "engine/OptimizationRequest.java",
+    "engine/LoadoutOptimizer.java",
+    "engine/QuestRewardItems.java",
+    "optimizer/OptimizerService.java"
+   ],
+   "tests": [
+    "engine/DreamAndBudgetTest.java",
+    "engine/QuestRewardItemsTest.java",
+    "engine/QuestRewardPoolTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Budget field showing e.g. 50m with a buyable upgrade line visible under a card. Single PNG screenshot."
+  },
+  {
+   "id": "stored-elsewhere",
+   "title": "Stored elsewhere (manual owned items)",
+   "group": "Gear sources",
+   "anchor": "stored-elsewhere-manual-owned-items",
+   "media": "docs/img/stored-elsewhere.png",
+   "code": [
+    "collection/ManualOwnedStore.java",
+    "collection/CollectionLedger.java",
+    "data/LoadoutData.java",
+    "ui/LoadoutLabPanel.java",
+    "LoadoutLabPlugin.java"
+   ],
+   "tests": [
+    "collection/ManualOwnedStoreTest.java",
+    "collection/CollectionLedgerTest.java",
+    "data/GearSearchTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source.",
+   "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
+  },
+  {
+   "id": "dwms-import",
+   "title": "Dude, Where's My Stuff import",
+   "group": "Bank and integrations",
+   "anchor": "dude-wheres-my-stuff-import",
+   "media": "docs/img/dwms-import.png",
+   "code": [
+    "collection/DwmsImport.java",
+    "collection/DwmsLink.java",
+    "LoadoutLabPlugin.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "collection/DwmsImportTest.java",
+    "collection/DwmsLinkTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "Two tiers. Preferred: the storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream) - exact canonical id+qty per storage, panel line shows '(live)'. Fallback for older DWMS: best-effort read of its persisted ConfigManager data (public API, no reflection; works with DWMS disabled), strictly defensive parsing - an upstream format change drops items rather than miscounting.",
+   "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
+  },
+  {
+   "id": "native-storages",
+   "title": "STASH, POH costume room, and cargo hold tracking",
+   "group": "Gear sources",
+   "anchor": "stash-poh-costume-room-and-cargo-hold-tracking",
+   "media": "docs/img/native-storages.png",
+   "code": [
+    "collection/CollectionLedger.java",
+    "data/StashUnits.java",
+    "LoadoutLabPlugin.java"
+   ],
+   "tests": [
+    "data/StashUnitsTest.java",
+    "collection/CollectionLedgerTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap.",
+   "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
+  },
+  {
+   "id": "location-hints",
+   "title": "Where your gear is (location hints)",
+   "group": "Gear sources",
+   "anchor": "where-your-gear-is-location-hints",
+   "media": "docs/img/location-hints.png",
+   "code": [
+    "collection/ItemLocations.java",
+    "collection/CollectionLedger.java",
+    "ui/LoadoutLabPanel.java",
+    "LoadoutLabPlugin.java"
+   ],
+   "tests": [
+    "collection/ItemLocationsTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "Per-source provenance kept end-to-end: ledger source snapshots + manual list + DWMS families feed a variant-aware lookup. Only fetch-trip sources get a bottom-right cell dot (at-hand equipped/inventory/bank stay unmarked - no palette entry = no dot); the 'Stored:' legend under the cards lists EXACTLY the sources present in the current results. Tooltips add the 'stored in ...' clause for the same cells. profile.json gains an optional ownedBySource breakdown.",
+   "capture": "A result mixing bank gear with a STASH or POH item: dots only on the fetch-trip cells, and the 'Stored:' legend under the cards showing only those entries. Single PNG screenshot."
+  },
+  {
+   "id": "revenant-conditionals",
+   "title": "Revenant and wilderness gear conditionals",
+   "group": "Wilderness and risk",
+   "anchor": "revenant-and-wilderness-gear-conditionals",
+   "code": [
+    "engine/DpsCalculator.java",
+    "engine/IncomingDpsCalculator.java",
+    "engine/PvpRisk.java"
+   ],
+   "tests": [
+    "engine/RevenantConditionalsTest.java",
+    "engine/PvpRiskTest.java",
+    "engine/WildernessToggleTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "Official-calc verified to 4 decimals (craws/ursine/avarice vectors): charged wilderness weapons get 3/2 accuracy and damage vs wilderness monsters; the amulet of avarice heads the salve/slayer chain (6/5 vs revenants) and the risk model knows it skulls the wearer (kept slots 3->0, 4->1 with Protect Item); a charged bracelet of ethereum zeroes revenant incoming damage. Engine-only: no dedicated screenshot - visible on any revenant card. 2026-07-15: the +50% is gated by an \"In the Wilderness\" checkbox for shared-name monsters (Catacombs hellhounds no longer get buffed picks); wilderness-exclusive monsters are always in (WildernessToggleTest)."
+  },
+  {
+   "id": "mob-profiles",
+   "title": "Mob profiles: pins, notes, and bank-filter items",
+   "group": "Gear sources",
+   "anchor": "mob-profiles-pins-notes-and-bank-filter-items",
+   "media": "docs/img/mob-profiles.png",
+   "code": [
+    "collection/MonsterProfileStore.java",
+    "engine/OptimizationRequest.java",
+    "engine/LoadoutOptimizer.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "engine/PinTest.java",
+    "collection/MonsterProfileStoreTest.java"
+   ],
+   "since": "0.2.0",
+   "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it).",
+   "capture": "A mob with a style-scoped pin, the post-it note expanded, one card auto-collapsed to its dps header, and the filtered bank showing a per-set supply. Single PNG screenshot."
+  },
+  {
+   "id": "wilderness-risk",
+   "title": "Wilderness low-risk sets",
+   "group": "Wilderness and risk",
+   "anchor": "wilderness-low-risk-sets",
+   "media": "docs/img/wilderness-risk.png",
+   "code": [
+    "engine/PvpRisk.java",
+    "engine/UntradeableDeathCosts.java",
+    "data/WildernessMonsters.java",
+    "engine/OptimizationRequest.java"
+   ],
+   "tests": [
+    "engine/PvpRiskTest.java",
+    "engine/RiskConstraintTest.java",
+    "engine/UntradeableDeathCostsTest.java"
+   ],
+   "since": "0.1.0",
+   "notes": "0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp and convert pool values, and low-risk sets NEVER put a friction item at risk (PvpRisk.risksUnprotected rejects unprotected ones outright, any cap; protected kept-slot rides stay legal). Tooltips say 'breaks on death (rebuild errand ~X)'.",
+   "capture": "Calvar'ion low-risk card: halo/skull/coins fates on the grid plus the risk gp line. Single PNG screenshot."
+  },
+  {
+   "id": "slayer-toggle",
+   "title": "Slayer task toggle",
+   "group": "Filters and tasks",
+   "anchor": "slayer-task-toggle",
+   "media": "docs/img/slayer-toggle.png",
+   "code": [
+    "data/SlayerLockedMonsters.java",
+    "engine/OptimizationRequest.java",
+    "optimizer/OptimizerService.java",
+    "data/DataService.java"
+   ],
+   "tests": [
+    "engine/SlayerInvariantTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot."
+  },
+  {
+   "id": "exclusions",
+   "title": "Exclude items from suggestions",
+   "group": "Filters and tasks",
+   "anchor": "exclude-items-from-suggestions",
+   "media": "docs/img/exclusions.png",
+   "code": [
+    "collection/ExclusionStore.java",
+    "engine/LoadoutOptimizer.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "collection/ExclusionStoreTest.java",
+    "engine/ExclusionTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "Right-click menu open on a suggested item showing 'Exclude ... from suggestions' (or the excluded-items count line). Single PNG screenshot."
+  },
+  {
+   "id": "bank-tools",
+   "title": "Bank tools: show and filter",
+   "group": "Bank and integrations",
+   "anchor": "bank-tools-show-and-filter",
+   "media": "docs/img/bank-tools.png",
+   "code": [
+    "ui/BankHighlightOverlay.java",
+    "ui/LoadoutLabPanel.java",
+    "LoadoutLabPlugin.java"
+   ],
+   "tests": [],
+   "since": "0.1.0",
+   "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
+   "capture": "Bank open with 'Show in bank' outlining the set (or 'Filter bank' active); Show/Filter buttons visible in the card. Same capture moment can also serve owned-ledger. Single PNG screenshot."
+  },
+  {
+   "id": "link-in",
+   "title": "Search in Loadout Lab (cross-plugin)",
+   "group": "Bank and integrations",
+   "anchor": "search-in-loadout-lab-cross-plugin",
+   "code": [
+    "LoadoutLabPlugin.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "ui/LinkInTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "In-world right-click menu open on a known monster showing 'Search in Loadout Lab'. Single PNG screenshot.",
+   "media": "docs/img/link-in.png",
+   "notes": "onMenuOpened wiring is client-bound (no automated coverage) - verified in-client; the resolution+compute path it calls is covered by LinkInTest."
+  },
+  {
+   "id": "owned-ledger",
+   "title": "Owned-gear ledger (profile-aware)",
+   "group": "Owned-gear optimizer",
+   "anchor": "owned-gear-ledger-profile-aware",
+   "media": "docs/img/owned-ledger.png",
+   "code": [
+    "profile/PlayerProfile.java",
+    "collection/CollectionLedger.java",
+    "engine/OwnedItems.java"
+   ],
+   "tests": [
+    "profile/PlayerProfileTest.java",
+    "collection/CollectionLedgerTest.java"
+   ],
+   "since": "0.1.0",
+   "capture": "With a set computed, click 'Filter bank' and frame the bank: it shows exactly the recommended items - the ledger's knowledge of what you own, on screen. Same capture moment as bank-tools; save a second copy/crop under this name. Single PNG screenshot."
+  },
+  {
+   "id": "discord",
+   "title": "Community Discord",
+   "group": "Bank and integrations",
+   "anchor": "community-discord",
+   "media": "docs/img/discord.png",
+   "code": [
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [],
+   "since": "0.1.0",
+   "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
+   "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
+  },
+  {
+   "id": "undo-redo",
+   "title": "Undo and redo",
+   "group": "Filters and tasks",
+   "anchor": "undo-and-redo",
+   "media": "docs/img/undo-redo.png",
+   "code": [
+    "command/Command.java",
+    "command/CommandHistory.java",
+    "command/CompositeCommand.java",
+    "command/Commands.java",
+    "LoadoutLabPlugin.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "command/CommandHistoryTest.java",
+    "command/CommandsTest.java",
+    "ui/SelectionHistoryTest.java"
+   ],
+   "since": "0.2.4",
+   "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
+   "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
+  },
+  {
+   "id": "trip-supplies",
+   "title": "Trip supplies",
+   "group": "Filters and tasks",
+   "anchor": "trip-supplies",
+   "media": "docs/img/trip-supplies.png",
+   "code": [
+    "data/TripSupplies.java",
+    "LoadoutLabConfig.java",
+    "LoadoutLabPlugin.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "data/TripSuppliesTest.java"
+   ],
+   "since": "0.3.3",
+   "capture": "Wrench panel Controls section showing the five supply dropdowns (Food: Detect best...), beside a result card whose consumable cells show the detected food + prayer restore. Single PNG screenshot."
+  }
+ ]
 }

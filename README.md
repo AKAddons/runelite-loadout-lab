@@ -345,9 +345,23 @@ resets on profile switch.
 ### Bank tools: show and filter
 
 "Show in bank" outlines the set's items in your bank; "Filter bank" shows
-only them. Uses the core Bank Tags plugin.
+only them, arranged like the in-game equipment and inventory tabs - the
+worn set as the equipment cross, the carried kit in a 4-wide block beside
+it. Uses the core Bank Tags plugin.
 
 ![Bank tools: show and filter](docs/img/bank-tools.png)
+
+### Trip supplies
+
+Persistent defaults for the food, fast food, prayer restore, surge
+potion, spellbook-swap cape and anti-venom every trip brings (wrench
+panel, Controls section). Detect best picks the highest tier your
+collection has; anti-venom only joins the kit against monsters that can
+actually inflict venom (Zulrah, Araxxor, Vorkath and friends). Chosen
+supplies ride the result card's consumable cells, the bank filter (every
+dose matches) and the filtered bank's inventory block.
+
+![Trip supplies](docs/img/trip-supplies.png)
 
 ### Search in Loadout Lab (cross-plugin)
 

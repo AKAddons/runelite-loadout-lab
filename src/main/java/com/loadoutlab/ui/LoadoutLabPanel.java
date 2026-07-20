@@ -8,6 +8,7 @@ import com.loadoutlab.data.MonsterNotes;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SlayerLockedMonsters;
 import com.loadoutlab.data.StatBlock;
+import com.loadoutlab.data.TripSupplies;
 import com.loadoutlab.data.WildernessMonsters;
 import com.loadoutlab.engine.BlowpipeDarts;
 import com.loadoutlab.engine.CombatStyle;
@@ -351,6 +352,18 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 		}
 
+		/** Per-mob trip-supply overrides (TripSupplies category ->
+		 * mode/option key); empty = the wrench-panel defaults apply. */
+		default Map<String, String> supplyOverrides(int monsterId)
+		{
+			return Map.of();
+		}
+
+		/** Null/empty choice returns the category to the global default. */
+		default void setSupplyOverride(int monsterId, String category, String choice)
+		{
+		}
+
 		/** Whole-group twins (field request 2026-07-18): the same write on
 		 * every group member, undoable as ONE action. */
 		default void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
@@ -384,6 +397,65 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface OwnedCheck
 	{
 		boolean owns(int itemId);
+	}
+
+	/** The persistent trip-supply defaults (config enum names keyed by
+	 * TripSupplies category); resolved per result in activeSupplies. */
+	private Map<String, String> supplyDefaults = Collections.emptyMap();
+
+	/** Plugin hook: swap in the wrench-panel supply defaults and re-render
+	 * so the cells, filter and layout pick them up. */
+	public void setSupplyDefaults(Map<String, String> defaults)
+	{
+		supplyDefaults = defaults == null ? Collections.emptyMap() : defaults;
+		renderPage();
+	}
+
+	/** The trip supplies this result brings: each category's config default
+	 * resolved against the collection (Detect = best owned tier), anti-venom
+	 * only when a roster mob can inflict venom. Options carry ids best
+	 * first: ids[0] is the display cell, the full list joins the filter. */
+	private List<TripSupplies.Option> activeSupplies(ResultEntry entry)
+	{
+		if (entry == null || supplyDefaults.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+		List<TripSupplies.Option> picks = new ArrayList<>();
+		for (Map.Entry<String, String> e : supplyDefaults.entrySet())
+		{
+			String category = e.getKey();
+			String mode = e.getValue();
+			if ("NONE".equals(mode))
+			{
+				continue;
+			}
+			if (TripSupplies.ANTIVENOM.equals(category))
+			{
+				boolean venomous = false;
+				for (MonsterStats m : entry.mobs)
+				{
+					if (TripSupplies.inflictsVenom(m))
+					{
+						venomous = true;
+						break;
+					}
+				}
+				if (!venomous)
+				{
+					continue;
+				}
+			}
+			TripSupplies.Option pick =
+				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
+					? TripSupplies.detectBest(category, id -> ownedCheck.owns(id))
+					: TripSupplies.option(category, mode);
+			if (pick != null)
+			{
+				picks.add(pick);
+			}
+		}
+		return picks;
 	}
 
 	/** "Show in bank": set the highlighted item ids (null clears). */
@@ -2707,6 +2779,12 @@ public class LoadoutLabPanel extends PluginPanel
 		int[] filterLayout = null;
 		if (best != null)
 		{
+			// The persistent trip supplies: every dose id joins the filter
+			// and highlight so a 2-dose potion in the bank still matches;
+			// the LAYOUT places only the display id (ids[0]) - the bank-tag
+			// variant matcher draws whatever dose the bank holds there, and
+			// placing ghost doses would render faded placeholders.
+			List<TripSupplies.Option> supplies = activeSupplies(active);
 			if (bankShowing)
 			{
 				highlightIds = new HashSet<>();
@@ -2729,6 +2807,13 @@ public class LoadoutLabPanel extends PluginPanel
 				// The inventory items are part of this trip's kit too.
 				highlightIds.addAll(inventoryIds(style));
 				highlightIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+				for (TripSupplies.Option supply : supplies)
+				{
+					for (int id : supply.ids)
+					{
+						highlightIds.add(id);
+					}
+				}
 			}
 			if (bankFiltering)
 			{
@@ -2737,11 +2822,27 @@ public class LoadoutLabPanel extends PluginPanel
 				// The mob profile's supplies (food, antidotes...) join the
 				// filtered bank view - they are part of THIS trip.
 				filterIds.addAll(mobProfile.filterItems(currentMonsterId(), style));
+				for (TripSupplies.Option supply : supplies)
+				{
+					for (int id : supply.ids)
+					{
+						filterIds.add(id);
+					}
+				}
 				// Arrange the set in the bank like the in-game equipment +
 				// inventory tabs. Pass the full membership so EVERY filtered
 				// item is placed (an unplaced member would be shoved into the
-				// cross's blank corners by the bank-tag layout).
-				filterLayout = buildBankLayout(style, best, specWeapon, filterIds);
+				// cross's blank corners by the bank-tag layout) - minus the
+				// supplies' non-display dose ids (ghost placeholders).
+				Set<Integer> layoutMembers = new HashSet<>(filterIds);
+				for (TripSupplies.Option supply : supplies)
+				{
+					for (int i = 1; i < supply.ids.length; i++)
+					{
+						layoutMembers.remove(supply.ids[i]);
+					}
+				}
+				filterLayout = buildBankLayout(style, best, specWeapon, layoutMembers);
 			}
 		}
 		if (!Objects.equals(highlightIds, lastHighlightIds))
@@ -4527,6 +4628,13 @@ public class LoadoutLabPanel extends PluginPanel
 		else if (entry.antifireMode == 2)
 		{
 			ids.add(21978);
+		}
+		// The persistent trip supplies (food, prayer restore...) ride the
+		// same consumable cells: display id only - the bank filter carries
+		// the full dose lists separately.
+		for (TripSupplies.Option supply : activeSupplies(entry))
+		{
+			ids.add(supply.ids[0]);
 		}
 		return new ArrayList<>(ids);
 	}

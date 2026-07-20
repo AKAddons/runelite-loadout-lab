@@ -421,6 +421,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				panel.setHistoryControl(historyControl());
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
+				panel.setSupplyDefaults(buildSupplyDefaults());
 				panel.setDeveloperMode(developerMode);
 				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
 				panel.setMonsterIcons(monsterIcons);
@@ -536,6 +537,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			if (panel != null)
 			{
 				panel.setDisplayOptions(buildDisplayOptions());
+				panel.setSupplyDefaults(buildSupplyDefaults());
 			}
 		});
 	}
@@ -547,7 +549,23 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
+		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap",
+		"supplyFood", "supplyFastFood", "supplyPrayerRestore", "supplySurge",
+		"supplySpellbookCape", "supplyAntivenom");
+
+	/** The persistent trip-supply defaults (config enum names keyed by
+	 * TripSupplies category) - the panel resolves them per result. */
+	private Map<String, String> buildSupplyDefaults()
+	{
+		Map<String, String> defaults = new LinkedHashMap<>();
+		defaults.put(com.loadoutlab.data.TripSupplies.FOOD, config.supplyFood().name());
+		defaults.put(com.loadoutlab.data.TripSupplies.FAST_FOOD, config.supplyFastFood().name());
+		defaults.put(com.loadoutlab.data.TripSupplies.PRAYER_RESTORE, config.supplyPrayerRestore().name());
+		defaults.put(com.loadoutlab.data.TripSupplies.SURGE, config.supplySurge().name());
+		defaults.put(com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE, config.supplySpellbookCape().name());
+		defaults.put(com.loadoutlab.data.TripSupplies.ANTIVENOM, config.supplyAntivenom().name());
+		return defaults;
+	}
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
