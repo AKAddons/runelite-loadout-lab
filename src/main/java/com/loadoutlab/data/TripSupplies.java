@@ -57,6 +57,7 @@ public final class TripSupplies
 
 	private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
 	private static final Set<String> VENOMOUS = new HashSet<>();
+	private static final Map<String, int[]> SPELL_KITS = new LinkedHashMap<>();
 
 	static
 	{
@@ -87,6 +88,20 @@ public final class TripSupplies
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
+			}
+			JsonObject kits = root.getAsJsonObject("spellKits");
+			if (kits != null)
+			{
+				for (String key : kits.keySet())
+				{
+					JsonArray idArr = kits.getAsJsonArray(key);
+					int[] ids = new int[idArr.size()];
+					for (int i = 0; i < ids.length; i++)
+					{
+						ids[i] = idArr.get(i).getAsInt();
+					}
+					SPELL_KITS.put(key, ids);
+				}
 			}
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
 		}
@@ -135,6 +150,14 @@ public final class TripSupplies
 			}
 		}
 		return null;
+	}
+
+	/** An Arceuus casting dependency kit ("thrallGreaterRunes",
+	 * "deathChargeRunes", "markOfDarknessRunes", "bookOfTheDead",
+	 * "runePouch" - the pouch list is detect-ordered, best first). */
+	public static int[] spellKit(String name)
+	{
+		return SPELL_KITS.getOrDefault(name, new int[0]);
 	}
 
 	/** True when the monster can inflict venom (wiki Venom page inflictor

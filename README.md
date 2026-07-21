@@ -378,8 +378,11 @@ gear/thrall breakdown, and the ranking never moves (a thrall adds the
 same to every set). The D charge chip (Magic 80) assumes Death Charge -
 15% special attack energy per killing blow, once per 60-second cast -
 feeding the spec model's energy budget, so long energy-bound fights fit
-more special attacks. (Vengeance modeling is roadmapped with the
-spellbook-lock work.)
+more special attacks. Both recommendations carry their dependencies:
+the book of the dead and your best rune pouch join the trip cells, and
+the resurrect / Death Charge / Mark of Darkness runes (the last when
+your magic card casts Demonbane) join the bank filter and setup layout.
+(Vengeance modeling is roadmapped with the spellbook-lock work.)
 
 ![Thralls and Death Charge](docs/img/thralls-veng.png)
 

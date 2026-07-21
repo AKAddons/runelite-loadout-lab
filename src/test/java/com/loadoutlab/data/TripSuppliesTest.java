@@ -94,6 +94,22 @@ public class TripSuppliesTest
 	}
 
 	@Test
+	public void spellKitsCarryTheVerifiedArceuusCosts()
+	{
+		// Wiki-verified 2026-07-21: greater resurrect 10 fire 5 blood
+		// 1 cosmic; Death Charge 1 death 1 blood 1 soul; Mark of Darkness
+		// 1 cosmic 1 soul; pouch detect order divine > base.
+		org.junit.Assert.assertArrayEquals(new int[]{554, 565, 564},
+			TripSupplies.spellKit("thrallGreaterRunes"));
+		org.junit.Assert.assertArrayEquals(new int[]{560, 565, 566},
+			TripSupplies.spellKit("deathChargeRunes"));
+		org.junit.Assert.assertArrayEquals(new int[]{564, 566},
+			TripSupplies.spellKit("markOfDarknessRunes"));
+		org.junit.Assert.assertEquals(27281, TripSupplies.spellKit("runePouch")[0]);
+		org.junit.Assert.assertEquals(0, TripSupplies.spellKit("noSuchKit").length);
+	}
+
+	@Test
 	public void unknownAndModeKeysResolveToNoOption()
 	{
 		Assert.assertNull(TripSupplies.option(TripSupplies.FOOD, "DETECT_BEST"));

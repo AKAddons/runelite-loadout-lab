@@ -566,6 +566,96 @@ public class LoadoutLabPanel extends PluginPanel
 		return entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
 	}
 
+	/** True when the shown MAGIC answer autocasts a Demonbane spell - the
+	 * case where Mark of Darkness pays (field ask 2026-07-21). */
+	private boolean demonbaneCast(ResultEntry entry)
+	{
+		if (entry.results == null)
+		{
+			return false;
+		}
+		StyleResult magic = entry.results.get(CombatStyle.MAGIC);
+		if (magic == null || magic.owned == null || magic.owned.isEmpty())
+		{
+			return false;
+		}
+		String spell = magic.owned.get(0).getSpellName();
+		return spell != null && spell.contains("Demonbane");
+	}
+
+	/** The Arceuus casting dependencies the current assumptions imply
+	 * (field ask 2026-07-21: "if we're recommending thralls we need to be
+	 * recommending... the runes + rune pouch"): the resurrect runes + book
+	 * of the dead when thralls are on (greater tier only - the one the
+	 * 76+ auto-on gate reaches), Death Charge's runes when it is assumed,
+	 * Mark of Darkness's when the magic card casts Demonbane, and the best
+	 * owned rune pouch to carry any of them. Filter/layout ids - the cells
+	 * stay compact (book + pouch only, via consumableIds). */
+	/** Just the RUNES the assumptions imply - routed to the bank layout's
+	 * utility strip beside the spellbook cape (field spec 2026-07-21: runes
+	 * are staging gear, loaded into the pouch before the trip). */
+	private List<Integer> arcaneRuneIds(ResultEntry entry)
+	{
+		List<Integer> ids = new ArrayList<>();
+		if (entry.thralls && magicLevel >= 76)
+		{
+			for (int id : TripSupplies.spellKit("thrallGreaterRunes"))
+			{
+				ids.add(id);
+			}
+		}
+		if (entry.deathCharge)
+		{
+			for (int id : TripSupplies.spellKit("deathChargeRunes"))
+			{
+				ids.add(id);
+			}
+		}
+		if (demonbaneCast(entry))
+		{
+			for (int id : TripSupplies.spellKit("markOfDarknessRunes"))
+			{
+				ids.add(id);
+			}
+		}
+		return ids;
+	}
+
+	private List<Integer> arcaneKitFilterIds(ResultEntry entry)
+	{
+		List<Integer> ids = new ArrayList<>(arcaneRuneIds(entry));
+		if (entry.thralls)
+		{
+			for (int id : TripSupplies.spellKit("bookOfTheDead"))
+			{
+				ids.add(id);
+			}
+		}
+		if (!ids.isEmpty())
+		{
+			int pouch = ownedRunePouch();
+			if (pouch != -1)
+			{
+				ids.add(pouch);
+			}
+		}
+		return ids;
+	}
+
+	/** The best owned rune pouch (divine first, trouver-locked variants
+	 * counted), or -1. */
+	private int ownedRunePouch()
+	{
+		for (int id : TripSupplies.spellKit("runePouch"))
+		{
+			if (ownedCheck.owns(id))
+			{
+				return id;
+			}
+		}
+		return -1;
+	}
+
 	/** The persistent trip-supply defaults (config enum names keyed by
 	 * TripSupplies category); resolved per result in activeSupplies. */
 	private Map<String, String> supplyDefaults = Collections.emptyMap();
@@ -2986,6 +3076,8 @@ public class LoadoutLabPanel extends PluginPanel
 			// variant matcher draws whatever dose the bank holds there, and
 			// placing ghost doses would render faded placeholders.
 			List<TripSupplies.Option> supplies = activeSupplies(active);
+			List<Integer> arcaneKit = active == null
+				? Collections.emptyList() : arcaneKitFilterIds(active);
 			if (bankShowing)
 			{
 				highlightIds = new HashSet<>();
@@ -3019,6 +3111,7 @@ public class LoadoutLabPanel extends PluginPanel
 						highlightIds.add(id);
 					}
 				}
+				highlightIds.addAll(arcaneKit);
 			}
 			if (bankFiltering)
 			{
@@ -3040,6 +3133,7 @@ public class LoadoutLabPanel extends PluginPanel
 						filterIds.add(id);
 					}
 				}
+				filterIds.addAll(arcaneKit);
 				// Arrange the set in the bank like the in-game equipment +
 				// inventory tabs. Pass the full membership so EVERY filtered
 				// item is placed (an unplaced member would be shoved into the
@@ -3059,6 +3153,16 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						layoutMembers.remove(supply.ids[0]);
 						utilityIds.add(supply.ids[0]);
+					}
+				}
+				// The assumption runes are staging gear: they ride the
+				// utility strip beside the cape, not the inventory block
+				// (the pouch carries them on the trip itself).
+				for (int runeId : arcaneRuneIds(active))
+				{
+					if (layoutMembers.remove(runeId))
+					{
+						utilityIds.add(runeId);
 					}
 				}
 				filterLayout = buildBankLayout(style, best, specWeapon,
@@ -4900,6 +5004,21 @@ public class LoadoutLabPanel extends PluginPanel
 		for (TripSupplies.Option supply : activeSupplies(entry))
 		{
 			ids.add(supply.ids[0]);
+		}
+		// Arceuus casting dependencies keep the cells compact: the book of
+		// the dead and the best owned rune pouch (the runes are filter/
+		// layout only - they live inside the pouch).
+		if (entry.thralls)
+		{
+			ids.add(ExtraDps.BOOK_OF_THE_DEAD);
+		}
+		if ((entry.thralls || entry.deathCharge || demonbaneCast(entry)))
+		{
+			int pouch = ownedRunePouch();
+			if (pouch != -1)
+			{
+				ids.add(pouch);
+			}
 		}
 		return new ArrayList<>(ids);
 	}
