@@ -166,10 +166,14 @@ public class OptimizerService
 	 * independent optimize() calls serially - THE wall, not the kit
 	 * search). Small and near-minimum priority so the client thread never
 	 * starves; each task builds its own LoadoutOptimizer because the
-	 * optimizer's internal DpsCalculator is stateful. */
+	 * optimizer's internal DpsCalculator is stateful. Fixed size rather
+	 * than sized to the host: the Plugin Hub bans java.lang.Runtime, so
+	 * availableProcessors() is unavailable - 4 min-priority daemon threads
+	 * clear the serial wall without oversubscribing a modest machine. */
+	private static final int ROSTER_POOL_SIZE = 4;
 	private final java.util.concurrent.ExecutorService rosterPool =
 		Executors.newFixedThreadPool(
-			Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors() - 2)), r ->
+			ROSTER_POOL_SIZE, r ->
 			{
 				Thread t = new Thread(r, "loadout-lab-roster");
 				t.setDaemon(true);
