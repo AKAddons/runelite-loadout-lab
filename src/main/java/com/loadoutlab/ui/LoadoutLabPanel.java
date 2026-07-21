@@ -649,7 +649,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
 	/** Stamped into the copy-report text so a Discord report names its build.
 	 * Keep in sync with the version in runelite-plugin.properties on release. */
-	private static final String PLUGIN_VERSION = "0.3.2";
+	private static final String PLUGIN_VERSION = "0.3.3";
 	/** Resting label of the copy-report chip; the flash reverts to exactly
 	 * this, so a rapid double-click can't strand it on "Copied!". */
 	private static final String COPY_REPORT_LABEL = "Copy report";
