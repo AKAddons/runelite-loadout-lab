@@ -383,6 +383,20 @@ spellbook-lock work.)
 
 ![Thralls and Death Charge](docs/img/thralls-veng.png)
 
+### Assumption pickers: prayer and boost
+
+The prayer and potion icons on each style card are pickers. Detect best
+stays the default - the boost detect reads what you actually own, the
+prayer detect your unlocks - and clicking an icon overrides that style's
+assumption: any named tier (Piety, Chivalry, Rigour, Deadeye, Augury,
+Mystic Might...), any boost including overloads and smelling salts
+outside raids, or None. An accent border marks an override; the numbers,
+the assume label and the consumable cells all follow. Handy when a low
+prayer-bonus setup cannot sustain Piety and you want the DPS you will
+actually do.
+
+![Assumption pickers](docs/img/assume-pickers.png)
+
 ### Search in Loadout Lab (cross-plugin)
 
 Right-click a monster in the world and choose "Search in Loadout Lab":

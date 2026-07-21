@@ -90,6 +90,7 @@ public final class ServiceCalls
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			byStyle, maxTradeables, riskBudgetGp, antifirePotion, 0,
+			Collections.emptyMap(), Collections.emptyMap(),
 			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
 			dreamItems, upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell,
 			Collections.<Integer>emptySet(), callback);
@@ -123,7 +124,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, 0, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
 			upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
 
@@ -156,7 +157,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, 0, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
 			upgradeBudgetGp, mode, maxSwaps, true, pinnedByStyle, pinnedSpell,
 			protectOnlyItems, callback);
 	}
@@ -219,7 +220,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, Collections.emptyMap(), Collections.emptyMap(), inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob,
 			Collections.emptyMap(), true,
 			pinnedByStyle, pinnedSpell, protectOnlyItems, callback);

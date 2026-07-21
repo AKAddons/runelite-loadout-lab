@@ -126,6 +126,57 @@ public final class PrayerBonuses
 		return result;
 	}
 
+	/** The selectable named tiers per style, best first - the assume-chip
+	 * picker (field direction 2026-07-21: "I don't use Piety against every
+	 * mob"). Factors mirror bestAvailable's cascade exactly. */
+	public static String[] optionsFor(CombatStyle style)
+	{
+		switch (style)
+		{
+			case RANGED: return new String[]{"Rigour", "Deadeye", "Eagle Eye"};
+			case MAGIC: return new String[]{"Augury", "Mystic Vigour", "Mystic Might"};
+			default: return new String[]{"Piety", "Chivalry",
+				"Ultimate Strength + Incredible Reflexes"};
+		}
+	}
+
+	/** A specific pick's bonuses for ONE style: the fallback's factors with
+	 * this style's replaced by the named tier (the other styles' values are
+	 * irrelevant to a single-style request). Unknown names fall back. */
+	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback)
+	{
+		double mAcc = fallback.meleeAccuracy, mStr = fallback.meleeStrength;
+		double rAcc = fallback.rangedAccuracy, rStr = fallback.rangedStrength;
+		double gAcc = fallback.magicAccuracy, gDmg = fallback.magicDamagePercent;
+		String name = pick;
+		switch (style)
+		{
+			case RANGED:
+				if ("Rigour".equals(pick)) { rAcc = 1.20; rStr = 1.23; }
+				else if ("Deadeye".equals(pick)) { rAcc = 1.18; rStr = 1.18; }
+				else if ("Eagle Eye".equals(pick)) { rAcc = 1.15; rStr = 1.15; }
+				else { return fallback; }
+				break;
+			case MAGIC:
+				if ("Augury".equals(pick)) { gAcc = 1.25; gDmg = 4.0; }
+				else if ("Mystic Vigour".equals(pick)) { gAcc = 1.18; gDmg = 3.0; }
+				else if ("Mystic Might".equals(pick)) { gAcc = 1.15; gDmg = 2.0; }
+				else { return fallback; }
+				break;
+			default:
+				if ("Piety".equals(pick)) { mAcc = 1.20; mStr = 1.23; }
+				else if ("Chivalry".equals(pick)) { mAcc = 1.15; mStr = 1.18; }
+				else if ("Ultimate Strength + Incredible Reflexes".equals(pick)) { mAcc = 1.15; mStr = 1.15; }
+				else { return fallback; }
+				break;
+		}
+		PrayerBonuses result = new PrayerBonuses(mAcc, mStr, rAcc, rStr, gAcc, gDmg);
+		result.meleeName = style == CombatStyle.MELEE ? name : fallback.meleeName;
+		result.rangedName = style == CombatStyle.RANGED ? name : fallback.rangedName;
+		result.magicName = style == CombatStyle.MAGIC ? name : fallback.magicName;
+		return result;
+	}
+
 	/** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */
 	public String nameFor(CombatStyle style)
 	{

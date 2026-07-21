@@ -250,6 +250,8 @@ public class OptimizerService
 		int riskBudgetGp,
 		boolean antifirePotion,
 		int deathCharge,
+		Map<CombatStyle, String> boostPicks,
+		Map<CombatStyle, String> prayerPicks,
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
@@ -263,7 +265,7 @@ public class OptimizerService
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
@@ -318,6 +320,8 @@ public class OptimizerService
 		boolean onSlayerTask;
 		boolean antifirePotion;
 		int deathCharge;
+		Map<CombatStyle, String> boostPicks = Collections.emptyMap();
+		Map<CombatStyle, String> prayerPicks = Collections.emptyMap();
 		boolean inWilderness;
 		String lock;
 		int maxTradeables;
@@ -365,7 +369,7 @@ public class OptimizerService
 		return mob.getId() + "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.inWilderness
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + dreamsFor(ctx, mob).hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
@@ -444,7 +448,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
 			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
-			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge
+			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.inWilderness
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.chosenMode.name() + "|" + ctx.maxSwaps
@@ -578,7 +582,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
@@ -608,6 +612,8 @@ public class OptimizerService
 		ctx.onSlayerTask = onSlayerTask;
 		ctx.antifirePotion = antifirePotion;
 		ctx.deathCharge = deathCharge;
+		ctx.boostPicks = boostPicks == null ? Collections.emptyMap() : boostPicks;
+		ctx.prayerPicks = prayerPicks == null ? Collections.emptyMap() : prayerPicks;
 		ctx.inWilderness = inWilderness;
 		ctx.maxTradeables = maxTradeables;
 		ctx.upgradeBudgetGp = upgradeBudgetGp;
@@ -2306,7 +2312,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
@@ -2352,14 +2358,14 @@ public class OptimizerService
 			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness, mergedDreams, upgradeBudgetGp,
+				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
 				mode, maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
@@ -2890,21 +2896,71 @@ public class OptimizerService
 		final String gameLabel;
 	}
 
+	/** Decorate a request with the user's prayer pick: NONE = prayerless,
+	 * a named tier = that tier's factors for this style (detect otherwise). */
+	private static OptimizationRequest withPrayerPick(OptimizationRequest r,
+		ComputeContext ctx, CombatStyle style, PlayerLevels levels, PrayerUnlocks unlocks)
+	{
+		String pick = ctx.prayerPicks.get(style);
+		if (pick == null)
+		{
+			return r;
+		}
+		return r.withPrayers("NONE".equals(pick) ? PrayerBonuses.NONE
+			: PrayerBonuses.forPick(style, pick, PrayerBonuses.bestAvailable(levels, unlocks)));
+	}
+
+	/** The user's boost pick for this style (assume-chip picker), or null
+	 * for detect; "NONE" maps to the unboosted profile. */
+	private static BoostProfile boostPickFor(ComputeContext ctx, CombatStyle style)
+	{
+		String pick = ctx.boostPicks.get(style);
+		if (pick == null)
+		{
+			return null;
+		}
+		try
+		{
+			return BoostProfile.valueOf(pick);
+		}
+		catch (IllegalArgumentException bad)
+		{
+			return null;
+		}
+	}
+
+	/** The assumed-prayer label part: the user's pick (null part when
+	 * prayerless), or detect's best-available tier. */
+	private static String prayerLabelFor(ComputeContext ctx, CombatStyle style,
+		PlayerLevels levels, PrayerUnlocks unlocks)
+	{
+		String pick = ctx.prayerPicks.get(style);
+		if (pick == null)
+		{
+			return PrayerBonuses.bestAvailable(levels, unlocks).nameFor(style);
+		}
+		return "NONE".equals(pick) ? null : pick;
+	}
+
 	private static StylePlan stylePlan(ComputeContext ctx, CombatStyle style, BoostProfile supplied)
 	{
-		BoostProfile boost = supplied != null ? supplied
+		BoostProfile userBoost = boostPickFor(ctx, style);
+		BoostProfile boost = userBoost != null ? userBoost
+			: supplied != null ? supplied
 			: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
 				ctx.inWilderness && ctx.maxTradeables >= 0);
 		PlayerLevels levels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
-		String label = joinAssumes(PrayerBonuses.bestAvailable(levels, ctx.unlocks).nameFor(style),
+		String label = joinAssumes(prayerLabelFor(ctx, style, levels, ctx.unlocks),
 			boost == BoostProfile.NONE ? null : boost.toString());
 		// The ceiling assumes the best prayers/boost in the GAME, not just
 		// what this player has unlocked or owns.
-		BoostProfile gameBoost = supplied != null ? supplied
+		BoostProfile gameBoost = userBoost != null ? userBoost
+			: supplied != null ? supplied
 			: BoostSelector.ceilingFor(style, ctx.f2pOnly);
 		PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
-		String gameLabel = joinAssumes(PrayerBonuses.bestAvailable(gameLevels,
-			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL).nameFor(style), gameBoost.toString());
+		String gameLabel = joinAssumes(prayerLabelFor(ctx, style, gameLevels,
+			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL),
+			gameBoost == BoostProfile.NONE ? null : gameBoost.toString());
 		return new StylePlan(levels, label, gameLevels, gameLabel);
 	}
 
@@ -2927,6 +2983,7 @@ public class OptimizerService
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
 			.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
+		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
 		if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
 		{
 			r = r.withSpell(ctx.pinnedSpell);
@@ -2939,7 +2996,7 @@ public class OptimizerService
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels)
 	{
-		return request(
+		OptimizationRequest r = request(
 			mob, style, gameLevels, PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
 			.withExcludedItems(excludedFor(ctx, style, mob))
@@ -2949,6 +3006,8 @@ public class OptimizerService
 			.withDeathCharge(ctx.deathCharge)
 			.withInWilderness(ctx.inWilderness)
 			.withProtectOnlyItems(ctx.protectOnly);
+		return withPrayerPick(r, ctx, style, gameLevels,
+			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
 	}
 
 	private OptimizationRequest request(

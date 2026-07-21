@@ -62,6 +62,13 @@ public enum BoostProfile
 			boostIf('m', source.getMagic()));
 	}
 
+	/** True when this profile boosts the skill letter (from "asdrm") - the
+	 * assume-chip picker filters style-relevant boosts with it. */
+	public boolean boosts(char skill)
+	{
+		return skills.indexOf(skill) >= 0;
+	}
+
 	/** floor(flat + level * factor), or 0 when this profile skips the skill. */
 	private int boostIf(char skill, int level)
 	{

@@ -47,6 +47,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +123,9 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge, int upgradeBudgetGp,
+			boolean antifirePotion, int deathCharge,
+			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
+			int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
 			boolean raidBoost, Runnable onDone);
 
@@ -132,7 +135,9 @@ public class LoadoutLabPanel extends PluginPanel
 		 * production hook overrides it. */
 		default void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge, int upgradeBudgetGp,
+			boolean antifirePotion, int deathCharge,
+			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
+			int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
 			boolean raidBoost, Runnable onDone)
 		{
@@ -478,6 +483,81 @@ public class LoadoutLabPanel extends PluginPanel
 		return maxHp >= 150;
 	}
 
+	/** Defensive copy for the compute hook (the entry maps mutate on the
+	 * EDT while the optimizer reads on its worker). */
+	private static Map<CombatStyle, String> copyPicks(Map<CombatStyle, String> picks)
+	{
+		return picks.isEmpty() ? Collections.emptyMap() : new EnumMap<>(picks);
+	}
+
+	/** The assume-chip pickers (field direction 2026-07-21): the prayer and
+	 * boost icons on each style card open a menu - Detect best (grey
+	 * default) / None / the style's named tiers (boosts add the universal
+	 * overloads and salts). Engine inputs: picking recomputes. */
+	private void showPrayerPickMenu(ResultEntry entry, CombatStyle style)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		String current = entry.prayerPicks.get(style);
+		pickItem(menu, "Detect best", current == null,
+			() -> { entry.prayerPicks.remove(style); recompute(); }, entry);
+		pickItem(menu, "None (prayerless)", "NONE".equals(current),
+			() -> { entry.prayerPicks.put(style, "NONE"); recompute(); }, entry);
+		for (String option : com.loadoutlab.engine.PrayerBonuses.optionsFor(style))
+		{
+			pickItem(menu, option, option.equals(current),
+				() -> { entry.prayerPicks.put(style, option); recompute(); }, entry);
+		}
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	private void showBoostPickMenu(ResultEntry entry, CombatStyle style)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		String current = entry.boostPicks.get(style);
+		pickItem(menu, "Detect best in bank", current == null,
+			() -> { entry.boostPicks.remove(style); recompute(); }, entry);
+		pickItem(menu, "None (unboosted)", "NONE".equals(current),
+			() -> { entry.boostPicks.put(style, "NONE"); recompute(); }, entry);
+		for (com.loadoutlab.engine.BoostProfile option : styleBoosts(style))
+		{
+			pickItem(menu, option.toString(), option.name().equals(current),
+				() -> { entry.boostPicks.put(style, option.name()); recompute(); }, entry);
+		}
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+	}
+
+	/** The style's boost family plus the universal raid boosts. */
+	private static java.util.List<com.loadoutlab.engine.BoostProfile> styleBoosts(CombatStyle style)
+	{
+		java.util.List<com.loadoutlab.engine.BoostProfile> options = new ArrayList<>();
+		for (com.loadoutlab.engine.BoostProfile b : com.loadoutlab.engine.BoostProfile.values())
+		{
+			if (b == com.loadoutlab.engine.BoostProfile.NONE
+				|| b == com.loadoutlab.engine.BoostProfile.LIVE_CURRENT)
+			{
+				continue;
+			}
+			boolean universal = b.boosts('a') && b.boosts('r') && b.boosts('m');
+			boolean forStyle = style == CombatStyle.MELEE ? b.boosts('a')
+				: style == CombatStyle.RANGED ? b.boosts('r') : b.boosts('m');
+			if (universal || forStyle)
+			{
+				options.add(b);
+			}
+		}
+		return options;
+	}
+
+	private void pickItem(JPopupMenu menu, String label, boolean selected,
+		Runnable action, ResultEntry entry)
+	{
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		item.addActionListener(a -> asActive(entry, action));
+		menu.add(item);
+	}
+
 	/** The display-only dps addition for the shown numbers: the thrall's
 	 * flat tier dps (the official calculator's thrall toggle behaves the
 	 * same) - never a ranking input. */
@@ -808,6 +888,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Death Charge (Arceuus): 15% spec energy per killing blow - an
 		 * ENGINE input to the spec model, so toggling recomputes. */
 		boolean deathCharge;
+		/** Assume-chip picker overrides (field direction 2026-07-21): per
+		 * style, a BoostProfile enum name / a prayer tier name, or "NONE";
+		 * absent = detect best (grey). Engine inputs - changing recomputes. */
+		final Map<CombatStyle, String> boostPicks = new EnumMap<>(CombatStyle.class);
+		final Map<CombatStyle, String> prayerPicks = new EnumMap<>(CombatStyle.class);
 		int optimizeMode;
 		boolean protectItem;
 		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
@@ -3641,6 +3726,7 @@ public class LoadoutLabPanel extends PluginPanel
 				parsedBudgetGp(entry.riskCap),
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
+			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 				entry.maxSwaps, entry.raidBoost,
@@ -3652,6 +3738,7 @@ public class LoadoutLabPanel extends PluginPanel
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
+			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			entry.maxSwaps, entry.raidBoost,
@@ -5292,6 +5379,16 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Thralls: " + ExtraDps.thrallTier(magicLevel)
 				+ " (dps shown includes " + String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")");
 		}
+		for (Map.Entry<CombatStyle, String> pick : entry.prayerPicks.entrySet())
+		{
+			params.add("Prayer (" + pick.getKey() + "): "
+				+ ("NONE".equals(pick.getValue()) ? "none" : pick.getValue()));
+		}
+		for (Map.Entry<CombatStyle, String> pick : entry.boostPicks.entrySet())
+		{
+			params.add("Boost (" + pick.getKey() + "): "
+				+ ("NONE".equals(pick.getValue()) ? "none" : pick.getValue()));
+		}
 		if (entry.deathCharge)
 		{
 			params.add("Death Charge: on"
@@ -5593,7 +5690,7 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " required shield, dragonfire is fully blocked";
 			}
 			// The chips render in the stat panel beside the gear, not here.
-			JPanel chips = assumesChips(chipLabel,
+			JPanel chips = assumesChips(entry, style, chipLabel,
 				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
 				antifireTooltip);
 			renderingChips = chips;
@@ -6632,7 +6729,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Just the prayer/boost icon chips - the card HEADER hosts these
 	 * inline with the style title to reclaim a whole row of vertical
 	 * space (field request); tooltips carry the words. */
-	private JPanel assumesChips(String label, String tooltip, String antifireTooltip)
+	private JPanel assumesChips(ResultEntry entry, CombatStyle style, String label,
+		String tooltip, String antifireTooltip)
 	{
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
 		chips.setOpaque(false);
@@ -6647,7 +6745,6 @@ public class LoadoutLabPanel extends PluginPanel
 		for (String part : label.split(" \\+ "))
 		{
 			JLabel chip = new JLabel();
-			chip.setToolTipText(part);
 			int sprite = AssumeIcons.prayerSprite(part);
 			int item = AssumeIcons.boostItem(part);
 			if (sprite >= 0)
@@ -6663,6 +6760,35 @@ public class LoadoutLabPanel extends PluginPanel
 				chip.setText(part);
 				chip.setForeground(MUTED);
 				chip.setFont(chip.getFont().deriveFont(13f));
+			}
+			// The picker (field direction 2026-07-21): prayer chips open the
+			// prayer menu, boost chips the boost menu - grey means detected,
+			// the accent border an override.
+			boolean isPrayer = sprite >= 0;
+			boolean overridden = entry != null && style != null
+				&& (isPrayer ? entry.prayerPicks.containsKey(style)
+					: entry.boostPicks.containsKey(style));
+			chip.setToolTipText(part + (entry != null
+				? " - click to change this assumption" + (overridden ? " (custom)" : "") : ""));
+			if (overridden)
+			{
+				chip.setBorder(new RoundedBorder(ACCENT, 1, 3));
+			}
+			if (entry != null && style != null)
+			{
+				chip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				final boolean prayerChip = isPrayer;
+				onClick(chip, e -> asActive(entry, () ->
+				{
+					if (prayerChip)
+					{
+						showPrayerPickMenu(entry, style);
+					}
+					else
+					{
+						showBoostPickMenu(entry, style);
+					}
+				}));
 			}
 			chips.add(chip);
 		}

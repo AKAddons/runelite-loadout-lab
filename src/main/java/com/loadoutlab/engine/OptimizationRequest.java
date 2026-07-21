@@ -214,6 +214,15 @@ public final class OptimizationRequest implements Cloneable
 		return deathCharge;
 	}
 
+	/** Override the assumed prayer bonuses (the assume-chip picker); the
+	 * default is bestAvailable at the request's levels/unlocks. */
+	public OptimizationRequest withPrayers(PrayerBonuses prayers)
+	{
+		OptimizationRequest c = copy();
+		c.prayers = prayers;
+		return c;
+	}
+
 	public boolean isRiskConstrained()
 	{
 		return maxTradeables >= 0;
