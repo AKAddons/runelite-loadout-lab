@@ -161,6 +161,21 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "displaySpellbookChip",
+		name = "Assumed spellbook chip",
+		description = "Show the Arceuus / Lunar+swap chip on every style card"
+			+ " when thralls or Death Charge are assumed, with a warning"
+			+ " border when you are not on that spellbook. Turn off if you"
+			+ " never juggle spellbooks.",
+		section = display,
+		position = 11
+	)
+	default boolean displaySpellbookChip()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "loadingAnimation",
 		name = "Loading animation",
 		description = "Show the animated mascot while the optimizer computes a"

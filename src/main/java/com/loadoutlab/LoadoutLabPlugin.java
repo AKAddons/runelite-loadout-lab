@@ -555,7 +555,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
 		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
 		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
+		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
+		"defaultRiskCap");
 
 	/** The panel's grey-trio hook: the global always-filter list plus
 	 * wrench-panel supply defaults editable straight from the chip menu
@@ -639,6 +640,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			config.showInBankButton(),
 			config.showFilterBankButton(),
 			config.loadingAnimation(),
+			config.displaySpellbookChip(),
 			config.defaultUpgradeBudget(),
 			config.defaultRiskCap(),
 			config.defaultOnTask(),

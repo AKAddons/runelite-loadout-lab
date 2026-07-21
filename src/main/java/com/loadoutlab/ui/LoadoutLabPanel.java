@@ -189,6 +189,9 @@ public class LoadoutLabPanel extends PluginPanel
 		final boolean showInBank;
 		final boolean filterBank;
 		final boolean loadingAnimation;
+		/** The cross-tab assumed-spellbook chip - optional: it annoys
+		 * players who never juggle spellbooks (field call 2026-07-21). */
+		final boolean spellbookChip;
 
 		/** Seeds for every NEW result's parameter zone (settings panel). */
 		public final String defaultUpgradeBudget;
@@ -206,7 +209,8 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
 			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
 			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, String defaultUpgradeBudget, String defaultRiskCap,
+			boolean loadingAnimation, boolean spellbookChip,
+			String defaultUpgradeBudget, String defaultRiskCap,
 			boolean defaultOnTask, int defaultAntifireMode)
 		{
 			this.defaultAntifireMode = defaultAntifireMode;
@@ -229,12 +233,13 @@ public class LoadoutLabPanel extends PluginPanel
 			this.showInBank = showInBank;
 			this.filterBank = filterBank;
 			this.loadingAnimation = loadingAnimation;
+			this.spellbookChip = spellbookChip;
 		}
 
 		static DisplayOptions all()
 		{
 			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true, "", "", false, -1);
+				true, true, true, true, true, true, true, true, true, true, "", "", false, -1);
 		}
 	}
 
@@ -6904,7 +6909,8 @@ public class LoadoutLabPanel extends PluginPanel
 		// The spellbook the BUILD assumes rides every tab, not just magic
 		// (field spec 2026-07-21): thralls / Death Charge mean Arceuus. A
 		// warning border says the player is NOT currently on that book.
-		if (entry != null && (entry.thralls || entry.deathCharge))
+		if (entry != null && displayOptions.spellbookChip
+			&& (entry.thralls || entry.deathCharge))
 		{
 			boolean viaSwap = arceuusViaSwap();
 			int homeBook = viaSwap ? SPELLBOOK_LUNAR : SPELLBOOK_ARCEUUS;
@@ -6930,6 +6936,16 @@ public class LoadoutLabPanel extends PluginPanel
 						+ " (a magic or max cape can swap anywhere)"
 					: "This build assumes the Arceuus spellbook (thralls / Death"
 						+ " Charge)"));
+			// Clicking the chip toggles the access mode in place (the grey
+			// chip menu holds the same choice).
+			if (globalFilters != null)
+			{
+				bookChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				final boolean wasSwap = viaSwap;
+				onClick(bookChip, e -> asActive(entry, () ->
+					globalFilters.setSupplyDefault("arceuusAccess",
+						wasSwap ? "DETECT_BEST" : "SPELLBOOK_SWAP")));
+			}
 			chips.add(bookChip);
 		}
 		for (String part : label.split(" \\+ "))
