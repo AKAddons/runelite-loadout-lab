@@ -40,13 +40,18 @@ public final class TripSupplies
 		/** False = only selectable explicitly (prayer regeneration's
 		 * over-time mechanism should never win an auto-detect). */
 		public final boolean detect;
+		/** True = fight-relevant gear that is neither worn nor carried
+		 * (spellbook capes): the bank layout's third strip, below the
+		 * cross and the inventory block (field spec 2026-07-20). */
+		public final boolean utility;
 
-		Option(String key, String name, int[] ids, boolean detect)
+		Option(String key, String name, int[] ids, boolean detect, boolean utility)
 		{
 			this.key = key;
 			this.name = name;
 			this.ids = ids;
 			this.detect = detect;
+			this.utility = utility;
 		}
 	}
 
@@ -77,7 +82,8 @@ public final class TripSupplies
 							o.get("key").getAsString(),
 							o.get("name").getAsString(),
 							ids,
-							!o.has("detect") || o.get("detect").getAsBoolean()));
+							!o.has("detect") || o.get("detect").getAsBoolean(),
+							o.has("placement") && "utility".equals(o.get("placement").getAsString())));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));

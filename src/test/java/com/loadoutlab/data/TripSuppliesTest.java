@@ -75,6 +75,25 @@ public class TripSuppliesTest
 	}
 
 	@Test
+	public void onlyTheSpellbookCapesAreUtilityPlacement()
+	{
+		// Utility = fight-relevant gear that is neither worn nor carried:
+		// the bank layout's third strip. Consumables stay inventory-placed.
+		for (TripSupplies.Option o : TripSupplies.options(TripSupplies.SPELLBOOK_CAPE))
+		{
+			Assert.assertTrue(o.key + " should be utility", o.utility);
+		}
+		for (String category : new String[]{TripSupplies.FOOD, TripSupplies.FAST_FOOD,
+			TripSupplies.PRAYER_RESTORE, TripSupplies.SURGE, TripSupplies.ANTIVENOM})
+		{
+			for (TripSupplies.Option o : TripSupplies.options(category))
+			{
+				Assert.assertFalse(o.key + " should not be utility", o.utility);
+			}
+		}
+	}
+
+	@Test
 	public void unknownAndModeKeysResolveToNoOption()
 	{
 		Assert.assertNull(TripSupplies.option(TripSupplies.FOOD, "DETECT_BEST"));

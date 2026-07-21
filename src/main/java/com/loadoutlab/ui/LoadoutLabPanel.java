@@ -2887,15 +2887,24 @@ public class LoadoutLabPanel extends PluginPanel
 				// item is placed (an unplaced member would be shoved into the
 				// cross's blank corners by the bank-tag layout) - minus the
 				// supplies' non-display dose ids (ghost placeholders).
+				// Utility supplies (spellbook capes - fight-relevant but
+				// neither worn nor carried) get the layout's THIRD strip.
 				Set<Integer> layoutMembers = new HashSet<>(filterIds);
+				List<Integer> utilityIds = new ArrayList<>();
 				for (TripSupplies.Option supply : supplies)
 				{
 					for (int i = 1; i < supply.ids.length; i++)
 					{
 						layoutMembers.remove(supply.ids[i]);
 					}
+					if (supply.utility)
+					{
+						layoutMembers.remove(supply.ids[0]);
+						utilityIds.add(supply.ids[0]);
+					}
 				}
-				filterLayout = buildBankLayout(style, best, specWeapon, layoutMembers);
+				filterLayout = buildBankLayout(style, best, specWeapon,
+					layoutMembers, utilityIds);
 			}
 		}
 		if (!Objects.equals(highlightIds, lastHighlightIds))
@@ -2916,7 +2925,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * inventory tabs. Positions RuneLite doesn't fill stay -1 (blank). The
 	 * matcher maps owned variants; unowned pieces render as faded placeholders. */
 	private int[] buildBankLayout(CombatStyle style, DpsResult best, GearItem specWeapon,
-		Set<Integer> members)
+		Set<Integer> members, List<Integer> utilityIds)
 	{
 		int specId = specWeapon != null ? specWeapon.getId() : -1;
 		Map<Integer, Integer> place = new LinkedHashMap<>();
@@ -2964,6 +2973,20 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			place.put((k / 4) * 8 + 4 + (k % 4), id);
 			k++;
+		}
+		// The THIRD strip (field spec 2026-07-20): fight-relevant gear that
+		// is neither worn nor carried (spellbook capes), one blank row below
+		// whichever of the cross / inventory reaches lower.
+		if (utilityIds != null && !utilityIds.isEmpty())
+		{
+			int invBottom = k > 0 ? (k - 1) / 4 : 0;
+			int stripRow = Math.max(4, invBottom) + 2;
+			int u = 0;
+			for (int id : utilityIds)
+			{
+				place.put((stripRow + u / 8) * 8 + (u % 8), id);
+				u++;
+			}
 		}
 		int maxPos = 0;
 		for (int pos : place.keySet())

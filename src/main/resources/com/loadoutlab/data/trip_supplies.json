@@ -1,5 +1,5 @@
 {
-  "_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely).",
+  "_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely).",
   "food": [
     {"key": "MOONLIGHT_ANTELOPE", "name": "Cooked moonlight antelope", "ids": [29143]},
     {"key": "MARLIN", "name": "Marlin", "ids": [32352]},
@@ -24,8 +24,8 @@
     {"key": "SURGE_POTION", "name": "Surge potion", "ids": [30875, 30878, 30881, 30884]}
   ],
   "spellbookCape": [
-    {"key": "MAX_CAPE", "name": "Max cape", "ids": [13280]},
-    {"key": "MAGIC_CAPE", "name": "Magic cape", "ids": [9762, 9763]}
+    {"key": "MAX_CAPE", "name": "Max cape", "ids": [13280], "placement": "utility"},
+    {"key": "MAGIC_CAPE", "name": "Magic cape", "ids": [9762, 9763], "placement": "utility"}
   ],
   "antivenom": [
     {"key": "EXTENDED_ANTIVENOM", "name": "Extended anti-venom+", "ids": [29824, 29827, 29830, 29833]},
