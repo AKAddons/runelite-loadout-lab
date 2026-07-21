@@ -5648,12 +5648,12 @@ public class LoadoutLabPanel extends PluginPanel
 			// Same color language as the global -N/+N chips above the
 			// search bar: red for exclusions, green for sims.
 			localRow.add(localCountChip(
-				excludedCount > 0 ? "Exclude here: " + excludedCount : "Exclude here",
+				excludedCount > 0 ? "Exclude: " + excludedCount : "Exclude",
 				excludedCount > 0, true,
 				"Never use an item vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalExclusions(entry, lensedProfileId, mobName))));
 			localRow.add(localCountChip(
-				simCount > 0 ? "Sim here: " + simCount : "Sim here",
+				simCount > 0 ? "Sim: " + simCount : "Sim",
 				simCount > 0, false,
 				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
@@ -5664,7 +5664,7 @@ public class LoadoutLabPanel extends PluginPanel
 				filterHere += scopedItems.size();
 			}
 			localRow.add(localGreyChip(
-				filterHere > 0 ? "Filter here: " + filterHere : "Filter here",
+				filterHere > 0 ? "Filter: " + filterHere : "Filter",
 				filterHere > 0,
 				"Bank filters vs " + mobName + " (this mob only) - supply"
 					+ " overrides and always-at-hand items",
