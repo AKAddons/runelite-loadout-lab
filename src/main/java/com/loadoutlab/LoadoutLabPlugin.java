@@ -1860,6 +1860,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				panel.setMagicLevel(real.getMagic());
 				panel.setDeathChargeUpgraded(client.getVarbitValue(
 					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+				panel.setCurrentSpellbook(client.getVarbitValue(
+					net.runelite.api.gameval.VarbitID.SPELLBOOK));
 			}
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
@@ -1912,6 +1914,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				panel.setMagicLevel(real.getMagic());
 				panel.setDeathChargeUpgraded(client.getVarbitValue(
 					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+				panel.setCurrentSpellbook(client.getVarbitValue(
+					net.runelite.api.gameval.VarbitID.SPELLBOOK));
 			}
 			// One merge, shared by the optimizer request and the export - this
 			// runs on the client thread, where every merge is a frame tax.

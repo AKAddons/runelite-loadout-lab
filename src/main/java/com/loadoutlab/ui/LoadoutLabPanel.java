@@ -448,6 +448,17 @@ public class LoadoutLabPanel extends PluginPanel
 		deathChargeUpgraded = upgraded;
 	}
 
+	/** The player's LIVE spellbook (VarbitID.SPELLBOOK: 0 standard,
+	 * 1 ancient, 2 lunar, 3 arceuus; -1 unknown) - the cross-tab Arceuus
+	 * chip warns when the build's assumed book is not the current one. */
+	private volatile int currentSpellbook = -1;
+	private static final int SPELLBOOK_ARCEUUS = 3;
+
+	public void setCurrentSpellbook(int spellbook)
+	{
+		currentSpellbook = spellbook;
+	}
+
 	/** Thralls default ON where they benefit (field call 2026-07-21):
 	 * requirements met (tier reachable + book of the dead owned) and a
 	 * fight long enough to matter - 150+ hp, boss/slayer-boss tier, not
@@ -6860,6 +6871,29 @@ public class LoadoutLabPanel extends PluginPanel
 			potion.setToolTipText(antifireTooltip);
 			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
 			chips.add(potion);
+		}
+		// The spellbook the BUILD assumes rides every tab, not just magic
+		// (field spec 2026-07-21): thralls / Death Charge mean Arceuus. A
+		// warning border says the player is NOT currently on that book.
+		if (entry != null && (entry.thralls || entry.deathCharge))
+		{
+			boolean offBook = currentSpellbook >= 0
+				&& currentSpellbook != SPELLBOOK_ARCEUUS;
+			JLabel bookChip = new JLabel("Arceuus");
+			bookChip.setFont(bookChip.getFont().deriveFont(Font.BOLD, 11f));
+			bookChip.setForeground(offBook
+				? new Color(230, 170, 90) : MUTED);
+			if (offBook)
+			{
+				bookChip.setBorder(new RoundedBorder(new Color(200, 140, 60), 1, 4));
+			}
+			bookChip.setToolTipText(offBook
+				? "This build assumes the ARCEUUS spellbook (thralls / Death"
+					+ " Charge) and you are NOT on it - swap before the trip"
+					+ " (a magic or max cape can swap anywhere)"
+				: "This build assumes the Arceuus spellbook (thralls / Death"
+					+ " Charge)");
+			chips.add(bookChip);
 		}
 		for (String part : label.split(" \\+ "))
 		{
