@@ -74,6 +74,7 @@ public final class OptimizationRequest implements Cloneable
 	 * forced); false = protection must come from a shield. */
 	@Getter
 	private boolean antifirePotion;
+	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
 	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
@@ -195,6 +196,22 @@ public final class OptimizationRequest implements Cloneable
 		OptimizationRequest c = copy();
 		c.antifirePotion = antifirePotion;
 		return c;
+	}
+
+	/** Death Charge (Arceuus, Magic 80): 15% spec energy back on a killing
+	 * blow per cast window - an extra energy stream for the spec model.
+	 * 0 = off, 1 = base (60s window), 2 = upgraded by Yama's rite of vile
+	 * transference (two refunds per cast = an effective 30s window). */
+	public OptimizationRequest withDeathCharge(int deathCharge)
+	{
+		OptimizationRequest c = copy();
+		c.deathCharge = deathCharge;
+		return c;
+	}
+
+	public int getDeathCharge()
+	{
+		return deathCharge;
 	}
 
 	public boolean isRiskConstrained()

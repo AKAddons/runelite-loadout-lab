@@ -249,6 +249,7 @@ public class OptimizerService
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
+		int deathCharge,
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
@@ -262,7 +263,7 @@ public class OptimizerService
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
@@ -316,6 +317,7 @@ public class OptimizerService
 		boolean f2pOnly;
 		boolean onSlayerTask;
 		boolean antifirePotion;
+		int deathCharge;
 		boolean inWilderness;
 		String lock;
 		int maxTradeables;
@@ -363,7 +365,7 @@ public class OptimizerService
 		return mob.getId() + "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.inWilderness
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.inWilderness
 			+ "|" + dreamsFor(ctx, mob).hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
@@ -442,7 +444,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
 			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
-			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion
+			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge
 			+ "|" + ctx.inWilderness
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.chosenMode.name() + "|" + ctx.maxSwaps
@@ -576,7 +578,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
@@ -605,6 +607,7 @@ public class OptimizerService
 		ctx.f2pOnly = f2pOnly;
 		ctx.onSlayerTask = onSlayerTask;
 		ctx.antifirePotion = antifirePotion;
+		ctx.deathCharge = deathCharge;
 		ctx.inWilderness = inWilderness;
 		ctx.maxTradeables = maxTradeables;
 		ctx.upgradeBudgetGp = upgradeBudgetGp;
@@ -2303,7 +2306,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
@@ -2349,14 +2352,14 @@ public class OptimizerService
 			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, inWilderness, mergedDreams, upgradeBudgetGp,
+				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness, mergedDreams, upgradeBudgetGp,
 				mode, maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
@@ -2754,6 +2757,23 @@ public class OptimizerService
 	 * value is their max, not their sum - a small undercount for a spec that
 	 * genuinely does both at once (BGS), accepted for v1.
 	 */
+	/** The spec energy available over one kill: the opening bar, regen
+	 * (10%/30s, doubled by a Lightbearer), and - with Death Charge assumed -
+	 * one 15% refund per cast window, scaled down when the kill is shorter
+	 * than the window (the refund needs a killing blow in it). Yama's rite
+	 * of vile transference upgrades the spell to refund from TWO kills per
+	 * cast, an effective 30s window (level 2). Package-private: the
+	 * deterministic unit under DeathChargeTest. */
+	static double specEnergyOverKill(double ttkSeconds, boolean lightbearer,
+		int deathChargeLevel)
+	{
+		double regenPerSec = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
+		double window = deathChargeLevel >= 2 ? 30.0 : 60.0;
+		return 100.0 + regenPerSec * ttkSeconds
+			+ (deathChargeLevel > 0
+				? 15.0 * ttkSeconds / Math.max(window, ttkSeconds) : 0.0);
+	}
+
 	private double specDpsAdded(
 		DpsCalculator calculator,
 		SpecialAttack spec,
@@ -2777,8 +2797,8 @@ public class OptimizerService
 		// (10%/30s, doubled by a Lightbearer), but never more than the fight has
 		// time for - so a mob that dies in one hit gets no spec value, and a
 		// long fight fits more. Fully TTK-consistent, no short-kill blow-up.
-		double regenPerSec = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
-		double energyOverKill = 100.0 + regenPerSec * ttkSeconds;
+		double energyOverKill = specEnergyOverKill(ttkSeconds, lightbearer,
+			request.getDeathCharge());
 		double usesByEnergy = Math.floor(energyOverKill / Math.max(1, spec.getEnergyCost()));
 		double usesByTime = Math.floor(ttkSeconds / specCycle);
 		double uses = Math.max(0, Math.min(usesByEnergy, usesByTime));
@@ -2902,6 +2922,7 @@ public class OptimizerService
 			.withSpellbookLock(ctx.lock)
 			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 			.withAntifirePotion(ctx.antifirePotion)
+			.withDeathCharge(ctx.deathCharge)
 			.withInWilderness(ctx.inWilderness)
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
@@ -2925,6 +2946,7 @@ public class OptimizerService
 			.withSpellbookLock(ctx.lock)
 			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 			.withAntifirePotion(ctx.antifirePotion)
+			.withDeathCharge(ctx.deathCharge)
 			.withInWilderness(ctx.inWilderness)
 			.withProtectOnlyItems(ctx.protectOnly);
 	}

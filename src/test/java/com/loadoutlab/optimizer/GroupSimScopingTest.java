@@ -52,7 +52,7 @@ public class GroupSimScopingTest
 					PrayerUnlocks.ALL, RequirementProfile.MAXED,
 					new OwnedItems(owned, true), 1, false, false, "",
 					Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-					false, false, Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+					false, 0, false, Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
 					maxSwaps, Collections.emptyMap(), dreamsByMob, true,
 					Collections.emptyMap(), null, Collections.emptySet(),
 					roster -> { out.set(roster); done.countDown(); });

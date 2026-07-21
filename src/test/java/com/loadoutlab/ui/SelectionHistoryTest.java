@@ -34,7 +34,7 @@ public class SelectionHistoryTest
 		return new LoadoutLabPanel(data,
 			Mockito.mock(ItemManager.class, Mockito.RETURNS_DEEP_STUBS),
 			Mockito.mock(SpriteManager.class),
-			(monster, f2p, slayer, wildy, book, maxTradeables, riskBudget, antifire, budget, mode, maxSwaps, raidBoost, onDone) -> computed.set(monster),
+			(monster, f2p, slayer, wildy, book, maxTradeables, riskBudget, antifire, dcharge, budget, mode, maxSwaps, raidBoost, onDone) -> computed.set(monster),
 			itemId -> false,
 			java.util.Collections::emptySet,
 			new LoadoutLabPanel.ProtectOnlyToggle()

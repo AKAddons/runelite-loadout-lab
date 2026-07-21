@@ -89,7 +89,7 @@ public final class ServiceCalls
 		}
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			byStyle, maxTradeables, riskBudgetGp, antifirePotion,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion, 0,
 			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
 			dreamItems, upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell,
 			Collections.<Integer>emptySet(), callback);
@@ -123,7 +123,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness, dreamItems,
 			upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
 
@@ -156,7 +156,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness, dreamItems,
 			upgradeBudgetGp, mode, maxSwaps, true, pinnedByStyle, pinnedSpell,
 			protectOnlyItems, callback);
 	}
@@ -219,7 +219,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob,
 			Collections.emptyMap(), true,
 			pinnedByStyle, pinnedSpell, protectOnlyItems, callback);

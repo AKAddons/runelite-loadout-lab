@@ -1836,7 +1836,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	}
 
 	@Override
-	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
+	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1854,6 +1854,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			if (panel != null)
+			{
+				panel.setMagicLevel(real.getMagic());
+				panel.setDeathChargeUpgraded(client.getVarbitValue(
+					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+			}
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			int fingerprint = owned.presenceFingerprint();
@@ -1861,7 +1867,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			MonsterStats anchor = mobs.get(0);
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion,
+				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode, maxSwaps, perMobExclusions(mobs),
 				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				protectOnly.snapshot(),
@@ -1877,7 +1883,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	}
 
 	@Override
-	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
+	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1900,6 +1906,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			if (panel != null)
+			{
+				panel.setMagicLevel(real.getMagic());
+				panel.setDeathChargeUpgraded(client.getVarbitValue(
+					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+			}
 			// One merge, shared by the optimizer request and the export - this
 			// runs on the client thread, where every merge is a frame tax.
 			Map<Integer, Integer> mergedOwned = ownedItems();
@@ -1913,7 +1925,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
+				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, mode, maxSwaps, raidBoost,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				protectOnly.snapshot(),

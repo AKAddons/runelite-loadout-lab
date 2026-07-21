@@ -417,6 +417,26 @@
    ],
    "since": "0.3.3",
    "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot."
+  },
+  {
+   "id": "thralls-death-charge",
+   "title": "Thralls and Death Charge",
+   "group": "Results",
+   "anchor": "thralls-and-death-charge",
+   "media": "docs/img/thralls-veng.png",
+   "code": [
+    "engine/ExtraDps.java",
+    "engine/OptimizationRequest.java",
+    "optimizer/OptimizerService.java",
+    "LoadoutLabPlugin.java",
+    "ui/LoadoutLabPanel.java"
+   ],
+   "tests": [
+    "engine/ExtraDpsTest.java",
+    "optimizer/DeathChargeTest.java"
+   ],
+   "since": "0.3.3",
+   "capture": "A boss card with the Thralls and D charge chips active in the params row, the style tab tooltip open showing the 'gear + thrall' breakdown. Single PNG screenshot."
   }
  ]
 }

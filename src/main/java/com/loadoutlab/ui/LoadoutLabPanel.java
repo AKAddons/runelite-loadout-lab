@@ -9,6 +9,7 @@ import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SlayerLockedMonsters;
 import com.loadoutlab.data.StatBlock;
 import com.loadoutlab.data.TripSupplies;
+import com.loadoutlab.engine.ExtraDps;
 import com.loadoutlab.data.WildernessMonsters;
 import com.loadoutlab.engine.BlowpipeDarts;
 import com.loadoutlab.engine.CombatStyle;
@@ -121,7 +122,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int upgradeBudgetGp,
+			boolean antifirePotion, int deathCharge, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
 			boolean raidBoost, Runnable onDone);
 
@@ -131,7 +132,7 @@ public class LoadoutLabPanel extends PluginPanel
 		 * production hook overrides it. */
 		default void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int upgradeBudgetGp,
+			boolean antifirePotion, int deathCharge, int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
 			boolean raidBoost, Runnable onDone)
 		{
@@ -420,6 +421,69 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		globalFilters = filters;
 		refreshCountChips();
+	}
+
+	/** The player's real Magic level (plugin-pushed at compute staging) -
+	 * gates the thrall tier and the Vengeance chip. Volatile: written on
+	 * the client thread, read on the EDT. */
+	private volatile int magicLevel = 99;
+
+	public void setMagicLevel(int level)
+	{
+		magicLevel = level;
+	}
+
+	/** Yama's rite of vile transference read (VarbitID
+	 * DEATH_CHARGE_SCROLL_USED): Death Charge refunds from TWO kills per
+	 * cast. Plugin-pushed at compute staging, like the Magic level. */
+	private volatile boolean deathChargeUpgraded;
+
+	public void setDeathChargeUpgraded(boolean upgraded)
+	{
+		deathChargeUpgraded = upgraded;
+	}
+
+	/** Thralls default ON where they benefit (field call 2026-07-21):
+	 * requirements met (tier reachable + book of the dead owned) and a
+	 * fight long enough to matter - 150+ hp, boss/slayer-boss tier, not
+	 * trash that dies before the thrall lands twice. */
+	private boolean defaultThralls(ResultEntry entry)
+	{
+		if (ExtraDps.thrallDps(magicLevel) <= 0
+			|| !ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
+		{
+			return false;
+		}
+		int maxHp = 0;
+		for (MonsterStats m : entry.mobs)
+		{
+			maxHp = Math.max(maxHp, m.getHitpoints());
+		}
+		return maxHp >= 150;
+	}
+
+	/** Death Charge defaults ON with the same benefit gate as thralls
+	 * (Magic 80 + a 150+ hp fight); no book required - it is a spell. */
+	private boolean defaultDeathCharge(ResultEntry entry)
+	{
+		if (magicLevel < 80)
+		{
+			return false;
+		}
+		int maxHp = 0;
+		for (MonsterStats m : entry.mobs)
+		{
+			maxHp = Math.max(maxHp, m.getHitpoints());
+		}
+		return maxHp >= 150;
+	}
+
+	/** The display-only dps addition for the shown numbers: the thrall's
+	 * flat tier dps (the official calculator's thrall toggle behaves the
+	 * same) - never a ranking input. */
+	private double extraShownDps(ResultEntry entry)
+	{
+		return entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
 	}
 
 	/** The persistent trip-supply defaults (config enum names keyed by
@@ -739,6 +803,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// the per-card chip row lands (step 2).
 		boolean onSlayerTask;
 		boolean inWilderness;
+		/** Fold thrall dps into the shown numbers (display-only). */
+		boolean thralls;
+		/** Death Charge (Arceuus): 15% spec energy per killing blow - an
+		 * ENGINE input to the spec model, so toggling recomputes. */
+		boolean deathCharge;
 		int optimizeMode;
 		boolean protectItem;
 		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
@@ -1656,6 +1725,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			active.addMob(group.getMobs().get(i));
 		}
+		active.thralls = defaultThralls(active);
+		active.deathCharge = defaultDeathCharge(active);
 		active.seedInventoryDefault(group.getInventory());
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
@@ -1722,6 +1793,8 @@ public class LoadoutLabPanel extends PluginPanel
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
+		active.thralls = defaultThralls(active);
+		active.deathCharge = defaultDeathCharge(active);
 		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
@@ -3567,6 +3640,7 @@ public class LoadoutLabPanel extends PluginPanel
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
+				entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 				entry.maxSwaps, entry.raidBoost,
@@ -3577,6 +3651,7 @@ public class LoadoutLabPanel extends PluginPanel
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
+			entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			entry.maxSwaps, entry.raidBoost,
@@ -4097,6 +4172,41 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						setAntifireMode(next);
 					}
+				})));
+		}
+		// Thralls / Vengeance (field direction 2026-07-21): display-only
+		// dps folds - the chips show only when usable (tier reachable +
+		// book of the dead owned; Magic 94 for Veng).
+		if (ExtraDps.thrallDps(magicLevel) > 0 && ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
+		{
+			toggles.add(paramChip("Thralls", entry.thralls, true,
+				entry.thralls
+					? "Folding your " + ExtraDps.thrallTier(magicLevel)
+						+ " thrall (" + String.format("%.2f", ExtraDps.thrallDps(magicLevel))
+						+ " dps, always hits) into the shown numbers - click to exclude"
+					: "Fold your " + ExtraDps.thrallTier(magicLevel)
+						+ " thrall's dps into the shown numbers (Arceuus + book of the dead)",
+				() -> asActive(entry, () ->
+				{
+					entry.thralls = !entry.thralls;
+					renderPage();
+				})));
+		}
+		if (magicLevel >= 80)
+		{
+			toggles.add(paramChip("D charge", entry.deathCharge, true,
+				entry.deathCharge
+					? (deathChargeUpgraded
+						? "Death Charge assumed, UPGRADED by Yama's rite (two 15%"
+							+ " refunds per cast) - feeds the spec model; click to exclude"
+						: "Death Charge assumed (Arceuus, 15% spec energy per killing"
+							+ " blow, 60s cast) - feeds the spec model; click to exclude")
+					: "Assume Death Charge - more special attacks per trip"
+						+ " (Arceuus, Magic 80)",
+				() -> asActive(entry, () ->
+				{
+					entry.deathCharge = !entry.deathCharge;
+					recompute();
 				})));
 		}
 		// One continuous wrap row for ALL chips (field fix 2026-07-18:
@@ -5177,6 +5287,16 @@ public class LoadoutLabPanel extends PluginPanel
 				: unlimited ? "unlimited" : budget));
 		}
 
+		if (entry.thralls)
+		{
+			params.add("Thralls: " + ExtraDps.thrallTier(magicLevel)
+				+ " (dps shown includes " + String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")");
+		}
+		if (entry.deathCharge)
+		{
+			params.add("Death Charge: on"
+				+ (deathChargeUpgraded ? " (upgraded - two refunds per cast)" : ""));
+		}
 		if (entry.mobs.size() > 1)
 		{
 			params.add("Inventory: " + entry.maxSwaps);
@@ -5384,6 +5504,7 @@ public class LoadoutLabPanel extends PluginPanel
 				: bis ? r.overallBest
 				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
 			boolean hasSet = shown != null && shown.getDps() > 0;
+			double extra = hasSet ? extraShownDps(entry) : 0;
 			boolean isSelected = style == selected;
 			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
 			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -5395,12 +5516,17 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel icon = new JLabel();
 			attachSprite(icon, AssumeIcons.styleSprite(style));
 			JLabel dps = new JLabel(hasSet
-				? String.format("%.2f", shown.getDps()) : "-");
+				? String.format("%.2f", shown.getDps() + extra) : "-");
 			dps.setForeground(isSelected ? Color.WHITE : new Color(160, 160, 160));
 			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
 			tab.add(icon);
 			tab.add(dps);
-			tab.setToolTipText(style + (hasSet ? " - " + dps.getText() + " DPS" : " - no set"));
+			tab.setToolTipText(style + (hasSet
+				? " - " + dps.getText() + " DPS" + (extra > 0
+					? String.format(" (%.2f gear + %.2f thrall)",
+						shown.getDps(), extra)
+					: "")
+				: " - no set"));
 			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			onClick(tab, e ->
 			{

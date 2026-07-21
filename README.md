@@ -367,6 +367,22 @@ dose matches) and the filtered bank's inventory block.
 
 ![Trip supplies](docs/img/trip-supplies.png)
 
+### Thralls and Death Charge
+
+Arceuus support, modeled honestly. The Thralls chip appears when your
+Magic reaches a tier (38/57/76) and you own the book of the dead - it
+defaults ON against 150+ hp targets, folding the tier's flat dps
+(greater: 0.625, always hits) into the shown numbers, exactly like the
+official calculator's thrall toggle; the tab tooltip shows the
+gear/thrall breakdown, and the ranking never moves (a thrall adds the
+same to every set). The D charge chip (Magic 80) assumes Death Charge -
+15% special attack energy per killing blow, once per 60-second cast -
+feeding the spec model's energy budget, so long energy-bound fights fit
+more special attacks. (Vengeance modeling is roadmapped with the
+spellbook-lock work.)
+
+![Thralls and Death Charge](docs/img/thralls-veng.png)
+
 ### Search in Loadout Lab (cross-plugin)
 
 Right-click a monster in the world and choose "Search in Loadout Lab":
