@@ -5620,13 +5620,23 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (!bis)
 		{
-			// LOCAL excludes/sims (field spec 2026-07-18): the per-mob
-			// twins of the global exclude/sim tools, scoped to the lensed
-			// mob - between the bank buttons and the note.
-			JPanel localRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+			// LOCAL excludes/sims/filters (the trio, field spec 2026-07-20):
+			// the per-mob twins of the global tools, scoped to the lensed
+			// mob - between the bank buttons and the note. A WRAPPING row:
+			// three chips overflow the sidebar's width, and a plain
+			// FlowLayout reports one-row height, silently clipping the
+			// wrapped chip (the vanishing-Risk-chip field bug - Filter here
+			// was invisible on 2026-07-20's first test).
+			JPanel localRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 8, 2))
+			{
+				@Override
+				public Dimension getMaximumSize()
+				{
+					return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+				}
+			};
 			localRow.setOpaque(false);
 			localRow.setAlignmentX(LEFT_ALIGNMENT);
-			localRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 			int lensedProfileId = entry.mob().profileId();
 			String mobName = entry.mob().getName();
 			int excludedCount = 0;
