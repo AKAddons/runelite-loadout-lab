@@ -33,13 +33,15 @@
     {"key": "ANTIVENOM", "name": "Anti-venom", "ids": [12905, 12907, 12909, 12911]},
     {"key": "ANTIDOTE_PP", "name": "Antidote++", "ids": [5952, 5954, 5956, 5958]}
   ],
-  "_spellKits_comment": "Arceuus casting dependencies (wiki-verified 2026-07-21): greater resurrect = 10 fire 5 blood 1 cosmic + book of the dead; Death Charge = 1 death 1 blood 1 soul; Mark of Darkness = 1 cosmic 1 soul (joins when the magic card casts Demonbane). runePouch is a detect list, best first (divine + trouver locked variants ahead of the base pouch).",
+  "_spellKits_comment": "Arceuus casting dependencies (wiki-verified 2026-07-21): greater resurrect = 10 fire 5 blood 1 cosmic + book of the dead; Death Charge = 1 death 1 blood 1 soul; Mark of Darkness = 1 cosmic 1 soul (joins when the magic card casts Demonbane); Spellbook Swap (Lunar 96, Dream Mentor) = 3 astral 2 cosmic 1 law; Vengeance = 10 earth 4 astral 2 death - both join under the Arceuus-via-swap option. runePouch is a detect list, best first (divine + trouver locked variants ahead of the base pouch).",
   "spellKits": {
     "thrallGreaterRunes": [554, 565, 564],
     "deathChargeRunes": [560, 565, 566],
     "markOfDarknessRunes": [564, 566],
     "bookOfTheDead": [25818],
-    "runePouch": [27281, 27509, 12791, 24416]
+    "runePouch": [27281, 27509, 12791, 24416],
+    "spellbookSwapRunes": [9075, 564, 563],
+    "vengeanceRunes": [9075, 557, 560]
   },
   "venomousMonsters": [
     "zulrah", "snakeling", "vorkath", "araxxor", "araxyte",

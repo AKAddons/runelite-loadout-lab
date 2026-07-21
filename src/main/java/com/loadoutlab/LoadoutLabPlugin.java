@@ -610,7 +610,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			com.loadoutlab.data.TripSupplies.PRAYER_RESTORE,
 			com.loadoutlab.data.TripSupplies.SURGE,
 			com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE,
-			com.loadoutlab.data.TripSupplies.ANTIVENOM})
+			com.loadoutlab.data.TripSupplies.ANTIVENOM,
+			"arceuusAccess"})
 		{
 			defaults.put(category, supplyDefaults == null
 				? com.loadoutlab.collection.SupplyDefaultsStore.DETECT_BEST
@@ -1857,7 +1858,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			if (panel != null)
 			{
-				panel.setMagicLevel(real.getMagic());
+				// BOOSTED magic (field call 2026-07-21): castability follows
+				// the boosted stat, not the base level.
+				panel.setMagicLevel(live.getMagic());
 				panel.setDeathChargeUpgraded(client.getVarbitValue(
 					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
 				panel.setCurrentSpellbook(client.getVarbitValue(
@@ -1911,7 +1914,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			if (panel != null)
 			{
-				panel.setMagicLevel(real.getMagic());
+				// BOOSTED magic (field call 2026-07-21): castability follows
+				// the boosted stat, not the base level.
+				panel.setMagicLevel(live.getMagic());
 				panel.setDeathChargeUpgraded(client.getVarbitValue(
 					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
 				panel.setCurrentSpellbook(client.getVarbitValue(

@@ -453,6 +453,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * chip warns when the build's assumed book is not the current one. */
 	private volatile int currentSpellbook = -1;
 	private static final int SPELLBOOK_ARCEUUS = 3;
+	private static final int SPELLBOOK_LUNAR = 2;
 
 	public void setCurrentSpellbook(int spellbook)
 	{
@@ -629,6 +630,17 @@ public class LoadoutLabPanel extends PluginPanel
 				ids.add(id);
 			}
 		}
+		if ((entry.thralls || entry.deathCharge) && arceuusViaSwap())
+		{
+			for (int id : TripSupplies.spellKit("spellbookSwapRunes"))
+			{
+				ids.add(id);
+			}
+			for (int id : TripSupplies.spellKit("vengeanceRunes"))
+			{
+				ids.add(id);
+			}
+		}
 		return ids;
 	}
 
@@ -651,6 +663,16 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return ids;
+	}
+
+	/** Arceuus access mode (field nuance 2026-07-21): true = the player
+	 * camps LUNAR and reaches Arceuus casts via Spellbook Swap (96 Magic,
+	 * Dream Mentor) - the kit then adds the swap runes AND Vengeance's
+	 * (being on Lunar makes veng available). Set from the grey chip menu. */
+	private boolean arceuusViaSwap()
+	{
+		return "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"))
+			&& magicLevel >= 96;
 	}
 
 	/** The best owned rune pouch (divine first, trouver-locked variants
@@ -6213,6 +6235,13 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			menu.add(sub);
 		}
+		JMenu access = new JMenu("Arceuus access");
+		boolean swap = "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"));
+		supplyDefaultChoice(access, "arceuusAccess", "DETECT_BEST",
+			"Direct (camp Arceuus)", !swap);
+		supplyDefaultChoice(access, "arceuusAccess", "SPELLBOOK_SWAP",
+			"Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)", swap);
+		menu.add(access);
 		menu.addSeparator();
 		menuItem(menu, "Always filter an item...", ev ->
 			itemSearch.search("Always filter (every bank view)", (itemId, name) ->
@@ -6877,9 +6906,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// warning border says the player is NOT currently on that book.
 		if (entry != null && (entry.thralls || entry.deathCharge))
 		{
+			boolean viaSwap = arceuusViaSwap();
+			int homeBook = viaSwap ? SPELLBOOK_LUNAR : SPELLBOOK_ARCEUUS;
 			boolean offBook = currentSpellbook >= 0
-				&& currentSpellbook != SPELLBOOK_ARCEUUS;
-			JLabel bookChip = new JLabel("Arceuus");
+				&& currentSpellbook != homeBook;
+			JLabel bookChip = new JLabel(viaSwap ? "Lunar+swap" : "Arceuus");
 			bookChip.setFont(bookChip.getFont().deriveFont(Font.BOLD, 11f));
 			bookChip.setForeground(offBook
 				? new Color(230, 170, 90) : MUTED);
@@ -6887,12 +6918,18 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				bookChip.setBorder(new RoundedBorder(new Color(200, 140, 60), 1, 4));
 			}
-			bookChip.setToolTipText(offBook
-				? "This build assumes the ARCEUUS spellbook (thralls / Death"
-					+ " Charge) and you are NOT on it - swap before the trip"
-					+ " (a magic or max cape can swap anywhere)"
-				: "This build assumes the Arceuus spellbook (thralls / Death"
-					+ " Charge)");
+			bookChip.setToolTipText(viaSwap
+				? (offBook
+					? "This build assumes LUNAR home with Spellbook Swap into"
+						+ " Arceuus for the summons - and you are NOT on Lunar"
+					: "This build assumes Lunar home, Spellbook Swap into"
+						+ " Arceuus for the summons (Vengeance stays available)")
+				: (offBook
+					? "This build assumes the ARCEUUS spellbook (thralls / Death"
+						+ " Charge) and you are NOT on it - swap before the trip"
+						+ " (a magic or max cape can swap anywhere)"
+					: "This build assumes the Arceuus spellbook (thralls / Death"
+						+ " Charge)"));
 			chips.add(bookChip);
 		}
 		for (String part : label.split(" \\+ "))

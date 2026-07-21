@@ -106,6 +106,10 @@ public class TripSuppliesTest
 		org.junit.Assert.assertArrayEquals(new int[]{564, 566},
 			TripSupplies.spellKit("markOfDarknessRunes"));
 		org.junit.Assert.assertEquals(27281, TripSupplies.spellKit("runePouch")[0]);
+		org.junit.Assert.assertArrayEquals(new int[]{9075, 564, 563},
+			TripSupplies.spellKit("spellbookSwapRunes"));
+		org.junit.Assert.assertArrayEquals(new int[]{9075, 557, 560},
+			TripSupplies.spellKit("vengeanceRunes"));
 		org.junit.Assert.assertEquals(0, TripSupplies.spellKit("noSuchKit").length);
 	}
 
