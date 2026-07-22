@@ -4522,23 +4522,38 @@ public class LoadoutLabPanel extends PluginPanel
 		// Thralls / Vengeance (field direction 2026-07-21): display-only
 		// dps folds - the chips show only when usable (tier reachable +
 		// book of the dead owned; Magic 94 for Veng).
-		String clashNote = magicArcaneClash(entry)
+		CombatStyle viewedTab = entry.selectedTab != null ? entry.selectedTab
+			: entry.results == null ? null : defaultTab(entry);
+		// Viewing the clashed MAGIC tab greys the pair (field spec
+		// 2026-07-21 v4): that card is locked to its autocast book, so the
+		// assumptions cannot apply to what is on screen.
+		boolean viewClash = arcaneBlocked(entry, viewedTab);
+		String viewClashNote = "Unavailable on this card - its autocast"
+			+ " spell locks the spellbook away from Arceuus";
+		String clashNote = !viewClash && magicArcaneClash(entry)
 			? " Not applied to the Magic card - its autocast needs another book." : "";
 		if (ExtraDps.thrallDps(magicLevel) > 0 && ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
 		{
-			toggles.add(paramChip("Thralls", entry.thralls, true,
-				(entry.thralls
-					? "Folding your " + ExtraDps.thrallTier(magicLevel)
-						+ " thrall (" + String.format("%.2f", ExtraDps.thrallDps(magicLevel))
-						+ " dps, always hits) into the shown numbers - click to exclude"
-					: "Fold your " + ExtraDps.thrallTier(magicLevel)
-						+ " thrall's dps into the shown numbers (Arceuus + book of the dead)")
-					+ clashNote,
-				() -> asActive(entry, () ->
-				{
-					entry.thralls = !entry.thralls;
-					renderPage();
-				})));
+			if (viewClash)
+			{
+				toggles.add(paramChip("Thralls", false, false, viewClashNote, null));
+			}
+			else
+			{
+				toggles.add(paramChip("Thralls", entry.thralls, true,
+					(entry.thralls
+						? "Folding your " + ExtraDps.thrallTier(magicLevel)
+							+ " thrall (" + String.format("%.2f", ExtraDps.thrallDps(magicLevel))
+							+ " dps, always hits) into the shown numbers - click to exclude"
+						: "Fold your " + ExtraDps.thrallTier(magicLevel)
+							+ " thrall's dps into the shown numbers (Arceuus + book of the dead)")
+						+ clashNote,
+					() -> asActive(entry, () ->
+					{
+						entry.thralls = !entry.thralls;
+						renderPage();
+					})));
+			}
 		}
 		toggles.add(paramChip("Spec", entry.specWeapon, true,
 			entry.specWeapon
@@ -4552,21 +4567,28 @@ public class LoadoutLabPanel extends PluginPanel
 			})));
 		if (magicLevel >= 80)
 		{
-			toggles.add(paramChip("D charge", entry.deathCharge, true,
-				(entry.deathCharge
-					? (deathChargeUpgraded
-						? "Death Charge assumed, UPGRADED by Yama's rite (two 15%"
-							+ " refunds per cast) - feeds the spec model; click to exclude"
-						: "Death Charge assumed (Arceuus, 15% spec energy per killing"
-							+ " blow, 60s cast) - feeds the spec model; click to exclude")
-					: "Assume Death Charge - more special attacks per trip"
-						+ " (Arceuus, Magic 80)")
-					+ clashNote,
-				() -> asActive(entry, () ->
-				{
-					entry.deathCharge = !entry.deathCharge;
-					recompute();
-				})));
+			if (viewClash)
+			{
+				toggles.add(paramChip("D charge", false, false, viewClashNote, null));
+			}
+			else
+			{
+				toggles.add(paramChip("D charge", entry.deathCharge, true,
+					(entry.deathCharge
+						? (deathChargeUpgraded
+							? "Death Charge assumed, UPGRADED by Yama's rite (two 15%"
+								+ " refunds per cast) - feeds the spec model; click to exclude"
+							: "Death Charge assumed (Arceuus, 15% spec energy per killing"
+								+ " blow, 60s cast) - feeds the spec model; click to exclude")
+						: "Assume Death Charge - more special attacks per trip"
+							+ " (Arceuus, Magic 80)")
+						+ clashNote,
+					() -> asActive(entry, () ->
+					{
+						entry.deathCharge = !entry.deathCharge;
+						recompute();
+					})));
+			}
 		}
 		// One continuous wrap row for ALL chips (field fix 2026-07-18:
 		// the split rows left orphaned chips floating awkwardly).
