@@ -77,10 +77,6 @@ public final class OptimizationRequest implements Cloneable
 	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
-	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
-	 * 0 = pure offense (default), higher trades damage for safety. */
-	@Getter
-	private double defenseWeight;
 	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
 	 * of slaughter class - value the model cannot price). A pinned slot
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
@@ -129,7 +125,6 @@ public final class OptimizationRequest implements Cloneable
 		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
 		this.dreamItems = Collections.emptySet();
-		this.defenseWeight = 0;
 		this.pinnedItems = Collections.emptyMap();
 		this.protectOnlyItems = Collections.emptySet();
 		this.inWilderness = com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
@@ -280,13 +275,6 @@ public final class OptimizationRequest implements Cloneable
 	{
 		OptimizationRequest c = copy();
 		c.pinnedItems = pinnedItems == null ? Collections.emptyMap() : pinnedItems;
-		return c;
-	}
-
-	public OptimizationRequest withDefenseWeight(double defenseWeight)
-	{
-		OptimizationRequest c = copy();
-		c.defenseWeight = defenseWeight;
 		return c;
 	}
 

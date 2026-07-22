@@ -207,20 +207,10 @@ public final class LoadoutOptimizer
 		return best == null ? result : best;
 	}
 
-	/**
-	 * D-4: the beam's objective. Pure dps by default; with a defense
-	 * weight the score becomes dps - weight * incoming dps, so the beam
-	 * walks the offense/defense frontier instead of its endpoint.
-	 */
-	private static double weightedScore(OptimizationRequest request, DpsResult score, Loadout loadout,
-		IncomingDpsCalculator.Prepared incoming)
+	/** The beam's objective: pure dps, with a tiny attack-roll nudge. */
+	private static double beamScore(DpsResult score)
 	{
-		double value = score.getDps() + score.getAttackRoll() * 1e-9;
-		if (request.getDefenseWeight() > 0)
-		{
-			value -= request.getDefenseWeight() * incoming.totalDps(loadout);
-		}
-		return value;
+		return score.getDps() + score.getAttackRoll() * 1e-9;
 	}
 
 	/** The style's damage-driving bonus (melee strength / ranged strength /
@@ -369,10 +359,7 @@ public final class LoadoutOptimizer
 	/**
 	 * The candidate pools one optimize run searches: legal spells, the
 	 * weapon pool, the non-weapon slot pools, and (lazily, per weapon) the
-	 * compatible-ammo pools. Pools depend on the request's filters but NOT
-	 * on the defense weight's magnitude - candidates() only branches on
-	 * weight > 0 - so the D-4 sweep builds them once and reuses them
-	 * across its weighted runs. Confined to the optimizer worker.
+	 * compatible-ammo pools. Confined to the optimizer worker.
 	 */
 	public static final class CandidatePools
 	{
@@ -392,9 +379,7 @@ public final class LoadoutOptimizer
 
 	/**
 	 * Build the pools optimize(data, request) would build. Only useful with
-	 * the pool-taking optimize overload; the request passed there must
-	 * differ from this one at most in defenseWeight, and both must have
-	 * defenseWeight on the same side of zero.
+	 * the pool-taking optimize overload, with an identical request.
 	 */
 	public CandidatePools preparePools(LoadoutData data, OptimizationRequest request)
 	{
@@ -442,12 +427,6 @@ public final class LoadoutOptimizer
 			dragonShield = false;
 			antifireAssumed = true;
 		}
-		// The monster-side incoming constants for the D-4 beam objective,
-		// hoisted once per optimize (call-scoped, worker-thread confined).
-		IncomingDpsCalculator.Prepared incoming = request.getDefenseWeight() > 0
-			? IncomingDpsCalculator.prepare(request.getMonster(),
-				request.getLevels().getDefence(), request.getLevels().getMagic())
-			: null;
 		// Request-level risk constants, hoisted out of the beam (they were
 		// recomputed - EnumMap, Loadout, riskGp, a HashSet - per trial).
 		long riskCapGp = 0;
@@ -470,7 +449,6 @@ public final class LoadoutOptimizer
 			// The ammo top-N must be cut AFTER weapon compatibility: bolts
 			// and javelins out-score every arrow on raw ranged strength, so
 			// a global cut starves arrow weapons of usable ammo entirely.
-			// Cached per weapon so the D-4 sweep does not rebuild it.
 			List<GearItem> ammoCandidates = pools.ammoByWeapon.computeIfAbsent(weapon,
 				w -> candidates(data, request, GearSlot.AMMO, SLOT_LIMIT, w));
 			List<SearchState> states = new ArrayList<>();
@@ -544,7 +522,7 @@ public final class LoadoutOptimizer
 						// pure cost tie-break picked snakeskin boots over
 						// pegasians. Never outweighs a real DPS difference.
 						next.add(new SearchState(gear, cost,
-							weightedScore(request, score, loadout, incoming), riskGp, potentialRiskGp));
+							beamScore(score), riskGp, potentialRiskGp));
 					}
 				}
 				// On DPS ties prefer less risk (an untradeable that crumbles
@@ -591,16 +569,7 @@ public final class LoadoutOptimizer
 					PvpRisk.riskGp(result.getLoadout(), null, request.getMaxTradeables()));
 			}
 		}
-		Map<DpsResult, Double> weighted = new IdentityHashMap<>();
-		if (request.getDefenseWeight() > 0)
-		{
-			for (DpsResult result : results)
-			{
-				weighted.put(result, weightedScore(request, result, result.getLoadout(), incoming));
-			}
-		}
-		results.sort(Comparator.comparingDouble(
-				(DpsResult r) -> weighted.getOrDefault(r, r.getDps())).reversed()
+		results.sort(Comparator.comparingDouble(DpsResult::getDps).reversed()
 			.thenComparing(Comparator.comparingLong(DpsResult::getAttackRoll).reversed())
 			.thenComparingLong(r -> riskByResult.getOrDefault(r, 0L))
 			.thenComparingLong(r -> -setDamageBonus(request, r.getLoadout()))
@@ -882,12 +851,7 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item);
-			// Defense-weighted runs (Tanky/Balanced) must SEE pure-defense
-			// gear - ring of suffering, guardian boots, tank shields score
-			// zero offense and would never enter the pool otherwise.
-			boolean defensiveCandidate = request.getDefenseWeight() > 0
-				&& slot != GearSlot.WEAPON && utilityScore(item) > 0;
-			if (slot != GearSlot.WEAPON && !protective && !defensiveCandidate
+			if (slot != GearSlot.WEAPON && !protective
 				&& candidateScore(request, item) <= 0)
 			{
 				continue;
@@ -908,23 +872,7 @@ public final class LoadoutOptimizer
 		rows = dedupe(rows, request);
 		if (rows.size() > limit)
 		{
-			// Defense-weighted runs keep a second tier: the best defensive
-			// items by utility, unioned with the offensive top-N, so the
-			// beam can genuinely trade damage for safety.
-			List<GearItem> cut = new ArrayList<>(rows.subList(0, limit));
-			if (request.getDefenseWeight() > 0 && slot != GearSlot.WEAPON)
-			{
-				List<GearItem> defensive = new ArrayList<>(rows.subList(limit, rows.size()));
-				defensive.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
-				for (GearItem item : defensive.subList(0, Math.min(8, defensive.size())))
-				{
-					if (utilityScore(item) > 0)
-					{
-						cut.add(item);
-					}
-				}
-			}
-			rows = cut;
+			rows = new ArrayList<>(rows.subList(0, limit));
 		}
 		rows.addAll(protectives);
 		if (slot != GearSlot.WEAPON)

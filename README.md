@@ -21,9 +21,6 @@ equipment.
 - **Incoming damage**: how hard the boss hits YOU in that set, with
   curated per-boss attack data (GWD, Zulrah, Vorkath, Cerberus, the
   wilderness ring, and more).
-- **Optimize modes**: Max DPS (maximize output), Balanced (maximize
-  dps-out^1.2 / dps-in - exact math in the feature guide), or Tanky
-  (minimize damage taken).
 - **Wilderness risk**: low-risk sets built around the items-kept-on-death
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates
@@ -51,8 +48,8 @@ equipment.
 1. Open your bank once so the plugin can learn what you own.
 2. Search a monster in the sidebar panel and pick a style card.
 3. Right-click items for exclusions, simmed items, and stored-elsewhere
-   marks; use the toggles for slayer tasks, spellbook locks, wilderness
-   risk, and optimize modes.
+   marks; use the toggles for slayer tasks, spellbook locks, and
+   wilderness risk.
 
 ## Privacy
 
@@ -123,30 +120,6 @@ so you see how close your kit is. Slots where you already own the best (or
 a stat-identical analog) get a gold border.
 
 ![Game-best ceiling comparison](docs/img/game-best.png)
-
-### Optimize modes
-
-Exact definitions - `dps_out` is your damage per second into the monster;
-`dps_in` is the monster's expected damage per second into YOU wearing that
-set, at your real defence/magic levels with the best protection prayer up.
-
-- **Max DPS** - maximize `dps_out`. Incoming damage is ignored entirely.
-- **Tanky** - minimize `dps_in`, full stop. Ties go to the higher-dps set.
-- **Balanced** - maximize the ratio `dps_out^1.2 / dps_in`. The 1.2
-  exponent slightly favors output: a 10% dps gain is worth taking ~12%
-  more damage. Balanced considers the Max DPS and Tanky sets too, so its
-  ratio is always >= both by construction. Ties go to the higher-dps set.
-
-How the candidates are found: the optimizer re-runs its search five times
-with the beam scored as `dps_out - w * dps_in` for
-`w = a * dps_out0 / dps_in0`, `a` in `{0.3, 0.7, 1.5, 3.0, 10.0}` (scaled
-so the weights are comparable across monsters). That traces the
-(dps out, dps in) frontier from full glass-cannon to full turtle; each
-mode then picks its point off that frontier. The card's sword/shield note
-shows the trade the pick made vs the Max DPS set ("10%- / 56%+" = 10%
-less dps for 56% less damage taken).
-
-![Optimize modes](docs/img/optimize-modes.png)
 
 ### Owned-gear ledger (profile-aware)
 
@@ -331,11 +304,11 @@ The header's back/forward arrows walk your last 50 steps - monster
 searches, panel settings, AND edits in one history: search Zulrah,
 flip the slayer toggle, search Vorkath - back, back, back retraces
 each of those in turn. Steps cover: monster selections; the toggles
-(F2P, slayer task, wilderness, low-risk, Protect Item); the optimize
-mode, spellbook and risk-cap dropdowns; the upgrade budget; the
-antifire flip; and every edit (exclusions, pins, notes, simmed items,
-stored-elsewhere marks, protect-only flags, pinned spells, trip
-supplies). Hover for exactly what's next ("Back: Optimize: Balanced").
+(F2P, slayer task, wilderness, low-risk, Protect Item); the spellbook
+and risk-cap dropdowns; the upgrade budget; the antifire flip; and
+every edit (exclusions, pins, notes, simmed items, stored-elsewhere
+marks, protect-only flags, pinned spells, trip supplies). Hover for
+exactly what's next ("Back: Spellbook: Ancient").
 Scan-driven changes (bank snapshots, storage captures) are never
 steps - only what you deliberately did. History is per-session and
 resets on profile switch.

@@ -22,7 +22,6 @@ import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
 import com.loadoutlab.optimizer.OptimizerService;
-import com.loadoutlab.optimizer.OptimizerService.ModeTrade;
 import com.loadoutlab.optimizer.OptimizerService.StyleResult;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -126,8 +125,7 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			int upgradeBudgetGp, int maxSwaps,
 			boolean raidBoost, Runnable onDone);
 
 		/** Roster compute: ONE shared set per style across the mobs, with
@@ -138,8 +136,7 @@ public class LoadoutLabPanel extends PluginPanel
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp,
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
+			int upgradeBudgetGp, int maxSwaps,
 			boolean raidBoost, Runnable onDone)
 		{
 			onDone.run();
@@ -940,9 +937,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Which style's set is currently glowing in the bank (null = none). */
 	private boolean bankShowing;
 	private Set<Integer> lastHighlightIds;
-	/** D-4: which frontier point to recommend per style. */
-	private final JComboBox<String> optimizeMode = new JComboBox<>(
-		new String[]{"Optimize: Max DPS", "Optimize: Balanced", "Optimize: Tanky"});
 	/** Free-form upgrade budget: "750k", "1m", "1.5b", plain gp, or "-"
 	 * for max. Empty or unparseable = off. */
 	private final JTextField upgradeBudget = new JTextField();
@@ -1108,7 +1102,6 @@ public class LoadoutLabPanel extends PluginPanel
 		 * absent = detect best (grey). Engine inputs - changing recomputes. */
 		final Map<CombatStyle, String> boostPicks = new EnumMap<>(CombatStyle.class);
 		final Map<CombatStyle, String> prayerPicks = new EnumMap<>(CombatStyle.class);
-		int optimizeMode;
 		boolean protectItem;
 		/** Free-form wilderness risk cap ("25k"); empty = unconstrained.
 		 * Non-empty IS the low-risk mode - the old toggle + step combo
@@ -1420,13 +1413,6 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		});
 		budgetRow.add(upgradeBudget, BorderLayout.CENTER);
-
-		// D-4: pick the offense/defense frontier point (sweep is slower).
-		optimizeMode.setAlignmentX(LEFT_ALIGNMENT);
-		optimizeMode.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		optimizeMode.setToolTipText("Balanced/Tanky trade dps for less damage taken");
-		optimizeMode.addActionListener(e -> { if (!syncingControls) recompute(); });
-		recordCombo(optimizeMode, "Optimize");
 
 		refreshExclusionsLabel();
 
@@ -2138,7 +2124,6 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		active.onSlayerTask = slayerTask.isSelected();
 		active.inWilderness = inWilderness.isSelected();
-		active.optimizeMode = Math.max(0, optimizeMode.getSelectedIndex());
 		active.protectItem = protectItem.isSelected();
 		active.riskCap = riskCapField.getText() == null ? "" : riskCapField.getText();
 		active.upgradeBudget = upgradeBudget.getText() == null ? "" : upgradeBudget.getText();
@@ -2158,7 +2143,6 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			slayerTask.setSelected(active.onSlayerTask);
 			inWilderness.setSelected(active.inWilderness);
-			optimizeMode.setSelectedIndex(active.optimizeMode);
 			protectItem.setSelected(active.protectItem);
 			riskCapField.setText(active.riskCap);
 			lastRiskGp = parsedBudgetGp(active.riskCap);
@@ -2631,11 +2615,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** Test seams (package-private): controls and state for history tests. */
-	JComboBox<String> optimizeModeForTest()
-	{
-		return optimizeMode;
-	}
-
 	void clearSelectionForTest()
 	{
 		clearSelection();
@@ -2652,6 +2631,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			closeResult(active);
 		}
+	}
+
+	JComboBox<String> spellbookForTest()
+	{
+		return spellbook;
 	}
 
 	MonsterStats selectedMonsterForTest()
@@ -3993,8 +3977,7 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 				parsedBudgetGp(entry.upgradeBudget),
-				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
-				entry.maxSwaps, entry.raidBoost,
+					entry.maxSwaps, entry.raidBoost,
 				() -> statusLabel.setText(" "));
 			return;
 		}
@@ -4007,7 +3990,6 @@ public class LoadoutLabPanel extends PluginPanel
 			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 			parsedBudgetGp(entry.upgradeBudget),
-			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			entry.maxSwaps, entry.raidBoost,
 			() -> statusLabel.setText(" "));
 	}
@@ -4594,12 +4576,6 @@ public class LoadoutLabPanel extends PluginPanel
 		// One continuous wrap row for ALL chips (field fix 2026-07-18:
 		// the split rows left orphaned chips floating awkwardly).
 		JPanel values = toggles;
-		String modeText = String.valueOf(optimizeMode.getItemAt(
-			Math.min(entry.optimizeMode, optimizeMode.getItemCount() - 1)));
-		values.add(paramChip(modeText.replace("Optimize: ", ""),
-			entry.optimizeMode > 0, true,
-			"Balanced/Tanky trade dps for less damage taken - click to pick",
-			() -> pickFromCombo(entry, optimizeMode, "Optimize")));
 		if (displayOptions.upgradeBudget)
 		{
 			String budget = entry.upgradeBudget == null ? "" : entry.upgradeBudget.trim();
@@ -5626,10 +5602,6 @@ public class LoadoutLabPanel extends PluginPanel
 		MonsterStats mob = entry.mob();
 		List<String> params = new ArrayList<>();
 
-		String[] modeNames = {"Max DPS", "Balanced", "Tanky"};
-		params.add("Optimize: " + modeNames[Math.max(0,
-			Math.min(entry.optimizeMode, modeNames.length - 1))]);
-
 		if (SlayerLockedMonsters.isTaskOnly(mob))
 		{
 			params.add("On task: yes (task-only boss)");
@@ -6123,21 +6095,6 @@ public class LoadoutLabPanel extends PluginPanel
 		// bonuses live in the grid's stat panel (field spec) - no text rows.
 		if (!bis)
 		{
-			if (result.modeTrade != null)
-			{
-				card.add(modeTradeRow(result.modeTrade));
-			}
-			else if (optimizeMode.getSelectedIndex() > 0)
-			{
-				// Assurance: Balanced/Tanky ran and CHOSE the same set - not a
-				// mix-up (common when a monster's incoming damage barely varies
-				// with armour, or is not modeled).
-				JLabel same = line("Same set as Max DPS - no safer trade found", MUTED);
-				same.setFont(same.getFont().deriveFont(11f));
-				same.setToolTipText("Balanced/Tanky swept the defence frontier and found no set"
-					+ " worth trading dps for at this monster");
-				card.add(same);
-			}
 		}
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already
@@ -6508,8 +6465,6 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
-	private static final ImageIcon SWORD_ICON = loadSkillIcon("attack");
-	private static final ImageIcon SHIELD_ICON = loadSkillIcon("defence");
 	private static final Icon NO_PRAYER_ICON = new NoPrayerIcon(13);
 
 	private static ImageIcon loadPrayerIcon()
@@ -6529,34 +6484,6 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return null;
 		}
-	}
-
-	/** Compact frontier trade: [sword] N%-  [shield] M%+ using the Attack and
-	 * Defence skill icons (Swing emoji tofu on macOS Tahoe). Hover for the
-	 * full sentence. */
-	private JPanel modeTradeRow(ModeTrade t)
-	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
-		row.setOpaque(false);
-		row.setAlignmentX(LEFT_ALIGNMENT);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
-		row.setToolTipText(String.format(
-			"This mode: %d%% less DPS for %d%% less damage taken", t.dpsLossPct, t.dmgCutPct));
-		row.add(tradeChip(SWORD_ICON, "-" + t.dpsLossPct + "%"));
-		row.add(tradeChip(SHIELD_ICON, "+" + t.dmgCutPct + "%"));
-		return row;
-	}
-
-	private static JLabel tradeChip(ImageIcon icon, String text)
-	{
-		JLabel label = new JLabel(text);
-		if (icon != null)
-		{
-			label.setIcon(icon);
-			label.setIconTextGap(3);
-		}
-		label.setForeground(INFO);
-		return label;
 	}
 
 	/** The set's total prayer bonus - just the prayer icon and the number. */

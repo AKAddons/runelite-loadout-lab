@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
  */
 public final class QueryBenchmark
 {
-	private static final OptimizerService.OptimizeMode[] MODES = {
-		OptimizerService.OptimizeMode.MAX_DPS, OptimizerService.OptimizeMode.BALANCED};
 	private static final int[] RISKS = {-1, 3};
 	private static final int PASSES = 3;
 
@@ -53,37 +51,31 @@ public final class QueryBenchmark
 			// Warmup: one untimed full pass so the JIT sees every path.
 			for (String monster : MONSTERS)
 			{
-				for (OptimizerService.OptimizeMode mode : MODES)
+				for (int risk : RISKS)
 				{
-					for (int risk : RISKS)
-					{
-						runOnce(service, data, profile, monster, mode, risk, fingerprint);
-					}
+					runOnce(service, data, profile, monster, risk, fingerprint);
 				}
 			}
 			// The friction + pin cell: a revenant (salve territory) with the
 			// salve owned AND pinned, risk-capped - the per-trial rebuild-veto
 			// and pinned-risk-floor paths the standard matrix never touches.
 			runPinnedSalve(service, data, profile, fingerprint);
-			System.out.println("monster            mode      risk  median_ms  passes_ms");
+			System.out.println("monster            risk  median_ms  passes_ms");
 			for (String monster : MONSTERS)
 			{
-				for (OptimizerService.OptimizeMode mode : MODES)
+				for (int risk : RISKS)
 				{
-					for (int risk : RISKS)
+					long[] times = new long[PASSES];
+					for (int pass = 0; pass < PASSES; pass++)
 					{
-						long[] times = new long[PASSES];
-						for (int pass = 0; pass < PASSES; pass++)
-						{
-							times[pass] = runOnce(service, data, profile, monster, mode, risk, fingerprint);
-						}
-						long[] sorted = times.clone();
-						Arrays.sort(sorted);
-						System.out.println(String.format(Locale.ROOT,
-							"%-18s %-9s %-5s %9d  %s",
-							monster, mode, risk < 0 ? "off" : ("lr" + risk),
-							sorted[PASSES / 2], Arrays.toString(times)));
+						times[pass] = runOnce(service, data, profile, monster, risk, fingerprint);
 					}
+					long[] sorted = times.clone();
+					Arrays.sort(sorted);
+					System.out.println(String.format(Locale.ROOT,
+						"%-18s %-5s %9d  %s",
+						monster, risk < 0 ? "off" : ("lr" + risk),
+						sorted[PASSES / 2], Arrays.toString(times)));
 				}
 			}
 			long[] times = new long[PASSES];
@@ -94,8 +86,8 @@ public final class QueryBenchmark
 			long[] sorted = times.clone();
 			Arrays.sort(sorted);
 			System.out.println(String.format(Locale.ROOT,
-				"%-18s %-9s %-5s %9d  %s",
-				"rev demon+salvepin", OptimizerService.OptimizeMode.MAX_DPS, "lr3",
+				"%-18s %-5s %9d  %s",
+				"rev demon+salvepin", "lr3",
 				sorted[PASSES / 2], Arrays.toString(times)));
 		}
 		finally
@@ -146,7 +138,7 @@ public final class QueryBenchmark
 			fingerprint[0]++, false, false, "",
 			Collections.emptySet(), 3,
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
-			Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
+			Collections.emptySet(), 0,
 			pins, null,
 			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
 		if (!done.await(600, TimeUnit.SECONDS))
@@ -157,7 +149,7 @@ public final class QueryBenchmark
 	}
 
 	private static long runOnce(OptimizerService service, LoadoutData data,
-		PlayerProfile profile, String monsterName, OptimizerService.OptimizeMode mode,
+		PlayerProfile profile, String monsterName,
 		int lowRisk, int[] fingerprint) throws Exception
 	{
 		MonsterStats monster = data.searchMonsters(monsterName, 1).get(0);
@@ -170,7 +162,7 @@ public final class QueryBenchmark
 			fingerprint[0]++, false, false, "",
 			Collections.emptySet(), lowRisk,
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
-			Collections.emptySet(), 0, mode,
+			Collections.emptySet(), 0,
 			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
 		if (!done.await(600, TimeUnit.SECONDS))
 		{

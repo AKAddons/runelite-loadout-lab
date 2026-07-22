@@ -368,6 +368,10 @@ per-boss defensive thresholds. Phased:
   note ("Balanced: -7% less dps for -34% less damage taken").
   Remaining: D-3 explicit stat thresholds (subsumed for most uses by
   the modes), per-boss threshold derivation from the knees.
+  **REMOVED 2026-07-21** (token budget, "for now" - field decision):
+  the whole frontier - OptimizeMode enum, defense-weighted beam,
+  ModeTrade UI - came out in 0.3.3 to fit the 200k hub cap.
+  Resurrect from git history (the removal commit is the map).
 
 ## Spec registry follow-ups (deferred, from the 2026-07 wiki audit)
 
@@ -428,9 +432,10 @@ play that raw DPS ignores.
 - Realistic-play factors the same mode could fold in: food/brew inventory
   slots saved (freeing them for more supplies or a longer trip), the spec
   bar spent on sustain rather than burst, and prayer upkeep.
-- Surface as a fourth OptimizeMode next to Max DPS / Balanced / Tanky, or
-  as a sustain overlay on the existing frontier. Own branch off main, its
-  own golden re-baseline, like the spec-value work.
+- Surface as its own optimize mode (note: the Balanced/Tanky frontier
+  was removed 2026-07-21 for token budget - a sustain mode would need
+  that scaffolding back, or its own). Own branch off main, its own
+  golden re-baseline, like the spec-value work.
 
 ## Future: teleport items in the trip kit (field ask 2026-07-20)
 

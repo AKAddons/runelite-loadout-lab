@@ -55,7 +55,6 @@ public final class HeadlessQuery
 		int lowRisk = -1;
 		int riskBudget = com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		int upgradeBudget = 0;
-		OptimizerService.OptimizeMode mode = OptimizerService.OptimizeMode.MAX_DPS;
 		java.util.Set<Integer> excluded = new java.util.HashSet<>();
 		for (int i = 0; i < args.length; i++)
 		{
@@ -71,7 +70,6 @@ public final class HeadlessQuery
 				case "--low-risk": lowRisk = Integer.parseInt(args[++i]); break;
 				case "--risk-budget": riskBudget = Integer.parseInt(args[++i]); break;
 				case "--budget": upgradeBudget = Integer.parseInt(args[++i]); break;
-				case "--mode": mode = OptimizerService.OptimizeMode.valueOf(args[++i].toUpperCase()); break;
 				// Comma-separated item ids - reproduce a client report with
 				// the player's exclusion list (config: loadoutlab.excludedItems).
 				case "--exclude":
@@ -111,7 +109,7 @@ public final class HeadlessQuery
 				profile.prayerUnlocks, profile.requirements, profile.ownedItems(),
 				profile.owned.hashCode(), f2p, slayer, spellbook,
 				excludedByStyle, lowRisk, riskBudget, antifirePotion, inWilderness,
-				java.util.Collections.emptySet(), upgradeBudget, mode,
+				java.util.Collections.emptySet(), upgradeBudget,
 				java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(),
 				results ->
 				{
