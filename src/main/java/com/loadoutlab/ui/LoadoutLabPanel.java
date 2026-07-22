@@ -681,9 +681,13 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Just the RUNES the assumptions imply - routed to the bank layout's
 	 * utility strip beside the spellbook cape (field spec 2026-07-21: runes
 	 * are staging gear, loaded into the pouch before the trip). */
-	private List<Integer> arcaneRuneIds(ResultEntry entry)
+	private List<Integer> arcaneRuneIds(ResultEntry entry, CombatStyle style)
 	{
 		List<Integer> ids = new ArrayList<>();
+		if (arcaneBlocked(entry, style))
+		{
+			return ids; // this card cannot leave its autocast book
+		}
 		if (entry.thralls && magicLevel >= 76)
 		{
 			addIds(ids, TripSupplies.spellKit("thrallGreaterRunes"));
@@ -704,10 +708,10 @@ public class LoadoutLabPanel extends PluginPanel
 		return ids;
 	}
 
-	private List<Integer> arcaneKitFilterIds(ResultEntry entry)
+	private List<Integer> arcaneKitFilterIds(ResultEntry entry, CombatStyle style)
 	{
-		List<Integer> ids = new ArrayList<>(arcaneRuneIds(entry));
-		if (entry.thralls)
+		List<Integer> ids = new ArrayList<>(arcaneRuneIds(entry, style));
+		if (entry.thralls && !arcaneBlocked(entry, style))
 		{
 			addIds(ids, TripSupplies.spellKit("bookOfTheDead"));
 		}
@@ -3227,7 +3231,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// placing ghost doses would render faded placeholders.
 			List<TripSupplies.Option> supplies = activeSupplies(active);
 			List<Integer> arcaneKit = active == null
-				? Collections.emptyList() : arcaneKitFilterIds(active);
+				? Collections.emptyList() : arcaneKitFilterIds(active, style);
 			if (bankShowing)
 			{
 				highlightIds = new HashSet<>();
@@ -3308,7 +3312,7 @@ public class LoadoutLabPanel extends PluginPanel
 				// The assumption runes are staging gear: they ride the
 				// utility strip beside the cape, not the inventory block
 				// (the pouch carries them on the trip itself).
-				for (int runeId : arcaneRuneIds(active))
+				for (int runeId : arcaneRuneIds(active, style))
 				{
 					if (layoutMembers.remove(runeId))
 					{
@@ -3435,7 +3439,7 @@ public class LoadoutLabPanel extends PluginPanel
 				ids.add(item.getId());
 			}
 		}
-		ids.addAll(consumableIds(active, r, active.viewingBis));
+		ids.addAll(consumableIds(active, style, r, active.viewingBis));
 		return ids;
 	}
 
@@ -4876,7 +4880,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The bench/backpack row: the carried items beyond the worn set -
 	 * spec weapon and per-mob swaps. A swap WORN against the lensed mob
 	 * wears the accent border; the rest sit quietly on the bench. */
-	private JComponent inventoryRow(ResultEntry entry, StyleResult result, boolean bis)
+	private JComponent inventoryRow(ResultEntry entry, CombatStyle style,
+		StyleResult result, boolean bis)
 	{
 		// A wrapping grid, NOT a single flow line: at Inventory 20 the
 		// carried items overflow one row, and a clipped weapon swap reads
@@ -4925,7 +4930,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assumed consumables ride along for FREE (field spec 2026-07-18):
 		// the boost potion and the antifire - never a swap slot, muted
 		// border so they read as supplies rather than gear.
-		for (int consumableId : consumableIds(entry, result, bis))
+		for (int consumableId : consumableIds(entry, style, result, bis))
 		{
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
@@ -5123,7 +5128,8 @@ public class LoadoutLabPanel extends PluginPanel
 	 * ranging potion replaces it); a roster shows the union across each
 	 * mob's BEST answer - a melee/ranged plan carries both potions. The
 	 * antifire mode's potion always rides along. */
-	private List<Integer> consumableIds(ResultEntry entry, StyleResult viewed, boolean bis)
+	private List<Integer> consumableIds(ResultEntry entry, CombatStyle style,
+		StyleResult viewed, boolean bis)
 	{
 		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
 		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
@@ -5177,11 +5183,12 @@ public class LoadoutLabPanel extends PluginPanel
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
 		// layout only - they live inside the pouch).
-		if (entry.thralls)
+		boolean blocked = arcaneBlocked(entry, style);
+		if (entry.thralls && !blocked)
 		{
 			ids.add(ExtraDps.BOOK_OF_THE_DEAD);
 		}
-		if (entry.thralls || entry.deathCharge || demonbaneCast(entry))
+		if (!blocked && (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
@@ -5940,7 +5947,7 @@ public class LoadoutLabPanel extends PluginPanel
 		renderingRiskSpecWeapon = result == null ? null : result.specWeapon;
 		renderingRiskKeep = entry.protectItem ? 4 : 3;
 		renderingRiskConsumables = result == null || bis
-			? Collections.emptyList() : consumableIds(entry, result, false);
+			? Collections.emptyList() : consumableIds(entry, style, result, false);
 		renderingIncoming = result == null ? null : bis ? result.gameIncoming : result.incoming;
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -6105,13 +6112,13 @@ public class LoadoutLabPanel extends PluginPanel
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
 		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
-			|| !consumableIds(entry, result, bis).isEmpty()))
+			|| !consumableIds(entry, style, result, bis).isEmpty()))
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
 			// but not worn against the lensed mob, plus the assumed
 			// consumables. Both sides have a kit.
 			card.add(Box.createVerticalStrut(4));
-			card.add(inventoryRow(entry, result, bis));
+			card.add(inventoryRow(entry, style, result, bis));
 		}
 		card.add(Box.createVerticalStrut(6));
 		card.add(styleStrip);
@@ -6927,7 +6934,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (r != null)
 		{
-			ids.addAll(consumableIds(active, r, active.viewingBis));
+			ids.addAll(consumableIds(active, style, r, active.viewingBis));
 		}
 		return ids;
 	}
