@@ -576,12 +576,20 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.add(item);
 	}
 
-	/** The display-only dps addition for the shown numbers: the thrall's
+	/** The display-only dps additions for the shown numbers: the thrall's
 	 * flat tier dps (the official calculator's thrall toggle behaves the
-	 * same) - never a ranking input. */
-	private double extraShownDps(ResultEntry entry)
+	 * same) plus the carried spec's value-over-replacement (field call
+	 * 2026-07-21: "spec dps is not additive to the total while thralls
+	 * are"). Never ranking inputs - the tab tooltip carries the breakdown
+	 * so official-calc cross-checks stay possible. */
+	private double extraShownDps(ResultEntry entry, StyleResult result, boolean bis)
 	{
-		return entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
+		double extra = entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
+		if (result != null)
+		{
+			extra += bis ? result.gameSpecDpsAdded : result.specDpsAdded;
+		}
+		return extra;
 	}
 
 	/** True when the shown MAGIC answer autocasts a Demonbane spell - the
@@ -5775,7 +5783,8 @@ public class LoadoutLabPanel extends PluginPanel
 			&& selected.overallBest.getDps() > 0)
 		{
 			double pct = Math.min(100.0,
-				100.0 * selected.owned.get(0).getDps() / selected.overallBest.getDps());
+				100.0 * (selected.owned.get(0).getDps() + extraShownDps(entry, selected, false))
+					/ (selected.overallBest.getDps() + extraShownDps(entry, selected, true)));
 			JLabel gap = new JLabel(String.format("you are at %.0f%%", pct));
 			gap.setForeground(MUTED);
 			gap.setFont(gap.getFont().deriveFont(11f));
@@ -5817,7 +5826,7 @@ public class LoadoutLabPanel extends PluginPanel
 				: bis ? r.overallBest
 				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
 			boolean hasSet = shown != null && shown.getDps() > 0;
-			double extra = hasSet ? extraShownDps(entry) : 0;
+			double extra = hasSet ? extraShownDps(entry, r, bis) : 0;
 			boolean isSelected = style == selected;
 			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
 			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -5834,10 +5843,13 @@ public class LoadoutLabPanel extends PluginPanel
 			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
 			tab.add(icon);
 			tab.add(dps);
+			double tabThrall = hasSet && entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
+			double tabSpec = hasSet ? extra - tabThrall : 0;
 			tab.setToolTipText(style + (hasSet
 				? " - " + dps.getText() + " DPS" + (extra > 0
-					? String.format(" (%.2f gear + %.2f thrall)",
-						shown.getDps(), extra)
+					? String.format(" (%.2f gear%s%s)", shown.getDps(),
+						tabThrall > 0 ? String.format(" + %.2f thrall", tabThrall) : "",
+						tabSpec > 0 ? String.format(" + %.2f spec", tabSpec) : "")
 					: "")
 				: " - no set"));
 			tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
