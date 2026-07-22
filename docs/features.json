@@ -138,22 +138,20 @@
     },
     {
       "id": "dwms-import",
-      "title": "Dude, Where's My Stuff import",
+      "title": "Dude, Where's My Stuff link",
       "group": "Bank and integrations",
-      "anchor": "dude-wheres-my-stuff-import",
+      "anchor": "dude-wheres-my-stuff-link",
       "media": "docs/img/dwms-import.png",
       "code": [
-        "collection/DwmsImport.java",
         "collection/DwmsLink.java",
         "LoadoutLabPlugin.java",
         "ui/LoadoutLabPanel.java"
       ],
       "tests": [
-        "collection/DwmsImportTest.java",
         "collection/DwmsLinkTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Two tiers. Preferred: the storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream) - exact canonical id+qty per storage, panel line shows '(live)'. Fallback for older DWMS: best-effort read of its persisted ConfigManager data (public API, no reflection; works with DWMS disabled), strictly defensive parsing - an upstream format change drops items rather than miscounting.",
+      "notes": "The storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream, DWMS 2.11.5+): exact canonical id+qty per storage, per-category families for the location hints. The old config-read fallback retired 2026-07-22.",
       "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
     },
     {

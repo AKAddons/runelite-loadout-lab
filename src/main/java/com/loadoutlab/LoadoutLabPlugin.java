@@ -6,7 +6,6 @@ import com.loadoutlab.collection.CollectionLedger;
 import com.loadoutlab.command.CommandHistory;
 import com.loadoutlab.command.Commands;
 import com.loadoutlab.collection.DreamStore;
-import com.loadoutlab.collection.DwmsImport;
 import com.loadoutlab.collection.DwmsLink;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.ManualOwnedStore;
@@ -191,7 +190,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private com.loadoutlab.collection.MonsterProfileStore mobProfiles;
 	private com.loadoutlab.collection.AlwaysFilterStore alwaysFilter;
 	private com.loadoutlab.collection.SupplyDefaultsStore supplyDefaults;
-	private DwmsImport dwmsImport;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
@@ -352,7 +350,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
 		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
 		supplyDefaults = new com.loadoutlab.collection.SupplyDefaultsStore(configManager, gson);
-		dwmsImport = new DwmsImport(configManager);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
@@ -384,7 +381,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
-			dwmsImport.reload();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
@@ -490,7 +486,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		protectOnly = null;
 		manualOwned = null;
 		mobProfiles = null;
-		dwmsImport = null;
 		dwmsLink = null;
 		stashUnits = null;
 		stashChartSeen = false;
@@ -746,10 +741,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			manualOwned.loadScope(worldScope());
 		}
-		if (dwmsImport != null)
-		{
-			dwmsImport.reload();
-		}
 		if (dwmsLink != null)
 		{
 			// The live snapshot belongs to the PREVIOUS identity; drop it and
@@ -787,7 +778,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
-			dwmsImport.reload();
 			requestDwmsStorages();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
@@ -1027,7 +1017,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			// count as owned (the stores stay loaded for a live re-enable).
 			return owned;
 		}
-		return dwmsLink.isLive() ? dwmsLink.mergeInto(owned) : dwmsImport.mergeInto(owned);
+		return dwmsLink.mergeInto(owned);
 	}
 
 	/**
@@ -1038,9 +1028,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private int ownedFingerprint()
 	{
 		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
-		int dwms = !config.useDwmsData() ? 0
-			: dwmsLink.isLive()
-				? dwmsLink.snapshot().hashCode() : dwmsImport.snapshot().hashCode();
+		int dwms = config.useDwmsData() ? dwmsLink.snapshot().hashCode() : 0;
 		return 31 * fingerprint + dwms;
 	}
 
@@ -1081,7 +1069,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		origins.put("stored elsewhere", manual);
 		if (config.useDwmsData())
 		{
-			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsImport.families().entrySet())
+			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsLink.families().entrySet())
 			{
 				origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
 			}
@@ -1593,7 +1581,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			/** EDT-confined (panel render/hover), like the panel itself. */
 			private com.loadoutlab.collection.ItemLocations locations()
 			{
-				if (ledger == null || manualOwned == null || dwmsImport == null)
+				if (ledger == null || manualOwned == null || dwmsLink == null)
 				{
 					return null;
 				}
@@ -1611,9 +1599,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	/**
 	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
-	 * Nothing is posted when the plugin is absent or disabled, and a
-	 * missing reply (a DWMS predating the contract) just leaves the
-	 * config-read fallback in charge.
+	 * Nothing is posted when the plugin is absent or disabled; a missing
+	 * reply (a DWMS predating 2.11.5) just means its storages do not
+	 * count until it updates.
 	 */
 	private void requestDwmsStorages()
 	{
@@ -1931,7 +1919,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			refreshConsumablePrices();
 			if (config.useDwmsData())
 			{
-				dwmsImport.reload();
 				requestDwmsStorages();
 			}
 			RequirementProfile profile = requirementProfile != null
@@ -1978,7 +1965,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			// DWMS-tracked storages change rarely).
 			if (config.useDwmsData())
 			{
-				dwmsImport.reload();
 				requestDwmsStorages();
 			}
 			RequirementProfile profile = requirementProfile != null

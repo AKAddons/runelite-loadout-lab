@@ -443,20 +443,16 @@ for bug reports.
 
 ![Where your gear is (location hints)](docs/img/location-hints.png)
 
-### Dude, Where's My Stuff import
+### Dude, Where's My Stuff link
 
-If you run the Dude, Where's My Stuff plugin, the gear storages it has
-seen are also counted as owned - useful for death storage (which Loadout
-Lab does not track) and for instantly seeding storages you opened before
-installing Loadout Lab. With a DWMS version that supports the storages
-PluginMessage contract, Loadout Lab asks DWMS directly and gets its exact
-tracked items back (the panel line shows "(live)"); with older versions
-it falls back to a best-effort read of the data DWMS has already saved
-(that even works while DWMS is disabled), with strictly defensive
-parsing: if a future DWMS update changes its format, items quietly stop
-importing rather than ever miscounting. Either way the stored-elsewhere
-list remains the manual override, and a muted panel line shows how many
-items came in this way.
+If you run the Dude, Where's My Stuff plugin (2.11.5+), the gear
+storages it tracks are also counted as owned - useful for death storage
+(which Loadout Lab does not track) and for storages you opened before
+installing Loadout Lab. Loadout Lab asks DWMS directly over the
+PluginMessage bus and gets its exact tracked items back, storage by
+storage, feeding both ownership and the location hints. The
+stored-elsewhere list remains the manual override, and a muted panel
+line shows how many items came in this way.
 
 ![Dude, Where's My Stuff import](docs/img/dwms-import.png)
 

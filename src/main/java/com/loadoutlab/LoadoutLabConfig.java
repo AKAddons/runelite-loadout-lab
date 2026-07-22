@@ -630,8 +630,8 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "useDwmsData",
 		name = "Use Dude, Where's My Stuff",
-		description = "Count gear tracked by Dude, Where's My Stuff as owned"
-			+ " (STASH, POH, death storage...).",
+		description = "Count gear tracked by Dude, Where's My Stuff (2.11.5+,"
+			+ " running) as owned - STASH, POH, death storage and more.",
 		section = connections,
 		position = 1
 	)
