@@ -2,9 +2,10 @@
 
 ![Loadout Lab](docs/img/hero.png)
 
-Loadout Lab quickly optimizes any mob, boss, or even a full raid around
-the best gear you own - in your bank, your storages, or wherever you
-keep it. Keep it simple and let the plugin do the work, or reach beyond
+"What should I bring?" is a bank-standing question. Loadout Lab answers
+it quickly, optimizing any mob, boss, or even a full raid around the
+best gear you own - in your bank, your storages, or wherever you keep
+it. Keep it simple and let the plugin do the work, or reach beyond
 your own gear with the powerful simulation and customization options.
 At the end of your search, filter the kit in your bank and get going.
 
