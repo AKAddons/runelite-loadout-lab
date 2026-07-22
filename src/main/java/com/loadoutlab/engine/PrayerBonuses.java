@@ -133,8 +133,10 @@ public final class PrayerBonuses
 	{
 		switch (style)
 		{
-			case RANGED: return new String[]{"Rigour", "Deadeye", "Eagle Eye"};
-			case MAGIC: return new String[]{"Augury", "Mystic Vigour", "Mystic Might"};
+			case RANGED: return new String[]{"Rigour", "Deadeye", "Eagle Eye",
+				"Hawk Eye", "Sharp Eye"};
+			case MAGIC: return new String[]{"Augury", "Mystic Vigour", "Mystic Might",
+				"Mystic Lore", "Mystic Will"};
 			default: return new String[]{"Piety", "Chivalry",
 				"Ultimate Strength + Incredible Reflexes",
 				"Superhuman Strength + Improved Reflexes",
@@ -157,12 +159,16 @@ public final class PrayerBonuses
 				if ("Rigour".equals(pick)) { rAcc = 1.20; rStr = 1.23; }
 				else if ("Deadeye".equals(pick)) { rAcc = 1.18; rStr = 1.18; }
 				else if ("Eagle Eye".equals(pick)) { rAcc = 1.15; rStr = 1.15; }
+				else if ("Hawk Eye".equals(pick)) { rAcc = 1.10; rStr = 1.10; }
+				else if ("Sharp Eye".equals(pick)) { rAcc = 1.05; rStr = 1.05; }
 				else { return fallback; }
 				break;
 			case MAGIC:
 				if ("Augury".equals(pick)) { gAcc = 1.25; gDmg = 4.0; }
 				else if ("Mystic Vigour".equals(pick)) { gAcc = 1.18; gDmg = 3.0; }
 				else if ("Mystic Might".equals(pick)) { gAcc = 1.15; gDmg = 2.0; }
+				else if ("Mystic Lore".equals(pick)) { gAcc = 1.10; gDmg = 1.0; }
+				else if ("Mystic Will".equals(pick)) { gAcc = 1.05; gDmg = 0.0; }
 				else { return fallback; }
 				break;
 			default:

@@ -39,6 +39,19 @@ public class PrayerPickTest
 			"Burst of Strength + Clarity of Thought", best);
 		Assert.assertEquals(1.05, low.getMeleeAccuracy(), 1e-9);
 		Assert.assertEquals(1.05, low.getMeleeStrength(), 1e-9);
+
+		// The lower ranged/magic tiers (field ask 2026-07-21 part 2),
+		// mirroring the cascade: Hawk/Sharp Eye, Mystic Lore/Will.
+		Assert.assertEquals(1.10, PrayerBonuses.forPick(CombatStyle.RANGED,
+			"Hawk Eye", best).getRangedAccuracy(), 1e-9);
+		Assert.assertEquals(1.05, PrayerBonuses.forPick(CombatStyle.RANGED,
+			"Sharp Eye", best).getRangedStrength(), 1e-9);
+		PrayerBonuses lore = PrayerBonuses.forPick(CombatStyle.MAGIC, "Mystic Lore", best);
+		Assert.assertEquals(1.10, lore.getMagicAccuracy(), 1e-9);
+		Assert.assertEquals(1.0, lore.getMagicDamagePercent(), 1e-9);
+		PrayerBonuses will = PrayerBonuses.forPick(CombatStyle.MAGIC, "Mystic Will", best);
+		Assert.assertEquals(1.05, will.getMagicAccuracy(), 1e-9);
+		Assert.assertEquals(0.0, will.getMagicDamagePercent(), 1e-9);
 	}
 
 	@Test
