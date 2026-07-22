@@ -1751,13 +1751,13 @@ public class OptimizerService
 		// pass runs for BOTH sides - the Yours kit over your bank and the
 		// BiS kit over the whole game, under the same inventory budget.
 		long tKitStart = System.nanoTime();
-		KitView ownedView = ctx.maxSwaps >= 1 && ctx.specWeapon && sharedByStyle.size() >= 2
+		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
 				bestsByStyle, specsByStyle, specCarriedByStyle, specAmmoByStyle, "owned", true)
 			: null;
 		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
 		long tGameKitStart = System.nanoTime();
-		KitView gameView = ctx.maxSwaps >= 1 && ctx.specWeapon && sharedGameByStyle.size() >= 2
+		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
 				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle,
 				new EnumMap<>(CombatStyle.class), "BiS", false)
