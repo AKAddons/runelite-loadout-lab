@@ -3449,12 +3449,14 @@ public class LoadoutLabPanel extends PluginPanel
 			k++;
 		}
 		// The THIRD strip (field spec 2026-07-20): fight-relevant gear that
-		// is neither worn nor carried (spellbook capes), one blank row below
-		// whichever of the cross / inventory reaches lower.
+		// is neither worn nor carried (spellbook capes), TWO blank rows
+		// below whichever of the cross / inventory reaches lower (field fix
+		// 2026-07-21: one row could clash - the bank-tag layout backfills
+		// unplaced matched members into the first blanks).
 		if (utilityIds != null && !utilityIds.isEmpty())
 		{
 			int invBottom = k > 0 ? (k - 1) / 4 : 0;
-			int stripRow = Math.max(4, invBottom) + 2;
+			int stripRow = Math.max(4, invBottom) + 3;
 			int u = 0;
 			for (int id : utilityIds)
 			{
