@@ -597,9 +597,10 @@ public class LoadoutLabPanel extends PluginPanel
 	 * 2026-07-21: "spec dps is not additive to the total while thralls
 	 * are"). Never ranking inputs - the tab tooltip carries the breakdown
 	 * so official-calc cross-checks stay possible. */
-	private double extraShownDps(ResultEntry entry, StyleResult result, boolean bis)
+	private double extraShownDps(ResultEntry entry, CombatStyle style,
+		StyleResult result, boolean bis)
 	{
-		double extra = entry.thralls && !arcaneBlocked(entry)
+		double extra = entry.thralls && !arcaneBlocked(entry, style)
 			? ExtraDps.thrallDps(magicLevel) : 0;
 		if (result != null)
 		{
@@ -616,12 +617,22 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** The Arceuus assumptions CLASH with the trip's autocast book (field
+	/** The clash is PER STYLE CARD (field bug 2026-07-21 v2: "my melee
+	 * build isn't locked into a standard spellbook - my magic set is"):
+	 * only the card that actually autocasts can be book-locked away from
+	 * Arceuus. Melee and ranged never autocast, so their folds always
+	 * apply. */
+	private boolean arcaneBlocked(ResultEntry entry, CombatStyle style)
+	{
+		return style == CombatStyle.MAGIC && magicArcaneClash(entry);
+	}
+
+	/** The MAGIC card's autocast book clashes with Arceuus summons (field
 	 * bug 2026-07-21: Fire Surge needs the standard spellbook - no viable
-	 * path to Arceuus summons from a standard/ancient home; a lunar
-	 * autocast is fine only when access is Via Spellbook Swap). Thralls
-	 * and Death Charge stand down while the clash holds. */
-	private boolean arcaneBlocked(ResultEntry entry)
+	 * path to Arceuus from a standard/ancient home; a lunar autocast is
+	 * fine only when access is Via Spellbook Swap). Only that card's
+	 * thrall/Death Charge folds stand down. */
+	private boolean magicArcaneClash(ResultEntry entry)
 	{
 		if (entry == null || entry.results == null)
 		{
@@ -673,10 +684,6 @@ public class LoadoutLabPanel extends PluginPanel
 	private List<Integer> arcaneRuneIds(ResultEntry entry)
 	{
 		List<Integer> ids = new ArrayList<>();
-		if (arcaneBlocked(entry))
-		{
-			return ids;
-		}
 		if (entry.thralls && magicLevel >= 76)
 		{
 			addIds(ids, TripSupplies.spellKit("thrallGreaterRunes"));
@@ -700,7 +707,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private List<Integer> arcaneKitFilterIds(ResultEntry entry)
 	{
 		List<Integer> ids = new ArrayList<>(arcaneRuneIds(entry));
-		if (entry.thralls && !arcaneBlocked(entry))
+		if (entry.thralls)
 		{
 			addIds(ids, TripSupplies.spellKit("bookOfTheDead"));
 		}
@@ -3972,8 +3979,7 @@ public class LoadoutLabPanel extends PluginPanel
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
-				entry.deathCharge && !arcaneBlocked(entry)
-				? (deathChargeUpgraded ? 2 : 1) : 0,
+				entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
 			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 				parsedBudgetGp(entry.upgradeBudget),
@@ -3985,8 +3991,7 @@ public class LoadoutLabPanel extends PluginPanel
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
-			entry.deathCharge && !arcaneBlocked(entry)
-				? (deathChargeUpgraded ? 2 : 1) : 0,
+			entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
 			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 			parsedBudgetGp(entry.upgradeBudget),
@@ -4513,31 +4518,23 @@ public class LoadoutLabPanel extends PluginPanel
 		// Thralls / Vengeance (field direction 2026-07-21): display-only
 		// dps folds - the chips show only when usable (tier reachable +
 		// book of the dead owned; Magic 94 for Veng).
-		boolean arcaneClash = arcaneBlocked(entry);
-		String clashNote = "Unavailable: the autocast spell needs a spellbook"
-			+ " with no viable route to Arceuus summons (pin a different"
-			+ " spell or use a powered staff to re-enable)";
+		String clashNote = magicArcaneClash(entry)
+			? " Not applied to the Magic card - its autocast needs another book." : "";
 		if (ExtraDps.thrallDps(magicLevel) > 0 && ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
 		{
-			if (arcaneClash)
-			{
-				toggles.add(paramChip("Thralls", false, false, clashNote, null));
-			}
-			else
-			{
 			toggles.add(paramChip("Thralls", entry.thralls, true,
-				entry.thralls
+				(entry.thralls
 					? "Folding your " + ExtraDps.thrallTier(magicLevel)
 						+ " thrall (" + String.format("%.2f", ExtraDps.thrallDps(magicLevel))
 						+ " dps, always hits) into the shown numbers - click to exclude"
 					: "Fold your " + ExtraDps.thrallTier(magicLevel)
-						+ " thrall's dps into the shown numbers (Arceuus + book of the dead)",
+						+ " thrall's dps into the shown numbers (Arceuus + book of the dead)")
+					+ clashNote,
 				() -> asActive(entry, () ->
 				{
 					entry.thralls = !entry.thralls;
 					renderPage();
 				})));
-			}
 		}
 		toggles.add(paramChip("Spec", entry.specWeapon, true,
 			entry.specWeapon
@@ -4551,27 +4548,21 @@ public class LoadoutLabPanel extends PluginPanel
 			})));
 		if (magicLevel >= 80)
 		{
-			if (arcaneClash)
-			{
-				toggles.add(paramChip("D charge", false, false, clashNote, null));
-			}
-			else
-			{
 			toggles.add(paramChip("D charge", entry.deathCharge, true,
-				entry.deathCharge
+				(entry.deathCharge
 					? (deathChargeUpgraded
 						? "Death Charge assumed, UPGRADED by Yama's rite (two 15%"
 							+ " refunds per cast) - feeds the spec model; click to exclude"
 						: "Death Charge assumed (Arceuus, 15% spec energy per killing"
 							+ " blow, 60s cast) - feeds the spec model; click to exclude")
 					: "Assume Death Charge - more special attacks per trip"
-						+ " (Arceuus, Magic 80)",
+						+ " (Arceuus, Magic 80)")
+					+ clashNote,
 				() -> asActive(entry, () ->
 				{
 					entry.deathCharge = !entry.deathCharge;
 					recompute();
 				})));
-			}
 		}
 		// One continuous wrap row for ALL chips (field fix 2026-07-18:
 		// the split rows left orphaned chips floating awkwardly).
@@ -5021,7 +5012,7 @@ public class LoadoutLabPanel extends PluginPanel
 					entry.perMobResults != null && index < entry.perMobResults.size()
 						? entry.perMobResults.get(index) : entry.results;
 				StyleResult rowStyleResult = rowMap == null ? null : rowMap.get(rs);
-				rowDps += extraShownDps(entry, rowStyleResult, bis);
+				rowDps += extraShownDps(entry, rs, rowStyleResult, bis);
 			}
 			if (rowDps > 0)
 			{
@@ -5186,12 +5177,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
 		// layout only - they live inside the pouch).
-		boolean blocked = arcaneBlocked(entry);
-		if (entry.thralls && !blocked)
+		if (entry.thralls)
 		{
 			ids.add(ExtraDps.BOOK_OF_THE_DEAD);
 		}
-		if (!blocked && (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
+		if (entry.thralls || entry.deathCharge || demonbaneCast(entry))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
@@ -5668,10 +5658,11 @@ public class LoadoutLabPanel extends PluginPanel
 				: unlimited ? "unlimited" : budget));
 		}
 
-		if (entry.thralls && !arcaneBlocked(entry))
+		if (entry.thralls)
 		{
 			params.add("Thralls: " + ExtraDps.thrallTier(magicLevel)
-				+ " (dps shown includes " + String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")");
+				+ " (dps shown includes " + String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")"
+				+ (magicArcaneClash(entry) ? " (not applied to the Magic card)" : ""));
 		}
 		for (Map.Entry<CombatStyle, String> pick : entry.prayerPicks.entrySet())
 		{
@@ -5683,7 +5674,7 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Boost (" + pick.getKey() + "): "
 				+ ("NONE".equals(pick.getValue()) ? "none" : pick.getValue()));
 		}
-		if (entry.deathCharge && !arcaneBlocked(entry))
+		if (entry.deathCharge)
 		{
 			params.add("Death Charge: on"
 				+ (deathChargeUpgraded ? " (upgraded - two refunds per cast)" : ""));
@@ -5828,7 +5819,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The Yours | BiS chip pair (field spec: the BiS view is the SAME card
 	 * through a toggle, not a separate section), with the gear-gap percent
 	 * for the selected style beside it. */
-	private JComponent viewToggleRow(ResultEntry entry, StyleResult selected, boolean bis)
+	private JComponent viewToggleRow(ResultEntry entry, CombatStyle style,
+		StyleResult selected, boolean bis)
 	{
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -5853,8 +5845,8 @@ public class LoadoutLabPanel extends PluginPanel
 			&& selected.overallBest.getDps() > 0)
 		{
 			double pct = Math.min(100.0,
-				100.0 * (selected.owned.get(0).getDps() + extraShownDps(entry, selected, false))
-					/ (selected.overallBest.getDps() + extraShownDps(entry, selected, true)));
+				100.0 * (selected.owned.get(0).getDps() + extraShownDps(entry, style, selected, false))
+					/ (selected.overallBest.getDps() + extraShownDps(entry, style, selected, true)));
 			JLabel gap = new JLabel(String.format("you are at %.0f%%", pct));
 			gap.setForeground(MUTED);
 			gap.setFont(gap.getFont().deriveFont(11f));
@@ -5896,7 +5888,7 @@ public class LoadoutLabPanel extends PluginPanel
 				: bis ? r.overallBest
 				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
 			boolean hasSet = shown != null && shown.getDps() > 0;
-			double extra = hasSet ? extraShownDps(entry, r, bis) : 0;
+			double extra = hasSet ? extraShownDps(entry, style, r, bis) : 0;
 			boolean isSelected = style == selected;
 			JPanel tab = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 3));
 			tab.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -6071,7 +6063,7 @@ public class LoadoutLabPanel extends PluginPanel
 			if (hasBis)
 			{
 				card.add(Box.createVerticalStrut(4));
-				card.add(viewToggleRow(entry, result, bis));
+				card.add(viewToggleRow(entry, style, result, bis));
 			}
 			return card;
 		}
@@ -6126,7 +6118,7 @@ public class LoadoutLabPanel extends PluginPanel
 		if (hasBis)
 		{
 			card.add(Box.createVerticalStrut(4));
-			card.add(viewToggleRow(entry, result, bis));
+			card.add(viewToggleRow(entry, style, result, bis));
 		}
 		if (!bis)
 		{
@@ -7009,7 +7001,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// player's LIVE book does not match.
 		String homeBookName = arceuusViaSwap() ? "lunar" : "arceuus";
 		boolean arcaneAssumed = entry != null && displayOptions.spellbookChip
-			&& (entry.thralls || entry.deathCharge) && !arcaneBlocked(entry);
+			&& (entry.thralls || entry.deathCharge) && !arcaneBlocked(entry, style);
 		if (castingBook != null)
 		{
 			int wantIndex = bookIndexOf(castingBook);
