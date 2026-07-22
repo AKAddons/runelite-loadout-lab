@@ -2,11 +2,11 @@
 
 ![Loadout Lab](docs/img/hero.png)
 
-Pick a monster - or a whole raid - and Loadout Lab works out the best
-gear you actually own for it: every combat style, exact DPS, verified
-against the official wiki calculator. Because it reads your bank as you
-play, the answer is YOUR kit, not a maxed player's - and the bank tools
-lay it out ready to withdraw.
+Loadout Lab quickly optimizes any mob, boss, or even a full raid around
+the best gear you own - in your bank, your storages, or wherever you
+keep it. Keep it simple and let the plugin do the work, or reach beyond
+your own gear with the powerful simulation and customization options.
+At the end of your search, filter the kit in your bank and get going.
 
 ## What it does
 
