@@ -68,21 +68,6 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("the classroom runs the school terms and is dark over summer and December")
-	void classroomTerm()
-	{
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2027, 2, 15)).contains(MascotRoster.CLASSROOM));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 1)).contains(MascotRoster.CLASSROOM));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CLASSROOM));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 7, 15)).contains(MascotRoster.CLASSROOM),
-			"summer break");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 8, 20)).contains(MascotRoster.CLASSROOM),
-			"summer break");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 12, 15)).contains(MascotRoster.CLASSROOM),
-			"December holidays");
-	}
-
-	@Test
 	@DisplayName("the chef cooks every month except October, which it cedes to Halloween")
 	void chefSkipsOctober()
 	{

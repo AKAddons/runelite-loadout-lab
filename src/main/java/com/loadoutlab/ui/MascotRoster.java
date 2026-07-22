@@ -21,8 +21,9 @@ import java.util.function.Supplier;
  *   - Workout (weight 2) and Skater (weight 1) run all year.
  *   - Chef (weight 1) cooks every month except October, which it cedes to
  *     Halloween (weight 6) - so October is the cauldron's headline month.
- *   - Classroom (weight 1) runs only the school terms: Jan-May and Sep-Nov
- *     (dark over summer break Jun-Aug and the December holidays).
+ *   - Classroom (weight 1, school terms Jan-May and Sep-Nov) is BENCHED
+ *     in ~/Development/loadout-lab-attic until September (token budget;
+ *     restore per that repo's README before the term starts).
  *   - The World Cup striker (weight 6, June-July of tournament years) is
  *     RETIRED to ~/Development/loadout-lab-attic after the 2026 final -
  *     restore per that repo's README for 2030. The dated-window factories
@@ -37,8 +38,6 @@ enum MascotRoster
 	SKATER(Window.ALWAYS, 1, MascotSkater::new),
 	// Chef cooks year-round except October (Halloween's month).
 	CHEF(Window.months(1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12), 1, MascotChef::new),
-	// Classroom is in session only during the school terms.
-	CLASSROOM(Window.months(1, 2, 3, 4, 5, 9, 10, 11), 1, MascotClassroom::new),
 
 	// Seasonal / event - eligible only inside their window, where the big
 	// weight makes them the headline act.
