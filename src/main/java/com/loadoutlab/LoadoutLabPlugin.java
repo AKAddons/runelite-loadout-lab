@@ -54,6 +54,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -1807,6 +1808,27 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * after a bank open, where core's BANKMAIN_INIT reload has just wiped
 	 * the in-memory list. The FINISHBUILDING hook covers rebuild variants.
 	 * (Priority-after-core precedent: Inventory Setups.) */
+	/** The book chips react LIVE to a spellbook swap (field bug
+	 * 2026-07-21: the chip stayed red after swapping - the live book was
+	 * only pushed at compute staging). Filtered to the one varbit; the
+	 * re-render is user-action-rare, never per-tick work. */
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarbitId() != net.runelite.api.gameval.VarbitID.SPELLBOOK)
+		{
+			return;
+		}
+		final int book = event.getValue();
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.refreshSpellbook(book);
+			}
+		});
+	}
+
 	@Subscribe(priority = -1)
 	public void onScriptPreFired(ScriptPreFired event)
 	{
