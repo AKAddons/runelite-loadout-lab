@@ -284,8 +284,8 @@ public interface LoadoutLabConfig extends Config
 		description = "Where the carried spec weapon's added dps appears:"
 			+ " folded into the shown numbers, as a footnote under the card,"
 			+ " or not shown.",
-		section = defaults,
-		position = 3
+		section = display,
+		position = 17
 	)
 	default DpsFold specDpsOutput()
 	{
@@ -297,8 +297,8 @@ public interface LoadoutLabConfig extends Config
 		name = "Thrall dps output",
 		description = "Where the assumed thrall's dps appears: folded into"
 			+ " the shown numbers, as a footnote under the card, or not shown.",
-		section = defaults,
-		position = 10
+		section = display,
+		position = 18
 	)
 	default DpsFold thrallDpsOutput()
 	{
@@ -322,7 +322,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Upgrade budget",
 		description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)",
 		section = defaults,
-		position = 4
+		position = 3
 	)
 	default String defaultUpgradeBudget()
 	{
@@ -346,7 +346,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Wilderness risk cap",
 		description = "Seed new results' wilderness risk cap (empty = unconstrained).",
 		section = defaults,
-		position = 5
+		position = 4
 	)
 	default String defaultRiskCap()
 	{
@@ -376,7 +376,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Autocast",
 		description = "Detect picks the best castable spell; None = powered staves only.",
 		section = defaults,
-		position = 6
+		position = 5
 	)
 	default AssumeDefault defaultAutocast()
 	{
@@ -422,7 +422,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Prayer",
 		description = "Detect, prayerless, or a named tier (seeds its own style).",
 		section = defaults,
-		position = 7
+		position = 6
 	)
 	default PrayerDefault defaultPrayer()
 	{
@@ -466,7 +466,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Boost",
 		description = "Detect, unboosted, or a named boost (seeds the styles it touches).",
 		section = defaults,
-		position = 8
+		position = 7
 	)
 	default BoostDefault defaultBoost()
 	{
@@ -478,7 +478,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Thralls",
 		description = "Detect folds a thrall in where it benefits; None starts off.",
 		section = defaults,
-		position = 9
+		position = 8
 	)
 	default AssumeDefault defaultThralls()
 	{
@@ -490,7 +490,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Death Charge",
 		description = "Detect assumes Death Charge where it benefits; None starts off.",
 		section = defaults,
-		position = 11
+		position = 9
 	)
 	default AssumeDefault defaultDeathCharge()
 	{
@@ -503,7 +503,7 @@ public interface LoadoutLabConfig extends Config
 		description = "Reach Arceuus casts from Lunar via Spellbook Swap (96 Magic);"
 			+ " the kit adds the swap and Vengeance runes.",
 		section = defaults,
-		position = 12
+		position = 10
 	)
 	default boolean spellbookSwapVengeance()
 	{
@@ -607,7 +607,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Antifire",
 		description = "Dragonfire seed: Detect = best owned potion, None = gear only.",
 		section = defaults,
-		position = 13
+		position = 11
 	)
 	default AntifireDefault defaultAntifire()
 	{

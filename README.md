@@ -367,15 +367,15 @@ Every card line and control is optional, across three settings sections.
 Display toggles each detail line (max hit, accuracy, damage taken, the
 defensive-prayer call, risk on death, prayer bonus, attack style, the
 inventory row, game best, notes, the '+ Add mob' row, the footnote, the
-loading animation). Controls picks which chips and buttons appear
+loading animation, and where the spec and thrall dps appear - in the
+numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
 wilderness controls). Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost
 (Detect best, None, or a named pick), the budget and risk-cap seeds,
-antifire, Arceuus via Spellbook Swap, and where the spec and thrall dps
-appear (in the numbers, as a footnote, or not shown) - the per-card
-chips and pickers still override each mob.
+antifire, and Arceuus via Spellbook Swap - the per-card chips and
+pickers still override each mob.
 
 ### Mob profiles: pins, notes, and bank-filter items
 
