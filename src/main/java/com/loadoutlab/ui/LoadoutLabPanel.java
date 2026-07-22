@@ -5934,7 +5934,8 @@ public class LoadoutLabPanel extends PluginPanel
 			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
 			tab.add(icon);
 			tab.add(dps);
-			double tabThrall = hasSet && entry.thralls ? ExtraDps.thrallDps(magicLevel) : 0;
+			double tabThrall = hasSet && entry.thralls && !arcaneBlocked(entry, style)
+				? ExtraDps.thrallDps(magicLevel) : 0;
 			double tabSpec = hasSet ? extra - tabThrall : 0;
 			tab.setToolTipText(style + (hasSet
 				? " - " + dps.getText() + " DPS" + (extra > 0
