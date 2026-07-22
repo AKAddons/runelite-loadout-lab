@@ -2,12 +2,11 @@
 
 ![Loadout Lab](docs/img/hero.png)
 
-**Your gear, your enemy, your best kit.** Pick any monster - or a whole
-raid - and Loadout Lab computes the strongest sets you actually OWN for
-every combat style, with exact DPS verified against the official wiki
-calculator. It knows your bank. It knows the boss. It plans the trip:
-gear, swaps, potions, prayers, thralls, supplies - then lays the whole
-kit out in your bank, ready to withdraw.
+Pick a monster - or a whole raid - and Loadout Lab works out the best
+gear you actually own for it: every combat style, exact DPS, verified
+against the official wiki calculator. Because it reads your bank as you
+play, the answer is YOUR kit, not a maxed player's - and the bank tools
+lay it out ready to withdraw.
 
 ## What it does
 
