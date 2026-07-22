@@ -218,6 +218,9 @@ public class LoadoutLabPanel extends PluginPanel
 		public boolean detectDeathCharge = true;
 		/** True seeds new results with autocast off (powered staves only). */
 		public boolean autocastNone;
+		/** 0 = fold into the shown dps, 1 = footnote line, 2 = not shown. */
+		public int specDpsMode;
+		public int thrallDpsMode;
 		/** A named tier/boost seeded into new results' pickers ("" = detect,
 		 * "NONE" = prayerless/unboosted; prayer = tier label, boost =
 		 * BoostProfile name). */
@@ -647,13 +650,20 @@ public class LoadoutLabPanel extends PluginPanel
 	private double extraShownDps(ResultEntry entry, CombatStyle style,
 		StyleResult result, boolean bis)
 	{
-		double extra = entry.thralls && !arcaneBlocked(entry, style)
-			? ExtraDps.thrallDps(magicLevel) : 0;
-		if (result != null)
+		double extra = displayOptions.thrallDpsMode == 0 ? thrallFoldDps(entry, style) : 0;
+		if (result != null && displayOptions.specDpsMode == 0)
 		{
 			extra += bis ? result.gameSpecDpsAdded : result.specDpsAdded;
 		}
 		return extra;
+	}
+
+	/** The thrall dps the assumptions imply for this card (0 when off,
+	 * unreachable, or the card's autocast book clashes). */
+	private double thrallFoldDps(ResultEntry entry, CombatStyle style)
+	{
+		return entry.thralls && !arcaneBlocked(entry, style)
+			? ExtraDps.thrallDps(magicLevel) : 0;
 	}
 
 	private static void addIds(List<Integer> into, int[] ids)
@@ -5757,8 +5767,10 @@ public class LoadoutLabPanel extends PluginPanel
 
 		if (entry.thralls)
 		{
+			String[] where = {"dps shown includes", "footnoted, not counted:", "dps hidden:"};
 			params.add("Thralls: " + ExtraDps.thrallTier(magicLevel)
-				+ " (dps shown includes " + String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")"
+				+ " (" + where[Math.min(displayOptions.thrallDpsMode, 2)] + " "
+				+ String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")"
 				+ (magicArcaneClash(entry) ? " (not applied to the Magic card)" : ""));
 		}
 		for (Map.Entry<CombatStyle, String> pick : entry.prayerPicks.entrySet())
@@ -6002,8 +6014,8 @@ public class LoadoutLabPanel extends PluginPanel
 			dps.setFont(dps.getFont().deriveFont(Font.BOLD, 13f));
 			tab.add(icon);
 			tab.add(dps);
-			double tabThrall = hasSet && entry.thralls && !arcaneBlocked(entry, style)
-				? ExtraDps.thrallDps(magicLevel) : 0;
+			double tabThrall = hasSet && displayOptions.thrallDpsMode == 0
+				? thrallFoldDps(entry, style) : 0;
 			double tabSpec = hasSet ? extra - tabThrall : 0;
 			tab.setToolTipText(style + (hasSet
 				? " - " + dps.getText() + " DPS" + (extra > 0
@@ -6183,8 +6195,30 @@ public class LoadoutLabPanel extends PluginPanel
 
 		// Max hit, accuracy, damage taken, style, prayer bonus and counted
 		// bonuses live in the grid's stat panel (field spec) - no text rows.
+		// FOOTNOTE mode (field ask 2026-07-22): dps kept OUT of the shown
+		// numbers still gets a muted line so the value is visible.
 		if (!bis)
 		{
+			StringBuilder foot = new StringBuilder();
+			double specAdd = result == null ? 0 : result.specDpsAdded;
+			if (displayOptions.specDpsMode == 1 && specAdd > 0)
+			{
+				foot.append(String.format("+%.2f spec", specAdd));
+			}
+			double thrallAdd = thrallFoldDps(entry, style);
+			if (displayOptions.thrallDpsMode == 1 && thrallAdd > 0)
+			{
+				foot.append(foot.length() > 0 ? ", " : "")
+					.append(String.format("+%.2f thrall", thrallAdd));
+			}
+			if (foot.length() > 0)
+			{
+				JLabel note = line(foot + " dps not in the shown numbers", MUTED);
+				note.setFont(note.getFont().deriveFont(11f));
+				note.setToolTipText("Footnote mode (settings under Defaults):"
+					+ " this dps is real but kept out of the totals");
+				card.add(note);
+			}
 		}
 		card.add(Box.createVerticalStrut(4));
 		// The owned grid marks what you don't own (green) and what already

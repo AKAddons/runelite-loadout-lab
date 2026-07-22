@@ -373,8 +373,9 @@ wilderness controls). Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost
 (Detect best, None, or a named pick), the budget and risk-cap seeds,
-antifire, and Arceuus via Spellbook Swap - the per-card chips and
-pickers still override each mob.
+antifire, Arceuus via Spellbook Swap, and where the spec and thrall dps
+appear (in the numbers, as a footnote, or not shown) - the per-card
+chips and pickers still override each mob.
 
 ### Mob profiles: pins, notes, and bank-filter items
 

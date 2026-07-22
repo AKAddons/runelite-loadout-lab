@@ -689,6 +689,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		LoadoutLabConfig.BoostDefault boost = config.defaultBoost();
 		o.defaultBoostPick = boost == LoadoutLabConfig.BoostDefault.DETECT ? ""
 			: boost.name();
+		o.specDpsMode = config.specDpsOutput().ordinal();
+		o.thrallDpsMode = config.thrallDpsOutput().ordinal();
 		o.spellbookSwapVengeance = config.spellbookSwapVengeance();
 		return o;
 	}
