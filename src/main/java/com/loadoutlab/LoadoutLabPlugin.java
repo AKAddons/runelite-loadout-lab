@@ -361,6 +361,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		// the in-memory tab into the tagtabs CSV (we never save it ourselves).
 		configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
 		layoutManager.removeLayout(BANK_TAG);
+		// Core bank-tags "Remember tab" reopens the last active tag at the
+		// next bank open - across sessions our virtual tag then leads to
+		// NOTHING (no filter registered yet; field bug 2026-07-21). Forget
+		// it whenever a session starts.
+		if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab")))
+		{
+			configManager.setConfiguration("banktags", "tab", "");
+		}
 		String tagtabs = configManager.getConfiguration("banktags", "tagtabs");
 		if (tagtabs != null && tagtabs.contains(BANK_TAG))
 		{
@@ -1695,6 +1703,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				layoutManager.removeLayout(BANK_TAG);
 				removeBankTagTab();
 				tagManager.unregisterTag(BANK_TAG);
+				if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab")))
+				{
+					configManager.setConfiguration("banktags", "tab", "");
+				}
 			});
 			return;
 		}
@@ -1798,13 +1810,21 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	@Subscribe(priority = -1)
 	public void onScriptPreFired(ScriptPreFired event)
 	{
-		if (event.getScriptId() == ScriptID.BANKMAIN_FINISHBUILDING
-			&& bankFilter != null
-			&& BANK_TAG.equals(bankTagsService.getActiveTag()))
+		if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING
+			|| !BANK_TAG.equals(bankTagsService.getActiveTag()))
 		{
-			log.debug("bank tab: FINISHBUILDING prefired, ensuring tab");
-			ensureBankTagTab();
+			return;
 		}
+		if (bankFilter == null)
+		{
+			// A remembered-tab ghost: our tag is open with no filter
+			// registered - it shows an empty bank (field bug 2026-07-21).
+			log.debug("bank tab: ghost tag open with no filter - closing");
+			bankTagsService.closeBankTag();
+			return;
+		}
+		log.debug("bank tab: FINISHBUILDING prefired, ensuring tab");
+		ensureBankTagTab();
 	}
 
 	@Subscribe(priority = -0.5f)

@@ -28,6 +28,17 @@ public class PrayerPickTest
 		PrayerBonuses might = PrayerBonuses.forPick(CombatStyle.MAGIC, "Mystic Might", best);
 		Assert.assertEquals(1.15, might.getMagicAccuracy(), 1e-9);
 		Assert.assertEquals(2.0, might.getMagicDamagePercent(), 1e-9);
+
+		// The lower melee combo tiers (field ask 2026-07-21): 1.10/1.10
+		// and 1.05/1.05, mirroring bestAvailable's cascade exactly.
+		PrayerBonuses mid = PrayerBonuses.forPick(CombatStyle.MELEE,
+			"Superhuman Strength + Improved Reflexes", best);
+		Assert.assertEquals(1.10, mid.getMeleeAccuracy(), 1e-9);
+		Assert.assertEquals(1.10, mid.getMeleeStrength(), 1e-9);
+		PrayerBonuses low = PrayerBonuses.forPick(CombatStyle.MELEE,
+			"Burst of Strength + Clarity of Thought", best);
+		Assert.assertEquals(1.05, low.getMeleeAccuracy(), 1e-9);
+		Assert.assertEquals(1.05, low.getMeleeStrength(), 1e-9);
 	}
 
 	@Test

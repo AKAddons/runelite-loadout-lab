@@ -136,7 +136,9 @@ public final class PrayerBonuses
 			case RANGED: return new String[]{"Rigour", "Deadeye", "Eagle Eye"};
 			case MAGIC: return new String[]{"Augury", "Mystic Vigour", "Mystic Might"};
 			default: return new String[]{"Piety", "Chivalry",
-				"Ultimate Strength + Incredible Reflexes"};
+				"Ultimate Strength + Incredible Reflexes",
+				"Superhuman Strength + Improved Reflexes",
+				"Burst of Strength + Clarity of Thought"};
 		}
 	}
 
@@ -167,6 +169,8 @@ public final class PrayerBonuses
 				if ("Piety".equals(pick)) { mAcc = 1.20; mStr = 1.23; }
 				else if ("Chivalry".equals(pick)) { mAcc = 1.15; mStr = 1.18; }
 				else if ("Ultimate Strength + Incredible Reflexes".equals(pick)) { mAcc = 1.15; mStr = 1.15; }
+				else if ("Superhuman Strength + Improved Reflexes".equals(pick)) { mAcc = 1.10; mStr = 1.10; }
+				else if ("Burst of Strength + Clarity of Thought".equals(pick)) { mAcc = 1.05; mStr = 1.05; }
 				else { return fallback; }
 				break;
 		}

@@ -98,6 +98,7 @@ import java.util.Objects;
 import java.util.Locale;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.awt.Window;
 import java.awt.Point;
@@ -678,6 +679,30 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		return "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"))
 			&& magicLevel >= 96;
+	}
+
+	/** The Arceuus access menu (field note 2026-07-21: "i don't see the
+	 * options for lunar -> arceuus" - the grey menu alone was buried). */
+	private void showArceuusAccessMenu(ResultEntry entry)
+	{
+		if (globalFilters == null)
+		{
+			return;
+		}
+		JPopupMenu menu = new JPopupMenu();
+		boolean swap = "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"));
+		JCheckBoxMenuItem direct = new JCheckBoxMenuItem(
+			"Direct (camp Arceuus)", !swap);
+		direct.addActionListener(a ->
+			globalFilters.setSupplyDefault("arceuusAccess", "DETECT_BEST"));
+		menu.add(direct);
+		JCheckBoxMenuItem via = new JCheckBoxMenuItem(
+			"Via Spellbook Swap (Lunar home - adds swap + Vengeance runes)", swap);
+		via.addActionListener(a ->
+			globalFilters.setSupplyDefault("arceuusAccess", "SPELLBOOK_SWAP"));
+		menu.add(via);
+		Point at = getMousePosition();
+		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
 
 	/** The best owned rune pouch (divine first, trouver-locked variants
@@ -2945,6 +2970,40 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			spellPin.setSelectedItem(pinned);
 		}
+		// The spell image rides the dropdown (field spec 2026-07-21 v3).
+		// Icons load async into a cache and REPAINT - a rubber-stamp
+		// renderer must never mutate itself after the fact (the icon would
+		// land on whichever cell stamps next).
+		final Map<String, ImageIcon> spellIcons = new HashMap<>();
+		final Set<String> spellIconRequests = new HashSet<>();
+		spellPin.setRenderer(new DefaultListCellRenderer()
+		{
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				String text = String.valueOf(value);
+				String name = text.startsWith("Auto: ") ? text.substring(6) : text;
+				ImageIcon cached = spellIcons.get(name);
+				setIcon(cached);
+				if (cached == null && spellIconRequests.add(name))
+				{
+					int sprite = AssumeIcons.spellSprite(name);
+					if (sprite >= 0)
+					{
+						spriteManager.getSpriteAsync(sprite, 0, img ->
+							SwingUtilities.invokeLater(() ->
+						{
+							spellIcons.put(name, new ImageIcon(
+								img.getScaledInstance(-1, 16, Image.SCALE_SMOOTH)));
+							spellPin.repaint();
+						}));
+					}
+				}
+				return this;
+			}
+		});
 		spellPin.setAlignmentX(LEFT_ALIGNMENT);
 		spellPin.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		spellPin.setToolTipText("Pin the autocast spell for this mob - the gear optimizes around it");
@@ -5847,7 +5906,11 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " required shield, dragonfire is fully blocked";
 			}
 			// The chips render in the stat panel beside the gear, not here.
-			JPanel chips = assumesChips(entry, style, chipLabel,
+			DpsResult shownForBook = bis ? result.overallBest
+				: result.owned.get(0);
+			String castingBook = style == CombatStyle.MAGIC && shownForBook != null
+				? spellBookText(shownForBook) : null;
+			JPanel chips = assumesChips(entry, style, chipLabel, castingBook,
 				bis ? "Best prayers + boost in the game" : "Assumed prayer + boost (you own these)",
 				antifireTooltip);
 			renderingChips = chips;
@@ -6894,7 +6957,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * inline with the style title to reclaim a whole row of vertical
 	 * space (field request); tooltips carry the words. */
 	private JPanel assumesChips(ResultEntry entry, CombatStyle style, String label,
-		String tooltip, String antifireTooltip)
+		String castingBook, String tooltip, String antifireTooltip)
 	{
 		JPanel chips = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 0));
 		chips.setOpaque(false);
@@ -6906,46 +6969,67 @@ public class LoadoutLabPanel extends PluginPanel
 			attachItemIcon(potion, SUPER_ANTIFIRE_ID);
 			chips.add(potion);
 		}
-		// The spellbook the BUILD assumes rides every tab, not just magic
-		// (field spec 2026-07-21): thralls / Death Charge mean Arceuus. A
-		// warning border says the player is NOT currently on that book.
-		if (entry != null && displayOptions.spellbookChip
-			&& (entry.thralls || entry.deathCharge))
+		// The CASTING book, lifted out of the 2x5 stat panel (field spec
+		// 2026-07-21 v3: "we are duplicating efforts") - the autocast
+		// spell's spellbook on an item-cell plate, faded red when the
+		// player's LIVE book does not match.
+		String homeBookName = arceuusViaSwap() ? "lunar" : "arceuus";
+		boolean arcaneAssumed = entry != null && displayOptions.spellbookChip
+			&& (entry.thralls || entry.deathCharge);
+		if (castingBook != null)
+		{
+			int wantIndex = bookIndexOf(castingBook);
+			boolean offBook = currentSpellbook >= 0 && wantIndex >= 0
+				&& currentSpellbook != wantIndex;
+			JLabel castChip = new JLabel();
+			castChip.setOpaque(true);
+			castChip.setHorizontalAlignment(SwingConstants.CENTER);
+			castChip.setPreferredSize(new Dimension(24, 22));
+			castChip.setBackground(offBook ? new Color(110, 52, 52) : CELL_BG);
+			castChip.setBorder(new RoundedBorder(offBook
+				? new Color(160, 80, 80) : ColorScheme.MEDIUM_GRAY_COLOR, 1, 3));
+			attachSprite(castChip, spellbookSprite(castingBook));
+			castChip.setToolTipText(castingBook + " spellbook - the autocast"
+				+ " spell's book" + (offBook ? " (you are NOT on it)" : ""));
+			chips.add(castChip);
+			// One truth per book: if the summons chip would show the same
+			// book, the casting chip already covers it.
+			if (arcaneAssumed && homeBookName.equalsIgnoreCase(castingBook))
+			{
+				arcaneAssumed = false;
+			}
+		}
+		// The spellbook the SUMMONS assume rides every tab, not just magic
+		// (field spec 2026-07-21): thralls / Death Charge mean Arceuus
+		// (or Lunar home when reached via Spellbook Swap). A faded red
+		// plate says the player's LIVE book does not match. Clicking opens
+		// the access menu (Direct / Via Spellbook Swap).
+		if (arcaneAssumed)
 		{
 			boolean viaSwap = arceuusViaSwap();
 			int homeBook = viaSwap ? SPELLBOOK_LUNAR : SPELLBOOK_ARCEUUS;
 			boolean offBook = currentSpellbook >= 0
 				&& currentSpellbook != homeBook;
-			JLabel bookChip = new JLabel(viaSwap ? "Lunar+swap" : "Arceuus");
-			bookChip.setFont(bookChip.getFont().deriveFont(Font.BOLD, 11f));
-			bookChip.setForeground(offBook
-				? new Color(230, 170, 90) : MUTED);
-			if (offBook)
-			{
-				bookChip.setBorder(new RoundedBorder(new Color(200, 140, 60), 1, 4));
-			}
-			bookChip.setToolTipText(viaSwap
-				? (offBook
-					? "This build assumes LUNAR home with Spellbook Swap into"
-						+ " Arceuus for the summons - and you are NOT on Lunar"
-					: "This build assumes Lunar home, Spellbook Swap into"
-						+ " Arceuus for the summons (Vengeance stays available)")
-				: (offBook
-					? "This build assumes the ARCEUUS spellbook (thralls / Death"
-						+ " Charge) and you are NOT on it - swap before the trip"
-						+ " (a magic or max cape can swap anywhere)"
-					: "This build assumes the Arceuus spellbook (thralls / Death"
-						+ " Charge)"));
-			// Clicking the chip toggles the access mode in place (the grey
-			// chip menu holds the same choice).
-			if (globalFilters != null)
-			{
-				bookChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				final boolean wasSwap = viaSwap;
-				onClick(bookChip, e -> asActive(entry, () ->
-					globalFilters.setSupplyDefault("arceuusAccess",
-						wasSwap ? "DETECT_BEST" : "SPELLBOOK_SWAP")));
-			}
+			JLabel bookChip = new JLabel();
+			bookChip.setOpaque(true);
+			bookChip.setHorizontalAlignment(SwingConstants.CENTER);
+			bookChip.setPreferredSize(new Dimension(24, 22));
+			bookChip.setBackground(offBook ? new Color(110, 52, 52) : CELL_BG);
+			bookChip.setBorder(new RoundedBorder(offBook
+				? new Color(160, 80, 80) : ColorScheme.MEDIUM_GRAY_COLOR, 1, 3));
+			// The REAL spellbook tab icons (field correction 2026-07-21:
+			// the sigil/astral proxies read as the wrong things).
+			attachSprite(bookChip, viaSwap
+				? net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR
+				: net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS);
+			bookChip.setToolTipText((viaSwap
+				? "Assumes LUNAR home, Spellbook Swap into Arceuus for the"
+					+ " summons (Vengeance stays available)"
+				: "Assumes the ARCEUUS spellbook (thralls / Death Charge)")
+				+ (offBook ? " - and you are NOT on that book" : "")
+				+ " - click to change the access mode");
+			bookChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			onClick(bookChip, e -> asActive(entry, () -> showArceuusAccessMenu(entry)));
 			chips.add(bookChip);
 		}
 		for (String part : label.split(" \\+ "))
@@ -7348,11 +7432,12 @@ int sprite = incoming.protectPrayer != null
 				}
 				panel.add(builtIn);
 			}
-			else if (spellName != null)
+			else if (spellName != null && renderingBis)
 			{
-				// ONE row: <spellbook icon> <spell icon> (field spec), the
-				// game's real book art; the BiS view appends the name (no
-				// combo carries it there).
+				// BiS only (field spec 2026-07-21 v3): the owned side's book
+				// moved to the assume chips and its spell icon into the
+				// autocast dropdown - no duplication. The BiS view keeps
+				// this row (it has no combo).
 				JPanel spellRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
 				spellRow.setOpaque(false);
 				spellRow.setAlignmentX(LEFT_ALIGNMENT);
@@ -7558,6 +7643,19 @@ int sprite = incoming.protectPrayer != null
 
 	/** The game's own spellbook icons (SideIcons): standard = the magic
 	 * tab star, the other books their dedicated sidebar art. */
+	/** The VarbitID.SPELLBOOK index for a book name, or -1. */
+	private static int bookIndexOf(String book)
+	{
+		switch (book.toLowerCase(Locale.ROOT))
+		{
+			case "standard": return 0;
+			case "ancient": return 1;
+			case "lunar": return 2;
+			case "arceuus": return 3;
+			default: return -1;
+		}
+	}
+
 	private static int spellbookSprite(String book)
 	{
 		switch (book.toLowerCase(Locale.ROOT))
