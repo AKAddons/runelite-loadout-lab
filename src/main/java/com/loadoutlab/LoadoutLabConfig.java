@@ -17,15 +17,23 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigSection(
 		name = "Controls",
-		description = "Which parameter chips each card offers, and what new results assume",
+		description = "Which parameter chips and buttons each card offers",
 		position = 1
 	)
 	String controls = "controls";
 
 	@ConfigSection(
+		name = "Defaults",
+		description = "What every NEW result assumes - the per-card chips and"
+			+ " pickers still override per mob",
+		position = 2
+	)
+	String defaults = "defaults";
+
+	@ConfigSection(
 		name = "Connections",
 		description = "Other plugins Loadout Lab reads data from when they are installed",
-		position = 2
+		position = 3
 	)
 	String connections = "connections";
 
@@ -228,9 +236,9 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultOnTask",
-		name = "Default searches to On task",
+		name = "On slayer task",
 		description = "Seed new results with On task enabled.",
-		section = controls,
+		section = defaults,
 		position = 1
 	)
 	default boolean defaultOnTask()
@@ -240,9 +248,9 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultSpecWeapon",
-		name = "Spec weapon by default",
+		name = "Spec weapon",
 		description = "Seed new results with the Spec chip on.",
-		section = controls,
+		section = defaults,
 		position = 2
 	)
 	default boolean defaultSpecWeapon()
@@ -255,7 +263,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Upgrade budget",
 		description = "Show the upgrade-budget field.",
 		section = controls,
-		position = 3
+		position = 1
 	)
 	default boolean showUpgradeBudget()
 	{
@@ -264,10 +272,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultUpgradeBudget",
-		name = "Default upgrade budget",
+		name = "Upgrade budget",
 		description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)",
-		section = controls,
-		position = 4
+		section = defaults,
+		position = 3
 	)
 	default String defaultUpgradeBudget()
 	{
@@ -279,7 +287,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Wilderness risk options",
 		description = "Show the low-risk, Protect Item and risk-cap controls.",
 		section = controls,
-		position = 5
+		position = 2
 	)
 	default boolean showWildyRisk()
 	{
@@ -288,10 +296,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultRiskCap",
-		name = "Default wilderness risk cap",
+		name = "Wilderness risk cap",
 		description = "Seed new results' wilderness risk cap (empty = unconstrained).",
-		section = controls,
-		position = 6
+		section = defaults,
+		position = 4
 	)
 	default String defaultRiskCap()
 	{
@@ -303,7 +311,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Spell selection",
 		description = "Show the spellbook lock and per-mob autocast spell pin.",
 		section = controls,
-		position = 7
+		position = 3
 	)
 	default boolean showSpellControls()
 	{
@@ -318,10 +326,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultAutocast",
-		name = "Autocast default",
+		name = "Autocast",
 		description = "Detect picks the best castable spell; None = powered staves only.",
-		section = controls,
-		position = 8
+		section = defaults,
+		position = 5
 	)
 	default AssumeDefault defaultAutocast()
 	{
@@ -364,10 +372,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultPrayer",
-		name = "Prayer default",
+		name = "Prayer",
 		description = "Detect, prayerless, or a named tier (seeds its own style).",
-		section = controls,
-		position = 9
+		section = defaults,
+		position = 6
 	)
 	default PrayerDefault defaultPrayer()
 	{
@@ -408,10 +416,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultBoost",
-		name = "Boost default",
+		name = "Boost",
 		description = "Detect, unboosted, or a named boost (seeds the styles it touches).",
-		section = controls,
-		position = 10
+		section = defaults,
+		position = 7
 	)
 	default BoostDefault defaultBoost()
 	{
@@ -420,10 +428,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultThralls",
-		name = "Thralls default",
+		name = "Thralls",
 		description = "Detect folds a thrall in where it benefits; None starts off.",
-		section = controls,
-		position = 11
+		section = defaults,
+		position = 8
 	)
 	default AssumeDefault defaultThralls()
 	{
@@ -432,10 +440,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultDeathCharge",
-		name = "Death Charge default",
+		name = "Death Charge",
 		description = "Detect assumes Death Charge where it benefits; None starts off.",
-		section = controls,
-		position = 12
+		section = defaults,
+		position = 9
 	)
 	default AssumeDefault defaultDeathCharge()
 	{
@@ -447,8 +455,8 @@ public interface LoadoutLabConfig extends Config
 		name = "Arceuus via Spellbook Swap",
 		description = "Reach Arceuus casts from Lunar via Spellbook Swap (96 Magic);"
 			+ " the kit adds the swap and Vengeance runes.",
-		section = controls,
-		position = 13
+		section = defaults,
+		position = 10
 	)
 	default boolean spellbookSwapVengeance()
 	{
@@ -460,7 +468,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Exclude controls",
 		description = "Show the red exclude chips (global and per-mob).",
 		section = controls,
-		position = 14
+		position = 4
 	)
 	default boolean showExcludeControls()
 	{
@@ -472,7 +480,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Sim controls",
 		description = "Show the green sim chips (global and per-mob).",
 		section = controls,
-		position = 15
+		position = 5
 	)
 	default boolean showSimControls()
 	{
@@ -484,7 +492,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Filter controls",
 		description = "Show the grey filter chips (global and per-mob).",
 		section = controls,
-		position = 16
+		position = 6
 	)
 	default boolean showFilterControls()
 	{
@@ -496,7 +504,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Pin controls",
 		description = "Show the 'Pins: N' chip (right-click pinning stays).",
 		section = controls,
-		position = 17
+		position = 7
 	)
 	default boolean showPinControls()
 	{
@@ -508,7 +516,7 @@ public interface LoadoutLabConfig extends Config
 		name = "'Show in bank' button",
 		description = "Show the button that outlines the set in your open bank.",
 		section = controls,
-		position = 18
+		position = 8
 	)
 	default boolean showInBankButton()
 	{
@@ -520,7 +528,7 @@ public interface LoadoutLabConfig extends Config
 		name = "'Filter bank' button",
 		description = "Show the button that filters your bank to the set's items.",
 		section = controls,
-		position = 19
+		position = 9
 	)
 	default boolean showFilterBankButton()
 	{
@@ -532,7 +540,7 @@ public interface LoadoutLabConfig extends Config
 		name = "NPC right-click entry",
 		description = "Add 'Search in Loadout Lab' to known monsters' right-click menus.",
 		section = controls,
-		position = 20
+		position = 10
 	)
 	default boolean npcRightClickEntry()
 	{
@@ -549,10 +557,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultAntifire",
-		name = "Default antifire",
+		name = "Antifire",
 		description = "Dragonfire seed: Detect = best owned potion, None = gear only.",
-		section = controls,
-		position = 21
+		section = defaults,
+		position = 11
 	)
 	default AntifireDefault defaultAntifire()
 	{
