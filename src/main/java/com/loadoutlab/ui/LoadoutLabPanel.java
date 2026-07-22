@@ -18,6 +18,8 @@ import com.loadoutlab.engine.DragonfireRules;
 import com.loadoutlab.engine.IncomingDpsCalculator;
 import com.loadoutlab.engine.Loadout;
 import com.loadoutlab.engine.MonsterMechanics;
+import com.loadoutlab.engine.BoostProfile;
+import com.loadoutlab.engine.PrayerBonuses;
 import com.loadoutlab.engine.PvpRisk;
 import com.loadoutlab.engine.QuestRewardItems;
 import com.loadoutlab.engine.SpecialAttack;
@@ -169,76 +171,61 @@ public class LoadoutLabPanel extends PluginPanel
 	 * plugin's config. Immutable; the plugin builds one and hands it over
 	 * with setDisplayOptions. Everything defaults on (the full panel).
 	 */
+	/** Plain mutable field-bag (the 21-arg telescoping ctor died with the
+	 * 2026-07-21 options evolution): the plugin fills the fields it reads
+	 * from config; everything defaults to shown/detect. */
 	public static final class DisplayOptions
 	{
-		final boolean maxHit;
-		final boolean accuracy;
-		final boolean bonuses;
-		final boolean assumes;
-		final boolean damageTaken;
-		final boolean riskLine;
-		final boolean prayerBonus;
-		final boolean attackStyle;
-		final boolean gameBest;
-		final boolean notes;
-		final boolean spellControls;
-		final boolean upgradeBudget;
-		final boolean wildyRisk;
-		final boolean showInBank;
-		final boolean filterBank;
-		final boolean loadingAnimation;
+		public boolean maxHit = true;
+		public boolean accuracy = true;
+		public boolean bonuses = true;
+		public boolean assumes = true;
+		public boolean damageTaken = true;
+		/** The pray-against call (protection prayer icon) on the DTPS line. */
+		public boolean defensivePrayer = true;
+		public boolean riskLine = true;
+		public boolean prayerBonus = true;
+		public boolean attackStyle = true;
+		public boolean gameBest = true;
+		public boolean notes = true;
+		public boolean footnote = true;
+		public boolean addMob = true;
+		public boolean inventory = true;
+		public boolean spellControls = true;
+		public boolean upgradeBudget = true;
+		public boolean wildyRisk = true;
+		public boolean showInBank = true;
+		public boolean filterBank = true;
+		public boolean loadingAnimation = true;
 		/** The cross-tab assumed-spellbook chip - optional: it annoys
 		 * players who never juggle spellbooks (field call 2026-07-21). */
-		final boolean spellbookChip;
+		public boolean spellbookChip = true;
+		/** The exclude/sim/filter chip trios and the Pins chip. */
+		public boolean showExclude = true;
+		public boolean showSim = true;
+		public boolean showFilter = true;
+		public boolean showPins = true;
 
 		/** Seeds for every NEW result's parameter zone (settings panel). */
-		public final String defaultUpgradeBudget;
-		public final String defaultRiskCap;
-		public final boolean defaultOnTask;
+		public String defaultUpgradeBudget = "";
+		public String defaultRiskCap = "";
+		public boolean defaultOnTask;
+		public boolean defaultSpecWeapon = true;
 		/** -1 = detect from the collection, else the antifire mode. */
-		public final int defaultAntifireMode;
-
-		/**
-		 * The one canonical constructor. Callers that used to rely on the
-		 * 18-/19-arg telescoping forms now pass the trailing defaults
-		 * explicitly (defaultOnTask=false, defaultAntifireMode=-1).
-		 */
-		public DisplayOptions(boolean maxHit, boolean accuracy, boolean bonuses, boolean assumes,
-			boolean damageTaken, boolean riskLine, boolean prayerBonus, boolean attackStyle,
-			boolean gameBest, boolean notes, boolean spellControls, boolean upgradeBudget,
-			boolean wildyRisk, boolean showInBank, boolean filterBank,
-			boolean loadingAnimation, boolean spellbookChip,
-			String defaultUpgradeBudget, String defaultRiskCap,
-			boolean defaultOnTask, int defaultAntifireMode)
-		{
-			this.defaultAntifireMode = defaultAntifireMode;
-			this.defaultOnTask = defaultOnTask;
-			this.defaultUpgradeBudget = defaultUpgradeBudget == null ? "" : defaultUpgradeBudget;
-			this.defaultRiskCap = defaultRiskCap == null ? "" : defaultRiskCap;
-			this.maxHit = maxHit;
-			this.accuracy = accuracy;
-			this.bonuses = bonuses;
-			this.assumes = assumes;
-			this.damageTaken = damageTaken;
-			this.riskLine = riskLine;
-			this.prayerBonus = prayerBonus;
-			this.attackStyle = attackStyle;
-			this.gameBest = gameBest;
-			this.notes = notes;
-			this.spellControls = spellControls;
-			this.upgradeBudget = upgradeBudget;
-			this.wildyRisk = wildyRisk;
-			this.showInBank = showInBank;
-			this.filterBank = filterBank;
-			this.loadingAnimation = loadingAnimation;
-			this.spellbookChip = spellbookChip;
-		}
-
-		static DisplayOptions all()
-		{
-			return new DisplayOptions(true, true, true, true, true, true, true,
-				true, true, true, true, true, true, true, true, true, true, "", "", false, -1);
-		}
+		public int defaultAntifireMode = -1;
+		/** Detect-vs-off gates for the auto-on assumptions. */
+		public boolean detectThralls = true;
+		public boolean detectDeathCharge = true;
+		/** True seeds new results with autocast off (powered staves only). */
+		public boolean autocastNone;
+		/** A named tier/boost seeded into new results' pickers ("" = detect,
+		 * "NONE" = prayerless/unboosted; prayer = tier label, boost =
+		 * BoostProfile name). */
+		public String defaultPrayerPick = "";
+		public String defaultBoostPick = "";
+		/** Arceuus casts via Spellbook Swap from a Lunar home (config-level
+		 * default; the grey menu's per-profile choice also enables it). */
+		public boolean spellbookSwapVengeance;
 	}
 
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
@@ -493,6 +480,66 @@ public class LoadoutLabPanel extends PluginPanel
 		return maxHp >= 150;
 	}
 
+	/** Every config-driven assumption seed for a NEW result (the options
+	 * evolution, field spec 2026-07-21): detect gates, the spec chip, the
+	 * named prayer/boost picks, and autocast-off. */
+	private void seedAssumptionDefaults(ResultEntry entry)
+	{
+		entry.thralls = displayOptions.detectThralls && defaultThralls(entry);
+		entry.deathCharge = displayOptions.detectDeathCharge && defaultDeathCharge(entry);
+		entry.specWeapon = displayOptions.defaultSpecWeapon;
+		if (displayOptions.autocastNone)
+		{
+			entry.spellbookIndex = NO_AUTOCAST_INDEX;
+		}
+		seedPick(entry.prayerPicks, displayOptions.defaultPrayerPick, true);
+		seedPick(entry.boostPicks, displayOptions.defaultBoostPick, false);
+	}
+
+	/** Seed a picker map from the config default: "NONE" hits every style;
+	 * a named prayer tier lands on its own style; a named boost lands on
+	 * every style it touches. Unknown names seed nothing (detect). */
+	private static void seedPick(Map<CombatStyle, String> picks, String pick, boolean prayer)
+	{
+		if (pick == null || pick.isEmpty())
+		{
+			return;
+		}
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			if ("NONE".equals(pick))
+			{
+				picks.put(style, "NONE");
+			}
+			else if (prayer)
+			{
+				for (String option : PrayerBonuses.optionsFor(style))
+				{
+					if (option.equals(pick))
+					{
+						picks.put(style, pick);
+					}
+				}
+			}
+			else
+			{
+				try
+				{
+					BoostProfile profile = BoostProfile.valueOf(pick);
+					char letter = style == CombatStyle.RANGED ? 'r'
+						: style == CombatStyle.MAGIC ? 'm' : 's';
+					if (profile.boosts(letter))
+					{
+						picks.put(style, pick);
+					}
+				}
+				catch (IllegalArgumentException ignored)
+				{
+				}
+			}
+		}
+	}
+
 	/** Death Charge defaults ON with the same benefit gate as thralls
 	 * (Magic 80 + a 150+ hp fight); no book required - it is a spell. */
 	private boolean defaultDeathCharge(ResultEntry entry)
@@ -732,7 +779,8 @@ public class LoadoutLabPanel extends PluginPanel
 	 * (being on Lunar makes veng available). Set from the grey chip menu. */
 	private boolean arceuusViaSwap()
 	{
-		return "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"))
+		return (displayOptions.spellbookSwapVengeance
+			|| "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess")))
 			&& magicLevel >= 96;
 	}
 
@@ -965,7 +1013,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private final JLabel noteHeader = new JLabel();
 	private final JTextArea noteArea = new JTextArea();
 	/** Config-driven display gates (all on until the plugin sets them). */
-	private DisplayOptions displayOptions = DisplayOptions.all();
+	private DisplayOptions displayOptions = new DisplayOptions();
 	/** The upgrade-budget control row - gated by displayOptions.upgradeBudget. */
 	private JPanel budgetRow;
 	private static final Color POSTIT_BG = new Color(78, 72, 50);
@@ -1003,7 +1051,11 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The budget field's last committed text, for the back step. */
 	private String lastBudgetText = "";
 	private final JComboBox<String> spellbook =
-		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus"});
+		new JComboBox<>(new String[]{"Any spellbook", "Standard", "Ancient", "Arceuus", "No autocast"});
+
+	/** The combo index that turns autocast OFF: its lock string ("no
+	 * autocast") matches no spell's book, so only powered staves cast. */
+	private static final int NO_AUTOCAST_INDEX = 4;
 	// Sits in BorderLayout.CENTER (see the constructor), so it's stretched to
 	// the fixed sidebar width and over-wide children can't inflate it - the
 	// horizontal-clip guard the old Scrollable width-tracking used to provide
@@ -1750,6 +1802,9 @@ public class LoadoutLabPanel extends PluginPanel
 	public void setDisplayOptions(DisplayOptions options)
 	{
 		this.displayOptions = options;
+		excludeCountChip.setVisible(options.showExclude);
+		dreamCountChip.setVisible(options.showSim);
+		filterCountChip.setVisible(options.showFilter);
 		// Flush any in-progress note edit before the post-it can vanish.
 		if (!options.notes)
 		{
@@ -2022,8 +2077,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			active.addMob(group.getMobs().get(i));
 		}
-		active.thralls = defaultThralls(active);
-		active.deathCharge = defaultDeathCharge(active);
+		seedAssumptionDefaults(active);
 		active.seedInventoryDefault(group.getInventory());
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
@@ -2090,8 +2144,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// bosses fight on-task; everything else starts at the defaults
 		// (out of the wilderness - a per-fight statement, not a preference).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
-		active.thralls = defaultThralls(active);
-		active.deathCharge = defaultDeathCharge(active);
+		seedAssumptionDefaults(active);
 		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
@@ -2647,6 +2700,11 @@ public class LoadoutLabPanel extends PluginPanel
 	JComboBox<String> spellbookForTest()
 	{
 		return spellbook;
+	}
+
+	ResultEntry activeForTest()
+	{
+		return active;
 	}
 
 	MonsterStats selectedMonsterForTest()
@@ -4631,7 +4689,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			pinCount += scoped.size();
 		}
-		if (pinCount > 0)
+		if (pinCount > 0 && displayOptions.showPins)
 		{
 			values.add(pinFilterChip(entry, "Pins: " + pinCount,
 				"Pinned items for this mob - click to manage"));
@@ -5083,6 +5141,10 @@ public class LoadoutLabPanel extends PluginPanel
 			rows.add(Box.createVerticalStrut(2));
 		}
 		// The growth affordance: add a mob straight to this result's roster.
+		if (!displayOptions.addMob)
+		{
+			return rows;
+		}
 		JLabel add = new JLabel("+ Add mob");
 		add.setForeground(new Color(150, 150, 150));
 		add.setFont(add.getFont().deriveFont(Font.BOLD, 12f));
@@ -5452,7 +5514,10 @@ public class LoadoutLabPanel extends PluginPanel
 			column.add(legend);
 		}
 		column.add(Box.createVerticalStrut(6));
-		column.add(guidanceNote(entry, selected, bis));
+		if (displayOptions.footnote)
+		{
+			column.add(guidanceNote(entry, selected, bis));
+		}
 		return column;
 	}
 
@@ -6134,7 +6199,8 @@ public class LoadoutLabPanel extends PluginPanel
 				result.specDpsAdded, "Swap in for the special attack",
 				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
 		}
-		if (result != null && (!(bis ? result.gameBench : result.bench).isEmpty()
+		if (displayOptions.inventory && result != null
+			&& (!(bis ? result.gameBench : result.bench).isEmpty()
 			|| !consumableIds(entry, style, result, bis).isEmpty()))
 		{
 			// The INVENTORY (field spec): below the gear - what is carried
@@ -6179,22 +6245,30 @@ public class LoadoutLabPanel extends PluginPanel
 			int simCount = mobProfile.allMobSims(lensedProfileId).size();
 			// Same color language as the global -N/+N chips above the
 			// search bar: red for exclusions, green for sims.
+			if (displayOptions.showExclude)
+			{
 			localRow.add(localCountChip(
 				excludedCount > 0 ? "Exclude: " + excludedCount : "Exclude",
 				excludedCount > 0, true,
 				"Never use an item vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalExclusions(entry, lensedProfileId, mobName))));
+			}
+			if (displayOptions.showSim)
+			{
 			localRow.add(localCountChip(
 				simCount > 0 ? "Sim: " + simCount : "Sim",
 				simCount > 0, false,
 				"Count an item as owned vs " + mobName + " (this mob only) - click to add or manage",
 				() -> asActive(entry, () -> manageLocalSims(entry, lensedProfileId, mobName))));
+			}
 			int filterHere = mobProfile.supplyOverrides(lensedProfileId).size();
 			for (Map<Integer, String> scopedItems
 				: mobProfile.allFilterItems(lensedProfileId).values())
 			{
 				filterHere += scopedItems.size();
 			}
+			if (displayOptions.showFilter)
+			{
 			localRow.add(chip(
 				filterHere > 0 ? "Filter: " + filterHere : "Filter", true,
 				filterHere > 0 ? new Color(190, 190, 190) : new Color(130, 130, 130),
@@ -6204,8 +6278,12 @@ public class LoadoutLabPanel extends PluginPanel
 				"Bank filters vs " + mobName + " (this mob only) - supply"
 					+ " overrides and always-at-hand items",
 				e -> asActive(entry, () -> manageSupplyOverrides(entry, lensedProfileId, mobName))));
-			card.add(Box.createVerticalStrut(4));
-			card.add(localRow);
+			}
+			if (localRow.getComponentCount() > 0)
+			{
+				card.add(Box.createVerticalStrut(4));
+				card.add(localRow);
+			}
 		}
 		if (displayOptions.showInBank || displayOptions.filterBank)
 		{
@@ -7412,7 +7490,7 @@ public class LoadoutLabPanel extends PluginPanel
 			if (!unmodeled)
 			{
 				// The protect-prayer sprite IS the pray call.
-int sprite = incoming.protectPrayer != null
+				int sprite = displayOptions.defensivePrayer && incoming.protectPrayer != null
 					? AssumeIcons.prayerSprite(incoming.protectPrayer) : -1;
 				if (sprite >= 0)
 				{

@@ -648,29 +648,49 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
-		return new LoadoutLabPanel.DisplayOptions(
-			config.displayMaxHit(),
-			config.displayAccuracy(),
-			config.displayBonuses(),
-			config.displayAssumes(),
-			config.displayDamageTaken(),
-			config.displayRiskOnDeath(),
-			config.displayPrayerBonus(),
-			config.displayAttackStyle(),
-			config.displayGameBest(),
-			config.enableNotes(),
-			config.showSpellControls(),
-			config.showUpgradeBudget(),
-			config.showWildyRisk(),
-			config.showInBankButton(),
-			config.showFilterBankButton(),
-			config.loadingAnimation(),
-			config.displaySpellbookChip(),
-			config.defaultUpgradeBudget(),
-			config.defaultRiskCap(),
-			config.defaultOnTask(),
-			config.defaultAntifire() == LoadoutLabConfig.AntifireDefault.DETECT ? -1
-				: config.defaultAntifire().ordinal() - 1);
+		LoadoutLabPanel.DisplayOptions o = new LoadoutLabPanel.DisplayOptions();
+		o.maxHit = config.displayMaxHit();
+		o.accuracy = config.displayAccuracy();
+		o.bonuses = config.displayBonuses();
+		o.assumes = config.displayAssumes();
+		o.damageTaken = config.displayDamageTaken();
+		o.defensivePrayer = config.displayDefensivePrayer();
+		o.riskLine = config.displayRiskOnDeath();
+		o.prayerBonus = config.displayPrayerBonus();
+		o.attackStyle = config.displayAttackStyle();
+		o.gameBest = config.displayGameBest();
+		o.notes = config.enableNotes();
+		o.footnote = config.displayFootnote();
+		o.addMob = config.displayAddMob();
+		o.inventory = config.displayInventory();
+		o.spellControls = config.showSpellControls();
+		o.upgradeBudget = config.showUpgradeBudget();
+		o.wildyRisk = config.showWildyRisk();
+		o.showInBank = config.showInBankButton();
+		o.filterBank = config.showFilterBankButton();
+		o.loadingAnimation = config.loadingAnimation();
+		o.spellbookChip = config.displaySpellbookChip();
+		o.showExclude = config.showExcludeControls();
+		o.showSim = config.showSimControls();
+		o.showFilter = config.showFilterControls();
+		o.showPins = config.showPinControls();
+		o.defaultUpgradeBudget = config.defaultUpgradeBudget();
+		o.defaultRiskCap = config.defaultRiskCap();
+		o.defaultOnTask = config.defaultOnTask();
+		o.defaultSpecWeapon = config.defaultSpecWeapon();
+		o.defaultAntifireMode = config.defaultAntifire() == LoadoutLabConfig.AntifireDefault.DETECT
+			? -1 : config.defaultAntifire().ordinal() - 1;
+		o.detectThralls = config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
+		o.detectDeathCharge = config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
+		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
+		LoadoutLabConfig.PrayerDefault prayer = config.defaultPrayer();
+		o.defaultPrayerPick = prayer == LoadoutLabConfig.PrayerDefault.DETECT ? ""
+			: prayer == LoadoutLabConfig.PrayerDefault.NONE ? "NONE" : prayer.toString();
+		LoadoutLabConfig.BoostDefault boost = config.defaultBoost();
+		o.defaultBoostPick = boost == LoadoutLabConfig.BoostDefault.DETECT ? ""
+			: boost.name();
+		o.spellbookSwapVengeance = config.spellbookSwapVengeance();
+		return o;
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */

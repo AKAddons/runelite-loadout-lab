@@ -384,6 +384,20 @@ send a monster the same way (Goal Planner's boss cards are rolling it out).
 
 ![Search in Loadout Lab (cross-plugin)](docs/img/link-in.png)
 
+### Panel options: display and controls
+
+Every card line and control is optional. The plugin settings' Display
+section toggles each detail line (max hit, accuracy, damage taken, the
+defensive-prayer call, risk on death, prayer bonus, attack style, the
+inventory row, game best, notes, the '+ Add mob' row, the footnote, the
+loading animation). The Controls section picks which chips appear
+(exclude / sim / filter / pins, bank buttons, spell selection, budget and
+wilderness controls) and what every NEW result assumes: On task, the Spec
+chip, thralls and Death Charge (Detect best or None), autocast (Detect or
+powered staves only), a prayer tier and a boost (Detect best, None, or a
+named pick - the per-card pickers still override per mob), plus Arceuus
+via Spellbook Swap.
+
 ### Community Discord
 
 The header Options menu has a "Join our Discord" link to the plugin's

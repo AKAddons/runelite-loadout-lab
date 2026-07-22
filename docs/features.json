@@ -440,6 +440,23 @@
       ],
       "since": "0.3.3",
       "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot."
+    },
+    {
+      "id": "panel-options",
+      "title": "Panel options: display and controls",
+      "group": "Panel",
+      "anchor": "panel-options-display-and-controls",
+      "media": "docs/img/panel-options.png",
+      "code": [
+        "LoadoutLabConfig.java",
+        "ui/LoadoutLabPanel.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [
+        "ui/DefaultSeedingTest.java"
+      ],
+      "since": "0.3.3",
+      "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot."
     }
   ]
 }
