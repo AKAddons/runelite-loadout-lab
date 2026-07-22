@@ -17,11 +17,16 @@ public enum BoostProfile
 	// Label deliberately avoids " + " - the assumes chips split on it.
 	F2P_COMBAT("Attack & strength potions", 3, 0.10, "as"),
 	SUPER_COMBAT("Super combat", 5, 0.15, "asd"),
+	// Divine variants boost identically; they hold the boost at ceiling
+	// for 5 minutes instead of decaying, so they are the preferred assumption.
+	DIVINE_SUPER_COMBAT("Divine super combat", 5, 0.15, "asd"),
 	RANGING("Ranging potion", 4, 0.10, "r"),
+	DIVINE_RANGING("Divine ranging potion", 4, 0.10, "r"),
 	SUPER_RANGING("Super ranging", 5, 0.15, "r"),
 	SATURATED_HEART("Saturated heart", 4, 0.10, "m"),
 	IMBUED_HEART("Imbued heart", 1, 0.10, "m"),
 	MAGIC("Magic potion", 4, 0.0, "m"),
+	DIVINE_MAGIC("Divine magic potion", 4, 0.0, "m"),
 	SUPER_MAGIC("Super magic", 5, 0.15, "m"),
 	OVERLOAD("Overload", 5, 0.13, "asdrm"),
 	OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"),

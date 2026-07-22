@@ -366,7 +366,10 @@ stays the default - the boost detect reads what you actually own, the
 prayer detect your unlocks - and clicking an icon overrides that style's
 assumption: any named tier (Piety, Chivalry, Rigour, Deadeye, Augury,
 Mystic Might...), any boost including overloads and smelling salts
-outside raids, or None. An accent border marks an override; the numbers,
+outside raids, or None. Divine potions are preferred: the BiS ceiling
+assumes the divine super combat / divine ranging potion, and your side
+assumes the divine variant whenever you own one (same boost numbers,
+but the boost holds at ceiling instead of decaying). An accent border marks an override; the numbers,
 the assume label and the consumable cells all follow. Handy when a low
 prayer-bonus setup cannot sustain Piety and you want the DPS you will
 actually do.

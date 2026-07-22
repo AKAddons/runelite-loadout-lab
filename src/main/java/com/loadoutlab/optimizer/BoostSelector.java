@@ -6,14 +6,19 @@ import com.loadoutlab.engine.OwnedItems;
 
 /**
  * The best stat boost assumed per style. Tradeable potions are ALWAYS
- * assumed (cheap consumables - like prayers, you bring them); only the
- * hearts (untradeable drops) gate on ownership. Raid-scoped boosts
- * (overloads, smelling salts) are deliberately not auto-assumed.
+ * assumed (cheap consumables - like prayers, you bring them); the hearts
+ * (untradeable drops) and the pricier divine variants gate on ownership.
+ * Raid-scoped boosts (overloads, smelling salts) are deliberately not
+ * auto-assumed.
  */
 public final class BoostSelector
 {
 	private static final int SATURATED_HEART = 27641;
 	private static final int IMBUED_HEART = 20724;
+	/** All dose variants - owning any counts (GE-verified ids 2026-07-21). */
+	private static final int[] DIVINE_SUPER_COMBAT = {23685, 23688, 23691, 23694};
+	private static final int[] DIVINE_RANGING = {23733, 23736, 23739, 23742};
+	private static final int[] DIVINE_MAGIC = {23745, 23748, 23751, 23754};
 
 	private BoostSelector()
 	{
@@ -30,8 +35,10 @@ public final class BoostSelector
 		}
 		switch (style)
 		{
-			case MELEE: return BoostProfile.SUPER_COMBAT;
-			case RANGED: return BoostProfile.RANGING;
+			// Divine variants hold the boost at ceiling for the whole fight
+			// - same numbers, better assumption (field ask 2026-07-21).
+			case MELEE: return BoostProfile.DIVINE_SUPER_COMBAT;
+			case RANGED: return BoostProfile.DIVINE_RANGING;
 			case MAGIC: return BoostProfile.SATURATED_HEART;
 			default: return BoostProfile.NONE;
 		}
@@ -51,9 +58,11 @@ public final class BoostSelector
 		switch (style)
 		{
 			case MELEE:
-				return BoostProfile.SUPER_COMBAT;
+				return ownsAny(owned, DIVINE_SUPER_COMBAT)
+					? BoostProfile.DIVINE_SUPER_COMBAT : BoostProfile.SUPER_COMBAT;
 			case RANGED:
-				return BoostProfile.RANGING;
+				return ownsAny(owned, DIVINE_RANGING)
+					? BoostProfile.DIVINE_RANGING : BoostProfile.RANGING;
 			case MAGIC:
 				if (!noHearts && owned.owns(SATURATED_HEART))
 				{
@@ -63,9 +72,22 @@ public final class BoostSelector
 				{
 					return BoostProfile.IMBUED_HEART;
 				}
-				return BoostProfile.MAGIC;
+				return ownsAny(owned, DIVINE_MAGIC)
+					? BoostProfile.DIVINE_MAGIC : BoostProfile.MAGIC;
 			default:
 				return BoostProfile.NONE;
 		}
+	}
+
+	private static boolean ownsAny(OwnedItems owned, int[] ids)
+	{
+		for (int id : ids)
+		{
+			if (owned.owns(id))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }

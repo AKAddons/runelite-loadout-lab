@@ -429,12 +429,14 @@
       "code": [
         "engine/PrayerBonuses.java",
         "engine/BoostProfile.java",
+        "optimizer/BoostSelector.java",
         "engine/OptimizationRequest.java",
         "optimizer/OptimizerService.java",
         "ui/LoadoutLabPanel.java"
       ],
       "tests": [
-        "engine/PrayerPickTest.java"
+        "engine/PrayerPickTest.java",
+        "optimizer/BoostSelectorTest.java"
       ],
       "since": "0.3.3",
       "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot."
