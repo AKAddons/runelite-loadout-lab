@@ -250,6 +250,7 @@ public class OptimizerService
 		int riskBudgetGp,
 		boolean antifirePotion,
 		int deathCharge,
+		boolean specWeapon,
 		Map<CombatStyle, String> boostPicks,
 		Map<CombatStyle, String> prayerPicks,
 		boolean inWilderness,
@@ -265,7 +266,7 @@ public class OptimizerService
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
@@ -320,6 +321,7 @@ public class OptimizerService
 		boolean onSlayerTask;
 		boolean antifirePotion;
 		int deathCharge;
+		boolean specWeapon = true;
 		Map<CombatStyle, String> boostPicks = Collections.emptyMap();
 		Map<CombatStyle, String> prayerPicks = Collections.emptyMap();
 		boolean inWilderness;
@@ -369,7 +371,7 @@ public class OptimizerService
 		return mob.getId() + "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + dreamsFor(ctx, mob).hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
@@ -448,7 +450,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
 			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
-			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
+			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.specWeapon + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.inWilderness
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
 			+ "|" + ctx.chosenMode.name() + "|" + ctx.maxSwaps
@@ -528,10 +530,10 @@ public class OptimizerService
 					gameBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, gameRequest, gameBest.get(0)));
 				}
 				// Bench 0 = strictly one worn set: no spec swap is carried.
-				SpecPick spec = ctx.maxSwaps >= 1
+				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
 					? bestSpec(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned)
 					: null;
-				SpecPick gameSpec = ctx.maxSwaps >= 1
+				SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
 					? bestSpec(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null)
 					: null;
 				// The defensive story of the shown set: what the boss does
@@ -582,7 +584,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
@@ -612,6 +614,7 @@ public class OptimizerService
 		ctx.onSlayerTask = onSlayerTask;
 		ctx.antifirePotion = antifirePotion;
 		ctx.deathCharge = deathCharge;
+		ctx.specWeapon = specWeapon;
 		ctx.boostPicks = boostPicks == null ? Collections.emptyMap() : boostPicks;
 		ctx.prayerPicks = prayerPicks == null ? Collections.emptyMap() : prayerPicks;
 		ctx.inWilderness = inWilderness;
@@ -1600,11 +1603,11 @@ public class OptimizerService
 				shownGame.add(sharedGame == null ? null
 					: calcRespecting(calc, gameReqs.get(j), sharedGame));
 			}
-			SpecPick[] specs = ctx.maxSwaps >= 1
+			SpecPick[] specs = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, ownedReqs,
 					shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame)
 				: new SpecPick[n];
-			SpecPick[] gameSpecs = ctx.maxSwaps >= 1
+			SpecPick[] gameSpecs = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, gameReqs,
 					shownOwned, gameLevels, null, true, shownGame)
 				: new SpecPick[n];
@@ -1748,13 +1751,13 @@ public class OptimizerService
 		// pass runs for BOTH sides - the Yours kit over your bank and the
 		// BiS kit over the whole game, under the same inventory budget.
 		long tKitStart = System.nanoTime();
-		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
+		KitView ownedView = ctx.maxSwaps >= 1 && ctx.specWeapon && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
 				bestsByStyle, specsByStyle, specCarriedByStyle, specAmmoByStyle, "owned", true)
 			: null;
 		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
 		long tGameKitStart = System.nanoTime();
-		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
+		KitView gameView = ctx.maxSwaps >= 1 && ctx.specWeapon && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
 				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle,
 				new EnumMap<>(CombatStyle.class), "BiS", false)
@@ -2312,7 +2315,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		OptimizeMode mode, int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
@@ -2358,14 +2361,14 @@ public class OptimizerService
 			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
+				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
 				mode, maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, boostPicks, prayerPicks, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, mode, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;

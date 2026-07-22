@@ -124,7 +124,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge,
+			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
 			int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
@@ -136,7 +136,7 @@ public class LoadoutLabPanel extends PluginPanel
 		 * production hook overrides it. */
 		default void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge,
+			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
 			int upgradeBudgetGp,
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode mode, int maxSwaps,
@@ -1049,6 +1049,8 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Death Charge (Arceuus): 15% spec energy per killing blow - an
 		 * ENGINE input to the spec model, so toggling recomputes. */
 		boolean deathCharge;
+		/** Carry a special-attack weapon at all (the Spec y/n chip). */
+		boolean specWeapon = true;
 		/** Assume-chip picker overrides (field direction 2026-07-21): per
 		 * style, a BoostProfile enum name / a prayer tier name, or "NONE";
 		 * absent = detect best (grey). Engine inputs - changing recomputes. */
@@ -3935,6 +3937,7 @@ public class LoadoutLabPanel extends PluginPanel
 				parsedBudgetGp(entry.riskCap),
 				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
+			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
@@ -3947,6 +3950,7 @@ public class LoadoutLabPanel extends PluginPanel
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			entry.deathCharge ? (deathChargeUpgraded ? 2 : 1) : 0,
+			entry.specWeapon,
 			copyPicks(entry.boostPicks), copyPicks(entry.prayerPicks),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
@@ -4488,6 +4492,16 @@ public class LoadoutLabPanel extends PluginPanel
 					renderPage();
 				})));
 		}
+		toggles.add(paramChip("Spec", entry.specWeapon, true,
+			entry.specWeapon
+				? "A special-attack weapon may be carried and its added dps"
+					+ " folded in - click to plan without one"
+				: "No spec weapon carried - click to allow one",
+			() -> asActive(entry, () ->
+			{
+				entry.specWeapon = !entry.specWeapon;
+				recompute();
+			})));
 		if (magicLevel >= 80)
 		{
 			toggles.add(paramChip("D charge", entry.deathCharge, true,
@@ -4950,6 +4964,17 @@ public class LoadoutLabPanel extends PluginPanel
 			// lensing the row follows it to that style's tab.
 			DpsResult rowResult = mobRowResult(entry, index, viewedStyle, bis);
 			double rowDps = rowResult == null ? 0 : rowResult.getDps();
+			if (rowResult != null)
+			{
+				// The row's total matches the tabs (field sync fix
+				// 2026-07-21): thrall + the row style's spec fold in.
+				CombatStyle rs = resultStyle(rowResult, viewedStyle);
+				Map<CombatStyle, StyleResult> rowMap =
+					entry.perMobResults != null && index < entry.perMobResults.size()
+						? entry.perMobResults.get(index) : entry.results;
+				StyleResult rowStyleResult = rowMap == null ? null : rowMap.get(rs);
+				rowDps += extraShownDps(entry, rowStyleResult, bis);
+			}
 			if (rowDps > 0)
 			{
 				CombatStyle rowStyle = resultStyle(rowResult, viewedStyle);
