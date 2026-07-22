@@ -131,17 +131,36 @@ public final class PrayerBonuses
 	 * mob"). Factors mirror bestAvailable's cascade exactly. */
 	public static String[] optionsFor(CombatStyle style)
 	{
-		switch (style)
+		Object[][] picks = picksFor(style);
+		String[] names = new String[picks.length];
+		for (int i = 0; i < picks.length; i++)
 		{
-			case RANGED: return new String[]{"Rigour", "Deadeye", "Eagle Eye",
-				"Hawk Eye", "Sharp Eye"};
-			case MAGIC: return new String[]{"Augury", "Mystic Vigour", "Mystic Might",
-				"Mystic Lore", "Mystic Will"};
-			default: return new String[]{"Piety", "Chivalry",
-				"Ultimate Strength + Incredible Reflexes",
-				"Superhuman Strength + Improved Reflexes",
-				"Burst of Strength + Clarity of Thought"};
+			names[i] = (String) picks[i][0];
 		}
+		return names;
+	}
+
+	/** A specific pick's bonuses for ONE style: the fallback's factors with
+	 * this style's replaced by the named tier (the other styles' values are
+	 * irrelevant to a single-style request). Unknown names fall back. */
+	/** name -> {accuracy, strength-or-damage} per style, best first -
+	 * mirrors bestAvailable's cascade exactly. */
+	private static final Object[][] MELEE_PICKS = {
+		{"Piety", 1.20, 1.23}, {"Chivalry", 1.15, 1.18},
+		{"Ultimate Strength + Incredible Reflexes", 1.15, 1.15},
+		{"Superhuman Strength + Improved Reflexes", 1.10, 1.10},
+		{"Burst of Strength + Clarity of Thought", 1.05, 1.05}};
+	private static final Object[][] RANGED_PICKS = {
+		{"Rigour", 1.20, 1.23}, {"Deadeye", 1.18, 1.18}, {"Eagle Eye", 1.15, 1.15},
+		{"Hawk Eye", 1.10, 1.10}, {"Sharp Eye", 1.05, 1.05}};
+	private static final Object[][] MAGIC_PICKS = {
+		{"Augury", 1.25, 4.0}, {"Mystic Vigour", 1.18, 3.0}, {"Mystic Might", 1.15, 2.0},
+		{"Mystic Lore", 1.10, 1.0}, {"Mystic Will", 1.05, 0.0}};
+
+	private static Object[][] picksFor(CombatStyle style)
+	{
+		return style == CombatStyle.RANGED ? RANGED_PICKS
+			: style == CombatStyle.MAGIC ? MAGIC_PICKS : MELEE_PICKS;
 	}
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with
@@ -149,42 +168,36 @@ public final class PrayerBonuses
 	 * irrelevant to a single-style request). Unknown names fall back. */
 	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback)
 	{
-		double mAcc = fallback.meleeAccuracy, mStr = fallback.meleeStrength;
-		double rAcc = fallback.rangedAccuracy, rStr = fallback.rangedStrength;
-		double gAcc = fallback.magicAccuracy, gDmg = fallback.magicDamagePercent;
-		String name = pick;
-		switch (style)
+		for (Object[] row : picksFor(style))
 		{
-			case RANGED:
-				if ("Rigour".equals(pick)) { rAcc = 1.20; rStr = 1.23; }
-				else if ("Deadeye".equals(pick)) { rAcc = 1.18; rStr = 1.18; }
-				else if ("Eagle Eye".equals(pick)) { rAcc = 1.15; rStr = 1.15; }
-				else if ("Hawk Eye".equals(pick)) { rAcc = 1.10; rStr = 1.10; }
-				else if ("Sharp Eye".equals(pick)) { rAcc = 1.05; rStr = 1.05; }
-				else { return fallback; }
-				break;
-			case MAGIC:
-				if ("Augury".equals(pick)) { gAcc = 1.25; gDmg = 4.0; }
-				else if ("Mystic Vigour".equals(pick)) { gAcc = 1.18; gDmg = 3.0; }
-				else if ("Mystic Might".equals(pick)) { gAcc = 1.15; gDmg = 2.0; }
-				else if ("Mystic Lore".equals(pick)) { gAcc = 1.10; gDmg = 1.0; }
-				else if ("Mystic Will".equals(pick)) { gAcc = 1.05; gDmg = 0.0; }
-				else { return fallback; }
-				break;
-			default:
-				if ("Piety".equals(pick)) { mAcc = 1.20; mStr = 1.23; }
-				else if ("Chivalry".equals(pick)) { mAcc = 1.15; mStr = 1.18; }
-				else if ("Ultimate Strength + Incredible Reflexes".equals(pick)) { mAcc = 1.15; mStr = 1.15; }
-				else if ("Superhuman Strength + Improved Reflexes".equals(pick)) { mAcc = 1.10; mStr = 1.10; }
-				else if ("Burst of Strength + Clarity of Thought".equals(pick)) { mAcc = 1.05; mStr = 1.05; }
-				else { return fallback; }
-				break;
+			if (!row[0].equals(pick))
+			{
+				continue;
+			}
+			double a = (Double) row[1];
+			double b = (Double) row[2];
+			PrayerBonuses result;
+			if (style == CombatStyle.RANGED)
+			{
+				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
+					a, b, fallback.magicAccuracy, fallback.magicDamagePercent);
+			}
+			else if (style == CombatStyle.MAGIC)
+			{
+				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
+					fallback.rangedAccuracy, fallback.rangedStrength, a, b);
+			}
+			else
+			{
+				result = new PrayerBonuses(a, b, fallback.rangedAccuracy,
+					fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent);
+			}
+			result.meleeName = style == CombatStyle.MELEE ? pick : fallback.meleeName;
+			result.rangedName = style == CombatStyle.RANGED ? pick : fallback.rangedName;
+			result.magicName = style == CombatStyle.MAGIC ? pick : fallback.magicName;
+			return result;
 		}
-		PrayerBonuses result = new PrayerBonuses(mAcc, mStr, rAcc, rStr, gAcc, gDmg);
-		result.meleeName = style == CombatStyle.MELEE ? name : fallback.meleeName;
-		result.rangedName = style == CombatStyle.RANGED ? name : fallback.rangedName;
-		result.magicName = style == CombatStyle.MAGIC ? name : fallback.magicName;
-		return result;
+		return fallback;
 	}
 
 	/** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */

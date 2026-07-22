@@ -567,6 +567,22 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
 		"defaultRiskCap");
 
+	/** Client-thread staging push: the castability state the panel's
+	 * chips read - BOOSTED magic (field call 2026-07-21: castability
+	 * follows the boosted stat), the Yama rite unlock, the live book. */
+	private void pushPanelCastState(PlayerLevels live)
+	{
+		if (panel == null)
+		{
+			return;
+		}
+		panel.setMagicLevel(live.getMagic());
+		panel.setDeathChargeUpgraded(client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+		panel.setCurrentSpellbook(client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.SPELLBOOK));
+	}
+
 	/** The panel's grey-trio hook: the global always-filter list plus
 	 * wrench-panel supply defaults editable straight from the chip menu
 	 * (the config write loops back through PANEL_CONFIG_KEYS, so the
@@ -1900,16 +1916,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
-			if (panel != null)
-			{
-				// BOOSTED magic (field call 2026-07-21): castability follows
-				// the boosted stat, not the base level.
-				panel.setMagicLevel(live.getMagic());
-				panel.setDeathChargeUpgraded(client.getVarbitValue(
-					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
-				panel.setCurrentSpellbook(client.getVarbitValue(
-					net.runelite.api.gameval.VarbitID.SPELLBOOK));
-			}
+			pushPanelCastState(live);
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			int fingerprint = owned.presenceFingerprint();
@@ -1956,16 +1963,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
-			if (panel != null)
-			{
-				// BOOSTED magic (field call 2026-07-21): castability follows
-				// the boosted stat, not the base level.
-				panel.setMagicLevel(live.getMagic());
-				panel.setDeathChargeUpgraded(client.getVarbitValue(
-					net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
-				panel.setCurrentSpellbook(client.getVarbitValue(
-					net.runelite.api.gameval.VarbitID.SPELLBOOK));
-			}
+			pushPanelCastState(live);
 			// One merge, shared by the optimizer request and the export - this
 			// runs on the client thread, where every merge is a frame tax.
 			Map<Integer, Integer> mergedOwned = ownedItems();

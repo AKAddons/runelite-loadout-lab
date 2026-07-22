@@ -525,33 +525,42 @@ public class LoadoutLabPanel extends PluginPanel
 	 * overloads and salts). Engine inputs: picking recomputes. */
 	private void showPrayerPickMenu(ResultEntry entry, CombatStyle style)
 	{
-		JPopupMenu menu = new JPopupMenu();
-		String current = entry.prayerPicks.get(style);
-		pickItem(menu, "Detect best", current == null,
-			() -> { entry.prayerPicks.remove(style); recompute(); }, entry);
-		pickItem(menu, "None (prayerless)", "NONE".equals(current),
-			() -> { entry.prayerPicks.put(style, "NONE"); recompute(); }, entry);
-		for (String option : com.loadoutlab.engine.PrayerBonuses.optionsFor(style))
+		java.util.LinkedHashMap<String, String> options = new java.util.LinkedHashMap<>();
+		for (String o : com.loadoutlab.engine.PrayerBonuses.optionsFor(style))
 		{
-			pickItem(menu, option, option.equals(current),
-				() -> { entry.prayerPicks.put(style, option); recompute(); }, entry);
+			options.put(o, o);
 		}
-		Point at = getMousePosition();
-		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
+		showAssumePickMenu(entry, entry.prayerPicks, style,
+			"Detect best", "None (prayerless)", options);
 	}
 
 	private void showBoostPickMenu(ResultEntry entry, CombatStyle style)
 	{
-		JPopupMenu menu = new JPopupMenu();
-		String current = entry.boostPicks.get(style);
-		pickItem(menu, "Detect best in bank", current == null,
-			() -> { entry.boostPicks.remove(style); recompute(); }, entry);
-		pickItem(menu, "None (unboosted)", "NONE".equals(current),
-			() -> { entry.boostPicks.put(style, "NONE"); recompute(); }, entry);
-		for (com.loadoutlab.engine.BoostProfile option : styleBoosts(style))
+		java.util.LinkedHashMap<String, String> options = new java.util.LinkedHashMap<>();
+		for (com.loadoutlab.engine.BoostProfile o : styleBoosts(style))
 		{
-			pickItem(menu, option.toString(), option.name().equals(current),
-				() -> { entry.boostPicks.put(style, option.name()); recompute(); }, entry);
+			options.put(o.name(), o.toString());
+		}
+		showAssumePickMenu(entry, entry.boostPicks, style,
+			"Detect best in bank", "None (unboosted)", options);
+	}
+
+	/** The shared picker shell: Detect (removes the entry) / None / the
+	 * named options (key stored, label shown). Picking recomputes. */
+	private void showAssumePickMenu(ResultEntry entry, Map<CombatStyle, String> picks,
+		CombatStyle style, String detectLabel, String noneLabel,
+		Map<String, String> options)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		String current = picks.get(style);
+		pickItem(menu, detectLabel, current == null,
+			() -> { picks.remove(style); recompute(); }, entry);
+		pickItem(menu, noneLabel, "NONE".equals(current),
+			() -> { picks.put(style, "NONE"); recompute(); }, entry);
+		for (Map.Entry<String, String> option : options.entrySet())
+		{
+			pickItem(menu, option.getValue(), option.getKey().equals(current),
+				() -> { picks.put(style, option.getKey()); recompute(); }, entry);
 		}
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
@@ -582,9 +591,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private void pickItem(JPopupMenu menu, String label, boolean selected,
 		Runnable action, ResultEntry entry)
 	{
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
-		item.addActionListener(a -> asActive(entry, action));
-		menu.add(item);
+		checkItem(menu, label, selected, () -> asActive(entry, action));
 	}
 
 	/** The display-only dps additions for the shown numbers: the thrall's
@@ -602,6 +609,14 @@ public class LoadoutLabPanel extends PluginPanel
 			extra += bis ? result.gameSpecDpsAdded : result.specDpsAdded;
 		}
 		return extra;
+	}
+
+	private static void addIds(List<Integer> into, int[] ids)
+	{
+		for (int id : ids)
+		{
+			into.add(id);
+		}
 	}
 
 	/** The Arceuus assumptions CLASH with the trip's autocast book (field
@@ -667,35 +682,20 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (entry.thralls && magicLevel >= 76)
 		{
-			for (int id : TripSupplies.spellKit("thrallGreaterRunes"))
-			{
-				ids.add(id);
-			}
+			addIds(ids, TripSupplies.spellKit("thrallGreaterRunes"));
 		}
 		if (entry.deathCharge)
 		{
-			for (int id : TripSupplies.spellKit("deathChargeRunes"))
-			{
-				ids.add(id);
-			}
+			addIds(ids, TripSupplies.spellKit("deathChargeRunes"));
 		}
 		if (demonbaneCast(entry))
 		{
-			for (int id : TripSupplies.spellKit("markOfDarknessRunes"))
-			{
-				ids.add(id);
-			}
+			addIds(ids, TripSupplies.spellKit("markOfDarknessRunes"));
 		}
 		if ((entry.thralls || entry.deathCharge) && arceuusViaSwap())
 		{
-			for (int id : TripSupplies.spellKit("spellbookSwapRunes"))
-			{
-				ids.add(id);
-			}
-			for (int id : TripSupplies.spellKit("vengeanceRunes"))
-			{
-				ids.add(id);
-			}
+			addIds(ids, TripSupplies.spellKit("spellbookSwapRunes"));
+			addIds(ids, TripSupplies.spellKit("vengeanceRunes"));
 		}
 		return ids;
 	}
@@ -705,10 +705,7 @@ public class LoadoutLabPanel extends PluginPanel
 		List<Integer> ids = new ArrayList<>(arcaneRuneIds(entry));
 		if (entry.thralls && !arcaneBlocked(entry))
 		{
-			for (int id : TripSupplies.spellKit("bookOfTheDead"))
-			{
-				ids.add(id);
-			}
+			addIds(ids, TripSupplies.spellKit("bookOfTheDead"));
 		}
 		if (!ids.isEmpty())
 		{
@@ -731,6 +728,25 @@ public class LoadoutLabPanel extends PluginPanel
 			&& magicLevel >= 96;
 	}
 
+	/** A spellbook icon on an item-cell plate; faded red = the player's
+	 * live book does not match. */
+	private JLabel bookPlate(int sprite, boolean offBook, String tooltip)
+	{
+		JLabel plate = new JLabel();
+		plate.setOpaque(true);
+		plate.setHorizontalAlignment(SwingConstants.CENTER);
+		plate.setPreferredSize(new Dimension(24, 22));
+		plate.setBackground(offBook ? new Color(110, 52, 52) : CELL_BG);
+		plate.setBorder(new RoundedBorder(offBook
+			? new Color(160, 80, 80) : ColorScheme.MEDIUM_GRAY_COLOR, 1, 3));
+		attachSprite(plate, sprite);
+		if (tooltip != null)
+		{
+			plate.setToolTipText(tooltip);
+		}
+		return plate;
+	}
+
 	/** The Arceuus access menu (field note 2026-07-21: "i don't see the
 	 * options for lunar -> arceuus" - the grey menu alone was buried). */
 	private void showArceuusAccessMenu(ResultEntry entry)
@@ -741,16 +757,10 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		JPopupMenu menu = new JPopupMenu();
 		boolean swap = "SPELLBOOK_SWAP".equals(supplyDefaults.get("arceuusAccess"));
-		JCheckBoxMenuItem direct = new JCheckBoxMenuItem(
-			"Direct (camp Arceuus)", !swap);
-		direct.addActionListener(a ->
-			globalFilters.setSupplyDefault("arceuusAccess", "DETECT_BEST"));
-		menu.add(direct);
-		JCheckBoxMenuItem via = new JCheckBoxMenuItem(
-			"Via Spellbook Swap (Lunar home - adds swap + Vengeance runes)", swap);
-		via.addActionListener(a ->
-			globalFilters.setSupplyDefault("arceuusAccess", "SPELLBOOK_SWAP"));
-		menu.add(via);
+		checkItem(menu, "Direct (camp Arceuus)", !swap,
+			() -> globalFilters.setSupplyDefault("arceuusAccess", "DETECT_BEST"));
+		checkItem(menu, "Via Spellbook Swap (Lunar home - adds swap + Vengeance runes)",
+			swap, () -> globalFilters.setSupplyDefault("arceuusAccess", "SPELLBOOK_SWAP"));
 		Point at = getMousePosition();
 		menu.show(this, at != null ? at.x : 20, at != null ? at.y : 20);
 	}
@@ -6206,12 +6216,15 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				filterHere += scopedItems.size();
 			}
-			localRow.add(localGreyChip(
-				filterHere > 0 ? "Filter: " + filterHere : "Filter",
-				filterHere > 0,
+			localRow.add(chip(
+				filterHere > 0 ? "Filter: " + filterHere : "Filter", true,
+				filterHere > 0 ? new Color(190, 190, 190) : new Color(130, 130, 130),
+				Font.BOLD, 11f,
+				filterHere > 0 ? new Color(150, 150, 150) : ColorScheme.MEDIUM_GRAY_COLOR,
+				2, 7,
 				"Bank filters vs " + mobName + " (this mob only) - supply"
 					+ " overrides and always-at-hand items",
-				() -> asActive(entry, () -> manageSupplyOverrides(entry, lensedProfileId, mobName))));
+				e -> asActive(entry, () -> manageSupplyOverrides(entry, lensedProfileId, mobName))));
 			card.add(Box.createVerticalStrut(4));
 			card.add(localRow);
 		}
@@ -6270,17 +6283,6 @@ public class LoadoutLabPanel extends PluginPanel
 				? (red ? new Color(170, 90, 90) : new Color(95, 160, 95))
 				: ColorScheme.MEDIUM_GRAY_COLOR, 2, 7, tooltip,
 			e -> onClick.run());
-	}
-
-	/** The grey twin of localCountChip for the trio's filter member. */
-	private JComponent localGreyChip(String text, boolean active,
-		String tooltip, Runnable onClick)
-	{
-		return chip(text, true,
-			active ? new Color(190, 190, 190) : new Color(130, 130, 130),
-			Font.BOLD, 11f,
-			active ? new Color(150, 150, 150) : ColorScheme.MEDIUM_GRAY_COLOR,
-			2, 7, tooltip, e -> onClick.run());
 	}
 
 	/** The local exclusions manager: current entries with click-to-allow,
@@ -6431,12 +6433,19 @@ public class LoadoutLabPanel extends PluginPanel
 		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
 	}
 
+	private static void checkItem(javax.swing.JComponent menu, String label,
+		boolean selected, Runnable action)
+	{
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		item.addActionListener(a -> action.run());
+		menu.add(item);
+	}
+
 	private void supplyDefaultChoice(JMenu sub, String category, String enumName,
 		String label, boolean selected)
 	{
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
-		item.addActionListener(a -> globalFilters.setSupplyDefault(category, enumName));
-		sub.add(item);
+		checkItem(sub, label, selected,
+			() -> globalFilters.setSupplyDefault(category, enumName));
 	}
 
 	/** The per-mob grey menu (field spec 2026-07-20: the trio's third
@@ -6491,13 +6500,11 @@ public class LoadoutLabPanel extends PluginPanel
 	private void supplyChoice(JMenu sub, ResultEntry entry, int profileId,
 		String category, String choice, String label, boolean selected)
 	{
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
-		item.addActionListener(a -> asActive(entry, () ->
+		checkItem(sub, label, selected, () -> asActive(entry, () ->
 		{
 			mobProfile.setSupplyOverride(profileId, category, choice);
 			renderPage();
 		}));
-		sub.add(item);
 	}
 
 	private static final ImageIcon PRAYER_ICON = loadPrayerIcon();
@@ -7081,16 +7088,9 @@ public class LoadoutLabPanel extends PluginPanel
 			int wantIndex = bookIndexOf(castingBook);
 			boolean offBook = currentSpellbook >= 0 && wantIndex >= 0
 				&& currentSpellbook != wantIndex;
-			JLabel castChip = new JLabel();
-			castChip.setOpaque(true);
-			castChip.setHorizontalAlignment(SwingConstants.CENTER);
-			castChip.setPreferredSize(new Dimension(24, 22));
-			castChip.setBackground(offBook ? new Color(110, 52, 52) : CELL_BG);
-			castChip.setBorder(new RoundedBorder(offBook
-				? new Color(160, 80, 80) : ColorScheme.MEDIUM_GRAY_COLOR, 1, 3));
-			attachSprite(castChip, spellbookSprite(castingBook));
-			castChip.setToolTipText(castingBook + " spellbook - the autocast"
-				+ " spell's book" + (offBook ? " (you are NOT on it)" : ""));
+			JLabel castChip = bookPlate(spellbookSprite(castingBook), offBook,
+				castingBook + " spellbook - the autocast spell's book"
+					+ (offBook ? " (you are NOT on it)" : ""));
 			chips.add(castChip);
 			// One truth per book: if the summons chip would show the same
 			// book, the casting chip already covers it.
@@ -7110,18 +7110,12 @@ public class LoadoutLabPanel extends PluginPanel
 			int homeBook = viaSwap ? SPELLBOOK_LUNAR : SPELLBOOK_ARCEUUS;
 			boolean offBook = currentSpellbook >= 0
 				&& currentSpellbook != homeBook;
-			JLabel bookChip = new JLabel();
-			bookChip.setOpaque(true);
-			bookChip.setHorizontalAlignment(SwingConstants.CENTER);
-			bookChip.setPreferredSize(new Dimension(24, 22));
-			bookChip.setBackground(offBook ? new Color(110, 52, 52) : CELL_BG);
-			bookChip.setBorder(new RoundedBorder(offBook
-				? new Color(160, 80, 80) : ColorScheme.MEDIUM_GRAY_COLOR, 1, 3));
 			// The REAL spellbook tab icons (field correction 2026-07-21:
 			// the sigil/astral proxies read as the wrong things).
-			attachSprite(bookChip, viaSwap
+			JLabel bookChip = bookPlate(viaSwap
 				? net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR
-				: net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS);
+				: net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS,
+				offBook, null);
 			bookChip.setToolTipText((viaSwap
 				? "Assumes LUNAR home, Spellbook Swap into Arceuus for the"
 					+ " summons (Vengeance stays available)"
