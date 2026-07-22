@@ -685,7 +685,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
 		LoadoutLabConfig.PrayerDefault prayer = config.defaultPrayer();
 		o.defaultPrayerPick = prayer == LoadoutLabConfig.PrayerDefault.DETECT ? ""
-			: prayer == LoadoutLabConfig.PrayerDefault.NONE ? "NONE" : prayer.toString();
+			: prayer == LoadoutLabConfig.PrayerDefault.NONE ? "NONE" : prayer.pick();
 		LoadoutLabConfig.BoostDefault boost = config.defaultBoost();
 		o.defaultBoostPick = boost == LoadoutLabConfig.BoostDefault.DETECT ? ""
 			: boost.name();
