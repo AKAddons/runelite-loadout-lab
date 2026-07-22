@@ -457,6 +457,42 @@
       ],
       "since": "0.3.3",
       "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot."
+    },
+    {
+      "id": "multi-mob-roster",
+      "title": "Multi-mob rosters: groups and raids",
+      "group": "Results",
+      "anchor": "multi-mob-rosters-groups-and-raids",
+      "media": "docs/img/multi-mob-roster.png",
+      "code": [
+        "ui/LoadoutLabPanel.java",
+        "optimizer/OptimizerService.java",
+        "data/MonsterGroups.java"
+      ],
+      "tests": [
+        "optimizer/RosterOptimizerTest.java",
+        "optimizer/GroupSimScopingTest.java",
+        "profile/RosterGolden.java"
+      ],
+      "since": "0.3.0",
+      "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot."
+    },
+    {
+      "id": "inventory-budget",
+      "title": "Inventory budget: swaps vs bag space",
+      "group": "Results",
+      "anchor": "inventory-budget-swaps-vs-bag-space",
+      "media": "docs/img/inventory-budget.png",
+      "code": [
+        "ui/LoadoutLabPanel.java",
+        "optimizer/OptimizerService.java"
+      ],
+      "tests": [
+        "optimizer/RosterOptimizerTest.java",
+        "optimizer/SpecValueTest.java"
+      ],
+      "since": "0.3.0",
+      "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot."
     }
   ]
 }
