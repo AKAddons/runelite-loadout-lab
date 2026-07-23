@@ -556,11 +556,16 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * only keys onConfigChanged reacts to besides useDwmsData. */
 	private static final Set<String> PANEL_CONFIG_KEYS = Set.of(
 		"displayMaxHit", "displayAccuracy", "displayBonuses", "displayAssumes",
-		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
-		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
-		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
+		"displayDamageTaken", "displayDefensivePrayer", "displayRiskOnDeath",
+		"displayPrayerBonus", "displayAttackStyle", "displayGameBest", "enableNotes",
+		"displayFootnote", "displayAddMob", "displayInventory", "specDpsOutput",
+		"thrallDpsOutput", "showSpellControls", "showUpgradeBudget", "showWildyRisk",
+		"showInBankButton", "showFilterBankButton", "showExcludeControls",
+		"showSimControls", "showFilterControls", "showPinControls",
 		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
-		"defaultRiskCap");
+		"defaultRiskCap", "defaultOnTask", "defaultSpecWeapon", "defaultAutocast",
+		"defaultPrayer", "defaultBoost", "defaultThralls", "defaultDeathCharge",
+		"spellbookSwapVengeance", "defaultAntifire");
 
 	/** Client-thread staging push: the castability state the panel's
 	 * chips read - BOOSTED magic (field call 2026-07-21: castability
