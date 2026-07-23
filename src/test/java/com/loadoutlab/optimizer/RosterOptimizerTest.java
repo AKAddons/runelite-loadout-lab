@@ -64,8 +64,7 @@ public class RosterOptimizerTest
 			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, false, Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-			maxSwaps, excludedByMob, Collections.emptyMap(), null, Collections.emptySet(),
+			false, false, Collections.emptySet(), 0, 			maxSwaps, excludedByMob, Collections.emptyMap(), null, Collections.emptySet(),
 			roster ->
 			{
 				out.set(roster);
@@ -111,8 +110,7 @@ public class RosterOptimizerTest
 			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, ankou, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
-				Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-				Collections.emptyMap(), null, Collections.emptySet(),
+				Collections.emptySet(), 0, 				Collections.emptyMap(), null, Collections.emptySet(),
 				map ->
 				{
 					out.set(map);

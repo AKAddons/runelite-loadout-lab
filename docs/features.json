@@ -11,11 +11,13 @@
         "engine/LoadoutOptimizer.java",
         "engine/DpsCalculator.java",
         "engine/DpsResult.java",
-        "engine/Loadout.java"
+        "engine/Loadout.java",
+        "WikiCalcLink.java"
       ],
       "tests": [
         "optimizer/OptimizerServiceTest.java",
-        "engine/LoadoutOptimizerTest.java"
+        "engine/LoadoutOptimizerTest.java",
+        "WikiCalcLinkTest.java"
       ],
       "since": "0.1.0",
       "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."
@@ -38,24 +40,6 @@
       ],
       "since": "0.1.0",
       "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot."
-    },
-    {
-      "id": "optimize-modes",
-      "title": "Optimize modes",
-      "group": "Owned-gear optimizer",
-      "anchor": "optimize-modes",
-      "media": "docs/img/optimize-modes.png",
-      "code": [
-        "optimizer/OptimizerService.java",
-        "engine/CandidateMode.java",
-        "engine/OptimizationRequest.java",
-        "engine/IncomingDpsCalculator.java"
-      ],
-      "tests": [
-        "optimizer/OptimizeModeTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "Tanky selected; frame the card with the sword/shield trade row visible under the DPS line. Single PNG screenshot."
     },
     {
       "id": "incoming-damage",
@@ -137,7 +121,6 @@
       "title": "Stored elsewhere (manual owned items)",
       "group": "Gear sources",
       "anchor": "stored-elsewhere-manual-owned-items",
-      "media": "docs/img/stored-elsewhere.png",
       "code": [
         "collection/ManualOwnedStore.java",
         "collection/CollectionLedger.java",
@@ -151,35 +134,29 @@
         "data/GearSearchTest.java"
       ],
       "since": "0.2.0",
-      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source.",
-      "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
+      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source."
     },
     {
       "id": "dwms-import",
-      "title": "Dude, Where's My Stuff import",
+      "title": "Dude, Where's My Stuff link",
       "group": "Bank and integrations",
-      "anchor": "dude-wheres-my-stuff-import",
-      "media": "docs/img/dwms-import.png",
+      "anchor": "dude-wheres-my-stuff-link",
       "code": [
-        "collection/DwmsImport.java",
         "collection/DwmsLink.java",
         "LoadoutLabPlugin.java",
         "ui/LoadoutLabPanel.java"
       ],
       "tests": [
-        "collection/DwmsImportTest.java",
         "collection/DwmsLinkTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Two tiers. Preferred: the storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream) - exact canonical id+qty per storage, panel line shows '(live)'. Fallback for older DWMS: best-effort read of its persisted ConfigManager data (public API, no reflection; works with DWMS disabled), strictly defensive parsing - an upstream format change drops items rather than miscounting.",
-      "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
+      "notes": "The storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream, DWMS 2.11.5+): exact canonical id+qty per storage, per-category families for the location hints. The old config-read fallback retired 2026-07-22."
     },
     {
       "id": "native-storages",
       "title": "STASH, POH costume room, and cargo hold tracking",
       "group": "Gear sources",
       "anchor": "stash-poh-costume-room-and-cargo-hold-tracking",
-      "media": "docs/img/native-storages.png",
       "code": [
         "collection/CollectionLedger.java",
         "data/StashUnits.java",
@@ -190,8 +167,7 @@
         "collection/CollectionLedgerTest.java"
       ],
       "since": "0.2.0",
-      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap.",
-      "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
+      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap."
     },
     {
       "id": "location-hints",
@@ -235,7 +211,6 @@
       "title": "Mob profiles: pins, notes, and bank-filter items",
       "group": "Gear sources",
       "anchor": "mob-profiles-pins-notes-and-bank-filter-items",
-      "media": "docs/img/mob-profiles.png",
       "code": [
         "collection/MonsterProfileStore.java",
         "engine/OptimizationRequest.java",
@@ -247,8 +222,7 @@
         "collection/MonsterProfileStoreTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it).",
-      "capture": "A mob with a style-scoped pin, the post-it note expanded, one card auto-collapsed to its dps header, and the filtered bank showing a per-set supply. Single PNG screenshot."
+      "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it)."
     },
     {
       "id": "wilderness-risk",
@@ -377,7 +351,6 @@
       "title": "Undo and redo",
       "group": "Filters and tasks",
       "anchor": "undo-and-redo",
-      "media": "docs/img/undo-redo.png",
       "code": [
         "command/Command.java",
         "command/CommandHistory.java",
@@ -392,8 +365,124 @@
         "ui/SelectionHistoryTest.java"
       ],
       "since": "0.2.4",
-      "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
       "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
+    },
+    {
+      "id": "trip-supplies",
+      "title": "Trip supplies",
+      "group": "Filters and tasks",
+      "anchor": "trip-supplies",
+      "media": "docs/img/trip-supplies.png",
+      "code": [
+        "data/TripSupplies.java",
+        "collection/SupplyDefaultsStore.java",
+        "collection/AlwaysFilterStore.java",
+        "collection/MonsterProfileStore.java",
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "data/TripSuppliesTest.java",
+        "collection/AlwaysFilterStoreTest.java",
+        "collection/SupplyDefaultsStoreTest.java",
+        "collection/MonsterProfileStoreTest.java"
+      ],
+      "since": "0.3.3",
+      "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot."
+    },
+    {
+      "id": "thralls-death-charge",
+      "title": "Thralls and Death Charge",
+      "group": "Results",
+      "anchor": "thralls-and-death-charge",
+      "media": "docs/img/thralls-veng.png",
+      "code": [
+        "engine/ExtraDps.java",
+        "engine/OptimizationRequest.java",
+        "optimizer/OptimizerService.java",
+        "LoadoutLabPlugin.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "engine/ExtraDpsTest.java",
+        "optimizer/DeathChargeTest.java"
+      ],
+      "since": "0.3.3",
+      "capture": "A boss card with the Thralls and D charge chips active in the params row, the style tab tooltip open showing the 'gear + thrall' breakdown. Single PNG screenshot."
+    },
+    {
+      "id": "assume-pickers",
+      "title": "Assumption pickers: prayer and boost",
+      "group": "Results",
+      "anchor": "assumption-pickers-prayer-and-boost",
+      "media": "docs/img/assume-pickers.png",
+      "code": [
+        "engine/PrayerBonuses.java",
+        "engine/BoostProfile.java",
+        "optimizer/BoostSelector.java",
+        "engine/OptimizationRequest.java",
+        "optimizer/OptimizerService.java",
+        "ui/LoadoutLabPanel.java"
+      ],
+      "tests": [
+        "engine/PrayerPickTest.java",
+        "optimizer/BoostSelectorTest.java"
+      ],
+      "since": "0.3.3",
+      "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot."
+    },
+    {
+      "id": "panel-options",
+      "title": "Panel options: display and controls",
+      "group": "Panel",
+      "anchor": "panel-options-display-and-controls",
+      "media": "docs/img/panel-options.png",
+      "code": [
+        "LoadoutLabConfig.java",
+        "ui/LoadoutLabPanel.java",
+        "LoadoutLabPlugin.java"
+      ],
+      "tests": [
+        "ui/DefaultSeedingTest.java"
+      ],
+      "since": "0.3.3",
+      "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot."
+    },
+    {
+      "id": "multi-mob-roster",
+      "title": "Multi-mob rosters: groups and raids",
+      "group": "Results",
+      "anchor": "multi-mob-rosters-groups-and-raids",
+      "media": "docs/img/multi-mob-roster.png",
+      "code": [
+        "ui/LoadoutLabPanel.java",
+        "optimizer/OptimizerService.java",
+        "data/MonsterGroups.java"
+      ],
+      "tests": [
+        "optimizer/RosterOptimizerTest.java",
+        "optimizer/GroupSimScopingTest.java",
+        "profile/RosterGolden.java"
+      ],
+      "since": "0.3.0",
+      "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot."
+    },
+    {
+      "id": "inventory-budget",
+      "title": "Inventory budget: swaps vs bag space",
+      "group": "Results",
+      "anchor": "inventory-budget-swaps-vs-bag-space",
+      "media": "docs/img/inventory-budget.png",
+      "code": [
+        "ui/LoadoutLabPanel.java",
+        "optimizer/OptimizerService.java"
+      ],
+      "tests": [
+        "optimizer/RosterOptimizerTest.java",
+        "optimizer/SpecValueTest.java"
+      ],
+      "since": "0.3.0",
+      "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot."
     }
   ]
 }

@@ -65,7 +65,7 @@ public class SpecValueTest
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), owned.hashCode(),
 			false, false, "", java.util.Collections.emptySet(), -1,
 			OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0,
-			OptimizerService.OptimizeMode.MAX_DPS, results -> { out.set(results); done.countDown(); });
+			results -> { out.set(results); done.countDown(); });
 		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
 		return out.get().get(CombatStyle.RANGED);
 	}

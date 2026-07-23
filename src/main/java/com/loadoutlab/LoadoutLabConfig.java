@@ -17,15 +17,23 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigSection(
 		name = "Controls",
-		description = "Which parameter chips and buttons each result card offers",
+		description = "Which parameter chips and buttons each card offers",
 		position = 1
 	)
 	String controls = "controls";
 
 	@ConfigSection(
+		name = "Defaults",
+		description = "What every NEW result assumes - the per-card chips and"
+			+ " pickers still override per mob",
+		position = 2
+	)
+	String defaults = "defaults";
+
+	@ConfigSection(
 		name = "Connections",
 		description = "Other plugins Loadout Lab reads data from when they are installed",
-		position = 2
+		position = 3
 	)
 	String connections = "connections";
 
@@ -57,9 +65,8 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "displayBonuses",
-		name = "Counted bonuses",
-		description = "Show the 'Counting:' line naming the conditional bonuses"
-			+ " (salve, slayer helm, crystal set...) applied to the numbers.",
+		name = "Counted bonuses / sets",
+		description = "Show the 'Counting:' line naming the conditional bonuses applied.",
 		section = display,
 		position = 3
 	)
@@ -69,26 +76,11 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "displayAssumes",
-		name = "Assumed prayer / boost",
-		description = "Show the assumed prayer and potion/boost the numbers use"
-			+ " (e.g. 'Piety + Super combat'), in the card header and the"
-			+ " game-best section. The cast spell is under 'Attack style / spell'.",
-		section = display,
-		position = 4
-	)
-	default boolean displayAssumes()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 		keyName = "displayDamageTaken",
 		name = "Damage taken per second",
-		description = "Show the incoming-damage line (what the monster does back"
-			+ " to you, prayed and unprayed).",
+		description = "Show the incoming-damage line (prayed and unprayed).",
 		section = display,
-		position = 5
+		position = 4
 	)
 	default boolean displayDamageTaken()
 	{
@@ -96,10 +88,21 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "displayDefensivePrayer",
+		name = "Defensive prayer",
+		description = "Show the pray-against call icon on the damage-taken line.",
+		section = display,
+		position = 5
+	)
+	default boolean displayDefensivePrayer()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "displayRiskOnDeath",
 		name = "Risk on death",
-		description = "Show the wilderness 'Risk: X gp (N kept on death)' line on"
-			+ " each set (wilderness monsters only).",
+		description = "Show the wilderness risk-on-death line.",
 		section = display,
 		position = 6
 	)
@@ -123,8 +126,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "displayAttackStyle",
 		name = "Attack style / spell",
-		description = "Show the attack-style line (and, on the magic card, the"
-			+ " cast spell).",
+		description = "Show the attack-style line (and the magic card's cast spell).",
 		section = display,
 		position = 8
 	)
@@ -134,14 +136,26 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "displayGameBest",
-		name = "Game best (BiS)",
-		description = "Show the collapsible game-best ceiling under each set - the"
-			+ " strongest set in the game and how close yours is.",
+		keyName = "displayAssumes",
+		name = "Assumed prayer / boost",
+		description = "Show the assumed prayer and boost icons in the card header.",
 		section = display,
 		position = 9
 	)
-	default boolean displayGameBest()
+	default boolean displayAssumes()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displaySpellbookChip",
+		name = "Assumed spellbook chip",
+		description = "Show the assumed-spellbook chip when thralls or Death Charge"
+			+ " are on, red when you are not on that book.",
+		section = display,
+		position = 10
+	)
+	default boolean displaySpellbookChip()
 	{
 		return true;
 	}
@@ -149,11 +163,9 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "enableNotes",
 		name = "Per-monster notes",
-		description = "Show the collapsible note ('+ Note') on each monster's"
-			+ " panel for your own reminders. Turning this off hides the note"
-			+ " control; saved notes are kept and reappear when re-enabled.",
+		description = "Show the '+ Note' control; saved notes survive a re-enable.",
 		section = display,
-		position = 10
+		position = 11
 	)
 	default boolean enableNotes()
 	{
@@ -163,8 +175,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "loadingAnimation",
 		name = "Loading animation",
-		description = "Show the animated mascot while the optimizer computes a"
-			+ " set. Some moods are seasonal. Turn off for a plain loading line.",
+		description = "Show the animated mascot while computing; off = a plain line.",
 		section = display,
 		position = 12
 	)
@@ -173,28 +184,133 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
-	// --- Controls --------------------------------------------------------
-
 	@ConfigItem(
-		keyName = "showSpellControls",
-		name = "Spell selection",
-		description = "Show the spellbook lock and per-monster autocast spell"
-			+ " pin on the magic card.",
-		section = controls,
-		position = 1
+		keyName = "displayFootnote",
+		name = "Footnote disclaimer",
+		description = "Show the cross-check footnote with Copy report and Discord.",
+		section = display,
+		position = 13
 	)
-	default boolean showSpellControls()
+	default boolean displayFootnote()
 	{
 		return true;
 	}
 
 	@ConfigItem(
+		keyName = "displayAddMob",
+		name = "'+ Add mob' row",
+		description = "Show the row that grows a result into a multi-mob roster.",
+		section = display,
+		position = 14
+	)
+	default boolean displayAddMob()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayGameBest",
+		name = "Game best (BiS)",
+		description = "Show the game-best ceiling view beside yours.",
+		section = display,
+		position = 15
+	)
+	default boolean displayGameBest()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "displayInventory",
+		name = "Inventory row",
+		description = "Show the Inventory row - swaps, spec weapon, consumables.",
+		section = display,
+		position = 16
+	)
+	default boolean displayInventory()
+	{
+		return true;
+	}
+
+	// --- Controls --------------------------------------------------------
+
+	@ConfigItem(
+		keyName = "defaultOnTask",
+		name = "On slayer task",
+		description = "Seed new results with On task enabled.",
+		section = defaults,
+		position = 1
+	)
+	default boolean defaultOnTask()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "defaultSpecWeapon",
+		name = "Spec weapon",
+		description = "Seed new results with the Spec chip on.",
+		section = defaults,
+		position = 2
+	)
+	default boolean defaultSpecWeapon()
+	{
+		return true;
+	}
+
+	enum DpsFold
+	{
+		OUTPUT("In the numbers"),
+		FOOTNOTE("As a footnote"),
+		OFF("Not shown");
+
+		private final String label;
+
+		DpsFold(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "specDpsOutput",
+		name = "Spec dps",
+		description = "Where the carried spec weapon's added dps appears:"
+			+ " folded into the shown numbers, as a footnote under the card,"
+			+ " or not shown.",
+		section = display,
+		position = 17
+	)
+	default DpsFold specDpsOutput()
+	{
+		return DpsFold.OUTPUT;
+	}
+
+	@ConfigItem(
+		keyName = "thrallDpsOutput",
+		name = "Thrall dps",
+		description = "Where the assumed thrall's dps appears: folded into"
+			+ " the shown numbers, as a footnote under the card, or not shown.",
+		section = display,
+		position = 18
+	)
+	default DpsFold thrallDpsOutput()
+	{
+		return DpsFold.OUTPUT;
+	}
+
+	@ConfigItem(
 		keyName = "showUpgradeBudget",
 		name = "Upgrade budget",
-		description = "Show the upgrade-budget field (suggest buyable gear within"
-			+ " a gp budget).",
+		description = "Show the upgrade-budget field.",
 		section = controls,
-		position = 2
+		position = 1
 	)
 	default boolean showUpgradeBudget()
 	{
@@ -202,12 +318,23 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "defaultUpgradeBudget",
+		name = "Upgrade budget",
+		description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)",
+		section = defaults,
+		position = 14
+	)
+	default String defaultUpgradeBudget()
+	{
+		return "";
+	}
+
+	@ConfigItem(
 		keyName = "showWildyRisk",
 		name = "Wilderness risk options",
-		description = "Show the low-risk, Protect Item, and risk-cap controls on"
-			+ " wilderness monsters.",
+		description = "Show the low-risk, Protect Item and risk-cap controls.",
 		section = controls,
-		position = 3
+		position = 2
 	)
 	default boolean showWildyRisk()
 	{
@@ -215,12 +342,364 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showInBankButton",
-		name = "'Show in bank' button",
-		description = "Show the button that outlines the set's items in your"
-			+ " open bank (uses the Bank Tags plugin).",
+		keyName = "defaultRiskCap",
+		name = "Wilderness risk cap",
+		description = "Seed new results' wilderness risk cap (empty = unconstrained).",
+		section = defaults,
+		position = 15
+	)
+	default String defaultRiskCap()
+	{
+		return "75k";
+	}
+
+	@ConfigItem(
+		keyName = "showSpellControls",
+		name = "Spell selection",
+		description = "Show the spellbook lock and per-mob autocast spell pin.",
+		section = controls,
+		position = 3
+	)
+	default boolean showSpellControls()
+	{
+		return true;
+	}
+
+	enum AssumeDefault
+	{
+		DETECT,
+		NONE
+	}
+
+	@ConfigItem(
+		keyName = "defaultAutocast",
+		name = "Autocast",
+		description = "Detect picks the best castable spell; None = powered staves only.",
+		section = defaults,
+		position = 11
+	)
+	default AssumeDefault defaultAutocast()
+	{
+		return AssumeDefault.DETECT;
+	}
+
+	enum MeleePrayerDefault
+	{
+		DETECT("Detect best", null),
+		NONE("None", null),
+		PIETY("Piety", "Piety"),
+		CHIVALRY("Chivalry", "Chivalry"),
+		ULTIMATE_INCREDIBLE("Ult + Incredible",
+			"Ultimate Strength + Incredible Reflexes"),
+		SUPERHUMAN_IMPROVED("Super + Improved",
+			"Superhuman Strength + Improved Reflexes"),
+		BURST_CLARITY("Burst + Clarity",
+			"Burst of Strength + Clarity of Thought");
+
+		private final String label;
+		final String pick;
+
+		MeleePrayerDefault(String label, String pick)
+		{
+			this.label = label;
+			this.pick = pick;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMeleePrayer",
+		name = "Melee prayer",
+		description = "Seed the melee card's prayer assumption.",
+		section = defaults,
+		position = 3
+	)
+	default MeleePrayerDefault defaultMeleePrayer()
+	{
+		return MeleePrayerDefault.DETECT;
+	}
+
+	enum RangedPrayerDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		RIGOUR("Rigour"),
+		DEADEYE("Deadeye"),
+		EAGLE_EYE("Eagle Eye"),
+		HAWK_EYE("Hawk Eye"),
+		SHARP_EYE("Sharp Eye");
+
+		private final String label;
+
+		RangedPrayerDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultRangedPrayer",
+		name = "Ranged prayer",
+		description = "Seed the ranged card's prayer assumption.",
+		section = defaults,
+		position = 4
+	)
+	default RangedPrayerDefault defaultRangedPrayer()
+	{
+		return RangedPrayerDefault.DETECT;
+	}
+
+	enum MagicPrayerDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		AUGURY("Augury"),
+		MYSTIC_VIGOUR("Mystic Vigour"),
+		MYSTIC_MIGHT("Mystic Might"),
+		MYSTIC_LORE("Mystic Lore"),
+		MYSTIC_WILL("Mystic Will");
+
+		private final String label;
+
+		MagicPrayerDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMagicPrayer",
+		name = "Magic prayer",
+		description = "Seed the magic card's prayer assumption.",
+		section = defaults,
+		position = 5
+	)
+	default MagicPrayerDefault defaultMagicPrayer()
+	{
+		return MagicPrayerDefault.DETECT;
+	}
+
+	enum MeleeBoostDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		SUPER_COMBAT("Super combat"),
+		DIVINE_SUPER_COMBAT("Div super combat"),
+		F2P_COMBAT("Atk/str potions"),
+		OVERLOAD("Overload"),
+		OVERLOAD_PLUS("Overload (+)"),
+		SMELLING_SALTS("Smelling salts");
+
+		private final String label;
+
+		MeleeBoostDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMeleeBoost",
+		name = "Melee boost",
+		description = "Seed the melee card's potion/boost assumption.",
+		section = defaults,
+		position = 6
+	)
+	default MeleeBoostDefault defaultMeleeBoost()
+	{
+		return MeleeBoostDefault.DETECT;
+	}
+
+	enum RangedBoostDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		RANGING("Ranging potion"),
+		DIVINE_RANGING("Divine ranging"),
+		SUPER_RANGING("Super ranging"),
+		OVERLOAD("Overload"),
+		OVERLOAD_PLUS("Overload (+)"),
+		SMELLING_SALTS("Smelling salts");
+
+		private final String label;
+
+		RangedBoostDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultRangedBoost",
+		name = "Ranged boost",
+		description = "Seed the ranged card's potion/boost assumption.",
+		section = defaults,
+		position = 7
+	)
+	default RangedBoostDefault defaultRangedBoost()
+	{
+		return RangedBoostDefault.DETECT;
+	}
+
+	enum MagicBoostDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		SATURATED_HEART("Saturated heart"),
+		IMBUED_HEART("Imbued heart"),
+		MAGIC("Magic potion"),
+		DIVINE_MAGIC("Divine magic"),
+		SUPER_MAGIC("Super magic"),
+		OVERLOAD("Overload"),
+		OVERLOAD_PLUS("Overload (+)"),
+		SMELLING_SALTS("Smelling salts");
+
+		private final String label;
+
+		MagicBoostDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMagicBoost",
+		name = "Magic boost",
+		description = "Seed the magic card's potion/boost assumption.",
+		section = defaults,
+		position = 8
+	)
+	default MagicBoostDefault defaultMagicBoost()
+	{
+		return MagicBoostDefault.DETECT;
+	}
+
+	@ConfigItem(
+		keyName = "defaultThralls",
+		name = "Thralls",
+		description = "Detect folds a thrall in where it benefits; None starts off.",
+		section = defaults,
+		position = 9
+	)
+	default AssumeDefault defaultThralls()
+	{
+		return AssumeDefault.DETECT;
+	}
+
+	@ConfigItem(
+		keyName = "defaultDeathCharge",
+		name = "Death Charge",
+		description = "Detect assumes Death Charge where it benefits; None starts off.",
+		section = defaults,
+		position = 10
+	)
+	default AssumeDefault defaultDeathCharge()
+	{
+		return AssumeDefault.DETECT;
+	}
+
+	@ConfigItem(
+		keyName = "spellbookSwapVengeance",
+		name = "Arceuus via Spellbook Swap",
+		description = "Reach Arceuus casts from Lunar via Spellbook Swap (96 Magic);"
+			+ " the kit adds the swap and Vengeance runes.",
+		section = defaults,
+		position = 12
+	)
+	default boolean spellbookSwapVengeance()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showExcludeControls",
+		name = "Exclude controls",
+		description = "Show the red exclude chips (global and per-mob).",
 		section = controls,
 		position = 4
+	)
+	default boolean showExcludeControls()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showSimControls",
+		name = "Sim controls",
+		description = "Show the green sim chips (global and per-mob).",
+		section = controls,
+		position = 5
+	)
+	default boolean showSimControls()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showFilterControls",
+		name = "Filter controls",
+		description = "Show the grey filter chips (global and per-mob).",
+		section = controls,
+		position = 6
+	)
+	default boolean showFilterControls()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showPinControls",
+		name = "Pin controls",
+		description = "Show the 'Pins: N' chip (right-click pinning stays).",
+		section = controls,
+		position = 7
+	)
+	default boolean showPinControls()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showInBankButton",
+		name = "'Show in bank' button",
+		description = "Show the button that outlines the set in your open bank.",
+		section = controls,
+		position = 8
 	)
 	default boolean showInBankButton()
 	{
@@ -230,10 +709,9 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "showFilterBankButton",
 		name = "'Filter bank' button",
-		description = "Show the button that filters your open bank to only the"
-			+ " set's items (uses the Bank Tags plugin).",
+		description = "Show the button that filters your bank to the set's items.",
 		section = controls,
-		position = 5
+		position = 9
 	)
 	default boolean showFilterBankButton()
 	{
@@ -243,55 +721,13 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "npcRightClickEntry",
 		name = "NPC right-click entry",
-		description = "Add a 'Search in Loadout Lab' option when you right-click"
-			+ " a monster the plugin knows. Turn off to keep NPC menus clean;"
-			+ " you can still search from the panel.",
+		description = "Add 'Search in Loadout Lab' to known monsters' right-click menus.",
 		section = controls,
-		position = 6
+		position = 10
 	)
 	default boolean npcRightClickEntry()
 	{
 		return true;
-	}
-
-	@ConfigItem(
-		keyName = "defaultUpgradeBudget",
-		name = "Default upgrade budget",
-		description = "Seed every new result's upgrade budget (750k, 1m, 1.5b;"
-			+ " - = unlimited; empty = owned gear only)",
-		section = controls,
-		position = 90
-	)
-	default String defaultUpgradeBudget()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "defaultRiskCap",
-		name = "Default wilderness risk cap",
-		description = "Seed every new result's wilderness risk cap in gp"
-			+ " (25k, 1m...; empty = unconstrained). Defaults to 75k so a"
-			+ " wilderness search starts low-risk out of the box.",
-		section = controls,
-		position = 91
-	)
-	default String defaultRiskCap()
-	{
-		return "75k";
-	}
-
-	@ConfigItem(
-		keyName = "defaultOnTask",
-		name = "Default searches to On task",
-		description = "Seed every new result with the On task toggle enabled"
-			+ " (slayer-only monsters always start on-task regardless)",
-		section = controls,
-		position = 92
-	)
-	default boolean defaultOnTask()
-	{
-		return false;
 	}
 
 	enum AntifireDefault
@@ -304,12 +740,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "defaultAntifire",
-		name = "Default antifire",
-		description = "Seed dragonfire searches with this antifire mode:"
-			+ " Detect picks the best potion your collection has, None"
-			+ " computes gear-only protection",
-		section = controls,
-		position = 93
+		name = "Antifire",
+		description = "Dragonfire seed: Detect = best owned potion, None = gear only.",
+		section = defaults,
+		position = 13
 	)
 	default AntifireDefault defaultAntifire()
 	{
@@ -321,9 +755,8 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "useDwmsData",
 		name = "Use Dude, Where's My Stuff",
-		description = "Count gear tracked by the Dude, Where's My Stuff plugin as owned"
-			+ " - STASH units, POH storage, death storage and more. Uses its live"
-			+ " data while it runs, its saved data otherwise.",
+		description = "Count gear tracked by Dude, Where's My Stuff (2.11.5+,"
+			+ " running) as owned - STASH, POH, death storage and more.",
 		section = connections,
 		position = 1
 	)

@@ -34,7 +34,7 @@ public class SelectionHistoryTest
 		return new LoadoutLabPanel(data,
 			Mockito.mock(ItemManager.class, Mockito.RETURNS_DEEP_STUBS),
 			Mockito.mock(SpriteManager.class),
-			(monster, f2p, slayer, wildy, book, maxTradeables, riskBudget, antifire, budget, mode, maxSwaps, raidBoost, onDone) -> computed.set(monster),
+			(monster, f2p, slayer, wildy, book, maxTradeables, riskBudget, antifire, dcharge, specw, boostPicks, prayerPicks, budget, maxSwaps, raidBoost, onDone) -> computed.set(monster),
 			itemId -> false,
 			java.util.Collections::emptySet,
 			new LoadoutLabPanel.ProtectOnlyToggle()
@@ -143,7 +143,7 @@ public class SelectionHistoryTest
 			(prompt, onPicked) -> { },
 			itemId -> true,
 			ids -> { },
-			ids -> { });
+			(ids, layout) -> { });
 	}
 
 	/** A HistoryControl over a real CommandHistory - the plugin's wiring. */
@@ -238,22 +238,22 @@ public class SelectionHistoryTest
 		panel.setHistoryControl(control(history));
 
 		Assert.assertTrue(panel.selectExternal("zulrah", null));          // unrecorded first pick
-		panel.optimizeModeForTest().setSelectedIndex(1);                  // step: Optimize: Balanced
+		panel.spellbookForTest().setSelectedIndex(1);                  // step: Spellbook: Standard
 		Assert.assertTrue(panel.selectExternal("vorkath", null));         // step: vs Vorkath
 
 		Assert.assertTrue(history.undo());
 		Assert.assertEquals("first back re-lands the previous search",
 			"Zulrah", computed.get().getName());
-		Assert.assertEquals("the optimize step is untouched so far",
-			1, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertEquals("the spellbook step is untouched so far",
+			1, panel.spellbookForTest().getSelectedIndex());
 
 		Assert.assertTrue(history.undo());
-		Assert.assertEquals("second back reverts the optimize change",
-			0, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertEquals("second back reverts the spellbook change",
+			0, panel.spellbookForTest().getSelectedIndex());
 		Assert.assertFalse(history.canUndo());
 
 		Assert.assertTrue(history.redo());
-		Assert.assertEquals(1, panel.optimizeModeForTest().getSelectedIndex());
+		Assert.assertEquals(1, panel.spellbookForTest().getSelectedIndex());
 		Assert.assertTrue(history.redo());
 		Assert.assertEquals("Vorkath", computed.get().getName());
 	}
@@ -267,7 +267,7 @@ public class SelectionHistoryTest
 		panel.setHistoryControl(control(history));
 
 		Assert.assertTrue(panel.selectExternal("general graardor", null));
-		panel.optimizeModeForTest().setSelectedIndex(2);               // step: Tanky @ Graardor
+		panel.spellbookForTest().setSelectedIndex(2);               // step: Ancient @ Graardor
 		panel.clearSelectionForTest();                                 // step: Clear - Graardor
 		computed.set(null);
 
@@ -276,9 +276,9 @@ public class SelectionHistoryTest
 		Assert.assertTrue(history.undo());                             // back over the clear
 		Assert.assertEquals("General Graardor", computed.get().getName());
 
-		Assert.assertTrue(history.undo());                             // back over Tanky
+		Assert.assertTrue(history.undo());                             // back over Ancient
 		Assert.assertEquals("the toggle reverts WITH its mob on screen, not in a vacuum",
-			0, panel.optimizeModeForTest().getSelectedIndex());
+			0, panel.spellbookForTest().getSelectedIndex());
 		Assert.assertEquals("General Graardor", computed.get().getName());
 	}
 
@@ -378,16 +378,16 @@ public class SelectionHistoryTest
 		panel.setHistoryControl(control(history));
 
 		Assert.assertTrue(panel.selectExternal("zulrah", null));
-		panel.optimizeModeForTest().setSelectedIndex(2);               // Zulrah: Tanky
-		Assert.assertEquals(2, panel.optimizeModeForTest().getSelectedIndex());
+		panel.spellbookForTest().setSelectedIndex(2);               // Zulrah: Ancient
+		Assert.assertEquals(2, panel.spellbookForTest().getSelectedIndex());
 
 		panel.addToView(data.searchMonsters("general graardor", 1).get(0));
 		Assert.assertEquals("the new result starts at its own defaults",
-			0, panel.optimizeModeForTest().getSelectedIndex());
+			0, panel.spellbookForTest().getSelectedIndex());
 
 		panel.closeActiveResultForTest();
 		Assert.assertEquals("Zulrah's zone survives untouched - the controls repaint from it",
-			2, panel.optimizeModeForTest().getSelectedIndex());
+			2, panel.spellbookForTest().getSelectedIndex());
 	}
 
 	@Test

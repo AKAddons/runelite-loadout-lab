@@ -81,6 +81,21 @@ class CommandHistoryTest
 	}
 
 	@Test
+	@DisplayName("the back label names where back LANDS, not the current step")
+	void undoTargetNamesTheLanding()
+	{
+		assertNull(history.peekUndoTarget(), "empty history has no landing");
+		history.execute(stubCmd(1));
+		assertNull(history.peekUndoTarget(),
+			"one step back reaches the unrecorded start");
+		history.execute(stubCmd(2));
+		assertEquals("cmd-1", history.peekUndoTarget(),
+			"back from cmd-2's state lands on cmd-1's");
+		assertEquals("cmd-2", history.peekUndoDescription(),
+			"the step-to-undo peek is unchanged");
+	}
+
+	@Test
 	@DisplayName("undo pops the most recent entry and reverts it, moving to redo stack")
 	void undoMovesToRedo()
 	{

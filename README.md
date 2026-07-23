@@ -1,9 +1,13 @@
 # Loadout Lab
 
-Your gear, your enemy, your best kit. Pick a monster and Loadout Lab
-computes the strongest set you actually OWN for every combat style -
-exact DPS included - from live knowledge of your bank, inventory, and
-equipment.
+![Loadout Lab](docs/img/hero.png)
+
+"What should I bring?" is a bank-standing question. Loadout Lab answers
+it quickly, optimizing any mob, boss, or even a full raid around the
+best gear you own - in your bank, your storages, or wherever you keep
+it. Keep it simple and let the plugin do the work, or reach beyond
+your own gear with the powerful simulation and customization options.
+At the end of your search, filter the kit in your bank and get going.
 
 ## What it does
 
@@ -21,9 +25,6 @@ equipment.
 - **Incoming damage**: how hard the boss hits YOU in that set, with
   curated per-boss attack data (GWD, Zulrah, Vorkath, Cerberus, the
   wilderness ring, and more).
-- **Optimize modes**: Max DPS (maximize output), Balanced (maximize
-  dps-out^1.2 / dps-in - exact math in the feature guide), or Tanky
-  (minimize damage taken).
 - **Wilderness risk**: low-risk sets built around the items-kept-on-death
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates
@@ -51,15 +52,19 @@ equipment.
 1. Open your bank once so the plugin can learn what you own.
 2. Search a monster in the sidebar panel and pick a style card.
 3. Right-click items for exclusions, simmed items, and stored-elsewhere
-   marks; use the toggles for slayer tasks, spellbook locks, wilderness
-   risk, and optimize modes.
+   marks; use the toggles for slayer tasks, spellbook locks, and
+   wilderness risk.
 
 ## Privacy
 
 Everything is local. The plugin writes two files under
 `.runelite/loadout-lab/` on your machine only: `profile.json` (your
 levels/bank snapshot, useful for bug reports) and `usage.tsv` (your own
-search history). Nothing is ever sent anywhere.
+search history). Nothing is ever sent anywhere on its own. The one
+exception is explicit: clicking the footnote's "Wiki calc" button
+uploads that shown setup (gear, levels, prayers, boosts, monster) to
+the wiki's own share service to create the link it opens - exactly what
+the calculator's Share button does.
 
 ## Data sharing (for other plugins)
 
@@ -104,15 +109,81 @@ monster and gear data from the OSRS Wiki.
 
 # Feature guide
 
-One section per user-facing feature. Each heading below is mirrored in
-`docs/features.json`; `./gradlew checkDocs` audits the two against the
-source tree and flags drift or missing screenshots.
+The guide follows the way a trip actually comes together: pick the
+target, read the answer, shape it to the fight, then make the defaults
+yours. Each heading below is mirrored in `docs/features.json`;
+`./gradlew checkDocs` audits the two against the source tree and flags
+drift or missing screenshots.
+
+## 1. Pick the target
+
+Search any monster by name, right-click one in the world, or pull in a
+whole group or raid - then grow or trim the lineup until it matches the
+trip you are planning.
+
+### Search in Loadout Lab (cross-plugin)
+
+Right-click a monster in the world and choose "Search in Loadout Lab":
+the panel opens and computes the best owned set for it. Other plugins can
+send a monster the same way (Goal Planner's boss cards are rolling it out).
+
+![Search in Loadout Lab (cross-plugin)](docs/img/link-in.png)
+
+### Multi-mob rosters: groups and raids
+
+One trip rarely means one monster. Any result grows into a roster: the
+'+ Add mob' row appends another target, and searching a curated group
+lands the whole lineup at once - Fight Caves, the Inferno, Zulrah's
+forms, Dagannoth Kings, Barrows, Tormented Demons, the Theatre of Blood,
+Tombs of Amascut, Chambers of Xeric, the Fortis Colosseum, Nex, Yama and
+more. The optimizer then finds ONE shared set per style across the whole
+list - the kit you actually bring - with each mob shown as its own row:
+its dps in that shared set, the style that answers it, and a lens that
+flips every card and number to that mob on click. Any mob can leave via
+its row's X (the last one closes the result), so a raid roster can be
+trimmed to the rooms you actually fight. Inside raids, the supplied
+boost (CoX overloads, ToA salts) is a toggle, not a promise.
+
+![Multi-mob rosters](docs/img/multi-mob-roster.png)
+
+### Slayer task toggle
+
+Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
+behind an active task are greyed out.
+
+![Slayer task toggle](docs/img/slayer-toggle.png)
+
+### Undo and redo
+
+The header's back/forward arrows walk your last 50 steps - monster
+searches, panel settings, AND edits in one history: search Zulrah,
+flip the slayer toggle, search Vorkath - back, back, back retraces
+each of those in turn. Steps cover: monster selections; the toggles
+(F2P, slayer task, wilderness, low-risk, Protect Item); the spellbook
+and risk-cap dropdowns; the upgrade budget; the antifire flip; and
+every edit (exclusions, pins, notes, simmed items, stored-elsewhere
+marks, protect-only flags, pinned spells, trip supplies). Hover for
+exactly what's next ("Back: Spellbook: Ancient").
+Scan-driven changes (bank snapshots, storage captures) are never
+steps - only what you deliberately did. History is per-session and
+resets on profile switch.
+
+
+## 2. Read the answer
+
+Every style card is a full battle plan - and every line of it can be
+toggled in the Display options or compared against the true game-wide
+ceiling. When it is time to gear up, the same answer projects into your
+bank.
 
 ### Best owned set per style
 
 Pick a monster and Loadout Lab computes the strongest set you actually
 OWN for melee, ranged, and magic - with exact DPS, max hit, and accuracy,
-verified against the official wiki calculator. When poison tiers of the
+verified against the official wiki calculator. Every result's footnote
+has a "Wiki calc" button that opens that exact setup - gear, levels,
+prayers, boosts, monster - in the official calculator via its share
+service, so the cross-check is one click. When poison tiers of the
 same weapon tie on stats, the strongest venom wins the suggestion
 (dragon dagger p++ over plain, main hand and spec alike).
 
@@ -123,38 +194,6 @@ so you see how close your kit is. Slots where you already own the best (or
 a stat-identical analog) get a gold border.
 
 ![Game-best ceiling comparison](docs/img/game-best.png)
-
-### Optimize modes
-
-Exact definitions - `dps_out` is your damage per second into the monster;
-`dps_in` is the monster's expected damage per second into YOU wearing that
-set, at your real defence/magic levels with the best protection prayer up.
-
-- **Max DPS** - maximize `dps_out`. Incoming damage is ignored entirely.
-- **Tanky** - minimize `dps_in`, full stop. Ties go to the higher-dps set.
-- **Balanced** - maximize the ratio `dps_out^1.2 / dps_in`. The 1.2
-  exponent slightly favors output: a 10% dps gain is worth taking ~12%
-  more damage. Balanced considers the Max DPS and Tanky sets too, so its
-  ratio is always >= both by construction. Ties go to the higher-dps set.
-
-How the candidates are found: the optimizer re-runs its search five times
-with the beam scored as `dps_out - w * dps_in` for
-`w = a * dps_out0 / dps_in0`, `a` in `{0.3, 0.7, 1.5, 3.0, 10.0}` (scaled
-so the weights are comparable across monsters). That traces the
-(dps out, dps in) frontier from full glass-cannon to full turtle; each
-mode then picks its point off that frontier. The card's sword/shield note
-shows the trade the pick made vs the Max DPS set ("10%- / 56%+" = 10%
-less dps for 56% less damage taken).
-
-![Optimize modes](docs/img/optimize-modes.png)
-
-### Owned-gear ledger (profile-aware)
-
-Your owned gear is learned from your bank, inventory, equipment, and
-looting bag as you play, and remembered per account so suggestions always
-reflect what THIS character actually has.
-
-![Owned-gear ledger (profile-aware)](docs/img/owned-ledger.png)
 
 ### Incoming damage and protection prayer
 
@@ -170,6 +209,94 @@ On the magic card, Loadout Lab shows the spell to autocast. Lock the
 spellbook to your setup and the suggested spell and set adjust to match.
 
 ![Spell and spellbook recommendation](docs/img/spellbook.png)
+
+### Owned-gear ledger (profile-aware)
+
+Your owned gear is learned from your bank, inventory, equipment, and
+looting bag as you play, and remembered per account so suggestions always
+reflect what THIS character actually has.
+
+![Owned-gear ledger (profile-aware)](docs/img/owned-ledger.png)
+
+### Bank tools: show and filter
+
+"Show in bank" outlines the set's items in your bank; "Filter bank" shows
+only them, arranged like the in-game equipment and inventory tabs - the
+worn set as the equipment cross, the carried kit in a 4-wide block beside
+it. Uses the core Bank Tags plugin.
+
+![Bank tools: show and filter](docs/img/bank-tools.png)
+
+## 3. Shape the fight
+
+The computed answer is a starting point. Every assumption is a control:
+the chips on each card, the prayer and boost pickers, the inventory
+budget, simulated gear, budgets and risk caps - tune them and the
+optimizer re-answers.
+
+### Assumption pickers: prayer and boost
+
+The prayer and potion icons on each style card are pickers. Detect best
+stays the default - the boost detect reads what you actually own, the
+prayer detect your unlocks - and clicking an icon overrides that style's
+assumption: any named tier (Piety, Chivalry, Rigour, Deadeye, Augury,
+Mystic Might...), any boost including overloads and smelling salts
+outside raids, or None. Divine potions are preferred: the BiS ceiling
+assumes the divine super combat / divine ranging potion, and your side
+assumes the divine variant whenever you own one (same boost numbers,
+but the boost holds at ceiling instead of decaying). An accent border marks an override; the numbers,
+the assume label and the consumable cells all follow. Handy when a low
+prayer-bonus setup cannot sustain Piety and you want the DPS you will
+actually do.
+
+![Assumption pickers](docs/img/assume-pickers.png)
+
+### Thralls and Death Charge
+
+Arceuus support, modeled honestly. The Thralls chip appears when your
+Magic reaches a tier (38/57/76) and you own the book of the dead - it
+defaults ON against 150+ hp targets, folding the tier's flat dps
+(greater: 0.625, always hits) into the shown numbers, exactly like the
+official calculator's thrall toggle; the tab tooltip shows the
+gear/thrall breakdown, and the ranking never moves (a thrall adds the
+same to every set). The D charge chip (Magic 80) assumes Death Charge -
+15% special attack energy per killing blow, once per 60-second cast -
+feeding the spec model's energy budget, so long energy-bound fights fit
+more special attacks. Both recommendations carry their dependencies:
+the book of the dead and your best rune pouch join the trip cells, and
+the resurrect / Death Charge / Mark of Darkness runes (the last when
+your magic card casts Demonbane) join the bank filter and setup layout.
+(Vengeance modeling is roadmapped with the spellbook-lock work.)
+
+![Thralls and Death Charge](docs/img/thralls-veng.png)
+
+### Inventory budget: swaps vs bag space
+
+The Inventory slider on a roster sets how many carried swaps the shared
+set may lean on, and it optimizes honestly in BOTH directions. Push it
+up and the optimizer may answer different mobs with different weapons or
+armour pieces - more dps, more slots. Pull it down and it hunts the best
+single set that needs nothing carried - more room for food and loot on a
+long trip. The special-attack weapon occupies a swap slot whenever it
+differs from the worn weapon, so the spec is never free bag space.
+
+![Inventory budget](docs/img/inventory-budget.png)
+
+### Trip supplies
+
+Excludes, sims and bank filters form a trio - red, green and grey - at
+two levels: global chips above the search bar, and per-mob "here" chips
+on every card that override the global level. The grey member manages
+the trip kit: persistent defaults for the food, fast food, prayer
+restore, surge potion, spellbook-swap cape and anti-venom every trip
+brings, plus an always-filter list for items like teleport capes that
+belong in every bank view. Detect best picks the highest tier your
+collection has; anti-venom only joins the kit against monsters that can
+actually inflict venom (Zulrah, Araxxor, Vorkath and friends). Chosen
+supplies ride the result card's consumable cells, the bank filter (every
+dose matches) and the filtered bank's inventory block.
+
+![Trip supplies](docs/img/trip-supplies.png)
 
 ### Simulated items
 
@@ -190,88 +317,14 @@ source quest named.
 
 ![Upgrade budget](docs/img/upgrade-budget.png)
 
-### Stored elsewhere (manual owned items)
+### Exclude items from suggestions
 
-Gear kept where no plugin can see it - an Ultimate Ironman's cold or
-nest storage, a friend's holding, anything untracked - can still count
-as owned: right-click an unowned suggestion and pick "Stored elsewhere",
-or add any item by name from the header Options menu. The list is kept
-per account, marked items join suggestions, bank borders, and the
-exported profile exactly like banked gear, and the green "Stored
-elsewhere" line in the panel manages them. (The looting bag, POH costume
-room, STASH units, and cargo holds need no marking - see the next
-sections.)
+Right-click a suggestion to protect rare supplies (like dragon darts) so
+the optimizer stops recommending them - everywhere, only against this
+monster, or only against this monster's melee/ranged/magic set. Per-mob
+exclusions are managed from the "This mob" line.
 
-![Stored elsewhere (manual owned items)](docs/img/stored-elsewhere.png)
-
-### STASH, POH costume room, and cargo hold tracking
-
-These storages track natively, the same way the bank does - open each
-once and the contents count as owned from then on:
-
-- **STASH units**: read the STASH unit chart (the noticeboard by
-  Watson's house) once. Every filled unit across all tiers counts its
-  stored items as owned in that single read - no visiting each unit.
-- **POH costume room**: open a costume storage (armour case, wardrobe,
-  treasure chest, cape rack) in your house once.
-- **Cargo holds**: open a boat's cargo hold once - cannonballs stored
-  there count for ranged setups.
-
-![STASH, POH costume room, and cargo hold tracking](docs/img/native-storages.png)
-
-### Where your gear is (location hints)
-
-The ledger remembers which storage each item was seen in, not just that
-you own it. Suggested items that need a fetch trip - a STASH, the POH
-costume room, a cargo hold, the looting bag - carry a small colored dot
-in the cell corner naming the storage, with a "Stored:" legend under the
-cards that lists only the sources actually on screen. Gear at hand
-(equipped, inventory, bank) stays unmarked, so an all-bank set shows no
-dots and no legend at all. The tooltip spells it out too ("stored in
-STASH"), and the profile export carries the same per-source breakdown
-for bug reports.
-
-![Where your gear is (location hints)](docs/img/location-hints.png)
-
-### Mob profiles: pins, notes, and bank-filter items
-
-Every monster remembers your preferences for it - scoped to one combat
-set or all of them. PIN an item (right-click a cell's Pin submenu, or
-the card's dots menu, both opening the native in-game item search) - a
-Bracelet of slaughter stretching that slayer task - and that card
-always brings it, owned or not, with the optimizer building the best
-set around it; a melee-only pin never touches your ranged card. Pins
-outrank exclusions, budgets, and the low-risk safety vetoes while the
-risk numbers stay honest, and game best stays unpinned so you can see
-what the preference costs. The mob's NOTE is a collapsible post-it
-under the storage lines, edited inline - click, type, click away.
-BANK-FILTER ITEMS are per-set trip supplies (a super combat on the
-melee card, a ranged potion on ranged, sharks everywhere) that join
-that card's "Show in bank" and "Filter bank" views. The "This mob: ..."
-line manages everything, and each style card collapses to its DPS
-header - sets a standard deviation under your best start collapsed.
-The magic card hosts its own controls: PIN THE SPELL ("I am casting
-Wind Bolt") and the gear optimizes around it, with the spellbook lock
-shown while the spell is on Auto.
-
-![Mob profiles: pins, notes, and bank-filter items](docs/img/mob-profiles.png)
-
-### Dude, Where's My Stuff import
-
-If you run the Dude, Where's My Stuff plugin, the gear storages it has
-seen are also counted as owned - useful for death storage (which Loadout
-Lab does not track) and for instantly seeding storages you opened before
-installing Loadout Lab. With a DWMS version that supports the storages
-PluginMessage contract, Loadout Lab asks DWMS directly and gets its exact
-tracked items back (the panel line shows "(live)"); with older versions
-it falls back to a best-effort read of the data DWMS has already saved
-(that even works while DWMS is disabled), with strictly defensive
-parsing: if a future DWMS update changes its format, items quietly stop
-importing rather than ever miscounting. Either way the stored-elsewhere
-list remains the manual override, and a muted panel line shows how many
-items came in this way.
-
-![Dude, Where's My Stuff import](docs/img/dwms-import.png)
+![Exclude items from suggestions](docs/img/exclusions.png)
 
 ### Wilderness low-risk sets
 
@@ -309,53 +362,101 @@ devils, green dragons...) get an "In the Wilderness" checkbox: the
 actually happening there. Wilderness-exclusive monsters (revenants,
 the boss ring) are always "in".
 
-### Slayer task toggle
+## 4. Make it yours
 
-Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
-behind an active task are greyed out.
+Set your own defaults, teach the plugin what you own wherever it is
+stored, and pin the per-mob decisions worth remembering.
 
-![Slayer task toggle](docs/img/slayer-toggle.png)
+### Panel options: display and controls
 
-### Exclude items from suggestions
+Every card line and control is optional, across three settings sections.
+Display toggles each detail line (max hit, accuracy, damage taken, the
+defensive-prayer call, risk on death, prayer bonus, attack style, the
+inventory row, game best, notes, the '+ Add mob' row, the footnote, the
+loading animation, and where the spec and thrall dps appear - in the
+numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
+(exclude / sim / filter / pins, bank buttons, spell selection, budget and
+wilderness controls). Defaults sets what every NEW result assumes: On
+task, the Spec chip, thralls and Death Charge (Detect best or None),
+autocast (Detect or powered staves only), a prayer tier and a boost PER
+STYLE (Detect best, None, or a named pick for each of melee, ranged and
+magic), the budget and risk-cap seeds, antifire, and Arceuus via
+Spellbook Swap - the per-card chips and pickers still override each mob.
 
-Right-click a suggestion to protect rare supplies (like dragon darts) so
-the optimizer stops recommending them - everywhere, only against this
-monster, or only against this monster's melee/ranged/magic set. Per-mob
-exclusions are managed from the "This mob" line.
+### Mob profiles: pins, notes, and bank-filter items
 
-![Exclude items from suggestions](docs/img/exclusions.png)
+Every monster remembers your preferences for it - scoped to one combat
+set or all of them. PIN an item (right-click a cell's Pin submenu, or
+the card's dots menu, both opening the native in-game item search) - a
+Bracelet of slaughter stretching that slayer task - and that card
+always brings it, owned or not, with the optimizer building the best
+set around it; a melee-only pin never touches your ranged card. Pins
+outrank exclusions, budgets, and the low-risk safety vetoes while the
+risk numbers stay honest, and game best stays unpinned so you can see
+what the preference costs. The mob's NOTE is a collapsible post-it
+under the storage lines, edited inline - click, type, click away.
+BANK-FILTER ITEMS are per-set trip supplies (a super combat on the
+melee card, a ranged potion on ranged, sharks everywhere) that join
+that card's "Show in bank" and "Filter bank" views. The "This mob: ..."
+line manages everything, and each style card collapses to its DPS
+header - sets a standard deviation under your best start collapsed.
+The magic card hosts its own controls: PIN THE SPELL ("I am casting
+Wind Bolt") and the gear optimizes around it, with the spellbook lock
+shown while the spell is on Auto.
 
-### Undo and redo
 
-The header's back/forward arrows walk your last 50 steps - monster
-searches, panel settings, AND edits in one history: search Zulrah,
-flip the slayer toggle, search Vorkath - back, back, back retraces
-each of those in turn. Steps cover: monster selections; the toggles
-(F2P, slayer task, wilderness, low-risk, Protect Item); the optimize
-mode, spellbook and risk-cap dropdowns; the upgrade budget; the
-antifire flip; and every edit (exclusions, pins, notes, simmed items,
-stored-elsewhere marks, protect-only flags, pinned spells, trip
-supplies). Hover for exactly what's next ("Back: Optimize: Balanced").
-Scan-driven changes (bank snapshots, storage captures) are never
-steps - only what you deliberately did. History is per-session and
-resets on profile switch.
+### Stored elsewhere (manual owned items)
 
-![Undo and redo](docs/img/undo-redo.png)
+Gear kept where no plugin can see it - an Ultimate Ironman's cold or
+nest storage, a friend's holding, anything untracked - can still count
+as owned: right-click an unowned suggestion and pick "Stored elsewhere",
+or add any item by name from the header Options menu. The list is kept
+per account, marked items join suggestions, bank borders, and the
+exported profile exactly like banked gear, and the green "Stored
+elsewhere" line in the panel manages them. (The looting bag, POH costume
+room, STASH units, and cargo holds need no marking - see the next
+sections.)
 
-### Bank tools: show and filter
 
-"Show in bank" outlines the set's items in your bank; "Filter bank" shows
-only them. Uses the core Bank Tags plugin.
+### STASH, POH costume room, and cargo hold tracking
 
-![Bank tools: show and filter](docs/img/bank-tools.png)
+These storages track natively, the same way the bank does - open each
+once and the contents count as owned from then on:
 
-### Search in Loadout Lab (cross-plugin)
+- **STASH units**: read the STASH unit chart (the noticeboard by
+  Watson's house) once. Every filled unit across all tiers counts its
+  stored items as owned in that single read - no visiting each unit.
+- **POH costume room**: open a costume storage (armour case, wardrobe,
+  treasure chest, cape rack) in your house once.
+- **Cargo holds**: open a boat's cargo hold once - cannonballs stored
+  there count for ranged setups.
 
-Right-click a monster in the world and choose "Search in Loadout Lab":
-the panel opens and computes the best owned set for it. Other plugins can
-send a monster the same way (Goal Planner's boss cards are rolling it out).
 
-![Search in Loadout Lab (cross-plugin)](docs/img/link-in.png)
+### Where your gear is (location hints)
+
+The ledger remembers which storage each item was seen in, not just that
+you own it. Suggested items that need a fetch trip - a STASH, the POH
+costume room, a cargo hold, the looting bag - carry a small colored dot
+in the cell corner naming the storage, with a "Stored:" legend under the
+cards that lists only the sources actually on screen. Gear at hand
+(equipped, inventory, bank) stays unmarked, so an all-bank set shows no
+dots and no legend at all. The tooltip spells it out too ("stored in
+STASH"), and the profile export carries the same per-source breakdown
+for bug reports.
+
+![Where your gear is (location hints)](docs/img/location-hints.png)
+
+### Dude, Where's My Stuff link
+
+If you run the Dude, Where's My Stuff plugin (2.11.5+), the gear
+storages it tracks are also counted as owned - useful for death storage
+(which Loadout Lab does not track) and for storages you opened before
+installing Loadout Lab. Loadout Lab asks DWMS directly over the
+PluginMessage bus and gets its exact tracked items back, storage by
+storage, feeding both ownership and the location hints. The
+stored-elsewhere list remains the manual override, and a muted panel
+line shows how many items came in this way.
+
 
 ### Community Discord
 

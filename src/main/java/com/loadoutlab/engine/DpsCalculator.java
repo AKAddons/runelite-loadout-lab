@@ -870,6 +870,12 @@ public final class DpsCalculator
 
 	private long applyMagicAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll)
 	{
+		// The elemental-weakness bonus adds severity% OF THIS BASE ROLL
+		// after every conditional multiplier (official-verified 2026-07-23:
+		// multiplying the boosted roll instead over-credited an Iron dragon
+		// Earth Surge by ~1.4% dps - field cross-check via the Wiki calc
+		// button, its first catch).
+		long baseRoll = roll;
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% accuracy");
@@ -904,8 +910,8 @@ public final class DpsCalculator
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
 			int severity = request.getMonster().getWeaknessSeverity();
-			counted("elemental weakness", "+" + severity + "% accuracy");
-			roll = multiply(roll, 100 + severity, 100);
+			counted("elemental weakness", "+" + severity + "% of base accuracy");
+			roll += multiply(baseRoll, severity, 100);
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{

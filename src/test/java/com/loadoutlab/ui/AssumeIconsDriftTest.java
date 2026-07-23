@@ -35,11 +35,11 @@ public class AssumeIconsDriftTest
 	private static final String SYMBOLS = "/com/loadoutlab/data/assume_icons_symbols.json";
 
 	@Test
-	public void tableCountsAreTwentyOneEightAndSixtyOne()
+	public void tableCountsAreTwentyOneElevenAndSixtyOne()
 	{
 		JsonObject root = read(VALUES);
 		assertEquals("prayer entries", 21, root.getAsJsonObject("prayers").size());
-		assertEquals("boost item entries", 8, root.getAsJsonObject("boostItems").size());
+		assertEquals("boost item entries", 11, root.getAsJsonObject("boostItems").size());
 		assertEquals("spell entries", 61, root.getAsJsonObject("spells").size());
 	}
 

@@ -74,12 +74,9 @@ public final class OptimizationRequest implements Cloneable
 	 * forced); false = protection must come from a shield. */
 	@Getter
 	private boolean antifirePotion;
+	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
-	/** D-4 frontier: beam score = dps - defenseWeight * incoming dps;
-	 * 0 = pure offense (default), higher trades damage for safety. */
-	@Getter
-	private double defenseWeight;
 	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
 	 * of slaughter class - value the model cannot price). A pinned slot
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
@@ -128,7 +125,6 @@ public final class OptimizationRequest implements Cloneable
 		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
 		this.dreamItems = Collections.emptySet();
-		this.defenseWeight = 0;
 		this.pinnedItems = Collections.emptyMap();
 		this.protectOnlyItems = Collections.emptySet();
 		this.inWilderness = com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
@@ -197,6 +193,31 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
+	/** Death Charge (Arceuus, Magic 80): 15% spec energy back on a killing
+	 * blow per cast window - an extra energy stream for the spec model.
+	 * 0 = off, 1 = base (60s window), 2 = upgraded by Yama's rite of vile
+	 * transference (two refunds per cast = an effective 30s window). */
+	public OptimizationRequest withDeathCharge(int deathCharge)
+	{
+		OptimizationRequest c = copy();
+		c.deathCharge = deathCharge;
+		return c;
+	}
+
+	public int getDeathCharge()
+	{
+		return deathCharge;
+	}
+
+	/** Override the assumed prayer bonuses (the assume-chip picker); the
+	 * default is bestAvailable at the request's levels/unlocks. */
+	public OptimizationRequest withPrayers(PrayerBonuses prayers)
+	{
+		OptimizationRequest c = copy();
+		c.prayers = prayers;
+		return c;
+	}
+
 	public boolean isRiskConstrained()
 	{
 		return maxTradeables >= 0;
@@ -254,13 +275,6 @@ public final class OptimizationRequest implements Cloneable
 	{
 		OptimizationRequest c = copy();
 		c.pinnedItems = pinnedItems == null ? Collections.emptyMap() : pinnedItems;
-		return c;
-	}
-
-	public OptimizationRequest withDefenseWeight(double defenseWeight)
-	{
-		OptimizationRequest c = copy();
-		c.defenseWeight = defenseWeight;
 		return c;
 	}
 

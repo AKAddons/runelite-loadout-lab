@@ -368,6 +368,10 @@ per-boss defensive thresholds. Phased:
   note ("Balanced: -7% less dps for -34% less damage taken").
   Remaining: D-3 explicit stat thresholds (subsumed for most uses by
   the modes), per-boss threshold derivation from the knees.
+  **REMOVED 2026-07-21** (token budget, "for now" - field decision):
+  the whole frontier - OptimizeMode enum, defense-weighted beam,
+  ModeTrade UI - came out in 0.3.3 to fit the 200k hub cap.
+  Resurrect from git history (the removal commit is the map).
 
 ## Spec registry follow-ups (deferred, from the 2026-07 wiki audit)
 
@@ -428,6 +432,31 @@ play that raw DPS ignores.
 - Realistic-play factors the same mode could fold in: food/brew inventory
   slots saved (freeing them for more supplies or a longer trip), the spec
   bar spent on sustain rather than burst, and prayer upkeep.
-- Surface as a fourth OptimizeMode next to Max DPS / Balanced / Tanky, or
-  as a sustain overlay on the existing frontier. Own branch off main, its
-  own golden re-baseline, like the spec-value work.
+- Surface as its own optimize mode (note: the Balanced/Tanky frontier
+  was removed 2026-07-21 for token budget - a sustain mode would need
+  that scaffolding back, or its own). Own branch off main, its own
+  golden re-baseline, like the spec-value work.
+
+## Future: teleport items in the trip kit (field ask 2026-07-20)
+
+Always-filter common teleport items - construction cape, max cape,
+crafting cape and friends - plus the SPECIFIC teleport that reaches the
+searched boss/raid (e.g. a Rada's blessing for Mount Karuulm, a xeric's
+talisman for CoX). Curated boss -> teleport table as a resource; joins
+the trip-supply system's filter/layout the same way food does.
+
+## Future: runes, spellbooks, and the "bring alchs" default (field ask 2026-07-20)
+
+Rune planning is dictated by the spellbook brought, so it layers on a
+spellbook model:
+
+- **Bring alchs** default: always carry the nature/fire runes to alch
+  drops - preferring a rune pouch (divine rune pouch when owned) EXCEPT
+  in the Wilderness (never risk the pouch), and an explorer's ring as
+  the runeless alch alternative when Magic is high enough and the
+  spellbook is not standard.
+- **Spellbook lock**: let the user pin a result to Arceuus (thralls -
+  book of the dead + thrall runes in the kit) or Lunar (vengeance -
+  its runes in the kit). Vengeance itself is a Smart-mode-adjacent
+  modelling question (damage returned = DPS added) - model it when the
+  spellbook lock lands.

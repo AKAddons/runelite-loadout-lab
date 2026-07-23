@@ -37,6 +37,13 @@ SYMBOLS_OUT = os.path.join(
     ROOT, "src/test/resources/com/loadoutlab/data/assume_icons_symbols.json")
 
 EXPECTED = {"prayers": 21, "boostItems": 8, "spells": 61}
+# Boost items added AFTER the tables were extracted (plain item ids, no
+# symbolic sprite to resolve) - appended post-parse so a regen keeps them.
+MANUAL_BOOSTS = {
+    "Divine super combat": 23685,       # 2026-07-21, GE-verified
+    "Divine ranging potion": 23733,
+    "Divine magic potion": 23745,
+}
 MAP_KEY = {"PRAYERS": "prayers", "BOOST_ITEMS": "boostItems", "SPELLS": "spells"}
 
 PUT = re.compile(
@@ -99,6 +106,7 @@ def main():
     for key, want in EXPECTED.items():
         got = len(tables[key])
         assert got == want, "%s: %d entries, expected %d" % (key, got, want)
+    tables["boostItems"].update(MANUAL_BOOSTS)
 
     with open(OUT, "w") as fh:
         json.dump(tables, fh, indent=1)

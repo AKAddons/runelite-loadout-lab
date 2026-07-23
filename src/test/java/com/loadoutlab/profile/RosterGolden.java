@@ -104,7 +104,7 @@ public final class RosterGolden
 				profile.requirements, profile.ownedItems(), profile.owned.hashCode(),
 				false, false, "", Collections.emptyMap(), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
-				Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, bench,
+				Collections.emptySet(), 0, bench,
 				Collections.emptyMap(), null, Collections.emptySet(),
 				roster ->
 				{

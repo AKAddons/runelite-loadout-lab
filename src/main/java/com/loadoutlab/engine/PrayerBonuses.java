@@ -126,6 +126,80 @@ public final class PrayerBonuses
 		return result;
 	}
 
+	/** The selectable named tiers per style, best first - the assume-chip
+	 * picker (field direction 2026-07-21: "I don't use Piety against every
+	 * mob"). Factors mirror bestAvailable's cascade exactly. */
+	public static String[] optionsFor(CombatStyle style)
+	{
+		Object[][] picks = picksFor(style);
+		String[] names = new String[picks.length];
+		for (int i = 0; i < picks.length; i++)
+		{
+			names[i] = (String) picks[i][0];
+		}
+		return names;
+	}
+
+	/** A specific pick's bonuses for ONE style: the fallback's factors with
+	 * this style's replaced by the named tier (the other styles' values are
+	 * irrelevant to a single-style request). Unknown names fall back. */
+	/** name -> {accuracy, strength-or-damage} per style, best first -
+	 * mirrors bestAvailable's cascade exactly. */
+	private static final Object[][] MELEE_PICKS = {
+		{"Piety", 1.20, 1.23}, {"Chivalry", 1.15, 1.18},
+		{"Ultimate Strength + Incredible Reflexes", 1.15, 1.15},
+		{"Superhuman Strength + Improved Reflexes", 1.10, 1.10},
+		{"Burst of Strength + Clarity of Thought", 1.05, 1.05}};
+	private static final Object[][] RANGED_PICKS = {
+		{"Rigour", 1.20, 1.23}, {"Deadeye", 1.18, 1.18}, {"Eagle Eye", 1.15, 1.15},
+		{"Hawk Eye", 1.10, 1.10}, {"Sharp Eye", 1.05, 1.05}};
+	private static final Object[][] MAGIC_PICKS = {
+		{"Augury", 1.25, 4.0}, {"Mystic Vigour", 1.18, 3.0}, {"Mystic Might", 1.15, 2.0},
+		{"Mystic Lore", 1.10, 1.0}, {"Mystic Will", 1.05, 0.0}};
+
+	private static Object[][] picksFor(CombatStyle style)
+	{
+		return style == CombatStyle.RANGED ? RANGED_PICKS
+			: style == CombatStyle.MAGIC ? MAGIC_PICKS : MELEE_PICKS;
+	}
+
+	/** A specific pick's bonuses for ONE style: the fallback's factors with
+	 * this style's replaced by the named tier (the other styles' values are
+	 * irrelevant to a single-style request). Unknown names fall back. */
+	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback)
+	{
+		for (Object[] row : picksFor(style))
+		{
+			if (!row[0].equals(pick))
+			{
+				continue;
+			}
+			double a = (Double) row[1];
+			double b = (Double) row[2];
+			PrayerBonuses result;
+			if (style == CombatStyle.RANGED)
+			{
+				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
+					a, b, fallback.magicAccuracy, fallback.magicDamagePercent);
+			}
+			else if (style == CombatStyle.MAGIC)
+			{
+				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
+					fallback.rangedAccuracy, fallback.rangedStrength, a, b);
+			}
+			else
+			{
+				result = new PrayerBonuses(a, b, fallback.rangedAccuracy,
+					fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent);
+			}
+			result.meleeName = style == CombatStyle.MELEE ? pick : fallback.meleeName;
+			result.rangedName = style == CombatStyle.RANGED ? pick : fallback.rangedName;
+			result.magicName = style == CombatStyle.MAGIC ? pick : fallback.magicName;
+			return result;
+		}
+		return fallback;
+	}
+
 	/** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */
 	public String nameFor(CombatStyle style)
 	{

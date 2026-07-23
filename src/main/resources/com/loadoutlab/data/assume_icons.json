@@ -30,7 +30,10 @@
   "Magic potion": 3040,
   "Super magic": 11726,
   "Saturated heart": 27641,
-  "Imbued heart": 20724
+  "Imbued heart": 20724,
+  "Divine super combat": 23685,
+  "Divine ranging potion": 23733,
+  "Divine magic potion": 23745
  },
  "spells": {
   "Wind Strike": 15,

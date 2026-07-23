@@ -63,9 +63,8 @@ public class LoadoutOptimizerTest
 	@Test
 	public void prebuiltPoolsProduceTheSameResultsAsAFreshOptimize()
 	{
-		// The D-4 sweep reuses one CandidatePools across its weighted runs;
-		// the pool-taking overload must be indistinguishable from
-		// optimize(data, request) at every weight it is reused for.
+		// The pool-taking overload must be indistinguishable from
+		// optimize(data, request) for the same request.
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
@@ -75,14 +74,10 @@ public class LoadoutOptimizerTest
 				monster, style, PlayerLevels.MAXED,
 				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
 				10_000_000, CandidateMode.BUDGET, false, false,
-				OwnedItems.EMPTY, 5).withDefenseWeight(0.5);
-			// One pools instance, reused for two differently-weighted runs.
+				OwnedItems.EMPTY, 5);
 			LoadoutOptimizer.CandidatePools pools = optimizer.preparePools(data, request);
 			assertSameResults(optimizer.optimize(data, request),
 				optimizer.optimize(data, request, pools));
-			OptimizationRequest reweighted = request.withDefenseWeight(1.5);
-			assertSameResults(optimizer.optimize(data, reweighted),
-				optimizer.optimize(data, reweighted, pools));
 		}
 	}
 

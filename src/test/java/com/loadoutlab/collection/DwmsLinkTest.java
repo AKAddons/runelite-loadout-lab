@@ -40,6 +40,23 @@ class DwmsLinkTest
 	}
 
 	@Test
+	@DisplayName("families group items by response category for the location hints")
+	void familiesGroupByCategory()
+	{
+		DwmsLink link = new DwmsLink();
+		assertTrue(link.accept(response(List.of(
+			storage("stash", "Hosidius STASH", List.of(item(11864, 1))),
+			storage("stash", "Falador STASH", List.of(item(11864, 1))),
+			storage("death", "Grave", List.of(item(4151, 1)))))));
+		assertEquals(Map.of(11864, 2), link.families().get("stash"),
+			"same-category storages merge");
+		assertEquals(Map.of(4151, 1), link.families().get("death"));
+		assertEquals(2, link.families().size());
+		link.reset();
+		assertTrue(link.families().isEmpty(), "reset drops the families too");
+	}
+
+	@Test
 	@DisplayName("a well-formed response goes live, merging duplicate items across storages")
 	void wellFormedResponseParses()
 	{

@@ -44,13 +44,12 @@ public final class ServiceCalls
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode,
 		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback)
 	{
 		bestPerStyle(service, monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedItems, maxTradeables, riskBudgetGp, antifirePotion, dreamItems,
-			upgradeBudgetGp, mode,
+			upgradeBudgetGp,
 			Collections.<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>emptyMap(),
 			null, callback);
 	}
@@ -75,7 +74,6 @@ public final class ServiceCalls
 		boolean antifirePotion,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		Consumer<Map<CombatStyle, OptimizerService.StyleResult>> callback)
@@ -89,9 +87,10 @@ public final class ServiceCalls
 		}
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			byStyle, maxTradeables, riskBudgetGp, antifirePotion,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, true,
+			Collections.emptyMap(), Collections.emptyMap(),
 			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
-			dreamItems, upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell,
+			dreamItems, upgradeBudgetGp, 1, true, pinnedByStyle, pinnedSpell,
 			Collections.<Integer>emptySet(), callback);
 	}
 
@@ -115,7 +114,6 @@ public final class ServiceCalls
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
 		Set<Integer> protectOnlyItems,
@@ -123,8 +121,8 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems,
-			upgradeBudgetGp, mode, 1, true, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
+			maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
+			upgradeBudgetGp, 1, true, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
 
 	/** maxSwaps bench, raid boost assumed. */
@@ -147,7 +145,6 @@ public final class ServiceCalls
 		boolean inWilderness,
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode,
 		int maxSwaps,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell,
@@ -156,8 +153,8 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems,
-			upgradeBudgetGp, mode, maxSwaps, true, pinnedByStyle, pinnedSpell,
+			maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
+			upgradeBudgetGp, maxSwaps, true, pinnedByStyle, pinnedSpell,
 			protectOnlyItems, callback);
 	}
 
@@ -170,7 +167,6 @@ public final class ServiceCalls
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback)
@@ -178,7 +174,7 @@ public final class ServiceCalls
 		bestPerStyleAcross(service, mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
 			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
-			mode, 1, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
+			1, pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
 
 	/** maxSwaps bench, no per-mob exclusions. */
@@ -190,7 +186,7 @@ public final class ServiceCalls
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode, int maxSwaps,
+		int maxSwaps,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback)
@@ -198,7 +194,7 @@ public final class ServiceCalls
 		bestPerStyleAcross(service, mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
 			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
-			mode, maxSwaps, Collections.emptyMap(), pinnedByStyle, pinnedSpell,
+			maxSwaps, Collections.emptyMap(), pinnedByStyle, pinnedSpell,
 			protectOnlyItems, callback);
 	}
 
@@ -211,7 +207,7 @@ public final class ServiceCalls
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		OptimizerService.OptimizeMode mode, int maxSwaps,
+		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
@@ -219,8 +215,8 @@ public final class ServiceCalls
 	{
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, inWilderness,
-			dreamItems, upgradeBudgetGp, mode, maxSwaps, excludedByMob,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness,
+			dreamItems, upgradeBudgetGp, maxSwaps, excludedByMob,
 			Collections.emptyMap(), true,
 			pinnedByStyle, pinnedSpell, protectOnlyItems, callback);
 	}
