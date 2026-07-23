@@ -19,8 +19,10 @@ import java.util.function.Supplier;
  *
  * Calendar:
  *   - Workout (weight 2) and Skater (weight 1) run all year.
- *   - Chef (weight 1) cooks every month except October, which it cedes to
- *     Halloween (weight 6) - so October is the cauldron's headline month.
+ *   - Chef (weight 1) cooks every month except October, which stays
+ *     reserved for the Halloween cauldron (weight 6) - BENCHED in
+ *     ~/Development/loadout-lab-attic until October (token budget;
+ *     restore per that repo's README before the month starts).
  *   - Classroom (weight 1, school terms Jan-May and Sep-Nov) is BENCHED
  *     in ~/Development/loadout-lab-attic until September (token budget;
  *     restore per that repo's README before the term starts).
@@ -36,12 +38,9 @@ enum MascotRoster
 	// Evergreen - always eligible, low base weight.
 	WORKOUT(Window.ALWAYS, 2, MascotSpinner::new),
 	SKATER(Window.ALWAYS, 1, MascotSkater::new),
-	// Chef cooks year-round except October (Halloween's month).
-	CHEF(Window.months(1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12), 1, MascotChef::new),
-
-	// Seasonal / event - eligible only inside their window, where the big
-	// weight makes them the headline act.
-	HALLOWEEN(Window.months(10), 6, MascotCauldron::new);
+	// Chef cooks year-round except October (kept clear for the benched
+	// cauldron's return - see the attic note below).
+	CHEF(Window.months(1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12), 1, MascotChef::new);
 
 	private final Window window;
 	private final int weight;

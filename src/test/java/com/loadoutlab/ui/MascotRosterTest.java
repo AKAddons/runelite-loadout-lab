@@ -48,32 +48,20 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("a dormant mood is never picked (the cauldron outside October)")
+	@DisplayName("a dormant mood is never picked (the chef in October)")
 	void dormantNeverPicked()
 	{
-		Map<Class<?>, Integer> counts = sample(SEPTEMBER, 90_000);
-		assertEquals(0, counts.getOrDefault(MascotCauldron.class, 0),
+		Map<Class<?>, Integer> counts = sample(LocalDate.of(2026, 10, 15), 90_000);
+		assertEquals(0, counts.getOrDefault(MascotChef.class, 0),
 			"a dormant mood must never be picked");
 	}
 
 	@Test
-	@DisplayName("Halloween is eligible around Oct 31 and dormant the rest of the year")
-	void halloweenSeason()
-	{
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 31)).contains(MascotRoster.HALLOWEEN));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2027, 10, 25)).contains(MascotRoster.HALLOWEEN),
-			"recurs every year");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 9, 1)).contains(MascotRoster.HALLOWEEN));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 12, 1)).contains(MascotRoster.HALLOWEEN));
-	}
-
-	@Test
-	@DisplayName("the chef cooks every month except October, which it cedes to Halloween")
+	@DisplayName("the chef cooks every month except October (the benched cauldron's month)")
 	void chefSkipsOctober()
 	{
 		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.CHEF),
-			"October belongs to the cauldron");
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.HALLOWEEN));
+			"October stays reserved for the cauldron's return");
 		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CHEF));
 		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 11, 1)).contains(MascotRoster.CHEF));
 	}
