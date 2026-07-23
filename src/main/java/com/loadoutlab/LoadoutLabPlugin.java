@@ -305,6 +305,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			}
 			final String name = npc.getName();
 			final int id = npc.getId();
+			if (!attackable(npc))
+			{
+				// Corpus membership is not enough (Discord field report
+				// 2026-07-23: a Rabbit got the entry): only NPCs whose own
+				// menu offers Attack get one - the entry rides fights, not
+				// scenery.
+				return;
+			}
 			if (!knownMonster(name, id))
 			{
 				return; // an NPC menu, but not one we can compute for
@@ -322,6 +330,24 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				}));
 			return; // one entry, even when several rows reference the NPC
 		}
+	}
+
+	/** The NPC's own right-click menu offers Attack - composition actions,
+	 * client thread. */
+	private static boolean attackable(NPC npc)
+	{
+		if (npc.getComposition() == null || npc.getComposition().getActions() == null)
+		{
+			return false;
+		}
+		for (String action : npc.getComposition().getActions())
+		{
+			if ("Attack".equalsIgnoreCase(action))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Cheap client-thread gate: exact id or normalized-name match. */
