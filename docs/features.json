@@ -121,7 +121,6 @@
       "title": "Stored elsewhere (manual owned items)",
       "group": "Gear sources",
       "anchor": "stored-elsewhere-manual-owned-items",
-      "media": "docs/img/stored-elsewhere.png",
       "code": [
         "collection/ManualOwnedStore.java",
         "collection/CollectionLedger.java",
@@ -135,15 +134,13 @@
         "data/GearSearchTest.java"
       ],
       "since": "0.2.0",
-      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source.",
-      "capture": "Right-click menu open on an unowned suggestion showing 'Stored elsewhere: count ... as owned', with the green 'Stored elsewhere: N (click to manage)' label visible in the panel. Single PNG screenshot."
+      "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source."
     },
     {
       "id": "dwms-import",
       "title": "Dude, Where's My Stuff link",
       "group": "Bank and integrations",
       "anchor": "dude-wheres-my-stuff-link",
-      "media": "docs/img/dwms-import.png",
       "code": [
         "collection/DwmsLink.java",
         "LoadoutLabPlugin.java",
@@ -153,15 +150,13 @@
         "collection/DwmsLinkTest.java"
       ],
       "since": "0.2.0",
-      "notes": "The storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream, DWMS 2.11.5+): exact canonical id+qty per storage, per-category families for the location hints. The old config-read fallback retired 2026-07-22.",
-      "capture": "Panel with the muted 'From Dude Where's My Stuff: N items' line visible under the stored-elsewhere label. Single PNG screenshot."
+      "notes": "The storages PluginMessage contract (namespace dudewheresmystuff, storages-request/storages-response, authored upstream, DWMS 2.11.5+): exact canonical id+qty per storage, per-category families for the location hints. The old config-read fallback retired 2026-07-22."
     },
     {
       "id": "native-storages",
       "title": "STASH, POH costume room, and cargo hold tracking",
       "group": "Gear sources",
       "anchor": "stash-poh-costume-room-and-cargo-hold-tracking",
-      "media": "docs/img/native-storages.png",
       "code": [
         "collection/CollectionLedger.java",
         "data/StashUnits.java",
@@ -172,8 +167,7 @@
         "collection/CollectionLedgerTest.java"
       ],
       "since": "0.2.0",
-      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap.",
-      "capture": "STASH chart open with the panel beside it; after closing, a filled unit's item (e.g. the STASH'd slayer helmet) shows owned in a suggestion. Single PNG screenshot."
+      "notes": "No DWMS needed: the STASH chart (widget 493) marks filled units' default items owned in one read; the POH costume container (gameval 637, shared across cases) and the five sailing cargo holds scan like the bank. STASH table vendored from DWMS's StashUnit enum (BSD-2) via scripts/gen_stash_units.py. The POH shared-container union assumption and chart cell types need one in-client verification lap."
     },
     {
       "id": "location-hints",
@@ -217,7 +211,6 @@
       "title": "Mob profiles: pins, notes, and bank-filter items",
       "group": "Gear sources",
       "anchor": "mob-profiles-pins-notes-and-bank-filter-items",
-      "media": "docs/img/mob-profiles.png",
       "code": [
         "collection/MonsterProfileStore.java",
         "engine/OptimizationRequest.java",
@@ -229,8 +222,7 @@
         "collection/MonsterProfileStoreTest.java"
       ],
       "since": "0.2.0",
-      "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it).",
-      "capture": "A mob with a style-scoped pin, the post-it note expanded, one card auto-collapsed to its dps header, and the filtered bank showing a per-set supply. Single PNG screenshot."
+      "notes": "Per-monster remembered preferences, scoped per set or all sets. PINS (any slot, owned or not, picked via the NATIVE chatbox item search or the cell's Pin submenu): the slot has exactly one candidate, bypassing exclusions/mode/budget and the low-risk vetoes (risk totals stay honest; the cap constrains the REST via a pinned-risk floor); a style-scoped pin overlays the all-sets pin on its own card; pins shape YOUR sets only - game best stays the pure ceiling. NOTE: a collapsible post-it, edited inline (saves on focus loss), togglable off in the plugin settings ('Per-monster notes'). FILTER ITEMS: per-set or all-sets supplies (super combat on the melee card, ranged potion on ranged) unioned into that card's Show/Filter bank. Entry points live ON the style cards (header dots menu + cell right-click) and the 'This mob' line. Style cards themselves collapse to a dps header - auto-collapsed when a standard deviation under the best set. The magic card hosts the spellbook lock and a per-mob SPELL PIN (forced autocast via the engine's existing forced-spell path; gear optimizes around it)."
     },
     {
       "id": "wilderness-risk",
@@ -359,7 +351,6 @@
       "title": "Undo and redo",
       "group": "Filters and tasks",
       "anchor": "undo-and-redo",
-      "media": "docs/img/undo-redo.png",
       "code": [
         "command/Command.java",
         "command/CommandHistory.java",
@@ -374,7 +365,6 @@
         "ui/SelectionHistoryTest.java"
       ],
       "since": "0.2.4",
-      "capture": "Header with the back arrow hovered, tooltip reading 'Back: vs <monster>' after searching two monsters. Single PNG screenshot.",
       "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
     },
     {

@@ -168,7 +168,6 @@ Scan-driven changes (bank snapshots, storage captures) are never
 steps - only what you deliberately did. History is per-session and
 resets on profile switch.
 
-![Undo and redo](docs/img/undo-redo.png)
 
 ## 2. Read the answer
 
@@ -405,7 +404,6 @@ The magic card hosts its own controls: PIN THE SPELL ("I am casting
 Wind Bolt") and the gear optimizes around it, with the spellbook lock
 shown while the spell is on Auto.
 
-![Mob profiles: pins, notes, and bank-filter items](docs/img/mob-profiles.png)
 
 ### Stored elsewhere (manual owned items)
 
@@ -419,7 +417,6 @@ elsewhere" line in the panel manages them. (The looting bag, POH costume
 room, STASH units, and cargo holds need no marking - see the next
 sections.)
 
-![Stored elsewhere (manual owned items)](docs/img/stored-elsewhere.png)
 
 ### STASH, POH costume room, and cargo hold tracking
 
@@ -434,7 +431,6 @@ once and the contents count as owned from then on:
 - **Cargo holds**: open a boat's cargo hold once - cannonballs stored
   there count for ranged setups.
 
-![STASH, POH costume room, and cargo hold tracking](docs/img/native-storages.png)
 
 ### Where your gear is (location hints)
 
@@ -461,7 +457,6 @@ storage, feeding both ownership and the location hints. The
 stored-elsewhere list remains the manual override, and a muted panel
 line shows how many items came in this way.
 
-![Dude, Where's My Stuff import](docs/img/dwms-import.png)
 
 ### Community Discord
 
