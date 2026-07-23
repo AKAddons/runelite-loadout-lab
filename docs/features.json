@@ -11,11 +11,13 @@
         "engine/LoadoutOptimizer.java",
         "engine/DpsCalculator.java",
         "engine/DpsResult.java",
-        "engine/Loadout.java"
+        "engine/Loadout.java",
+        "WikiCalcLink.java"
       ],
       "tests": [
         "optimizer/OptimizerServiceTest.java",
-        "engine/LoadoutOptimizerTest.java"
+        "engine/LoadoutOptimizerTest.java",
+        "WikiCalcLinkTest.java"
       ],
       "since": "0.1.0",
       "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."

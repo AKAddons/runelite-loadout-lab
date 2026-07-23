@@ -46,7 +46,7 @@ public enum BoostProfile
 		this.skills = skills;
 	}
 
-	PlayerLevels apply(PlayerLevels base, PlayerLevels current)
+	public PlayerLevels apply(PlayerLevels base, PlayerLevels current)
 	{
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
 		if (this == LIVE_CURRENT)

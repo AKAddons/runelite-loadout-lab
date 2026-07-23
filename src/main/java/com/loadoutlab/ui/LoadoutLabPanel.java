@@ -231,6 +231,14 @@ public class LoadoutLabPanel extends PluginPanel
 		public boolean spellbookSwapVengeance;
 	}
 
+	/** Open the shown setup in the official wiki calculator (plugin-side:
+	 * shortlink POST + browser). Null hides the footnote chip. */
+	public interface WikiCalcOpener
+	{
+		void open(MonsterStats mob, DpsResult shown, int dartId, String assumes,
+			boolean onSlayerTask, boolean inWilderness);
+	}
+
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
 	public interface DreamToggle
 	{
@@ -1809,6 +1817,13 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Config hook: which detail lines and controls to show. Re-renders the
 	 * cards from the cached results (no recompute - display only) and updates
 	 * the top-control visibility. Saved notes are never touched. */
+	private WikiCalcOpener wikiCalcOpener;
+
+	public void setWikiCalcOpener(WikiCalcOpener opener)
+	{
+		this.wikiCalcOpener = opener;
+	}
+
 	public void setDisplayOptions(DisplayOptions options)
 	{
 		this.displayOptions = options;
@@ -5580,6 +5595,24 @@ public class LoadoutLabPanel extends PluginPanel
 		actions.setOpaque(false);
 		actions.setAlignmentX(LEFT_ALIGNMENT);
 		actions.add(copyChip);
+		// The exact-setup cross-check (field ask 2026-07-23): full setups
+		// can only ride a URL as a shortlink id, so the click uploads the
+		// shown setup to the wiki's share service first.
+		StyleResult wikiResult = entry.results == null ? null : entry.results.get(selected);
+		DpsResult wikiShown = wikiResult == null ? null
+			: bis ? wikiResult.overallBest
+			: wikiResult.owned == null || wikiResult.owned.isEmpty() ? null : wikiResult.owned.get(0);
+		if (wikiCalcOpener != null && wikiShown != null)
+		{
+			String assumes = bis ? wikiResult.gameBoostLabel : wikiResult.boostLabel;
+			GearItem dart = loadedDart(wikiShown);
+			actions.add(actionChip("Wiki calc",
+				"Open this exact setup in the official wiki calculator"
+					+ " (shares the setup via the wiki's shortlink service)",
+				() -> wikiCalcOpener.open(entry.mob(), wikiShown,
+					dart == null ? -1 : dart.getId(), assumes,
+					entry.onSlayerTask, effectiveWilderness(entry))));
+		}
 		actions.add(discordChip);
 		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE,
 			actions.getPreferredSize().height));
