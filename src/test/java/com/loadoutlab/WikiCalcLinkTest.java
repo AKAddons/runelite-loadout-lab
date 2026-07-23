@@ -53,6 +53,10 @@ class WikiCalcLinkTest
 			true, false);
 
 		assertEquals(10, payload.get("serializationVersion"));
+		// The document must survive gson under the JDK module system - the
+		// private Collections$*/List.of types throw InaccessibleObjectException
+		// (field bug 2026-07-23: the button silently died on serialize).
+		assertDoesNotThrow(() -> new com.google.gson.Gson().toJson(payload));
 		Map<String, Object> monsterDoc = (Map<String, Object>) payload.get("monster");
 		assertEquals(monster.getId(), monsterDoc.get("id"));
 		assertNotNull(((Map<String, Object>) monsterDoc.get("inputs")).get("defenceReductions"),

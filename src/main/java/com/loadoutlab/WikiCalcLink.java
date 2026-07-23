@@ -10,7 +10,6 @@ import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.engine.PlayerLevels;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,7 +158,14 @@ public class WikiCalcLink
 				: slot == GearSlot.AMMO && dartId > 0 ? dartId : -1;
 			if (id > 0)
 			{
-				equipment.put(slot.getJsonName(), Collections.singletonMap("id", id));
+				// Plain maps/lists ONLY in this document: gson's map adapter
+				// reflects the runtime type, and the JDK's private
+				// Collections$*/ImmutableCollections classes throw
+				// InaccessibleObjectException under the module system
+				// (field-found 2026-07-23 - the button silently died).
+				Map<String, Object> idMap = new LinkedHashMap<>();
+				idMap.put("id", id);
+				equipment.put(slot.getJsonName(), idMap);
 			}
 		}
 
@@ -182,18 +188,23 @@ public class WikiCalcLink
 		String spell = shown.getSpellName();
 		if (spell != null && !spell.isEmpty())
 		{
-			loadout.put("spell", Collections.singletonMap("name", spell));
+			Map<String, Object> spellMap = new LinkedHashMap<>();
+			spellMap.put("name", spell);
+			loadout.put("spell", spellMap);
 		}
 
 		Map<String, Object> monster = new LinkedHashMap<>();
 		monster.put("id", mob.getId());
 		monster.put("version", mob.getVersion());
-		monster.put("inputs", Collections.singletonMap(
-			"defenceReductions", Collections.emptyMap()));
+		Map<String, Object> inputs = new LinkedHashMap<>();
+		inputs.put("defenceReductions", new LinkedHashMap<>());
+		monster.put("inputs", inputs);
 
 		Map<String, Object> data = new LinkedHashMap<>();
 		data.put("serializationVersion", 10);
-		data.put("loadouts", Collections.singletonList(loadout));
+		List<Map<String, Object>> loadouts = new ArrayList<>();
+		loadouts.add(loadout);
+		data.put("loadouts", loadouts);
 		data.put("selectedLoadout", 0);
 		data.put("monster", monster);
 		return data;
