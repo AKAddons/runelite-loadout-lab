@@ -221,11 +221,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** 0 = fold into the shown dps, 1 = footnote line, 2 = not shown. */
 		public int specDpsMode;
 		public int thrallDpsMode;
-		/** A named tier/boost seeded into new results' pickers ("" = detect,
-		 * "NONE" = prayerless/unboosted; prayer = tier label, boost =
-		 * BoostProfile name). */
-		public String defaultPrayerPick = "";
-		public String defaultBoostPick = "";
+		/** Per-style named tiers/boosts seeded into new results' pickers
+		 * (absent = detect, "NONE" = prayerless/unboosted; prayer = exact
+		 * tier name, boost = BoostProfile name). */
+		public final Map<CombatStyle, String> defaultPrayerPicks = new EnumMap<>(CombatStyle.class);
+		public final Map<CombatStyle, String> defaultBoostPicks = new EnumMap<>(CombatStyle.class);
 		/** Arceuus casts via Spellbook Swap from a Lunar home (config-level
 		 * default; the grey menu's per-profile choice also enables it). */
 		public boolean spellbookSwapVengeance;
@@ -503,52 +503,8 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			entry.spellbookIndex = NO_AUTOCAST_INDEX;
 		}
-		seedPick(entry.prayerPicks, displayOptions.defaultPrayerPick, true);
-		seedPick(entry.boostPicks, displayOptions.defaultBoostPick, false);
-	}
-
-	/** Seed a picker map from the config default: "NONE" hits every style;
-	 * a named prayer tier lands on its own style; a named boost lands on
-	 * every style it touches. Unknown names seed nothing (detect). */
-	private static void seedPick(Map<CombatStyle, String> picks, String pick, boolean prayer)
-	{
-		if (pick == null || pick.isEmpty())
-		{
-			return;
-		}
-		for (CombatStyle style : CombatStyle.concreteValues())
-		{
-			if ("NONE".equals(pick))
-			{
-				picks.put(style, "NONE");
-			}
-			else if (prayer)
-			{
-				for (String option : PrayerBonuses.optionsFor(style))
-				{
-					if (option.equals(pick))
-					{
-						picks.put(style, pick);
-					}
-				}
-			}
-			else
-			{
-				try
-				{
-					BoostProfile profile = BoostProfile.valueOf(pick);
-					char letter = style == CombatStyle.RANGED ? 'r'
-						: style == CombatStyle.MAGIC ? 'm' : 's';
-					if (profile.boosts(letter))
-					{
-						picks.put(style, pick);
-					}
-				}
-				catch (IllegalArgumentException ignored)
-				{
-				}
-			}
-		}
+		entry.prayerPicks.putAll(displayOptions.defaultPrayerPicks);
+		entry.boostPicks.putAll(displayOptions.defaultBoostPicks);
 	}
 
 	/** Death Charge defaults ON with the same benefit gate as thralls

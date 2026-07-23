@@ -378,10 +378,10 @@ numbers, as a footnote, or not shown). Controls picks which chips and buttons ap
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
 wilderness controls). Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
-autocast (Detect or powered staves only), a prayer tier and a boost
-(Detect best, None, or a named pick), the budget and risk-cap seeds,
-antifire, and Arceuus via Spellbook Swap - the per-card chips and
-pickers still override each mob.
+autocast (Detect or powered staves only), a prayer tier and a boost PER
+STYLE (Detect best, None, or a named pick for each of melee, ranged and
+magic), the budget and risk-cap seeds, antifire, and Arceuus via
+Spellbook Swap - the per-card chips and pickers still override each mob.
 
 ### Mob profiles: pins, notes, and bank-filter items
 

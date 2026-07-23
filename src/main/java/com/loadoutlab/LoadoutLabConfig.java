@@ -322,7 +322,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Upgrade budget",
 		description = "Seed new results' budget (750k, 1m; - = unlimited; empty = owned only)",
 		section = defaults,
-		position = 10
+		position = 14
 	)
 	default String defaultUpgradeBudget()
 	{
@@ -346,7 +346,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Wilderness risk cap",
 		description = "Seed new results' wilderness risk cap (empty = unconstrained).",
 		section = defaults,
-		position = 11
+		position = 15
 	)
 	default String defaultRiskCap()
 	{
@@ -376,14 +376,14 @@ public interface LoadoutLabConfig extends Config
 		name = "Autocast",
 		description = "Detect picks the best castable spell; None = powered staves only.",
 		section = defaults,
-		position = 7
+		position = 11
 	)
 	default AssumeDefault defaultAutocast()
 	{
 		return AssumeDefault.DETECT;
 	}
 
-	enum PrayerDefault
+	enum MeleePrayerDefault
 	{
 		DETECT("Detect best", null),
 		NONE("None", null),
@@ -394,31 +394,15 @@ public interface LoadoutLabConfig extends Config
 		SUPERHUMAN_IMPROVED("Superhuman + Improved",
 			"Superhuman Strength + Improved Reflexes"),
 		BURST_CLARITY("Burst + Clarity",
-			"Burst of Strength + Clarity of Thought"),
-		RIGOUR("Rigour", "Rigour"),
-		DEADEYE("Deadeye", "Deadeye"),
-		EAGLE_EYE("Eagle Eye", "Eagle Eye"),
-		HAWK_EYE("Hawk Eye", "Hawk Eye"),
-		SHARP_EYE("Sharp Eye", "Sharp Eye"),
-		AUGURY("Augury", "Augury"),
-		MYSTIC_VIGOUR("Mystic Vigour", "Mystic Vigour"),
-		MYSTIC_MIGHT("Mystic Might", "Mystic Might"),
-		MYSTIC_LORE("Mystic Lore", "Mystic Lore"),
-		MYSTIC_WILL("Mystic Will", "Mystic Will");
+			"Burst of Strength + Clarity of Thought");
 
 		private final String label;
-		/** The exact PrayerBonuses tier name the seed writes (null = none). */
-		private final String pick;
+		final String pick;
 
-		PrayerDefault(String label, String pick)
+		MeleePrayerDefault(String label, String pick)
 		{
 			this.label = label;
 			this.pick = pick;
-		}
-
-		public String pick()
-		{
-			return pick;
 		}
 
 		@Override
@@ -429,26 +413,167 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "defaultPrayer",
-		name = "Prayer",
-		description = "Detect, prayerless, or a named tier (seeds its own style).",
+		keyName = "defaultMeleePrayer",
+		name = "Melee prayer",
+		description = "Seed the melee card's prayer assumption.",
 		section = defaults,
 		position = 3
 	)
-	default PrayerDefault defaultPrayer()
+	default MeleePrayerDefault defaultMeleePrayer()
 	{
-		return PrayerDefault.DETECT;
+		return MeleePrayerDefault.DETECT;
 	}
 
-	enum BoostDefault
+	enum RangedPrayerDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		RIGOUR("Rigour"),
+		DEADEYE("Deadeye"),
+		EAGLE_EYE("Eagle Eye"),
+		HAWK_EYE("Hawk Eye"),
+		SHARP_EYE("Sharp Eye");
+
+		private final String label;
+
+		RangedPrayerDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultRangedPrayer",
+		name = "Ranged prayer",
+		description = "Seed the ranged card's prayer assumption.",
+		section = defaults,
+		position = 4
+	)
+	default RangedPrayerDefault defaultRangedPrayer()
+	{
+		return RangedPrayerDefault.DETECT;
+	}
+
+	enum MagicPrayerDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
+		AUGURY("Augury"),
+		MYSTIC_VIGOUR("Mystic Vigour"),
+		MYSTIC_MIGHT("Mystic Might"),
+		MYSTIC_LORE("Mystic Lore"),
+		MYSTIC_WILL("Mystic Will");
+
+		private final String label;
+
+		MagicPrayerDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMagicPrayer",
+		name = "Magic prayer",
+		description = "Seed the magic card's prayer assumption.",
+		section = defaults,
+		position = 5
+	)
+	default MagicPrayerDefault defaultMagicPrayer()
+	{
+		return MagicPrayerDefault.DETECT;
+	}
+
+	enum MeleeBoostDefault
 	{
 		DETECT("Detect best"),
 		NONE("None"),
 		SUPER_COMBAT("Super combat"),
 		DIVINE_SUPER_COMBAT("Divine super combat"),
+		F2P_COMBAT("Attack & strength potions"),
+		OVERLOAD("Overload"),
+		OVERLOAD_PLUS("Overload (+)"),
+		SMELLING_SALTS("Smelling salts");
+
+		private final String label;
+
+		MeleeBoostDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultMeleeBoost",
+		name = "Melee boost",
+		description = "Seed the melee card's potion/boost assumption.",
+		section = defaults,
+		position = 6
+	)
+	default MeleeBoostDefault defaultMeleeBoost()
+	{
+		return MeleeBoostDefault.DETECT;
+	}
+
+	enum RangedBoostDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
 		RANGING("Ranging potion"),
 		DIVINE_RANGING("Divine ranging potion"),
 		SUPER_RANGING("Super ranging"),
+		OVERLOAD("Overload"),
+		OVERLOAD_PLUS("Overload (+)"),
+		SMELLING_SALTS("Smelling salts");
+
+		private final String label;
+
+		RangedBoostDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
+	@ConfigItem(
+		keyName = "defaultRangedBoost",
+		name = "Ranged boost",
+		description = "Seed the ranged card's potion/boost assumption.",
+		section = defaults,
+		position = 7
+	)
+	default RangedBoostDefault defaultRangedBoost()
+	{
+		return RangedBoostDefault.DETECT;
+	}
+
+	enum MagicBoostDefault
+	{
+		DETECT("Detect best"),
+		NONE("None"),
 		SATURATED_HEART("Saturated heart"),
 		IMBUED_HEART("Imbued heart"),
 		MAGIC("Magic potion"),
@@ -460,7 +585,7 @@ public interface LoadoutLabConfig extends Config
 
 		private final String label;
 
-		BoostDefault(String label)
+		MagicBoostDefault(String label)
 		{
 			this.label = label;
 		}
@@ -473,15 +598,15 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "defaultBoost",
-		name = "Boost",
-		description = "Detect, unboosted, or a named boost (seeds the styles it touches).",
+		keyName = "defaultMagicBoost",
+		name = "Magic boost",
+		description = "Seed the magic card's potion/boost assumption.",
 		section = defaults,
-		position = 4
+		position = 8
 	)
-	default BoostDefault defaultBoost()
+	default MagicBoostDefault defaultMagicBoost()
 	{
-		return BoostDefault.DETECT;
+		return MagicBoostDefault.DETECT;
 	}
 
 	@ConfigItem(
@@ -489,7 +614,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Thralls",
 		description = "Detect folds a thrall in where it benefits; None starts off.",
 		section = defaults,
-		position = 5
+		position = 9
 	)
 	default AssumeDefault defaultThralls()
 	{
@@ -501,7 +626,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Death Charge",
 		description = "Detect assumes Death Charge where it benefits; None starts off.",
 		section = defaults,
-		position = 6
+		position = 10
 	)
 	default AssumeDefault defaultDeathCharge()
 	{
@@ -514,7 +639,7 @@ public interface LoadoutLabConfig extends Config
 		description = "Reach Arceuus casts from Lunar via Spellbook Swap (96 Magic);"
 			+ " the kit adds the swap and Vengeance runes.",
 		section = defaults,
-		position = 8
+		position = 12
 	)
 	default boolean spellbookSwapVengeance()
 	{
@@ -618,7 +743,7 @@ public interface LoadoutLabConfig extends Config
 		name = "Antifire",
 		description = "Dragonfire seed: Detect = best owned potion, None = gear only.",
 		section = defaults,
-		position = 9
+		position = 13
 	)
 	default AntifireDefault defaultAntifire()
 	{

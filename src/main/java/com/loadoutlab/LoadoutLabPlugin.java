@@ -596,7 +596,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		"showSimControls", "showFilterControls", "showPinControls",
 		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
 		"defaultRiskCap", "defaultOnTask", "defaultSpecWeapon", "defaultAutocast",
-		"defaultPrayer", "defaultBoost", "defaultThralls", "defaultDeathCharge",
+		"defaultMeleePrayer", "defaultRangedPrayer", "defaultMagicPrayer",
+		"defaultMeleeBoost", "defaultRangedBoost", "defaultMagicBoost",
+		"defaultThralls", "defaultDeathCharge",
 		"spellbookSwapVengeance", "defaultAntifire");
 
 	/** Client-thread staging push: the castability state the panel's
@@ -678,6 +680,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		return defaults;
 	}
 
+	/** DETECT seeds nothing, NONE seeds prayerless/unboosted, any other
+	 * enum constant seeds its pick string for that style. */
+	private static void seedPick(java.util.Map<com.loadoutlab.engine.CombatStyle, String> into,
+		com.loadoutlab.engine.CombatStyle style, String constant, String pick)
+	{
+		if ("DETECT".equals(constant) || pick == null)
+		{
+			return;
+		}
+		into.put(style, "NONE".equals(constant) ? "NONE" : pick);
+	}
+
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
 		LoadoutLabPanel.DisplayOptions o = new LoadoutLabPanel.DisplayOptions();
@@ -715,12 +729,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		o.detectThralls = config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
 		o.detectDeathCharge = config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
 		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
-		LoadoutLabConfig.PrayerDefault prayer = config.defaultPrayer();
-		o.defaultPrayerPick = prayer == LoadoutLabConfig.PrayerDefault.DETECT ? ""
-			: prayer == LoadoutLabConfig.PrayerDefault.NONE ? "NONE" : prayer.pick();
-		LoadoutLabConfig.BoostDefault boost = config.defaultBoost();
-		o.defaultBoostPick = boost == LoadoutLabConfig.BoostDefault.DETECT ? ""
-			: boost.name();
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+			config.defaultMeleePrayer().name(), config.defaultMeleePrayer().pick);
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+			config.defaultRangedPrayer().name(), config.defaultRangedPrayer().toString());
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+			config.defaultMagicPrayer().name(), config.defaultMagicPrayer().toString());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+			config.defaultMeleeBoost().name(), config.defaultMeleeBoost().name());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+			config.defaultRangedBoost().name(), config.defaultRangedBoost().name());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+			config.defaultMagicBoost().name(), config.defaultMagicBoost().name());
 		o.specDpsMode = config.specDpsOutput().ordinal();
 		o.thrallDpsMode = config.thrallDpsOutput().ordinal();
 		o.spellbookSwapVengeance = config.spellbookSwapVengeance();

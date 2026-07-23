@@ -173,18 +173,22 @@ public class DefaultSeedingTest
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		LoadoutLabPanel panel = panel(computed);
 		LoadoutLabPanel.DisplayOptions options = new LoadoutLabPanel.DisplayOptions();
-		options.defaultPrayerPick = "Piety";
-		options.defaultBoostPick = "OVERLOAD";
+		options.defaultPrayerPicks.put(CombatStyle.MELEE, "Piety");
+		options.defaultPrayerPicks.put(CombatStyle.RANGED, "Eagle Eye");
+		options.defaultBoostPicks.put(CombatStyle.MAGIC, "OVERLOAD");
+		options.defaultBoostPicks.put(CombatStyle.RANGED, "OVERLOAD");
 		panel.setDisplayOptions(options);
 
 		Assert.assertTrue(panel.selectExternal("zulrah", null));
 		LoadoutLabPanel.ResultEntry entry = panel.activeForTest();
-		Assert.assertEquals("a melee tier seeds the melee style only",
+		Assert.assertEquals("each style seeds independently",
 			"Piety", entry.prayerPicks.get(CombatStyle.MELEE));
-		Assert.assertNull(entry.prayerPicks.get(CombatStyle.RANGED));
-		Assert.assertEquals("an all-style boost seeds every style",
-			"OVERLOAD", entry.boostPicks.get(CombatStyle.MAGIC));
+		Assert.assertEquals("Eagle Eye", entry.prayerPicks.get(CombatStyle.RANGED));
+		Assert.assertNull("unset styles stay detect",
+			entry.prayerPicks.get(CombatStyle.MAGIC));
+		Assert.assertEquals("OVERLOAD", entry.boostPicks.get(CombatStyle.MAGIC));
 		Assert.assertEquals("OVERLOAD", entry.boostPicks.get(CombatStyle.RANGED));
+		Assert.assertNull(entry.boostPicks.get(CombatStyle.MELEE));
 	}
 
 	@Test
@@ -193,8 +197,11 @@ public class DefaultSeedingTest
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		LoadoutLabPanel panel = panel(computed);
 		LoadoutLabPanel.DisplayOptions options = new LoadoutLabPanel.DisplayOptions();
-		options.defaultPrayerPick = "NONE";
-		options.defaultBoostPick = "NONE";
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			options.defaultPrayerPicks.put(style, "NONE");
+			options.defaultBoostPicks.put(style, "NONE");
+		}
 		panel.setDisplayOptions(options);
 
 		Assert.assertTrue(panel.selectExternal("zulrah", null));
