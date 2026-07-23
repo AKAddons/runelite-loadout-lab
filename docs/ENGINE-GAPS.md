@@ -37,6 +37,13 @@ listed below.
   spells share a class-wide max scaled by Magic level (Water Surge at 95+
   hits like Fire Surge) - this is what makes weakness-matched spell picks
   win vs elemental-weak monsters.
+- ~~Elemental weakness accuracy stacking~~ FIXED 2026-07-23 (the Wiki
+  calc button's first field catch, Iron dragon + Earth Surge): the
+  +severity% accuracy bonus adds severity% OF THE BASE ROLL after the
+  conditional multipliers (official-verified), not a multiplier on the
+  boosted roll - with slayer helm + dragon hunter wand active the old
+  order over-credited ~1.4% dps. Damage side was already additive-from-
+  base and unchanged. Harness vector: dhw-irondragon.
 - ~~Tormented demons~~ ADDED (TormentedDemonRules, matching the official
   default phase): guaranteed hits; 20% damage reduction bypassed by
   demonbane and abyssal weapons. All TD scenarios within 3.4%.
