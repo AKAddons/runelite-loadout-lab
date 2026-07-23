@@ -5798,13 +5798,29 @@ public class LoadoutLabPanel extends PluginPanel
 				: unlimited ? "unlimited" : budget));
 		}
 
+		if (f2pOnly.isSelected())
+		{
+			params.add("F2P gear only: yes");
+		}
+		String[] where = {"dps shown includes it", "footnoted, not counted", "not shown"};
+		params.add("Spec weapon: " + (entry.specWeapon
+			? "carried (" + where[Math.min(displayOptions.specDpsMode, 2)] + ")" : "off"));
+		if (entry.spellbookIndex > 0)
+		{
+			params.add("Spellbook: " + spellbook.getItemAt(Math.min(
+				entry.spellbookIndex, spellbook.getItemCount() - 1)));
+		}
 		if (entry.thralls)
 		{
-			String[] where = {"dps shown includes", "footnoted, not counted:", "dps hidden:"};
 			params.add("Thralls: " + ExtraDps.thrallTier(magicLevel)
-				+ " (" + where[Math.min(displayOptions.thrallDpsMode, 2)] + " "
+				+ " (" + where[Math.min(displayOptions.thrallDpsMode, 2)] + ": "
 				+ String.format("%.2f", ExtraDps.thrallDps(magicLevel)) + ")"
 				+ (magicArcaneClash(entry) ? " (not applied to the Magic card)" : ""));
+		}
+		if (entry.thralls || entry.deathCharge)
+		{
+			params.add("Arceuus access: " + (arceuusViaSwap()
+				? "via Spellbook Swap (Lunar home)" : "native spellbook"));
 		}
 		for (Map.Entry<CombatStyle, String> pick : entry.prayerPicks.entrySet())
 		{
