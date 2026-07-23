@@ -260,7 +260,7 @@ public interface LoadoutLabConfig extends Config
 
 	enum DpsFold
 	{
-		OUTPUT("In the DPS numbers"),
+		OUTPUT("In the numbers"),
 		FOOTNOTE("As a footnote"),
 		OFF("Not shown");
 
@@ -389,9 +389,9 @@ public interface LoadoutLabConfig extends Config
 		NONE("None", null),
 		PIETY("Piety", "Piety"),
 		CHIVALRY("Chivalry", "Chivalry"),
-		ULTIMATE_INCREDIBLE("Ultimate + Incredible",
+		ULTIMATE_INCREDIBLE("Ult + Incredible",
 			"Ultimate Strength + Incredible Reflexes"),
-		SUPERHUMAN_IMPROVED("Superhuman + Improved",
+		SUPERHUMAN_IMPROVED("Super + Improved",
 			"Superhuman Strength + Improved Reflexes"),
 		BURST_CLARITY("Burst + Clarity",
 			"Burst of Strength + Clarity of Thought");
@@ -501,8 +501,8 @@ public interface LoadoutLabConfig extends Config
 		DETECT("Detect best"),
 		NONE("None"),
 		SUPER_COMBAT("Super combat"),
-		DIVINE_SUPER_COMBAT("Divine super combat"),
-		F2P_COMBAT("Attack & strength potions"),
+		DIVINE_SUPER_COMBAT("Div super combat"),
+		F2P_COMBAT("Atk/str potions"),
 		OVERLOAD("Overload"),
 		OVERLOAD_PLUS("Overload (+)"),
 		SMELLING_SALTS("Smelling salts");
@@ -538,7 +538,7 @@ public interface LoadoutLabConfig extends Config
 		DETECT("Detect best"),
 		NONE("None"),
 		RANGING("Ranging potion"),
-		DIVINE_RANGING("Divine ranging potion"),
+		DIVINE_RANGING("Divine ranging"),
 		SUPER_RANGING("Super ranging"),
 		OVERLOAD("Overload"),
 		OVERLOAD_PLUS("Overload (+)"),
@@ -577,7 +577,7 @@ public interface LoadoutLabConfig extends Config
 		SATURATED_HEART("Saturated heart"),
 		IMBUED_HEART("Imbued heart"),
 		MAGIC("Magic potion"),
-		DIVINE_MAGIC("Divine magic potion"),
+		DIVINE_MAGIC("Divine magic"),
 		SUPER_MAGIC("Super magic"),
 		OVERLOAD("Overload"),
 		OVERLOAD_PLUS("Overload (+)"),
