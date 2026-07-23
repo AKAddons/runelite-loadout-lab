@@ -2755,7 +2755,10 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean canRedo = historyControl != null && historyControl.canRedo();
 		undoButton.setEnabled(canUndo);
 		redoButton.setEnabled(canRedo);
-		undoButton.setToolTipText(canUndo ? "Back: " + historyControl.undoLabel() : "Nothing to go back to");
+		String backTarget = canUndo ? historyControl.undoLabel() : null;
+		undoButton.setToolTipText(!canUndo ? "Nothing to go back to"
+			: backTarget == null ? "Back: where this session started"
+			: "Back: " + backTarget);
 		redoButton.setToolTipText(canRedo ? "Forward: " + historyControl.redoLabel() : "Nothing to go forward to");
 	}
 

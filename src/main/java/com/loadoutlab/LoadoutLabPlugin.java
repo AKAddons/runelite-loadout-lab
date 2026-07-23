@@ -1171,7 +1171,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			@Override
 			public String undoLabel()
 			{
-				return commandHistory.peekUndoDescription();
+				return commandHistory.peekUndoTarget();
 			}
 
 			@Override

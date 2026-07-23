@@ -188,6 +188,21 @@ public class CommandHistory
 		return undoStack.isEmpty() ? null : undoStack.peek().getDescription();
 	}
 
+	/** Where BACK lands: the step BELOW the top (the top produced the
+	 * CURRENT state - naming it read as "back goes to where you already
+	 * are", field bug 2026-07-23). Null once back would reach the
+	 * unrecorded start. */
+	public String peekUndoTarget()
+	{
+		java.util.Iterator<Command> it = undoStack.iterator();
+		if (!it.hasNext())
+		{
+			return null;
+		}
+		it.next();
+		return it.hasNext() ? it.next().getDescription() : null;
+	}
+
 	/** Description of the next redo target, or null if the stack is empty. */
 	public String peekRedoDescription()
 	{
