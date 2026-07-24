@@ -685,11 +685,23 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private static void seedPick(java.util.Map<com.loadoutlab.engine.CombatStyle, String> into,
 		com.loadoutlab.engine.CombatStyle style, String constant, String pick)
 	{
-		if ("DETECT".equals(constant) || pick == null)
+		if ("DETECT_BEST".equals(constant) || pick == null)
 		{
 			return;
 		}
 		into.put(style, "NONE".equals(constant) ? "NONE" : pick);
+	}
+
+	/** Config constants shortened for dropdown width map back to their
+	 * BoostProfile names; the rest match 1:1. */
+	private static String boostProfileName(String constant)
+	{
+		switch (constant)
+		{
+			case "DIV_SUPER_COMBAT": return "DIVINE_SUPER_COMBAT";
+			case "ATK_STR_POTIONS": return "F2P_COMBAT";
+			default: return constant;
+		}
 	}
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
@@ -732,11 +744,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MELEE,
 			config.defaultMeleePrayer().name(), config.defaultMeleePrayer().pick);
 		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.RANGED,
-			config.defaultRangedPrayer().name(), config.defaultRangedPrayer().toString());
+			config.defaultRangedPrayer().name(), Text.titleCase(config.defaultRangedPrayer()));
 		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
-			config.defaultMagicPrayer().name(), config.defaultMagicPrayer().toString());
+			config.defaultMagicPrayer().name(), Text.titleCase(config.defaultMagicPrayer()));
 		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MELEE,
-			config.defaultMeleeBoost().name(), config.defaultMeleeBoost().name());
+			config.defaultMeleeBoost().name(), boostProfileName(config.defaultMeleeBoost().name()));
 		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.RANGED,
 			config.defaultRangedBoost().name(), config.defaultRangedBoost().name());
 		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
