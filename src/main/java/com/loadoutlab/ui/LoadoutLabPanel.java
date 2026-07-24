@@ -1826,7 +1826,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return;
 		}
-		resultsPanel.removeAll();
+		fastClear(resultsPanel);
 		resultsPanel.add(new MascotGallery());
 		resultsPanel.revalidate();
 		revalidate();
@@ -4102,7 +4102,7 @@ public class LoadoutLabPanel extends PluginPanel
 		page.clear();
 		active = null;
 		refreshNotePanel();
-		resultsPanel.removeAll();
+		fastClear(resultsPanel);
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
 		statusLabel.setText("Search a monster to begin.");
@@ -4245,11 +4245,27 @@ public class LoadoutLabPanel extends PluginPanel
 	 * (header with fold + close) only appears once the page holds more than
 	 * one result, so the single view stays pixel-identical to 0.2.4.
 	 * Entries still computing render a placeholder (mascot on the first). */
+	/** Core's fastRemoveAll avoids removeAll()'s O(n^2) event-queue lock
+	 * storm on big panels (spelunked from core + inventory-setups,
+	 * 2026-07-23) but asserts the EDT and pumps the real event queue - the
+	 * headless panel tests run off-EDT, so they take the plain path. */
+	private static void fastClear(java.awt.Container c)
+	{
+		if (javax.swing.SwingUtilities.isEventDispatchThread())
+		{
+			net.runelite.client.util.SwingUtil.fastRemoveAll(c);
+		}
+		else
+		{
+			c.removeAll();
+		}
+	}
+
 	private void renderPage()
 	{
 		// Every path that changes dreams/exclusions ends in a render.
 		refreshCountChips();
-		resultsPanel.removeAll();
+		fastClear(resultsPanel);
 		// Chrome on every result (field spec 2026-07-17): the fold/title
 		// row now carries the per-result refresh + close, replacing the
 		// old global reload/clear buttons beside the monster name.
