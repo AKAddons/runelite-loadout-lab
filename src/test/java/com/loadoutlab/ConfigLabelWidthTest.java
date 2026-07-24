@@ -31,7 +31,9 @@ class ConfigLabelWidthTest
 			}
 			for (Object constant : nested.getEnumConstants())
 			{
-				String label = constant.toString();
+				// What the config panel actually renders (core title-cases
+				// bare enum names; an overridden toString wins).
+				String label = net.runelite.client.util.Text.titleCase((Enum<?>) constant);
 				if (label.length() > MAX_LABEL)
 				{
 					over.add(nested.getSimpleName() + "." + constant + " -> \"" + label + "\"");
