@@ -1504,7 +1504,10 @@ public class OptimizerService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Cancellation of a superseded search is cooperative, via requestSeq
+			// (checked immediately below) - not thread interruption. This runs on
+			// our own daemon optimizer worker, interrupted only when the executor
+			// is shut down on plugin stop, so just abandon the computation.
 			return null;
 		}
 		if (requestSeq.get() != ticket)
@@ -2093,7 +2096,10 @@ public class OptimizerService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Cancellation of a superseded search is cooperative, via requestSeq
+			// (checked immediately below) - not thread interruption. This runs on
+			// our own daemon optimizer worker, interrupted only when the executor
+			// is shut down on plugin stop, so just abandon the computation.
 			return null;
 		}
 		if (requestSeq.get() != ticket)
