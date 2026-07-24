@@ -50,13 +50,67 @@ class MonsterVersionDefaultTest
 	@DisplayName("multi-mode bosses default to the everyday-numbers row, delves to the first")
 	void modesAndDelves()
 	{
-		// ToB's Normal-mode rows stat-collapse into the Hard-labeled ones
-		// (identical defensive block), so the hard-labeled Phase 1 row IS the
-		// everyday fight's numbers; Entry mode (genuinely weaker) never leads.
-		assertTrue(defaultVersion("verzik vitur").toLowerCase().startsWith("hard mode, phase 1"),
+		// ToB's Normal-mode rows now stay distinct from Hard/Entry (issue #2),
+		// so the everyday Normal Phase 1 row leads; Hard and Entry (genuinely
+		// harder/weaker) never lead but stay reachable below.
+		assertTrue(defaultVersion("verzik vitur").toLowerCase().startsWith("normal mode, phase 1"),
 			"got: " + defaultVersion("verzik vitur"));
 		assertFalse(defaultVersion("doom of mokhaiotl").toLowerCase().contains("deep"),
 			"deep delve must not be the default: " + defaultVersion("doom of mokhaiotl"));
+	}
+
+	@Test
+	@DisplayName("ToB bosses keep distinct Entry/Normal/Hard rows; phase spawns still collapse (issue #2)")
+	void tobDifficultiesStaySeparate()
+	{
+		// Before the fix, the Normal defensive block collapsed into the
+		// higher-level Hard row and vanished. Each difficulty must now be its
+		// own selectable entry.
+		for (String boss : new String[]{"the maiden of sugadinti", "verzik vitur"})
+		{
+			List<MonsterStats> hits = data.searchMonsters(boss, 20);
+			assertTrue(hits.stream().anyMatch(m -> tierOf(m).equals("entry")),
+				boss + " lost its Entry entry: " + versionsOf(hits));
+			assertTrue(hits.stream().anyMatch(m -> tierOf(m).equals("normal")),
+				boss + " lost its Normal entry: " + versionsOf(hits));
+			assertTrue(hits.stream().anyMatch(m -> tierOf(m).equals("hard")),
+				boss + " lost its Hard entry: " + versionsOf(hits));
+		}
+		// The Maiden's "30%/50%/70% Health" phase rows are same-difficulty
+		// duplicates of Normal - they must NOT surface as selectable entries.
+		List<MonsterStats> maiden = data.searchMonsters("the maiden of sugadinti", 20);
+		assertTrue(maiden.stream().noneMatch(m -> m.getVersion().toLowerCase().contains("health")),
+			"phase-health rows must collapse into Normal: " + versionsOf(maiden));
+		// The surviving Normal row carries the full-health numbers, not a
+		// phase row's reduced HP.
+		MonsterStats normal = maiden.stream()
+			.filter(m -> tierOf(m).equals("normal")).findFirst().orElseThrow(AssertionError::new);
+		assertEquals("Normal", normal.getVersion());
+		assertEquals(3500, normal.getHitpoints());
+	}
+
+	private static String tierOf(MonsterStats m)
+	{
+		String v = m.getVersion() == null ? "" : m.getVersion().toLowerCase();
+		if (v.contains("entry"))
+		{
+			return "entry";
+		}
+		if (v.contains("hard"))
+		{
+			return "hard";
+		}
+		return "normal";
+	}
+
+	private static String versionsOf(List<MonsterStats> hits)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (MonsterStats m : hits)
+		{
+			sb.append('[').append(m.getVersion()).append(']');
+		}
+		return sb.toString();
 	}
 
 	@Test
