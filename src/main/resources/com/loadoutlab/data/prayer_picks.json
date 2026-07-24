@@ -1,0 +1,17 @@
+{
+  "_comment": "Assume-picker tiers per style, best first: [name, accuracy factor, strength-or-damage factor]. Factors mirror PrayerBonuses.bestAvailable's cascade exactly (magic second factor = damage percent points).",
+  "MELEE": [
+    ["Piety", 1.20, 1.23], ["Chivalry", 1.15, 1.18],
+    ["Ultimate Strength + Incredible Reflexes", 1.15, 1.15],
+    ["Superhuman Strength + Improved Reflexes", 1.10, 1.10],
+    ["Burst of Strength + Clarity of Thought", 1.05, 1.05]
+  ],
+  "RANGED": [
+    ["Rigour", 1.20, 1.23], ["Deadeye", 1.18, 1.18], ["Eagle Eye", 1.15, 1.15],
+    ["Hawk Eye", 1.10, 1.10], ["Sharp Eye", 1.05, 1.05]
+  ],
+  "MAGIC": [
+    ["Augury", 1.25, 4.0], ["Mystic Vigour", 1.18, 3.0], ["Mystic Might", 1.15, 2.0],
+    ["Mystic Lore", 1.10, 1.0], ["Mystic Will", 1.05, 0.0]
+  ]
+}

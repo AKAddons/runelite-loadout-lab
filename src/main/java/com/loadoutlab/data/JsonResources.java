@@ -64,6 +64,17 @@ public final class JsonResources
 		}
 	}
 
+	/** A JSON array of numbers as an int[]. */
+	public static int[] intArray(com.google.gson.JsonArray arr)
+	{
+		int[] ids = new int[arr.size()];
+		for (int i = 0; i < ids.length; i++)
+		{
+			ids[i] = arr.get(i).getAsInt();
+		}
+		return ids;
+	}
+
 	/** Copy the string array at root[key] into the collection. */
 	public static void strings(JsonObject root, String key, Collection<String> into)
 	{

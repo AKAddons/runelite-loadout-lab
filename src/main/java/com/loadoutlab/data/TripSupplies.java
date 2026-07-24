@@ -73,12 +73,7 @@ public final class TripSupplies
 					for (JsonElement e : arr)
 					{
 						JsonObject o = e.getAsJsonObject();
-						JsonArray idArr = o.getAsJsonArray("ids");
-						int[] ids = new int[idArr.size()];
-						for (int i = 0; i < ids.length; i++)
-						{
-							ids[i] = idArr.get(i).getAsInt();
-						}
+						int[] ids = JsonResources.intArray(o.getAsJsonArray("ids"));
 						options.add(new Option(
 							o.get("key").getAsString(),
 							o.get("name").getAsString(),
@@ -94,12 +89,7 @@ public final class TripSupplies
 			{
 				for (String key : kits.keySet())
 				{
-					JsonArray idArr = kits.getAsJsonArray(key);
-					int[] ids = new int[idArr.size()];
-					for (int i = 0; i < ids.length; i++)
-					{
-						ids[i] = idArr.get(i).getAsInt();
-					}
+					int[] ids = JsonResources.intArray(kits.getAsJsonArray(key));
 					SPELL_KITS.put(key, ids);
 				}
 			}

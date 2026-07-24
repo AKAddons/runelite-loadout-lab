@@ -14,75 +14,29 @@ import net.runelite.client.config.ConfigManager;
  * Names are captured at add time (id resolution later needs the client
  * thread), matching the mob-profile filter items.
  */
-public class AlwaysFilterStore
+public class AlwaysFilterStore extends ConfigJsonStore<Integer, String>
 {
-	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "alwaysFilterItems";
-
-	private final ConfigManager configManager;
-	private final Gson gson;
-	private final Map<Integer, String> items = new LinkedHashMap<>();
 
 	public AlwaysFilterStore(ConfigManager configManager, Gson gson)
 	{
-		this.configManager = configManager;
-		this.gson = gson;
-		load();
-	}
-
-	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void reload()
-	{
-		load();
-	}
-
-	private void load()
-	{
-		items.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, KEY);
-		if (json == null || json.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			Map<Integer, String> stored = gson.fromJson(json,
-				new TypeToken<Map<Integer, String>>(){}.getType());
-			if (stored != null)
-			{
-				items.putAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
-		}
+		super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
 	}
 
 	public synchronized Map<Integer, String> all()
 	{
-		return Collections.unmodifiableMap(new LinkedHashMap<>(items));
+		return Collections.unmodifiableMap(new LinkedHashMap<>(map));
 	}
 
 	public synchronized void add(int itemId, String name)
 	{
-		items.put(itemId, name == null ? ("item " + itemId) : name);
+		map.put(itemId, name == null ? ("item " + itemId) : name);
 		save();
 	}
 
 	public synchronized void remove(int itemId)
 	{
-		items.remove(itemId);
+		map.remove(itemId);
 		save();
-	}
-
-	private void save()
-	{
-		if (items.isEmpty())
-		{
-			configManager.unsetConfiguration(CONFIG_GROUP, KEY);
-			return;
-		}
-		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(items));
 	}
 }

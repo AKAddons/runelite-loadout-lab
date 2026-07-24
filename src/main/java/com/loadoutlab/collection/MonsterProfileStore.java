@@ -26,9 +26,8 @@ import net.runelite.client.config.ConfigManager;
  * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
  * follow the player. Empty profiles are pruned on save.
  */
-public class MonsterProfileStore
+public class MonsterProfileStore extends ConfigJsonStore<Integer, MonsterProfileStore.Stored>
 {
-	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "monsterProfiles";
 	/** The every-style scope key. Style scopes use CombatStyle names. */
 	public static final String ALL = "ALL";
@@ -36,7 +35,7 @@ public class MonsterProfileStore
 	/** Serialized form: scope -> slot-name -> id for pins; scope -> id ->
 	 * display name for filter items (names captured at add time - id
 	 * resolution later needs the client thread). */
-	private static final class Stored
+	static final class Stored
 	{
 		Map<String, Map<String, Integer>> pins;
 		String note;
@@ -55,44 +54,11 @@ public class MonsterProfileStore
 		Map<String, String> supplies;
 	}
 
-	private final ConfigManager configManager;
-	private final Gson gson;
-	private final Map<Integer, Stored> profiles = new HashMap<>();
+	private final Map<Integer, Stored> profiles = map;
 
 	public MonsterProfileStore(ConfigManager configManager, Gson gson)
 	{
-		this.configManager = configManager;
-		this.gson = gson;
-		load();
-	}
-
-	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void reload()
-	{
-		load();
-	}
-
-	private void load()
-	{
-		profiles.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, KEY);
-		if (json == null || json.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			Map<Integer, Stored> stored = gson.fromJson(json,
-				new TypeToken<Map<Integer, Stored>>(){}.getType());
-			if (stored != null)
-			{
-				profiles.putAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
-		}
+		super(configManager, gson, KEY, new TypeToken<Map<Integer, Stored>>(){}.getType());
 	}
 
 	/** Effective pins for one style card: ALL overlaid by the style scope. */
@@ -408,7 +374,8 @@ public class MonsterProfileStore
 		}
 	}
 
-	private void save()
+	@Override
+	void save()
 	{
 		Map<Integer, Stored> out = new LinkedHashMap<>();
 		for (Map.Entry<Integer, Stored> entry : profiles.entrySet())
@@ -437,7 +404,7 @@ public class MonsterProfileStore
 			}
 		}
 		profiles.keySet().retainAll(out.keySet());
-		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(out));
+		saveJson(gson.toJson(out));
 	}
 
 	private static void prune(Map<String, ? extends Map<?, ?>> scoped)
