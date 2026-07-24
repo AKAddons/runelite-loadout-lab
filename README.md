@@ -111,9 +111,7 @@ monster and gear data from the OSRS Wiki.
 
 The guide follows the way a trip actually comes together: pick the
 target, read the answer, shape it to the fight, then make the defaults
-yours. Each heading below is mirrored in `docs/features.json`;
-`./gradlew checkDocs` audits the two against the source tree and flags
-drift or missing screenshots.
+yours.
 
 ## 1. Pick the target
 
@@ -465,3 +463,8 @@ community server.
 
 ![Community Discord](docs/img/discord.png)
 
+---
+
+*For contributors: each feature heading above is mirrored in
+`docs/features.json`; `./gradlew checkDocs` audits the two against the
+source tree.*
