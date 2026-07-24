@@ -290,21 +290,43 @@ public final class DataService
 		JsonArray rows = readArray(MONSTER_RESOURCE);
 		// The wiki data lists one row per SPAWN - Tormented Demon (1)..(4)
 		// are four combat-identical rows. Collapse same-name rows whose
-		// combat-relevant stats match, and drop the version label entirely
-		// when a name has only one distinct stat block (Dusk keeps its
-		// First/Second form; the four TDs become one unlabeled entry).
-		Map<String, Set<String>> statKeysByName = new HashMap<>();
+		// combat-relevant stats AND difficulty tier match, and drop the
+		// version label entirely when a name yields only one such group
+		// (Dusk keeps its First/Second form; the four TDs become one
+		// unlabeled entry). The difficulty tier keeps ToB Normal/Hard/Entry
+		// rows apart even though they share a defensive stat block (issue #2:
+		// otherwise Normal collapses into the higher-level Hard row and
+		// disappears from search), while same-difficulty duplicates (Maiden's
+		// "30%/50%/70% Health" phase rows, all "normal" tier) still collapse.
+		Map<String, Set<String>> groupsByName = new HashMap<>();
 		// Collapsed groups display the HIGHEST combat level among their spawns.
 		Map<String, Integer> maxLevelByGroup = new HashMap<>();
 		for (JsonElement element : rows)
 		{
 			JsonObject row = element.getAsJsonObject();
 			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
-			statKeysByName
+			groupsByName
 				.computeIfAbsent(nameKey, k -> new LinkedHashSet<>())
-				.add(monsterStatKey(row));
-			maxLevelByGroup.merge(nameKey + "|" + monsterStatKey(row),
+				.add(groupSuffix(row));
+			maxLevelByGroup.merge(nameKey + "|" + groupSuffix(row),
 				integer(row, "level", 0), Math::max);
+		}
+
+		// Among the highest-LEVEL spawns of a group, keep the highest-HP one as
+		// the representative. For ToB's normal tier this promotes the clean
+		// "Normal" row (full hp) over a same-level "30% Health" phase row, so the
+		// entry carries both the right label and the right hp.
+		Map<String, Integer> maxHpAtTopLevel = new HashMap<>();
+		for (JsonElement element : rows)
+		{
+			JsonObject row = element.getAsJsonObject();
+			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
+			String groupKey = nameKey + "|" + groupSuffix(row);
+			if (integer(row, "level", 0) == maxLevelByGroup.get(groupKey))
+			{
+				maxHpAtTopLevel.merge(groupKey,
+					integer(object(row, "skills"), "hp", 1), Math::max);
+			}
 		}
 
 		Set<String> emitted = new HashSet<>();
@@ -313,16 +335,17 @@ public final class DataService
 		{
 			JsonObject row = element.getAsJsonObject();
 			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
-			String groupKey = nameKey + "|" + monsterStatKey(row);
-			// Emit the HIGHEST-LEVEL spawn of each collapsed group, so the
-			// offensive sheet (used for incoming dps) matches the combat
-			// level the label displays.
+			String groupKey = nameKey + "|" + groupSuffix(row);
+			// Emit the HIGHEST-LEVEL spawn of each collapsed group (highest HP
+			// breaks ties), so the offensive sheet (used for incoming dps) and
+			// the displayed hp match the combat level the label displays.
 			if (integer(row, "level", 0) != maxLevelByGroup.get(groupKey)
+				|| integer(object(row, "skills"), "hp", 1) != maxHpAtTopLevel.get(groupKey)
 				|| !emitted.add(groupKey))
 			{
 				continue;
 			}
-			boolean distinctVersions = statKeysByName.get(nameKey).size() > 1;
+			boolean distinctVersions = groupsByName.get(nameKey).size() > 1;
 			JsonObject skills = object(row, "skills");
 			JsonObject offensive = object(row, "offensive");
 			JsonObject defensive = object(row, "defensive");
@@ -352,7 +375,7 @@ public final class DataService
 				integer(row, "id", -1),
 				string(row, "name"),
 				distinctVersions ? string(row, "version") : "",
-				maxLevelByGroup.get(nameKey + "|" + monsterStatKey(row)),
+				maxLevelByGroup.get(groupKey),
 				integer(skills, "hp", 1),
 				integer(row, "size", 1),
 				integer(skills, "def", 1),
@@ -392,6 +415,38 @@ public final class DataService
 			}
 		}
 		return styles;
+	}
+
+	/** Collapse key for a row: its stat block plus its difficulty tier, so
+	 * ToB Normal/Hard/Entry rows (identical defensive blocks, different tiers)
+	 * stay separate while same-tier duplicates still merge. */
+	private static String groupSuffix(JsonObject row)
+	{
+		return monsterStatKey(row) + "|" + difficultyTier(string(row, "version"));
+	}
+
+	/**
+	 * Difficulty tier implied by a version label. ToB (and other scaled
+	 * content) reuse one defensive stat block across modes; the tier is what
+	 * keeps them as distinct entries. Everything unlabeled - and every
+	 * within-mode phase row like "30% Health" - falls to "normal".
+	 */
+	private static String difficultyTier(String version)
+	{
+		String v = version == null ? "" : version.toLowerCase(Locale.ROOT);
+		if (v.contains("entry"))
+		{
+			return "entry";
+		}
+		if (v.contains("hard"))
+		{
+			return "hard";
+		}
+		if (v.contains("challenge"))
+		{
+			return "challenge";
+		}
+		return "normal";
 	}
 
 	/** Everything the engine reads from a monster - rows agreeing on this are one entry. */

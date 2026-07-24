@@ -208,10 +208,9 @@ public final class LoadoutData
 		{
 			return 3;   // scaled/hard variants and quest-only rows: never the default
 		}
-		// "Hard mode" stays neutral (tier 2): where a true Normal row exists it
-		// outranks hard at tier 1 anyway, and ToB's Normal rows stat-collapse
-		// INTO the Hard-labeled ones (same defensive block), so for Verzik the
-		// hard-labeled row IS the everyday fight's numbers.
+		// "Hard mode" stays neutral (tier 2): ToB's Normal rows carry "normal"
+		// and outrank Hard at tier 1, so the everyday raid leads a bare-name
+		// search while Hard and Entry stay reachable below it.
 		return 2;
 	}
 

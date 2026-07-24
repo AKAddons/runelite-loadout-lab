@@ -323,6 +323,72 @@
   "note": "Entry-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style."
  },
  {
+  "name": "Theatre of Blood (Normal)",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "The Maiden of Sugadinti",
+    "version": "Normal"
+   },
+   {
+    "name": "Pestilent Bloat",
+    "version": "Normal"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Normal",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Melee form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Normal",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Ranged form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Normal",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Magic form"
+   },
+   {
+    "name": "Sotetseg",
+    "version": "Normal"
+   },
+   {
+    "name": "Xarpus",
+    "version": "Normal mode"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Normal mode, Phase 1"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Normal mode, Phase 2"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Normal mode, Phase 3"
+   }
+  ],
+  "aliases": [
+   "tob normal",
+   "normal mode tob"
+  ],
+  "note": "Normal-mode rows for all six rooms - the regular raid. Each Nylocas Vasilias form takes damage only from its own style."
+ },
+ {
   "name": "Theatre of Blood (Hard)",
   "inventory": 8,
   "members": [
@@ -389,7 +455,7 @@
    "verzik",
    "hmt"
   ],
-  "note": "Hard-mode rows for all six rooms; the corpus merges normal-mode stats into these labels, so this is also the closest fit for the regular raid. Each Nylocas Vasilias form takes damage only from its own style."
+  "note": "Hard-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style."
  },
  {
   "name": "Tombs of Amascut",
