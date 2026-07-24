@@ -260,22 +260,9 @@ public interface LoadoutLabConfig extends Config
 
 	enum DpsFold
 	{
-		OUTPUT("In the numbers"),
-		FOOTNOTE("As a footnote"),
-		OFF("Not shown");
-
-		private final String label;
-
-		DpsFold(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		IN_THE_NUMBERS,
+		AS_A_FOOTNOTE,
+		NOT_SHOWN;
 	}
 
 	@ConfigItem(
@@ -289,7 +276,7 @@ public interface LoadoutLabConfig extends Config
 	)
 	default DpsFold specDpsOutput()
 	{
-		return DpsFold.OUTPUT;
+		return DpsFold.IN_THE_NUMBERS;
 	}
 
 	@ConfigItem(
@@ -302,7 +289,7 @@ public interface LoadoutLabConfig extends Config
 	)
 	default DpsFold thrallDpsOutput()
 	{
-		return DpsFold.OUTPUT;
+		return DpsFold.IN_THE_NUMBERS;
 	}
 
 	@ConfigItem(
@@ -385,30 +372,20 @@ public interface LoadoutLabConfig extends Config
 
 	enum MeleePrayerDefault
 	{
-		DETECT("Detect best", null),
-		NONE("None", null),
-		PIETY("Piety", "Piety"),
-		CHIVALRY("Chivalry", "Chivalry"),
-		ULTIMATE_INCREDIBLE("Ult + Incredible",
-			"Ultimate Strength + Incredible Reflexes"),
-		SUPERHUMAN_IMPROVED("Super + Improved",
-			"Superhuman Strength + Improved Reflexes"),
-		BURST_CLARITY("Burst + Clarity",
-			"Burst of Strength + Clarity of Thought");
+		DETECT_BEST(null),
+		NONE(null),
+		PIETY("Piety"),
+		CHIVALRY("Chivalry"),
+		ULT_INCREDIBLE("Ultimate Strength + Incredible Reflexes"),
+		SUPER_IMPROVED("Superhuman Strength + Improved Reflexes"),
+		BURST_CLARITY("Burst of Strength + Clarity of Thought");
 
-		private final String label;
+		/** The exact PrayerBonuses tier name the seed writes (null = none). */
 		final String pick;
 
-		MeleePrayerDefault(String label, String pick)
+		MeleePrayerDefault(String pick)
 		{
-			this.label = label;
 			this.pick = pick;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
 		}
 	}
 
@@ -421,31 +398,18 @@ public interface LoadoutLabConfig extends Config
 	)
 	default MeleePrayerDefault defaultMeleePrayer()
 	{
-		return MeleePrayerDefault.DETECT;
+		return MeleePrayerDefault.DETECT_BEST;
 	}
 
 	enum RangedPrayerDefault
 	{
-		DETECT("Detect best"),
-		NONE("None"),
-		RIGOUR("Rigour"),
-		DEADEYE("Deadeye"),
-		EAGLE_EYE("Eagle Eye"),
-		HAWK_EYE("Hawk Eye"),
-		SHARP_EYE("Sharp Eye");
-
-		private final String label;
-
-		RangedPrayerDefault(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		DETECT_BEST,
+		NONE,
+		RIGOUR,
+		DEADEYE,
+		EAGLE_EYE,
+		HAWK_EYE,
+		SHARP_EYE;
 	}
 
 	@ConfigItem(
@@ -457,31 +421,18 @@ public interface LoadoutLabConfig extends Config
 	)
 	default RangedPrayerDefault defaultRangedPrayer()
 	{
-		return RangedPrayerDefault.DETECT;
+		return RangedPrayerDefault.DETECT_BEST;
 	}
 
 	enum MagicPrayerDefault
 	{
-		DETECT("Detect best"),
-		NONE("None"),
-		AUGURY("Augury"),
-		MYSTIC_VIGOUR("Mystic Vigour"),
-		MYSTIC_MIGHT("Mystic Might"),
-		MYSTIC_LORE("Mystic Lore"),
-		MYSTIC_WILL("Mystic Will");
-
-		private final String label;
-
-		MagicPrayerDefault(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		DETECT_BEST,
+		NONE,
+		AUGURY,
+		MYSTIC_VIGOUR,
+		MYSTIC_MIGHT,
+		MYSTIC_LORE,
+		MYSTIC_WILL;
 	}
 
 	@ConfigItem(
@@ -493,32 +444,19 @@ public interface LoadoutLabConfig extends Config
 	)
 	default MagicPrayerDefault defaultMagicPrayer()
 	{
-		return MagicPrayerDefault.DETECT;
+		return MagicPrayerDefault.DETECT_BEST;
 	}
 
 	enum MeleeBoostDefault
 	{
-		DETECT("Detect best"),
-		NONE("None"),
-		SUPER_COMBAT("Super combat"),
-		DIVINE_SUPER_COMBAT("Div super combat"),
-		F2P_COMBAT("Atk/str potions"),
-		OVERLOAD("Overload"),
-		OVERLOAD_PLUS("Overload (+)"),
-		SMELLING_SALTS("Smelling salts");
-
-		private final String label;
-
-		MeleeBoostDefault(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		DETECT_BEST,
+		NONE,
+		SUPER_COMBAT,
+		DIV_SUPER_COMBAT,
+		ATK_STR_POTIONS,
+		OVERLOAD,
+		OVERLOAD_PLUS,
+		SMELLING_SALTS;
 	}
 
 	@ConfigItem(
@@ -530,32 +468,19 @@ public interface LoadoutLabConfig extends Config
 	)
 	default MeleeBoostDefault defaultMeleeBoost()
 	{
-		return MeleeBoostDefault.DETECT;
+		return MeleeBoostDefault.DETECT_BEST;
 	}
 
 	enum RangedBoostDefault
 	{
-		DETECT("Detect best"),
-		NONE("None"),
-		RANGING("Ranging potion"),
-		DIVINE_RANGING("Divine ranging"),
-		SUPER_RANGING("Super ranging"),
-		OVERLOAD("Overload"),
-		OVERLOAD_PLUS("Overload (+)"),
-		SMELLING_SALTS("Smelling salts");
-
-		private final String label;
-
-		RangedBoostDefault(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		DETECT_BEST,
+		NONE,
+		RANGING,
+		DIVINE_RANGING,
+		SUPER_RANGING,
+		OVERLOAD,
+		OVERLOAD_PLUS,
+		SMELLING_SALTS;
 	}
 
 	@ConfigItem(
@@ -567,34 +492,21 @@ public interface LoadoutLabConfig extends Config
 	)
 	default RangedBoostDefault defaultRangedBoost()
 	{
-		return RangedBoostDefault.DETECT;
+		return RangedBoostDefault.DETECT_BEST;
 	}
 
 	enum MagicBoostDefault
 	{
-		DETECT("Detect best"),
-		NONE("None"),
-		SATURATED_HEART("Saturated heart"),
-		IMBUED_HEART("Imbued heart"),
-		MAGIC("Magic potion"),
-		DIVINE_MAGIC("Divine magic"),
-		SUPER_MAGIC("Super magic"),
-		OVERLOAD("Overload"),
-		OVERLOAD_PLUS("Overload (+)"),
-		SMELLING_SALTS("Smelling salts");
-
-		private final String label;
-
-		MagicBoostDefault(String label)
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
+		DETECT_BEST,
+		NONE,
+		SATURATED_HEART,
+		IMBUED_HEART,
+		MAGIC,
+		DIVINE_MAGIC,
+		SUPER_MAGIC,
+		OVERLOAD,
+		OVERLOAD_PLUS,
+		SMELLING_SALTS;
 	}
 
 	@ConfigItem(
@@ -606,7 +518,7 @@ public interface LoadoutLabConfig extends Config
 	)
 	default MagicBoostDefault defaultMagicBoost()
 	{
-		return MagicBoostDefault.DETECT;
+		return MagicBoostDefault.DETECT_BEST;
 	}
 
 	@ConfigItem(
