@@ -37,35 +37,24 @@ public class WikiCalcLink
 	static final String SHORTLINK_API = "https://tools.runescape.wiki/osrs-dps/shortlink";
 	static final String CALC_URL = "https://tools.runescape.wiki/osrs-dps/?id=";
 
-	/** Their Prayer enum ordinals, by the tier names our labels use. */
-	private static final Map<String, Integer> PRAYER_IDS = Map.ofEntries(
-		Map.entry("Burst of Strength", 0), Map.entry("Clarity of Thought", 1),
-		Map.entry("Sharp Eye", 2), Map.entry("Mystic Will", 3),
-		Map.entry("Superhuman Strength", 4), Map.entry("Improved Reflexes", 5),
-		Map.entry("Hawk Eye", 6), Map.entry("Mystic Lore", 7),
-		Map.entry("Ultimate Strength", 8), Map.entry("Incredible Reflexes", 9),
-		Map.entry("Eagle Eye", 10), Map.entry("Mystic Might", 11),
-		Map.entry("Chivalry", 12), Map.entry("Piety", 13),
-		Map.entry("Rigour", 14), Map.entry("Augury", 15),
-		Map.entry("Deadeye", 19), Map.entry("Mystic Vigour", 20));
+	/** Their Prayer/Potion enum ordinals, from wiki_calc_ids.json (see the
+	 * resource's comment for the contract provenance). Loaded throwing -
+	 * a missing table must fail loudly, not silently empty the payload. */
+	private static final Map<String, Integer> PRAYER_IDS = new LinkedHashMap<>();
+	private static final Map<String, int[]> POTION_IDS = new LinkedHashMap<>();
 
-	/** Their Potion enum ordinals by OUR boost labels. The calculator has
-	 * no divine variants (identical numbers), so divines map to the base. */
-	private static final Map<String, int[]> POTION_IDS = Map.ofEntries(
-		Map.entry("Super combat", new int[]{14}),
-		Map.entry("Divine super combat", new int[]{14}),
-		Map.entry("Ranging potion", new int[]{7}),
-		Map.entry("Divine ranging potion", new int[]{7}),
-		Map.entry("Magic potion", new int[]{4}),
-		Map.entry("Divine magic potion", new int[]{4}),
-		Map.entry("Saturated heart", new int[]{8}),
-		Map.entry("Imbued heart", new int[]{3}),
-		Map.entry("Super ranging", new int[]{13}),
-		Map.entry("Super magic", new int[]{15}),
-		Map.entry("Overload", new int[]{5}),
-		Map.entry("Overload (+)", new int[]{6}),
-		Map.entry("Smelling salts", new int[]{9}),
-		Map.entry("Attack & strength potions", new int[]{1, 10}));
+	static
+	{
+		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(
+			"/com/loadoutlab/data/wiki_calc_ids.json");
+		com.loadoutlab.data.JsonResources.stringIntMap(root, "prayerIds", PRAYER_IDS);
+		for (Map.Entry<String, com.google.gson.JsonElement> e
+			: root.getAsJsonObject("potionIds").entrySet())
+		{
+			POTION_IDS.put(e.getKey(),
+				com.loadoutlab.data.JsonResources.intArray(e.getValue().getAsJsonArray()));
+		}
+	}
 
 	private final OkHttpClient http;
 	private final Gson gson;

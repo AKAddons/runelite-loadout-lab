@@ -143,24 +143,33 @@ public final class PrayerBonuses
 	/** A specific pick's bonuses for ONE style: the fallback's factors with
 	 * this style's replaced by the named tier (the other styles' values are
 	 * irrelevant to a single-style request). Unknown names fall back. */
-	/** name -> {accuracy, strength-or-damage} per style, best first -
-	 * mirrors bestAvailable's cascade exactly. */
-	private static final Object[][] MELEE_PICKS = {
-		{"Piety", 1.20, 1.23}, {"Chivalry", 1.15, 1.18},
-		{"Ultimate Strength + Incredible Reflexes", 1.15, 1.15},
-		{"Superhuman Strength + Improved Reflexes", 1.10, 1.10},
-		{"Burst of Strength + Clarity of Thought", 1.05, 1.05}};
-	private static final Object[][] RANGED_PICKS = {
-		{"Rigour", 1.20, 1.23}, {"Deadeye", 1.18, 1.18}, {"Eagle Eye", 1.15, 1.15},
-		{"Hawk Eye", 1.10, 1.10}, {"Sharp Eye", 1.05, 1.05}};
-	private static final Object[][] MAGIC_PICKS = {
-		{"Augury", 1.25, 4.0}, {"Mystic Vigour", 1.18, 3.0}, {"Mystic Might", 1.15, 2.0},
-		{"Mystic Lore", 1.10, 1.0}, {"Mystic Will", 1.05, 0.0}};
+	/** name -> {accuracy, strength-or-damage} per style, best first - from
+	 * prayer_picks.json (mirrors bestAvailable's cascade exactly). Loaded
+	 * throwing: these feed engine output, so a missing table must fail
+	 * loudly - the golden nets then catch any transcription slip. */
+	private static final java.util.Map<CombatStyle, Object[][]> PICKS = new java.util.EnumMap<>(CombatStyle.class);
+
+	static
+	{
+		com.google.gson.JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(
+			"/com/loadoutlab/data/prayer_picks.json");
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			com.google.gson.JsonArray rows = root.getAsJsonArray(style.name());
+			Object[][] picks = new Object[rows.size()][];
+			for (int i = 0; i < picks.length; i++)
+			{
+				com.google.gson.JsonArray row = rows.get(i).getAsJsonArray();
+				picks[i] = new Object[]{row.get(0).getAsString(),
+					row.get(1).getAsDouble(), row.get(2).getAsDouble()};
+			}
+			PICKS.put(style, picks);
+		}
+	}
 
 	private static Object[][] picksFor(CombatStyle style)
 	{
-		return style == CombatStyle.RANGED ? RANGED_PICKS
-			: style == CombatStyle.MAGIC ? MAGIC_PICKS : MELEE_PICKS;
+		return PICKS.get(style);
 	}
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with

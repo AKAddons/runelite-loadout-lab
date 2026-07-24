@@ -1,0 +1,20 @@
+{
+  "_comment": "osrs-dps-calc enum ordinals (their src/enums/Prayer.ts and Potion.ts, IMPORT_VERSION 10, verified 2026-07-23). prayerIds: tier name -> Prayer ordinal. potionIds: OUR boost label -> Potion ordinal(s); the calculator has no divine variants (identical numbers), so divines map to the base entries.",
+  "prayerIds": {
+    "Burst of Strength": 0, "Clarity of Thought": 1, "Sharp Eye": 2,
+    "Mystic Will": 3, "Superhuman Strength": 4, "Improved Reflexes": 5,
+    "Hawk Eye": 6, "Mystic Lore": 7, "Ultimate Strength": 8,
+    "Incredible Reflexes": 9, "Eagle Eye": 10, "Mystic Might": 11,
+    "Chivalry": 12, "Piety": 13, "Rigour": 14, "Augury": 15,
+    "Deadeye": 19, "Mystic Vigour": 20
+  },
+  "potionIds": {
+    "Super combat": [14], "Divine super combat": [14],
+    "Ranging potion": [7], "Divine ranging potion": [7],
+    "Magic potion": [4], "Divine magic potion": [4],
+    "Saturated heart": [8], "Imbued heart": [3],
+    "Super ranging": [13], "Super magic": [15],
+    "Overload": [5], "Overload (+)": [6], "Smelling salts": [9],
+    "Attack & strength potions": [1, 10]
+  }
+}
