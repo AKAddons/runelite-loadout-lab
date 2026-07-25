@@ -119,12 +119,14 @@ class ParetoModeMapTest
 
 		// Diagnostic only (first run 2026-07-24): 6 TIEs; NEEDS MODE =
 		// ankou -11.4 / spectre -12.7 (salve), vorkath -6.9 (salve+DHL),
-		// rev demon -14.6 (wildy weapons/avarice); apparent BEAM MISSES
-		// still under suspicion of DP constraint-cheating - KBD +10.5 is
-		// the dragonfire-shield rule my fold does not honor yet, corp +2.0
-		// and kurask +1.8 unverified, and goblin -0.41 is an OPEN QUESTION
-		// (no conditional should apply; suspect a passive-effect item or
-		// ammo interaction). Hard assertion deferred until the fold
+		// rev demon -14.6 (wildy weapons/avarice), goblin -0.41 (SOLVED by
+		// probe: Dual macuahuitl + Blood Moon SET - near-zero raw bonuses
+		// are dominated out, then the set bonus wins in calculate(); SET
+		// COMPLETIONS are the second mode category alongside item
+		// multipliers - void/crystal/blood moon/inquisitor). Apparent BEAM
+		// MISSES still suspected DP constraint-cheats: KBD +10.5 = the
+		// dragonfire-shield rule the fold does not honor yet; corp +2.0 and
+		// kurask +1.8 unverified. Hard assertion deferred until the fold
 		// carries the beam's full constraint set.
 		assertFalse(map.isEmpty());
 	}
