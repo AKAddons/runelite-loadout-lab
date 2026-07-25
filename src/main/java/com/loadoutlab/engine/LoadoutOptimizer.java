@@ -364,8 +364,11 @@ public final class LoadoutOptimizer
 	public static final class CandidatePools
 	{
 		private final List<SpellStats> spells;
-		private final List<GearItem> weapons;
-		private final Map<GearSlot, List<GearItem>> slotCandidates;
+		// Package-private: the D-7 differential harness reads the pools so
+		// engine eligibility is never reimplemented (test-found 2026-07-24:
+		// a hand-rolled candidate list silently diverged on untradeables).
+		final List<GearItem> weapons;
+		final Map<GearSlot, List<GearItem>> slotCandidates;
 		private final Map<GearItem, List<GearItem>> ammoByWeapon = new IdentityHashMap<>();
 
 		private CandidatePools(List<SpellStats> spells, List<GearItem> weapons,
