@@ -16,6 +16,7 @@ carries the real ordering.
 | [0004](docs/decisions/0004-style-tabs-and-per-result-parameters.md) | Style cards become a tab strip; search parameters move into each result | accepted |
 | [0005](docs/decisions/0005-m4-group-answers-are-kit-based.md) | M-4 group answers: kit-based sets under a swap budget, greedy-merged, with BiS under the same budget | accepted |
 | [0006](docs/decisions/0006-optimization-request-copies-by-clone.md) | OptimizationRequest copies by Object.clone with non-final fields | accepted |
+| [0007](docs/decisions/0007-pareto-frontier-dp-optimizer-with-war-semantics.md) | Replace the beam-search core with a Pareto-frontier DP carrying WAR semantics | accepted |
 
 The pre-MADR log was migrated by decision, not by entry: same-day
 addendum/clarification/correction chains were consolidated into single ADRs
