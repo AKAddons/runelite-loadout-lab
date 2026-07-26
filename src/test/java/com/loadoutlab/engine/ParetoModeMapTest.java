@@ -68,43 +68,7 @@ class ParetoModeMapTest
 			DpsResult beamBest = optimizer.optimize(data, request).get(0);
 			LoadoutOptimizer.CandidatePools pools = optimizer.preparePools(data, request);
 
-			double dpBest = 0;
-			for (GearItem weapon : pools.weapons)
-			{
-				for (WeaponStyles.MeleeStyle style : WeaponStyles.melee(weapon))
-				{
-					ParetoFrontier frontier = new ParetoFrontier();
-					for (Map.Entry<GearSlot, List<GearItem>> slot : pools.slotCandidates.entrySet())
-					{
-						if (slot.getKey() == GearSlot.SHIELD && weapon.isTwoHanded())
-						{
-							continue;
-						}
-						List<GearItem> candidates = new ArrayList<>();
-						for (GearItem item : slot.getValue())
-						{
-							if (item != null)
-							{
-								candidates.add(item);
-							}
-						}
-						String type = style.attackType;
-						frontier.fold(slot.getKey(), candidates,
-							item -> item.getOffensive().getAttackBonus(type),
-							item -> item.getBonuses().getStrength());
-					}
-					for (ParetoFrontier.State state : frontier.states())
-					{
-						Map<GearSlot, GearItem> gear = new EnumMap<>(state.picks);
-						gear.put(GearSlot.WEAPON, weapon);
-						DpsResult result = calculator.calculate(request, new Loadout(gear));
-						if (result != null && result.getDps() > dpBest)
-						{
-							dpBest = result.getDps();
-						}
-					}
-				}
-			}
+			double dpBest = ParetoModes.bestOverModes(request, pools, calculator);
 
 			double beam = beamBest.getDps();
 			String verdict = Math.abs(dpBest - beam) < 1e-6 ? "TIE"
@@ -113,7 +77,7 @@ class ParetoModeMapTest
 			map.put(monster.getName(), String.format("beam %.3f dp %.3f  %s", beam, dpBest, verdict));
 		}
 
-		StringBuilder report = new StringBuilder("\n=== D-7 mode-necessity map (melee, game-best pools) ===\n");
+		StringBuilder report = new StringBuilder("\n=== D-7 MODED map (melee, game-best pools) ===\n");
 		map.forEach((m, v) -> report.append(String.format("  %-22s %s%n", m, v)));
 		System.out.println(report);
 
