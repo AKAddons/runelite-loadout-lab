@@ -81,6 +81,17 @@ class ParetoModeMapTest
 		map.forEach((m, v) -> report.append(String.format("  %-22s %s%n", m, v)));
 		System.out.println(report);
 
+		// PROBE FINDINGS (2026-07-24, probes deleted per playbook): the 5
+		// beam misses by name - inquisitor set completions the width cut
+		// starves (gargoyle/kurask/rev demon heads+bodies), Torva-over-
+		// faceguard at corp (base mode), and vorkath +1.04% under the
+		// dragonfire-shield rule (an unconstrained hand probe hit 8.838
+		// with avernic defender - ILLEGAL, the shield rule explains it;
+		// lesson: every probe must carry the full constraint set). OPEN:
+		// vorkath's DP winner wears mixed hide top over torva under
+		// constraints - print the FULL winning set (weapon included) to
+		// adjudicate; torva dominates mixed on both fold dims, so its
+		// survival implies an evaluation conditional or a pool gap.
 		// Diagnostic only (first run 2026-07-24): 6 TIEs; NEEDS MODE =
 		// ankou -11.4 / spectre -12.7 (salve), vorkath -6.9 (salve+DHL),
 		// rev demon -14.6 (wildy weapons/avarice), goblin -0.41 (SOLVED by
