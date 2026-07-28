@@ -29,7 +29,12 @@ public class AnalogTest
 			null, 0, CandidateMode.ALL_STANDARD, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(ownedCoif, 1)), true), 1)
 			.withMaxTradeables(3);
-		DpsResult best = new LoadoutOptimizer().optimize(data, req).get(0);
+		LoadoutOptimizer optimizer = new LoadoutOptimizer();
+		// Mirror production: the dps-neutral fill is what populates a head
+		// slot the raw beam legally leaves empty (post Summer Sweep-Up
+		// 2026-07-22, every risk-surviving ranged head is dps-neutral here).
+		DpsResult best = optimizer.fillDpsNeutralSlots(data, req,
+			optimizer.optimize(data, req).get(0));
 		return best.getLoadout().get(com.loadoutlab.data.GearSlot.HEAD);
 	}
 
