@@ -25,7 +25,7 @@ import java.util.Set;
  * and the executing thread. There is no {@code parallelStream}, ForkJoin,
  * or {@code CompletableFuture} anywhere in src/main. If the optimizer
  * ever adopts those, this constraint becomes load-bearing and the fields
- * must go back to final (see DECISIONS.md).
+ * must go back to final (see ADR-0006 in docs/decisions).
  */
 public final class OptimizationRequest implements Cloneable
 {
