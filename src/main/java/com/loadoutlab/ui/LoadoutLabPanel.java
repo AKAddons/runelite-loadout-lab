@@ -231,14 +231,6 @@ public class LoadoutLabPanel extends PluginPanel
 		public boolean spellbookSwapVengeance;
 	}
 
-	/** Open the shown setup in the official wiki calculator (plugin-side:
-	 * shortlink POST + browser). Null hides the footnote chip. */
-	public interface WikiCalcOpener
-	{
-		void open(MonsterStats mob, DpsResult shown, int dartId, String assumes,
-			boolean onSlayerTask, boolean inWilderness);
-	}
-
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
 	public interface DreamToggle
 	{
@@ -1227,14 +1219,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The entry the panel-global affordances (toggles, notes, bank tools)
 	 * act on. With a one-entry page this is always page.get(0). */
 	private ResultEntry active;
-	/** Async wiki thumbnails for the mob rows (null in tests - rows keep
-	 * their text-only look). */
-	private MonsterIcons monsterIcons;
-
-	public void setMonsterIcons(MonsterIcons monsterIcons)
-	{
-		this.monsterIcons = monsterIcons;
-	}
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -1773,13 +1757,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Config hook: which detail lines and controls to show. Re-renders the
 	 * cards from the cached results (no recompute - display only) and updates
 	 * the top-control visibility. Saved notes are never touched. */
-	private WikiCalcOpener wikiCalcOpener;
-
-	public void setWikiCalcOpener(WikiCalcOpener opener)
-	{
-		this.wikiCalcOpener = opener;
-	}
-
 	public void setDisplayOptions(DisplayOptions options)
 	{
 		this.displayOptions = options;
@@ -5046,26 +5023,6 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
-			if (monsterIcons != null)
-			{
-				// The mob's wiki render rides the row; text-only until it
-				// loads (or when the wiki has no picture for it).
-				ImageIcon mobIcon = monsterIcons.get(mob.getName(), mob.getVersion(), 20, () ->
-				{
-					ImageIcon ready = monsterIcons.get(mob.getName(), mob.getVersion(), 20, null);
-					if (ready != null)
-					{
-						name.setIcon(ready);
-						name.setIconTextGap(6);
-						name.revalidate();
-					}
-				});
-				if (mobIcon != null)
-				{
-					name.setIcon(mobIcon);
-					name.setIconTextGap(6);
-				}
-			}
 			row.add(name, BorderLayout.CENTER);
 			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			east.setOpaque(false);
@@ -5554,24 +5511,6 @@ public class LoadoutLabPanel extends PluginPanel
 		actions.setOpaque(false);
 		actions.setAlignmentX(LEFT_ALIGNMENT);
 		actions.add(copyChip);
-		// The exact-setup cross-check (field ask 2026-07-23): full setups
-		// can only ride a URL as a shortlink id, so the click uploads the
-		// shown setup to the wiki's share service first.
-		StyleResult wikiResult = entry.results == null ? null : entry.results.get(selected);
-		DpsResult wikiShown = wikiResult == null ? null
-			: bis ? wikiResult.overallBest
-			: wikiResult.owned == null || wikiResult.owned.isEmpty() ? null : wikiResult.owned.get(0);
-		if (wikiCalcOpener != null && wikiShown != null)
-		{
-			String assumes = bis ? wikiResult.gameBoostLabel : wikiResult.boostLabel;
-			GearItem dart = loadedDart(wikiShown);
-			actions.add(actionChip("Wiki calc",
-				"Open this exact setup in the official wiki calculator"
-					+ " (shares the setup via the wiki's shortlink service)",
-				() -> wikiCalcOpener.open(entry.mob(), wikiShown,
-					dart == null ? -1 : dart.getId(), assumes,
-					entry.onSlayerTask, effectiveWilderness(entry))));
-		}
 		actions.add(discordChip);
 		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE,
 			actions.getPreferredSize().height));
