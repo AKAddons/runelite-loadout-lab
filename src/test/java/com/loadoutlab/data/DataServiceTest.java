@@ -46,6 +46,25 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void questIssueKitIsNotStandardGear()
+	{
+		// The Silvthrill ballista and its javelins ship upstream as ordinary
+		// gear with real stats (ranged +125 / ranged str +124), but they are
+		// handed out during The Blood Moon Rises and destroyed on completion
+		// - no account can bring them anywhere. Left standard, the optimizer
+		// recommends a weapon nobody can own (see refresh_data.py
+		// NONSTANDARD_OVERRIDES).
+		LoadoutData data = new DataService().load();
+		for (int id : new int[]{33800, 33801})
+		{
+			GearItem item = data.getGear(id);
+			Assert.assertNotNull("missing gear id " + id, item);
+			Assert.assertFalse(item.getName() + " must not be standard gear",
+				item.isStandardGear());
+		}
+	}
+
+	@Test
 	public void releasedYamaGearIsStandardNotFrozenOffAsPreRelease()
 	{
 		// Field report: oathplate never appeared. best-dps froze these ids

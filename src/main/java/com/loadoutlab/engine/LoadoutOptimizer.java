@@ -1001,6 +1001,17 @@ public final class LoadoutOptimizer
 			{
 				score += 4_000.0;
 			}
+			// Same lesson, golembane: the granite hammer's +30% accuracy AND
+			// +30% damage vs golems live in the DPS model, and its raw stats
+			// (crush +57, str +56) sit well below the weapon cut - so it was
+			// pruned before the bonus could ever count. Field-found
+			// 2026-08-01: a hasta outranked it at the Mad Angel, and at
+			// Dawn/Dusk (crush defence 0) it never appeared at all.
+			if (request.getMonster().hasAttribute("golem")
+				&& (name.contains("granite hammer") || name.contains("barronite mace")))
+			{
+				score += 4_000.0;
+			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score
