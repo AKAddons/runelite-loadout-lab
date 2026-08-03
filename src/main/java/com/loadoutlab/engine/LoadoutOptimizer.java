@@ -1005,8 +1005,8 @@ public final class LoadoutOptimizer
 			// +30% damage vs golems live in the DPS model, and its raw stats
 			// (crush +57, str +56) sit well below the weapon cut - so it was
 			// pruned before the bonus could ever count. Field-found
-			// 2026-08-02: at Dusk and Dawn (crush defence 0) the hammer never
-			// appeared at all, and a hasta was suggested instead.
+			// 2026-08-01: a hasta outranked it at the Mad Angel, and at
+			// Dawn/Dusk (crush defence 0) it never appeared at all.
 			if (request.getMonster().hasAttribute("golem")
 				&& (name.contains("granite hammer") || name.contains("barronite mace")))
 			{
@@ -1031,6 +1031,21 @@ public final class LoadoutOptimizer
 			}
 		}
 		if (request.getStyle() == CombatStyle.RANGED && (name.contains("crystal helm") || name.contains("crystal body") || name.contains("crystal legs") || name.contains("bow of faerdhinen") || name.contains("crystal bow")))
+		{
+			score += 2_500.0;
+		}
+		// Void: the whole set's value lives in the DPS model, the pieces
+		// carry ~zero raw stats - without a boost the zero-score prune
+		// drops the helm/gloves outright and a stocked bank's top-N cut
+		// drops the top/robe, so the set could NEVER assemble for a
+		// well-geared account (field question 2026-07-17 - it only worked
+		// when you owned little else). The style's own helm gates entry.
+		if (name.contains("void knight top") || name.contains("elite void top")
+			|| name.contains("void knight robe") || name.contains("elite void robe")
+			|| name.contains("void knight gloves")
+			|| (request.getStyle() == CombatStyle.RANGED && name.contains("void ranger helm"))
+			|| (request.getStyle() == CombatStyle.MAGIC && name.contains("void mage helm"))
+			|| (request.getStyle() == CombatStyle.MELEE && name.contains("void melee helm")))
 		{
 			score += 2_500.0;
 		}
