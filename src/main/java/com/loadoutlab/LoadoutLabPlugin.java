@@ -153,6 +153,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private SpriteManager spriteManager;
 
 	@Inject
+	private okhttp3.OkHttpClient okHttpClient;
+
+	private com.loadoutlab.ui.MonsterIcons monsterIcons;
+
+	@Inject
 	private ChatboxItemSearch chatboxItemSearch;
 
 	@Inject
@@ -454,7 +459,15 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				panel.setDisplayOptions(buildDisplayOptions());
 				panel.setSupplyDefaults(buildSupplyDefaults());
 				panel.setGlobalFilters(globalFiltersView());
+				WikiCalcLink wikiCalc = new WikiCalcLink(okHttpClient, gson);
+				panel.setWikiCalcOpener((mob, shown, dartId, assumes, onTask, wildy) ->
+					wikiCalc.open(mob, shown, dartId, assumes,
+						realLevels != null ? realLevels : PlayerLevels.MAXED,
+						boostedLevels != null ? boostedLevels : PlayerLevels.MAXED,
+						onTask, wildy));
 				panel.setDeveloperMode(developerMode);
+				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
+				panel.setMonsterIcons(monsterIcons);
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
@@ -473,6 +486,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	@Override
 	protected void shutDown()
 	{
+		if (monsterIcons != null)
+		{
+			monsterIcons.shutdown();
+			monsterIcons = null;
+		}
 		if (bankOverlay != null)
 		{
 			overlayManager.remove(bankOverlay);

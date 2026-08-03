@@ -11,14 +11,16 @@
         "engine/LoadoutOptimizer.java",
         "engine/DpsCalculator.java",
         "engine/DpsResult.java",
-        "engine/Loadout.java"
+        "engine/Loadout.java",
+        "WikiCalcLink.java"
       ],
       "tests": [
         "optimizer/OptimizerServiceTest.java",
-        "engine/LoadoutOptimizerTest.java"
+        "engine/LoadoutOptimizerTest.java",
+        "WikiCalcLinkTest.java"
       ],
       "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs). 2026-07-31 (0.3.4): the footnote's 'Wiki calc' chip and its shortlink POST (WikiCalcLink) are held out of the Plugin Hub build - new network I/O forces manual maintainer review; it returns in its own hub PR."
+      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs)."
     },
     {
       "id": "game-best",
@@ -455,15 +457,18 @@
       "code": [
         "ui/LoadoutLabPanel.java",
         "optimizer/OptimizerService.java",
-        "data/MonsterGroups.java"
+        "data/MonsterGroups.java",
+        "ui/MonsterIcons.java"
       ],
       "tests": [
         "optimizer/RosterOptimizerTest.java",
         "optimizer/GroupSimScopingTest.java",
-        "profile/RosterGolden.java"
+        "profile/RosterGolden.java",
+        "ui/MonsterIconsTest.java"
       ],
       "since": "0.3.0",
-      "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot."
+      "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
+      "notes": "2026-07-31 (0.3.5): the mob rows carry the wiki's monster picture. The file name comes from the bundled corpus's own 'image' value (100% coverage, per-form for versioned mobs), so a thumbnail is exactly ONE request to Special:FilePath - the earlier name-guessing fan-out (up to 15 sequential requests per unknown mob, retried every restart) is gone. Memory + disk cached under .runelite/loadout-lab/npc-icons."
     },
     {
       "id": "inventory-budget",
