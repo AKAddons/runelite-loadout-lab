@@ -56,7 +56,7 @@ public final class Commands
 	public static Command toggleDream(DreamStore store, int itemId, String label)
 	{
 		boolean turnOn = !store.isDreamed(itemId);
-		return of((turnOn ? "Add dream item " : "Remove dream item ") + label,
+		return of((turnOn ? "Sim item " : "Stop simming ") + label,
 			() -> { if (store.isDreamed(itemId) != turnOn) store.toggle(itemId); return true; },
 			() -> { if (store.isDreamed(itemId) == turnOn) store.toggle(itemId); return true; });
 	}

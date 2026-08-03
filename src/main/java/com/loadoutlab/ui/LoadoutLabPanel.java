@@ -523,9 +523,11 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Viewing the BiS answer instead of yours (the Yours|BiS toggle). */
 		boolean viewingBis;
 		boolean noteCollapsed = true;
-		/** Dragonfire: gear protection by default; the shield cell flips
-		 * this result to an assumed super antifire (and back). */
-		boolean superAntifireAssumed;
+		/** Dragonfire mode: 0 = gear (a shield is required in the set),
+		 * 1 = regular antifire assumed (shield STILL required - only the
+		 * combo fully blocks; the honesty rule refuses half-protection),
+		 * 2 = super antifire assumed (shield slot freed). */
+		int antifireMode;
 		/** Whole-result fold: collapsed to the header's one-line summary. */
 		boolean folded;
 		/** The style tab in view; null = strongest owned set (the default). */
@@ -675,44 +677,9 @@ public class LoadoutLabPanel extends PluginPanel
 			JPopupMenu menu = new JPopupMenu();
 			// Entry point for the first stored-elsewhere item (before any
 			// exists there is no label or right-click row to reach it from).
-			JMenuItem addStored = new JMenuItem("Add a stored-elsewhere item...");
-			addStored.addActionListener(ev -> showAddStoredDialog());
-			menu.add(addStored);
-			// Dream items were only reachable by right-clicking a green
-			// cell that happened to be on screen (field report) - this is
-			// the proactive entry point, plus the un-dream list so a
-			// dreamed item that never wins a slot stays reachable.
-			JMenuItem addDream = new JMenuItem("Dream an item (consider as owned)...");
-			addDream.addActionListener(ev -> showAddDreamDialog());
-			menu.add(addDream);
-			Set<Integer> dreamed = dreamView.snapshot();
-			if (!dreamed.isEmpty())
-			{
-				javax.swing.JMenu dreamMenu = new javax.swing.JMenu(
-					"Dream items (" + dreamed.size() + ")");
-				List<GearItem> dreamGear = new ArrayList<>();
-				for (int id : dreamed)
-				{
-					GearItem gear = data.getGear(id);
-					if (gear != null)
-					{
-						dreamGear.add(gear);
-					}
-				}
-				dreamGear.sort(Comparator.comparing(GearItem::label));
-				for (GearItem gear : dreamGear)
-				{
-					JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
-					undream.addActionListener(ev ->
-					{
-						dreamToggle.toggle(gear.getId());
-						recompute();
-					});
-					dreamMenu.add(undream);
-				}
-				menu.add(dreamMenu);
-			}
-			// Mob-specific actions live on the style cards and the
+			// Stored-elsewhere and simmed items moved to their own entry
+			// points (the stored label's menu + the green +N chip); the
+			// mob-specific actions live on the style cards and the
 			// "This mob" line - the header menu stays plugin-wide.
 			JMenuItem joinDiscord = new JMenuItem("Join our Discord");
 			joinDiscord.addActionListener(ev -> LinkBrowser.browse(DISCORD_URL));
@@ -741,7 +708,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Exclusions (red -N) and dreams (green +N) live ABOVE the search
 		// bar (field spec 2026-07-17) - compact rounded chips; clicking
 		// manages the list. Counts refresh via refreshCountChips().
-		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		JPanel countRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
 		countRow.setOpaque(false);
 		countRow.setAlignmentX(LEFT_ALIGNMENT);
 		countRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
@@ -761,7 +728,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamCountChip.setOpaque(true);
 		dreamCountChip.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		dreamCountChip.setFont(dreamCountChip.getFont().deriveFont(Font.BOLD, 12f));
-		dreamCountChip.setToolTipText("Dream items (considered as owned) - click to manage");
+		dreamCountChip.setToolTipText("Simmed items (considered as owned) - click to manage");
 		dreamCountChip.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		dreamCountChip.addMouseListener(new MouseAdapter()
 		{
@@ -997,6 +964,9 @@ public class LoadoutLabPanel extends PluginPanel
 		add(resultsPanel, BorderLayout.CENTER);
 
 		statusLabel.setForeground(MUTED);
+		// The empty-state prompt reads as a caption: centered, italic.
+		statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		statusLabel.setFont(statusLabel.getFont().deriveFont(Font.ITALIC));
 		add(statusLabel, BorderLayout.SOUTH);
 
 		searchDebounce = new Timer(SEARCH_DEBOUNCE_MS, e -> runSearch());
@@ -1007,42 +977,10 @@ public class LoadoutLabPanel extends PluginPanel
 			public void removeUpdate(DocumentEvent e) { onSearchEdited(); }
 			public void changedUpdate(DocumentEvent e) { onSearchEdited(); }
 		});
-		// Right-click a search hit: add it to the page WITHOUT dropping the
-		// current results (multi-mob canvas M-2). Plain click still replaces.
-		monsterList.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				maybePopup(e);
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e)
-			{
-				maybePopup(e);
-			}
-
-			private void maybePopup(MouseEvent e)
-			{
-				if (!e.isPopupTrigger())
-				{
-					return;
-				}
-				int idx = monsterList.locationToIndex(e.getPoint());
-				if (idx < 0)
-				{
-					return;
-				}
-				MonsterStats hit = monsterModel.get(idx);
-				JPopupMenu menu = new JPopupMenu();
-				JMenuItem add = new JMenuItem(selectedMonster == null
-					? "Open" : "Add to view");
-				add.addActionListener(a -> addToView(hit));
-				menu.add(add);
-				menu.show(monsterList, e.getX(), e.getY());
-			}
-		});
+		// The search-hit right-click ("Add to view" - a SECOND result on
+		// the page) left this release: the + Add mob row grows a roster on
+		// the card, and a plain click opens a fresh result. The addToView
+		// machinery stays for the group expansion to come (M-3).
 		monsterList.addListSelectionListener(e ->
 		{
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
@@ -1070,7 +1008,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private boolean superAntifireAssumed()
 	{
-		return active != null && active.superAntifireAssumed;
+		return active != null && active.antifireMode == 2;
 	}
 
 	private Map<CombatStyle, StyleResult> lastResults()
@@ -2147,13 +2085,13 @@ public class LoadoutLabPanel extends PluginPanel
 		excludeCountChip.setForeground(excluded > 0
 			? new Color(220, 120, 120) : new Color(140, 110, 110));
 		excludeCountChip.setBorder(new RoundedBorder(excluded > 0
-			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+			? new Color(170, 90, 90) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 		int dreams = dreamView.snapshot().size();
 		dreamCountChip.setText("+" + dreams);
 		dreamCountChip.setForeground(dreams > 0
 			? new Color(130, 200, 130) : new Color(110, 140, 110));
 		dreamCountChip.setBorder(new RoundedBorder(dreams > 0
-			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+			? new Color(95, 160, 95) : ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 	}
 
 	/** The dream chip's menu: each dream un-dreamable, plus the add entry. */
@@ -2172,7 +2110,7 @@ public class LoadoutLabPanel extends PluginPanel
 		dreamGear.sort(Comparator.comparing(GearItem::label));
 		for (GearItem gear : dreamGear)
 		{
-			JMenuItem undream = new JMenuItem("Stop dreaming of " + gear.label());
+			JMenuItem undream = new JMenuItem("Stop simming " + gear.label());
 			undream.addActionListener(ev ->
 			{
 				dreamToggle.toggle(gear.getId());
@@ -2185,7 +2123,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			menu.addSeparator();
 		}
-		JMenuItem add = new JMenuItem("Dream an item (consider as owned)...");
+		JMenuItem add = new JMenuItem("Sim an item (consider as owned)...");
 		add.addActionListener(ev -> showAddDreamDialog());
 		menu.add(add);
 		menu.show((Component) e.getSource(), 0, ((Component) e.getSource()).getHeight());
@@ -2207,7 +2145,18 @@ public class LoadoutLabPanel extends PluginPanel
 			});
 			menu.add(entry);
 		}
-		menu.show(exclusionsLabel, e.getX(), e.getY());
+		if (menu.getComponentCount() > 0)
+		{
+			menu.addSeparator();
+		}
+		JMenuItem addExclusion = new JMenuItem("Exclude an item (search)...");
+		addExclusion.addActionListener(a -> showAddExclusionDialog());
+		menu.add(addExclusion);
+		// Anchor to the CLICKED component - the old label left the layout
+		// when the -N chip replaced it (field bug: dead click; show() on a
+		// non-displayable component throws).
+		Component source = (Component) e.getSource();
+		menu.show(source, 0, source.getHeight());
 	}
 
 	private void refreshStoredLabel()
@@ -2759,11 +2708,36 @@ public class LoadoutLabPanel extends PluginPanel
 		});
 	}
 
+	/** Chatbox item search -> exclude any item from every suggestion
+	 * (the chip's add path - right-clicking a suggested cell still works
+	 * for items already on screen). */
+	private void showAddExclusionDialog()
+	{
+		itemSearch.search("Exclude an item", (itemId, name) ->
+		{
+			GearItem gear = data.getGear(itemId);
+			if (gear == null)
+			{
+				JOptionPane.showMessageDialog(this,
+					name + " is not combat gear in the dataset - only equipment"
+						+ " joins the loadout search.",
+					"Exclude an item", JOptionPane.INFORMATION_MESSAGE);
+				return;
+			}
+			if (!exclusionView.snapshot().contains(gear.getId()))
+			{
+				exclusionToggle.toggle(gear.getId());
+			}
+			refreshExclusionsLabel();
+			recompute();
+		});
+	}
+
 	/** Chatbox item search -> dream an unowned item into the owned pool
 	 * (same green-border language as the right-click path). */
 	private void showAddDreamDialog()
 	{
-		itemSearch.search("Dream an item (counts as owned)", (itemId, name) ->
+		itemSearch.search("Sim an item (counts as owned)", (itemId, name) ->
 		{
 			GearItem gear = data.getGear(itemId);
 			if (gear == null)
@@ -2771,14 +2745,14 @@ public class LoadoutLabPanel extends PluginPanel
 				JOptionPane.showMessageDialog(this,
 					name + " is not combat gear in the dataset - only equipment"
 						+ " affects the loadout search.",
-					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
 			if (ownedCheck.owns(gear.getId()))
 			{
 				JOptionPane.showMessageDialog(this,
-					"You already own " + gear.label() + " - no dream needed.",
-					"Dream an item", JOptionPane.INFORMATION_MESSAGE);
+					"You already own " + gear.label() + " - no sim needed.",
+					"Sim an item", JOptionPane.INFORMATION_MESSAGE);
 				return;
 			}
 			if (!dreamView.snapshot().contains(gear.getId()))
@@ -2902,8 +2876,8 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						boolean dreamed = dreamView.snapshot().contains(item.getId());
 						JMenuItem dream = new JMenuItem(dreamed
-							? "Stop dreaming of " + item.label()
-							: "Dream: consider " + item.label() + " as owned");
+							? "Stop simming " + item.label()
+							: "Sim: consider " + item.label() + " as owned");
 						dream.addActionListener(a ->
 						{
 							dreamToggle.toggle(item.getId());
@@ -3259,7 +3233,7 @@ public class LoadoutLabPanel extends PluginPanel
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
-				entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
+				entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 				parsedBudgetGp(entry.upgradeBudget),
 				com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 				() -> statusLabel.setText(" "));
@@ -3268,7 +3242,7 @@ public class LoadoutLabPanel extends PluginPanel
 		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
-			entry.superAntifireAssumed && DragonfireRules.breathesFire(entry.mob()),
+			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
 			parsedBudgetGp(entry.upgradeBudget),
 			com.loadoutlab.optimizer.OptimizerService.OptimizeMode.values()[entry.optimizeMode],
 			() -> statusLabel.setText(" "));
@@ -3634,7 +3608,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// The mob list leads (field spec): build or trim the roster while
 		// the optimizer runs - each edit supersedes the in-flight compute
 		// via the service ticket. The mascot performs BELOW the list.
-		column.add(mobLensRows(entry));
+		column.add(mobLensRows(entry, null, false));
 		column.add(paramChipRow(entry));
 		// The roster picks today's mood (weighted by season); see MascotRoster.
 		if (withMascot && page.size() == 1
@@ -3701,6 +3675,49 @@ public class LoadoutLabPanel extends PluginPanel
 			toggles.add(paramChip("Protect item", entry.protectItem, true,
 				"Protect Item keeps a 4th item (not while skulled)",
 				() -> asActive(entry, protectItem::doClick)));
+		}
+		boolean fiery = false;
+		for (MonsterStats m : entry.mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				fiery = true;
+				break;
+			}
+		}
+		if (fiery)
+		{
+			// Dragonfire protection mode (field spec), cycling gear ->
+			// regular -> super. Regular keeps the shield REQUIRED (only
+			// the combo fully blocks - the honesty rule refuses half
+			// protection); its dps effect lands with antifire-aware
+			// incoming, the chips admit the potion today. Super frees
+			// the shield slot.
+			int mode = entry.antifireMode;
+			String[] antifireLabels = {"Antifire: gear", "Antifire: regular", "Super antifire"};
+			String[] antifireTips = {
+				"A dragonfire shield is required in the set; click to also"
+					+ " assume a regular antifire (shield + potion = immune)",
+				"Regular antifire assumed WITH the required shield - the"
+					+ " combo fully blocks dragonfire; click for super"
+					+ " antifire (no shield needed)",
+				"Super antifire assumed - the shield slot is free; click to"
+					+ " require the shield alone again"};
+			String[] antifireSteps = {"Require dragonfire shield",
+				"Assume regular antifire", "Assume super antifire"};
+			toggles.add(paramChip(antifireLabels[mode], mode > 0, true,
+				antifireTips[mode],
+				() -> asActive(entry, () ->
+				{
+					int next = (entry.antifireMode + 1) % 3;
+					int prev = entry.antifireMode;
+					recordStep(antifireSteps[next],
+						() -> setAntifireMode(next), () -> setAntifireMode(prev));
+					if (historyControl == null)
+					{
+						setAntifireMode(next);
+					}
+				})));
 		}
 		if (toggles.getComponentCount() > 0)
 		{
@@ -3837,7 +3854,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The roster rows (card anatomy #1): name + hp per mob, an
 	 * INFORMATIONAL LENS - clicking flips whose numbers display below;
 	 * the shared set never changes. */
-	private javax.swing.JComponent mobLensRows(ResultEntry entry)
+	private javax.swing.JComponent mobLensRows(ResultEntry entry,
+		CombatStyle viewedStyle, boolean bis)
 	{
 		JPanel rows = new JPanel();
 		rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
@@ -3864,6 +3882,24 @@ public class LoadoutLabPanel extends PluginPanel
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
 			row.add(name, BorderLayout.CENTER);
+			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+			east.setOpaque(false);
+			// The chosen set's dps vs THIS mob (field spec): the viewed
+			// style + Yours|BiS side, flipping with the tabs and toggle.
+			double rowDps = mobRowDps(entry, index, viewedStyle, bis);
+			if (rowDps > 0)
+			{
+				JLabel dps = new JLabel(String.format("%.2f", rowDps));
+				dps.setForeground(lensed ? GOOD : new Color(150, 170, 150));
+				dps.setFont(dps.getFont().deriveFont(Font.BOLD, 12f));
+				dps.setToolTipText("The shared set's dps against this mob"
+					+ (bis ? " (BiS view)" : "") + " - " + viewedStyle.toString().toLowerCase());
+				// The viewed style's skill sprite rides the number (field
+				// spec) - same icon language as the tabs.
+				attachSprite(dps, AssumeIcons.styleSprite(viewedStyle));
+				dps.setIconTextGap(3);
+				east.add(dps);
+			}
 			MouseAdapter lens = new MouseAdapter()
 			{
 				@Override
@@ -3889,7 +3925,11 @@ public class LoadoutLabPanel extends PluginPanel
 						removeMobFromEntry(entry, index);
 					}
 				});
-				row.add(remove, BorderLayout.EAST);
+				east.add(remove);
+			}
+			if (east.getComponentCount() > 0)
+			{
+				row.add(east, BorderLayout.EAST);
 			}
 			rows.add(row);
 			rows.add(Box.createVerticalStrut(2));
@@ -3914,6 +3954,33 @@ public class LoadoutLabPanel extends PluginPanel
 		rows.add(add);
 		rows.add(Box.createVerticalStrut(4));
 		return rows;
+	}
+
+	/** The viewed side's dps against one mob of the roster: the per-mob
+	 * bundle when present (roster), the live map for the lensed single. */
+	private double mobRowDps(ResultEntry entry, int index, CombatStyle style, boolean bis)
+	{
+		if (style == null)
+		{
+			return 0;
+		}
+		Map<CombatStyle, StyleResult> map = null;
+		if (entry.perMobResults != null && index < entry.perMobResults.size())
+		{
+			map = entry.perMobResults.get(index);
+		}
+		else if (entry.mobs.size() == 1)
+		{
+			map = entry.results;
+		}
+		StyleResult r = map == null ? null : map.get(style);
+		if (r == null)
+		{
+			return 0;
+		}
+		DpsResult shown = bis ? r.overallBest
+			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+		return shown == null ? 0 : shown.getDps();
 	}
 
 	/** The + row's mob picker: incremental search, double-click/Enter adds
@@ -4040,7 +4107,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// body, with the style tabs BETWEEN the gear view and Yours|BiS -
 		// the strip is built here (it needs the roster-wide order) and
 		// rides into the card body.
-		column.add(mobLensRows(entry));
+		column.add(mobLensRows(entry, selected, bis));
 		column.add(paramChipRow(entry));
 		column.add(styleCard(entry, selected, results.get(selected), hasBis, bis,
 			styleTabs(entry, results, styleOrder, selected, bis)));
@@ -4282,6 +4349,12 @@ public class LoadoutLabPanel extends PluginPanel
 			else if (superAntifireAssumed())
 			{
 				antifireTooltip = "Super antifire (right-click the shield cell to flip back)";
+			}
+			else if (active != null && active.antifireMode == 1
+				&& DragonfireRules.breathesFire(entry.mob()))
+			{
+				antifireTooltip = "Regular antifire assumed - with the"
+					+ " required shield, dragonfire is fully blocked";
 			}
 			// The chips render in the stat panel beside the gear, not here.
 			renderingChips = assumesChips(chipLabel,
@@ -4762,9 +4835,14 @@ public class LoadoutLabPanel extends PluginPanel
 
 	private void setAntifireTo(boolean assume)
 	{
-		if (active != null && active.superAntifireAssumed != assume)
+		setAntifireMode(assume ? 2 : 0);
+	}
+
+	private void setAntifireMode(int mode)
+	{
+		if (active != null && active.antifireMode != mode)
 		{
-			active.superAntifireAssumed = assume;
+			active.antifireMode = mode;
 			recompute();
 		}
 	}
@@ -5163,15 +5241,19 @@ public class LoadoutLabPanel extends PluginPanel
 			panel.add(renderingChips);
 			panel.add(Box.createVerticalStrut(4));
 		}
+		Color statText = new Color(200, 200, 200);
 		if (displayOptions.maxHit)
 		{
 			panel.add(statLine("Max: " + result.getMaxHit(),
-				"Max hit " + result.getMaxHit(), GOOD, null));
+				"Max hit " + result.getMaxHit(), statText, new HitsplatIcon(12)));
 		}
 		if (displayOptions.accuracy)
 		{
 			String acc = Math.round(result.getAccuracy() * 100) + "%";
-			panel.add(statLine("Acc: " + acc, "Hit chance " + acc, GOOD, null));
+			JLabel accLine = statLine("Acc: " + acc, "Hit chance " + acc, statText, null);
+			attachSprite(accLine, net.runelite.api.gameval.SpriteID.Staticons.ATTACK);
+			accLine.setIconTextGap(3);
+			panel.add(accLine);
 		}
 		if (incoming != null && displayOptions.damageTaken)
 		{
@@ -5187,7 +5269,7 @@ public class LoadoutLabPanel extends PluginPanel
 					? "This monster's attacks are beyond the stat-sheet model"
 						+ " - unknown, not zero"
 					: incomingTooltip(incoming),
-				new Color(210, 140, 130), null);
+				statText, null);
 			if (!unmodeled)
 			{
 				// The protect-prayer sprite IS the pray call.
@@ -5210,7 +5292,7 @@ public class LoadoutLabPanel extends PluginPanel
 			// Protect Item assumed (field spec): the prayer sprite beside
 			// the other defensive facts.
 			JLabel kept = statLine("kept: 4",
-				"Protect Item assumed - a 4th item is kept on death", MUTED, null);
+				"Protect Item assumed - a 4th item is kept on death", statText, null);
 			attachSprite(kept, net.runelite.api.gameval.SpriteID.Prayeron.PROTECT_ITEM);
 			kept.setIconTextGap(3);
 			panel.add(kept);
@@ -5220,8 +5302,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			// Compact type on the line; the stance ("controlled" - Defence
 			// xp!) survives in the tooltip.
-			panel.add(statLine("Style: " + styleText,
-				"Use this attack style: " + result.getAttackType(), INFO, null));
+			JLabel styleLine = statLine("Style: " + styleText,
+				"Use this attack style: " + result.getAttackType(), statText, null);
+			attachSprite(styleLine, net.runelite.api.gameval.SpriteID.Combaticons.SWORD_SLASH);
+			styleLine.setIconTextGap(3);
+			panel.add(styleLine);
 		}
 		String type = result.getAttackType();
 		int dartIdx = type.indexOf(" - ");
@@ -5235,7 +5320,7 @@ public class LoadoutLabPanel extends PluginPanel
 			String tier = dartName.toLowerCase().replace(" darts", "").replace(" dart", "");
 			JLabel dart = statLine(capitalize(tier),
 				"Loaded with " + dartName + " - included in the dps"
-					+ " (right-click to exclude)", INFO, null);
+					+ " (right-click to exclude)", statText, null);
 			GearItem dartItem = loadedDart(result);
 			if (dartItem != null)
 			{
@@ -5253,7 +5338,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				// A magic set without an autocast spell is a powered staff.
 				JLabel builtIn = statLine("Built-in",
-					"Powered staff - casts its own spell", INFO, null);
+					"Powered staff - casts its own spell", statText, null);
 				GearItem weapon = result.getLoadout().getWeapon();
 				if (weapon != null)
 				{
@@ -5266,7 +5351,7 @@ public class LoadoutLabPanel extends PluginPanel
 			{
 				JLabel spell = statLine(spellName,
 					"Autocast " + spellName + (spellName.contains("Demonbane")
-						? " - assumes Mark of Darkness" : ""), INFO, null);
+						? " - assumes Mark of Darkness" : ""), statText, null);
 				int sprite = AssumeIcons.spellSprite(spellName);
 				if (sprite >= 0)
 				{
@@ -5279,13 +5364,17 @@ public class LoadoutLabPanel extends PluginPanel
 		String book = spellBookText(result);
 		if (displayOptions.attackStyle && book != null)
 		{
-			panel.add(statLine("Book: " + book, "The autocast spell's spellbook", INFO, null));
+			JLabel bookLine = statLine("Book: " + book,
+				"The autocast spell's spellbook", statText, null);
+			attachSprite(bookLine, net.runelite.api.gameval.SpriteID.Staticons.MAGIC);
+			bookLine.setIconTextGap(3);
+			panel.add(bookLine);
 		}
 		int prayer = result.getLoadout().getBonuses().getPrayer();
 		if (displayOptions.prayerBonus && prayer != 0)
 		{
 			JLabel pray = statLine(String.format("%+d", prayer),
-				"Gear prayer bonus - slower prayer drain", MUTED, null);
+				"Gear prayer bonus - slower prayer drain", statText, null);
 			if (PRAYER_ICON != null)
 			{
 				pray.setIcon(new BackedIcon(PRAYER_ICON));
@@ -5297,7 +5386,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
 				"<html>Conditional bonuses applied:<br>"
-					+ String.join("<br>", result.getCountedBonuses()) + "</html>", INFO, null);
+					+ String.join("<br>", result.getCountedBonuses()) + "</html>", statText, null);
 			counting.setIcon(new BackedIcon(new PlusStarIcon(11)));
 			counting.setIconTextGap(3);
 			panel.add(counting);
@@ -5332,6 +5421,48 @@ public class LoadoutLabPanel extends PluginPanel
 			line.setIconTextGap(3);
 		}
 		return line;
+	}
+
+	/** A painted red hitsplat for the max-hit line (glyph-safe). */
+	private static final class HitsplatIcon implements javax.swing.Icon
+	{
+		private final int size;
+
+		HitsplatIcon(int size)
+		{
+			this.size = size;
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			try
+			{
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(new Color(150, 30, 30));
+				g2.fillRoundRect(x, y + 1, size - 1, size - 2, 5, 5);
+				g2.setColor(new Color(200, 60, 60));
+				g2.drawRoundRect(x, y + 1, size - 2, size - 3, 5, 5);
+			}
+			finally
+			{
+				g2.dispose();
+			}
+		}
 	}
 
 	/** A painted circled-i for the mechanics note - amber like the note

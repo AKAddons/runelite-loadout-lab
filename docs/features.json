@@ -96,9 +96,9 @@
     },
     {
       "id": "dream-items",
-      "title": "Dream items",
+      "title": "Simulated items",
       "group": "Gear sources",
-      "anchor": "dream-items",
+      "anchor": "simulated-items",
       "media": "docs/img/dream-items.png",
       "code": [
         "collection/DreamStore.java",
@@ -110,7 +110,7 @@
         "engine/DreamAndBudgetTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The header '...' menu also offers 'Dream an item (consider as owned)...' plus a Dream items (N) un-dream list."
+      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list."
     },
     {
       "id": "upgrade-budget",
