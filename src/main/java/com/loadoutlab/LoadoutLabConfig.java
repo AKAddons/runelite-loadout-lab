@@ -254,6 +254,32 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "defaultUpgradeBudget",
+		name = "Default upgrade budget",
+		description = "Seed every new result's upgrade budget (750k, 1m, 1.5b;"
+			+ " - = unlimited; empty = owned gear only)",
+		section = controls,
+		position = 90
+	)
+	default String defaultUpgradeBudget()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "defaultRiskCap",
+		name = "Default wilderness risk cap",
+		description = "Seed every new result's wilderness risk cap in gp"
+			+ " (25k, 1m...; empty = unconstrained)",
+		section = controls,
+		position = 91
+	)
+	default String defaultRiskCap()
+	{
+		return "";
+	}
+
 	// --- Connections -----------------------------------------------------
 
 	@ConfigItem(

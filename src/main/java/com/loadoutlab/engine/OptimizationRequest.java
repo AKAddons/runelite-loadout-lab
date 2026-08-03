@@ -436,6 +436,7 @@ public final class OptimizationRequest
 		return copy.build();
 	}
 
+
 	public boolean isInWilderness()
 	{
 		return inWilderness;

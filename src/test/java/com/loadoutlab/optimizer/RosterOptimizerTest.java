@@ -1,6 +1,7 @@
 package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
@@ -151,6 +152,127 @@ public class RosterOptimizerTest
 				Assert.assertEquals("the roster shares a single BiS set",
 					setIds(m0.overallBest.getLoadout()), setIds(m1.overallBest.getLoadout()));
 			}
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void zulrahFormsShareOneSetWithPerFormDps() throws Exception
+	{
+		// Field bug report 2026-07-17: all three forms showed the SAME dps.
+		// The corpus rows disagree hard (ranged def 300 / 50 / 0), so the
+		// shared ranged set MUST produce three different numbers.
+		LoadoutData data = new DataService().load();
+		List<MonsterStats> forms = new ArrayList<>();
+		for (MonsterStats hit : data.searchMonsters("zulrah", 10))
+		{
+			if ("Zulrah".equals(hit.getName()))
+			{
+				forms.add(hit);
+			}
+		}
+		Assert.assertEquals("corpus premise: three Zulrah forms", 3, forms.size());
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(12926, 1);  // toxic blowpipe
+		owned.put(11840, 1);  // dragon boots
+		owned.put(2503, 1);   // black d'hide body
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, forms, owned);
+			Assert.assertEquals(3, roster.result.perMob.size());
+			List<Double> dps = new ArrayList<>();
+			List<List<Integer>> sets = new ArrayList<>();
+			for (Map<CombatStyle, OptimizerService.StyleResult> perMob : roster.result.perMob)
+			{
+				OptimizerService.StyleResult ranged = perMob.get(CombatStyle.RANGED);
+				Assert.assertNotNull(ranged);
+				Assert.assertFalse(ranged.owned.isEmpty());
+				dps.add(ranged.owned.get(0).getDps());
+				sets.add(setIds(ranged.owned.get(0).getLoadout()));
+			}
+			// ONE set...
+			Assert.assertEquals(sets.get(0), sets.get(1));
+			Assert.assertEquals(sets.get(0), sets.get(2));
+			// ...three different numbers.
+			Assert.assertTrue("form dps must differ: " + dps,
+				Math.abs(dps.get(0) - dps.get(1)) > 1e-6
+					|| Math.abs(dps.get(1) - dps.get(2)) > 1e-6);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void bigHpMobDominatesTheSharedSetChoice() throws Exception
+	{
+		// HP-weighted objective (field decision 2026-07-17): Vorkath (~750hp,
+		// undead - salve territory) vs a goblin (5hp) - the shared melee
+		// neck must be the big mob's preference, the goblin along for the
+		// ride. (A mob the set cannot damage contributes zero everywhere,
+		// so an unhittable giant drops out of the choice naturally.)
+		LoadoutData data = new DataService().load();
+		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Assert.assertTrue("premise: vorkath dwarfs the goblin",
+			vorkath.getHitpoints() >= 10 * goblin.getHitpoints());
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // abyssal whip
+		owned.put(12018, 1);  // salve amulet(ei)
+		owned.put(19553, 1);  // amulet of torture
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(vorkath, goblin), owned);
+			OptimizerService.StyleResult melee = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertNotNull(melee);
+			Assert.assertFalse(melee.owned.isEmpty());
+			GearItem neck = melee.owned.get(0).getLoadout().get(GearSlot.NECK);
+			Assert.assertNotNull(neck);
+			Assert.assertEquals("the 750hp undead's salve wins the shared neck",
+				"salve amulet(ei)", neck.getNameLower());
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void rosterSharesOneSpecWeaponAcrossMobs() throws Exception
+	{
+		// Solo, Graardor picks the warhammer (drain pays off over 255hp)
+		// and a goblin picks the dagger (raw burst) - proven by
+		// OptimizerServiceTest. With ZERO swaps the spec weapon is part of
+		// the carried set (field decision 2026-07-17): the roster brings
+		// ONE, HP-weighted like the worn set - Graardor's warhammer wins.
+		LoadoutData data = new DataService().load();
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip
+		owned.put(1215, 1);   // dragon dagger
+		owned.put(13576, 1);  // dragon warhammer
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(graardor, goblin), owned);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			OptimizerService.StyleResult m1 = roster.result.perMob.get(1).get(CombatStyle.MELEE);
+			Assert.assertNotNull(m0.specWeapon);
+			Assert.assertNotNull(m1.specWeapon);
+			Assert.assertEquals("one spec weapon for the whole trip",
+				m0.specWeapon.getId(), m1.specWeapon.getId());
+			Assert.assertEquals("the 255hp boss's warhammer wins the slot",
+				13576, m0.specWeapon.getId());
+			// The numbers still flip per mob.
+			Assert.assertTrue(m0.specExpectedDamage > 0);
+			Assert.assertTrue(m1.specExpectedDamage > 0);
 		}
 		finally
 		{

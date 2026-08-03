@@ -489,6 +489,10 @@ public final class IncomingDpsCalculator
 				: accuracyFor(style, off, def, defenceLevel, magicLevel);
 			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
 			dpsPer[i] = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
+			if (attack.isAvoidable())
+			{
+				continue; // dodged by the standard play - no prayer saving
+			}
 			double saving = dpsPer[i] * attack.getShare() * (1 - attack.getPrayerFactor());
 			if (saving > 0)
 			{
@@ -512,6 +516,15 @@ public final class IncomingDpsCalculator
 		for (int i = 0; i < attacks.size(); i++)
 		{
 			BossIncomingOverrides.Attack attack = attacks.get(i);
+			if (attack.isAvoidable())
+			{
+				// In the threat list for the tooltip (what it WOULD hit),
+				// out of both totals - the standard play dodges it.
+				threats.add(new StyleThreat(
+					displayStyle(attack.getStyle()) + " (avoidable - assumed dodged)",
+					dpsPer[i], attack.getMaxHit(), true, false, attack.getShare(), 1));
+				continue;
+			}
 			boolean prayedClass = prayer != null
 				&& prayer.equals(protectPrayerFor(attack.getStyle()))
 				&& attack.getPrayerFactor() < 1;
