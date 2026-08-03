@@ -16,9 +16,6 @@ public final class PrayerBonuses
 	private String meleeName = "";
 	private String rangedName = "";
 	private String magicName = "";
-	/** Mystic Vigour's separate x1.18 magic accuracy factor - the official
-	 * calc applies it with its own floor AFTER Augury's 1.25. */
-	private final double magicAccuracySecondary;
 	private final double magicDamagePercent;
 
 	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy)
@@ -33,7 +30,6 @@ public final class PrayerBonuses
 		this.rangedAccuracy = rangedAccuracy;
 		this.rangedStrength = rangedStrength;
 		this.magicAccuracy = magicAccuracy;
-		this.magicAccuracySecondary = levelFor(magicDamagePercent);
 		this.magicDamagePercent = magicDamagePercent;
 	}
 
@@ -104,17 +100,19 @@ public final class PrayerBonuses
 		boolean augury = levels.getPrayer() >= 77 && unlocks.augury();
 		boolean vigour = levels.getPrayer() >= 77 && unlocks.mysticVigour();
 		double magic = augury ? 1.25 : vigour ? 1.18 : levels.getPrayer() >= 45 ? 1.15 : levels.getPrayer() >= 27 ? 1.10 : levels.getPrayer() >= 9 ? 1.05 : 1.0;
-		// Augury (4%) and Mystic Vigour (3%) stack - verified vs the official calc.
-		double magicDamage = (augury ? 4.0 : 0.0) + (vigour ? 3.0 : 0.0)
-			+ (!augury && !vigour ? (levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0) : 0.0);
+		// All magic prayers share one prayer group in game - Augury and
+		// Mystic Vigour cannot be active together (the wiki calc engine
+		// stacks whatever it is fed, which is how the old 7% slipped past
+		// the harness). Augury strictly dominates when both are unlocked.
+		double magicDamage = augury ? 4.0 : vigour ? 3.0
+			: levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0;
 		PrayerBonuses result = new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
 		result.meleeName = meleeName;
 		result.rangedName = rigour ? "Rigour" : deadeye ? "Deadeye"
 			: levels.getPrayer() >= 44 ? "Eagle Eye"
 			: levels.getPrayer() >= 26 ? "Hawk Eye"
 			: levels.getPrayer() >= 8 ? "Sharp Eye" : "";
-		result.magicName = augury && vigour ? "Augury + Mystic Vigour"
-			: augury ? "Augury" : vigour ? "Mystic Vigour"
+		result.magicName = augury ? "Augury" : vigour ? "Mystic Vigour"
 			: levels.getPrayer() >= 45 ? "Mystic Might"
 			: levels.getPrayer() >= 27 ? "Mystic Lore"
 			: levels.getPrayer() >= 9 ? "Mystic Will" : "";
@@ -238,17 +236,6 @@ public final class PrayerBonuses
 	public double getRangedStrength()
 	{
 		return rangedStrength;
-	}
-
-	/** 1.18 when Mystic Vigour is up (77+ prayer), else 1.0. */
-	private static double levelFor(double magicDamagePercent)
-	{
-		return magicDamagePercent >= 7.0 ? 1.18 : 1.0;
-	}
-
-	public double getMagicAccuracySecondary()
-	{
-		return magicAccuracySecondary;
 	}
 
 	public double getMagicAccuracy()

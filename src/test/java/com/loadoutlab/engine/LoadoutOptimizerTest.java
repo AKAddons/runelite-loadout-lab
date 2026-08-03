@@ -311,6 +311,31 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
+	public void tiedOrnamentVariantsLoseToTheDominatingMaxKit()
+	{
+		// Field bug (2026-07-17): on the MAGIC tab the Avernic treads (et)
+		// kit ties the (max) kit exactly - same magic damage, defence and
+		// prayer - so data order picked the shown feet. The cross-style
+		// damage tie-break must hand the slot to the strictly-dominating
+		// (max) (better melee + ranged strength on top of the tied magic).
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("ankou", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(11907, 1);  // trident of the seas - the magic weapon
+		owned.put(31093, 1);  // Avernic treads (et)
+		owned.put(31097, 1);  // Avernic treads (max)
+		OptimizationRequest request = new OptimizationRequest(
+			monster, CombatStyle.MAGIC, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.OWNED_ONLY, true, false, new OwnedItems(owned, true), 10);
+		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
+		Assert.assertFalse(results.isEmpty());
+		GearItem feet = results.get(0).getLoadout().get(GearSlot.FEET);
+		Assert.assertNotNull("both tread kits are owned - one must be worn", feet);
+		Assert.assertEquals("Avernic treads (max)", feet.getName());
+	}
+
+	@Test
 	public void ownedGearDoesNotConsumePurchaseBudget()
 	{
 		LoadoutData data = new DataService().load();
@@ -649,8 +674,10 @@ public class LoadoutOptimizerTest
 		Assert.assertEquals(1.20, prayers.getRangedAccuracy(), 0.00001);
 		Assert.assertEquals(1.23, prayers.getRangedStrength(), 0.00001);
 		Assert.assertEquals(1.25, prayers.getMagicAccuracy(), 0.00001);
-		// Augury 4% + Mystic Vigour 3% stack (verified vs the official calc).
-		Assert.assertEquals(7.0, prayers.getMagicDamagePercent(), 0.00001);
+		// Augury alone - magic prayers share one prayer group in game, so
+		// Mystic Vigour can never stack on top (field report 2026-07-16).
+		Assert.assertEquals(4.0, prayers.getMagicDamagePercent(), 0.00001);
+		Assert.assertEquals("Augury", prayers.nameFor(CombatStyle.MAGIC));
 	}
 
 	@Test

@@ -20,8 +20,12 @@ listed below.
   per-category style table; melee converged to <=0.2%.
 - ~~Tumeken's shadow~~ FIXED: the shadow now triples the magic ATTACK bonus
   too (was damage only); shadow-zulrah converged to -2.3%.
-- ~~Sanguinesti / prayer stacking~~ FIXED: Augury (4%) + Mystic Vigour (3%)
-  stack to 7% magic damage; sang-goblin converged to -0.5%.
+- ~~Sanguinesti / prayer stacking~~ CORRECTED 2026-07-16: the earlier
+  "fix" stacked Augury (4%) + Mystic Vigour (3%) to 7% magic damage and
+  converged vs the official calc - but only because the harness fed the
+  wiki engine both prayers, and it stacks whatever it is given. In game
+  all magic prayers share one prayer group, so only one can be active;
+  the engine now assumes Augury alone (4%) when unlocked.
 - ~~Autocast speed~~ FIXED: casting is 5 ticks (harmonised 4), not the
   wand's melee speed - upstream overstated every autocast DPS by 25%.
 - ~~Demonbane~~ FIXED to official/wiki values: spells +20% accuracy only
@@ -37,9 +41,10 @@ listed below.
   default phase): guaranteed hits; 20% damage reduction bypassed by
   demonbane and abyssal weapons. All TD scenarios within 3.4%.
 - ~~Bone staff vs Scurrius / systematic magic accuracy~~ FIXED 2026-07-06:
-  Mystic Vigour also grants x1.18 magic ACCURACY (applied with its own
-  floor after Augury) plus the +2 accurate stance - every magic sweep row
-  converged to 0.0%.
+  the +2 accurate stance was missing from effective magic level - every
+  magic sweep row converged to 0.0%. (The same fix originally layered
+  Mystic Vigour's x1.18 accuracy after Augury's floor; that second step
+  died with the prayer-stacking correction above.)
 - ~~Style immunities / NPC rules~~ ADDED 2026-07-06 (MonsterMechanics,
   id lists vendored from the official calc): magic/ranged/melee immunity
   lists (Zulrah meleeable with a polearm - both engines now agree at
@@ -134,3 +139,27 @@ enhancing barrows set effects (Dharok's, Ahrim's, Guthan's...) - is NOT
 modeled; when set effects land in DpsCalculator, the damned will re-earn
 its slot through dps with full barrows worn, no special-casing needed.
 Until then it only surfaces when no glory is owned.
+
+## Moons of Peril sets (2026-07-17)
+
+All three set effects are modeled (broken pieces count, per the wiki):
+
+- **Bloodrager** (blood moon + dual macuahuitl): the weapon's two hits
+  are CHAINED (first rolls max/2, second remainder only when the first
+  lands) and the full set's expected attack interval is
+  `speed - (acc/3 + acc^2*2/9)` - both mirror the official calc.
+- **Eclipse** (eclipse moon + atlatl): the atlatl's BASE damage side is
+  official-mirrored (Strength level, worn melee strength bonuses, melee
+  salve/black-mask variants, ranged void kept; accuracy stays ranged).
+  The burn set effect goes BEYOND the official calc (it flags moon set
+  effects unsupported): wiki average of ~2 burn damage per landed hit,
+  added as `acc x 2` expected, gated on the corpus burn-immunity column
+  (Normal/Strong immunity blocks it, Weak does not).
+- **Frostweaver** (blue moon + spear): also beyond-official - Standard
+  binds and Ancient ice casts add a 20% (Arceuus grasps 50%) chance of
+  an instant spear hit, modeled as chance x the spear's plain melee
+  expectation with no melee prayer (you are on a magic prayer while
+  casting). Chips name all three effects.
+
+Not modeled: burn stack-cap/target-death truncation (the wiki's own
+average ignores it too), and Frostweaver's manual-trigger variants.

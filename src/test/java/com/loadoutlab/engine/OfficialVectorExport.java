@@ -315,7 +315,9 @@ public class OfficialVectorExport
 		switch (style)
 		{
 			case RANGED: return List.of("RIGOUR");
-			case MAGIC: return List.of("AUGURY", "MYSTIC_VIGOUR");
+			// Augury only - the wiki engine stacks any prayers it is fed,
+			// but the game's prayer groups forbid two magic prayers at once.
+			case MAGIC: return List.of("AUGURY");
 			default: return List.of("PIETY");
 		}
 	}

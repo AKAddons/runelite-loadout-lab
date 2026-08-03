@@ -72,6 +72,29 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
+	public void krakenRollsMagicAccuracyButPiercesPrayer()
+	{
+		// Wiki: "uses typeless Magic, and as such Protect from Magic does
+		// not provide any degree of damage reduction", yet it "can hit very
+		// hard [28] but has very poor accuracy" - so the model is a normal
+		// magic ACCURACY roll (magic defence gear is the real mitigation)
+		// whose damage pierces prayer entirely (field report 2026-07-17).
+		IncomingDpsCalculator.Result tanky = IncomingDpsCalculator.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 400, 0), 99, 99);
+		Assert.assertTrue(tanky.fullyModeled);
+		Assert.assertNull(tanky.protectPrayer);
+		Assert.assertTrue(tanky.unprayedDps > 0);
+		Assert.assertEquals(tanky.unprayedDps, tanky.totalDps, 1e-9);
+		Assert.assertEquals(28, threat(tanky, "magic").maxHit);
+		// The accuracy roll is real: magic defence lowers the number.
+		IncomingDpsCalculator.Result naked = IncomingDpsCalculator.calculate(
+			named("Kraken", Arrays.asList("Typeless Magic")),
+			armour(0, 0, 0, 0, 0), 99, 99);
+		Assert.assertTrue(tanky.totalDps < naked.totalDps);
+	}
+
+	@Test
 	public void partialPierceAttacksAlwaysContributeSomething()
 	{
 		// Corporeal Beast: magic carries TRUE max 65 with prayerFactor
@@ -145,7 +168,7 @@ public class BossIncomingOverridesTest
 			"commander zilyana", "zulrah", "vorkath", "cerberus", "callisto",
 			"artio", "vet'ion", "calvar'ion", "venenatis", "spindel",
 			"chaos elemental", "king black dragon", "alchemical hydra",
-			"corporeal beast");
+			"corporeal beast", "kraken");
 		for (String name : expected)
 		{
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides

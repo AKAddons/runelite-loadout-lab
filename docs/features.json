@@ -110,7 +110,7 @@
         "engine/DreamAndBudgetTest.java"
       ],
       "since": "0.1.0",
-      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot."
+      "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The header '...' menu also offers 'Dream an item (consider as owned)...' plus a Dream items (N) un-dream list."
     },
     {
       "id": "upgrade-budget",

@@ -248,6 +248,11 @@ public class OptimizerServiceTest
 			Assert.assertNotNull(melee.gameSpec);
 			Assert.assertNotNull(melee.gameSpecWeapon);
 			Assert.assertTrue(melee.gameSpecExpectedDamage >= melee.specExpectedDamage);
+			// Both sides of the Yours|BiS toggle carry their own defensive
+			// story - the BiS DTPS is computed vs the BiS armour, not yours.
+			Assert.assertNotNull(melee.incoming);
+			Assert.assertNotNull(melee.gameIncoming);
+			Assert.assertTrue(melee.gameIncoming.unprayedDps > 0);
 		}
 		finally
 		{

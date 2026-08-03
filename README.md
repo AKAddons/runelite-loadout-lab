@@ -175,6 +175,9 @@ spellbook to your setup and the suggested spell and set adjust to match.
 
 Right-click any suggestion you do not own ("what if I had a tbow?") to
 highlight it as an aspirational pick and see the set it would build.
+Any item can be dreamed proactively from the header "..." menu ("Dream
+an item"), which also lists your current dreams so one that never wins
+a slot can still be un-dreamed.
 
 ![Dream items](docs/img/dream-items.png)
 
