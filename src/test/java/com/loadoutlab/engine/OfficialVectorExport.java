@@ -33,6 +33,10 @@ public class OfficialVectorExport
 	private static final String[][] SCENARIOS = {
 		// name | monster | version | style | weapon | ammo | forced spell | extra gear (slayer helm implies on-task)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
+		// Elemental weakness stacking (field dispute 2026-07-23, first Wiki
+		// calc button catch): the +severity% adds from the BASE roll after
+		// slayer helm + DHW multiply - Iron dragon is earth-weak 50%.
+		{"dhw-irondragon", "Iron dragon", "Standard", "MAGIC", "Dragon hunter wand", null, "Earth Surge", "Slayer helmet (i)"},
 		// Revenant conditionals: byName resolves the Charged versions
 		// (they precede Uncharged in the corpus); the harness infers the
 		// inWilderness buff from the Revenant monster name.

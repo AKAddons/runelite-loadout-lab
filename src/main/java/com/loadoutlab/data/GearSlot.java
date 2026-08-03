@@ -3,6 +3,8 @@ package com.loadoutlab.data;
 
 import java.util.Locale;
 
+import lombok.Getter;
+
 public enum GearSlot
 {
 	HEAD("head"),
@@ -17,6 +19,7 @@ public enum GearSlot
 	FEET("feet"),
 	RING("ring");
 
+	@Getter
 	private final String jsonName;
 
 	GearSlot(String jsonName)
@@ -24,10 +27,6 @@ public enum GearSlot
 		this.jsonName = jsonName;
 	}
 
-	public String getJsonName()
-	{
-		return jsonName;
-	}
 
 	public static GearSlot fromJson(String value)
 	{

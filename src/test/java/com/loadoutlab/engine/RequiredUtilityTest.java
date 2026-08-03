@@ -49,7 +49,7 @@ public class RequiredUtilityTest
 	@Test
 	public void theGameBestZulrahSetCarriesARecoilSource()
 	{
-		OptimizationRequest req = new OptimizationRequest(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		Assert.assertTrue(hasRecoil(best(req)));
@@ -60,7 +60,7 @@ public class RequiredUtilityTest
 	{
 		// Own tbow + arrows + an UNCHARGED suffering (i): the set must show
 		// the Recoil-charged form (20657) in the ring slot.
-		OptimizationRequest req = new OptimizationRequest(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(20997, 1, 11212, 200, 19710, 1)), true), 1);
@@ -73,7 +73,7 @@ public class RequiredUtilityTest
 	@Test
 	public void owningNoRecoilSourceLeavesTheSetUnchanged()
 	{
-		OptimizationRequest req = new OptimizationRequest(zulrah, CombatStyle.RANGED,
+		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(data.canonicalizeOwned(Map.of(20997, 1, 11212, 200)), true), 1);

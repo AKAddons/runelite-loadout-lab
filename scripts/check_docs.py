@@ -85,6 +85,8 @@ def main() -> int:
         for p in sorted(img_dir.iterdir()):
             if p.name.startswith("."):
                 continue  # .gitkeep and other dotfiles are not media
+            if p.name == "hero.png":
+                continue  # the README masthead lives above the audited guide
             if p.is_file() and f"docs/img/{p.name}" not in seen_media:
                 gaps.append(f"orphaned media: docs/img/{p.name} (no registry entry)")
 

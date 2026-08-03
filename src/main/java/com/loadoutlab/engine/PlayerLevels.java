@@ -1,18 +1,27 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import net.runelite.api.Skill;
+import java.util.Map;
 
 public final class PlayerLevels
 {
 	public static final PlayerLevels MAXED = new PlayerLevels(99, 99, 99, 99, 99, 99, 99);
 
+	@Getter
 	private final int attack;
+	@Getter
 	private final int strength;
+	@Getter
 	private final int defence;
+	@Getter
 	private final int ranged;
+	@Getter
 	private final int magic;
+	@Getter
 	private final int prayer;
+	@Getter
 	private final int hitpoints;
 
 	public PlayerLevels(int attack, int strength, int defence, int ranged, int magic, int prayer, int hitpoints)
@@ -42,7 +51,7 @@ public final class PlayerLevels
 			profile.level(Skill.HITPOINTS));
 	}
 
-	public static PlayerLevels from(java.util.Map<Skill, Integer> levels)
+	public static PlayerLevels from(Map<Skill, Integer> levels)
 	{
 		if (levels == null || levels.isEmpty())
 		{
@@ -95,40 +104,5 @@ public final class PlayerLevels
 	private static int clamp(int value)
 	{
 		return Math.max(1, Math.min(126, value));
-	}
-
-	public int getAttack()
-	{
-		return attack;
-	}
-
-	public int getStrength()
-	{
-		return strength;
-	}
-
-	public int getDefence()
-	{
-		return defence;
-	}
-
-	public int getRanged()
-	{
-		return ranged;
-	}
-
-	public int getMagic()
-	{
-		return magic;
-	}
-
-	public int getPrayer()
-	{
-		return prayer;
-	}
-
-	public int getHitpoints()
-	{
-		return hitpoints;
 	}
 }

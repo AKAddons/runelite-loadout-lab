@@ -76,7 +76,7 @@ class CommandsTest
 		store.toggle(FANG);
 		store.toggle(11230);
 
-		assertTrue(history.execute(Commands.clearExclusions(store)));
+		assertTrue(history.execute(TestCommands.clearExclusions(store)));
 		assertTrue(store.snapshot().isEmpty());
 		assertEquals(1, history.undoSize());
 
@@ -94,7 +94,7 @@ class CommandsTest
 	void clearEmptyNoop()
 	{
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
-		assertFalse(history.execute(Commands.clearExclusions(store)));
+		assertFalse(history.execute(TestCommands.clearExclusions(store)));
 		assertFalse(history.canUndo());
 	}
 
@@ -229,5 +229,38 @@ class CommandsTest
 		history.undo();
 		assertEquals("Super combat potion(4)", mobs.allFilterItems(MOB).get("ALL").get(12695),
 			"the persisted display name must survive the undo");
+	}
+
+	@Test
+	@DisplayName("a whole-group sim is one compound: every member gets it, one undo clears it")
+	void wholeGroupSimIsOneCompound()
+	{
+		// Mirrors the plugin's simForMobs override (field request
+		// 2026-07-18: sim/exclude for the whole group).
+		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
+		int[] group = {2042, 2043, 2044};
+		history.beginCompound("Sim for the whole group: Abyssal whip");
+		for (int id : group)
+		{
+			history.execute(Commands.simForMob(mobs, id, WHIP, "Abyssal whip"));
+		}
+		history.endCompound();
+		for (int id : group)
+		{
+			assertEquals(java.util.Set.of(WHIP), mobs.simsFor(id));
+		}
+
+		assertTrue(history.undo(), "the compound undoes as one entry");
+		for (int id : group)
+		{
+			assertTrue(mobs.simsFor(id).isEmpty(), "one undo clears every member");
+		}
+		assertFalse(history.undo(), "nothing else on the stack");
+
+		assertTrue(history.redo(), "and redoes as one");
+		for (int id : group)
+		{
+			assertEquals(java.util.Set.of(WHIP), mobs.simsFor(id));
+		}
 	}
 }

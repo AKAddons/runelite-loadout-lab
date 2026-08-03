@@ -15,7 +15,7 @@ import static com.loadoutlab.ui.MascotArt.SCALE;
  * (the LL in Loadout Lab) do the bouncing: feet planted, thigh segments
  * squash and stretch at the knee as the body bobs, little arms pump and
  * snap. Sprite slices and the leg renderer live in MascotArt (shared with
- * MascotChef). Unlike the deterministic moods it keeps a bit of state (the
+ * every other mood). Unlike the deterministic moods it keeps a bit of state (the
  * juice slosh spring), reset in onStart.
  */
 class MascotSpinner extends Mascot

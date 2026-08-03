@@ -1,7 +1,7 @@
 package com.loadoutlab.data;
 
-import java.util.Locale;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Monsters fought in the Wilderness, where dying to a PKer risks your
@@ -20,70 +20,8 @@ import java.util.Set;
  */
 public final class WildernessMonsters
 {
-	private static final Set<String> NAMES = Set.of(
-		"callisto",
-		"artio",
-		"vet'ion",
-		"calvar'ion",
-		"venenatis",
-		"spindel",
-		"chaos elemental",
-		"chaos fanatic",
-		"crazy archaeologist",
-		"scorpia",
-		"king black dragon",
-		"revenant imp",
-		"revenant goblin",
-		"revenant pyrefiend",
-		"revenant hobgoblin",
-		"revenant cyclops",
-		"revenant hellhound",
-		"revenant demon",
-		"revenant ork",
-		"revenant dark beast",
-		"revenant knight",
-		"revenant dragon",
-		"revenant maledictus",
-		// Wilderness Slayer Cave + common wildy mobs (wiki-listed 2026-07-08)
-		"green dragon",
-		"black dragon",
-		"lava dragon",
-		"abyssal demon",
-		"ankou",
-		"bandit",
-		"black demon",
-		"dust devil",
-		"greater demon",
-		"greater nechryael",
-		"hellhound",
-		"ice giant",
-		"jelly",
-		"lesser demon",
-		"chaos druid",
-		"elder chaos druid",
-		"dark warrior",
-		"rogue",
-		"pirate",
-		"earth warrior",
-		"ent",
-		"runite golem",
-		"mammoth",
-		"magic axe",
-		"bloodveld",
-		"ice warrior",
-		"moss giant",
-		"fire giant",
-		"skeleton",
-		"zombie",
-		"ghost",
-		"grizzly bear",
-		"king scorpion",
-		"scorpion",
-		"poison spider",
-		"chaos dwarf",
-		"black knight",
-		"skeleton hellhound");
-
+	/** Curated lists live in wilderness_monsters.json (hub token cap). */
+	private static final Set<String> NAMES = new HashSet<>();
 	/**
 	 * The subset that exists ONLY in the Wilderness - fighting one of these
 	 * IS being in the Wilderness, so the wilderness-weapon buff and the risk
@@ -91,42 +29,18 @@ public final class WildernessMonsters
 	 * elsewhere (Catacombs hellhounds, Taverley black dragons...), so those
 	 * take the user's "In the Wilderness" toggle instead (audit A3.1).
 	 * KBD note: the lair is reached through level-42 Wilderness; it stays
-	 * exclusive here so the risk UI covers the walk, matching the pre-toggle
+	 * exclusive so the risk UI covers the walk, matching the pre-toggle
 	 * behaviour.
 	 */
-	private static final Set<String> EXCLUSIVE = Set.of(
-		"callisto",
-		"artio",
-		"vet'ion",
-		"calvar'ion",
-		"venenatis",
-		"spindel",
-		"chaos elemental",
-		"chaos fanatic",
-		"crazy archaeologist",
-		"scorpia",
-		"king black dragon",
-		"revenant imp",
-		"revenant goblin",
-		"revenant pyrefiend",
-		"revenant hobgoblin",
-		"revenant cyclops",
-		"revenant hellhound",
-		"revenant demon",
-		"revenant ork",
-		"revenant dark beast",
-		"revenant knight",
-		"revenant dragon",
-		"revenant maledictus",
-		"lava dragon",
-		"elder chaos druid",
-		"mammoth",
-		"magic axe",
-		"ent",
-		"runite golem",
-		"dark warrior",
-		"earth warrior",
-		"skeleton hellhound");
+	private static final Set<String> EXCLUSIVE = new HashSet<>();
+
+	static
+	{
+		com.google.gson.JsonObject root = JsonResources.object(
+			"/com/loadoutlab/data/wilderness_monsters.json");
+		JsonResources.strings(root, "names", NAMES);
+		JsonResources.strings(root, "exclusive", EXCLUSIVE);
+	}
 
 	private WildernessMonsters()
 	{

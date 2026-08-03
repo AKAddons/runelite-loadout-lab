@@ -34,7 +34,7 @@ public class QuestRewardPoolTest
 
 	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp)
 	{
-		return new OptimizationRequest(graardor, CombatStyle.MELEE, PlayerLevels.MAXED,
+		return TestRequests.of(graardor, CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
 			budgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,

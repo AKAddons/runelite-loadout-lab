@@ -17,22 +17,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MascotRosterTest
 {
-	private static final LocalDate IN_WORLD_CUP = LocalDate.of(2026, 7, 1);
-	private static final LocalDate AFTER_WORLD_CUP = LocalDate.of(2026, 9, 1);
+	private static final LocalDate SUMMER = LocalDate.of(2026, 7, 1);
+	private static final LocalDate SEPTEMBER = LocalDate.of(2026, 9, 1);
 
 	@Test
-	@DisplayName("evergreen moods are eligible every day; the World Cup only in its window")
+	@DisplayName("evergreen moods are eligible every day")
 	void eligibility()
 	{
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.WORKOUT));
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.CHEF));
-		assertTrue(MascotRoster.activeOn(IN_WORLD_CUP).contains(MascotRoster.WORLD_CUP));
-
-		assertTrue(MascotRoster.activeOn(AFTER_WORLD_CUP).contains(MascotRoster.WORKOUT));
-		assertFalse(MascotRoster.activeOn(AFTER_WORLD_CUP).contains(MascotRoster.WORLD_CUP),
-			"the striker retires after the final");
-		// A one-off dated window does not recur the year after.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2031, 7, 1)).contains(MascotRoster.WORLD_CUP));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.WORKOUT));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.SKATER));
+		assertTrue(MascotRoster.activeOn(SEPTEMBER).contains(MascotRoster.WORKOUT));
 	}
 
 	@Test
@@ -40,7 +34,7 @@ class MascotRosterTest
 	void weightedMix()
 	{
 		int draws = 120_000;
-		for (LocalDate date : new LocalDate[]{IN_WORLD_CUP, AFTER_WORLD_CUP})
+		for (LocalDate date : new LocalDate[]{SUMMER, SEPTEMBER})
 		{
 			java.util.List<MascotRoster> active = MascotRoster.activeOn(date);
 			int total = active.stream().mapToInt(MascotRoster::weight).sum();
@@ -54,91 +48,42 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("a dormant mood is never picked (the striker is gone out of season)")
-	void dormantNeverPicked()
+	@DisplayName("only eligible moods are ever picked")
+	void onlyEligibleMoodsArePicked()
 	{
-		Map<Class<?>, Integer> counts = sample(AFTER_WORLD_CUP, 90_000);
-		assertEquals(0, counts.getOrDefault(MascotStriker.class, 0),
-			"a dormant mood must never be picked");
+		// Every mood is evergreen right now (the seasonal ones are benched in
+		// the attic), so the guarantee to hold is the weaker one: pick never
+		// returns anything outside activeOn.
+		for (LocalDate date : new LocalDate[]{SUMMER, SEPTEMBER, LocalDate.of(2026, 10, 15)})
+		{
+			java.util.Set<Class<?>> eligible = new java.util.HashSet<>();
+			for (MascotRoster mood : MascotRoster.activeOn(date))
+			{
+				eligible.add(mood.create().getClass());
+			}
+			for (Class<?> picked : sample(date, 5_000).keySet())
+			{
+				assertTrue(eligible.contains(picked),
+					picked.getSimpleName() + " was picked on " + date + " while dormant");
+			}
+		}
 	}
 
 	@Test
-	@DisplayName("Halloween is eligible around Oct 31 and dormant the rest of the year")
-	void halloweenSeason()
+	@DisplayName("the months window still gates by calendar month (the benched moods' restore)")
+	void monthsWindowGates()
 	{
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 31)).contains(MascotRoster.HALLOWEEN));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2027, 10, 25)).contains(MascotRoster.HALLOWEEN),
-			"recurs every year");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 9, 1)).contains(MascotRoster.HALLOWEEN));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 12, 1)).contains(MascotRoster.HALLOWEEN));
-	}
+		// Window.months has no caller in main source since the chef was
+		// benched, but the chef, classroom and cauldron restores all depend
+		// on it - so it stays, and this is what keeps it honest.
+		MascotRoster.Window october = MascotRoster.Window.months(10);
+		assertTrue(october.active(LocalDate.of(2026, 10, 15)));
+		assertFalse(october.active(LocalDate.of(2026, 9, 30)));
+		assertFalse(october.active(LocalDate.of(2026, 11, 1)));
 
-	@Test
-	@DisplayName("the classroom runs the school terms and is dark over summer and December")
-	void classroomTerm()
-	{
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2027, 2, 15)).contains(MascotRoster.CLASSROOM));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 1)).contains(MascotRoster.CLASSROOM));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CLASSROOM));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 7, 15)).contains(MascotRoster.CLASSROOM),
-			"summer break");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 8, 20)).contains(MascotRoster.CLASSROOM),
-			"summer break");
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 12, 15)).contains(MascotRoster.CLASSROOM),
-			"December holidays");
-	}
-
-	@Test
-	@DisplayName("the chef cooks every month except October, which it cedes to Halloween")
-	void chefSkipsOctober()
-	{
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.CHEF),
-			"October belongs to the cauldron");
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.HALLOWEEN));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CHEF));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 11, 1)).contains(MascotRoster.CHEF));
-	}
-
-	@Test
-	@DisplayName("the World Cup covers June-July of 2026 and 2030 and nothing in between")
-	void worldCupWindow()
-	{
-		// 2026 tournament.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 5, 31)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 6, 1)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 7, 31)).contains(MascotRoster.WORLD_CUP));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 8, 1)).contains(MascotRoster.WORLD_CUP));
-		// Dark in the years between tournaments.
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2028, 7, 1)).contains(MascotRoster.WORLD_CUP));
-		// 2030 tournament.
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2030, 6, 1)).contains(MascotRoster.WORLD_CUP));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2030, 7, 31)).contains(MascotRoster.WORLD_CUP));
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2030, 8, 1)).contains(MascotRoster.WORLD_CUP));
-	}
-
-	@Test
-	@DisplayName("annual windows recur every year and wrap the year boundary")
-	void annualWindowWraps()
-	{
-		MascotRoster.Window winter = MascotRoster.Window.annual(12, 15, 1, 2);
-		assertTrue(winter.active(LocalDate.of(2026, 12, 20)));
-		assertTrue(winter.active(LocalDate.of(2027, 1, 1)), "wraps into the new year");
-		assertFalse(winter.active(LocalDate.of(2027, 1, 10)));
-		assertTrue(winter.active(LocalDate.of(2030, 12, 31)), "recurs, unlike a dated window");
-
-		MascotRoster.Window fall = MascotRoster.Window.annual(10, 20, 11, 1);
-		assertTrue(fall.active(LocalDate.of(2026, 10, 25)));
-		assertFalse(fall.active(LocalDate.of(2026, 11, 5)));
-	}
-
-	@Test
-	@DisplayName("an anchored window spills across the year boundary by its radius")
-	void aroundWindowSpills()
-	{
-		MascotRoster.Window newYear = MascotRoster.Window.around(12, 31, 2);
-		assertTrue(newYear.active(LocalDate.of(2026, 12, 30)));
-		assertTrue(newYear.active(LocalDate.of(2027, 1, 2)), "two days into January");
-		assertFalse(newYear.active(LocalDate.of(2027, 1, 5)));
+		MascotRoster.Window terms = MascotRoster.Window.months(1, 2, 3, 4, 5, 9, 10, 11);
+		assertTrue(terms.active(LocalDate.of(2026, 5, 31)));
+		assertFalse(terms.active(LocalDate.of(2026, 6, 1)));
 	}
 
 	private static Map<Class<?>, Integer> sample(LocalDate date, int draws)

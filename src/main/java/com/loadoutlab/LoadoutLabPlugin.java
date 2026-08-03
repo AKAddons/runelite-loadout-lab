@@ -6,7 +6,6 @@ import com.loadoutlab.collection.CollectionLedger;
 import com.loadoutlab.command.CommandHistory;
 import com.loadoutlab.command.Commands;
 import com.loadoutlab.collection.DreamStore;
-import com.loadoutlab.collection.DwmsImport;
 import com.loadoutlab.collection.DwmsLink;
 import com.loadoutlab.collection.ExclusionStore;
 import com.loadoutlab.collection.ManualOwnedStore;
@@ -15,6 +14,7 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.OwnedItems;
+import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
 import com.loadoutlab.engine.RequirementProfile;
@@ -45,11 +45,15 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
+import net.runelite.api.ScriptID;
 import net.runelite.api.Skill;
 import net.runelite.api.WorldType;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -64,6 +68,30 @@ import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.ClientUI;
+import net.runelite.client.plugins.banktags.TagManager;
+import net.runelite.client.plugins.banktags.BankTagsService;
+import net.runelite.client.plugins.banktags.tabs.Layout;
+import net.runelite.client.plugins.banktags.tabs.LayoutManager;
+import net.runelite.client.plugins.banktags.tabs.TabManager;
+import net.runelite.client.plugins.banktags.tabs.TagTab;
+import net.runelite.client.game.chatbox.ChatboxItemSearch;
+import net.runelite.client.events.ProfileChanged;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.events.MenuOpened;
+import net.runelite.api.events.AccountHashChanged;
+import net.runelite.api.NPC;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.MenuAction;
+import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -79,7 +107,7 @@ import net.runelite.client.util.ImageUtil;
 	description = "Best-in-slot sets from the gear you own, per enemy and combat style, with exact DPS",
 	tags = {"gear", "bis", "dps", "loadout", "equipment"}
 )
-public class LoadoutLabPlugin extends Plugin
+public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeHook
 {
 	@Inject
 	private Client client;
@@ -107,22 +135,28 @@ public class LoadoutLabPlugin extends Plugin
 	private ItemManager itemManager;
 
 	@Inject
-	private net.runelite.client.ui.overlay.OverlayManager overlayManager;
+	private OverlayManager overlayManager;
 
 	@Inject
-	private net.runelite.client.plugins.banktags.BankTagsService bankTagsService;
+	private BankTagsService bankTagsService;
 
 	@Inject
-	private net.runelite.client.plugins.banktags.TagManager tagManager;
+	private TagManager tagManager;
+
+	@Inject
+	private LayoutManager layoutManager;
+
+	@Inject
+	private TabManager tabManager;
 
 	@Inject
 	private SpriteManager spriteManager;
 
 	@Inject
-	private net.runelite.client.game.chatbox.ChatboxItemSearch chatboxItemSearch;
+	private ChatboxItemSearch chatboxItemSearch;
 
 	@Inject
-	private net.runelite.client.ui.ClientUI clientUI;
+	private ClientUI clientUI;
 
 	@Inject
 	private EventBus eventBus;
@@ -138,10 +172,10 @@ public class LoadoutLabPlugin extends Plugin
 	private final CommandHistory commandHistory = new CommandHistory();
 	private com.loadoutlab.collection.ProtectOnlyStore protectOnly;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
-	private volatile java.util.Set<Integer> bankHighlight;
+	private volatile Set<Integer> bankHighlight;
 	/** "Filter bank": a VIRTUAL bank tag (never persisted to the player's
 	 * tag config) containing the active set's expanded ids; null = off. */
-	private volatile java.util.Set<Integer> bankFilter;
+	private volatile Set<Integer> bankFilter;
 	private static final String BANK_TAG = "loadout-lab";
 	/** DWMS's exact plugin name - detection and icon lookup key off it. */
 	private static final String DWMS_PLUGIN_NAME = "Dude, Where's My Stuff?";
@@ -149,7 +183,8 @@ public class LoadoutLabPlugin extends Plugin
 	private DreamStore dreams;
 	private ManualOwnedStore manualOwned;
 	private com.loadoutlab.collection.MonsterProfileStore mobProfiles;
-	private DwmsImport dwmsImport;
+	private com.loadoutlab.collection.AlwaysFilterStore alwaysFilter;
+	private com.loadoutlab.collection.SupplyDefaultsStore supplyDefaults;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
@@ -250,21 +285,29 @@ public class LoadoutLabPlugin extends Plugin
 	 * the EDT and reuses the same select-and-open path as onPluginMessage.
 	 */
 	@Subscribe
-	public void onMenuOpened(net.runelite.api.events.MenuOpened event)
+	public void onMenuOpened(MenuOpened event)
 	{
 		if (data == null || panel == null || navButton == null || !config.npcRightClickEntry())
 		{
 			return;
 		}
-		for (net.runelite.api.MenuEntry entry : event.getMenuEntries())
+		for (MenuEntry entry : event.getMenuEntries())
 		{
-			net.runelite.api.NPC npc = entry.getNpc();
+			NPC npc = entry.getNpc();
 			if (npc == null || npc.getName() == null)
 			{
 				continue;
 			}
 			final String name = npc.getName();
 			final int id = npc.getId();
+			if (!attackable(npc))
+			{
+				// Corpus membership is not enough (Discord field report
+				// 2026-07-23: a Rabbit got the entry): only NPCs whose own
+				// menu offers Attack get one - the entry rides fights, not
+				// scenery.
+				return;
+			}
 			if (!knownMonster(name, id))
 			{
 				return; // an NPC menu, but not one we can compute for
@@ -272,7 +315,7 @@ public class LoadoutLabPlugin extends Plugin
 			client.createMenuEntry(1)
 				.setOption("Search in Loadout Lab")
 				.setTarget(entry.getTarget())
-				.setType(net.runelite.api.MenuAction.RUNELITE)
+				.setType(MenuAction.RUNELITE)
 				.onClick(e -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel.selectExternal(name, id))
@@ -282,6 +325,24 @@ public class LoadoutLabPlugin extends Plugin
 				}));
 			return; // one entry, even when several rows reference the NPC
 		}
+	}
+
+	/** The NPC's own right-click menu offers Attack - composition actions,
+	 * client thread. */
+	private static boolean attackable(NPC npc)
+	{
+		if (npc.getComposition() == null || npc.getComposition().getActions() == null)
+		{
+			return false;
+		}
+		for (String action : npc.getComposition().getActions())
+		{
+			if ("Attack".equalsIgnoreCase(action))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Cheap client-thread gate: exact id or normalized-name match. */
@@ -308,15 +369,39 @@ public class LoadoutLabPlugin extends Plugin
 		dreams = new DreamStore(configManager, gson);
 		manualOwned = new ManualOwnedStore(configManager, gson);
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
-		dwmsImport = new DwmsImport(configManager);
+		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
+		supplyDefaults = new com.loadoutlab.collection.SupplyDefaultsStore(configManager, gson);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
+		// Bank-tag hygiene: drop the layout Bank Tag Layouts auto-enabled on
+		// our tag before the real-tab fix existed, any core layout a crash
+		// left behind, and our tab name if a user tab-edit ever persisted
+		// the in-memory tab into the tagtabs CSV (we never save it ourselves).
+		configManager.unsetConfiguration(BTL_GROUP, BTL_LAYOUT_KEY);
+		layoutManager.removeLayout(BANK_TAG);
+		// Core bank-tags "Remember tab" reopens the last active tag at the
+		// next bank open - across sessions our virtual tag then leads to
+		// NOTHING (no filter registered yet; field bug 2026-07-21). Forget
+		// it whenever a session starts.
+		if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab")))
+		{
+			configManager.setConfiguration("banktags", "tab", "");
+		}
+		String tagtabs = configManager.getConfiguration("banktags", "tagtabs");
+		if (tagtabs != null && tagtabs.contains(BANK_TAG))
+		{
+			List<String> names = new ArrayList<>(Text.fromCSV(tagtabs));
+			if (names.remove(BANK_TAG))
+			{
+				configManager.setConfiguration("banktags", "tagtabs", Text.toCSV(names));
+				configManager.unsetConfiguration("banktags", "icon_" + BANK_TAG);
+			}
+		}
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
-			dwmsImport.reload();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
@@ -337,29 +422,9 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
-				LoadoutLabPanel.ComputeHook hook = new LoadoutLabPanel.ComputeHook()
-			{
-				@Override
-				public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-					boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-					boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, Runnable onDone)
-				{
-					computeForMonster(monster, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, onDone);
-				}
-
-				@Override
-				public void computeRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly,
-					boolean onSlayerTask, boolean inWilderness, String spellbookLock,
-					int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp,
-					OptimizerService.OptimizeMode mode, Runnable onDone)
-				{
-					computeForRoster(mobs, f2pOnly, onSlayerTask, inWilderness, spellbookLock,
-						maxTradeables, riskBudgetGp, antifirePotion, upgradeBudgetGp, mode, onDone);
-				}
-			};
-			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, hook,
+			// The plugin IS the compute hook (see compute/computeRoster
+			// below) - no delegating anonymous class needed.
+			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,
 					id ->
 					{
 						exec(Commands.toggleExclusion(exclusions, id, itemLabel(id)));
@@ -387,6 +452,8 @@ public class LoadoutLabPlugin extends Plugin
 				panel.setHistoryControl(historyControl());
 				panel.setF2pWorld(onF2pWorld());
 				panel.setDisplayOptions(buildDisplayOptions());
+				panel.setSupplyDefaults(buildSupplyDefaults());
+				panel.setGlobalFilters(globalFiltersView());
 				panel.setDeveloperMode(developerMode);
 				navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
@@ -413,6 +480,8 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		bankHighlight = null;
 		bankFilter = null;
+		layoutManager.removeLayout(BANK_TAG);
+		removeBankTagTab();
 		tagManager.unregisterTag(BANK_TAG);
 		if (navButton != null)
 		{
@@ -431,7 +500,6 @@ public class LoadoutLabPlugin extends Plugin
 		protectOnly = null;
 		manualOwned = null;
 		mobProfiles = null;
-		dwmsImport = null;
 		dwmsLink = null;
 		stashUnits = null;
 		stashChartSeen = false;
@@ -451,7 +519,7 @@ public class LoadoutLabPlugin extends Plugin
 	/** A different character logged in: nothing from the previous one may
 	 * survive - ledger scope, caches, snapshot, panel results, bank tools. */
 	@Subscribe
-	public void onAccountHashChanged(net.runelite.api.events.AccountHashChanged event)
+	public void onAccountHashChanged(AccountHashChanged event)
 	{
 		resetForIdentityChange();
 	}
@@ -460,7 +528,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * so refresh the shown answer (the ownership fingerprint keys the
 	 * optimizer cache - neither direction can serve a stale set). */
 	@Subscribe
-	public void onConfigChanged(net.runelite.client.events.ConfigChanged event)
+	public void onConfigChanged(ConfigChanged event)
 	{
 		if (!"loadoutlab".equals(event.getGroup()))
 		{
@@ -493,45 +561,177 @@ public class LoadoutLabPlugin extends Plugin
 			if (panel != null)
 			{
 				panel.setDisplayOptions(buildDisplayOptions());
+				panel.setSupplyDefaults(buildSupplyDefaults());
 			}
 		});
 	}
 
 	/** The wrench-panel display/control keys (see LoadoutLabConfig) - the
 	 * only keys onConfigChanged reacts to besides useDwmsData. */
-	private static final java.util.Set<String> PANEL_CONFIG_KEYS = java.util.Set.of(
+	private static final Set<String> PANEL_CONFIG_KEYS = Set.of(
 		"displayMaxHit", "displayAccuracy", "displayBonuses", "displayAssumes",
-		"displayDamageTaken", "displayRiskOnDeath", "displayPrayerBonus",
-		"displayAttackStyle", "displayGameBest", "enableNotes", "showSpellControls",
-		"showUpgradeBudget", "showWildyRisk", "showInBankButton", "showFilterBankButton",
-		"loadingAnimation", "defaultUpgradeBudget", "defaultRiskCap");
+		"displayDamageTaken", "displayDefensivePrayer", "displayRiskOnDeath",
+		"displayPrayerBonus", "displayAttackStyle", "displayGameBest", "enableNotes",
+		"displayFootnote", "displayAddMob", "displayInventory", "specDpsOutput",
+		"thrallDpsOutput", "showSpellControls", "showUpgradeBudget", "showWildyRisk",
+		"showInBankButton", "showFilterBankButton", "showExcludeControls",
+		"showSimControls", "showFilterControls", "showPinControls",
+		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
+		"defaultRiskCap", "defaultOnTask", "defaultSpecWeapon", "defaultAutocast",
+		"defaultMeleePrayer", "defaultRangedPrayer", "defaultMagicPrayer",
+		"defaultMeleeBoost", "defaultRangedBoost", "defaultMagicBoost",
+		"defaultThralls", "defaultDeathCharge",
+		"spellbookSwapVengeance", "defaultAntifire");
+
+	/** Client-thread staging push: the castability state the panel's
+	 * chips read - BOOSTED magic (field call 2026-07-21: castability
+	 * follows the boosted stat), the Yama rite unlock, the live book. */
+	private void pushPanelCastState(PlayerLevels live)
+	{
+		if (panel == null)
+		{
+			return;
+		}
+		panel.setMagicLevel(live.getMagic());
+		panel.setDeathChargeUpgraded(client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
+		panel.setCurrentSpellbook(client.getVarbitValue(
+			net.runelite.api.gameval.VarbitID.SPELLBOOK));
+	}
+
+	/** The panel's grey-trio hook: the global always-filter list plus
+	 * wrench-panel supply defaults editable straight from the chip menu
+	 * (the config write loops back through PANEL_CONFIG_KEYS, so the
+	 * panel refreshes exactly like a wrench edit). */
+	private LoadoutLabPanel.GlobalFilters globalFiltersView()
+	{
+		return new LoadoutLabPanel.GlobalFilters()
+		{
+			@Override
+			public Map<Integer, String> alwaysFiltered()
+			{
+				return alwaysFilter == null ? Map.of() : alwaysFilter.all();
+			}
+
+			@Override
+			public void addAlwaysFiltered(int itemId, String name)
+			{
+				alwaysFilter.add(itemId, name);
+			}
+
+			@Override
+			public void removeAlwaysFiltered(int itemId)
+			{
+				alwaysFilter.remove(itemId);
+			}
+
+			@Override
+			public void setSupplyDefault(String category, String enumName)
+			{
+				supplyDefaults.setChoice(category, enumName);
+				SwingUtilities.invokeLater(() ->
+				{
+					if (panel != null)
+					{
+						panel.setSupplyDefaults(buildSupplyDefaults());
+					}
+				});
+			}
+		};
+	}
+
+	/** The persistent trip-supply defaults (choice keys by TripSupplies
+	 * category) - store-backed, every category DETECT_BEST until the grey
+	 * chip's menu changes it. The panel resolves them per result. */
+	private Map<String, String> buildSupplyDefaults()
+	{
+		Map<String, String> defaults = new LinkedHashMap<>();
+		for (String category : new String[]{
+			com.loadoutlab.data.TripSupplies.FOOD,
+			com.loadoutlab.data.TripSupplies.FAST_FOOD,
+			com.loadoutlab.data.TripSupplies.PRAYER_RESTORE,
+			com.loadoutlab.data.TripSupplies.SURGE,
+			com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE,
+			com.loadoutlab.data.TripSupplies.ANTIVENOM,
+			"arceuusAccess"})
+		{
+			defaults.put(category, supplyDefaults == null
+				? com.loadoutlab.collection.SupplyDefaultsStore.DETECT_BEST
+				: supplyDefaults.choice(category));
+		}
+		return defaults;
+	}
+
+	/** DETECT seeds nothing, NONE seeds prayerless/unboosted, any other
+	 * enum constant seeds its pick string for that style. */
+	private static void seedPick(java.util.Map<com.loadoutlab.engine.CombatStyle, String> into,
+		com.loadoutlab.engine.CombatStyle style, String constant, String pick)
+	{
+		if ("DETECT".equals(constant) || pick == null)
+		{
+			return;
+		}
+		into.put(style, "NONE".equals(constant) ? "NONE" : pick);
+	}
 
 	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
 	{
-		return new LoadoutLabPanel.DisplayOptions(
-			config.displayMaxHit(),
-			config.displayAccuracy(),
-			config.displayBonuses(),
-			config.displayAssumes(),
-			config.displayDamageTaken(),
-			config.displayRiskOnDeath(),
-			config.displayPrayerBonus(),
-			config.displayAttackStyle(),
-			config.displayGameBest(),
-			config.enableNotes(),
-			config.showSpellControls(),
-			config.showUpgradeBudget(),
-			config.showWildyRisk(),
-			config.showInBankButton(),
-			config.showFilterBankButton(),
-			config.loadingAnimation(),
-			config.defaultUpgradeBudget(),
-			config.defaultRiskCap());
+		LoadoutLabPanel.DisplayOptions o = new LoadoutLabPanel.DisplayOptions();
+		o.maxHit = config.displayMaxHit();
+		o.accuracy = config.displayAccuracy();
+		o.bonuses = config.displayBonuses();
+		o.assumes = config.displayAssumes();
+		o.damageTaken = config.displayDamageTaken();
+		o.defensivePrayer = config.displayDefensivePrayer();
+		o.riskLine = config.displayRiskOnDeath();
+		o.prayerBonus = config.displayPrayerBonus();
+		o.attackStyle = config.displayAttackStyle();
+		o.gameBest = config.displayGameBest();
+		o.notes = config.enableNotes();
+		o.footnote = config.displayFootnote();
+		o.addMob = config.displayAddMob();
+		o.inventory = config.displayInventory();
+		o.spellControls = config.showSpellControls();
+		o.upgradeBudget = config.showUpgradeBudget();
+		o.wildyRisk = config.showWildyRisk();
+		o.showInBank = config.showInBankButton();
+		o.filterBank = config.showFilterBankButton();
+		o.loadingAnimation = config.loadingAnimation();
+		o.spellbookChip = config.displaySpellbookChip();
+		o.showExclude = config.showExcludeControls();
+		o.showSim = config.showSimControls();
+		o.showFilter = config.showFilterControls();
+		o.showPins = config.showPinControls();
+		o.defaultUpgradeBudget = config.defaultUpgradeBudget();
+		o.defaultRiskCap = config.defaultRiskCap();
+		o.defaultOnTask = config.defaultOnTask();
+		o.defaultSpecWeapon = config.defaultSpecWeapon();
+		o.defaultAntifireMode = config.defaultAntifire() == LoadoutLabConfig.AntifireDefault.DETECT
+			? -1 : config.defaultAntifire().ordinal() - 1;
+		o.detectThralls = config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
+		o.detectDeathCharge = config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
+		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+			config.defaultMeleePrayer().name(), config.defaultMeleePrayer().pick);
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+			config.defaultRangedPrayer().name(), config.defaultRangedPrayer().toString());
+		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+			config.defaultMagicPrayer().name(), config.defaultMagicPrayer().toString());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+			config.defaultMeleeBoost().name(), config.defaultMeleeBoost().name());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+			config.defaultRangedBoost().name(), config.defaultRangedBoost().name());
+		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+			config.defaultMagicBoost().name(), config.defaultMagicBoost().name());
+		o.specDpsMode = config.specDpsOutput().ordinal();
+		o.thrallDpsMode = config.thrallDpsOutput().ordinal();
+		o.spellbookSwapVengeance = config.spellbookSwapVengeance();
+		return o;
 	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
 	@Subscribe
-	public void onProfileChanged(net.runelite.client.events.ProfileChanged event)
+	public void onProfileChanged(ProfileChanged event)
 	{
 		if (exclusions != null)
 		{
@@ -548,6 +748,14 @@ public class LoadoutLabPlugin extends Plugin
 		if (mobProfiles != null)
 		{
 			mobProfiles.reload();
+		}
+		if (alwaysFilter != null)
+		{
+			alwaysFilter.reload();
+		}
+		if (supplyDefaults != null)
+		{
+			supplyDefaults.reload();
 		}
 		// Undo entries captured against the previous profile's stores must
 		// never replay into this one. The stack is EDT-owned - hop over.
@@ -571,10 +779,6 @@ public class LoadoutLabPlugin extends Plugin
 		if (manualOwned != null)
 		{
 			manualOwned.loadScope(worldScope());
-		}
-		if (dwmsImport != null)
-		{
-			dwmsImport.reload();
 		}
 		if (dwmsLink != null)
 		{
@@ -613,7 +817,6 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
-			dwmsImport.reload();
 			requestDwmsStorages();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
@@ -662,7 +865,9 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		else
 		{
-			CollectionLedger.Source source = storageSourceFor(id);
+			// EQUIPMENT/INVENTORY/BANK are consumed by the branches above,
+			// so this only ever resolves storage-style containers.
+			CollectionLedger.Source source = CollectionLedger.Source.forContainer(id);
 			if (source != null)
 			{
 				// These containers may not be re-fetchable later under the
@@ -687,51 +892,17 @@ public class LoadoutLabPlugin extends Plugin
 	 * still seen. An empty-over-empty scan is a no-op write.
 	 */
 	@Subscribe
-	public void onWidgetLoaded(net.runelite.api.events.WidgetLoaded event)
+	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (event.getGroupId() == net.runelite.api.gameval.InterfaceID.WILDERNESS_LOOTINGBAG)
+		if (event.getGroupId() == InterfaceID.WILDERNESS_LOOTINGBAG)
 		{
 			lootingBagScanTicks = 3;
 		}
 	}
 
-	/** Storage containers scanned from the event rather than re-fetched. */
-	private static CollectionLedger.Source storageSourceFor(int containerId)
-	{
-		switch (containerId)
-		{
-			case net.runelite.api.gameval.InventoryID.LOOTING_BAG:
-				// Fires when the bag is opened or checked - the only times
-				// the client learns its contents. Vital for UIM.
-				return CollectionLedger.Source.LOOTING_BAG;
-			case net.runelite.api.gameval.InventoryID.POH_COSTUMES:
-				// One shared container for every costume-room storage; fires
-				// when a case/wardrobe/chest interface is opened in the POH.
-				return CollectionLedger.Source.POH_COSTUMES;
-			default:
-				return cargoSourceFor(containerId);
-		}
-	}
-
-	/** Sailing cargo holds: one container per boat slot. */
-	private static CollectionLedger.Source cargoSourceFor(int containerId)
-	{
-		switch (containerId)
-		{
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_1;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_2;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_3;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_4;
-			case net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD:
-				return CollectionLedger.Source.CARGO_HOLD_5;
-			default:
-				return null;
-		}
-	}
+	// The container id per source (looting bag, POH costume storage, the
+	// five sailing cargo holds) now lives on CollectionLedger.Source, so
+	// both directions of the mapping come from one table there.
 
 	@Subscribe
 	public void onGameTick(GameTick event)
@@ -759,7 +930,7 @@ public class LoadoutLabPlugin extends Plugin
 				dirtySources.remove(source);
 				continue;
 			}
-			ItemContainer c = client.getItemContainer(containerFor(source));
+			ItemContainer c = client.getItemContainer(source.containerId());
 			if (c == null)
 			{
 				dirtySources.remove(source);
@@ -809,13 +980,13 @@ public class LoadoutLabPlugin extends Plugin
 		Map<Integer, Integer> items = new HashMap<>();
 		for (int childId : STASH_TIER_CHILDREN)
 		{
-			net.runelite.api.widgets.Widget tier = client.getWidget(493, childId);
+			Widget tier = client.getWidget(493, childId);
 			if (tier == null || tier.getChildren() == null)
 			{
 				continue;
 			}
-			java.util.List<com.loadoutlab.data.StashUnits.Cell> cells = new java.util.ArrayList<>();
-			for (net.runelite.api.widgets.Widget child : tier.getChildren())
+			List<com.loadoutlab.data.StashUnits.Cell> cells = new ArrayList<>();
+			for (Widget child : tier.getChildren())
 			{
 				if (child != null)
 				{
@@ -885,7 +1056,7 @@ public class LoadoutLabPlugin extends Plugin
 			// count as owned (the stores stay loaded for a live re-enable).
 			return owned;
 		}
-		return dwmsLink.isLive() ? dwmsLink.mergeInto(owned) : dwmsImport.mergeInto(owned);
+		return dwmsLink.mergeInto(owned);
 	}
 
 	/**
@@ -896,9 +1067,7 @@ public class LoadoutLabPlugin extends Plugin
 	private int ownedFingerprint()
 	{
 		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
-		int dwms = !config.useDwmsData() ? 0
-			: dwmsLink.isLive()
-				? dwmsLink.snapshot().hashCode() : dwmsImport.snapshot().hashCode();
+		int dwms = config.useDwmsData() ? dwmsLink.snapshot().hashCode() : 0;
 		return 31 * fingerprint + dwms;
 	}
 
@@ -912,7 +1081,7 @@ public class LoadoutLabPlugin extends Plugin
 	 */
 	private Map<String, Map<Integer, Integer>> ownedBySources()
 	{
-		java.util.LinkedHashMap<String, Map<Integer, Integer>> origins = new java.util.LinkedHashMap<>();
+		LinkedHashMap<String, Map<Integer, Integer>> origins = new LinkedHashMap<>();
 		origins.put("equipped", ledger.snapshot(CollectionLedger.Source.EQUIPMENT));
 		origins.put("inventory", ledger.snapshot(CollectionLedger.Source.INVENTORY));
 		origins.put("bank", ledger.snapshot(CollectionLedger.Source.BANK));
@@ -920,7 +1089,7 @@ public class LoadoutLabPlugin extends Plugin
 		origins.put("POH costume room", ledger.snapshot(CollectionLedger.Source.POH_COSTUMES));
 		origins.put("STASH", ledger.snapshot(CollectionLedger.Source.STASH));
 		Map<Integer, Integer> cargo = new HashMap<>();
-		for (CollectionLedger.Source hold : java.util.List.of(
+		for (CollectionLedger.Source hold : List.of(
 			CollectionLedger.Source.CARGO_HOLD_1, CollectionLedger.Source.CARGO_HOLD_2,
 			CollectionLedger.Source.CARGO_HOLD_3, CollectionLedger.Source.CARGO_HOLD_4,
 			CollectionLedger.Source.CARGO_HOLD_5))
@@ -939,7 +1108,7 @@ public class LoadoutLabPlugin extends Plugin
 		origins.put("stored elsewhere", manual);
 		if (config.useDwmsData())
 		{
-			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsImport.families().entrySet())
+			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsLink.families().entrySet())
 			{
 				origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
 			}
@@ -1030,7 +1199,7 @@ public class LoadoutLabPlugin extends Plugin
 			@Override
 			public String undoLabel()
 			{
-				return commandHistory.peekUndoDescription();
+				return commandHistory.peekUndoTarget();
 			}
 
 			@Override
@@ -1074,22 +1243,106 @@ public class LoadoutLabPlugin extends Plugin
 	/** Effective exclusions per style: the global list unioned with this
 	 * mob's ALL + style scopes. Styles with no mob exclusions share the
 	 * global set instance, so their cache keys stay stable. */
-	private Map<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> excludedByStyle(int monsterId)
+	private Map<com.loadoutlab.engine.CombatStyle, Set<Integer>> excludedByStyle(int monsterId)
 	{
-		java.util.Set<Integer> global = exclusions.snapshot();
-		EnumMap<com.loadoutlab.engine.CombatStyle, java.util.Set<Integer>> byStyle =
+		Set<Integer> global = exclusions.snapshot();
+		EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle =
 			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
 		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
 		{
-			java.util.Set<Integer> mob = mobProfiles.exclusionsFor(monsterId, style.name());
+			Set<Integer> mob = mobProfiles.exclusionsFor(monsterId, style.name());
 			if (mob.isEmpty())
 			{
 				byStyle.put(style, global);
 				continue;
 			}
-			java.util.Set<Integer> merged = new java.util.HashSet<>(global);
+			Set<Integer> merged = new HashSet<>(global);
 			merged.addAll(mob);
 			byStyle.put(style, merged);
+		}
+		return byStyle;
+	}
+
+	/** Roster exclusions travel PER MOB (field decision 2026-07-17,
+	 * refining the same-day union: "never scythe vs Ket-Zek" means the
+	 * Fight Caves KIT may still carry the scythe, but Ket-Zek's own
+	 * answer never wears it). Global exclusions ride the style map; each
+	 * mob's own exclusions ride this per-profileId map, so synthetic
+	 * phase variants (TD shields) inherit their real monster's profile. */
+	private Map<Integer, Map<com.loadoutlab.engine.CombatStyle, Set<Integer>>> perMobExclusions(
+		List<MonsterStats> mobs)
+	{
+		Map<Integer, Map<com.loadoutlab.engine.CombatStyle, Set<Integer>>> byMob =
+			new HashMap<>();
+		for (MonsterStats mob : mobs)
+		{
+			EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle = null;
+			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+			{
+				Set<Integer> per = mobProfiles.exclusionsFor(mob.profileId(), style.name());
+				if (per.isEmpty())
+				{
+					continue;
+				}
+				if (byStyle == null)
+				{
+					byStyle = new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+				}
+				byStyle.put(style, per);
+			}
+			if (byStyle != null)
+			{
+				byMob.put(mob.profileId(), byStyle);
+			}
+		}
+		return byMob;
+	}
+
+	/** The lensed mob's local sims join the global simmed set for a
+	 * single-mob compute (field spec 2026-07-18). */
+	private Set<Integer> dreamsWithMobSims(MonsterStats monster)
+	{
+		Set<Integer> global = dreams.snapshot();
+		Set<Integer> local = mobProfiles == null
+			? Collections.emptySet() : mobProfiles.simsFor(monster.profileId());
+		if (local.isEmpty())
+		{
+			return global;
+		}
+		Set<Integer> merged = new HashSet<>(global);
+		merged.addAll(local);
+		return merged;
+	}
+
+	/** Per-mob sims for a roster, keyed by profileId. */
+	private Map<Integer, Set<Integer>> perMobSims(List<MonsterStats> mobs)
+	{
+		Map<Integer, Set<Integer>> byMob = new HashMap<>();
+		if (mobProfiles == null)
+		{
+			return byMob;
+		}
+		for (MonsterStats mob : mobs)
+		{
+			Set<Integer> sims = mobProfiles.simsFor(mob.profileId());
+			if (!sims.isEmpty())
+			{
+				byMob.put(mob.profileId(), sims);
+			}
+		}
+		return byMob;
+	}
+
+	/** The global exclusion set for every style - the roster path's base
+	 * map; per-mob exclusions layer on top inside the optimizer. */
+	private Map<com.loadoutlab.engine.CombatStyle, Set<Integer>> globalExcludedByStyle()
+	{
+		Set<Integer> global = exclusions.snapshot();
+		EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle =
+			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		{
+			byStyle.put(style, global);
 		}
 		return byStyle;
 	}
@@ -1196,7 +1449,7 @@ public class LoadoutLabPlugin extends Plugin
 			}
 
 			@Override
-			public Map<String, java.util.Set<Integer>> allMobExclusions(int monsterId)
+			public Map<String, Set<Integer>> allMobExclusions(int monsterId)
 			{
 				return mobProfiles == null ? Map.of() : mobProfiles.allExclusions(monsterId);
 			}
@@ -1216,6 +1469,81 @@ public class LoadoutLabPlugin extends Plugin
 				if (mobProfiles != null)
 				{
 					exec(Commands.removeMobExclusion(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
+				}
+			}
+
+			@Override
+			public Map<Integer, String> allMobSims(int monsterId)
+			{
+				return mobProfiles == null ? Map.of() : mobProfiles.allSims(monsterId);
+			}
+
+			@Override
+			public void simForMob(int monsterId, int itemId, String name)
+			{
+				if (mobProfiles != null)
+				{
+					exec(Commands.simForMob(mobProfiles, monsterId, itemId, name));
+				}
+			}
+
+			@Override
+			public Map<String, String> supplyOverrides(int monsterId)
+			{
+				return mobProfiles.supplies(monsterId);
+			}
+
+			@Override
+			public void setSupplyOverride(int monsterId, String category, String choice)
+			{
+				mobProfiles.setSupply(monsterId, category, choice);
+			}
+
+			@Override
+			public void removeMobSim(int monsterId, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					exec(Commands.removeMobSim(mobProfiles, monsterId, itemId, itemLabel(itemId)));
+				}
+			}
+
+			@Override
+			public void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
+			{
+				if (mobProfiles == null)
+				{
+					return;
+				}
+				// One undo entry for the whole group (field request 2026-07-18).
+				commandHistory.beginCompound("Exclude for the whole group: " + itemLabel(itemId));
+				for (int id : monsterIds)
+				{
+					exec(Commands.excludeForMob(mobProfiles, id, scope, itemId, itemLabel(itemId)));
+				}
+				commandHistory.endCompound();
+				if (panel != null)
+				{
+					panel.refreshHistoryButtons();
+				}
+			}
+
+			@Override
+			public void simForMobs(java.util.List<Integer> monsterIds, int itemId, String name)
+			{
+				if (mobProfiles == null)
+				{
+					return;
+				}
+				commandHistory.beginCompound("Sim for the whole group: " + name);
+				for (int id : monsterIds)
+				{
+					exec(Commands.simForMob(mobProfiles, id, itemId, name));
+				}
+				commandHistory.endCompound();
+				if (panel != null)
+				{
+					panel.refreshHistoryButtons();
 				}
 			}
 		};
@@ -1292,7 +1620,7 @@ public class LoadoutLabPlugin extends Plugin
 			/** EDT-confined (panel render/hover), like the panel itself. */
 			private com.loadoutlab.collection.ItemLocations locations()
 			{
-				if (ledger == null || manualOwned == null || dwmsImport == null)
+				if (ledger == null || manualOwned == null || dwmsLink == null)
 				{
 					return null;
 				}
@@ -1310,9 +1638,9 @@ public class LoadoutLabPlugin extends Plugin
 
 	/**
 	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
-	 * Nothing is posted when the plugin is absent or disabled, and a
-	 * missing reply (a DWMS predating the contract) just leaves the
-	 * config-read fallback in charge.
+	 * Nothing is posted when the plugin is absent or disabled; a missing
+	 * reply (a DWMS predating 2.11.5) just means its storages do not
+	 * count until it updates.
 	 */
 	private void requestDwmsStorages()
 	{
@@ -1344,7 +1672,7 @@ public class LoadoutLabPlugin extends Plugin
 			client.getGameState().getState() >= GameState.LOGIN_SCREEN.getState()
 				? itemManager::canonicalize
 				: java.util.function.IntUnaryOperator.identity();
-		java.util.List<Map<String, Object>> storages = new java.util.ArrayList<>();
+		List<Map<String, Object>> storages = new ArrayList<>();
 		for (CollectionLedger.Source source : CollectionLedger.Source.values())
 		{
 			Map<String, Object> entry = StoragesApi.storage(
@@ -1409,14 +1737,14 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/** Panel hook: set (or clear, with null) the bank-highlighted item ids. */
-	private void setBankHighlight(java.util.Set<Integer> itemIds)
+	private void setBankHighlight(Set<Integer> itemIds)
 	{
 		if (itemIds == null || itemIds.isEmpty() || data == null)
 		{
 			bankHighlight = null;
 			return;
 		}
-		java.util.Set<Integer> expanded = new java.util.HashSet<>();
+		Set<Integer> expanded = new HashSet<>();
 		for (int id : itemIds)
 		{
 			expanded.addAll(data.equivalentIds(id));
@@ -1424,8 +1752,10 @@ public class LoadoutLabPlugin extends Plugin
 		bankHighlight = expanded;
 	}
 
-	/** Panel hook: filter the open bank to these ids via a virtual tag. */
-	private void setBankFilter(java.util.Set<Integer> itemIds)
+	/** Panel hook: filter the open bank to these ids via a virtual tag, and -
+	 * when {@code layout} is non-null - arrange the set in the bank in the
+	 * equipment + inventory shape (a bank-tag layout position array). */
+	private void setBankFilter(Set<Integer> itemIds, int[] layout)
 	{
 		if (itemIds == null || itemIds.isEmpty() || data == null)
 		{
@@ -1436,11 +1766,17 @@ public class LoadoutLabPlugin extends Plugin
 				{
 					bankTagsService.closeBankTag();
 				}
+				layoutManager.removeLayout(BANK_TAG);
+				removeBankTagTab();
 				tagManager.unregisterTag(BANK_TAG);
+				if (BANK_TAG.equals(configManager.getConfiguration("banktags", "tab")))
+				{
+					configManager.setConfiguration("banktags", "tab", "");
+				}
 			});
 			return;
 		}
-		java.util.Set<Integer> expanded = new java.util.HashSet<>();
+		Set<Integer> expanded = new HashSet<>();
 		for (int id : itemIds)
 		{
 			expanded.addAll(data.equivalentIds(id));
@@ -1450,19 +1786,168 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			tagManager.registerTag(BANK_TAG, itemId ->
 			{
-				java.util.Set<Integer> ids = bankFilter;
+				Set<Integer> ids = bankFilter;
 				return ids != null && ids.contains(itemId);
 			});
-			bankTagsService.openBankTag(BANK_TAG,
-				net.runelite.client.plugins.banktags.BankTagsService.OPTION_NO_LAYOUT);
+			if (layout != null)
+			{
+				layoutManager.saveLayout(new Layout(BANK_TAG, layout));
+				ensureBankTagTab();
+				bankTagsService.openBankTag(BANK_TAG, 0);
+			}
+			else
+			{
+				layoutManager.removeLayout(BANK_TAG);
+				removeBankTagTab();
+				bankTagsService.openBankTag(BANK_TAG,
+					BankTagsService.OPTION_NO_LAYOUT);
+			}
 		});
 	}
 
-	/** Roster mirror of computeForMonster: same client-thread staging, then
+	/** The hub "Bank Tag Layouts" plugin's config coordinates - kept only to
+	 * clean up the layout its auto-enable wrote for our tag before the
+	 * real-tab fix below existed. */
+	private static final String BTL_GROUP = "banktaglayouts";
+	private static final String BTL_LAYOUT_KEY = "layout_" + BANK_TAG;
+	/** The filter tab's icon in the bank's tag strip (rune scimitar). */
+	private static final int BANK_TAB_ICON = 1333;
+
+	private boolean bankTagLayoutsActive()
+	{
+		for (Plugin p : pluginManager.getPlugins())
+		{
+			if ("Bank Tag Layouts".equals(p.getName()) && pluginManager.isPluginEnabled(p))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** With Bank Tag Layouts running, our tag must exist as a REAL tag tab
+	 * while the filter is on: BTL only defers to the core bank-tags layout
+	 * for a tab it can find (isVanillaLayoutEnabled = a TagTab AND a core
+	 * layout), and with "layout enabled by default" on it auto-enables its
+	 * own flat layout over any purely virtual tag every bank rebuild
+	 * (field-found 2026-07-20: the cross rendered flat under it; a config
+	 * mirror lost the write war). Inventory Setups escapes via a hardcoded
+	 * _invsetup_ prefix exemption; a real tab is the road for everyone else.
+	 *
+	 * IN-MEMORY ONLY - deliberately no TabManager.save(): save() rewrites
+	 * the user's whole tagtabs config from the in-memory list, which would
+	 * WIPE their real tabs if the list isn't loaded yet. BTL's find() and
+	 * the tab strip both read the live list, so persistence buys nothing;
+	 * the bank-build hook below re-adds it whenever core reloads the list. */
+	private void ensureBankTagTab()
+	{
+		if (!bankTagLayoutsActive())
+		{
+			log.debug("bank tab: Bank Tag Layouts not active, skipping");
+			return;
+		}
+		if (tabManager.find(BANK_TAG) != null)
+		{
+			log.debug("bank tab: already present");
+			return;
+		}
+		TagTab tab = new TagTab();
+		tab.setTag(BANK_TAG);
+		tab.setIconItemId(BANK_TAB_ICON);
+		tabManager.add(tab);
+		log.debug("bank tab: added (find now = {})", tabManager.find(BANK_TAG) != null);
+	}
+
+	private void removeBankTagTab()
+	{
+		if (tabManager.find(BANK_TAG) != null)
+		{
+			tabManager.remove(BANK_TAG);
+		}
+	}
+
+	/** Re-assert the real tab on every bank build while the filter is on.
+	 * Two hooks because BTL applies its layout at PostFired(BANKMAIN_BUILD,
+	 * priority -1): the PostFired hook at -0.5 slots BETWEEN core's handlers
+	 * (0) and BTL's apply (-1) - the decisive ordering on the first build
+	 * after a bank open, where core's BANKMAIN_INIT reload has just wiped
+	 * the in-memory list. The FINISHBUILDING hook covers rebuild variants.
+	 * (Priority-after-core precedent: Inventory Setups.) */
+	/** The book chips react LIVE to a spellbook swap (field bug
+	 * 2026-07-21: the chip stayed red after swapping - the live book was
+	 * only pushed at compute staging). Filtered to the one varbit; the
+	 * re-render is user-action-rare, never per-tick work. */
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarbitId() != net.runelite.api.gameval.VarbitID.SPELLBOOK)
+		{
+			return;
+		}
+		final int book = event.getValue();
+		SwingUtilities.invokeLater(() ->
+		{
+			if (panel != null)
+			{
+				panel.refreshSpellbook(book);
+			}
+		});
+	}
+
+	@Subscribe(priority = -1)
+	public void onScriptPreFired(ScriptPreFired event)
+	{
+		if (event.getScriptId() != ScriptID.BANKMAIN_FINISHBUILDING
+			|| !BANK_TAG.equals(bankTagsService.getActiveTag()))
+		{
+			return;
+		}
+		if (bankFilter == null)
+		{
+			// A remembered-tab ghost: our tag is open with no filter
+			// registered - it shows an empty bank (field bug 2026-07-21).
+			log.debug("bank tab: ghost tag open with no filter - closing");
+			bankTagsService.closeBankTag();
+			return;
+		}
+		log.debug("bank tab: FINISHBUILDING prefired, ensuring tab");
+		ensureBankTagTab();
+	}
+
+	@Subscribe(priority = -0.5f)
+	public void onScriptPostFired(ScriptPostFired event)
+	{
+		if (event.getScriptId() == ScriptID.BANKMAIN_BUILD
+			&& bankFilter != null
+			&& BANK_TAG.equals(bankTagsService.getActiveTag()))
+		{
+			log.debug("bank tab: BANKMAIN_BUILD postfired, ensuring tab");
+			ensureBankTagTab();
+		}
+	}
+
+	/** Roster mirror of compute: same client-thread staging, then
 	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
 	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
 	 * v1 - roster-wide per-mob preferences come later. */
-	private void computeForRoster(java.util.List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
+	/** Consumable GE prices, resolved ON the client thread (compositions
+	 * assert off-thread) and handed to the panel for EDT rendering. */
+	private void refreshConsumablePrices()
+	{
+		if (panel == null)
+		{
+			return;
+		}
+		Map<Integer, Long> prices = new HashMap<>();
+		for (int id : LoadoutLabPanel.CONSUMABLE_PRICE_IDS)
+		{
+			prices.put(id, (long) itemManager.getItemPrice(id));
+		}
+		panel.setConsumablePrices(prices);
+	}
+
+	@Override
+	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1470,15 +1955,16 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				snapshotProfileIfNeeded();
 			}
+			refreshConsumablePrices();
 			if (config.useDwmsData())
 			{
-				dwmsImport.reload();
 				requestDwmsStorages();
 			}
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			pushPanelCastState(live);
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			int fingerprint = owned.presenceFingerprint();
@@ -1486,22 +1972,23 @@ public class LoadoutLabPlugin extends Plugin
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			MonsterStats anchor = mobs.get(0);
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(anchor.getId()), maxTradeables, riskBudgetGp, antifirePotion,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode,
-				pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
+				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
+				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
+				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{
 					if (panel != null)
 					{
-						panel.showRosterResults(roster.mobs, roster.perMob);
+						panel.showRosterResults(roster.mobs, roster.perMob, roster.curve);
 					}
 					onDone.run();
 				}));
 		});
 	}
 
-	private void computeForMonster(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int upgradeBudgetGp, OptimizerService.OptimizeMode mode, Runnable onDone)
+	@Override
+	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1509,6 +1996,7 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				snapshotProfileIfNeeded();
 			}
+			refreshConsumablePrices();
 			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
 			// re-read keeps imported storages as fresh as they can be. The
 			// PluginMessage re-request refreshes the live snapshot the same
@@ -1516,19 +2004,19 @@ public class LoadoutLabPlugin extends Plugin
 			// DWMS-tracked storages change rarely).
 			if (config.useDwmsData())
 			{
-				dwmsImport.reload();
 				requestDwmsStorages();
 			}
 			RequirementProfile profile = requirementProfile != null
 				? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			pushPanelCastState(live);
 			// One merge, shared by the optimizer request and the export - this
 			// runs on the client thread, where every merge is a frame tax.
 			Map<Integer, Integer> mergedOwned = ownedItems();
 			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			// The optimizer cache keys on ownership PRESENCE, not quantities
-			// - firing an arrow must not re-pay a 20s Balanced compute.
+			// - firing an arrow must not re-pay a full compute.
 			int fingerprint = owned.presenceFingerprint();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
@@ -1536,8 +2024,8 @@ public class LoadoutLabPlugin extends Plugin
 				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, mode,
+				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
+				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps, raidBoost,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
@@ -1633,28 +2121,6 @@ public class LoadoutLabPlugin extends Plugin
 			&& !client.getWorldType().contains(WorldType.MEMBERS);
 	}
 
-	private static int containerFor(CollectionLedger.Source source)
-	{
-		switch (source)
-		{
-			case EQUIPMENT: return InventoryID.EQUIPMENT.getId();
-			case INVENTORY: return InventoryID.INVENTORY.getId();
-			case BANK: return InventoryID.BANK.getId();
-			// The classic InventoryID enum lacks the newer containers; the
-			// gameval ids are the authoritative modern constants.
-			case LOOTING_BAG: return net.runelite.api.gameval.InventoryID.LOOTING_BAG;
-			case POH_COSTUMES: return net.runelite.api.gameval.InventoryID.POH_COSTUMES;
-			case CARGO_HOLD_1: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_1_CARGOHOLD;
-			case CARGO_HOLD_2: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_2_CARGOHOLD;
-			case CARGO_HOLD_3: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_3_CARGOHOLD;
-			case CARGO_HOLD_4: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_4_CARGOHOLD;
-			case CARGO_HOLD_5: return net.runelite.api.gameval.InventoryID.SAILING_BOAT_5_CARGOHOLD;
-			// STASH is chart-driven, never container-scanned; -1 makes the
-			// per-tick drain's null-container check clear a stray dirty flag.
-			default: return -1;
-		}
-	}
-
 	/** Bundled sidebar icon (see scripts/generate_icons.py), drawn fallback if absent. */
 	private static BufferedImage loadSidebarIcon()
 	{
@@ -1682,12 +2148,6 @@ public class LoadoutLabPlugin extends Plugin
 		g.drawString("LL", 2, 12);
 		g.dispose();
 		return img;
-	}
-
-	/** The player's owned-items ledger (persistent across sessions). */
-	public CollectionLedger getLedger()
-	{
-		return ledger;
 	}
 
 	@Provides

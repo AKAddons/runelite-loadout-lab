@@ -1,5 +1,6 @@
 package com.loadoutlab.collection;
 
+import lombok.Getter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -7,8 +8,8 @@ import java.util.Map;
 
 /**
  * Live link to "Dude, Where's My Stuff?" over RuneLite's PluginMessage
- * bus - the durable successor to the best-effort config read in
- * {@link DwmsImport}.
+ * bus (DWMS ships the contract since 2.11.5 - the old best-effort config
+ * read is retired).
  *
  * <p>Contract (version 1, authored upstream): we post a request
  * (namespace "dudewheresmystuff", name "storages-request", data
@@ -17,8 +18,8 @@ import java.util.Map;
  * plugins are ignored), "version" and "storages", a list of maps with
  * "category"/"name"/"lastUpdated" plus "items" ({"id": canonical item
  * id, "quantity"}). Requests are fire-and-forget: an absent or older
- * DWMS never replies, {@link #isLive()} stays false, and the config
- * read remains in charge.
+ * DWMS never replies and {@link #isLive()} stays false - its storages
+ * then simply do not count as owned.
  *
  * <p>Responses arrive on DWMS's client thread; parsing is defensive
  * (drop, never guess) and the snapshot swap is a volatile write, so no
@@ -37,6 +38,11 @@ public class DwmsLink
 	static final String SOURCE = "Loadout Lab";
 
 	private volatile Map<Integer, Integer> items = Collections.emptyMap();
+	/** Response "category" (carryable/death/poh/stash/world...) -> items -
+	 * the location-hint provenance families. */
+	private volatile Map<String, Map<Integer, Integer>> families = Collections.emptyMap();
+	/** True once DWMS has answered for the current identity. */
+	@Getter
 	private volatile boolean live;
 
 	/** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
@@ -61,6 +67,7 @@ public class DwmsLink
 			return false;
 		}
 		Map<Integer, Integer> next = new HashMap<>();
+		Map<String, Map<Integer, Integer>> nextFamilies = new HashMap<>();
 		for (Object storage : (List<?>) data.get("storages"))
 		{
 			if (!(storage instanceof Map))
@@ -72,12 +79,19 @@ public class DwmsLink
 			{
 				continue;
 			}
+			Object category = ((Map<?, ?>) storage).get("category");
+			Map<Integer, Integer> family = nextFamilies.computeIfAbsent(
+				category instanceof String ? (String) category : "world",
+				k -> new HashMap<>());
 			for (Object item : (List<?>) storageItems)
 			{
 				mergeItem(item, next);
+				mergeItem(item, family);
 			}
 		}
 		items = next.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(next);
+		families = nextFamilies.isEmpty() ? Collections.emptyMap()
+			: Collections.unmodifiableMap(nextFamilies);
 		live = true;
 		return true;
 	}
@@ -105,17 +119,18 @@ public class DwmsLink
 			(a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
 	}
 
-	/** True once DWMS has answered for the current identity. */
-	public boolean isLive()
-	{
-		return live;
-	}
-
 	/** A different account/profile: nothing from the previous one survives. */
 	public void reset()
 	{
 		items = Collections.emptyMap();
+		families = Collections.emptyMap();
 		live = false;
+	}
+
+	/** Category -> merged items, for the location-hint provenance. */
+	public Map<String, Map<Integer, Integer>> families()
+	{
+		return families;
 	}
 
 	/** Item id -> quantity from the latest response, merged across storages. */

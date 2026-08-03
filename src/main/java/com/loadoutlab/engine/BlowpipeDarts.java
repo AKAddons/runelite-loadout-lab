@@ -1,7 +1,6 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearItem;
-import java.util.Locale;
 
 /**
  * Blowpipes fire a LOADED dart whose ranged strength stacks on the

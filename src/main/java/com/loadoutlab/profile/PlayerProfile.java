@@ -12,6 +12,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Skill;
+import java.util.LinkedHashMap;
+import java.util.Collections;
 
 /**
  * A player as data: levels (real and live-boosted), prayer unlocks,
@@ -53,7 +55,7 @@ public final class PlayerProfile
 		this.bankScanned = bankScanned;
 		// Deep-copied on the constructing thread: the export writer runs
 		// off-thread while the client keeps mutating the live snapshots.
-		java.util.LinkedHashMap<String, Map<Integer, Integer>> copy = new java.util.LinkedHashMap<>();
+		LinkedHashMap<String, Map<Integer, Integer>> copy = new LinkedHashMap<>();
 		if (ownedBySource != null)
 		{
 			for (Map.Entry<String, Map<Integer, Integer>> e : ownedBySource.entrySet())
@@ -61,19 +63,12 @@ public final class PlayerProfile
 				copy.put(e.getKey(), Map.copyOf(e.getValue()));
 			}
 		}
-		this.ownedBySource = java.util.Collections.unmodifiableMap(copy);
+		this.ownedBySource = Collections.unmodifiableMap(copy);
 	}
 
 	public OwnedItems ownedItems()
 	{
 		return new OwnedItems(owned, bankScanned);
-	}
-
-	/** A maxed account that owns nothing - game-best queries only. */
-	public static PlayerProfile maxed()
-	{
-		return new PlayerProfile(PlayerLevels.MAXED, PlayerLevels.MAXED,
-			PrayerUnlocks.ALL, RequirementProfile.MAXED, Map.of(), true);
 	}
 
 	public String toJson()
@@ -156,7 +151,7 @@ public final class PlayerProfile
 		Map<String, Map<Integer, Integer>> bySource = null;
 		if (root.has("ownedBySource"))
 		{
-			bySource = new java.util.LinkedHashMap<>();
+			bySource = new LinkedHashMap<>();
 			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet())
 			{
 				Map<Integer, Integer> items = new HashMap<>();

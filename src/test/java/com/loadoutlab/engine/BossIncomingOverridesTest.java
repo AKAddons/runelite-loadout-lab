@@ -214,6 +214,14 @@ public class BossIncomingOverridesTest
 			armour(0, 0, 0, 0, 0), 99, 99).protectPrayer);
 	}
 
+	/** The style whitelist BossIncomingOverrides.parse() used to enforce at
+	 * load time. It moved here with the rest of the data validation: test
+	 * source is free of the plugin-hub token cap, and the sweep below is
+	 * coupled to a hardcoded boss list, so a newly added boss has to come
+	 * through this check. */
+	private static final java.util.Set<String> STYLES = java.util.Set.of(
+		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless");
+
 	@Test
 	public void everySeededBossIsPresentAndItsSharesSumToAtMostOne()
 	{
@@ -229,11 +237,20 @@ public class BossIncomingOverridesTest
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
 				.overridesFor(named(name, List.of("Melee")));
 			Assert.assertNotNull(name, override);
+			// An EMPTY attack list would sail through the shares check below,
+			// so demand attacks before looking at them.
+			Assert.assertFalse(name + ": no attacks", override.getAttacks().isEmpty());
 			double shares = 0;
 			for (BossIncomingOverrides.Attack attack : override.getAttacks())
 			{
+				Assert.assertTrue(name + ": unknown style " + attack.getStyle(),
+					STYLES.contains(attack.getStyle()));
 				Assert.assertTrue(name, attack.getMaxHit() > 0);
 				Assert.assertTrue(name, attack.getShare() > 0);
+				Assert.assertTrue(name, attack.getShare() <= 1.0);
+				Assert.assertTrue(name, attack.getSpeedTicks() >= 0);
+				Assert.assertTrue(name + ": prayerFactor out of range",
+					attack.getPrayerFactor() >= 0 && attack.getPrayerFactor() <= 1);
 				if ("typeless".equals(attack.getStyle()))
 				{
 					Assert.assertFalse(name, attack.isPrayable());

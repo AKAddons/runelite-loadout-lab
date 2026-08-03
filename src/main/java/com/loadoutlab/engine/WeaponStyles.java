@@ -1,6 +1,11 @@
 package com.loadoutlab.engine;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.JsonResources;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +22,12 @@ import java.util.Map;
  * <p>Stances: accurate = +3 attack, aggressive = +3 strength,
  * controlled = +1 both. Defensive is omitted - it adds no offence, so it
  * can never be the best-DPS pick.
+ *
+ * <p>The table itself lives in weapon_styles.json (hub token cap: data goes
+ * in resources, not source). It is GENERATED from the old hardcoded table by
+ * scripts/extract_weapon_styles.py, which asserts 24 categories, 56 style
+ * entries and the 9-entry fallback row - regenerate with that script, never
+ * by hand.
  */
 public final class WeaponStyles
 {
@@ -35,56 +46,39 @@ public final class WeaponStyles
 		}
 	}
 
-	private static MeleeStyle accurate(String type)
-	{
-		return new MeleeStyle(type, 3, 0);
-	}
+	private static final String RESOURCE = "/com/loadoutlab/data/weapon_styles.json";
+	/** Resource key of the unknown-category fallback row - not a real weapon
+	 * category, so it can never collide with one. */
+	private static final String FALLBACK = "*";
 
-	private static MeleeStyle aggressive(String type)
-	{
-		return new MeleeStyle(type, 0, 3);
-	}
-
-	private static MeleeStyle controlled(String type)
-	{
-		return new MeleeStyle(type, 1, 1);
-	}
-
-	private static final Map<String, List<MeleeStyle>> BY_CATEGORY = new HashMap<>();
-
-	static
-	{
-		BY_CATEGORY.put("2h Sword", List.of(accurate("slash"), aggressive("slash"), aggressive("crush")));
-		BY_CATEGORY.put("Axe", List.of(accurate("slash"), aggressive("slash"), aggressive("crush")));
-		BY_CATEGORY.put("Banner", List.of(accurate("stab"), aggressive("slash"), controlled("crush")));
-		BY_CATEGORY.put("Bladed Staff", List.of(accurate("stab"), aggressive("slash")));
-		BY_CATEGORY.put("Bludgeon", List.of(aggressive("crush")));
-		BY_CATEGORY.put("Blunt", List.of(accurate("crush"), aggressive("crush")));
-		BY_CATEGORY.put("Bulwark", List.of(accurate("crush")));
-		BY_CATEGORY.put("Claw", List.of(accurate("slash"), aggressive("slash"), controlled("stab")));
-		BY_CATEGORY.put("Flail", List.of(accurate("slash"), aggressive("slash")));
-		BY_CATEGORY.put("Gun", List.of(aggressive("crush")));
-		BY_CATEGORY.put("Multi-Melee", List.of(accurate("stab"), aggressive("slash"), aggressive("crush")));
-		BY_CATEGORY.put("Partisan", List.of(accurate("stab"), aggressive("stab"), aggressive("crush")));
-		BY_CATEGORY.put("Pickaxe", List.of(accurate("stab"), aggressive("stab"), aggressive("crush")));
-		BY_CATEGORY.put("Polearm", List.of(controlled("stab"), aggressive("slash")));
-		BY_CATEGORY.put("Polestaff", List.of(accurate("crush"), aggressive("crush")));
-		BY_CATEGORY.put("Salamander", List.of(aggressive("slash")));
-		BY_CATEGORY.put("Scythe", List.of(accurate("slash"), aggressive("slash"), aggressive("crush")));
-		BY_CATEGORY.put("Slash Sword", List.of(accurate("slash"), aggressive("slash"), controlled("stab")));
-		BY_CATEGORY.put("Spear", List.of(controlled("stab"), controlled("slash"), controlled("crush")));
-		BY_CATEGORY.put("Spiked", List.of(accurate("crush"), aggressive("crush"), controlled("stab")));
-		BY_CATEGORY.put("Stab Sword", List.of(accurate("stab"), aggressive("stab"), aggressive("slash")));
-		BY_CATEGORY.put("Staff", List.of(accurate("crush"), aggressive("crush")));
-		BY_CATEGORY.put("Unarmed", List.of(accurate("crush"), aggressive("crush")));
-		BY_CATEGORY.put("Whip", List.of(accurate("slash"), controlled("slash")));
-	}
+	private static final Map<String, List<MeleeStyle>> BY_CATEGORY = load();
 
 	/** Every attack type x stance a full search would try - the fallback. */
-	private static final List<MeleeStyle> ALL = List.of(
-		accurate("stab"), aggressive("stab"), controlled("stab"),
-		accurate("slash"), aggressive("slash"), controlled("slash"),
-		accurate("crush"), aggressive("crush"), controlled("crush"));
+	private static final List<MeleeStyle> ALL =
+		BY_CATEGORY.getOrDefault(FALLBACK, Collections.emptyList());
+
+	private static Map<String, List<MeleeStyle>> load()
+	{
+		Map<String, List<MeleeStyle>> table = new HashMap<>();
+		JsonObject root = JsonResources.object(RESOURCE);
+		if (root == null)
+		{
+			return table;
+		}
+		for (Map.Entry<String, JsonElement> entry : root.entrySet())
+		{
+			List<MeleeStyle> styles = new ArrayList<>();
+			for (JsonElement element : entry.getValue().getAsJsonArray())
+			{
+				JsonObject style = element.getAsJsonObject();
+				styles.add(new MeleeStyle(style.get("attackType").getAsString(),
+					style.get("attackStance").getAsInt(),
+					style.get("strengthStance").getAsInt()));
+			}
+			table.put(entry.getKey(), Collections.unmodifiableList(styles));
+		}
+		return table;
+	}
 
 	private WeaponStyles()
 	{
@@ -93,11 +87,13 @@ public final class WeaponStyles
 	/** The melee styles this weapon actually offers (unknown category: all). */
 	public static List<MeleeStyle> melee(GearItem weapon)
 	{
-		if (weapon == null)
-		{
-			return BY_CATEGORY.get("Unarmed");
-		}
-		List<MeleeStyle> styles = BY_CATEGORY.get(weapon.getCategory());
+		// Null weapon = bare fists, which is a real category row. Looking it up
+		// through the same map (rather than returning it directly) is what
+		// keeps a missing resource from returning null here and NPE-ing
+		// DpsCalculator: an absent row falls back to ALL, and ALL itself
+		// defaults to an empty list.
+		List<MeleeStyle> styles = BY_CATEGORY.get(
+			weapon == null ? "Unarmed" : weapon.getCategory());
 		return styles != null ? styles : ALL;
 	}
 }

@@ -1,26 +1,41 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
+import lombok.Getter;
+import java.util.List;
+import java.util.Collections;
 
 public final class DpsResult
 {
+	@Getter
 	private final Loadout loadout;
+	@Getter
 	private final double dps;
+	@Getter
 	private final double accuracy;
+	@Getter
 	private final double expectedHit;
+	@Getter
 	private final int maxHit;
+	@Getter
 	private final int attackSpeed;
+	@Getter
 	private final String attackType;
+	@Getter
 	private final long attackRoll;
+	@Getter
 	private final long defenceRoll;
+	@Getter
 	private final int purchaseCost;
 	private final String spellName;
 	/** Conditional bonuses the calculator actually counted for this set
 	 * (salve, wilderness weapon, crystal set...) - user assurance that
 	 * the situational math is happening. */
-	private final java.util.List<String> countedBonuses;
+	@Getter
+	private final List<String> countedBonuses;
 	/** True when the optimizer could not satisfy a dragonfire shield
 	 * constraint (no protective shield in the pool) and fell back to the
 	 * unconstrained set - the panel must say "assumes a super antifire". */
+	@Getter
 	private final boolean antifireAssumed;
 
 	public DpsResult(
@@ -51,7 +66,7 @@ public final class DpsResult
 		String spellName)
 	{
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
-			attackRoll, defenceRoll, purchaseCost, spellName, java.util.Collections.emptyList(), false);
+			attackRoll, defenceRoll, purchaseCost, spellName, Collections.emptyList(), false);
 	}
 
 	private DpsResult(
@@ -66,7 +81,7 @@ public final class DpsResult
 		long defenceRoll,
 		int purchaseCost,
 		String spellName,
-		java.util.List<String> countedBonuses,
+		List<String> countedBonuses,
 		boolean antifireAssumed)
 	{
 		this.loadout = loadout;
@@ -81,25 +96,15 @@ public final class DpsResult
 		this.purchaseCost = Math.max(0, purchaseCost);
 		this.spellName = spellName == null ? "" : spellName;
 		this.countedBonuses = countedBonuses == null
-			? java.util.Collections.emptyList() : countedBonuses;
+			? Collections.emptyList() : countedBonuses;
 		this.antifireAssumed = antifireAssumed;
 	}
 
-	public java.util.List<String> getCountedBonuses()
-	{
-		return countedBonuses;
-	}
-
-	public DpsResult withCountedBonuses(java.util.List<String> bonuses)
+	public DpsResult withCountedBonuses(List<String> bonuses)
 	{
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
-			java.util.List.copyOf(bonuses), antifireAssumed);
-	}
-
-	public boolean isAntifireAssumed()
-	{
-		return antifireAssumed;
+			List.copyOf(bonuses), antifireAssumed);
 	}
 
 	public DpsResult withAntifireAssumed(boolean assumed)
@@ -132,56 +137,6 @@ public final class DpsResult
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses,
 			antifireAssumed);
-	}
-
-	public Loadout getLoadout()
-	{
-		return loadout;
-	}
-
-	public double getDps()
-	{
-		return dps;
-	}
-
-	public double getAccuracy()
-	{
-		return accuracy;
-	}
-
-	public double getExpectedHit()
-	{
-		return expectedHit;
-	}
-
-	public int getMaxHit()
-	{
-		return maxHit;
-	}
-
-	public int getAttackSpeed()
-	{
-		return attackSpeed;
-	}
-
-	public String getAttackType()
-	{
-		return attackType;
-	}
-
-	public long getAttackRoll()
-	{
-		return attackRoll;
-	}
-
-	public long getDefenceRoll()
-	{
-		return defenceRoll;
-	}
-
-	public int getPurchaseCost()
-	{
-		return purchaseCost;
 	}
 
 	/** The autocast spell, or null for powered staves / non-magic - the

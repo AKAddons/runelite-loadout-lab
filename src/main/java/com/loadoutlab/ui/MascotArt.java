@@ -8,9 +8,10 @@ import javax.imageio.ImageIO;
 /**
  * Shared pixel-art plumbing for the mascot loading animations: the 16x16
  * sprite sliced into body and leg segments, the palette, and the leg
- * renderer. MascotSpinner (working out) and MascotChef (cooking) both draw
- * from here so the creature stays one creature instead of two drifting
- * copies of the slicing arithmetic.
+ * renderer. Every mood draws from here - MascotSpinner (working out) and
+ * MascotSkater today, the benched chef and cauldron on restore - so the
+ * creature stays one creature instead of drifting copies of the slicing
+ * arithmetic.
  */
 final class MascotArt
 {

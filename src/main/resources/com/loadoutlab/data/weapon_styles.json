@@ -1,0 +1,377 @@
+{
+ "*": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "stab",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  },
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "slash",
+   "strengthStance": 1
+  },
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "crush",
+   "strengthStance": 1
+  }
+ ],
+ "2h Sword": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Axe": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Banner": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "crush",
+   "strengthStance": 1
+  }
+ ],
+ "Bladed Staff": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  }
+ ],
+ "Bludgeon": [
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Blunt": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Bulwark": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  }
+ ],
+ "Claw": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  }
+ ],
+ "Flail": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  }
+ ],
+ "Gun": [
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Multi-Melee": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Partisan": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "stab",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Pickaxe": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "stab",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Polearm": [
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  }
+ ],
+ "Polestaff": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Salamander": [
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  }
+ ],
+ "Scythe": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Slash Sword": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  }
+ ],
+ "Spear": [
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  },
+  {
+   "attackStance": 1,
+   "attackType": "slash",
+   "strengthStance": 1
+  },
+  {
+   "attackStance": 1,
+   "attackType": "crush",
+   "strengthStance": 1
+  }
+ ],
+ "Spiked": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 1,
+   "attackType": "stab",
+   "strengthStance": 1
+  }
+ ],
+ "Stab Sword": [
+  {
+   "attackStance": 3,
+   "attackType": "stab",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "stab",
+   "strengthStance": 3
+  },
+  {
+   "attackStance": 0,
+   "attackType": "slash",
+   "strengthStance": 3
+  }
+ ],
+ "Staff": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Unarmed": [
+  {
+   "attackStance": 3,
+   "attackType": "crush",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 0,
+   "attackType": "crush",
+   "strengthStance": 3
+  }
+ ],
+ "Whip": [
+  {
+   "attackStance": 3,
+   "attackType": "slash",
+   "strengthStance": 0
+  },
+  {
+   "attackStance": 1,
+   "attackType": "slash",
+   "strengthStance": 1
+  }
+ ]
+}

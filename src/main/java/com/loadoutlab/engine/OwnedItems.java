@@ -1,15 +1,19 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
 
 public final class OwnedItems
 {
 	public static final OwnedItems EMPTY = new OwnedItems(Collections.emptyMap(), false);
 
+	@Getter
 	private final Map<Integer, Integer> quantities;
+	@Getter
 	private final boolean bankScanned;
 
 	public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned)
@@ -21,16 +25,6 @@ public final class OwnedItems
 	public boolean owns(int itemId)
 	{
 		return quantities.getOrDefault(itemId, 0) > 0;
-	}
-
-	public Map<Integer, Integer> getQuantities()
-	{
-		return quantities;
-	}
-
-	public boolean isBankScanned()
-	{
-		return bankScanned;
 	}
 
 	public int size()
@@ -57,7 +51,7 @@ public final class OwnedItems
 				ids[count++] = entry.getKey();
 			}
 		}
-		java.util.Arrays.sort(ids, 0, count);
+		Arrays.sort(ids, 0, count);
 		int hash = count;
 		for (int i = 0; i < count; i++)
 		{

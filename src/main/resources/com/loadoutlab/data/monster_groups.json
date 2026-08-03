@@ -1,0 +1,774 @@
+[
+ {
+  "name": "Fight Caves",
+  "members": [
+   {
+    "name": "Tz-Kih"
+   },
+   {
+    "name": "Tz-Kek",
+    "version": "Level 45"
+   },
+   {
+    "name": "Tok-Xil"
+   },
+   {
+    "name": "Yt-MejKot"
+   },
+   {
+    "name": "Ket-Zek"
+   },
+   {
+    "name": "Yt-HurKot",
+    "version": "Level 108"
+   },
+   {
+    "name": "TzTok-Jad"
+   }
+  ],
+  "note": "The full wave roster - healers included (you attack them on Jad).",
+  "aliases": [
+   "jad",
+   "fight cave",
+   "fire cape"
+  ]
+ },
+ {
+  "name": "Inferno",
+  "members": [
+   {
+    "name": "Jal-Nib"
+   },
+   {
+    "name": "Jal-MejRah"
+   },
+   {
+    "name": "Jal-Ak",
+    "version": ""
+   },
+   {
+    "name": "Jal-ImKot"
+   },
+   {
+    "name": "Jal-Xil"
+   },
+   {
+    "name": "Jal-Zek"
+   },
+   {
+    "name": "Jal-MejJak"
+   },
+   {
+    "name": "JalTok-Jad"
+   },
+   {
+    "name": "TzKal-Zuk"
+   }
+  ],
+  "note": "The full wave roster incl. Jad-phase healers; Zuk at his normal phase.",
+  "aliases": [
+   "zuk",
+   "infernal cape"
+  ]
+ },
+ {
+  "name": "Zulrah (all forms)",
+  "members": [
+   {
+    "name": "Zulrah",
+    "version": "Serpentine"
+   },
+   {
+    "name": "Zulrah",
+    "version": "Magma"
+   },
+   {
+    "name": "Zulrah",
+    "version": "Tanzanite"
+   }
+  ],
+  "note": "One set judged across all three forms.",
+  "aliases": [
+   "zulrah"
+  ]
+ },
+ {
+  "name": "Dagannoth Kings",
+  "members": [
+   {
+    "name": "Dagannoth Rex"
+   },
+   {
+    "name": "Dagannoth Prime"
+   },
+   {
+    "name": "Dagannoth Supreme"
+   }
+  ],
+  "note": "The trio - one set for the whole trip.",
+  "aliases": [
+   "dks",
+   "dagannoth"
+  ]
+ },
+ {
+  "name": "Barrows",
+  "members": [
+   {
+    "name": "Ahrim the Blighted"
+   },
+   {
+    "name": "Dharok the Wretched"
+   },
+   {
+    "name": "Guthan the Infested"
+   },
+   {
+    "name": "Karil the Tainted"
+   },
+   {
+    "name": "Torag the Corrupted"
+   },
+   {
+    "name": "Verac the Defiled"
+   }
+  ],
+  "note": "All six brothers.",
+  "aliases": [
+   "brothers"
+  ]
+ },
+ {
+  "name": "Moons of Peril",
+  "members": [
+   {
+    "name": "Blood Moon"
+   },
+   {
+    "name": "Blue Moon"
+   },
+   {
+    "name": "Eclipse Moon",
+    "version": "Regular"
+   }
+  ],
+  "note": "The lunar trio.",
+  "aliases": [
+   "lunar",
+   "perilous moons"
+  ]
+ },
+ {
+  "name": "Tormented Demons",
+  "members": [
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "melee"
+   },
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "ranged"
+   },
+   {
+    "name": "Tormented Demon",
+    "immuneTo": "magic"
+   }
+  ],
+  "aliases": [
+   "td",
+   "tds",
+   "tormented"
+  ],
+  "note": "One phase per shielded style - the demon's shield locks out one style at a time, so each row shows the best answer while that shield is up."
+ },
+ {
+  "name": "Demonic gorillas",
+  "members": [
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "melee"
+   },
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "ranged"
+   },
+   {
+    "name": "Demonic gorilla",
+    "immuneTo": "magic"
+   }
+  ],
+  "aliases": [
+   "demonics",
+   "gorillas",
+   "demonic"
+  ],
+  "note": "One phase per protection prayer - after enough damage from a style the gorilla prays it away, so each row shows the best answer while that prayer is up."
+ },
+ {
+  "name": "Kalphite Queen",
+  "members": [
+   {
+    "name": "Kalphite Queen",
+    "version": "Crawling",
+    "immuneTo": [
+     "magic",
+     "ranged"
+    ],
+    "label": "Crawling (melee only)"
+   },
+   {
+    "name": "Kalphite Queen",
+    "version": "Airborne",
+    "immuneTo": "melee",
+    "label": "Airborne (no melee)"
+   }
+  ],
+  "aliases": [
+   "kq",
+   "kalphite"
+  ],
+  "note": "Both forms - the crawling form prays away magic and ranged, the airborne form prays away melee."
+ },
+ {
+  "name": "Abyssal Sire",
+  "members": [
+   {
+    "name": "Respiratory system"
+   },
+   {
+    "name": "Abyssal Sire",
+    "version": "Phase 1"
+   },
+   {
+    "name": "Abyssal Sire",
+    "version": "Phase 3 (stage 2)"
+   },
+   {
+    "name": "Spawn"
+   },
+   {
+    "name": "Scion"
+   }
+  ],
+  "aliases": [
+   "sire",
+   "abyssal"
+  ],
+  "note": "The whole fight: respiratory systems (phase 1), the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1), and the spawn/scion adds."
+ },
+ {
+  "name": "Theatre of Blood (Entry)",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "The Maiden of Sugadinti",
+    "version": "Entry Mode"
+   },
+   {
+    "name": "Pestilent Bloat",
+    "version": "Entry"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Entry - Melee form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Entry - Ranged form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Entry",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Entry - Magic form"
+   },
+   {
+    "name": "Sotetseg",
+    "version": "Entry"
+   },
+   {
+    "name": "Xarpus",
+    "version": "Entry mode"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 1"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 2"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Entry mode, Phase 3"
+   }
+  ],
+  "aliases": [
+   "tob entry",
+   "entry mode tob"
+  ],
+  "note": "Entry-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style."
+ },
+ {
+  "name": "Theatre of Blood (Hard)",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "The Maiden of Sugadinti",
+    "version": "Hard Mode"
+   },
+   {
+    "name": "Pestilent Bloat",
+    "version": "Hard"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Hard - Melee form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Hard - Ranged form"
+   },
+   {
+    "name": "Nylocas Vasilias",
+    "version": "Hard",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Hard - Magic form"
+   },
+   {
+    "name": "Sotetseg",
+    "version": "Hard"
+   },
+   {
+    "name": "Xarpus",
+    "version": "Hard mode"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 1"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 2"
+   },
+   {
+    "name": "Verzik Vitur",
+    "version": "Hard mode, Phase 3"
+   }
+  ],
+  "aliases": [
+   "tob",
+   "theatre",
+   "theater",
+   "verzik",
+   "hmt"
+  ],
+  "note": "Hard-mode rows for all six rooms; the corpus merges normal-mode stats into these labels, so this is also the closest fit for the regular raid. Each Nylocas Vasilias form takes damage only from its own style."
+ },
+ {
+  "name": "Tombs of Amascut",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "Ba-Ba"
+   },
+   {
+    "name": "Kephri",
+    "version": "Shielded"
+   },
+   {
+    "name": "Arcane Scarab"
+   },
+   {
+    "name": "Agile Scarab"
+   },
+   {
+    "name": "Akkha",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Melee only"
+   },
+   {
+    "name": "Akkha",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "Ranged only"
+   },
+   {
+    "name": "Akkha",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "Magic only"
+   },
+   {
+    "name": "Zebak"
+   },
+   {
+    "name": "Obelisk (Tombs of Amascut)"
+   },
+   {
+    "name": "Elidinis' Warden",
+    "version": "Damaged",
+    "immuneTo": [
+     "melee",
+     "ranged"
+    ],
+    "label": "P2 (magic only)"
+   },
+   {
+    "name": "Tumeken's Warden",
+    "version": "Damaged",
+    "immuneTo": [
+     "melee",
+     "magic"
+    ],
+    "label": "P2 (ranged only)"
+   },
+   {
+    "name": "Elidinis' Warden",
+    "version": "Enraged"
+   },
+   {
+    "name": "Tumeken's Warden",
+    "version": "Enraged"
+   }
+  ],
+  "aliases": [
+   "toa",
+   "tombs",
+   "amascut",
+   "wardens"
+  ],
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
+ },
+ {
+  "name": "Chambers of Xeric",
+  "inventory": 8,
+  "members": [
+   {
+    "name": "Tekton",
+    "version": "Normal"
+   },
+   {
+    "name": "Vasa Nistirio"
+   },
+   {
+    "name": "Vespula"
+   },
+   {
+    "name": "Muttadile",
+    "version": "Large"
+   },
+   {
+    "name": "Muttadile",
+    "version": "Small"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Magic"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Melee"
+   },
+   {
+    "name": "Vanguard",
+    "version": "Ranged"
+   },
+   {
+    "name": "Skeletal Mystic"
+   },
+   {
+    "name": "Ice demon"
+   },
+   {
+    "name": "Lizardman shaman (Chambers of Xeric)"
+   },
+   {
+    "name": "Guardian (Chambers of Xeric)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Head (Normal)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Left claw (Normal)"
+   },
+   {
+    "name": "Great Olm",
+    "version": "Right claw (Normal)"
+   }
+  ],
+  "aliases": [
+   "cox",
+   "chambers",
+   "xeric",
+   "olm"
+  ],
+  "note": "The common combat rooms and Olm (head + both claws). A Vanguard's label is its OWN attack style - each is weak to the next step of the combat triangle (mage Vanguard to ranged, melee to magic, ranged to melee). Rooms roll per raid - treat the roster as the pool."
+ },
+ {
+  "name": "Fortis Colosseum",
+  "members": [
+   {
+    "name": "Fremennik warband archer"
+   },
+   {
+    "name": "Fremennik warband seer"
+   },
+   {
+    "name": "Fremennik warband berserker"
+   },
+   {
+    "name": "Serpent shaman"
+   },
+   {
+    "name": "Javelin Colossus"
+   },
+   {
+    "name": "Manticore"
+   },
+   {
+    "name": "Shockwave Colossus"
+   },
+   {
+    "name": "Minotaur (Fortis Colosseum)"
+   },
+   {
+    "name": "Sol Heredit"
+   }
+  ],
+  "aliases": [
+   "colosseum",
+   "sol",
+   "heredit",
+   "fortis"
+  ],
+  "note": "The full wave roster through Sol Heredit."
+ },
+ {
+  "name": "The Gauntlet",
+  "members": [
+   {
+    "name": "Crystalline Hunllef"
+   },
+   {
+    "name": "Crystalline Bear"
+   },
+   {
+    "name": "Crystalline Dragon"
+   },
+   {
+    "name": "Crystalline Dark Beast"
+   }
+  ],
+  "aliases": [
+   "gauntlet",
+   "hunllef"
+  ],
+  "note": "Gear inside is limited to the raid-crafted crystal tiers - the recommendations use only those (perfected assumed for now).",
+  "comingSoon": true
+ },
+ {
+  "name": "Corrupted Gauntlet",
+  "members": [
+   {
+    "name": "Corrupted Hunllef"
+   },
+   {
+    "name": "Corrupted Bear"
+   },
+   {
+    "name": "Corrupted Dragon"
+   },
+   {
+    "name": "Corrupted Dark Beast"
+   }
+  ],
+  "aliases": [
+   "cg",
+   "corrupted gauntlet"
+  ],
+  "note": "Gear inside is limited to the raid-crafted corrupted tiers - the recommendations use only those (perfected assumed for now).",
+  "comingSoon": true
+ },
+ {
+  "name": "Grotesque Guardians",
+  "members": [
+   {
+    "name": "Dawn"
+   },
+   {
+    "name": "Dusk",
+    "version": "First form"
+   },
+   {
+    "name": "Dusk",
+    "version": "Second form"
+   }
+  ],
+  "aliases": [
+   "gg",
+   "grotesque",
+   "guardians",
+   "dawn",
+   "dusk"
+  ],
+  "note": "Dawn and both of Dusk's forms."
+ },
+ {
+  "name": "The Hueycoatl",
+  "members": [
+   {
+    "name": "The Hueycoatl",
+    "version": "Normal"
+   },
+   {
+    "name": "The Hueycoatl",
+    "version": "Body"
+   },
+   {
+    "name": "The Hueycoatl",
+    "version": "Tail"
+   }
+  ],
+  "aliases": [
+   "huey",
+   "hueycoatl"
+  ],
+  "note": "Head, body and tail segments."
+ },
+ {
+  "name": "Phantom Muspah",
+  "members": [
+   {
+    "name": "Phantom Muspah",
+    "version": "Ranged"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Melee"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Shielded"
+   },
+   {
+    "name": "Phantom Muspah",
+    "version": "Post-shield"
+   }
+  ],
+  "aliases": [
+   "muspah",
+   "pm"
+  ],
+  "note": "All four forms of the fight."
+ },
+ {
+  "name": "Nex",
+  "members": [
+   {
+    "name": "Nex"
+   },
+   {
+    "name": "Fumus"
+   },
+   {
+    "name": "Umbra"
+   },
+   {
+    "name": "Cruor"
+   },
+   {
+    "name": "Glacies"
+   }
+  ],
+  "aliases": [
+   "nex",
+   "zaros",
+   "ancient prison"
+  ],
+  "note": "Nex and her four minions."
+ },
+ {
+  "name": "Royal Titans",
+  "members": [
+   {
+    "name": "Branda the Fire Queen"
+   },
+   {
+    "name": "Eldric the Ice King"
+   },
+   {
+    "name": "Fire elemental (Royal Titans)"
+   },
+   {
+    "name": "Ice elemental (Royal Titans)"
+   }
+  ],
+  "aliases": [
+   "royal titans",
+   "titans",
+   "branda",
+   "eldric"
+  ],
+  "note": "The duo and their elementals."
+ },
+ {
+  "name": "Yama",
+  "members": [
+   {
+    "name": "Yama",
+    "version": "Normal"
+   },
+   {
+    "name": "Yama",
+    "version": "Phase 3"
+   },
+   {
+    "name": "Judge of Yama"
+   },
+   {
+    "name": "Void Flare"
+   }
+  ],
+  "aliases": [
+   "yama",
+   "judge"
+  ],
+  "note": "The phases, the mid-fight Judge duel, and the void flare adds."
+ }
+]

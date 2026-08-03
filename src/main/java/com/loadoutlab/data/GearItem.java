@@ -3,31 +3,52 @@ package com.loadoutlab.data;
 
 import java.util.Locale;
 
+import lombok.Getter;
+
 public final class GearItem
 {
+	@Getter
 	private final int id;
+	@Getter
 	private final String name;
+	@Getter
 	private final String version;
+	@Getter
 	private final GearSlot slot;
+	@Getter
 	private final String category;
+	@Getter
 	private final int speed;
+	@Getter
 	private final boolean twoHanded;
+	@Getter
 	private final boolean standardGear;
+	@Getter
 	private final boolean tradeable;
+	@Getter
 	private final boolean members;
+	@Getter
 	private final Integer estimatedPrice;
+	@Getter
 	private final StatBlock offensive;
+	@Getter
 	private final StatBlock defensive;
+	@Getter
 	private final StatBlock bonuses;
+	@Getter
 	private final GearRequirements requirements;
 	// Lowercase views, precomputed once: the engine matches items by name
 	// fragment on every candidate evaluation, and per-call toLowerCase was
 	// the single hottest path in the whole optimize (64% of CPU samples).
+	@Getter
 	private final String nameLower;
+	@Getter
 	private final String versionLower;
+	@Getter
 	private final String categoryLower;
 	private final String labelLower;
 	private final String nameVersionLower;
+	@Getter
 	private final boolean poweredStaff;
 
 	public GearItem(
@@ -82,10 +103,6 @@ public final class GearItem
 	}
 
 	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
-	public boolean isPoweredStaff()
-	{
-		return poweredStaff;
-	}
 
 	public boolean isWeaponFor(com.loadoutlab.engine.CombatStyle style)
 	{
@@ -154,10 +171,6 @@ public final class GearItem
 		return isSlayerHead() && normalizedLabel().contains("(i)");
 	}
 
-	public boolean isMembers()
-	{
-		return members;
-	}
 
 	public String label()
 	{
@@ -171,16 +184,8 @@ public final class GearItem
 	}
 
 	/** getName() lowercased (Locale.ROOT), precomputed. */
-	public String getNameLower()
-	{
-		return nameLower;
-	}
 
 	/** getVersion() lowercased (Locale.ROOT), precomputed. */
-	public String getVersionLower()
-	{
-		return versionLower;
-	}
 
 	/**
 	 * Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
@@ -206,10 +211,6 @@ public final class GearItem
 	}
 
 	/** getCategory() lowercased (Locale.ROOT), precomputed. */
-	public String getCategoryLower()
-	{
-		return categoryLower;
-	}
 
 	private String normalizedLabel()
 	{
@@ -221,73 +222,17 @@ public final class GearItem
 		return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice);
 	}
 
-	public int getId()
-	{
-		return id;
-	}
 
-	public String getName()
-	{
-		return name;
-	}
 
-	public String getVersion()
-	{
-		return version;
-	}
 
-	public GearSlot getSlot()
-	{
-		return slot;
-	}
 
-	public String getCategory()
-	{
-		return category;
-	}
 
-	public int getSpeed()
-	{
-		return speed;
-	}
 
-	public boolean isTwoHanded()
-	{
-		return twoHanded;
-	}
 
-	public boolean isStandardGear()
-	{
-		return standardGear;
-	}
 
-	public boolean isTradeable()
-	{
-		return tradeable;
-	}
 
-	public Integer getEstimatedPrice()
-	{
-		return estimatedPrice;
-	}
 
-	public StatBlock getOffensive()
-	{
-		return offensive;
-	}
 
-	public StatBlock getDefensive()
-	{
-		return defensive;
-	}
 
-	public StatBlock getBonuses()
-	{
-		return bonuses;
-	}
 
-	public GearRequirements getRequirements()
-	{
-		return requirements;
-	}
 }

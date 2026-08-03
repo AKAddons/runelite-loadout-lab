@@ -1,11 +1,14 @@
 package com.loadoutlab.engine;
 
+import lombok.AllArgsConstructor;
+
 /**
  * Unlock-gated prayers: Piety/Chivalry need King's Ransom (Knight Waves),
  * Rigour/Augury need CoX prayer scrolls, Deadeye/Mystic Vigour need
  * Colosseum-era scrolls. Level requirements alone are not enough - the
  * plugin reads quest state and the unlock varbits at snapshot time.
  */
+@AllArgsConstructor
 public final class PrayerUnlocks
 {
 	/** Everything unlocked - tests, harness, and the game-best ceiling. */
@@ -22,16 +25,6 @@ public final class PrayerUnlocks
 	private final boolean augury;
 	private final boolean deadeye;
 	private final boolean mysticVigour;
-
-	public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury,
-		boolean deadeye, boolean mysticVigour)
-	{
-		this.kingsRansom = kingsRansom;
-		this.rigour = rigour;
-		this.augury = augury;
-		this.deadeye = deadeye;
-		this.mysticVigour = mysticVigour;
-	}
 
 	public boolean piety()
 	{

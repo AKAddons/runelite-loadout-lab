@@ -37,6 +37,13 @@ listed below.
   spells share a class-wide max scaled by Magic level (Water Surge at 95+
   hits like Fire Surge) - this is what makes weakness-matched spell picks
   win vs elemental-weak monsters.
+- ~~Elemental weakness accuracy stacking~~ FIXED 2026-07-23 (the Wiki
+  calc button's first field catch, Iron dragon + Earth Surge): the
+  +severity% accuracy bonus adds severity% OF THE BASE ROLL after the
+  conditional multipliers (official-verified), not a multiplier on the
+  boosted roll - with slayer helm + dragon hunter wand active the old
+  order over-credited ~1.4% dps. Damage side was already additive-from-
+  base and unchanged. Harness vector: dhw-irondragon.
 - ~~Tormented demons~~ ADDED (TormentedDemonRules, matching the official
   default phase): guaranteed hits; 20% damage reduction bypassed by
   demonbane and abyssal weapons. All TD scenarios within 3.4%.
@@ -163,3 +170,17 @@ All three set effects are modeled (broken pieces count, per the wiki):
 
 Not modeled: burn stack-cap/target-death truncation (the wiki's own
 average ignores it too), and Frostweaver's manual-trigger variants.
+
+## Sustain / healing not modelled (DELIBERATE - Max DPS limitation, 2026-07-19)
+
+The engine models raw DPS and, since 2026-07-19, a spec's DPS added over
+just attacking. It models ZERO survivability value: a heal-on-hit or a
+heal-spec (Saradomin godsword, toxic blowpipe, Saradomin sword, Guthan's)
+is worth nothing under Max DPS. This is CORRECT for a pure-DPS metric - a
+heal is not damage - and it is why our spec/weapon picks match the wiki on
+Graardor for the top DPS options while the wiki also lists SGS (heal) and
+the blowpipe (heal off minions), which we rank low. It is NOT a bug; do
+not "fix" it by crediting healing inside Max DPS - that was verified to
+move the ranking away from the wiki. The proper home is the roadmapped
+"Smart" mode (see ROADMAP.md), which values HP restored as offensive-
+equivalent DPS scaled by the mob's incoming DTPS.

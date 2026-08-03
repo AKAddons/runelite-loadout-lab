@@ -34,7 +34,7 @@ class DragonfireHonestyTest
 	{
 		data = new DataService().load();
 		vorkath = data.searchMonsters("vorkath", 1).get(0);
-		assertEquals("Post-quest", vorkath.getVersion(), "test premise: everyday Vorkath");
+		assertEquals("", vorkath.getVersion(), "test premise: everyday Vorkath owns the bare name");
 		assertTrue(DragonfireRules.breathesFire(vorkath));
 	}
 

@@ -4,11 +4,23 @@ package com.loadoutlab.data;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Locale;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Comparator;
+import java.util.ArrayList;
+
+import lombok.Getter;
 
 public final class LoadoutData
 {
+	@Getter
 	private final List<GearItem> gearItems;
+	@Getter
 	private final List<MonsterStats> monsters;
+	@Getter
 	private final List<SpellStats> spells;
 	private final Map<Integer, GearItem> gearById;
 	private final Map<Integer, Integer> variantToBase;
@@ -28,10 +40,10 @@ public final class LoadoutData
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
 		this.variantToBase = Collections.unmodifiableMap(variantToBase);
-		java.util.EnumMap<GearSlot, List<GearItem>> bySlot = new java.util.EnumMap<>(GearSlot.class);
+		EnumMap<GearSlot, List<GearItem>> bySlot = new EnumMap<>(GearSlot.class);
 		for (GearSlot slot : GearSlot.values())
 		{
-			bySlot.put(slot, new java.util.ArrayList<>());
+			bySlot.put(slot, new ArrayList<>());
 		}
 		for (GearItem item : this.gearItems)
 		{
@@ -54,8 +66,8 @@ public final class LoadoutData
 	 */
 	public LoadoutData freeToPlayView()
 	{
-		java.util.List<GearItem> free = new java.util.ArrayList<>();
-		java.util.Map<Integer, GearItem> byId = new java.util.HashMap<>();
+		List<GearItem> free = new ArrayList<>();
+		Map<Integer, GearItem> byId = new HashMap<>();
 		for (GearItem g : gearItems)
 		{
 			if (!g.isMembers())
@@ -64,7 +76,7 @@ public final class LoadoutData
 				byId.put(g.getId(), g);
 			}
 		}
-		java.util.List<SpellStats> freeSpells = new java.util.ArrayList<>();
+		List<SpellStats> freeSpells = new ArrayList<>();
 		for (SpellStats spell : spells)
 		{
 			if ("standard".equalsIgnoreCase(spell.getSpellbook()))
@@ -90,7 +102,7 @@ public final class LoadoutData
 	 */
 	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned)
 	{
-		java.util.Map<Integer, Integer> result = new java.util.HashMap<>(owned);
+		Map<Integer, Integer> result = new HashMap<>(owned);
 		for (Map.Entry<Integer, Integer> entry : owned.entrySet())
 		{
 			Integer base = variantToBase.get(entry.getKey());
@@ -140,9 +152,9 @@ public final class LoadoutData
 			return Collections.emptyList();
 		}
 
-		java.util.ArrayList<MonsterStats> exact = new java.util.ArrayList<>();
-		java.util.ArrayList<MonsterStats> prefix = new java.util.ArrayList<>();
-		java.util.ArrayList<MonsterStats> contains = new java.util.ArrayList<>();
+		ArrayList<MonsterStats> exact = new ArrayList<>();
+		ArrayList<MonsterStats> prefix = new ArrayList<>();
+		ArrayList<MonsterStats> contains = new ArrayList<>();
 		for (MonsterStats monster : monsters)
 		{
 			String name = MonsterStats.normalizeQuery(monster.getName());
@@ -166,9 +178,9 @@ public final class LoadoutData
 		// and used to be the silent default for vorkath, the DT2 four, zuk
 		// and verzik). Stable sort - corpus order breaks ties, and every
 		// version stays reachable further down the hit list.
-		exact.sort(java.util.Comparator.comparingInt(m -> versionTier(m.getVersion())));
+		exact.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
 
-		java.util.ArrayList<MonsterStats> result = new java.util.ArrayList<>(limit);
+		ArrayList<MonsterStats> result = new ArrayList<>(limit);
 		addLimited(result, exact, limit);
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
@@ -182,7 +194,7 @@ public final class LoadoutData
 		{
 			return 1;
 		}
-		String v = version.toLowerCase(java.util.Locale.ROOT);
+		String v = version.toLowerCase(Locale.ROOT);
 		if (v.contains("post-quest"))
 		{
 			return 0;   // the everyday fight
@@ -203,47 +215,6 @@ public final class LoadoutData
 		return 2;
 	}
 
-	/**
-	 * Item-name search for the stored-elsewhere picker: exact label/name
-	 * (or id) first, then prefix, then substring - same ranking shape as
-	 * {@link #searchMonsters}.
-	 */
-	public List<GearItem> searchGear(String query, int limit)
-	{
-		String text = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
-		if (text.isEmpty())
-		{
-			return Collections.emptyList();
-		}
-
-		java.util.ArrayList<GearItem> exact = new java.util.ArrayList<>();
-		java.util.ArrayList<GearItem> prefix = new java.util.ArrayList<>();
-		java.util.ArrayList<GearItem> contains = new java.util.ArrayList<>();
-		for (GearItem item : gearItems)
-		{
-			String label = item.labelLower();
-			if (label.equals(text) || item.getNameLower().equals(text)
-				|| String.valueOf(item.getId()).equals(text))
-			{
-				exact.add(item);
-			}
-			else if (label.startsWith(text))
-			{
-				prefix.add(item);
-			}
-			else if (label.contains(text))
-			{
-				contains.add(item);
-			}
-		}
-
-		java.util.ArrayList<GearItem> result = new java.util.ArrayList<>(limit);
-		addLimited(result, exact, limit);
-		addLimited(result, prefix, limit);
-		addLimited(result, contains, limit);
-		return result;
-	}
-
 	private static <T> void addLimited(List<T> target, List<T> source, int limit)
 	{
 		for (T entry : source)
@@ -261,10 +232,10 @@ public final class LoadoutData
 	 * base plus every variant that canonicalizes to it - so a bank
 	 * highlight for "Abyssal whip" also lights the (or) version.
 	 */
-	public java.util.Set<Integer> equivalentIds(int itemId)
+	public Set<Integer> equivalentIds(int itemId)
 	{
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
-		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		Set<Integer> ids = new HashSet<>();
 		ids.add(itemId);
 		ids.add(base);
 		for (Map.Entry<Integer, Integer> entry : variantToBase.entrySet())
@@ -282,10 +253,6 @@ public final class LoadoutData
 		return gearById.get(id);
 	}
 
-	public List<GearItem> getGearItems()
-	{
-		return gearItems;
-	}
 
 	/** The corpus items for one equip slot, in getGearItems() order. */
 	public List<GearItem> getGearItems(GearSlot slot)
@@ -293,13 +260,5 @@ public final class LoadoutData
 		return gearBySlot.get(slot);
 	}
 
-	public List<MonsterStats> getMonsters()
-	{
-		return monsters;
-	}
 
-	public List<SpellStats> getSpells()
-	{
-		return spells;
-	}
 }
