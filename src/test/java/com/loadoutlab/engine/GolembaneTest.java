@@ -49,6 +49,36 @@ public class GolembaneTest
 	}
 
 	@Test
+	public void optimizerPicksTheHammerAtAGolem()
+	{
+		// The pool lesson, which the model tests here do NOT cover: golembane
+		// lives in the DPS model, not in the hammer's raw stats (crush +57 /
+		// str +56), so the weapon-pool cut dropped it before the bonus could
+		// ever be applied. Field-found 2026-08-02 - at Dusk the optimizer
+		// offered a hasta and the owned melee answer came in ~2 dps low.
+		MonsterStats dusk = data().searchMonsters("dusk", 1).get(0);
+		Assert.assertTrue(dusk.hasAttribute("golem"));
+
+		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
+		for (String n : new String[]{"Granite hammer", "Zamorakian hasta"})
+		{
+			owned.put(data().getGearItems().stream()
+				.filter(g -> g.getName().equalsIgnoreCase(n) && g.isStandardGear())
+				.findFirst().orElseThrow(() -> new AssertionError("missing " + n))
+				.getId(), 1);
+		}
+		OptimizationRequest request = new OptimizationRequest(
+			dusk, CombatStyle.MELEE, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.OWNED_ONLY, true, false,
+			new OwnedItems(owned, true), RequirementProfile.MAXED, 3);
+		java.util.List<DpsResult> results = new LoadoutOptimizer().optimize(data(), request);
+		Assert.assertFalse(results.isEmpty());
+		Assert.assertEquals("granite hammer",
+			results.get(0).getLoadout().getWeapon().getNameLower());
+	}
+
+	@Test
 	public void golembaneDoesNotApplyToNonGolems()
 	{
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
