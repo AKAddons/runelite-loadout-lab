@@ -687,6 +687,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		o.prayerBonus = config.displayPrayerBonus();
 		o.attackStyle = config.displayAttackStyle();
 		o.gameBest = config.displayGameBest();
+		o.setCost = config.displaySetCost();
 		o.notes = config.enableNotes();
 		o.footnote = config.displayFootnote();
 		o.addMob = config.displayAddMob();

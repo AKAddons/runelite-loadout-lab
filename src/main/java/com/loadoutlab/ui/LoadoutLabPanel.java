@@ -187,6 +187,10 @@ public class LoadoutLabPanel extends PluginPanel
 		public boolean prayerBonus = true;
 		public boolean attackStyle = true;
 		public boolean gameBest = true;
+		/** The gp still between you and the set on screen (the BiS pieces
+		 * you do not own). Zero on the Yours side by construction, so the
+		 * line simply does not render there. */
+		public boolean setCost = true;
 		public boolean notes = true;
 		public boolean footnote = true;
 		public boolean addMob = true;
@@ -6168,14 +6172,20 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		card.add(Box.createVerticalStrut(4));
-		// The owned grid marks what you don't own (green) and what already
-		// matches the game-best pick (gold); the BiS grid is the same
-		// renderer over the other answer (field spec - just a toggle).
+		// Both grids mark ownership, in the same border language: green =
+		// you do not own this piece, gold = you do. On the Yours side gold
+		// reads "your item is already the game's best"; on the BiS side the
+		// same colour reads "you already own this BiS piece" - the two are
+		// the same statement (your item and the best item coincide) seen
+		// from either end. Field request 2026-08-05: the BiS grid used to
+		// pass neither flag, so every cell fell through to plain grey and
+		// the view carried no ownership information at all.
 		if (bis)
 		{
 			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
 				result.gameSpecExpectedDamage, result.gameSpecDpsAdded,
-				"Strongest special attack in the game vs this monster"));
+				"Strongest special attack in the game vs this monster",
+				true, best == null ? null : best.getLoadout()));
 		}
 		else
 		{
@@ -7586,6 +7596,21 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			panel.add(pray);
 		}
+			// What the set on screen still costs you: the search accumulates
+			// budgetCost per slot, which is the item's price when you do not
+			// own it and zero when you do. So this is exactly the gp gap
+			// between your bank and the shown set - non-zero only on the BiS
+			// side (and on a budget/simmed set), which is why it needs no
+			// side flag: the Yours answer is already yours, so it prices at
+			// zero and the line stays off.
+			if (displayOptions.setCost && result.getPurchaseCost() > 0)
+			{
+				JLabel cost = statLine(PvpRisk.formatGp(result.getPurchaseCost()),
+					"Cost to own this set - the pieces you are missing, at wiki prices"
+						+ " (quest rewards are named on their slot, not priced)",
+					statText, new FixedWidthIcon(new CoinsIcon()));
+				panel.add(cost);
+			}
 		if (displayOptions.bonuses && !result.getCountedBonuses().isEmpty())
 		{
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
