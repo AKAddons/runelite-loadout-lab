@@ -46,6 +46,21 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void discontinuedEventGearIsNotStandardGear()
+	{
+		// The Wilderness champion amulet was a Wilderness Wars (Aug 2017)
+		// reward - five players ever owned it, and an update removed it. It
+		// still ships upstream as ordinary gear carrying +100 to EVERY attack
+		// style, +50 str and +50 prayer, so it dominates the neck slot
+		// outright and was being shown as BiS (field report 2026-08-05).
+		LoadoutData data = new DataService().load();
+		GearItem amulet = data.getGear(21433);
+		Assert.assertNotNull(amulet);
+		Assert.assertFalse("a discontinued event item must never be recommended",
+			amulet.isStandardGear());
+	}
+
+	@Test
 	public void questIssueKitIsNotStandardGear()
 	{
 		// The Silvthrill ballista and its javelins ship upstream as ordinary

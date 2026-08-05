@@ -100,6 +100,13 @@ NONSTANDARD_OVERRIDES = {
     33800: "Silvthrill ballista",  # The Blood Moon Rises quest issue;
     33801: "Silvthrill javelin",   # both removed from the inventory on
                                    # completion (wiki-confirmed 2026-07-31).
+    # Wilderness Wars (August 2017) champion reward. FIVE players ever owned
+    # it and it was removed by a later update - but upstream still ships it
+    # as ordinary gear with +100 to every attack style, +50 str and +50
+    # prayer, so it dominates every neck slot it is allowed into and was
+    # being offered as BiS (field report 2026-08-05, wiki-confirmed
+    # discontinued).
+    21433: "Wilderness champion amulet",
 }
 
 assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \
