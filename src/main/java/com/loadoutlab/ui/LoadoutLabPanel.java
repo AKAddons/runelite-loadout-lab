@@ -6185,13 +6185,13 @@ public class LoadoutLabPanel extends PluginPanel
 			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
 				result.gameSpecExpectedDamage, result.gameSpecDpsAdded,
 				"Strongest special attack in the game vs this monster",
-				true, best == null ? null : best.getLoadout()));
+				true, best == null ? null : best.getLoadout(), true));
 		}
 		else
 		{
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 				result.specDpsAdded, "Swap in for the special attack",
-				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+				true, result.overallBest == null ? null : result.overallBest.getLoadout(), false));
 		}
 		if (displayOptions.inventory && result != null
 			&& (!(bis ? result.gameBench : result.bench).isEmpty()
@@ -7340,12 +7340,12 @@ public class LoadoutLabPanel extends PluginPanel
 		double specDpsAdded, String specFallbackTooltip)
 	{
 		return iconGrid(result, spec, specWeapon, specExpected, specDpsAdded,
-			specFallbackTooltip, false, null);
+			specFallbackTooltip, false, null, false);
 	}
 
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
 		double specDpsAdded, String specFallbackTooltip, boolean markUnowned,
-		Loadout gameBest)
+		Loadout gameBest, boolean bisSide)
 	{
 		int cell = ICON_SIZE + 4;
 		// Wilderness: badge every cell with its death fate.
@@ -7361,7 +7361,7 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDpsAdded, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
-			markUnowned, gameBest, specCell, renderingIncoming));
+			markUnowned, gameBest, bisSide, specCell, renderingIncoming));
 	}
 
 	/**
@@ -7401,7 +7401,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The in-game worn-equipment tab: 5 rows of 3, empty corners blank, spec
 	 * in the empty slot left of the legs. */
 	private JPanel classicGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, boolean bisSide,
 		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
 		// The item/stat view (field spec): the classic gear silhouette on
@@ -7418,7 +7418,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			else if (CLASSIC_ORDER[i] != null)
 			{
-				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
+				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest, bisSide));
 			}
 			else
 			{
@@ -7941,7 +7941,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** One equipment-slot cell: the item icon with its border language, death
 	 * fate, source dot, tooltip and right-click menu - or an empty box. */
 	private RiskDotLabel buildSlotCell(GearSlot slotType, DpsResult result, int cell,
-		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest)
+		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned,
+		Loadout gameBest, boolean bisSide)
 	{
 		GearItem item = result.getLoadout().get(slotType);
 		RiskDotLabel slot = new RiskDotLabel();
@@ -7953,17 +7954,31 @@ public class LoadoutLabPanel extends PluginPanel
 			? dragonfireMenuEntries() : Collections.emptyList();
 		if (item != null)
 		{
-			// Border language: green = you don't own it (dream/budget
-			// upgrade); gold = your item IS the game's best available
-			// for this slot; blue = the spec cell (matches the in-game
-			// special attack bar).
-			boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
+			// Border language. Every colour has to EARN its cell - a colour
+			// that paints most of the grid is wallpaper, not information
+			// (field note 2026-08-05: on the BiS side almost nothing is
+			// owned, so "green = unowned" lit up the whole set and said
+			// nothing).
+			//   gold  = you own this piece
+			//   green = you are SIMMING it (a dream item), or on the Yours
+			//           side an unowned budget upgrade - either way, gear
+			//           the answer is ASSUMING you will have
+			//   grey  = none of the above; on the BiS side that is simply
+			//           a piece you have not got
+			//   blue  = the spec cell (matches the in-game spec bar)
+			boolean owns = ownedCheck.owns(item.getId());
+			boolean simmed = !owns && dreamView.snapshot().contains(item.getId());
+			// The Yours answer only ever shows gear you own, sim, or would
+			// buy - so an unowned cell there is an assumption worth marking.
+			// The BiS answer shows the whole game, where unowned is the norm.
+			boolean assumed = simmed || (markUnowned && !bisSide && !owns);
 			GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
 			// Analogs count: a stat-identical item (any god's d'hide
 			// coif) is just as best-available as the exact pick.
-			boolean bis = !unowned && bisItem != null
+			boolean bis = owns && bisItem != null
 				&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
-			Color border = unowned ? BORDER_UNOWNED
+			boolean unowned = assumed;
+			Color border = assumed ? BORDER_UNOWNED
 				: bis ? BORDER_BIS : BORDER_PLAIN;
 			slot.setBorder(BorderFactory.createLineBorder(border));
 			// Quest rewards are earned, not bought: name the quest
