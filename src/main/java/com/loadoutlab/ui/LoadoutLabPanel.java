@@ -4985,7 +4985,8 @@ public class LoadoutLabPanel extends PluginPanel
 			cell.setHorizontalAlignment(JLabel.CENTER);
 			cell.setBackground(CELL_BG);
 			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
-			cell.setToolTipText("Potion the numbers assume - does not use an Inventory slot");
+			cell.setToolTipText(CONSUMABLE_NAMES.getOrDefault(consumableId, "Potion")
+				+ " - assumed by the numbers, no Inventory slot used");
 			AsyncBufferedImage img = itemManager.getImage(consumableId);
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
@@ -5231,7 +5232,37 @@ public class LoadoutLabPanel extends PluginPanel
 		return new ArrayList<>(ids);
 	}
 
-	private static void addBoostConsumables(String label, Set<Integer> ids)
+	/** Inventory-chip names for the assumed consumables, keyed by the ids
+	 * the chain below adds - the tooltip names the potion because at 24px
+	 * the divine and regular sprites differ only by a sparkle (field
+	 * report 2026-08-05: "hard to see"). */
+	static final Map<Integer, String> CONSUMABLE_NAMES = new LinkedHashMap<>();
+	static
+	{
+		CONSUMABLE_NAMES.put(20996, "Overload (+)");
+		CONSUMABLE_NAMES.put(20992, "Overload");
+		CONSUMABLE_NAMES.put(23685, "Divine super combat");
+		CONSUMABLE_NAMES.put(12695, "Super combat");
+		CONSUMABLE_NAMES.put(2428, "Attack potion");
+		CONSUMABLE_NAMES.put(113, "Strength potion");
+		CONSUMABLE_NAMES.put(11722, "Super ranging");
+		CONSUMABLE_NAMES.put(23733, "Divine ranging potion");
+		CONSUMABLE_NAMES.put(2444, "Ranging potion");
+		CONSUMABLE_NAMES.put(11726, "Super magic");
+		CONSUMABLE_NAMES.put(23745, "Divine magic potion");
+		CONSUMABLE_NAMES.put(3040, "Magic potion");
+		CONSUMABLE_NAMES.put(27641, "Saturated heart");
+		CONSUMABLE_NAMES.put(20724, "Imbued heart");
+		CONSUMABLE_NAMES.put(2452, "Antifire potion");
+	}
+
+	/** Package-private for the shadowing regression test. Order matters:
+	 * every "Divine X" label CONTAINS its base label ("Divine super
+	 * combat".contains("Super combat")), so the divine branches must be
+	 * tested first or they are dead code - which is exactly how divine
+	 * assumptions were rendering the REGULAR potion's chip (field report
+	 * 2026-08-05: divine super combat "not showing in the inventory"). */
+	static void addBoostConsumables(String label, Set<Integer> ids)
 	{
 		if (label == null)
 		{
@@ -5244,6 +5275,10 @@ public class LoadoutLabPanel extends PluginPanel
 		else if (label.contains("Overload"))
 		{
 			ids.add(20992);
+		}
+		else if (label.contains("Divine super combat"))
+		{
+			ids.add(23685);
 		}
 		else if (label.contains("Super combat"))
 		{
@@ -5258,6 +5293,10 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(11722);
 		}
+		else if (label.contains("Divine ranging"))
+		{
+			ids.add(23733);
+		}
 		else if (label.contains("Ranging potion"))
 		{
 			ids.add(2444);
@@ -5265,6 +5304,10 @@ public class LoadoutLabPanel extends PluginPanel
 		else if (label.contains("Super magic"))
 		{
 			ids.add(11726);
+		}
+		else if (label.contains("Divine magic"))
+		{
+			ids.add(23745);
 		}
 		else if (label.contains("Magic potion"))
 		{
