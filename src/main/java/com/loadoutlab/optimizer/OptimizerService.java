@@ -135,15 +135,12 @@ public class OptimizerService
 	 * starves; each task builds its own LoadoutOptimizer because the
 	 * optimizer's internal DpsCalculator is stateful. Fixed size rather
 	 * than sized to the host: the Plugin Hub bans java.lang.Runtime, so
-	 * availableProcessors() is unavailable.
-	 *
-	 * <p>Raised 4 -> 6 (field report 2026-08-05: Chambers of Xeric still
-	 * took 30s+). The fan-out is 3 styles x mobs x 2 sides, so a 15-mob
-	 * raid queues ~90 optimizations; at width 4 that is 23 waves. Six still
-	 * leaves headroom on a 4-core machine because these are MIN_PRIORITY
-	 * daemons - they yield to the client thread rather than competing with
-	 * it, so oversubscription costs latency here, never frame time there. */
-	private static final int ROSTER_POOL_SIZE = 6;
+	 * availableProcessors() is unavailable - 4 min-priority daemon threads
+	 * clear the serial wall without oversubscribing a modest machine.
+	 * The 4 is also what the #14014 review thread was told, so it stays 4
+	 * until a widening is deliberately decided and re-verified - a wider
+	 * pool rode along uninvited once (2026-08-05, reverted same day). */
+	private static final int ROSTER_POOL_SIZE = 4;
 	private final java.util.concurrent.ExecutorService rosterPool =
 		Executors.newFixedThreadPool(
 			ROSTER_POOL_SIZE, r ->
