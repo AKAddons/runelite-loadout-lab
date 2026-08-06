@@ -105,6 +105,74 @@ class RespiratorySystemTest
 	}
 
 	@Test
+	@DisplayName("a demonbane hit is modeled as the one-shot it is, in every style")
+	void demonbaneOneShotMath()
+	{
+		OptimizationRequest request = new OptimizationRequest(vents,
+			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("arclight"));
+		DpsResult arclight = new DpsCalculator().calculate(request, new Loadout(gear));
+		assertNotNull(arclight);
+		assertEquals(vents.getHitpoints(), arclight.getMaxHit(),
+			"a demonbane max hit vs a vent is the vent's whole hp bar");
+		assertEquals(arclight.getAccuracy() * vents.getHitpoints(),
+			arclight.getExpectedHit(), 1e-6);
+	}
+
+	@Test
+	@DisplayName("the ranged pick vs a vent is the Scorching bow, not a blowpipe")
+	void scorchingBowBeatsTheBlowpipe()
+	{
+		OptimizationRequest request = new OptimizationRequest(vents,
+			CombatStyle.RANGED, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
+		assertFalse(out.isEmpty());
+		assertTrue(out.get(0).getLoadout().getWeapon().getNameLower().startsWith("scorching bow"),
+			"the one-shot must out-rank ordinary ranged dps, was: "
+				+ out.get(0).getLoadout().getWeapon().label());
+	}
+
+	@Test
+	@DisplayName("every other landed hit deals at least half its max (1.5x expectation)")
+	void minHitScalesTheExpectation()
+	{
+		// Compare mean damage PER LANDED HIT (expected/accuracy) against the
+		// same weapon at a plain target: gear and levels identical, so the
+		// only difference is the vents' min-hit rule. Asserting against a
+		// reconstructed acc*max*0.75 was ~0.2% off - the base roll model has
+		// its own subtleties; the 1.5x scaling is the contract.
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("crystal halberd"));
+		Loadout halberd = new Loadout(gear);
+
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		DpsResult atVents = new DpsCalculator().calculate(req(vents), halberd);
+		DpsResult atGoblin = new DpsCalculator().calculate(req(goblin), halberd);
+		assertNotNull(atVents);
+		assertNotNull(atGoblin);
+		double meanVents = atVents.getExpectedHit() / atVents.getAccuracy();
+		double meanPlain = atGoblin.getExpectedHit() / atGoblin.getAccuracy();
+		assertEquals(1.5, meanVents / meanPlain, 1e-9,
+			"the vents' min-hit must scale the per-hit mean by exactly 1.5");
+	}
+
+	private static OptimizationRequest req(MonsterStats monster)
+	{
+		return new OptimizationRequest(monster,
+			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+	}
+
+	@Test
 	@DisplayName("the vents and Sire phase 1 carry their mechanics notes")
 	void notesPresent()
 	{

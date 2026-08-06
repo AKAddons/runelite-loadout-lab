@@ -200,6 +200,27 @@ public final class MonsterMechanics
 		return true;
 	}
 
+	/** The Sire's vents (per-monster rules live on the id set). */
+	public static boolean isRespiratorySystem(MonsterStats monster)
+	{
+		return monster != null && RESPIRATORY_SYSTEMS.contains(monster.getId());
+	}
+
+	/** Demonbane in EVERY style, holy water excluded: the class that
+	 * destroys a respiratory system on any landed hit. The Scorching bow
+	 * and Purging staff belong here too - field report 2026-08-05: the
+	 * melee-only reading ranked a blowpipe above the bow that one-shots. */
+	public static boolean isDemonbane(GearItem weapon)
+	{
+		if (weapon == null)
+		{
+			return false;
+		}
+		String name = weapon.getNameLower();
+		return isMeleeDemonbane(weapon)
+			|| name.startsWith("scorching bow") || name.startsWith("purging staff");
+	}
+
 	/** Melee demonbane - the class that destroys a respiratory system on
 	 * any successful hit (wiki: "demonbane weapons (other than holy water)
 	 * will instantly kill the systems"). */

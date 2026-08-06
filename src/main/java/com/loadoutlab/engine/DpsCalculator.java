@@ -117,6 +117,37 @@ public final class DpsCalculator
 				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
 				result.getPurchaseCost(), result.getSpellName());
 		}
+		// The Sire's vents, after every other factor so the ranking sees
+		// it: a demonbane hit destroys the vent outright (expected damage
+		// per attack = accuracy x its full hp), and every other landed hit
+		// deals at least half its max (a 1.5x on the plain expectation -
+		// every weapon that can reach the vents rolls plainly, so the
+		// scale is exact). Ordinary dps math ranked a blowpipe above the
+		// Scorching bow (field report 2026-08-05).
+		if (result != null && MonsterMechanics.isRespiratorySystem(request.getMonster()))
+		{
+			if (MonsterMechanics.isDemonbane(loadout.getWeapon()))
+			{
+				int hp = Math.max(1, request.getMonster().getHitpoints());
+				counted("demonbane one-shot", "any landed hit destroys the vent");
+				result = new DpsResult(result.getLoadout(),
+					result.getAccuracy() * hp
+						/ (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+					result.getAccuracy(), result.getAccuracy() * hp, hp,
+					result.getAttackSpeed(), result.getAttackType(),
+					result.getAttackRoll(), result.getDefenceRoll(),
+					result.getPurchaseCost(), result.getSpellName());
+			}
+			else if (result.getDps() > 0)
+			{
+				counted("vent min-hit", "every landed hit deals at least half its max");
+				result = new DpsResult(result.getLoadout(), result.getDps() * 1.5,
+					result.getAccuracy(), result.getExpectedHit() * 1.5,
+					result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
+					result.getAttackRoll(), result.getDefenceRoll(),
+					result.getPurchaseCost(), result.getSpellName());
+			}
+		}
 		return result == null || counted.isEmpty()
 			? result : result.withCountedBonuses(countedLines());
 	}

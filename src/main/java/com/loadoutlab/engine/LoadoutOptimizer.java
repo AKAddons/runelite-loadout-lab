@@ -1004,6 +1004,15 @@ public final class LoadoutOptimizer
 			{
 				score += 4_000.0;
 			}
+			// One-shot demonbane vs the Sire's vents lives entirely in the
+			// DPS model - raw stats rank the Scorching bow under a blowpipe,
+			// so without a boost the weapon cut prunes the actual answer
+			// (pool lesson; field report 2026-08-05).
+			if (MonsterMechanics.isRespiratorySystem(request.getMonster())
+				&& MonsterMechanics.isDemonbane(item))
+			{
+				score += 10_000.0;
+			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score
