@@ -5361,14 +5361,25 @@ public class LoadoutLabPanel extends PluginPanel
 			return null;
 		}
 		DpsResult best = null;
+		boolean bestKitBacked = false;
 		for (StyleResult r : map.values())
 		{
 			DpsResult shown = r == null ? null
 				: bis ? r.overallBest
 				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-			if (shown != null && (best == null || shown.getDps() > best.getDps()))
+			if (shown == null)
+			{
+				continue;
+			}
+			// The row promises a set the carried kit can assemble - a
+			// tab-only fallback never outbids a kit-backed answer, however
+			// good its number looks (it needs a different worn kit).
+			boolean kitBacked = bis ? r.gameKitBacked : r.ownedKitBacked;
+			if (best == null || (kitBacked && !bestKitBacked)
+				|| (kitBacked == bestKitBacked && shown.getDps() > best.getDps()))
 			{
 				best = shown;
+				bestKitBacked = kitBacked;
 			}
 		}
 		return best;

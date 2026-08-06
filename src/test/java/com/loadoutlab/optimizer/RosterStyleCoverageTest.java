@@ -100,6 +100,60 @@ public class RosterStyleCoverageTest
 		}
 	}
 
+	@Test
+	public void fallbackAnswersNeverMasqueradeAsKitAnswers() throws Exception
+	{
+		// Inventory 1: the kit carries at most one cross-style weapon, so at
+		// least one style per mob must be a tab-only fallback. The dash fix
+		// keeps that style's numbers visible; the kitBacked flag keeps it
+		// out of the mob row (field bug 2026-08-06: the vents row showed a
+		// whole ranged set on a melee kit).
+		LoadoutData data = new DataService().load();
+		MonsterStats vents = data.searchMonsters("respiratory system", 1).get(0);
+		MonsterStats phase1 = sire(data, "Phase 1");
+		List<MonsterStats> mobs = new ArrayList<>(List.of(vents, phase1));
+
+		OptimizerService service = new OptimizerService(data);
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
+		ServiceCalls.bestPerStyleAcross(service,
+			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			new OwnedItems(styleCompleteKit(), true), 1, false, false, "",
+			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+			false, false, Collections.emptySet(), 0, 1,
+			Collections.emptyMap(), Collections.emptyMap(), null, Collections.emptySet(),
+			roster ->
+			{
+				out.set(roster);
+				done.countDown();
+			});
+		Assert.assertTrue("roster compute timed out", done.await(120, TimeUnit.SECONDS));
+		OptimizerService.RosterResult roster = out.get();
+		Assert.assertNotNull(roster);
+
+		for (int j = 0; j < mobs.size(); j++)
+		{
+			boolean anyKitBacked = false;
+			boolean anyFallbackWithNumbers = false;
+			for (OptimizerService.StyleResult sr : roster.perMob.get(j).values())
+			{
+				if (sr == null)
+				{
+					continue;
+				}
+				anyKitBacked |= sr.ownedKitBacked;
+				anyFallbackWithNumbers |= !sr.ownedKitBacked
+					&& sr.owned != null && !sr.owned.isEmpty();
+			}
+			Assert.assertTrue(mobs.get(j).label()
+				+ " has no kit-backed style at all - the row would have nothing honest to show",
+				anyKitBacked);
+			Assert.assertTrue(mobs.get(j).label()
+				+ " kept no fallback numbers - the style tabs would dash again",
+				anyFallbackWithNumbers);
+		}
+	}
+
 	private static MonsterStats sire(LoadoutData data, String version)
 	{
 		return data.searchMonsters("abyssal sire", 6).stream()

@@ -99,12 +99,33 @@ public class OptimizerService
 		public final List<GearItem> bench;
 		/** Same, for the BiS side's kit. */
 		public final List<GearItem> gameBench;
+		/** True when the Yours half is something the CARRIED KIT can
+		 * actually assemble mid-trip (or no kit ran, so the shared set IS
+		 * the trip). False marks a tab-only fallback - "what this style
+		 * could do if you geared for it" - which must never win the mob
+		 * row (field bug 2026-08-06: the vents row showed a whole ranged
+		 * set on a melee kit with Inventory 3). */
+		public final boolean ownedKitBacked;
+		/** Same contract for the BiS half. */
+		public final boolean gameKitBacked;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
 			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
 			List<GearItem> bench, List<GearItem> gameBench)
 		{
+			this(owned, overallBest, spec, gameSpec, boostLabel, gameBoostLabel,
+				incoming, gameIncoming, bench, gameBench, true, true);
+		}
+
+		StyleResult(List<DpsResult> owned, DpsResult overallBest,
+			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
+			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
+			List<GearItem> bench, List<GearItem> gameBench,
+			boolean ownedKitBacked, boolean gameKitBacked)
+		{
+			this.ownedKitBacked = ownedKitBacked;
+			this.gameKitBacked = gameKitBacked;
 			this.bench = bench == null ? Collections.emptyList()
 				: Collections.unmodifiableList(bench);
 			this.gameBench = gameBench == null ? Collections.emptyList()
@@ -1814,8 +1835,15 @@ public class OptimizerService
 						// the kit-specific spec drops.
 						gameSpec = null;
 					}
+					boolean ownedKitBacked = ownedView == null
+						|| (ownedView.styles.contains(s)
+							&& ownedView.shownByMob.get(j).get(s) != null);
+					boolean gameKitBacked = gameView == null
+						|| (gameView.styles.contains(s)
+							&& gameView.shownByMob.get(j).get(s) != null);
 					perMob.get(j).put(s, new StyleResult(ownedList, gameBest, spec, gameSpec,
-						label, gameLabel, incoming, gameIncoming, bench, gameBench));
+						label, gameLabel, incoming, gameIncoming, bench, gameBench,
+						ownedKitBacked, gameKitBacked));
 				}
 			}
 		}
