@@ -25,6 +25,14 @@ public final class MonsterNotes
 		String name = monster.getName().toLowerCase(Locale.ROOT);
 		switch (name)
 		{
+			case "jal-nib":
+				return "Three nibblers spawn every wave - one Ice Barrage"
+					+ " cast clears the trio (a 152 xp drop means all three"
+					+ " died). Bring the Ancient spellbook; Blood Barrage"
+					+ " heals off packs once the wave is under control.";
+			case "jal-ak":
+				return "Blood or Ice Barrage is effective on the blob and"
+					+ " its spawns.";
 			case "respiratory system":
 				return "Standard melee cannot damage the vents - halberds,"
 					+ " ranged, or magic only. A demonbane hit (Scorching"
