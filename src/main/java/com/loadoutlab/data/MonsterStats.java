@@ -130,6 +130,20 @@ public final class MonsterStats
 			slayerMonster, weaknessElement, weaknessSeverity);
 	}
 
+	/** What the label SHOWS when the community name beats the in-game one
+	 * (the Inferno's Jal- vocabulary: "Bat" for Jal-MejRah). Display only:
+	 * getName() stays the real name, so every name-keyed rule - notes, TD
+	 * damage reduction, boss overrides - keeps applying, and profile
+	 * pins/exclusions follow the real row. */
+	private String displayName;
+
+	public MonsterStats withDisplayName(String nick)
+	{
+		MonsterStats copy = withVersion(version);
+		copy.displayName = nick;
+		return copy;
+	}
+
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
 	{
 		return immuneVariant(syntheticId, versionLabel,
@@ -184,7 +198,7 @@ public final class MonsterStats
 		boolean levelVersion = version.regionMatches(true, 0, "level", 0, 5);
 		String suffix = version.isEmpty() || levelVersion ? "" : " (" + version + ")";
 		String level = combatLevel > 0 ? " - lvl " + combatLevel : "";
-		return name + suffix + level;
+		return (displayName != null ? displayName : name) + suffix + level;
 	}
 
 	public String searchText()

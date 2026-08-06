@@ -3,27 +3,34 @@
   "name": "Fight Caves",
   "members": [
    {
-    "name": "Tz-Kih"
+    "name": "Tz-Kih",
+    "nick": "Bat"
    },
    {
     "name": "Tz-Kek",
-    "version": "Level 45"
+    "version": "Level 45",
+    "nick": "Blob"
    },
    {
-    "name": "Tok-Xil"
+    "name": "Tok-Xil",
+    "nick": "Ranger"
    },
    {
-    "name": "Yt-MejKot"
+    "name": "Yt-MejKot",
+    "nick": "Meleer"
    },
    {
-    "name": "Ket-Zek"
+    "name": "Ket-Zek",
+    "nick": "Mage"
    },
    {
     "name": "Yt-HurKot",
-    "version": "Level 108"
+    "version": "Level 108",
+    "nick": "Healer"
    },
    {
-    "name": "TzTok-Jad"
+    "name": "TzTok-Jad",
+    "nick": "Jad"
    }
   ],
   "note": "The full wave roster - healers included (you attack them on Jad).",
@@ -37,32 +44,41 @@
   "name": "Inferno",
   "members": [
    {
-    "name": "Jal-Nib"
+    "name": "Jal-Nib",
+    "nick": "Nibbler"
    },
    {
-    "name": "Jal-MejRah"
+    "name": "Jal-MejRah",
+    "nick": "Bat"
    },
    {
     "name": "Jal-Ak",
-    "version": ""
+    "version": "",
+    "nick": "Blob"
    },
    {
-    "name": "Jal-ImKot"
+    "name": "Jal-ImKot",
+    "nick": "Meleer"
    },
    {
-    "name": "Jal-Xil"
+    "name": "Jal-Xil",
+    "nick": "Ranger"
    },
    {
-    "name": "Jal-Zek"
+    "name": "Jal-Zek",
+    "nick": "Mager"
    },
    {
-    "name": "Jal-MejJak"
+    "name": "Jal-MejJak",
+    "nick": "Healer"
    },
    {
-    "name": "JalTok-Jad"
+    "name": "JalTok-Jad",
+    "nick": "Jad"
    },
    {
-    "name": "TzKal-Zuk"
+    "name": "TzKal-Zuk",
+    "nick": "Zuk"
    }
   ],
   "note": "The full wave roster incl. Jad-phase healers; Zuk at his normal phase. Ancients recommended: Ice Barrage clears the nibbler trio each wave, Blood Barrage sustains off packs (wiki-sourced 2026-08-06).",

@@ -146,6 +146,10 @@ public final class MonsterGroups
 							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + mask,
 							label, attributes);
 					}
+					if (member.has("nick"))
+					{
+						resolved = resolved.withDisplayName(member.get("nick").getAsString());
+					}
 					mobs.add(resolved);
 				}
 				List<String> aliases = new ArrayList<>();

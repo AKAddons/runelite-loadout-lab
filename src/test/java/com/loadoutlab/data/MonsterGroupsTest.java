@@ -109,6 +109,33 @@ class MonsterGroupsTest
 	}
 
 	@Test
+	@DisplayName("Inferno and Fight Caves rows wear their community names")
+	void communityNicknames()
+	{
+		// The Jal-/Tz- vocabulary is what made a field report say "the
+		// bats" (2026-08-06): rows display the name players actually use.
+		// getName() stays the in-game name, so name-keyed rules (the
+		// nibbler barrage note, TzHaar handling) keep firing.
+		MonsterStats bat = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-MejRah".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(bat.label().startsWith("Bat"), "was: " + bat.label());
+		assertEquals("Jal-MejRah", bat.getName());
+
+		MonsterStats nibbler = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-Nib".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(nibbler.label().startsWith("Nibbler"));
+		assertNotNull(MonsterNotes.noteFor(nibbler),
+			"the nickname must not orphan the name-keyed barrage note");
+
+		assertTrue(byName("Fight Caves").getMobs().stream()
+			.anyMatch(m -> m.label().startsWith("Jad")));
+		// Plain corpus searches stay un-nicked - only curated group rows
+		// carry the community name.
+		assertEquals("Jal-MejRah",
+			data.searchMonsters("jal-mejrah", 1).get(0).label().split(" - ")[0]);
+	}
+
+	@Test
 	@DisplayName("group search finds by fragment, in curated order")
 	void searchFindsGroups()
 	{
