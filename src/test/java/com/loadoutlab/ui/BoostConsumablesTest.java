@@ -49,7 +49,7 @@ class BoostConsumablesTest
 		// 24px - the tooltip names the potion, so the name table must
 		// cover every id the chain can add.
 		for (int id : new int[]{20996, 20992, 23685, 12695, 2428, 113, 11722,
-			23733, 2444, 11726, 23745, 3040, 27641, 20724, 2452})
+			23733, 2444, 11726, 23745, 3040, 27641, 20724, 2452, 21978})
 		{
 			assertTrue(LoadoutLabPanel.CONSUMABLE_NAMES.containsKey(id),
 				"unnamed consumable id " + id);

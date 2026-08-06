@@ -4978,15 +4978,15 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assumed consumables ride along for FREE (field spec 2026-07-18):
 		// the boost potion and the antifire - never a swap slot, muted
 		// border so they read as supplies rather than gear.
-		for (int consumableId : consumableIds(entry, style, result, bis))
+		for (Map.Entry<Integer, String> chip : consumableChips(entry, style, result, bis).entrySet())
 		{
+			int consumableId = chip.getKey();
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
 			cell.setHorizontalAlignment(JLabel.CENTER);
 			cell.setBackground(CELL_BG);
 			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
-			cell.setToolTipText(CONSUMABLE_NAMES.getOrDefault(consumableId, "Potion")
-				+ " - assumed by the numbers, no Inventory slot used");
+			cell.setToolTipText(chip.getValue());
 			AsyncBufferedImage img = itemManager.getImage(consumableId);
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
@@ -5164,6 +5164,18 @@ public class LoadoutLabPanel extends PluginPanel
 	private List<Integer> consumableIds(ResultEntry entry, CombatStyle style,
 		StyleResult viewed, boolean bis)
 	{
+		return new ArrayList<>(consumableChips(entry, style, viewed, bis).keySet());
+	}
+
+	/** The consumable chips with their tooltips, keyed by item id - each
+	 * chip named at its SOURCE, because one generic label cannot cover
+	 * them (field report 2026-08-05: a shark captioned "Potion - assumed
+	 * by the numbers"). Boosts and antifires are assumptions the math
+	 * makes; supplies, the thrall book and the rune pouch are things you
+	 * bring. */
+	private LinkedHashMap<Integer, String> consumableChips(ResultEntry entry, CombatStyle style,
+		StyleResult viewed, boolean bis)
+	{
 		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
 		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
 		{
@@ -5206,12 +5218,18 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(21978);
 		}
+		LinkedHashMap<Integer, String> chips = new LinkedHashMap<>();
+		for (int id : ids)
+		{
+			chips.put(id, CONSUMABLE_NAMES.getOrDefault(id, "Potion")
+				+ " - assumed by the numbers, no Inventory slot used");
+		}
 		// The persistent trip supplies (food, prayer restore...) ride the
 		// same consumable cells: display id only - the bank filter carries
 		// the full dose lists separately.
 		for (TripSupplies.Option supply : activeSupplies(entry))
 		{
-			ids.add(supply.ids[0]);
+			chips.putIfAbsent(supply.ids[0], supply.name + " - trip supply");
 		}
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
@@ -5219,17 +5237,17 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean blocked = arcaneBlocked(entry, style);
 		if (entry.thralls && !blocked)
 		{
-			ids.add(ExtraDps.BOOK_OF_THE_DEAD);
+			chips.putIfAbsent(ExtraDps.BOOK_OF_THE_DEAD, "Book of the dead - thrall casting");
 		}
 		if (!blocked && (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
 			{
-				ids.add(pouch);
+				chips.putIfAbsent(pouch, "Rune pouch - casting runes");
 			}
 		}
-		return new ArrayList<>(ids);
+		return chips;
 	}
 
 	/** Inventory-chip names for the assumed consumables, keyed by the ids
@@ -5254,6 +5272,7 @@ public class LoadoutLabPanel extends PluginPanel
 		CONSUMABLE_NAMES.put(27641, "Saturated heart");
 		CONSUMABLE_NAMES.put(20724, "Imbued heart");
 		CONSUMABLE_NAMES.put(2452, "Antifire potion");
+		CONSUMABLE_NAMES.put(21978, "Super antifire");
 	}
 
 	/** Package-private for the shadowing regression test. Order matters:
