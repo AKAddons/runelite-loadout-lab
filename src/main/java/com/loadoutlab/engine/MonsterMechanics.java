@@ -36,6 +36,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> TEKTON = new HashSet<>();
 	private static final Set<Integer> ICE_DEMON = new HashSet<>();
 	private static final Set<Integer> RESPIRATORY_SYSTEMS = new HashSet<>();
+	private static final Set<Integer> SALARIN = new HashSet<>();
 
 	static
 	{
@@ -54,6 +55,7 @@ public final class MonsterMechanics
 			com.loadoutlab.data.JsonResources.ints(root, "tekton", TEKTON);
 			com.loadoutlab.data.JsonResources.ints(root, "iceDemon", ICE_DEMON);
 			com.loadoutlab.data.JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
+			com.loadoutlab.data.JsonResources.ints(root, "salarin", SALARIN);
 		}
 		catch (Exception ex)
 		{
@@ -107,6 +109,17 @@ public final class MonsterMechanics
 		if (style == CombatStyle.MAGIC && IMMUNE_MAGIC.contains(id))
 		{
 			return true;
+		}
+		// Salarin the twisted (wiki): "can only be damaged by Strike
+		// spells, ring of recoil damage, and dynamite(p)". Melee and
+		// ranged never land; magic lands only as a Strike cast.
+		if (SALARIN.contains(id))
+		{
+			if (style != CombatStyle.MAGIC)
+			{
+				return true;
+			}
+			return spell == null || !"Strike".equals(spell.getNameSecondWord());
 		}
 		if (style == CombatStyle.RANGED && IMMUNE_RANGED.contains(id))
 		{
@@ -188,6 +201,10 @@ public final class MonsterMechanics
 		{
 			return false;
 		}
+		if (SALARIN.contains(id))
+		{
+			return false; // strike spells only - no melee weapon ever works
+		}
 		if (GUARDIANS.contains(id) && !"Pickaxe".equals(category))
 		{
 			return false;
@@ -211,6 +228,12 @@ public final class MonsterMechanics
 	public static int meleeReachPenaltyTicks(MonsterStats monster)
 	{
 		return isRespiratorySystem(monster) ? 5 : 0;
+	}
+
+	/** Salarin the twisted - strike-spells-only, flat damage. */
+	public static boolean isSalarin(MonsterStats monster)
+	{
+		return monster != null && SALARIN.contains(monster.getId());
 	}
 
 	/** The Sire's vents (per-monster rules live on the id set). */

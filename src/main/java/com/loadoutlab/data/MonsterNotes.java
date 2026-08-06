@@ -25,6 +25,11 @@ public final class MonsterNotes
 		String name = monster.getName().toLowerCase(Locale.ROOT);
 		switch (name)
 		{
+			case "salarin the twisted":
+				return "Only Strike spells damage him - a flat 9-12 set by"
+					+ " your highest strike unlocked. Gear and damage"
+					+ " bonuses do nothing; a Ring of recoil and"
+					+ " dynamite(p) also work.";
 			case "jal-nib":
 				return "Three nibblers spawn every wave - one Ice Barrage"
 					+ " cast clears the trio (a 152 xp drop means all three"
