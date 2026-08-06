@@ -242,19 +242,13 @@
    {
     "name": "Abyssal Sire",
     "version": "Phase 3 (stage 2)"
-   },
-   {
-    "name": "Spawn"
-   },
-   {
-    "name": "Scion"
    }
   ],
   "aliases": [
    "sire",
    "abyssal"
   ],
-  "note": "The whole fight: respiratory systems (phase 1), the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1), and the spawn/scion adds."
+  "note": "The fight as actually fought: the vents (phase 1) and the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1). The spawn/scion adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); add them via + Add mob if you do kill them."
  },
  {
   "name": "Theatre of Blood (Entry)",

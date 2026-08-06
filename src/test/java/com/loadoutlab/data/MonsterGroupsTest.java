@@ -88,7 +88,12 @@ class MonsterGroupsTest
 		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
 		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
-		assertEquals(5, byName("Abyssal Sire").getMobs().size());
+		// Vents + the two phase rows only: the spawn/scion adds are
+		// deliberately absent - players walk or ignore them (field
+		// decision 2026-08-06); + Add mob covers whoever kills them.
+		assertEquals(3, byName("Abyssal Sire").getMobs().size());
+		assertTrue(byName("Abyssal Sire").getMobs().stream()
+			.noneMatch(m -> "Scion".equals(m.getName()) || "Spawn".equals(m.getName())));
 		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
 		// The Jad in the Fight Caves roster is the real one, not the
 		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
