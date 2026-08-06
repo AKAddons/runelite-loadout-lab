@@ -1503,7 +1503,22 @@ public class OptimizerService
 		long tFanStart = System.nanoTime();
 		try
 		{
-			rosterPool.invokeAll(optimizeTasks);
+			// Check every future: a task that THROWS otherwise vanishes
+			// silently, its array slot stays null, and the whole style
+			// renders as "-" with no trace (field bug 2026-08-05: the
+			// Sire roster's ranged and magic buttons dashed while every
+			// member answered fine alone).
+			for (java.util.concurrent.Future<Void> f : rosterPool.invokeAll(optimizeTasks))
+			{
+				try
+				{
+					f.get();
+				}
+				catch (java.util.concurrent.ExecutionException e)
+				{
+					log.warn("roster optimize task failed", e.getCause());
+				}
+			}
 		}
 		catch (InterruptedException e)
 		{
@@ -1751,33 +1766,36 @@ public class OptimizerService
 					String label = old.boostLabel;
 					IncomingDpsCalculator.Result incoming = old.incoming;
 					List<GearItem> bench = old.bench;
-					if (ownedView != null && ownedView.styles.contains(s))
+					if (ownedView != null && ownedView.styles.contains(s)
+						&& ownedView.shownByMob.get(j).get(s) != null)
 					{
 						DpsResult result = ownedView.shownByMob.get(j).get(s);
 						ownedList = new ArrayList<>();
-						if (result != null)
-						{
-							ownedList.add(result);
-						}
-						spec = result != null && ownedView.specs != null
-							? ownedView.specs[j] : null;
+						ownedList.add(result);
+						spec = ownedView.specs != null ? ownedView.specs[j] : null;
 						label = boostLabelByStyle.get(s);
-						Loadout worn = result != null ? result.getLoadout() : ownedView.base;
-						incoming = result == null ? null
-							: IncomingDpsCalculator.calculate(mobs.get(j), worn,
-								ctx.real.getDefence(), ctx.real.getMagic());
+						Loadout worn = result.getLoadout();
+						incoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
+							ctx.real.getDefence(), ctx.real.getMagic());
 						bench = inventoryFor(ownedView.plan.values(), ownedView.specCarried, worn);
 					}
 					else if (ownedView != null)
 					{
-						spec = null; // owned side blank on unreachable styles
+						// The kit has no answer for this style here - keep the
+						// PRE-KIT shared per-style answer instead of blanking
+						// (field bug 2026-08-05: the Sire roster dashed ranged
+						// and magic while every mob answered them alone). The
+						// carried spec is kit-specific, so only that is
+						// dropped.
+						spec = null;
 					}
 					DpsResult gameBest = old.overallBest;
 					SpecPick gameSpec = gameSpecsByStyle.get(s) == null ? null : gameSpecsByStyle.get(s)[j];
 					String gameLabel = old.gameBoostLabel;
 					IncomingDpsCalculator.Result gameIncoming = old.gameIncoming;
 					List<GearItem> gameBench = old.gameBench;
-					if (gameView != null && gameView.styles.contains(s))
+					if (gameView != null && gameView.styles.contains(s)
+						&& gameView.shownByMob.get(j).get(s) != null)
 					{
 						gameBest = gameView.shownByMob.get(j).get(s);
 						gameSpec = gameBest != null && gameView.specs != null
@@ -1791,7 +1809,9 @@ public class OptimizerService
 					}
 					else if (gameView != null)
 					{
-						gameBest = null;
+						// Same fallback on the BiS side: the ceiling per style
+						// always shows (it is aspirational by definition); only
+						// the kit-specific spec drops.
 						gameSpec = null;
 					}
 					perMob.get(j).put(s, new StyleResult(ownedList, gameBest, spec, gameSpec,
