@@ -35,6 +35,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> GUARDIANS = new HashSet<>();
 	private static final Set<Integer> TEKTON = new HashSet<>();
 	private static final Set<Integer> ICE_DEMON = new HashSet<>();
+	private static final Set<Integer> RESPIRATORY_SYSTEMS = new HashSet<>();
 
 	static
 	{
@@ -52,6 +53,7 @@ public final class MonsterMechanics
 			com.loadoutlab.data.JsonResources.ints(root, "guardians", GUARDIANS);
 			com.loadoutlab.data.JsonResources.ints(root, "tekton", TEKTON);
 			com.loadoutlab.data.JsonResources.ints(root, "iceDemon", ICE_DEMON);
+			com.loadoutlab.data.JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
 		}
 		catch (Exception ex)
 		{
@@ -177,6 +179,15 @@ public final class MonsterMechanics
 		{
 			return false;
 		}
+		// The Sire's vents shrug off standard melee - "magic, ranged or a
+		// halberd" per the wiki - and a melee demonbane hit destroys one
+		// outright, so those two classes are the only melee that belongs
+		// in the pool. Same carve-out shape as Zulrah's polearm exception.
+		if (RESPIRATORY_SYSTEMS.contains(id) && !"Polearm".equals(category)
+			&& !isMeleeDemonbane(weapon))
+		{
+			return false;
+		}
 		if (GUARDIANS.contains(id) && !"Pickaxe".equals(category))
 		{
 			return false;
@@ -187,6 +198,20 @@ public final class MonsterMechanics
 			return false;
 		}
 		return true;
+	}
+
+	/** Melee demonbane - the class that destroys a respiratory system on
+	 * any successful hit (wiki: "demonbane weapons (other than holy water)
+	 * will instantly kill the systems"). */
+	private static boolean isMeleeDemonbane(GearItem weapon)
+	{
+		if (weapon == null)
+		{
+			return false;
+		}
+		String name = weapon.getNameLower();
+		return name.contains("arclight") || name.contains("emberlight")
+			|| name.contains("darklight") || name.contains("silverlight");
 	}
 
 	/** Some NPCs' magic defence rolls use their Defence level, not Magic. */

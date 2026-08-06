@@ -25,6 +25,20 @@ public final class MonsterNotes
 		String name = monster.getName().toLowerCase(Locale.ROOT);
 		switch (name)
 		{
+			case "respiratory system":
+				return "Standard melee cannot damage the vents - halberds,"
+					+ " ranged, or magic only. A melee demonbane hit"
+					+ " (Arclight, Emberlight...) destroys one instantly,"
+					+ " and every hit lands for at least half your max.";
+			case "abyssal sire":
+				if (monster.getVersion() != null
+					&& monster.getVersion().startsWith("Phase 1"))
+				{
+					return "Disorient the Sire with a Shadow spell (Ancient"
+						+ " spellbook - bring Ancients or Spellbook Swap),"
+						+ " then kill the respiratory systems.";
+				}
+				return null;
 			case "zulrah":
 				return "Bring a recoil effect for the snakelings - Ring of"
 					+ " recoil, Ring of suffering (r), or Echo boots. Hits"
