@@ -162,6 +162,23 @@ public final class DpsCalculator
 					result.getPurchaseCost(), result.getSpellName());
 			}
 		}
+		// Salarin the twisted: a landed Strike always deals a FLAT 9-12,
+		// set by the highest strike tier unlocked - never by gear ("not
+		// affected by items that would normally increase spell damage").
+		// The isImmune gate has already filtered everything but Strike
+		// casts, so what remains is rebuilt as guaranteed flat damage.
+		if (result != null && MonsterMechanics.isSalarin(request.getMonster()))
+		{
+			int magic = request.getLevels().getMagic();
+			int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
+			counted("salarin", "strikes deal a flat " + flat + " - gear does not matter");
+			result = new DpsResult(result.getLoadout(),
+				flat / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+				1.0, flat, flat,
+				result.getAttackSpeed(), result.getAttackType(),
+				result.getAttackRoll(), result.getDefenceRoll(),
+				result.getPurchaseCost(), result.getSpellName());
+		}
 		return result == null || counted.isEmpty()
 			? result : result.withCountedBonuses(countedLines());
 	}
@@ -321,7 +338,7 @@ public final class DpsCalculator
 
 	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
 	 * only (wiki excludes Strike and Surge explicitly). */
-	private static boolean twinflameDoubles(SpellStats spell)
+	static boolean twinflameDoubles(SpellStats spell)
 	{
 		if (spell.getElement() == null || spell.getElement().isEmpty())
 		{

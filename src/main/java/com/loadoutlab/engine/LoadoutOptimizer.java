@@ -656,6 +656,20 @@ public final class LoadoutOptimizer
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
 		List<SpellStats> all = spellsForUnfiltered(data, request);
+		// Salarin: strike casts are the ONLY damage, and the elemental
+		// prune would drop them as dominated - short-circuit past it.
+		if (MonsterMechanics.isSalarin(request.getMonster()))
+		{
+			List<SpellStats> strikes = new ArrayList<>();
+			for (SpellStats spell : all)
+			{
+				if ("Strike".equals(spell.getNameSecondWord()))
+				{
+					strikes.add(spell);
+				}
+			}
+			return strikes;
+		}
 		if (!request.getSpellbookLock().isEmpty())
 		{
 			List<SpellStats> locked = new ArrayList<>();
@@ -691,8 +705,17 @@ public final class LoadoutOptimizer
 		String weakness = request.getMonster().getWeaknessElement();
 		int magicLevel = request.getLevels().getMagic();
 		List<SpellStats> kept = new ArrayList<>(spells.size());
-		int bestMatching = -1;
-		int bestPlain = -1;
+		// Dominance is per (weakness-match, twinflame-doubling) CELL, not
+		// per class alone: the staff's 40% second hit applies to
+		// Bolt/Blast/Wave but NOT Strike/Surge, so a lower-max Wave can
+		// out-dps the Surge that "dominates" it whenever a twinflame is in
+		// the pool. Field bug 2026-08-06: Wind Surge (24) pruned Wind Wave
+		// (20) before evaluation, and a pinned twinflame staff was told to
+		// autocast the worse spell. The prune runs request-level - it
+		// cannot see the weapon - so both tier-groups survive to the
+		// per-loadout evaluation, which prices the second hit correctly.
+		int[] best = new int[4];
+		java.util.Arrays.fill(best, -1);
 		for (SpellStats spell : spells)
 		{
 			if (!DpsCalculator.isPlainElemental(spell))
@@ -701,18 +724,12 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean match = spell.getElement().equals(weakness);
+			int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0);
 			int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
-			if (match ? effective > bestMatching : effective > bestPlain)
+			if (effective > best[cell])
 			{
 				kept.add(spell);
-				if (match)
-				{
-					bestMatching = effective;
-				}
-				else
-				{
-					bestPlain = effective;
-				}
+				best[cell] = effective;
 			}
 		}
 		return kept;
