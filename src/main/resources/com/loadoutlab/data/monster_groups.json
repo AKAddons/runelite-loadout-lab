@@ -397,12 +397,6 @@
     "version": "Shielded"
    },
    {
-    "name": "Arcane Scarab"
-   },
-   {
-    "name": "Agile Scarab"
-   },
-   {
     "name": "Akkha",
     "immuneTo": [
      "ranged",
@@ -465,7 +459,7 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them."
  },
  {
   "name": "Chambers of Xeric",

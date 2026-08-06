@@ -87,7 +87,11 @@ class MonsterGroupsTest
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
-		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
+		// Kephri's scarab adds are deliberately absent, same call as the
+		// Sire's spawn/scion (field decision 2026-08-06).
+		assertEquals(11, byName("Tombs of Amascut").getMobs().size());
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.noneMatch(m -> m.getName().contains("Scarab")));
 		// Vents + the two phase rows only: the spawn/scion adds are
 		// deliberately absent - players walk or ignore them (field
 		// decision 2026-08-06); + Add mob covers whoever kills them.
