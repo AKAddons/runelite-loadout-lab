@@ -78,6 +78,33 @@ class RespiratorySystemTest
 	}
 
 	@Test
+	@DisplayName("the math agrees with the pool: a whip does ZERO dps to a vent")
+	void calculateAgreesWithTheGate()
+	{
+		// The candidate pool filters standard melee out, but re-show paths
+		// (the roster kit pass, shared-set evaluation) call calculate()
+		// directly - without the damageFactor rule a whip line rendered a
+		// phantom 6.97 dps against the vents (found 2026-08-05 while
+		// chasing the roster dashes).
+		OptimizationRequest request = new OptimizationRequest(vents,
+			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
+			CandidateMode.ALL_STANDARD, true, false,
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("abyssal whip"));
+		DpsResult whip = new DpsCalculator().calculate(request, new Loadout(gear));
+		assertTrue(whip == null || whip.getDps() == 0.0,
+			"a whip must deal zero to the vents, got "
+				+ (whip == null ? "null" : whip.getDps()));
+
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("crystal halberd"));
+		DpsResult halberd = new DpsCalculator().calculate(request, new Loadout(gear));
+		assertTrue(halberd != null && halberd.getDps() > 0,
+			"a halberd must still land");
+	}
+
+	@Test
 	@DisplayName("the vents and Sire phase 1 carry their mechanics notes")
 	void notesPresent()
 	{

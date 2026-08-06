@@ -237,6 +237,17 @@ public final class MonsterMechanics
 		String name = monster.getName();
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
+		// The Sire's vents: standard melee does NOTHING - only halberds and
+		// melee demonbane land (wiki). The candidate pool already filters
+		// this, but re-shows (the kit pass, shared-set evaluation) call
+		// calculate() directly, so the math must agree or a whip line
+		// renders a phantom dps against them.
+		if (RESPIRATORY_SYSTEMS.contains(monster.getId()) && style == CombatStyle.MELEE
+			&& !"Polearm".equals(weapon == null ? "" : weapon.getCategory())
+			&& !isMeleeDemonbane(weapon))
+		{
+			return 0.0;
+		}
 		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType))
 		{
 			return 0.5;
