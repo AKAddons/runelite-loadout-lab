@@ -5231,6 +5231,27 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			chips.putIfAbsent(supply.ids[0], supply.name + " - trip supply");
 		}
+		// Curated per-monster recommendations (the barrage runes, DK
+		// antipoison): the mechanics note TELLS, these chips SHOW - and a
+		// rune recommendation pulls the pouch along.
+		boolean recommendedRunes = false;
+		for (MonsterStats recMob : entry.mobs)
+		{
+			for (Map.Entry<Integer, String> rec
+				: com.loadoutlab.data.RecommendedBring.chipsFor(recMob).entrySet())
+			{
+				chips.putIfAbsent(rec.getKey(), rec.getValue());
+				recommendedRunes |= com.loadoutlab.data.RecommendedBring.isRune(rec.getKey());
+			}
+		}
+		if (recommendedRunes)
+		{
+			int recPouch = ownedRunePouch();
+			if (recPouch != -1)
+			{
+				chips.putIfAbsent(recPouch, "Rune pouch - casting runes");
+			}
+		}
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
 		// layout only - they live inside the pouch).
