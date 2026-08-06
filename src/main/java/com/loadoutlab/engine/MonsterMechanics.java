@@ -200,6 +200,19 @@ public final class MonsterMechanics
 		return true;
 	}
 
+	/** Ticks a MELEE attacker spends walking between the Sire's four
+	 * vents, amortised per kill - and a demonbane kill IS one attack, so
+	 * it lands straight on the attack interval. The vents sit apart
+	 * across the arena; ranged and magic one-shot each from one spot,
+	 * which is why the bow "drastically cuts the time between kills"
+	 * (field decision 2026-08-06). The ORDER (ranged demonbane first) is
+	 * the contract the tests pin; this constant is the tunable estimate
+	 * behind it. */
+	public static int meleeReachPenaltyTicks(MonsterStats monster)
+	{
+		return isRespiratorySystem(monster) ? 5 : 0;
+	}
+
 	/** The Sire's vents (per-monster rules live on the id set). */
 	public static boolean isRespiratorySystem(MonsterStats monster)
 	{

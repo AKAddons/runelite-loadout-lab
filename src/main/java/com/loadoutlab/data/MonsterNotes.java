@@ -27,9 +27,11 @@ public final class MonsterNotes
 		{
 			case "respiratory system":
 				return "Standard melee cannot damage the vents - halberds,"
-					+ " ranged, or magic only. A melee demonbane hit"
-					+ " (Arclight, Emberlight...) destroys one instantly,"
-					+ " and every hit lands for at least half your max.";
+					+ " ranged, or magic only. A demonbane hit (Scorching"
+					+ " bow, Arclight...) destroys one instantly, and every"
+					+ " hit lands for at least half your max. The four vents"
+					+ " are spread out: ranged one-shots them all from one"
+					+ " spot, so the melee numbers include the walk.";
 			case "abyssal sire":
 				if (monster.getVersion() != null
 					&& monster.getVersion().startsWith("Phase 1"))

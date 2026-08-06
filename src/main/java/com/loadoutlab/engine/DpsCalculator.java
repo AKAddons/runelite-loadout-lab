@@ -126,13 +126,26 @@ public final class DpsCalculator
 		// Scorching bow (field report 2026-08-05).
 		if (result != null && MonsterMechanics.isRespiratorySystem(request.getMonster()))
 		{
+			// Melee pays the walk between the four spread vents; ranged and
+			// magic hit every vent from one spot. With one-shots a kill IS
+			// one attack, so the walk lands directly on the interval - the
+			// per-hit numbers (max, expected) stay honest, only time does
+			// the separating. This is what puts the Scorching bow ahead of
+			// a melee demonbane of near-identical per-attack dps.
+			int reach = request.getStyle() == CombatStyle.MELEE
+				? MonsterMechanics.meleeReachPenaltyTicks(request.getMonster()) : 0;
+			if (reach > 0 && result.getDps() > 0)
+			{
+				counted("vent spacing", "melee walks between the four vents"
+					+ " (+" + reach + " ticks per kill)");
+			}
+			double interval = (result.getAttackSpeed() + reach) * RollMath.SECONDS_PER_TICK;
 			if (MonsterMechanics.isDemonbane(loadout.getWeapon()))
 			{
 				int hp = Math.max(1, request.getMonster().getHitpoints());
 				counted("demonbane one-shot", "any landed hit destroys the vent");
 				result = new DpsResult(result.getLoadout(),
-					result.getAccuracy() * hp
-						/ (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+					result.getAccuracy() * hp / interval,
 					result.getAccuracy(), result.getAccuracy() * hp, hp,
 					result.getAttackSpeed(), result.getAttackType(),
 					result.getAttackRoll(), result.getDefenceRoll(),
@@ -141,7 +154,8 @@ public final class DpsCalculator
 			else if (result.getDps() > 0)
 			{
 				counted("vent min-hit", "every landed hit deals at least half its max");
-				result = new DpsResult(result.getLoadout(), result.getDps() * 1.5,
+				result = new DpsResult(result.getLoadout(),
+					result.getExpectedHit() * 1.5 / interval,
 					result.getAccuracy(), result.getExpectedHit() * 1.5,
 					result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
 					result.getAttackRoll(), result.getDefenceRoll(),

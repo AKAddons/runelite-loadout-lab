@@ -124,6 +124,36 @@ class RespiratorySystemTest
 	}
 
 	@Test
+	@DisplayName("the bow beats melee demonbane at the vents: no walking between them")
+	void rangedDemonbaneOutranksMeleeDemonbane()
+	{
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("scorching bow"));
+		DpsResult bow = new DpsCalculator().calculate(
+			new OptimizationRequest(vents, CombatStyle.RANGED, PlayerLevels.MAXED,
+				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false,
+				OwnedItems.EMPTY, RequirementProfile.MAXED, 1), new Loadout(gear));
+
+		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("emberlight"));
+		DpsResult ember = new DpsCalculator().calculate(req(vents), new Loadout(gear));
+
+		assertNotNull(bow);
+		assertNotNull(ember);
+		assertTrue(bow.getDps() > ember.getDps() * 1.5,
+			"one spot vs four walks: the bow must lead decisively, got bow="
+				+ bow.getDps() + " vs melee=" + ember.getDps());
+
+		// The melee interval carries exactly the published walk penalty.
+		int reach = MonsterMechanics.meleeReachPenaltyTicks(vents);
+		assertTrue(reach > 0, "the vents must publish a melee reach penalty");
+		assertEquals(
+			ember.getAccuracy() * vents.getHitpoints()
+				/ ((ember.getAttackSpeed() + reach) * 0.6),
+			ember.getDps(), 1e-6);
+	}
+
+	@Test
 	@DisplayName("the ranged pick vs a vent is the Scorching bow, not a blowpipe")
 	void scorchingBowBeatsTheBlowpipe()
 	{
