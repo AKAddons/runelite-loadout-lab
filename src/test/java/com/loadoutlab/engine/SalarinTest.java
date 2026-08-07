@@ -33,10 +33,9 @@ class SalarinTest
 
 	private static OptimizationRequest req(CombatStyle style)
 	{
-		return new OptimizationRequest(salarin, style, PlayerLevels.MAXED,
+		return TestRequests.of(salarin, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
-			CandidateMode.ALL_STANDARD, true, false,
-			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
 	@Test

@@ -1,5 +1,7 @@
 package com.loadoutlab.data;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -85,5 +87,29 @@ class RecommendedBringTest
 	void unknownIsEmpty()
 	{
 		assertTrue(chipsFor("goblin").isEmpty());
+	}
+
+	@Test
+	@DisplayName("recommendsAncients stays in lockstep with the chip tooltips")
+	void ancientsSwitchAgreesWithChips()
+	{
+		// recommendsAncients answers by name switch instead of scanning its
+		// own tooltips (the panel asks per mob per rebuild) - this pins the
+		// switch against the tooltip-derived truth for every curated case,
+		// so a new Ancients chip cannot silently miss the switch.
+		List<MonsterStats> cases = new ArrayList<>();
+		for (String name : new String[]{"jal-nib", "jal-ak", "dagannoth rex",
+			"dagannoth prime", "dagannoth supreme", "goblin"})
+		{
+			cases.add(data.searchMonsters(name, 1).get(0));
+		}
+		cases.addAll(data.searchMonsters("abyssal sire", 6));
+		for (MonsterStats monster : cases)
+		{
+			boolean fromChips = RecommendedBring.chipsFor(monster).values().stream()
+				.anyMatch(t -> t.contains("Ancient"));
+			assertEquals(fromChips, RecommendedBring.recommendsAncients(monster),
+				monster.label() + ": the switch must agree with the tooltips it replaced");
+		}
 	}
 }

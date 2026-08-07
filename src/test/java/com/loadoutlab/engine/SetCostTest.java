@@ -32,10 +32,10 @@ class SetCostTest
 
 	private static DpsResult best(OwnedItems owned, CandidateMode mode)
 	{
-		OptimizationRequest request = new OptimizationRequest(target,
+		OptimizationRequest request = TestRequests.of(target,
 			CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
-			mode, true, false, owned, RequirementProfile.MAXED, 1);
+			mode, true, false, owned, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(out.isEmpty(), "optimizer returned nothing");
 		return out.get(0);

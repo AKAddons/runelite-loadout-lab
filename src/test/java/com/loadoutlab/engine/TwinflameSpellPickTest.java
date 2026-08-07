@@ -53,11 +53,11 @@ class TwinflameSpellPickTest
 		owned.put(staff.getId(), 1);
 		Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 		pins.put(GearSlot.WEAPON, staff.getId());
-		OptimizationRequest request = new OptimizationRequest(guthan,
+		OptimizationRequest request = TestRequests.of(guthan,
 			CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
-			new OwnedItems(owned, true), RequirementProfile.MAXED, 1)
+			new OwnedItems(owned, true), 1)
 			.withPinnedItems(pins);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(out.isEmpty());
@@ -82,11 +82,10 @@ class TwinflameSpellPickTest
 	@DisplayName("without a twinflame the surge tier still wins - no over-correction")
 	void plainStaffStillPicksSurge()
 	{
-		OptimizationRequest request = new OptimizationRequest(guthan,
+		OptimizationRequest request = TestRequests.of(guthan,
 			CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
-			CandidateMode.ALL_STANDARD, true, false,
-			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(out.isEmpty());
 		String spell = out.get(0).getSpellName();

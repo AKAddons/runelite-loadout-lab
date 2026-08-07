@@ -32,10 +32,9 @@ class NibblerBarrageTest
 
 	private static OptimizationRequest req(CombatStyle style)
 	{
-		return new OptimizationRequest(nibbler, style, PlayerLevels.MAXED,
+		return TestRequests.of(nibbler, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
-			CandidateMode.ALL_STANDARD, true, false,
-			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
 	@Test

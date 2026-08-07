@@ -41,7 +41,7 @@ class KalphiteVeracTest
 			"test premise: the airborne form's immunity is prayer-based");
 	}
 
-	private static Loadout verac(LoadoutData data, boolean full)
+	private static Loadout verac(boolean full)
 	{
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		for (GearItem g : data.getGearItems())
@@ -73,17 +73,16 @@ class KalphiteVeracTest
 
 	private static OptimizationRequest req()
 	{
-		return new OptimizationRequest(airborne, CombatStyle.MELEE,
+		return TestRequests.of(airborne, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
-			null, 0, CandidateMode.ALL_STANDARD, true, false,
-			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
 	@Test
 	@DisplayName("full Verac's pierces the airborne prayer at exactly the proc rate")
 	void fullSetPierces()
 	{
-		DpsResult r = new DpsCalculator().calculate(req(), verac(data, true));
+		DpsResult r = new DpsCalculator().calculate(req(), verac(true));
 		assertNotNull(r, "the flail must gate melee entry through the prayer");
 		assertTrue(r.getDps() > 0, "the classic full-Verac's kill must be possible");
 		assertEquals(0.25, r.getAccuracy(), 1e-9, "only the proc lands");
@@ -95,7 +94,7 @@ class KalphiteVeracTest
 	@DisplayName("the flail without the set lands nothing - but stays a zero, not a null")
 	void partialSetIsZeroNotNull()
 	{
-		DpsResult r = new DpsCalculator().calculate(req(), verac(data, false));
+		DpsResult r = new DpsCalculator().calculate(req(), verac(false));
 		assertNotNull(r, "partial Verac states must survive for the beam to finish the set");
 		assertEquals(0.0, r.getDps(), 1e-9);
 	}
@@ -129,11 +128,10 @@ class KalphiteVeracTest
 				owned.put(g.getId(), 1);
 			}
 		}
-		OptimizationRequest request = new OptimizationRequest(airborne,
+		OptimizationRequest request = TestRequests.of(airborne,
 			CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
-			CandidateMode.OWNED_ONLY, true, false,
-			new OwnedItems(owned, true), RequirementProfile.MAXED, 1);
+			CandidateMode.OWNED_ONLY, true, false, new OwnedItems(owned, true), 1);
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, request);
 		assertFalse(out.isEmpty(), "an owned Verac's set must produce a melee answer");
 		assertTrue(DpsCalculator.fullVeracSet(out.get(0).getLoadout()),

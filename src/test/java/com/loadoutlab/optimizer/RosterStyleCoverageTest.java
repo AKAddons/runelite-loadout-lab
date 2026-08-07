@@ -4,19 +4,11 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.OptimizationRequest;
-import com.loadoutlab.engine.OwnedItems;
-import com.loadoutlab.engine.PlayerLevels;
-import com.loadoutlab.engine.PrayerUnlocks;
-import com.loadoutlab.engine.RequirementProfile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,23 +53,9 @@ public class RosterStyleCoverageTest
 		List<MonsterStats> mobs = new ArrayList<>(List.of(vents, phase1, phase3));
 
 		OptimizerService service = new OptimizerService(data);
-		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
-		// Mirrors the client call RosterOptimizerTest uses, at the
-		// screenshot's Inventory: 3.
-		ServiceCalls.bestPerStyleAcross(service,
-			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(styleCompleteKit(), true), 1, false, false, "",
-			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, false, Collections.emptySet(), 0, 3,
-			Collections.emptyMap(), Collections.emptyMap(), null, Collections.emptySet(),
-			roster ->
-			{
-				out.set(roster);
-				done.countDown();
-			});
-		Assert.assertTrue("roster compute timed out", done.await(120, TimeUnit.SECONDS));
-		OptimizerService.RosterResult roster = out.get();
+		// The shared client-call harness, at the screenshot's Inventory: 3.
+		OptimizerService.RosterResult roster = ServiceCalls.runRoster(
+			service, mobs, styleCompleteKit(), 3, Collections.emptyMap());
 		Assert.assertNotNull("roster returned null (superseded?)", roster);
 
 		for (int j = 0; j < mobs.size(); j++)
@@ -114,21 +92,8 @@ public class RosterStyleCoverageTest
 		List<MonsterStats> mobs = new ArrayList<>(List.of(vents, phase1));
 
 		OptimizerService service = new OptimizerService(data);
-		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
-		ServiceCalls.bestPerStyleAcross(service,
-			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(styleCompleteKit(), true), 1, false, false, "",
-			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, false, Collections.emptySet(), 0, 1,
-			Collections.emptyMap(), Collections.emptyMap(), null, Collections.emptySet(),
-			roster ->
-			{
-				out.set(roster);
-				done.countDown();
-			});
-		Assert.assertTrue("roster compute timed out", done.await(120, TimeUnit.SECONDS));
-		OptimizerService.RosterResult roster = out.get();
+		OptimizerService.RosterResult roster = ServiceCalls.runRoster(
+			service, mobs, styleCompleteKit(), 1, Collections.emptyMap());
 		Assert.assertNotNull(roster);
 
 		for (int j = 0; j < mobs.size(); j++)
