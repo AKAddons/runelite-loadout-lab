@@ -641,7 +641,28 @@ public class LoadoutLabPanel extends PluginPanel
 	 * apply. */
 	private boolean arcaneBlocked(ResultEntry entry, CombatStyle style)
 	{
-		return style == CombatStyle.MAGIC && magicArcaneClash(entry);
+		// A curated barrage recommendation puts the WHOLE TRIP on the
+		// Ancient spellbook, so the Arceuus folds stand down on every
+		// card, not just the magic one (field report 2026-08-06: the
+		// Inferno recommended barrage runes and thralls at once).
+		return tripsOnAncients(entry)
+			|| (style == CombatStyle.MAGIC && magicArcaneClash(entry));
+	}
+
+	private static boolean tripsOnAncients(ResultEntry entry)
+	{
+		if (entry == null)
+		{
+			return false;
+		}
+		for (MonsterStats mob : entry.mobs)
+		{
+			if (com.loadoutlab.data.RecommendedBring.recommendsAncients(mob))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** The MAGIC card's autocast book clashes with Arceuus summons (field
@@ -4554,8 +4575,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// 2026-07-21 v4): that card is locked to its autocast book, so the
 		// assumptions cannot apply to what is on screen.
 		boolean viewClash = arcaneBlocked(entry, viewedTab);
-		String viewClashNote = "Unavailable on this card - its autocast"
-			+ " spell locks the spellbook away from Arceuus";
+		String viewClashNote = tripsOnAncients(entry)
+			? "Unavailable - this trip is recommended onto the Ancient"
+				+ " spellbook (barrages), which has no path to Arceuus summons"
+			: "Unavailable on this card - its autocast"
+				+ " spell locks the spellbook away from Arceuus";
 		String clashNote = !viewClash && magicArcaneClash(entry)
 			? " Not applied to the Magic card - its autocast needs another book." : "";
 		if (ExtraDps.thrallDps(magicLevel) > 0 && ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))

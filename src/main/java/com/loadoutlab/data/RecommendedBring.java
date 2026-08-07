@@ -37,6 +37,23 @@ public final class RecommendedBring
 		return RUNES.contains(itemId);
 	}
 
+	/** True when this monster's recommendation puts the trip on the
+	 * ANCIENT spellbook (the barrage stipulations) - which has no path to
+	 * Arceuus summons, so the thrall/Death Charge folds must stand down
+	 * (field report 2026-08-06: the Inferno recommended barrages and
+	 * thralls at once). */
+	public static boolean recommendsAncients(MonsterStats monster)
+	{
+		for (String tooltip : chipsFor(monster).values())
+		{
+			if (tooltip.contains("Ancient"))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** The curated chips for this monster: item id -> tooltip. Empty for
 	 * monsters with no recommendation. */
 	public static Map<Integer, String> chipsFor(MonsterStats monster)

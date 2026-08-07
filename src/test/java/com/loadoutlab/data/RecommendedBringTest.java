@@ -69,6 +69,18 @@ class RecommendedBringTest
 	}
 
 	@Test
+	@DisplayName("barrage recommendations imply Ancients; antipoison does not")
+	void ancientsImplication()
+	{
+		assertTrue(RecommendedBring.recommendsAncients(
+			data.searchMonsters("jal-nib", 1).get(0)),
+			"the Inferno trip lives on Ancients - Arceuus folds stand down");
+		assertFalse(RecommendedBring.recommendsAncients(
+			data.searchMonsters("dagannoth rex", 1).get(0)),
+			"antipoison implies no spellbook at all");
+	}
+
+	@Test
 	@DisplayName("monsters without a recommendation chip nothing")
 	void unknownIsEmpty()
 	{
