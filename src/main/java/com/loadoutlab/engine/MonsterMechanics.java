@@ -39,6 +39,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> SALARIN = new HashSet<>();
 	private static final Set<Integer> NIBBLERS = new HashSet<>();
 	private static final Set<Integer> WARDEN_CORES = new HashSet<>();
+	private static final Set<Integer> TOA_INVOCATION_SCALED = new HashSet<>();
 
 	static
 	{
@@ -60,6 +61,7 @@ public final class MonsterMechanics
 			com.loadoutlab.data.JsonResources.ints(root, "salarin", SALARIN);
 			com.loadoutlab.data.JsonResources.ints(root, "nibblers", NIBBLERS);
 			com.loadoutlab.data.JsonResources.ints(root, "wardenCores", WARDEN_CORES);
+			com.loadoutlab.data.JsonResources.ints(root, "toaInvocationScaled", TOA_INVOCATION_SCALED);
 		}
 		catch (Exception ex)
 		{
@@ -274,6 +276,24 @@ public final class MonsterMechanics
 	{
 		return monster != null && WARDEN_CORES.contains(monster.getId())
 			&& monster.versionStartsWith("Core-ejected");
+	}
+
+	/** ToA rows whose defence scales with the raid's invocation level
+	 * (vendored from the official calc, which excludes the Kephri
+	 * overlords). profileId maps the group's synthetic phase variants
+	 * back to their real rows. */
+	public static boolean isToaInvocationScaled(MonsterStats monster)
+	{
+		return monster != null && TOA_INVOCATION_SCALED.contains(monster.profileId());
+	}
+
+	/** The monster priced at a raid level: a factored copy for scaled ToA
+	 * rows (level 0 clears an earlier factor), the monster itself
+	 * otherwise. */
+	public static MonsterStats atToaInvocation(MonsterStats monster, int level)
+	{
+		return isToaInvocationScaled(monster)
+			? monster.withToaInvocation(level) : monster;
 	}
 
 	/** The Sire's vents (per-monster rules live on the id set). */

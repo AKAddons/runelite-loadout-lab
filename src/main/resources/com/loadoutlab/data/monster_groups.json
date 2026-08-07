@@ -482,7 +482,7 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), the ejected core (the spec-dump window - melee always maxes there), and the P3 enraged Wardens. Invocation-level scaling is not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them."
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), the ejected core (the spec-dump window - melee always maxes there), and the P3 enraged Wardens. The Invocation chip applies the official defence scaling to every row; kill-time (hp) scaling is not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them."
  },
  {
   "name": "Chambers of Xeric",

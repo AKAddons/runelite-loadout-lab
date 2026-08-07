@@ -40,7 +40,11 @@ describe('loadout lab vectors', () => {
     const results: object[] = [];
     for (const v of vectors) {
       try {
-        const monster = getTestMonster(v.monster, v.monsterVersion || '');
+        const base = getTestMonster(v.monster, v.monsterVersion || '');
+        // ToA invocation rides monster.inputs (their P2-style scaling gate).
+        const monster = v.toaInvocationLevel
+          ? { ...base, inputs: { ...base.inputs, toaInvocationLevel: v.toaInvocationLevel } }
+          : base;
         const equipment: Record<string, EquipmentPiece> = {};
         for (const entry of v.gear || []) {
           const [name, version] = Array.isArray(entry) ? entry : [entry, ''];

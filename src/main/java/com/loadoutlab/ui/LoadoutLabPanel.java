@@ -1133,6 +1133,11 @@ public class LoadoutLabPanel extends PluginPanel
 		 * combo fully blocks; the honesty rule refuses half-protection),
 		 * 2 = super antifire assumed (shield slot freed). */
 		int antifireMode;
+		/** ToA invocation level (0/150/300/540): the official defence
+		 * scaling (x(250+invo)/250) on every invocation-scaled ToA row.
+		 * Engine input - changing recomputes. Kill-time (hp) scaling is
+		 * not modeled yet. */
+		int toaInvocation = 300;
 		/** Whole-result fold: collapsed to the header's one-line summary. */
 		boolean folded;
 		/** The style tab in view; null = strongest owned set (the default). */
@@ -4025,7 +4030,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		if (entry.mobs.size() > 1)
 		{
-			computeHook.computeRoster(new ArrayList<>(entry.mobs),
+			computeHook.computeRoster(invocationMobs(entry),
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
@@ -4038,7 +4043,9 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> statusLabel.setText(" "));
 			return;
 		}
-		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
+		computeHook.compute(
+			com.loadoutlab.engine.MonsterMechanics.atToaInvocation(entry.mob(), entry.toaInvocation),
+			f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
@@ -4048,6 +4055,19 @@ public class LoadoutLabPanel extends PluginPanel
 			parsedBudgetGp(entry.upgradeBudget),
 			entry.maxSwaps, entry.raidBoost,
 			() -> statusLabel.setText(" "));
+	}
+
+	/** The entry's mobs priced at its invocation chip: factored copies go
+	 * to the compute only - entry.mobs stays the display/pin identity.
+	 * Level 0 clears an earlier factor (set semantics, never compounded). */
+	private List<MonsterStats> invocationMobs(ResultEntry entry)
+	{
+		List<MonsterStats> mobs = new ArrayList<>(entry.mobs.size());
+		for (MonsterStats mob : entry.mobs)
+		{
+			mobs.add(com.loadoutlab.engine.MonsterMechanics.atToaInvocation(mob, entry.toaInvocation));
+		}
+		return mobs;
 	}
 
 	/** Account or profile switched: nothing on screen may survive. */
@@ -4563,6 +4583,40 @@ public class LoadoutLabPanel extends PluginPanel
 					if (historyControl == null)
 					{
 						setAntifireMode(next);
+					}
+				})));
+		}
+		// Tombs invocation (field report 2026-08-06: at any real raid
+		// level the official defence scaling flips bowfa over a blowpipe
+		// at the Wardens - invocation 0 silently told the wrong story).
+		if (entry.mobs.stream().anyMatch(
+			com.loadoutlab.engine.MonsterMechanics::isToaInvocationScaled))
+		{
+			final int[] invoLevels = {0, 150, 300, 540};
+			int invoIdx = 0;
+			for (int i = 0; i < invoLevels.length; i++)
+			{
+				if (invoLevels[i] == entry.toaInvocation)
+				{
+					invoIdx = i;
+				}
+			}
+			int invoNext = invoLevels[(invoIdx + 1) % invoLevels.length];
+			int invoPrev = entry.toaInvocation;
+			toggles.add(paramChip("Invocation " + entry.toaInvocation,
+				entry.toaInvocation > 0, true,
+				"Raid level " + entry.toaInvocation + " - ToA defence scales"
+					+ " with invocation (the official engine's rule), which is"
+					+ " what makes accuracy weapons pull ahead in real raids;"
+					+ " kill times are not scaled yet. Click to cycle"
+					+ " 0/150/300/540.",
+				() -> asActive(entry, () ->
+				{
+					recordStep("Invocation " + invoNext,
+						() -> setToaInvocation(invoNext), () -> setToaInvocation(invoPrev));
+					if (historyControl == null)
+					{
+						setToaInvocation(invoNext);
 					}
 				})));
 		}
@@ -7131,6 +7185,15 @@ public class LoadoutLabPanel extends PluginPanel
 		if (active != null && active.antifireMode != mode)
 		{
 			active.antifireMode = mode;
+			recompute();
+		}
+	}
+
+	private void setToaInvocation(int level)
+	{
+		if (active != null && active.toaInvocation != level)
+		{
+			active.toaInvocation = level;
 			recompute();
 		}
 	}

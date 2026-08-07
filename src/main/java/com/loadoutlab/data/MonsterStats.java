@@ -141,6 +141,34 @@ public final class MonsterStats
 	{
 		MonsterStats copy = withVersion(version);
 		copy.displayName = nick;
+		copy.toaInvocationLevel = toaInvocationLevel;
+		return copy;
+	}
+
+	/** ToA raid level carried ON the monster so every path - pool, kit
+	 * re-shows, spec sims - prices the same invocation; 0 everywhere
+	 * else. The engine scales defence rolls by (250+level)/250 (the
+	 * official engine's rule) for invocation-scaled rows. */
+	private int toaInvocationLevel;
+
+	public int getToaInvocationLevel()
+	{
+		return toaInvocationLevel;
+	}
+
+	/** A copy priced at this raid level (SET, not compounded - re-applying
+	 * a different level replaces the old one); returns this when the
+	 * level already matches. */
+	public MonsterStats withToaInvocation(int level)
+	{
+		int clamped = Math.max(0, level);
+		if (clamped == toaInvocationLevel)
+		{
+			return this;
+		}
+		MonsterStats copy = withVersion(version);
+		copy.displayName = displayName;
+		copy.toaInvocationLevel = clamped;
 		return copy;
 	}
 
@@ -178,12 +206,16 @@ public final class MonsterStats
 		return revenant;
 	}
 
-	/** A copy at a different Defence level - defence-drain spec modeling. */
+	/** A copy at a different Defence level - defence-drain spec modeling.
+	 * Carries the invocation level: a drained ToA row keeps its raid
+	 * scaling or the drain would be valued at invocation 0. */
 	public MonsterStats withDefence(int newDefence)
 	{
-		return new MonsterStats(id, name, version, combatLevel, hitpoints, size,
+		MonsterStats copy = new MonsterStats(id, name, version, combatLevel, hitpoints, size,
 			Math.max(0, newDefence), magic, offensiveMagic, defensive, offence,
 			attributes, slayerMonster, weaknessElement, weaknessSeverity);
+		copy.toaInvocationLevel = toaInvocationLevel;
+		return copy;
 	}
 
 	public boolean hasAttribute(String attribute)

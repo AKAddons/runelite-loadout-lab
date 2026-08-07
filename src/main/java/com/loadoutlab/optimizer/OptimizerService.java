@@ -357,7 +357,7 @@ public class OptimizerService
 	private static String optimizeKey(MonsterStats mob, CombatStyle style, boolean game,
 		ComputeContext ctx)
 	{
-		return mob.getId() + "|" + style.name() + "|" + (game ? "g" : "o")
+		return mob.getId() + "|" + mob.getToaInvocationLevel() + "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks

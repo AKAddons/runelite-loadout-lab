@@ -73,6 +73,11 @@ public class OfficialVectorExport
 		// itemVars (a dart as gear is a thrown WEAPON and replaces the bp).
 		{"bofaset-warden3", "Tumeken's Warden", "Enraged", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
 		{"bp-warden3", "Tumeken's Warden", "Enraged", "RANGED", "Toxic blowpipe#Charged", "DART:Dragon dart"},
+		// The same pair at raid level 300: the invocation defence scaling
+		// ((250+invo)/250, INVO: token) must match the official engine on
+		// both sides of the flip.
+		{"bofaset-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs", "INVO:300"},
+		{"bp-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Toxic blowpipe#Charged", "DART:Dragon dart", null, "INVO:300"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},
@@ -248,10 +253,16 @@ public class OfficialVectorExport
 				gearNames.add(gearRef(ammo));
 			}
 			boolean onTask = false;
+			int toaInvocation = 0;
 			for (int i = 7; i < s.length; i++)
 			{
 				if (s[i] == null)
 				{
+					continue;
+				}
+				if (s[i].startsWith("INVO:"))
+				{
+					toaInvocation = Integer.parseInt(s[i].substring(5));
 					continue;
 				}
 				GearItem extra = byName(data, s[i]);
@@ -259,6 +270,7 @@ public class OfficialVectorExport
 				gearNames.add(gearRef(extra));
 				onTask |= s[i].toLowerCase().contains("slayer helmet");
 			}
+			monster = MonsterMechanics.atToaInvocation(monster, toaInvocation);
 
 			OptimizationRequest request = new OptimizationRequest(
 				monster, style, PlayerLevels.MAXED,
@@ -279,6 +291,10 @@ public class OfficialVectorExport
 			if (blowpipeDartId != null)
 			{
 				vector.put("blowpipeDartId", blowpipeDartId);
+			}
+			if (toaInvocation > 0)
+			{
+				vector.put("toaInvocationLevel", toaInvocation);
 			}
 			vector.put("prayers", prayerNames(style));
 			if (onTask)

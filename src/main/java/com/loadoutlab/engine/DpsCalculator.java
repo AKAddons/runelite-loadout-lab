@@ -614,7 +614,18 @@ public final class DpsCalculator
 		{
 			bonus = monster.getDefensive().get(attackType);
 		}
-		return RollMath.defenceRoll(level + 9, bonus);
+		long roll = RollMath.defenceRoll(level + 9, bonus);
+		int invocation = monster.getToaInvocationLevel();
+		if (invocation > 0)
+		{
+			// ToA invocation scaling (official engine rule): defence rolls
+			// x (250+invocation)/250, truncated - long math multiplies
+			// before dividing so the result matches theirs exactly. This
+			// is what flips bowfa over a blowpipe at the Wardens at any
+			// real raid level (field report 2026-08-06).
+			roll = roll * (250 + invocation) / 250;
+		}
+		return roll;
 	}
 
 	private static String rangedDefenceType(GearItem weapon)
