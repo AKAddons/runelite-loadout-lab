@@ -5210,24 +5210,11 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
+			// The union across each mob's SHOWN answer - bestStyleResult is
+			// the row contract, so the potions match what the rows display.
 			for (Map<CombatStyle, StyleResult> map : entry.perMobResults)
 			{
-				StyleResult best = null;
-				double bestDps = -1;
-				for (StyleResult r : map.values())
-				{
-					if (r == null)
-					{
-						continue;
-					}
-					DpsResult shown = bis ? r.overallBest
-						: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-					if (shown != null && shown.getDps() > bestDps)
-					{
-						bestDps = shown.getDps();
-						best = r;
-					}
-				}
+				StyleResult best = bestStyleResult(map, bis);
 				if (best != null)
 				{
 					addBoostConsumables(bis ? best.gameBoostLabel : best.boostLabel, ids);
@@ -5270,11 +5257,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (recommendedRunes && !effectiveWilderness(entry))
 		{
-			int recPouch = ownedRunePouch();
-			if (recPouch != -1)
-			{
-				chips.putIfAbsent(recPouch, "Rune pouch - casting runes");
-			}
+			addRunePouchChip(chips);
 		}
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
@@ -5291,13 +5274,20 @@ public class LoadoutLabPanel extends PluginPanel
 		if (!blocked && !effectiveWilderness(entry)
 			&& (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
 		{
-			int pouch = ownedRunePouch();
-			if (pouch != -1)
-			{
-				chips.putIfAbsent(pouch, "Rune pouch - casting runes");
-			}
+			addRunePouchChip(chips);
 		}
 		return chips;
+	}
+
+	/** The best owned rune pouch chip - the block both rune paths above
+	 * add (Wilderness-gated by the callers). */
+	private void addRunePouchChip(Map<Integer, String> chips)
+	{
+		int pouch = ownedRunePouch();
+		if (pouch != -1)
+		{
+			chips.putIfAbsent(pouch, "Rune pouch - casting runes");
+		}
 	}
 
 	/** Inventory-chip names for the assumed consumables, keyed by the ids
@@ -5406,29 +5396,41 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			map = entry.results;
 		}
-		if (map == null)
-		{
-			return null;
-		}
-		DpsResult best = null;
+		StyleResult best = map == null ? null : bestStyleResult(map, bis);
+		return best == null ? null : shownResult(best, bis);
+	}
+
+	/** The side's shown answer for one style: BiS = the game-wide best,
+	 * Yours = the best owned set. */
+	private static DpsResult shownResult(StyleResult r, boolean bis)
+	{
+		return bis ? r.overallBest
+			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+	}
+
+	/** One mob's best across styles for a side, by the row contract: a
+	 * tab-only fallback never outbids a kit-backed answer, however good
+	 * its number looks (it needs a different worn kit); dps breaks the
+	 * remaining ties. The mob rows and the consumable chips both pick
+	 * through this, so the chips always describe the shown answer. */
+	private static StyleResult bestStyleResult(Map<CombatStyle, StyleResult> map, boolean bis)
+	{
+		StyleResult best = null;
+		double bestDps = -1;
 		boolean bestKitBacked = false;
 		for (StyleResult r : map.values())
 		{
-			DpsResult shown = r == null ? null
-				: bis ? r.overallBest
-				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+			DpsResult shown = r == null ? null : shownResult(r, bis);
 			if (shown == null)
 			{
 				continue;
 			}
-			// The row promises a set the carried kit can assemble - a
-			// tab-only fallback never outbids a kit-backed answer, however
-			// good its number looks (it needs a different worn kit).
 			boolean kitBacked = bis ? r.gameKitBacked : r.ownedKitBacked;
 			if (best == null || (kitBacked && !bestKitBacked)
-				|| (kitBacked == bestKitBacked && shown.getDps() > best.getDps()))
+				|| (kitBacked == bestKitBacked && shown.getDps() > bestDps))
 			{
-				best = shown;
+				best = r;
+				bestDps = shown.getDps();
 				bestKitBacked = kitBacked;
 			}
 		}
@@ -7533,6 +7535,9 @@ public class LoadoutLabPanel extends PluginPanel
 		// typography. Both sides of the Yours|BiS toggle share this layout.
 		JPanel gear = new JPanel(new GridLayout(5, 3, 2, 2));
 		gear.setOpaque(false);
+		// One dream-view snapshot for the whole grid - snapshot() locks and
+		// copies, and per-cell copies were ~a dozen per rebuild.
+		Set<Integer> dreamIds = dreamView.snapshot();
 		for (int i = 0; i < CLASSIC_ORDER.length; i++)
 		{
 			if (i == CLASSIC_SPEC_INDEX)
@@ -7541,7 +7546,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			else if (CLASSIC_ORDER[i] != null)
 			{
-				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest, bisSide));
+				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest, bisSide, dreamIds));
 			}
 			else
 			{
@@ -8065,7 +8070,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * fate, source dot, tooltip and right-click menu - or an empty box. */
 	private RiskDotLabel buildSlotCell(GearSlot slotType, DpsResult result, int cell,
 		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned,
-		Loadout gameBest, boolean bisSide)
+		Loadout gameBest, boolean bisSide, Set<Integer> dreamIds)
 	{
 		GearItem item = result.getLoadout().get(slotType);
 		RiskDotLabel slot = new RiskDotLabel();
@@ -8090,7 +8095,7 @@ public class LoadoutLabPanel extends PluginPanel
 			//           a piece you have not got
 			//   blue  = the spec cell (matches the in-game spec bar)
 			boolean owns = ownedCheck.owns(item.getId());
-			boolean simmed = !owns && dreamView.snapshot().contains(item.getId());
+			boolean simmed = !owns && dreamIds.contains(item.getId());
 			// The Yours answer only ever shows gear you own, sim, or would
 			// buy - so an unowned cell there is an assumption worth marking.
 			// The BiS answer shows the whole game, where unowned is the norm.
@@ -8100,7 +8105,6 @@ public class LoadoutLabPanel extends PluginPanel
 			// coif) is just as best-available as the exact pick.
 			boolean bis = owns && bisItem != null
 				&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
-			boolean unowned = assumed;
 			Color border = assumed ? BORDER_UNOWNED
 				: bis ? BORDER_BIS : BORDER_PLAIN;
 			slot.setBorder(BorderFactory.createLineBorder(border));
@@ -8149,12 +8153,12 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			// Location clause only when a fetch trip is needed - "in
 			// bank" would be noise on 95% of cells.
-			String where = unowned ? "" : locationHint.hint(item.getId());
+			String where = assumed ? "" : locationHint.hint(item.getId());
 			Integer pinnedHere = pinnedSlots.get(slotType);
 			String pinNote = pinnedHere != null && pinnedHere == item.getId()
 				? " - pinned" : "";
 			// Source dot + legend entry: only for locations we know.
-			if (!unowned)
+			if (!assumed)
 			{
 				String source = locationHint.primary(item.getId());
 				Color sourceColor = SOURCE_COLORS.get(source);
@@ -8166,7 +8170,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			slot.setToolTipText(slotName(slotType) + ": " + item.label()
 				+ pinNote
-				+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
+				+ (assumed ? " - NOT OWNED (" + obtain + ")" : "")
 				+ (where.isEmpty() ? "" : " - " + where)
 				+ (bis ? " - best available" : "")
 				+ fate

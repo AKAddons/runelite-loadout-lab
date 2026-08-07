@@ -191,6 +191,13 @@ public final class MonsterStats
 		return attributesLower.contains(attribute.toLowerCase(Locale.ROOT));
 	}
 
+	/** True when this variant's version label starts with the prefix - the
+	 * phase gate MonsterNotes and RecommendedBring share ("Phase 1..."). */
+	public boolean versionStartsWith(String prefix)
+	{
+		return version != null && version.startsWith(prefix);
+	}
+
 	public String label()
 	{
 		// Level-derived version labels ("Level 137") are redundant with -

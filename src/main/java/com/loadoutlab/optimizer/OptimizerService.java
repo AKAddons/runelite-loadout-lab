@@ -1787,8 +1787,9 @@ public class OptimizerService
 					String label = old.boostLabel;
 					IncomingDpsCalculator.Result incoming = old.incoming;
 					List<GearItem> bench = old.bench;
-					if (ownedView != null && ownedView.styles.contains(s)
-						&& ownedView.shownByMob.get(j).get(s) != null)
+					boolean ownedKitAnswers = ownedView != null && ownedView.styles.contains(s)
+						&& ownedView.shownByMob.get(j).get(s) != null;
+					if (ownedKitAnswers)
 					{
 						DpsResult result = ownedView.shownByMob.get(j).get(s);
 						ownedList = new ArrayList<>();
@@ -1815,17 +1816,16 @@ public class OptimizerService
 					String gameLabel = old.gameBoostLabel;
 					IncomingDpsCalculator.Result gameIncoming = old.gameIncoming;
 					List<GearItem> gameBench = old.gameBench;
-					if (gameView != null && gameView.styles.contains(s)
-						&& gameView.shownByMob.get(j).get(s) != null)
+					boolean gameKitAnswers = gameView != null && gameView.styles.contains(s)
+						&& gameView.shownByMob.get(j).get(s) != null;
+					if (gameKitAnswers)
 					{
 						gameBest = gameView.shownByMob.get(j).get(s);
-						gameSpec = gameBest != null && gameView.specs != null
-							? gameView.specs[j] : null;
+						gameSpec = gameView.specs != null ? gameView.specs[j] : null;
 						gameLabel = gameBoostLabelByStyle.get(s);
-						Loadout worn = gameBest != null ? gameBest.getLoadout() : gameView.base;
-						gameIncoming = gameBest == null ? null
-							: IncomingDpsCalculator.calculate(mobs.get(j), worn,
-								ctx.real.getDefence(), ctx.real.getMagic());
+						Loadout worn = gameBest.getLoadout();
+						gameIncoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
+							ctx.real.getDefence(), ctx.real.getMagic());
 						gameBench = inventoryFor(gameView.plan.values(), gameView.specCarried, worn);
 					}
 					else if (gameView != null)
@@ -1835,12 +1835,10 @@ public class OptimizerService
 						// the kit-specific spec drops.
 						gameSpec = null;
 					}
-					boolean ownedKitBacked = ownedView == null
-						|| (ownedView.styles.contains(s)
-							&& ownedView.shownByMob.get(j).get(s) != null);
-					boolean gameKitBacked = gameView == null
-						|| (gameView.styles.contains(s)
-							&& gameView.shownByMob.get(j).get(s) != null);
+					// A side is kit-backed when it has no kit at all (nothing
+					// to contradict) or the kit just answered this style.
+					boolean ownedKitBacked = ownedView == null || ownedKitAnswers;
+					boolean gameKitBacked = gameView == null || gameKitAnswers;
 					perMob.get(j).put(s, new StyleResult(ownedList, gameBest, spec, gameSpec,
 						label, gameLabel, incoming, gameIncoming, bench, gameBench,
 						ownedKitBacked, gameKitBacked));

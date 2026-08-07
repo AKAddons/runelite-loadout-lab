@@ -41,17 +41,25 @@ public final class RecommendedBring
 	 * ANCIENT spellbook (the barrage stipulations) - which has no path to
 	 * Arceuus summons, so the thrall/Death Charge folds must stand down
 	 * (field report 2026-08-06: the Inferno recommended barrages and
-	 * thralls at once). */
+	 * thralls at once). A direct switch, not a scan of chipsFor's
+	 * tooltips: the panel asks this per mob per card rebuild, and
+	 * RecommendedBringTest pins the two in agreement. */
 	public static boolean recommendsAncients(MonsterStats monster)
 	{
-		for (String tooltip : chipsFor(monster).values())
+		if (monster == null)
 		{
-			if (tooltip.contains("Ancient"))
-			{
-				return true;
-			}
+			return false;
 		}
-		return false;
+		switch (monster.getName().toLowerCase(Locale.ROOT))
+		{
+			case "jal-nib":
+			case "jal-ak":
+				return true;
+			case "abyssal sire":
+				return monster.versionStartsWith("Phase 1");
+			default:
+				return false;
+		}
 	}
 
 	/** The curated chips for this monster: item id -> tooltip. Empty for
@@ -78,8 +86,7 @@ public final class RecommendedBring
 				break;
 			}
 			case "abyssal sire":
-				if (monster.getVersion() != null
-					&& monster.getVersion().startsWith("Phase 1"))
+				if (monster.versionStartsWith("Phase 1"))
 				{
 					String why = "Shadow Barrage runes (Ancient spellbook)"
 						+ " - disorients the Sire";

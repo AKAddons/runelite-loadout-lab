@@ -51,8 +51,7 @@ public final class MonsterNotes
 					+ " are spread out: ranged one-shots them all from one"
 					+ " spot, so the melee numbers include the walk.";
 			case "abyssal sire":
-				if (monster.getVersion() != null
-					&& monster.getVersion().startsWith("Phase 1"))
+				if (monster.versionStartsWith("Phase 1"))
 				{
 					return "Disorient the Sire with a Shadow spell (Ancient"
 						+ " spellbook - bring Ancients or Spellbook Swap),"
