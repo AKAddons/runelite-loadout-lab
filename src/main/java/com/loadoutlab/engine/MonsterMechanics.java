@@ -98,10 +98,20 @@ public final class MonsterMechanics
 			return false;
 		}
 		// Data-driven immunity (synthetic group variants) gates the
-		// calculator too - no loadout reaches a shielded style.
+		// calculator too - no loadout reaches a shielded style. One
+		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
+		// pierced by Verac's set - the flail gates entry here, and the
+		// calculator prices set-complete-or-zero.
 		if (monster.hasAttribute("immune_" + style.name().toLowerCase(Locale.ROOT)))
 		{
-			return true;
+			boolean veracPierce = style == CombatStyle.MELEE
+				&& monster.hasAttribute("prayer_immunity")
+				&& loadout.getWeapon() != null
+				&& loadout.getWeapon().getNameLower().contains("verac");
+			if (!veracPierce)
+			{
+				return true;
+			}
 		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();

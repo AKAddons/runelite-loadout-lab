@@ -179,6 +179,34 @@ public final class DpsCalculator
 				result.getAttackRoll(), result.getDefenceRoll(),
 				result.getPurchaseCost(), result.getSpellName());
 		}
+		// A prayer-based melee immunity (KQ airborne): everything is
+		// blocked EXCEPT Verac's proc - a quarter of attacks land,
+		// guaranteed, +1 damage. Without the full set nothing lands, but
+		// the result stays a zero rather than a null so the beam can keep
+		// partial Verac states alive long enough to complete the set.
+		if (result != null && request.getStyle() == CombatStyle.MELEE
+			&& request.getMonster().hasAttribute("immune_melee")
+			&& request.getMonster().hasAttribute("prayer_immunity"))
+		{
+			if (fullVeracSet(loadout))
+			{
+				counted("verac's set", "only the 25% proc lands through the prayer");
+				double exp = 0.25 * RollMath.normalExpectedHit(1.0, result.getMaxHit() + 1);
+				result = new DpsResult(result.getLoadout(),
+					exp / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+					0.25, exp, result.getMaxHit() + 1,
+					result.getAttackSpeed(), result.getAttackType(),
+					result.getAttackRoll(), result.getDefenceRoll(),
+					result.getPurchaseCost(), result.getSpellName());
+			}
+			else
+			{
+				result = new DpsResult(result.getLoadout(), 0, 0, 0,
+					result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
+					result.getAttackRoll(), result.getDefenceRoll(),
+					result.getPurchaseCost(), result.getSpellName());
+			}
+		}
 		return result == null || counted.isEmpty()
 			? result : result.withCountedBonuses(countedLines());
 	}
@@ -194,6 +222,13 @@ public final class DpsCalculator
 				style.attackStance, style.strengthStance));
 		}
 		return best;
+	}
+
+	/** All four Verac pieces worn - the set effect's gate. */
+	static boolean fullVeracSet(Loadout loadout)
+	{
+		return wearing(loadout, "verac's flail") && wearing(loadout, "verac's helm")
+			&& wearing(loadout, "verac's brassard") && wearing(loadout, "verac's plateskirt");
 	}
 
 	private DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance)
@@ -244,6 +279,16 @@ public final class DpsCalculator
 			{
 				expected += RollMath.normalExpectedHit(accuracy, applyFlatArmour(request, maxHit / 4));
 			}
+		}
+		// Verac's set (wiki): 25% of attacks are a guaranteed hit with +1
+		// damage - a quarter of the expectation swaps its accuracy for 1.0.
+		// The prayer-immune override in calculate() replaces this wholesale
+		// when only the proc can land at all.
+		if (fullVeracSet(loadout))
+		{
+			counted("verac's set", "25% guaranteed hit, +1 damage");
+			expected = 0.75 * expected
+				+ 0.25 * RollMath.normalExpectedHit(1.0, maxHit + 1);
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
 		double effectiveSpeed = speed;

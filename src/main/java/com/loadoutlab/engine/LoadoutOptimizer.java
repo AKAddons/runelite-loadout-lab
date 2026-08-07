@@ -1030,6 +1030,16 @@ public final class LoadoutOptimizer
 			{
 				score += 10_000.0;
 			}
+			// Verac's whole value at a prayer-immune phase lives in the set
+			// proc (pool lesson, set edition - the void precedent): every
+			// melee line scores zero there until all four pieces assemble,
+			// so the pieces must outrank raw-stat armour to survive their
+			// slot cuts at all.
+			if (request.getMonster().hasAttribute("prayer_immunity")
+				&& name.contains("verac"))
+			{
+				score += 8_000.0;
+			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the
 			// DPS models), so without a boost the pool cut or the zero-score

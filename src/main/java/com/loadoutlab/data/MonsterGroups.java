@@ -127,6 +127,13 @@ public final class MonsterGroups
 						}
 						int mask = 0;
 						List<String> attributes = new ArrayList<>();
+						if (member.has("prayerImmunity")
+							&& member.get("prayerImmunity").getAsBoolean())
+						{
+							// The immunity is a protection PRAYER, not a
+							// shield: Verac's set pierces it (KQ forms).
+							attributes.add("prayer_immunity");
+						}
 						StringBuilder joined = new StringBuilder();
 						for (String style : styles)
 						{

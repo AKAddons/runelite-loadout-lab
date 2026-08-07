@@ -230,20 +230,22 @@
      "magic",
      "ranged"
     ],
-    "label": "Crawling (melee only)"
+    "label": "Crawling (melee only)",
+    "prayerImmunity": true
    },
    {
     "name": "Kalphite Queen",
     "version": "Airborne",
     "immuneTo": "melee",
-    "label": "Airborne (no melee)"
+    "label": "Airborne (no melee)",
+    "prayerImmunity": true
    }
   ],
   "aliases": [
    "kq",
    "kalphite"
   ],
-  "note": "Both forms - the crawling form prays away magic and ranged, the airborne form prays away melee."
+  "note": "Both forms pray a style away - crawling prays magic and ranged, airborne prays melee. Verac's set pierces the prayer: 25% guaranteed hits with +1 damage, the classic full-Verac's kill (field decision 2026-08-06)."
  },
  {
   "name": "Abyssal Sire",
