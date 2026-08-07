@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Documentation-gap auditor for the feature registry.
 
-Cross-checks docs/features.json against the README feature guide, docs/img/,
-and the source tree, then prints a gap report:
+Cross-checks docs/features.json against the feature guide (docs/GUIDE.md),
+docs/img/, and the source tree, then prints a gap report:
 
   STRUCTURAL (exit 1) — registry/guide drift that must be fixed:
-    * registry entry whose README section is missing (anchor check)
-    * README feature heading (### in the feature guide) with no registry entry
-    * media referenced by the README but absent from the registry
+    * registry entry whose guide section is missing (anchor check)
+    * guide feature heading (###) with no registry entry
+    * media referenced by the guide but absent from the registry
     * code/test path in the registry that no longer exists
 
   GAPS (exit 0, reported) — work outstanding, tracked on purpose:
@@ -15,9 +15,10 @@ and the source tree, then prints a gap report:
     * features with no automated tests
     * orphaned files in docs/img/ no feature references
 
-The feature guide is the part of the README under the "# Feature guide"
-heading; ### headings only count as features there (so README sections like
-## Getting started don't trip the audit). Run via `./gradlew checkDocs`.
+The guide lives in docs/GUIDE.md (the hub-facing README stays a condensed
+pitch); the WHOLE file is the audited region, and its image refs are
+GUIDE.md-relative (img/...), mapped to docs/img/ for registry matching.
+Run via `./gradlew checkDocs`.
 """
 import json
 import re
@@ -36,22 +37,12 @@ def slugify(heading: str) -> str:
     return re.sub(r"[\s]", "-", s)
 
 
-def feature_guide(readme: str) -> str:
-    """The README region from '# Feature guide' to the next '# ' (or EOF)."""
-    m = re.search(r"^# Feature guide\s*$", readme, re.M)
-    if not m:
-        return ""
-    rest = readme[m.end():]
-    nxt = re.search(r"^# ", rest, re.M)
-    return rest[: nxt.start()] if nxt else rest
-
-
 def main() -> int:
     registry = json.loads((DOCS / "features.json").read_text())["features"]
-    guide = feature_guide((ROOT / "README.md").read_text())
+    guide = (DOCS / "GUIDE.md").read_text()
 
     guide_anchors = {slugify(m) for m in re.findall(r"^### (.+)$", guide, re.M)}
-    guide_media = set(re.findall(r"!\[[^\]]*\]\((docs/img/[^)]+)\)", guide))
+    guide_media = {"docs/" + m for m in re.findall(r"!\[[^\]]*\]\((img/[^)]+)\)", guide)}
 
     structural: list[str] = []
     gaps: list[str] = []
@@ -61,7 +52,7 @@ def main() -> int:
         fid = f["id"]
         seen_anchors.add(f["anchor"])
         if f["anchor"] not in guide_anchors:
-            structural.append(f"[{fid}] README feature guide has no '### …' section with anchor '{f['anchor']}'")
+            structural.append(f"[{fid}] guide (docs/GUIDE.md) has no '### …' section with anchor '{f['anchor']}'")
         if f.get("media"):
             seen_media.add(f["media"])
             if not (ROOT / f["media"]).exists():
@@ -77,9 +68,9 @@ def main() -> int:
             gaps.append(f"[{fid}] no automated tests ({f.get('notes', 'no notes')})")
 
     for anchor in sorted(guide_anchors - seen_anchors):
-        structural.append(f"README feature '#{anchor}' has no registry entry")
+        structural.append(f"guide feature '#{anchor}' has no registry entry")
     for media in sorted(guide_media - seen_media):
-        structural.append(f"README references {media} but no registry entry claims it")
+        structural.append(f"guide references {media} but no registry entry claims it")
     img_dir = DOCS / "img"
     if img_dir.is_dir():
         for p in sorted(img_dir.iterdir()):
