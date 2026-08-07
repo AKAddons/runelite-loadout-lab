@@ -2580,7 +2580,14 @@ public class OptimizerService
 			}
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
 				|| request.isExcluded(item.getId())
-				|| (owned != null && !owned.owns(item.getId())))
+				// Sims are pretend-owned EVERYWHERE, including here: the
+				// worn-set machinery honoured dreams but the spec pool
+				// checked raw ownership only, so a simmed spec weapon
+				// could never compete (field report 2026-08-06: simmed
+				// Burning claws vs Barrows still recommended the owned
+				// abyssal dagger).
+				|| (owned != null && !owned.owns(item.getId())
+					&& !request.isDream(item.getId())))
 			{
 				continue;
 			}
