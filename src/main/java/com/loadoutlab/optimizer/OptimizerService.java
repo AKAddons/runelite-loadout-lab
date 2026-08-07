@@ -99,12 +99,33 @@ public class OptimizerService
 		public final List<GearItem> bench;
 		/** Same, for the BiS side's kit. */
 		public final List<GearItem> gameBench;
+		/** True when the Yours half is something the CARRIED KIT can
+		 * actually assemble mid-trip (or no kit ran, so the shared set IS
+		 * the trip). False marks a tab-only fallback - "what this style
+		 * could do if you geared for it" - which must never win the mob
+		 * row (field bug 2026-08-06: the vents row showed a whole ranged
+		 * set on a melee kit with Inventory 3). */
+		public final boolean ownedKitBacked;
+		/** Same contract for the BiS half. */
+		public final boolean gameKitBacked;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
 			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
 			List<GearItem> bench, List<GearItem> gameBench)
 		{
+			this(owned, overallBest, spec, gameSpec, boostLabel, gameBoostLabel,
+				incoming, gameIncoming, bench, gameBench, true, true);
+		}
+
+		StyleResult(List<DpsResult> owned, DpsResult overallBest,
+			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
+			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
+			List<GearItem> bench, List<GearItem> gameBench,
+			boolean ownedKitBacked, boolean gameKitBacked)
+		{
+			this.ownedKitBacked = ownedKitBacked;
+			this.gameKitBacked = gameKitBacked;
 			this.bench = bench == null ? Collections.emptyList()
 				: Collections.unmodifiableList(bench);
 			this.gameBench = gameBench == null ? Collections.emptyList()
@@ -136,7 +157,10 @@ public class OptimizerService
 	 * optimizer's internal DpsCalculator is stateful. Fixed size rather
 	 * than sized to the host: the Plugin Hub bans java.lang.Runtime, so
 	 * availableProcessors() is unavailable - 4 min-priority daemon threads
-	 * clear the serial wall without oversubscribing a modest machine. */
+	 * clear the serial wall without oversubscribing a modest machine.
+	 * The 4 is also what the #14014 review thread was told, so it stays 4
+	 * until a widening is deliberately decided and re-verified - a wider
+	 * pool rode along uninvited once (2026-08-05, reverted same day). */
 	private static final int ROSTER_POOL_SIZE = 4;
 	private final java.util.concurrent.ExecutorService rosterPool =
 		Executors.newFixedThreadPool(
@@ -333,7 +357,7 @@ public class OptimizerService
 	private static String optimizeKey(MonsterStats mob, CombatStyle style, boolean game,
 		ComputeContext ctx)
 	{
-		return mob.getId() + "|" + style.name() + "|" + (game ? "g" : "o")
+		return mob.getId() + "|" + mob.getToaInvocationLevel() + "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
@@ -1500,11 +1524,29 @@ public class OptimizerService
 		long tFanStart = System.nanoTime();
 		try
 		{
-			rosterPool.invokeAll(optimizeTasks);
+			// Check every future: a task that THROWS otherwise vanishes
+			// silently, its array slot stays null, and the whole style
+			// renders as "-" with no trace (field bug 2026-08-05: the
+			// Sire roster's ranged and magic buttons dashed while every
+			// member answered fine alone).
+			for (java.util.concurrent.Future<Void> f : rosterPool.invokeAll(optimizeTasks))
+			{
+				try
+				{
+					f.get();
+				}
+				catch (java.util.concurrent.ExecutionException e)
+				{
+					log.warn("roster optimize task failed", e.getCause());
+				}
+			}
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Cancellation of a superseded search is cooperative, via requestSeq
+			// (checked immediately below) - not thread interruption. This runs on
+			// our own daemon optimizer worker, interrupted only when the executor
+			// is shut down on plugin stop, so just abandon the computation.
 			return null;
 		}
 		if (requestSeq.get() != ticket)
@@ -1745,51 +1787,61 @@ public class OptimizerService
 					String label = old.boostLabel;
 					IncomingDpsCalculator.Result incoming = old.incoming;
 					List<GearItem> bench = old.bench;
-					if (ownedView != null && ownedView.styles.contains(s))
+					boolean ownedKitAnswers = ownedView != null && ownedView.styles.contains(s)
+						&& ownedView.shownByMob.get(j).get(s) != null;
+					if (ownedKitAnswers)
 					{
 						DpsResult result = ownedView.shownByMob.get(j).get(s);
 						ownedList = new ArrayList<>();
-						if (result != null)
-						{
-							ownedList.add(result);
-						}
-						spec = result != null && ownedView.specs != null
-							? ownedView.specs[j] : null;
+						ownedList.add(result);
+						spec = ownedView.specs != null ? ownedView.specs[j] : null;
 						label = boostLabelByStyle.get(s);
-						Loadout worn = result != null ? result.getLoadout() : ownedView.base;
-						incoming = result == null ? null
-							: IncomingDpsCalculator.calculate(mobs.get(j), worn,
-								ctx.real.getDefence(), ctx.real.getMagic());
+						Loadout worn = result.getLoadout();
+						incoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
+							ctx.real.getDefence(), ctx.real.getMagic());
 						bench = inventoryFor(ownedView.plan.values(), ownedView.specCarried, worn);
 					}
 					else if (ownedView != null)
 					{
-						spec = null; // owned side blank on unreachable styles
+						// The kit has no answer for this style here - keep the
+						// PRE-KIT shared per-style answer instead of blanking
+						// (field bug 2026-08-05: the Sire roster dashed ranged
+						// and magic while every mob answered them alone). The
+						// carried spec is kit-specific, so only that is
+						// dropped.
+						spec = null;
 					}
 					DpsResult gameBest = old.overallBest;
 					SpecPick gameSpec = gameSpecsByStyle.get(s) == null ? null : gameSpecsByStyle.get(s)[j];
 					String gameLabel = old.gameBoostLabel;
 					IncomingDpsCalculator.Result gameIncoming = old.gameIncoming;
 					List<GearItem> gameBench = old.gameBench;
-					if (gameView != null && gameView.styles.contains(s))
+					boolean gameKitAnswers = gameView != null && gameView.styles.contains(s)
+						&& gameView.shownByMob.get(j).get(s) != null;
+					if (gameKitAnswers)
 					{
 						gameBest = gameView.shownByMob.get(j).get(s);
-						gameSpec = gameBest != null && gameView.specs != null
-							? gameView.specs[j] : null;
+						gameSpec = gameView.specs != null ? gameView.specs[j] : null;
 						gameLabel = gameBoostLabelByStyle.get(s);
-						Loadout worn = gameBest != null ? gameBest.getLoadout() : gameView.base;
-						gameIncoming = gameBest == null ? null
-							: IncomingDpsCalculator.calculate(mobs.get(j), worn,
-								ctx.real.getDefence(), ctx.real.getMagic());
+						Loadout worn = gameBest.getLoadout();
+						gameIncoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
+							ctx.real.getDefence(), ctx.real.getMagic());
 						gameBench = inventoryFor(gameView.plan.values(), gameView.specCarried, worn);
 					}
 					else if (gameView != null)
 					{
-						gameBest = null;
+						// Same fallback on the BiS side: the ceiling per style
+						// always shows (it is aspirational by definition); only
+						// the kit-specific spec drops.
 						gameSpec = null;
 					}
+					// A side is kit-backed when it has no kit at all (nothing
+					// to contradict) or the kit just answered this style.
+					boolean ownedKitBacked = ownedView == null || ownedKitAnswers;
+					boolean gameKitBacked = gameView == null || gameKitAnswers;
 					perMob.get(j).put(s, new StyleResult(ownedList, gameBest, spec, gameSpec,
-						label, gameLabel, incoming, gameIncoming, bench, gameBench));
+						label, gameLabel, incoming, gameIncoming, bench, gameBench,
+						ownedKitBacked, gameKitBacked));
 				}
 			}
 		}
@@ -2093,7 +2145,10 @@ public class OptimizerService
 		}
 		catch (InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			// Cancellation of a superseded search is cooperative, via requestSeq
+			// (checked immediately below) - not thread interruption. This runs on
+			// our own daemon optimizer worker, interrupted only when the executor
+			// is shut down on plugin stop, so just abandon the computation.
 			return null;
 		}
 		if (requestSeq.get() != ticket)
@@ -2523,7 +2578,14 @@ public class OptimizerService
 			}
 			if (!item.isStandardGear() || dataset.isVariant(item.getId())
 				|| request.isExcluded(item.getId())
-				|| (owned != null && !owned.owns(item.getId())))
+				// Sims are pretend-owned EVERYWHERE, including here: the
+				// worn-set machinery honoured dreams but the spec pool
+				// checked raw ownership only, so a simmed spec weapon
+				// could never compete (field report 2026-08-06: simmed
+				// Burning claws vs Barrows still recommended the owned
+				// abyssal dagger).
+				|| (owned != null && !owned.owns(item.getId())
+					&& !request.isDream(item.getId())))
 			{
 				continue;
 			}

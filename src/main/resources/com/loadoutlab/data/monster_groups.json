@@ -3,27 +3,34 @@
   "name": "Fight Caves",
   "members": [
    {
-    "name": "Tz-Kih"
+    "name": "Tz-Kih",
+    "nick": "Bat"
    },
    {
     "name": "Tz-Kek",
-    "version": "Level 45"
+    "version": "Level 45",
+    "nick": "Blob"
    },
    {
-    "name": "Tok-Xil"
+    "name": "Tok-Xil",
+    "nick": "Ranger"
    },
    {
-    "name": "Yt-MejKot"
+    "name": "Yt-MejKot",
+    "nick": "Meleer"
    },
    {
-    "name": "Ket-Zek"
+    "name": "Ket-Zek",
+    "nick": "Mage"
    },
    {
     "name": "Yt-HurKot",
-    "version": "Level 108"
+    "version": "Level 108",
+    "nick": "Healer"
    },
    {
-    "name": "TzTok-Jad"
+    "name": "TzTok-Jad",
+    "nick": "Jad"
    }
   ],
   "note": "The full wave roster - healers included (you attack them on Jad).",
@@ -37,35 +44,44 @@
   "name": "Inferno",
   "members": [
    {
-    "name": "Jal-Nib"
+    "name": "Jal-Nib",
+    "nick": "Nibbler"
    },
    {
-    "name": "Jal-MejRah"
+    "name": "Jal-MejRah",
+    "nick": "Bat"
    },
    {
     "name": "Jal-Ak",
-    "version": ""
+    "version": "",
+    "nick": "Blob"
    },
    {
-    "name": "Jal-ImKot"
+    "name": "Jal-ImKot",
+    "nick": "Meleer"
    },
    {
-    "name": "Jal-Xil"
+    "name": "Jal-Xil",
+    "nick": "Ranger"
    },
    {
-    "name": "Jal-Zek"
+    "name": "Jal-Zek",
+    "nick": "Mager"
    },
    {
-    "name": "Jal-MejJak"
+    "name": "Jal-MejJak",
+    "nick": "Healer"
    },
    {
-    "name": "JalTok-Jad"
+    "name": "JalTok-Jad",
+    "nick": "Jad"
    },
    {
-    "name": "TzKal-Zuk"
+    "name": "TzKal-Zuk",
+    "nick": "Zuk"
    }
   ],
-  "note": "The full wave roster incl. Jad-phase healers; Zuk at his normal phase.",
+  "note": "The full wave roster incl. Jad-phase healers; Zuk at his normal phase. Ancients recommended: Ice Barrage clears the nibbler trio each wave, Blood Barrage sustains off packs (wiki-sourced 2026-08-06).",
   "aliases": [
    "zuk",
    "infernal cape"
@@ -105,7 +121,7 @@
     "name": "Dagannoth Supreme"
    }
   ],
-  "note": "The trio - one set for the whole trip.",
+  "note": "The trio - one set for the whole trip. Spinolyps in the room poison (wiki: poisonous, strength 6) - antipoison recommended.",
   "aliases": [
    "dks",
    "dagannoth"
@@ -214,20 +230,22 @@
      "magic",
      "ranged"
     ],
-    "label": "Crawling (melee only)"
+    "label": "Crawling (melee only)",
+    "prayerImmunity": true
    },
    {
     "name": "Kalphite Queen",
     "version": "Airborne",
     "immuneTo": "melee",
-    "label": "Airborne (no melee)"
+    "label": "Airborne (no melee)",
+    "prayerImmunity": true
    }
   ],
   "aliases": [
    "kq",
    "kalphite"
   ],
-  "note": "Both forms - the crawling form prays away magic and ranged, the airborne form prays away melee."
+  "note": "Both forms pray a style away - crawling prays magic and ranged, airborne prays melee. Verac's set pierces the prayer: 25% guaranteed hits with +1 damage, the classic full-Verac's kill (field decision 2026-08-06)."
  },
  {
   "name": "Abyssal Sire",
@@ -242,19 +260,13 @@
    {
     "name": "Abyssal Sire",
     "version": "Phase 3 (stage 2)"
-   },
-   {
-    "name": "Spawn"
-   },
-   {
-    "name": "Scion"
    }
   ],
   "aliases": [
    "sire",
    "abyssal"
   ],
-  "note": "The whole fight: respiratory systems (phase 1), the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1), and the spawn/scion adds."
+  "note": "The fight as actually fought: the vents (phase 1) and the sire's phase rows as the corpus carries them (phase 2 stats merge into phase 1). The spawn/scion adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); add them via + Add mob if you do kill them."
  },
  {
   "name": "Theatre of Blood (Entry)",
@@ -403,12 +415,6 @@
     "version": "Shielded"
    },
    {
-    "name": "Arcane Scarab"
-   },
-   {
-    "name": "Agile Scarab"
-   },
-   {
     "name": "Akkha",
     "immuneTo": [
      "ranged",
@@ -457,6 +463,11 @@
     "label": "P2 (ranged only)"
    },
    {
+    "name": "Tumeken's Warden",
+    "version": "Core-ejected",
+    "nick": "Warden's Core (spec dump)"
+   },
+   {
     "name": "Elidinis' Warden",
     "version": "Enraged"
    },
@@ -471,7 +482,7 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), and the P3 enraged Wardens. Invocation-level scaling and the heart spec dump are not modeled yet."
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), the ejected core (the spec-dump window - melee always maxes there), and the P3 enraged Wardens. The Invocation chip applies the official defence scaling to every row; kill-time (hp) scaling is not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them."
  },
  {
   "name": "Chambers of Xeric",

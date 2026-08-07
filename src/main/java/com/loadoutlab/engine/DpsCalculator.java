@@ -96,11 +96,8 @@ public final class DpsCalculator
 			}
 			cappedMean /= (max + 1);
 			double capFactor = cappedMean / (max / 2.0);
-			result = new DpsResult(result.getLoadout(), result.getDps() * capFactor,
-				result.getAccuracy(), result.getExpectedHit() * capFactor,
-				50, result.getAttackSpeed(), result.getAttackType(),
-				result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+			result = result.withHitModel(result.getDps() * capFactor,
+				result.getAccuracy(), result.getExpectedHit() * capFactor, 50);
 		}
 		// Tormented demons: guaranteed hits in the official default phase -
 		// scale the expectation up to accuracy 1 (all hit models here are
@@ -110,12 +107,112 @@ public final class DpsCalculator
 			&& result.getAccuracy() > 0 ? 1.0 / result.getAccuracy() : 1.0;
 		if (result != null && (factor < 1.0 || accuracyOverride != 1.0))
 		{
-			result = new DpsResult(result.getLoadout(), result.getDps() * factor * accuracyOverride,
+			result = result.withHitModel(result.getDps() * factor * accuracyOverride,
 				Math.min(1.0, result.getAccuracy() * accuracyOverride),
 				result.getExpectedHit() * factor * accuracyOverride,
-				(int) (result.getMaxHit() * factor), result.getAttackSpeed(),
-				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+				(int) (result.getMaxHit() * factor));
+		}
+		// The Sire's vents, after every other factor so the ranking sees
+		// it: a demonbane hit destroys the vent outright (expected damage
+		// per attack = accuracy x its full hp), and every other landed hit
+		// deals at least half its max (a 1.5x on the plain expectation -
+		// every weapon that can reach the vents rolls plainly, so the
+		// scale is exact). Ordinary dps math ranked a blowpipe above the
+		// Scorching bow (field report 2026-08-05).
+		if (result != null && MonsterMechanics.isRespiratorySystem(request.getMonster()))
+		{
+			// Melee pays the walk between the four spread vents; ranged and
+			// magic hit every vent from one spot. With one-shots a kill IS
+			// one attack, so the walk lands directly on the interval - the
+			// per-hit numbers (max, expected) stay honest, only time does
+			// the separating. This is what puts the Scorching bow ahead of
+			// a melee demonbane of near-identical per-attack dps.
+			int reach = request.getStyle() == CombatStyle.MELEE
+				? MonsterMechanics.meleeReachPenaltyTicks(request.getMonster()) : 0;
+			if (reach > 0 && result.getDps() > 0)
+			{
+				counted("vent spacing", "melee walks between the four vents"
+					+ " (+" + reach + " ticks per kill)");
+			}
+			double interval = (result.getAttackSpeed() + reach) * RollMath.SECONDS_PER_TICK;
+			if (MonsterMechanics.isDemonbane(loadout.getWeapon()))
+			{
+				int hp = Math.max(1, request.getMonster().getHitpoints());
+				counted("demonbane one-shot", "any landed hit destroys the vent");
+				result = result.withHitModel(result.getAccuracy() * hp / interval,
+					result.getAccuracy(), result.getAccuracy() * hp, hp);
+			}
+			else if (result.getDps() > 0)
+			{
+				counted("vent min-hit", "every landed hit deals at least half its max");
+				result = result.withHitModel(result.getExpectedHit() * 1.5 / interval,
+					result.getAccuracy(), result.getExpectedHit() * 1.5, result.getMaxHit());
+			}
+		}
+		// The nibbler trio: three spawn per wave and one barrage cast hits
+		// all of them, so an AoE cast's effective output is 3x the
+		// single-target number. EVERY barrage is a 3x3 AoE, so a kit
+		// re-show of, say, Smoke Barrage earns the trio too - the Ice/Blood
+		// lock in spellsFor is pool curation, deliberately narrower than
+		// this mechanic. This is what makes the barrage WIN the nibbler row
+		// on real math instead of a blowpipe headlining the mob nobody
+		// blowpipes (field decision 2026-08-06).
+		if (result != null && request.getStyle() == CombatStyle.MAGIC
+			&& MonsterMechanics.isNibbler(request.getMonster())
+			&& result.getSpellName() != null && result.getSpellName().endsWith("Barrage"))
+		{
+			counted("nibbler trio", "one barrage cast hits all three");
+			result = result.withHitModel(result.getDps() * 3,
+				result.getAccuracy(), result.getExpectedHit() * 3, result.getMaxHit());
+		}
+		// Salarin the twisted: a landed Strike always deals a FLAT 9-12,
+		// set by the highest strike tier unlocked - never by gear ("not
+		// affected by items that would normally increase spell damage").
+		// The isImmune gate has already filtered everything but Strike
+		// casts, so what remains is rebuilt as guaranteed flat damage.
+		if (result != null && MonsterMechanics.isSalarin(request.getMonster()))
+		{
+			int magic = request.getLevels().getMagic();
+			int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
+			counted("salarin", "strikes deal a flat " + flat + " - gear does not matter");
+			result = result.withHitModel(
+				flat / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+				1.0, flat, flat);
+		}
+		// The Wardens' ejected core (ToA P2, wiki): melee "will always
+		// deal their max hit" - no accuracy roll, no damage roll. That
+		// certainty is why the core is THE spec-dump phase; SpecialAttack
+		// mirrors the same rule so multi-hit specs price honestly.
+		if (result != null && request.getStyle() == CombatStyle.MELEE
+			&& MonsterMechanics.isWardenCore(request.getMonster())
+			&& result.getMaxHit() > 0)
+		{
+			counted("warden core", "melee always deals its max hit");
+			result = result.withHitModel(
+				result.getMaxHit() / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+				1.0, result.getMaxHit(), result.getMaxHit());
+		}
+		// A prayer-based melee immunity (KQ airborne): everything is
+		// blocked EXCEPT Verac's proc - a quarter of attacks land,
+		// guaranteed, +1 damage. Without the full set nothing lands, but
+		// the result stays a zero rather than a null so the beam can keep
+		// partial Verac states alive long enough to complete the set.
+		if (result != null && request.getStyle() == CombatStyle.MELEE
+			&& request.getMonster().hasAttribute("immune_melee")
+			&& request.getMonster().hasAttribute("prayer_immunity"))
+		{
+			if (fullVeracSet(loadout))
+			{
+				counted("verac's set", "only the 25% proc lands through the prayer");
+				double exp = 0.25 * RollMath.normalExpectedHit(1.0, result.getMaxHit() + 1);
+				result = result.withHitModel(
+					exp / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+					0.25, exp, result.getMaxHit() + 1);
+			}
+			else
+			{
+				result = result.withHitModel(0, 0, 0, result.getMaxHit());
+			}
 		}
 		return result == null || counted.isEmpty()
 			? result : result.withCountedBonuses(countedLines());
@@ -132,6 +229,20 @@ public final class DpsCalculator
 				style.attackStance, style.strengthStance));
 		}
 		return best;
+	}
+
+	/** All four Verac pieces worn - the set effect's gate. The flail can
+	 * only sit in the weapon slot, so that one cached-field check runs
+	 * first and skips the three armour scans for the ~all loadouts not
+	 * holding it - this gate sits inside every melee stance variant (the
+	 * isWearingBloodMoonSet precedent). */
+	static boolean fullVeracSet(Loadout loadout)
+	{
+		GearItem weapon = loadout.getWeapon();
+		return weapon != null && weapon.getNameLower().startsWith("verac's flail")
+			&& wearing(loadout, "verac's helm")
+			&& wearing(loadout, "verac's brassard")
+			&& wearing(loadout, "verac's plateskirt");
 	}
 
 	private DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance)
@@ -182,6 +293,16 @@ public final class DpsCalculator
 			{
 				expected += RollMath.normalExpectedHit(accuracy, applyFlatArmour(request, maxHit / 4));
 			}
+		}
+		// Verac's set (wiki): 25% of attacks are a guaranteed hit with +1
+		// damage - a quarter of the expectation swaps its accuracy for 1.0.
+		// The prayer-immune override in calculate() replaces this wholesale
+		// when only the proc can land at all.
+		if (fullVeracSet(loadout))
+		{
+			counted("verac's set", "25% guaranteed hit, +1 damage");
+			expected = 0.75 * expected
+				+ 0.25 * RollMath.normalExpectedHit(1.0, maxHit + 1);
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
 		double effectiveSpeed = speed;
@@ -276,7 +397,7 @@ public final class DpsCalculator
 
 	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
 	 * only (wiki excludes Strike and Surge explicitly). */
-	private static boolean twinflameDoubles(SpellStats spell)
+	static boolean twinflameDoubles(SpellStats spell)
 	{
 		if (spell.getElement() == null || spell.getElement().isEmpty())
 		{
@@ -493,7 +614,18 @@ public final class DpsCalculator
 		{
 			bonus = monster.getDefensive().get(attackType);
 		}
-		return RollMath.defenceRoll(level + 9, bonus);
+		long roll = RollMath.defenceRoll(level + 9, bonus);
+		int invocation = monster.getToaInvocationLevel();
+		if (invocation > 0)
+		{
+			// ToA invocation scaling (official engine rule): defence rolls
+			// x (250+invocation)/250, truncated - long math multiplies
+			// before dividing so the result matches theirs exactly. This
+			// is what flips bowfa over a blowpipe at the Wardens at any
+			// real raid level (field report 2026-08-06).
+			roll = roll * (250 + invocation) / 250;
+		}
+		return roll;
 	}
 
 	private static String rangedDefenceType(GearItem weapon)

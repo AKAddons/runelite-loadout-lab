@@ -112,6 +112,18 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "displaySetCost",
+		name = "Cost to own",
+		description = "Show what the shown set still costs you - the BiS pieces you do not own, at wiki prices.",
+		section = display,
+		position = 19
+	)
+	default boolean displaySetCost()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "displayPrayerBonus",
 		name = "Prayer bonus",
 		description = "Show the set's total prayer bonus line.",

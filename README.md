@@ -60,11 +60,8 @@ At the end of your search, filter the kit in your bank and get going.
 Everything is local. The plugin writes two files under
 `.runelite/loadout-lab/` on your machine only: `profile.json` (your
 levels/bank snapshot, useful for bug reports) and `usage.tsv` (your own
-search history). Nothing is ever sent anywhere on its own. The one
-exception is explicit: clicking the footnote's "Wiki calc" button
-uploads that shown setup (gear, levels, prayers, boosts, monster) to
-the wiki's own share service to create the link it opens - exactly what
-the calculator's Share button does.
+search history). Nothing is ever sent anywhere: the plugin makes no
+network requests at all.
 
 ## Data sharing (for other plugins)
 
@@ -142,7 +139,10 @@ its dps in that shared set, the style that answers it, and a lens that
 flips every card and number to that mob on click. Any mob can leave via
 its row's X (the last one closes the result), so a raid roster can be
 trimmed to the rooms you actually fight. Inside raids, the supplied
-boost (CoX overloads, ToA salts) is a toggle, not a promise.
+boost (CoX overloads, ToA salts) is a toggle, not a promise - and ToA
+results carry an Invocation chip (0/150/300/540) applying the official
+calculator's defence scaling, so weapon rankings hold at the raid
+level you actually run.
 
 ![Multi-mob rosters](docs/img/multi-mob-roster.png)
 
@@ -180,10 +180,7 @@ bank.
 
 Pick a monster and Loadout Lab computes the strongest set you actually
 OWN for melee, ranged, and magic - with exact DPS, max hit, and accuracy,
-verified against the official wiki calculator. Every result's footnote
-has a "Wiki calc" button that opens that exact setup - gear, levels,
-prayers, boosts, monster - in the official calculator via its share
-service, so the cross-check is one click. When poison tiers of the
+verified against the official wiki calculator. When poison tiers of the
 same weapon tie on stats, the strongest venom wins the suggestion
 (dragon dagger p++ over plain, main hand and spec alike).
 

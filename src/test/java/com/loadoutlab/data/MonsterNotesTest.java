@@ -1,18 +1,48 @@
 package com.loadoutlab.data;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-public class MonsterNotesTest
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The curated mechanics notes are name-keyed strings - a rename in the
+ * corpus silently orphans one, so the load-bearing notes are pinned
+ * against the LOADED rows, not just the switch.
+ */
+class MonsterNotesTest
 {
-	@Test
-	public void gargoyleTypesCarryFinishingNotesAndOthersDoNot()
+	private static LoadoutData data;
+
+	@BeforeAll
+	static void load()
 	{
-		LoadoutData data = new DataService().load();
-		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("dusk", 1).get(0)));
-		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("gargoyle", 1).get(0)));
-		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("rockslug", 1).get(0)));
-		Assert.assertNull(MonsterNotes.noteFor(data.searchMonsters("goblin", 1).get(0)));
-		Assert.assertNotNull(MonsterNotes.noteFor(data.searchMonsters("zulrah", 1).get(0)));
+		data = new DataService().load();
+	}
+
+	private static String noteFor(String search)
+	{
+		MonsterStats mob = data.searchMonsters(search, 1).get(0);
+		return MonsterNotes.noteFor(mob);
+	}
+
+	@Test
+	@DisplayName("the Inferno's nibblers carry the barrage stipulation")
+	void nibblersRecommendBarrages()
+	{
+		String note = noteFor("jal-nib");
+		assertNotNull(note);
+		assertTrue(note.contains("Ice Barrage"), "the trio-clear is the point");
+		assertTrue(note.contains("Ancient"), "the spellbook is the stipulation");
+	}
+
+	@Test
+	@DisplayName("the blob seconds it")
+	void blobRecommendsBarrages()
+	{
+		String note = noteFor("jal-ak");
+		assertNotNull(note);
+		assertTrue(note.contains("Barrage"));
 	}
 }

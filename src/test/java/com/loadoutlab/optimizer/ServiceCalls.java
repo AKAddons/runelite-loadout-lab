@@ -2,6 +2,7 @@ package com.loadoutlab.optimizer;
 
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.OptimizationRequest;
 import com.loadoutlab.engine.OwnedItems;
 import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
@@ -11,6 +12,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -196,6 +200,37 @@ public final class ServiceCalls
 			maxTradeables, riskBudgetGp, antifirePotion, inWilderness, dreamItems, upgradeBudgetGp,
 			maxSwaps, Collections.emptyMap(), pinnedByStyle, pinnedSpell,
 			protectOnlyItems, callback);
+	}
+
+	/** The synchronous roster harness the roster tests share: the client's
+	 * bestPerStyleAcross call at MAXED defaults, latched to completion.
+	 * Returns the raw result (null when the compute was superseded);
+	 * throws on timeout. Previously each roster test hand-rolled this
+	 * latch + AtomicReference block. */
+	public static OptimizerService.RosterResult runRoster(
+		OptimizerService service, List<MonsterStats> mobs,
+		Map<Integer, Integer> owned, int maxSwaps,
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob)
+		throws InterruptedException
+	{
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
+		bestPerStyleAcross(service,
+			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			new OwnedItems(owned, true), 1, false, false, "",
+			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+			false, false, Collections.emptySet(), 0, maxSwaps,
+			excludedByMob, Collections.emptyMap(), null, Collections.emptySet(),
+			roster ->
+			{
+				out.set(roster);
+				done.countDown();
+			});
+		if (!done.await(120, TimeUnit.SECONDS))
+		{
+			throw new AssertionError("roster compute timed out");
+		}
+		return out.get();
 	}
 
 	/** Per-mob exclusions; per-mob sims empty, raid boost assumed. */

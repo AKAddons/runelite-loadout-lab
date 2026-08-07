@@ -18,11 +18,17 @@ import java.util.function.Supplier;
  * weight while the evergreens sit at a low base and keep the mix varied.
  *
  * Calendar:
- *   - Workout (weight 2) and Skater (weight 1) run all year.
- *   - Chef (weight 1) cooks every month except October, which stays
- *     reserved for the Halloween cauldron (weight 6) - BENCHED in
- *     ~/Development/loadout-lab-attic until October (token budget;
- *     restore per that repo's README before the month starts).
+ *   - Workout (weight 2) and Skater (weight 1) run all year, and are
+ *     currently the whole roster.
+ *   - Chef (weight 1, every month but October) is BENCHED in
+ *     ~/Development/loadout-lab-attic - the largest of the three moods,
+ *     cut 2026-08-02 to buy hub-cap headroom for the 0.3.4/0.3.5 slices.
+ *     Restore per that repo's README whenever the budget allows.
+ *   - The Halloween cauldron (weight 6, October) is BENCHED there too
+ *     until October (token budget; restore before the month starts).
+ *   - {@code Window.months} is deliberately KEPT despite having no caller
+ *     now: the benched chef, classroom and cauldron all need it back on
+ *     restore, and a dead factory is cheaper than three broken restores.
  *   - Classroom (weight 1, school terms Jan-May and Sep-Nov) is BENCHED
  *     in ~/Development/loadout-lab-attic until September (token budget;
  *     restore per that repo's README before the term starts).
@@ -37,10 +43,7 @@ enum MascotRoster
 {
 	// Evergreen - always eligible, low base weight.
 	WORKOUT(Window.ALWAYS, 2, MascotSpinner::new),
-	SKATER(Window.ALWAYS, 1, MascotSkater::new),
-	// Chef cooks year-round except October (kept clear for the benched
-	// cauldron's return - see the attic note below).
-	CHEF(Window.months(1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12), 1, MascotChef::new);
+	SKATER(Window.ALWAYS, 1, MascotSkater::new);
 
 	private final Window window;
 	private final int weight;

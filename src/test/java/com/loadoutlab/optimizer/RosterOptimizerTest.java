@@ -58,20 +58,8 @@ public class RosterOptimizerTest
 		Map<Integer, Integer> owned, int maxSwaps,
 		Map<Integer, Map<CombatStyle, java.util.Set<Integer>>> excludedByMob) throws Exception
 	{
-		CountDownLatch done = new CountDownLatch(1);
-		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
-		com.loadoutlab.optimizer.ServiceCalls.bestPerStyleAcross(service, 
-			mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(owned, true), 1, false, false, "",
-			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, false, Collections.emptySet(), 0, 			maxSwaps, excludedByMob, Collections.emptyMap(), null, Collections.emptySet(),
-			roster ->
-			{
-				out.set(roster);
-				done.countDown();
-			});
-		Assert.assertTrue("roster compute timed out", done.await(90, TimeUnit.SECONDS));
-		return new RosterResultView(out.get());
+		return new RosterResultView(
+			ServiceCalls.runRoster(service, mobs, owned, maxSwaps, excludedByMob));
 	}
 
 	/** The worn item ids of a set, sorted - a set-identity fingerprint. */

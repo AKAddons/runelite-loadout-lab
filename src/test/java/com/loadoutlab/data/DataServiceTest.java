@@ -46,6 +46,40 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void discontinuedEventGearIsNotStandardGear()
+	{
+		// The Wilderness champion amulet was a Wilderness Wars (Aug 2017)
+		// reward - five players ever owned it, and an update removed it. It
+		// still ships upstream as ordinary gear carrying +100 to EVERY attack
+		// style, +50 str and +50 prayer, so it dominates the neck slot
+		// outright and was being shown as BiS (field report 2026-08-05).
+		LoadoutData data = new DataService().load();
+		GearItem amulet = data.getGear(21433);
+		Assert.assertNotNull(amulet);
+		Assert.assertFalse("a discontinued event item must never be recommended",
+			amulet.isStandardGear());
+	}
+
+	@Test
+	public void questIssueKitIsNotStandardGear()
+	{
+		// The Silvthrill ballista and its javelins ship upstream as ordinary
+		// gear with real stats (ranged +125 / ranged str +124), but they are
+		// handed out during The Blood Moon Rises and destroyed on completion
+		// - no account can bring them anywhere. Left standard, the optimizer
+		// recommends a weapon nobody can own (see refresh_data.py
+		// NONSTANDARD_OVERRIDES).
+		LoadoutData data = new DataService().load();
+		for (int id : new int[]{33800, 33801})
+		{
+			GearItem item = data.getGear(id);
+			Assert.assertNotNull("missing gear id " + id, item);
+			Assert.assertFalse(item.getName() + " must not be standard gear",
+				item.isStandardGear());
+		}
+	}
+
+	@Test
 	public void releasedYamaGearIsStandardNotFrozenOffAsPreRelease()
 	{
 		// Field report: oathplate never appeared. best-dps froze these ids

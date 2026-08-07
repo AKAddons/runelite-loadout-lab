@@ -187,6 +187,10 @@ public class LoadoutLabPanel extends PluginPanel
 		public boolean prayerBonus = true;
 		public boolean attackStyle = true;
 		public boolean gameBest = true;
+		/** The gp still between you and the set on screen (the BiS pieces
+		 * you do not own). Zero on the Yours side by construction, so the
+		 * line simply does not render there. */
+		public boolean setCost = true;
 		public boolean notes = true;
 		public boolean footnote = true;
 		public boolean addMob = true;
@@ -229,14 +233,6 @@ public class LoadoutLabPanel extends PluginPanel
 		/** Arceuus casts via Spellbook Swap from a Lunar home (config-level
 		 * default; the grey menu's per-profile choice also enables it). */
 		public boolean spellbookSwapVengeance;
-	}
-
-	/** Open the shown setup in the official wiki calculator (plugin-side:
-	 * shortlink POST + browser). Null hides the footnote chip. */
-	public interface WikiCalcOpener
-	{
-		void open(MonsterStats mob, DpsResult shown, int dartId, String assumes,
-			boolean onSlayerTask, boolean inWilderness);
 	}
 
 	/** Toggle an item's dream ("green") state; true when now dreamed. */
@@ -645,7 +641,28 @@ public class LoadoutLabPanel extends PluginPanel
 	 * apply. */
 	private boolean arcaneBlocked(ResultEntry entry, CombatStyle style)
 	{
-		return style == CombatStyle.MAGIC && magicArcaneClash(entry);
+		// A curated barrage recommendation puts the WHOLE TRIP on the
+		// Ancient spellbook, so the Arceuus folds stand down on every
+		// card, not just the magic one (field report 2026-08-06: the
+		// Inferno recommended barrage runes and thralls at once).
+		return tripsOnAncients(entry)
+			|| (style == CombatStyle.MAGIC && magicArcaneClash(entry));
+	}
+
+	private static boolean tripsOnAncients(ResultEntry entry)
+	{
+		if (entry == null)
+		{
+			return false;
+		}
+		for (MonsterStats mob : entry.mobs)
+		{
+			if (com.loadoutlab.data.RecommendedBring.recommendsAncients(mob))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** The MAGIC card's autocast book clashes with Arceuus summons (field
@@ -736,7 +753,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			addIds(ids, TripSupplies.spellKit("bookOfTheDead"));
 		}
-		if (!ids.isEmpty())
+		if (!ids.isEmpty() && !effectiveWilderness(entry))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
@@ -1116,6 +1133,11 @@ public class LoadoutLabPanel extends PluginPanel
 		 * combo fully blocks; the honesty rule refuses half-protection),
 		 * 2 = super antifire assumed (shield slot freed). */
 		int antifireMode;
+		/** ToA invocation level (0/150/300/540): the official defence
+		 * scaling (x(250+invo)/250) on every invocation-scaled ToA row.
+		 * Engine input - changing recomputes. Kill-time (hp) scaling is
+		 * not modeled yet. */
+		int toaInvocation = 300;
 		/** Whole-result fold: collapsed to the header's one-line summary. */
 		boolean folded;
 		/** The style tab in view; null = strongest owned set (the default). */
@@ -1227,14 +1249,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The entry the panel-global affordances (toggles, notes, bank tools)
 	 * act on. With a one-entry page this is always page.get(0). */
 	private ResultEntry active;
-	/** Async wiki thumbnails for the mob rows (null in tests - rows keep
-	 * their text-only look). */
-	private MonsterIcons monsterIcons;
-
-	public void setMonsterIcons(MonsterIcons monsterIcons)
-	{
-		this.monsterIcons = monsterIcons;
-	}
 
 	public LoadoutLabPanel(LoadoutData data, ItemManager itemManager,
 		SpriteManager spriteManager, ComputeHook computeHook,
@@ -1773,13 +1787,6 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Config hook: which detail lines and controls to show. Re-renders the
 	 * cards from the cached results (no recompute - display only) and updates
 	 * the top-control visibility. Saved notes are never touched. */
-	private WikiCalcOpener wikiCalcOpener;
-
-	public void setWikiCalcOpener(WikiCalcOpener opener)
-	{
-		this.wikiCalcOpener = opener;
-	}
-
 	public void setDisplayOptions(DisplayOptions options)
 	{
 		this.displayOptions = options;
@@ -4023,7 +4030,7 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		if (entry.mobs.size() > 1)
 		{
-			computeHook.computeRoster(new ArrayList<>(entry.mobs),
+			computeHook.computeRoster(invocationMobs(entry),
 				f2pOnly.isSelected(), entry.onSlayerTask,
 				effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 				parsedBudgetGp(entry.riskCap),
@@ -4036,7 +4043,9 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> statusLabel.setText(" "));
 			return;
 		}
-		computeHook.compute(entry.mob(), f2pOnly.isSelected(), entry.onSlayerTask,
+		computeHook.compute(
+			com.loadoutlab.engine.MonsterMechanics.atToaInvocation(entry.mob(), entry.toaInvocation),
+			f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
 			entry.antifireMode == 2 && DragonfireRules.breathesFire(entry.mob()),
@@ -4046,6 +4055,19 @@ public class LoadoutLabPanel extends PluginPanel
 			parsedBudgetGp(entry.upgradeBudget),
 			entry.maxSwaps, entry.raidBoost,
 			() -> statusLabel.setText(" "));
+	}
+
+	/** The entry's mobs priced at its invocation chip: factored copies go
+	 * to the compute only - entry.mobs stays the display/pin identity.
+	 * Level 0 clears an earlier factor (set semantics, never compounded). */
+	private List<MonsterStats> invocationMobs(ResultEntry entry)
+	{
+		List<MonsterStats> mobs = new ArrayList<>(entry.mobs.size());
+		for (MonsterStats mob : entry.mobs)
+		{
+			mobs.add(com.loadoutlab.engine.MonsterMechanics.atToaInvocation(mob, entry.toaInvocation));
+		}
+		return mobs;
 	}
 
 	/** Account or profile switched: nothing on screen may survive. */
@@ -4564,6 +4586,40 @@ public class LoadoutLabPanel extends PluginPanel
 					}
 				})));
 		}
+		// Tombs invocation (field report 2026-08-06: at any real raid
+		// level the official defence scaling flips bowfa over a blowpipe
+		// at the Wardens - invocation 0 silently told the wrong story).
+		if (entry.mobs.stream().anyMatch(
+			com.loadoutlab.engine.MonsterMechanics::isToaInvocationScaled))
+		{
+			final int[] invoLevels = {0, 150, 300, 540};
+			int invoIdx = 0;
+			for (int i = 0; i < invoLevels.length; i++)
+			{
+				if (invoLevels[i] == entry.toaInvocation)
+				{
+					invoIdx = i;
+				}
+			}
+			int invoNext = invoLevels[(invoIdx + 1) % invoLevels.length];
+			int invoPrev = entry.toaInvocation;
+			toggles.add(paramChip("Invocation " + entry.toaInvocation,
+				entry.toaInvocation > 0, true,
+				"Raid level " + entry.toaInvocation + " - ToA defence scales"
+					+ " with invocation (the official engine's rule), which is"
+					+ " what makes accuracy weapons pull ahead in real raids;"
+					+ " kill times are not scaled yet. Click to cycle"
+					+ " 0/150/300/540.",
+				() -> asActive(entry, () ->
+				{
+					recordStep("Invocation " + invoNext,
+						() -> setToaInvocation(invoNext), () -> setToaInvocation(invoPrev));
+					if (historyControl == null)
+					{
+						setToaInvocation(invoNext);
+					}
+				})));
+		}
 		// Thralls / Vengeance (field direction 2026-07-21): display-only
 		// dps folds - the chips show only when usable (tier reachable +
 		// book of the dead owned; Magic 94 for Veng).
@@ -4573,8 +4629,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// 2026-07-21 v4): that card is locked to its autocast book, so the
 		// assumptions cannot apply to what is on screen.
 		boolean viewClash = arcaneBlocked(entry, viewedTab);
-		String viewClashNote = "Unavailable on this card - its autocast"
-			+ " spell locks the spellbook away from Arceuus";
+		String viewClashNote = tripsOnAncients(entry)
+			? "Unavailable - this trip is recommended onto the Ancient"
+				+ " spellbook (barrages), which has no path to Arceuus summons"
+			: "Unavailable on this card - its autocast"
+				+ " spell locks the spellbook away from Arceuus";
 		String clashNote = !viewClash && magicArcaneClash(entry)
 			? " Not applied to the Magic card - its autocast needs another book." : "";
 		if (ExtraDps.thrallDps(magicLevel) > 0 && ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
@@ -4997,14 +5056,15 @@ public class LoadoutLabPanel extends PluginPanel
 		// Assumed consumables ride along for FREE (field spec 2026-07-18):
 		// the boost potion and the antifire - never a swap slot, muted
 		// border so they read as supplies rather than gear.
-		for (int consumableId : consumableIds(entry, style, result, bis))
+		for (Map.Entry<Integer, String> chip : consumableChips(entry, style, result, bis).entrySet())
 		{
+			int consumableId = chip.getKey();
 			JLabel cell = new JLabel();
 			cell.setOpaque(true);
 			cell.setHorizontalAlignment(JLabel.CENTER);
 			cell.setBackground(CELL_BG);
 			cell.setBorder(new RoundedBorder(new Color(90, 90, 90), 2, 2));
-			cell.setToolTipText("Potion the numbers assume - does not use an Inventory slot");
+			cell.setToolTipText(chip.getValue());
 			AsyncBufferedImage img = itemManager.getImage(consumableId);
 			Runnable set = () -> cell.setIcon(new ImageIcon(
 				img.getScaledInstance(-1, 24, Image.SCALE_SMOOTH)));
@@ -5046,26 +5106,6 @@ public class LoadoutLabPanel extends PluginPanel
 			JLabel name = new JLabel(mob.label() + " - " + mob.getHitpoints() + " hp");
 			name.setForeground(lensed ? Color.WHITE : new Color(150, 150, 150));
 			name.setFont(name.getFont().deriveFont(lensed ? Font.BOLD : Font.PLAIN, 12f));
-			if (monsterIcons != null)
-			{
-				// The mob's wiki render rides the row; text-only until it
-				// loads (or when the wiki has no picture for it).
-				ImageIcon mobIcon = monsterIcons.get(mob.getName(), mob.getVersion(), 20, () ->
-				{
-					ImageIcon ready = monsterIcons.get(mob.getName(), mob.getVersion(), 20, null);
-					if (ready != null)
-					{
-						name.setIcon(ready);
-						name.setIconTextGap(6);
-						name.revalidate();
-					}
-				});
-				if (mobIcon != null)
-				{
-					name.setIcon(mobIcon);
-					name.setIconTextGap(6);
-				}
-			}
 			row.add(name, BorderLayout.CENTER);
 			JPanel east = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			east.setOpaque(false);
@@ -5202,6 +5242,18 @@ public class LoadoutLabPanel extends PluginPanel
 	private List<Integer> consumableIds(ResultEntry entry, CombatStyle style,
 		StyleResult viewed, boolean bis)
 	{
+		return new ArrayList<>(consumableChips(entry, style, viewed, bis).keySet());
+	}
+
+	/** The consumable chips with their tooltips, keyed by item id - each
+	 * chip named at its SOURCE, because one generic label cannot cover
+	 * them (field report 2026-08-05: a shark captioned "Potion - assumed
+	 * by the numbers"). Boosts and antifires are assumptions the math
+	 * makes; supplies, the thrall book and the rune pouch are things you
+	 * bring. */
+	private LinkedHashMap<Integer, String> consumableChips(ResultEntry entry, CombatStyle style,
+		StyleResult viewed, boolean bis)
+	{
 		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
 		if (entry.mobs.size() <= 1 || entry.perMobResults == null)
 		{
@@ -5212,24 +5264,11 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		else
 		{
+			// The union across each mob's SHOWN answer - bestStyleResult is
+			// the row contract, so the potions match what the rows display.
 			for (Map<CombatStyle, StyleResult> map : entry.perMobResults)
 			{
-				StyleResult best = null;
-				double bestDps = -1;
-				for (StyleResult r : map.values())
-				{
-					if (r == null)
-					{
-						continue;
-					}
-					DpsResult shown = bis ? r.overallBest
-						: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-					if (shown != null && shown.getDps() > bestDps)
-					{
-						bestDps = shown.getDps();
-						best = r;
-					}
-				}
+				StyleResult best = bestStyleResult(map, bis);
 				if (best != null)
 				{
 					addBoostConsumables(bis ? best.gameBoostLabel : best.boostLabel, ids);
@@ -5244,12 +5283,35 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(21978);
 		}
+		LinkedHashMap<Integer, String> chips = new LinkedHashMap<>();
+		for (int id : ids)
+		{
+			chips.put(id, CONSUMABLE_NAMES.getOrDefault(id, "Potion")
+				+ " - assumed by the numbers, no Inventory slot used");
+		}
 		// The persistent trip supplies (food, prayer restore...) ride the
 		// same consumable cells: display id only - the bank filter carries
 		// the full dose lists separately.
 		for (TripSupplies.Option supply : activeSupplies(entry))
 		{
-			ids.add(supply.ids[0]);
+			chips.putIfAbsent(supply.ids[0], supply.name + " - trip supply");
+		}
+		// Curated per-monster recommendations (the barrage runes, DK
+		// antipoison): the mechanics note TELLS, these chips SHOW - and a
+		// rune recommendation pulls the pouch along.
+		boolean recommendedRunes = false;
+		for (MonsterStats recMob : entry.mobs)
+		{
+			for (Map.Entry<Integer, String> rec
+				: com.loadoutlab.data.RecommendedBring.chipsFor(recMob).entrySet())
+			{
+				chips.putIfAbsent(rec.getKey(), rec.getValue());
+				recommendedRunes |= com.loadoutlab.data.RecommendedBring.isRune(rec.getKey());
+			}
+		}
+		if (recommendedRunes && !effectiveWilderness(entry))
+		{
+			addRunePouchChip(chips);
 		}
 		// Arceuus casting dependencies keep the cells compact: the book of
 		// the dead and the best owned rune pouch (the runes are filter/
@@ -5257,20 +5319,63 @@ public class LoadoutLabPanel extends PluginPanel
 		boolean blocked = arcaneBlocked(entry, style);
 		if (entry.thralls && !blocked)
 		{
-			ids.add(ExtraDps.BOOK_OF_THE_DEAD);
+			chips.putIfAbsent(ExtraDps.BOOK_OF_THE_DEAD, "Book of the dead - thrall casting");
 		}
-		if (!blocked && (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
+		// A rune pouch is PK loot: in the Wilderness the casting kit is
+		// advice we should not give (field decision 2026-08-06), so the
+		// pouch chip stays out there - both the Arceuus and the curated
+		// rune paths.
+		if (!blocked && !effectiveWilderness(entry)
+			&& (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
 		{
-			int pouch = ownedRunePouch();
-			if (pouch != -1)
-			{
-				ids.add(pouch);
-			}
+			addRunePouchChip(chips);
 		}
-		return new ArrayList<>(ids);
+		return chips;
 	}
 
-	private static void addBoostConsumables(String label, Set<Integer> ids)
+	/** The best owned rune pouch chip - the block both rune paths above
+	 * add (Wilderness-gated by the callers). */
+	private void addRunePouchChip(Map<Integer, String> chips)
+	{
+		int pouch = ownedRunePouch();
+		if (pouch != -1)
+		{
+			chips.putIfAbsent(pouch, "Rune pouch - casting runes");
+		}
+	}
+
+	/** Inventory-chip names for the assumed consumables, keyed by the ids
+	 * the chain below adds - the tooltip names the potion because at 24px
+	 * the divine and regular sprites differ only by a sparkle (field
+	 * report 2026-08-05: "hard to see"). */
+	static final Map<Integer, String> CONSUMABLE_NAMES = new LinkedHashMap<>();
+	static
+	{
+		CONSUMABLE_NAMES.put(20996, "Overload (+)");
+		CONSUMABLE_NAMES.put(20992, "Overload");
+		CONSUMABLE_NAMES.put(23685, "Divine super combat");
+		CONSUMABLE_NAMES.put(12695, "Super combat");
+		CONSUMABLE_NAMES.put(2428, "Attack potion");
+		CONSUMABLE_NAMES.put(113, "Strength potion");
+		CONSUMABLE_NAMES.put(11722, "Super ranging");
+		CONSUMABLE_NAMES.put(23733, "Divine ranging potion");
+		CONSUMABLE_NAMES.put(2444, "Ranging potion");
+		CONSUMABLE_NAMES.put(11726, "Super magic");
+		CONSUMABLE_NAMES.put(23745, "Divine magic potion");
+		CONSUMABLE_NAMES.put(3040, "Magic potion");
+		CONSUMABLE_NAMES.put(27641, "Saturated heart");
+		CONSUMABLE_NAMES.put(20724, "Imbued heart");
+		CONSUMABLE_NAMES.put(2452, "Antifire potion");
+		CONSUMABLE_NAMES.put(21978, "Super antifire");
+	}
+
+	/** Package-private for the shadowing regression test. Order matters:
+	 * every "Divine X" label CONTAINS its base label ("Divine super
+	 * combat".contains("Super combat")), so the divine branches must be
+	 * tested first or they are dead code - which is exactly how divine
+	 * assumptions were rendering the REGULAR potion's chip (field report
+	 * 2026-08-05: divine super combat "not showing in the inventory"). */
+	static void addBoostConsumables(String label, Set<Integer> ids)
 	{
 		if (label == null)
 		{
@@ -5283,6 +5388,10 @@ public class LoadoutLabPanel extends PluginPanel
 		else if (label.contains("Overload"))
 		{
 			ids.add(20992);
+		}
+		else if (label.contains("Divine super combat"))
+		{
+			ids.add(23685);
 		}
 		else if (label.contains("Super combat"))
 		{
@@ -5297,6 +5406,10 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(11722);
 		}
+		else if (label.contains("Divine ranging"))
+		{
+			ids.add(23733);
+		}
 		else if (label.contains("Ranging potion"))
 		{
 			ids.add(2444);
@@ -5304,6 +5417,10 @@ public class LoadoutLabPanel extends PluginPanel
 		else if (label.contains("Super magic"))
 		{
 			ids.add(11726);
+		}
+		else if (label.contains("Divine magic"))
+		{
+			ids.add(23745);
 		}
 		else if (label.contains("Magic potion"))
 		{
@@ -5333,19 +5450,42 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			map = entry.results;
 		}
-		if (map == null)
-		{
-			return null;
-		}
-		DpsResult best = null;
+		StyleResult best = map == null ? null : bestStyleResult(map, bis);
+		return best == null ? null : shownResult(best, bis);
+	}
+
+	/** The side's shown answer for one style: BiS = the game-wide best,
+	 * Yours = the best owned set. */
+	private static DpsResult shownResult(StyleResult r, boolean bis)
+	{
+		return bis ? r.overallBest
+			: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
+	}
+
+	/** One mob's best across styles for a side, by the row contract: a
+	 * tab-only fallback never outbids a kit-backed answer, however good
+	 * its number looks (it needs a different worn kit); dps breaks the
+	 * remaining ties. The mob rows and the consumable chips both pick
+	 * through this, so the chips always describe the shown answer. */
+	private static StyleResult bestStyleResult(Map<CombatStyle, StyleResult> map, boolean bis)
+	{
+		StyleResult best = null;
+		double bestDps = -1;
+		boolean bestKitBacked = false;
 		for (StyleResult r : map.values())
 		{
-			DpsResult shown = r == null ? null
-				: bis ? r.overallBest
-				: r.owned == null || r.owned.isEmpty() ? null : r.owned.get(0);
-			if (shown != null && (best == null || shown.getDps() > best.getDps()))
+			DpsResult shown = r == null ? null : shownResult(r, bis);
+			if (shown == null)
 			{
-				best = shown;
+				continue;
+			}
+			boolean kitBacked = bis ? r.gameKitBacked : r.ownedKitBacked;
+			if (best == null || (kitBacked && !bestKitBacked)
+				|| (kitBacked == bestKitBacked && shown.getDps() > bestDps))
+			{
+				best = r;
+				bestDps = shown.getDps();
+				bestKitBacked = kitBacked;
 			}
 		}
 		return best;
@@ -5554,24 +5694,6 @@ public class LoadoutLabPanel extends PluginPanel
 		actions.setOpaque(false);
 		actions.setAlignmentX(LEFT_ALIGNMENT);
 		actions.add(copyChip);
-		// The exact-setup cross-check (field ask 2026-07-23): full setups
-		// can only ride a URL as a shortlink id, so the click uploads the
-		// shown setup to the wiki's share service first.
-		StyleResult wikiResult = entry.results == null ? null : entry.results.get(selected);
-		DpsResult wikiShown = wikiResult == null ? null
-			: bis ? wikiResult.overallBest
-			: wikiResult.owned == null || wikiResult.owned.isEmpty() ? null : wikiResult.owned.get(0);
-		if (wikiCalcOpener != null && wikiShown != null)
-		{
-			String assumes = bis ? wikiResult.gameBoostLabel : wikiResult.boostLabel;
-			GearItem dart = loadedDart(wikiShown);
-			actions.add(actionChip("Wiki calc",
-				"Open this exact setup in the official wiki calculator"
-					+ " (shares the setup via the wiki's shortlink service)",
-				() -> wikiCalcOpener.open(entry.mob(), wikiShown,
-					dart == null ? -1 : dart.getId(), assumes,
-					entry.onSlayerTask, effectiveWilderness(entry))));
-		}
 		actions.add(discordChip);
 		actions.setMaximumSize(new Dimension(Integer.MAX_VALUE,
 			actions.getPreferredSize().height));
@@ -6229,20 +6351,26 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		card.add(Box.createVerticalStrut(4));
-		// The owned grid marks what you don't own (green) and what already
-		// matches the game-best pick (gold); the BiS grid is the same
-		// renderer over the other answer (field spec - just a toggle).
+		// Both grids mark ownership, in the same border language: green =
+		// you do not own this piece, gold = you do. On the Yours side gold
+		// reads "your item is already the game's best"; on the BiS side the
+		// same colour reads "you already own this BiS piece" - the two are
+		// the same statement (your item and the best item coincide) seen
+		// from either end. Field request 2026-08-05: the BiS grid used to
+		// pass neither flag, so every cell fell through to plain grey and
+		// the view carried no ownership information at all.
 		if (bis)
 		{
 			card.add(iconGrid(best, result.gameSpec, result.gameSpecWeapon,
 				result.gameSpecExpectedDamage, result.gameSpecDpsAdded,
-				"Strongest special attack in the game vs this monster"));
+				"Strongest special attack in the game vs this monster",
+				true, best == null ? null : best.getLoadout(), true));
 		}
 		else
 		{
 			card.add(iconGrid(best, result.spec, result.specWeapon, result.specExpectedDamage,
 				result.specDpsAdded, "Swap in for the special attack",
-				true, result.overallBest == null ? null : result.overallBest.getLoadout()));
+				true, result.overallBest == null ? null : result.overallBest.getLoadout(), false));
 		}
 		if (displayOptions.inventory && result != null
 			&& (!(bis ? result.gameBench : result.bench).isEmpty()
@@ -7061,6 +7189,15 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	private void setToaInvocation(int level)
+	{
+		if (active != null && active.toaInvocation != level)
+		{
+			active.toaInvocation = level;
+			recompute();
+		}
+	}
+
 	/** The active set's item ids: gear + loaded dart + spec weapon. */
 	/** The lensed result's inventory item ids for the viewed style - bank
 	 * show/filter treats carried swaps exactly like worn gear. */
@@ -7391,12 +7528,12 @@ public class LoadoutLabPanel extends PluginPanel
 		double specDpsAdded, String specFallbackTooltip)
 	{
 		return iconGrid(result, spec, specWeapon, specExpected, specDpsAdded,
-			specFallbackTooltip, false, null);
+			specFallbackTooltip, false, null, false);
 	}
 
 	private JPanel iconGrid(DpsResult result, SpecialAttack spec, GearItem specWeapon, double specExpected,
 		double specDpsAdded, String specFallbackTooltip, boolean markUnowned,
-		Loadout gameBest)
+		Loadout gameBest, boolean bisSide)
 	{
 		int cell = ICON_SIZE + 4;
 		// Wilderness: badge every cell with its death fate.
@@ -7412,7 +7549,7 @@ public class LoadoutLabPanel extends PluginPanel
 		RiskDotLabel specCell = buildSpecCell(cell, spec, specWeapon, specExpected,
 			specDpsAdded, specFallbackTooltip, fates);
 		return centerRow(classicGrid(cell, result, fates, pinnedSlots,
-			markUnowned, gameBest, specCell, renderingIncoming));
+			markUnowned, gameBest, bisSide, specCell, renderingIncoming));
 	}
 
 	/**
@@ -7452,7 +7589,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** The in-game worn-equipment tab: 5 rows of 3, empty corners blank, spec
 	 * in the empty slot left of the legs. */
 	private JPanel classicGrid(int cell, DpsResult result, PvpRisk.Assessment fates,
-		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest,
+		Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest, boolean bisSide,
 		RiskDotLabel specCell, IncomingDpsCalculator.Result incoming)
 	{
 		// The item/stat view (field spec): the classic gear silhouette on
@@ -7461,6 +7598,9 @@ public class LoadoutLabPanel extends PluginPanel
 		// typography. Both sides of the Yours|BiS toggle share this layout.
 		JPanel gear = new JPanel(new GridLayout(5, 3, 2, 2));
 		gear.setOpaque(false);
+		// One dream-view snapshot for the whole grid - snapshot() locks and
+		// copies, and per-cell copies were ~a dozen per rebuild.
+		Set<Integer> dreamIds = dreamView.snapshot();
 		for (int i = 0; i < CLASSIC_ORDER.length; i++)
 		{
 			if (i == CLASSIC_SPEC_INDEX)
@@ -7469,7 +7609,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			else if (CLASSIC_ORDER[i] != null)
 			{
-				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest));
+				gear.add(buildSlotCell(CLASSIC_ORDER[i], result, cell, fates, pinnedSlots, markUnowned, gameBest, bisSide, dreamIds));
 			}
 			else
 			{
@@ -7647,6 +7787,21 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			panel.add(pray);
 		}
+			// What the set on screen still costs you: the search accumulates
+			// budgetCost per slot, which is the item's price when you do not
+			// own it and zero when you do. So this is exactly the gp gap
+			// between your bank and the shown set - non-zero only on the BiS
+			// side (and on a budget/simmed set), which is why it needs no
+			// side flag: the Yours answer is already yours, so it prices at
+			// zero and the line stays off.
+			if (displayOptions.setCost && result.getPurchaseCost() > 0)
+			{
+				JLabel cost = statLine(PvpRisk.formatGp(result.getPurchaseCost()),
+					"Cost to own this set - the pieces you are missing, at wiki prices"
+						+ " (quest rewards are named on their slot, not priced)",
+					statText, new FixedWidthIcon(new CoinsIcon()));
+				panel.add(cost);
+			}
 		if (displayOptions.bonuses && !result.getCountedBonuses().isEmpty())
 		{
 			JLabel counting = statLine(String.valueOf(result.getCountedBonuses().size()),
@@ -7977,7 +8132,8 @@ public class LoadoutLabPanel extends PluginPanel
 	/** One equipment-slot cell: the item icon with its border language, death
 	 * fate, source dot, tooltip and right-click menu - or an empty box. */
 	private RiskDotLabel buildSlotCell(GearSlot slotType, DpsResult result, int cell,
-		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned, Loadout gameBest)
+		PvpRisk.Assessment fates, Map<GearSlot, Integer> pinnedSlots, boolean markUnowned,
+		Loadout gameBest, boolean bisSide, Set<Integer> dreamIds)
 	{
 		GearItem item = result.getLoadout().get(slotType);
 		RiskDotLabel slot = new RiskDotLabel();
@@ -7989,17 +8145,30 @@ public class LoadoutLabPanel extends PluginPanel
 			? dragonfireMenuEntries() : Collections.emptyList();
 		if (item != null)
 		{
-			// Border language: green = you don't own it (dream/budget
-			// upgrade); gold = your item IS the game's best available
-			// for this slot; blue = the spec cell (matches the in-game
-			// special attack bar).
-			boolean unowned = markUnowned && !ownedCheck.owns(item.getId());
+			// Border language. Every colour has to EARN its cell - a colour
+			// that paints most of the grid is wallpaper, not information
+			// (field note 2026-08-05: on the BiS side almost nothing is
+			// owned, so "green = unowned" lit up the whole set and said
+			// nothing).
+			//   gold  = you own this piece
+			//   green = you are SIMMING it (a dream item), or on the Yours
+			//           side an unowned budget upgrade - either way, gear
+			//           the answer is ASSUMING you will have
+			//   grey  = none of the above; on the BiS side that is simply
+			//           a piece you have not got
+			//   blue  = the spec cell (matches the in-game spec bar)
+			boolean owns = ownedCheck.owns(item.getId());
+			boolean simmed = !owns && dreamIds.contains(item.getId());
+			// The Yours answer only ever shows gear you own, sim, or would
+			// buy - so an unowned cell there is an assumption worth marking.
+			// The BiS answer shows the whole game, where unowned is the norm.
+			boolean assumed = simmed || (markUnowned && !bisSide && !owns);
 			GearItem bisItem = gameBest == null ? null : gameBest.get(slotType);
 			// Analogs count: a stat-identical item (any god's d'hide
 			// coif) is just as best-available as the exact pick.
-			boolean bis = !unowned && bisItem != null
+			boolean bis = owns && bisItem != null
 				&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item));
-			Color border = unowned ? BORDER_UNOWNED
+			Color border = assumed ? BORDER_UNOWNED
 				: bis ? BORDER_BIS : BORDER_PLAIN;
 			slot.setBorder(BorderFactory.createLineBorder(border));
 			// Quest rewards are earned, not bought: name the quest
@@ -8047,12 +8216,12 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			// Location clause only when a fetch trip is needed - "in
 			// bank" would be noise on 95% of cells.
-			String where = unowned ? "" : locationHint.hint(item.getId());
+			String where = assumed ? "" : locationHint.hint(item.getId());
 			Integer pinnedHere = pinnedSlots.get(slotType);
 			String pinNote = pinnedHere != null && pinnedHere == item.getId()
 				? " - pinned" : "";
 			// Source dot + legend entry: only for locations we know.
-			if (!unowned)
+			if (!assumed)
 			{
 				String source = locationHint.primary(item.getId());
 				Color sourceColor = SOURCE_COLORS.get(source);
@@ -8064,7 +8233,7 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			slot.setToolTipText(slotName(slotType) + ": " + item.label()
 				+ pinNote
-				+ (unowned ? " - NOT OWNED (" + obtain + ")" : "")
+				+ (assumed ? " - NOT OWNED (" + obtain + ")" : "")
 				+ (where.isEmpty() ? "" : " - " + where)
 				+ (bis ? " - best available" : "")
 				+ fate

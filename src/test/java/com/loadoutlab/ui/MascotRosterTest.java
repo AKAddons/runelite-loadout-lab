@@ -25,7 +25,7 @@ class MascotRosterTest
 	void eligibility()
 	{
 		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.WORKOUT));
-		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.CHEF));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.SKATER));
 		assertTrue(MascotRoster.activeOn(SEPTEMBER).contains(MascotRoster.WORKOUT));
 	}
 
@@ -48,22 +48,42 @@ class MascotRosterTest
 	}
 
 	@Test
-	@DisplayName("a dormant mood is never picked (the chef in October)")
-	void dormantNeverPicked()
+	@DisplayName("only eligible moods are ever picked")
+	void onlyEligibleMoodsArePicked()
 	{
-		Map<Class<?>, Integer> counts = sample(LocalDate.of(2026, 10, 15), 90_000);
-		assertEquals(0, counts.getOrDefault(MascotChef.class, 0),
-			"a dormant mood must never be picked");
+		// Every mood is evergreen right now (the seasonal ones are benched in
+		// the attic), so the guarantee to hold is the weaker one: pick never
+		// returns anything outside activeOn.
+		for (LocalDate date : new LocalDate[]{SUMMER, SEPTEMBER, LocalDate.of(2026, 10, 15)})
+		{
+			java.util.Set<Class<?>> eligible = new java.util.HashSet<>();
+			for (MascotRoster mood : MascotRoster.activeOn(date))
+			{
+				eligible.add(mood.create().getClass());
+			}
+			for (Class<?> picked : sample(date, 5_000).keySet())
+			{
+				assertTrue(eligible.contains(picked),
+					picked.getSimpleName() + " was picked on " + date + " while dormant");
+			}
+		}
 	}
 
 	@Test
-	@DisplayName("the chef cooks every month except October (the benched cauldron's month)")
-	void chefSkipsOctober()
+	@DisplayName("the months window still gates by calendar month (the benched moods' restore)")
+	void monthsWindowGates()
 	{
-		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.CHEF),
-			"October stays reserved for the cauldron's return");
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CHEF));
-		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 11, 1)).contains(MascotRoster.CHEF));
+		// Window.months has no caller in main source since the chef was
+		// benched, but the chef, classroom and cauldron restores all depend
+		// on it - so it stays, and this is what keeps it honest.
+		MascotRoster.Window october = MascotRoster.Window.months(10);
+		assertTrue(october.active(LocalDate.of(2026, 10, 15)));
+		assertFalse(october.active(LocalDate.of(2026, 9, 30)));
+		assertFalse(october.active(LocalDate.of(2026, 11, 1)));
+
+		MascotRoster.Window terms = MascotRoster.Window.months(1, 2, 3, 4, 5, 9, 10, 11);
+		assertTrue(terms.active(LocalDate.of(2026, 5, 31)));
+		assertFalse(terms.active(LocalDate.of(2026, 6, 1)));
 	}
 
 	private static Map<Class<?>, Integer> sample(LocalDate date, int draws)

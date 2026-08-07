@@ -656,19 +656,43 @@ public final class LoadoutOptimizer
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
 		List<SpellStats> all = spellsForUnfiltered(data, request);
+		// Nibblers: locked to the barrages (field decision 2026-08-06) -
+		// Ice clears the trio, Blood heals off it; any other autocast is
+		// the wrong advice for the mob whose role is being barraged.
+		if (MonsterMechanics.isNibbler(request.getMonster()))
+		{
+			return keep(all, spell -> "Ice Barrage".equals(spell.getName())
+				|| "Blood Barrage".equals(spell.getName()));
+		}
+		// Salarin: strike casts are the ONLY damage (the same whitelist
+		// isImmune enforces), and the elemental prune would drop them as
+		// dominated - short-circuit past it.
+		if (MonsterMechanics.isSalarin(request.getMonster()))
+		{
+			return keep(all, MonsterMechanics::salarinDamagingSpell);
+		}
 		if (!request.getSpellbookLock().isEmpty())
 		{
-			List<SpellStats> locked = new ArrayList<>();
-			for (SpellStats spell : all)
-			{
-				if (request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()))
-				{
-					locked.add(spell);
-				}
-			}
-			all = locked;
+			all = keep(all, spell ->
+				request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()));
 		}
 		return pruneDominatedElementals(all, request);
+	}
+
+	/** The spells passing one predicate - the shape all three pool filters
+	 * above share. Runs once per optimize, never in the beam. */
+	private static List<SpellStats> keep(List<SpellStats> all,
+		java.util.function.Predicate<SpellStats> filter)
+	{
+		List<SpellStats> kept = new ArrayList<>(all.size());
+		for (SpellStats spell : all)
+		{
+			if (filter.test(spell))
+			{
+				kept.add(spell);
+			}
+		}
+		return kept;
 	}
 
 	/**
@@ -691,8 +715,17 @@ public final class LoadoutOptimizer
 		String weakness = request.getMonster().getWeaknessElement();
 		int magicLevel = request.getLevels().getMagic();
 		List<SpellStats> kept = new ArrayList<>(spells.size());
-		int bestMatching = -1;
-		int bestPlain = -1;
+		// Dominance is per (weakness-match, twinflame-doubling) CELL, not
+		// per class alone: the staff's 40% second hit applies to
+		// Bolt/Blast/Wave but NOT Strike/Surge, so a lower-max Wave can
+		// out-dps the Surge that "dominates" it whenever a twinflame is in
+		// the pool. Field bug 2026-08-06: Wind Surge (24) pruned Wind Wave
+		// (20) before evaluation, and a pinned twinflame staff was told to
+		// autocast the worse spell. The prune runs request-level - it
+		// cannot see the weapon - so both tier-groups survive to the
+		// per-loadout evaluation, which prices the second hit correctly.
+		int[] best = new int[4];
+		java.util.Arrays.fill(best, -1);
 		for (SpellStats spell : spells)
 		{
 			if (!DpsCalculator.isPlainElemental(spell))
@@ -701,18 +734,12 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean match = spell.getElement().equals(weakness);
+			int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0);
 			int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
-			if (match ? effective > bestMatching : effective > bestPlain)
+			if (effective > best[cell])
 			{
 				kept.add(spell);
-				if (match)
-				{
-					bestMatching = effective;
-				}
-				else
-				{
-					bestPlain = effective;
-				}
+				best[cell] = effective;
 			}
 		}
 		return kept;
@@ -979,7 +1006,7 @@ public final class LoadoutOptimizer
 			{
 				score += 4_500.0;
 			}
-			if (request.getMonster().hasAttribute("demon") && (name.contains("arclight") || name.contains("emberlight") || name.contains("darklight") || name.contains("silverlight") || name.contains("scorching bow")))
+			if (item.isDemonbane() && request.getMonster().hasAttribute("demon"))
 			{
 				score += 4_000.0;
 			}
@@ -992,6 +1019,38 @@ public final class LoadoutOptimizer
 			if (request.getMonster().hasAttribute("leafy") && name.contains("leaf-bladed battleaxe"))
 			{
 				score += 4_000.0;
+			}
+			// Same lesson, golembane: the granite hammer's +30% accuracy AND
+			// +30% damage vs golems live in the DPS model, and its raw stats
+			// (crush +57, str +56) sit well below the weapon cut - so it was
+			// pruned before the bonus could ever count. Field-found
+			// 2026-08-01: a hasta outranked it at the Mad Angel, and at
+			// Dawn/Dusk (crush defence 0) it never appeared at all.
+			if (request.getMonster().hasAttribute("golem")
+				&& (name.contains("granite hammer") || name.contains("barronite mace")))
+			{
+				score += 4_000.0;
+			}
+			// One-shot demonbane vs the Sire's vents lives entirely in the
+			// DPS model - raw stats rank the Scorching bow under a blowpipe,
+			// so without a boost the weapon cut prunes the actual answer
+			// (pool lesson; field report 2026-08-05). Flag first: this runs
+			// inside the pool sort's comparator.
+			if (item.isDemonbane()
+				&& MonsterMechanics.isRespiratorySystem(request.getMonster()))
+			{
+				score += 10_000.0;
+			}
+			// Verac's whole value at a prayer-immune phase lives in the set
+			// proc (pool lesson, set edition - the void precedent): every
+			// melee line scores zero there until all four pieces assemble,
+			// so the pieces must outrank raw-stat armour to survive their
+			// slot cuts at all. Name first: the attribute lookup is the
+			// dearer half and almost no item is named verac.
+			if (name.contains("verac")
+				&& request.getMonster().hasAttribute("prayer_immunity"))
+			{
+				score += 8_000.0;
 			}
 			// Wilderness/revenant conditionals: their raw stats undersell
 			// them (the +50% passive and the incoming-nullify live in the

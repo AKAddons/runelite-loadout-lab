@@ -91,6 +91,27 @@ STANDARD_OVERRIDES = {
     31106: "Confliction gauntlets",
 }
 
+# The mirror image: ids upstream ships as ordinary gear that no player can
+# ever actually bring on a trip. Quest-issue kit is the usual case - handed
+# out mid-quest and destroyed on completion - so a stat line makes the
+# optimizer recommend a weapon that cannot be owned. These WIN over both
+# preserve and the heuristic, same as the overrides above.
+NONSTANDARD_OVERRIDES = {
+    33800: "Silvthrill ballista",  # The Blood Moon Rises quest issue;
+    33801: "Silvthrill javelin",   # both removed from the inventory on
+                                   # completion (wiki-confirmed 2026-07-31).
+    # Wilderness Wars (August 2017) champion reward. FIVE players ever owned
+    # it and it was removed by a later update - but upstream still ships it
+    # as ordinary gear with +100 to every attack style, +50 str and +50
+    # prayer, so it dominates every neck slot it is allowed into and was
+    # being offered as BiS (field report 2026-08-05, wiki-confirmed
+    # discontinued).
+    21433: "Wilderness champion amulet",
+}
+
+assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \
+    "an id cannot be both standard and non-standard"
+
 
 def fetch(url, cache_dir, cache_name):
     path = os.path.join(cache_dir, cache_name)
@@ -174,8 +195,10 @@ def build_gear(wg_equipment, mapping_by_id, latest_by_id, old_by_id):
             "estimatedPrice": estimated,
             "priceSource": source,
             # Curated usable-state flag: an explicit override wins (stale
-            # pre-release Falses); else preserve; else heuristic for new ids.
+            # pre-release Falses, and quest-issue kit upstream ships as
+            # ordinary gear); else preserve; else heuristic for new ids.
             "isStandardGear": (True if item_id in STANDARD_OVERRIDES
+                               else False if item_id in NONSTANDARD_OVERRIDES
                                else old["isStandardGear"] if old is not None
                                else default_standard(row.get("name"), row.get("version"))),
         }

@@ -348,13 +348,20 @@ public final class DataService
 				attributes.add("burn_immune");
 			}
 
+			// The ejected core is a 1x1 target - the wiki row carries the
+			// Warden's 5x5 frame, which handed the crystal halberd's sweep a
+			// phantom second hit and outranked the DDS dump (field report
+			// 2026-08-06). Size is the one stat the always-max rule still
+			// reads (halberd sweep, scythe cleave).
+			int size = "Core-ejected".equals(string(row, "version"))
+				? 1 : integer(row, "size", 1);
 			result.add(new MonsterStats(
 				integer(row, "id", -1),
 				string(row, "name"),
 				distinctVersions ? string(row, "version") : "",
 				maxLevelByGroup.get(nameKey + "|" + monsterStatKey(row)),
 				integer(skills, "hp", 1),
-				integer(row, "size", 1),
+				size,
 				integer(skills, "def", 1),
 				integer(skills, "magic", 1),
 				integer(offensive, "magic", 0),
@@ -399,13 +406,20 @@ public final class DataService
 	{
 		JsonObject skills = object(row, "skills");
 		JsonObject offensive = object(row, "offensive");
+		// The Wardens' Core-ejected rows are stat-identical to their
+		// Active siblings, but the engine reads that version as a
+		// MECHANIC (the core's always-max rule) - collapsing them would
+		// erase the spec-dump phase from the corpus entirely.
+		String mechanicVersion = "Core-ejected".equals(string(row, "version"))
+			? "Core-ejected" : "";
 		return integer(skills, "def", 1) + "|" + integer(skills, "magic", 1)
 			+ "|" + integer(offensive, "magic", 0)
 			+ "|" + object(row, "defensive").toString()
 			+ "|" + array(row, "attributes").toString()
 			+ "|" + bool(row, "is_slayer_monster", false)
 			+ "|" + object(row, "weakness").toString()
-			+ "|" + integer(row, "size", 1);
+			+ "|" + integer(row, "size", 1)
+			+ "|" + mechanicVersion;
 	}
 
 	private List<SpellStats> loadSpells()

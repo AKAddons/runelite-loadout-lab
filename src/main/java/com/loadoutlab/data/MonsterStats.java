@@ -130,6 +130,48 @@ public final class MonsterStats
 			slayerMonster, weaknessElement, weaknessSeverity);
 	}
 
+	/** What the label SHOWS when the community name beats the in-game one
+	 * (the Inferno's Jal- vocabulary: "Bat" for Jal-MejRah). Display only:
+	 * getName() stays the real name, so every name-keyed rule - notes, TD
+	 * damage reduction, boss overrides - keeps applying, and profile
+	 * pins/exclusions follow the real row. */
+	private String displayName;
+
+	public MonsterStats withDisplayName(String nick)
+	{
+		MonsterStats copy = withVersion(version);
+		copy.displayName = nick;
+		copy.toaInvocationLevel = toaInvocationLevel;
+		return copy;
+	}
+
+	/** ToA raid level carried ON the monster so every path - pool, kit
+	 * re-shows, spec sims - prices the same invocation; 0 everywhere
+	 * else. The engine scales defence rolls by (250+level)/250 (the
+	 * official engine's rule) for invocation-scaled rows. */
+	private int toaInvocationLevel;
+
+	public int getToaInvocationLevel()
+	{
+		return toaInvocationLevel;
+	}
+
+	/** A copy priced at this raid level (SET, not compounded - re-applying
+	 * a different level replaces the old one); returns this when the
+	 * level already matches. */
+	public MonsterStats withToaInvocation(int level)
+	{
+		int clamped = Math.max(0, level);
+		if (clamped == toaInvocationLevel)
+		{
+			return this;
+		}
+		MonsterStats copy = withVersion(version);
+		copy.displayName = displayName;
+		copy.toaInvocationLevel = clamped;
+		return copy;
+	}
+
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
 	{
 		return immuneVariant(syntheticId, versionLabel,
@@ -164,17 +206,28 @@ public final class MonsterStats
 		return revenant;
 	}
 
-	/** A copy at a different Defence level - defence-drain spec modeling. */
+	/** A copy at a different Defence level - defence-drain spec modeling.
+	 * Carries the invocation level: a drained ToA row keeps its raid
+	 * scaling or the drain would be valued at invocation 0. */
 	public MonsterStats withDefence(int newDefence)
 	{
-		return new MonsterStats(id, name, version, combatLevel, hitpoints, size,
+		MonsterStats copy = new MonsterStats(id, name, version, combatLevel, hitpoints, size,
 			Math.max(0, newDefence), magic, offensiveMagic, defensive, offence,
 			attributes, slayerMonster, weaknessElement, weaknessSeverity);
+		copy.toaInvocationLevel = toaInvocationLevel;
+		return copy;
 	}
 
 	public boolean hasAttribute(String attribute)
 	{
 		return attributesLower.contains(attribute.toLowerCase(Locale.ROOT));
+	}
+
+	/** True when this variant's version label starts with the prefix - the
+	 * phase gate MonsterNotes and RecommendedBring share ("Phase 1..."). */
+	public boolean versionStartsWith(String prefix)
+	{
+		return version != null && version.startsWith(prefix);
 	}
 
 	public String label()
@@ -184,7 +237,7 @@ public final class MonsterStats
 		boolean levelVersion = version.regionMatches(true, 0, "level", 0, 5);
 		String suffix = version.isEmpty() || levelVersion ? "" : " (" + version + ")";
 		String level = combatLevel > 0 ? " - lvl " + combatLevel : "";
-		return name + suffix + level;
+		return (displayName != null ? displayName : name) + suffix + level;
 	}
 
 	public String searchText()

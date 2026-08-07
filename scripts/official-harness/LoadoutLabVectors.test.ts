@@ -40,7 +40,11 @@ describe('loadout lab vectors', () => {
     const results: object[] = [];
     for (const v of vectors) {
       try {
-        const monster = getTestMonster(v.monster, v.monsterVersion || '');
+        const base = getTestMonster(v.monster, v.monsterVersion || '');
+        // ToA invocation rides monster.inputs (their P2-style scaling gate).
+        const monster = v.toaInvocationLevel
+          ? { ...base, inputs: { ...base.inputs, toaInvocationLevel: v.toaInvocationLevel } }
+          : base;
         const equipment: Record<string, EquipmentPiece> = {};
         for (const entry of v.gear || []) {
           const [name, version] = Array.isArray(entry) ? entry : [entry, ''];
@@ -49,6 +53,16 @@ describe('loadout lab vectors', () => {
           if (slot) {
             equipment[slot] = piece;
           }
+        }
+        // Blowpipes take their dart via itemVars, NOT the ammo slot - a
+        // dart placed as gear is a weapon-slot THROWN item and silently
+        // replaces the blowpipe (2026-08-06: the first bp vector measured
+        // hand-thrown darts).
+        if (v.blowpipeDartId && equipment.weapon) {
+          equipment.weapon = {
+            ...equipment.weapon,
+            itemVars: { ...(equipment.weapon as any).itemVars, blowpipeDartId: v.blowpipeDartId },
+          } as EquipmentPiece;
         }
         // Prayer names are enum keys: "PIETY", "RIGOUR", "AUGURY", "MYSTIC_VIGOUR".
         const prayers = (v.prayers || [])

@@ -87,8 +87,23 @@ class MonsterGroupsTest
 		assertEquals(3, byName("Zulrah (all forms)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Entry)").getMobs().size());
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
-		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
-		assertEquals(5, byName("Abyssal Sire").getMobs().size());
+		// Kephri's scarab adds are deliberately absent, same call as the
+		// Sire's spawn/scion (field decision 2026-08-06).
+		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.noneMatch(m -> m.getName().contains("Scarab")));
+		// The P2 spec-dump window rides the Core-ejected row, nicked so
+		// the roster reads as the phase players know (field report
+		// 2026-08-06: "ToA is missing the crucial heart phase").
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.anyMatch(m -> m.getVersion().startsWith("Core-ejected")
+				&& m.label().contains("Warden's Core")));
+		// Vents + the two phase rows only: the spawn/scion adds are
+		// deliberately absent - players walk or ignore them (field
+		// decision 2026-08-06); + Add mob covers whoever kills them.
+		assertEquals(3, byName("Abyssal Sire").getMobs().size());
+		assertTrue(byName("Abyssal Sire").getMobs().stream()
+			.noneMatch(m -> "Scion".equals(m.getName()) || "Spawn".equals(m.getName())));
 		assertEquals(15, byName("Chambers of Xeric").getMobs().size());
 		// The Jad in the Fight Caves roster is the real one, not the
 		// Colosseum's TzTok-Jad-Rek; the Tok-Xil is the fight-caves row,
@@ -97,6 +112,33 @@ class MonsterGroupsTest
 			.anyMatch(m -> m.getName().equals("TzTok-Jad")));
 		assertTrue(byName("Fight Caves").getMobs().stream()
 			.noneMatch(m -> m.getName().contains("Construction")));
+	}
+
+	@Test
+	@DisplayName("Inferno and Fight Caves rows wear their community names")
+	void communityNicknames()
+	{
+		// The Jal-/Tz- vocabulary is what made a field report say "the
+		// bats" (2026-08-06): rows display the name players actually use.
+		// getName() stays the in-game name, so name-keyed rules (the
+		// nibbler barrage note, TzHaar handling) keep firing.
+		MonsterStats bat = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-MejRah".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(bat.label().startsWith("Bat"), "was: " + bat.label());
+		assertEquals("Jal-MejRah", bat.getName());
+
+		MonsterStats nibbler = byName("Inferno").getMobs().stream()
+			.filter(m -> "Jal-Nib".equals(m.getName())).findFirst().orElseThrow();
+		assertTrue(nibbler.label().startsWith("Nibbler"));
+		assertNotNull(MonsterNotes.noteFor(nibbler),
+			"the nickname must not orphan the name-keyed barrage note");
+
+		assertTrue(byName("Fight Caves").getMobs().stream()
+			.anyMatch(m -> m.label().startsWith("Jad")));
+		// Plain corpus searches stay un-nicked - only curated group rows
+		// carry the community name.
+		assertEquals("Jal-MejRah",
+			data.searchMonsters("jal-mejrah", 1).get(0).label().split(" - ")[0]);
 	}
 
 	@Test
