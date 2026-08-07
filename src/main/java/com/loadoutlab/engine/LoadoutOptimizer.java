@@ -656,6 +656,22 @@ public final class LoadoutOptimizer
 	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
 		List<SpellStats> all = spellsForUnfiltered(data, request);
+		// Nibblers: locked to the barrages (field decision 2026-08-06) -
+		// Ice clears the trio, Blood heals off it; any other autocast is
+		// the wrong advice for the mob whose role is being barraged.
+		if (MonsterMechanics.isNibbler(request.getMonster()))
+		{
+			List<SpellStats> barrages = new ArrayList<>();
+			for (SpellStats spell : all)
+			{
+				if ("Ice Barrage".equals(spell.getName())
+					|| "Blood Barrage".equals(spell.getName()))
+				{
+					barrages.add(spell);
+				}
+			}
+			return barrages;
+		}
 		// Salarin: strike casts are the ONLY damage, and the elemental
 		// prune would drop them as dominated - short-circuit past it.
 		if (MonsterMechanics.isSalarin(request.getMonster()))

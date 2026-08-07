@@ -162,6 +162,22 @@ public final class DpsCalculator
 					result.getPurchaseCost(), result.getSpellName());
 			}
 		}
+		// The nibbler trio: three spawn per wave and one barrage cast hits
+		// all of them, so an AoE cast's effective output is 3x the
+		// single-target number. This is what makes the barrage WIN the
+		// nibbler row on real math instead of a blowpipe headlining the
+		// mob nobody blowpipes (field decision 2026-08-06).
+		if (result != null && MonsterMechanics.isNibbler(request.getMonster())
+			&& request.getStyle() == CombatStyle.MAGIC
+			&& result.getSpellName() != null && result.getSpellName().endsWith("Barrage"))
+		{
+			counted("nibbler trio", "one barrage cast hits all three");
+			result = new DpsResult(result.getLoadout(), result.getDps() * 3,
+				result.getAccuracy(), result.getExpectedHit() * 3,
+				result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
+				result.getAttackRoll(), result.getDefenceRoll(),
+				result.getPurchaseCost(), result.getSpellName());
+		}
 		// Salarin the twisted: a landed Strike always deals a FLAT 9-12,
 		// set by the highest strike tier unlocked - never by gear ("not
 		// affected by items that would normally increase spell damage").

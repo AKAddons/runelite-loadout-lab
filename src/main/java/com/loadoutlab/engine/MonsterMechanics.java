@@ -37,6 +37,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> ICE_DEMON = new HashSet<>();
 	private static final Set<Integer> RESPIRATORY_SYSTEMS = new HashSet<>();
 	private static final Set<Integer> SALARIN = new HashSet<>();
+	private static final Set<Integer> NIBBLERS = new HashSet<>();
 
 	static
 	{
@@ -56,6 +57,7 @@ public final class MonsterMechanics
 			com.loadoutlab.data.JsonResources.ints(root, "iceDemon", ICE_DEMON);
 			com.loadoutlab.data.JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
 			com.loadoutlab.data.JsonResources.ints(root, "salarin", SALARIN);
+			com.loadoutlab.data.JsonResources.ints(root, "nibblers", NIBBLERS);
 		}
 		catch (Exception ex)
 		{
@@ -238,6 +240,13 @@ public final class MonsterMechanics
 	public static int meleeReachPenaltyTicks(MonsterStats monster)
 	{
 		return isRespiratorySystem(monster) ? 5 : 0;
+	}
+
+	/** The Inferno's nibblers - the mob whose whole role is being
+	 * barraged: three spawn per wave and one AoE cast clears the set. */
+	public static boolean isNibbler(MonsterStats monster)
+	{
+		return monster != null && NIBBLERS.contains(monster.getId());
 	}
 
 	/** Salarin the twisted - strike-spells-only, flat damage. */
