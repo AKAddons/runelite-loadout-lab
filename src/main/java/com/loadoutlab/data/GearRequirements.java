@@ -7,11 +7,14 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.Getter;
+
 public final class GearRequirements
 {
 	public static final GearRequirements NONE = new GearRequirements(Collections.emptyMap(), Collections.emptySet());
 
 	private final Map<String, Integer> skills;
+	@Getter
 	private final Set<String> quests;
 
 	public GearRequirements(Map<String, Integer> skills, Set<String> quests)
@@ -25,10 +28,6 @@ public final class GearRequirements
 		return skills;
 	}
 
-	public Set<String> getQuests()
-	{
-		return quests;
-	}
 
 	public boolean isEmpty()
 	{

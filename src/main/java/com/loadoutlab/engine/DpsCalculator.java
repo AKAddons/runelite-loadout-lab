@@ -7,18 +7,20 @@ import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.SpellStats;
 import java.util.Locale;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 public final class DpsCalculator
 {
-	private static final String[] MELEE_TYPES = {"stab", "slash", "crush"};
-
 	/** Conditional bonuses counted during the CURRENT calculate() call -
 	 * source -> exact parts ("+16.7% accuracy"), both insertion-ordered,
 	 * attached to the result for user assurance (single-threaded use,
 	 * matching how the optimizer drives this class). Melee tries several
 	 * stance variants per calculate; the part set dedupes the re-adds. */
-	private final java.util.LinkedHashMap<String, java.util.LinkedHashSet<String>> counted =
-		new java.util.LinkedHashMap<>();
+	private final LinkedHashMap<String, LinkedHashSet<String>> counted =
+		new LinkedHashMap<>();
 	/** The beam turns collection off: only results that can reach the panel
 	 * (final rescore, fill, spec) need the bonus list, and the map churn +
 	 * per-result copy is pure waste across beam trials. */
@@ -35,15 +37,15 @@ public final class DpsCalculator
 	{
 		if (collectCounted)
 		{
-			counted.computeIfAbsent(source, s -> new java.util.LinkedHashSet<>()).add(part);
+			counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part);
 		}
 	}
 
 	/** The assurance lines: "source: +X% accuracy, +Y% damage" per source. */
-	private java.util.List<String> countedLines()
+	private List<String> countedLines()
 	{
-		java.util.List<String> lines = new java.util.ArrayList<>(counted.size());
-		for (java.util.Map.Entry<String, java.util.LinkedHashSet<String>> entry : counted.entrySet())
+		List<String> lines = new ArrayList<>(counted.size());
+		for (Map.Entry<String, LinkedHashSet<String>> entry : counted.entrySet())
 		{
 			lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
 		}
@@ -160,6 +162,16 @@ public final class DpsCalculator
 		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
 		double expected = RollMath.expectedHit(accuracy, minHit, maxHit);
+		if (isDualMacuahuitl(loadout))
+		{
+			// Two chained hits (official calc model): the first rolls half
+			// the max; the second (the remainder) only rolls when the
+			// first lands, with its own accuracy roll.
+			int firstMax = maxHit / 2;
+			int secondMax = maxHit - firstMax;
+			expected = RollMath.normalExpectedHit(accuracy, firstMax)
+				+ accuracy * RollMath.normalExpectedHit(accuracy, secondMax);
+		}
 		if (isScythe(loadout))
 		{
 			if (request.getMonster().getSize() >= 2)
@@ -172,8 +184,19 @@ public final class DpsCalculator
 			}
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
+		double effectiveSpeed = speed;
+		if (isWearingBloodMoonSet(loadout))
+		{
+			// Bloodrager (wiki): each successful macuahuitl hit has a 1/3
+			// chance to make the NEXT attack come one tick earlier; with
+			// the chained hits that is acc/3 + acc^2 * 2/9 per attack
+			// (matches the official calc's expected attack speed).
+			double proc = accuracy / 3.0 + accuracy * accuracy * 2.0 / 9.0;
+			counted("bloodrager set", String.format("%.2f ticks faster on average", proc));
+			effectiveSpeed = speed - proc;
+		}
 		String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
-		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
+		return new DpsResult(loadout, expected / (effectiveSpeed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout)
@@ -201,8 +224,24 @@ public final class DpsCalculator
 		}
 
 		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getRanged());
+		boolean atlatl = isEclipseAtlatl(loadout);
+		if (atlatl)
+		{
+			// Official calc: the atlatl swaps the DAMAGE side to melee -
+			// Strength level (ranged prayer factors and void still apply)
+			// and the worn MELEE strength bonuses - while accuracy stays
+			// pure ranged.
+			effectiveDamage = RollMath.effectiveLevel(levels.getStrength(),
+				prayers.getRangedStrength(), stanceBonus);
+			if (isWearingRangedVoid(loadout))
+			{
+				effectiveDamage = (int) Math.floor(effectiveDamage
+					* (isWearingEliteVoid(loadout) ? 1.125 : 1.10));
+			}
+		}
 		int maxHit = RollMath.maxHitFromEffective(effectiveDamage,
-			effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
+			atlatl ? loadout.getBonuses().getStrength()
+				: effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
@@ -211,6 +250,16 @@ public final class DpsCalculator
 		long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (isWearingEclipseMoonSet(loadout)
+			&& !request.getMonster().hasAttribute("burn_immune"))
+		{
+			// Eclipse (wiki): each successful hit has a 20% chance to apply
+			// a 10-damage burn - "roughly 2 burn damage per successful hit"
+			// sustained (their own average; the 5-stack cap and target
+			// death truncate a little in practice).
+			counted("eclipse set", "~2 burn damage per landed hit");
+			expected += accuracy * 2.0;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.RANGED);
 		if (rapid)
 		{
@@ -225,16 +274,28 @@ public final class DpsCalculator
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
 	}
 
+	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
+	 * only (wiki excludes Strike and Surge explicitly). */
+	private static boolean twinflameDoubles(SpellStats spell)
+	{
+		if (spell.getElement() == null || spell.getElement().isEmpty())
+		{
+			return false;
+		}
+		String name = spell.getName().toLowerCase(Locale.ROOT);
+		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
+	}
+
 	private DpsResult calculateMagic(OptimizationRequest request, Loadout loadout)
 	{
 		OptimizationRequest effectiveRequest = isPoweredStaff(loadout) && request.getSpell() != null ? request.withSpell(null) : request;
 		PlayerLevels levels = effectiveRequest.getLevels();
 		PrayerBonuses prayers = effectiveRequest.getPrayers();
-		// Two-step prayer floors (Augury then Mystic Vigour's 1.18 accuracy),
-		// +2 accurate stance, +9 - matches the official calc's effective level.
-		int effectiveAccuracy = (int) Math.floor(Math.floor(levels.getMagic() * prayers.getMagicAccuracy())
-			* prayers.getMagicAccuracySecondary()) + 2 + 9;
-		if (isWearingMagicVoid(loadout))
+		// Prayer floor, +2 accurate stance, +9 - matches the official
+		// calc's effective level.
+		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 2 + 9;
+		boolean magicVoid = isWearingMagicVoid(loadout);
+		if (magicVoid)
 		{
 			counted("void set", "+45% accuracy");
 			effectiveAccuracy = (int) Math.floor(effectiveAccuracy * 1.45);
@@ -251,13 +312,44 @@ public final class DpsCalculator
 		int maxHit = magicMaxHit(effectiveRequest, loadout);
 		attackRoll = applyMagicAccuracyBonuses(effectiveRequest, loadout, attackRoll);
 		maxHit = applyMagicDamageBonuses(effectiveRequest, loadout, maxHit);
+		if (magicVoid && isWearingEliteVoid(loadout))
+		{
+			// Elite magic void: +2.5% magic damage (was missing - the set
+			// only got its accuracy; wiki-standard values).
+			counted("void set", "+2.5% damage");
+			maxHit = (int) Math.floor(maxHit * 1.025);
+		}
+		// Twinflame staff (wiki, verified 2026-07-18): +10% accuracy and
+		// damage on standard-spellbook spells, and Bolt/Blast/Wave
+		// elementals fire a SECOND hit at 40% of the first (no extra
+		// runes) - Strike and Surge spells do not double.
+		SpellStats twinflameSpell = effectiveRequest.getSpell();
+		boolean twinflame = wearing(loadout, "twinflame") && twinflameSpell != null
+			&& "standard".equalsIgnoreCase(twinflameSpell.getSpellbook());
+		if (twinflame)
+		{
+			counted("twinflame staff", "+10% accuracy and damage on standard spells");
+			attackRoll = (long) Math.floor(attackRoll * 1.10);
+			maxHit = (int) Math.floor(maxHit * 1.10);
+		}
 		maxHit = applyFlatArmour(effectiveRequest, maxHit);
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		if (twinflame && twinflameDoubles(twinflameSpell))
+		{
+			counted("twinflame staff", "second hit at 40% (Bolt/Blast/Wave)");
+			expected *= 1.4;
+		}
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
+		double frostweaver = frostweaverBonus(effectiveRequest, loadout);
+		if (frostweaver > 0)
+		{
+			counted("frostweaver set", "chance of a free spear hit per cast");
+			expected += frostweaver;
+		}
 		String poweredName = spellName.isEmpty() && isPoweredStaff(loadout) && loadout.getWeapon() != null ? loadout.getWeapon().getName() : "";
 		String attackType = spellName.isEmpty() ? poweredName.isEmpty() ? "magic" : "magic: " + poweredName : "magic: " + spellName;
 		return new DpsResult(loadout, expected / (speed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll, loadout.getCost(), spellName);
@@ -442,7 +534,10 @@ public final class DpsCalculator
 			// speed (upstream billed autocasts at the wand's 4 ticks - a
 			// 25% dps overstatement). Harmonised nightmare staff: 4 ticks
 			// on standard spells.
-			return name(weapon).contains("harmonised") ? 4 : 5;
+			// Twinflame casts at 6 ticks (wiki: "attack and cast speed of
+			// 6") - its damage bonuses more than pay the tick back.
+			return name(weapon).contains("harmonised") ? 4
+				: name(weapon).contains("twinflame") ? 6 : 5;
 		}
 		return Math.max(1, weapon.getSpeed());
 	}
@@ -473,6 +568,13 @@ public final class DpsCalculator
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% accuracy");
+			roll = multiply(roll, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Named WITHOUT a space, unlike "salve amulet (e)" - a contains
+			// match on the (e) string misses it and demotes it a tier.
+			counted("salve amulet(ei)", "+20% accuracy");
 			roll = multiply(roll, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
@@ -544,9 +646,21 @@ public final class DpsCalculator
 			counted("golembane weapon", "+15% damage");
 			maxHit = multiply(maxHit, 23, 20);
 		}
+		if (isLeafy(request) && wearing(loadout, "leaf-bladed battleaxe"))
+		{
+			// Damage only (accuracy untouched); stacks with the slayer helm.
+			counted("leaf-bladed battleaxe", "+17.5% damage vs leafy");
+			maxHit = multiply(maxHit, 47, 40);
+		}
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Spaceless name - see the accuracy chain note.
+			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
@@ -700,9 +814,27 @@ public final class DpsCalculator
 			counted("salve amulet(ei)", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
 		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet (e)"))
+		{
+			// The atlatl's melee-side damage accepts the UNIMBUED melee
+			// salve variants (official calc scalesWithStr branches).
+			counted("salve amulet (e)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
 			counted("salve amulet(i)", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet"))
+		{
+			counted("salve amulet", "+16.7% damage");
+			maxHit = multiply(maxHit, 7, 6);
+		}
+		else if (isSlayerTaskEligible(request) && isEclipseAtlatl(loadout)
+			&& wearing(loadout, "black mask") && imbuedSlayerHead(loadout) == null)
+		{
+			counted("black mask", "+16.7% damage");
 			maxHit = multiply(maxHit, 7, 6);
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
@@ -738,6 +870,12 @@ public final class DpsCalculator
 
 	private long applyMagicAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll)
 	{
+		// The elemental-weakness bonus adds severity% OF THIS BASE ROLL
+		// after every conditional multiplier (official-verified 2026-07-23:
+		// multiplying the boosted roll instead over-credited an Iron dragon
+		// Earth Surge by ~1.4% dps - field cross-check via the Wiki calc
+		// button, its first catch).
+		long baseRoll = roll;
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% accuracy");
@@ -772,8 +910,8 @@ public final class DpsCalculator
 		if (request.getSpell() != null && request.getSpell().getElement().equals(request.getMonster().getWeaknessElement()))
 		{
 			int severity = request.getMonster().getWeaknessSeverity();
-			counted("elemental weakness", "+" + severity + "% accuracy");
-			roll = multiply(roll, 100 + severity, 100);
+			counted("elemental weakness", "+" + severity + "% of base accuracy");
+			roll += multiply(baseRoll, severity, 100);
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
@@ -801,6 +939,18 @@ public final class DpsCalculator
 		{
 			counted("amulet of avarice", "+20% damage");
 			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// The magic damage path lacked a salve branch entirely (the
+			// accuracy path had one) - wiki: (ei) +20%, (i) +15% magic damage.
+			counted("salve amulet(ei)", "+20% damage");
+			maxHit = multiply(maxHit, 6, 5);
+		}
+		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
+		{
+			counted("salve amulet(i)", "+15% damage");
+			maxHit = multiply(maxHit, 23, 20);
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
@@ -854,12 +1004,13 @@ public final class DpsCalculator
 	 * Wilderness weapon passive: +50% accuracy AND damage against monsters
 	 * in the Wilderness, CHARGED version only (wiki calc BaseCalc
 	 * .isRevWeaponBuffApplicable, applied after the avarice/salve/slayer
-	 * chain). Fighting a monster on the wilderness list is our "in the
-	 * Wilderness" signal.
+	 * chain). Keyed on the REQUEST's in-Wilderness flag - name membership
+	 * alone buffed Catacombs hellhounds and Taverley dungeon staples
+	 * (audit A3.1); wilderness-exclusive monsters default the flag on.
 	 */
 	static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons)
 	{
-		if (!com.loadoutlab.data.WildernessMonsters.isWilderness(request.getMonster()))
+		if (!request.isInWilderness())
 		{
 			return false;
 		}
@@ -963,6 +1114,11 @@ public final class DpsCalculator
 		return request.getMonster().hasAttribute("golem");
 	}
 
+	private static boolean isLeafy(OptimizationRequest request)
+	{
+		return request.getMonster().hasAttribute("leafy");
+	}
+
 	private static boolean isSlayerTaskEligible(OptimizationRequest request)
 	{
 		return request.isOnSlayerTask() && request.getMonster().isSlayerMonster();
@@ -991,6 +1147,91 @@ public final class DpsCalculator
 	private static boolean isScythe(Loadout loadout)
 	{
 		return wearing(loadout, "scythe of vitur");
+	}
+
+	private static boolean isDualMacuahuitl(Loadout loadout)
+	{
+		return wearing(loadout, "dual macuahuitl");
+	}
+
+	/** Bloodrager: all three blood moon pieces + the dual macuahuitl. The
+	 * wiki confirms the effect activates even on broken pieces, and every
+	 * New/Used/Broken variant shares the clean item name. */
+	private static boolean isWearingBloodMoonSet(Loadout loadout)
+	{
+		return isDualMacuahuitl(loadout)
+			&& wearing(loadout, "blood moon helm")
+			&& wearing(loadout, "blood moon chestplate")
+			&& wearing(loadout, "blood moon tassets");
+	}
+
+	private static boolean isEclipseAtlatl(Loadout loadout)
+	{
+		return wearing(loadout, "eclipse atlatl");
+	}
+
+	/** Eclipse: all three eclipse moon pieces + the atlatl (broken counts,
+	 * same as the other moon sets). */
+	private static boolean isWearingEclipseMoonSet(Loadout loadout)
+	{
+		return isEclipseAtlatl(loadout)
+			&& wearing(loadout, "eclipse moon helm")
+			&& wearing(loadout, "eclipse moon chestplate")
+			&& wearing(loadout, "eclipse moon tassets");
+	}
+
+	/** Frostweaver: all three blue moon pieces + the spear. */
+	private static boolean isWearingBlueMoonSet(Loadout loadout)
+	{
+		return wearing(loadout, "blue moon spear")
+			&& wearing(loadout, "blue moon helm")
+			&& wearing(loadout, "blue moon chestplate")
+			&& wearing(loadout, "blue moon tassets");
+	}
+
+	/**
+	 * Frostweaver (wiki): after casting a spell that binds, freezes or
+	 * roots, the spear has a chance to land an instant melee attack - 20%
+	 * for Standard-book binds and Ancient ice spells, 50% for Arceuus
+	 * grasps, "even if it does not bind a target". Expected bonus damage
+	 * per cast = chance x the spear's plain melee expected hit (stab, no
+	 * melee prayer - you are on a magic prayer while casting).
+	 */
+	private double frostweaverBonus(OptimizationRequest request, Loadout loadout)
+	{
+		com.loadoutlab.data.SpellStats spell = request.getSpell();
+		if (spell == null || !isWearingBlueMoonSet(loadout))
+		{
+			return 0;
+		}
+		String spellName = spell.getName();
+		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(Locale.ROOT);
+		double chance;
+		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
+		{
+			chance = 0.5;
+		}
+		else if ("ancient".equals(book) && "Ice".equalsIgnoreCase(spell.getNameFirstWord()))
+		{
+			chance = 0.2;
+		}
+		else if ("standard".equals(book) && ("Bind".equalsIgnoreCase(spellName)
+			|| "Snare".equalsIgnoreCase(spellName) || "Entangle".equalsIgnoreCase(spellName)))
+		{
+			chance = 0.2;
+		}
+		else
+		{
+			return 0;
+		}
+		PlayerLevels levels = request.getLevels();
+		int effAttack = RollMath.effectiveLevel(levels.getAttack(), 1.0, 0);
+		long meleeRoll = RollMath.attackRoll(effAttack, loadout.getOffensive().getAttackBonus("stab"));
+		int effStrength = RollMath.effectiveLevel(levels.getStrength(), 1.0, 0);
+		int meleeMax = RollMath.maxHitFromEffective(effStrength, loadout.getBonuses().getStrength());
+		long defenceRoll = npcDefenceRoll(request.getMonster(), "stab", loadout.getWeapon());
+		double meleeAccuracy = RollMath.normalAccuracy(meleeRoll, defenceRoll);
+		return chance * RollMath.normalExpectedHit(meleeAccuracy, meleeMax);
 	}
 
 	private static boolean isCrystalBow(Loadout loadout)

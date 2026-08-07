@@ -1,0 +1,536 @@
+[
+ {
+  "prefixes": [
+   "dragon dagger"
+  ],
+  "name": "Dragon dagger",
+  "style": "MELEE",
+  "kind": "DOUBLE_INDEPENDENT",
+  "cost": 25,
+  "accuracy": 1.15,
+  "damage": 1.15,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "abyssal dagger"
+  ],
+  "name": "Abyssal dagger",
+  "style": "MELEE",
+  "kind": "LINKED_DOUBLE",
+  "cost": 25,
+  "accuracy": 1.25,
+  "damage": 0.85,
+  "note": "second hit shares the first's accuracy roll",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon claws"
+  ],
+  "name": "Dragon claws",
+  "style": "MELEE",
+  "kind": "CLAWS",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "voidwaker"
+  ],
+  "name": "Voidwaker",
+  "style": "MELEE",
+  "kind": "VOIDWAKER",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "guaranteed hit",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "armadyl godsword"
+  ],
+  "name": "Armadyl godsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.375,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "bandos godsword"
+  ],
+  "name": "Bandos godsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.21,
+  "note": "drains combat stats by damage dealt",
+  "drainFraction": 0.0,
+  "drainsByDamage": true
+ },
+ {
+  "prefixes": [
+   "saradomin godsword"
+  ],
+  "name": "Saradomin godsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.1,
+  "note": "heals HP 50% / Prayer 25% of damage",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "ancient godsword"
+  ],
+  "name": "Ancient godsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.1,
+  "note": "plus 25 delayed blood-sacrifice damage",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon warhammer"
+  ],
+  "name": "Dragon warhammer",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 1.5,
+  "note": "lowers Defence 30% on a damaging hit",
+  "drainFraction": 0.3,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "elder maul"
+  ],
+  "name": "Elder maul",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 1.25,
+  "damage": 1.0,
+  "note": "lowers Defence 35% on a damaging hit",
+  "drainFraction": 0.35,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon mace"
+  ],
+  "name": "Dragon mace",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 25,
+  "accuracy": 1.25,
+  "damage": 1.5,
+  "note": "Shatter: rolls against the target's crush defence",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "granite maul (or"
+  ],
+  "name": "Granite maul",
+  "style": "MELEE",
+  "kind": "EXTRA_ATTACK",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "instant extra attack",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "granite maul"
+  ],
+  "name": "Granite maul",
+  "style": "MELEE",
+  "kind": "EXTRA_ATTACK",
+  "cost": 60,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "instant extra attack",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "crystal halberd",
+   "dragon halberd"
+  ],
+  "name": "Halberd sweep",
+  "style": "MELEE",
+  "kind": "HALBERD_SWEEP",
+  "cost": 30,
+  "accuracy": 1.0,
+  "damage": 1.1,
+  "note": "second hit only vs large (2x2+) monsters",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "sunspear"
+  ],
+  "name": "Sunspear",
+  "style": "MELEE",
+  "kind": "FIXED_FRACTION",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 0.7,
+  "note": "Seeking Lunge: always exactly 70% of max on a hit",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "crimson kisten"
+  ],
+  "name": "Crimson kisten",
+  "style": "MELEE",
+  "kind": "MULTI_ROLL_TIERED",
+  "cost": 50,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "Brutal Swing: four rolls; damage tier scales with hits landed; rolls crush defence",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "burning claws"
+  ],
+  "name": "Burning claws",
+  "style": "MELEE",
+  "kind": "CASCADE_CLAWS",
+  "cost": 30,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "plus a burn (10 per stack) not counted here",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "zamorak godsword"
+  ],
+  "name": "Zamorak godsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.1,
+  "note": "freezes the target for 20 seconds",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "arkan blade"
+  ],
+  "name": "Arkan blade",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 30,
+  "accuracy": 1.5,
+  "damage": 1.5,
+  "note": "plus a 10 damage burn over 24s, not counted here",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "ursine chainmace"
+  ],
+  "name": "Ursine chainmace",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.0,
+  "note": "wilderness weapon; damage-over-time rider not counted",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon sword"
+  ],
+  "name": "Dragon sword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 40,
+  "accuracy": 1.25,
+  "damage": 1.25,
+  "note": "ignores Protect from Melee",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon longsword"
+  ],
+  "name": "Dragon longsword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 25,
+  "accuracy": 1.0,
+  "damage": 1.25,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "saradomin sword"
+  ],
+  "name": "Saradomin sword",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 100,
+  "accuracy": 1.0,
+  "damage": 1.1,
+  "note": "plus 1-16 magic damage rolled separately, not counted",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "bone dagger"
+  ],
+  "name": "Bone dagger",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 75,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "drains Defence by damage dealt",
+  "drainFraction": 0.0,
+  "drainsByDamage": true
+ },
+ {
+  "prefixes": [
+   "dark bow"
+  ],
+  "name": "Dark bow",
+  "style": "RANGED",
+  "kind": "DARK_BOW",
+  "cost": 55,
+  "accuracy": 1.0,
+  "damage": 1.3,
+  "note": "with dragon arrows: +50% damage, min 8 per hit",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "magic shortbow (i)"
+  ],
+  "name": "Magic shortbow (i)",
+  "style": "RANGED",
+  "kind": "MSB_SNAPSHOT",
+  "cost": 50,
+  "accuracy": 1.4285714285714286,
+  "damage": 1.0,
+  "note": "max hit ignores prayers and void",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "magic shortbow"
+  ],
+  "name": "Magic shortbow",
+  "style": "RANGED",
+  "kind": "MSB_SNAPSHOT",
+  "cost": 55,
+  "accuracy": 1.4285714285714286,
+  "damage": 1.0,
+  "note": "max hit ignores prayers and void",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon knife"
+  ],
+  "name": "Dragon knife",
+  "style": "RANGED",
+  "kind": "DOUBLE_INDEPENDENT",
+  "cost": 25,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "toxic blowpipe"
+  ],
+  "name": "Toxic blowpipe",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.5,
+  "note": "heals 50% of damage dealt",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "zaryte crossbow"
+  ],
+  "name": "Zaryte crossbow",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 75,
+  "accuracy": 2.0,
+  "damage": 1.0,
+  "note": "guaranteed bolt proc on hit (proc damage not modeled)",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "armadyl crossbow"
+  ],
+  "name": "Armadyl crossbow",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.0,
+  "note": "doubles enchanted bolt proc chance, not modeled",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "rosewood blowpipe"
+  ],
+  "name": "Rosewood blowpipe",
+  "style": "RANGED",
+  "kind": "DOUBLE_INDEPENDENT",
+  "cost": 25,
+  "accuracy": 0.8,
+  "damage": 1.1,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dragon crossbow"
+  ],
+  "name": "Dragon crossbow",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 60,
+  "accuracy": 1.0,
+  "damage": 1.2,
+  "note": "",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "heavy ballista",
+   "light ballista"
+  ],
+  "name": "Ballista",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 65,
+  "accuracy": 1.25,
+  "damage": 1.25,
+  "note": "fires 2.4s slower than normal",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "dorgeshuun crossbow"
+  ],
+  "name": "Dorgeshuun crossbow",
+  "style": "RANGED",
+  "kind": "SINGLE",
+  "cost": 75,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "drains Defence by damage dealt",
+  "drainFraction": 0.0,
+  "drainsByDamage": true
+ },
+ {
+  "prefixes": [
+   "volatile nightmare staff"
+  ],
+  "name": "Volatile nightmare staff",
+  "style": "MAGIC",
+  "kind": "VOLATILE",
+  "cost": 55,
+  "accuracy": 1.5,
+  "damage": 1.0,
+  "note": "rune-free; damage scales with Magic level",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "accursed sceptre"
+  ],
+  "name": "Accursed sceptre",
+  "style": "MAGIC",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 1.5,
+  "damage": 1.5,
+  "note": "lowers target Defence and Magic 15%",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ },
+ {
+  "prefixes": [
+   "eye of ayak"
+  ],
+  "name": "Eye of ayak",
+  "style": "MAGIC",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 2.0,
+  "damage": 1.3,
+  "note": "drains magic defence bonus by damage dealt, not modeled",
+  "drainFraction": 0,
+  "drainsByDamage": false
+ }
+]

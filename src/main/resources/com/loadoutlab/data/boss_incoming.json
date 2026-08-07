@@ -208,6 +208,18 @@
   ],
   "note": "Wiki: melee 25; normal dragonfire 65 and shock/ice/poison dragonfire 50 vs an unprotected player - uniform across the five attacks; shield/antifire mitigation unmodeled."
  },
+ "kraken": {
+  "attacks": [
+   {
+    "maxHit": 28,
+    "prayable": false,
+    "share": 1.0,
+    "speedTicks": 4,
+    "style": "magic"
+   }
+  ],
+  "note": "Wiki: 'uses typeless Magic, and as such Protect from Magic does not provide any degree of damage reduction' but 'can hit very hard [28] with very poor accuracy' - so it DOES roll magic accuracy (magic defence gear is the mitigation), and prayer does nothing."
+ },
  "kree'arra": {
   "attacks": [
    {
@@ -321,5 +333,42 @@
    }
   ],
   "note": "Wiki: 41 ranged/magic across the serpentine and tanzanite forms (approximate phase mix); magma tail slam (30) is typeless and dodgeable; snakelings and venom unmodeled."
+ },
+ "zulrah|magma": {
+  "attacks": [
+   {
+    "avoidable": true,
+    "maxHit": 30,
+    "prayable": false,
+    "share": 1.0,
+    "style": "typeless"
+   }
+  ],
+  "note": "Wiki: 'red, it uses a typeless attack wherein it swings its tail... can be avoided by moving two tiles away' - the standard play dodges it, so it counts zero (shown in the tooltip at its undodged value); snakelings/venom unmodeled."
+ },
+ "zulrah|serpentine": {
+  "attacks": [
+   {
+    "maxHit": 41,
+    "share": 1.0,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: 'green, it attacks with Ranged' (41); the green 'Jad phase' alternates Ranged and Magic - flick it, unmodeled here; snakelings and venom clouds unmodeled."
+ },
+ "zulrah|tanzanite": {
+  "attacks": [
+   {
+    "maxHit": 41,
+    "share": 0.5,
+    "style": "magic"
+   },
+   {
+    "maxHit": 41,
+    "share": 0.5,
+    "style": "ranged"
+   }
+  ],
+  "note": "Wiki: 'blue, it attacks with Ranged and Magic' (41s, even mix modeled; magic listed first so the tied prayer pick lands on Protect from Magic)."
  }
 }

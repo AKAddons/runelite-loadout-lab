@@ -23,9 +23,13 @@ public class OptimizerServiceTest
 	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception
 	{
 		LoadoutData data = new DataService().load();
-		// General Graardor: 250 defence, 255 hp - a drain pays off for the
-		// whole kill. Against a goblin the dagger's raw burst should win.
+		// General Graardor (250 defence, 255 hp): a drain pays off over the
+		// whole kill, so the warhammer wins. A fire giant (120 defence, 130
+		// hp) dies before a drain earns back its lost hits, so the dagger's
+		// burst wins. A goblin dies in one attack - no spec beats just
+		// attacking, so none is carried (value-over-replacement).
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // whip - main weapon
@@ -35,7 +39,9 @@ public class OptimizerServiceTest
 		try
 		{
 			Assert.assertEquals("Dragon warhammer", specPick(service, graardor, owned));
-			Assert.assertEquals("Dragon dagger", specPick(service, goblin, owned));
+			Assert.assertEquals("Dragon dagger", specPick(service, fireGiant, owned));
+			Assert.assertNull("a one-hit kill is not worth a spec slot",
+				specPick(service, goblin, owned));
 		}
 		finally
 		{
@@ -56,15 +62,15 @@ public class OptimizerServiceTest
 			CountDownLatch fresh = new CountDownLatch(1);
 			java.util.concurrent.atomic.AtomicInteger staleDelivered = new java.util.concurrent.atomic.AtomicInteger();
 			// Stale request (off-task), immediately superseded by the toggle.
-			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, false, "",
-				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> staleDelivered.incrementAndGet());
+				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> staleDelivered.incrementAndGet());
 			// The toggle: same monster, on-task, fired before the stale run ends.
-			service.bestPerStyle(graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, graardor, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 				new OwnedItems(owned, true), owned.hashCode(), false, true, "",
-				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results -> fresh.countDown());
+				java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> fresh.countDown());
 			Assert.assertTrue(fresh.await(120, TimeUnit.SECONDS));
 			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
 			Assert.assertTrue("the stale computation must have been abandoned",
@@ -81,14 +87,17 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
 			{
 				out.set(results);
 				done.countDown();
 			});
 		Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
-		return out.get().get(CombatStyle.MELEE).spec.getDisplayName();
+		OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+		// A spec that adds nothing over just attacking is not carried (the
+		// value-over-replacement model): null means "no spec worth a slot".
+		return melee == null || melee.spec == null ? null : melee.spec.getDisplayName();
 	}
 
 	@Test
@@ -133,12 +142,11 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-			pins, null, results ->
+			false, java.util.Collections.emptySet(), 0, 			pins, null, results ->
 			{
 				out.set(results);
 				done.countDown();
@@ -199,12 +207,11 @@ public class OptimizerServiceTest
 	{
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-		service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			excludedByStyle, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS,
-			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results ->
+			false, false, java.util.Collections.emptySet(), 0, 			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results ->
 			{
 				out.set(results);
 				done.countDown();
@@ -214,10 +221,55 @@ public class OptimizerServiceTest
 	}
 
 	@Test
+	public void crossStyleSpecWeaponsCompeteOnEverySet() throws Exception
+	{
+		// Field request 2026-07-17: "sometimes you want to use magic +
+		// chally" - the spec swap is its own weapon switch, so a MELEE
+		// spec weapon must surface on the MAGIC set when it is the best
+		// special owned. Owned: a trident (the magic set) + a dragon
+		// dagger (melee spec) and nothing else spec-worthy.
+		LoadoutData data = new DataService().load();
+		MonsterStats monster = data.searchMonsters("ankou", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(11907, 1);  // trident of the seas
+		owned.put(1215, 1);   // dragon dagger
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
+				com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+				new OwnedItems(owned, true), 1, false, false, "",
+				java.util.Collections.emptySet(), -1,
+				OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+				false, java.util.Collections.emptySet(), 0,
+								java.util.Collections.emptyMap(), null, results ->
+				{
+					out.set(results);
+					done.countDown();
+				});
+			Assert.assertTrue(done.await(120, TimeUnit.SECONDS));
+			OptimizerService.StyleResult magic = out.get().get(CombatStyle.MAGIC);
+			Assert.assertNotNull(magic);
+			Assert.assertFalse("premise: the trident set exists", magic.owned.isEmpty());
+			Assert.assertNotNull("the melee dagger specs for the magic set", magic.spec);
+			Assert.assertEquals(1215, magic.specWeapon.getId());
+			Assert.assertTrue(magic.specExpectedDamage > 0);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
 	{
 		LoadoutData data = new DataService().load();
-		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
+		// A fire giant, not a goblin: enough HP that a spec earns its slot
+		// (a goblin dies in one hit, so the value model carries no spec).
+		MonsterStats monster = data.searchMonsters("fire giant", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip - the sustained-DPS weapon
 		owned.put(1215, 1);   // dragon dagger - the spec weapon
@@ -226,8 +278,8 @@ public class OptimizerServiceTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, OptimizerService.OptimizeMode.MAX_DPS, results ->
+			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
+				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
 				{
 					out.set(results);
 					done.countDown();
@@ -243,11 +295,19 @@ public class OptimizerServiceTest
 			Assert.assertEquals("Dragon dagger", melee.spec.getDisplayName());
 			Assert.assertEquals(1215, melee.specWeapon.getId());
 			Assert.assertTrue(melee.specExpectedDamage > 0);
+			// The win-over-replacement value is surfaced and positive.
+			Assert.assertTrue("the spec must add positive dps to be carried",
+				melee.specDpsAdded > 0);
 			// The game-best section carries its own spec - the strongest
 			// special attack that exists, regardless of ownership.
 			Assert.assertNotNull(melee.gameSpec);
 			Assert.assertNotNull(melee.gameSpecWeapon);
 			Assert.assertTrue(melee.gameSpecExpectedDamage >= melee.specExpectedDamage);
+			// Both sides of the Yours|BiS toggle carry their own defensive
+			// story - the BiS DTPS is computed vs the BiS armour, not yours.
+			Assert.assertNotNull(melee.incoming);
+			Assert.assertNotNull(melee.gameIncoming);
+			Assert.assertTrue(melee.gameIncoming.unprayedDps > 0);
 		}
 		finally
 		{

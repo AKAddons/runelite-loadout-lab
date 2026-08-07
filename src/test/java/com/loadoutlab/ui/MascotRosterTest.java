@@ -1,0 +1,87 @@
+package com.loadoutlab.ui;
+
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * The mascot roster's selection logic - eligibility windows and weighted
+ * frequency - is pure and easy to get subtly wrong (a wrapped window, an
+ * off-by-a-day season, a weight that no longer matches the intended mix).
+ * These lock the calendar behaviour the pixels can't self-check.
+ */
+class MascotRosterTest
+{
+	private static final LocalDate SUMMER = LocalDate.of(2026, 7, 1);
+	private static final LocalDate SEPTEMBER = LocalDate.of(2026, 9, 1);
+
+	@Test
+	@DisplayName("evergreen moods are eligible every day")
+	void eligibility()
+	{
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.WORKOUT));
+		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.CHEF));
+		assertTrue(MascotRoster.activeOn(SEPTEMBER).contains(MascotRoster.WORKOUT));
+	}
+
+	@Test
+	@DisplayName("each active mood is picked in proportion to its weight")
+	void weightedMix()
+	{
+		int draws = 120_000;
+		for (LocalDate date : new LocalDate[]{SUMMER, SEPTEMBER})
+		{
+			java.util.List<MascotRoster> active = MascotRoster.activeOn(date);
+			int total = active.stream().mapToInt(MascotRoster::weight).sum();
+			Map<Class<?>, Integer> counts = sample(date, draws);
+			for (MascotRoster mood : active)
+			{
+				assertClose(counts.getOrDefault(mood.create().getClass(), 0),
+					draws * mood.weight() / total);
+			}
+		}
+	}
+
+	@Test
+	@DisplayName("a dormant mood is never picked (the chef in October)")
+	void dormantNeverPicked()
+	{
+		Map<Class<?>, Integer> counts = sample(LocalDate.of(2026, 10, 15), 90_000);
+		assertEquals(0, counts.getOrDefault(MascotChef.class, 0),
+			"a dormant mood must never be picked");
+	}
+
+	@Test
+	@DisplayName("the chef cooks every month except October (the benched cauldron's month)")
+	void chefSkipsOctober()
+	{
+		assertFalse(MascotRoster.activeOn(LocalDate.of(2026, 10, 15)).contains(MascotRoster.CHEF),
+			"October stays reserved for the cauldron's return");
+		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 9, 30)).contains(MascotRoster.CHEF));
+		assertTrue(MascotRoster.activeOn(LocalDate.of(2026, 11, 1)).contains(MascotRoster.CHEF));
+	}
+
+	private static Map<Class<?>, Integer> sample(LocalDate date, int draws)
+	{
+		Random rng = new Random(1234);
+		Map<Class<?>, Integer> counts = new HashMap<>();
+		for (int i = 0; i < draws; i++)
+		{
+			Mascot m = MascotRoster.pick(date, rng);
+			counts.merge(m.getClass(), 1, Integer::sum);
+		}
+		return counts;
+	}
+
+	private static void assertClose(int actual, int expected)
+	{
+		double tolerance = expected * 0.05 + 50;
+		assertTrue(Math.abs(actual - expected) <= tolerance,
+			"expected ~" + expected + " but got " + actual);
+	}
+}

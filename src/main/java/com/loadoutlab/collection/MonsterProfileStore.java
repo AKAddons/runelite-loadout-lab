@@ -41,11 +41,18 @@ public class MonsterProfileStore
 		Map<String, Map<String, Integer>> pins;
 		String note;
 		Map<String, Map<Integer, String>> filterItems;
+		/** Per-mob simulated items (id -> add-time name) - counted as
+		 * owned for THIS mob only. */
+		Map<Integer, String> sims;
 		/** Pinned autocast spell name for the magic card ("" / null = auto). */
 		String spell;
 		/** Per-mob exclusions: scope -> item ids the suggestions here must
 		 * never contain (the global exclusion list handles "everywhere"). */
 		Map<String, Set<Integer>> exclusions;
+		/** Per-mob trip-supply overrides: TripSupplies category ->
+		 * mode/option key ("DETECT_BEST", "NONE", "SANFEW_SERUM"...).
+		 * Absent category = the wrench-panel default applies. */
+		Map<String, String> supplies;
 	}
 
 	private final ConfigManager configManager;
@@ -278,6 +285,84 @@ public class MonsterProfileStore
 		return Collections.unmodifiableMap(out);
 	}
 
+	/** Per-mob sims: counted as owned for THIS mob only. */
+	public synchronized Set<Integer> simsFor(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.sims == null || profile.sims.isEmpty())
+		{
+			return Collections.emptySet();
+		}
+		return Collections.unmodifiableSet(new LinkedHashSet<>(profile.sims.keySet()));
+	}
+
+	/** Raw per-mob sims (id -> add-time name), for the manage menu. */
+	public synchronized Map<Integer, String> allSims(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.sims == null || profile.sims.isEmpty())
+		{
+			return Collections.emptyMap();
+		}
+		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.sims));
+	}
+
+	public synchronized void addSim(int monsterId, int itemId, String name)
+	{
+		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		if (profile.sims == null)
+		{
+			profile.sims = new LinkedHashMap<>();
+		}
+		profile.sims.put(itemId, name == null ? ("item " + itemId) : name);
+		save();
+	}
+
+	public synchronized void removeSim(int monsterId, int itemId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile != null && profile.sims != null)
+		{
+			profile.sims.remove(itemId);
+			save();
+		}
+	}
+
+	/** Per-mob trip-supply overrides (category -> mode/option key);
+	 * empty when the wrench-panel defaults apply untouched. */
+	public synchronized Map<String, String> supplies(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		if (profile == null || profile.supplies == null || profile.supplies.isEmpty())
+		{
+			return Collections.emptyMap();
+		}
+		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.supplies));
+	}
+
+	/** Set one category's override; null/empty choice returns the category
+	 * to the wrench-panel default. */
+	public synchronized void setSupply(int monsterId, String category, String choice)
+	{
+		if (choice == null || choice.isEmpty())
+		{
+			Stored existing = profiles.get(monsterId);
+			if (existing != null && existing.supplies != null)
+			{
+				existing.supplies.remove(category);
+				save();
+			}
+			return;
+		}
+		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		if (profile.supplies == null)
+		{
+			profile.supplies = new LinkedHashMap<>();
+		}
+		profile.supplies.put(category, choice);
+		save();
+	}
+
 	public synchronized void exclude(int monsterId, String scope, int itemId)
 	{
 		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
@@ -335,11 +420,17 @@ public class MonsterProfileStore
 			{
 				profile.exclusions.values().removeIf(s -> s == null || s.isEmpty());
 			}
+			// EVERY field participates (field bug 2026-07-18: sims was
+			// missing here, so a sims-only profile was judged empty and the
+			// retainAll below erased the sim in the same call that added it
+			// - "Sim here" appeared to do nothing).
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
 				&& (profile.filterItems == null || profile.filterItems.isEmpty())
-				&& (profile.exclusions == null || profile.exclusions.isEmpty());
+				&& (profile.exclusions == null || profile.exclusions.isEmpty())
+				&& (profile.sims == null || profile.sims.isEmpty())
+				&& (profile.supplies == null || profile.supplies.isEmpty());
 			if (!empty)
 			{
 				out.put(entry.getKey(), profile);

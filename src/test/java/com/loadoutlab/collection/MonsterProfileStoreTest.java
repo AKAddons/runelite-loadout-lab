@@ -171,4 +171,60 @@ class MonsterProfileStoreTest
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
 		assertEquals("", fresh.noteFor(415));
 	}
+
+	@Test
+	@DisplayName("a sims-only profile survives the save (the Sim here field bug)")
+	void simsOnlyProfilePersists()
+	{
+		// Field bug 2026-07-18: save()'s empty-profile prune did not count
+		// sims, so a profile holding ONLY a sim was erased by the very call
+		// that added it - "Sim here" appeared to do nothing.
+		store.addSim(239, 22324, "Ghrazi rapier");
+		assertEquals(Map.of(22324, "Ghrazi rapier"), store.allSims(239));
+		assertEquals(Set.of(22324), store.simsFor(239));
+
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals(Map.of(22324, "Ghrazi rapier"), reloaded.allSims(239),
+			"the sim survives a config round-trip");
+
+		store.removeSim(239, 22324);
+		assertTrue(store.allSims(239).isEmpty());
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", "monsterProfiles"),
+			"an emptied sims profile prunes back to nothing");
+	}
+
+	@Test
+	@DisplayName("supply overrides persist per mob and clear back to the global default")
+	void supplyOverridesPersistAndClear()
+	{
+		store.setSupply(8781, "prayerRestore", "SANFEW_SERUM");
+		store.setSupply(8781, "food", "NONE");
+		assertEquals(Map.of("prayerRestore", "SANFEW_SERUM", "food", "NONE"),
+			store.supplies(8781));
+		assertTrue(store.supplies(9999).isEmpty(), "another mob keeps the defaults");
+
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals("SANFEW_SERUM", reloaded.supplies(8781).get("prayerRestore"),
+			"overrides survive a config round-trip");
+
+		store.setSupply(8781, "prayerRestore", null);
+		assertEquals(Map.of("food", "NONE"), store.supplies(8781),
+			"a null choice returns the category to the global default");
+	}
+
+	@Test
+	@DisplayName("a supplies-only profile survives the save (the every-field prune rule)")
+	void suppliesOnlyProfilePersists()
+	{
+		// The Sim-here field bug's lesson: every Stored field must join
+		// save()'s empty check, or a supplies-only profile would be erased
+		// by the very call that set it.
+		store.setSupply(8781, "antivenom", "ANTIVENOM_PLUS");
+		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		assertEquals(Map.of("antivenom", "ANTIVENOM_PLUS"), reloaded.supplies(8781));
+
+		store.setSupply(8781, "antivenom", "");
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", "monsterProfiles"),
+			"clearing the only override prunes the profile away");
+	}
 }

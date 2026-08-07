@@ -9,22 +9,36 @@ import java.util.List;
  * the styles it attacks with (wiki infobox strings such as "Crush",
  * "Ranged", "Magic", "Typeless", "Dragonfire").
  */
+import lombok.Getter;
+
 public final class MonsterOffence
 {
 	public static final MonsterOffence NONE = new MonsterOffence(
 		1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, Collections.emptyList());
 
+	@Getter
 	private final int attackLevel;
+	@Getter
 	private final int strengthLevel;
+	@Getter
 	private final int rangedLevel;
+	@Getter
 	private final int magicLevel;
+	@Getter
 	private final int attackBonus;
+	@Getter
 	private final int strengthBonus;
+	@Getter
 	private final int rangedBonus;
+	@Getter
 	private final int rangedStrengthBonus;
+	@Getter
 	private final int magicBonus;
+	@Getter
 	private final int magicStrengthBonus;
+	@Getter
 	private final int speedTicks;
+	@Getter
 	private final List<String> styles;
 
 	public MonsterOffence(
@@ -56,63 +70,15 @@ public final class MonsterOffence
 			: Collections.unmodifiableList(styles);
 	}
 
-	public int getAttackLevel()
-	{
-		return attackLevel;
-	}
 
-	public int getStrengthLevel()
-	{
-		return strengthLevel;
-	}
 
-	public int getRangedLevel()
-	{
-		return rangedLevel;
-	}
 
-	public int getMagicLevel()
-	{
-		return magicLevel;
-	}
 
-	public int getAttackBonus()
-	{
-		return attackBonus;
-	}
 
-	public int getStrengthBonus()
-	{
-		return strengthBonus;
-	}
 
-	public int getRangedBonus()
-	{
-		return rangedBonus;
-	}
 
-	public int getRangedStrengthBonus()
-	{
-		return rangedStrengthBonus;
-	}
 
-	public int getMagicBonus()
-	{
-		return magicBonus;
-	}
 
-	public int getMagicStrengthBonus()
-	{
-		return magicStrengthBonus;
-	}
 
-	public int getSpeedTicks()
-	{
-		return speedTicks;
-	}
 
-	public List<String> getStyles()
-	{
-		return styles;
-	}
 }

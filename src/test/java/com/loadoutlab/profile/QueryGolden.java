@@ -22,6 +22,21 @@ public final class QueryGolden
 	private static final String[] MODES = {"max_dps", "balanced"};
 	private static final int[] RISKS = {-1, 3};
 
+	/** The BROAD sweep: one config each, but across the monsters that
+	 * trigger the engine's per-monster and per-item conditionals - undead
+	 * (salve), dragonfire, slayer-only, golembane, vampyre, demonbane,
+	 * wilderness/revenant, raid-supplied boosts, and the multi-form
+	 * bosses. Every name here is one an existing test already resolves,
+	 * so a miss means the corpus moved, not that the name was invented.
+	 * This is the net under any change to DpsCalculator's conditionals. */
+	private static final String[] BROAD = {
+		"ankou", "aberrant spectre", "vorkath", "king black dragon", "green dragon",
+		"revenant demon", "revenant dragon", "alchemical hydra", "tormented demon",
+		"gargoyle", "dust devil", "kurask", "rockslug", "grey golem", "scurrius",
+		"corporeal beast", "araxxor", "tekton", "great olm", "zebak", "kree'arra",
+		"kril", "dusk", "dawn", "abomination", "hellhound", "goblin",
+	};
+
 	private QueryGolden()
 	{
 	}
@@ -69,6 +84,30 @@ public final class QueryGolden
 						System.out.println(HeadlessQuery.run(query.toArray(new String[0])));
 					}
 				}
+			}
+		}
+
+		// The BROAD conditional sweep: both profiles, max dps, risk off.
+		for (String profileKind : new String[]{"maxed", "fixture"})
+		{
+			for (String monster : BROAD)
+			{
+				List<String> query = new ArrayList<>();
+				for (String word : monster.split(" "))
+				{
+					query.add(word);
+				}
+				if ("maxed".equals(profileKind))
+				{
+					query.add("--maxed");
+				}
+				else
+				{
+					query.add("--profile");
+					query.add(fixturePath.toString());
+				}
+				System.out.println("##### broad | " + profileKind + " | " + monster);
+				System.out.println(HeadlessQuery.run(query.toArray(new String[0])));
 			}
 		}
 	}

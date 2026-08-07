@@ -20,7 +20,12 @@ public final class SlayerLockedMonsters
 		"alchemical hydra",
 		"araxxor",
 		"dusk",
-		"dawn");
+		"dawn",
+		// Wiki-verified 2026-07-18: off-task kills exist only via an elite
+		// clue step, and the boss stops respawning once the task ends -
+		// task-locked for all practical purposes. The quest copy is a
+		// different row name ("(Troubled Tortugans)") and stays free.
+		"shellbane gryphon");
 
 	private SlayerLockedMonsters()
 	{

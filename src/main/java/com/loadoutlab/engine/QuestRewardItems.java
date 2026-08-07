@@ -2,11 +2,7 @@ package com.loadoutlab.engine;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.loadoutlab.data.GearItem;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -37,20 +33,13 @@ public final class QuestRewardItems
 
 	static
 	{
-		try (InputStream stream = QuestRewardItems.class.getResourceAsStream(RESOURCE);
-			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
+		// Fail-loud on purpose: a silently empty table would quietly drop
+		// every quest reward out of the obtainable-gear pool.
+		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
+		for (Map.Entry<String, JsonElement> entry : root.entrySet())
 		{
-			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			for (Map.Entry<String, JsonElement> entry : root.entrySet())
-			{
-				JsonObject row = entry.getValue().getAsJsonObject();
-				QUEST_BY_NAME.put(entry.getKey().toLowerCase(Locale.ROOT),
-					row.get("quest").getAsString());
-			}
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("Could not load " + RESOURCE, ex);
+			QUEST_BY_NAME.put(entry.getKey().toLowerCase(Locale.ROOT),
+				entry.getValue().getAsJsonObject().get("quest").getAsString());
 		}
 	}
 

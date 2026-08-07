@@ -4,25 +4,46 @@ package com.loadoutlab.data;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
+
+import lombok.Getter;
 
 public final class MonsterStats
 {
+	@Getter
 	private final int id;
+	@Getter
 	private final String name;
+	@Getter
 	private final String version;
+	@Getter
 	private final int combatLevel;
+	@Getter
 	private final int hitpoints;
+	@Getter
 	private final int size;
+	@Getter
 	private final int defence;
+	@Getter
 	private final int magic;
+	@Getter
 	private final int offensiveMagic;
+	@Getter
 	private final MonsterDefences defensive;
+	@Getter
 	private final MonsterOffence offence;
+	@Getter
 	private final List<String> attributes;
-	private final java.util.Set<String> attributesLower;
+	private final Set<String> attributesLower;
+	@Getter
 	private final boolean slayerMonster;
+	@Getter
 	private final String weaknessElement;
+	@Getter
 	private final int weaknessSeverity;
+	@Getter
 	private final String nameLower;
 	private final boolean wilderness;
 	private final boolean revenant;
@@ -76,7 +97,7 @@ public final class MonsterStats
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
-		java.util.HashSet<String> lower = new java.util.HashSet<>();
+		HashSet<String> lower = new HashSet<>();
 		for (String value : this.attributes)
 		{
 			if (value != null)
@@ -92,11 +113,43 @@ public final class MonsterStats
 		this.revenant = this.nameLower.startsWith("revenant");
 	}
 
-	/** Lowercased monster name, cached (per-trial engine gates). */
-	public String getNameLower()
+	/**
+	 * A synthetic per-phase variant (M-3 groups): the same stat sheet under
+	 * a new id + version label, with an immunity attribute the engine
+	 * honors ("immune_melee"...). Tormented demons' shield rotation is the
+	 * flagship: one variant per shielded style, so a roster shows the best
+	 * set for each phase. The NAME is preserved - name-keyed rules (the
+	 * TD damage reduction, boss overrides) keep applying.
+	 */
+	/** Same sheet under a different version label (load-time
+	 * normalization of quest/post-quest noise). */
+	public MonsterStats withVersion(String newVersion)
 	{
-		return nameLower;
+		return new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, attributes,
+			slayerMonster, weaknessElement, weaknessSeverity);
 	}
+
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
+	{
+		return immuneVariant(syntheticId, versionLabel,
+			Collections.singletonList(immuneAttribute));
+	}
+
+	/** Multi-immunity variant: a phase can lock out SEVERAL styles at
+	 * once (Kalphite Queen's first form prays off magic AND ranged; a
+	 * Nylocas form takes only its own style). */
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel,
+		List<String> immuneAttributes)
+	{
+		List<String> extended = new ArrayList<>(attributes);
+		extended.addAll(immuneAttributes);
+		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, extended,
+			slayerMonster, weaknessElement, weaknessSeverity);
+	}
+
+	/** Lowercased monster name, cached (per-trial engine gates). */
 
 	/** Fought in the Wilderness (see WildernessMonsters) - cached, the
 	 * wilderness-weapon gate asks several times per DPS trial. */
@@ -154,78 +207,30 @@ public final class MonsterStats
 		return sb.toString();
 	}
 
-	public int getId()
+
+	/** Synthetic phase-variant ids live above this base (M-3 groups):
+	 * base + realId * 10 + styleOrdinal. */
+	public static final int SYNTHETIC_ID_BASE = 9_000_000;
+
+	/** The id user-profile data (pins, exclusions, notes) attaches to -
+	 * a synthetic phase variant maps back to its real monster, so a
+	 * profile set on the plain mob follows it into groups. */
+	public int profileId()
 	{
-		return id;
+		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
 	}
 
-	public String getName()
-	{
-		return name;
-	}
 
-	public String getVersion()
-	{
-		return version;
-	}
 
-	public int getCombatLevel()
-	{
-		return combatLevel;
-	}
 
-	public int getHitpoints()
-	{
-		return hitpoints;
-	}
 
-	public int getSize()
-	{
-		return size;
-	}
 
-	public int getDefence()
-	{
-		return defence;
-	}
 
-	public int getMagic()
-	{
-		return magic;
-	}
 
-	public int getOffensiveMagic()
-	{
-		return offensiveMagic;
-	}
 
-	public MonsterDefences getDefensive()
-	{
-		return defensive;
-	}
 
-	public MonsterOffence getOffence()
-	{
-		return offence;
-	}
 
-	public List<String> getAttributes()
-	{
-		return attributes;
-	}
 
-	public boolean isSlayerMonster()
-	{
-		return slayerMonster;
-	}
 
-	public String getWeaknessElement()
-	{
-		return weaknessElement;
-	}
 
-	public int getWeaknessSeverity()
-	{
-		return weaknessSeverity;
-	}
 }

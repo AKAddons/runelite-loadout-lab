@@ -1,29 +1,31 @@
 package com.loadoutlab.ui;
 
 import java.awt.BasicStroke;
-import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.JComponent;
-import javax.swing.Timer;
 
 import static com.loadoutlab.ui.MascotArt.JUICE;
 import static com.loadoutlab.ui.MascotArt.LIMB;
 import static com.loadoutlab.ui.MascotArt.SCALE;
 
 /**
- * The bottle mascot, working out while the optimizer thinks. Its own
- * chunky L-legs (the LL in Loadout Lab) do the bouncing: feet planted,
- * thigh segments squash and stretch at the knee as the body bobs, and
- * little arms pump up and down. Sprite slices and the leg renderer live
- * in MascotArt (shared with MascotChef). Nearest-neighbour scaling keeps
- * the pixel art crisp; the timer only runs while showing.
+ * The bottle mascot, working out - dancing, really - while the optimizer
+ * thinks, under a disco ball off in the upper corner. Its own chunky L-legs
+ * (the LL in Loadout Lab) do the bouncing: feet planted, thigh segments
+ * squash and stretch at the knee as the body bobs, little arms pump and
+ * snap. Sprite slices and the leg renderer live in MascotArt (shared with
+ * MascotChef). Unlike the deterministic moods it keeps a bit of state (the
+ * juice slosh spring), reset in onStart.
  */
-class MascotSpinner extends JComponent
+class MascotSpinner extends Mascot
 {
-	private final Timer timer = new Timer(33, e -> repaint());
-	private long startedAt;
+	private static final Color CORD = new Color(70, 70, 80);
+	// Disco lights that twinkle on the ball and scatter around it.
+	private static final Color[] GLINT = {
+		new Color(240, 120, 180), new Color(120, 210, 240),
+		new Color(240, 224, 120), new Color(150, 230, 150),
+	};
 	// Juice surface: a damped spring forced by the bottle's motion, so the
 	// liquid lags behind each step and sloshes back. Tilt is in sprite rows
 	// (positive = piled up on the left).
@@ -31,43 +33,22 @@ class MascotSpinner extends JComponent
 	private double sloshVel;
 	private int lastBodyX = Integer.MIN_VALUE;
 
-	MascotSpinner()
-	{
-		setPreferredSize(new Dimension(16 * SCALE + 44, 16 * SCALE + 22));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, 16 * SCALE + 22));
-		setAlignmentX(LEFT_ALIGNMENT);
-	}
-
 	@Override
-	public void addNotify()
+	protected void onStart()
 	{
-		super.addNotify();
-		startedAt = System.currentTimeMillis();
 		sloshTilt = 0;
 		sloshVel = 0;
 		lastBodyX = Integer.MIN_VALUE;
-		timer.start();
 	}
 
 	@Override
-	public void removeNotify()
+	protected void render(Graphics2D g2, double t, int w, int h)
 	{
-		timer.stop();
-		super.removeNotify();
-	}
-
-	@Override
-	protected void paintComponent(Graphics g)
-	{
-		if (!MascotArt.available())
-		{
-			return;
-		}
-		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 			RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-
-		double t = (System.currentTimeMillis() - startedAt) / 1000.0;
+		// The disco ball, hung off-centre above the dancer, behind him - draw
+		// it first so he grooves in front of it.
+		drawDiscoBall(g2, t, w - 44, 17, 8);
 		// The real 2-step, a 4-count: right foot steps LEFT, left foot
 		// steps LEFT, left foot steps RIGHT, right foot steps RIGHT. Each
 		// stepping foot lifts, arcs to its NEW spot, and plants; the body
@@ -90,9 +71,9 @@ class MascotSpinner extends JComponent
 		double rightDx = rightStart[count] + (rightEnd[count] - rightStart[count]) * eased;
 
 		int bodyW = 16 * SCALE;
-		int centerX = (getWidth() - bodyW) / 2;
+		int centerX = (w - bodyW) / 2;
 		int bodyX = centerX + (int) Math.round((leftDx + rightDx) / 2.0);
-		int groundY = getHeight() - 4;
+		int groundY = h - 4;
 		int shinH = 3 * SCALE;
 		int thighBase = 3 * SCALE;
 		int dip = (int) Math.round((1.0 - arc) * 2.0);
@@ -174,6 +155,70 @@ class MascotSpinner extends JComponent
 
 		// Body over the limbs and juice (the walls cover the liquid's edges).
 		g2.drawImage(MascotArt.BODY, bodyX, bodyY, bodyW, 10 * SCALE, null);
-		g2.dispose();
+	}
+
+	/**
+	 * A mirror-ball: a facet grid clipped to a circle, spherically shaded
+	 * with a highlight column that sweeps across as it spins, coloured glints
+	 * twinkling on its face, and a few sparkles of thrown light around it.
+	 */
+	private static void drawDiscoBall(Graphics2D g2, double t, int cx, int cy, int r)
+	{
+		// Cord up to the ceiling.
+		g2.setColor(CORD);
+		g2.fillRect(cx - 1, 0, 2, cy - r);
+
+		java.awt.Shape oldClip = g2.getClip();
+		g2.setClip(new java.awt.geom.Ellipse2D.Double(cx - r, cy - r, 2 * r, 2 * r));
+		int cell = 3;
+		double hlX = cx + Math.sin(t * 2.5) * r * 0.9; // the spinning highlight
+		for (int gy = cy - r; gy <= cy + r; gy += cell)
+		{
+			for (int gx = cx - r; gx <= cx + r; gx += cell)
+			{
+				double fx = gx + cell / 2.0;
+				double fy = gy + cell / 2.0;
+				double dxn = (fx - cx) / r;
+				double dyn = (fy - cy) / r;
+				double edge = Math.max(0, 1 - (dxn * dxn + dyn * dyn)); // 1 centre, 0 rim
+				double hl = Math.max(0, 1 - Math.abs(fx - hlX) / (r * 0.6));
+				double b = 0.30 + edge * 0.30 + hl * 0.55;
+				int v = (int) Math.min(235, 70 + b * 165);
+				g2.setColor(new Color(v, Math.min(255, v + 8), Math.min(255, v + 22)));
+				g2.fillRect(gx, gy, cell - 1, cell - 1); // the 1px gap = facet lines
+			}
+		}
+		g2.setClip(oldClip);
+
+		// Coloured glints twinkling across the facets.
+		for (int i = 0; i < 3; i++)
+		{
+			double gp = t * 3.0 + i * 2.3;
+			if (Math.sin(gp) > 0.4)
+			{
+				int gx = cx + (int) Math.round(Math.cos(gp * 1.7 + i) * r * 0.55);
+				int gy = cy + (int) Math.round(Math.sin(gp * 1.3 + i) * r * 0.55);
+				g2.setColor(GLINT[i % GLINT.length]);
+				g2.fillRect(gx, gy, 2, 2);
+			}
+		}
+		// A dark rim to seat the ball.
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setColor(CORD);
+		g2.drawOval(cx - r, cy - r, 2 * r, 2 * r);
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+
+		// Sparkles of thrown light around it, twinkling on and off.
+		for (int i = 0; i < 5; i++)
+		{
+			if (Math.sin(t * 2.2 + i * 1.7) > 0.55)
+			{
+				int sx = cx + (int) Math.round(Math.cos(i * 2.1) * (r + 6 + (i % 3) * 5));
+				int sy = cy + (int) Math.round(Math.sin(i * 1.5) * (r + 5 + (i % 2) * 6));
+				g2.setColor(GLINT[i % GLINT.length]);
+				g2.fillRect(sx, sy - 1, 1, 3);
+				g2.fillRect(sx - 1, sy, 3, 1);
+			}
+		}
 	}
 }

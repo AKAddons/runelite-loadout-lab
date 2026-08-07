@@ -31,12 +31,12 @@ public final class RequirementProfile
 
 	public Map<Skill, Integer> getLevels()
 	{
-		return java.util.Collections.unmodifiableMap(levels);
+		return Collections.unmodifiableMap(levels);
 	}
 
 	public Set<String> getCompletedQuests()
 	{
-		return java.util.Collections.unmodifiableSet(completedQuests);
+		return Collections.unmodifiableSet(completedQuests);
 	}
 
 	public boolean canEquip(GearRequirements requirements)

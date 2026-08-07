@@ -1,17 +1,12 @@
 package com.loadoutlab.engine;
 
+import lombok.Getter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.loadoutlab.data.MonsterStats;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,24 +27,39 @@ public final class BossIncomingOverrides
 {
 	private static final String RESOURCE = "/com/loadoutlab/data/boss_incoming.json";
 
-	private static final Set<String> STYLES = new HashSet<>(Arrays.asList(
-		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless"));
-
 	/** One curated attack in the boss's rotation. */
 	public static final class Attack
 	{
+		@Getter
 		private final String style;
+		@Getter
 		private final int maxHit;
+		@Getter
 		private final double share;
+		@Getter
 		private final boolean prayable;
+		/** Dodgeable by design (Zulrah's magma slam): the standard play
+		 * takes zero, so the attack is excluded from both dps totals and
+		 * kept in the threat list for the tooltip - the same philosophy as
+		 * assuming the protection prayer is up. */
+		@Getter
+		private final boolean avoidable;
 		/** Fraction of damage that gets THROUGH the matching protection
 		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
 		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
 		 * unprayed value. */
+		@Getter
 		private final double prayerFactor;
+		/** 0 means "use the stat sheet's attack speed". */
+		@Getter
 		private final int speedTicks;
 
 		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks)
+		{
+			this(style, maxHit, share, prayable, prayerFactor, speedTicks, false);
+		}
+
+		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks, boolean avoidable)
 		{
 			this.style = style;
 			this.maxHit = maxHit;
@@ -57,44 +67,16 @@ public final class BossIncomingOverrides
 			this.prayable = prayable;
 			this.prayerFactor = prayerFactor;
 			this.speedTicks = speedTicks;
-		}
-
-		public double getPrayerFactor()
-		{
-			return prayerFactor;
-		}
-
-		public String getStyle()
-		{
-			return style;
-		}
-
-		public int getMaxHit()
-		{
-			return maxHit;
-		}
-
-		public double getShare()
-		{
-			return share;
-		}
-
-		public boolean isPrayable()
-		{
-			return prayable;
-		}
-
-		/** 0 means "use the stat sheet's attack speed". */
-		public int getSpeedTicks()
-		{
-			return speedTicks;
+			this.avoidable = avoidable;
 		}
 	}
 
 	/** The full curated picture for one boss. */
 	public static final class BossOverride
 	{
+		@Getter
 		private final List<Attack> attacks;
+		@Getter
 		private final String note;
 
 		BossOverride(List<Attack> attacks, String note)
@@ -102,76 +84,49 @@ public final class BossIncomingOverrides
 			this.attacks = Collections.unmodifiableList(attacks);
 			this.note = note;
 		}
-
-		public List<Attack> getAttacks()
-		{
-			return attacks;
-		}
-
-		public String getNote()
-		{
-			return note;
-		}
 	}
 
 	private static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
 
 	static
 	{
-		try (InputStream stream = BossIncomingOverrides.class.getResourceAsStream(RESOURCE);
-			InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8))
+		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
+		for (Map.Entry<String, JsonElement> entry : root.entrySet())
 		{
-			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			for (Map.Entry<String, JsonElement> entry : root.entrySet())
-			{
-				String name = entry.getKey().toLowerCase(Locale.ROOT);
-				OVERRIDES.put(name, parse(name, entry.getValue().getAsJsonObject()));
-			}
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("Could not load " + RESOURCE, ex);
+			OVERRIDES.put(entry.getKey().toLowerCase(Locale.ROOT),
+				parse(entry.getValue().getAsJsonObject()));
 		}
 	}
 
-	private static BossOverride parse(String name, JsonObject json)
+	/**
+	 * Shape-only read of one boss entry. The DATA validation that used to
+	 * throw from here (style whitelist, typeless-must-not-be-prayable, sane
+	 * maxHit/share/speed, shares summing to at most 1.0, non-empty attack
+	 * list) now lives in BossIncomingOverridesTest's all-overrides sweep -
+	 * test source is free of the hub token cap, and the sweep is coupled to a
+	 * hardcoded boss list so a newly added boss cannot skip it. Only the
+	 * "resource missing" throw stays here: that is a packaging failure, not
+	 * bad data.
+	 */
+	private static BossOverride parse(JsonObject json)
 	{
 		List<Attack> attacks = new ArrayList<>();
-		double shareSum = 0;
 		for (JsonElement element : json.getAsJsonArray("attacks"))
 		{
 			JsonObject a = element.getAsJsonObject();
-			String style = a.get("style").getAsString().toLowerCase(Locale.ROOT);
-			int maxHit = a.get("maxHit").getAsInt();
-			double share = a.get("share").getAsDouble();
 			boolean prayable = !a.has("prayable") || a.get("prayable").getAsBoolean();
 			// Legacy semantics preserved: prayable = full block (0 through),
 			// unprayable = full pierce (1 through), unless a factor is given.
 			double prayerFactor = a.has("prayerFactor") ? a.get("prayerFactor").getAsDouble()
 				: (prayable ? 0.0 : 1.0);
-			if (prayerFactor < 0 || prayerFactor > 1)
-			{
-				throw new IllegalStateException(name + ": prayerFactor out of range");
-			}
-			int speedTicks = a.has("speedTicks") ? a.get("speedTicks").getAsInt() : 0;
-			if (!STYLES.contains(style))
-			{
-				throw new IllegalStateException(name + ": unknown style " + style);
-			}
-			if ("typeless".equals(style) && prayable)
-			{
-				throw new IllegalStateException(name + ": typeless attacks must be prayable=false");
-			}
-			if (maxHit <= 0 || share <= 0 || share > 1.0 || speedTicks < 0)
-			{
-				throw new IllegalStateException(name + ": bad attack values");
-			}
-			shareSum += share;
-			attacks.add(new Attack(style, maxHit, share, prayable, prayerFactor, speedTicks));
-		}
-		if (attacks.isEmpty() || shareSum > 1.0 + 1e-9)
-		{
-			throw new IllegalStateException(name + ": shares must be non-empty and sum to <= 1.0");
+			attacks.add(new Attack(
+				a.get("style").getAsString().toLowerCase(Locale.ROOT),
+				a.get("maxHit").getAsInt(),
+				a.get("share").getAsDouble(),
+				prayable,
+				prayerFactor,
+				a.has("speedTicks") ? a.get("speedTicks").getAsInt() : 0,
+				a.has("avoidable") && a.get("avoidable").getAsBoolean()));
 		}
 		return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
 	}
@@ -187,6 +142,21 @@ public final class BossIncomingOverrides
 		if (monster == null)
 		{
 			return null;
+		}
+		// Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
+		// differently per form, and the roster lens shows one form at a
+		// time - each must carry ITS OWN attacks and protect prayer (field
+		// report 2026-07-17: every Zulrah form said pray mage). The bare
+		// name stays as the whole-fight fallback.
+		String version = monster.getVersion();
+		if (version != null && !version.isEmpty())
+		{
+			BossOverride byForm = OVERRIDES.get(
+				(monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
+			if (byForm != null)
+			{
+				return byForm;
+			}
 		}
 		return OVERRIDES.get(monster.getNameLower());
 	}
