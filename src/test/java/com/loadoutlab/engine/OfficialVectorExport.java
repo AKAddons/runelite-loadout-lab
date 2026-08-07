@@ -65,6 +65,14 @@ public class OfficialVectorExport
 		{"cbowset-graardor", "General Graardor", "", "RANGED", "Crystal bow", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
 		// Slayer helm + crystal body/legs: flooring order (crystal before slayer) matters.
 		{"bofasetslayer-graardor", "General Graardor", "", "RANGED", "Bow of faerdhinen", null, null, "Slayer helmet (i)", "Crystal body", "Crystal legs"},
+		// Bowfa+crystal vs the dragon-dart blowpipe at the Enraged Warden
+		// (field report 2026-08-06). VERDICT: both engines agree at
+		// invocation 0 (bp ahead by ~1%); the user-visible flip to bowfa
+		// comes from the official calc's ToA invocation defence scaling,
+		// which we do not model. DART: routes through the official side's
+		// itemVars (a dart as gear is a thrown WEAPON and replaces the bp).
+		{"bofaset-warden3", "Tumeken's Warden", "Enraged", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
+		{"bp-warden3", "Tumeken's Warden", "Enraged", "RANGED", "Toxic blowpipe#Charged", "DART:Dragon dart"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},
@@ -223,7 +231,17 @@ public class OfficialVectorExport
 			gear.put(GearSlot.WEAPON, weapon);
 			List<Object> gearNames = new ArrayList<>();
 			gearNames.add(gearRef(weapon));
-			if (s[5] != null)
+			Integer blowpipeDartId = null;
+			if (s[5] != null && s[5].startsWith("DART:"))
+			{
+				// The blowpipe's loaded dart: itemVars on the official side
+				// (a dart as gear is a thrown WEAPON there and would replace
+				// the blowpipe); our side keeps the BlowpipeDarts assumption
+				// - game-best assumes dragon, so name a dragon dart here.
+				GearItem dart = byName(data, s[5].substring(5));
+				blowpipeDartId = dart.getId();
+			}
+			else if (s[5] != null)
 			{
 				GearItem ammo = byName(data, s[5]);
 				gear.put(GearSlot.AMMO, ammo);
@@ -258,6 +276,10 @@ public class OfficialVectorExport
 			vector.put("monster", s[1]);
 			vector.put("monsterVersion", s[2] == null ? "" : s[2]);
 			vector.put("gear", gearNames);
+			if (blowpipeDartId != null)
+			{
+				vector.put("blowpipeDartId", blowpipeDartId);
+			}
 			vector.put("prayers", prayerNames(style));
 			if (onTask)
 			{
@@ -304,8 +326,16 @@ public class OfficialVectorExport
 
 	private static GearItem byName(LoadoutData data, String name)
 	{
+		// "Name#Version" pins an exact variant (Toxic blowpipe#Charged);
+		// plain names keep first-standard-match, where Empty can precede
+		// Charged in corpus order.
+		int hash = name.indexOf('#');
+		String plain = hash < 0 ? name : name.substring(0, hash);
+		String version = hash < 0 ? null : name.substring(hash + 1);
 		return data.getGearItems().stream()
-			.filter(g -> g.getName().equalsIgnoreCase(name) && g.isStandardGear())
+			.filter(g -> g.getName().equalsIgnoreCase(plain)
+				&& (version == null || g.getVersion().equalsIgnoreCase(version))
+				&& (version != null || g.isStandardGear()))
 			.findFirst().orElse(null);
 	}
 
