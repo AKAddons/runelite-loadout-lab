@@ -753,7 +753,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			addIds(ids, TripSupplies.spellKit("bookOfTheDead"));
 		}
-		if (!ids.isEmpty())
+		if (!ids.isEmpty() && !effectiveWilderness(entry))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
@@ -5268,7 +5268,7 @@ public class LoadoutLabPanel extends PluginPanel
 				recommendedRunes |= com.loadoutlab.data.RecommendedBring.isRune(rec.getKey());
 			}
 		}
-		if (recommendedRunes)
+		if (recommendedRunes && !effectiveWilderness(entry))
 		{
 			int recPouch = ownedRunePouch();
 			if (recPouch != -1)
@@ -5284,7 +5284,12 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			chips.putIfAbsent(ExtraDps.BOOK_OF_THE_DEAD, "Book of the dead - thrall casting");
 		}
-		if (!blocked && (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
+		// A rune pouch is PK loot: in the Wilderness the casting kit is
+		// advice we should not give (field decision 2026-08-06), so the
+		// pouch chip stays out there - both the Arceuus and the curated
+		// rune paths.
+		if (!blocked && !effectiveWilderness(entry)
+			&& (entry.thralls || entry.deathCharge || demonbaneCast(entry)))
 		{
 			int pouch = ownedRunePouch();
 			if (pouch != -1)
