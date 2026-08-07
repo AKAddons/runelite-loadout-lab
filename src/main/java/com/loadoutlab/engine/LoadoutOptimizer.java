@@ -661,44 +661,38 @@ public final class LoadoutOptimizer
 		// the wrong advice for the mob whose role is being barraged.
 		if (MonsterMechanics.isNibbler(request.getMonster()))
 		{
-			List<SpellStats> barrages = new ArrayList<>();
-			for (SpellStats spell : all)
-			{
-				if ("Ice Barrage".equals(spell.getName())
-					|| "Blood Barrage".equals(spell.getName()))
-				{
-					barrages.add(spell);
-				}
-			}
-			return barrages;
+			return keep(all, spell -> "Ice Barrage".equals(spell.getName())
+				|| "Blood Barrage".equals(spell.getName()));
 		}
-		// Salarin: strike casts are the ONLY damage, and the elemental
-		// prune would drop them as dominated - short-circuit past it.
+		// Salarin: strike casts are the ONLY damage (the same whitelist
+		// isImmune enforces), and the elemental prune would drop them as
+		// dominated - short-circuit past it.
 		if (MonsterMechanics.isSalarin(request.getMonster()))
 		{
-			List<SpellStats> strikes = new ArrayList<>();
-			for (SpellStats spell : all)
-			{
-				if ("Strike".equals(spell.getNameSecondWord()))
-				{
-					strikes.add(spell);
-				}
-			}
-			return strikes;
+			return keep(all, MonsterMechanics::salarinDamagingSpell);
 		}
 		if (!request.getSpellbookLock().isEmpty())
 		{
-			List<SpellStats> locked = new ArrayList<>();
-			for (SpellStats spell : all)
-			{
-				if (request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()))
-				{
-					locked.add(spell);
-				}
-			}
-			all = locked;
+			all = keep(all, spell ->
+				request.getSpellbookLock().equalsIgnoreCase(spell.getSpellbook()));
 		}
 		return pruneDominatedElementals(all, request);
+	}
+
+	/** The spells passing one predicate - the shape all three pool filters
+	 * above share. Runs once per optimize, never in the beam. */
+	private static List<SpellStats> keep(List<SpellStats> all,
+		java.util.function.Predicate<SpellStats> filter)
+	{
+		List<SpellStats> kept = new ArrayList<>(all.size());
+		for (SpellStats spell : all)
+		{
+			if (filter.test(spell))
+			{
+				kept.add(spell);
+			}
+		}
+		return kept;
 	}
 
 	/**
@@ -1012,7 +1006,7 @@ public final class LoadoutOptimizer
 			{
 				score += 4_500.0;
 			}
-			if (request.getMonster().hasAttribute("demon") && (name.contains("arclight") || name.contains("emberlight") || name.contains("darklight") || name.contains("silverlight") || name.contains("scorching bow")))
+			if (item.isDemonbane() && request.getMonster().hasAttribute("demon"))
 			{
 				score += 4_000.0;
 			}
@@ -1040,9 +1034,10 @@ public final class LoadoutOptimizer
 			// One-shot demonbane vs the Sire's vents lives entirely in the
 			// DPS model - raw stats rank the Scorching bow under a blowpipe,
 			// so without a boost the weapon cut prunes the actual answer
-			// (pool lesson; field report 2026-08-05).
-			if (MonsterMechanics.isRespiratorySystem(request.getMonster())
-				&& MonsterMechanics.isDemonbane(item))
+			// (pool lesson; field report 2026-08-05). Flag first: this runs
+			// inside the pool sort's comparator.
+			if (item.isDemonbane()
+				&& MonsterMechanics.isRespiratorySystem(request.getMonster()))
 			{
 				score += 10_000.0;
 			}
@@ -1050,9 +1045,10 @@ public final class LoadoutOptimizer
 			// proc (pool lesson, set edition - the void precedent): every
 			// melee line scores zero there until all four pieces assemble,
 			// so the pieces must outrank raw-stat armour to survive their
-			// slot cuts at all.
-			if (request.getMonster().hasAttribute("prayer_immunity")
-				&& name.contains("verac"))
+			// slot cuts at all. Name first: the attribute lookup is the
+			// dearer half and almost no item is named verac.
+			if (name.contains("verac")
+				&& request.getMonster().hasAttribute("prayer_immunity"))
 			{
 				score += 8_000.0;
 			}

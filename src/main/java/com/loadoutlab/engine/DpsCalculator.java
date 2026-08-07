@@ -96,11 +96,8 @@ public final class DpsCalculator
 			}
 			cappedMean /= (max + 1);
 			double capFactor = cappedMean / (max / 2.0);
-			result = new DpsResult(result.getLoadout(), result.getDps() * capFactor,
-				result.getAccuracy(), result.getExpectedHit() * capFactor,
-				50, result.getAttackSpeed(), result.getAttackType(),
-				result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+			result = result.withHitModel(result.getDps() * capFactor,
+				result.getAccuracy(), result.getExpectedHit() * capFactor, 50);
 		}
 		// Tormented demons: guaranteed hits in the official default phase -
 		// scale the expectation up to accuracy 1 (all hit models here are
@@ -110,12 +107,10 @@ public final class DpsCalculator
 			&& result.getAccuracy() > 0 ? 1.0 / result.getAccuracy() : 1.0;
 		if (result != null && (factor < 1.0 || accuracyOverride != 1.0))
 		{
-			result = new DpsResult(result.getLoadout(), result.getDps() * factor * accuracyOverride,
+			result = result.withHitModel(result.getDps() * factor * accuracyOverride,
 				Math.min(1.0, result.getAccuracy() * accuracyOverride),
 				result.getExpectedHit() * factor * accuracyOverride,
-				(int) (result.getMaxHit() * factor), result.getAttackSpeed(),
-				result.getAttackType(), result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+				(int) (result.getMaxHit() * factor));
 		}
 		// The Sire's vents, after every other factor so the ranking sees
 		// it: a demonbane hit destroys the vent outright (expected damage
@@ -144,39 +139,31 @@ public final class DpsCalculator
 			{
 				int hp = Math.max(1, request.getMonster().getHitpoints());
 				counted("demonbane one-shot", "any landed hit destroys the vent");
-				result = new DpsResult(result.getLoadout(),
-					result.getAccuracy() * hp / interval,
-					result.getAccuracy(), result.getAccuracy() * hp, hp,
-					result.getAttackSpeed(), result.getAttackType(),
-					result.getAttackRoll(), result.getDefenceRoll(),
-					result.getPurchaseCost(), result.getSpellName());
+				result = result.withHitModel(result.getAccuracy() * hp / interval,
+					result.getAccuracy(), result.getAccuracy() * hp, hp);
 			}
 			else if (result.getDps() > 0)
 			{
 				counted("vent min-hit", "every landed hit deals at least half its max");
-				result = new DpsResult(result.getLoadout(),
-					result.getExpectedHit() * 1.5 / interval,
-					result.getAccuracy(), result.getExpectedHit() * 1.5,
-					result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
-					result.getAttackRoll(), result.getDefenceRoll(),
-					result.getPurchaseCost(), result.getSpellName());
+				result = result.withHitModel(result.getExpectedHit() * 1.5 / interval,
+					result.getAccuracy(), result.getExpectedHit() * 1.5, result.getMaxHit());
 			}
 		}
 		// The nibbler trio: three spawn per wave and one barrage cast hits
 		// all of them, so an AoE cast's effective output is 3x the
-		// single-target number. This is what makes the barrage WIN the
-		// nibbler row on real math instead of a blowpipe headlining the
-		// mob nobody blowpipes (field decision 2026-08-06).
-		if (result != null && MonsterMechanics.isNibbler(request.getMonster())
-			&& request.getStyle() == CombatStyle.MAGIC
+		// single-target number. EVERY barrage is a 3x3 AoE, so a kit
+		// re-show of, say, Smoke Barrage earns the trio too - the Ice/Blood
+		// lock in spellsFor is pool curation, deliberately narrower than
+		// this mechanic. This is what makes the barrage WIN the nibbler row
+		// on real math instead of a blowpipe headlining the mob nobody
+		// blowpipes (field decision 2026-08-06).
+		if (result != null && request.getStyle() == CombatStyle.MAGIC
+			&& MonsterMechanics.isNibbler(request.getMonster())
 			&& result.getSpellName() != null && result.getSpellName().endsWith("Barrage"))
 		{
 			counted("nibbler trio", "one barrage cast hits all three");
-			result = new DpsResult(result.getLoadout(), result.getDps() * 3,
-				result.getAccuracy(), result.getExpectedHit() * 3,
-				result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
-				result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+			result = result.withHitModel(result.getDps() * 3,
+				result.getAccuracy(), result.getExpectedHit() * 3, result.getMaxHit());
 		}
 		// Salarin the twisted: a landed Strike always deals a FLAT 9-12,
 		// set by the highest strike tier unlocked - never by gear ("not
@@ -188,12 +175,9 @@ public final class DpsCalculator
 			int magic = request.getLevels().getMagic();
 			int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
 			counted("salarin", "strikes deal a flat " + flat + " - gear does not matter");
-			result = new DpsResult(result.getLoadout(),
+			result = result.withHitModel(
 				flat / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
-				1.0, flat, flat,
-				result.getAttackSpeed(), result.getAttackType(),
-				result.getAttackRoll(), result.getDefenceRoll(),
-				result.getPurchaseCost(), result.getSpellName());
+				1.0, flat, flat);
 		}
 		// A prayer-based melee immunity (KQ airborne): everything is
 		// blocked EXCEPT Verac's proc - a quarter of attacks land,
@@ -208,19 +192,13 @@ public final class DpsCalculator
 			{
 				counted("verac's set", "only the 25% proc lands through the prayer");
 				double exp = 0.25 * RollMath.normalExpectedHit(1.0, result.getMaxHit() + 1);
-				result = new DpsResult(result.getLoadout(),
+				result = result.withHitModel(
 					exp / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
-					0.25, exp, result.getMaxHit() + 1,
-					result.getAttackSpeed(), result.getAttackType(),
-					result.getAttackRoll(), result.getDefenceRoll(),
-					result.getPurchaseCost(), result.getSpellName());
+					0.25, exp, result.getMaxHit() + 1);
 			}
 			else
 			{
-				result = new DpsResult(result.getLoadout(), 0, 0, 0,
-					result.getMaxHit(), result.getAttackSpeed(), result.getAttackType(),
-					result.getAttackRoll(), result.getDefenceRoll(),
-					result.getPurchaseCost(), result.getSpellName());
+				result = result.withHitModel(0, 0, 0, result.getMaxHit());
 			}
 		}
 		return result == null || counted.isEmpty()
@@ -240,11 +218,18 @@ public final class DpsCalculator
 		return best;
 	}
 
-	/** All four Verac pieces worn - the set effect's gate. */
+	/** All four Verac pieces worn - the set effect's gate. The flail can
+	 * only sit in the weapon slot, so that one cached-field check runs
+	 * first and skips the three armour scans for the ~all loadouts not
+	 * holding it - this gate sits inside every melee stance variant (the
+	 * isWearingBloodMoonSet precedent). */
 	static boolean fullVeracSet(Loadout loadout)
 	{
-		return wearing(loadout, "verac's flail") && wearing(loadout, "verac's helm")
-			&& wearing(loadout, "verac's brassard") && wearing(loadout, "verac's plateskirt");
+		GearItem weapon = loadout.getWeapon();
+		return weapon != null && weapon.getNameLower().startsWith("verac's flail")
+			&& wearing(loadout, "verac's helm")
+			&& wearing(loadout, "verac's brassard")
+			&& wearing(loadout, "verac's plateskirt");
 	}
 
 	private DpsResult meleeVariant(OptimizationRequest request, Loadout loadout, String attackType, int attackStance, int strengthStance)

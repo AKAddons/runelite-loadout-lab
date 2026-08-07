@@ -127,11 +127,7 @@ public final class MonsterMechanics
 		// ranged never land; magic lands only as a Strike cast.
 		if (SALARIN.contains(id))
 		{
-			if (style != CombatStyle.MAGIC)
-			{
-				return true;
-			}
-			return spell == null || !"Strike".equals(spell.getNameSecondWord());
+			return style != CombatStyle.MAGIC || !salarinDamagingSpell(spell);
 		}
 		if (style == CombatStyle.RANGED && IMMUNE_RANGED.contains(id))
 		{
@@ -204,12 +200,7 @@ public final class MonsterMechanics
 		{
 			return false;
 		}
-		// The Sire's vents shrug off standard melee - "magic, ranged or a
-		// halberd" per the wiki - and a melee demonbane hit destroys one
-		// outright, so those two classes are the only melee that belongs
-		// in the pool. Same carve-out shape as Zulrah's polearm exception.
-		if (RESPIRATORY_SYSTEMS.contains(id) && !"Polearm".equals(category)
-			&& !isMeleeDemonbane(weapon))
+		if (RESPIRATORY_SYSTEMS.contains(id) && !ventMeleeLands(weapon))
 		{
 			return false;
 		}
@@ -229,17 +220,29 @@ public final class MonsterMechanics
 		return true;
 	}
 
+	/** The walk between the Sire's four vents, amortised per kill - the
+	 * tunable estimate behind the ranged-demonbane-first ORDER the tests
+	 * pin (field decision 2026-08-06). */
+	private static final int VENT_MELEE_WALK_TICKS = 5;
+
 	/** Ticks a MELEE attacker spends walking between the Sire's four
 	 * vents, amortised per kill - and a demonbane kill IS one attack, so
 	 * it lands straight on the attack interval. The vents sit apart
 	 * across the arena; ranged and magic one-shot each from one spot,
-	 * which is why the bow "drastically cuts the time between kills"
-	 * (field decision 2026-08-06). The ORDER (ranged demonbane first) is
-	 * the contract the tests pin; this constant is the tunable estimate
-	 * behind it. */
+	 * which is why the bow "drastically cuts the time between kills". */
 	public static int meleeReachPenaltyTicks(MonsterStats monster)
 	{
-		return isRespiratorySystem(monster) ? 5 : 0;
+		return isRespiratorySystem(monster) ? VENT_MELEE_WALK_TICKS : 0;
+	}
+
+	/** The vents shrug off standard melee - "magic, ranged or a halberd"
+	 * per the wiki, plus the melee demonbane one-shot. weaponCanEverWork
+	 * prunes the pool with this and damageFactor zeroes re-shows with it,
+	 * so pool and math can never disagree. */
+	private static boolean ventMeleeLands(GearItem weapon)
+	{
+		return "Polearm".equals(weapon == null ? "" : weapon.getCategory())
+			|| isMeleeDemonbane(weapon);
 	}
 
 	/** The Inferno's nibblers - the mob whose whole role is being
@@ -255,6 +258,13 @@ public final class MonsterMechanics
 		return monster != null && SALARIN.contains(monster.getId());
 	}
 
+	/** Salarin's whitelist - the only casts that damage him. isImmune and
+	 * the optimizer's spell pool enforce the same fact through this. */
+	public static boolean salarinDamagingSpell(SpellStats spell)
+	{
+		return spell != null && "Strike".equals(spell.getNameSecondWord());
+	}
+
 	/** The Sire's vents (per-monster rules live on the id set). */
 	public static boolean isRespiratorySystem(MonsterStats monster)
 	{
@@ -264,16 +274,12 @@ public final class MonsterMechanics
 	/** Demonbane in EVERY style, holy water excluded: the class that
 	 * destroys a respiratory system on any landed hit. The Scorching bow
 	 * and Purging staff belong here too - field report 2026-08-05: the
-	 * melee-only reading ranked a blowpipe above the bow that one-shots. */
+	 * melee-only reading ranked a blowpipe above the bow that one-shots.
+	 * The vocabulary itself is precomputed on GearItem (one list for this,
+	 * TormentedDemonRules, and the optimizer's demon bump). */
 	public static boolean isDemonbane(GearItem weapon)
 	{
-		if (weapon == null)
-		{
-			return false;
-		}
-		String name = weapon.getNameLower();
-		return isMeleeDemonbane(weapon)
-			|| name.startsWith("scorching bow") || name.startsWith("purging staff");
+		return weapon != null && weapon.isDemonbane();
 	}
 
 	/** Melee demonbane - the class that destroys a respiratory system on
@@ -281,13 +287,7 @@ public final class MonsterMechanics
 	 * will instantly kill the systems"). */
 	private static boolean isMeleeDemonbane(GearItem weapon)
 	{
-		if (weapon == null)
-		{
-			return false;
-		}
-		String name = weapon.getNameLower();
-		return name.contains("arclight") || name.contains("emberlight")
-			|| name.contains("darklight") || name.contains("silverlight");
+		return weapon != null && weapon.isMeleeDemonbane();
 	}
 
 	/** Some NPCs' magic defence rolls use their Defence level, not Magic. */
@@ -313,14 +313,13 @@ public final class MonsterMechanics
 		String name = monster.getName();
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
-		// The Sire's vents: standard melee does NOTHING - only halberds and
-		// melee demonbane land (wiki). The candidate pool already filters
-		// this, but re-shows (the kit pass, shared-set evaluation) call
-		// calculate() directly, so the math must agree or a whip line
-		// renders a phantom dps against them.
-		if (RESPIRATORY_SYSTEMS.contains(monster.getId()) && style == CombatStyle.MELEE
-			&& !"Polearm".equals(weapon == null ? "" : weapon.getCategory())
-			&& !isMeleeDemonbane(weapon))
+		// The Sire's vents: standard melee does NOTHING (wiki). The pool
+		// already filters on the SAME predicate in weaponCanEverWork, but
+		// re-shows (the kit pass, shared-set evaluation) call calculate()
+		// directly, so the math must agree or a whip line renders a
+		// phantom dps against them.
+		if (style == CombatStyle.MELEE
+			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon))
 		{
 			return 0.0;
 		}

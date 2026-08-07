@@ -50,6 +50,10 @@ public final class GearItem
 	private final String nameVersionLower;
 	@Getter
 	private final boolean poweredStaff;
+	@Getter
+	private final boolean meleeDemonbane;
+	@Getter
+	private final boolean demonbane;
 
 	public GearItem(
 		int id,
@@ -100,6 +104,19 @@ public final class GearItem
 			|| nameLower.contains("warped sceptre")
 			|| nameLower.contains("eye of ayak")
 			|| nameLower.contains("bone staff");
+		// The demonbane weapon class (wiki), one vocabulary for everyone:
+		// MonsterMechanics (the Sire's vents), TormentedDemonRules, and the
+		// optimizer's demon pool bump all ask this in hot loops - same
+		// precompute rationale as poweredStaff. Holy water is not gear.
+		this.meleeDemonbane = nameLower.contains("silverlight")
+			|| nameLower.contains("darklight")
+			|| nameLower.contains("arclight")
+			|| nameLower.contains("emberlight")
+			|| nameLower.contains("bone claws")
+			|| nameLower.contains("burning claws");
+		this.demonbane = meleeDemonbane
+			|| nameLower.startsWith("scorching bow")
+			|| nameLower.startsWith("purging staff");
 	}
 
 	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */

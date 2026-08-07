@@ -139,6 +139,16 @@ public final class DpsResult
 			antifireAssumed);
 	}
 
+	/** Copy with a reshaped hit model - the per-monster overrides in
+	 * DpsCalculator.calculate() (Zulrah cap, vent one-shot, nibbler trio,
+	 * Salarin flat, Verac proc) change only these four numbers. */
+	DpsResult withHitModel(double dps, double accuracy, double expectedHit, int maxHit)
+	{
+		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
+			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses,
+			antifireAssumed);
+	}
+
 	/** The autocast spell, or null for powered staves / non-magic - the
 	 * calculator passes "" internally for the powered path, which made
 	 * null-keyed consumers (the panel's built-in-spell line) miss. */

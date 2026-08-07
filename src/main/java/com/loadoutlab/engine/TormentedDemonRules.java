@@ -19,9 +19,6 @@ import com.loadoutlab.data.MonsterStats;
  */
 public final class TormentedDemonRules
 {
-	private static final String[] DEMONBANE_MELEE = {
-		"silverlight", "darklight", "arclight", "emberlight", "bone claws", "burning claws",
-	};
 	private static final String[] ABYSSAL = {
 		"abyssal whip", "abyssal tentacle", "abyssal dagger", "abyssal bludgeon",
 	};
@@ -51,21 +48,21 @@ public final class TormentedDemonRules
 		{
 			return spellName != null && spellName.contains("Demonbane");
 		}
-		String name = weapon == null ? "" : weapon.getNameLower();
-		if (style == CombatStyle.RANGED)
+		// The demonbane weapon vocabulary lives on GearItem (one list with
+		// MonsterMechanics and the optimizer's demon bump); a melee name
+		// can never be the weapon of a RANGED attack, so one flag serves
+		// both remaining styles.
+		if (weapon == null)
 		{
-			return name.startsWith("scorching bow");
+			return false;
 		}
-		for (String demonbane : DEMONBANE_MELEE)
+		if (weapon.isDemonbane())
 		{
-			if (name.startsWith(demonbane))
-			{
-				return true;
-			}
+			return true;
 		}
 		for (String abyssal : ABYSSAL)
 		{
-			if (name.startsWith(abyssal))
+			if (weapon.getNameLower().startsWith(abyssal))
 			{
 				return true;
 			}
