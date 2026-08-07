@@ -399,13 +399,20 @@ public final class DataService
 	{
 		JsonObject skills = object(row, "skills");
 		JsonObject offensive = object(row, "offensive");
+		// The Wardens' Core-ejected rows are stat-identical to their
+		// Active siblings, but the engine reads that version as a
+		// MECHANIC (the core's always-max rule) - collapsing them would
+		// erase the spec-dump phase from the corpus entirely.
+		String mechanicVersion = "Core-ejected".equals(string(row, "version"))
+			? "Core-ejected" : "";
 		return integer(skills, "def", 1) + "|" + integer(skills, "magic", 1)
 			+ "|" + integer(offensive, "magic", 0)
 			+ "|" + object(row, "defensive").toString()
 			+ "|" + array(row, "attributes").toString()
 			+ "|" + bool(row, "is_slayer_monster", false)
 			+ "|" + object(row, "weakness").toString()
-			+ "|" + integer(row, "size", 1);
+			+ "|" + integer(row, "size", 1)
+			+ "|" + mechanicVersion;
 	}
 
 	private List<SpellStats> loadSpells()

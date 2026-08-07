@@ -170,6 +170,14 @@ public final class SpecialAttack
 	 */
 	public double expectedDamage(DpsResult base, MonsterStats monster, PlayerLevels levels)
 	{
+		// The Wardens' ejected core (wiki): melee "will always deal their
+		// max hit" - hitChance and every damage roll collapse to their
+		// caps. Without this, the rolls below would halve every spec's
+		// value at the one place the game is built around spec dumping.
+		if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster))
+		{
+			return coreMaxDamage(base);
+		}
 		long attackRoll = base.getAttackRoll();
 		long defenceRoll = base.getDefenceRoll();
 		double hitChance = RollMath.normalAccuracy(
@@ -216,6 +224,36 @@ public final class SpecialAttack
 			case VOLATILE:
 			default:
 				return hitChance * mean(volatileMax(base, levels));
+		}
+	}
+
+	/** Every melee hit at the Warden's core deals its max (wiki) - each
+	 * kind collapses to its hit count at the TOP of its damage range:
+	 * doubles land both boosted hits, the claw cascades sit at their
+	 * tier-1 cap, the voidwaker's uniform roll caps at 150%. */
+	private double coreMaxDamage(DpsResult base)
+	{
+		int max = base.getMaxHit();
+		switch (kind)
+		{
+			case DOUBLE_INDEPENDENT:
+			case LINKED_DOUBLE:
+			case HALBERD_SWEEP: // the size-5 core takes both sweep hits
+				return 2.0 * (int) (max * damageMultiplier);
+			case CLAWS:
+				return 2.0 * max; // tier-1 cascade cap (max + halves/quarters)
+			case CASCADE_CLAWS:
+				return 1.5 * max; // tier-1 cap of the 1.25-mean uniform
+			case MULTI_ROLL_TIERED:
+				return 1.7 * max; // four successes, top of the k=4 range
+			case VOIDWAKER:
+				return 1.5 * max;
+			case EXTRA_ATTACK:
+				return base.getExpectedHit(); // already max via calculate()
+			case SINGLE:
+			case FIXED_FRACTION:
+			default:
+				return (int) (max * damageMultiplier);
 		}
 	}
 

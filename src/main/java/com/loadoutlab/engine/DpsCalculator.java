@@ -179,6 +179,19 @@ public final class DpsCalculator
 				flat / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
 				1.0, flat, flat);
 		}
+		// The Wardens' ejected core (ToA P2, wiki): melee "will always
+		// deal their max hit" - no accuracy roll, no damage roll. That
+		// certainty is why the core is THE spec-dump phase; SpecialAttack
+		// mirrors the same rule so multi-hit specs price honestly.
+		if (result != null && request.getStyle() == CombatStyle.MELEE
+			&& MonsterMechanics.isWardenCore(request.getMonster())
+			&& result.getMaxHit() > 0)
+		{
+			counted("warden core", "melee always deals its max hit");
+			result = result.withHitModel(
+				result.getMaxHit() / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
+				1.0, result.getMaxHit(), result.getMaxHit());
+		}
 		// A prayer-based melee immunity (KQ airborne): everything is
 		// blocked EXCEPT Verac's proc - a quarter of attacks land,
 		// guaranteed, +1 damage. Without the full set nothing lands, but

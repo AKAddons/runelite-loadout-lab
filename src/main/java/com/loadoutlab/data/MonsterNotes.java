@@ -58,6 +58,16 @@ public final class MonsterNotes
 						+ " then kill the respiratory systems.";
 				}
 				return null;
+			case "tumeken's warden":
+			case "elidinis' warden":
+				if (monster.versionStartsWith("Core-ejected"))
+				{
+					return "The spec dump: melee ALWAYS deals its max hit on"
+						+ " the ejected core, and every hit counts x5 toward"
+						+ " the Warden - unload multi-hit specs (claws,"
+						+ " dragon dagger) in the 21-37 tick window.";
+				}
+				return null;
 			case "zulrah":
 				return "Bring a recoil effect for the snakelings - Ring of"
 					+ " recoil, Ring of suffering (r), or Echo boots. Hits"

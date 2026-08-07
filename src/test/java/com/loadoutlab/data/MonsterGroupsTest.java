@@ -89,9 +89,15 @@ class MonsterGroupsTest
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
 		// Kephri's scarab adds are deliberately absent, same call as the
 		// Sire's spawn/scion (field decision 2026-08-06).
-		assertEquals(11, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
 		assertTrue(byName("Tombs of Amascut").getMobs().stream()
 			.noneMatch(m -> m.getName().contains("Scarab")));
+		// The P2 spec-dump window rides the Core-ejected row, nicked so
+		// the roster reads as the phase players know (field report
+		// 2026-08-06: "ToA is missing the crucial heart phase").
+		assertTrue(byName("Tombs of Amascut").getMobs().stream()
+			.anyMatch(m -> m.getVersion().startsWith("Core-ejected")
+				&& m.label().contains("Warden's Core")));
 		// Vents + the two phase rows only: the spawn/scion adds are
 		// deliberately absent - players walk or ignore them (field
 		// decision 2026-08-06); + Add mob covers whoever kills them.

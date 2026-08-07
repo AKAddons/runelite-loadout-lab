@@ -38,6 +38,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> RESPIRATORY_SYSTEMS = new HashSet<>();
 	private static final Set<Integer> SALARIN = new HashSet<>();
 	private static final Set<Integer> NIBBLERS = new HashSet<>();
+	private static final Set<Integer> WARDEN_CORES = new HashSet<>();
 
 	static
 	{
@@ -58,6 +59,7 @@ public final class MonsterMechanics
 			com.loadoutlab.data.JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
 			com.loadoutlab.data.JsonResources.ints(root, "salarin", SALARIN);
 			com.loadoutlab.data.JsonResources.ints(root, "nibblers", NIBBLERS);
+			com.loadoutlab.data.JsonResources.ints(root, "wardenCores", WARDEN_CORES);
 		}
 		catch (Exception ex)
 		{
@@ -263,6 +265,15 @@ public final class MonsterMechanics
 	public static boolean salarinDamagingSpell(SpellStats spell)
 	{
 		return spell != null && "Strike".equals(spell.getNameSecondWord());
+	}
+
+	/** The Wardens' ejected core (ToA P2): melee "will always deal their
+	 * max hit" against it (wiki) - DpsCalculator and SpecialAttack apply
+	 * the same certainty rule. */
+	public static boolean isWardenCore(MonsterStats monster)
+	{
+		return monster != null && WARDEN_CORES.contains(monster.getId())
+			&& monster.versionStartsWith("Core-ejected");
 	}
 
 	/** The Sire's vents (per-monster rules live on the id set). */
