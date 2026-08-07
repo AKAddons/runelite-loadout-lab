@@ -296,4 +296,22 @@ class MonsterGroupsTest
 		return groups.stream().filter(g -> g.getName().equals(name))
 			.findFirst().orElseThrow(() -> new AssertionError("missing group " + name));
 	}
+
+	@Test
+	@DisplayName("link-in names resolve groups by full name or exact alias - aliases never swallow")
+	void linkMatchIsStrict()
+	{
+		assertEquals("Abyssal Sire", MonsterGroups.linkMatch(groups, "Abyssal Sire").getName(),
+			"the Goal Planner Sire card opens the whole fight");
+		assertEquals("Tombs of Amascut", MonsterGroups.linkMatch(groups, "toa").getName(),
+			"exact aliases still land the group");
+		assertEquals("Tormented Demons", MonsterGroups.linkMatch(groups, "Tormented Demon").getName());
+		assertEquals("Zulrah (all forms)", MonsterGroups.linkMatch(groups, "Zulrah").getName());
+		assertNull(MonsterGroups.linkMatch(groups, "Dagannoth Rex"),
+			"a single King stays a single King");
+		assertNull(MonsterGroups.linkMatch(groups, "TzTok-Jad"),
+			"a Jad goal is not the whole Fight Caves");
+		assertNull(MonsterGroups.linkMatch(groups, "Abyssal demon"),
+			"the Sire's 'abyssal' alias must not swallow the slayer mob");
+	}
 }

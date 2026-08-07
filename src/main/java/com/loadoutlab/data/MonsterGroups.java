@@ -217,6 +217,31 @@ public final class MonsterGroups
 		return match;
 	}
 
+	/** The group a cross-plugin LINK-IN name resolves to, or null. Stricter
+	 * than search(): name-contains-query or EXACT alias only - search's
+	 * query-contains-alias direction would let short aliases swallow
+	 * single-boss names ("Dagannoth Rex" contains "dagannoth", "TzTok-Jad"
+	 * contains "jad", "Abyssal demon" contains "abyssal"), and a sender
+	 * naming one boss means that boss. "Abyssal Sire" still lands the
+	 * group by name; "toa" by alias. */
+	public static MonsterGroup linkMatch(List<MonsterGroup> groups, String query)
+	{
+		String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+		if (text.length() < 2)
+		{
+			return null;
+		}
+		for (MonsterGroup group : groups)
+		{
+			if (group.getName().toLowerCase(Locale.ROOT).contains(text)
+				|| group.aliases.contains(text))
+			{
+				return group;
+			}
+		}
+		return null;
+	}
+
 	/** Name-contains search over the groups, hits in curated order. */
 	public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit)
 	{

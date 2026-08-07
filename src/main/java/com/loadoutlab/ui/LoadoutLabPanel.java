@@ -1893,10 +1893,28 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		if (monsterName != null && !monsterName.isEmpty())
 		{
+			int paren = monsterName.indexOf(" (");
+			// A group name opens the whole roster (field task 2026-08-07:
+			// a Goal Planner "Abyssal Sire" card means the fight, not one
+			// phase) - and it must resolve BEFORE searchMonsters, which
+			// happily returns a single phase for a group name. Name-only
+			// senders get this; the npcId path above stays single-monster
+			// (an in-world right-click on Phase 2 means Phase 2).
+			com.loadoutlab.data.MonsterGroups.MonsterGroup group =
+				com.loadoutlab.data.MonsterGroups.linkMatch(groups, monsterName);
+			if (group == null && paren > 0)
+			{
+				group = com.loadoutlab.data.MonsterGroups.linkMatch(
+					groups, monsterName.substring(0, paren));
+			}
+			if (group != null)
+			{
+				selectGroup(group);
+				return true;
+			}
 			List<MonsterStats> hits = data.searchMonsters(monsterName, 1);
 			// Sender labels often carry qualifiers the corpus doesn't -
 			// "Doom of Mokhaiotl (L3)", "Duke (Awake)" - retry without them.
-			int paren = monsterName.indexOf(" (");
 			if (hits.isEmpty() && paren > 0)
 			{
 				hits = data.searchMonsters(monsterName.substring(0, paren), 1);
