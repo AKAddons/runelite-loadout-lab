@@ -33,6 +33,9 @@ class WardenCoreTest
 			.filter(m -> m.getVersion().startsWith("Core-ejected"))
 			.findFirst().orElseThrow();
 		assertTrue(MonsterMechanics.isWardenCore(core), "test premise: the core row");
+		assertEquals(1, core.getSize(), "the ejected core is a 1x1 target - the"
+			+ " Warden-frame size 5 handed the chally sweep a phantom second hit"
+			+ " (field report 2026-08-06)");
 	}
 
 	private static GearItem byName(String nameLower)

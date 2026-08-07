@@ -176,7 +176,7 @@ public final class SpecialAttack
 		// value at the one place the game is built around spec dumping.
 		if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster))
 		{
-			return coreMaxDamage(base);
+			return coreMaxDamage(base, monster);
 		}
 		long attackRoll = base.getAttackRoll();
 		long defenceRoll = base.getDefenceRoll();
@@ -230,15 +230,19 @@ public final class SpecialAttack
 	/** Every melee hit at the Warden's core deals its max (wiki) - each
 	 * kind collapses to its hit count at the TOP of its damage range:
 	 * doubles land both boosted hits, the claw cascades sit at their
-	 * tier-1 cap, the voidwaker's uniform roll caps at 150%. */
-	private double coreMaxDamage(DpsResult base)
+	 * tier-1 cap, the voidwaker's uniform roll caps at 150%. The 1x1
+	 * core denies the halberd sweep its second hit - which is exactly
+	 * why the DDS dump beats a chally there (field report 2026-08-06). */
+	private double coreMaxDamage(DpsResult base, MonsterStats monster)
 	{
 		int max = base.getMaxHit();
 		switch (kind)
 		{
+			case HALBERD_SWEEP:
+				return (monster.getSize() > 1 ? 2.0 : 1.0)
+					* (int) (max * damageMultiplier);
 			case DOUBLE_INDEPENDENT:
 			case LINKED_DOUBLE:
-			case HALBERD_SWEEP: // the size-5 core takes both sweep hits
 				return 2.0 * (int) (max * damageMultiplier);
 			case CLAWS:
 				return 2.0 * max; // tier-1 cascade cap (max + halves/quarters)

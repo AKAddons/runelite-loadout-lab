@@ -37,6 +37,7 @@ public class WardenCoreSpecTest
 
 		GearItem dds = null;
 		GearItem whip = null;
+		GearItem chally = null;
 		for (GearItem g : data.getGearItems())
 		{
 			if (g.getNameLower().equals("dragon dagger") && g.isStandardGear())
@@ -47,12 +48,21 @@ public class WardenCoreSpecTest
 			{
 				whip = g;
 			}
+			if (g.getNameLower().equals("crystal halberd") && g.isStandardGear())
+			{
+				chally = g;
+			}
 		}
 		Assert.assertNotNull(dds);
+		Assert.assertNotNull(chally);
 
+		// The chally competes and must LOSE: the 1x1 core denies its sweep
+		// the second hit (field report 2026-08-06: "it should recommend DDS
+		// instead of chally").
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(whip.getId(), 1);
 		owned.put(dds.getId(), 1);
+		owned.put(chally.getId(), 1);
 
 		OptimizerService service = new OptimizerService(data);
 		CountDownLatch done = new CountDownLatch(1);
