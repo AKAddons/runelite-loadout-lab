@@ -139,7 +139,9 @@ actually do.
 
 Arceuus support, modeled honestly. The Thralls chip appears when your
 Magic reaches a tier (38/57/76) and you own the book of the dead - it
-defaults ON against 150+ hp targets, folding the tier's flat dps
+defaults ON (a thrall is summoned once a minute and rides across the
+kills of a grind, so its value applies to a task mob exactly as it
+does to a boss), folding the tier's flat dps
 (greater: 0.625, always hits) into the shown numbers, exactly like the
 official calculator's thrall toggle; the tab tooltip shows the
 gear/thrall breakdown, and the ranking never moves (a thrall adds the

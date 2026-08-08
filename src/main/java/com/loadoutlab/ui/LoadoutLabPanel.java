@@ -468,23 +468,16 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** Thralls default ON where they benefit (field call 2026-07-21):
-	 * requirements met (tier reachable + book of the dead owned) and a
-	 * fight long enough to matter - 150+ hp, boss/slayer-boss tier, not
-	 * trash that dies before the thrall lands twice. */
+	/** Thralls default ON whenever the requirements are met (tier
+	 * reachable + book of the dead owned). The old 150+ hp gate was a
+	 * burst-ism (field report 2026-08-08: no thralls on a Baby black
+	 * dragon task): a thrall is summoned once per minute and rides
+	 * ACROSS kills on a grind, so its flat dps applies to trash exactly
+	 * as it does to a boss - the sustained frame, ADR-0007. */
 	private boolean defaultThralls(ResultEntry entry)
 	{
-		if (ExtraDps.thrallDps(magicLevel) <= 0
-			|| !ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD))
-		{
-			return false;
-		}
-		int maxHp = 0;
-		for (MonsterStats m : entry.mobs)
-		{
-			maxHp = Math.max(maxHp, m.getHitpoints());
-		}
-		return maxHp >= 150;
+		return ExtraDps.thrallDps(magicLevel) > 0
+			&& ownedCheck.owns(ExtraDps.BOOK_OF_THE_DEAD);
 	}
 
 	/** Every config-driven assumption seed for a NEW result (the options
@@ -503,20 +496,14 @@ public class LoadoutLabPanel extends PluginPanel
 		entry.boostPicks.putAll(displayOptions.defaultBoostPicks);
 	}
 
-	/** Death Charge defaults ON with the same benefit gate as thralls
-	 * (Magic 80 + a 150+ hp fight); no book required - it is a spell. */
+	/** Death Charge defaults ON at Magic 80; no book required - it is a
+	 * spell. The 150+ hp gate fell with the thralls' (same sustained
+	 * reasoning, inverted even: fast kills mean MORE killing-blow
+	 * refunds, up to the cast-window cap the energy model already
+	 * applies). */
 	private boolean defaultDeathCharge(ResultEntry entry)
 	{
-		if (magicLevel < 80)
-		{
-			return false;
-		}
-		int maxHp = 0;
-		for (MonsterStats m : entry.mobs)
-		{
-			maxHp = Math.max(maxHp, m.getHitpoints());
-		}
-		return maxHp >= 150;
+		return magicLevel >= 80;
 	}
 
 	/** Defensive copy for the compute hook (the entry maps mutate on the
