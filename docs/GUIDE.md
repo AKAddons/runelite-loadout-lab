@@ -102,14 +102,6 @@ spellbook to your setup and the suggested spell and set adjust to match.
 
 ![Spell and spellbook recommendation](img/spellbook.png)
 
-### Owned-gear ledger (profile-aware)
-
-Your owned gear is learned from your bank, inventory, equipment, and
-looting bag as you play, and remembered per account so suggestions always
-reflect what THIS character actually has.
-
-![Owned-gear ledger (profile-aware)](img/owned-ledger.png)
-
 ### Bank tools: show and filter
 
 "Show in bank" outlines the set's items in your bank; "Filter bank" shows

@@ -313,24 +313,6 @@
       "notes": "onMenuOpened wiring is client-bound (no automated coverage) - verified in-client; the resolution+compute path it calls is covered by LinkInTest."
     },
     {
-      "id": "owned-ledger",
-      "title": "Owned-gear ledger (profile-aware)",
-      "group": "Owned-gear optimizer",
-      "anchor": "owned-gear-ledger-profile-aware",
-      "media": "docs/img/owned-ledger.png",
-      "code": [
-        "profile/PlayerProfile.java",
-        "collection/CollectionLedger.java",
-        "engine/OwnedItems.java"
-      ],
-      "tests": [
-        "profile/PlayerProfileTest.java",
-        "collection/CollectionLedgerTest.java"
-      ],
-      "since": "0.1.0",
-      "capture": "With a set computed, click 'Filter bank' and frame the bank: it shows exactly the recommended items - the ledger's knowledge of what you own, on screen. Same capture moment as bank-tools; save a second copy/crop under this name. Single PNG screenshot."
-    },
-    {
       "id": "discord",
       "title": "Community Discord",
       "group": "Bank and integrations",
