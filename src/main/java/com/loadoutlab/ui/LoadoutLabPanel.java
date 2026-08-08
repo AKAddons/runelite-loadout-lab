@@ -641,15 +641,15 @@ public class LoadoutLabPanel extends PluginPanel
 	 * apply. */
 	private boolean arcaneBlocked(ResultEntry entry, CombatStyle style)
 	{
-		// A curated barrage recommendation puts the WHOLE TRIP on the
-		// Ancient spellbook, so the Arceuus folds stand down on every
-		// card, not just the magic one (field report 2026-08-06: the
-		// Inferno recommended barrage runes and thralls at once).
-		return tripsOnAncients(entry)
+		// A curated spell recommendation puts the WHOLE TRIP on a specific
+		// non-Arceuus book (Ancients for barrages, standard for Vorkath's
+		// Crumble Undead), so the Arceuus folds stand down on every card,
+		// not just the magic one (field reports 2026-08-06 and 2026-08-08).
+		return tripsOnStipulatedBook(entry)
 			|| (style == CombatStyle.MAGIC && magicArcaneClash(entry));
 	}
 
-	private static boolean tripsOnAncients(ResultEntry entry)
+	private static boolean tripsOnStipulatedBook(ResultEntry entry)
 	{
 		if (entry == null)
 		{
@@ -657,7 +657,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		for (MonsterStats mob : entry.mobs)
 		{
-			if (com.loadoutlab.data.RecommendedBring.recommendsAncients(mob))
+			if (com.loadoutlab.data.RecommendedBring.stipulatesSpellbook(mob))
 			{
 				return true;
 			}
@@ -1151,6 +1151,10 @@ public class LoadoutLabPanel extends PluginPanel
 		 * combo fully blocks; the honesty rule refuses half-protection),
 		 * 2 = super antifire assumed (shield slot freed). */
 		int antifireMode;
+		/** True once the user cycles the antifire chip - a DETECTED
+		 * default may re-resolve when the ledger learns the bank; an
+		 * explicit choice never does. */
+		boolean antifireTouched;
 		/** ToA invocation level (0/150/300/540): the official defence
 		 * scaling (x(250+invo)/250) on every invocation-scaled ToA row.
 		 * Engine input - changing recomputes. Kill-time (hp) scaling is
@@ -4052,6 +4056,12 @@ public class LoadoutLabPanel extends PluginPanel
 	 * the placeholders, and recompute each entry. */
 	private void recompute()
 	{
+		// The count chips render store state and every store mutation
+		// funnels through recompute - refreshing here covers ALL of them,
+		// including toggles made before any monster is selected (field bug
+		// 2026-08-08: a sim added from the row menu left the +N chip at 0;
+		// the early return below skipped the only paths that refreshed).
+		refreshCountChips();
 		if (selectedMonster == null)
 		{
 			return;
@@ -4678,9 +4688,9 @@ public class LoadoutLabPanel extends PluginPanel
 		// 2026-07-21 v4): that card is locked to its autocast book, so the
 		// assumptions cannot apply to what is on screen.
 		boolean viewClash = arcaneBlocked(entry, viewedTab);
-		String viewClashNote = tripsOnAncients(entry)
-			? "Unavailable - this trip is recommended onto the Ancient"
-				+ " spellbook (barrages), which has no path to Arceuus summons"
+		String viewClashNote = tripsOnStipulatedBook(entry)
+			? "Unavailable - this trip's recommended spell (barrages, Crumble"
+				+ " Undead) locks the spellbook away from Arceuus summons"
 			: "Unavailable on this card - its autocast"
 				+ " spell locks the spellbook away from Arceuus";
 		String clashNote = !viewClash && magicArcaneClash(entry)
@@ -6011,11 +6021,56 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Boosts: off (unboosted)");
 		}
 
+		// Sims and exclusions travel with every report (field request
+		// 2026-08-08: a spec-pick dispute could not be triaged without
+		// knowing whether the claws sim was live).
+		String sims = itemNames(dreamView.snapshot());
+		if (!sims.isEmpty())
+		{
+			params.add("Simmed as owned: " + sims);
+		}
+		String excludedNames = itemNames(exclusionView.snapshot());
+		if (!excludedNames.isEmpty())
+		{
+			params.add("Excluded: " + excludedNames);
+		}
+		for (MonsterStats m : entry.mobs)
+		{
+			String mobSims = itemNames(mobProfile.allMobSims(m.profileId()).keySet());
+			if (!mobSims.isEmpty())
+			{
+				params.add("Simmed vs " + m.getName() + ": " + mobSims);
+			}
+			for (Map.Entry<String, Set<Integer>> scoped
+				: mobProfile.allMobExclusions(m.profileId()).entrySet())
+			{
+				String names = itemNames(scoped.getValue());
+				if (!names.isEmpty())
+				{
+					params.add("Excluded vs " + m.getName() + " ("
+						+ scopeLabel(scoped.getKey()) + "): " + names);
+				}
+			}
+		}
+
 		sb.append("Parameters:\n");
 		for (String p : params)
 		{
 			sb.append("  ").append(p).append('\n');
 		}
+	}
+
+	/** Comma-joined sorted item labels for a set of ids (report use). */
+	private String itemNames(java.util.Collection<Integer> ids)
+	{
+		List<String> names = new ArrayList<>();
+		for (int id : ids)
+		{
+			GearItem item = data.getGear(id);
+			names.add(item == null ? ("item " + id) : item.label());
+		}
+		names.sort(String.CASE_INSENSITIVE_ORDER);
+		return String.join(", ", names);
 	}
 
 	/** One set block in the issue report: dps AS SHOWN ON THE CARD (set +
@@ -7290,7 +7345,37 @@ public class LoadoutLabPanel extends PluginPanel
 		if (active != null && active.antifireMode != mode)
 		{
 			active.antifireMode = mode;
+			active.antifireTouched = true;
 			recompute();
+		}
+	}
+
+	/** The ownership ledger changed (bank finally ingested, potions
+	 * banked mid-session): re-resolve the DETECTED antifire default on
+	 * every card the user has not explicitly cycled - a card created
+	 * before the bank was known must not freeze on "gear only" (field
+	 * report 2026-08-08: Vorkath ignored the super antifires in the
+	 * bank). Only a real mode change recomputes. */
+	public void onOwnedChanged()
+	{
+		boolean changed = false;
+		for (ResultEntry entry : page)
+		{
+			if (entry.antifireTouched)
+			{
+				continue;
+			}
+			int resolved = resolveDefaultAntifire(entry);
+			if (resolved != entry.antifireMode)
+			{
+				entry.antifireMode = resolved;
+				computeEntry(entry);
+				changed = true;
+			}
+		}
+		if (changed)
+		{
+			renderPage();
 		}
 	}
 

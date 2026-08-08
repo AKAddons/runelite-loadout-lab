@@ -17,14 +17,18 @@ public final class RecommendedBring
 {
 	private static final int AIR_RUNE = 556;
 	private static final int WATER_RUNE = 555;
+	private static final int EARTH_RUNE = 557;
 	private static final int DEATH_RUNE = 560;
+	private static final int CHAOS_RUNE = 562;
 	private static final int BLOOD_RUNE = 565;
 	private static final int SOUL_RUNE = 566;
 	private static final Set<Integer> RUNES =
-		Set.of(AIR_RUNE, WATER_RUNE, DEATH_RUNE, BLOOD_RUNE, SOUL_RUNE);
+		Set.of(AIR_RUNE, WATER_RUNE, EARTH_RUNE, DEATH_RUNE, CHAOS_RUNE,
+			BLOOD_RUNE, SOUL_RUNE);
 	/** Antidote++ (4) - the representative antipoison chip; the supplies
 	 * system stays the configurable path for exact tiers. */
 	private static final int ANTIDOTE_PP = 5952;
+	private static final int SLAYERS_STAFF = 4170;
 
 	private RecommendedBring()
 	{
@@ -37,14 +41,16 @@ public final class RecommendedBring
 		return RUNES.contains(itemId);
 	}
 
-	/** True when this monster's recommendation puts the trip on the
-	 * ANCIENT spellbook (the barrage stipulations) - which has no path to
-	 * Arceuus summons, so the thrall/Death Charge folds must stand down
-	 * (field report 2026-08-06: the Inferno recommended barrages and
-	 * thralls at once). A direct switch, not a scan of chipsFor's
-	 * tooltips: the panel asks this per mob per card rebuild, and
-	 * RecommendedBringTest pins the two in agreement. */
-	public static boolean recommendsAncients(MonsterStats monster)
+	/** True when this monster's recommendation puts the trip on a specific
+	 * NON-ARCEUUS spellbook - Ancients for the barrage stipulations,
+	 * standard for Vorkath's Crumble Undead - which has no path to Arceuus
+	 * summons, so the thrall/Death Charge folds must stand down (field
+	 * reports 2026-08-06: the Inferno recommended barrages and thralls at
+	 * once; 2026-08-08: Vorkath assumed Arceuus, making Crumble Undead
+	 * impossible). A direct switch, not a scan of chipsFor's tooltips: the
+	 * panel asks this per mob per card rebuild, and RecommendedBringTest
+	 * pins the two in agreement. */
+	public static boolean stipulatesSpellbook(MonsterStats monster)
 	{
 		if (monster == null)
 		{
@@ -54,6 +60,7 @@ public final class RecommendedBring
 		{
 			case "jal-nib":
 			case "jal-ak":
+			case "vorkath":
 				return true;
 			case "abyssal sire":
 				return monster.versionStartsWith("Phase 1");
@@ -101,6 +108,20 @@ public final class RecommendedBring
 				chips.put(ANTIDOTE_PP, "Spinolyps in the room poison"
 					+ " - bring antipoison");
 				break;
+			case "vorkath":
+			{
+				// Wiki-verified 2026-08-08: Crumble Undead (39 Magic,
+				// standard spellbook, 2 air + 2 earth + 1 chaos) is
+				// GUARANTEED to instantly kill the Zombified Spawn.
+				String why = "Crumble Undead runes (standard spellbook)"
+					+ " - guaranteed one-shot on the Zombified Spawn";
+				chips.put(AIR_RUNE, why);
+				chips.put(EARTH_RUNE, why);
+				chips.put(CHAOS_RUNE, why);
+				chips.put(SLAYERS_STAFF, "Slayer's staff - left-click casts"
+					+ " Crumble Undead on the spawn, no spell menu fumble");
+				break;
+			}
 			default:
 				break;
 		}

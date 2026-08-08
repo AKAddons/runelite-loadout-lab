@@ -42,6 +42,22 @@ class RecommendedBringTest
 	}
 
 	@Test
+	@DisplayName("Vorkath chips the Crumble Undead runes for the spawn")
+	void vorkathCrumbleRunes()
+	{
+		Map<Integer, String> chips = chipsFor("vorkath");
+		assertTrue(chips.containsKey(556), "air rune (x2)");
+		assertTrue(chips.containsKey(557), "earth rune (x2)");
+		assertTrue(chips.containsKey(562), "chaos rune (x1)");
+		assertTrue(chips.containsKey(4170), "slayer's staff for the left-click cast");
+		assertTrue(chips.values().stream().allMatch(t -> t.contains("Crumble Undead")),
+			"the spell is the point of every chip");
+		assertTrue(RecommendedBring.isRune(557), "runes pull the pouch along");
+		assertFalse(RecommendedBring.isRune(4170),
+			"the staff must not drag the rune pouch in");
+	}
+
+	@Test
 	@DisplayName("Sire phase 1 chips the shadow runes; phase 3 does not")
 	void sireShadowRunes()
 	{
@@ -71,13 +87,17 @@ class RecommendedBringTest
 	}
 
 	@Test
-	@DisplayName("barrage recommendations imply Ancients; antipoison does not")
-	void ancientsImplication()
+	@DisplayName("spell recommendations stipulate their book; antipoison does not")
+	void spellbookImplication()
 	{
-		assertTrue(RecommendedBring.recommendsAncients(
+		assertTrue(RecommendedBring.stipulatesSpellbook(
 			data.searchMonsters("jal-nib", 1).get(0)),
 			"the Inferno trip lives on Ancients - Arceuus folds stand down");
-		assertFalse(RecommendedBring.recommendsAncients(
+		assertTrue(RecommendedBring.stipulatesSpellbook(
+			data.searchMonsters("vorkath", 1).get(0)),
+			"Crumble Undead locks the trip to the standard book - Arceuus"
+				+ " folds stand down (field report 2026-08-08)");
+		assertFalse(RecommendedBring.stipulatesSpellbook(
 			data.searchMonsters("dagannoth rex", 1).get(0)),
 			"antipoison implies no spellbook at all");
 	}
@@ -90,16 +110,18 @@ class RecommendedBringTest
 	}
 
 	@Test
-	@DisplayName("recommendsAncients stays in lockstep with the chip tooltips")
-	void ancientsSwitchAgreesWithChips()
+	@DisplayName("stipulatesSpellbook stays in lockstep with the chip tooltips")
+	void spellbookSwitchAgreesWithChips()
 	{
-		// recommendsAncients answers by name switch instead of scanning its
-		// own tooltips (the panel asks per mob per rebuild) - this pins the
-		// switch against the tooltip-derived truth for every curated case,
-		// so a new Ancients chip cannot silently miss the switch.
+		// stipulatesSpellbook answers by name switch instead of scanning
+		// its own tooltips (the panel asks per mob per rebuild) - this pins
+		// the switch against the tooltip-derived truth for every curated
+		// case, so a new spell chip cannot silently miss the switch. Any
+		// tooltip naming a spellbook IS a stipulation (Ancient barrages,
+		// standard Crumble Undead alike).
 		List<MonsterStats> cases = new ArrayList<>();
-		for (String name : new String[]{"jal-nib", "jal-ak", "dagannoth rex",
-			"dagannoth prime", "dagannoth supreme", "goblin"})
+		for (String name : new String[]{"jal-nib", "jal-ak", "vorkath",
+			"dagannoth rex", "dagannoth prime", "dagannoth supreme", "goblin"})
 		{
 			cases.add(data.searchMonsters(name, 1).get(0));
 		}
@@ -107,8 +129,8 @@ class RecommendedBringTest
 		for (MonsterStats monster : cases)
 		{
 			boolean fromChips = RecommendedBring.chipsFor(monster).values().stream()
-				.anyMatch(t -> t.contains("Ancient"));
-			assertEquals(fromChips, RecommendedBring.recommendsAncients(monster),
+				.anyMatch(t -> t.toLowerCase().contains("spellbook"));
+			assertEquals(fromChips, RecommendedBring.stipulatesSpellbook(monster),
 				monster.label() + ": the switch must agree with the tooltips it replaced");
 		}
 	}

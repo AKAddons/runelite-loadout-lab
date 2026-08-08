@@ -922,12 +922,13 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			return;
 		}
+		boolean ledgerChanged = false;
 		for (CollectionLedger.Source source : EnumSet.copyOf(dirtySources))
 		{
 			Map<Integer, Integer> pending = pendingScans.remove(source);
 			if (pending != null)
 			{
-				ledger.update(source, pending);
+				ledgerChanged |= ledger.update(source, pending);
 				dirtySources.remove(source);
 				continue;
 			}
@@ -937,8 +938,21 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				dirtySources.remove(source);
 				continue;
 			}
-			ledger.update(source, itemsOf(c));
+			ledgerChanged |= ledger.update(source, itemsOf(c));
 			dirtySources.remove(source);
+		}
+		if (ledgerChanged)
+		{
+			// A card created before this container was known may sit on a
+			// stale DETECTED default (field report 2026-08-08: Vorkath
+			// froze on "gear only" with super antifires in the bank).
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.onOwnedChanged();
+				}
+			});
 		}
 	}
 

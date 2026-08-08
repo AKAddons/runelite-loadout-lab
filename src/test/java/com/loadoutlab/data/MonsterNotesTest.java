@@ -45,4 +45,14 @@ class MonsterNotesTest
 		assertNotNull(note);
 		assertTrue(note.contains("Barrage"));
 	}
+
+	@Test
+	@DisplayName("Vorkath carries the Crumble Undead stipulation")
+	void vorkathRecommendsCrumbleUndead()
+	{
+		String note = noteFor("vorkath");
+		assertNotNull(note);
+		assertTrue(note.contains("Crumble Undead"), "the spawn one-shot is the point");
+		assertTrue(note.contains("Zombified Spawn"), "names the mechanic it answers");
+	}
 }

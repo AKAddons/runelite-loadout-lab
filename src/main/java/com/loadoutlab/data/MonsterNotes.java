@@ -72,6 +72,11 @@ public final class MonsterNotes
 				return "Bring a recoil effect for the snakelings - Ring of"
 					+ " recoil, Ring of suffering (r), or Echo boots. Hits"
 					+ " above 50 are rerolled to 45-50.";
+			case "vorkath":
+				return "Crumble Undead (39 Magic, standard book) is a"
+					+ " guaranteed one-shot on the Zombified Spawn during the"
+					+ " freeze phase - cast it before the spawn reaches you"
+					+ " and explodes. A Slayer's staff makes it a left-click.";
 			case "dusk":
 				return "Gargoyle: bring a rock hammer to finish it, or use the"
 					+ " granite hammer (auto-smashes). Mostly immune to Magic.";
