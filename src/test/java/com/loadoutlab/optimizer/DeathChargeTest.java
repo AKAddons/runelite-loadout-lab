@@ -21,19 +21,24 @@ public class DeathChargeTest
 	@Test
 	public void deathChargeAddsOneRefundPerCastWindow()
 	{
+		// SUSTAINED pricing (field direction 2026-08-08): the budget is
+		// regen over the kill - no opening bar; a 50-200 mob grind is
+		// regen-bound and the bar amortises to nothing.
 		// Long fight (>= 60s): one full 15-energy refund rides the kill.
-		Assert.assertEquals(100.0 + 120.0 / 3.0,
+		Assert.assertEquals(120.0 / 3.0,
 			OptimizerService.specEnergyOverKill(120, false, 0), 1e-9);
-		Assert.assertEquals(100.0 + 120.0 / 3.0 + 15.0,
+		Assert.assertEquals(120.0 / 3.0 + 15.0,
 			OptimizerService.specEnergyOverKill(120, false, 1), 1e-9);
 
 		// Short fight (30s): kills come faster than the 60s cast, so the
 		// per-kill refund scales to the window share (7.5 energy).
-		Assert.assertEquals(100.0 + 10.0 + 7.5,
+		Assert.assertEquals(10.0 + 7.5,
 			OptimizerService.specEnergyOverKill(30, false, 1), 1e-9);
 
-		// Lightbearer doubles regen independently of the refund.
-		Assert.assertEquals(100.0 + 120.0 * 2.0 / 3.0 + 15.0,
+		// Lightbearer doubles regen independently of the refund - at
+		// sustained pace this is the whole point: double regen is double
+		// spec throughput, every kill, not one extra squeeze.
+		Assert.assertEquals(120.0 * 2.0 / 3.0 + 15.0,
 			OptimizerService.specEnergyOverKill(120, true, 1), 1e-9);
 	}
 
@@ -43,11 +48,11 @@ public class DeathChargeTest
 		// Upgraded (level 2): two refunds per cast = a 30s window. A 30s
 		// kill now earns the FULL 15 (vs 7.5 base); a long kill is
 		// unchanged (only one kill fits the minute either way).
-		Assert.assertEquals(100.0 + 10.0 + 15.0,
+		Assert.assertEquals(10.0 + 15.0,
 			OptimizerService.specEnergyOverKill(30, false, 2), 1e-9);
-		Assert.assertEquals(100.0 + 5.0 + 7.5,
+		Assert.assertEquals(5.0 + 7.5,
 			OptimizerService.specEnergyOverKill(15, false, 2), 1e-9);
-		Assert.assertEquals(100.0 + 120.0 / 3.0 + 15.0,
+		Assert.assertEquals(120.0 / 3.0 + 15.0,
 			OptimizerService.specEnergyOverKill(120, false, 2), 1e-9);
 	}
 

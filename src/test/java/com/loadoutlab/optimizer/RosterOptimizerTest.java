@@ -243,14 +243,17 @@ public class RosterOptimizerTest
 	@Test
 	public void rosterSharesOneSpecWeaponAcrossMobs() throws Exception
 	{
-		// With ZERO swaps the spec weapon is part of the carried set (field
-		// decision 2026-07-17): the roster brings exactly ONE, chosen for the
-		// most DPS added across the WHOLE trip (value-over-replacement, HP-
-		// weighted). Here the dragon dagger wins the shared slot: it earns
-		// its slot strongly at the fire giant (a burst spec on a low-defence
-		// mob), while the warhammer's drain barely pays off even at Graardor
-		// with this bare 3-item set - so the trip-wide value picks the dagger,
-		// not the heaviest mob's local preference.
+		// The spec weapon is part of the carried set (field decision
+		// 2026-07-17): the roster brings exactly ONE, chosen for the most
+		// DPS added across the WHOLE trip (value-over-replacement, HP-
+		// weighted) AMONG options that pay for their carried seat. Under
+		// the fishing drain math the warhammer outbids the dagger trip-wide
+		// (two opening specs at Graardor are worth the fishing), but its
+		// damage-priced seat value cannot cover the swap slot it displaces
+		// - the seat check falls through to the dagger, the strongest
+		// KEEPABLE option (a burst spec on the low-defence fire giant), and
+		// the trip carries a spec rather than none (regression 2026-08-08:
+		// argmax-then-veto used to drop the spec slot entirely).
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
@@ -273,6 +276,81 @@ public class RosterOptimizerTest
 			// The numbers still flip per mob.
 			Assert.assertTrue(m0.specExpectedDamage > 0);
 			Assert.assertTrue(m1.specExpectedDamage > 0);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void rosterArbitratesTheLightbearerOnTheSharedRing() throws Exception
+	{
+		// Field report 2026-08-08 (Nex group): the shared ring falls out of
+		// raw-stat set construction, which the stat-less Lightbearer can
+		// never win - but its doubled regen scales the trip's spec value.
+		// Against a stat-less alternative (ring of dueling) the Lightbearer
+		// must take the shared slot whenever any spec value is in play.
+		LoadoutData data = new DataService().load();
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip
+		owned.put(13576, 1);  // dragon warhammer
+		for (GearItem g : data.getGearItems())
+		{
+			if ((g.getNameLower().equals("ring of dueling")
+				|| g.getNameLower().equals("lightbearer")) && g.isStandardGear())
+			{
+				owned.put(g.getId(), 1);
+			}
+		}
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(graardor, fireGiant), owned);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertNotNull(m0);
+			GearItem ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+			Assert.assertNotNull("a ring must be worn", ring);
+			Assert.assertTrue("doubled regen with no stat cost must take the shared slot, was: "
+				+ ring.label(), ring.getNameLower().contains("lightbearer"));
+			Assert.assertNotNull("the trip still carries its spec", m0.specWeapon);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
+	public void aStatRingKeepsTheSharedSlotOnTrashRosters() throws Exception
+	{
+		// Two goblins die before any sustained spec fires - the Berserker
+		// ring's strength beats regen nobody spends.
+		LoadoutData data = new DataService().load();
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip
+		owned.put(13576, 1);  // dragon warhammer
+		for (GearItem g : data.getGearItems())
+		{
+			if ((g.getNameLower().equals("berserker ring (i)")
+				|| g.getNameLower().equals("lightbearer")) && g.isStandardGear())
+			{
+				owned.put(g.getId(), 1);
+			}
+		}
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, Arrays.asList(goblin, goblin), owned);
+			OptimizerService.StyleResult m0 = roster.result.perMob.get(0).get(CombatStyle.MELEE);
+			Assert.assertNotNull(m0);
+			GearItem ring = m0.owned.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.RING);
+			Assert.assertNotNull(ring);
+			Assert.assertTrue("no spec value, no swap - the stat ring stands, was: "
+				+ ring.label(), ring.getNameLower().contains("berserker"));
 		}
 		finally
 		{

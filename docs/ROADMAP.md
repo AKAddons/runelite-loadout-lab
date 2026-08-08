@@ -211,8 +211,11 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
 - **Spec-throughput vs ring slot** - DONE (2026-08-08, 0.3.5):
   arbitrateLightbearer prices both ring candidates on the TOTAL (set
   dps + spec dps-added) after the spec pick and the argmax wins -
-  single-mob cards, owned and BiS sides; rosters keep the shared-set
-  ring (a per-mob swap cannot ride one shared set - future work).
+  single-mob cards, owned and BiS sides. Rosters run the same argmax
+  at the shared-set altitude (same day, field report: a Nex group
+  recommended Ring of shadows over the Lightbearer): the trip is
+  priced both ways - HP-weighted shared-set dps plus the top shared-
+  spec value - and the variant wins strictly, owned and BiS sides.
 - **Constraint parameters + parameterized link-in API (added 2026-07-16)** -
   broader query constraints: max total gear WEIGHT (data prereq: carry the
   weirdgloop weight field through refresh_data.py - not vendored today) and
@@ -406,6 +409,29 @@ nothing is not carried. This is the Max DPS view of a spec's value, and it
 is calibrated: at General Graardor our game-best specs are dragon claws
 (1.60) ~ voidwaker (1.56), matching the wiki's top pair, with the
 warhammer correctly mid-tier.
+
+**Sustained re-pricing (2026-08-08, ADR-0007).** The energy budget
+dropped its opening-bar term: a 50-200 mob outing is regen-bound, the
+100% bar amortises to nothing, and specs per kill go fractional (0.5 = a
+spec every other kill). This is what makes the Lightbearer honest -
+doubled regen is doubled spec throughput, every kill, not one extra
+squeeze into a long fight. Defence-drain value now fishes for the land
+(P(landed) over the budgeted attempts, charged the expected specs
+spent), and a roster's shared spec is chosen among ranked options that
+can pay for their carried seat - the strongest keepable option wins
+instead of a vetoed argmax winner costing the trip its spec. The
+absolute numbers above predate this re-pricing. Future "burst" mode:
+always-POH-pool play (ornate rejuvenation pool between kills) genuinely
+opens every kill at 100% - the old frame, behind a chip.
+
+**Future: spec podium (field request 2026-08-08).** Show the top 2-3
+spec candidates with their differentials instead of only the winner -
+photo-finish picks are common (Vorkath: chally +0.41 vs simmed claws
++0.39, a 3% margin that flips with the boost and between Yours/BiS
+sets), and a user simming a weapon deserves to see where it landed even
+when it loses the argmax. Likely shape: the spec tooltip/report lists
+1st/2nd/3rd with "adds ~X.XX" each; the card keeps showing only the
+winner (vertical-budget rule).
 
 ## Future: "Smart" mode - model sustain, not just raw DPS
 

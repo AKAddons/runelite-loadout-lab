@@ -1444,9 +1444,8 @@ public class OptimizerService
 		Map<CombatStyle, List<List<DpsResult>>> gameBestsByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, SpecPick[]> specsByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, SpecPick[]> gameSpecsByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, GearItem> specCarriedByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, GearItem> specAmmoByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, GearItem> gameSpecCarriedByStyle = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, List<SpecPick[]>> specOptionsByStyle = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, List<SpecPick[]>> gameSpecOptionsByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, String> boostLabelByStyle = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, String> gameBoostLabelByStyle = new EnumMap<>(CombatStyle.class);
 		// PASS A (field fix 2026-07-17: the load-time wall was the 2x3xN
@@ -1599,52 +1598,109 @@ public class OptimizerService
 				shownGame.add(sharedGame == null ? null
 					: calcRespecting(calc, gameReqs.get(j), sharedGame));
 			}
-			SpecPick[] specs = ctx.maxSwaps >= 1 && ctx.specWeapon
+			List<SpecPick[]> specOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, ownedReqs,
 					shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame)
-				: new SpecPick[n];
-			SpecPick[] gameSpecs = ctx.maxSwaps >= 1 && ctx.specWeapon
+				: Collections.emptyList();
+			List<SpecPick[]> gameSpecOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, gameReqs,
 					shownOwned, gameLevels, null, true, shownGame)
-				: new SpecPick[n];
+				: Collections.emptyList();
+			// ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
+			// group recommended Ring of shadows over the Lightbearer): the
+			// shared ring falls out of raw-stat set construction, which the
+			// stat-less Lightbearer can never win - but doubled regen scales
+			// the whole trip's spec value. Price the trip both ways (HP-
+			// weighted shared-set dps + top shared-spec value) and adopt the
+			// variant on a strict win - the single-mob arbitration's argmax,
+			// at the shared-set altitude.
+			if (ctx.maxSwaps >= 1 && ctx.specWeapon)
+			{
+				Loadout lbOwned = lightbearerVariant(ctx.dataset, sharedOwned,
+					ownedReqs, ctx.effectiveOwned);
+				if (lbOwned != null)
+				{
+					List<List<DpsResult>> lbShown = new ArrayList<>();
+					double baseTotal = topSpecScore(specOptions, mobs);
+					double lbTotal = 0;
+					for (int j = 0; j < n; j++)
+					{
+						List<DpsResult> list = new ArrayList<>();
+						DpsResult shown = calcRespecting(calc, ownedReqs.get(j), lbOwned);
+						if (shown != null)
+						{
+							list.add(shown);
+							lbTotal += shown.getDps() * Math.max(1, mobs.get(j).getHitpoints());
+						}
+						lbShown.add(list);
+						if (!shownOwned.get(j).isEmpty())
+						{
+							baseTotal += shownOwned.get(j).get(0).getDps()
+								* Math.max(1, mobs.get(j).getHitpoints());
+						}
+					}
+					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
+						ownedReqs, lbShown, styleLevels, ctx.effectiveOwned, false, shownGame);
+					lbTotal += topSpecScore(lbOptions, mobs);
+					if (lbTotal > baseTotal + 1e-9)
+					{
+						sharedOwned = lbOwned;
+						shownOwned = lbShown;
+						specOptions = lbOptions;
+					}
+				}
+				Loadout lbGame = lightbearerVariant(ctx.dataset, sharedGame, gameReqs, null);
+				if (lbGame != null)
+				{
+					List<DpsResult> lbGameShown = new ArrayList<>();
+					double baseTotal = topSpecScore(gameSpecOptions, mobs);
+					double lbTotal = 0;
+					for (int j = 0; j < n; j++)
+					{
+						DpsResult shown = calcRespecting(calc, gameReqs.get(j), lbGame);
+						lbGameShown.add(shown);
+						if (shown != null)
+						{
+							lbTotal += shown.getDps() * Math.max(1, mobs.get(j).getHitpoints());
+						}
+						if (shownGame.get(j) != null)
+						{
+							baseTotal += shownGame.get(j).getDps()
+								* Math.max(1, mobs.get(j).getHitpoints());
+						}
+					}
+					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
+						gameReqs, shownOwned, gameLevels, null, true, lbGameShown);
+					lbTotal += topSpecScore(lbOptions, mobs);
+					if (lbTotal > baseTotal + 1e-9)
+					{
+						sharedGame = lbGame;
+						shownGame = lbGameShown;
+						gameSpecOptions = lbOptions;
+					}
+				}
+			}
+			SpecPick[] specs = specOptions.isEmpty() ? new SpecPick[n] : specOptions.get(0);
+			SpecPick[] gameSpecs = gameSpecOptions.isEmpty() ? new SpecPick[n] : gameSpecOptions.get(0);
 			// The INVENTORY budget counts every carried item INCLUDING the
 			// spec weapon (field decision 2026-07-17, reversing same-day:
 			// Inventory 0 = strictly one worn set, NO spec recommended).
 			// Swaps are chosen greedily by HP-weighted marginal gain; each
 			// mob then WEARS its best combination of base + carried swaps.
-			GearItem specCarried = null;
-			GearItem specAmmoCarried = null;
-			for (SpecPick pick : specs)
-			{
-				if (pick != null && pick.weapon != null && sharedOwned != null
-					&& (sharedOwned.getWeapon() == null
-						|| sharedOwned.getWeapon().getId() != pick.weapon.getId()))
-				{
-					specCarried = pick.weapon;
-					// A dark bow needs its arrows carried too - the spec
-					// spends TWO slots when the base quiver cannot feed it
-					// (field spec 2026-07-18).
-					specAmmoCarried = pick.ammo;
-					break;
-				}
-			}
-			GearItem gameSpecCarried = null;
-			for (SpecPick pick : gameSpecs)
-			{
-				if (pick != null && pick.weapon != null && sharedGame != null
-					&& (sharedGame.getWeapon() == null
-						|| sharedGame.getWeapon().getId() != pick.weapon.getId()))
-				{
-					gameSpecCarried = pick.weapon;
-					break;
-				}
-			}
+			// The bench reserves slots for the PRESUMPTIVE (top-ranked)
+			// spec; the kit pass re-prices each option it actually seats.
+			GearItem[] carriedSlots = carriedSpecOf(specs, sharedOwned);
+			GearItem specCarried = carriedSlots[0];
+			GearItem specAmmoCarried = carriedSlots[1];
+			GearItem gameSpecCarried = carriedSpecOf(gameSpecs, sharedGame)[0];
 			int benchForSwaps = Math.max(0, ctx.maxSwaps
 				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0));
 			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			specsByStyle.put(style, specs);
 			gameSpecsByStyle.put(style, gameSpecs);
+			specOptionsByStyle.put(style, specOptions);
+			gameSpecOptionsByStyle.put(style, gameSpecOptions);
 			boostLabelByStyle.put(style, boostLabel);
 			gameBoostLabelByStyle.put(style, gameBoostLabel);
 			if (sharedOwned != null)
@@ -1652,24 +1708,12 @@ public class OptimizerService
 				reqsByStyle.put(style, ownedReqs);
 				sharedByStyle.put(style, sharedOwned);
 				bestsByStyle.put(style, ownedBests);
-				if (specCarried != null)
-				{
-					specCarriedByStyle.put(style, specCarried);
-				}
-				if (specAmmoCarried != null)
-				{
-					specAmmoByStyle.put(style, specAmmoCarried);
-				}
 			}
 			if (sharedGame != null)
 			{
 				gameReqsByStyle.put(style, gameReqs);
 				sharedGameByStyle.put(style, sharedGame);
 				gameBestsByStyle.put(style, gameBests);
-				if (gameSpecCarried != null)
-				{
-					gameSpecCarriedByStyle.put(style, gameSpecCarried);
-				}
 			}
 			if (sharedOwned != null && !swaps.isEmpty())
 			{
@@ -1748,14 +1792,13 @@ public class OptimizerService
 		long tKitStart = System.nanoTime();
 		KitView ownedView = ctx.maxSwaps >= 1 && sharedByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, reqsByStyle, sharedByStyle,
-				bestsByStyle, specsByStyle, specCarriedByStyle, specAmmoByStyle, "owned", true)
+				bestsByStyle, specOptionsByStyle, "owned", true)
 			: null;
 		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
 		long tGameKitStart = System.nanoTime();
 		KitView gameView = ctx.maxSwaps >= 1 && sharedGameByStyle.size() >= 2
 			? kitPass(calc, mobs, ctx, ticket, gameReqsByStyle, sharedGameByStyle,
-				gameBestsByStyle, gameSpecsByStyle, gameSpecCarriedByStyle,
-				new EnumMap<>(CombatStyle.class), "BiS", false)
+				gameBestsByStyle, gameSpecOptionsByStyle, "BiS", false)
 			: null;
 		long tGameKitMs = (System.nanoTime() - tGameKitStart) / 1_000_000;
 		if (requestSeq.get() != ticket)
@@ -1894,9 +1937,8 @@ public class OptimizerService
 		Map<CombatStyle, List<OptimizationRequest>> reqsByStyle,
 		Map<CombatStyle, Loadout> sharedByStyle,
 		Map<CombatStyle, List<List<DpsResult>>> bestsByStyle,
-		Map<CombatStyle, SpecPick[]> specsByStyle,
-		Map<CombatStyle, GearItem> specCarriedByStyle,
-		Map<CombatStyle, GearItem> specAmmoByStyle, String side, boolean wantCurve)
+		Map<CombatStyle, List<SpecPick[]>> specOptionsByStyle,
+		String side, boolean wantCurve)
 	{
 		int n = mobs.size();
 		// SLOT UNIFICATION (field insight 2026-07-18: a tribrid answer
@@ -2063,35 +2105,43 @@ public class OptimizerService
 				Loadout base = sharedByStyle.get(primary);
 				List<GearItem> singlePool =
 					crossStylePool(base, primary, sharedByStyle, bestsByStyle);
-				GearItem primarySpec = specCarriedByStyle.get(primary);
-				GearItem primarySpecAmmo = specAmmoByStyle.get(primary);
-				int specSlots = (primarySpec != null ? 1 : 0) + (primarySpecAmmo != null ? 1 : 0);
-				SpecPick[] specs = specsByStyle.get(primary);
-				// One memo per primary base, shared by the spec-compete
-				// pair - the evaluations match either side of the spec.
+				List<SpecPick[]> specOptions = specOptionsByStyle.getOrDefault(
+					primary, Collections.emptyList());
+				// One memo per primary base, shared across the spec-compete
+				// evaluations - keys carry the bundle set, so options with
+				// different spec weapons never collide.
 				Map<String, Double> memo = new HashMap<>();
 				// THE SPEC COMPETES FOR ITS SLOT: build the kit both ways -
 				// spec carried (one slot fewer for swaps) and spec dropped -
 				// and let the spec's damage value argue for its seat. The
 				// value is the expected spec damage once per kill, in the
-				// same HP-weighted currency as the kit total.
+				// same HP-weighted currency as the kit total. The options
+				// arrive ranked by trip value; the FIRST that pays for its
+				// seat is kept - a vetoed argmax winner falls through to
+				// the runner-up rather than costing the roster its spec
+				// entirely (regression 2026-08-08).
 				KitAnswer kitFree = chooseKit(localCalc, base, primary, singlePool,
 					bundleCandidates(primary, base, null, sharedByStyle, bestsByStyle),
 					reqsByStyle, bestsByStyle, mobs, ctx.maxSwaps, memo, null);
 				KitAnswer kit = kitFree;
-				boolean specKept = false;
+				SpecPick[] keptSpecs = null;
+				GearItem keptCarried = null;
+				GearItem keptAmmo = null;
 				double score = kitFree.total;
-				if (primarySpec != null)
+				for (SpecPick[] option : specOptions)
 				{
-					KitAnswer kitSpec = chooseKit(localCalc, base, primary, singlePool,
-						bundleCandidates(primary, base, primarySpec, sharedByStyle, bestsByStyle),
-						reqsByStyle, bestsByStyle, mobs, Math.max(0, ctx.maxSwaps - specSlots),
-						memo, null);
+					GearItem[] slots = carriedSpecOf(option, base);
+					int specSlots = (slots[0] != null ? 1 : 0) + (slots[1] != null ? 1 : 0);
+					KitAnswer kitSpec = specSlots == 0 ? kitFree
+						: chooseKit(localCalc, base, primary, singlePool,
+							bundleCandidates(primary, base, slots[0], sharedByStyle, bestsByStyle),
+							reqsByStyle, bestsByStyle, mobs,
+							Math.max(0, ctx.maxSwaps - specSlots), memo, null);
 					double specValue = 0;
 					List<GearItem> carriedSpec = carriedOf(kitSpec);
 					for (int j = 0; j < n; j++)
 					{
-						if (specs == null || specs[j] == null)
+						if (option[j] == null)
 						{
 							continue;
 						}
@@ -2099,22 +2149,27 @@ public class OptimizerService
 							kitSpec.bundles, carriedSpec, reqsByStyle, bestsByStyle, j);
 						if (shown != null && shown.getDps() > 0)
 						{
-							specValue += specs[j].expectedDamage * shown.getDps();
+							specValue += option[j].expectedDamage * shown.getDps();
 						}
 					}
 					if (kitSpec.total + specValue >= kitFree.total)
 					{
 						kit = kitSpec;
-						specKept = true;
+						keptSpecs = option;
+						keptCarried = slots[0];
+						keptAmmo = slots[1];
 						score = kitSpec.total + specValue;
+						break;
 					}
 				}
-				return new Object[]{primary, kit, specKept, score};
+				return new Object[]{primary, kit, keptSpecs, score, keptCarried, keptAmmo};
 			});
 		}
 		CombatStyle bestPrimary = null;
 		KitAnswer bestKit = null;
-		boolean bestSpecKept = false;
+		SpecPick[] bestSpecs = null;
+		GearItem bestSpecCarried = null;
+		GearItem bestSpecAmmo = null;
 		double bestScore = -1;
 		try
 		{
@@ -2138,7 +2193,9 @@ public class OptimizerService
 				{
 					bestPrimary = (CombatStyle) outcome[0];
 					bestKit = (KitAnswer) outcome[1];
-					bestSpecKept = (Boolean) outcome[2];
+					bestSpecs = (SpecPick[]) outcome[2];
+					bestSpecCarried = (GearItem) outcome[4];
+					bestSpecAmmo = (GearItem) outcome[5];
 					bestScore = score;
 				}
 			}
@@ -2161,9 +2218,9 @@ public class OptimizerService
 			return null; // unreachable with >= 2 shared styles; be safe
 		}
 		Loadout base = sharedByStyle.get(bestPrimary);
-		GearItem specCarried = bestSpecKept ? specCarriedByStyle.get(bestPrimary) : null;
-		GearItem specAmmo = bestSpecKept ? specAmmoByStyle.get(bestPrimary) : null;
-		SpecPick[] specs = bestSpecKept ? specsByStyle.get(bestPrimary) : null;
+		GearItem specCarried = bestSpecCarried;
+		GearItem specAmmo = bestSpecAmmo;
+		SpecPick[] specs = bestSpecs;
 		List<GearItem> carried = carriedOf(bestKit);
 		// THE BREAKPOINT CURVE (field spec 2026-07-18): one more greedy to
 		// exhaustion for the winning configuration - with warm machinery
@@ -2283,7 +2340,7 @@ public class OptimizerService
 				carriedNames.append(item.getNameLower()).append(", ");
 			}
 			log.debug("kit[{}]: primary={} specKept={} spec={} carried=[{}] score={}",
-				side, bestPrimary, bestSpecKept,
+				side, bestPrimary, specs != null,
 				specCarried == null ? "-" : specCarried.getNameLower(),
 				carriedNames, String.format("%.0f", bestScore));
 		}
@@ -2451,16 +2508,22 @@ public class OptimizerService
 	 * game-best spec.
 	 */
 	/** One shared spec weapon for the whole roster: candidates are each
-	 * mob's free pick; the winner maximizes the HP-weighted expected value
-	 * (expected + drain), a mob it cannot roll against contributing zero.
-	 * Returns the winner's per-mob SpecPicks (null where it cannot spec). */
-	private SpecPick[] chooseSharedSpec(ComputeContext ctx, CombatStyle style,
+	 * mob's free pick, RANKED by HP-weighted value added (a mob a candidate
+	 * cannot roll against contributes zero). The kit seat check walks this
+	 * ranking and keeps the strongest option that pays for its carried slot
+	 * - the argmax winner alone can be vetoed at the seat (a drain-heavy
+	 * pick whose value the damage-priced seat cannot see), and dropping the
+	 * spec entirely loses to carrying the runner-up (regression 2026-08-08:
+	 * the DWH outbid the dagger trip-wide, failed its seat, and the roster
+	 * carried no spec at all). Each entry is one candidate's per-mob
+	 * SpecPicks (null where it cannot spec); empty list = no candidate has
+	 * positive trip value. */
+	private List<SpecPick[]> chooseSharedSpec(ComputeContext ctx, CombatStyle style,
 		List<MonsterStats> mobs, List<OptimizationRequest> reqs,
 		List<List<DpsResult>> shownOwned, PlayerLevels levels, OwnedItems owned,
 		boolean game, List<DpsResult> shownGame)
 	{
 		int n = mobs.size();
-		SpecPick[] picks = new SpecPick[n];
 		LinkedHashSet<Integer> candidates = new LinkedHashSet<>();
 		for (int j = 0; j < n; j++)
 		{
@@ -2478,11 +2541,10 @@ public class OptimizerService
 		}
 		if (candidates.isEmpty())
 		{
-			return picks;
+			return Collections.emptyList();
 		}
-		Integer bestId = null;
-		double bestScore = -1;
-		SpecPick[] bestPerMob = null;
+		List<double[]> scores = new ArrayList<>();
+		List<SpecPick[]> perCandidate = new ArrayList<>();
 		for (Integer id : candidates)
 		{
 			SpecPick[] perMob = new SpecPick[n];
@@ -2501,14 +2563,19 @@ public class OptimizerService
 					score += perMob[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
 				}
 			}
-			if (score > bestScore + 1e-9)
+			if (score > 1e-9)
 			{
-				bestScore = score;
-				bestId = id;
-				bestPerMob = perMob;
+				scores.add(new double[]{score, perCandidate.size()});
+				perCandidate.add(perMob);
 			}
 		}
-		return bestPerMob != null ? bestPerMob : picks;
+		scores.sort((a, b) -> Double.compare(b[0], a[0]));
+		List<SpecPick[]> ranked = new ArrayList<>(scores.size());
+		for (double[] row : scores)
+		{
+			ranked.add(perCandidate.get((int) row[1]));
+		}
+		return ranked;
 	}
 
 	private static List<DpsResult> baseFor(boolean game, List<DpsResult> owned, DpsResult gameShown)
@@ -2520,6 +2587,97 @@ public class OptimizerService
 		}
 		return owned == null || owned.isEmpty() || owned.get(0) == null ? null
 			: new ArrayList<>(owned);
+	}
+
+	/** The shared set with a Lightbearer in the ring slot, or null when the
+	 * roster arbitration cannot apply: no shared set, already a Lightbearer,
+	 * a ring pinned or a risk budget on any mob (the shared risk package is
+	 * not re-priced here - conservative skip), or the ring unavailable
+	 * (unowned and unsimmed, excluded, requirements). owned == null is the
+	 * game-best side: everything standard is available. */
+	private static Loadout lightbearerVariant(LoadoutData dataset, Loadout shared,
+		List<OptimizationRequest> reqs, OwnedItems owned)
+	{
+		if (shared == null)
+		{
+			return null;
+		}
+		GearItem worn = shared.get(GearSlot.RING);
+		if (worn != null && worn.getNameLower().contains("lightbearer"))
+		{
+			return null;
+		}
+		GearItem lightbearer = null;
+		for (GearItem item : dataset.getGearItems(GearSlot.RING))
+		{
+			if (item.getNameLower().equals("lightbearer") && item.isStandardGear())
+			{
+				lightbearer = item;
+				break;
+			}
+		}
+		if (lightbearer == null)
+		{
+			return null;
+		}
+		boolean dreamed = false;
+		for (OptimizationRequest req : reqs)
+		{
+			if (req.pinnedFor(GearSlot.RING) != null || req.isRiskConstrained()
+				|| req.isExcluded(lightbearer.getId())
+				|| !req.getRequirementProfile().canEquip(lightbearer.getRequirements()))
+			{
+				return null;
+			}
+			dreamed |= req.isDream(lightbearer.getId());
+		}
+		if (owned != null && !owned.owns(lightbearer.getId()) && !dreamed)
+		{
+			return null;
+		}
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(shared.getGear());
+		gear.put(GearSlot.RING, lightbearer);
+		Loadout variant = Loadout.adopting(gear);
+		return shared.getQuiverAmmo() != null
+			? variant.withQuiverAmmo(shared.getQuiverAmmo()) : variant;
+	}
+
+	/** HP-weighted trip value of the top-ranked shared-spec option. */
+	private static double topSpecScore(List<SpecPick[]> options, List<MonsterStats> mobs)
+	{
+		if (options.isEmpty())
+		{
+			return 0;
+		}
+		double score = 0;
+		SpecPick[] top = options.get(0);
+		for (int j = 0; j < mobs.size(); j++)
+		{
+			if (top[j] != null)
+			{
+				score += top[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
+			}
+		}
+		return score;
+	}
+
+	/** The carried slots a shared-spec option costs: [weapon, ammo], both
+	 * null when the base already wears the spec weapon (it rides free). A
+	 * dark bow next to a chargebow base needs its arrows carried too - the
+	 * spec spends TWO slots when the base quiver cannot feed it (field
+	 * spec 2026-07-18). */
+	private static GearItem[] carriedSpecOf(SpecPick[] specs, Loadout shared)
+	{
+		for (SpecPick pick : specs)
+		{
+			if (pick != null && pick.weapon != null && shared != null
+				&& (shared.getWeapon() == null
+					|| shared.getWeapon().getId() != pick.weapon.getId()))
+			{
+				return new GearItem[]{pick.weapon, pick.ammo};
+			}
+		}
+		return new GearItem[]{null, null};
 	}
 
 	SpecPick bestSpec(
@@ -2544,8 +2702,8 @@ public class OptimizerService
 	 * utility"). Deterministic post-arbitration: both candidates fully
 	 * priced, the argmax wins, the beam is never touched. On a win the
 	 * results list is updated in place so the card shows the ring that
-	 * earned its slot. Rosters keep the shared-set ring (a per-mob swap
-	 * cannot ride one shared set). */
+	 * earned its slot. Rosters run the same argmax at the shared-set
+	 * altitude (lightbearerVariant, field report 2026-08-08 #2). */
 	SpecPick arbitrateLightbearer(
 		LoadoutData dataset,
 		OptimizationRequest request,
@@ -2756,27 +2914,36 @@ public class OptimizerService
 	 *     a longer kill fits more specs.</li>
 	 * <li><b>Drain, for every style.</b> A landed defence-drain lowers the
 	 *     Defence LEVEL, which ranged and magic roll against too, not only
-	 *     melee (v0.3.1 valued the drain for melee main-hands only). The one
-	 *     spec spent landing it is charged against the kill.</li>
+	 *     melee (v0.3.1 valued the drain for melee main-hands only). The
+	 *     player fishes for the land with the specs the energy budget
+	 *     allows - P(landed) over the attempts, charged the EXPECTED specs
+	 *     spent (fishing stops on the land) - so a Lightbearer's doubled
+	 *     regen buys real drain probability where the budget limits
+	 *     fishing (field report 2026-08-08).</li>
 	 * </ul>
 	 *
 	 * A weapon is used the better of the two ways (damage or drain), so the
 	 * value is their max, not their sum - a small undercount for a spec that
 	 * genuinely does both at once (BGS), accepted for v1.
 	 */
-	/** The spec energy available over one kill: the opening bar, regen
-	 * (10%/30s, doubled by a Lightbearer), and - with Death Charge assumed -
-	 * one 15% refund per cast window, scaled down when the kill is shorter
-	 * than the window (the refund needs a killing blow in it). Yama's rite
-	 * of vile transference upgrades the spell to refund from TWO kills per
-	 * cast, an effective 30s window (level 2). Package-private: the
-	 * deterministic unit under DeathChargeTest. */
+	/** The spec energy available per kill at SUSTAINED pace (field
+	 * direction 2026-08-08: "sustained is more realistic for 99% of
+	 * outings" - a 50-200 mob grind is regen-bound, so the opening bar
+	 * amortises to nothing and specs per kill go fractional): regen
+	 * (10%/30s, doubled by a Lightbearer) over the kill, plus - with
+	 * Death Charge assumed - one 15% refund per cast window, scaled down
+	 * when kills come faster than the window (the refund needs a killing
+	 * blow in it). Yama's rite of vile transference upgrades the spell to
+	 * refund from TWO kills per cast, an effective 30s window (level 2).
+	 * The old burst frame (every kill opens on a full 100% bar) is
+	 * roadmapped as a POH-pool mode. Package-private: the deterministic
+	 * unit under DeathChargeTest. */
 	static double specEnergyOverKill(double ttkSeconds, boolean lightbearer,
 		int deathChargeLevel)
 	{
 		double regenPerSec = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
 		double window = deathChargeLevel >= 2 ? 30.0 : 60.0;
-		return 100.0 + regenPerSec * ttkSeconds
+		return regenPerSec * ttkSeconds
 			+ (deathChargeLevel > 0
 				? 15.0 * ttkSeconds / Math.max(window, ttkSeconds) : 0.0);
 	}
@@ -2800,13 +2967,15 @@ public class OptimizerService
 		double replacedAuto = mainResult.getExpectedHit();
 		double specCycle = Math.max(0.6, specBase.getAttackSpeed() * 0.6);
 
-		// How many specs actually fire over the kill: the opening bar plus regen
-		// (10%/30s, doubled by a Lightbearer), but never more than the fight has
-		// time for - so a mob that dies in one hit gets no spec value, and a
-		// long fight fits more. Fully TTK-consistent, no short-kill blow-up.
+		// How many specs fire per kill at SUSTAINED pace: the regen-bound
+		// budget, fractional across kills (0.5 = a spec every other kill),
+		// but never more than the fight has time for - so a mob that dies
+		// in one hit gets no spec value, and a long fight fits more. The
+		// burst frame's floor() was an artifact of pricing one kill from a
+		// full bar; sustained throughput is a rate, not a count.
 		double energyOverKill = specEnergyOverKill(ttkSeconds, lightbearer,
 			request.getDeathCharge());
-		double usesByEnergy = Math.floor(energyOverKill / Math.max(1, spec.getEnergyCost()));
+		double usesByEnergy = energyOverKill / Math.max(1, spec.getEnergyCost());
 		double usesByTime = Math.floor(ttkSeconds / specCycle);
 		double uses = Math.max(0, Math.min(usesByEnergy, usesByTime));
 
@@ -2835,10 +3004,18 @@ public class OptimizerService
 				if (after != null && after.getDps() > mainDps)
 				{
 					double p = Math.max(0.01, spec.landChance(specBase));
-					double attempts = Math.max(1, Math.min(uses, Math.ceil(1.0 / p)));
+					// Fractional attempts are the sustained regime: 0.5
+					// attempts per kill = fishing lands on half the kills
+					// it is tried across.
+					double attempts = Math.min(uses, Math.ceil(1.0 / p));
 					double landed = 1 - Math.pow(1 - p, attempts);
+					// Fishing stops on the land, so the cost is the EXPECTED
+					// specs spent - (1-(1-p)^n)/p, the truncated geometric mean
+					// - not the full attempt cap (which overcharges exactly
+					// when the land comes early).
+					double spent = landed / p;
 					drainDps = landed * (after.getDps() - mainDps)
-						- attempts * replacedAuto / ttkSeconds;
+						- spent * replacedAuto / ttkSeconds;
 				}
 			}
 		}
