@@ -107,6 +107,29 @@ NONSTANDARD_OVERRIDES = {
     # being offered as BiS (field report 2026-08-05, wiki-confirmed
     # discontinued).
     21433: "Wilderness champion amulet",
+    # PvP Arena (Emir's Arena) exclusive equipment: exists only inside the
+    # minigame's equipment chests, never ownable in the overworld - yet
+    # upstream ships attack-bonus stats that put the breeches into melee
+    # BiS legs (field report 2026-08-07: Elite calamity breeches at Nex).
+    # All three tiers x both slots x Broken/Normal/Locked.
+    26689: "Calamity chest (Broken)",
+    26749: "Calamity chest (Normal)",
+    26750: "Calamity chest (Locked)",
+    26690: "Superior calamity chest (Broken)",
+    26751: "Superior calamity chest (Normal)",
+    26752: "Superior calamity chest (Locked)",
+    26691: "Elite calamity chest (Broken)",
+    26753: "Elite calamity chest (Normal)",
+    26754: "Elite calamity chest (Locked)",
+    26692: "Calamity breeches (Broken)",
+    26755: "Calamity breeches (Normal)",
+    26756: "Calamity breeches (Locked)",
+    26693: "Superior calamity breeches (Broken)",
+    26757: "Superior calamity breeches (Normal)",
+    26758: "Superior calamity breeches (Locked)",
+    26694: "Elite calamity breeches (Broken)",
+    26759: "Elite calamity breeches (Normal)",
+    26760: "Elite calamity breeches (Locked)",
 }
 
 assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \

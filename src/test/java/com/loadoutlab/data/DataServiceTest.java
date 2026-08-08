@@ -61,6 +61,23 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void pvpArenaExclusiveGearIsNotStandardGear()
+	{
+		// The calamity outfit exists only inside Emir's Arena equipment
+		// chests - never ownable in the overworld - yet upstream ships
+		// attack-bonus stats that put the breeches into melee BiS legs
+		// (field report 2026-08-07: Elite calamity breeches at Nex).
+		LoadoutData data = new DataService().load();
+		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751})
+		{
+			GearItem piece = data.getGear(id);
+			Assert.assertNotNull("calamity row missing: " + id, piece);
+			Assert.assertFalse("PvP Arena exclusive gear must never be recommended: "
+				+ piece.label(), piece.isStandardGear());
+		}
+	}
+
+	@Test
 	public void questIssueKitIsNotStandardGear()
 	{
 		// The Silvthrill ballista and its javelins ship upstream as ordinary
