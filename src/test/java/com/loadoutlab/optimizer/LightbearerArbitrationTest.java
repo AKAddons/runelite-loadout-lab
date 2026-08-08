@@ -119,4 +119,56 @@ public class LightbearerArbitrationTest
 		Assert.assertTrue("no spec value, no swap - the dps ring stands, was: "
 			+ ring.label(), ring.getNameLower().contains("berserker"));
 	}
+
+	@Test
+	public void doubledRegenRaisesDrainValueWhenTheBudgetLimitsFishing() throws Exception
+	{
+		// A synthetic high-defence dummy: the DWH land chance is low, so
+		// P(landed) = 1-(1-p)^attempts is budget-bound - exactly where the
+		// Lightbearer's extra specs buy real drain probability. v1 priced
+		// ONE attempt, making drain value blind to regen.
+		com.loadoutlab.data.MonsterStats dummy = new com.loadoutlab.data.MonsterStats(
+			-42, "Drain Dummy", "", 500, 800, 3, 350, 200, 0,
+			new com.loadoutlab.data.MonsterDefences(150, 150, 150, 100, 0, 60, 60, 60),
+			null, java.util.Collections.emptyList(), false, "", 0);
+		com.loadoutlab.engine.OptimizationRequest request =
+			com.loadoutlab.engine.TestRequests.of(dummy,
+				CombatStyle.MELEE, PlayerLevels.MAXED,
+				com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+				null, 0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD,
+				true, false, OwnedItems.EMPTY, 1);
+
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> worn =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		worn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("abyssal whip"));
+		com.loadoutlab.engine.DpsResult main = new com.loadoutlab.engine.DpsCalculator()
+			.calculate(request, new com.loadoutlab.engine.Loadout(worn));
+		Assert.assertNotNull(main);
+
+		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> specWorn =
+			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		specWorn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("dragon warhammer"));
+		com.loadoutlab.engine.DpsResult specBase = new com.loadoutlab.engine.DpsCalculator()
+			.calculate(request, new com.loadoutlab.engine.Loadout(specWorn));
+		Assert.assertNotNull(specBase);
+		com.loadoutlab.engine.SpecialAttack dwh =
+			com.loadoutlab.engine.SpecialAttack.match(byName("dragon warhammer"));
+		Assert.assertNotNull(dwh);
+		double expected = dwh.expectedDamage(specBase, dummy, PlayerLevels.MAXED);
+
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			double without = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
+				dwh, specBase, expected, request, main, dummy, false);
+			double with = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
+				dwh, specBase, expected, request, main, dummy, true);
+			Assert.assertTrue("more attempts must buy drain probability: "
+				+ without + " -> " + with, with > without + 1e-9);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
 }

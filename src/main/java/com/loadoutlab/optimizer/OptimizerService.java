@@ -2781,7 +2781,7 @@ public class OptimizerService
 				? 15.0 * ttkSeconds / Math.max(window, ttkSeconds) : 0.0);
 	}
 
-	private double specDpsAdded(
+	double specDpsAdded(
 		DpsCalculator calculator,
 		SpecialAttack spec,
 		DpsResult specBase,
@@ -2815,10 +2815,15 @@ public class OptimizerService
 		double marginal = Math.max(0, expected - replacedAuto);
 		double damageDps = uses * marginal / ttkSeconds;
 
-		// DRAIN use: one landed drain lifts the whole set's dps for the rest of
+		// DRAIN use: a landed drain lifts the whole set's dps for the rest of
 		// the fight - for EVERY style, since the drop is to the Defence LEVEL
-		// (v0.3.1 valued this for melee main-hands only). The one spec spent
-		// landing it costs its replaced auto, amortised.
+		// (v0.3.1 valued this for melee main-hands only). The player FISHES
+		// for the land with the specs the energy budget allows - P(landed)
+		// = 1 - (1-p)^attempts, each attempt charging its replaced auto
+		// (v1 priced exactly one attempt, which made drain value blind to
+		// spec regen - the whole reason a Lightbearer rides DWH fights;
+		// field report 2026-08-08). Attempts stop once a land is likely:
+		// ~1/p tries, never more than the budget.
 		double drainDps = 0;
 		if (spec.drainsDefence() && usesByTime >= 1)
 		{
@@ -2829,8 +2834,11 @@ public class OptimizerService
 					request.withMonster(monster.withDefence(drained)), mainResult.getLoadout());
 				if (after != null && after.getDps() > mainDps)
 				{
-					drainDps = spec.landChance(specBase) * (after.getDps() - mainDps)
-						- replacedAuto / ttkSeconds;
+					double p = Math.max(0.01, spec.landChance(specBase));
+					double attempts = Math.max(1, Math.min(uses, Math.ceil(1.0 / p)));
+					double landed = 1 - Math.pow(1 - p, attempts);
+					drainDps = landed * (after.getDps() - mainDps)
+						- attempts * replacedAuto / ttkSeconds;
 				}
 			}
 		}
