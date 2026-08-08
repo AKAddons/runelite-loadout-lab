@@ -46,6 +46,15 @@ tasks.named('test', Test) {
 group = 'com.loadoutlab'
 version = '0.3.4'
 
+// Stamp the build version into a readable resource: the panel's issue
+// report reads it at runtime. Replaces a hand-synced constant that went
+// stale at 0.3.4 (field report 2026-08-07: "v0.3.3" from a newer client).
+processResources {
+	filesMatching('com/loadoutlab/version.properties') {
+		expand(version: project.version)
+	}
+}
+
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 	options.release.set(11)

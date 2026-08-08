@@ -908,8 +908,26 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Discord invite for the plugin's community; opened from the header. */
 	private static final String DISCORD_URL = "https://discord.gg/6GuS6J8em3";
 	/** Stamped into the copy-report text so a Discord report names its build.
-	 * Keep in sync with the version in runelite-plugin.properties on release. */
-	private static final String PLUGIN_VERSION = "0.3.3";
+	 * Build-stamped (processResources expands the version resource) - the
+	 * hand-synced constant this replaces went stale at 0.3.4 and reports
+	 * carried "v0.3.3" from newer clients (field report 2026-08-07).
+	 * VersionStampTest pins the stamp against runelite-plugin.properties. */
+	static final String PLUGIN_VERSION = loadPluginVersion();
+
+	private static String loadPluginVersion()
+	{
+		try (java.io.InputStream in = LoadoutLabPanel.class.getResourceAsStream(
+			"/com/loadoutlab/version.properties"))
+		{
+			java.util.Properties props = new java.util.Properties();
+			props.load(in);
+			return props.getProperty("version", "unknown");
+		}
+		catch (Exception ex)
+		{
+			return "unknown";
+		}
+	}
 	/** Resting label of the copy-report chip; the flash reverts to exactly
 	 * this, so a rapid double-click can't strand it on "Copied!". */
 	private static final String COPY_REPORT_LABEL = "Copy report";
@@ -5791,18 +5809,44 @@ public class LoadoutLabPanel extends PluginPanel
 
 		StyleResult r = entry.results.get(selected);
 		sb.append("\n-- ").append(selected).append(" --\n");
-		if (r != null && r.owned != null && !r.owned.isEmpty())
+		// The VIEWED side leads and is tagged - a BiS report led with
+		// "Yours" and unfolded numbers, so the block contradicted the
+		// screen it was reporting (field report 2026-08-07). Folds are
+		// itemized per set so the card's number is reconstructable.
+		double thrallFold = displayOptions.thrallDpsMode == 0
+			? thrallFoldDps(entry, selected) : 0;
+		Runnable yours = () ->
 		{
-			appendSet(sb, "Yours", r.owned.get(0), r.spec, r.specDpsAdded, r.boostLabel);
+			if (r != null && r.owned != null && !r.owned.isEmpty())
+			{
+				appendSet(sb, bis ? "Yours" : "Yours (viewing)", r.owned.get(0),
+					r.spec, r.specDpsAdded, r.boostLabel, thrallFold,
+					displayOptions.specDpsMode == 0 ? r.specDpsAdded : 0);
+			}
+			else
+			{
+				sb.append("Yours: no set\n");
+			}
+		};
+		Runnable game = () ->
+		{
+			if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
+			{
+				appendSet(sb, bis ? "Best in game (viewing)" : "Best in game",
+					r.overallBest, r.gameSpec, r.gameSpecDpsAdded, r.gameBoostLabel,
+					thrallFold,
+					displayOptions.specDpsMode == 0 ? r.gameSpecDpsAdded : 0);
+			}
+		};
+		if (bis)
+		{
+			game.run();
+			yours.run();
 		}
 		else
 		{
-			sb.append("Yours: no set\n");
-		}
-		if (r != null && r.overallBest != null && r.overallBest.getDps() > 0)
-		{
-			appendSet(sb, "Best in game", r.overallBest, r.gameSpec, r.gameSpecDpsAdded,
-				r.gameBoostLabel);
+			yours.run();
+			game.run();
 		}
 
 		sb.append("\nOther styles (your best dps):");
@@ -5940,6 +5984,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			params.add("Inventory: " + entry.maxSwaps);
 		}
+		if (entry.mobs.stream().anyMatch(
+			com.loadoutlab.engine.MonsterMechanics::isToaInvocationScaled))
+		{
+			params.add("Invocation: " + entry.toaInvocation);
+		}
 		if (!entry.assumeBestPrayer)
 		{
 			params.add("Prayer: off (prayerless)");
@@ -5956,13 +6005,34 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
-	/** One set block in the issue report: dps, the worn items in slot order,
-	 * the prayer/boost the numbers assume, and the carried spec if any. */
+	/** One set block in the issue report: dps AS SHOWN ON THE CARD (set +
+	 * any thrall/spec folds, itemized), the worn items in slot order, the
+	 * prayer/boost the numbers assume, and the carried spec if any. */
 	private static void appendSet(StringBuilder sb, String label, DpsResult set,
-		SpecialAttack spec, double specDpsAdded, String boostLabel)
+		SpecialAttack spec, double specDpsAdded, String boostLabel,
+		double thrallFold, double specFold)
 	{
-		sb.append(label).append(": ").append(String.format("%.2f", set.getDps()))
-			.append(" dps\n");
+		if (thrallFold > 0 || specFold > 0)
+		{
+			double shown = set.getDps() + thrallFold + specFold;
+			sb.append(label).append(": ").append(String.format("%.2f", shown))
+				.append(" dps as shown = ").append(String.format("%.2f", set.getDps()))
+				.append(" set");
+			if (thrallFold > 0)
+			{
+				sb.append(String.format(" + %.2f thralls", thrallFold));
+			}
+			if (specFold > 0)
+			{
+				sb.append(String.format(" + %.2f spec", specFold));
+			}
+			sb.append('\n');
+		}
+		else
+		{
+			sb.append(label).append(": ").append(String.format("%.2f", set.getDps()))
+				.append(" dps\n");
+		}
 		List<String> items = new ArrayList<>();
 		for (GearItem item : set.getLoadout().getGear().values())
 		{
