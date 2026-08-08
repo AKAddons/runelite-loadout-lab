@@ -510,10 +510,10 @@ public class OptimizerService
 				}
 				// Bench 0 = strictly one worn set: no spec swap is carried.
 				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? bestSpec(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned)
+					? arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned)
 					: null;
 				SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? bestSpec(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null)
+					? arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null)
 					: null;
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
@@ -2536,6 +2536,93 @@ public class OptimizerService
 
 	/** restrictTo non-null: only these weapon ids are scanned - the roster
 	 * path uses it to evaluate ONE shared spec weapon per mob. */
+	/** The Lightbearer never survives the ring slot's raw-stat cut (its
+	 * stat line is empty), but its doubled spec regen can beat the best
+	 * dps ring ON THE TOTAL - set dps + spec dps-added - at fights with
+	 * real spec value (roadmap's "compare the two totals"; field report
+	 * 2026-08-08: "it can be really impactful in fights with big spec
+	 * utility"). Deterministic post-arbitration: both candidates fully
+	 * priced, the argmax wins, the beam is never touched. On a win the
+	 * results list is updated in place so the card shows the ring that
+	 * earned its slot. Rosters keep the shared-set ring (a per-mob swap
+	 * cannot ride one shared set). */
+	SpecPick arbitrateLightbearer(
+		LoadoutData dataset,
+		OptimizationRequest request,
+		List<DpsResult> results,
+		CombatStyle style,
+		MonsterStats monster,
+		PlayerLevels levels,
+		OwnedItems owned)
+	{
+		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned);
+		if (spec == null || results.isEmpty())
+		{
+			return spec; // no spec value in play - dps ring stands
+		}
+		DpsResult base = results.get(0);
+		GearItem worn = base.getLoadout().get(GearSlot.RING);
+		if (request.pinnedFor(GearSlot.RING) != null
+			|| (worn != null && worn.getNameLower().contains("lightbearer")))
+		{
+			return spec;
+		}
+		GearItem lightbearer = null;
+		for (GearItem item : dataset.getGearItems(GearSlot.RING))
+		{
+			if (item.getNameLower().equals("lightbearer") && item.isStandardGear())
+			{
+				lightbearer = item;
+				break;
+			}
+		}
+		if (lightbearer == null
+			|| request.isExcluded(lightbearer.getId())
+			|| !request.getRequirementProfile().canEquip(lightbearer.getRequirements())
+			|| (owned != null && !owned.owns(lightbearer.getId())
+				&& !request.isDream(lightbearer.getId())))
+		{
+			return spec;
+		}
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(base.getLoadout().getGear());
+		gear.put(GearSlot.RING, lightbearer);
+		Loadout variantLoadout = Loadout.adopting(gear);
+		if (base.getLoadout().getQuiverAmmo() != null)
+		{
+			variantLoadout = variantLoadout.withQuiverAmmo(base.getLoadout().getQuiverAmmo());
+		}
+		if (request.isRiskConstrained()
+			&& (PvpRisk.riskGp(variantLoadout, null, request.getMaxTradeables())
+					> request.getRiskBudgetGp() + LoadoutOptimizer.pinnedRiskFloor(dataset, request)
+				|| PvpRisk.risksUnprotected(variantLoadout, null, request.getMaxTradeables(),
+					request.getPinnedItems().isEmpty() ? Collections.emptySet()
+						: new HashSet<>(request.getPinnedItems().values()),
+					request.getProtectOnlyItems())))
+		{
+			return spec;
+		}
+		DpsResult variant = new DpsCalculator().calculate(request, variantLoadout);
+		if (variant == null)
+		{
+			return spec;
+		}
+		List<DpsResult> variantResults = new ArrayList<>(results);
+		variantResults.set(0, variant);
+		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned);
+		if (variantSpec == null)
+		{
+			return spec;
+		}
+		double baseTotal = base.getDps() + spec.dpsAdded;
+		double variantTotal = variant.getDps() + variantSpec.dpsAdded;
+		if (variantTotal > baseTotal + 1e-9)
+		{
+			results.set(0, variant);
+			return variantSpec;
+		}
+		return spec;
+	}
+
 	SpecPick bestSpec(
 		LoadoutData dataset,
 		OptimizationRequest request,

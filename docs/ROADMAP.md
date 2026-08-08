@@ -208,10 +208,11 @@ Undo/redo + history shipped 2026-07-15/16 as unified back/forward.
   a price; they never charge the gp budget or the upgrade-cost sum.
 - **Slot alternates** - expandable per-slot list of runner-up items
   (owned and BiS variants).
-- **Spec-throughput vs ring slot** - jointly optimize the ring: a
-  Lightbearer doubles spec regen (sustained spec dps is now shown in the
-  spec tooltip), so vs a Venator/Ultor ring the right pick depends on
-  the spec weapon's net gain. Optimizer should compare the two totals.
+- **Spec-throughput vs ring slot** - DONE (2026-08-08, 0.3.5):
+  arbitrateLightbearer prices both ring candidates on the TOTAL (set
+  dps + spec dps-added) after the spec pick and the argmax wins -
+  single-mob cards, owned and BiS sides; rosters keep the shared-set
+  ring (a per-mob swap cannot ride one shared set - future work).
 - **Constraint parameters + parameterized link-in API (added 2026-07-16)** -
   broader query constraints: max total gear WEIGHT (data prereq: carry the
   weirdgloop weight field through refresh_data.py - not vendored today) and
