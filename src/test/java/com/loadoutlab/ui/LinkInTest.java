@@ -163,10 +163,19 @@ public class LinkInTest
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		Assert.assertTrue(panel(computed).selectExternal("Thermy", null));
 		Assert.assertEquals("Thermonuclear smoke devil", computed.get().getName());
-		Assert.assertTrue(panel(computed).selectExternal("Grotesque Guardians", null));
-		Assert.assertEquals("Dusk", computed.get().getName());
-		Assert.assertTrue(panel(computed).selectExternal("ToB (HM)", null));
-		Assert.assertEquals("Verzik Vitur", computed.get().getName());
+		// Group names open the WHOLE fight now (2026-08-07): the old
+		// contract aliased an activity to one representative monster
+		// ("Grotesque Guardians" -> Dusk); the roster supersedes it.
+		LoadoutLabPanel gg = panel(computed);
+		Assert.assertTrue(gg.selectExternal("Grotesque Guardians", null));
+		Assert.assertEquals(3, gg.activeMobsForTest().size());
+		Assert.assertTrue(gg.activeMobsForTest().stream()
+			.anyMatch(m -> "Dusk".equals(m.getName())));
+		LoadoutLabPanel tob = panel(computed);
+		Assert.assertTrue(tob.selectExternal("ToB (HM)", null));
+		Assert.assertEquals(10, tob.activeMobsForTest().size());
+		Assert.assertTrue(tob.activeMobsForTest().stream()
+			.anyMatch(m -> "Verzik Vitur".equals(m.getName())));
 	}
 
 	@Test

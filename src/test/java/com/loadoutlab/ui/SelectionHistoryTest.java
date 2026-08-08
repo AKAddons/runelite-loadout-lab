@@ -203,18 +203,21 @@ public class SelectionHistoryTest
 		LoadoutLabPanel panel = panel(computed);
 		panel.setHistoryControl(control(history));
 
-		Assert.assertTrue(panel.selectExternal("zulrah", null));
-		Assert.assertEquals("Zulrah", computed.get().getName());
+		// Vorkath/Callisto: group-free names - "zulrah" now opens the
+		// forms ROSTER by design (2026-08-07), and this test is about
+		// history mechanics, not that product call.
 		Assert.assertTrue(panel.selectExternal("vorkath", null));
 		Assert.assertEquals("Vorkath", computed.get().getName());
+		Assert.assertTrue(panel.selectExternal("callisto", null));
+		Assert.assertEquals("Callisto", computed.get().getName());
 
 		Assert.assertTrue(history.undo());
 		Assert.assertEquals("back lands on the previous search",
-			"Zulrah", computed.get().getName());
+			"Vorkath", computed.get().getName());
 
 		Assert.assertTrue(history.redo());
 		Assert.assertEquals("forward returns to the newer search",
-			"Vorkath", computed.get().getName());
+			"Callisto", computed.get().getName());
 	}
 
 	@Test
@@ -237,13 +240,13 @@ public class SelectionHistoryTest
 		LoadoutLabPanel panel = panel(computed);
 		panel.setHistoryControl(control(history));
 
-		Assert.assertTrue(panel.selectExternal("zulrah", null));          // unrecorded first pick
+		Assert.assertTrue(panel.selectExternal("vorkath", null));         // unrecorded first pick
 		panel.spellbookForTest().setSelectedIndex(1);                  // step: Spellbook: Standard
-		Assert.assertTrue(panel.selectExternal("vorkath", null));         // step: vs Vorkath
+		Assert.assertTrue(panel.selectExternal("callisto", null));        // step: vs Callisto
 
 		Assert.assertTrue(history.undo());
 		Assert.assertEquals("first back re-lands the previous search",
-			"Zulrah", computed.get().getName());
+			"Vorkath", computed.get().getName());
 		Assert.assertEquals("the spellbook step is untouched so far",
 			1, panel.spellbookForTest().getSelectedIndex());
 
@@ -255,7 +258,7 @@ public class SelectionHistoryTest
 		Assert.assertTrue(history.redo());
 		Assert.assertEquals(1, panel.spellbookForTest().getSelectedIndex());
 		Assert.assertTrue(history.redo());
-		Assert.assertEquals("Vorkath", computed.get().getName());
+		Assert.assertEquals("Callisto", computed.get().getName());
 	}
 
 	@Test
@@ -398,8 +401,8 @@ public class SelectionHistoryTest
 		LoadoutLabPanel panel = panel(computed);
 		panel.setHistoryControl(control(history));
 
-		Assert.assertTrue(panel.selectExternal("zulrah", null));
-		Assert.assertTrue(panel.selectExternal("zulrah", null));
+		Assert.assertTrue(panel.selectExternal("vorkath", null));
+		Assert.assertTrue(panel.selectExternal("vorkath", null));
 		Assert.assertFalse(history.canUndo());
 	}
 }

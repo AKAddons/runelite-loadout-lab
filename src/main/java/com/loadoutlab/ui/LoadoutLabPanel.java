@@ -2721,6 +2721,15 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 	}
 
+	/** Test seam: the active entry's mob list - group link-ins land here
+	 * (the headless harness's roster hook is a no-op, so the entry is the
+	 * observable). */
+	java.util.List<MonsterStats> activeMobsForTest()
+	{
+		return active == null ? java.util.Collections.emptyList()
+			: java.util.Collections.unmodifiableList(active.mobs);
+	}
+
 	JComboBox<String> spellbookForTest()
 	{
 		return spellbook;
