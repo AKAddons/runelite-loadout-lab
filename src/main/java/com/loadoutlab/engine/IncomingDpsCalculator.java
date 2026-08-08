@@ -295,10 +295,18 @@ public final class IncomingDpsCalculator
 			case "crush": return KIND_CRUSH;
 			case "melee": return KIND_MELEE_GENERIC;
 			case "ranged":
-			case "range": return KIND_RANGED;
+			case "range":
+			// The inverse hybrids roll vs RANGED defence (wiki: Ranged
+			// magic "less likely to hit players wearing armour with high
+			// Ranged defence bonuses"; Ranged melee likewise) - the
+			// delivery only decides the prayer, mapped separately.
+			case "ranged magic":
+			case "ranged melee": return KIND_RANGED;
 			case "magic":
 			case "magical ranged":
-			case "magical melee": return KIND_MAGIC;
+			case "magical melee":
+			// The NMZ Moss Guardians' corpus spelling of magical melee.
+			case "magic melee": return KIND_MAGIC;
 			default: return KIND_UNMODELED;
 		}
 	}
@@ -565,16 +573,33 @@ public final class IncomingDpsCalculator
 		return new StyleThreat(rawStyle, dps, maxHit, true, false, share);
 	}
 
+	/** The prayer follows the attack's DELIVERY, never its accuracy roll
+	 * (wiki: Magical melee / Magical ranged / Ranged magic / Ranged melee;
+	 * field report 2026-08-08, grZ: a Pyrefiend's magical melee was told
+	 * Protect from Magic - Protect from MELEE blocks it):
+	 *   magical/magic melee -> Melee (rolls vs magic def, swings melee)
+	 *   magical ranged      -> Missiles (rolls vs magic def, projectile)
+	 *   ranged magic        -> Magic (rolls vs ranged def, a cast -
+	 *                          Kree'arra, Spinolyps, Torchers)
+	 *   ranged melee        -> Melee (rolls vs ranged def, swings melee) */
 	private static String protectPrayerFor(String rawStyle)
 	{
 		String style = rawStyle.toLowerCase(Locale.ROOT);
-		if (style.equals("ranged") || style.equals("range"))
+		if (style.contains("melee"))
+		{
+			return "Protect from Melee";
+		}
+		if (style.startsWith("magical ranged"))
 		{
 			return "Protect from Missiles";
 		}
-		if (style.startsWith("magic"))
+		if (style.equals("ranged magic") || style.startsWith("magic"))
 		{
 			return "Protect from Magic";
+		}
+		if (style.startsWith("ranged") || style.equals("range"))
+		{
+			return "Protect from Missiles";
 		}
 		return "Protect from Melee";
 	}

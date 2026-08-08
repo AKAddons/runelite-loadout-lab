@@ -52,6 +52,31 @@ public class IncomingDpsCalculatorTest
 	}
 
 	@Test
+	public void hybridStylesProtectByDeliveryNotRoll()
+	{
+		// Wiki (Magical melee / Magical ranged pages): the accuracy roll
+		// is vs magic defence, but the PRAYER follows the delivery - a
+		// Pyrefiend's magical melee is blocked by Protect from MELEE
+		// (field report 2026-08-08, grZ: "this is wrong should be melee
+		// protect"), magical ranged by Protect from MISSILES.
+		IncomingDpsCalculator.Result melee = IncomingDpsCalculator.calculate(
+			monster(List.of("Magical melee")), armour(200, 200, 200, 0, 150), 99, 99);
+		Assert.assertEquals("Protect from Melee", melee.protectPrayer);
+		IncomingDpsCalculator.Result ranged = IncomingDpsCalculator.calculate(
+			monster(List.of("Magical ranged")), armour(200, 200, 200, 0, 150), 99, 99);
+		Assert.assertEquals("Protect from Missiles", ranged.protectPrayer);
+		// The inverse hybrids: ranged magic (Kree'arra, Spinolyps) is a
+		// CAST that rolls vs ranged defence - Protect from Magic blocks
+		// it; ranged melee (dust devils) is melee-blocked.
+		IncomingDpsCalculator.Result cast = IncomingDpsCalculator.calculate(
+			monster(List.of("Ranged magic")), armour(200, 200, 200, 0, 150), 99, 99);
+		Assert.assertEquals("Protect from Magic", cast.protectPrayer);
+		IncomingDpsCalculator.Result swing = IncomingDpsCalculator.calculate(
+			monster(List.of("Ranged melee")), armour(200, 200, 200, 0, 150), 99, 99);
+		Assert.assertEquals("Protect from Melee", swing.protectPrayer);
+	}
+
+	@Test
 	public void chipStyleContributesItsRotationShareWhilePrayingTheWorst()
 	{
 		// Hand-computed: crush roll 289*184=53176 vs def (99+9)*(200+64)=28512
