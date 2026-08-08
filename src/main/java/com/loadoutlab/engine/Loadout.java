@@ -108,6 +108,22 @@ public final class Loadout
 			acc[5], acc[6], acc[7], acc[8]);
 	}
 
+	/** Ammunition carried IN a Dizana's quiver rather than the ammo slot
+	 * (see QuiverAmmo). Set once by the display post-pass on final
+	 * results - never inside the beam - so the field stays off the hot
+	 * path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
+	 * it in the max-hit chain, mirroring the blowpipe's loaded dart. */
+	@Getter
+	private GearItem quiverAmmo;
+
+	/** A copy with ammunition moved into the quiver (see QuiverAmmo). */
+	public Loadout withQuiverAmmo(GearItem carried)
+	{
+		Loadout copy = new Loadout(copyOf(gear), true);
+		copy.quiverAmmo = carried;
+		return copy;
+	}
+
 	public GearItem get(GearSlot slot)
 	{
 		return gear.get(slot);

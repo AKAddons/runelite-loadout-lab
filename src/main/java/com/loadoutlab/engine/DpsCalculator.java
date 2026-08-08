@@ -362,7 +362,9 @@ public final class DpsCalculator
 		}
 		int maxHit = RollMath.maxHitFromEffective(effectiveDamage,
 			atlatl ? loadout.getBonuses().getStrength()
-				: effectiveRangedStrength(loadout) + BlowpipeDarts.strength(request, loadout.getWeapon()));
+				: effectiveRangedStrength(loadout)
+					+ BlowpipeDarts.strength(request, loadout.getWeapon())
+					+ QuiverAmmo.strength(loadout));
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());

@@ -3341,6 +3341,10 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					highlightIds.add(dart.getId());
 				}
+				if (best.getLoadout().getQuiverAmmo() != null)
+				{
+					highlightIds.add(best.getLoadout().getQuiverAmmo().getId());
+				}
 				if (specWeapon != null)
 				{
 					highlightIds.add(specWeapon.getId());
@@ -6050,6 +6054,10 @@ public class LoadoutLabPanel extends PluginPanel
 				items.add(item.getName());
 			}
 		}
+		if (set.getLoadout().getQuiverAmmo() != null)
+		{
+			items.add(set.getLoadout().getQuiverAmmo().getName() + " (in quiver)");
+		}
 		if (!items.isEmpty())
 		{
 			sb.append("  ").append(String.join(", ", items)).append('\n');
@@ -7333,6 +7341,11 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			ids.add(dart.getId());
 		}
+		if (best.getLoadout().getQuiverAmmo() != null)
+		{
+			// Quiver-carried arrows are still a bank fetch.
+			ids.add(best.getLoadout().getQuiverAmmo().getId());
+		}
 		if (specWeapon != null)
 		{
 			ids.add(specWeapon.getId());
@@ -8339,7 +8352,8 @@ public class LoadoutLabPanel extends PluginPanel
 			img.addTo(slot);
 			List<GearItem> menuItems = new ArrayList<>();
 			menuItems.add(item);
-			GearItem dart = slotType == GearSlot.WEAPON ? loadedDart(result) : null;
+			GearItem dart = slotType == GearSlot.WEAPON ? loadedDart(result)
+				: slotType == GearSlot.CAPE ? result.getLoadout().getQuiverAmmo() : null;
 			if (dart != null)
 			{
 				menuItems.add(dart);

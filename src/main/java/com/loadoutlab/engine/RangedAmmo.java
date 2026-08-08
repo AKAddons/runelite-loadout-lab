@@ -70,6 +70,23 @@ public final class RangedAmmo
 		return ammo != null && projectileMatches(ammo, weapon);
 	}
 
+	/** Arrow or bolt weapons only - the classes Dizana's quiver can hold
+	 * (javelins, darts and chinchompas stay in their own slots). */
+	static boolean usesArrowsOrBolts(GearItem weapon)
+	{
+		return weapon != null
+			&& (ARROW_TIER_BY_WEAPON.containsKey(weapon.getId())
+				|| BOLT_TIER_BY_WEAPON.containsKey(weapon.getId())
+				|| weapon.getId() == DORGESHUUN_CROSSBOW);
+	}
+
+	/** A blessing (or other passive ammo-slot item) may ride the freed
+	 * slot when the quiver carries the projectiles. */
+	static boolean passiveForQuiver(GearItem item)
+	{
+		return passiveAmmoSlotItem(item);
+	}
+
 	private static boolean weaponUsesProjectileAmmo(GearItem weapon)
 	{
 		if (weapon == null)

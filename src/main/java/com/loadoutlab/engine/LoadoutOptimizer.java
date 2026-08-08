@@ -88,6 +88,22 @@ public final class LoadoutOptimizer
 		}
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
 		DpsResult current = result;
+		// Dizana's quiver carries the arrows (field report 2026-08-07):
+		// relocate them BEFORE the sweep so the freed ammo slot is filled
+		// like any other dps-neutral slot. QuiverAmmo.strength keeps the
+		// recompute identical, so the neutral guard verifies the move.
+		if (QuiverAmmo.relocatable(current.getLoadout()))
+		{
+			EnumMap<GearSlot, GearItem> gear =
+				new EnumMap<>(current.getLoadout().getGear());
+			GearItem carried = gear.remove(GearSlot.AMMO);
+			Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(carried);
+			DpsResult recomputed = bestSpellResult(request, relocated, spellContext);
+			if (recomputed != null && recomputed.getDps() >= current.getDps() - 1e-9)
+			{
+				current = recomputed.withPurchaseCost(current.getPurchaseCost());
+			}
+		}
 		for (GearSlot slot : GearSlot.values())
 		{
 			// A pinned slot is the player's explicit choice - never swapped.
@@ -121,7 +137,9 @@ public final class LoadoutOptimizer
 						&& budgetCost(request, item) > budgetCost(request, worn))
 					|| !request.getRequirementProfile().canEquip(item.getRequirements())
 					|| !allowedByMode(request, item)
-					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon))
+					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon)
+					&& !(current.getLoadout().getQuiverAmmo() != null
+						&& RangedAmmo.passiveForQuiver(item)))
 					// Dragonfire gear mode: never swap the protection away.
 					|| (dragonShield && slot == GearSlot.SHIELD
 						&& !DragonfireRules.isProtectiveShield(item)))
@@ -149,6 +167,12 @@ public final class LoadoutOptimizer
 				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
 				gear.put(slot, item);
 				Loadout trial = Loadout.adopting(gear);
+				if (current.getLoadout().getQuiverAmmo() != null)
+				{
+					// The quiver's carried arrows ride every trial, or the
+					// recompute would lose their strength and reject the swap.
+					trial = trial.withQuiverAmmo(current.getLoadout().getQuiverAmmo());
+				}
 				// Risk rejections must not consume tries: in risk mode the
 				// top utility items are exactly the expensive gear the
 				// budget rejects, and the free tier (god books, diary
