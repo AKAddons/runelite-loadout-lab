@@ -8486,6 +8486,20 @@ public class LoadoutLabPanel extends PluginPanel
 						recompute();
 					});
 				}
+				// Exclude the shown spec weapon (field request 2026-08-09:
+				// the spec cell lost its exclude when it gained the pin) -
+				// pushes an unwanted auto spec out without pinning a
+				// replacement.
+				if (shown != null)
+				{
+					menu.addSeparator();
+					menuItem(menu, "Exclude " + shown.label(), a ->
+					{
+						exclusionToggle.toggle(shown.getId());
+						refreshExclusionsLabel();
+						recompute();
+					});
+				}
 				JComponent src = (JComponent) e.getSource();
 				menu.show(src, e.getX(), e.getY());
 			}
