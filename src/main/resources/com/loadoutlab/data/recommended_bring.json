@@ -40,7 +40,7 @@
     {
       "monsters": ["gargoyle", "marble gargoyle", "dusk"],
       "chips": [
-        {"id": 4162, "tooltip": "Rock hammer - finishes the gargoyle below 9 hp (a granite hammer auto-smashes instead)"}
+        {"id": 4162, "redundantWith": [21742], "tooltip": "Rock hammer - finishes the gargoyle below 9 hp (a granite hammer auto-smashes instead)"}
       ]
     },
     {

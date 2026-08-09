@@ -125,6 +125,18 @@ class RecommendedBringTest
 	}
 
 	@Test
+	@DisplayName("the rock hammer chip yields IF AND ONLY IF the granite hammer is in the set")
+	void graniteHammerRedundancy()
+	{
+		assertTrue(RecommendedBring.redundant(4162, java.util.Set.of(21742)),
+			"granite hammer auto-smashes - the rock hammer chip is dead weight");
+		assertFalse(RecommendedBring.redundant(4162, java.util.Set.of(4151)),
+			"no granite hammer, the chip stands");
+		assertFalse(RecommendedBring.redundant(5952, java.util.Set.of(21742)),
+			"redundancy is per-chip data, never global");
+	}
+
+	@Test
 	@DisplayName("finishing items chip on their families")
 	void finishingItems()
 	{

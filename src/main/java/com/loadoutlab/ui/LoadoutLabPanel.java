@@ -5248,13 +5248,37 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		// Curated per-monster recommendations (the barrage runes, DK
 		// antipoison): the mechanics note TELLS, these chips SHOW - and a
-		// rune recommendation pulls the pouch along.
+		// rune recommendation pulls the pouch along. A chip the shown
+		// answer makes redundant is skipped (rock hammer IF AND ONLY IF
+		// the granite hammer is in the set; field refinement 2026-08-09).
+		java.util.Set<Integer> shownIds = new java.util.HashSet<>();
+		DpsResult shownForChips = viewed == null ? null
+			: bis ? viewed.overallBest
+			: viewed.owned == null || viewed.owned.isEmpty() ? null : viewed.owned.get(0);
+		if (shownForChips != null)
+		{
+			for (GearItem worn : shownForChips.getLoadout().getGear().values())
+			{
+				if (worn != null)
+				{
+					shownIds.add(worn.getId());
+				}
+			}
+		}
+		if (viewed != null && viewed.specWeapon != null)
+		{
+			shownIds.add(viewed.specWeapon.getId());
+		}
 		boolean recommendedRunes = false;
 		for (MonsterStats recMob : entry.mobs)
 		{
 			for (Map.Entry<Integer, String> rec
 				: com.loadoutlab.data.RecommendedBring.chipsFor(recMob).entrySet())
 			{
+				if (com.loadoutlab.data.RecommendedBring.redundant(rec.getKey(), shownIds))
+				{
+					continue;
+				}
 				chips.putIfAbsent(rec.getKey(), rec.getValue());
 				recommendedRunes |= com.loadoutlab.data.RecommendedBring.isRune(rec.getKey());
 			}

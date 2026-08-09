@@ -43,6 +43,7 @@ public final class RecommendedBring
 
 	private static final List<Rule> RULES = new ArrayList<>();
 	private static final Set<Integer> RUNES = new HashSet<>();
+	private static final Map<Integer, Set<Integer>> REDUNDANT = new LinkedHashMap<>();
 
 	static
 	{
@@ -63,6 +64,15 @@ public final class RecommendedBring
 				if (chip.has("rune") && chip.get("rune").getAsBoolean())
 				{
 					RUNES.add(id);
+				}
+				if (chip.has("redundantWith"))
+				{
+					Set<Integer> redundant = REDUNDANT.computeIfAbsent(id,
+						k -> new HashSet<>());
+					for (JsonElement r : chip.getAsJsonArray("redundantWith"))
+					{
+						redundant.add(r.getAsInt());
+					}
 				}
 			}
 			RULES.add(new Rule(monsters,
@@ -93,6 +103,26 @@ public final class RecommendedBring
 	public static boolean isRune(int itemId)
 	{
 		return RUNES.contains(itemId);
+	}
+
+	/** True when the shown answer already makes this chip pointless -
+	 * a rock hammer is dead weight IF AND ONLY IF the granite hammer is
+	 * in the set (it auto-smashes; field refinement 2026-08-09). */
+	public static boolean redundant(int chipId, Set<Integer> shownItemIds)
+	{
+		Set<Integer> redundant = REDUNDANT.get(chipId);
+		if (redundant == null)
+		{
+			return false;
+		}
+		for (int id : redundant)
+		{
+			if (shownItemIds.contains(id))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** True when this monster's recommendation puts the trip on a specific
