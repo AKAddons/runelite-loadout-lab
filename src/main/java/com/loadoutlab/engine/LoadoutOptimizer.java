@@ -748,6 +748,15 @@ public final class LoadoutOptimizer
 	{
 		if (request.getStyle() != CombatStyle.MAGIC || !request.isAutoSpell())
 		{
+			// A pinned spell rides only weapons that can autocast it - the
+			// same legality the auto path enforces. Without this a powered
+			// staff priced its own built-in and outbid the legal staves
+			// (field report 2026-08-09: Blood Barrage pin, Trident answer).
+			if (request.getStyle() == CombatStyle.MAGIC && request.getSpell() != null
+				&& !spellAllowed(request, loadout, request.getSpell()))
+			{
+				return null;
+			}
 			return calculator.calculate(request, loadout);
 		}
 		DpsResult best = null;
