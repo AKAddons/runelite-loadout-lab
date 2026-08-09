@@ -361,16 +361,24 @@ public class OptimizerService
 		ComputeContext ctx)
 	{
 		return mob.getId() + "|" + mob.getToaInvocationLevel() + "|" + style.name() + "|" + (game ? "g" : "o")
-			+ "|" + ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
-			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
-			+ "|" + dreamsFor(ctx, mob).hashCode() + "|" + ctx.upgradeBudgetGp
-			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
-			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels)
+			+ "|" + ctxKey(ctx)
+			+ "|" + dreamsFor(ctx, mob).hashCode()
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
 			+ "|" + ctx.pins.getOrDefault(style, Collections.emptyMap()).hashCode()
 			+ "|" + (style == CombatStyle.MAGIC && ctx.pinnedSpell != null
 				? ctx.pinnedSpell.getName() : "");
+	}
+
+	/** The query-wide ctx fields every cache key shares (keys only need
+	 * equality, so the two key builders reuse one middle). */
+	private static String ctxKey(ComputeContext ctx)
+	{
+		return ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
+			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge
+			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
+			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
+			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
 	}
 
 	/** One roster optimize (a pool task): LRU-cached; a hit hands out a
@@ -395,16 +403,24 @@ public class OptimizerService
 		}
 		LoadoutOptimizer local = new LoadoutOptimizer();
 		List<DpsResult> best = local.optimize(ctx.dataset, req);
-		if (!best.isEmpty())
-		{
-			best.set(0, local.fillDpsNeutralSlots(ctx.dataset, req, best.get(0)));
-			best.set(0, local.ensureRequiredUtility(ctx.dataset, req, best.get(0)));
-		}
+		polish(local, ctx.dataset, req, best);
 		synchronized (optimizeCache)
 		{
 			optimizeCache.put(key, new ArrayList<>(best));
 		}
 		return best;
+	}
+
+	/** The displayed set's finish, shared by every optimize site: top up
+	 * DPS-neutral empty slots and required utility (verified DPS-neutral). */
+	private static void polish(LoadoutOptimizer opt, LoadoutData dataset,
+		OptimizationRequest req, List<DpsResult> best)
+	{
+		if (!best.isEmpty())
+		{
+			best.set(0, opt.fillDpsNeutralSlots(dataset, req, best.get(0)));
+			best.set(0, opt.ensureRequiredUtility(dataset, req, best.get(0)));
+		}
 	}
 
 	/** The dream items for ONE mob: global sims plus that mob's own. */
@@ -440,14 +456,8 @@ public class OptimizerService
 	 * can never drift into split/colliding cache buckets. */
 	private static String baseKeyFor(MonsterStats monster, ComputeContext ctx)
 	{
-		return ctx.collectionFingerprint + "|" + monster.getId() + "|" + ctx.f2pOnly
-			+ "|" + ctx.onSlayerTask + "|" + ctx.lock + "|" + ctx.unlocks.key()
-			+ "|" + ctx.maxTradeables + "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge + "|" + ctx.specWeapon + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
-			+ "|" + ctx.inWilderness
-			+ "|" + ctx.dreams.hashCode() + "|" + ctx.upgradeBudgetGp
-			+ "|" + ctx.maxSwaps
-			+ "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
-			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
+		return monster.getId() + "|" + ctxKey(ctx)
+			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps;
 	}
 
 	private Map<CombatStyle, StyleResult> computeAllStyles(
@@ -490,13 +500,9 @@ public class OptimizerService
 				// by the beam).
 				OptimizationRequest ownedRequest = ownedRequestFor(ctx, monster, style, styleLevels);
 				List<DpsResult> ownedBest = optimizer.optimize(ctx.dataset, ownedRequest);
-				if (!ownedBest.isEmpty())
-				{
-					// The displayed set: top up DPS-neutral empty slots with
-					// prayer/defensive gear (verified not to change the DPS).
-					ownedBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, ownedRequest, ownedBest.get(0)));
-					ownedBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, ownedRequest, ownedBest.get(0)));
-				}
+				// The displayed set: top up DPS-neutral empty slots with
+				// prayer/defensive gear (verified not to change the DPS).
+				polish(optimizer, ctx.dataset, ownedRequest, ownedBest);
 				// The ceiling: every obtainable item, no quest/level gating -
 				// but computed at the player's own levels, so the comparison
 				// percentage isolates the GEAR gap.
@@ -506,11 +512,7 @@ public class OptimizerService
 				// arbitrary god's, and the BiS border matches by id.
 				OptimizationRequest gameRequest = gameRequestFor(ctx, monster, style, gameLevels);
 				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
-				if (!gameBest.isEmpty())
-				{
-					gameBest.set(0, optimizer.fillDpsNeutralSlots(ctx.dataset, gameRequest, gameBest.get(0)));
-					gameBest.set(0, optimizer.ensureRequiredUtility(ctx.dataset, gameRequest, gameBest.get(0)));
-				}
+				polish(optimizer, ctx.dataset, gameRequest, gameBest);
 				// Bench 0 = strictly one worn set: no spec swap is carried.
 				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
 					? arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned)
@@ -520,30 +522,14 @@ public class OptimizerService
 					: null;
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
-				IncomingDpsCalculator.Result incoming = ownedBest.isEmpty()
-					? null
-					: IncomingDpsCalculator.calculate(
-						monster, ownedBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
-				IncomingDpsCalculator.Result gameIncoming = gameBest.isEmpty()
-					? null
-					: IncomingDpsCalculator.calculate(
-						monster, gameBest.get(0).getLoadout(), ctx.real.getDefence(), ctx.real.getMagic());
-				List<GearItem> bench = new ArrayList<>();
-				if (spec != null && spec.weapon != null && !ownedBest.isEmpty()
-					&& (ownedBest.get(0).getLoadout().getWeapon() == null
-						|| ownedBest.get(0).getLoadout().getWeapon().getId() != spec.weapon.getId()))
-				{
-					bench.add(spec.weapon);
-				}
+				IncomingDpsCalculator.Result incoming = incomingFor(monster,
+					ownedBest.isEmpty() ? null : ownedBest.get(0).getLoadout(), ctx);
+				IncomingDpsCalculator.Result gameIncoming = incomingFor(monster,
+					gameBest.isEmpty() ? null : gameBest.get(0).getLoadout(), ctx);
+				List<GearItem> bench = specBenchOf(spec, ownedBest);
 				// The BiS side's inventory mirrors it (field fix 2026-07-18:
 				// a single mob's BiS view showed no carried spec).
-				List<GearItem> gameBench = new ArrayList<>();
-				if (gameSpec != null && gameSpec.weapon != null && !gameBest.isEmpty()
-					&& (gameBest.get(0).getLoadout().getWeapon() == null
-						|| gameBest.get(0).getLoadout().getWeapon().getId() != gameSpec.weapon.getId()))
-				{
-					gameBench.add(gameSpec.weapon);
-				}
+				List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
 				StyleResult styleResult = new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench);
@@ -556,6 +542,30 @@ public class OptimizerService
 				results.put(style, styleResult);
 			}
 		return results;
+	}
+
+	/** What the boss does back to you in this worn set, at REAL levels
+	 * (protection prayer up) - null loadout answers null. Twin owned/game
+	 * call sites in both compute paths share it. */
+	private static IncomingDpsCalculator.Result incomingFor(MonsterStats mob,
+		Loadout worn, ComputeContext ctx)
+	{
+		return worn == null ? null
+			: IncomingDpsCalculator.calculate(mob, worn, ctx.real.getDefence(), ctx.real.getMagic());
+	}
+
+	/** One side's bench for the single-mob path: the spec weapon when the
+	 * shown set does not already wear it. */
+	private static List<GearItem> specBenchOf(SpecPick spec, List<DpsResult> best)
+	{
+		List<GearItem> bench = new ArrayList<>();
+		if (spec != null && spec.weapon != null && !best.isEmpty()
+			&& (best.get(0).getLoadout().getWeapon() == null
+				|| best.get(0).getLoadout().getWeapon().getId() != spec.weapon.getId()))
+		{
+			bench.add(spec.weapon);
+		}
+		return bench;
 	}
 
 	/** Gather the query-wide state one compute needs. Shared by the single-
@@ -660,6 +670,12 @@ public class OptimizerService
 	 * combination of base + carried) until the bench is full or nothing
 	 * gains. Small scale by construction: candidates <= mobs x slots.
 	 */
+	/** True when a per-mob optimize answer has nothing usable in front. */
+	private static boolean emptyBest(List<DpsResult> best)
+	{
+		return best == null || best.isEmpty() || best.get(0) == null;
+	}
+
 	/** The same-style swap candidate pool: every per-mob free-best item
 	 * that differs from the base in its slot. */
 	private static Collection<GearItem> swapCandidates(Loadout base,
@@ -668,7 +684,7 @@ public class OptimizerService
 		LinkedHashMap<Integer, GearItem> candidates = new LinkedHashMap<>();
 		for (List<DpsResult> best : freeBests)
 		{
-			if (best == null || best.isEmpty() || best.get(0) == null)
+			if (emptyBest(best))
 			{
 				continue;
 			}
@@ -840,7 +856,7 @@ public class OptimizerService
 	private static DpsResult coverableBest(List<DpsResult> freeBest,
 		Loadout base, List<GearItem> carried)
 	{
-		if (freeBest == null || freeBest.isEmpty() || freeBest.get(0) == null)
+		if (emptyBest(freeBest))
 		{
 			return null;
 		}
@@ -918,7 +934,7 @@ public class OptimizerService
 			sources.add(entry.getValue());
 			for (List<DpsResult> best : bestsByStyle.get(style))
 			{
-				if (best != null && !best.isEmpty() && best.get(0) != null)
+				if (!emptyBest(best))
 				{
 					sources.add(best.get(0).getLoadout());
 				}
@@ -1106,7 +1122,7 @@ public class OptimizerService
 			for (List<List<DpsResult>> bests : bestsByStyle.values())
 			{
 				List<DpsResult> best = bests.get(j);
-				if (best == null || best.isEmpty() || best.get(0) == null)
+				if (emptyBest(best))
 				{
 					continue;
 				}
@@ -1157,7 +1173,7 @@ public class OptimizerService
 			for (List<List<DpsResult>> bests : bestsByStyle.values())
 			{
 				List<DpsResult> best = bests.get(j);
-				if (best == null || best.isEmpty() || best.get(0) == null)
+				if (emptyBest(best))
 				{
 					continue;
 				}
@@ -1395,7 +1411,7 @@ public class OptimizerService
 		List<Loadout> candidates = new ArrayList<>();
 		for (List<DpsResult> b : bests)
 		{
-			if (b != null && !b.isEmpty() && b.get(0) != null)
+			if (!emptyBest(b))
 			{
 				candidates.add(b.get(0).getLoadout());
 			}
@@ -1765,12 +1781,8 @@ public class OptimizerService
 				DpsResult gameShown = shownGame.get(j);
 				SpecPick spec = specs[j];
 				SpecPick gameSpec = gameSpecs[j];
-				IncomingDpsCalculator.Result incoming = sharedOwned == null ? null
-					: IncomingDpsCalculator.calculate(mob, sharedOwned,
-						ctx.real.getDefence(), ctx.real.getMagic());
-				IncomingDpsCalculator.Result gameIncoming = sharedGame == null ? null
-					: IncomingDpsCalculator.calculate(mob, sharedGame,
-						ctx.real.getDefence(), ctx.real.getMagic());
+				IncomingDpsCalculator.Result incoming = incomingFor(mob, sharedOwned, ctx);
+				IncomingDpsCalculator.Result gameIncoming = incomingFor(mob, sharedGame, ctx);
 				Loadout worn = ownedList.isEmpty() ? sharedOwned
 					: ownedList.get(0).getLoadout();
 				if (specAmmoCarried != null)
@@ -1843,8 +1855,7 @@ public class OptimizerService
 						spec = ownedView.specs != null ? ownedView.specs[j] : null;
 						label = boostLabelByStyle.get(s);
 						Loadout worn = result.getLoadout();
-						incoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
-							ctx.real.getDefence(), ctx.real.getMagic());
+						incoming = incomingFor(mobs.get(j), worn, ctx);
 						bench = inventoryFor(ownedView.plan.values(), ownedView.specCarried, worn);
 					}
 					else if (ownedView != null)
@@ -1870,8 +1881,7 @@ public class OptimizerService
 						gameSpec = gameView.specs != null ? gameView.specs[j] : null;
 						gameLabel = gameBoostLabelByStyle.get(s);
 						Loadout worn = gameBest.getLoadout();
-						gameIncoming = IncomingDpsCalculator.calculate(mobs.get(j), worn,
-							ctx.real.getDefence(), ctx.real.getMagic());
+						gameIncoming = incomingFor(mobs.get(j), worn, ctx);
 						gameBench = inventoryFor(gameView.plan.values(), gameView.specCarried, worn);
 					}
 					else if (gameView != null)
@@ -1960,7 +1970,7 @@ public class OptimizerService
 				Map<Integer, GearItem> itemsById = new HashMap<>();
 				for (List<DpsResult> best : unifyEntry.getValue())
 				{
-					if (best == null || best.isEmpty() || best.get(0) == null)
+					if (emptyBest(best))
 					{
 						continue;
 					}
@@ -1989,7 +1999,7 @@ public class OptimizerService
 				for (int j = 0; j < n; j++)
 				{
 					List<DpsResult> best = unifyEntry.getValue().get(j);
-					if (best == null || best.isEmpty() || best.get(0) == null)
+					if (emptyBest(best))
 					{
 						continue;
 					}
@@ -2018,7 +2028,7 @@ public class OptimizerService
 			for (CombatStyle s : sharedByStyle.keySet())
 			{
 				List<DpsResult> best = bestsByStyle.get(s).get(j);
-				if (best == null || best.isEmpty() || best.get(0) == null)
+				if (emptyBest(best))
 				{
 					continue;
 				}
@@ -2047,7 +2057,7 @@ public class OptimizerService
 			for (CombatStyle s : sharedByStyle.keySet())
 			{
 				List<DpsResult> best = bestsByStyle.get(s).get(j);
-				if (best == null || best.isEmpty() || best.get(0) == null)
+				if (emptyBest(best))
 				{
 					continue;
 				}
@@ -2588,8 +2598,7 @@ public class OptimizerService
 			return gameShown == null ? null
 				: new ArrayList<>(Collections.singletonList(gameShown));
 		}
-		return owned == null || owned.isEmpty() || owned.get(0) == null ? null
-			: new ArrayList<>(owned);
+		return emptyBest(owned) ? null : new ArrayList<>(owned);
 	}
 
 	/** The shared set with a Lightbearer in the ring slot, or null when the
@@ -2605,6 +2614,24 @@ public class OptimizerService
 		{
 			return null;
 		}
+		for (OptimizationRequest req : reqs)
+		{
+			if (req.pinnedFor(GearSlot.RING) != null || req.isRiskConstrained())
+			{
+				return null;
+			}
+		}
+		return lightbearerSwap(dataset, shared, reqs, owned);
+	}
+
+	/** The shared Lightbearer machinery: find the ring, prove it available
+	 * under every request (excluded/requirements/owned-or-dreamed), and wear
+	 * it into the set - null when the swap cannot apply. Callers layer their
+	 * own pin/risk policy on top (the roster skips risk conservatively; the
+	 * single-mob arbitration prices it). */
+	private static Loadout lightbearerSwap(LoadoutData dataset, Loadout shared,
+		List<OptimizationRequest> reqs, OwnedItems owned)
+	{
 		GearItem worn = shared.get(GearSlot.RING);
 		if (worn != null && worn.getNameLower().contains("lightbearer"))
 		{
@@ -2626,8 +2653,7 @@ public class OptimizerService
 		boolean dreamed = false;
 		for (OptimizationRequest req : reqs)
 		{
-			if (req.pinnedFor(GearSlot.RING) != null || req.isRiskConstrained()
-				|| req.isExcluded(lightbearer.getId())
+			if (req.isExcluded(lightbearer.getId())
 				|| !req.getRequirementProfile().canEquip(lightbearer.getRequirements()))
 			{
 				return null;
@@ -2722,35 +2748,15 @@ public class OptimizerService
 			return spec; // no spec value in play - dps ring stands
 		}
 		DpsResult base = results.get(0);
-		GearItem worn = base.getLoadout().get(GearSlot.RING);
-		if (request.pinnedFor(GearSlot.RING) != null
-			|| (worn != null && worn.getNameLower().contains("lightbearer")))
+		if (request.pinnedFor(GearSlot.RING) != null)
 		{
 			return spec;
 		}
-		GearItem lightbearer = null;
-		for (GearItem item : dataset.getGearItems(GearSlot.RING))
-		{
-			if (item.getNameLower().equals("lightbearer") && item.isStandardGear())
-			{
-				lightbearer = item;
-				break;
-			}
-		}
-		if (lightbearer == null
-			|| request.isExcluded(lightbearer.getId())
-			|| !request.getRequirementProfile().canEquip(lightbearer.getRequirements())
-			|| (owned != null && !owned.owns(lightbearer.getId())
-				&& !request.isDream(lightbearer.getId())))
+		Loadout variantLoadout = lightbearerSwap(dataset, base.getLoadout(),
+			Collections.singletonList(request), owned);
+		if (variantLoadout == null)
 		{
 			return spec;
-		}
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(base.getLoadout().getGear());
-		gear.put(GearSlot.RING, lightbearer);
-		Loadout variantLoadout = Loadout.adopting(gear);
-		if (base.getLoadout().getQuiverAmmo() != null)
-		{
-			variantLoadout = variantLoadout.withQuiverAmmo(base.getLoadout().getQuiverAmmo());
 		}
 		if (request.isRiskConstrained()
 			&& (PvpRisk.riskGp(variantLoadout, null, request.getMaxTradeables())
