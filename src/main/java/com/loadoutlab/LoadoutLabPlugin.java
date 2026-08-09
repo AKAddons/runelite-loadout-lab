@@ -1,5 +1,11 @@
 package com.loadoutlab;
 
+import com.loadoutlab.collection.ItemLocations;
+import com.loadoutlab.collection.SupplyDefaultsStore;
+import com.loadoutlab.data.GearSlot;
+import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.data.StashUnits;
+import com.loadoutlab.data.TripSupplies;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
@@ -184,11 +190,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private ManualOwnedStore manualOwned;
 	private com.loadoutlab.collection.MonsterProfileStore mobProfiles;
 	private com.loadoutlab.collection.AlwaysFilterStore alwaysFilter;
-	private com.loadoutlab.collection.SupplyDefaultsStore supplyDefaults;
+	private SupplyDefaultsStore supplyDefaults;
 	private DwmsLink dwmsLink;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
-	private volatile com.loadoutlab.data.StashUnits stashUnits;
+	private volatile StashUnits stashUnits;
 	/** One chart read per opening, mirroring the container-scan coalescing. */
 	private boolean stashChartSeen;
 	private OptimizerService optimizerService;
@@ -370,7 +376,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		manualOwned = new ManualOwnedStore(configManager, gson);
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
 		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
-		supplyDefaults = new com.loadoutlab.collection.SupplyDefaultsStore(configManager, gson);
+		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
 		dwmsLink = new DwmsLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
@@ -411,7 +417,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			try
 			{
-				stashUnits = com.loadoutlab.data.StashUnits.load();
+				stashUnits = StashUnits.load();
 			}
 			catch (RuntimeException ex)
 			{
@@ -647,16 +653,16 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	{
 		Map<String, String> defaults = new LinkedHashMap<>();
 		for (String category : new String[]{
-			com.loadoutlab.data.TripSupplies.FOOD,
-			com.loadoutlab.data.TripSupplies.FAST_FOOD,
-			com.loadoutlab.data.TripSupplies.PRAYER_RESTORE,
-			com.loadoutlab.data.TripSupplies.SURGE,
-			com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE,
-			com.loadoutlab.data.TripSupplies.ANTIVENOM,
+			TripSupplies.FOOD,
+			TripSupplies.FAST_FOOD,
+			TripSupplies.PRAYER_RESTORE,
+			TripSupplies.SURGE,
+			TripSupplies.SPELLBOOK_CAPE,
+			TripSupplies.ANTIVENOM,
 			"arceuusAccess"})
 		{
 			defaults.put(category, supplyDefaults == null
-				? com.loadoutlab.collection.SupplyDefaultsStore.DETECT_BEST
+				? SupplyDefaultsStore.DETECT_BEST
 				: supplyDefaults.choice(category));
 		}
 		return defaults;
@@ -664,8 +670,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	/** DETECT seeds nothing, NONE seeds prayerless/unboosted, any other
 	 * enum constant seeds its pick string for that style. */
-	private static void seedPick(java.util.Map<com.loadoutlab.engine.CombatStyle, String> into,
-		com.loadoutlab.engine.CombatStyle style, String constant, String pick)
+	private static void seedPick(java.util.Map<CombatStyle, String> into,
+		CombatStyle style, String constant, String pick)
 	{
 		if ("DETECT".equals(constant) || pick == null)
 		{
@@ -712,17 +718,17 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		o.detectThralls = config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
 		o.detectDeathCharge = config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
 		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
-		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+		seedPick(o.defaultPrayerPicks, CombatStyle.MELEE,
 			config.defaultMeleePrayer().name(), config.defaultMeleePrayer().pick);
-		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+		seedPick(o.defaultPrayerPicks, CombatStyle.RANGED,
 			config.defaultRangedPrayer().name(), config.defaultRangedPrayer().toString());
-		seedPick(o.defaultPrayerPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+		seedPick(o.defaultPrayerPicks, CombatStyle.MAGIC,
 			config.defaultMagicPrayer().name(), config.defaultMagicPrayer().toString());
-		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MELEE,
+		seedPick(o.defaultBoostPicks, CombatStyle.MELEE,
 			config.defaultMeleeBoost().name(), config.defaultMeleeBoost().name());
-		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.RANGED,
+		seedPick(o.defaultBoostPicks, CombatStyle.RANGED,
 			config.defaultRangedBoost().name(), config.defaultRangedBoost().name());
-		seedPick(o.defaultBoostPicks, com.loadoutlab.engine.CombatStyle.MAGIC,
+		seedPick(o.defaultBoostPicks, CombatStyle.MAGIC,
 			config.defaultMagicBoost().name(), config.defaultMagicBoost().name());
 		o.specDpsMode = config.specDpsOutput().ordinal();
 		o.thrallDpsMode = config.thrallDpsOutput().ordinal();
@@ -986,7 +992,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			stashChartSeen = false;
 			return;
 		}
-		com.loadoutlab.data.StashUnits units = stashUnits;
+		StashUnits units = stashUnits;
 		if (stashChartSeen || units == null)
 		{
 			return;
@@ -1000,15 +1006,15 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				continue;
 			}
-			List<com.loadoutlab.data.StashUnits.Cell> cells = new ArrayList<>();
+			List<StashUnits.Cell> cells = new ArrayList<>();
 			for (Widget child : tier.getChildren())
 			{
 				if (child != null)
 				{
-					cells.add(new com.loadoutlab.data.StashUnits.Cell(child.getType(), child.getText()));
+					cells.add(new StashUnits.Cell(child.getType(), child.getText()));
 				}
 			}
-			for (String name : com.loadoutlab.data.StashUnits.filledNames(cells, childId == 14))
+			for (String name : StashUnits.filledNames(cells, childId == 14))
 			{
 				int[] ids = units.itemsFor(name);
 				if (ids == null)
@@ -1136,24 +1142,24 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	{
 		switch (family)
 		{
-			case "poh": return "POH costume room" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
-			case "stash": return "STASH" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
-			case "death": return "death storage" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
-			case "sailing": return "cargo hold" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
-			case "carryable": return "carried container" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
-			default: return "world storage" + com.loadoutlab.collection.ItemLocations.VIA_DWMS;
+			case "poh": return "POH costume room" + ItemLocations.VIA_DWMS;
+			case "stash": return "STASH" + ItemLocations.VIA_DWMS;
+			case "death": return "death storage" + ItemLocations.VIA_DWMS;
+			case "sailing": return "cargo hold" + ItemLocations.VIA_DWMS;
+			case "carryable": return "carried container" + ItemLocations.VIA_DWMS;
+			default: return "world storage" + ItemLocations.VIA_DWMS;
 		}
 	}
 
 	/** The mob's effective pins per style (ALL overlaid by each style) -
 	 * what the optimizer request for each card carries. */
-	private Map<com.loadoutlab.engine.CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle(int monsterId)
+	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(int monsterId)
 	{
-		EnumMap<com.loadoutlab.engine.CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> byStyle =
-			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.values())
+		EnumMap<CombatStyle, Map<GearSlot, Integer>> byStyle =
+			new EnumMap<>(CombatStyle.class);
+		for (CombatStyle style : CombatStyle.values())
 		{
-			Map<com.loadoutlab.data.GearSlot, Integer> pins =
+			Map<GearSlot, Integer> pins =
 				mobProfiles.pinsFor(monsterId, style.name());
 			if (!pins.isEmpty())
 			{
@@ -1258,12 +1264,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	/** Effective exclusions per style: the global list unioned with this
 	 * mob's ALL + style scopes. Styles with no mob exclusions share the
 	 * global set instance, so their cache keys stay stable. */
-	private Map<com.loadoutlab.engine.CombatStyle, Set<Integer>> excludedByStyle(int monsterId)
+	private Map<CombatStyle, Set<Integer>> excludedByStyle(int monsterId)
 	{
 		Set<Integer> global = exclusions.snapshot();
-		EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle =
-			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		EnumMap<CombatStyle, Set<Integer>> byStyle =
+			new EnumMap<>(CombatStyle.class);
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			Set<Integer> mob = mobProfiles.exclusionsFor(monsterId, style.name());
 			if (mob.isEmpty())
@@ -1284,15 +1290,15 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * answer never wears it). Global exclusions ride the style map; each
 	 * mob's own exclusions ride this per-profileId map, so synthetic
 	 * phase variants (TD shields) inherit their real monster's profile. */
-	private Map<Integer, Map<com.loadoutlab.engine.CombatStyle, Set<Integer>>> perMobExclusions(
+	private Map<Integer, Map<CombatStyle, Set<Integer>>> perMobExclusions(
 		List<MonsterStats> mobs)
 	{
-		Map<Integer, Map<com.loadoutlab.engine.CombatStyle, Set<Integer>>> byMob =
+		Map<Integer, Map<CombatStyle, Set<Integer>>> byMob =
 			new HashMap<>();
 		for (MonsterStats mob : mobs)
 		{
-			EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle = null;
-			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+			EnumMap<CombatStyle, Set<Integer>> byStyle = null;
+			for (CombatStyle style : CombatStyle.concreteValues())
 			{
 				Set<Integer> per = mobProfiles.exclusionsFor(mob.profileId(), style.name());
 				if (per.isEmpty())
@@ -1301,7 +1307,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				}
 				if (byStyle == null)
 				{
-					byStyle = new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
+					byStyle = new EnumMap<>(CombatStyle.class);
 				}
 				byStyle.put(style, per);
 			}
@@ -1350,12 +1356,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 
 	/** The global exclusion set for every style - the roster path's base
 	 * map; per-mob exclusions layer on top inside the optimizer. */
-	private Map<com.loadoutlab.engine.CombatStyle, Set<Integer>> globalExcludedByStyle()
+	private Map<CombatStyle, Set<Integer>> globalExcludedByStyle()
 	{
 		Set<Integer> global = exclusions.snapshot();
-		EnumMap<com.loadoutlab.engine.CombatStyle, Set<Integer>> byStyle =
-			new EnumMap<>(com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
+		EnumMap<CombatStyle, Set<Integer>> byStyle =
+			new EnumMap<>(CombatStyle.class);
+		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			byStyle.put(style, global);
 		}
@@ -1368,20 +1374,20 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		return new LoadoutLabPanel.MobProfile()
 		{
 			@Override
-			public Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId, com.loadoutlab.engine.CombatStyle style)
+			public Map<GearSlot, Integer> pins(int monsterId, CombatStyle style)
 			{
 				return mobProfiles == null ? Map.of()
 					: mobProfiles.pinsFor(monsterId, style.name());
 			}
 
 			@Override
-			public Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId)
+			public Map<String, Map<GearSlot, Integer>> allPins(int monsterId)
 			{
 				return mobProfiles == null ? Map.of() : mobProfiles.allPins(monsterId);
 			}
 
 			@Override
-			public void pin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot, int itemId)
+			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
 			{
 				if (mobProfiles != null)
 				{
@@ -1390,7 +1396,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			}
 
 			@Override
-			public void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot)
+			public void unpin(int monsterId, String scope, GearSlot slot)
 			{
 				if (mobProfiles != null)
 				{
@@ -1418,7 +1424,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			}
 
 			@Override
-			public Set<Integer> filterItems(int monsterId, com.loadoutlab.engine.CombatStyle style)
+			public Set<Integer> filterItems(int monsterId, CombatStyle style)
 			{
 				return mobProfiles == null ? Set.of()
 					: mobProfiles.filterItemsFor(monsterId, style.name());
@@ -1565,14 +1571,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	}
 
 	/** The mob's pinned autocast spell resolved to the dataset, or null. */
-	private com.loadoutlab.data.SpellStats resolvedPinnedSpell(int monsterId)
+	private SpellStats resolvedPinnedSpell(int monsterId)
 	{
 		String name = mobProfiles == null ? "" : mobProfiles.pinnedSpellFor(monsterId);
 		if (name.isEmpty() || data == null)
 		{
 			return null;
 		}
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		for (SpellStats spell : data.getSpells())
 		{
 			if (spell.getName().equalsIgnoreCase(name))
 			{
@@ -1615,25 +1621,25 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	{
 		return new LoadoutLabPanel.LocationHint()
 		{
-			private com.loadoutlab.collection.ItemLocations cached;
+			private ItemLocations cached;
 			private int cachedFingerprint;
 
 			@Override
 			public String hint(int itemId)
 			{
-				com.loadoutlab.collection.ItemLocations locations = locations();
+				ItemLocations locations = locations();
 				return locations == null ? "" : locations.fetchHint(itemId);
 			}
 
 			@Override
 			public String primary(int itemId)
 			{
-				com.loadoutlab.collection.ItemLocations locations = locations();
+				ItemLocations locations = locations();
 				return locations == null ? "" : locations.primary(itemId);
 			}
 
 			/** EDT-confined (panel render/hover), like the panel itself. */
-			private com.loadoutlab.collection.ItemLocations locations()
+			private ItemLocations locations()
 			{
 				if (ledger == null || manualOwned == null || dwmsLink == null)
 				{
@@ -1642,7 +1648,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				int fingerprint = ownedFingerprint();
 				if (cached == null || cachedFingerprint != fingerprint)
 				{
-					cached = new com.loadoutlab.collection.ItemLocations(ownedBySources(),
+					cached = new ItemLocations(ownedBySources(),
 						data == null ? null : data::equivalentIds);
 					cachedFingerprint = fingerprint;
 				}

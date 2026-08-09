@@ -1,5 +1,8 @@
 package com.loadoutlab.optimizer;
 
+import com.loadoutlab.data.DefenceFloors;
+import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.engine.RaidBoosts;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import com.loadoutlab.engine.BoostProfile;
@@ -249,8 +252,8 @@ public class OptimizerService
 		int upgradeBudgetGp,
 		int maxSwaps,
 		boolean raidBoostAssumed,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
-		com.loadoutlab.data.SpellStats pinnedSpell,
+		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
+		SpellStats pinnedSpell,
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
@@ -325,7 +328,7 @@ public class OptimizerService
 		/** The bench size: carried items beyond the worn set; the spec
 		 * weapon occupies a slot when it differs from the worn weapon. */
 		int maxSwaps = 1;
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins;
+		Map<CombatStyle, Map<GearSlot, Integer>> pins;
 		Map<CombatStyle, Set<Integer>> excluded;
 		/** Assume the raid-supplied boost (CoX overload+, ToA salts) when
 		 * fighting inside - OFF falls back to the bank's own potions. */
@@ -338,7 +341,7 @@ public class OptimizerService
 		/** PER-MOB sims (profileId -> ids): counted as owned for that mob
 		 * only - the local twin of the global dream items. */
 		Map<Integer, Set<Integer>> dreamsByMob = Collections.emptyMap();
-		com.loadoutlab.data.SpellStats pinnedSpell;
+		SpellStats pinnedSpell;
 	}
 
 	/** Per-(mob, style, side) optimize results for the roster path, LRU.
@@ -476,7 +479,7 @@ public class OptimizerService
 				// bring), never below what is already live - unless the
 				// RAID supplies its own (CoX overload+, ToA salts).
 				BoostProfile supplied = ctx.raidBoostAssumed
-					? com.loadoutlab.engine.RaidBoosts.suppliedBoost(monster) : null;
+					? RaidBoosts.suppliedBoost(monster) : null;
 				StylePlan plan = stylePlan(ctx, style, supplied);
 				PlayerLevels styleLevels = plan.levels;
 				String boostLabel = plan.label;
@@ -565,8 +568,8 @@ public class OptimizerService
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
-		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
+		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
+		SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
 	{
 		ComputeContext ctx = new ComputeContext();
 		ctx.maxSwaps = Math.max(0, maxSwaps);
@@ -1360,20 +1363,20 @@ public class OptimizerService
 
 	private static Loadout withSwap(Loadout base, GearItem swap)
 	{
-		com.loadoutlab.data.GearSlot slot = swap.getSlot();
+		GearSlot slot = swap.getSlot();
 		GearItem weapon = base.getWeapon();
-		if (slot == com.loadoutlab.data.GearSlot.SHIELD
+		if (slot == GearSlot.SHIELD
 			&& weapon != null && weapon.isTwoHanded())
 		{
 			return null; // no shield under a 2h
 		}
-		EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
-			new EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		EnumMap<GearSlot, GearItem> gear =
+			new EnumMap<>(GearSlot.class);
 		gear.putAll(base.getGear());
 		gear.put(slot, swap);
-		if (slot == com.loadoutlab.data.GearSlot.WEAPON && swap.isTwoHanded())
+		if (slot == GearSlot.WEAPON && swap.isTwoHanded())
 		{
-			gear.remove(com.loadoutlab.data.GearSlot.SHIELD);
+			gear.remove(GearSlot.SHIELD);
 		}
 		return new Loadout(gear);
 	}
@@ -1470,10 +1473,10 @@ public class OptimizerService
 			// The roster assumes the raid's own boost when EVERY mob is
 			// inside the same raid (CoX overload+, ToA salts).
 			BoostProfile supplied = ctx.raidBoostAssumed
-				? com.loadoutlab.engine.RaidBoosts.suppliedBoost(mobs.get(0)) : null;
+				? RaidBoosts.suppliedBoost(mobs.get(0)) : null;
 			for (MonsterStats mob : mobs)
 			{
-				if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob) != supplied)
+				if (RaidBoosts.suppliedBoost(mob) != supplied)
 				{
 					supplied = null;
 					break;
@@ -2384,8 +2387,8 @@ public class OptimizerService
 		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pinnedByStyle,
-		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
+		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
+		SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
 	{
 		if (mobs == null || mobs.isEmpty())
@@ -2461,9 +2464,9 @@ public class OptimizerService
 	/** The per-style cache key: the query key minus per-style state, plus
 	 * this style and the pins/exclusions/pinned-spell that shape ITS answer. */
 	private static String styleKey(String baseKey, CombatStyle style,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins,
+		Map<CombatStyle, Map<GearSlot, Integer>> pins,
 		Map<CombatStyle, Set<Integer>> excluded,
-		com.loadoutlab.data.SpellStats pinnedSpell)
+		SpellStats pinnedSpell)
 	{
 		return baseKey + "|" + style.name()
 			+ "|" + pins.getOrDefault(style, Collections.emptyMap()).hashCode()
@@ -3001,7 +3004,7 @@ public class OptimizerService
 			// the official calc): drain stops at the floor - a DWH at Nex
 			// buys 10 levels, at Verzik/Vardorvis nothing at all. Without
 			// the clamp the fishing model overvalues drain specs there.
-			drained = Math.max(drained, com.loadoutlab.data.DefenceFloors.floorFor(monster));
+			drained = Math.max(drained, DefenceFloors.floorFor(monster));
 			if (drained < monster.getDefence())
 			{
 				DpsResult after = calculator.calculate(

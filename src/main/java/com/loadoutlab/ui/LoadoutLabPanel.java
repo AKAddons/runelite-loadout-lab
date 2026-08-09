@@ -1,5 +1,9 @@
 package com.loadoutlab.ui;
 
+import com.loadoutlab.data.MonsterGroups;
+import com.loadoutlab.data.RequiredGear;
+import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.engine.RaidBoosts;
 import com.loadoutlab.UsageLog;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
@@ -299,14 +303,14 @@ public class LoadoutLabPanel extends PluginPanel
 	public interface MobProfile
 	{
 		/** Effective pins for one style card (ALL overlaid by the style). */
-		Map<com.loadoutlab.data.GearSlot, Integer> pins(int monsterId, CombatStyle style);
+		Map<GearSlot, Integer> pins(int monsterId, CombatStyle style);
 
 		/** Raw pins by scope, for the manage menu. */
-		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId);
+		Map<String, Map<GearSlot, Integer>> allPins(int monsterId);
 
-		void pin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot, int itemId);
+		void pin(int monsterId, String scope, GearSlot slot, int itemId);
 
-		void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot);
+		void unpin(int monsterId, String scope, GearSlot slot);
 
 		String note(int monsterId);
 
@@ -531,7 +535,7 @@ public class LoadoutLabPanel extends PluginPanel
 	private void showBoostPickMenu(ResultEntry entry, CombatStyle style)
 	{
 		java.util.LinkedHashMap<String, String> options = new java.util.LinkedHashMap<>();
-		for (com.loadoutlab.engine.BoostProfile o : styleBoosts(style))
+		for (BoostProfile o : styleBoosts(style))
 		{
 			options.put(o.name(), o.toString());
 		}
@@ -561,13 +565,13 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The style's boost family plus the universal raid boosts. */
-	private static java.util.List<com.loadoutlab.engine.BoostProfile> styleBoosts(CombatStyle style)
+	private static java.util.List<BoostProfile> styleBoosts(CombatStyle style)
 	{
-		java.util.List<com.loadoutlab.engine.BoostProfile> options = new ArrayList<>();
-		for (com.loadoutlab.engine.BoostProfile b : com.loadoutlab.engine.BoostProfile.values())
+		java.util.List<BoostProfile> options = new ArrayList<>();
+		for (BoostProfile b : BoostProfile.values())
 		{
-			if (b == com.loadoutlab.engine.BoostProfile.NONE
-				|| b == com.loadoutlab.engine.BoostProfile.LIVE_CURRENT)
+			if (b == BoostProfile.NONE
+				|| b == BoostProfile.LIVE_CURRENT)
 			{
 				continue;
 			}
@@ -1020,7 +1024,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * (M-3) share the list - the renderer and selection handler branch. */
 	private final DefaultListModel<Object> monsterModel = new DefaultListModel<>();
 	private final JList<Object> monsterList = new JList<>(monsterModel);
-	private final List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
+	private final List<MonsterGroups.MonsterGroup> groups;
 	private final JScrollPane monsterScroll;
 	private final JCheckBox f2pOnly = new JCheckBox("Non-members gear only");
 	private final JCheckBox slayerTask = new JCheckBox("On slayer task");
@@ -1270,7 +1274,7 @@ public class LoadoutLabPanel extends PluginPanel
 		BankHighlighter bankHighlighter, BankFilter bankFilter)
 	{
 		this.bankHighlighter = bankHighlighter;
-		this.groups = com.loadoutlab.data.MonsterGroups.load(data);
+		this.groups = MonsterGroups.load(data);
 		this.bankFilter = bankFilter;
 		this.protectOnlyToggle = protectOnlyToggle;
 		this.data = data;
@@ -1405,11 +1409,11 @@ public class LoadoutLabPanel extends PluginPanel
 				int index, boolean isSelected, boolean cellHasFocus)
 			{
 				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				if (value instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				if (value instanceof MonsterGroups.MonsterGroup)
 				{
 					// Group hits wear the accent - they expand into a
 					// whole roster, not a single mob.
-					setText(((com.loadoutlab.data.MonsterGroups.MonsterGroup) value).label());
+					setText(((MonsterGroups.MonsterGroup) value).label());
 					setForeground(isSelected ? Color.WHITE : ACCENT);
 				}
 				else
@@ -1570,9 +1574,9 @@ public class LoadoutLabPanel extends PluginPanel
 			if (!e.getValueIsAdjusting() && monsterList.getSelectedValue() != null)
 			{
 				Object hit = monsterList.getSelectedValue();
-				if (hit instanceof com.loadoutlab.data.MonsterGroups.MonsterGroup)
+				if (hit instanceof MonsterGroups.MonsterGroup)
 				{
-					selectGroup((com.loadoutlab.data.MonsterGroups.MonsterGroup) hit);
+					selectGroup((MonsterGroups.MonsterGroup) hit);
 					return;
 				}
 				select((MonsterStats) hit);
@@ -1867,8 +1871,8 @@ public class LoadoutLabPanel extends PluginPanel
 			revalidate();
 			return;
 		}
-		for (com.loadoutlab.data.MonsterGroups.MonsterGroup group
-			: com.loadoutlab.data.MonsterGroups.search(groups, query, 3))
+		for (MonsterGroups.MonsterGroup group
+			: MonsterGroups.search(groups, query, 3))
 		{
 			monsterModel.addElement(group);
 		}
@@ -1909,11 +1913,11 @@ public class LoadoutLabPanel extends PluginPanel
 			// happily returns a single phase for a group name. Name-only
 			// senders get this; the npcId path above stays single-monster
 			// (an in-world right-click on Phase 2 means Phase 2).
-			com.loadoutlab.data.MonsterGroups.MonsterGroup group =
-				com.loadoutlab.data.MonsterGroups.linkMatch(groups, monsterName);
+			MonsterGroups.MonsterGroup group =
+				MonsterGroups.linkMatch(groups, monsterName);
 			if (group == null && paren > 0)
 			{
-				group = com.loadoutlab.data.MonsterGroups.linkMatch(
+				group = MonsterGroups.linkMatch(
 					groups, monsterName.substring(0, paren));
 			}
 			if (group != null)
@@ -2023,7 +2027,7 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** A group pick (M-3): the roster expands into ONE multi-mob result -
 	 * recorded as a back/forward step exactly like a monster pick. */
-	private void selectGroup(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	private void selectGroup(MonsterGroups.MonsterGroup group)
 	{
 		if (historyControl == null || (selectedMonster == null && !hadSelection))
 		{
@@ -2070,7 +2074,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The group expansion: a fresh page holding one roster entry. */
-	private void applyGroupSelection(com.loadoutlab.data.MonsterGroups.MonsterGroup group)
+	private void applyGroupSelection(MonsterGroups.MonsterGroup group)
 	{
 		suppressSearchEvents = true;
 		try
@@ -3015,18 +3019,18 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int monsterId = currentMonsterId();
 		JPopupMenu menu = new JPopupMenu();
-		for (Map.Entry<String, Map<com.loadoutlab.data.GearSlot, Integer>> scoped
+		for (Map.Entry<String, Map<GearSlot, Integer>> scoped
 			: mobProfile.allPins(monsterId).entrySet())
 		{
 			String scope = scoped.getKey();
-			for (Map.Entry<com.loadoutlab.data.GearSlot, Integer> entry
+			for (Map.Entry<GearSlot, Integer> entry
 				: scoped.getValue().entrySet())
 			{
 				GearItem item = data.getGear(entry.getValue());
 				String label = item == null ? ("item " + entry.getValue()) : item.label();
 				// Hoisted above the item so the whole construct is one
 				// menuItem(...) call; the lambda still captures it.
-				com.loadoutlab.data.GearSlot slot = entry.getKey();
+				GearSlot slot = entry.getKey();
 				menuItem(menu,
 					"Unpin " + label + " (" + scopeLabel(scope) + ")", a ->
 				{
@@ -3099,7 +3103,7 @@ public class LoadoutLabPanel extends PluginPanel
 				? "Auto: staff built-in"
 				: "Spell: Auto (best)");
 		List<String> names = new ArrayList<>();
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		for (SpellStats spell : data.getSpells())
 		{
 			names.add(spell.getName());
 		}
@@ -3183,12 +3187,12 @@ public class LoadoutLabPanel extends PluginPanel
 
 	/** The per-cell pin submenu: pin/unpin the shown item for this set or
 	 * all sets, or chatbox-search ANOTHER item into the pin. */
-	private JMenu pinSubmenu(GearItem item, com.loadoutlab.data.GearSlot slot,
+	private JMenu pinSubmenu(GearItem item, GearSlot slot,
 		CombatStyle style)
 	{
 		int monsterId = currentMonsterId();
 		JMenu pinMenu = new JMenu("Pin " + item.label());
-		Map<String, Map<com.loadoutlab.data.GearSlot, Integer>> raw = mobProfile.allPins(monsterId);
+		Map<String, Map<GearSlot, Integer>> raw = mobProfile.allPins(monsterId);
 		Integer styleScoped = raw.getOrDefault(style.name(), Collections.emptyMap()).get(slot);
 		Integer allScoped = raw.getOrDefault(ALL_SETS, Collections.emptyMap()).get(slot);
 
@@ -3658,7 +3662,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
-		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot, CombatStyle pinStyle)
+		List<JMenuItem> extras, GearSlot pinSlot, CombatStyle pinStyle)
 	{
 		attachExclusionMenu(cell, items, extras, pinSlot, pinStyle, Collections.emptySet());
 	}
@@ -3666,7 +3670,7 @@ public class LoadoutLabPanel extends PluginPanel
 	/** lostIds: item ids currently shown with the death skull (dropped on
 	 * death) - the "only bring if protected" flag is offered for those. */
 	private void attachExclusionMenu(JLabel cell, List<GearItem> items,
-		List<JMenuItem> extras, com.loadoutlab.data.GearSlot pinSlot, CombatStyle pinStyle,
+		List<JMenuItem> extras, GearSlot pinSlot, CombatStyle pinStyle,
 		Set<Integer> lostIds)
 	{
 		cell.addMouseListener(new MouseAdapter()
@@ -4090,7 +4094,7 @@ public class LoadoutLabPanel extends PluginPanel
 			return;
 		}
 		computeHook.compute(
-			com.loadoutlab.engine.MonsterMechanics.atToaInvocation(entry.mob(), entry.toaInvocation),
+			MonsterMechanics.atToaInvocation(entry.mob(), entry.toaInvocation),
 			f2pOnly.isSelected(), entry.onSlayerTask,
 			effectiveWilderness(entry), spellbookLock(entry), riskCap(entry),
 			parsedBudgetGp(entry.riskCap),
@@ -4111,7 +4115,7 @@ public class LoadoutLabPanel extends PluginPanel
 		List<MonsterStats> mobs = new ArrayList<>(entry.mobs.size());
 		for (MonsterStats mob : entry.mobs)
 		{
-			mobs.add(com.loadoutlab.engine.MonsterMechanics.atToaInvocation(mob, entry.toaInvocation));
+			mobs.add(MonsterMechanics.atToaInvocation(mob, entry.toaInvocation));
 		}
 		return mobs;
 	}
@@ -4561,11 +4565,11 @@ public class LoadoutLabPanel extends PluginPanel
 		// Raid-supplied boost toggle (field spec 2026-07-18): overloads/
 		// salts are the raid norm but not a promise - off falls back to
 		// the bank's own potions.
-		com.loadoutlab.engine.BoostProfile supplied =
-			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		BoostProfile supplied =
+			RaidBoosts.suppliedBoost(entry.mobs.get(0));
 		for (MonsterStats m : entry.mobs)
 		{
-			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			if (RaidBoosts.suppliedBoost(m) != supplied)
 			{
 				supplied = null;
 				break;
@@ -4636,7 +4640,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// level the official defence scaling flips bowfa over a blowpipe
 		// at the Wardens - invocation 0 silently told the wrong story).
 		if (entry.mobs.stream().anyMatch(
-			com.loadoutlab.engine.MonsterMechanics::isToaInvocationScaled))
+			MonsterMechanics::isToaInvocationScaled))
 		{
 			final int[] invoLevels = {0, 150, 300, 540};
 			int invoIdx = 0;
@@ -4776,7 +4780,7 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		int pinCount = 0;
 		int lensedId = entry.mob().getId();
-		for (Map<com.loadoutlab.data.GearSlot, Integer> scoped
+		for (Map<GearSlot, Integer> scoped
 			: mobProfile.allPins(lensedId).values())
 		{
 			pinCount += scoped.size();
@@ -5912,11 +5916,11 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Risk cap: " + (risk.isEmpty() ? "off" : risk));
 		}
 
-		com.loadoutlab.engine.BoostProfile supplied =
-			com.loadoutlab.engine.RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		BoostProfile supplied =
+			RaidBoosts.suppliedBoost(entry.mobs.get(0));
 		for (MonsterStats m : entry.mobs)
 		{
-			if (com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != supplied)
+			if (RaidBoosts.suppliedBoost(m) != supplied)
 			{
 				supplied = null;
 				break;
@@ -5995,7 +5999,7 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Inventory: " + entry.maxSwaps);
 		}
 		if (entry.mobs.stream().anyMatch(
-			com.loadoutlab.engine.MonsterMechanics::isToaInvocationScaled))
+			MonsterMechanics::isToaInvocationScaled))
 		{
 			params.add("Invocation: " + entry.toaInvocation);
 		}
@@ -6333,7 +6337,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Curated mechanics prose plus the required-gear stipulation
 		// (grZ 2026-08-08) - one info line carries both.
 		String curated = MonsterNotes.noteFor(entry.mob());
-		String requiredNote = com.loadoutlab.data.RequiredGear.noteFor(entry.mob());
+		String requiredNote = RequiredGear.noteFor(entry.mob());
 		renderingMechanicsNote = curated == null ? requiredNote
 			: requiredNote == null ? curated : requiredNote + " " + curated;
 		renderingProtectItem = entry.protectItem && effectiveWilderness(entry)
@@ -8287,7 +8291,7 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return null;
 		}
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		for (SpellStats spell : data.getSpells())
 		{
 			if (spell.getName().equalsIgnoreCase(name))
 			{
