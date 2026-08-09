@@ -53,7 +53,7 @@ public class GroupSimScopingTest
 					new OwnedItems(owned, true), 1, false, false, "",
 					Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 					false, 0, true, Collections.emptyMap(), Collections.emptyMap(), false, Collections.emptySet(), 0, 					maxSwaps, Collections.emptyMap(), dreamsByMob, true,
-					Collections.emptyMap(), null, Collections.emptySet(),
+					Collections.emptyMap(), null, 0, Collections.emptySet(),
 					roster -> { out.set(roster); done.countDown(); });
 				Assert.assertTrue("timed out", done.await(90, TimeUnit.SECONDS));
 				List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = out.get().perMob;

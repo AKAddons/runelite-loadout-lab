@@ -254,13 +254,14 @@ public class OptimizerService
 		boolean raidBoostAssumed,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
 		SpellStats pinnedSpell,
+		int pinnedSpec,
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
+			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
@@ -342,6 +343,25 @@ public class OptimizerService
 		 * only - the local twin of the global dream items. */
 		Map<Integer, Set<Integer>> dreamsByMob = Collections.emptyMap();
 		SpellStats pinnedSpell;
+		/** A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
+		 * the card whose style the weapon serves, leaving other styles to
+		 * pick freely. The pin machinery's carried-slot twin. */
+		int pinnedSpec;
+	}
+
+	/** The spec-weapon restriction for this style: the pin when it serves
+	 * this style, else null (unrestricted). A pinned melee spec never
+	 * starves the ranged card of its own best spec. */
+	private static Set<Integer> restrictSpec(ComputeContext ctx, CombatStyle style)
+	{
+		if (ctx.pinnedSpec == 0)
+		{
+			return null;
+		}
+		GearItem pinned = ctx.dataset.getGear(ctx.pinnedSpec);
+		SpecialAttack spec = pinned == null ? null : SpecialAttack.match(pinned);
+		return spec != null && spec.getStyle() == style
+			? Collections.singleton(ctx.pinnedSpec) : null;
 	}
 
 	/** Per-(mob, style, side) optimize results for the roster path, LRU.
@@ -460,7 +480,7 @@ public class OptimizerService
 		// (found 2026-08-09: optimizeKey carried it, this key did not, so
 		// flipping the Invocation chip served the previous level's cache).
 		return monster.getId() + "|" + monster.getToaInvocationLevel() + "|" + ctxKey(ctx)
-			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps;
+			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps + "|" + ctx.pinnedSpec;
 	}
 
 	private Map<CombatStyle, StyleResult> computeAllStyles(
@@ -517,11 +537,12 @@ public class OptimizerService
 				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
 				polish(optimizer, ctx.dataset, gameRequest, gameBest);
 				// Bench 0 = strictly one worn set: no spec swap is carried.
+				Set<Integer> specPin = restrictSpec(ctx, style);
 				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned)
+					? arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin)
 					: null;
 				SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null)
+					? arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin)
 					: null;
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
@@ -582,7 +603,7 @@ public class OptimizerService
 		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
-		SpellStats pinnedSpell, Set<Integer> protectOnlyItems)
+		SpellStats pinnedSpell, int pinnedSpec, Set<Integer> protectOnlyItems)
 	{
 		ComputeContext ctx = new ComputeContext();
 		ctx.maxSwaps = Math.max(0, maxSwaps);
@@ -616,6 +637,7 @@ public class OptimizerService
 		ctx.upgradeBudgetGp = upgradeBudgetGp;
 		ctx.collectionFingerprint = collectionFingerprint;
 		ctx.pinnedSpell = pinnedSpell;
+		ctx.pinnedSpec = pinnedSpec;
 		return ctx;
 	}
 
@@ -2443,7 +2465,7 @@ public class OptimizerService
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
-		SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
+		SpellStats pinnedSpell, int pinnedSpec, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
 	{
 		if (mobs == null || mobs.isEmpty())
@@ -2485,14 +2507,14 @@ public class OptimizerService
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
 				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
-				maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, protectOnlyItems,
+				maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, protectOnlyItems);
+			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
 		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Collections.emptyMap() : dreamsByMob;
@@ -2583,18 +2605,29 @@ public class OptimizerService
 	{
 		int n = mobs.size();
 		LinkedHashSet<Integer> candidates = new LinkedHashSet<>();
-		for (int j = 0; j < n; j++)
+		// A pinned spec weapon (serving this style) is the ONLY candidate:
+		// the player's explicit choice, priced across the trip like any
+		// other but never contested by the free picks.
+		Set<Integer> specPin = restrictSpec(ctx, style);
+		if (specPin != null)
 		{
-			List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
-			if (base == null)
+			candidates.addAll(specPin);
+		}
+		else
+		{
+			for (int j = 0; j < n; j++)
 			{
-				continue;
-			}
-			SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
-				mobs.get(j), levels, owned, null);
-			if (free != null && free.weapon != null)
-			{
-				candidates.add(free.weapon.getId());
+				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
+				if (base == null)
+				{
+					continue;
+				}
+				SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
+					mobs.get(j), levels, owned, null);
+				if (free != null && free.weapon != null)
+				{
+					candidates.add(free.weapon.getId());
+				}
 			}
 		}
 		if (candidates.isEmpty())
@@ -2785,9 +2818,10 @@ public class OptimizerService
 		CombatStyle style,
 		MonsterStats monster,
 		PlayerLevels levels,
-		OwnedItems owned)
+		OwnedItems owned,
+		Set<Integer> restrictTo)
 	{
-		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned);
+		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned, restrictTo);
 		if (spec == null || results.isEmpty())
 		{
 			return spec; // no spec value in play - dps ring stands
@@ -2820,7 +2854,7 @@ public class OptimizerService
 		}
 		List<DpsResult> variantResults = new ArrayList<>(results);
 		variantResults.set(0, variant);
-		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned);
+		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned, restrictTo);
 		if (variantSpec == null)
 		{
 			return spec;

@@ -79,6 +79,46 @@ public class LightbearerArbitrationTest
 	}
 
 	@Test
+	public void aPinnedSpecWeaponOverridesTheAutoPick() throws Exception
+	{
+		// Field request 2026-08-09: "i'm unable to pin to the spec slot."
+		// A pinned melee spec forces the melee card to it, even when the
+		// model would pick something else - and never starves the ranged
+		// card of its own free spec (the pin serves only melee here).
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		for (String n : new String[]{"abyssal whip", "dragon warhammer",
+			"dragon dagger", "magic shortbow", "dragon arrow"})
+		{
+			owned.put(byName(n).getId(), 1);
+		}
+		int daggerId = byName("dragon dagger").getId();
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			ServiceCalls.bestPerStyle(service, graardor,
+				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
+				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
+				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+				false, false, Collections.emptySet(), 0,
+				Collections.emptyMap(), null, daggerId, Collections.emptySet(),
+				results -> { out.set(results); done.countDown(); });
+			Assert.assertTrue("timed out", done.await(120, TimeUnit.SECONDS));
+			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			Assert.assertNotNull(melee.specWeapon);
+			Assert.assertEquals("the pinned dagger must ride the melee spec slot",
+				daggerId, melee.specWeapon.getId());
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void lightbearerWinsALongFightWhenTheRingCostsNoDps() throws Exception
 	{
 		// Ring of dueling and the Lightbearer are both stat-less: equal set

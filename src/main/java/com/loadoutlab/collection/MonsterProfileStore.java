@@ -46,6 +46,8 @@ public class MonsterProfileStore
 		Map<Integer, String> sims;
 		/** Pinned autocast spell name for the magic card ("" / null = auto). */
 		String spell;
+		/** Pinned SPEC weapon id (0 / null = auto-pick). */
+		Integer spec;
 		/** Per-mob exclusions: scope -> item ids the suggestions here must
 		 * never contain (the global exclusion list handles "everywhere"). */
 		Map<String, Set<Integer>> exclusions;
@@ -197,6 +199,20 @@ public class MonsterProfileStore
 		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
 		profile.spell = spellName == null || spellName.trim().isEmpty()
 			? null : spellName.trim();
+		save();
+	}
+
+	/** The pinned SPEC weapon id for this monster (0 = auto-pick). */
+	public synchronized int pinnedSpecFor(int monsterId)
+	{
+		Stored profile = profiles.get(monsterId);
+		return profile == null || profile.spec == null ? 0 : profile.spec;
+	}
+
+	public synchronized void setPinnedSpec(int monsterId, int itemId)
+	{
+		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		profile.spec = itemId <= 0 ? null : itemId;
 		save();
 	}
 

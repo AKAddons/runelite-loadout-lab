@@ -331,6 +331,16 @@ public class LoadoutLabPanel extends PluginPanel
 
 		void setPinnedSpell(int monsterId, String spellName);
 
+		/** Pinned spec weapon id for this monster (0 = auto-pick). */
+		default int pinnedSpec(int monsterId)
+		{
+			return 0;
+		}
+
+		default void setPinnedSpec(int monsterId, int itemId)
+		{
+		}
+
 		/** Raw per-mob exclusions by scope, for the manage menu. */
 		default Map<String, Set<Integer>> allMobExclusions(int monsterId)
 		{
@@ -8416,14 +8426,90 @@ public class LoadoutLabPanel extends PluginPanel
 			specCell.setToolTipText(specFate.isEmpty() ? specTip
 				: specTip.replace("</html>", specFate + "</html>"));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
-			attachExclusionMenu(specCell, List.of(specWeapon));
+			attachSpecMenu(specCell, specWeapon);
 		}
 		else
 		{
 			specCell.setBorder(BorderFactory.createLineBorder(BORDER_EMPTY));
-			specCell.setToolTipText("Spec: none");
+			specCell.setToolTipText("Spec: none - right-click to pin one");
+			attachSpecMenu(specCell, null);
 		}
 		return specCell;
+	}
+
+	/** The spec cell's right-click menu (field request 2026-08-09: "i'm
+	 * unable to pin to the spec slot"): pin the shown weapon, pin a
+	 * different one by search, or clear the pin - the carried-slot twin of
+	 * the gear-cell pin menu. Per monster, like every mob pin. */
+	private void attachSpecMenu(JLabel cell, GearItem shown)
+	{
+		cell.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			private void maybeShow(MouseEvent e)
+			{
+				if (!e.isPopupTrigger() || selectedMonster == null)
+				{
+					return;
+				}
+				int monsterId = currentMonsterId();
+				int pinned = mobProfile.pinnedSpec(monsterId);
+				JPopupMenu menu = new JPopupMenu();
+				if (shown != null && shown.getId() != pinned)
+				{
+					menuItem(menu, "Pin " + shown.label() + " as the spec", a ->
+					{
+						mobProfile.setPinnedSpec(monsterId, shown.getId());
+						recompute();
+					});
+				}
+				menuItem(menu, "Pin a spec weapon (search)...",
+					a -> showPinSpecDialog());
+				if (pinned > 0)
+				{
+					GearItem pinnedItem = data.getGear(pinned);
+					menuItem(menu, "Unpin spec"
+						+ (pinnedItem == null ? "" : " (" + pinnedItem.label() + ")"), a ->
+					{
+						mobProfile.setPinnedSpec(monsterId, 0);
+						recompute();
+					});
+				}
+				JComponent src = (JComponent) e.getSource();
+				menu.show(src, e.getX(), e.getY());
+			}
+		});
+	}
+
+	/** Chatbox item search -> pin any spec weapon for this monster (force
+	 * a spec the model would not pick, e.g. claws over the auto DWH). */
+	private void showPinSpecDialog()
+	{
+		itemSearch.search("Pin a spec weapon vs " + selectedMonster.getName(),
+			(itemId, name) ->
+			{
+				GearItem gear = data.getGear(itemId);
+				if (gear == null || com.loadoutlab.engine.SpecialAttack.match(gear) == null)
+				{
+					JOptionPane.showMessageDialog(this,
+						name + " has no special attack Loadout Lab models.",
+						"Pin a spec weapon", JOptionPane.INFORMATION_MESSAGE);
+					return;
+				}
+				mobProfile.setPinnedSpec(currentMonsterId(), itemId);
+				recompute();
+			});
 	}
 
 	/** Same combat stats in every block - interchangeable for dps. */

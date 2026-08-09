@@ -1470,6 +1470,23 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			}
 
 			@Override
+			public int pinnedSpec(int monsterId)
+			{
+				return mobProfiles == null ? 0 : mobProfiles.pinnedSpecFor(monsterId);
+			}
+
+			@Override
+			public void setPinnedSpec(int monsterId, int itemId)
+			{
+				if (mobProfiles != null)
+				{
+					com.loadoutlab.data.GearItem g = data == null ? null : data.getGear(itemId);
+					exec(Commands.setPinnedSpec(mobProfiles, monsterId, itemId,
+						g == null ? ("item " + itemId) : g.label()));
+				}
+			}
+
+			@Override
 			public Map<String, Set<Integer>> allMobExclusions(int monsterId)
 			{
 				return mobProfiles == null ? Map.of() : mobProfiles.allExclusions(monsterId);
@@ -1996,6 +2013,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
 				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
+				mobProfiles.pinnedSpecFor(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{
@@ -2048,6 +2066,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps, raidBoost,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
+				mobProfiles.pinnedSpecFor(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{

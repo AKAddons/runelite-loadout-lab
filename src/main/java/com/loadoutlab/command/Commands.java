@@ -180,6 +180,23 @@ public final class Commands
 			() -> { store.setPinnedSpell(monsterId, before); return true; });
 	}
 
+	public static Command setPinnedSpec(MonsterProfileStore store, int monsterId,
+		int itemId, String label)
+	{
+		int before = store.pinnedSpecFor(monsterId);
+		return of(itemId <= 0 ? "Unpin spec weapon" : "Pin spec " + label,
+			() ->
+			{
+				if (itemId == before)
+				{
+					return false;
+				}
+				store.setPinnedSpec(monsterId, itemId);
+				return true;
+			},
+			() -> { store.setPinnedSpec(monsterId, before); return true; });
+	}
+
 	public static Command excludeForMob(MonsterProfileStore store, int monsterId, String scope,
 		int itemId, String label)
 	{
