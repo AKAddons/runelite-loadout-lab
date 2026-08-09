@@ -119,6 +119,47 @@ public class LightbearerArbitrationTest
 	}
 
 	@Test
+	public void aPinnedSpecShowsEvenWhenItAddsNothing() throws Exception
+	{
+		// Field report 2026-08-09: pinning the Tonalztics on a set it does
+		// not help showed NOTHING for the spec ("it would be great if that
+		// was more clear"). A pin is the player's explicit choice - it must
+		// display with its honest number, even ~0.00, not vanish. A goblin
+		// dies before any spec fires, so a pinned DDS adds ~0 here.
+		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
+		Map<Integer, Integer> owned = new HashMap<>();
+		for (String n : new String[]{"abyssal whip", "dragon dagger"})
+		{
+			owned.put(byName(n).getId(), 1);
+		}
+		int daggerId = byName("dragon dagger").getId();
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			CountDownLatch done = new CountDownLatch(1);
+			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
+			ServiceCalls.bestPerStyle(service, goblin,
+				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
+				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
+				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,
+				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+				false, false, Collections.emptySet(), 0,
+				Collections.emptyMap(), null, daggerId, Collections.emptySet(),
+				results -> { out.set(results); done.countDown(); });
+			Assert.assertTrue("timed out", done.await(120, TimeUnit.SECONDS));
+			OptimizerService.StyleResult melee = out.get().get(CombatStyle.MELEE);
+			Assert.assertNotNull("the pinned spec must still show", melee.specWeapon);
+			Assert.assertEquals(daggerId, melee.specWeapon.getId());
+			Assert.assertTrue("its honest ~0 value is displayed, not hidden",
+				melee.specDpsAdded >= 0);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void lightbearerWinsALongFightWhenTheRingCostsNoDps() throws Exception
 	{
 		// Ring of dueling and the Lightbearer are both stat-less: equal set

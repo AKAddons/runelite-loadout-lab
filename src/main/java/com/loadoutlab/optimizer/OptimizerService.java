@@ -2191,6 +2191,10 @@ public class OptimizerService
 				GearItem keptCarried = null;
 				GearItem keptAmmo = null;
 				double score = kitFree.total;
+				// A pinned spec is seated unconditionally - the player's
+				// explicit choice overrides the seat economics, so it always
+				// shows (even adding ~0.00, field report 2026-08-09).
+				boolean specPinned = restrictSpec(ctx, primary) != null;
 				for (SpecPick[] option : specOptions)
 				{
 					GearItem[] slots = carriedSpecOf(option, base);
@@ -2215,7 +2219,7 @@ public class OptimizerService
 							specValue += option[j].expectedDamage * shown.getDps();
 						}
 					}
-					if (kitSpec.total + specValue >= kitFree.total)
+					if (specPinned || kitSpec.total + specValue >= kitFree.total)
 					{
 						kit = kitSpec;
 						keptSpecs = option;
@@ -2648,13 +2652,16 @@ public class OptimizerService
 					continue;
 				}
 				perMob[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
-					mobs.get(j), levels, owned, Collections.singleton(id));
+					mobs.get(j), levels, owned, Collections.singleton(id), specPin != null);
 				if (perMob[j] != null)
 				{
 					score += perMob[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
 				}
 			}
-			if (score > 1e-9)
+			// A pinned weapon is the player's explicit choice - it stays an
+			// option even at zero trip value, so the card can show it (with
+			// an honest ~0.00) instead of silently dropping it.
+			if (score > 1e-9 || specPin != null)
 			{
 				scores.add(new double[]{score, perCandidate.size()});
 				perCandidate.add(perMob);
@@ -2809,7 +2816,7 @@ public class OptimizerService
 		OwnedItems owned,
 		Set<Integer> restrictTo)
 	{
-		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned, restrictTo);
+		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned, restrictTo, restrictTo != null);
 		if (spec == null || results.isEmpty())
 		{
 			return spec; // no spec value in play - dps ring stands
@@ -2842,7 +2849,7 @@ public class OptimizerService
 		}
 		List<DpsResult> variantResults = new ArrayList<>(results);
 		variantResults.set(0, variant);
-		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned, restrictTo);
+		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned, restrictTo, restrictTo != null);
 		if (variantSpec == null)
 		{
 			return spec;
@@ -2866,6 +2873,24 @@ public class OptimizerService
 		PlayerLevels levels,
 		OwnedItems owned,
 		Set<Integer> restrictTo)
+	{
+		return bestSpec(dataset, request, baseResults, style, monster, levels, owned, restrictTo, false);
+	}
+
+	/** keepZero: keep a restricted (user-PINNED) weapon even when it adds
+	 * ~0 dps, so the pin always displays with an honest number instead of
+	 * silently vanishing (field report 2026-08-09: a pinned Tonalztics
+	 * showed nothing on a set it did not help). */
+	SpecPick bestSpec(
+		LoadoutData dataset,
+		OptimizationRequest request,
+		List<DpsResult> baseResults,
+		CombatStyle style,
+		MonsterStats monster,
+		PlayerLevels levels,
+		OwnedItems owned,
+		Set<Integer> restrictTo,
+		boolean keepZero)
 	{
 		if (baseResults == null || baseResults.isEmpty())
 		{
@@ -2951,7 +2976,7 @@ public class OptimizerService
 			// 2026-07-19). A spec that adds nothing loses to carrying no slot.
 			double added = specDpsAdded(calculator, spec, base, expected,
 				request, baseResults.get(0), monster, lightbearer);
-			if (added <= 1e-4)
+			if (added <= 1e-4 && !keepZero)
 			{
 				continue;
 			}
