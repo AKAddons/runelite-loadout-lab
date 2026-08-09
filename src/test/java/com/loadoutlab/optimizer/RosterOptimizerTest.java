@@ -284,6 +284,59 @@ public class RosterOptimizerTest
 	}
 
 	@Test
+	public void zulrahRosterWearsRecoilGear() throws Exception
+	{
+		// Field report 2026-08-09: the Zulrah roster recommended sets with
+		// no recoil gear - ensureRequiredUtility (the mandatory-recoil
+		// swap) was a single-mob post-pass the roster path never ran, the
+		// same disease as the quiver relocation. Every non-empty shown set
+		// on both sides must satisfy the recoil requirement.
+		LoadoutData data = new DataService().load();
+		List<MonsterStats> forms = new ArrayList<>(data.searchMonsters("zulrah", 5));
+		Assert.assertTrue("the Zulrah forms must load", forms.size() >= 3);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(12926, 1);  // toxic blowpipe - Zulrah rejects melee
+		owned.put(2550, 1);   // ring of recoil
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, forms, owned, 3);
+			boolean sawAnySet = false;
+			for (int j = 0; j < forms.size(); j++)
+			{
+				for (CombatStyle s : CombatStyle.concreteValues())
+				{
+					OptimizerService.StyleResult sr = roster.result.perMob.get(j).get(s);
+					if (sr == null)
+					{
+						continue;
+					}
+					if (sr.owned != null && !sr.owned.isEmpty())
+					{
+						sawAnySet = true;
+						Assert.assertTrue("owned set vs " + forms.get(j).getVersion()
+								+ " " + s + " must carry recoil",
+							com.loadoutlab.engine.RequiredUtility.hasRecoil(
+								sr.owned.get(0).getLoadout()));
+					}
+					if (sr.overallBest != null)
+					{
+						Assert.assertTrue("BiS set vs " + forms.get(j).getVersion()
+								+ " " + s + " must carry recoil",
+							com.loadoutlab.engine.RequiredUtility.hasRecoil(
+								sr.overallBest.getLoadout()));
+					}
+				}
+			}
+			Assert.assertTrue(sawAnySet);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void bisRosterKeepsASpecWhenTheKitContestIsClose() throws Exception
 	{
 		// Field report 2026-08-09 (Phantom Muspah, Spec chip on, no BiS
