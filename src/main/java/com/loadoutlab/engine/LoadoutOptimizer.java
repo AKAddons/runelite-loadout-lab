@@ -6,6 +6,7 @@ import lombok.Getter;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
+import com.loadoutlab.data.RequiredGear;
 import com.loadoutlab.data.SpellStats;
 import com.loadoutlab.data.StatBlock;
 import java.util.ArrayList;
@@ -87,6 +88,8 @@ public final class LoadoutOptimizer
 			protectOnly = request.getProtectOnlyItems();
 		}
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
+		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
+		Set<Integer> requiredIds = requiredRule == null ? null : requiredRule.ids(data);
 		DpsResult current = result;
 		// Dizana's quiver carries the arrows (field report 2026-08-07):
 		// relocate them BEFORE the sweep so the freed ammo slot is filled
@@ -142,7 +145,12 @@ public final class LoadoutOptimizer
 						&& RangedAmmo.passiveForQuiver(item)))
 					// Dragonfire gear mode: never swap the protection away.
 					|| (dragonShield && slot == GearSlot.SHIELD
-						&& !DragonfireRules.isProtectiveShield(item)))
+						&& !DragonfireRules.isProtectiveShield(item))
+					// Same for a worn required-protection item (mirror
+					// shield, earmuffs): only acceptable swaps may touch it.
+					|| (requiredIds != null && requiredRule.slot == slot
+						&& worn != null && requiredIds.contains(worn.getId())
+						&& !requiredIds.contains(item.getId())))
 				{
 					continue;
 				}
@@ -451,6 +459,25 @@ public final class LoadoutOptimizer
 			dragonShield = false;
 			antifireAssumed = true;
 		}
+		// Required slayer protection (grZ field request 2026-08-08: "some
+		// tasks where u need to equip something"): a mandated slot - mirror
+		// shield vs a basilisk's gaze, a lit bug lantern to harm harpies at
+		// all - enforces exactly like the dragonfire shield: the slot's pool
+		// collapses to the acceptable items and non-complying weapon lines
+		// die. Same all-or-nothing honesty rule: with no acceptable item in
+		// the pool (unowned on the owned side), fall back to the
+		// unconstrained hunt and let the mechanics note explain the gap. A
+		// pin on the slot outranks - the player's explicit choice.
+		RequiredGear.Rule required = RequiredGear.ruleFor(request.getMonster());
+		Set<Integer> requiredIds = null;
+		if (required != null && request.pinnedFor(required.slot) == null)
+		{
+			Set<Integer> acceptable = required.ids(data);
+			if (!onlyIds(pools.slotCandidates.get(required.slot), acceptable).isEmpty())
+			{
+				requiredIds = acceptable;
+			}
+		}
 		// Request-level risk constants, hoisted out of the beam (they were
 		// recomputed - EnumMap, Loadout, riskGp, a HashSet - per trial).
 		long riskCapGp = 0;
@@ -467,6 +494,13 @@ public final class LoadoutOptimizer
 			// Dragonfire without a potion: the shield slot is spoken for,
 			// so two-handed weapons cannot provide protection.
 			if (dragonShield && weapon.isTwoHanded())
+			{
+				continue;
+			}
+			// Same for a required protective shield (basilisk gaze, the
+			// harpies' lantern): a two-hander cannot comply.
+			if (requiredIds != null && required.slot == GearSlot.SHIELD
+				&& weapon.isTwoHanded())
 			{
 				continue;
 			}
@@ -494,6 +528,14 @@ public final class LoadoutOptimizer
 					if (candidates.isEmpty())
 					{
 						break; // no owned protection - this weapon line dies
+					}
+				}
+				if (requiredIds != null && slot == required.slot)
+				{
+					candidates = onlyIds(candidates, requiredIds);
+					if (candidates.isEmpty())
+					{
+						break; // cannot comply on this line - it dies
 					}
 				}
 				for (SearchState state : states)
@@ -838,6 +880,12 @@ public final class LoadoutOptimizer
 		// though most have zero offensive stats (the score filter and the
 		// stat-dedupe would silently drop the anti-dragon shield).
 		boolean needProtectiveShield = slot == GearSlot.SHIELD && DragonfireRules.shieldRequired(request);
+		// Required slayer protection rides the same rescue: a mirror shield
+		// or earmuffs would die at the score cut, and the beam's enforcement
+		// needs them present in the pool.
+		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
+		Set<Integer> requiredKeep = requiredRule != null && requiredRule.slot == slot
+			&& request.pinnedFor(slot) == null ? requiredRule.ids(data) : null;
 		List<GearItem> protectives = new ArrayList<>();
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems(slot))
@@ -902,7 +950,8 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item);
-			if (slot != GearSlot.WEAPON && !protective
+			boolean requiredItem = requiredKeep != null && requiredKeep.contains(item.getId());
+			if (slot != GearSlot.WEAPON && !protective && !requiredItem
 				&& candidateScore(request, item) <= 0)
 			{
 				continue;
@@ -911,7 +960,7 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
-			if (protective)
+			if (protective || requiredItem)
 			{
 				protectives.add(item);
 				continue;
@@ -963,6 +1012,21 @@ public final class LoadoutOptimizer
 		rest.sort(Comparator.comparingLong(SearchState::getPotentialRiskGp));
 		kept.addAll(rest.subList(0, Math.min(RISK_RESERVE, rest.size())));
 		return kept;
+	}
+
+	/** The candidates whose ids are acceptable for a required slot -
+	 * nulls drop too, a mandated slot may not ride empty. */
+	private static List<GearItem> onlyIds(List<GearItem> candidates, Set<Integer> ids)
+	{
+		List<GearItem> result = new ArrayList<>();
+		for (GearItem item : candidates)
+		{
+			if (item != null && ids.contains(item.getId()))
+			{
+				result.add(item);
+			}
+		}
+		return result;
 	}
 
 	/** Dragonfire gear mode: the shield MUST protect (no empty slot). */

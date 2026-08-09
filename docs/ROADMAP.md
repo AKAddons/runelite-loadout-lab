@@ -424,6 +424,24 @@ absolute numbers above predate this re-pricing. Future "burst" mode:
 always-POH-pool play (ornate rejuvenation pool between kills) genuinely
 opens every kill at 100% - the old frame, behind a chip.
 
+**Required slayer protection auto-equipped - DONE (2026-08-08, 0.3.5;
+grZ request: "some tasks where u need to equip something. would be
+cool if it was autopinned").** required_gear.json (a resource -
+token-free), every row wiki-verified: mirror shield / V's shield vs
+the basilisk and cockatrice families (gaze; the slayer helm does NOT
+cover it), earmuffs vs banshees, nose peg vs spectres, facemask vs
+dust devils, spiny helmet vs wall beasts, insulated boots vs
+killerwatts, slayer gloves vs fever spiders, reinforced goggles vs
+sourhogs (helm substitutes where its component would), lit bug
+lantern vs harpies (cannot harm them at all without it). Enforced on
+the dragonfire-shield pattern: the slot's pool collapses to the
+acceptable items, non-complying weapon lines die (two-handers vs a
+required shield), the all-or-nothing honesty rule falls back with the
+info-line note when nothing acceptable is owned, and a pin on the
+slot outranks. Both sides - the BiS ceiling wears it too. Cave
+horrors deliberately excluded (Protect from Melee fully substitutes
+the witchwood icon; their note says so).
+
 **Future: spec podium (field request 2026-08-08).** Show the top 2-3
 spec candidates with their differentials instead of only the winner -
 photo-finish picks are common (Vorkath: chally +0.41 vs simmed claws

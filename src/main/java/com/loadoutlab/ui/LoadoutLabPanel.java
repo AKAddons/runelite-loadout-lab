@@ -6038,6 +6038,19 @@ public class LoadoutLabPanel extends PluginPanel
 						+ scopeLabel(scoped.getKey()) + "): " + names);
 				}
 			}
+			// Pins travel too (grZ 2026-08-08: "even though i have it
+			// pinned it still ignores it" was untriageable - the report
+			// showed neither the pin nor its scope).
+			for (Map.Entry<String, Map<GearSlot, Integer>> scoped
+				: mobProfile.allPins(m.profileId()).entrySet())
+			{
+				String names = itemNames(scoped.getValue().values());
+				if (!names.isEmpty())
+				{
+					params.add("Pinned vs " + m.getName() + " ("
+						+ scopeLabel(scoped.getKey()) + "): " + names);
+				}
+			}
 		}
 
 		sb.append("Parameters:\n");
@@ -6317,7 +6330,12 @@ public class LoadoutLabPanel extends PluginPanel
 	{
 		renderingStyle = style;
 		renderingBis = bis;
-		renderingMechanicsNote = MonsterNotes.noteFor(entry.mob());
+		// Curated mechanics prose plus the required-gear stipulation
+		// (grZ 2026-08-08) - one info line carries both.
+		String curated = MonsterNotes.noteFor(entry.mob());
+		String requiredNote = com.loadoutlab.data.RequiredGear.noteFor(entry.mob());
+		renderingMechanicsNote = curated == null ? requiredNote
+			: requiredNote == null ? curated : requiredNote + " " + curated;
 		renderingProtectItem = entry.protectItem && effectiveWilderness(entry)
 			&& displayOptions.wildyRisk;
 		// The risk skull describes YOUR set's death mechanics - Yours view

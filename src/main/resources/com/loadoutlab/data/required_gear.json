@@ -1,0 +1,65 @@
+{
+  "_comment": "Mandatory protective slayer gear per monster (grZ field request 2026-08-08). Every row wiki-verified 2026-08-08 against the Slayer equipment page plus the monster's own page. Item specs are corpus names, optionally 'name#Version'. The slayer helmet substitutes ONLY where its component would (facemask/earmuffs/nose peg/spiny helmet, plus sourhogs per their page) - never for the gaze shields, boots, gloves, or the bug lantern. Cave horrors are deliberately ABSENT: Protect from Melee fully substitutes the witchwood icon (their MonsterNotes entry carries that).",
+  "rules": [
+    {
+      "monsters": ["basilisk", "basilisk (the fremennik exiles)", "basilisk youngling", "monstrous basilisk", "monstrous basilisk (the fremennik exiles)", "basilisk knight", "basilisk sentinel"],
+      "slot": "SHIELD",
+      "items": ["mirror shield", "v's shield"],
+      "note": "A mirror shield or V's shield is REQUIRED - the gaze drains combat stats every hit, even from a safespot."
+    },
+    {
+      "monsters": ["cockatrice", "cockathrice", "moonlight cockatrice"],
+      "slot": "SHIELD",
+      "items": ["mirror shield", "v's shield"],
+      "note": "A mirror shield or V's shield is REQUIRED - the gaze drains combat stats every hit, even from a safespot."
+    },
+    {
+      "monsters": ["banshee", "twisted banshee", "screaming banshee", "screaming twisted banshee"],
+      "slot": "HEAD",
+      "items": ["earmuffs", "slayer helmet", "slayer helmet (i)"],
+      "note": "Earmuffs or a slayer helmet are REQUIRED - the scream heavily drains stats."
+    },
+    {
+      "monsters": ["aberrant spectre", "deviant spectre", "abhorrent spectre", "repugnant spectre"],
+      "slot": "HEAD",
+      "items": ["nose peg", "slayer helmet", "slayer helmet (i)"],
+      "note": "A nose peg or slayer helmet is REQUIRED - the stench heavily drains stats."
+    },
+    {
+      "monsters": ["dust devil", "choke devil"],
+      "slot": "HEAD",
+      "items": ["facemask", "slayer helmet", "slayer helmet (i)"],
+      "note": "A facemask or slayer helmet is REQUIRED against the dust."
+    },
+    {
+      "monsters": ["wall beast"],
+      "slot": "HEAD",
+      "items": ["spiny helmet", "slayer helmet", "slayer helmet (i)"],
+      "note": "A spiny helmet or slayer helmet is REQUIRED."
+    },
+    {
+      "monsters": ["killerwatt"],
+      "slot": "FEET",
+      "items": ["insulated boots"],
+      "note": "Insulated boots are REQUIRED against the electricity."
+    },
+    {
+      "monsters": ["fever spider"],
+      "slot": "HANDS",
+      "items": ["slayer gloves"],
+      "note": "Slayer gloves are REQUIRED - fever spiders disease bare hands."
+    },
+    {
+      "monsters": ["harpie bug swarm"],
+      "slot": "SHIELD",
+      "items": ["bug lantern#Lit"],
+      "note": "A LIT bug lantern is REQUIRED to harm the swarm at all."
+    },
+    {
+      "monsters": ["sourhog", "sourhog (a porcine of interest)"],
+      "slot": "HEAD",
+      "items": ["reinforced goggles", "slayer helmet", "slayer helmet (i)"],
+      "note": "Reinforced goggles or a slayer helmet are REQUIRED against the spit."
+    }
+  ]
+}

@@ -77,6 +77,10 @@ public final class MonsterNotes
 					+ " guaranteed one-shot on the Zombified Spawn during the"
 					+ " freeze phase - cast it before the spawn reaches you"
 					+ " and explodes. A Slayer's staff makes it a left-click.";
+			case "cave horror":
+				return "A witchwood icon partially blocks the screech, OR"
+					+ " Protect from Melee nullifies it completely - with the"
+					+ " prayer up, a dps necklace beats the icon.";
 			case "dusk":
 				return "Gargoyle: bring a rock hammer to finish it, or use the"
 					+ " granite hammer (auto-smashes). Mostly immune to Magic.";

@@ -248,6 +248,23 @@ devils, green dragons...) get an "In the Wilderness" checkbox: the
 actually happening there. Wilderness-exclusive monsters (revenants,
 the boss ring) are always "in".
 
+### Required slayer protection
+
+Some monsters mandate an item before the fight is even playable: a
+mirror shield or V's shield against a basilisk's or cockatrice's gaze,
+earmuffs against banshees, a nose peg against aberrant spectres, a
+facemask against dust devils, a spiny helmet against wall beasts,
+insulated boots against killerwatts, slayer gloves against fever
+spiders, reinforced goggles against sourhogs (the slayer helmet stands
+in wherever one of its components would), and a lit bug lantern to
+harm harpie bug swarms at all. Loadout Lab equips the requirement
+automatically on BOTH the Yours and BiS sides: the slot's candidates
+collapse to the acceptable items, and weapon lines that cannot comply
+(a two-hander against a required shield) are discarded. Own none of
+the acceptable items and the best unrestricted set still shows, with
+the info line explaining what is missing. Pinning the slot overrides
+the requirement - your explicit choice always wins.
+
 ## 4. Make it yours
 
 Set your own defaults, teach the plugin what you own wherever it is
