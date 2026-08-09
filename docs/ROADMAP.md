@@ -443,6 +443,19 @@ slot outranks. Both sides - the BiS ceiling wears it too. Cave
 horrors deliberately excluded (Protect from Melee fully substitutes
 the witchwood icon; their note says so).
 
+**v0.4.0 headline (Andrew, 2026-08-09): sea combat done WELL, cannons
+included.** Capture the Sailing era's combat properly: ship-mounted
+cannons and sea-monster encounters (the corpus already carries sailing
+rows and the ledger tracks cargo holds), plus the land dwarf
+multicannon as the classic slayer dps adjunct - a major dps surface no
+in-client tool models (RuneBuddy is the only tool anywhere with cannon
++ boat combat, web-only, per the 2026-08-09 competitor audit).
+Research first: cannon dps mechanics (accuracy/max vs monster stats),
+ship weapon scaling, which sea monsters have corpus rows, and how the
+kills-per-hour framing fits voyage play. Design as data + engine
+primitive per the house rule; lands alongside/after the mascot
+companion split (ADR-0008) frees the token budget.
+
 **Future: spec podium (field request 2026-08-08).** Show the top 2-3
 spec candidates with their differentials instead of only the winner -
 photo-finish picks are common (Vorkath: chally +0.41 vs simmed claws
