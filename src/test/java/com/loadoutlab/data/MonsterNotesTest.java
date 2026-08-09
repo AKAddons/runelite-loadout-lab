@@ -55,4 +55,28 @@ class MonsterNotesTest
 		assertTrue(note.contains("Crumble Undead"), "the spawn one-shot is the point");
 		assertTrue(note.contains("Zombified Spawn"), "names the mechanic it answers");
 	}
+
+	@Test
+	@DisplayName("every curated note key binds to a loaded corpus row")
+	void keysBindToCorpus()
+	{
+		for (String key : MonsterNotes.monsterKeys())
+		{
+			assertTrue(data.searchMonsters(key, 10).stream().anyMatch(
+				m -> m.getName().equalsIgnoreCase(key)),
+				"no corpus row named: " + key);
+		}
+	}
+
+	@Test
+	@DisplayName("the Karuulm floor warning covers the whole dungeon roster")
+	void karuulmBoots()
+	{
+		for (String mob : new String[]{"drake", "wyrm", "hydra", "alchemical hydra"})
+		{
+			String note = noteFor(mob);
+			assertNotNull(note, mob);
+			assertTrue(note.contains("boots of stone"), mob);
+		}
+	}
 }

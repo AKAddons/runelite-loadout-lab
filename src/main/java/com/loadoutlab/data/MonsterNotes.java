@@ -1,21 +1,66 @@
 package com.loadoutlab.data;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * Curated per-monster mechanics the stat data cannot express - finishing
- * items, immunities - shown as a note under the selected monster so a
- * mathematically-correct suggestion doesn't read as a wrong one (e.g. the
- * tentacle out-DPSes the granite hammer vs Dusk by ~25%; the hammer's
- * value is the auto-smash). Wiki-verified 2026-07-05.
+ * items, immunities, environment hazards - shown as a note under the
+ * selected monster so a mathematically-correct suggestion doesn't read
+ * as a wrong one (e.g. the tentacle out-DPSes the granite hammer vs
+ * Dusk by ~25%; the hammer's value is the auto-smash). Data-driven from
+ * monster_notes.json (a token-free resource, Andrew's "all of this data
+ * in json" call 2026-08-08); rows wiki-verified at encode time.
  */
 public final class MonsterNotes
 {
+	private static final class Rule
+	{
+		final List<String> monsters;
+		final String versionStartsWith;
+		final String note;
+
+		Rule(List<String> monsters, String versionStartsWith, String note)
+		{
+			this.monsters = monsters;
+			this.versionStartsWith = versionStartsWith;
+			this.note = note;
+		}
+	}
+
+	private static final List<Rule> RULES = new ArrayList<>();
+
+	static
+	{
+		// Fail LOUD (the name_rules pattern): silently-empty prose would
+		// drop every warning with no visible error.
+		JsonObject root = JsonResources.objectOrThrow(
+			"/com/loadoutlab/data/monster_notes.json");
+		for (JsonElement e : root.getAsJsonArray("rules"))
+		{
+			JsonObject row = e.getAsJsonObject();
+			List<String> monsters = new ArrayList<>();
+			JsonResources.strings(row, "monsters", monsters);
+			RULES.add(new Rule(monsters,
+				row.has("versionStartsWith")
+					? row.get("versionStartsWith").getAsString() : null,
+				row.get("note").getAsString()));
+		}
+		if (RULES.isEmpty())
+		{
+			throw new IllegalStateException("monster_notes.json loaded empty");
+		}
+	}
+
 	private MonsterNotes()
 	{
 	}
 
-	/** A short mechanics note for this monster, or null. */
+	/** The mechanics notes for this monster (all matching rules,
+	 * concatenated), or null. */
 	public static String noteFor(MonsterStats monster)
 	{
 		if (monster == null)
@@ -23,83 +68,31 @@ public final class MonsterNotes
 			return null;
 		}
 		String name = monster.getName().toLowerCase(Locale.ROOT);
-		switch (name)
+		StringBuilder sb = new StringBuilder();
+		for (Rule rule : RULES)
 		{
-			case "kalphite queen":
-				return "Each form prays a style away - crawling blocks magic"
-					+ " and ranged, airborne blocks melee. Verac's set"
-					+ " pierces the prayer (25% guaranteed hits, +1 damage);"
-					+ " otherwise switch styles per form.";
-			case "salarin the twisted":
-				return "Only Strike spells damage him - a flat 9-12 set by"
-					+ " your highest strike unlocked. Gear and damage"
-					+ " bonuses do nothing; a Ring of recoil and"
-					+ " dynamite(p) also work.";
-			case "jal-nib":
-				return "Three nibblers spawn every wave - one Ice Barrage"
-					+ " cast clears the trio (a 152 xp drop means all three"
-					+ " died). Bring the Ancient spellbook; Blood Barrage"
-					+ " heals off packs once the wave is under control.";
-			case "jal-ak":
-				return "Blood or Ice Barrage is effective on the blob and"
-					+ " its spawns.";
-			case "respiratory system":
-				return "Standard melee cannot damage the vents - halberds,"
-					+ " ranged, or magic only. A demonbane hit (Scorching"
-					+ " bow, Arclight...) destroys one instantly, and every"
-					+ " hit lands for at least half your max. The four vents"
-					+ " are spread out: ranged one-shots them all from one"
-					+ " spot, so the melee numbers include the walk.";
-			case "abyssal sire":
-				if (monster.versionStartsWith("Phase 1"))
+			if (rule.monsters.contains(name)
+				&& (rule.versionStartsWith == null
+					|| monster.versionStartsWith(rule.versionStartsWith)))
+			{
+				if (sb.length() > 0)
 				{
-					return "Disorient the Sire with a Shadow spell (Ancient"
-						+ " spellbook - bring Ancients or Spellbook Swap),"
-						+ " then kill the respiratory systems.";
+					sb.append(' ');
 				}
-				return null;
-			case "tumeken's warden":
-			case "elidinis' warden":
-				if (monster.versionStartsWith("Core-ejected"))
-				{
-					return "The spec dump: melee ALWAYS deals its max hit on"
-						+ " the ejected core, and every hit counts x5 toward"
-						+ " the Warden - unload multi-hit specs (claws,"
-						+ " dragon dagger) in the 21-37 tick window.";
-				}
-				return null;
-			case "zulrah":
-				return "Bring a recoil effect for the snakelings - Ring of"
-					+ " recoil, Ring of suffering (r), or Echo boots. Hits"
-					+ " above 50 are rerolled to 45-50.";
-			case "vorkath":
-				return "Crumble Undead (39 Magic, standard book) is a"
-					+ " guaranteed one-shot on the Zombified Spawn during the"
-					+ " freeze phase - cast it before the spawn reaches you"
-					+ " and explodes. A Slayer's staff makes it a left-click.";
-			case "cave horror":
-				return "A witchwood icon partially blocks the screech, OR"
-					+ " Protect from Melee nullifies it completely - with the"
-					+ " prayer up, a dps necklace beats the icon.";
-			case "dusk":
-				return "Gargoyle: bring a rock hammer to finish it, or use the"
-					+ " granite hammer (auto-smashes). Mostly immune to Magic.";
-			case "gargoyle":
-			case "marble gargoyle":
-				return "Bring a rock hammer to finish it, or use the granite"
-					+ " hammer (auto-smashes).";
-			case "rockslug":
-			case "giant rockslug":
-				return "Bring a bag of salt to finish it.";
-			case "lizard":
-			case "small lizard":
-			case "desert lizard":
-				return "Bring an ice cooler to finish it.";
-			case "zygomite":
-			case "ancient zygomite":
-				return "Bring fungicide spray to finish it.";
-			default:
-				return null;
+				sb.append(rule.note);
+			}
 		}
+		return sb.length() == 0 ? null : sb.toString();
+	}
+
+	/** Every curated monster key (test seam - the binding pin). */
+	public static List<String> monsterKeys()
+	{
+		List<String> keys = new ArrayList<>();
+		for (Rule rule : RULES)
+		{
+			keys.addAll(rule.monsters);
+		}
+		return keys;
 	}
 }

@@ -1,0 +1,119 @@
+{
+  "_comment": "Curated per-monster bring-chips (originally the RecommendedBring switch, moved to a token-free resource 2026-08-08). A rule matches on lowercased monster name, optionally narrowed by versionStartsWith; ALL matching rules' chips merge. 'rune': true chips pull the rune pouch along; a 'spellbook' field means the recommendation locks the trip to that book and the Arceuus folds stand down. Item ids gameval/GE-verified at encode time; poison/venom rows carry foundational wiki facts (venom: Zulrah line, Vorkath, the wilderness spiders, the Araxxor line; poison: KQ, Sarachnis, Scorpia).",
+  "rules": [
+    {
+      "monsters": ["jal-nib", "jal-ak"],
+      "spellbook": "ancient",
+      "chips": [
+        {"id": 555, "rune": true, "tooltip": "Barrage runes (Ancient spellbook) - Ice clears the nibbler trio, Blood heals off packs"},
+        {"id": 560, "rune": true, "tooltip": "Barrage runes (Ancient spellbook) - Ice clears the nibbler trio, Blood heals off packs"},
+        {"id": 565, "rune": true, "tooltip": "Barrage runes (Ancient spellbook) - Ice clears the nibbler trio, Blood heals off packs"},
+        {"id": 566, "rune": true, "tooltip": "Barrage runes (Ancient spellbook) - Ice clears the nibbler trio, Blood heals off packs"}
+      ]
+    },
+    {
+      "monsters": ["abyssal sire"],
+      "versionStartsWith": "Phase 1",
+      "spellbook": "ancient",
+      "chips": [
+        {"id": 556, "rune": true, "tooltip": "Shadow Barrage runes (Ancient spellbook) - disorients the Sire"},
+        {"id": 566, "rune": true, "tooltip": "Shadow Barrage runes (Ancient spellbook) - disorients the Sire"},
+        {"id": 560, "rune": true, "tooltip": "Shadow Barrage runes (Ancient spellbook) - disorients the Sire"}
+      ]
+    },
+    {
+      "monsters": ["dagannoth rex", "dagannoth prime", "dagannoth supreme"],
+      "chips": [
+        {"id": 5952, "tooltip": "Spinolyps in the room poison - bring antipoison"}
+      ]
+    },
+    {
+      "monsters": ["vorkath"],
+      "spellbook": "standard",
+      "chips": [
+        {"id": 556, "rune": true, "tooltip": "Crumble Undead runes (standard spellbook) - guaranteed one-shot on the Zombified Spawn"},
+        {"id": 557, "rune": true, "tooltip": "Crumble Undead runes (standard spellbook) - guaranteed one-shot on the Zombified Spawn"},
+        {"id": 562, "rune": true, "tooltip": "Crumble Undead runes (standard spellbook) - guaranteed one-shot on the Zombified Spawn"},
+        {"id": 4170, "tooltip": "Slayer's staff - left-click casts Crumble Undead on the spawn, no spell menu fumble"}
+      ]
+    },
+    {
+      "monsters": ["gargoyle", "marble gargoyle", "dusk"],
+      "chips": [
+        {"id": 4162, "tooltip": "Rock hammer - finishes the gargoyle below 9 hp (a granite hammer auto-smashes instead)"}
+      ]
+    },
+    {
+      "monsters": ["rockslug", "giant rockslug"],
+      "chips": [
+        {"id": 4161, "tooltip": "Bag of salt - finishes the rockslug (one per slug)"}
+      ]
+    },
+    {
+      "monsters": ["lizard", "small lizard", "desert lizard"],
+      "chips": [
+        {"id": 6696, "tooltip": "Ice cooler - finishes the lizard (one per lizard)"}
+      ]
+    },
+    {
+      "monsters": ["zygomite", "ancient zygomite"],
+      "chips": [
+        {"id": 7421, "tooltip": "Fungicide spray - finishes the zygomite"}
+      ]
+    },
+    {
+      "monsters": ["molanisk"],
+      "chips": [
+        {"id": 10952, "tooltip": "Slayer bell - rings a molanisk off the wall so it can be attacked"}
+      ]
+    },
+    {
+      "monsters": ["mogre"],
+      "chips": [
+        {"id": 6664, "tooltip": "Fishing explosive - lures a mogre out of the ominous fishing spot"}
+      ]
+    },
+    {
+      "monsters": ["zulrah", "snakeling"],
+      "chips": [
+        {"id": 12913, "tooltip": "Zulrah and its snakelings inflict VENOM - bring anti-venom"}
+      ]
+    },
+    {
+      "monsters": ["vorkath"],
+      "chips": [
+        {"id": 12913, "tooltip": "The pink dragonfire inflicts VENOM - bring anti-venom"}
+      ]
+    },
+    {
+      "monsters": ["venenatis", "spindel"],
+      "chips": [
+        {"id": 12913, "tooltip": "The spider inflicts VENOM - bring anti-venom"}
+      ]
+    },
+    {
+      "monsters": ["araxxor", "araxyte", "acidic araxyte", "ruptura araxyte", "dreadborn araxyte", "mirrorback araxyte"],
+      "chips": [
+        {"id": 12913, "tooltip": "Araxytes inflict VENOM - bring anti-venom"}
+      ]
+    },
+    {
+      "monsters": ["kalphite queen"],
+      "chips": [
+        {"id": 5952, "tooltip": "Her hits poison - bring antipoison"}
+      ]
+    },
+    {
+      "monsters": ["sarachnis"],
+      "chips": [
+        {"id": 5952, "tooltip": "Her hits poison - bring antipoison"}
+      ]
+    },
+    {
+      "monsters": ["scorpia"],
+      "chips": [
+        {"id": 5952, "tooltip": "Her sting poisons hard - bring antipoison"}
+      ]
+    }
+  ]
+}

@@ -1,6 +1,11 @@
 package com.loadoutlab.data;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -12,26 +17,75 @@ import java.util.Set;
  * stipulation rendered as prose but nothing recommended the runes or
  * the spellbook). Rune chips name their spell AND spellbook in the
  * tooltip - counts are deliberately absent, like every supply chip.
+ * Data-driven from recommended_bring.json (a token-free resource,
+ * Andrew's "all of this data in json" call 2026-08-08): finishing
+ * items, casting runes, and poison/venom protection all live there as
+ * rows - extending coverage is a data edit, never code.
  */
 public final class RecommendedBring
 {
-	private static final int AIR_RUNE = 556;
-	private static final int WATER_RUNE = 555;
-	private static final int EARTH_RUNE = 557;
-	private static final int DEATH_RUNE = 560;
-	private static final int CHAOS_RUNE = 562;
-	private static final int BLOOD_RUNE = 565;
-	private static final int SOUL_RUNE = 566;
-	private static final Set<Integer> RUNES =
-		Set.of(AIR_RUNE, WATER_RUNE, EARTH_RUNE, DEATH_RUNE, CHAOS_RUNE,
-			BLOOD_RUNE, SOUL_RUNE);
-	/** Antidote++ (4) - the representative antipoison chip; the supplies
-	 * system stays the configurable path for exact tiers. */
-	private static final int ANTIDOTE_PP = 5952;
-	private static final int SLAYERS_STAFF = 4170;
+	private static final class Rule
+	{
+		final List<String> monsters;
+		final String versionStartsWith;
+		final String spellbook;
+		final Map<Integer, String> chips;
+
+		Rule(List<String> monsters, String versionStartsWith, String spellbook,
+			Map<Integer, String> chips)
+		{
+			this.monsters = monsters;
+			this.versionStartsWith = versionStartsWith;
+			this.spellbook = spellbook;
+			this.chips = chips;
+		}
+	}
+
+	private static final List<Rule> RULES = new ArrayList<>();
+	private static final Set<Integer> RUNES = new HashSet<>();
+
+	static
+	{
+		// Fail LOUD (the name_rules pattern).
+		JsonObject root = JsonResources.objectOrThrow(
+			"/com/loadoutlab/data/recommended_bring.json");
+		for (JsonElement e : root.getAsJsonArray("rules"))
+		{
+			JsonObject row = e.getAsJsonObject();
+			List<String> monsters = new ArrayList<>();
+			JsonResources.strings(row, "monsters", monsters);
+			Map<Integer, String> chips = new LinkedHashMap<>();
+			for (JsonElement c : row.getAsJsonArray("chips"))
+			{
+				JsonObject chip = c.getAsJsonObject();
+				int id = chip.get("id").getAsInt();
+				chips.put(id, chip.get("tooltip").getAsString());
+				if (chip.has("rune") && chip.get("rune").getAsBoolean())
+				{
+					RUNES.add(id);
+				}
+			}
+			RULES.add(new Rule(monsters,
+				row.has("versionStartsWith")
+					? row.get("versionStartsWith").getAsString() : null,
+				row.has("spellbook") ? row.get("spellbook").getAsString() : null,
+				chips));
+		}
+		if (RULES.isEmpty())
+		{
+			throw new IllegalStateException("recommended_bring.json loaded empty");
+		}
+	}
 
 	private RecommendedBring()
 	{
+	}
+
+	private static boolean matches(Rule rule, MonsterStats monster, String name)
+	{
+		return rule.monsters.contains(name)
+			&& (rule.versionStartsWith == null
+				|| monster.versionStartsWith(rule.versionStartsWith));
 	}
 
 	/** True when the chip is a casting rune - the caller adds the rune
@@ -45,32 +99,27 @@ public final class RecommendedBring
 	 * NON-ARCEUUS spellbook - Ancients for the barrage stipulations,
 	 * standard for Vorkath's Crumble Undead - which has no path to Arceuus
 	 * summons, so the thrall/Death Charge folds must stand down (field
-	 * reports 2026-08-06: the Inferno recommended barrages and thralls at
-	 * once; 2026-08-08: Vorkath assumed Arceuus, making Crumble Undead
-	 * impossible). A direct switch, not a scan of chipsFor's tooltips: the
-	 * panel asks this per mob per card rebuild, and RecommendedBringTest
-	 * pins the two in agreement. */
+	 * reports 2026-08-06 and 2026-08-08). Derived from the rule's
+	 * spellbook field, so data and switch can never drift. */
 	public static boolean stipulatesSpellbook(MonsterStats monster)
 	{
 		if (monster == null)
 		{
 			return false;
 		}
-		switch (monster.getName().toLowerCase(Locale.ROOT))
+		String name = monster.getName().toLowerCase(Locale.ROOT);
+		for (Rule rule : RULES)
 		{
-			case "jal-nib":
-			case "jal-ak":
-			case "vorkath":
+			if (rule.spellbook != null && matches(rule, monster, name))
+			{
 				return true;
-			case "abyssal sire":
-				return monster.versionStartsWith("Phase 1");
-			default:
-				return false;
+			}
 		}
+		return false;
 	}
 
-	/** The curated chips for this monster: item id -> tooltip. Empty for
-	 * monsters with no recommendation. */
+	/** The curated chips for this monster (all matching rules merged):
+	 * item id -> tooltip. Empty for monsters with no recommendation. */
 	public static Map<Integer, String> chipsFor(MonsterStats monster)
 	{
 		LinkedHashMap<Integer, String> chips = new LinkedHashMap<>();
@@ -79,52 +128,24 @@ public final class RecommendedBring
 			return chips;
 		}
 		String name = monster.getName().toLowerCase(Locale.ROOT);
-		switch (name)
+		for (Rule rule : RULES)
 		{
-			case "jal-nib":
-			case "jal-ak":
+			if (matches(rule, monster, name))
 			{
-				String why = "Barrage runes (Ancient spellbook) - Ice clears"
-					+ " the nibbler trio, Blood heals off packs";
-				chips.put(WATER_RUNE, why);
-				chips.put(DEATH_RUNE, why);
-				chips.put(BLOOD_RUNE, why);
-				chips.put(SOUL_RUNE, why);
-				break;
+				chips.putAll(rule.chips);
 			}
-			case "abyssal sire":
-				if (monster.versionStartsWith("Phase 1"))
-				{
-					String why = "Shadow Barrage runes (Ancient spellbook)"
-						+ " - disorients the Sire";
-					chips.put(AIR_RUNE, why);
-					chips.put(SOUL_RUNE, why);
-					chips.put(DEATH_RUNE, why);
-				}
-				break;
-			case "dagannoth rex":
-			case "dagannoth prime":
-			case "dagannoth supreme":
-				chips.put(ANTIDOTE_PP, "Spinolyps in the room poison"
-					+ " - bring antipoison");
-				break;
-			case "vorkath":
-			{
-				// Wiki-verified 2026-08-08: Crumble Undead (39 Magic,
-				// standard spellbook, 2 air + 2 earth + 1 chaos) is
-				// GUARANTEED to instantly kill the Zombified Spawn.
-				String why = "Crumble Undead runes (standard spellbook)"
-					+ " - guaranteed one-shot on the Zombified Spawn";
-				chips.put(AIR_RUNE, why);
-				chips.put(EARTH_RUNE, why);
-				chips.put(CHAOS_RUNE, why);
-				chips.put(SLAYERS_STAFF, "Slayer's staff - left-click casts"
-					+ " Crumble Undead on the spawn, no spell menu fumble");
-				break;
-			}
-			default:
-				break;
 		}
 		return chips;
+	}
+
+	/** Every curated monster key (test seam - the binding pin). */
+	public static List<String> monsterKeys()
+	{
+		List<String> keys = new ArrayList<>();
+		for (Rule rule : RULES)
+		{
+			keys.addAll(rule.monsters);
+		}
+		return keys;
 	}
 }

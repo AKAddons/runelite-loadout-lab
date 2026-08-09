@@ -38,6 +38,12 @@
       "note": "A spiny helmet or slayer helmet is REQUIRED."
     },
     {
+      "monsters": ["smoke devil", "thermonuclear smoke devil"],
+      "slot": "HEAD",
+      "items": ["facemask", "slayer helmet", "slayer helmet (i)"],
+      "note": "A facemask or slayer helmet is REQUIRED to kill smoke devils."
+    },
+    {
       "monsters": ["killerwatt"],
       "slot": "FEET",
       "items": ["insulated boots"],

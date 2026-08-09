@@ -50,8 +50,11 @@ class RecommendedBringTest
 		assertTrue(chips.containsKey(557), "earth rune (x2)");
 		assertTrue(chips.containsKey(562), "chaos rune (x1)");
 		assertTrue(chips.containsKey(4170), "slayer's staff for the left-click cast");
-		assertTrue(chips.values().stream().allMatch(t -> t.contains("Crumble Undead")),
-			"the spell is the point of every chip");
+		for (int id : new int[]{556, 557, 562, 4170})
+		{
+			assertTrue(chips.get(id).contains("Crumble Undead"),
+				"the spell is the point of chip " + id);
+		}
 		assertTrue(RecommendedBring.isRune(557), "runes pull the pouch along");
 		assertFalse(RecommendedBring.isRune(4170),
 			"the staff must not drag the rune pouch in");
@@ -107,6 +110,46 @@ class RecommendedBringTest
 	void unknownIsEmpty()
 	{
 		assertTrue(chipsFor("goblin").isEmpty());
+	}
+
+	@Test
+	@DisplayName("every curated bring key binds to a loaded corpus row")
+	void keysBindToCorpus()
+	{
+		for (String key : RecommendedBring.monsterKeys())
+		{
+			assertTrue(data.searchMonsters(key, 10).stream().anyMatch(
+				m -> m.getName().equalsIgnoreCase(key)),
+				"no corpus row named: " + key);
+		}
+	}
+
+	@Test
+	@DisplayName("finishing items chip on their families")
+	void finishingItems()
+	{
+		assertTrue(chipsFor("gargoyle").containsKey(4162), "rock hammer");
+		assertTrue(chipsFor("dusk").containsKey(4162), "Dusk is a gargoyle too");
+		assertTrue(chipsFor("rockslug").containsKey(4161), "bag of salt");
+		assertTrue(chipsFor("desert lizard").containsKey(6696), "ice cooler");
+		assertTrue(chipsFor("zygomite").containsKey(7421), "fungicide spray");
+		assertTrue(chipsFor("molanisk").containsKey(10952), "slayer bell");
+		assertTrue(chipsFor("mogre").containsKey(6664), "fishing explosive");
+	}
+
+	@Test
+	@DisplayName("venom and poison inflictors chip their protection")
+	void poisonAndVenom()
+	{
+		assertTrue(chipsFor("zulrah").containsKey(12913), "anti-venom at Zulrah");
+		assertTrue(chipsFor("vorkath").containsKey(12913),
+			"anti-venom rides Vorkath's rule alongside the Crumble runes");
+		assertTrue(chipsFor("venenatis").containsKey(12913), "anti-venom");
+		assertTrue(chipsFor("araxxor").containsKey(12913), "anti-venom");
+		assertTrue(chipsFor("kalphite queen").containsKey(5952), "antipoison");
+		assertTrue(chipsFor("scorpia").containsKey(5952), "antipoison");
+		assertFalse(RecommendedBring.isRune(12913),
+			"potions must not drag the rune pouch in");
 	}
 
 	@Test
