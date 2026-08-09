@@ -4603,11 +4603,21 @@ public class LoadoutLabPanel extends PluginPanel
 					})));
 			}
 		}
-		toggles.add(paramChip("Spec", entry.specWeapon, true,
-			entry.specWeapon
-				? "A special-attack weapon may be carried and its added dps"
-					+ " folded in - click to plan without one"
-				: "No spec weapon carried - click to allow one",
+		// A pinned spec weapon announces itself ON the chip (field request
+		// 2026-08-09: "it should be in the spec chip") - the label carries
+		// the state, the tooltip the weapon.
+		int chipSpecPin = selectedMonster == null ? 0
+			: mobProfile.pinnedSpec(currentMonsterId());
+		GearItem chipPinned = chipSpecPin > 0 ? data.getGear(chipSpecPin) : null;
+		toggles.add(paramChip(chipPinned != null && entry.specWeapon
+				? "Spec: pinned" : "Spec", entry.specWeapon, true,
+			chipPinned != null && entry.specWeapon
+				? "Pinned to " + chipPinned.label() + " - right-click the"
+					+ " spec cell to unpin; click to plan without a spec"
+				: entry.specWeapon
+					? "A special-attack weapon may be carried and its added dps"
+						+ " folded in - click to plan without one"
+					: "No spec weapon carried - click to allow one",
 			() -> asActive(entry, () ->
 			{
 				entry.specWeapon = !entry.specWeapon;
@@ -5970,6 +5980,12 @@ public class LoadoutLabPanel extends PluginPanel
 					params.add("Pinned vs " + m.getName() + " ("
 						+ scopeLabel(scoped.getKey()) + "): " + names);
 				}
+			}
+			int reportSpecPin = mobProfile.pinnedSpec(m.profileId());
+			if (reportSpecPin > 0)
+			{
+				params.add("Pinned spec vs " + m.getName() + ": "
+					+ itemNames(java.util.List.of(reportSpecPin)));
 			}
 		}
 
