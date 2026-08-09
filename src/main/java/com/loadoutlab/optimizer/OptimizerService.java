@@ -349,9 +349,13 @@ public class OptimizerService
 		int pinnedSpec;
 	}
 
-	/** The spec-weapon restriction for this style: the pin when it serves
-	 * this style, else null (unrestricted). A pinned melee spec never
-	 * starves the ranged card of its own best spec. */
+	/** The spec-weapon restriction (0 = none): a user PIN forces the spec
+	 * slot to that weapon on EVERY style card, not just its own - specs
+	 * compete cross-style (a ranged Tonalztics is a real spec swap on a
+	 * melee setup; a DWH on a magic set), so a pin that only bound its own
+	 * style read as "the pin doesn't take" when viewing another card
+	 * (field report 2026-08-09). A card the weapon cannot serve shows the
+	 * pinned spec at its honest ~0 (keepZero), never a different auto pick. */
 	private static Set<Integer> restrictSpec(ComputeContext ctx, CombatStyle style)
 	{
 		if (ctx.pinnedSpec == 0)
@@ -359,8 +363,7 @@ public class OptimizerService
 			return null;
 		}
 		GearItem pinned = ctx.dataset.getGear(ctx.pinnedSpec);
-		SpecialAttack spec = pinned == null ? null : SpecialAttack.match(pinned);
-		return spec != null && spec.getStyle() == style
+		return pinned != null && SpecialAttack.match(pinned) != null
 			? Collections.singleton(ctx.pinnedSpec) : null;
 	}
 
