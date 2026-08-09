@@ -2997,6 +2997,11 @@ public class OptimizerService
 		if (spec.drainsDefence() && usesByTime >= 1)
 		{
 			int drained = spec.drainedDefence(monster.getDefence(), expected);
+			// Per-boss defence floors (competitor audit 2026-08-08, from
+			// the official calc): drain stops at the floor - a DWH at Nex
+			// buys 10 levels, at Verzik/Vardorvis nothing at all. Without
+			// the clamp the fishing model overvalues drain specs there.
+			drained = Math.max(drained, com.loadoutlab.data.DefenceFloors.floorFor(monster));
 			if (drained < monster.getDefence())
 			{
 				DpsResult after = calculator.calculate(

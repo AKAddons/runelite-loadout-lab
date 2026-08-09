@@ -121,6 +121,62 @@ public class LightbearerArbitrationTest
 	}
 
 	@Test
+	public void flooredBossesYieldNoDrainValue() throws Exception
+	{
+		// The same high-defence dummy twice: once synthetic (unfloored),
+		// once wearing Verzik's id - whose defence_floors.json floor is
+		// its own base, so the drain block must contribute NOTHING and
+		// the DWH prices at damage mode alone (competitor audit
+		// 2026-08-08: without the clamp, drain fishing overvalued drain
+		// specs at floored bosses).
+		com.loadoutlab.data.MonsterDefences def =
+			new com.loadoutlab.data.MonsterDefences(150, 150, 150, 100, 0, 60, 60, 60);
+		com.loadoutlab.data.MonsterStats unfloored = new com.loadoutlab.data.MonsterStats(
+			-42, "Drain Dummy", "", 500, 800, 3, 350, 200, 0,
+			def, null, java.util.Collections.emptyList(), false, "", 0);
+		com.loadoutlab.data.MonsterStats floored = new com.loadoutlab.data.MonsterStats(
+			8372, "Verzik Dummy", "", 500, 800, 3, 350, 200, 0,
+			def, null, java.util.Collections.emptyList(), false, "", 0);
+
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			double[] added = new double[2];
+			com.loadoutlab.data.MonsterStats[] dummies = {unfloored, floored};
+			for (int i = 0; i < 2; i++)
+			{
+				com.loadoutlab.engine.OptimizationRequest request =
+					com.loadoutlab.engine.TestRequests.of(dummies[i],
+						CombatStyle.MELEE, PlayerLevels.MAXED,
+						com.loadoutlab.engine.PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
+						null, 0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD,
+						true, false, OwnedItems.EMPTY, 1);
+				java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> worn =
+					new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+				worn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("abyssal whip"));
+				com.loadoutlab.engine.DpsResult main = new com.loadoutlab.engine.DpsCalculator()
+					.calculate(request, new com.loadoutlab.engine.Loadout(worn));
+				java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> specWorn =
+					new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+				specWorn.put(com.loadoutlab.data.GearSlot.WEAPON, byName("dragon warhammer"));
+				com.loadoutlab.engine.DpsResult specBase = new com.loadoutlab.engine.DpsCalculator()
+					.calculate(request, new com.loadoutlab.engine.Loadout(specWorn));
+				com.loadoutlab.engine.SpecialAttack dwh =
+					com.loadoutlab.engine.SpecialAttack.match(byName("dragon warhammer"));
+				double expected = dwh.expectedDamage(specBase, dummies[i], PlayerLevels.MAXED);
+				added[i] = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
+					dwh, specBase, expected, request, main, dummies[i], false);
+			}
+			Assert.assertTrue("the floor must strip the drain value: unfloored "
+				+ added[0] + " vs floored " + added[1], added[0] > added[1] + 1e-9);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void doubledRegenRaisesDrainValueWhenTheBudgetLimitsFishing() throws Exception
 	{
 		// A synthetic high-defence dummy: the DWH land chance is low, so

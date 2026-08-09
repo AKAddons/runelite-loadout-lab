@@ -1,0 +1,22 @@
+{
+  "_comment": "Per-boss defence floors for drain valuation (competitor audit 2026-08-08): id arrays copied verbatim from the official wiki calculator's DefenceReduction.ts/constants.ts - the same weirdgloop ids our corpus carries. floor: 'base' means the boss's defence cannot be drained at all (Verzik, Vardorvis); a number is the hard stop DWH/BGS/maul stacking cannot pass. Monsters absent here have no floor.",
+  "rules": [
+    {
+      "floor": "base",
+      "ids": [10830, 10831, 10832, 8369, 8370, 8371, 10847, 10848, 10849,
+              10833, 10834, 10835, 8372, 8373, 8374, 10850, 10851, 10852,
+              12223, 12224, 12228, 12425, 12426, 13656]
+    },
+    {"floor": 100, "ids": [8387, 8388, 10867, 10868]},
+    {"floor": 120, "ids": [378, 9425, 9426, 9427, 9428, 9429, 9430, 9431, 9432, 9433, 9460,
+                            377, 9423, 9416, 9417, 9418, 9419, 9420, 9421, 9422, 9424, 11153, 11154, 11155,
+                            11761, 11762, 11763, 11764,
+                            14009, 14010, 14013, 14017, 14014]},
+    {"floor": 70, "ids": [11789, 11790, 11791, 11792, 11793, 11794, 11795, 11796]},
+    {"floor": 60, "ids": [11778, 11779, 11780, 11719, 11721, 11750, 11751, 11752]},
+    {"floor": 50, "ids": [11730, 11732, 11733]},
+    {"floor": 250, "ids": [11278, 11279, 11280, 11281, 11282]},
+    {"floor": 90, "ids": [13668]},
+    {"floor": 145, "ids": [14176]}
+  ]
+}
