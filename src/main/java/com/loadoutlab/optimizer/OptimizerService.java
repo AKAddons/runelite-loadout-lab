@@ -456,7 +456,10 @@ public class OptimizerService
 	 * can never drift into split/colliding cache buckets. */
 	private static String baseKeyFor(MonsterStats monster, ComputeContext ctx)
 	{
-		return monster.getId() + "|" + ctxKey(ctx)
+		// The invocation level scales the monster's defence but not its id
+		// (found 2026-08-09: optimizeKey carried it, this key did not, so
+		// flipping the Invocation chip served the previous level's cache).
+		return monster.getId() + "|" + monster.getToaInvocationLevel() + "|" + ctxKey(ctx)
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps;
 	}
 
