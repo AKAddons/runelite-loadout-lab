@@ -1684,29 +1684,54 @@ public class LoadoutLabPanel extends PluginPanel
 		// restores that monster, so "Optimize: Tanky" never flips a setting
 		// against a cleared or different selection (field report 2026-07-16).
 		MonsterStats at = selectedMonster;
-		String label = at == null ? description : description + " - " + at.getName();
+		execCommand(at == null ? description : description + " - " + at.getName(),
+			() ->
+			{
+				restoreContext(at);
+				toNew.run();
+			},
+			() ->
+			{
+				restoreContext(at);
+				toOld.run();
+			});
+	}
+
+	/** Record the step; with no history wired, still apply it. */
+	private void stepOrRun(String description, Runnable toNew, Runnable toOld)
+	{
+		recordStep(description, toNew, toOld);
+		if (historyControl == null)
+		{
+			toNew.run();
+		}
+	}
+
+	/** The one Command body behind every history entry here: apply/revert
+	 * as runnables (all panel steps report success), description fixed at
+	 * record time. Callers guard historyControl themselves. */
+	private void execCommand(String description, Runnable apply, Runnable revert)
+	{
 		historyControl.execute(new com.loadoutlab.command.Command()
 		{
 			@Override
 			public boolean apply()
 			{
-				restoreContext(at);
-				toNew.run();
+				apply.run();
 				return true;
 			}
 
 			@Override
 			public boolean revert()
 			{
-				restoreContext(at);
-				toOld.run();
+				revert.run();
 				return true;
 			}
 
 			@Override
 			public String getDescription()
 			{
-				return label;
+				return description;
 			}
 		});
 	}
@@ -1958,37 +1983,41 @@ public class LoadoutLabPanel extends PluginPanel
 			applySelection(monster);
 			return;
 		}
+		recordSelection("vs " + monster.label(), () -> applySelection(monster), true);
+	}
+
+	/** A recorded pick (select / selectGroup): the first apply runs the
+	 * applier and memoizes the resulting page, so redo reinstates the SAME
+	 * entries - their parameter zones and computed results survive the
+	 * round trip. Back reinstates the replaced entries intact; with
+	 * clearWhenNoActive, a pick made from a deliberately cleared panel
+	 * goes back to cleared. */
+	private void recordSelection(String description, Runnable applier,
+		boolean clearWhenNoActive)
+	{
 		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
-		historyControl.execute(new com.loadoutlab.command.Command()
-		{
-			private List<ResultEntry> pageAfter;
-			private ResultEntry activeAfter;
-
-			@Override
-			public boolean apply()
+		final List<ResultEntry> pageAfter = new ArrayList<>();
+		final ResultEntry[] activeAfter = new ResultEntry[1];
+		final boolean[] applied = {false};
+		execCommand(description,
+			() ->
 			{
-				if (pageAfter == null)
+				if (!applied[0])
 				{
-					applySelection(monster);
-					pageAfter = new ArrayList<>(page);
-					activeAfter = active;
+					applier.run();
+					applied[0] = true;
+					pageAfter.addAll(page);
+					activeAfter[0] = active;
 				}
 				else
 				{
-					// Redo reinstates the SAME entries - their parameter
-					// zones and computed results survive the round trip.
-					restorePage(pageAfter, activeAfter);
+					restorePage(pageAfter, activeAfter[0]);
 				}
-				return true;
-			}
-
-			@Override
-			public boolean revert()
+			},
+			() ->
 			{
-				// Back reinstates the replaced entries intact; a pick made
-				// from a deliberately cleared panel goes back to cleared.
-				if (activeBefore != null)
+				if (activeBefore != null || !clearWhenNoActive)
 				{
 					restorePage(pageBefore, activeBefore);
 				}
@@ -1996,15 +2025,7 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					clearSelectionInternal();
 				}
-				return true;
-			}
-
-			@Override
-			public String getDescription()
-			{
-				return "vs " + monster.label();
-			}
-		});
+			});
 	}
 
 	/** Reinstate a captured page (entry OBJECTS - parameters and results
@@ -2034,59 +2055,13 @@ public class LoadoutLabPanel extends PluginPanel
 			applyGroupSelection(group);
 			return;
 		}
-		final List<ResultEntry> pageBefore = new ArrayList<>(page);
-		final ResultEntry activeBefore = active;
-		historyControl.execute(new com.loadoutlab.command.Command()
-		{
-			private List<ResultEntry> pageAfter;
-			private ResultEntry activeAfter;
-
-			@Override
-			public boolean apply()
-			{
-				if (pageAfter == null)
-				{
-					applyGroupSelection(group);
-					pageAfter = new ArrayList<>(page);
-					activeAfter = active;
-				}
-				else
-				{
-					// Redo reinstates the SAME entries - results intact.
-					restorePage(pageAfter, activeAfter);
-				}
-				return true;
-			}
-
-			@Override
-			public boolean revert()
-			{
-				restorePage(pageBefore, activeBefore);
-				return true;
-			}
-
-			@Override
-			public String getDescription()
-			{
-				return "vs " + group.getName();
-			}
-		});
+		recordSelection("vs " + group.getName(), () -> applyGroupSelection(group), false);
 	}
 
 	/** The group expansion: a fresh page holding one roster entry. */
 	private void applyGroupSelection(MonsterGroups.MonsterGroup group)
 	{
-		suppressSearchEvents = true;
-		try
-		{
-			searchField.setText("");
-		}
-		finally
-		{
-			suppressSearchEvents = false;
-		}
-		monsterModel.clear();
-		monsterScroll.setVisible(false);
+		collapseSearchDropdown();
 		hadSelection = true;
 		page.clear();
 		MonsterStats first = group.getMobs().get(0);
@@ -2101,6 +2076,34 @@ public class LoadoutLabPanel extends PluginPanel
 		// Parameter seeding mirrors a single pick, anchored on the first
 		// mob (the roster compute anchors exclusions/pins there too).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(first) || displayOptions.defaultOnTask;
+		installActive(first, group.getName());
+		renderPage();
+		statusLabel.setText(" ");
+		computeEntry(active);
+	}
+
+	/** The search dropdown collapses on any pick - text cleared without
+	 * re-triggering the search listener. */
+	private void collapseSearchDropdown()
+	{
+		suppressSearchEvents = true;
+		try
+		{
+			searchField.setText("");
+		}
+		finally
+		{
+			suppressSearchEvents = false;
+		}
+		monsterModel.clear();
+		monsterScroll.setVisible(false);
+	}
+
+	/** The shared back half of a pick (single or group): remaining seeded
+	 * defaults, control sync, bank view reset, and the per-mob UI/note
+	 * state - identical between applySelection and applyGroupSelection. */
+	private void installActive(MonsterStats mob, String usageLabel)
+	{
 		active.antifireMode = resolveDefaultAntifire(active);
 		active.upgradeBudget = displayOptions.upgradeBudget
 			? displayOptions.defaultUpgradeBudget : "";
@@ -2113,15 +2116,12 @@ public class LoadoutLabPanel extends PluginPanel
 		lastFilterIds = null;
 		bankHighlighter.highlight(null);
 		bankFilter.filter(null, null);
-		applyActiveMonsterUi(first);
-		usageLog.record(group.getName());
-		setNoteCollapsed(mobProfile.note(first.getId()).isEmpty());
+		applyActiveMonsterUi(mob);
+		usageLog.record(usageLabel);
+		setNoteCollapsed(mobProfile.note(mob.getId()).isEmpty());
 		refreshNotePanel();
 		revalidate();
 		repaint();
-		renderPage();
-		statusLabel.setText(" ");
-		computeEntry(active);
 	}
 
 	/** The selection itself: collapse the dropdown, show it, recompute. */
@@ -2135,17 +2135,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * result and becomes active (multi-add, M-2). */
 	private void applySelection(MonsterStats monster, boolean replacePage)
 	{
-		suppressSearchEvents = true;
-		try
-		{
-			searchField.setText("");
-		}
-		finally
-		{
-			suppressSearchEvents = false;
-		}
-		monsterModel.clear();
-		monsterScroll.setVisible(false);
+		collapseSearchDropdown();
 		selectedMonster = monster;
 		hadSelection = true;
 		if (replacePage)
@@ -2164,25 +2154,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// (out of the wilderness - a per-fight statement, not a preference).
 		active.onSlayerTask = SlayerLockedMonsters.isTaskOnly(monster) || displayOptions.defaultOnTask;
 		seedAssumptionDefaults(active);
-		active.antifireMode = resolveDefaultAntifire(active);
-		active.upgradeBudget = displayOptions.upgradeBudget
-			? displayOptions.defaultUpgradeBudget : "";
-		active.riskCap = displayOptions.wildyRisk ? displayOptions.defaultRiskCap : "";
-		page.add(active);
-		syncControlsFromActive();
-		bankShowing = false;
-		bankFiltering = false;
-		lastHighlightIds = null;
-		lastFilterIds = null;
-		bankHighlighter.highlight(null);
-		bankFilter.filter(null, null);
-		applyActiveMonsterUi(monster);
-		usageLog.record(monster.label());
-		// A new mob: its own note state.
-		setNoteCollapsed(mobProfile.note(monster.getId()).isEmpty());
-		refreshNotePanel();
-		revalidate();
-		repaint();
+		installActive(monster, monster.label());
 		if (replacePage)
 		{
 			recompute();
@@ -2387,32 +2359,14 @@ public class LoadoutLabPanel extends PluginPanel
 			applyAdd.run();
 			return;
 		}
-		historyControl.execute(new com.loadoutlab.command.Command()
+		execCommand("Add " + monster.getName() + " to result", applyAdd, () ->
 		{
-			@Override
-			public boolean apply()
-			{
-				applyAdd.run();
-				return true;
-			}
-
-			@Override
-			public boolean revert()
-			{
-				target.mobs.clear();
-				target.mobs.addAll(mobsBefore);
-				target.lensIndex = lensBefore;
-				target.results = resultsBefore;
-				target.perMobResults = perMobBefore;
-				restorePage(pageBefore, activeBefore);
-				return true;
-			}
-
-			@Override
-			public String getDescription()
-			{
-				return "Add " + monster.getName() + " to result";
-			}
+			target.mobs.clear();
+			target.mobs.addAll(mobsBefore);
+			target.lensIndex = lensBefore;
+			target.results = resultsBefore;
+			target.perMobResults = perMobBefore;
+			restorePage(pageBefore, activeBefore);
 		});
 	}
 
@@ -2430,28 +2384,9 @@ public class LoadoutLabPanel extends PluginPanel
 		{
 			return; // already the active result
 		}
-		historyControl.execute(new com.loadoutlab.command.Command()
-		{
-			@Override
-			public boolean apply()
-			{
-				applySelection(monster, false);
-				return true;
-			}
-
-			@Override
-			public boolean revert()
-			{
-				removeFromPage(monster.getId(), previousActive);
-				return true;
-			}
-
-			@Override
-			public String getDescription()
-			{
-				return "+ vs " + monster.label();
-			}
-		});
+		execCommand("+ vs " + monster.label(),
+			() -> applySelection(monster, false),
+			() -> removeFromPage(monster.getId(), previousActive));
 	}
 
 	/** Close a result (the X or a step revert): drop the entry; if it was
@@ -4144,28 +4079,9 @@ public class LoadoutLabPanel extends PluginPanel
 		}
 		final List<ResultEntry> pageBefore = new ArrayList<>(page);
 		final ResultEntry activeBefore = active;
-		historyControl.execute(new com.loadoutlab.command.Command()
-		{
-			@Override
-			public boolean apply()
-			{
-				clearSelectionInternal();
-				return true;
-			}
-
-			@Override
-			public boolean revert()
-			{
-				restorePage(pageBefore, activeBefore);
-				return true;
-			}
-
-			@Override
-			public String getDescription()
-			{
-				return "Clear - " + previous.getName();
-			}
-		});
+		execCommand("Clear - " + previous.getName(),
+			this::clearSelectionInternal,
+			() -> restorePage(pageBefore, activeBefore));
 	}
 
 	private void clearSelectionInternal()
@@ -4565,16 +4481,7 @@ public class LoadoutLabPanel extends PluginPanel
 		// Raid-supplied boost toggle (field spec 2026-07-18): overloads/
 		// salts are the raid norm but not a promise - off falls back to
 		// the bank's own potions.
-		BoostProfile supplied =
-			RaidBoosts.suppliedBoost(entry.mobs.get(0));
-		for (MonsterStats m : entry.mobs)
-		{
-			if (RaidBoosts.suppliedBoost(m) != supplied)
-			{
-				supplied = null;
-				break;
-			}
-		}
+		BoostProfile supplied = rosterSuppliedBoost(entry);
 		if (supplied != null)
 		{
 			String suppliedLabel = supplied.toString();
@@ -4585,24 +4492,11 @@ public class LoadoutLabPanel extends PluginPanel
 				() -> asActive(entry, () ->
 			{
 				boolean prev = entry.raidBoost;
-				recordStep(prev ? "No raid boost" : "Raid boost",
+				stepOrRun(prev ? "No raid boost" : "Raid boost",
 					() -> setRaidBoost(!prev), () -> setRaidBoost(prev));
-				if (historyControl == null)
-				{
-					setRaidBoost(!prev);
-				}
 			})));
 		}
-		boolean fiery = false;
-		for (MonsterStats m : entry.mobs)
-		{
-			if (DragonfireRules.breathesFire(m))
-			{
-				fiery = true;
-				break;
-			}
-		}
-		if (fiery)
+		if (rosterBreathesFire(entry.mobs))
 		{
 			// Dragonfire protection mode (field spec), cycling gear ->
 			// regular -> super. Regular keeps the shield REQUIRED (only
@@ -4628,12 +4522,8 @@ public class LoadoutLabPanel extends PluginPanel
 				{
 					int next = (entry.antifireMode + 1) % 3;
 					int prev = entry.antifireMode;
-					recordStep(antifireSteps[next],
+					stepOrRun(antifireSteps[next],
 						() -> setAntifireMode(next), () -> setAntifireMode(prev));
-					if (historyControl == null)
-					{
-						setAntifireMode(next);
-					}
 				})));
 		}
 		// Tombs invocation (field report 2026-08-06: at any real raid
@@ -4661,14 +4551,8 @@ public class LoadoutLabPanel extends PluginPanel
 					+ " kill times are not scaled yet. Click to cycle"
 					+ " 0/150/300/540.",
 				() -> asActive(entry, () ->
-				{
-					recordStep("Invocation " + invoNext,
-						() -> setToaInvocation(invoNext), () -> setToaInvocation(invoPrev));
-					if (historyControl == null)
-					{
-						setToaInvocation(invoNext);
-					}
-				})));
+					stepOrRun("Invocation " + invoNext,
+						() -> setToaInvocation(invoNext), () -> setToaInvocation(invoPrev)))));
 		}
 		// Thralls / Vengeance (field direction 2026-07-21): display-only
 		// dps folds - the chips show only when usable (tier reachable +
@@ -4833,12 +4717,8 @@ public class LoadoutLabPanel extends PluginPanel
 					{
 						return;
 					}
-					recordStep("Inventory " + pick,
+					stepOrRun("Inventory " + pick,
 						() -> setMaxSwaps(pick), () -> setMaxSwaps(prev));
-					if (historyControl == null)
-					{
-						setMaxSwaps(pick);
-					}
 				});
 			});
 			// Label + slider travel as ONE unit so the wrap can never
@@ -5249,16 +5129,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * Detect scans the collection for the best potion you have. */
 	private int resolveDefaultAntifire(ResultEntry entry)
 	{
-		boolean fiery = false;
-		for (MonsterStats m : entry.mobs)
-		{
-			if (DragonfireRules.breathesFire(m))
-			{
-				fiery = true;
-				break;
-			}
-		}
-		if (!fiery)
+		if (!rosterBreathesFire(entry.mobs))
 		{
 			return 0;
 		}
@@ -5282,6 +5153,35 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 		}
 		return 0;
+	}
+
+	/** Whether ANY roster mob breathes fire - the antifire chips, report
+	 * line and detected default all key off the same roster question. */
+	private static boolean rosterBreathesFire(List<MonsterStats> mobs)
+	{
+		for (MonsterStats m : mobs)
+		{
+			if (DragonfireRules.breathesFire(m))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The raid-supplied boost shared by EVERY mob on the roster, or null
+	 * when the mobs disagree (mixed rosters get no raid-boost chip). */
+	private static BoostProfile rosterSuppliedBoost(ResultEntry entry)
+	{
+		BoostProfile supplied = RaidBoosts.suppliedBoost(entry.mobs.get(0));
+		for (MonsterStats m : entry.mobs)
+		{
+			if (RaidBoosts.suppliedBoost(m) != supplied)
+			{
+				return null;
+			}
+		}
+		return supplied;
 	}
 
 	/** Assumed consumables (field spec 2026-07-18, refined): a SINGLE
@@ -5916,31 +5816,13 @@ public class LoadoutLabPanel extends PluginPanel
 			params.add("Risk cap: " + (risk.isEmpty() ? "off" : risk));
 		}
 
-		BoostProfile supplied =
-			RaidBoosts.suppliedBoost(entry.mobs.get(0));
-		for (MonsterStats m : entry.mobs)
-		{
-			if (RaidBoosts.suppliedBoost(m) != supplied)
-			{
-				supplied = null;
-				break;
-			}
-		}
+		BoostProfile supplied = rosterSuppliedBoost(entry);
 		if (supplied != null)
 		{
 			params.add(supplied + ": " + (entry.raidBoost ? "assumed" : "own potions"));
 		}
 
-		boolean fiery = false;
-		for (MonsterStats m : entry.mobs)
-		{
-			if (DragonfireRules.breathesFire(m))
-			{
-				fiery = true;
-				break;
-			}
-		}
-		if (fiery)
+		if (rosterBreathesFire(entry.mobs))
 		{
 			String[] antifire = {"Antifire: gear only", "Antifire: regular assumed",
 				"Antifire: super assumed"};
@@ -7316,12 +7198,8 @@ public class LoadoutLabPanel extends PluginPanel
 		flip.addActionListener(a ->
 		{
 			boolean assume = !superAntifireAssumed();
-			recordStep(assume ? "Assume super antifire" : "Require dragonfire shield",
+			stepOrRun(assume ? "Assume super antifire" : "Require dragonfire shield",
 				() -> setAntifireTo(assume), () -> setAntifireTo(!assume));
-			if (historyControl == null)
-			{
-				setAntifireTo(assume); // no history wired: still flip
-			}
 		});
 		return List.of(flip);
 	}
