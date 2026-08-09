@@ -274,7 +274,16 @@ public final class LoadoutOptimizer
 		{
 			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(result.getLoadout().getGear());
 			gear.put(candidate.getSlot(), candidate);
-			DpsResult swapped = bestSpellResult(request, Loadout.adopting(gear), spellContext);
+			Loadout trial = Loadout.adopting(gear);
+			if (result.getLoadout().getQuiverAmmo() != null)
+			{
+				// The quiver's carried arrows ride the swap, or the recoil
+				// trial silently sheds their strength and accuracy (found
+				// 2026-08-09: the roster golden halved at Zulrah when the
+				// relocate-then-recoil chain dropped the quiver ammo).
+				trial = trial.withQuiverAmmo(result.getLoadout().getQuiverAmmo());
+			}
+			DpsResult swapped = bestSpellResult(request, trial, spellContext);
 			if (swapped != null && (best == null || swapped.getDps() > best.getDps()))
 			{
 				best = swapped.withPurchaseCost(result.getPurchaseCost() + budgetCost(request, candidate));

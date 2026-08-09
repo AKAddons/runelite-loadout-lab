@@ -143,6 +143,29 @@ class QuiverAmmoTest
 	}
 
 	@Test
+	@DisplayName("accuracy-bearing arrows keep their bonus from the quiver")
+	void accuracyParity()
+	{
+		// Field report 2026-08-09: Seeking dragon arrows carry +20 ranged
+		// ACCURACY; pricing only the strength made the relocation
+		// dps-negative and the ammo slot never freed for a blessing. The
+		// quiver's extra slot is worn equipment - full stats count.
+		OptimizationRequest request = req();
+		Loadout start = worn("twisted bow", "seeking dragon arrow", "blessed dizana's quiver");
+		DpsResult base = new DpsCalculator().calculate(request, start);
+		assertNotNull(base);
+
+		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(start.getGear());
+		GearItem arrows = gear.remove(GearSlot.AMMO);
+		Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(arrows);
+		DpsResult reShown = new DpsCalculator().calculate(request, relocated);
+		assertNotNull(reShown);
+		assertEquals(base.getDps(), reShown.getDps(), 1e-9,
+			"the +20 accuracy must survive the relocation");
+		assertEquals(base.getAccuracy(), reShown.getAccuracy(), 1e-9);
+	}
+
+	@Test
 	@DisplayName("crossbow bolts relocate; a ballista's javelins and a plain cape do not")
 	void scoping()
 	{

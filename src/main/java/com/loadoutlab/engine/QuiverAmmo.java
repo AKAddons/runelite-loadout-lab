@@ -49,4 +49,15 @@ public final class QuiverAmmo
 		GearItem carried = loadout.getQuiverAmmo();
 		return carried == null ? 0 : carried.getBonuses().getRangedStrength();
 	}
+
+	/** The quiver-carried ammo's ranged ACCURACY bonus - the quiver's
+	 * extra slot is worn equipment, so its contents' full stats count
+	 * (field report 2026-08-09: Seeking dragon arrows carry +20 ranged
+	 * accuracy, and pricing only the strength made their relocation
+	 * dps-negative, so the freed-slot blessing never happened). */
+	public static int accuracy(Loadout loadout)
+	{
+		GearItem carried = loadout.getQuiverAmmo();
+		return carried == null ? 0 : carried.getOffensive().getRanged();
+	}
 }

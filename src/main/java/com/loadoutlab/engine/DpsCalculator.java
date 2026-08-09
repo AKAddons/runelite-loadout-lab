@@ -344,7 +344,8 @@ public final class DpsCalculator
 			effectiveDamage = (int) Math.floor(effectiveDamage * (elite ? 1.125 : 1.10));
 		}
 
-		long attackRoll = RollMath.attackRoll(effectiveAccuracy, loadout.getOffensive().getRanged());
+		long attackRoll = RollMath.attackRoll(effectiveAccuracy,
+			loadout.getOffensive().getRanged() + QuiverAmmo.accuracy(loadout));
 		boolean atlatl = isEclipseAtlatl(loadout);
 		if (atlatl)
 		{
