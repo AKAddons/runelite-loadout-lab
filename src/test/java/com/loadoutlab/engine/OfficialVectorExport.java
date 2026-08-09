@@ -84,6 +84,19 @@ public class OfficialVectorExport
 		{"bonestaff-scurrius", "Scurrius", "", "MAGIC", "Bone staff", null},
 		{"whip-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Abyssal whip", null},
 		{"arclight-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Arclight", null},
+		// Ring of shadows vs Lightbearer on a full melee set (field dispute
+		// 2026-08-08: "lightbearer should always beat ring of shadows in a
+		// melee setup") - the official calc prices the SET side of the
+		// argument: RoS's +4 slash / +2 str must be worth the same ~0.37
+		// dps in both engines; the spec-value side is ours alone.
+		{"rosfull-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Emberlight", null, null,
+			"Neitiznot faceguard", "Fire cape", "Amulet of torture", "Rada's blessing 4",
+			"Bandos chestplate", "Dragon defender", "Blood moon tassets", "Ferocious gloves",
+			"Primordial boots", "Ring of shadows#Charged"},
+		{"lbfull-abyssaldemon", "Abyssal demon", "Standard", "MELEE", "Emberlight", null, null,
+			"Neitiznot faceguard", "Fire cape", "Amulet of torture", "Rada's blessing 4",
+			"Bandos chestplate", "Dragon defender", "Blood moon tassets", "Ferocious gloves",
+			"Primordial boots", "Lightbearer"},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
 		{"scorchingbow-td", "Tormented Demon", "1", "RANGED", "Scorching bow", "Dragon arrow"},
