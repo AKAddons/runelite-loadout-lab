@@ -90,23 +90,11 @@ public final class LoadoutOptimizer
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
 		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
 		Set<Integer> requiredIds = requiredRule == null ? null : requiredRule.ids(data);
-		DpsResult current = result;
 		// Dizana's quiver carries the arrows (field report 2026-08-07):
 		// relocate them BEFORE the sweep so the freed ammo slot is filled
-		// like any other dps-neutral slot. QuiverAmmo.strength keeps the
-		// recompute identical, so the neutral guard verifies the move.
-		if (QuiverAmmo.relocatable(current.getLoadout()))
-		{
-			EnumMap<GearSlot, GearItem> gear =
-				new EnumMap<>(current.getLoadout().getGear());
-			GearItem carried = gear.remove(GearSlot.AMMO);
-			Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(carried);
-			DpsResult recomputed = bestSpellResult(request, relocated, spellContext);
-			if (recomputed != null && recomputed.getDps() >= current.getDps() - 1e-9)
-			{
-				current = recomputed.withPurchaseCost(current.getPurchaseCost());
-			}
-		}
+		// like any other dps-neutral slot. Shared with the roster shown-set
+		// post-pass; the neutral guard inside verifies the move.
+		DpsResult current = relocateQuiverAmmo(data, request, result);
 		for (GearSlot slot : GearSlot.values())
 		{
 			current = fillSlot(data, request, current, slot, spellContext,

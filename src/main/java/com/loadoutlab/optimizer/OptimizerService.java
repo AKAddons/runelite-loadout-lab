@@ -2787,18 +2787,6 @@ public class OptimizerService
 		return new GearItem[]{null, null};
 	}
 
-	SpecPick bestSpec(
-		LoadoutData dataset,
-		OptimizationRequest request,
-		List<DpsResult> baseResults,
-		CombatStyle style,
-		MonsterStats monster,
-		PlayerLevels levels,
-		OwnedItems owned)
-	{
-		return bestSpec(dataset, request, baseResults, style, monster, levels, owned, null);
-	}
-
 	/** restrictTo non-null: only these weapon ids are scanned - the roster
 	 * path uses it to evaluate ONE shared spec weapon per mob. */
 	/** The Lightbearer never survives the ring slot's raw-stat cut (its

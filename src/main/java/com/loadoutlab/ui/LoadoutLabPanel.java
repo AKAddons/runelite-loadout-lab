@@ -8443,7 +8443,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * the gear-cell pin menu. Per monster, like every mob pin. */
 	private void attachSpecMenu(JLabel cell, GearItem shown)
 	{
-		cell.addMouseListener(new java.awt.event.MouseAdapter()
+		cell.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mousePressed(MouseEvent e)
@@ -8514,7 +8514,7 @@ public class LoadoutLabPanel extends PluginPanel
 			(itemId, name) ->
 			{
 				GearItem gear = data.getGear(itemId);
-				if (gear == null || com.loadoutlab.engine.SpecialAttack.match(gear) == null)
+				if (gear == null || SpecialAttack.match(gear) == null)
 				{
 					JOptionPane.showMessageDialog(this,
 						name + " has no special attack Loadout Lab models.",
