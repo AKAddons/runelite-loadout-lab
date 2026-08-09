@@ -8393,8 +8393,14 @@ public class LoadoutLabPanel extends PluginPanel
 		specCell.setBackground(CELL_BG);
 		if (spec != null && specWeapon != null && specExpected > 0)
 		{
-			// Light sky blue, sampled from the in-game spec orb's gradient.
-			specCell.setBorder(BorderFactory.createLineBorder(BORDER_SPEC));
+			// A PINNED spec wears the accent border (the toggle-chip
+			// "chosen" language) so the pin is visible at a glance, not
+			// just in the tooltip (field request 2026-08-09); an auto pick
+			// keeps the sky-blue spec-orb border.
+			boolean pinnedSpec = selectedMonster != null
+				&& mobProfile.pinnedSpec(currentMonsterId()) == specWeapon.getId();
+			specCell.setBorder(BorderFactory.createLineBorder(
+				pinnedSpec ? ACCENT : BORDER_SPEC, pinnedSpec ? 2 : 1));
 			String specFate = "";
 			if (fates != null && specWeapon != null)
 			{
@@ -8423,6 +8429,11 @@ public class LoadoutLabPanel extends PluginPanel
 			}
 			String specTip = specTooltip(spec, specExpected,
 				specDpsAdded, specFallbackTooltip);
+			if (pinnedSpec)
+			{
+				specTip = specTip.replace("</html>",
+					"<br>Pinned - right-click to unpin.</html>");
+			}
 			specCell.setToolTipText(specFate.isEmpty() ? specTip
 				: specTip.replace("</html>", specFate + "</html>"));
 			itemManager.getImage(specWeapon.getId()).addTo(specCell);
