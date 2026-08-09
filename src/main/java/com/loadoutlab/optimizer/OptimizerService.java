@@ -1782,6 +1782,16 @@ public class OptimizerService
 				MonsterStats mob = mobs.get(j);
 				List<DpsResult> ownedList = shownOwned.get(j);
 				DpsResult gameShown = shownGame.get(j);
+				// Dizana's quiver relocation is a single-mob post-pass; the
+				// roster shown sets never got it (field report 2026-08-09:
+				// a roster BiS kept the arrow in the ammo slot, not Rada's).
+				if (!ownedList.isEmpty())
+				{
+					ownedList = new ArrayList<>(ownedList);
+					ownedList.set(0, optimizer.relocateQuiverAmmo(
+						ctx.dataset, ownedReqs.get(j), ownedList.get(0)));
+				}
+				gameShown = optimizer.relocateQuiverAmmo(ctx.dataset, gameReqs.get(j), gameShown);
 				SpecPick spec = specs[j];
 				SpecPick gameSpec = gameSpecs[j];
 				IncomingDpsCalculator.Result incoming = incomingFor(mob, sharedOwned, ctx);
@@ -1893,6 +1903,21 @@ public class OptimizerService
 						// always shows (it is aspirational by definition); only
 						// the kit-specific spec drops.
 						gameSpec = null;
+					}
+					// Relocate a quiver's arrows on whichever shown set won
+					// (base-shared or kit-backed) - the kit's shownByMob sets
+					// bypass the earlier per-mob relocation (field report
+					// 2026-08-09). reqsByStyle carries the per-mob request.
+					if (ownedList != null && !ownedList.isEmpty() && reqsByStyle.get(s) != null)
+					{
+						ownedList = new ArrayList<>(ownedList);
+						ownedList.set(0, optimizer.relocateQuiverAmmo(
+							ctx.dataset, reqsByStyle.get(s).get(j), ownedList.get(0)));
+					}
+					if (gameBest != null && gameReqsByStyle.get(s) != null)
+					{
+						gameBest = optimizer.relocateQuiverAmmo(
+							ctx.dataset, gameReqsByStyle.get(s).get(j), gameBest);
 					}
 					// A side is kit-backed when it has no kit at all (nothing
 					// to contradict) or the kit just answered this style.

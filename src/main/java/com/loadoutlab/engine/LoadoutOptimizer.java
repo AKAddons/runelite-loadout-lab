@@ -109,102 +109,158 @@ public final class LoadoutOptimizer
 		}
 		for (GearSlot slot : GearSlot.values())
 		{
-			// A pinned slot is the player's explicit choice - never swapped.
-			if (slot == GearSlot.WEAPON || request.pinnedFor(slot) != null)
+			current = fillSlot(data, request, current, slot, spellContext,
+				dragonShield, requiredRule, requiredIds, riskCapGp, pinnedIds, protectOnly);
+		}
+		return current;
+	}
+
+	/** The dps-neutral fill for ONE slot: swap in the highest-utility item
+	 * that does not cost dps (or fill an empty slot), honouring budget,
+	 * risk, dragonfire/required-protection locks. Extracted so the roster
+	 * quiver relocation can fill just the freed ammo slot without the whole
+	 * sweep (field report 2026-08-09: rosters kept the arrow in the ammo
+	 * slot because the roster path never ran the sweep). */
+	private DpsResult fillSlot(LoadoutData data, OptimizationRequest request,
+		DpsResult current, GearSlot slot, SpellContext spellContext,
+		boolean dragonShield, RequiredGear.Rule requiredRule, Set<Integer> requiredIds,
+		long riskCapGp, Set<Integer> pinnedIds, Set<Integer> protectOnly)
+	{
+		// A pinned slot is the player's explicit choice - never swapped.
+		if (slot == GearSlot.WEAPON || request.pinnedFor(slot) != null)
+		{
+			return current;
+		}
+		GearItem weapon = current.getLoadout().getWeapon();
+		if (slot == GearSlot.SHIELD && weapon != null && weapon.isTwoHanded())
+		{
+			return current;
+		}
+		GearItem worn = current.getLoadout().get(slot);
+		// Only a strictly better utility can justify touching the slot.
+		long wornUtility = worn == null ? 0 : utilityScore(worn);
+		long wornDamage = damageBonus(request, worn);
+		List<GearItem> options = new ArrayList<>();
+		for (GearItem item : data.getGearItems(slot))
+		{
+			if (!item.isStandardGear() || data.isVariant(item.getId())
+				|| request.isExcluded(item.getId())
+				|| utilityScore(item) <= wornUtility
+				// Never TRADE DAMAGE for utility: a dps-neutral swap that
+				// drops the style's damage bonus tank-ified a max-dps set
+				// (proselyte legs displacing blood moon on a floored tie).
+				// Torva-over-blood-moon still passes: it GAINS strength.
+				|| damageBonus(request, item) < wornDamage
+				// And never SPEND the budget on a dps-neutral upgrade swap
+				// (game best has no budget - its ceiling swap is exempt).
+				|| (worn != null && request.getCandidateMode() != CandidateMode.ALL_STANDARD
+					&& budgetCost(request, item) > budgetCost(request, worn))
+				|| !request.getRequirementProfile().canEquip(item.getRequirements())
+				|| !allowedByMode(request, item)
+				|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon)
+				&& !(current.getLoadout().getQuiverAmmo() != null
+					&& RangedAmmo.passiveForQuiver(item)))
+				// Dragonfire gear mode: never swap the protection away.
+				|| (dragonShield && slot == GearSlot.SHIELD
+					&& !DragonfireRules.isProtectiveShield(item))
+				// Same for a worn required-protection item (mirror
+				// shield, earmuffs): only acceptable swaps may touch it.
+				|| (requiredIds != null && requiredRule.slot == slot
+					&& worn != null && requiredIds.contains(worn.getId())
+					&& !requiredIds.contains(item.getId())))
 			{
 				continue;
 			}
-			GearItem weapon = current.getLoadout().getWeapon();
-			if (slot == GearSlot.SHIELD && weapon != null && weapon.isTwoHanded())
+			options.add(item);
+		}
+		// Collapse stat-clone families first (explorer's ring tiers, god
+		// book analogs) so the owned version represents its clones and
+		// the try cap is spent on genuinely different items.
+		options = dedupe(options, request);
+		options.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
+		int tried = 0;
+		for (GearItem item : options)
+		{
+			// Swap accounting: the replaced item's spend comes back.
+			int cost = (int) Math.min(Integer.MAX_VALUE,
+				(long) current.getPurchaseCost() - budgetCost(request, worn)
+					+ budgetCost(request, item));
+			if (!withinBudget(request, cost))
 			{
 				continue;
 			}
-			GearItem worn = current.getLoadout().get(slot);
-			// Only a strictly better utility can justify touching the slot.
-			long wornUtility = worn == null ? 0 : utilityScore(worn);
-			long wornDamage = damageBonus(request, worn);
-			List<GearItem> options = new ArrayList<>();
-			for (GearItem item : data.getGearItems(slot))
+			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
+			gear.put(slot, item);
+			Loadout trial = Loadout.adopting(gear);
+			if (current.getLoadout().getQuiverAmmo() != null)
 			{
-				if (!item.isStandardGear() || data.isVariant(item.getId())
-					|| request.isExcluded(item.getId())
-					|| utilityScore(item) <= wornUtility
-					// Never TRADE DAMAGE for utility: a dps-neutral swap that
-					// drops the style's damage bonus tank-ified a max-dps set
-					// (proselyte legs displacing blood moon on a floored tie).
-					// Torva-over-blood-moon still passes: it GAINS strength.
-					|| damageBonus(request, item) < wornDamage
-					// And never SPEND the budget on a dps-neutral upgrade swap
-					// (game best has no budget - its ceiling swap is exempt).
-					|| (worn != null && request.getCandidateMode() != CandidateMode.ALL_STANDARD
-						&& budgetCost(request, item) > budgetCost(request, worn))
-					|| !request.getRequirementProfile().canEquip(item.getRequirements())
-					|| !allowedByMode(request, item)
-					|| (slot == GearSlot.AMMO && !RangedAmmo.compatible(item, weapon)
-					&& !(current.getLoadout().getQuiverAmmo() != null
-						&& RangedAmmo.passiveForQuiver(item)))
-					// Dragonfire gear mode: never swap the protection away.
-					|| (dragonShield && slot == GearSlot.SHIELD
-						&& !DragonfireRules.isProtectiveShield(item))
-					// Same for a worn required-protection item (mirror
-					// shield, earmuffs): only acceptable swaps may touch it.
-					|| (requiredIds != null && requiredRule.slot == slot
-						&& worn != null && requiredIds.contains(worn.getId())
-						&& !requiredIds.contains(item.getId())))
-				{
-					continue;
-				}
-				options.add(item);
+				// The quiver's carried arrows ride every trial, or the
+				// recompute would lose their strength and reject the swap.
+				trial = trial.withQuiverAmmo(current.getLoadout().getQuiverAmmo());
 			}
-			// Collapse stat-clone families first (explorer's ring tiers, god
-			// book analogs) so the owned version represents its clones and
-			// the try cap is spent on genuinely different items.
-			options = dedupe(options, request);
-			options.sort(Comparator.comparingLong(LoadoutOptimizer::utilityScore).reversed());
-			int tried = 0;
-			for (GearItem item : options)
+			// Risk rejections must not consume tries: in risk mode the
+			// top utility items are exactly the expensive gear the
+			// budget rejects, and the free tier (god books, diary
+			// boots) sits below them - it starved behind the cap.
+			if (request.isRiskConstrained()
+				&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables()) > riskCapGp
+					|| PvpRisk.risksUnprotected(trial, null, request.getMaxTradeables(),
+						pinnedIds, protectOnly)))
 			{
-				// Swap accounting: the replaced item's spend comes back.
-				int cost = (int) Math.min(Integer.MAX_VALUE,
-					(long) current.getPurchaseCost() - budgetCost(request, worn)
-						+ budgetCost(request, item));
-				if (!withinBudget(request, cost))
-				{
-					continue;
-				}
-				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
-				gear.put(slot, item);
-				Loadout trial = Loadout.adopting(gear);
-				if (current.getLoadout().getQuiverAmmo() != null)
-				{
-					// The quiver's carried arrows ride every trial, or the
-					// recompute would lose their strength and reject the swap.
-					trial = trial.withQuiverAmmo(current.getLoadout().getQuiverAmmo());
-				}
-				// Risk rejections must not consume tries: in risk mode the
-				// top utility items are exactly the expensive gear the
-				// budget rejects, and the free tier (god books, diary
-				// boots) sits below them - it starved behind the cap.
-				if (request.isRiskConstrained()
-					&& (PvpRisk.riskGp(trial, null, request.getMaxTradeables()) > riskCapGp
-						|| PvpRisk.risksUnprotected(trial, null, request.getMaxTradeables(),
-							pinnedIds, protectOnly)))
-				{
-					continue;
-				}
-				if (++tried > 12)
-				{
-					break;
-				}
-				DpsResult candidate = bestSpellResult(request, trial, spellContext);
-				if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
-				{
-					current = candidate.withPurchaseCost(cost);
-					break;
-				}
+				continue;
+			}
+			if (++tried > 12)
+			{
+				break;
+			}
+			DpsResult candidate = bestSpellResult(request, trial, spellContext);
+			if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
+			{
+				current = candidate.withPurchaseCost(cost);
+				break;
 			}
 		}
 		return current;
+	}
+
+	/** Relocate a bow's arrows into a worn Dizana's quiver and fill the
+	 * freed ammo slot with a blessing - the quiver-only slice of
+	 * fillDpsNeutralSlots, for the roster shown sets (field report
+	 * 2026-08-09: a roster BiS kept the arrow in the ammo slot instead of
+	 * Rada's, because the roster path never ran the full sweep). Returns
+	 * the input unchanged when no relocation applies, so it is safe on
+	 * every shown set. */
+	public DpsResult relocateQuiverAmmo(LoadoutData data, OptimizationRequest request, DpsResult result)
+	{
+		if (result == null || !QuiverAmmo.relocatable(result.getLoadout()))
+		{
+			return result;
+		}
+		SpellContext spellContext = new SpellContext(request, spellsFor(data, request));
+		long riskCapGp = 0;
+		Set<Integer> pinnedIds = Collections.emptySet();
+		Set<Integer> protectOnly = Collections.emptySet();
+		if (request.isRiskConstrained())
+		{
+			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
+			pinnedIds = pinnedIds(request);
+			protectOnly = request.getProtectOnlyItems();
+		}
+		EnumMap<GearSlot, GearItem> gear =
+			new EnumMap<>(result.getLoadout().getGear());
+		GearItem carried = gear.remove(GearSlot.AMMO);
+		Loadout relocated = Loadout.adopting(gear).withQuiverAmmo(carried);
+		DpsResult moved = bestSpellResult(request, relocated, spellContext);
+		if (moved == null || moved.getDps() < result.getDps() - 1e-9)
+		{
+			return result; // relocation must be dps-neutral, or leave it
+		}
+		moved = moved.withPurchaseCost(result.getPurchaseCost());
+		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
+		Set<Integer> requiredIds = requiredRule == null ? null : requiredRule.ids(data);
+		return fillSlot(data, request, moved, GearSlot.AMMO, spellContext,
+			DragonfireRules.shieldRequired(request), requiredRule, requiredIds,
+			riskCapGp, pinnedIds, protectOnly);
 	}
 
 	/**

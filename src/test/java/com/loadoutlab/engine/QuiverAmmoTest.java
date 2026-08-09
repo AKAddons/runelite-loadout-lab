@@ -88,6 +88,43 @@ class QuiverAmmoTest
 	}
 
 	@Test
+	@DisplayName("the roster relocation helper frees the ammo slot on its own")
+	void rosterRelocationHelper()
+	{
+		// The roster path calls relocateQuiverAmmo (not the full sweep) on
+		// each shown set (field report 2026-08-09: a roster BiS kept the
+		// arrow in the ammo slot instead of Rada's). It relocates AND fills
+		// the freed slot, exactly like the sweep's quiver branch, with no
+		// other slot touched.
+		OptimizationRequest request = req();
+		Loadout start = worn("magic shortbow (i)", "amethyst arrow", "blessed dizana's quiver");
+		DpsResult base = new DpsCalculator().calculate(request, start);
+		assertNotNull(base);
+
+		DpsResult moved = new LoadoutOptimizer().relocateQuiverAmmo(data, request, base);
+		assertEquals("Amethyst arrow", moved.getLoadout().getQuiverAmmo().getName(),
+			"the arrows must ride the quiver");
+		GearItem slot = moved.getLoadout().get(GearSlot.AMMO);
+		assertTrue(slot == null || slot.getBonuses().getRangedStrength() == 0,
+			"the freed slot holds a passive, never firing ammo: "
+				+ (slot == null ? "empty" : slot.label()));
+		assertTrue(moved.getDps() >= base.getDps() - 1e-9, "relocation is dps-neutral");
+		assertTrue(moved.getMaxHit() >= base.getMaxHit(), "the quiver still fires the arrows");
+	}
+
+	@Test
+	@DisplayName("the roster helper no-ops on a set without a relocatable quiver")
+	void rosterRelocationNoOp()
+	{
+		OptimizationRequest request = req();
+		Loadout plain = worn("twisted bow", "dragon arrow", "ava's assembler");
+		DpsResult base = new DpsCalculator().calculate(request, plain);
+		DpsResult moved = new LoadoutOptimizer().relocateQuiverAmmo(data, request, base);
+		assertSame(base, moved, "no quiver, no change - same object back");
+		assertNull(new LoadoutOptimizer().relocateQuiverAmmo(data, request, null));
+	}
+
+	@Test
 	@DisplayName("a re-show prices the relocated set identically")
 	void reShowParity()
 	{
