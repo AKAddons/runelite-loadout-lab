@@ -443,6 +443,7 @@ public class MonsterProfileStore
 			boolean empty = (profile.pins == null || profile.pins.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
+				&& profile.spec == null
 				&& (profile.filterItems == null || profile.filterItems.isEmpty())
 				&& (profile.exclusions == null || profile.exclusions.isEmpty())
 				&& (profile.sims == null || profile.sims.isEmpty())

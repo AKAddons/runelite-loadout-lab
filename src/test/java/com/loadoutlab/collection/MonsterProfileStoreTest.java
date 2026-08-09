@@ -146,6 +146,23 @@ class MonsterProfileStoreTest
 	}
 
 	@Test
+	@DisplayName("a spec-only profile survives save (not judged empty and pruned)")
+	void pinnedSpecPersists()
+	{
+		// Field report 2026-08-09: pinning a spec did nothing because the
+		// save() empty-check omitted the spec field, so a spec-only profile
+		// was pruned in the same call that set it (the exact 2026-07-18 sims
+		// bug, recurring). Read back from a FRESH store = the config
+		// round-trip, the path the compute actually reads.
+		store.setPinnedSpec(415, 28922);
+		assertEquals(28922, new MonsterProfileStore(configManager, new Gson())
+			.pinnedSpecFor(415), "the spec pin must survive save + reload");
+		assertEquals(0, store.pinnedSpecFor(9999), "other mobs stay on auto");
+		store.setPinnedSpec(415, 0);
+		assertEquals(0, store.pinnedSpecFor(415), "clearing returns to auto");
+	}
+
+	@Test
 	@DisplayName("clearing every field prunes the profile from config entirely")
 	void emptyProfilesPrune()
 	{
