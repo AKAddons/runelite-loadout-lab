@@ -73,19 +73,24 @@ public final class SpecialAttack
 	 * damage dealt - modeled via {@link #drainsByDamage}. */
 	private final double defenceDrainFraction;
 	private final boolean drainsByDamage;
+	/** Drains DEFENCE by this fraction of the target's MAGIC level per
+	 * landed spec (Tonalztics of ralos' Division - wiki 2026-08-09:
+	 * 12.5% per glaive hit, two glaives charged = 25% per spec). */
+	private final double magicDrainFraction;
 
 	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
 		int energyCost, double accuracyMultiplier, double damageMultiplier, String note)
 	{
-		this(namePrefixes, displayName, style, kind, energyCost, accuracyMultiplier, damageMultiplier, note, 0, false);
+		this(namePrefixes, displayName, style, kind, energyCost, accuracyMultiplier, damageMultiplier, note, 0, false, 0);
 	}
 
 	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
 		int energyCost, double accuracyMultiplier, double damageMultiplier, String note,
-		double defenceDrainFraction, boolean drainsByDamage)
+		double defenceDrainFraction, boolean drainsByDamage, double magicDrainFraction)
 	{
 		this.defenceDrainFraction = defenceDrainFraction;
 		this.drainsByDamage = drainsByDamage;
+		this.magicDrainFraction = magicDrainFraction;
 		this.namePrefixes = namePrefixes;
 		this.displayName = displayName;
 		this.style = style;
@@ -121,7 +126,9 @@ public final class SpecialAttack
 					row.get("damage").getAsDouble(),
 					row.get("note").getAsString(),
 					row.get("drainFraction").getAsDouble(),
-					row.get("drainsByDamage").getAsBoolean()));
+					row.get("drainsByDamage").getAsBoolean(),
+					row.has("drainMagicFraction")
+						? row.get("drainMagicFraction").getAsDouble() : 0));
 			}
 		}
 		catch (Exception e)
@@ -386,8 +393,21 @@ public final class SpecialAttack
 		return currentDefence;
 	}
 
+	/** Monster-aware drain: the Division spec measures its DEFENCE drain
+	 * off the target's MAGIC level, so it shines exactly where a DWH
+	 * cannot reach (the wiki's example: Zulrah's 300 Magic). */
+	public int drainedDefence(com.loadoutlab.data.MonsterStats monster, double specExpectedDamage)
+	{
+		if (magicDrainFraction > 0)
+		{
+			return Math.max(0, monster.getDefence()
+				- (int) (monster.getMagic() * magicDrainFraction));
+		}
+		return drainedDefence(monster.getDefence(), specExpectedDamage);
+	}
+
 	public boolean drainsDefence()
 	{
-		return drainsByDamage || defenceDrainFraction > 0;
+		return drainsByDamage || defenceDrainFraction > 0 || magicDrainFraction > 0;
 	}
 }

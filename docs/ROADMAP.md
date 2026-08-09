@@ -384,9 +384,10 @@ Weapons the audit surfaced that need engine work beyond a registry row:
 - Osmumten's fang Eviscerate - needs true-max recovery (the fang's normal
   attack already reshapes the damage roll; the spec math needs the
   unmodified max back).
-- Tonalztics of ralos + Arclight/Emberlight - need new drain modes
-  (flat/percentage stat drains that aren't defence-by-damage or
-  defence-by-fraction).
+- Tonalztics of ralos - DONE (2026-08-09): Division modeled as a
+  magic-measured DEFENCE drain (drainMagicFraction 0.25/spec, two
+  glaives at +50% acc, 0.75 damage each) riding the fishing valuation.
+- Arclight/Emberlight spec drains - still need flat stat-drain modes.
 - Dinh's bulwark - hit linkage unverified (single vs multi-target rolls).
 - Dual macuahuitl - blood moon set gate; spec depends on worn set pieces.
 - Eldritch nightmare staff - damage formula unconfirmed against the wiki.

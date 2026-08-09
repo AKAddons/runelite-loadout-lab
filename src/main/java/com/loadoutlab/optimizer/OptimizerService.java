@@ -3025,7 +3025,7 @@ public class OptimizerService
 		double drainDps = 0;
 		if (spec.drainsDefence() && usesByTime >= 1)
 		{
-			int drained = spec.drainedDefence(monster.getDefence(), expected);
+			int drained = spec.drainedDefence(monster, expected);
 			// Per-boss defence floors (competitor audit 2026-08-08, from
 			// the official calc): drain stops at the floor - a DWH at Nex
 			// buys 10 levels, at Verzik/Vardorvis nothing at all. Without
