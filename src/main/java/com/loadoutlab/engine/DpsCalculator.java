@@ -251,6 +251,16 @@ public final class DpsCalculator
 		PrayerBonuses prayers = request.getPrayers();
 		int effectiveAttack = RollMath.effectiveLevel(levels.getAttack(), prayers.getMeleeAccuracy(), attackStance);
 		int effectiveStrength = RollMath.effectiveLevel(levels.getStrength(), prayers.getMeleeStrength(), strengthStance);
+		if (isSoulreaper(loadout))
+		{
+			// Soul stacks (wiki): +6% of the boosted strength level per
+			// stack, added flat AFTER the prayer factor ("does not stack
+			// multiplicatively with prayers"), strength only. Stacks build
+			// per swing (even misses) and persist between kills with a 30s
+			// idle decay, so sustained grinding sits at the 5-stack cap.
+			counted("soul stacks", "+30% strength level at 5 stacks (sustained)");
+			effectiveStrength += levels.getStrength() * 30 / 100;
+		}
 
 		long attackRoll = RollMath.attackRoll(effectiveAttack, loadout.getOffensive().getAttackBonus(attackType));
 		long baseAttackRoll = attackRoll;
@@ -1282,6 +1292,11 @@ public final class DpsCalculator
 	private static boolean isScythe(Loadout loadout)
 	{
 		return wearing(loadout, "scythe of vitur");
+	}
+
+	private static boolean isSoulreaper(Loadout loadout)
+	{
+		return wearing(loadout, "soulreaper axe");
 	}
 
 	private static boolean isDualMacuahuitl(Loadout loadout)
