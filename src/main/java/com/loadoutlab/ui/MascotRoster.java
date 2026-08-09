@@ -18,8 +18,11 @@ import java.util.function.Supplier;
  * weight while the evergreens sit at a low base and keep the mix varied.
  *
  * Calendar:
- *   - Workout (weight 2) and Skater (weight 1) run all year, and are
- *     currently the whole roster.
+ *   - Workout (weight 2) runs all year and is currently the whole
+ *     roster. The Skater (weight 1, evergreen) is BENCHED in
+ *     ~/Development/loadout-lab-attic - cut 2026-08-09 to hold under
+ *     the hub submit gate; it comes home with the mascot companion
+ *     plugin (ADR-0008). Restore per that repo's README.
  *   - Chef (weight 1, every month but October) is BENCHED in
  *     ~/Development/loadout-lab-attic - the largest of the three moods,
  *     cut 2026-08-02 to buy hub-cap headroom for the 0.3.4/0.3.5 slices.
@@ -42,8 +45,7 @@ import java.util.function.Supplier;
 enum MascotRoster
 {
 	// Evergreen - always eligible, low base weight.
-	WORKOUT(Window.ALWAYS, 2, MascotSpinner::new),
-	SKATER(Window.ALWAYS, 1, MascotSkater::new);
+	WORKOUT(Window.ALWAYS, 2, MascotSpinner::new);
 
 	private final Window window;
 	private final int weight;

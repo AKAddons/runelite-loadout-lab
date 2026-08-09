@@ -25,7 +25,6 @@ class MascotRosterTest
 	void eligibility()
 	{
 		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.WORKOUT));
-		assertTrue(MascotRoster.activeOn(SUMMER).contains(MascotRoster.SKATER));
 		assertTrue(MascotRoster.activeOn(SEPTEMBER).contains(MascotRoster.WORKOUT));
 	}
 
