@@ -2174,7 +2174,24 @@ public class OptimizerService
 						keptSpecs = option;
 						keptCarried = slots[0];
 						keptAmmo = slots[1];
-						score = kitSpec.total + specValue;
+						// The PRIMARY contest scores what the card SHOWS -
+						// kit total plus the kept spec's honest dpsAdded
+						// value - not the damage-blind seat currency (field
+						// report 2026-08-09: the Muspah roster's magic
+						// primary outbid a spec-kept ranged primary by 0.3%
+						// of kit total while ignoring an elder maul worth
+						// 20x that in drain value, and the BiS card lost
+						// its spec entirely).
+						double shownSpec = 0;
+						for (int j = 0; j < n; j++)
+						{
+							if (option[j] != null)
+							{
+								shownSpec += option[j].dpsAdded
+									* Math.max(1, mobs.get(j).getHitpoints());
+							}
+						}
+						score = kitSpec.total + shownSpec;
 						break;
 					}
 				}

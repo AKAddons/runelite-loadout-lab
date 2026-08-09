@@ -284,6 +284,43 @@ public class RosterOptimizerTest
 	}
 
 	@Test
+	public void bisRosterKeepsASpecWhenTheKitContestIsClose() throws Exception
+	{
+		// Field report 2026-08-09 (Phantom Muspah, Spec chip on, no BiS
+		// spec shown): the magic primary outbid a spec-kept ranged primary
+		// by 0.3% of kit total because the primary contest scored the kept
+		// spec in the damage-blind seat currency (elder maul = 58 there,
+		// 1,100+ in honest drain-aware value) - so the whole BiS trip lost
+		// its spec. The contest now scores what the card SHOWS: kit total
+		// plus the kept spec's dpsAdded value.
+		LoadoutData data = new DataService().load();
+		List<MonsterStats> mobs = new ArrayList<>(data.searchMonsters("phantom muspah", 10));
+		Assert.assertTrue("the Muspah phases must load", mobs.size() >= 3);
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(4151, 1);   // whip - the owned side is irrelevant here
+		OptimizerService service = new OptimizerService(data);
+		try
+		{
+			RosterResultView roster = run(service, mobs, owned, 3);
+			boolean anyGameSpec = false;
+			for (int j = 0; j < mobs.size(); j++)
+			{
+				for (CombatStyle s : CombatStyle.concreteValues())
+				{
+					OptimizerService.StyleResult sr = roster.result.perMob.get(j).get(s);
+					anyGameSpec |= sr != null && sr.gameSpecWeapon != null;
+				}
+			}
+			Assert.assertTrue("the BiS trip must carry its spec somewhere",
+				anyGameSpec);
+		}
+		finally
+		{
+			service.shutdown();
+		}
+	}
+
+	@Test
 	public void rosterArbitratesTheLightbearerOnTheSharedRing() throws Exception
 	{
 		// Field report 2026-08-08 (Nex group): the shared ring falls out of
