@@ -26,6 +26,14 @@ public class CompanionLink
 	private final EventBus eventBus;
 	private final String coreVersion;
 	private volatile Map<String, Object> lastPage;
+	/** In-plugin page listener (the internal renderer) - notified on
+	 * every publish alongside the PluginMessage broadcast. */
+	private volatile Runnable pageListener;
+
+	public void setPageListener(Runnable pageListener)
+	{
+		this.pageListener = pageListener;
+	}
 
 	public CompanionLink(EventBus eventBus, String coreVersion)
 	{
@@ -60,7 +68,15 @@ public class CompanionLink
 	private void post(Map<String, Object> page)
 	{
 		lastPage = page;
-		eventBus.post(new PluginMessage(NAMESPACE, MODEL,
-			Map.of("v", RenderModel.VERSION, "page", page)));
+		if (eventBus != null)
+		{
+			eventBus.post(new PluginMessage(NAMESPACE, MODEL,
+				Map.of("v", RenderModel.VERSION, "page", page)));
+		}
+		Runnable listener = pageListener;
+		if (listener != null)
+		{
+			listener.run();
+		}
 	}
 }

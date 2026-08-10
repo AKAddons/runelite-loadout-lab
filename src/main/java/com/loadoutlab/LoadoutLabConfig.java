@@ -779,9 +779,10 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "useCompanionUi",
-		name = "Use Loadout Lab UI",
-		description = "Render results with the Loadout Lab UI plugin when it"
-			+ " is installed (beta) - the same panel, drawn prettier.",
+		name = "New UI (beta)",
+		description = "Render results with the rebuilt model-driven interface."
+			+ " Off = the classic panel. (A Loadout Lab UI companion plugin,"
+			+ " if ever installed, takes over the same slot.)",
 		section = connections,
 		position = 2
 	)

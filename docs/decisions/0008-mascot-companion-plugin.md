@@ -29,7 +29,27 @@ An earlier draft of this ADR proposed a cosmetics-only Companion
 (mascots + painters registered back into Core's panel). Superseded:
 that kept the 60k panel in Core, which is exactly backwards.
 
-## Decision Outcome
+## Decision Outcome (revised 2026-08-10: single-plugin first)
+
+Reviewer risk surfaced (Andrew: "i don't know if reviewers are
+liking the dual addon approach"), and the numbers say the seam work
+pays either way: a model-driven renderer rebuilt against the page
+model is estimated at 20-30k where the organically-grown monolith is
+60k. DECIDED - Path C: the renderer lands IN CORE (package
+com.loadoutlab.render), consuming the same model and command engine,
+mounted in the same one-surface host as the DEFAULT renderer; the
+external Companion plugin (repo runelite-loadout-lab-ui) is PARKED
+as the future split vehicle - its surface-register message still
+overrides the internal renderer, so lifting the renderer out later
+is a move, not a rewrite. Icons convert to game sprites/PNG
+resources as views port (painters never port; resources are exempt
+from the token cap). End state single-plugin: Core ~150-155k after
+the monolith swap. The two-plugin ship decision is DEFERRED until
+real reviewer signal exists (research hub precedents / ask in the
+hub Discord before any Companion PR).
+
+## Original decision (dual-plugin end state, retained as the target
+if reviewer signal turns positive)
 
 Two plugins, one seam: **Core publishes a generic render-model;
 renderers live in the Companion.** One model, N renderers.

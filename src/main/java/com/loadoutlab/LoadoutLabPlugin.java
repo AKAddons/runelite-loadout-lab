@@ -195,6 +195,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private volatile com.loadoutlab.model.CompanionLink companionLink;
 	private volatile com.loadoutlab.model.CommandEngine commandEngine;
 	private volatile java.util.function.Function<Map<String, Object>, javax.swing.JComponent> companionRenderer;
+	private volatile com.loadoutlab.render.RenderSurface internalSurface;
 	private com.loadoutlab.ui.CompanionHost companionHost;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
@@ -510,6 +511,29 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					"stored", manualOwned.snapshot().size()));
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
+				// Path C (ADR-0008): the model-driven renderer lives IN
+				// CORE as the default; an external Companion's
+				// surface-register still overrides it.
+				com.loadoutlab.render.CommandSink sink = (n, a) ->
+				{
+					com.loadoutlab.model.CommandEngine engine = commandEngine;
+					if (engine != null)
+					{
+						engine.execute(n, a);
+					}
+				};
+				internalSurface = new com.loadoutlab.render.RenderSurface(
+					new com.loadoutlab.render.ResultCards(itemManager, sink),
+					() -> companionLink == null ? null : companionLink.lastPage(), sink);
+				companionLink.setPageListener(() ->
+				{
+					com.loadoutlab.render.RenderSurface surface = internalSurface;
+					if (surface != null)
+					{
+						surface.onModelChanged();
+					}
+					refreshHostedView();
+				});
 				commandEngine.setStoreOps(new com.loadoutlab.model.CommandEngine.StoreOps()
 				{
 					@Override
@@ -2217,14 +2241,22 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				return;
 			}
-			boolean hosted = companionRenderer != null && config.useCompanionUi();
+			// External Companion renderer wins; the in-core surface is
+			// the default (ADR-0008 Path C).
+			java.util.function.Function<Map<String, Object>, javax.swing.JComponent> renderer =
+				companionRenderer;
+			if (renderer == null && internalSurface != null)
+			{
+				renderer = internalSurface.asFunction();
+			}
+			boolean hosted = renderer != null && config.useCompanionUi();
 			boolean showingHost = companionHost != null && navButton.getPanel() == companionHost;
 			if (hosted)
 			{
 				javax.swing.JComponent content;
 				try
 				{
-					content = companionRenderer.apply(
+					content = renderer.apply(
 						companionLink == null ? null : companionLink.lastPage());
 				}
 				catch (RuntimeException ex)
