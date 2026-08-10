@@ -1,70 +1,105 @@
 ---
-status: proposed
+status: accepted
 date: 2026-08-09
 decision-makers: ajkatz
 ---
 
-# Core and Companion: the two-plugin architecture
+# Core and Companion: the render-model split
 
 ## Context and Problem Statement
 
-The hub caps main source at 200k tokens PER PLUGIN; after the wave-4
-diet the base plugin sits at ~192k with its new-code fat gone, and the
-only remaining single-plugin levers were rejected for good reasons
-(the mascot JSON-VM's maintainability tax, logic-moving table
-rewrites). Meanwhile AKAddons already ships multiple plugins and the
-PluginMessage contract plumbing is field-proven. Andrew, 2026-08-09:
-"loadout lab - core (essential data + most thin UI layer possible for
-barebones), then loadout lab - companion (UI prettification,
-animations). Core will always give you everything you need but its
-not pretty."
+The hub caps main source at 200k tokens PER PLUGIN; the base plugin
+sits at ~192.7k with its new-code fat gone, and the only remaining
+single-plugin levers were rejected for good reasons (the mascot
+JSON-VM's maintainability tax, logic-moving table rewrites). The
+token map names the real hostage: `ui` is 65.5k (34% of the budget),
+and LoadoutLabPanel.java alone is 60.4k - one Swing monolith worth a
+third of the plugin. Meanwhile AKAddons already ships multiple
+plugins and the PluginMessage contract plumbing is field-proven.
 
-## Decision Outcome (proposed)
+Andrew, 2026-08-09: "the core package is pure API and engine, jam
+packed and dense with all calculations ... we should produce a
+generic output and apply a UI layer based on the instructions in the
+ui companion. the basic ui output should heavily nudge the user to
+install the UI companion but still output the most basic usable
+output in just text"; "in the UI app we can even define multiple
+different UIs and have all of the animations live there."
 
-Two plugins with one boundary rule: **function lives in Core,
-appearance lives in Companion.**
+An earlier draft of this ADR proposed a cosmetics-only Companion
+(mascots + painters registered back into Core's panel). Superseded:
+that kept the 60k panel in Core, which is exactly backwards.
 
-- **Loadout Lab (Core)**: the engine, all data resources, and the
-  thinnest UI that still delivers EVERYTHING - every answer, control,
-  chip, report, and store. Standalone-complete by definition; a user
-  with only Core loses nothing but polish. (This also satisfies hub
-  reviewers: no shell plugins.)
-- **Loadout Lab Companion**: the pretty layer - mascot loading
-  animations (all five plus the attic seasonals, home permanently),
-  painted icon sets, styled borders/chips/cards, future skins. Pure
-  overlay, enhancement-only; the Resource-packs hub plugin is the
-  cosmetic-overlay precedent.
-- **The seam**: Core exposes SURFACES (compute-wait slot first, then
-  icon/border/card painters) and publishes lifecycle messages on the
-  loadoutlab PluginMessage namespace; Companion registers painters
-  back (same JVM, object references in the message map, shapes
-  documented in the contracts registry, additive-only versioning).
-  Companion absent = Core's plain fallback rendering.
+## Decision Outcome
 
-### Phasing (each phase ships alone)
+Two plugins, one seam: **Core publishes a generic render-model;
+renderers live in the Companion.** One model, N renderers.
 
-1. **Mascots** (~12.8k freed) - the proven, lowest-risk seam: one
-   surface, the frame-hash battery moves with the code. After 0.3.6.
-2. **Painted icons and chrome** (~3-5k) - the icon painters the audit
-   wanted rasterized go to Companion as rich painters; Core keeps
-   text/basic fallbacks. Kills the fractional-scaling objection too:
-   Companion can afford BOTH painters and PNG packs.
-3. **Card/border styling surfaces** - only once the surface API has
-   proven stable across a few releases; this is where the contract
-   cost lives, so it waits for evidence.
+- **Loadout Lab (Core)**: engine, optimizer, all data resources,
+  profiles/sims/pins/undo - every calculation and store - plus a
+  RENDER-MODEL BUILDER: a versioned, JSON-safe structure carrying
+  everything a UI needs to draw (per-style cards, cells, chip states,
+  breakdowns, roster views, report text). Core's own surface is the
+  cheapest usable rendering of that model: copy-report-style text
+  (the report generator is already a working text renderer), plain
+  controls for every capability (search field, chip checkboxes,
+  simple dialogs for pin/exclude/sim), and a prominent nudge to
+  install the Companion. Bare-UI depth decision: FULL CAPABILITY,
+  CLUNKY - nothing is impossible with only Core installed; the
+  guarantee reviewers and users rely on, enforced by asking of every
+  moved piece "does Core lose a capability, or only a presentation?"
+- **Loadout Lab UI (Companion)**: the renderers. The current rich
+  panel ports here wholesale, all five mascots plus the attic
+  seasonals come home permanently, and future presentation ambitions
+  (compact mode, dashboard layouts, skins, animation sets) are
+  additional renderers over the same model, spending the Companion's
+  own untouched 200k.
+- **The seam**: the `loadoutlab` PluginMessage namespace. Core
+  publishes model + lifecycle messages; the Companion renders and
+  sends command messages back (search, pin, exclude, sim, chip
+  toggles), which Core executes through the same command layer its
+  bare UI uses, then re-publishes the model. Payloads are JSON-safe
+  maps/lists/primitives ONLY (hub plugins load in separate
+  classloaders - no shared classes), shapes documented in the
+  contracts registry, versioned additive-only. Companion absent =
+  Core's text surface; Core absent = Companion shows "install Core".
 
-End state: Core ~175-178k with years of data-first feature runway;
-Companion carries every future cosmetic ambition with its own
-untouched 200k.
+### Phasing: big-bang panel move (decided over staged-by-surface)
+
+One arc, one release pair - Core 0.3.6 + Companion 1.0.0:
+
+1. Render-model + builder in Core (inventory of everything the
+   panel reads today IS the model's field list).
+2. Command layer exposed on the seam (Commands.java already reifies
+   the actions).
+3. Core's bare surface: text renderer + capability controls + nudge.
+4. Companion repo: port LoadoutLabPanel + mascots, replace direct
+   adapter calls with the contract client.
+5. A model-snapshot golden joins the nets: the serialized model for
+   the golden scenarios locks the contract like rosterGolden locks
+   the engine.
+6. Hub: Core re-pin shrinks ~55k; Companion is a NEW plugin PR
+   (draft-staged, needs the usual explicit approval and a free
+   review slot).
+
+Rationale vs staged: staging leaves the panel half-in-half-out
+across public releases and churns the contract repeatedly; the
+big-bang pays the risk once, and the golden nets plus the
+capability-parity rule are the safety harness.
+
+End state: Core ~135-140k with years of data-first runway (0.4.0 sea
+combat fits trivially); Companion starts ~70k with room for every
+renderer and animation ambition.
 
 ### Consequences
 
-* Two hub plugins to release-manage (drafts park as usual; the
-  one-active-review throttle applies per author, not per plugin -
-  stagger the PRs).
-* The surface API is a semi-public cross-plugin contract: additive
-  changes only, versioned like the DWMS storages contract.
-* Core PRs SHRINK at each phase - reviewer goodwill.
-* Users who never install Companion still get the whole product -
-  the boundary rule is the guarantee, enforced at review time by
-  asking of every moved piece: "does Core lose a CAPABILITY?"
+* Every interaction becomes a message round-trip (same JVM, so
+  latency is negligible; the real cost is that the command surface
+  is now a versioned public contract).
+* Two hub plugins to release-manage; the one-active-review throttle
+  applies per author, so the Companion PR staggers behind Core's.
+* Core PRs shrink massively - reviewer goodwill.
+* Version skew is a supported state: the Companion checks the model
+  version and degrades additively; mismatch never breaks Core.
+* The Resource-packs hub plugin is the presentation-layer precedent;
+  Core standing alone fully functional answers the shell-plugin
+  objection from either side.
