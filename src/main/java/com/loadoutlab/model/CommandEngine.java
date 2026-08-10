@@ -367,7 +367,18 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
 		entry.put("params", state.paramsNode());
-		link.publishPage(withHistory(RenderModel.page(List.of(entry))));
+		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
+		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
+		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
+			countSupplier == null ? null : countSupplier.get()));
+		link.publishPage(page);
+	}
+
+	private volatile String coreVersion = "dev";
+
+	public void setCoreVersion(String coreVersion)
+	{
+		this.coreVersion = coreVersion;
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page)

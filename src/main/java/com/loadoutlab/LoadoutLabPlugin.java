@@ -509,6 +509,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					"simmed", dreams.snapshot().size(),
 					"stored", manualOwned.snapshot().size()));
 				commandEngine.setRosterCompute(this::computeRoster);
+				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
 				commandEngine.setStoreOps(new com.loadoutlab.model.CommandEngine.StoreOps()
 				{
 					@Override
