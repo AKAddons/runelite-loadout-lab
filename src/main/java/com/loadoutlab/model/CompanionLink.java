@@ -15,6 +15,11 @@ public class CompanionLink
 {
 	public static final String NAMESPACE = "loadoutlab";
 	public static final String UI_HELLO = "ui-hello";
+	/** Companion registers its renderer: {"renderer": Function<Map,JComponent>}
+	 * - a JDK type passed BY REFERENCE (same JVM); Core mounts what it
+	 * returns inside Core's own panel shell (the one-surface ruling). */
+	public static final String SURFACE_REGISTER = "surface-register";
+	public static final String SURFACE_CLEAR = "surface-clear";
 	static final String CORE_HELLO = "core-hello";
 	static final String MODEL = "model";
 
@@ -44,6 +49,12 @@ public class CompanionLink
 	public void publishPage(Map<String, Object> page)
 	{
 		post(page);
+	}
+
+	/** The latest published page - Core's own hosted view renders it. */
+	public Map<String, Object> lastPage()
+	{
+		return lastPage;
 	}
 
 	private void post(Map<String, Object> page)

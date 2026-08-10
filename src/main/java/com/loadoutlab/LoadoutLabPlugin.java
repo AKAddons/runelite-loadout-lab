@@ -194,6 +194,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private DwmsLink dwmsLink;
 	private volatile com.loadoutlab.model.CompanionLink companionLink;
 	private volatile com.loadoutlab.model.CommandEngine commandEngine;
+	private volatile java.util.function.Function<Map<String, Object>, javax.swing.JComponent> companionRenderer;
+	private com.loadoutlab.ui.CompanionHost companionHost;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
 	private volatile StashUnits stashUnits;
@@ -276,6 +278,27 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				link.hello();
 			}
+			return;
+		}
+		// The Companion registering (or clearing) its renderer - a JDK
+		// Function passed by reference, mounted in Core's own panel shell
+		// (the one-surface ruling in ADR-0008).
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& com.loadoutlab.model.CompanionLink.SURFACE_REGISTER.equals(event.getName()))
+		{
+			Object renderer = event.getData().get("renderer");
+			if (renderer instanceof java.util.function.Function)
+			{
+				companionRenderer = (java.util.function.Function<Map<String, Object>, javax.swing.JComponent>) renderer;
+				refreshHostedView();
+			}
+			return;
+		}
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& com.loadoutlab.model.CompanionLink.SURFACE_CLEAR.equals(event.getName()))
+		{
+			companionRenderer = null;
+			refreshHostedView();
 			return;
 		}
 		// A Companion command (docs/COMPANION_CONTRACT.md): executed on
@@ -504,6 +527,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					.panel(panel)
 					.build();
 				clientToolbar.addNavigation(navButton);
+				// A Companion that registered while we were loading mounts now.
+				refreshHostedView();
 			});
 		}, "loadout-lab-data-loader");
 		loader.setDaemon(true);
@@ -582,6 +607,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		// wrench-panel keys, never a store write, or each ledger flush would
 		// rebuild the whole results panel on the EDT.
 		String key = event.getKey();
+		if ("useCompanionUi".equals(key))
+		{
+			refreshHostedView();
+			return;
+		}
 		if ("useDwmsData".equals(key))
 		{
 			// Ownership changed -> recompute (not just re-render).
@@ -2057,6 +2087,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					if (engine != null)
 					{
 						engine.onRosterResults(roster.mobs, roster.perMob);
+						refreshHostedView();
 					}
 					SwingUtilities.invokeLater(() ->
 					{
@@ -2118,6 +2149,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					if (engine != null)
 					{
 						engine.onResults(monster, results);
+						refreshHostedView();
 					}
 					SwingUtilities.invokeLater(() ->
 					{
@@ -2129,6 +2161,62 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					});
 				});
 		});
+	}
+
+	/** The one-surface swap (ADR-0008): with a Companion renderer
+	 * registered and the toggle on, Core's single nav slot shows the
+	 * Companion's content; otherwise the classic panel. Rebuilding the
+	 * NavigationButton is the supported way to change its panel. */
+	private void refreshHostedView()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			if (navButton == null)
+			{
+				return;
+			}
+			boolean hosted = companionRenderer != null && config.useCompanionUi();
+			boolean showingHost = companionHost != null && navButton.getPanel() == companionHost;
+			if (hosted)
+			{
+				javax.swing.JComponent content;
+				try
+				{
+					content = companionRenderer.apply(
+						companionLink == null ? null : companionLink.lastPage());
+				}
+				catch (RuntimeException ex)
+				{
+					log.warn("companion renderer failed; keeping the classic panel", ex);
+					return;
+				}
+				if (companionHost == null)
+				{
+					companionHost = new com.loadoutlab.ui.CompanionHost();
+				}
+				companionHost.mount(content);
+				if (!showingHost)
+				{
+					swapNavPanel(companionHost);
+				}
+			}
+			else if (showingHost)
+			{
+				swapNavPanel(panel);
+			}
+		});
+	}
+
+	private void swapNavPanel(net.runelite.client.ui.PluginPanel target)
+	{
+		clientToolbar.removeNavigation(navButton);
+		navButton = NavigationButton.builder()
+			.tooltip("Loadout Lab")
+			.icon(loadSidebarIcon())
+			.priority(7)
+			.panel(target)
+			.build();
+		clientToolbar.addNavigation(navButton);
 	}
 
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */

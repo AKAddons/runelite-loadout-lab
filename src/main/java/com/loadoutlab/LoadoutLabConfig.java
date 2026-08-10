@@ -776,4 +776,17 @@ public interface LoadoutLabConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "useCompanionUi",
+		name = "Use Loadout Lab UI",
+		description = "Render results with the Loadout Lab UI plugin when it"
+			+ " is installed (beta) - the same panel, drawn prettier.",
+		section = connections,
+		position = 2
+	)
+	default boolean useCompanionUi()
+	{
+		return true;
+	}
 }

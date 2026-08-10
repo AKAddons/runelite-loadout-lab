@@ -53,6 +53,19 @@ renderers live in the Companion.** One model, N renderers.
   (compact mode, dashboard layouts, skins, animation sets) are
   additional renderers over the same model, spending the Companion's
   own untouched 200k.
+- **Hosting (decided 2026-08-09, after the two-panel prototype
+  confused the field test)**: ONE surface, Core hosts it. Core owns
+  the single sidebar icon and panel shell; when the Companion is
+  present it registers a renderer (a JDK `Function<page, JComponent>`
+  passed by reference - same JVM, JDK types only, so it legally
+  crosses the classloader seam) and Core mounts the rich content
+  inside its own shell. No Companion = Core mounts its plain
+  rendering of the same model in the same spot. The Companion shows
+  its own (tiny) panel ONLY when Core is absent - the install nudge -
+  and hides it the moment Core hosts. Rejected: Companion as a pure
+  instruction pack that Core interprets (Core would need a renderer
+  powerful enough to execute the instructions - the rejected mascot
+  JSON-VM tax at full-UI scope, and Core's tokens would not drop).
 - **The seam**: the `loadoutlab` PluginMessage namespace. Core
   publishes model + lifecycle messages; the Companion renders and
   sends command messages back (search, pin, exclude, sim, chip
