@@ -62,17 +62,37 @@ final class ReportBuilder
 	private static void appendParams(StringBuilder sb, PageState state, Map<String, Object> counts)
 	{
 		Map<String, Object> params = state.paramsNode();
+		String tab = String.valueOf(params.getOrDefault("selectedTab", ""));
+		sb.append("Viewing: ").append(tab.isEmpty() ? "auto" : tab)
+			.append(" / ").append(Boolean.TRUE.equals(params.get("viewingBis")) ? "BiS" : "Yours")
+			.append('\n');
 		sb.append("Parameters:\n");
 		sb.append("  On task: ").append(yesNo(params.get("onTask")));
 		sb.append("; Wilderness: ").append(yesNo(params.get("inWilderness")));
 		sb.append("; Spec weapon: ").append(yesNo(params.get("specWeapon")));
 		sb.append("; Antifire: ").append(yesNo(params.get("antifirePotion")));
 		sb.append("; Raid boost: ").append(yesNo(params.get("raidBoost"))).append('\n');
+		sb.append("  Death charge: ").append(params.get("deathCharge"));
+		sb.append("; Invocation: ").append(params.get("toaInvocation"));
+		Object lock = params.get("spellbookLock");
+		sb.append("; Spellbook lock: ").append(lock == null || String.valueOf(lock).isEmpty()
+			? "auto" : lock);
+		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp")).append('\n');
 		if (counts != null)
 		{
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed, ")
 				.append(counts.getOrDefault("stored", 0)).append(" stored elsewhere\n");
+			Object names = counts.get("simmedNames");
+			if (names instanceof List && !((List<?>) names).isEmpty())
+			{
+				sb.append("  Simmed as owned:");
+				for (Object name : (List<?>) names)
+				{
+					sb.append(' ').append(name).append(',');
+				}
+				sb.append('\n');
+			}
 		}
 	}
 

@@ -249,6 +249,27 @@ public class ResultCards
 			panel.add(left(dtps));
 		}
 		panel.add(left(gearGrid(card, bis)));
+		Map<String, Object> stats = Model.map(card, "stats");
+		if (stats != null)
+		{
+			Map<String, Object> off = Model.map(stats, "offensive");
+			Map<String, Object> def = Model.map(stats, "defensive");
+			JLabel statLine = new JLabel(String.format(
+				"Atk %d/%d/%d m%d r%d   Str %d RStr %d MDmg %d%% Pray %d",
+				Model.id(off, "stab"), Model.id(off, "slash"), Model.id(off, "crush"),
+				Model.id(off, "magic"), Model.id(off, "ranged"),
+				Model.id(stats, "strength"), Model.id(stats, "rangedStrength"),
+				Model.id(stats, "magicDamage"), Model.id(stats, "prayer")));
+			statLine.setFont(statLine.getFont().deriveFont(statLine.getFont().getSize() - 2f));
+			statLine.setToolTipText(String.format(
+				"<html>Offence: stab %d, slash %d, crush %d, magic %d, ranged %d"
+					+ "<br>Defence: stab %d, slash %d, crush %d, magic %d, ranged %d</html>",
+				Model.id(off, "stab"), Model.id(off, "slash"), Model.id(off, "crush"),
+				Model.id(off, "magic"), Model.id(off, "ranged"),
+				Model.id(def, "stab"), Model.id(def, "slash"), Model.id(def, "crush"),
+				Model.id(def, "magic"), Model.id(def, "ranged")));
+			panel.add(left(statLine));
+		}
 		Object counted = card.get("counted");
 		if (counted instanceof List && !((List<?>) counted).isEmpty())
 		{

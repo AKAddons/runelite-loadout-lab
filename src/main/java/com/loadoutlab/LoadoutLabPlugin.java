@@ -505,10 +505,19 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				optimizerService = new OptimizerService(loaded);
 				commandEngine = new com.loadoutlab.model.CommandEngine(
 					loaded, new com.loadoutlab.model.PageState(), this::compute, companionLink);
-				commandEngine.setCounts(() -> Map.of(
-					"excluded", exclusions.snapshot().size(),
-					"simmed", dreams.snapshot().size(),
-					"stored", manualOwned.snapshot().size()));
+				commandEngine.setCounts(() ->
+				{
+					List<String> simmedNames = new ArrayList<>();
+					for (int id : dreams.snapshot())
+					{
+						simmedNames.add(itemLabel(id));
+					}
+					return Map.of(
+						"excluded", exclusions.snapshot().size(),
+						"simmed", dreams.snapshot().size(),
+						"stored", manualOwned.snapshot().size(),
+						"simmedNames", simmedNames);
+				});
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
 				// Path C (ADR-0008): the model-driven renderer lives IN

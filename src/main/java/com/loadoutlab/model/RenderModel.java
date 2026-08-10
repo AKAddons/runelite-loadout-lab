@@ -125,7 +125,27 @@ public final class RenderModel
 		card.put("incoming", incoming(bis ? result.gameIncoming : result.incoming));
 		card.put("bench", items(bis ? result.gameBench : result.bench));
 		card.put("kitBacked", bis ? result.gameKitBacked : result.ownedKitBacked);
+		Map<String, Object> stats = new LinkedHashMap<>();
+		stats.put("offensive", statBlock(shown.getLoadout().getOffensive()));
+		stats.put("defensive", statBlock(shown.getLoadout().getDefensive()));
+		com.loadoutlab.data.StatBlock bonuses = shown.getLoadout().getBonuses();
+		stats.put("strength", bonuses.getStrength());
+		stats.put("rangedStrength", bonuses.getRangedStrength());
+		stats.put("magicDamage", bonuses.getMagicDamage());
+		stats.put("prayer", bonuses.getPrayer());
+		card.put("stats", stats);
 		return card;
+	}
+
+	private static Map<String, Object> statBlock(com.loadoutlab.data.StatBlock block)
+	{
+		Map<String, Object> node = new LinkedHashMap<>();
+		node.put("stab", block.getStab());
+		node.put("slash", block.getSlash());
+		node.put("crush", block.getCrush());
+		node.put("magic", block.getMagic());
+		node.put("ranged", block.getRanged());
+		return node;
 	}
 
 	private static Map<String, Object> spec(OptimizerService.StyleResult result, boolean bis)
