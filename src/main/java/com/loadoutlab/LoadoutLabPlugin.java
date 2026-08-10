@@ -504,6 +504,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				optimizerService = new OptimizerService(loaded);
 				commandEngine = new com.loadoutlab.model.CommandEngine(
 					loaded, new com.loadoutlab.model.PageState(), this::compute, companionLink);
+				commandEngine.setCounts(() -> Map.of(
+					"excluded", exclusions.snapshot().size(),
+					"simmed", dreams.snapshot().size(),
+					"stored", manualOwned.snapshot().size()));
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
 			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,

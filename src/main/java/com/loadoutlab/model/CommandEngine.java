@@ -32,6 +32,14 @@ public class CommandEngine
 	private final PageState state;
 	private final Compute compute;
 	private final CompanionLink link;
+	/** Live global-store counts (excluded/simmed/stored) - supplied by
+	 * the plugin, read at page-build time so chips are never stale. */
+	private volatile java.util.function.Supplier<Map<String, Object>> counts;
+
+	public void setCounts(java.util.function.Supplier<Map<String, Object>> counts)
+	{
+		this.counts = counts;
+	}
 	/** Engine-owned history for seam-driven actions. Separate from the
 	 * old panel's stack during the transition (its commands re-sync
 	 * Swing controls the engine does not know about); they merge when
@@ -258,6 +266,11 @@ public class CommandEngine
 		node.put("undoLabel", history.peekUndoDescription());
 		node.put("redoLabel", history.peekRedoDescription());
 		page.put("history", node);
+		java.util.function.Supplier<Map<String, Object>> supplier = counts;
+		if (supplier != null)
+		{
+			page.put("counts", supplier.get());
+		}
 		return page;
 	}
 }
