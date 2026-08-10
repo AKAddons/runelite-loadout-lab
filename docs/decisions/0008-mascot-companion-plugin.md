@@ -77,9 +77,15 @@ One arc, one release pair - Core 0.3.6 + Companion 1.0.0:
 5. A model-snapshot golden joins the nets: the serialized model for
    the golden scenarios locks the contract like rosterGolden locks
    the engine.
-6. Hub: Core re-pin shrinks ~55k; Companion is a NEW plugin PR
-   (draft-staged, needs the usual explicit approval and a free
-   review slot).
+6. Test both apart: Core standalone (bare UI, full capability),
+   Companion standalone (waiting-for-Core message), then the pair.
+7. Hub, COMPANION FIRST: the Companion's new-plugin PR lands while
+   Core 0.3.5 is still live (the Companion waits patiently for a
+   model-publishing Core); only once it is installable does Core
+   0.3.6 ship and drop the panel. No user ever sits in the window
+   where the rich UI left Core but its replacement can't be
+   installed. Both PRs draft-staged, explicit approval, one review
+   slot at a time.
 
 Rationale vs staged: staging leaves the panel half-in-half-out
 across public releases and churns the contract repeatedly; the
