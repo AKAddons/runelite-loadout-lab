@@ -29,11 +29,13 @@ public class ResultCards
 
 	private final ItemManager itemManager;
 	private final CommandSink commands;
+	private final ItemPicker picker;
 
-	public ResultCards(ItemManager itemManager, CommandSink commands)
+	public ResultCards(ItemManager itemManager, CommandSink commands, ItemPicker picker)
 	{
 		this.itemManager = itemManager;
 		this.commands = commands;
+		this.picker = picker;
 	}
 
 	/** The tab the page is effectively showing: the explicit selection,
@@ -245,6 +247,10 @@ public class ResultCards
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
 			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
 			menu.add(pin);
+			javax.swing.JMenuItem pinOther = new javax.swing.JMenuItem("Pin another item (search)...");
+			pinOther.addActionListener(e -> picker.search("Pin in " + slot,
+				(pickedId, pickedName) -> commands.send("pin", Map.of("slot", slot, "itemId", pickedId))));
+			menu.add(pinOther);
 			javax.swing.JMenuItem unpin = new javax.swing.JMenuItem("Unpin " + slot);
 			unpin.addActionListener(e -> commands.send("unpin", Map.of("slot", slot)));
 			menu.add(unpin);

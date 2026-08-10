@@ -522,9 +522,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 						engine.execute(n, a);
 					}
 				};
+				com.loadoutlab.render.ItemPicker picker = (prompt, onPicked) ->
+					itemSearchView().search(prompt, onPicked);
 				internalSurface = new com.loadoutlab.render.RenderSurface(
-					new com.loadoutlab.render.ResultCards(itemManager, sink),
-					() -> companionLink == null ? null : companionLink.lastPage(), sink);
+					new com.loadoutlab.render.ResultCards(itemManager, sink, picker),
+					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker);
 				companionLink.setPageListener(() ->
 				{
 					com.loadoutlab.render.RenderSurface surface = internalSurface;

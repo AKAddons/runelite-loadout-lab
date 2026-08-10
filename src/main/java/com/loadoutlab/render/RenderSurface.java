@@ -21,14 +21,17 @@ public class RenderSurface
 	private final ResultCards cards;
 	private final java.util.function.Supplier<Map<String, Object>> page;
 	private final CommandSink commands;
+	private final ItemPicker picker;
 	private JPanel root;
 	private JPanel cardArea;
 
-	public RenderSurface(ResultCards cards, java.util.function.Supplier<Map<String, Object>> page, CommandSink commands)
+	public RenderSurface(ResultCards cards, java.util.function.Supplier<Map<String, Object>> page,
+		CommandSink commands, ItemPicker picker)
 	{
 		this.cards = cards;
 		this.page = page;
 		this.commands = commands;
+		this.picker = picker;
 	}
 
 	/** The reference Core stores; JDK types only cross the seam. */
