@@ -1,9 +1,5 @@
 package com.loadoutlab.model;
 
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.optimizer.OptimizerService;
-import java.util.List;
 import java.util.Map;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.events.PluginMessage;
@@ -44,15 +40,10 @@ public class CompanionLink
 		}
 	}
 
-	public void publish(MonsterStats mob, Map<CombatStyle, OptimizerService.StyleResult> results)
+	/** Publish an assembled page (the CommandEngine builds them). */
+	public void publishPage(Map<String, Object> page)
 	{
-		post(RenderModel.page(List.of(RenderModel.entry(List.of(mob), List.of(results)))));
-	}
-
-	public void publishRoster(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
-	{
-		post(RenderModel.page(List.of(RenderModel.entry(mobs, perMob))));
+		post(page);
 	}
 
 	private void post(Map<String, Object> page)

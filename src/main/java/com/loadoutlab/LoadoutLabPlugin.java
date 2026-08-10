@@ -193,6 +193,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private SupplyDefaultsStore supplyDefaults;
 	private DwmsLink dwmsLink;
 	private volatile com.loadoutlab.model.CompanionLink companionLink;
+	private volatile com.loadoutlab.model.CommandEngine commandEngine;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
 	private volatile StashUnits stashUnits;
@@ -274,6 +275,23 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			if (link != null)
 			{
 				link.hello();
+			}
+			return;
+		}
+		// A Companion command (docs/COMPANION_CONTRACT.md): executed on
+		// the shared engine; unknown commands are refused, and a refusal
+		// is logged rather than guessed at.
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& "command".equals(event.getName()))
+		{
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			Object commandName = event.getData().get("name");
+			Object args = event.getData().get("args");
+			if (engine == null || !(commandName instanceof String)
+				|| !engine.execute((String) commandName,
+					args instanceof Map ? (Map<String, Object>) args : null))
+			{
+				log.debug("companion command refused: {}", commandName);
 			}
 			return;
 		}
@@ -444,6 +462,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				data = loaded;
 				optimizerService = new OptimizerService(loaded);
+				commandEngine = new com.loadoutlab.model.CommandEngine(
+					loaded, new com.loadoutlab.model.PageState(), this::compute, companionLink);
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
 			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,
@@ -2033,10 +2053,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				protectOnly.snapshot(),
 				roster ->
 				{
-					com.loadoutlab.model.CompanionLink link = companionLink;
-					if (link != null)
+					com.loadoutlab.model.CommandEngine engine = commandEngine;
+					if (engine != null)
 					{
-						link.publishRoster(roster.mobs, roster.perMob);
+						engine.onRosterResults(roster.mobs, roster.perMob);
 					}
 					SwingUtilities.invokeLater(() ->
 					{
@@ -2094,10 +2114,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				protectOnly.snapshot(),
 				results ->
 				{
-					com.loadoutlab.model.CompanionLink link = companionLink;
-					if (link != null)
+					com.loadoutlab.model.CommandEngine engine = commandEngine;
+					if (engine != null)
 					{
-						link.publish(monster, results);
+						engine.onResults(monster, results);
 					}
 					SwingUtilities.invokeLater(() ->
 					{
