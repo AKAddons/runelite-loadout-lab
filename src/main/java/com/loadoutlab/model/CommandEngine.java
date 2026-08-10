@@ -32,6 +32,12 @@ public class CommandEngine
 	private final PageState state;
 	private final Compute compute;
 	private final CompanionLink link;
+	/** Engine-owned history for seam-driven actions. Separate from the
+	 * old panel's stack during the transition (its commands re-sync
+	 * Swing controls the engine does not know about); they merge when
+	 * the panel leaves. */
+	private final com.loadoutlab.command.CommandHistory history =
+		new com.loadoutlab.command.CommandHistory();
 
 	public CommandEngine(LoadoutData data, PageState state, Compute compute, CompanionLink link)
 	{
@@ -40,6 +46,15 @@ public class CommandEngine
 		this.compute = compute;
 		this.link = link;
 	}
+
+	private static final Map<String, String> PARAM_LABELS = Map.ofEntries(
+		Map.entry("onTask", "On task"), Map.entry("inWilderness", "Wilderness"),
+		Map.entry("f2pOnly", "F2P"), Map.entry("specWeapon", "Spec weapon"),
+		Map.entry("antifirePotion", "Antifire"), Map.entry("raidBoost", "Raid boost"),
+		Map.entry("deathCharge", "Death charge"), Map.entry("viewingBis", "View"),
+		Map.entry("selectedTab", "Tab"), Map.entry("spellbookLock", "Spellbook"),
+		Map.entry("riskBudgetGp", "Risk cap"), Map.entry("upgradeBudgetGp", "Upgrade budget"),
+		Map.entry("maxSwaps", "Inventory"));
 
 	/** Handle one contract command; returns false for an unknown or
 	 * malformed command (refused loudly at the seam, never guessed). */
@@ -60,33 +75,99 @@ public class CommandEngine
 				{
 					return false;
 				}
-				state.select(matches.get(0));
-				recompute();
-				return true;
+				MonsterStats prev = state.mob();
+				MonsterStats next = matches.get(0);
+				if (prev != null && prev.getId() == next.getId())
+				{
+					recompute();
+					return true;
+				}
+				return history.execute(new com.loadoutlab.command.Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						state.select(next);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						state.select(prev);
+						if (prev != null)
+						{
+							recompute();
+						}
+						else
+						{
+							clearResults();
+						}
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return "vs " + next.label();
+					}
+				});
 			}
 			case "set-param":
 			{
 				Object param = args == null ? null : args.get("param");
-				if (!(param instanceof String)
-					|| !state.setParam((String) param, args.get("value")))
+				if (!(param instanceof String))
 				{
 					return false;
 				}
-				// View params change what is SHOWN, not what is computed:
-				// republish the held results under the new view state.
-				if (PageState.isViewParam((String) param))
+				String key = (String) param;
+				Object next = args.get("value");
+				Object prev = state.paramsNode().get(key);
+				if (java.util.Objects.equals(prev, next))
 				{
-					republish();
+					return true;
 				}
-				else
+				String label = PARAM_LABELS.getOrDefault(key, key);
+				return history.execute(new com.loadoutlab.command.Command()
 				{
-					recompute();
-				}
-				return true;
+					@Override
+					public boolean apply()
+					{
+						return applyParam(key, next);
+					}
+
+					@Override
+					public boolean revert()
+					{
+						return applyParam(key, prev);
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return Boolean.TRUE.equals(next) ? label + " on"
+							: Boolean.FALSE.equals(next) ? label + " off"
+							: label + " " + next;
+					}
+				});
 			}
 			case "recompute":
 				recompute();
 				return true;
+			case "undo":
+			case "redo":
+			{
+				// The command's own publish runs BEFORE CommandHistory moves
+				// it between stacks - republish after, so the page's history
+				// node (canUndo/canRedo/labels) reflects the settled stacks.
+				boolean ok = "undo".equals(name) ? history.undo() : history.redo();
+				if (ok)
+				{
+					republish();
+				}
+				return ok;
+			}
 			default:
 				return false;
 		}
@@ -129,6 +210,33 @@ public class CommandEngine
 		republish();
 	}
 
+	/** Route one param change: view params republish, the rest compute.
+	 * Shared by the live command and its undo/redo replays. */
+	private boolean applyParam(String key, Object value)
+	{
+		if (!state.setParam(key, value))
+		{
+			return false;
+		}
+		if (PageState.isViewParam(key))
+		{
+			republish();
+		}
+		else
+		{
+			recompute();
+		}
+		return true;
+	}
+
+	/** Reverting the first select: no mob, no results - an empty page. */
+	private void clearResults()
+	{
+		lastMobs = null;
+		lastPerMob = null;
+		link.publishPage(withHistory(RenderModel.page(List.of())));
+	}
+
 	private void republish()
 	{
 		List<MonsterStats> mobs = lastMobs;
@@ -139,6 +247,17 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
 		entry.put("params", state.paramsNode());
-		link.publishPage(RenderModel.page(List.of(entry)));
+		link.publishPage(withHistory(RenderModel.page(List.of(entry))));
+	}
+
+	private Map<String, Object> withHistory(Map<String, Object> page)
+	{
+		Map<String, Object> node = new java.util.LinkedHashMap<>();
+		node.put("canUndo", history.canUndo());
+		node.put("canRedo", history.canRedo());
+		node.put("undoLabel", history.peekUndoDescription());
+		node.put("redoLabel", history.peekRedoDescription());
+		page.put("history", node);
+		return page;
 	}
 }

@@ -109,6 +109,39 @@ class CommandEngineTest
 	}
 
 	@Test
+	@DisplayName("engine commands are undoable and history rides the page")
+	void undoRedo()
+	{
+		CaptureLink link = new CaptureLink();
+		java.util.List<String> computedMobs = new java.util.ArrayList<>();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) -> computedMobs.add(mob.getName()),
+			link);
+		assertTrue(engine.execute("select", Map.of("query", "zulrah")));
+		assertTrue(engine.execute("select", Map.of("query", "vorkath")));
+		assertEquals(2, computedMobs.size());
+
+		assertTrue(engine.execute("undo", Map.of()), "undo re-selects zulrah");
+		assertTrue(computedMobs.get(2).toLowerCase().contains("zulrah"));
+		assertTrue(engine.execute("redo", Map.of()), "redo returns to vorkath");
+		assertTrue(computedMobs.get(3).toLowerCase().contains("vorkath"));
+
+		// A view-param flip is undoable too, and the published page
+		// carries the history node.
+		MonsterStats mob = data.searchMonsters("vorkath", 1).get(0);
+		engine.onResults(mob, Map.of());
+		assertTrue(engine.execute("set-param", Map.of("param", "viewingBis", "value", true)));
+		assertTrue(engine.execute("undo", Map.of()));
+		Map<?, ?> entries0 = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		assertEquals(Boolean.FALSE, ((Map<?, ?>) entries0.get("params")).get("viewingBis"));
+		Map<?, ?> history = (Map<?, ?>) link.published.get("history");
+		assertEquals(Boolean.TRUE, history.get("canRedo"));
+		assertEquals("View on", history.get("redoLabel"));
+	}
+
+	@Test
 	@DisplayName("results publish as a page carrying the params node")
 	void resultsCarryParams()
 	{
