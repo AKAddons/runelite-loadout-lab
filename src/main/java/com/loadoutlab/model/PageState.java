@@ -18,6 +18,8 @@ import java.util.Map;
 public class PageState
 {
 	private MonsterStats mob;
+	private java.util.List<MonsterStats> rosterMobs;
+	private String rosterName;
 
 	private boolean onTask;
 	private boolean inWilderness;
@@ -47,11 +49,44 @@ public class PageState
 	public synchronized void select(MonsterStats mob)
 	{
 		this.mob = mob;
+		this.rosterMobs = null;
+		this.rosterName = null;
+	}
+
+	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name)
+	{
+		this.mob = null;
+		this.rosterMobs = mobs;
+		this.rosterName = name;
 	}
 
 	public synchronized MonsterStats mob()
 	{
 		return mob;
+	}
+
+	public synchronized java.util.List<MonsterStats> rosterMobs()
+	{
+		return rosterMobs;
+	}
+
+	/** Selection snapshot for undo: restore() reinstates it exactly. */
+	public synchronized Object[] selectionSnapshot()
+	{
+		return new Object[]{mob, rosterMobs, rosterName};
+	}
+
+	@SuppressWarnings("unchecked")
+	public synchronized void restoreSelection(Object[] snapshot)
+	{
+		this.mob = (MonsterStats) snapshot[0];
+		this.rosterMobs = (java.util.List<MonsterStats>) snapshot[1];
+		this.rosterName = (String) snapshot[2];
+	}
+
+	public synchronized boolean hasSelection()
+	{
+		return mob != null || rosterMobs != null;
 	}
 
 	/** Apply one named parameter; returns false for an unknown name so

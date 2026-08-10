@@ -63,9 +63,9 @@ class CommandEngineTest
 		assertTrue(engine.execute("set-param", Map.of("param", "onTask", "value", true)),
 			"params may be staged before a mob is selected");
 		assertNull(computed.get(), "no mob yet - nothing to compute");
-		assertTrue(engine.execute("select", Map.of("query", "zulrah")));
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		assertNotNull(computed.get());
-		assertTrue(computed.get().getName().toLowerCase().contains("zulrah"));
+		assertTrue(computed.get().getName().toLowerCase().contains("abyssal"));
 		assertEquals(Boolean.TRUE, taskFlag.get(), "the staged param rode the compute");
 	}
 
@@ -95,7 +95,7 @@ class CommandEngineTest
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
 				boosts, prayers, budget, swaps, raid, onDone) -> computes.incrementAndGet(),
 			link);
-		assertTrue(engine.execute("select", Map.of("query", "zulrah")));
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		assertEquals(1, computes.get());
 		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
 		engine.onResults(mob, Map.of());
@@ -109,6 +109,31 @@ class CommandEngineTest
 	}
 
 	@Test
+	@DisplayName("a group query opens the roster; undo returns to the single mob")
+	void groupSelect()
+	{
+		java.util.List<String> rosterRuns = new java.util.ArrayList<>();
+		java.util.List<String> singleRuns = new java.util.ArrayList<>();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) -> singleRuns.add(mob.getName()),
+			new CaptureLink());
+		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
+			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			rosterRuns.add(mobs.size() + " mobs"));
+
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		int singles = singleRuns.size();
+		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")),
+			"a curated group name opens the roster");
+		assertEquals(1, rosterRuns.size());
+		assertTrue(rosterRuns.get(0).startsWith("3"), "the DKs roster carries its three kings");
+		assertTrue(engine.execute("undo", Map.of()), "undo returns to the single mob");
+		assertEquals(singles + 1, singleRuns.size());
+	}
+
+	@Test
 	@DisplayName("engine commands are undoable and history rides the page")
 	void undoRedo()
 	{
@@ -119,14 +144,14 @@ class CommandEngineTest
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
 				boosts, prayers, budget, swaps, raid, onDone) -> computedMobs.add(mob.getName()),
 			link);
-		assertTrue(engine.execute("select", Map.of("query", "zulrah")));
-		assertTrue(engine.execute("select", Map.of("query", "vorkath")));
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		assertTrue(engine.execute("select", Map.of("query", "black demon")));
 		assertEquals(2, computedMobs.size());
 
-		assertTrue(engine.execute("undo", Map.of()), "undo re-selects zulrah");
-		assertTrue(computedMobs.get(2).toLowerCase().contains("zulrah"));
-		assertTrue(engine.execute("redo", Map.of()), "redo returns to vorkath");
-		assertTrue(computedMobs.get(3).toLowerCase().contains("vorkath"));
+		assertTrue(engine.execute("undo", Map.of()), "undo re-selects the abyssal demon");
+		assertTrue(computedMobs.get(2).toLowerCase().contains("abyssal"));
+		assertTrue(engine.execute("redo", Map.of()), "redo returns to the black demon");
+		assertTrue(computedMobs.get(3).toLowerCase().contains("black demon"));
 
 		// A view-param flip is undoable too, and the published page
 		// carries the history node.

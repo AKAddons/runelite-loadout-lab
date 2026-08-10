@@ -57,6 +57,24 @@ public class CommandEngine
 	{
 		this.stores = stores;
 	}
+
+	/** The plugin's roster compute path (ComputeHook.computeRoster). */
+	public interface RosterCompute
+	{
+		void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
+			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
+			boolean antifirePotion, int deathCharge, boolean specWeapon,
+			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
+			int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone);
+	}
+
+	private volatile RosterCompute rosterCompute;
+	private volatile List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
+
+	public void setRosterCompute(RosterCompute rosterCompute)
+	{
+		this.rosterCompute = rosterCompute;
+	}
 	/** Engine-owned history for seam-driven actions. Separate from the
 	 * old panel's stack during the transition (its commands re-sync
 	 * Swing controls the engine does not know about); they merge when
@@ -95,24 +113,42 @@ public class CommandEngine
 				{
 					return false;
 				}
-				List<MonsterStats> matches = data.searchMonsters((String) query, 1);
-				if (matches.isEmpty())
+				// Groups first on an exact-ish name hit, else single mobs -
+				// mirrors the classic search's dropdown priorities loosely;
+				// a group named like the query opens the roster.
+				com.loadoutlab.data.MonsterGroups.MonsterGroup group = groupFor((String) query);
+				MonsterStats next = null;
+				if (group == null)
 				{
-					return false;
+					List<MonsterStats> matches = data.searchMonsters((String) query, 1);
+					if (matches.isEmpty())
+					{
+						return false;
+					}
+					next = matches.get(0);
+					if (next.getId() == (state.mob() == null ? -1 : state.mob().getId()))
+					{
+						recompute();
+						return true;
+					}
 				}
-				MonsterStats prev = state.mob();
-				MonsterStats next = matches.get(0);
-				if (prev != null && prev.getId() == next.getId())
-				{
-					recompute();
-					return true;
-				}
+				Object[] prev = state.selectionSnapshot();
+				boolean hadSelection = state.hasSelection();
+				MonsterStats mobPick = next;
+				com.loadoutlab.data.MonsterGroups.MonsterGroup groupPick = group;
 				return history.execute(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
 					{
-						state.select(next);
+						if (groupPick != null)
+						{
+							state.selectRoster(groupPick.getMobs(), groupPick.getName());
+						}
+						else
+						{
+							state.select(mobPick);
+						}
 						recompute();
 						return true;
 					}
@@ -120,8 +156,8 @@ public class CommandEngine
 					@Override
 					public boolean revert()
 					{
-						state.select(prev);
-						if (prev != null)
+						state.restoreSelection(prev);
+						if (hadSelection)
 						{
 							recompute();
 						}
@@ -135,7 +171,7 @@ public class CommandEngine
 					@Override
 					public String getDescription()
 					{
-						return "vs " + next.label();
+						return "vs " + (groupPick != null ? groupPick.getName() : mobPick.label());
 					}
 				});
 			}
@@ -215,21 +251,63 @@ public class CommandEngine
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private void recompute()
 	{
 		MonsterStats mob = state.mob();
-		if (mob == null)
+		List<MonsterStats> roster = state.rosterMobs();
+		RosterCompute rosterPath = rosterCompute;
+		if (mob == null && (roster == null || rosterPath == null))
 		{
 			return;
 		}
 		Object[] a = state.computeArgs();
-		compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
-			(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
-			(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
-			(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12],
-			(Boolean) a[13], () ->
+		if (mob != null)
+		{
+			compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
+				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
+				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
+				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12],
+				(Boolean) a[13], () ->
+				{
+				});
+		}
+		else
+		{
+			rosterPath.computeRoster(roster, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
+				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
+				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
+				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12],
+				(Boolean) a[13], () ->
+				{
+				});
+		}
+	}
+
+	/** A curated group whose name matches the query (contains, both
+	 * directions) - loaded once, resolved like the classic dropdown. */
+	private com.loadoutlab.data.MonsterGroups.MonsterGroup groupFor(String query)
+	{
+		List<com.loadoutlab.data.MonsterGroups.MonsterGroup> loaded = groups;
+		if (loaded == null)
+		{
+			loaded = com.loadoutlab.data.MonsterGroups.load(data);
+			groups = loaded;
+		}
+		String q = query.toLowerCase();
+		if (q.length() < 3)
+		{
+			return null;
+		}
+		for (com.loadoutlab.data.MonsterGroups.MonsterGroup candidate : loaded)
+		{
+			String name = candidate.getName().toLowerCase();
+			if (name.contains(q) || q.contains(name))
 			{
-			});
+				return candidate;
+			}
+		}
+		return null;
 	}
 
 	private volatile List<MonsterStats> lastMobs;
