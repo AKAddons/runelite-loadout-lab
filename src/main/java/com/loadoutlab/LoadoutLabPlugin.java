@@ -273,11 +273,17 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
 			&& com.loadoutlab.model.CompanionLink.UI_HELLO.equals(event.getName()))
 		{
-			com.loadoutlab.model.CompanionLink link = companionLink;
-			if (link != null)
+			// Reply DEFERRED: the asker may have posted from its own
+			// startUp() before its subscribers were live - by the next EDT
+			// slot it can hear us (same race as the deferred startUp hello).
+			SwingUtilities.invokeLater(() ->
 			{
-				link.hello();
-			}
+				com.loadoutlab.model.CompanionLink link = companionLink;
+				if (link != null)
+				{
+					link.hello();
+				}
+			});
 			return;
 		}
 		// The Companion registering (or clearing) its renderer - a JDK
@@ -434,7 +440,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		dwmsLink = new DwmsLink();
 		companionLink = new com.loadoutlab.model.CompanionLink(
 			eventBus, com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
-		companionLink.hello();
+		// Deferred: a PluginMessage posted from inside startUp() is lost
+		// to any plugin whose subscribers register after its startUp
+		// returns (field-observed 2026-08-09: the Companion missed our
+		// synchronous reply and kept its nudge icon forever).
+		SwingUtilities.invokeLater(() ->
+		{
+			com.loadoutlab.model.CompanionLink link = companionLink;
+			if (link != null)
+			{
+				link.hello();
+			}
+		});
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		// Bank-tag hygiene: drop the layout Bank Tag Layouts auto-enabled on
