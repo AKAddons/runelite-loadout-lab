@@ -239,6 +239,16 @@ public class ResultCards
 			sim.addActionListener(e -> commands.send("toggle-sim", Map.of("itemId", id)));
 			menu.add(sim);
 		}
+		else if (!"quiver".equals(slot))
+		{
+			javax.swing.JMenuItem pin = new javax.swing.JMenuItem("Pin " + name);
+			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
+			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
+			menu.add(pin);
+			javax.swing.JMenuItem unpin = new javax.swing.JMenuItem("Unpin " + slot);
+			unpin.addActionListener(e -> commands.send("unpin", Map.of("slot", slot)));
+			menu.add(unpin);
+		}
 		cell.setComponentPopupMenu(menu);
 		return cell;
 	}

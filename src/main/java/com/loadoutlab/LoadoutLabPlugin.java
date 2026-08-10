@@ -547,6 +547,20 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					{
 						return exec(Commands.toggleDream(dreams, itemId, itemLabel(itemId)));
 					}
+
+					@Override
+					public void pin(int monsterId, String slot, int itemId)
+					{
+						mobProfiles.pin(monsterId, com.loadoutlab.ui.LoadoutLabPanel.ALL_SETS,
+							com.loadoutlab.data.GearSlot.valueOf(slot.toUpperCase()), itemId);
+					}
+
+					@Override
+					public void unpin(int monsterId, String slot)
+					{
+						mobProfiles.unpin(monsterId, com.loadoutlab.ui.LoadoutLabPanel.ALL_SETS,
+							com.loadoutlab.data.GearSlot.valueOf(slot.toUpperCase()));
+					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
