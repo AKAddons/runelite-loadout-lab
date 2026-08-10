@@ -23,7 +23,8 @@ final class ReportBuilder
 	}
 
 	static String build(String version, PageState state, List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, Map<String, Object> counts)
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, Map<String, Object> counts,
+		Map<String, Object> thralls)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
@@ -35,6 +36,12 @@ final class ReportBuilder
 			if (i == 0)
 			{
 				appendParams(sb, state, counts);
+				if (thralls != null)
+				{
+					sb.append("  Thralls: ").append(thralls.get("tier"))
+						.append(String.format(" (dps shown includes it: %.2f)%n",
+							((Number) thralls.get("dps")).doubleValue()));
+				}
 			}
 			Map<CombatStyle, OptimizerService.StyleResult> results = perMob.get(i);
 			for (CombatStyle style : CombatStyle.concreteValues())

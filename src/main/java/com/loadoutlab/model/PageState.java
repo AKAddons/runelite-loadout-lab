@@ -37,13 +37,15 @@ public class PageState
 	// change here republishes without recomputing (see CommandEngine).
 	private boolean viewingBis;
 	private String selectedTab = "";
+	private boolean thralls;
 	private final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return "viewingBis".equals(param) || "selectedTab".equals(param);
+		return "viewingBis".equals(param) || "selectedTab".equals(param)
+			|| "thralls".equals(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -131,6 +133,9 @@ public class PageState
 			case "viewingBis":
 				viewingBis = Boolean.TRUE.equals(value);
 				return true;
+			case "thralls":
+				thralls = Boolean.TRUE.equals(value);
+				return true;
 			case "selectedTab":
 				selectedTab = value instanceof String ? (String) value : "";
 				return true;
@@ -161,6 +166,7 @@ public class PageState
 		node.put("maxSwaps", maxSwaps);
 		node.put("raidBoost", raidBoost);
 		node.put("viewingBis", viewingBis);
+		node.put("thralls", thralls);
 		node.put("selectedTab", selectedTab);
 		return node;
 	}

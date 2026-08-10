@@ -367,14 +367,34 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
 		entry.put("params", state.paramsNode());
+		Map<String, Object> thrallsNode = null;
+		if (Boolean.TRUE.equals(state.paramsNode().get("thralls")))
+		{
+			double dps = com.loadoutlab.engine.ExtraDps.thrallDps(magicLevel);
+			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
+			if (dps > 0 && tier != null)
+			{
+				thrallsNode = new java.util.LinkedHashMap<>();
+				thrallsNode.put("dps", dps);
+				thrallsNode.put("tier", tier);
+				entry.put("thralls", thrallsNode);
+			}
+		}
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
-			countSupplier == null ? null : countSupplier.get()));
+			countSupplier == null ? null : countSupplier.get(), thrallsNode));
 		link.publishPage(page);
 	}
 
 	private volatile String coreVersion = "dev";
+	/** The account's live Magic level - thrall dps scales off it. */
+	private volatile int magicLevel = 99;
+
+	public void setMagicLevel(int magicLevel)
+	{
+		this.magicLevel = magicLevel;
+	}
 
 	public void setCoreVersion(String coreVersion)
 	{

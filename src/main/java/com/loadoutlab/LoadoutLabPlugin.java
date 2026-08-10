@@ -697,6 +697,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * follows the boosted stat), the Yama rite unlock, the live book. */
 	private void pushPanelCastState(PlayerLevels live)
 	{
+		com.loadoutlab.model.CommandEngine engine = commandEngine;
+		if (engine != null)
+		{
+			engine.setMagicLevel(live.getMagic());
+		}
 		if (panel == null)
 		{
 			return;
