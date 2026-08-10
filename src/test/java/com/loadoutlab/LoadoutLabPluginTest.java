@@ -18,6 +18,7 @@ public class LoadoutLabPluginTest
 	 */
 	private static final String[] COMPANION_PLUGINS = {
 		"dev.thource.runelite.dudewheresmystuff.DudeWheresMyStuffPlugin",
+		"com.loadoutlabui.LoadoutLabUiPlugin",
 	};
 
 	public static void main(String[] args) throws Exception

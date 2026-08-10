@@ -192,6 +192,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private com.loadoutlab.collection.AlwaysFilterStore alwaysFilter;
 	private SupplyDefaultsStore supplyDefaults;
 	private DwmsLink dwmsLink;
+	private volatile com.loadoutlab.model.CompanionLink companionLink;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
 	private volatile StashUnits stashUnits;
@@ -261,6 +262,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			if (requester != null)
 			{
 				clientThread.invokeLater(() -> respondWithStorages(requester));
+			}
+			return;
+		}
+		// A Companion UI saying hello (it started second): announce back
+		// and replay the latest model page (see CompanionLink).
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& com.loadoutlab.model.CompanionLink.UI_HELLO.equals(event.getName()))
+		{
+			com.loadoutlab.model.CompanionLink link = companionLink;
+			if (link != null)
+			{
+				link.hello();
 			}
 			return;
 		}
@@ -378,6 +391,9 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
 		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
 		dwmsLink = new DwmsLink();
+		companionLink = new com.loadoutlab.model.CompanionLink(
+			eventBus, com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
+		companionLink.hello();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		// Bank-tag hygiene: drop the layout Bank Tag Layouts auto-enabled on
@@ -2015,14 +2031,22 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				mobProfiles.pinnedSpecFor(anchor.getId()),
 				protectOnly.snapshot(),
-				roster -> SwingUtilities.invokeLater(() ->
+				roster ->
 				{
-					if (panel != null)
+					com.loadoutlab.model.CompanionLink link = companionLink;
+					if (link != null)
 					{
-						panel.showRosterResults(roster.mobs, roster.perMob, roster.curve);
+						link.publishRoster(roster.mobs, roster.perMob);
 					}
-					onDone.run();
-				}));
+					SwingUtilities.invokeLater(() ->
+					{
+						if (panel != null)
+						{
+							panel.showRosterResults(roster.mobs, roster.perMob, roster.curve);
+						}
+						onDone.run();
+					});
+				});
 		});
 	}
 
@@ -2068,14 +2092,22 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpecFor(monster.getId()),
 				protectOnly.snapshot(),
-				results -> SwingUtilities.invokeLater(() ->
+				results ->
 				{
-					if (panel != null)
+					com.loadoutlab.model.CompanionLink link = companionLink;
+					if (link != null)
 					{
-						panel.showResults(monster, results);
+						link.publish(monster, results);
 					}
-					onDone.run();
-				}));
+					SwingUtilities.invokeLater(() ->
+					{
+						if (panel != null)
+						{
+							panel.showResults(monster, results);
+						}
+						onDone.run();
+					});
+				});
 		});
 	}
 

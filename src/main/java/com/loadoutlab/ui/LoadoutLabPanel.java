@@ -913,7 +913,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * hand-synced constant this replaces went stale at 0.3.4 and reports
 	 * carried "v0.3.3" from newer clients (field report 2026-08-07).
 	 * VersionStampTest pins the stamp against runelite-plugin.properties. */
-	static final String PLUGIN_VERSION = loadPluginVersion();
+	public static final String PLUGIN_VERSION = loadPluginVersion();
 
 	private static String loadPluginVersion()
 	{
