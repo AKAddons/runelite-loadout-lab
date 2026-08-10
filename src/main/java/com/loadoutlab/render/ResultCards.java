@@ -90,16 +90,61 @@ public class ResultCards
 		JPanel column = new JPanel();
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
 		column.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
 			double thrallsDps = Model.num(Model.map(entry, "thralls"), "dps");
-			for (Map<String, Object> mob : Model.list(entry, "mobs"))
+			List<Map<String, Object>> mobs = Model.list(entry, "mobs");
+			if (mobs.size() <= 1)
 			{
-				column.add(mobCard(mob, tab, bis, thrallsDps));
-				column.add(Box.createVerticalStrut(8));
+				for (Map<String, Object> mob : mobs)
+				{
+					column.add(mobCard(mob, tab, bis, thrallsDps));
+					column.add(Box.createVerticalStrut(8));
+				}
+				continue;
+			}
+			// Roster lens: compact clickable rows, one mob expanded.
+			int shownLens = Math.min(Math.max(lens, 0), mobs.size() - 1);
+			for (int i = 0; i < mobs.size(); i++)
+			{
+				Map<String, Object> mob = mobs.get(i);
+				if (i == shownLens)
+				{
+					column.add(mobCard(mob, tab, bis, thrallsDps));
+				}
+				else
+				{
+					column.add(lensRow(mob, tab, bis, i));
+				}
+				column.add(Box.createVerticalStrut(4));
 			}
 		}
 		return column;
+	}
+
+	/** One collapsed roster row: label + the shown side's dps for the
+	 * current tab; click to move the lens here. */
+	private JPanel lensRow(Map<String, Object> mob, String tab, boolean bis, int index)
+	{
+		Map<String, Object> styles = Model.map(mob, "styles");
+		Map<String, Object> node = styles == null ? null : Model.map(styles, tab);
+		Map<String, Object> shown = node == null ? null : Model.map(node, bis ? "bis" : "yours");
+		String dps = shown == null ? "-" : String.format("%.2f dps", Model.num(shown, "dps"));
+		JLabel label = new JLabel(Model.str(mob, "label") + "  -  " + dps);
+		label.setToolTipText("Click to expand");
+		label.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		label.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				commands.send("set-param", Map.of("param", "lensIndex", "value", index));
+			}
+		});
+		JPanel row = left(label);
+		row.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
+		return row;
 	}
 
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps)
@@ -204,6 +249,25 @@ public class ResultCards
 			panel.add(left(dtps));
 		}
 		panel.add(left(gearGrid(card, bis)));
+		Object counted = card.get("counted");
+		if (counted instanceof List && !((List<?>) counted).isEmpty())
+		{
+			StringBuilder line = new StringBuilder("Counting: ");
+			boolean first = true;
+			for (Object bonus : (List<?>) counted)
+			{
+				if (!first)
+				{
+					line.append(", ");
+				}
+				first = false;
+				line.append(bonus);
+			}
+			JLabel counting = new JLabel(line.toString());
+			counting.setFont(counting.getFont().deriveFont(counting.getFont().getSize() - 2f));
+			counting.setToolTipText("Situational bonuses the math actually counted for this set");
+			panel.add(left(counting));
+		}
 		return panel;
 	}
 

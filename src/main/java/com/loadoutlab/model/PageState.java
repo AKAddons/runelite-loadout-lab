@@ -40,6 +40,7 @@ public class PageState
 	private boolean viewingBis;
 	private String selectedTab = "";
 	private boolean thralls;
+	private int lensIndex;
 	private final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
@@ -47,7 +48,7 @@ public class PageState
 	public static boolean isViewParam(String param)
 	{
 		return "viewingBis".equals(param) || "selectedTab".equals(param)
-			|| "thralls".equals(param);
+			|| "thralls".equals(param) || "lensIndex".equals(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -144,6 +145,9 @@ public class PageState
 			case "thralls":
 				thralls = Boolean.TRUE.equals(value);
 				return true;
+			case "lensIndex":
+				lensIndex = asInt(value, 0);
+				return true;
 			case "selectedTab":
 				selectedTab = value instanceof String ? (String) value : "";
 				return true;
@@ -177,6 +181,7 @@ public class PageState
 		node.put("protectItem", protectItem);
 		node.put("viewingBis", viewingBis);
 		node.put("thralls", thralls);
+		node.put("lensIndex", lensIndex);
 		node.put("selectedTab", selectedTab);
 		return node;
 	}
