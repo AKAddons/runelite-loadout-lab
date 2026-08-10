@@ -150,6 +150,17 @@ task rosterGolden(type: JavaExec) {
 	mainClass = 'com.loadoutlab.profile.RosterGolden'
 }
 
+// Model-snapshot golden (see ModelGolden) - the serialized render-model
+// the Companion renders against (ADR-0008); locks the seam like the
+// engine goldens lock the numbers:
+//   ./gradlew -q modelGolden > model-golden.txt
+task modelGolden(type: JavaExec) {
+	group = 'loadout lab'
+	description = 'Print the canonical render-model JSON for the scenario matrix (golden diffing)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.loadoutlab.model.ModelGolden'
+}
+
 // Headless query runner - the mock environment (see HeadlessQuery):
 //   ./gradlew query -Pargs="vorkath --maxed"
 task query(type: JavaExec) {
