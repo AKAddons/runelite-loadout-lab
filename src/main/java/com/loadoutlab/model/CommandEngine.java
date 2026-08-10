@@ -72,7 +72,16 @@ public class CommandEngine
 				{
 					return false;
 				}
-				recompute();
+				// View params change what is SHOWN, not what is computed:
+				// republish the held results under the new view state.
+				if (PageState.isViewParam((String) param))
+				{
+					republish();
+				}
+				else
+				{
+					recompute();
+				}
 				return true;
 			}
 			case "recompute":
@@ -100,20 +109,34 @@ public class CommandEngine
 			});
 	}
 
+	private volatile List<MonsterStats> lastMobs;
+	private volatile List<Map<CombatStyle, OptimizerService.StyleResult>> lastPerMob;
+
 	/** Every single-mob compute lands here (engine-driven or old-panel
 	 * driven) - assemble the page, attach the params the state holds,
 	 * and publish. */
 	public void onResults(MonsterStats mob, Map<CombatStyle, OptimizerService.StyleResult> results)
 	{
-		Map<String, Object> entry = RenderModel.entry(List.of(mob), List.of(results));
-		entry.put("params", state.paramsNode());
-		link.publishPage(RenderModel.page(List.of(entry)));
+		onRosterResults(List.of(mob), List.of(results));
 	}
 
 	/** Roster computes: published with the shared params node. */
 	public void onRosterResults(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
+		lastMobs = mobs;
+		lastPerMob = perMob;
+		republish();
+	}
+
+	private void republish()
+	{
+		List<MonsterStats> mobs = lastMobs;
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = lastPerMob;
+		if (mobs == null || perMob == null)
+		{
+			return;
+		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
 		entry.put("params", state.paramsNode());
 		link.publishPage(RenderModel.page(List.of(entry)));

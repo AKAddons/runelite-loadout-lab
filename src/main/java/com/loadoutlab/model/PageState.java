@@ -31,8 +31,18 @@ public class PageState
 	private int upgradeBudgetGp;
 	private int maxSwaps = 1;
 	private boolean raidBoost;
+	// View state - core-owned like everything else (ADR-0008), but a
+	// change here republishes without recomputing (see CommandEngine).
+	private boolean viewingBis;
+	private String selectedTab = "";
 	private final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
+
+	/** Parameters that change what is SHOWN, not what is computed. */
+	public static boolean isViewParam(String param)
+	{
+		return "viewingBis".equals(param) || "selectedTab".equals(param);
+	}
 
 	public synchronized void select(MonsterStats mob)
 	{
@@ -83,6 +93,12 @@ public class PageState
 			case "raidBoost":
 				raidBoost = Boolean.TRUE.equals(value);
 				return true;
+			case "viewingBis":
+				viewingBis = Boolean.TRUE.equals(value);
+				return true;
+			case "selectedTab":
+				selectedTab = value instanceof String ? (String) value : "";
+				return true;
 			default:
 				return false;
 		}
@@ -109,6 +125,8 @@ public class PageState
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
 		node.put("maxSwaps", maxSwaps);
 		node.put("raidBoost", raidBoost);
+		node.put("viewingBis", viewingBis);
+		node.put("selectedTab", selectedTab);
 		return node;
 	}
 
