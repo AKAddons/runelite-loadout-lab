@@ -102,7 +102,7 @@ public class CommandEngine
 		Map.entry("deathCharge", "Death charge"), Map.entry("viewingBis", "View"),
 		Map.entry("selectedTab", "Tab"), Map.entry("spellbookLock", "Spellbook"),
 		Map.entry("riskBudgetGp", "Risk cap"), Map.entry("upgradeBudgetGp", "Upgrade budget"),
-		Map.entry("maxSwaps", "Inventory"));
+		Map.entry("maxSwaps", "Inventory"), Map.entry("toaInvocation", "Invocation"));
 
 	/** Handle one contract command; returns false for an unknown or
 	 * malformed command (refused loudly at the seam, never guessed). */
@@ -295,6 +295,7 @@ public class CommandEngine
 		Object[] a = state.computeArgs();
 		if (mob != null)
 		{
+			mob = atInvocation(mob);
 			compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
 				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
@@ -305,6 +306,12 @@ public class CommandEngine
 		}
 		else
 		{
+			List<MonsterStats> scaled = new java.util.ArrayList<>();
+			for (MonsterStats m : roster)
+			{
+				scaled.add(atInvocation(m));
+			}
+			roster = scaled;
 			rosterPath.computeRoster(roster, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
 				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
@@ -313,6 +320,15 @@ public class CommandEngine
 				{
 				});
 		}
+	}
+
+	/** ToA mobs scale with the invocation param - the same transform
+	 * the classic panel applies before every compute. */
+	private MonsterStats atInvocation(MonsterStats mob)
+	{
+		return com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob)
+			? com.loadoutlab.engine.MonsterMechanics.atToaInvocation(mob, state.toaInvocation())
+			: mob;
 	}
 
 	/** A curated group whose name matches the query (contains, both

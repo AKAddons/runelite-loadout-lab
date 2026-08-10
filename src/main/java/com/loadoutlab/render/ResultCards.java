@@ -194,6 +194,15 @@ public class ResultCards
 		}
 		headline.setToolTipText(tip.append("</html>").toString());
 		panel.add(left(headline));
+		if (incoming != null && Model.str(incoming, "protectPrayer") != null)
+		{
+			String caveat = Model.flag(incoming, "fullyModeled") ? "" : " (partly modeled)";
+			JLabel dtps = new JLabel(String.format("Pray %s - takes %.2f dps (%.2f unprayed)%s",
+				Model.str(incoming, "protectPrayer"), Model.num(incoming, "dps"),
+				Model.num(incoming, "unprayedDps"), caveat));
+			dtps.setFont(dtps.getFont().deriveFont(dtps.getFont().getSize() - 1f));
+			panel.add(left(dtps));
+		}
 		panel.add(left(gearGrid(card, bis)));
 		return panel;
 	}

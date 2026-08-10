@@ -79,6 +79,21 @@ public class RenderSurface
 			Map.of("param", key, "value", button.isSelected())));
 	}
 
+	private static boolean anyInvocationScaled(Map<String, Object> page)
+	{
+		for (Map<String, Object> entry : Model.list(page, "entries"))
+		{
+			for (Map<String, Object> mob : Model.list(entry, "mobs"))
+			{
+				if (Model.flag(mob, "invocationScaled"))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private synchronized JComponent root()
 	{
 		if (root == null)

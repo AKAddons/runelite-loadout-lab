@@ -67,6 +67,8 @@ public final class RenderModel
 		node.put("name", mob.getName());
 		node.put("label", mob.label());
 		node.put("hp", mob.getHitpoints());
+		node.put("invocationScaled",
+			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		return node;
 	}
 

@@ -33,6 +33,7 @@ public class PageState
 	private int upgradeBudgetGp;
 	private int maxSwaps = 1;
 	private boolean raidBoost;
+	private int toaInvocation = 300;
 	// View state - core-owned like everything else (ADR-0008), but a
 	// change here republishes without recomputing (see CommandEngine).
 	private boolean viewingBis;
@@ -130,6 +131,9 @@ public class PageState
 			case "raidBoost":
 				raidBoost = Boolean.TRUE.equals(value);
 				return true;
+			case "toaInvocation":
+				toaInvocation = asInt(value, 300);
+				return true;
 			case "viewingBis":
 				viewingBis = Boolean.TRUE.equals(value);
 				return true;
@@ -165,10 +169,16 @@ public class PageState
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
 		node.put("maxSwaps", maxSwaps);
 		node.put("raidBoost", raidBoost);
+		node.put("toaInvocation", toaInvocation);
 		node.put("viewingBis", viewingBis);
 		node.put("thralls", thralls);
 		node.put("selectedTab", selectedTab);
 		return node;
+	}
+
+	public synchronized int toaInvocation()
+	{
+		return toaInvocation;
 	}
 
 	/** The compute arguments in ComputeHook order (see CommandEngine). */
