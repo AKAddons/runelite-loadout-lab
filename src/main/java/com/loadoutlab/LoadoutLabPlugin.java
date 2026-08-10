@@ -508,6 +508,20 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					"excluded", exclusions.snapshot().size(),
 					"simmed", dreams.snapshot().size(),
 					"stored", manualOwned.snapshot().size()));
+				commandEngine.setStoreOps(new com.loadoutlab.model.CommandEngine.StoreOps()
+				{
+					@Override
+					public boolean toggleExclusion(int itemId)
+					{
+						return exec(Commands.toggleExclusion(exclusions, itemId, itemLabel(itemId)));
+					}
+
+					@Override
+					public boolean toggleSim(int itemId)
+					{
+						return exec(Commands.toggleDream(dreams, itemId, itemLabel(itemId)));
+					}
+				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
 			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,

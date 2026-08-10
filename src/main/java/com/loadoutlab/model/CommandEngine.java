@@ -40,6 +40,23 @@ public class CommandEngine
 	{
 		this.counts = counts;
 	}
+
+	/** Global-store toggles, implemented by the plugin over the same
+	 * Commands factories the classic panel uses - so store history
+	 * stays in ONE place (the plugin's stack) during the transition. */
+	public interface StoreOps
+	{
+		boolean toggleExclusion(int itemId);
+
+		boolean toggleSim(int itemId);
+	}
+
+	private volatile StoreOps stores;
+
+	public void setStoreOps(StoreOps stores)
+	{
+		this.stores = stores;
+	}
 	/** Engine-owned history for seam-driven actions. Separate from the
 	 * old panel's stack during the transition (its commands re-sync
 	 * Swing controls the engine does not know about); they merge when
@@ -159,6 +176,23 @@ public class CommandEngine
 							: label + " " + next;
 					}
 				});
+			}
+			case "toggle-exclusion":
+			case "toggle-sim":
+			{
+				StoreOps ops = stores;
+				Object itemId = args == null ? null : args.get("itemId");
+				if (ops == null || !(itemId instanceof Number))
+				{
+					return false;
+				}
+				int id = ((Number) itemId).intValue();
+				if ("toggle-exclusion".equals(name) ? !ops.toggleExclusion(id) : !ops.toggleSim(id))
+				{
+					return false;
+				}
+				recompute();
+				return true;
 			}
 			case "recompute":
 				recompute();
