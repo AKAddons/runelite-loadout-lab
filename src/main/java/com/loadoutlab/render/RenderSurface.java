@@ -175,17 +175,66 @@ public class RenderSurface
 			view.addActionListener(e -> commands.send("set-param",
 				Map.of("param", "viewingBis", "value", view.isSelected())));
 			chipRow.add(view);
-			for (String[] chip : CHIPS)
+			for (String[] entry : CHIPS)
 			{
-				String key = chip[1];
-				javax.swing.JToggleButton button =
-					new javax.swing.JToggleButton(chip[0], Model.flag(params, key));
-				button.setFocusable(false);
-				button.setMargin(new java.awt.Insets(1, 6, 1, 6));
-				button.addActionListener(e -> commands.send("set-param",
-					Map.of("param", key, "value", button.isSelected())));
-				chipRow.add(button);
+				chipRow.add(paramChip(entry[0], entry[1], Model.flag(params, entry[1])));
 			}
+			int dCharge = Model.id(params, "deathCharge");
+			javax.swing.JToggleButton dc = new javax.swing.JToggleButton(
+				dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
+				dCharge > 0);
+			chipRow.add(chip(dc, "Death Charge: off / on / upgraded - cycles",
+				() -> commands.send("set-param",
+					Map.of("param", "deathCharge", "value", (dCharge + 1) % 3))));
+			if (anyInvocationScaled(page))
+			{
+				int invo = Model.id(params, "toaInvocation");
+				int nextInvo = invo >= 540 ? 0 : invo >= 300 ? 540 : invo >= 150 ? 300 : 150;
+				javax.swing.JToggleButton invoChip =
+					new javax.swing.JToggleButton("Invo " + invo, invo > 0);
+				chipRow.add(chip(invoChip, "ToA invocation level - cycles 0/150/300/540",
+					() -> commands.send("set-param",
+						Map.of("param", "toaInvocation", "value", nextInvo))));
+			}
+			String lock = Model.str(params, "spellbookLock");
+			javax.swing.JComboBox<String> book = new javax.swing.JComboBox<>(
+				new String[]{"Auto book", "standard", "ancient", "lunar", "arceuus"});
+			book.setSelectedItem(lock == null || lock.isEmpty() ? "Auto book" : lock);
+			book.setToolTipText("Lock autocast picks to one spellbook");
+			book.setFocusable(false);
+			book.addActionListener(e -> commands.send("set-param",
+				Map.of("param", "spellbookLock", "value",
+					"Auto book".equals(book.getSelectedItem()) ? "" : book.getSelectedItem())));
+			chipRow.add(book);
+			javax.swing.JTextField budget = new javax.swing.JTextField(
+				Gp.format(Model.id(params, "upgradeBudgetGp")), 5);
+			budget.setToolTipText("Upgrade budget (k/m/b, 'max'); empty = owned gear only");
+			budget.addActionListener(e -> commands.send("set-param",
+				Map.of("param", "upgradeBudgetGp", "value", Gp.parse(budget.getText()))));
+			chipRow.add(budget);
+			if (Model.flag(params, "inWilderness"))
+			{
+				javax.swing.JTextField risk = new javax.swing.JTextField(5);
+				risk.setToolTipText("Wilderness risk cap in gp (k/m/b); empty = uncapped."
+					+ " Caps tradeables carried to 3 (4 with Protect Item)");
+				risk.addActionListener(e ->
+				{
+					String text = risk.getText().trim();
+					// Empty = clear: a null value falls back to the engine
+					// default (uncapped); Map.of refuses nulls.
+					Map<String, Object> riskArgs = new java.util.HashMap<>();
+					riskArgs.put("param", "riskBudgetGp");
+					riskArgs.put("value", text.isEmpty() ? null : Gp.parse(text));
+					commands.send("set-param", riskArgs);
+				});
+				chipRow.add(risk);
+				chipRow.add(paramChip("Protect item", "protectItem",
+					Model.flag(params, "protectItem")));
+			}
+			chipRow.add(chip(new javax.swing.JButton("+ Sim"),
+				"Search an item and sim it as owned", () ->
+					picker.search("Sim as owned",
+						(id, name) -> commands.send("toggle-sim", Map.of("itemId", id)))));
 			String report = Model.str(page, "reportText");
 			if (report != null)
 			{

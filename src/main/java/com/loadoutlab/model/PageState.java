@@ -34,6 +34,7 @@ public class PageState
 	private int maxSwaps = 1;
 	private boolean raidBoost;
 	private int toaInvocation = 300;
+	private boolean protectItem;
 	// View state - core-owned like everything else (ADR-0008), but a
 	// change here republishes without recomputing (see CommandEngine).
 	private boolean viewingBis;
@@ -134,6 +135,9 @@ public class PageState
 			case "toaInvocation":
 				toaInvocation = asInt(value, 300);
 				return true;
+			case "protectItem":
+				protectItem = Boolean.TRUE.equals(value);
+				return true;
 			case "viewingBis":
 				viewingBis = Boolean.TRUE.equals(value);
 				return true;
@@ -170,6 +174,7 @@ public class PageState
 		node.put("maxSwaps", maxSwaps);
 		node.put("raidBoost", raidBoost);
 		node.put("toaInvocation", toaInvocation);
+		node.put("protectItem", protectItem);
 		node.put("viewingBis", viewingBis);
 		node.put("thralls", thralls);
 		node.put("selectedTab", selectedTab);
@@ -184,8 +189,12 @@ public class PageState
 	/** The compute arguments in ComputeHook order (see CommandEngine). */
 	public synchronized Object[] computeArgs()
 	{
+		// Kept-slots mirror the classic riskCap() gate: a risk cap only
+		// binds in the wilderness, and Protect Item keeps a 4th slot.
+		int tradeables = inWilderness && riskBudgetGp != OptimizationRequest.DEFAULT_RISK_BUDGET_GP
+			? (protectItem ? 4 : 3) : maxTradeables;
 		return new Object[]{
-			f2pOnly, onTask, inWilderness, spellbookLock, maxTradeables,
+			f2pOnly, onTask, inWilderness, spellbookLock, tradeables,
 			riskBudgetGp, antifirePotion, deathCharge, specWeapon,
 			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
 			upgradeBudgetGp, maxSwaps, raidBoost,
