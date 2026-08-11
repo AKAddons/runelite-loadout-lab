@@ -54,6 +54,9 @@ public class CommandEngine
 		void pin(int monsterId, String slot, int itemId);
 
 		void unpin(int monsterId, String slot);
+
+		/** Highlight these ids in the open bank; null clears. */
+		void showInBank(java.util.Set<Integer> itemIds);
 	}
 
 	private volatile StoreOps stores;
@@ -259,6 +262,32 @@ public class CommandEngine
 					ops.unpin(mob.getId(), (String) slot);
 				}
 				recompute();
+				return true;
+			}
+			case "bank-show":
+			{
+				StoreOps ops = stores;
+				if (ops == null)
+				{
+					return false;
+				}
+				Object ids = args == null ? null : args.get("ids");
+				if (ids instanceof List)
+				{
+					java.util.Set<Integer> itemIds = new java.util.HashSet<>();
+					for (Object id : (List<?>) ids)
+					{
+						if (id instanceof Number)
+						{
+							itemIds.add(((Number) id).intValue());
+						}
+					}
+					ops.showInBank(itemIds);
+				}
+				else
+				{
+					ops.showInBank(null);
+				}
 				return true;
 			}
 			case "recompute":

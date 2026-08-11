@@ -572,6 +572,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 						mobProfiles.unpin(monsterId, com.loadoutlab.ui.LoadoutLabPanel.ALL_SETS,
 							com.loadoutlab.data.GearSlot.valueOf(slot.toUpperCase()));
 					}
+
+					@Override
+					public void showInBank(Set<Integer> itemIds)
+					{
+						setBankHighlight(itemIds);
+					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.

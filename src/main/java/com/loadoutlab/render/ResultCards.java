@@ -270,6 +270,43 @@ public class ResultCards
 				Model.id(def, "magic"), Model.id(def, "ranged")));
 			panel.add(left(statLine));
 		}
+		javax.swing.JToggleButton showBank = new javax.swing.JToggleButton("Show in bank");
+		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
+		showBank.setFocusable(false);
+		showBank.setMargin(new java.awt.Insets(1, 6, 1, 6));
+		showBank.addActionListener(e ->
+		{
+			if (showBank.isSelected())
+			{
+				List<Integer> ids = new java.util.ArrayList<>();
+				Map<String, Object> gearMap = Model.map(card, "gear");
+				if (gearMap != null)
+				{
+					for (Object slotItem : gearMap.values())
+					{
+						if (slotItem instanceof Map)
+						{
+							ids.add((int) Model.num((Map<String, Object>) slotItem, "id"));
+						}
+					}
+				}
+				Map<String, Object> quiverItem = Model.map(card, "quiverAmmo");
+				if (quiverItem != null)
+				{
+					ids.add(Model.id(quiverItem, "id"));
+				}
+				for (Map<String, Object> carried : Model.list(card, "bench"))
+				{
+					ids.add(Model.id(carried, "id"));
+				}
+				commands.send("bank-show", Map.of("ids", ids));
+			}
+			else
+			{
+				commands.send("bank-show", Map.of());
+			}
+		});
+		panel.add(left(showBank));
 		Object counted = card.get("counted");
 		if (counted instanceof List && !((List<?>) counted).isEmpty())
 		{
