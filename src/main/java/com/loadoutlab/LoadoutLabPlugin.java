@@ -520,6 +520,35 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
+				// Detect (classic resolveDefaultAntifire): only for a
+				// fire-breathing selection, best owned tier wins.
+				commandEngine.setAntifireResolver(mobs ->
+				{
+					boolean fire = false;
+					for (com.loadoutlab.data.MonsterStats m : mobs)
+					{
+						fire |= com.loadoutlab.engine.DragonfireRules.breathesFire(m);
+					}
+					if (!fire)
+					{
+						return 0;
+					}
+					for (int id : com.loadoutlab.ui.LoadoutLabPanel.SUPER_ANTIFIRE_IDS)
+					{
+						if (ownsCanonical(id))
+						{
+							return 2;
+						}
+					}
+					for (int id : com.loadoutlab.ui.LoadoutLabPanel.REGULAR_ANTIFIRE_IDS)
+					{
+						if (ownsCanonical(id))
+						{
+							return 1;
+						}
+					}
+					return 0;
+				});
 				// Path C (ADR-0008): the model-driven renderer lives IN
 				// CORE as the default; an external Companion's
 				// surface-register still overrides it.

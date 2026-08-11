@@ -70,7 +70,9 @@ final class ReportBuilder
 		sb.append("  On task: ").append(yesNo(params.get("onTask")));
 		sb.append("; Wilderness: ").append(yesNo(params.get("inWilderness")));
 		sb.append("; Spec weapon: ").append(yesNo(params.get("specWeapon")));
-		sb.append("; Antifire: ").append(yesNo(params.get("antifirePotion")));
+		Object af = params.get("antifireMode");
+		int afMode = af instanceof Number ? ((Number) af).intValue() : 0;
+		sb.append("; Antifire: ").append(afMode == 2 ? "super" : afMode == 1 ? "regular" : "no");
 		sb.append("; Raid boost: ").append(yesNo(params.get("raidBoost"))).append('\n');
 		sb.append("  Death charge: ").append(params.get("deathCharge"));
 		sb.append("; Invocation: ").append(params.get("toaInvocation"));

@@ -97,6 +97,15 @@ public class CommandEngine
 			int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone);
 	}
 
+	/** Classic Detect: the best owned antifire tier (0/1/2) for a
+	 * fire-breathing selection - supplied by the plugin (owned scan). */
+	private volatile java.util.function.Function<List<MonsterStats>, Integer> antifireResolver;
+
+	public void setAntifireResolver(java.util.function.Function<List<MonsterStats>, Integer> antifireResolver)
+	{
+		this.antifireResolver = antifireResolver;
+	}
+
 	private volatile RosterCompute rosterCompute;
 	private volatile List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
 
@@ -177,6 +186,13 @@ public class CommandEngine
 						else
 						{
 							state.select(mobPick);
+						}
+						java.util.function.Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+						if (resolve != null)
+						{
+							List<MonsterStats> selected = groupPick != null
+								? groupPick.getMobs() : List.of(mobPick);
+							state.setParam("antifireMode", resolve.apply(selected));
 						}
 						recompute();
 						return true;
@@ -488,6 +504,12 @@ public class CommandEngine
 		}
 		link.publishStatus(true);
 		Object[] a = state.computeArgs();
+		boolean anyFire = false;
+		for (MonsterStats m : roster != null ? roster : List.of(mob))
+		{
+			anyFire |= com.loadoutlab.engine.DragonfireRules.breathesFire(m);
+		}
+		a[6] = ((Boolean) a[6]) && anyFire;
 		if (mob != null)
 		{
 			mob = atInvocation(mob);

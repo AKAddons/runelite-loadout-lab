@@ -27,7 +27,9 @@ public class PageState
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-	private boolean antifirePotion;
+	/** 0 = shield required, 1 = regular antifire, 2 = super antifire -
+	 * the classic tri-state; Detect resolves it at selection time. */
+	private int antifireMode;
 	private int deathCharge;
 	private boolean specWeapon;
 	private int upgradeBudgetGp;
@@ -115,8 +117,8 @@ public class PageState
 			case "riskBudgetGp":
 				riskBudgetGp = asInt(value, OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 				return true;
-			case "antifirePotion":
-				antifirePotion = Boolean.TRUE.equals(value);
+			case "antifireMode":
+				antifireMode = Math.max(0, Math.min(2, asInt(value, 0)));
 				return true;
 			case "deathCharge":
 				deathCharge = asInt(value, 0);
@@ -171,7 +173,7 @@ public class PageState
 		node.put("f2pOnly", f2pOnly);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
-		node.put("antifirePotion", antifirePotion);
+		node.put("antifireMode", antifireMode);
 		node.put("deathCharge", deathCharge);
 		node.put("specWeapon", specWeapon);
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
@@ -227,7 +229,7 @@ public class PageState
 			? (protectItem ? 4 : 3) : maxTradeables;
 		return new Object[]{
 			f2pOnly, onTask, inWilderness, spellbookLock, tradeables,
-			riskBudgetGp, antifirePotion, deathCharge, specWeapon,
+			riskBudgetGp, antifireMode == 2, deathCharge, specWeapon,
 			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
 			upgradeBudgetGp, maxSwaps, raidBoost,
 		};

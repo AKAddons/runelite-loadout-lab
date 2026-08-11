@@ -5139,9 +5139,9 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Antifire potion doses, best first (gameval-verified 2026-07-18:
 	 * super 21978.., extended super 22209.., regular 2452.., extended
 	 * 11951..; classic 2-step dose spacing). */
-	private static final int[] SUPER_ANTIFIRE_IDS = {
+	public static final int[] SUPER_ANTIFIRE_IDS = {
 		21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
-	private static final int[] REGULAR_ANTIFIRE_IDS = {
+	public static final int[] REGULAR_ANTIFIRE_IDS = {
 		2452, 2454, 2456, 2458, 11951, 11953, 11955, 11957};
 
 	/** The default antifire mode for a fresh result (field spec

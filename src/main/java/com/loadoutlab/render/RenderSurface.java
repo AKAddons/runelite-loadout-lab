@@ -68,7 +68,6 @@ public class RenderSurface
 		{"On task", "onTask"},
 		{"Wildy", "inWilderness"},
 		{"Spec", "specWeapon"},
-		{"Antifire", "antifirePotion"},
 		{"Raid boost", "raidBoost"},
 		{"Thralls", "thralls"},
 	};
@@ -93,6 +92,21 @@ public class RenderSurface
 		javax.swing.JToggleButton button = new javax.swing.JToggleButton(label, selected);
 		return chip(button, null, () -> commands.send("set-param",
 			Map.of("param", key, "value", button.isSelected())));
+	}
+
+	private static boolean anyBreathesFire(Map<String, Object> page)
+	{
+		for (Map<String, Object> entry : Model.list(page, "entries"))
+		{
+			for (Map<String, Object> mob : Model.list(entry, "mobs"))
+			{
+				if (Model.flag(mob, "breathesFire"))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private static boolean anyInvocationScaled(Map<String, Object> page)
@@ -197,6 +211,16 @@ public class RenderSurface
 			for (String[] entry : CHIPS)
 			{
 				chipRow.add(paramChip(entry[0], entry[1], Model.flag(params, entry[1])));
+			}
+			if (anyBreathesFire(page))
+			{
+				int af = Model.id(params, "antifireMode");
+				javax.swing.JToggleButton afChip = new javax.swing.JToggleButton(
+					af == 0 ? "No antifire" : af == 1 ? "Antifire" : "Super antifire", af > 0);
+				chipRow.add(chip(afChip,
+					"Cycles: dragonfire shield required / regular / super antifire",
+					() -> commands.send("set-param",
+						Map.of("param", "antifireMode", "value", (af + 1) % 3))));
 			}
 			int dCharge = Model.id(params, "deathCharge");
 			javax.swing.JToggleButton dc = new javax.swing.JToggleButton(
