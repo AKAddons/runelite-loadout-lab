@@ -24,6 +24,22 @@ public class RenderSurface
 	private final ItemPicker picker;
 	private JPanel root;
 	private JPanel cardArea;
+	private javax.swing.JLabel computing;
+	private volatile boolean isComputing;
+
+	/** Compute-in-flight: dims the cards and shows the waiting line
+	 * (the mascot animation's future mount point). */
+	public void setComputing(boolean computing)
+	{
+		isComputing = computing;
+		javax.swing.SwingUtilities.invokeLater(() ->
+		{
+			if (this.computing != null)
+			{
+				this.computing.setVisible(isComputing);
+			}
+		});
+	}
 
 	public RenderSurface(ResultCards cards, java.util.function.Supplier<Map<String, Object>> page,
 		CommandSink commands, ItemPicker picker)
@@ -116,6 +132,9 @@ public class RenderSurface
 			chipRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
 			chipRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			top.add(chipRow, BorderLayout.CENTER);
+			computing = new javax.swing.JLabel("Computing...");
+			computing.setVisible(false);
+			top.add(computing, BorderLayout.SOUTH);
 			root.add(top, BorderLayout.NORTH);
 			cardArea = new JPanel();
 			cardArea.setLayout(new BoxLayout(cardArea, BoxLayout.Y_AXIS));

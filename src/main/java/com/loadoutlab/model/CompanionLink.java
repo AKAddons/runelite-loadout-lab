@@ -22,6 +22,7 @@ public class CompanionLink
 	public static final String SURFACE_CLEAR = "surface-clear";
 	static final String CORE_HELLO = "core-hello";
 	static final String MODEL = "model";
+	static final String STATUS = "status";
 
 	private final EventBus eventBus;
 	private final String coreVersion;
@@ -29,10 +30,32 @@ public class CompanionLink
 	/** In-plugin page listener (the internal renderer) - notified on
 	 * every publish alongside the PluginMessage broadcast. */
 	private volatile Runnable pageListener;
+	private volatile java.util.function.Consumer<Boolean> statusListener;
 
 	public void setPageListener(Runnable pageListener)
 	{
 		this.pageListener = pageListener;
+	}
+
+	public void setStatusListener(java.util.function.Consumer<Boolean> statusListener)
+	{
+		this.statusListener = statusListener;
+	}
+
+	/** Compute-in-flight signal: the contract's status message plus the
+	 * in-plugin listener (drives the renderer's waiting state). */
+	public void publishStatus(boolean computing)
+	{
+		if (eventBus != null)
+		{
+			eventBus.post(new PluginMessage(NAMESPACE, STATUS,
+				Map.of("v", RenderModel.VERSION, "computing", computing)));
+		}
+		java.util.function.Consumer<Boolean> listener = statusListener;
+		if (listener != null)
+		{
+			listener.accept(computing);
+		}
 	}
 
 	public CompanionLink(EventBus eventBus, String coreVersion)

@@ -486,6 +486,7 @@ public class CommandEngine
 		{
 			return;
 		}
+		link.publishStatus(true);
 		Object[] a = state.computeArgs();
 		if (mob != null)
 		{
@@ -568,6 +569,7 @@ public class CommandEngine
 	{
 		lastMobs = mobs;
 		lastPerMob = perMob;
+		link.publishStatus(false);
 		republish();
 	}
 

@@ -545,6 +545,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					}
 					refreshHostedView();
 				});
+				companionLink.setStatusListener(computing ->
+				{
+					com.loadoutlab.render.RenderSurface surface = internalSurface;
+					if (surface != null)
+					{
+						surface.setComputing(computing);
+					}
+				});
 				commandEngine.setStoreOps(new com.loadoutlab.model.CommandEngine.StoreOps()
 				{
 					@Override
