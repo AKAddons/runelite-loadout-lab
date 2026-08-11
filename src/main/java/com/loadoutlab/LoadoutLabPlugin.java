@@ -620,6 +620,19 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					{
 						mobProfiles.setNote(monsterId, note);
 					}
+
+					@Override
+					public void excludeForMob(int monsterId, String scope, int itemId)
+					{
+						exec(Commands.excludeForMob(mobProfiles, monsterId, scope, itemId,
+							itemLabel(itemId)));
+					}
+
+					@Override
+					public void simForMob(int monsterId, int itemId)
+					{
+						exec(Commands.simForMob(mobProfiles, monsterId, itemId, itemLabel(itemId)));
+					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.

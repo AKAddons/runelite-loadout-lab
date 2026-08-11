@@ -529,6 +529,16 @@ public class ResultCards
 		}
 		else if (!"quiver".equals(slot))
 		{
+			javax.swing.JMenuItem excludeMob = new javax.swing.JMenuItem("Exclude for this mob");
+			excludeMob.setToolTipText("Exclude " + name + " for this mob only (all sets)");
+			excludeMob.addActionListener(e -> commands.send("exclude-for-mob",
+				Map.of("itemId", id, "scope", "ALL")));
+			menu.add(excludeMob);
+			javax.swing.JMenuItem simMob = new javax.swing.JMenuItem("Sim for this mob (search)...");
+			simMob.setToolTipText("Search an item and sim it as owned for this mob only");
+			simMob.addActionListener(e -> picker.search("Sim for this mob",
+				(pickedId, pickedName) -> commands.send("sim-for-mob", Map.of("itemId", pickedId))));
+			menu.add(simMob);
 			javax.swing.JMenuItem pin = new javax.swing.JMenuItem("Pin " + name);
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
 			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));

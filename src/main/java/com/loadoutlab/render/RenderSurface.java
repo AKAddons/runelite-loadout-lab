@@ -206,6 +206,16 @@ public class RenderSurface
 				Map.of("param", "spellbookLock", "value",
 					"Auto book".equals(book.getSelectedItem()) ? "" : book.getSelectedItem())));
 			chipRow.add(book);
+			int swaps = Model.id(params, "maxSwaps");
+			javax.swing.JComboBox<String> inventory = new javax.swing.JComboBox<>(
+				new String[]{"Inv 0", "Inv 1", "Inv 3", "Inv 8"});
+			inventory.setSelectedItem("Inv " + swaps);
+			inventory.setToolTipText("Carried gear swaps the trip plan may use (bench size)");
+			inventory.setFocusable(false);
+			inventory.addActionListener(e -> commands.send("set-param",
+				Map.of("param", "maxSwaps", "value", Integer.parseInt(
+					String.valueOf(inventory.getSelectedItem()).substring(4)))));
+			chipRow.add(inventory);
 			javax.swing.JTextField budget = new javax.swing.JTextField(
 				Gp.format(Model.id(params, "upgradeBudgetGp")), 5);
 			budget.setToolTipText("Upgrade budget (k/m/b, 'max'); empty = owned gear only");

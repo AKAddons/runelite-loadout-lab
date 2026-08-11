@@ -73,6 +73,11 @@ public class CommandEngine
 		String note(int monsterId);
 
 		void setNote(int monsterId, String note);
+
+		/** Mob-scoped exclusion/sim (undoable Commands-factory backed). */
+		void excludeForMob(int monsterId, String scope, int itemId);
+
+		void simForMob(int monsterId, int itemId);
 	}
 
 	private volatile StoreOps stores;
@@ -298,8 +303,64 @@ public class CommandEngine
 					return false;
 				}
 				Object value = args.get("value");
-				state.setPick("set-prayer-pick".equals(name), combatStyle,
-					value instanceof String ? (String) value : null);
+				boolean prayer = "set-prayer-pick".equals(name);
+				String next = value instanceof String ? (String) value : null;
+				Map<String, Object> picks = (Map<String, Object>) state.paramsNode()
+					.get(prayer ? "prayerPicks" : "boostPicks");
+				Object prevRaw = picks == null ? null : picks.get(combatStyle.name().toLowerCase());
+				String prev = prevRaw instanceof String ? (String) prevRaw : null;
+				if (java.util.Objects.equals(prev, next))
+				{
+					return true;
+				}
+				String kind = prayer ? "Prayer" : "Boost";
+				return history.execute(new com.loadoutlab.command.Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						state.setPick(prayer, combatStyle, next);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						state.setPick(prayer, combatStyle, prev);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return kind + " " + (next == null ? "detect" : next.toLowerCase())
+							+ " - " + combatStyle.name().toLowerCase();
+					}
+				});
+			}
+			case "exclude-for-mob":
+			case "sim-for-mob":
+			{
+				StoreOps ops = stores;
+				MonsterStats mob = state.mob();
+				Object itemId = args == null ? null : args.get("itemId");
+				if (ops == null || mob == null || !(itemId instanceof Number))
+				{
+					return false;
+				}
+				int id = ((Number) itemId).intValue();
+				if ("exclude-for-mob".equals(name))
+				{
+					Object scope = args.get("scope");
+					ops.excludeForMob(mob.getId(),
+						scope instanceof String ? (String) scope : "ALL", id);
+				}
+				else
+				{
+					ops.simForMob(mob.getId(), id);
+				}
 				recompute();
 				return true;
 			}
