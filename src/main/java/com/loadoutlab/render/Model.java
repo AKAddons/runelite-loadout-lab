@@ -31,6 +31,13 @@ final class Model
 		return v instanceof List ? (List<Map<String, Object>>) v : Collections.emptyList();
 	}
 
+	/** A list of plain (non-map) values under the key. */
+	static List<Object> list2(Map<String, Object> node, String key)
+	{
+		Object v = node == null ? null : node.get(key);
+		return v instanceof List ? (List<Object>) v : Collections.emptyList();
+	}
+
 	static String str(Map<String, Object> node, String key)
 	{
 		Object v = node == null ? null : node.get(key);

@@ -183,12 +183,39 @@ public class PageState
 		node.put("thralls", thralls);
 		node.put("lensIndex", lensIndex);
 		node.put("selectedTab", selectedTab);
+		Map<String, Object> prayers = new LinkedHashMap<>();
+		for (Map.Entry<CombatStyle, String> pick : prayerPicks.entrySet())
+		{
+			prayers.put(pick.getKey().name().toLowerCase(), pick.getValue());
+		}
+		node.put("prayerPicks", prayers);
+		Map<String, Object> boosts = new LinkedHashMap<>();
+		for (Map.Entry<CombatStyle, String> pick : boostPicks.entrySet())
+		{
+			boosts.put(pick.getKey().name().toLowerCase(), pick.getValue());
+		}
+		node.put("boostPicks", boosts);
 		return node;
 	}
 
 	public synchronized int toaInvocation()
 	{
 		return toaInvocation;
+	}
+
+	/** Prayer/boost pick per style: null value = Detect (remove),
+	 * "NONE" = explicitly none, else the option key. */
+	public synchronized void setPick(boolean prayer, CombatStyle style, String value)
+	{
+		Map<CombatStyle, String> picks = prayer ? prayerPicks : boostPicks;
+		if (value == null)
+		{
+			picks.remove(style);
+		}
+		else
+		{
+			picks.put(style, value);
+		}
 	}
 
 	/** The compute arguments in ComputeHook order (see CommandEngine). */

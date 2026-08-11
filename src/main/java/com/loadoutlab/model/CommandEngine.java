@@ -280,6 +280,29 @@ public class CommandEngine
 				recompute();
 				return true;
 			}
+			case "set-prayer-pick":
+			case "set-boost-pick":
+			{
+				Object style = args == null ? null : args.get("style");
+				if (!(style instanceof String))
+				{
+					return false;
+				}
+				CombatStyle combatStyle;
+				try
+				{
+					combatStyle = CombatStyle.valueOf(((String) style).toUpperCase());
+				}
+				catch (IllegalArgumentException ex)
+				{
+					return false;
+				}
+				Object value = args.get("value");
+				state.setPick("set-prayer-pick".equals(name), combatStyle,
+					value instanceof String ? (String) value : null);
+				recompute();
+				return true;
+			}
 			case "set-pinned-spell":
 			case "set-pinned-spec":
 			case "set-note":
@@ -545,6 +568,7 @@ public class CommandEngine
 			spellNames.add(spell.getName());
 		}
 		page.put("spells", spellNames);
+		page.put("assumeOptions", assumeOptions());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode));
@@ -591,6 +615,51 @@ public class CommandEngine
 				}
 			}
 		}
+	}
+
+	private volatile Map<String, Object> assumeOptionsCache;
+
+	/** Static per-style prayer/boost option lists (key + label),
+	 * mirroring the classic pick menus. */
+	private Map<String, Object> assumeOptions()
+	{
+		Map<String, Object> cached = assumeOptionsCache;
+		if (cached != null)
+		{
+			return cached;
+		}
+		Map<String, Object> prayers = new java.util.LinkedHashMap<>();
+		Map<String, Object> boosts = new java.util.LinkedHashMap<>();
+		for (CombatStyle style : CombatStyle.concreteValues())
+		{
+			prayers.put(style.name().toLowerCase(), java.util.Arrays.asList(
+				com.loadoutlab.engine.PrayerBonuses.optionsFor(style)));
+			List<Map<String, Object>> styleBoosts = new java.util.ArrayList<>();
+			for (com.loadoutlab.engine.BoostProfile b : com.loadoutlab.engine.BoostProfile.values())
+			{
+				if (b == com.loadoutlab.engine.BoostProfile.NONE
+					|| b == com.loadoutlab.engine.BoostProfile.LIVE_CURRENT)
+				{
+					continue;
+				}
+				boolean universal = b.boosts('a') && b.boosts('r') && b.boosts('m');
+				boolean forStyle = style == CombatStyle.MELEE ? b.boosts('a')
+					: style == CombatStyle.RANGED ? b.boosts('r') : b.boosts('m');
+				if (universal || forStyle)
+				{
+					Map<String, Object> option = new java.util.LinkedHashMap<>();
+					option.put("key", b.name());
+					option.put("label", b.toString());
+					styleBoosts.add(option);
+				}
+			}
+			boosts.put(style.name().toLowerCase(), styleBoosts);
+		}
+		Map<String, Object> options = new java.util.LinkedHashMap<>();
+		options.put("prayers", prayers);
+		options.put("boosts", boosts);
+		assumeOptionsCache = options;
+		return options;
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page)

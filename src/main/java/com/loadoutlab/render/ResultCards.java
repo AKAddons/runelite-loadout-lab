@@ -31,6 +31,8 @@ public class ResultCards
 	private final CommandSink commands;
 	private final ItemPicker picker;
 	private List<String> spellOptions = List.of();
+	private Map<String, Object> assumeOptions;
+	private Map<String, Object> pageParams;
 
 	public ResultCards(ItemManager itemManager, CommandSink commands, ItemPicker picker)
 	{
@@ -88,6 +90,8 @@ public class ResultCards
 	{
 		Object spells = page == null ? null : page.get("spells");
 		spellOptions = spells instanceof List ? (List<String>) spells : List.of();
+		assumeOptions = Model.map(page, "assumeOptions");
+		pageParams = firstParams(page);
 		String tab = effectiveTab(page);
 		Map<String, Object> params = firstParams(page);
 		boolean bis = params != null && Model.flag(params, "viewingBis");
@@ -335,6 +339,83 @@ public class ResultCards
 			specMenu.add(pinSpec);
 			specCell.setComponentPopupMenu(specMenu);
 			panel.add(left(specCell));
+		}
+		if (!bis && assumeOptions != null)
+		{
+			Map<String, Object> prayerPicks = Model.map(pageParams, "prayerPicks");
+			Map<String, Object> boostPicks = Model.map(pageParams, "boostPicks");
+			Map<String, Object> prayerLists = Model.map(assumeOptions, "prayers");
+			JPanel pickRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
+			pickRow.setBackground(CARD);
+			javax.swing.JComboBox<String> prayer = new javax.swing.JComboBox<>();
+			prayer.addItem("Detect best");
+			prayer.addItem("None (prayerless)");
+			if (prayerLists != null)
+			{
+				for (Object option : Model.list2(prayerLists, tab))
+				{
+					prayer.addItem(String.valueOf(option));
+				}
+			}
+			String prayerPick = prayerPicks == null ? null : Model.str(prayerPicks, tab);
+			prayer.setSelectedItem(prayerPick == null ? "Detect best"
+				: "NONE".equals(prayerPick) ? "None (prayerless)" : prayerPick);
+			prayer.setToolTipText("The prayer the numbers assume for this style");
+			prayer.setFocusable(false);
+			prayer.addActionListener(e ->
+			{
+				String picked = String.valueOf(prayer.getSelectedItem());
+				Map<String, Object> args = new java.util.HashMap<>();
+				args.put("style", tab);
+				args.put("value", "Detect best".equals(picked) ? null
+					: "None (prayerless)".equals(picked) ? "NONE" : picked);
+				commands.send("set-prayer-pick", args);
+			});
+			pickRow.add(prayer);
+			javax.swing.JComboBox<String> boost = new javax.swing.JComboBox<>();
+			boost.addItem("Detect best in bank");
+			boost.addItem("None (unboosted)");
+			java.util.Map<String, String> boostKeyByLabel = new java.util.LinkedHashMap<>();
+			Map<String, Object> boostLists = Model.map(assumeOptions, "boosts");
+			if (boostLists != null)
+			{
+				for (Map<String, Object> option : Model.list(boostLists, tab))
+				{
+					String label = Model.str(option, "label");
+					boostKeyByLabel.put(label, Model.str(option, "key"));
+					boost.addItem(label);
+				}
+			}
+			String boostPick = boostPicks == null ? null : Model.str(boostPicks, tab);
+			String boostLabel = "Detect best in bank";
+			if ("NONE".equals(boostPick))
+			{
+				boostLabel = "None (unboosted)";
+			}
+			else if (boostPick != null)
+			{
+				for (Map.Entry<String, String> entry : boostKeyByLabel.entrySet())
+				{
+					if (entry.getValue().equals(boostPick))
+					{
+						boostLabel = entry.getKey();
+					}
+				}
+			}
+			boost.setSelectedItem(boostLabel);
+			boost.setToolTipText("The boost potion the numbers assume for this style");
+			boost.setFocusable(false);
+			boost.addActionListener(e ->
+			{
+				String picked = String.valueOf(boost.getSelectedItem());
+				Map<String, Object> args = new java.util.HashMap<>();
+				args.put("style", tab);
+				args.put("value", "Detect best in bank".equals(picked) ? null
+					: "None (unboosted)".equals(picked) ? "NONE" : boostKeyByLabel.get(picked));
+				commands.send("set-boost-pick", args);
+			});
+			pickRow.add(boost);
+			panel.add(left(pickRow));
 		}
 		if ("magic".equals(tab) && !bis)
 		{
