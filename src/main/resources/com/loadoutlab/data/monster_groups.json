@@ -744,6 +744,16 @@
     "name": "Eldric the Ice King"
    },
    {
+    "name": "Branda the Fire Queen",
+    "immuneTo": "melee",
+    "label": "Out of reach"
+   },
+   {
+    "name": "Eldric the Ice King",
+    "immuneTo": "melee",
+    "label": "Out of reach"
+   },
+   {
     "name": "Fire elemental (Royal Titans)"
    },
    {

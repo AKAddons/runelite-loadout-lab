@@ -874,6 +874,17 @@ public final class DpsCalculator
 
 	private long applyRangedAccuracyBonuses(OptimizationRequest request, Loadout loadout, long roll)
 	{
+		// Royal Titans out of melee distance (wiki, ref'd to Mod Husky):
+		// hidden +500% ranged accuracy - a 6x multiplier against their
+		// +700 ranged defence, lasting until they re-enter melee range.
+		// The far phase is exactly when ranged is meant to be used, and
+		// without this the "(Out of reach)" forms would price ranged as
+		// hopeless and recommend nothing sensible.
+		if (isFarTitan(request))
+		{
+			counted("titans out of reach", "6x ranged accuracy");
+			roll = multiply(roll, 6, 1);
+		}
 		// Crystal armour scales the base roll BEFORE salve/slayer - the wiki
 		// calc devs verified the flooring order in-game (bofa + slayer helm
 		// + crystal body/legs maxes 36, not the 37 the reverse order gives).
@@ -1297,6 +1308,20 @@ public final class DpsCalculator
 	private static boolean isSoulreaper(Loadout loadout)
 	{
 		return wearing(loadout, "soulreaper axe");
+	}
+
+	/** A Royal Titan in its out-of-reach phase (the synthetic melee-immune
+	 * group variant carries the attribute; the base near-phase rows never
+	 * do). */
+	private static boolean isFarTitan(OptimizationRequest request)
+	{
+		com.loadoutlab.data.MonsterStats monster = request.getMonster();
+		if (monster == null || !monster.hasAttribute("immune_melee"))
+		{
+			return false;
+		}
+		String name = monster.getName().toLowerCase();
+		return name.contains("branda") || name.contains("eldric");
 	}
 
 	private static boolean isDualMacuahuitl(Loadout loadout)
