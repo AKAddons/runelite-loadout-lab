@@ -50,6 +50,8 @@ public class CommandEngine
 
 		boolean toggleSim(int itemId);
 
+		boolean toggleStored(int itemId);
+
 		/** ALL-sets-scope pin/unpin on the given mob's profile. */
 		void pin(int monsterId, String slot, int itemId);
 
@@ -359,6 +361,7 @@ public class CommandEngine
 			}
 			case "toggle-exclusion":
 			case "toggle-sim":
+			case "toggle-stored":
 			{
 				StoreOps ops = stores;
 				Object itemId = args == null ? null : args.get("itemId");
@@ -367,7 +370,9 @@ public class CommandEngine
 					return false;
 				}
 				int id = ((Number) itemId).intValue();
-				if ("toggle-exclusion".equals(name) ? !ops.toggleExclusion(id) : !ops.toggleSim(id))
+				boolean applied = "toggle-exclusion".equals(name) ? ops.toggleExclusion(id)
+					: "toggle-sim".equals(name) ? ops.toggleSim(id) : ops.toggleStored(id);
+				if (!applied)
 				{
 					return false;
 				}

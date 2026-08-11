@@ -517,15 +517,31 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				commandEngine.setCounts(() ->
 				{
 					List<String> simmedNames = new ArrayList<>();
+					List<Map<String, Object>> excludedItems = new ArrayList<>();
+					List<Map<String, Object>> simmedItems = new ArrayList<>();
+					List<Map<String, Object>> storedItems = new ArrayList<>();
+					for (int id : exclusions.snapshot())
+					{
+						excludedItems.add(Map.of("id", id, "name", itemLabel(id)));
+					}
 					for (int id : dreams.snapshot())
 					{
 						simmedNames.add(itemLabel(id));
+						simmedItems.add(Map.of("id", id, "name", itemLabel(id)));
 					}
-					return Map.of(
-						"excluded", exclusions.snapshot().size(),
-						"simmed", dreams.snapshot().size(),
-						"stored", manualOwned.snapshot().size(),
-						"simmedNames", simmedNames);
+					for (int id : manualOwned.snapshot())
+					{
+						storedItems.add(Map.of("id", id, "name", itemLabel(id)));
+					}
+					Map<String, Object> counts = new java.util.LinkedHashMap<>();
+					counts.put("excluded", excludedItems.size());
+					counts.put("simmed", simmedItems.size());
+					counts.put("stored", storedItems.size());
+					counts.put("simmedNames", simmedNames);
+					counts.put("excludedItems", excludedItems);
+					counts.put("simmedItems", simmedItems);
+					counts.put("storedItems", storedItems);
+					return counts;
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
@@ -603,6 +619,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					public boolean toggleSim(int itemId)
 					{
 						return exec(Commands.toggleDream(dreams, itemId, itemLabel(itemId)));
+					}
+
+					@Override
+					public boolean toggleStored(int itemId)
+					{
+						return exec(Commands.toggleStored(manualOwned, itemId, itemLabel(itemId)));
 					}
 
 					@Override

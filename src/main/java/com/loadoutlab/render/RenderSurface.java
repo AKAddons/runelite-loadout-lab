@@ -124,6 +124,32 @@ public class RenderSurface
 		return false;
 	}
 
+	/** One store's count chip: click lists the entries, each removable. */
+	private void storeChip(Map<String, Object> counts, String listKey, String sigil,
+		String noun, String command, String verb)
+	{
+		java.util.List<Map<String, Object>> items = Model.list(counts, listKey);
+		if (items.isEmpty())
+		{
+			return;
+		}
+		javax.swing.JButton button = new javax.swing.JButton(sigil + items.size());
+		chip(button, items.size() + " " + noun + " - click to manage", () ->
+		{
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			for (Map<String, Object> item : items)
+			{
+				int id = Model.id(item, "id");
+				javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
+					verb + " " + Model.str(item, "name"));
+				entry.addActionListener(e -> commands.send(command, Map.of("itemId", id)));
+				menu.add(entry);
+			}
+			menu.show(button, 0, button.getHeight());
+		});
+		chipRow.add(button);
+	}
+
 	private synchronized JComponent root()
 	{
 		if (root == null)
@@ -323,18 +349,16 @@ public class RenderSurface
 			Map<String, Object> counts = Model.map(page, "counts");
 			if (counts != null)
 			{
-				int excluded = Model.id(counts, "excluded");
-				int simmed = Model.id(counts, "simmed");
-				int stored = Model.id(counts, "stored");
-				if (excluded + simmed + stored > 0)
-				{
-					javax.swing.JLabel label = new javax.swing.JLabel(String.format(
-						"-%d  +%d  ~%d", excluded, simmed, stored));
-					label.setToolTipText(excluded + " excluded, " + simmed
-						+ " simmed as owned, " + stored + " stored elsewhere"
-						+ " - manage in the classic panel for now");
-					chipRow.add(label);
-				}
+				storeChip(counts, "excludedItems", "-", "excluded",
+					"toggle-exclusion", "Re-include");
+				storeChip(counts, "simmedItems", "+", "simmed as owned",
+					"toggle-sim", "Stop simming");
+				storeChip(counts, "storedItems", "~", "stored elsewhere",
+					"toggle-stored", "Remove");
+				chipRow.add(chip(new javax.swing.JButton("+ Stored"),
+					"Search an item you own outside the tracked storages", () ->
+						picker.search("Stored elsewhere",
+							(id, name) -> commands.send("toggle-stored", Map.of("itemId", id)))));
 			}
 		}
 		cardArea.removeAll();
