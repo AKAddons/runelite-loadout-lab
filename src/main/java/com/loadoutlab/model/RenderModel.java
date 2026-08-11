@@ -47,12 +47,19 @@ public final class RenderModel
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
+		return entry(mobs, perMob, -1);
+	}
+
+	/** riskKeptSlots >= 0 adds a wilderness risk node per card. */
+	public static Map<String, Object> entry(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots)
+	{
 		Map<String, Object> entry = new LinkedHashMap<>();
 		List<Object> mobNodes = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++)
 		{
 			Map<String, Object> node = mob(mobs.get(i));
-			node.put("styles", styles(perMob.get(i)));
+			node.put("styles", styles(perMob.get(i), riskKeptSlots));
 			mobNodes.add(node);
 		}
 		entry.put("mobs", mobNodes);
@@ -73,7 +80,8 @@ public final class RenderModel
 		return node;
 	}
 
-	private static Map<String, Object> styles(Map<CombatStyle, OptimizerService.StyleResult> results)
+	private static Map<String, Object> styles(Map<CombatStyle, OptimizerService.StyleResult> results,
+		int riskKeptSlots)
 	{
 		Map<String, Object> styles = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
@@ -84,8 +92,8 @@ public final class RenderModel
 				continue;
 			}
 			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("yours", card(result, false));
-			node.put("bis", card(result, true));
+			node.put("yours", card(result, false, riskKeptSlots));
+			node.put("bis", card(result, true, riskKeptSlots));
 			node.put("boostLabel", result.boostLabel);
 			node.put("bisBoostLabel", result.gameBoostLabel);
 			styles.put(style.name().toLowerCase(), node);
@@ -93,8 +101,13 @@ public final class RenderModel
 		return styles;
 	}
 
-	/** One side's card: the shown set and everything rendered around it. */
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis)
+	{
+		return card(result, bis, -1);
+	}
+
+	/** One side's card: the shown set and everything rendered around it. */
+	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots)
 	{
 		DpsResult shown = bis ? result.overallBest
 			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
@@ -135,6 +148,26 @@ public final class RenderModel
 		stats.put("magicDamage", bonuses.getMagicDamage());
 		stats.put("prayer", bonuses.getPrayer());
 		card.put("stats", stats);
+		if (riskKeptSlots >= 0)
+		{
+			com.loadoutlab.engine.PvpRisk.Assessment risk = com.loadoutlab.engine.PvpRisk.assess(
+				shown.getLoadout(), bis ? result.gameSpecWeapon : result.specWeapon, riskKeptSlots);
+			Map<String, Object> riskNode = new LinkedHashMap<>();
+			riskNode.put("riskGp", risk.riskGp);
+			List<Object> kept = new ArrayList<>();
+			for (GearItem item : risk.kept)
+			{
+				kept.add(item.label());
+			}
+			riskNode.put("kept", kept);
+			List<Object> lost = new ArrayList<>();
+			for (GearItem item : risk.lost)
+			{
+				lost.add(item.label());
+			}
+			riskNode.put("lost", lost);
+			card.put("risk", riskNode);
+		}
 		return card;
 	}
 

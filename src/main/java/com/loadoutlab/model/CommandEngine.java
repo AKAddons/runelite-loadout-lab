@@ -729,8 +729,12 @@ public class CommandEngine
 		{
 			return;
 		}
-		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
-		entry.put("params", state.paramsNode());
+		Map<String, Object> params = state.paramsNode();
+		boolean wildy = Boolean.TRUE.equals(params.get("inWilderness"));
+		int keptSlots = wildy
+			? (Boolean.TRUE.equals(params.get("protectItem")) ? 4 : 3) : -1;
+		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots);
+		entry.put("params", params);
 		decorateProfiles(entry);
 		Map<String, Object> thrallsNode = null;
 		if (Boolean.TRUE.equals(state.paramsNode().get("thralls")))

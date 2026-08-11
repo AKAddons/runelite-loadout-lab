@@ -468,6 +468,32 @@ public class ResultCards
 			});
 			panel.add(left(filterBank));
 		}
+		Map<String, Object> riskNode = Model.map(card, "risk");
+		if (riskNode != null)
+		{
+			JLabel riskLine = new JLabel(String.format("Risk: %s gp",
+				Gp.format((int) Math.min(Integer.MAX_VALUE, Model.num(riskNode, "riskGp")))));
+			StringBuilder riskTip = new StringBuilder("<html>Kept on death:");
+			for (Object kept : Model.list2(riskNode, "kept"))
+			{
+				riskTip.append("<br> ").append(kept);
+			}
+			riskTip.append("<br>Lost:");
+			for (Object lost : Model.list2(riskNode, "lost"))
+			{
+				riskTip.append("<br> ").append(lost);
+			}
+			riskLine.setToolTipText(riskTip.append("</html>").toString());
+			riskLine.setFont(riskLine.getFont().deriveFont(riskLine.getFont().getSize() - 1f));
+			panel.add(left(riskLine));
+		}
+		int upgradeCost = (int) Model.num(card, "purchaseCost");
+		if (upgradeCost > 0)
+		{
+			JLabel costLine = new JLabel("Upgrade cost: " + Gp.format(upgradeCost) + " gp");
+			costLine.setFont(costLine.getFont().deriveFont(costLine.getFont().getSize() - 1f));
+			panel.add(left(costLine));
+		}
 		Object counted = card.get("counted");
 		if (counted instanceof List && !((List<?>) counted).isEmpty())
 		{
