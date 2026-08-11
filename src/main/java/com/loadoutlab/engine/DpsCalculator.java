@@ -280,6 +280,14 @@ public final class DpsCalculator
 			minHit = (int) Math.floor(maxHit * 3.0 / 20.0);
 			maxHit -= minHit;
 		}
+		// Flat armour is PER HITSPLAT (official calc: a hit-distribution
+		// transformer, accurate hits only) - so multi-hit weapons take it
+		// on EVERY hitsplat. Blue Moon's -5 armour is the payoff case
+		// (wiki: "weapons which deal damage via multiple hitsplats are
+		// particularly effective here"; field report 2026-08-10): the
+		// dual macuahuitl gets +5 twice, and the old split-after-armour
+		// order credited it only once.
+		int rawMax = maxHit;
 		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
 		double expected = RollMath.expectedHit(accuracy, minHit, maxHit);
@@ -287,21 +295,26 @@ public final class DpsCalculator
 		{
 			// Two chained hits (official calc model): the first rolls half
 			// the max; the second (the remainder) only rolls when the
-			// first lands, with its own accuracy roll.
-			int firstMax = maxHit / 2;
-			int secondMax = maxHit - firstMax;
-			expected = RollMath.normalExpectedHit(accuracy, firstMax)
-				+ accuracy * RollMath.normalExpectedHit(accuracy, secondMax);
+			// first lands, with its own accuracy roll. Armour applies to
+			// each hitsplat's own bounds.
+			int firstRaw = rawMax / 2;
+			int secondRaw = rawMax - firstRaw;
+			expected = RollMath.expectedHit(accuracy,
+					applyFlatArmour(request, 0), applyFlatArmour(request, firstRaw))
+				+ accuracy * RollMath.expectedHit(accuracy,
+					applyFlatArmour(request, 0), applyFlatArmour(request, secondRaw));
 		}
 		if (isScythe(loadout))
 		{
 			if (request.getMonster().getSize() >= 2)
 			{
-				expected += RollMath.normalExpectedHit(accuracy, applyFlatArmour(request, maxHit / 2));
+				expected += RollMath.expectedHit(accuracy,
+					applyFlatArmour(request, 0), applyFlatArmour(request, rawMax / 2));
 			}
 			if (request.getMonster().getSize() >= 3)
 			{
-				expected += RollMath.normalExpectedHit(accuracy, applyFlatArmour(request, maxHit / 4));
+				expected += RollMath.expectedHit(accuracy,
+					applyFlatArmour(request, 0), applyFlatArmour(request, rawMax / 4));
 			}
 		}
 		// Verac's set (wiki): 25% of attacks are a guaranteed hit with +1

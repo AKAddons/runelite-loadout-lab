@@ -72,7 +72,8 @@ class MonsterGroupsTest
 		assertEquals(3, byName("The Hueycoatl").getMobs().size());
 		assertEquals(4, byName("Phantom Muspah").getMobs().size());
 		assertEquals(5, byName("Nex").getMobs().size());
-		assertEquals(4, byName("Royal Titans").getMobs().size());
+		// 2 near + 2 out-of-reach phase forms + 2 elementals (2026-08-10).
+		assertEquals(6, byName("Royal Titans").getMobs().size());
 		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
 		assertEquals(4, byName("The Gauntlet").getMobs().size());
 		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());
