@@ -339,7 +339,16 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				return; // dataset still loading - drop rather than queue
 			}
-			if (panel.selectExternal(name, id))
+			// The hosted (new) view takes link-ins as a select command;
+			// the classic panel keeps its richer selectExternal path.
+			boolean hosted = companionHost != null && navButton.getPanel() == companionHost;
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			if (hosted && engine != null && name != null
+				&& engine.execute("select", Map.of("query", name)))
+			{
+				clientToolbar.openPanel(navButton);
+			}
+			else if (panel.selectExternal(name, id))
 			{
 				clientToolbar.openPanel(navButton);
 			}

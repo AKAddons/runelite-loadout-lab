@@ -220,6 +220,105 @@ public class CommandEngine
 					}
 				});
 			}
+			case "add-mob":
+			{
+				Object query = args == null ? null : args.get("query");
+				if (!(query instanceof String) || ((String) query).isBlank() || !state.hasSelection())
+				{
+					return false;
+				}
+				List<MonsterStats> matches = data.searchMonsters((String) query, 1);
+				if (matches.isEmpty())
+				{
+					return false;
+				}
+				MonsterStats added = matches.get(0);
+				List<MonsterStats> current = state.rosterMobs() != null
+					? state.rosterMobs() : List.of(state.mob());
+				for (MonsterStats m : current)
+				{
+					if (m.getId() == added.getId())
+					{
+						return false;
+					}
+				}
+				List<MonsterStats> combined = new java.util.ArrayList<>(current);
+				combined.add(added);
+				Object[] prevSel = state.selectionSnapshot();
+				return history.execute(new com.loadoutlab.command.Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						state.selectRoster(combined, "Custom roster");
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						state.restoreSelection(prevSel);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return "Add " + added.getName() + " to result";
+					}
+				});
+			}
+			case "remove-mob":
+			{
+				Object index = args == null ? null : args.get("index");
+				List<MonsterStats> current = state.rosterMobs();
+				if (!(index instanceof Number) || current == null)
+				{
+					return false;
+				}
+				int at = ((Number) index).intValue();
+				if (at < 0 || at >= current.size())
+				{
+					return false;
+				}
+				MonsterStats removed = current.get(at);
+				List<MonsterStats> remaining = new java.util.ArrayList<>(current);
+				remaining.remove(at);
+				Object[] prevSel = state.selectionSnapshot();
+				return history.execute(new com.loadoutlab.command.Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						if (remaining.size() == 1)
+						{
+							state.select(remaining.get(0));
+						}
+						else
+						{
+							state.selectRoster(remaining, "Custom roster");
+						}
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						state.restoreSelection(prevSel);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return "Remove " + removed.getName() + " from result";
+					}
+				});
+			}
 			case "set-param":
 			{
 				Object param = args == null ? null : args.get("param");

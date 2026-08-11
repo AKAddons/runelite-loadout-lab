@@ -150,6 +150,12 @@ public class ResultCards
 				commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 			}
 		});
+		javax.swing.JPopupMenu rowMenu = new javax.swing.JPopupMenu();
+		javax.swing.JMenuItem remove = new javax.swing.JMenuItem(
+			"Remove " + Model.str(mob, "name") + " from result");
+		remove.addActionListener(e -> commands.send("remove-mob", Map.of("index", index)));
+		rowMenu.add(remove);
+		label.setComponentPopupMenu(rowMenu);
 		JPanel row = left(label);
 		row.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
 		return row;

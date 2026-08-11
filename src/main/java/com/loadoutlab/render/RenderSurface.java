@@ -284,6 +284,17 @@ public class RenderSurface
 				chipRow.add(paramChip("Protect item", "protectItem",
 					Model.flag(params, "protectItem")));
 			}
+			chipRow.add(chip(new javax.swing.JButton("+ Mob"),
+				"Add another monster to this result (shared trip plan)", () ->
+			{
+				String query = javax.swing.JOptionPane.showInputDialog(root,
+					"Add a monster to this result:", "Add mob",
+					javax.swing.JOptionPane.PLAIN_MESSAGE);
+				if (query != null && !query.trim().isEmpty())
+				{
+					commands.send("add-mob", Map.of("query", query.trim()));
+				}
+			}));
 			chipRow.add(chip(new javax.swing.JButton("+ Sim"),
 				"Search an item and sim it as owned", () ->
 					picker.search("Sim as owned",
