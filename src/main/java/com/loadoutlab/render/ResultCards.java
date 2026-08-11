@@ -30,6 +30,7 @@ public class ResultCards
 	private final ItemManager itemManager;
 	private final CommandSink commands;
 	private final ItemPicker picker;
+	private List<String> spellOptions = List.of();
 
 	public ResultCards(ItemManager itemManager, CommandSink commands, ItemPicker picker)
 	{
@@ -82,8 +83,11 @@ public class ResultCards
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	JPanel render(Map<String, Object> page)
 	{
+		Object spells = page == null ? null : page.get("spells");
+		spellOptions = spells instanceof List ? (List<String>) spells : List.of();
 		String tab = effectiveTab(page);
 		Map<String, Object> params = firstParams(page);
 		boolean bis = params != null && Model.flag(params, "viewingBis");
@@ -173,8 +177,13 @@ public class ResultCards
 		}
 		if (shown != null)
 		{
-			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps)));
+			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab)));
 		}
+		javax.swing.JTextField note = new javax.swing.JTextField(Model.str(mob, "note"), 18);
+		note.setToolTipText("Your note for this mob - saved on Enter");
+		note.addActionListener(e -> commands.send("set-note", Map.of("text", note.getText())));
+		card.add(Box.createVerticalStrut(4));
+		card.add(left(note));
 		return card;
 	}
 
@@ -191,7 +200,8 @@ public class ResultCards
 		return label;
 	}
 
-	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps)
+	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,
+		Map<String, Object> mob, String tab)
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -307,6 +317,43 @@ public class ResultCards
 			}
 		});
 		panel.add(left(showBank));
+		if (specNode != null && !bis)
+		{
+			Map<String, Object> specWeapon = Model.map(specNode, "weapon");
+			int specId = specWeapon == null ? 0 : Model.id(specWeapon, "id");
+			boolean pinned = specId != 0 && Model.id(mob, "pinnedSpec") == specId;
+			JLabel specCell = new JLabel("Spec: " + Model.str(specWeapon, "name")
+				+ (pinned ? " (pinned)" : ""));
+			specCell.setToolTipText(pinned
+				? "Pinned - right-click to unpin"
+				: "Right-click to pin this spec weapon for this mob");
+			javax.swing.JPopupMenu specMenu = new javax.swing.JPopupMenu();
+			javax.swing.JMenuItem pinSpec = new javax.swing.JMenuItem(
+				pinned ? "Unpin spec" : "Pin as spec");
+			pinSpec.addActionListener(e -> commands.send("set-pinned-spec",
+				Map.of("itemId", pinned ? 0 : specId)));
+			specMenu.add(pinSpec);
+			specCell.setComponentPopupMenu(specMenu);
+			panel.add(left(specCell));
+		}
+		if ("magic".equals(tab) && !bis)
+		{
+			String pinnedSpell = Model.str(mob, "pinnedSpell");
+			javax.swing.JComboBox<String> spellBox = new javax.swing.JComboBox<>();
+			spellBox.addItem("Auto spell");
+			for (String spellName : spellOptions)
+			{
+				spellBox.addItem(spellName);
+			}
+			spellBox.setSelectedItem(pinnedSpell == null || pinnedSpell.isEmpty()
+				? "Auto spell" : pinnedSpell);
+			spellBox.setToolTipText("Pin the autocast spell for this mob");
+			spellBox.setFocusable(false);
+			spellBox.addActionListener(e -> commands.send("set-pinned-spell",
+				Map.of("name", "Auto spell".equals(spellBox.getSelectedItem())
+					? "" : String.valueOf(spellBox.getSelectedItem()))));
+			panel.add(left(spellBox));
+		}
 		Map<String, Object> bankPlan = BankLayout.build(card);
 		if (bankPlan != null)
 		{

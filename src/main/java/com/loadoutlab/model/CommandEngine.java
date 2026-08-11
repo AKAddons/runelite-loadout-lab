@@ -60,6 +60,19 @@ public class CommandEngine
 
 		/** Filter the open bank to these ids in this layout; nulls clear. */
 		void filterBank(java.util.Set<Integer> itemIds, int[] layout);
+
+		/** Per-mob profile reads/writes (MonsterProfileStore-backed). */
+		String pinnedSpell(int monsterId);
+
+		void setPinnedSpell(int monsterId, String spellName);
+
+		int pinnedSpec(int monsterId);
+
+		void setPinnedSpec(int monsterId, int itemId);
+
+		String note(int monsterId);
+
+		void setNote(int monsterId, String note);
 	}
 
 	private volatile StoreOps stores;
@@ -265,6 +278,37 @@ public class CommandEngine
 					ops.unpin(mob.getId(), (String) slot);
 				}
 				recompute();
+				return true;
+			}
+			case "set-pinned-spell":
+			case "set-pinned-spec":
+			case "set-note":
+			{
+				StoreOps ops = stores;
+				MonsterStats mob = state.mob();
+				if (ops == null || mob == null)
+				{
+					return false;
+				}
+				if ("set-pinned-spell".equals(name))
+				{
+					Object spell = args == null ? null : args.get("name");
+					ops.setPinnedSpell(mob.getId(), spell instanceof String ? (String) spell : "");
+					recompute();
+				}
+				else if ("set-pinned-spec".equals(name))
+				{
+					Object itemId = args == null ? null : args.get("itemId");
+					ops.setPinnedSpec(mob.getId(),
+						itemId instanceof Number ? ((Number) itemId).intValue() : 0);
+					recompute();
+				}
+				else
+				{
+					Object text = args == null ? null : args.get("text");
+					ops.setNote(mob.getId(), text instanceof String ? (String) text : "");
+					republish();
+				}
 				return true;
 			}
 			case "bank-show":
@@ -480,6 +524,7 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob);
 		entry.put("params", state.paramsNode());
+		decorateProfiles(entry);
 		Map<String, Object> thrallsNode = null;
 		if (Boolean.TRUE.equals(state.paramsNode().get("thralls")))
 		{
@@ -494,6 +539,12 @@ public class CommandEngine
 			}
 		}
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
+		List<String> spellNames = new java.util.ArrayList<>();
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			spellNames.add(spell.getName());
+		}
+		page.put("spells", spellNames);
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode));
@@ -512,6 +563,34 @@ public class CommandEngine
 	public void setCoreVersion(String coreVersion)
 	{
 		this.coreVersion = coreVersion;
+	}
+
+	/** Attach per-mob profile state (pinned spell/spec, note) to each
+	 * mob node so renderers can show and edit it. */
+	@SuppressWarnings("unchecked")
+	private void decorateProfiles(Map<String, Object> entry)
+	{
+		StoreOps ops = stores;
+		Object mobsNode = entry.get("mobs");
+		if (ops == null || !(mobsNode instanceof List))
+		{
+			return;
+		}
+		for (Object node : (List<?>) mobsNode)
+		{
+			if (node instanceof Map)
+			{
+				Map<String, Object> mob = (Map<String, Object>) node;
+				Object id = mob.get("id");
+				if (id instanceof Number)
+				{
+					int monsterId = ((Number) id).intValue();
+					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
+					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
+					mob.put("note", ops.note(monsterId));
+				}
+			}
+		}
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page)

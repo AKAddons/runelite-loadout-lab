@@ -584,6 +584,42 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					{
 						setBankFilter(itemIds, layout);
 					}
+
+					@Override
+					public String pinnedSpell(int monsterId)
+					{
+						return mobProfiles.pinnedSpellFor(monsterId);
+					}
+
+					@Override
+					public void setPinnedSpell(int monsterId, String spellName)
+					{
+						mobProfiles.setPinnedSpell(monsterId, spellName);
+					}
+
+					@Override
+					public int pinnedSpec(int monsterId)
+					{
+						return mobProfiles.pinnedSpecFor(monsterId);
+					}
+
+					@Override
+					public void setPinnedSpec(int monsterId, int itemId)
+					{
+						exec(Commands.setPinnedSpec(mobProfiles, monsterId, itemId, itemLabel(itemId)));
+					}
+
+					@Override
+					public String note(int monsterId)
+					{
+						return mobProfiles.noteFor(monsterId);
+					}
+
+					@Override
+					public void setNote(int monsterId, String note)
+					{
+						mobProfiles.setNote(monsterId, note);
+					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
