@@ -307,6 +307,33 @@ public class ResultCards
 			}
 		});
 		panel.add(left(showBank));
+		Map<String, Object> bankPlan = BankLayout.build(card);
+		if (bankPlan != null)
+		{
+			javax.swing.JToggleButton filterBank = new javax.swing.JToggleButton("Filter bank");
+			filterBank.setToolTipText("Filter your open bank to this set, laid out as the"
+				+ " equipment cross with the inventory beside it");
+			filterBank.setFocusable(false);
+			filterBank.setMargin(new java.awt.Insets(1, 6, 1, 6));
+			filterBank.addActionListener(e ->
+			{
+				if (filterBank.isSelected())
+				{
+					List<Integer> layoutList = new java.util.ArrayList<>();
+					for (int pos : (int[]) bankPlan.get("layout"))
+					{
+						layoutList.add(pos);
+					}
+					commands.send("bank-filter",
+						Map.of("ids", bankPlan.get("ids"), "layout", layoutList));
+				}
+				else
+				{
+					commands.send("bank-filter", Map.of());
+				}
+			});
+			panel.add(left(filterBank));
+		}
 		Object counted = card.get("counted");
 		if (counted instanceof List && !((List<?>) counted).isEmpty())
 		{

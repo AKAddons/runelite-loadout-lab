@@ -57,6 +57,9 @@ public class CommandEngine
 
 		/** Highlight these ids in the open bank; null clears. */
 		void showInBank(java.util.Set<Integer> itemIds);
+
+		/** Filter the open bank to these ids in this layout; nulls clear. */
+		void filterBank(java.util.Set<Integer> itemIds, int[] layout);
 	}
 
 	private volatile StoreOps stores;
@@ -287,6 +290,40 @@ public class CommandEngine
 				else
 				{
 					ops.showInBank(null);
+				}
+				return true;
+			}
+			case "bank-filter":
+			{
+				StoreOps ops = stores;
+				if (ops == null)
+				{
+					return false;
+				}
+				Object ids = args == null ? null : args.get("ids");
+				Object layout = args == null ? null : args.get("layout");
+				if (ids instanceof List && layout instanceof List)
+				{
+					java.util.Set<Integer> itemIds = new java.util.LinkedHashSet<>();
+					for (Object id : (List<?>) ids)
+					{
+						if (id instanceof Number)
+						{
+							itemIds.add(((Number) id).intValue());
+						}
+					}
+					List<?> slots = (List<?>) layout;
+					int[] positions = new int[slots.size()];
+					for (int i = 0; i < slots.size(); i++)
+					{
+						positions[i] = slots.get(i) instanceof Number
+							? ((Number) slots.get(i)).intValue() : -1;
+					}
+					ops.filterBank(itemIds, positions);
+				}
+				else
+				{
+					ops.filterBank(null, null);
 				}
 				return true;
 			}

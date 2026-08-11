@@ -578,6 +578,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					{
 						setBankHighlight(itemIds);
 					}
+
+					@Override
+					public void filterBank(Set<Integer> itemIds, int[] layout)
+					{
+						setBankFilter(itemIds, layout);
+					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
 			// below) - no delegating anonymous class needed.
