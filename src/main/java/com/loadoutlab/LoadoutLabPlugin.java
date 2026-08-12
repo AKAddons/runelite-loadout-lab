@@ -667,6 +667,12 @@ public class LoadoutLabPlugin extends Plugin
 					}
 
 					@Override
+					public void setSupplyDefault(String category, String choice)
+					{
+						supplyDefaults.setChoice(category, choice);
+					}
+
+					@Override
 					public void toggleAlwaysFilter(int itemId)
 					{
 						if (alwaysFilter.all().containsKey(itemId))

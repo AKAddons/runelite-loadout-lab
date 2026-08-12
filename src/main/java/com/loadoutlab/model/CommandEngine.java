@@ -54,6 +54,9 @@ public class CommandEngine
 
 		void toggleAlwaysFilter(int itemId);
 
+		/** Write a wrench-panel supply default (the classic grey chip). */
+		void setSupplyDefault(String category, String choice);
+
 		/** ALL-sets-scope pin/unpin on the given mob's profile. */
 		void pin(int monsterId, String slot, int itemId);
 
@@ -363,6 +366,19 @@ public class CommandEngine
 							: label + " " + next;
 					}
 				});
+			}
+			case "set-supply-default":
+			{
+				StoreOps ops = stores;
+				Object category = args == null ? null : args.get("category");
+				Object choice = args == null ? null : args.get("choice");
+				if (ops == null || !(category instanceof String) || !(choice instanceof String))
+				{
+					return false;
+				}
+				ops.setSupplyDefault((String) category, (String) choice);
+				recompute();
+				return true;
 			}
 			case "toggle-always-filter":
 			{
@@ -864,6 +880,7 @@ public class CommandEngine
 		}
 		page.put("spells", spellNames);
 		page.put("assumeOptions", assumeOptions());
+		page.put("supplyCatalog", supplyCatalog());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode));
@@ -970,6 +987,56 @@ public class CommandEngine
 			options.add(node);
 		}
 		return options;
+	}
+
+	/** Every supply category with its label, current DEFAULT and option
+	 * list - the grey chip's menu (global defaults, not per-mob). */
+	private List<Map<String, Object>> supplyCatalog()
+	{
+		java.util.function.Supplier<Map<String, String>> supplier = supplyDefaults;
+		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		if (supplier == null)
+		{
+			return out;
+		}
+		Map<String, String> defaults = supplier.get();
+		String[][] categories = {
+			{com.loadoutlab.data.TripSupplies.FOOD, "Food"},
+			{com.loadoutlab.data.TripSupplies.FAST_FOOD, "Fast food"},
+			{com.loadoutlab.data.TripSupplies.PRAYER_RESTORE, "Prayer restore"},
+			{com.loadoutlab.data.TripSupplies.SURGE, "Surge potion"},
+			{com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
+			{com.loadoutlab.data.TripSupplies.ANTIVENOM, "Anti-venom"},
+		};
+		for (String[] category : categories)
+		{
+			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			node.put("category", category[0]);
+			node.put("label", category[1]);
+			node.put("current", defaults.getOrDefault(category[0], "DETECT_BEST"));
+			List<Map<String, Object>> options = new java.util.ArrayList<>();
+			for (com.loadoutlab.data.TripSupplies.Option option
+				: com.loadoutlab.data.TripSupplies.options(category[0]))
+			{
+				Map<String, Object> opt = new java.util.LinkedHashMap<>();
+				opt.put("key", option.key);
+				opt.put("name", option.name);
+				options.add(opt);
+			}
+			node.put("options", options);
+			out.add(node);
+		}
+		// The Arceuus-access choice rides the same menu in the classic.
+		Map<String, Object> access = new java.util.LinkedHashMap<>();
+		access.put("category", "arceuusAccess");
+		access.put("label", "Arceuus access");
+		access.put("current", defaults.getOrDefault("arceuusAccess", "DETECT_BEST"));
+		access.put("options", List.of(
+			Map.of("key", "DETECT_BEST", "name", "Direct (camp Arceuus)"),
+			Map.of("key", "SPELLBOOK_SWAP",
+				"name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)")));
+		out.add(access);
+		return out;
 	}
 
 	/** The lens-selected mob (supply overrides key off its profile). */
