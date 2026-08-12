@@ -558,6 +558,11 @@ public class LoadoutLabPlugin extends Plugin
 					{
 						storedItems.add(Map.of("id", id, "name", itemLabel(id)));
 					}
+					List<Map<String, Object>> filteredItems = new ArrayList<>();
+					for (Map.Entry<Integer, String> f : alwaysFilter.all().entrySet())
+					{
+						filteredItems.add(Map.of("id", f.getKey(), "name", f.getValue()));
+					}
 					Map<String, Object> counts = new java.util.LinkedHashMap<>();
 					counts.put("excluded", excludedItems.size());
 					counts.put("simmed", simmedItems.size());
@@ -566,6 +571,7 @@ public class LoadoutLabPlugin extends Plugin
 					counts.put("excludedItems", excludedItems);
 					counts.put("simmedItems", simmedItems);
 					counts.put("storedItems", storedItems);
+					counts.put("filteredItems", filteredItems);
 					return counts;
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
@@ -658,6 +664,19 @@ public class LoadoutLabPlugin extends Plugin
 					public boolean toggleStored(int itemId)
 					{
 						return exec(Commands.toggleStored(manualOwned, itemId, itemLabel(itemId)));
+					}
+
+					@Override
+					public void toggleAlwaysFilter(int itemId)
+					{
+						if (alwaysFilter.all().containsKey(itemId))
+						{
+							alwaysFilter.remove(itemId);
+						}
+						else
+						{
+							alwaysFilter.add(itemId, itemLabel(itemId));
+						}
 					}
 
 					@Override

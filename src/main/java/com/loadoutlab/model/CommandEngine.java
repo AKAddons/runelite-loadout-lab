@@ -52,6 +52,8 @@ public class CommandEngine
 
 		boolean toggleStored(int itemId);
 
+		void toggleAlwaysFilter(int itemId);
+
 		/** ALL-sets-scope pin/unpin on the given mob's profile. */
 		void pin(int monsterId, String slot, int itemId);
 
@@ -361,6 +363,18 @@ public class CommandEngine
 							: label + " " + next;
 					}
 				});
+			}
+			case "toggle-always-filter":
+			{
+				StoreOps ops = stores;
+				Object itemId = args == null ? null : args.get("itemId");
+				if (ops == null || !(itemId instanceof Number))
+				{
+					return false;
+				}
+				ops.toggleAlwaysFilter(((Number) itemId).intValue());
+				republish();
+				return true;
 			}
 			case "toggle-exclusion":
 			case "toggle-sim":

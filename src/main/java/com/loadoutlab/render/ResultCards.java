@@ -371,6 +371,16 @@ public class ResultCards
 		return button;
 	}
 
+	private static JLabel statLine(String text, String tooltip, Color color)
+	{
+		JLabel line = new JLabel(text);
+		line.setForeground(color);
+		line.setToolTipText(tooltip);
+		line.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		line.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+		return line;
+	}
+
 	private static JLabel styleHeader(String style, Map<String, Object> node)
 	{
 		String name = Character.toUpperCase(style.charAt(0)) + style.substring(1);
@@ -434,17 +444,44 @@ public class ResultCards
 		}
 		headline.setToolTipText(tip.append("</html>").toString());
 		panel.add(left(headline));
-		if (incoming != null && Model.str(incoming, "protectPrayer") != null)
+		// The classic card centre: the cross LEFT, the stat column RIGHT.
+		JPanel center = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 2));
+		center.setBackground(CARD);
+		center.add(gearGrid(card, bis));
+		JPanel statColumn = new JPanel();
+		statColumn.setLayout(new BoxLayout(statColumn, BoxLayout.Y_AXIS));
+		statColumn.setBackground(CARD);
+		Color statText = new Color(200, 200, 200);
+		statColumn.add(statLine("Max " + (int) Model.num(card, "maxHit"),
+			"Max hit " + (int) Model.num(card, "maxHit"), statText));
+		statColumn.add(statLine(Math.round(Model.num(card, "accuracy") * 100) + "%",
+			"Hit chance", statText));
+		if (incoming != null)
 		{
-			String caveat = Model.flag(incoming, "fullyModeled") ? "" : " (partly modeled)";
-			JLabel dtps = new JLabel(String.format(
-				"<html>Pray %s - takes %.2f dps (%.2f unprayed)%s</html>",
-				Model.str(incoming, "protectPrayer"), Model.num(incoming, "dps"),
-				Model.num(incoming, "unprayedDps"), caveat));
-			dtps.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-			panel.add(left(dtps));
+			// Classic honesty rule: an unmodeled monster's DTPS reads "?" -
+			// silence must read as unknown, never safe.
+			boolean unmodeled = !Model.flag(incoming, "fullyModeled")
+				&& Model.num(incoming, "dps") <= 0 && Model.num(incoming, "unprayedDps") <= 0;
+			statColumn.add(statLine(
+				unmodeled ? "DTPS: ?" : String.format("DTPS: ~%.1f", Model.num(incoming, "dps")),
+				unmodeled ? "This monster's attacks are beyond the stat-sheet model"
+					: "Pray " + Model.str(incoming, "protectPrayer")
+						+ String.format(" - %.2f unprayed", Model.num(incoming, "unprayedDps")),
+				statText));
 		}
-		panel.add(left(gearGrid(card, bis)));
+		Map<String, Object> statsNode = Model.map(card, "stats");
+		if (statsNode != null)
+		{
+			statColumn.add(statLine("Pray +" + Model.id(statsNode, "prayer"),
+				"Prayer bonus", statText));
+		}
+		String atkType = Model.str(card, "attackType");
+		if (atkType != null)
+		{
+			statColumn.add(statLine(atkType, "Attack style the numbers use", statText));
+		}
+		center.add(statColumn);
+		panel.add(left(center));
 		Map<String, Object> stats = Model.map(card, "stats");
 		if (stats != null)
 		{

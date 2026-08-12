@@ -245,6 +245,47 @@ public class RenderSurface
 		return false;
 	}
 
+	/** A classic count pill: "-N" red / "+N" green / "~N" grey, muted at
+	 * zero, always visible; click = the manage menu + add-by-search. */
+	private void pillChip(Map<String, Object> counts, String listKey, String sigil,
+		java.awt.Color active, java.awt.Color muted, java.awt.Color activeBorder,
+		String removeVerb, String command, String addPrompt)
+	{
+		java.util.List<Map<String, Object>> items = Model.list(counts, listKey);
+		javax.swing.JLabel pill = new javax.swing.JLabel(sigil + items.size());
+		boolean any = !items.isEmpty();
+		pill.setForeground(any ? active : muted);
+		pill.setBorder(new RoundedBorder(any ? activeBorder
+			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
+		pill.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		pill.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				for (Map<String, Object> item : items)
+				{
+					int id = Model.id(item, "id");
+					javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
+						removeVerb + Model.str(item, "name"));
+					entry.addActionListener(ev -> commands.send(command, Map.of("itemId", id)));
+					menu.add(entry);
+				}
+				if (any)
+				{
+					menu.addSeparator();
+				}
+				javax.swing.JMenuItem add = new javax.swing.JMenuItem(addPrompt);
+				add.addActionListener(ev -> picker.search(addPrompt,
+					(id, name) -> commands.send(command, Map.of("itemId", id))));
+				menu.add(add);
+				menu.show(pill, 0, pill.getHeight());
+			}
+		});
+		countsRow.add(pill);
+	}
+
 	/** One store's count chip: click lists the entries, each removable. */
 	private void storeChip(Map<String, Object> counts, String listKey, String sigil,
 		String noun, String command, String verb)
@@ -516,10 +557,22 @@ public class RenderSurface
 			Map<String, Object> counts = Model.map(page, "counts");
 			if (counts != null)
 			{
-				storeChip(counts, "excludedItems", "-", "excluded",
-					"toggle-exclusion", "Re-include");
-				storeChip(counts, "simmedItems", "+", "simmed as owned",
-					"toggle-sim", "Stop simming");
+				// The classic trio: always visible, muted at zero.
+				pillChip(counts, "excludedItems", "-",
+					new java.awt.Color(220, 120, 120), new java.awt.Color(140, 110, 110),
+					new java.awt.Color(170, 90, 90),
+					"Allow again: ", "toggle-exclusion",
+					"Exclude an item (search)...");
+				pillChip(counts, "simmedItems", "+",
+					new java.awt.Color(130, 200, 130), new java.awt.Color(110, 140, 110),
+					new java.awt.Color(95, 160, 95),
+					"Stop simming ", "toggle-sim",
+					"Sim an item (consider as owned)...");
+				pillChip(counts, "filteredItems", "~",
+					new java.awt.Color(190, 190, 190), new java.awt.Color(130, 130, 130),
+					new java.awt.Color(150, 150, 150),
+					"Unfilter ", "toggle-always-filter",
+					"Always-filter an item (search)...");
 				storeChip(counts, "storedItems", "~", "stored elsewhere",
 					"toggle-stored", "Remove");
 				countsRow.add(chip(new javax.swing.JButton("+ Stored"),
@@ -527,7 +580,7 @@ public class RenderSurface
 						picker.search("Stored elsewhere",
 							(id, name) -> commands.send("toggle-stored", Map.of("itemId", id)))));
 			}
-			countsRow.setVisible(countsRow.getComponentCount() > 0);
+			countsRow.setVisible(true);
 		}
 		cardArea.removeAll();
 		if (page != null)
