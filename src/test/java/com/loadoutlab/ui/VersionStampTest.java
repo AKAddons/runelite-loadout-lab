@@ -25,10 +25,10 @@ class VersionStampTest
 		plugin.load(Files.newInputStream(Path.of("runelite-plugin.properties")));
 		String released = plugin.getProperty("version");
 		assertNotNull(released, "runelite-plugin.properties must declare a version");
-		assertEquals(released, LoadoutLabPanel.PLUGIN_VERSION,
+		assertEquals(released, com.loadoutlab.PluginVersion.VERSION,
 			"build.gradle's version (the stamp) and runelite-plugin.properties"
 				+ " have drifted - bump them together");
-		assertNotEquals("unknown", LoadoutLabPanel.PLUGIN_VERSION,
+		assertNotEquals("unknown", com.loadoutlab.PluginVersion.VERSION,
 			"the stamped resource must be readable at runtime");
 	}
 }

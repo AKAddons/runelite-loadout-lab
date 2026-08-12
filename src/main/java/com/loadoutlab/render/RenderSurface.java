@@ -325,6 +325,10 @@ public class RenderSurface
 				"Search an item and sim it as owned", () ->
 					picker.search("Sim as owned",
 						(id, name) -> commands.send("toggle-sim", Map.of("itemId", id)))));
+			chipRow.add(chip(new javax.swing.JButton("Discord"),
+				"Loadout Lab community - report issues, request features", () ->
+					net.runelite.client.util.LinkBrowser.browse(
+						"https://discord.gg/6GuS6J8em3")));
 			String report = Model.str(page, "reportText");
 			if (report != null)
 			{

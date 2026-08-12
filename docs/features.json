@@ -30,7 +30,7 @@
     "engine/LoadoutOptimizer.java",
     "optimizer/OptimizerService.java",
     "engine/OwnedItems.java",
-    "ui/LoadoutLabPanel.java"
+    "render/ResultCards.java"
    ],
    "tests": [
     "engine/LoadoutOptimizerTest.java",
@@ -49,7 +49,7 @@
     "engine/IncomingDpsCalculator.java",
     "engine/BossIncomingOverrides.java",
     "data/MonsterOffence.java",
-    "ui/AssumeIcons.java"
+    "render/ResultCards.java"
    ],
    "tests": [
     "engine/IncomingDpsCalculatorTest.java",
@@ -68,7 +68,7 @@
     "data/SpellStats.java",
     "engine/DpsCalculator.java",
     "optimizer/OptimizerService.java",
-    "ui/AssumeIcons.java"
+    "render/RenderSurface.java"
    ],
    "tests": [
     "engine/SpellbookLockTest.java"
@@ -86,7 +86,7 @@
     "collection/DreamStore.java",
     "engine/OptimizationRequest.java",
     "engine/LoadoutOptimizer.java",
-    "ui/LoadoutLabPanel.java"
+    "render/RenderSurface.java"
    ],
    "tests": [
     "engine/DreamAndBudgetTest.java"
@@ -123,7 +123,7 @@
     "collection/ManualOwnedStore.java",
     "collection/CollectionLedger.java",
     "data/LoadoutData.java",
-    "ui/LoadoutLabPanel.java",
+    "render/RenderSurface.java",
     "LoadoutLabPlugin.java"
    ],
    "tests": [
@@ -141,8 +141,7 @@
    "anchor": "dude-wheres-my-stuff-link",
    "code": [
     "collection/DwmsLink.java",
-    "LoadoutLabPlugin.java",
-    "ui/LoadoutLabPanel.java"
+    "LoadoutLabPlugin.java"
    ],
    "tests": [
     "collection/DwmsLinkTest.java"
@@ -176,7 +175,6 @@
    "code": [
     "collection/ItemLocations.java",
     "collection/CollectionLedger.java",
-    "ui/LoadoutLabPanel.java",
     "LoadoutLabPlugin.java"
    ],
    "tests": [
@@ -212,8 +210,7 @@
    "code": [
     "collection/MonsterProfileStore.java",
     "engine/OptimizationRequest.java",
-    "engine/LoadoutOptimizer.java",
-    "ui/LoadoutLabPanel.java"
+    "engine/LoadoutOptimizer.java"
    ],
    "tests": [
     "engine/PinTest.java",
@@ -270,7 +267,7 @@
    "code": [
     "collection/ExclusionStore.java",
     "engine/LoadoutOptimizer.java",
-    "ui/LoadoutLabPanel.java"
+    "render/RenderSurface.java"
    ],
    "tests": [
     "collection/ExclusionStoreTest.java",
@@ -287,7 +284,7 @@
    "media": "docs/img/bank-tools.png",
    "code": [
     "ui/BankHighlightOverlay.java",
-    "ui/LoadoutLabPanel.java",
+    "render/BankLayout.java",
     "LoadoutLabPlugin.java"
    ],
    "tests": [],
@@ -302,10 +299,10 @@
    "anchor": "search-in-loadout-lab-cross-plugin",
    "code": [
     "LoadoutLabPlugin.java",
-    "ui/LoadoutLabPanel.java"
+    "model/CommandEngine.java"
    ],
    "tests": [
-    "ui/LinkInTest.java"
+    "model/CommandEngineTest.java"
    ],
    "since": "0.1.0",
    "capture": "In-world right-click menu open on a known monster showing 'Search in Loadout Lab'. Single PNG screenshot.",
@@ -319,7 +316,7 @@
    "anchor": "community-discord",
    "media": "docs/img/discord.png",
    "code": [
-    "ui/LoadoutLabPanel.java"
+    "render/RenderSurface.java"
    ],
    "tests": [],
    "since": "0.1.0",
@@ -337,12 +334,12 @@
     "command/CompositeCommand.java",
     "command/Commands.java",
     "LoadoutLabPlugin.java",
-    "ui/LoadoutLabPanel.java"
+    "render/RenderSurface.java"
    ],
    "tests": [
     "command/CommandHistoryTest.java",
     "command/CommandsTest.java",
-    "ui/SelectionHistoryTest.java"
+    "model/CommandEngineTest.java"
    ],
    "since": "0.2.4",
    "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
@@ -359,7 +356,7 @@
     "collection/AlwaysFilterStore.java",
     "collection/MonsterProfileStore.java",
     "LoadoutLabPlugin.java",
-    "ui/LoadoutLabPanel.java"
+    "render/ResultCards.java"
    ],
    "tests": [
     "data/TripSuppliesTest.java",
@@ -381,7 +378,7 @@
     "engine/OptimizationRequest.java",
     "optimizer/OptimizerService.java",
     "LoadoutLabPlugin.java",
-    "ui/LoadoutLabPanel.java"
+    "render/RenderSurface.java"
    ],
    "tests": [
     "engine/ExtraDpsTest.java",
@@ -402,7 +399,7 @@
     "optimizer/BoostSelector.java",
     "engine/OptimizationRequest.java",
     "optimizer/OptimizerService.java",
-    "ui/LoadoutLabPanel.java"
+    "render/ResultCards.java"
    ],
    "tests": [
     "engine/PrayerPickTest.java",
@@ -419,12 +416,9 @@
    "media": "docs/img/panel-options.png",
    "code": [
     "LoadoutLabConfig.java",
-    "ui/LoadoutLabPanel.java",
     "LoadoutLabPlugin.java"
    ],
-   "tests": [
-    "ui/DefaultSeedingTest.java"
-   ],
+   "tests": [],
    "since": "0.3.3",
    "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot."
   },
@@ -435,7 +429,7 @@
    "anchor": "multi-mob-rosters-groups-and-raids",
    "media": "docs/img/multi-mob-roster.png",
    "code": [
-    "ui/LoadoutLabPanel.java",
+    "render/ResultCards.java",
     "optimizer/OptimizerService.java",
     "data/MonsterGroups.java"
    ],
@@ -454,7 +448,7 @@
    "anchor": "inventory-budget-swaps-vs-bag-space",
    "media": "docs/img/inventory-budget.png",
    "code": [
-    "ui/LoadoutLabPanel.java",
+    "render/RenderSurface.java",
     "optimizer/OptimizerService.java"
    ],
    "tests": [

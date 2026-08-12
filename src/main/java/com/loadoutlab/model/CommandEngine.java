@@ -755,6 +755,18 @@ public class CommandEngine
 		return true;
 	}
 
+	/** A different account logged in: nothing survives - selection,
+	 * results, history all reset and an empty page publishes. */
+	public void clearForIdentityChange()
+	{
+		state.select(null);
+		while (history.canUndo())
+		{
+			history.undo();
+		}
+		clearResults();
+	}
+
 	/** Reverting the first select: no mob, no results - an empty page. */
 	private void clearResults()
 	{

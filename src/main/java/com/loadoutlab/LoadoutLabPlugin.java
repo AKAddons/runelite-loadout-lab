@@ -26,7 +26,6 @@ import com.loadoutlab.engine.PrayerUnlocks;
 import com.loadoutlab.engine.RequirementProfile;
 import com.loadoutlab.optimizer.OptimizerService;
 import com.loadoutlab.profile.PlayerProfile;
-import com.loadoutlab.ui.LoadoutLabPanel;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -113,7 +112,7 @@ import java.util.ArrayList;
 	description = "Best-in-slot sets from the gear you own, per enemy and combat style, with exact DPS",
 	tags = {"gear", "bis", "dps", "loadout", "equipment"}
 )
-public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeHook
+public class LoadoutLabPlugin extends Plugin
 {
 	@Inject
 	private Client client;
@@ -203,7 +202,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	/** One chart read per opening, mirroring the container-scan coalescing. */
 	private boolean stashChartSeen;
 	private OptimizerService optimizerService;
-	private LoadoutLabPanel panel;
 	private NavigationButton navButton;
 
 	/**
@@ -335,20 +333,12 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		Integer id = npcId instanceof Number ? ((Number) npcId).intValue() : null;
 		SwingUtilities.invokeLater(() ->
 		{
-			if (panel == null || navButton == null)
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			if (engine == null || navButton == null || name == null)
 			{
 				return; // dataset still loading - drop rather than queue
 			}
-			// The hosted (new) view takes link-ins as a select command;
-			// the classic panel keeps its richer selectExternal path.
-			boolean hosted = companionHost != null && navButton.getPanel() == companionHost;
-			com.loadoutlab.model.CommandEngine engine = commandEngine;
-			if (hosted && engine != null && name != null
-				&& engine.execute("select", Map.of("query", name)))
-			{
-				clientToolbar.openPanel(navButton);
-			}
-			else if (panel.selectExternal(name, id))
+			if (engine.execute("select", Map.of("query", name)))
 			{
 				clientToolbar.openPanel(navButton);
 			}
@@ -363,7 +353,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	@Subscribe
 	public void onMenuOpened(MenuOpened event)
 	{
-		if (data == null || panel == null || navButton == null || !config.npcRightClickEntry())
+		if (data == null || commandEngine == null || navButton == null || !config.npcRightClickEntry())
 		{
 			return;
 		}
@@ -394,7 +384,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 				.setType(MenuAction.RUNELITE)
 				.onClick(e -> SwingUtilities.invokeLater(() ->
 				{
-					if (panel.selectExternal(name, id))
+					com.loadoutlab.model.CommandEngine engine = commandEngine;
+					if (engine != null && engine.execute("select", Map.of("query", name)))
 					{
 						clientToolbar.openPanel(navButton);
 					}
@@ -716,44 +707,15 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 						mobProfiles.setSupply(profileId, category, choice);
 					}
 				});
-			// The plugin IS the compute hook (see compute/computeRoster
-			// below) - no delegating anonymous class needed.
-			panel = new LoadoutLabPanel(loaded, itemManager, spriteManager, this,
-					id ->
-					{
-						exec(Commands.toggleExclusion(exclusions, id, itemLabel(id)));
-						return exclusions.isExcluded(id);
-					},
-					exclusions::snapshot,
-					protectOnlyView(),
-					id ->
-					{
-						exec(Commands.toggleDream(dreams, id, itemLabel(id)));
-						return dreams.isDreamed(id);
-					},
-					dreams::snapshot,
-					id ->
-					{
-						exec(Commands.toggleStored(manualOwned, id, itemLabel(id)));
-						return manualOwned.isStored(id);
-					},
-					manualOwned::snapshot,
-					locationHintView(),
-					mobProfileView(), itemSearchView(),
-					this::ownsCanonical,
-					this::setBankHighlight,
-					this::setBankFilter);
-				panel.setHistoryControl(historyControl());
-				panel.setF2pWorld(onF2pWorld());
-				panel.setDisplayOptions(buildDisplayOptions());
-				panel.setSupplyDefaults(buildSupplyDefaults());
-				panel.setGlobalFilters(globalFiltersView());
-				panel.setDeveloperMode(developerMode);
-				navButton = NavigationButton.builder()
+			// The one-surface host (ADR-0008 Path C): the model-driven
+			// renderer is the panel; an external Companion's
+			// surface-register can still take the slot over.
+			companionHost = new com.loadoutlab.ui.CompanionHost();
+			navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")
 					.icon(loadSidebarIcon())
 					.priority(7)
-					.panel(panel)
+					.panel(companionHost)
 					.build();
 				clientToolbar.addNavigation(navButton);
 				// A Companion that registered while we were loading mounts now.
@@ -789,7 +751,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			optimizerService.shutdown();
 			optimizerService = null;
 		}
-		panel = null;
 		data = null;
 		ledger = null;
 		exclusions = null;
@@ -836,35 +797,15 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		// wrench-panel keys, never a store write, or each ledger flush would
 		// rebuild the whole results panel on the EDT.
 		String key = event.getKey();
-		if ("useCompanionUi".equals(key))
-		{
-			refreshHostedView();
-			return;
-		}
 		if ("useDwmsData".equals(key))
 		{
 			// Ownership changed -> recompute (not just re-render).
-			SwingUtilities.invokeLater(() ->
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			if (engine != null)
 			{
-				if (panel != null)
-				{
-					panel.recomputeCurrent();
-				}
-			});
-			return;
-		}
-		if (!PANEL_CONFIG_KEYS.contains(key))
-		{
-			return; // a store write, not a display toggle
-		}
-		SwingUtilities.invokeLater(() ->
-		{
-			if (panel != null)
-			{
-				panel.setDisplayOptions(buildDisplayOptions());
-				panel.setSupplyDefaults(buildSupplyDefaults());
+				engine.execute("recompute", Map.of());
 			}
-		});
+		}
 	}
 
 	/** The wrench-panel display/control keys (see LoadoutLabConfig) - the
@@ -887,6 +828,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	/** Client-thread staging push: the castability state the panel's
 	 * chips read - BOOSTED magic (field call 2026-07-21: castability
 	 * follows the boosted stat), the Yama rite unlock, the live book. */
+	/** Live cast state for the engine: the Magic level drives thrall
+	 * tiers. (The classic panel's spellbook/D-charge display state died
+	 * with it; detect-grade spellbook awareness returns via the model
+	 * when the arceuus-clash rendering ports.) */
 	private void pushPanelCastState(PlayerLevels live)
 	{
 		com.loadoutlab.model.CommandEngine engine = commandEngine;
@@ -894,57 +839,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		{
 			engine.setMagicLevel(live.getMagic());
 		}
-		if (panel == null)
-		{
-			return;
-		}
-		panel.setMagicLevel(live.getMagic());
-		panel.setDeathChargeUpgraded(client.getVarbitValue(
-			net.runelite.api.gameval.VarbitID.DEATH_CHARGE_SCROLL_USED) > 0);
-		panel.setCurrentSpellbook(client.getVarbitValue(
-			net.runelite.api.gameval.VarbitID.SPELLBOOK));
 	}
 
-	/** The panel's grey-trio hook: the global always-filter list plus
-	 * wrench-panel supply defaults editable straight from the chip menu
-	 * (the config write loops back through PANEL_CONFIG_KEYS, so the
-	 * panel refreshes exactly like a wrench edit). */
-	private LoadoutLabPanel.GlobalFilters globalFiltersView()
-	{
-		return new LoadoutLabPanel.GlobalFilters()
-		{
-			@Override
-			public Map<Integer, String> alwaysFiltered()
-			{
-				return alwaysFilter == null ? Map.of() : alwaysFilter.all();
-			}
-
-			@Override
-			public void addAlwaysFiltered(int itemId, String name)
-			{
-				alwaysFilter.add(itemId, name);
-			}
-
-			@Override
-			public void removeAlwaysFiltered(int itemId)
-			{
-				alwaysFilter.remove(itemId);
-			}
-
-			@Override
-			public void setSupplyDefault(String category, String enumName)
-			{
-				supplyDefaults.setChoice(category, enumName);
-				SwingUtilities.invokeLater(() ->
-				{
-					if (panel != null)
-					{
-						panel.setSupplyDefaults(buildSupplyDefaults());
-					}
-				});
-			}
-		};
-	}
 
 	/** The persistent trip-supply defaults (choice keys by TripSupplies
 	 * category) - store-backed, every category DETECT_BEST until the grey
@@ -980,61 +876,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		into.put(style, "NONE".equals(constant) ? "NONE" : pick);
 	}
 
-	private LoadoutLabPanel.DisplayOptions buildDisplayOptions()
-	{
-		LoadoutLabPanel.DisplayOptions o = new LoadoutLabPanel.DisplayOptions();
-		o.maxHit = config.displayMaxHit();
-		o.accuracy = config.displayAccuracy();
-		o.bonuses = config.displayBonuses();
-		o.assumes = config.displayAssumes();
-		o.damageTaken = config.displayDamageTaken();
-		o.defensivePrayer = config.displayDefensivePrayer();
-		o.riskLine = config.displayRiskOnDeath();
-		o.prayerBonus = config.displayPrayerBonus();
-		o.attackStyle = config.displayAttackStyle();
-		o.gameBest = config.displayGameBest();
-		o.setCost = config.displaySetCost();
-		o.notes = config.enableNotes();
-		o.footnote = config.displayFootnote();
-		o.addMob = config.displayAddMob();
-		o.inventory = config.displayInventory();
-		o.spellControls = config.showSpellControls();
-		o.upgradeBudget = config.showUpgradeBudget();
-		o.wildyRisk = config.showWildyRisk();
-		o.showInBank = config.showInBankButton();
-		o.filterBank = config.showFilterBankButton();
-		o.loadingAnimation = config.loadingAnimation();
-		o.spellbookChip = config.displaySpellbookChip();
-		o.showExclude = config.showExcludeControls();
-		o.showSim = config.showSimControls();
-		o.showFilter = config.showFilterControls();
-		o.showPins = config.showPinControls();
-		o.defaultUpgradeBudget = config.defaultUpgradeBudget();
-		o.defaultRiskCap = config.defaultRiskCap();
-		o.defaultOnTask = config.defaultOnTask();
-		o.defaultSpecWeapon = config.defaultSpecWeapon();
-		o.defaultAntifireMode = config.defaultAntifire() == LoadoutLabConfig.AntifireDefault.DETECT
-			? -1 : config.defaultAntifire().ordinal() - 1;
-		o.detectThralls = config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
-		o.detectDeathCharge = config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
-		o.autocastNone = config.defaultAutocast() == LoadoutLabConfig.AssumeDefault.NONE;
-		seedPick(o.defaultPrayerPicks, CombatStyle.MELEE,
-			config.defaultMeleePrayer().name(), config.defaultMeleePrayer().pick);
-		seedPick(o.defaultPrayerPicks, CombatStyle.RANGED,
-			config.defaultRangedPrayer().name(), config.defaultRangedPrayer().toString());
-		seedPick(o.defaultPrayerPicks, CombatStyle.MAGIC,
-			config.defaultMagicPrayer().name(), config.defaultMagicPrayer().toString());
-		seedPick(o.defaultBoostPicks, CombatStyle.MELEE,
-			config.defaultMeleeBoost().name(), config.defaultMeleeBoost().name());
-		seedPick(o.defaultBoostPicks, CombatStyle.RANGED,
-			config.defaultRangedBoost().name(), config.defaultRangedBoost().name());
-		seedPick(o.defaultBoostPicks, CombatStyle.MAGIC,
-			config.defaultMagicBoost().name(), config.defaultMagicBoost().name());
-		o.specDpsMode = config.specDpsOutput().ordinal();
-		o.thrallDpsMode = config.thrallDpsOutput().ordinal();
-		o.spellbookSwapVengeance = config.spellbookSwapVengeance();
-		return o;
-	}
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
 	@Subscribe
@@ -1069,10 +910,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		SwingUtilities.invokeLater(() ->
 		{
 			commandHistory.clear();
-			if (panel != null)
-			{
-				panel.refreshHistoryButtons();
-			}
+			// History buttons render from the page's history node now.
 		});
 		resetForIdentityChange();
 	}
@@ -1110,9 +948,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		stashChartSeen = false;
 		SwingUtilities.invokeLater(() ->
 		{
-			if (panel != null)
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			if (engine != null)
 			{
-				panel.resetForIdentityChange();
+				engine.clearForIdentityChange();
 			}
 		});
 	}
@@ -1138,9 +977,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			boolean f2p = onF2pWorld();
 			SwingUtilities.invokeLater(() ->
 			{
-				if (panel != null)
+				com.loadoutlab.model.CommandEngine engine = commandEngine;
+				if (engine != null)
 				{
-					panel.setF2pWorld(f2p);
+					engine.execute("set-param", Map.of("param", "f2pOnly", "value", f2p));
 				}
 			});
 		}
@@ -1254,9 +1094,10 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			// froze on "gear only" with super antifires in the bank).
 			SwingUtilities.invokeLater(() ->
 			{
-				if (panel != null)
+				com.loadoutlab.model.CommandEngine engine = commandEngine;
+				if (engine != null)
 				{
-					panel.onOwnedChanged();
+					engine.execute("recompute", Map.of());
 				}
 			});
 		}
@@ -1473,10 +1314,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	private boolean exec(com.loadoutlab.command.Command cmd)
 	{
 		boolean ok = commandHistory.execute(cmd);
-		if (panel != null)
-		{
-			panel.refreshHistoryButtons();
-		}
+		// History buttons render from the page's history node now.
 		return ok;
 	}
 
@@ -1488,78 +1326,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		return item == null ? ("item " + itemId) : item.label();
 	}
 
-	/** Panel hook: the header undo/redo buttons over the command stack. */
-	private LoadoutLabPanel.HistoryControl historyControl()
-	{
-		return new LoadoutLabPanel.HistoryControl()
-		{
-			@Override
-			public boolean undo()
-			{
-				return commandHistory.undo();
-			}
 
-			@Override
-			public boolean redo()
-			{
-				return commandHistory.redo();
-			}
-
-			@Override
-			public boolean canUndo()
-			{
-				return commandHistory.canUndo();
-			}
-
-			@Override
-			public boolean canRedo()
-			{
-				return commandHistory.canRedo();
-			}
-
-			@Override
-			public String undoLabel()
-			{
-				return commandHistory.peekUndoTarget();
-			}
-
-			@Override
-			public String redoLabel()
-			{
-				return commandHistory.peekRedoDescription();
-			}
-
-			@Override
-			public boolean execute(com.loadoutlab.command.Command command)
-			{
-				return exec(command);
-			}
-		};
-	}
-
-	/** Panel hook: the "only bring if protected on death" flag store. */
-	private LoadoutLabPanel.ProtectOnlyToggle protectOnlyView()
-	{
-		return new LoadoutLabPanel.ProtectOnlyToggle()
-		{
-			@Override
-			public boolean toggle(int itemId)
-			{
-				if (protectOnly == null)
-				{
-					return false;
-				}
-				exec(Commands.toggleProtectOnly(protectOnly, itemId, itemLabel(itemId)));
-				return protectOnly.isProtectOnly(itemId);
-			}
-
-			@Override
-			public boolean isProtectOnly(int itemId)
-			{
-				return protectOnly != null && protectOnly.isProtectOnly(itemId);
-			}
-		};
-	}
 
 	/** Effective exclusions per style: the global list unioned with this
 	 * mob's ALL + style scopes. Styles with no mob exclusions share the
@@ -1668,224 +1435,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		return byStyle;
 	}
 
-	/** Panel hook: the per-monster user profile, backed by the store. */
-	private LoadoutLabPanel.MobProfile mobProfileView()
-	{
-		return new LoadoutLabPanel.MobProfile()
-		{
-			@Override
-			public Map<GearSlot, Integer> pins(int monsterId, CombatStyle style)
-			{
-				return mobProfiles == null ? Map.of()
-					: mobProfiles.pinsFor(monsterId, style.name());
-			}
-
-			@Override
-			public Map<String, Map<GearSlot, Integer>> allPins(int monsterId)
-			{
-				return mobProfiles == null ? Map.of() : mobProfiles.allPins(monsterId);
-			}
-
-			@Override
-			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.pin(mobProfiles, monsterId, scope, slot, itemId, itemLabel(itemId)));
-				}
-			}
-
-			@Override
-			public void unpin(int monsterId, String scope, GearSlot slot)
-			{
-				if (mobProfiles != null)
-				{
-					Integer current = mobProfiles.allPins(monsterId)
-						.getOrDefault(scope, Map.of()).get(slot);
-					String label = current == null
-						? slot.name().toLowerCase() : itemLabel(current);
-					exec(Commands.unpin(mobProfiles, monsterId, scope, slot, label));
-				}
-			}
-
-			@Override
-			public String note(int monsterId)
-			{
-				return mobProfiles == null ? "" : mobProfiles.noteFor(monsterId);
-			}
-
-			@Override
-			public void setNote(int monsterId, String note)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.setNote(mobProfiles, monsterId, note));
-				}
-			}
-
-			@Override
-			public Set<Integer> filterItems(int monsterId, CombatStyle style)
-			{
-				return mobProfiles == null ? Set.of()
-					: mobProfiles.filterItemsFor(monsterId, style.name());
-			}
-
-			@Override
-			public Map<String, Map<Integer, String>> allFilterItems(int monsterId)
-			{
-				return mobProfiles == null ? Map.of() : mobProfiles.allFilterItems(monsterId);
-			}
-
-			@Override
-			public void addFilterItem(int monsterId, String scope, int itemId, String name)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.addFilterItem(mobProfiles, monsterId, scope, itemId, name));
-				}
-			}
-
-			@Override
-			public void removeFilterItem(int monsterId, String scope, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.removeFilterItem(mobProfiles, monsterId, scope, itemId));
-				}
-			}
-
-			@Override
-			public String pinnedSpell(int monsterId)
-			{
-				return mobProfiles == null ? "" : mobProfiles.pinnedSpellFor(monsterId);
-			}
-
-			@Override
-			public void setPinnedSpell(int monsterId, String spellName)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.setPinnedSpell(mobProfiles, monsterId, spellName));
-				}
-			}
-
-			@Override
-			public int pinnedSpec(int monsterId)
-			{
-				return mobProfiles == null ? 0 : mobProfiles.pinnedSpecFor(monsterId);
-			}
-
-			@Override
-			public void setPinnedSpec(int monsterId, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					com.loadoutlab.data.GearItem g = data == null ? null : data.getGear(itemId);
-					exec(Commands.setPinnedSpec(mobProfiles, monsterId, itemId,
-						g == null ? ("item " + itemId) : g.label()));
-				}
-			}
-
-			@Override
-			public Map<String, Set<Integer>> allMobExclusions(int monsterId)
-			{
-				return mobProfiles == null ? Map.of() : mobProfiles.allExclusions(monsterId);
-			}
-
-			@Override
-			public void excludeForMob(int monsterId, String scope, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.excludeForMob(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
-				}
-			}
-
-			@Override
-			public void removeMobExclusion(int monsterId, String scope, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.removeMobExclusion(mobProfiles, monsterId, scope, itemId, itemLabel(itemId)));
-				}
-			}
-
-			@Override
-			public Map<Integer, String> allMobSims(int monsterId)
-			{
-				return mobProfiles == null ? Map.of() : mobProfiles.allSims(monsterId);
-			}
-
-			@Override
-			public void simForMob(int monsterId, int itemId, String name)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.simForMob(mobProfiles, monsterId, itemId, name));
-				}
-			}
-
-			@Override
-			public Map<String, String> supplyOverrides(int monsterId)
-			{
-				return mobProfiles.supplies(monsterId);
-			}
-
-			@Override
-			public void setSupplyOverride(int monsterId, String category, String choice)
-			{
-				mobProfiles.setSupply(monsterId, category, choice);
-			}
-
-			@Override
-			public void removeMobSim(int monsterId, int itemId)
-			{
-				if (mobProfiles != null)
-				{
-					exec(Commands.removeMobSim(mobProfiles, monsterId, itemId, itemLabel(itemId)));
-				}
-			}
-
-			@Override
-			public void excludeForMobs(java.util.List<Integer> monsterIds, String scope, int itemId)
-			{
-				if (mobProfiles == null)
-				{
-					return;
-				}
-				// One undo entry for the whole group (field request 2026-07-18).
-				commandHistory.beginCompound("Exclude for the whole group: " + itemLabel(itemId));
-				for (int id : monsterIds)
-				{
-					exec(Commands.excludeForMob(mobProfiles, id, scope, itemId, itemLabel(itemId)));
-				}
-				commandHistory.endCompound();
-				if (panel != null)
-				{
-					panel.refreshHistoryButtons();
-				}
-			}
-
-			@Override
-			public void simForMobs(java.util.List<Integer> monsterIds, int itemId, String name)
-			{
-				if (mobProfiles == null)
-				{
-					return;
-				}
-				commandHistory.beginCompound("Sim for the whole group: " + name);
-				for (int id : monsterIds)
-				{
-					exec(Commands.simForMob(mobProfiles, id, itemId, name));
-				}
-				commandHistory.endCompound();
-				if (panel != null)
-				{
-					panel.refreshHistoryButtons();
-				}
-			}
-		};
-	}
 
 	/** The mob's pinned autocast spell resolved to the dataset, or null. */
 	private SpellStats resolvedPinnedSpell(int monsterId)
@@ -1911,7 +1460,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * its display name there (the only thread where that is legal) and
 	 * returns to the EDT.
 	 */
-	private LoadoutLabPanel.ItemSearch itemSearchView()
+	private com.loadoutlab.render.ItemPicker itemSearchView()
 	{
 		return (prompt, onPicked) ->
 		{
@@ -1930,49 +1479,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		};
 	}
 
-	/** Panel hook: tooltip clause + legend label for an item's location.
-	 * Render/hover frequency - the origins map is memoized on the ownership
-	 * fingerprint (a render pass asked ~2x per gear cell, and every ask
-	 * rebuilt all the per-source snapshots). */
-	private LoadoutLabPanel.LocationHint locationHintView()
-	{
-		return new LoadoutLabPanel.LocationHint()
-		{
-			private ItemLocations cached;
-			private int cachedFingerprint;
-
-			@Override
-			public String hint(int itemId)
-			{
-				ItemLocations locations = locations();
-				return locations == null ? "" : locations.fetchHint(itemId);
-			}
-
-			@Override
-			public String primary(int itemId)
-			{
-				ItemLocations locations = locations();
-				return locations == null ? "" : locations.primary(itemId);
-			}
-
-			/** EDT-confined (panel render/hover), like the panel itself. */
-			private ItemLocations locations()
-			{
-				if (ledger == null || manualOwned == null || dwmsLink == null)
-				{
-					return null;
-				}
-				int fingerprint = ownedFingerprint();
-				if (cached == null || cachedFingerprint != fingerprint)
-				{
-					cached = new ItemLocations(ownedBySources(),
-						data == null ? null : data::equivalentIds);
-					cachedFingerprint = fingerprint;
-				}
-				return cached;
-			}
-		};
-	}
 
 	/**
 	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
@@ -2211,26 +1717,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * after a bank open, where core's BANKMAIN_INIT reload has just wiped
 	 * the in-memory list. The FINISHBUILDING hook covers rebuild variants.
 	 * (Priority-after-core precedent: Inventory Setups.) */
-	/** The book chips react LIVE to a spellbook swap (field bug
-	 * 2026-07-21: the chip stayed red after swapping - the live book was
-	 * only pushed at compute staging). Filtered to the one varbit; the
-	 * re-render is user-action-rare, never per-tick work. */
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		if (event.getVarbitId() != net.runelite.api.gameval.VarbitID.SPELLBOOK)
-		{
-			return;
-		}
-		final int book = event.getValue();
-		SwingUtilities.invokeLater(() ->
-		{
-			if (panel != null)
-			{
-				panel.refreshSpellbook(book);
-			}
-		});
-	}
 
 	@Subscribe(priority = -1)
 	public void onScriptPreFired(ScriptPreFired event)
@@ -2268,23 +1754,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
 	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
 	 * v1 - roster-wide per-mob preferences come later. */
-	/** Consumable GE prices, resolved ON the client thread (compositions
-	 * assert off-thread) and handed to the panel for EDT rendering. */
-	private void refreshConsumablePrices()
-	{
-		if (panel == null)
-		{
-			return;
-		}
-		Map<Integer, Long> prices = new HashMap<>();
-		for (int id : LoadoutLabPanel.CONSUMABLE_PRICE_IDS)
-		{
-			prices.put(id, (long) itemManager.getItemPrice(id));
-		}
-		panel.setConsumablePrices(prices);
-	}
 
-	@Override
 	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
@@ -2293,7 +1763,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				snapshotProfileIfNeeded();
 			}
-			refreshConsumablePrices();
 			if (config.useDwmsData())
 			{
 				requestDwmsStorages();
@@ -2323,19 +1792,11 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 						engine.onRosterResults(roster.mobs, roster.perMob);
 						refreshHostedView();
 					}
-					SwingUtilities.invokeLater(() ->
-					{
-						if (panel != null)
-						{
-							panel.showRosterResults(roster.mobs, roster.perMob, roster.curve);
-						}
-						onDone.run();
-					});
+					SwingUtilities.invokeLater(onDone);
 				});
 		});
 	}
 
-	@Override
 	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
@@ -2344,7 +1805,6 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 			{
 				snapshotProfileIfNeeded();
 			}
-			refreshConsumablePrices();
 			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
 			// re-read keeps imported storages as fresh as they can be. The
 			// PluginMessage re-request refreshes the live snapshot the same
@@ -2385,81 +1845,44 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 						engine.onResults(monster, results);
 						refreshHostedView();
 					}
-					SwingUtilities.invokeLater(() ->
-					{
-						if (panel != null)
-						{
-							panel.showResults(monster, results);
-						}
-						onDone.run();
-					});
+					SwingUtilities.invokeLater(onDone);
 				});
 		});
 	}
 
-	/** The one-surface swap (ADR-0008): with a Companion renderer
-	 * registered and the toggle on, Core's single nav slot shows the
-	 * Companion's content; otherwise the classic panel. Rebuilding the
-	 * NavigationButton is the supported way to change its panel. */
+	/** The one-surface mount (ADR-0008): Core's single nav slot always
+	 * hosts a renderer - an external Companion's registration wins,
+	 * the in-core model-driven surface is the default. */
 	private void refreshHostedView()
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			if (navButton == null)
+			if (navButton == null || companionHost == null)
 			{
 				return;
 			}
-			// External Companion renderer wins; the in-core surface is
-			// the default (ADR-0008 Path C).
 			java.util.function.Function<Map<String, Object>, javax.swing.JComponent> renderer =
 				companionRenderer;
 			if (renderer == null && internalSurface != null)
 			{
 				renderer = internalSurface.asFunction();
 			}
-			boolean hosted = renderer != null && config.useCompanionUi();
-			boolean showingHost = companionHost != null && navButton.getPanel() == companionHost;
-			if (hosted)
+			if (renderer == null)
 			{
-				javax.swing.JComponent content;
-				try
-				{
-					content = renderer.apply(
-						companionLink == null ? null : companionLink.lastPage());
-				}
-				catch (RuntimeException ex)
-				{
-					log.warn("companion renderer failed; keeping the classic panel", ex);
-					return;
-				}
-				if (companionHost == null)
-				{
-					companionHost = new com.loadoutlab.ui.CompanionHost();
-				}
-				companionHost.mount(content);
-				if (!showingHost)
-				{
-					swapNavPanel(companionHost);
-				}
+				return; // still loading
 			}
-			else if (showingHost)
+			try
 			{
-				swapNavPanel(panel);
+				companionHost.mount(renderer.apply(
+					companionLink == null ? null : companionLink.lastPage()));
+			}
+			catch (RuntimeException ex)
+			{
+				log.warn("renderer failed; keeping the previous content", ex);
 			}
 		});
 	}
 
-	private void swapNavPanel(net.runelite.client.ui.PluginPanel target)
-	{
-		clientToolbar.removeNavigation(navButton);
-		navButton = NavigationButton.builder()
-			.tooltip("Loadout Lab")
-			.icon(loadSidebarIcon())
-			.priority(7)
-			.panel(target)
-			.build();
-		clientToolbar.addNavigation(navButton);
-	}
 
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */
 	private void snapshotProfileIfNeeded()
