@@ -28,20 +28,40 @@ public class RenderSurface
 	private final javax.swing.Timer searchDebounce;
 	private JTextField search;
 	private JPanel cardArea;
-	private javax.swing.JLabel computing;
+	private JPanel waitingSlot;
 	private volatile boolean isComputing;
+	/** Optional rich waiting content (the Companion injects the mascot
+	 * roster here); absent = the plain Computing... line. */
+	private volatile java.util.function.Supplier<JComponent> waitingSupplier;
 
-	/** Compute-in-flight: dims the cards and shows the waiting line
-	 * (the mascot animation's future mount point). */
+	public void setWaitingSupplier(java.util.function.Supplier<JComponent> waitingSupplier)
+	{
+		this.waitingSupplier = waitingSupplier;
+	}
+
+	/** Compute-in-flight: shows the waiting slot; a supplier gets a
+	 * fresh component per compute (mascot moods re-roll). */
 	public void setComputing(boolean computing)
 	{
 		isComputing = computing;
 		javax.swing.SwingUtilities.invokeLater(() ->
 		{
-			if (this.computing != null)
+			if (waitingSlot == null)
 			{
-				this.computing.setVisible(isComputing);
+				return;
 			}
+			if (isComputing)
+			{
+				java.util.function.Supplier<JComponent> supplier = waitingSupplier;
+				if (supplier != null)
+				{
+					waitingSlot.removeAll();
+					waitingSlot.add(supplier.get(), BorderLayout.CENTER);
+				}
+			}
+			waitingSlot.setVisible(isComputing);
+			waitingSlot.revalidate();
+			waitingSlot.repaint();
 		});
 	}
 
@@ -298,9 +318,11 @@ public class RenderSurface
 			chipRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
 			chipRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			top.add(chipRow, BorderLayout.CENTER);
-			computing = new javax.swing.JLabel("Computing...");
-			computing.setVisible(false);
-			top.add(computing, BorderLayout.SOUTH);
+			waitingSlot = new JPanel(new BorderLayout());
+			waitingSlot.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			waitingSlot.add(new javax.swing.JLabel("Computing..."), BorderLayout.CENTER);
+			waitingSlot.setVisible(false);
+			top.add(waitingSlot, BorderLayout.SOUTH);
 			root.add(top, BorderLayout.NORTH);
 			cardArea = new JPanel();
 			cardArea.setLayout(new BoxLayout(cardArea, BoxLayout.Y_AXIS));
