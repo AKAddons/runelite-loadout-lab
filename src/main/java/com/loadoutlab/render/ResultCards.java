@@ -172,12 +172,18 @@ public class ResultCards
 		return row;
 	}
 
+	/** The brand accent (the classic ACCENT, ex-MascotArt.LIMB). */
+	static final Color ACCENT = new Color(0xE8, 0x9A, 0x3C);
+
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps)
 	{
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(CARD);
-		card.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(
+				bis ? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR, 1, true),
+			BorderFactory.createEmptyBorder(8, 8, 8, 8)));
 		JLabel title = new JLabel(Model.str(mob, "label"));
 		title.setFont(title.getFont().deriveFont(Font.BOLD));
 		card.add(left(title));
@@ -285,6 +291,7 @@ public class ResultCards
 				caption, setDps, (int) Model.num(card, "maxHit"),
 				Model.num(card, "accuracy") * 100);
 		JLabel headline = new JLabel(headlineText);
+		headline.setForeground(bis ? ACCENT : new Color(0xE6, 0xE6, 0xE6));
 		String spell = Model.str(card, "spell");
 		StringBuilder tip = new StringBuilder("<html>").append(Model.str(card, "attackType"));
 		if (spell != null)
@@ -308,10 +315,11 @@ public class ResultCards
 		if (incoming != null && Model.str(incoming, "protectPrayer") != null)
 		{
 			String caveat = Model.flag(incoming, "fullyModeled") ? "" : " (partly modeled)";
-			JLabel dtps = new JLabel(String.format("Pray %s - takes %.2f dps (%.2f unprayed)%s",
+			JLabel dtps = new JLabel(String.format(
+				"<html>Pray %s - takes %.2f dps (%.2f unprayed)%s</html>",
 				Model.str(incoming, "protectPrayer"), Model.num(incoming, "dps"),
 				Model.num(incoming, "unprayedDps"), caveat));
-			dtps.setFont(dtps.getFont().deriveFont(dtps.getFont().getSize() - 1f));
+			dtps.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			panel.add(left(dtps));
 		}
 		panel.add(left(gearGrid(card, bis)));
@@ -326,7 +334,7 @@ public class ResultCards
 				Model.id(off, "magic"), Model.id(off, "ranged"),
 				Model.id(stats, "strength"), Model.id(stats, "rangedStrength"),
 				Model.id(stats, "magicDamage"), Model.id(stats, "prayer")));
-			statLine.setFont(statLine.getFont().deriveFont(statLine.getFont().getSize() - 2f));
+			statLine.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			statLine.setToolTipText(String.format(
 				"<html>Offence: stab %d, slash %d, crush %d, magic %d, ranged %d"
 					+ "<br>Defence: stab %d, slash %d, crush %d, magic %d, ranged %d</html>",
@@ -530,14 +538,14 @@ public class ResultCards
 				riskTip.append("<br> ").append(lost);
 			}
 			riskLine.setToolTipText(riskTip.append("</html>").toString());
-			riskLine.setFont(riskLine.getFont().deriveFont(riskLine.getFont().getSize() - 1f));
+			riskLine.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			panel.add(left(riskLine));
 		}
 		int upgradeCost = (int) Model.num(card, "purchaseCost");
 		if (upgradeCost > 0)
 		{
 			JLabel costLine = new JLabel("Upgrade cost: " + Gp.format(upgradeCost) + " gp");
-			costLine.setFont(costLine.getFont().deriveFont(costLine.getFont().getSize() - 1f));
+			costLine.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			panel.add(left(costLine));
 		}
 		Object counted = card.get("counted");
@@ -555,36 +563,56 @@ public class ResultCards
 				line.append(bonus);
 			}
 			JLabel counting = new JLabel(line.toString());
-			counting.setFont(counting.getFont().deriveFont(counting.getFont().getSize() - 2f));
+			counting.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			counting.setToolTipText("Situational bonuses the math actually counted for this set");
 			panel.add(left(counting));
 		}
 		return panel;
 	}
 
+	/** The worn-equipment silhouette (5 rows x 3): blank corners, the
+	 * spec weapon in the empty cell left of the legs, quiver ammo in
+	 * the corner right of the legs - the classic panel's iconic grid. */
+	private static final String[] CROSS = {
+		null, "head", null,
+		"cape", "neck", "ammo",
+		"weapon", "body", "shield",
+		"#spec", "legs", "#quiver",
+		"hands", "feet", "ring",
+	};
+
 	private JPanel gearGrid(Map<String, Object> card, boolean bis)
 	{
-		JPanel grid = new JPanel(new GridLayout(0, 7, 2, 2));
+		JPanel grid = new JPanel(new GridLayout(5, 3, 2, 2));
 		grid.setBackground(CARD);
 		Map<String, Object> gear = Model.map(card, "gear");
-		if (gear != null)
+		Map<String, Object> specNode = Model.map(card, "spec");
+		Map<String, Object> quiver = Model.map(card, "quiverAmmo");
+		for (String slot : CROSS)
 		{
-			for (Map.Entry<String, Object> slot : gear.entrySet())
+			Map<String, Object> item =
+				"#spec".equals(slot) ? (specNode == null ? null : Model.map(specNode, "weapon"))
+				: "#quiver".equals(slot) ? quiver
+				: slot == null || gear == null ? null : Model.map(gear, slot);
+			if (item == null)
 			{
-				if (slot.getValue() instanceof Map)
-				{
-					@SuppressWarnings("unchecked")
-					Map<String, Object> item = (Map<String, Object>) slot.getValue();
-					grid.add(itemCell(item, slot.getKey(), bis));
-				}
+				JLabel blank = new JLabel();
+				blank.setPreferredSize(new java.awt.Dimension(36, 34));
+				blank.setOpaque(true);
+				blank.setBackground(ColorScheme.DARK_GRAY_COLOR);
+				grid.add(blank);
+			}
+			else
+			{
+				String slotName = "#spec".equals(slot) ? "spec"
+					: "#quiver".equals(slot) ? "quiver" : slot;
+				grid.add(itemCell(item, slotName, bis));
 			}
 		}
-		Map<String, Object> quiver = Model.map(card, "quiverAmmo");
-		if (quiver != null)
-		{
-			grid.add(itemCell(quiver, "quiver", bis));
-		}
-		return grid;
+		JPanel holder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
+		holder.setBackground(CARD);
+		holder.add(grid);
+		return holder;
 	}
 
 	private JLabel itemCell(Map<String, Object> item, String slot, boolean bis)
@@ -593,6 +621,11 @@ public class ResultCards
 		String name = Model.str(item, "name");
 		int id = Model.id(item, "id");
 		cell.setToolTipText(name + " (" + slot + ")");
+		cell.setPreferredSize(new java.awt.Dimension(36, 34));
+		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		cell.setOpaque(true);
+		cell.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
+		cell.setBorder(BorderFactory.createLineBorder(ColorScheme.DARK_GRAY_COLOR, 1));
 		itemManager.getImage(id).addTo(cell);
 		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 		javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + name);
