@@ -58,6 +58,14 @@ public class RenderSurface
 					waitingSlot.removeAll();
 					waitingSlot.add(supplier.get(), BorderLayout.CENTER);
 				}
+				// The classic contract: a compute clears the stage - only
+				// the loading animation shows until the new answer lands.
+				if (cardArea != null)
+				{
+					cardArea.removeAll();
+					cardArea.revalidate();
+					cardArea.repaint();
+				}
 			}
 			waitingSlot.setVisible(isComputing);
 			waitingSlot.revalidate();
