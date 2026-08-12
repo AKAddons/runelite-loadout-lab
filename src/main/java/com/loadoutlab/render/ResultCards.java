@@ -196,6 +196,22 @@ public class ResultCards
 			return card;
 		}
 		card.add(Box.createVerticalStrut(6));
+		JPanel tabStrip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 2, 0));
+		tabStrip.setBackground(CARD);
+		for (String style : STYLES)
+		{
+			boolean has = styles.get(style) != null;
+			javax.swing.JToggleButton tabButton = new javax.swing.JToggleButton(
+				Character.toUpperCase(style.charAt(0)) + style.substring(1), style.equals(tab));
+			tabButton.setEnabled(has);
+			tabButton.setFocusable(false);
+			tabButton.setMargin(new java.awt.Insets(1, 8, 1, 8));
+			String styleKey = style;
+			tabButton.addActionListener(e -> commands.send("set-param",
+				Map.of("param", "selectedTab", "value", styleKey)));
+			tabStrip.add(tabButton);
+		}
+		card.add(left(tabStrip));
 		card.add(left(styleHeader(tab, node)));
 		Map<String, Object> shown = Model.map(node, bis ? "bis" : "yours");
 		if (shown == null)

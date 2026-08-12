@@ -183,6 +183,8 @@ public class RenderSurface
 	};
 
 	private JPanel chipRow;
+	private javax.swing.JButton undoButton;
+	private javax.swing.JButton redoButton;
 
 	/** Uniform chip config: every control in the row shares it. */
 	private static <T extends javax.swing.AbstractButton> T chip(T button, String tooltip, Runnable onClick)
@@ -306,28 +308,45 @@ public class RenderSurface
 					search.setText("");
 				}
 			});
-			JPanel searchArea = new JPanel(new BorderLayout());
+			JPanel searchArea = new JPanel(new BorderLayout(4, 0));
 			searchArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			searchArea.add(search, BorderLayout.NORTH);
+			// Compact history arrows ride BESIDE the search (the classic
+			// header pattern), not loose in the chip row.
+			JPanel historyBox = new JPanel(new java.awt.GridLayout(1, 2, 2, 0));
+			historyBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			undoButton = chip(new javax.swing.JButton("<"), "Undo",
+				() -> commands.send("undo", Map.of()));
+			redoButton = chip(new javax.swing.JButton(">"), "Redo",
+				() -> commands.send("redo", Map.of()));
+			historyBox.add(undoButton);
+			historyBox.add(redoButton);
+			JPanel searchRow = new JPanel(new BorderLayout(4, 0));
+			searchRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			searchRow.add(search, BorderLayout.CENTER);
+			searchRow.add(historyBox, BorderLayout.EAST);
+			searchArea.add(searchRow, BorderLayout.NORTH);
 			matchesBox = new JPanel();
 			matchesBox.setLayout(new BoxLayout(matchesBox, BoxLayout.Y_AXIS));
 			matchesBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			matchesBox.setVisible(false);
 			searchArea.add(matchesBox, BorderLayout.CENTER);
 			top.add(searchArea, BorderLayout.NORTH);
-			chipRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
+			chipRow = new JPanel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
 			chipRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			top.add(chipRow, BorderLayout.CENTER);
+			root.add(top, BorderLayout.NORTH);
+			JPanel resultsArea = new JPanel(new BorderLayout());
+			resultsArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			waitingSlot = new JPanel(new BorderLayout());
 			waitingSlot.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			waitingSlot.add(new javax.swing.JLabel("Computing..."), BorderLayout.CENTER);
 			waitingSlot.setVisible(false);
-			top.add(waitingSlot, BorderLayout.SOUTH);
-			root.add(top, BorderLayout.NORTH);
+			resultsArea.add(waitingSlot, BorderLayout.NORTH);
 			cardArea = new JPanel();
 			cardArea.setLayout(new BoxLayout(cardArea, BoxLayout.Y_AXIS));
 			cardArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			root.add(cardArea, BorderLayout.CENTER);
+			resultsArea.add(cardArea, BorderLayout.CENTER);
+			root.add(resultsArea, BorderLayout.CENTER);
 		}
 		repaint();
 		return root;
@@ -346,32 +365,14 @@ public class RenderSurface
 		if (params != null)
 		{
 			Map<String, Object> history = Model.map(page, "history");
-			if (history != null)
+			if (history != null && undoButton != null)
 			{
-				javax.swing.JButton undo = chip(new javax.swing.JButton("<"),
-					Model.str(history, "undoLabel") == null ? "Undo"
-						: "Undo: " + Model.str(history, "undoLabel"),
-					() -> commands.send("undo", Map.of()));
-				undo.setEnabled(Model.flag(history, "canUndo"));
-				chipRow.add(undo);
-				javax.swing.JButton redo = chip(new javax.swing.JButton(">"),
-					Model.str(history, "redoLabel") == null ? "Redo"
-						: "Redo: " + Model.str(history, "redoLabel"),
-					() -> commands.send("redo", Map.of()));
-				redo.setEnabled(Model.flag(history, "canRedo"));
-				chipRow.add(redo);
-			}
-			String tab = ResultCards.effectiveTab(page);
-			for (String style : new String[]{"melee", "ranged", "magic"})
-			{
-				javax.swing.JToggleButton button = new javax.swing.JToggleButton(
-					Character.toUpperCase(style.charAt(0)) + style.substring(1),
-					style.equals(tab));
-				button.setFocusable(false);
-				button.setMargin(new java.awt.Insets(1, 6, 1, 6));
-				button.addActionListener(e -> commands.send("set-param",
-					Map.of("param", "selectedTab", "value", style)));
-				chipRow.add(button);
+				undoButton.setEnabled(Model.flag(history, "canUndo"));
+				undoButton.setToolTipText(Model.str(history, "undoLabel") == null
+					? "Undo" : "Undo: " + Model.str(history, "undoLabel"));
+				redoButton.setEnabled(Model.flag(history, "canRedo"));
+				redoButton.setToolTipText(Model.str(history, "redoLabel") == null
+					? "Redo" : "Redo: " + Model.str(history, "redoLabel"));
 			}
 			boolean bis = Model.flag(params, "viewingBis");
 			javax.swing.JToggleButton view = new javax.swing.JToggleButton(
