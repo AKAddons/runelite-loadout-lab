@@ -28,6 +28,10 @@ import net.runelite.client.config.ConfigManager;
  */
 public class MonsterProfileStore
 {
+	/** The every-set pin/filter scope key (relocated from the panel;
+	 * the panel's ALL_SETS remains an alias until it exits). */
+	public static final String ALL_SETS = "ALL";
+
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "monsterProfiles";
 	/** The every-style scope key. Style scopes use CombatStyle names. */

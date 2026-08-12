@@ -14,6 +14,13 @@ import java.util.Set;
  */
 public final class DragonfireRules
 {
+	/** Antifire potion dose ids per tier - the Detect scan and the
+	 * consumable chips share them (relocated from the classic panel). */
+	public static final int[] SUPER_ANTIFIRE_IDS = {
+		21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
+	public static final int[] REGULAR_ANTIFIRE_IDS = {
+		2452, 2454, 2456, 2458, 11951, 11953, 11955, 11957};
+
 	private static final Set<String> PROTECTIVE_SHIELDS = Set.of(
 		"anti-dragon shield",
 		"dragonfire shield",

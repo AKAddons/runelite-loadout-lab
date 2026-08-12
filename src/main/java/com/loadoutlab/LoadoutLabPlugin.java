@@ -449,7 +449,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
 		dwmsLink = new DwmsLink();
 		companionLink = new com.loadoutlab.model.CompanionLink(
-			eventBus, com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
+			eventBus, com.loadoutlab.PluginVersion.VERSION);
 		// Deferred: a PluginMessage posted from inside startUp() is lost
 		// to any plugin whose subscribers register after its startUp
 		// returns (field-observed 2026-08-09: the Companion missed our
@@ -544,7 +544,7 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					return counts;
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
-				commandEngine.setCoreVersion(com.loadoutlab.ui.LoadoutLabPanel.PLUGIN_VERSION);
+				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
 				// Detect (classic resolveDefaultAntifire): only for a
 				// fire-breathing selection, best owned tier wins.
 				commandEngine.setAntifireResolver(mobs ->
@@ -558,14 +558,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					{
 						return 0;
 					}
-					for (int id : com.loadoutlab.ui.LoadoutLabPanel.SUPER_ANTIFIRE_IDS)
+					for (int id : com.loadoutlab.engine.DragonfireRules.SUPER_ANTIFIRE_IDS)
 					{
 						if (ownsCanonical(id))
 						{
 							return 2;
 						}
 					}
-					for (int id : com.loadoutlab.ui.LoadoutLabPanel.REGULAR_ANTIFIRE_IDS)
+					for (int id : com.loadoutlab.engine.DragonfireRules.REGULAR_ANTIFIRE_IDS)
 					{
 						if (ownsCanonical(id))
 						{
@@ -630,14 +630,14 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					@Override
 					public void pin(int monsterId, String slot, int itemId)
 					{
-						mobProfiles.pin(monsterId, com.loadoutlab.ui.LoadoutLabPanel.ALL_SETS,
+						mobProfiles.pin(monsterId, com.loadoutlab.collection.MonsterProfileStore.ALL_SETS,
 							com.loadoutlab.data.GearSlot.valueOf(slot.toUpperCase()), itemId);
 					}
 
 					@Override
 					public void unpin(int monsterId, String slot)
 					{
-						mobProfiles.unpin(monsterId, com.loadoutlab.ui.LoadoutLabPanel.ALL_SETS,
+						mobProfiles.unpin(monsterId, com.loadoutlab.collection.MonsterProfileStore.ALL_SETS,
 							com.loadoutlab.data.GearSlot.valueOf(slot.toUpperCase()));
 					}
 

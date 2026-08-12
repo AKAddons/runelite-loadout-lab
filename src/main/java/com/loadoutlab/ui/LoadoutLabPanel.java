@@ -409,7 +409,7 @@ public class LoadoutLabPanel extends PluginPanel
 	}
 
 	/** The every-style pin/filter scope key. */
-	public static final String ALL_SETS = "ALL";
+	public static final String ALL_SETS = com.loadoutlab.collection.MonsterProfileStore.ALL_SETS;
 
 	/** Does the player actually own this item (black set)? */
 	public interface OwnedCheck
@@ -913,22 +913,7 @@ public class LoadoutLabPanel extends PluginPanel
 	 * hand-synced constant this replaces went stale at 0.3.4 and reports
 	 * carried "v0.3.3" from newer clients (field report 2026-08-07).
 	 * VersionStampTest pins the stamp against runelite-plugin.properties. */
-	public static final String PLUGIN_VERSION = loadPluginVersion();
-
-	private static String loadPluginVersion()
-	{
-		try (java.io.InputStream in = LoadoutLabPanel.class.getResourceAsStream(
-			"/com/loadoutlab/version.properties"))
-		{
-			java.util.Properties props = new java.util.Properties();
-			props.load(in);
-			return props.getProperty("version", "unknown");
-		}
-		catch (Exception ex)
-		{
-			return "unknown";
-		}
-	}
+	public static final String PLUGIN_VERSION = com.loadoutlab.PluginVersion.VERSION;
 	/** Resting label of the copy-report chip; the flash reverts to exactly
 	 * this, so a rapid double-click can't strand it on "Copied!". */
 	private static final String COPY_REPORT_LABEL = "Copy report";
@@ -5139,10 +5124,10 @@ public class LoadoutLabPanel extends PluginPanel
 	/** Antifire potion doses, best first (gameval-verified 2026-07-18:
 	 * super 21978.., extended super 22209.., regular 2452.., extended
 	 * 11951..; classic 2-step dose spacing). */
-	public static final int[] SUPER_ANTIFIRE_IDS = {
-		21978, 21981, 21984, 21987, 22209, 22212, 22215, 22218};
-	public static final int[] REGULAR_ANTIFIRE_IDS = {
-		2452, 2454, 2456, 2458, 11951, 11953, 11955, 11957};
+	public static final int[] SUPER_ANTIFIRE_IDS =
+		com.loadoutlab.engine.DragonfireRules.SUPER_ANTIFIRE_IDS;
+	public static final int[] REGULAR_ANTIFIRE_IDS =
+		com.loadoutlab.engine.DragonfireRules.REGULAR_ANTIFIRE_IDS;
 
 	/** The default antifire mode for a fresh result (field spec
 	 * 2026-07-18): only meaningful when the roster breathes fire;
