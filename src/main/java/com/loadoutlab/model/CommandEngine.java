@@ -170,6 +170,19 @@ public class CommandEngine
 		{
 			case "select":
 			{
+				Object exactId = args == null ? null : args.get("id");
+				if (exactId instanceof Number)
+				{
+					int wanted = ((Number) exactId).intValue();
+					for (MonsterStats m : data.getMonsters())
+					{
+						if (m.getId() == wanted)
+						{
+							return selectResolved(m, null);
+						}
+					}
+					return false;
+				}
 				Object query = args == null ? null : args.get("query");
 				if (!(query instanceof String) || ((String) query).isBlank())
 				{
@@ -194,55 +207,7 @@ public class CommandEngine
 						return true;
 					}
 				}
-				Object[] prev = state.selectionSnapshot();
-				boolean hadSelection = state.hasSelection();
-				MonsterStats mobPick = next;
-				com.loadoutlab.data.MonsterGroups.MonsterGroup groupPick = group;
-				return history.execute(new com.loadoutlab.command.Command()
-				{
-					@Override
-					public boolean apply()
-					{
-						if (groupPick != null)
-						{
-							state.selectRoster(groupPick.getMobs(), groupPick.getName());
-						}
-						else
-						{
-							state.select(mobPick);
-						}
-						java.util.function.Function<List<MonsterStats>, Integer> resolve = antifireResolver;
-						if (resolve != null)
-						{
-							List<MonsterStats> selected = groupPick != null
-								? groupPick.getMobs() : List.of(mobPick);
-							state.setParam("antifireMode", resolve.apply(selected));
-						}
-						recompute();
-						return true;
-					}
-
-					@Override
-					public boolean revert()
-					{
-						state.restoreSelection(prev);
-						if (hadSelection)
-						{
-							recompute();
-						}
-						else
-						{
-							clearResults();
-						}
-						return true;
-					}
-
-					@Override
-					public String getDescription()
-					{
-						return "vs " + (groupPick != null ? groupPick.getName() : mobPick.label());
-					}
-				});
+				return selectResolved(next, group);
 			}
 			case "add-mob":
 			{
@@ -851,6 +816,94 @@ public class CommandEngine
 	public void setCoreVersion(String coreVersion)
 	{
 		this.coreVersion = coreVersion;
+	}
+
+	/** Shared by query- and id-resolved selects: the undoable command
+	 * with detect-antifire at selection, exactly like the classic. */
+	private boolean selectResolved(MonsterStats mobPick,
+		com.loadoutlab.data.MonsterGroups.MonsterGroup groupPick)
+	{
+		Object[] prev = state.selectionSnapshot();
+		boolean hadSelection = state.hasSelection();
+		return history.execute(new com.loadoutlab.command.Command()
+		{
+			@Override
+			public boolean apply()
+			{
+				if (groupPick != null)
+				{
+					state.selectRoster(groupPick.getMobs(), groupPick.getName());
+				}
+				else
+				{
+					state.select(mobPick);
+				}
+				java.util.function.Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+				if (resolve != null)
+				{
+					List<MonsterStats> selected = groupPick != null
+						? groupPick.getMobs() : List.of(mobPick);
+					state.setParam("antifireMode", resolve.apply(selected));
+				}
+				recompute();
+				return true;
+			}
+
+			@Override
+			public boolean revert()
+			{
+				state.restoreSelection(prev);
+				if (hadSelection)
+				{
+					recompute();
+				}
+				else
+				{
+					clearResults();
+				}
+				return true;
+			}
+
+			@Override
+			public String getDescription()
+			{
+				return "vs " + (groupPick != null ? groupPick.getName() : mobPick.label());
+			}
+		});
+	}
+
+	/** The classic search dropdown feed: under 2 chars nothing, then
+	 * up to 3 matching groups followed by up to 25 monsters. */
+	public List<Map<String, Object>> searchOptions(String query)
+	{
+		List<Map<String, Object>> options = new java.util.ArrayList<>();
+		String q = query == null ? "" : query.trim();
+		if (q.length() < 2)
+		{
+			return options;
+		}
+		List<com.loadoutlab.data.MonsterGroups.MonsterGroup> loaded = groups;
+		if (loaded == null)
+		{
+			loaded = com.loadoutlab.data.MonsterGroups.load(data);
+			groups = loaded;
+		}
+		for (com.loadoutlab.data.MonsterGroups.MonsterGroup group
+			: com.loadoutlab.data.MonsterGroups.search(loaded, q, 3))
+		{
+			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			node.put("label", group.label());
+			node.put("group", group.getName());
+			options.add(node);
+		}
+		for (MonsterStats m : data.searchMonsters(q, 25))
+		{
+			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			node.put("label", m.label());
+			node.put("id", m.getId());
+			options.add(node);
+		}
+		return options;
 	}
 
 	/** The lens-selected mob (supply overrides key off its profile). */

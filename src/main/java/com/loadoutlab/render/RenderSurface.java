@@ -22,7 +22,11 @@ public class RenderSurface
 	private final java.util.function.Supplier<Map<String, Object>> page;
 	private final CommandSink commands;
 	private final ItemPicker picker;
+	private final Searcher searcher;
 	private JPanel root;
+	private JPanel matchesBox;
+	private final javax.swing.Timer searchDebounce;
+	private JTextField search;
 	private JPanel cardArea;
 	private javax.swing.JLabel computing;
 	private volatile boolean isComputing;
@@ -42,12 +46,98 @@ public class RenderSurface
 	}
 
 	public RenderSurface(ResultCards cards, java.util.function.Supplier<Map<String, Object>> page,
-		CommandSink commands, ItemPicker picker)
+		CommandSink commands, ItemPicker picker, Searcher searcher)
 	{
 		this.cards = cards;
 		this.page = page;
 		this.commands = commands;
 		this.picker = picker;
+		this.searcher = searcher;
+		// The classic search cadence: 150ms debounce, 2+ characters.
+		this.searchDebounce = new javax.swing.Timer(150, e -> runSearch());
+		this.searchDebounce.setRepeats(false);
+	}
+
+	private void runSearch()
+	{
+		if (search == null || matchesBox == null)
+		{
+			return;
+		}
+		String query = search.getText().trim();
+		if (query.length() < 2)
+		{
+			matchesBox.removeAll();
+			matchesBox.setVisible(false);
+			root.revalidate();
+			return;
+		}
+		searcher.search(query, matches -> javax.swing.SwingUtilities.invokeLater(() ->
+		{
+			matchesBox.removeAll();
+			for (Map<String, Object> match : matches)
+			{
+				matchesBox.add(matchRow(match));
+			}
+			matchesBox.setVisible(!matches.isEmpty());
+			root.revalidate();
+			root.repaint();
+		}));
+	}
+
+	/** One dropdown row: the label, group rows bold - click selects. */
+	private javax.swing.JComponent matchRow(Map<String, Object> match)
+	{
+		javax.swing.JLabel row = new javax.swing.JLabel(Model.str(match, "label"));
+		boolean group = match.get("group") != null;
+		if (group)
+		{
+			row.setFont(row.getFont().deriveFont(java.awt.Font.BOLD));
+		}
+		row.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 8, 3, 8));
+		row.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		row.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				pick(match);
+			}
+
+			@Override
+			public void mouseEntered(java.awt.event.MouseEvent e)
+			{
+				row.setOpaque(true);
+				row.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
+				row.repaint();
+			}
+
+			@Override
+			public void mouseExited(java.awt.event.MouseEvent e)
+			{
+				row.setOpaque(false);
+				row.repaint();
+			}
+		});
+		return row;
+	}
+
+	private void pick(Map<String, Object> match)
+	{
+		Object group = match.get("group");
+		if (group instanceof String)
+		{
+			commands.send("select", Map.of("query", group));
+		}
+		else
+		{
+			commands.send("select", Map.of("id", Model.id(match, "id")));
+		}
+		search.setText("");
+		matchesBox.removeAll();
+		matchesBox.setVisible(false);
+		root.revalidate();
+		root.repaint();
 	}
 
 	/** The reference Core stores; JDK types only cross the seam. */
@@ -158,17 +248,53 @@ public class RenderSurface
 			root.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			JPanel top = new JPanel(new BorderLayout(0, 4));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			JTextField search = new JTextField();
-			search.setToolTipText("Search a monster");
+			search = new JTextField();
+			search.setToolTipText("Search a monster or group");
+			search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
+			{
+				public void insertUpdate(javax.swing.event.DocumentEvent e)
+				{
+					searchDebounce.restart();
+				}
+
+				public void removeUpdate(javax.swing.event.DocumentEvent e)
+				{
+					searchDebounce.restart();
+				}
+
+				public void changedUpdate(javax.swing.event.DocumentEvent e)
+				{
+					searchDebounce.restart();
+				}
+			});
 			search.addActionListener(e ->
 			{
+				// Enter = the first match, exactly like clicking it.
+				if (matchesBox.getComponentCount() > 0)
+				{
+					java.awt.Component first = matchesBox.getComponent(0);
+					for (java.awt.event.MouseListener l : first.getMouseListeners())
+					{
+						l.mouseClicked(null);
+						return;
+					}
+				}
 				String query = search.getText().trim();
 				if (!query.isEmpty())
 				{
 					commands.send("select", Map.of("query", query));
+					search.setText("");
 				}
 			});
-			top.add(search, BorderLayout.NORTH);
+			JPanel searchArea = new JPanel(new BorderLayout());
+			searchArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			searchArea.add(search, BorderLayout.NORTH);
+			matchesBox = new JPanel();
+			matchesBox.setLayout(new BoxLayout(matchesBox, BoxLayout.Y_AXIS));
+			matchesBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			matchesBox.setVisible(false);
+			searchArea.add(matchesBox, BorderLayout.CENTER);
+			top.add(searchArea, BorderLayout.NORTH);
 			chipRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
 			chipRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			top.add(chipRow, BorderLayout.CENTER);

@@ -306,6 +306,23 @@ public class LoadoutLabPlugin extends Plugin
 			refreshHostedView();
 			return;
 		}
+		// Companion monster search (contract round trip): the dropdown
+		// feed posts back with the requester's token.
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& "search".equals(event.getName()))
+		{
+			Object query = event.getData().get("query");
+			Object token = event.getData().get("token");
+			com.loadoutlab.model.CommandEngine engine = commandEngine;
+			if (query instanceof String && token instanceof Number && engine != null)
+			{
+				eventBus.post(new PluginMessage(
+					com.loadoutlab.model.CompanionLink.NAMESPACE, "search-results",
+					Map.of("token", ((Number) token).intValue(),
+						"matches", engine.searchOptions((String) query))));
+			}
+			return;
+		}
 		// Companion item search (contract round trip): Core owns the
 		// chatbox; the pick posts back with the requester's token.
 		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
@@ -599,7 +616,13 @@ public class LoadoutLabPlugin extends Plugin
 					itemSearchView().search(prompt, onPicked);
 				internalSurface = new com.loadoutlab.render.RenderSurface(
 					new com.loadoutlab.render.ResultCards(itemManager, sink, picker),
-					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker);
+					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker,
+					(query, onResults) ->
+					{
+						com.loadoutlab.model.CommandEngine engine = commandEngine;
+						onResults.accept(engine == null
+							? java.util.Collections.emptyList() : engine.searchOptions(query));
+					});
 				companionLink.setPageListener(() ->
 				{
 					com.loadoutlab.render.RenderSurface surface = internalSurface;
