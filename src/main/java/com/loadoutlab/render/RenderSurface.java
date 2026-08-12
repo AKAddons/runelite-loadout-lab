@@ -191,6 +191,7 @@ public class RenderSurface
 	};
 
 	private JPanel chipRow;
+	private JPanel countsRow;
 	private javax.swing.JButton undoButton;
 	private javax.swing.JButton redoButton;
 
@@ -267,7 +268,7 @@ public class RenderSurface
 			}
 			menu.show(button, 0, button.getHeight());
 		});
-		chipRow.add(button);
+		countsRow.add(button);
 	}
 
 	private synchronized JComponent root()
@@ -276,8 +277,12 @@ public class RenderSurface
 		{
 			root = new JPanel(new BorderLayout(0, 6));
 			root.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			JPanel top = new JPanel(new BorderLayout(0, 4));
+			JPanel top = new JPanel();
+			top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			countsRow = new JPanel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
+			countsRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			top.add(countsRow);
 			search = new JTextField();
 			search.setToolTipText("Search a monster or group");
 			search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
@@ -507,6 +512,7 @@ public class RenderSurface
 				});
 				chipRow.add(copy);
 			}
+			countsRow.removeAll();
 			Map<String, Object> counts = Model.map(page, "counts");
 			if (counts != null)
 			{
@@ -516,11 +522,12 @@ public class RenderSurface
 					"toggle-sim", "Stop simming");
 				storeChip(counts, "storedItems", "~", "stored elsewhere",
 					"toggle-stored", "Remove");
-				chipRow.add(chip(new javax.swing.JButton("+ Stored"),
+				countsRow.add(chip(new javax.swing.JButton("+ Stored"),
 					"Search an item you own outside the tracked storages", () ->
 						picker.search("Stored elsewhere",
 							(id, name) -> commands.send("toggle-stored", Map.of("itemId", id)))));
 			}
+			countsRow.setVisible(countsRow.getComponentCount() > 0);
 		}
 		cardArea.removeAll();
 		if (page != null)

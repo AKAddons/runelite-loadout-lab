@@ -114,6 +114,7 @@ public class ResultCards
 		{
 			double thrallsDps = Model.num(Model.map(entry, "thralls"), "dps");
 			List<Map<String, Object>> mobs = Model.list(entry, "mobs");
+			rosterView = mobs.size() > 1;
 			if (mobs.size() <= 1)
 			{
 				for (Map<String, Object> mob : mobs)
@@ -123,35 +124,43 @@ public class ResultCards
 				}
 				continue;
 			}
-			// Roster lens: compact clickable rows, one mob expanded.
+			// Roster lens (classic mobLensRows): a compact switcher of
+			// ALL mobs first, then ONE expanded card below it.
 			int shownLens = Math.min(Math.max(lens, 0), mobs.size() - 1);
+			JPanel switcher = new JPanel();
+			switcher.setLayout(new BoxLayout(switcher, BoxLayout.Y_AXIS));
+			switcher.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			switcher.setBorder(BorderFactory.createLineBorder(
+				ColorScheme.DARKER_GRAY_HOVER_COLOR, 1, true));
 			for (int i = 0; i < mobs.size(); i++)
 			{
-				Map<String, Object> mob = mobs.get(i);
-				if (i == shownLens)
-				{
-					column.add(mobCard(mob, tab, bis, thrallsDps));
-				}
-				else
-				{
-					column.add(lensRow(mob, tab, bis, i));
-				}
-				column.add(Box.createVerticalStrut(4));
+				switcher.add(lensRow(mobs.get(i), tab, bis, i, i == shownLens));
 			}
+			column.add(switcher);
+			column.add(Box.createVerticalStrut(6));
+			column.add(mobCard(mobs.get(shownLens), tab, bis, thrallsDps));
+			column.add(Box.createVerticalStrut(4));
 		}
 		return column;
 	}
 
 	/** One collapsed roster row: label + the shown side's dps for the
 	 * current tab; click to move the lens here. */
-	private JPanel lensRow(Map<String, Object> mob, String tab, boolean bis, int index)
+	private JPanel lensRow(Map<String, Object> mob, String tab, boolean bis, int index,
+		boolean selected)
 	{
 		Map<String, Object> styles = Model.map(mob, "styles");
 		Map<String, Object> node = styles == null ? null : Model.map(styles, tab);
 		Map<String, Object> shown = node == null ? null : Model.map(node, bis ? "bis" : "yours");
-		String dps = shown == null ? "-" : String.format("%.2f dps", Model.num(shown, "dps"));
+		String dps = shown == null ? "-" : String.format("%.2f dps%s", Model.num(shown, "dps"),
+			Model.flag(shown, "kitBacked") ? "" : " (tab-only)");
 		JLabel label = new JLabel(Model.str(mob, "label") + "  -  " + dps);
-		label.setToolTipText("Click to expand");
+		if (selected)
+		{
+			label.setFont(label.getFont().deriveFont(Font.BOLD));
+			label.setForeground(ACCENT);
+		}
+		label.setToolTipText(selected ? "Shown below" : "Click to show");
 		label.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
 		label.addMouseListener(new java.awt.event.MouseAdapter()
 		{
@@ -168,12 +177,15 @@ public class ResultCards
 		rowMenu.add(remove);
 		label.setComponentPopupMenu(rowMenu);
 		JPanel row = left(label);
+		row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		row.setBorder(BorderFactory.createEmptyBorder(2, 8, 2, 8));
 		return row;
 	}
 
 	/** The brand accent (the classic ACCENT, ex-MascotArt.LIMB). */
 	static final Color ACCENT = new Color(0xE8, 0x9A, 0x3C);
+
+	private boolean rosterView;
 
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps)
 	{
@@ -216,10 +228,24 @@ public class ResultCards
 		Map<String, Object> shown = Model.map(node, bis ? "bis" : "yours");
 		if (shown == null)
 		{
-			shown = Model.map(node, bis ? "yours" : "bis");
+			// NEVER show the other side in this slot (field bug 2026-08-12:
+			// a missing owned answer silently rendered the BiS set - "gear
+			// that you don't have").
+			JLabel none = new JLabel("No usable " + tab + " set");
+			card.add(left(none));
 		}
-		if (shown != null)
+		else
 		{
+			if (!Model.flag(shown, "kitBacked") && rosterView)
+			{
+				// The vents rule (2026-08-06): a tab-only fallback must
+				// never read as the trip's answer.
+				JLabel caveat = new JLabel(
+					"Tab-only view - the shared kit does not carry this style here");
+				caveat.setForeground(new Color(220, 170, 90));
+				caveat.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+				card.add(left(caveat));
+			}
 			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab)));
 		}
 		if (!supplies.isEmpty())
@@ -256,6 +282,23 @@ public class ResultCards
 			}
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(supplyRow));
+		}
+		Map<String, Object> shownForInv = Model.map(node, bis ? "bis" : "yours");
+		List<Map<String, Object>> bench = Model.list(shownForInv, "bench");
+		if (!bench.isEmpty())
+		{
+			JPanel invRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 2, 0));
+			invRow.setBackground(CARD);
+			invRow.add(new JLabel("Inventory:"));
+			for (Map<String, Object> carried : bench)
+			{
+				JLabel cell = new JLabel();
+				cell.setToolTipText(Model.str(carried, "name") + " (carried swap)");
+				itemManager.getImage(Model.id(carried, "id")).addTo(cell);
+				invRow.add(cell);
+			}
+			card.add(Box.createVerticalStrut(4));
+			card.add(left(invRow));
 		}
 		JPanel trioRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
 		trioRow.setBackground(CARD);
