@@ -107,6 +107,15 @@ public final class RenderModel
 			node.put("bisBoostLabel", result.gameBoostLabel);
 			node.put("assume", assumeNode(result.boostLabel));
 			node.put("bisAssume", assumeNode(result.gameBoostLabel));
+			// Tab facts: the sprite and each side's SHOWN dps (set + spec)
+			// so a renderer can label the strip without re-deriving.
+			node.put("styleSprite", com.loadoutlab.data.AssumeIcons.styleSprite(style));
+			DpsResult ownedShown = result.owned == null || result.owned.isEmpty()
+				? null : result.owned.get(0);
+			node.put("tabDps", ownedShown == null ? 0
+				: ownedShown.getDps() + result.specDpsAdded);
+			node.put("bisTabDps", result.overallBest == null ? 0
+				: result.overallBest.getDps() + result.gameSpecDpsAdded);
 			styles.put(style.name().toLowerCase(), node);
 		}
 		return styles;
