@@ -762,13 +762,11 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
-			counted("demonbane weapon", "+70% accuracy");
-			roll = multiply(roll, 17, 10);
+			roll = demonbane(request, roll, 70, "accuracy");
 		}
 		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
-			counted("demonbane weapon", "+5% accuracy");
-			roll = multiply(roll, 21, 20);
+			roll = demonbane(request, roll, 5, "accuracy");
 		}
 		if (isKalphite(request) && wearing(loadout, "keris partisan of breaching"))
 		{
@@ -838,14 +836,12 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && (wearing(loadout, "arclight") || wearing(loadout, "emberlight")))
 		{
-			counted("demonbane weapon", "+70% damage");
-			maxHit = multiply(maxHit, 17, 10);
+			maxHit = (int) demonbane(request, maxHit, 70, "damage");
 		}
 		if (isDemon(request) && (wearing(loadout, "silverlight") || wearing(loadout, "darklight")))
 		{
 			// Damage only - the wiki and official calc give these no accuracy bonus.
-			counted("demonbane weapon", "+60% damage");
-			maxHit = multiply(maxHit, 8, 5);
+			maxHit = (int) demonbane(request, maxHit, 60, "damage");
 		}
 		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
@@ -1316,6 +1312,17 @@ public final class DpsCalculator
 	private static boolean isScythe(Loadout loadout)
 	{
 		return wearing(loadout, "scythe of vitur");
+	}
+
+	/** Apply a demonbane bonus scaled by the monster's effectiveness
+	 * (Duke resists: +70% lands as +49%; Yama amplifies). */
+	private long demonbane(OptimizationRequest request, long value, int bonusPercent, String what)
+	{
+		int scaled = DemonbaneVulnerability.scaledBonus(request.getMonster(), bonusPercent);
+		int effectiveness = DemonbaneVulnerability.percentFor(request.getMonster());
+		counted("demonbane weapon", "+" + scaled + "% " + what
+			+ (effectiveness == 100 ? "" : " (" + effectiveness + "% effectiveness)"));
+		return multiply(value, 100 + scaled, 100);
 	}
 
 	private static boolean isSoulreaper(Loadout loadout)
