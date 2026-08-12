@@ -105,6 +105,8 @@ public final class RenderModel
 			node.put("bis", card(result, true, riskKeptSlots, owned, simmed));
 			node.put("boostLabel", result.boostLabel);
 			node.put("bisBoostLabel", result.gameBoostLabel);
+			node.put("assume", assumeNode(result.boostLabel));
+			node.put("bisAssume", assumeNode(result.gameBoostLabel));
 			styles.put(style.name().toLowerCase(), node);
 		}
 		return styles;
@@ -218,6 +220,26 @@ public final class RenderModel
 			&& a.getRangedStrength() == b.getRangedStrength()
 			&& a.getMagicDamage() == b.getMagicDamage()
 			&& a.getPrayer() == b.getPrayer();
+	}
+
+	/** Facts for the header assume icons: the label "Piety + Divine
+	 * super combat" resolves to a prayer sprite id and a boost potion
+	 * item id (renderers draw, never map). */
+	private static Map<String, Object> assumeNode(String boostLabel)
+	{
+		if (boostLabel == null || boostLabel.isEmpty())
+		{
+			return null;
+		}
+		Map<String, Object> node = new LinkedHashMap<>();
+		node.put("text", boostLabel);
+		int plus = boostLabel.indexOf(" + ");
+		String prayerPart = plus > 0 ? boostLabel.substring(0, plus) : boostLabel;
+		String boostPart = plus > 0 ? boostLabel.substring(plus + 3) : null;
+		node.put("prayerSprite", com.loadoutlab.data.AssumeIcons.prayerSprite(prayerPart));
+		node.put("boostItem", boostPart == null ? -1
+			: com.loadoutlab.data.AssumeIcons.boostItem(boostPart));
+		return node;
 	}
 
 	private static Map<String, Object> statBlock(com.loadoutlab.data.StatBlock block)
