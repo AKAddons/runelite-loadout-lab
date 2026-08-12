@@ -736,6 +736,76 @@ public class LoadoutLabPlugin extends Plugin
 					}
 
 					@Override
+					public List<Map<String, Object>> mobExclusions(int monsterId)
+					{
+						List<Map<String, Object>> out = new ArrayList<>();
+						for (Map.Entry<String, Set<Integer>> scope
+							: mobProfiles.allExclusions(monsterId).entrySet())
+						{
+							for (int id : scope.getValue())
+							{
+								out.add(Map.of("id", id, "name", itemLabel(id),
+									"scope", scope.getKey()));
+							}
+						}
+						return out;
+					}
+
+					@Override
+					public List<Map<String, Object>> mobSims(int monsterId)
+					{
+						List<Map<String, Object>> out = new ArrayList<>();
+						for (Map.Entry<Integer, String> sim
+							: mobProfiles.allSims(monsterId).entrySet())
+						{
+							out.add(Map.of("id", sim.getKey(), "name", sim.getValue()));
+						}
+						return out;
+					}
+
+					@Override
+					public List<Map<String, Object>> mobFilters(int monsterId)
+					{
+						List<Map<String, Object>> out = new ArrayList<>();
+						for (Map.Entry<String, Map<Integer, String>> scope
+							: mobProfiles.allFilterItems(monsterId).entrySet())
+						{
+							for (Map.Entry<Integer, String> item : scope.getValue().entrySet())
+							{
+								out.add(Map.of("id", item.getKey(), "name", item.getValue(),
+									"scope", scope.getKey()));
+							}
+						}
+						return out;
+					}
+
+					@Override
+					public void removeMobExclusion(int monsterId, String scope, int itemId)
+					{
+						mobProfiles.removeExclusion(monsterId, scope, itemId);
+					}
+
+					@Override
+					public void removeMobSim(int monsterId, int itemId)
+					{
+						mobProfiles.removeSim(monsterId, itemId);
+					}
+
+					@Override
+					public void addMobFilter(int monsterId, int itemId)
+					{
+						mobProfiles.addFilterItem(monsterId,
+							com.loadoutlab.collection.MonsterProfileStore.ALL_SETS,
+							itemId, itemLabel(itemId));
+					}
+
+					@Override
+					public void removeMobFilter(int monsterId, String scope, int itemId)
+					{
+						mobProfiles.removeFilterItem(monsterId, scope, itemId);
+					}
+
+					@Override
 					public Map<String, String> supplyOverrides(int profileId)
 					{
 						return mobProfiles.supplies(profileId);

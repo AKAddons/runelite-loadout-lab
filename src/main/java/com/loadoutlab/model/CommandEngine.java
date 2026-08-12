@@ -81,6 +81,22 @@ public class CommandEngine
 
 		void simForMob(int monsterId, int itemId);
 
+		/** The mob's scoped lists for the card trio menus:
+		 * [{id, name, scope?}] built plugin-side with labels. */
+		List<Map<String, Object>> mobExclusions(int monsterId);
+
+		List<Map<String, Object>> mobSims(int monsterId);
+
+		List<Map<String, Object>> mobFilters(int monsterId);
+
+		void removeMobExclusion(int monsterId, String scope, int itemId);
+
+		void removeMobSim(int monsterId, int itemId);
+
+		void addMobFilter(int monsterId, int itemId);
+
+		void removeMobFilter(int monsterId, String scope, int itemId);
+
 		/** Per-mob supply overrides (profileId-keyed, like the classic). */
 		Map<String, String> supplyOverrides(int profileId);
 
@@ -469,6 +485,42 @@ public class CommandEngine
 					ops.simForMob(mob.getId(), id);
 				}
 				recompute();
+				return true;
+			}
+			case "remove-mob-exclusion":
+			case "remove-mob-sim":
+			case "add-mob-filter":
+			case "remove-mob-filter":
+			{
+				StoreOps ops = stores;
+				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				Object itemId = args == null ? null : args.get("itemId");
+				if (ops == null || mob == null || !(itemId instanceof Number))
+				{
+					return false;
+				}
+				int id = ((Number) itemId).intValue();
+				Object scope = args == null ? null : args.get("scope");
+				String scopeKey = scope instanceof String ? (String) scope : "ALL";
+				switch (name)
+				{
+					case "remove-mob-exclusion":
+						ops.removeMobExclusion(mob.getId(), scopeKey, id);
+						recompute();
+						break;
+					case "remove-mob-sim":
+						ops.removeMobSim(mob.getId(), id);
+						recompute();
+						break;
+					case "add-mob-filter":
+						ops.addMobFilter(mob.getId(), id);
+						republish();
+						break;
+					default:
+						ops.removeMobFilter(mob.getId(), scopeKey, id);
+						republish();
+						break;
+				}
 				return true;
 			}
 			case "set-supply-override":
@@ -1006,6 +1058,9 @@ public class CommandEngine
 					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
 					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
 					mob.put("note", ops.note(monsterId));
+					mob.put("mobExclusions", ops.mobExclusions(monsterId));
+					mob.put("mobSims", ops.mobSims(monsterId));
+					mob.put("mobFilters", ops.mobFilters(monsterId));
 				}
 			}
 		}

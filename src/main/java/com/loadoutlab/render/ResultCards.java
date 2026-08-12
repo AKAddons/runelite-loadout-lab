@@ -257,6 +257,19 @@ public class ResultCards
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(supplyRow));
 		}
+		JPanel trioRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 0));
+		trioRow.setBackground(CARD);
+		trioRow.add(trioButton(mob, "Exclude", "mobExclusions",
+			"Excluded for this mob", "remove-mob-exclusion", "exclude-for-mob",
+			"Exclude an item for this mob"));
+		trioRow.add(trioButton(mob, "Sim", "mobSims",
+			"Simmed for this mob", "remove-mob-sim", "sim-for-mob",
+			"Sim an item as owned for this mob"));
+		trioRow.add(trioButton(mob, "Filter", "mobFilters",
+			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
+			"Add a supply to this mob's bank filter"));
+		card.add(Box.createVerticalStrut(4));
+		card.add(left(trioRow));
 		javax.swing.JTextField note = new javax.swing.JTextField(Model.str(mob, "note"), 18);
 		note.setBackground(new Color(78, 72, 50));
 		note.setForeground(new Color(215, 205, 160));
@@ -267,6 +280,52 @@ public class ResultCards
 		card.add(Box.createVerticalStrut(4));
 		card.add(left(note));
 		return card;
+	}
+
+	/** One classic local chip: "Exclude (2)" opens the mob-scoped list
+	 * (remove per entry) plus an add-by-search entry. */
+	private javax.swing.JButton trioButton(Map<String, Object> mob, String label,
+		String listKey, String noun, String removeCommand, String addCommand, String addPrompt)
+	{
+		List<Map<String, Object>> items = Model.list(mob, listKey);
+		javax.swing.JButton button = new javax.swing.JButton(
+			items.isEmpty() ? label : label + " (" + items.size() + ")");
+		button.setToolTipText(noun + " - click to manage");
+		button.setFocusable(false);
+		button.setMargin(new java.awt.Insets(1, 6, 1, 6));
+		button.addActionListener(e ->
+		{
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			for (Map<String, Object> item : items)
+			{
+				int id = Model.id(item, "id");
+				String scope = Model.str(item, "scope");
+				javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
+					"Remove " + Model.str(item, "name")
+						+ (scope == null || "ALL".equals(scope) ? "" : " (" + scope + ")"));
+				entry.addActionListener(ev ->
+				{
+					Map<String, Object> args = new java.util.HashMap<>();
+					args.put("itemId", id);
+					if (scope != null)
+					{
+						args.put("scope", scope);
+					}
+					commands.send(removeCommand, args);
+				});
+				menu.add(entry);
+			}
+			if (!items.isEmpty())
+			{
+				menu.addSeparator();
+			}
+			javax.swing.JMenuItem add = new javax.swing.JMenuItem(addPrompt + " (search)...");
+			add.addActionListener(ev -> picker.search(addPrompt,
+				(id, name) -> commands.send(addCommand, Map.of("itemId", id))));
+			menu.add(add);
+			menu.show(button, 0, button.getHeight());
+		});
+		return button;
 	}
 
 	private static JLabel styleHeader(String style, Map<String, Object> node)
