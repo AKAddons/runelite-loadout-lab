@@ -86,8 +86,19 @@ public class ResultCards
 	}
 
 	@SuppressWarnings("unchecked")
+	private List<Map<String, Object>> supplies = List.of();
+
 	JPanel render(Map<String, Object> page)
 	{
+		supplies = List.of();
+		for (Map<String, Object> entryNode : Model.list(page, "entries"))
+		{
+			List<Map<String, Object>> found = Model.list(entryNode, "supplies");
+			if (!found.isEmpty())
+			{
+				supplies = found;
+			}
+		}
 		Object spells = page == null ? null : page.get("spells");
 		spellOptions = spells instanceof List ? (List<String>) spells : List.of();
 		assumeOptions = Model.map(page, "assumeOptions");
@@ -188,6 +199,41 @@ public class ResultCards
 		if (shown != null)
 		{
 			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab)));
+		}
+		if (!supplies.isEmpty())
+		{
+			JPanel supplyRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 2, 0));
+			supplyRow.setBackground(CARD);
+			supplyRow.add(new JLabel("Supplies:"));
+			for (Map<String, Object> supply : supplies)
+			{
+				JLabel cell = new JLabel();
+				cell.setToolTipText(Model.str(supply, "name")
+					+ " - right-click to change this category");
+				itemManager.getImage(Model.id(supply, "itemId")).addTo(cell);
+				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				String category = Model.str(supply, "category");
+				javax.swing.JMenuItem detect = new javax.swing.JMenuItem("Detect best");
+				detect.addActionListener(e -> commands.send("set-supply-override",
+					Map.of("category", category, "choice", "DETECT")));
+				menu.add(detect);
+				javax.swing.JMenuItem none = new javax.swing.JMenuItem("None");
+				none.addActionListener(e -> commands.send("set-supply-override",
+					Map.of("category", category, "choice", "NONE")));
+				menu.add(none);
+				for (Map<String, Object> option : Model.list(supply, "options"))
+				{
+					String key = Model.str(option, "key");
+					javax.swing.JMenuItem item = new javax.swing.JMenuItem(Model.str(option, "name"));
+					item.addActionListener(e -> commands.send("set-supply-override",
+						Map.of("category", category, "choice", key)));
+					menu.add(item);
+				}
+				cell.setComponentPopupMenu(menu);
+				supplyRow.add(cell);
+			}
+			card.add(Box.createVerticalStrut(4));
+			card.add(left(supplyRow));
 		}
 		javax.swing.JTextField note = new javax.swing.JTextField(Model.str(mob, "note"), 18);
 		note.setToolTipText("Your note for this mob - saved on Enter");

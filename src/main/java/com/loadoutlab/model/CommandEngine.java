@@ -80,6 +80,11 @@ public class CommandEngine
 		void excludeForMob(int monsterId, String scope, int itemId);
 
 		void simForMob(int monsterId, int itemId);
+
+		/** Per-mob supply overrides (profileId-keyed, like the classic). */
+		Map<String, String> supplyOverrides(int profileId);
+
+		void setSupplyOverride(int profileId, String category, String choice);
 	}
 
 	private volatile StoreOps stores;
@@ -97,6 +102,23 @@ public class CommandEngine
 			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
 			int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone);
+	}
+
+	/** Wrench-panel supply defaults (category -> config enum name),
+	 * re-read per publish so config changes land immediately. */
+	private volatile java.util.function.Supplier<Map<String, String>> supplyDefaults;
+
+	public void setSupplyDefaults(java.util.function.Supplier<Map<String, String>> supplyDefaults)
+	{
+		this.supplyDefaults = supplyDefaults;
+	}
+
+	/** Canonical ownership (dose variants collapse) for Detect scans. */
+	private volatile java.util.function.IntPredicate ownedCheck;
+
+	public void setOwnedCheck(java.util.function.IntPredicate ownedCheck)
+	{
+		this.ownedCheck = ownedCheck;
 	}
 
 	/** Classic Detect: the best owned antifire tier (0/1/2) for a
@@ -484,6 +506,21 @@ public class CommandEngine
 				recompute();
 				return true;
 			}
+			case "set-supply-override":
+			{
+				StoreOps ops = stores;
+				Object category = args == null ? null : args.get("category");
+				Object choice = args == null ? null : args.get("choice");
+				MonsterStats lensed = lensedMob();
+				if (ops == null || lensed == null || !(category instanceof String))
+				{
+					return false;
+				}
+				ops.setSupplyOverride(lensed.profileId(), (String) category,
+					choice instanceof String ? (String) choice : "DETECT");
+				republish();
+				return true;
+			}
 			case "set-pinned-spell":
 			case "set-pinned-spec":
 			case "set-note":
@@ -741,6 +778,7 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots);
 		entry.put("params", params);
 		decorateProfiles(entry);
+		entry.put("supplies", suppliesNode(mobs));
 		Map<String, Object> thrallsNode = null;
 		if (Boolean.TRUE.equals(state.paramsNode().get("thralls")))
 		{
@@ -780,6 +818,83 @@ public class CommandEngine
 	public void setCoreVersion(String coreVersion)
 	{
 		this.coreVersion = coreVersion;
+	}
+
+	/** The lens-selected mob (supply overrides key off its profile). */
+	private MonsterStats lensedMob()
+	{
+		List<MonsterStats> roster = state.rosterMobs();
+		if (roster == null)
+		{
+			return state.mob();
+		}
+		Object lens = state.paramsNode().get("lensIndex");
+		int at = lens instanceof Number ? ((Number) lens).intValue() : 0;
+		return roster.get(Math.min(Math.max(at, 0), roster.size() - 1));
+	}
+
+	/** The classic activeSupplies, core-side: config defaults overlaid
+	 * by the lensed mob's overrides, Detect = best owned tier, antivenom
+	 * only for venomous rosters. Each node carries the category's full
+	 * option list for the override menu. */
+	private List<Map<String, Object>> suppliesNode(List<MonsterStats> mobs)
+	{
+		java.util.function.Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
+		StoreOps ops = stores;
+		java.util.function.IntPredicate owns = ownedCheck;
+		MonsterStats lensed = lensedMob();
+		List<Map<String, Object>> nodes = new java.util.ArrayList<>();
+		if (defaultsSupplier == null || ops == null || owns == null || lensed == null)
+		{
+			return nodes;
+		}
+		Map<String, String> defaults = defaultsSupplier.get();
+		Map<String, String> overrides = ops.supplyOverrides(lensed.profileId());
+		for (Map.Entry<String, String> e : defaults.entrySet())
+		{
+			String category = e.getKey();
+			String mode = overrides.getOrDefault(category, e.getValue());
+			if ("NONE".equals(mode))
+			{
+				continue;
+			}
+			if (com.loadoutlab.data.TripSupplies.ANTIVENOM.equals(category))
+			{
+				boolean venomous = false;
+				for (MonsterStats m : mobs)
+				{
+					venomous |= com.loadoutlab.data.TripSupplies.inflictsVenom(m);
+				}
+				if (!venomous)
+				{
+					continue;
+				}
+			}
+			com.loadoutlab.data.TripSupplies.Option pick =
+				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
+					? com.loadoutlab.data.TripSupplies.detectBest(category, owns)
+					: com.loadoutlab.data.TripSupplies.option(category, mode);
+			if (pick == null)
+			{
+				continue;
+			}
+			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			node.put("category", category);
+			node.put("name", pick.name);
+			node.put("itemId", pick.ids.length > 0 ? pick.ids[0] : 0);
+			List<Map<String, Object>> options = new java.util.ArrayList<>();
+			for (com.loadoutlab.data.TripSupplies.Option option
+				: com.loadoutlab.data.TripSupplies.options(category))
+			{
+				Map<String, Object> opt = new java.util.LinkedHashMap<>();
+				opt.put("key", option.key);
+				opt.put("name", option.name);
+				options.add(opt);
+			}
+			node.put("options", options);
+			nodes.add(node);
+		}
+		return nodes;
 	}
 
 	/** Attach per-mob profile state (pinned spell/spec, note) to each

@@ -544,6 +544,8 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					return counts;
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
+				commandEngine.setSupplyDefaults(this::buildSupplyDefaults);
+				commandEngine.setOwnedCheck(this::ownsCanonical);
 				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
 				// Detect (classic resolveDefaultAntifire): only for a
 				// fire-breathing selection, best owned tier wins.
@@ -700,6 +702,18 @@ public class LoadoutLabPlugin extends Plugin implements LoadoutLabPanel.ComputeH
 					public void simForMob(int monsterId, int itemId)
 					{
 						exec(Commands.simForMob(mobProfiles, monsterId, itemId, itemLabel(itemId)));
+					}
+
+					@Override
+					public Map<String, String> supplyOverrides(int profileId)
+					{
+						return mobProfiles.supplies(profileId);
+					}
+
+					@Override
+					public void setSupplyOverride(int profileId, String category, String choice)
+					{
+						mobProfiles.setSupply(profileId, category, choice);
 					}
 				});
 			// The plugin IS the compute hook (see compute/computeRoster
