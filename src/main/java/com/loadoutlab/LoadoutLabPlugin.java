@@ -306,6 +306,23 @@ public class LoadoutLabPlugin extends Plugin
 			refreshHostedView();
 			return;
 		}
+		// Companion item search (contract round trip): Core owns the
+		// chatbox; the pick posts back with the requester's token.
+		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
+			&& "item-search".equals(event.getName()))
+		{
+			Object prompt = event.getData().get("prompt");
+			Object token = event.getData().get("token");
+			if (prompt instanceof String && token instanceof Number)
+			{
+				int requestToken = ((Number) token).intValue();
+				itemSearchView().search((String) prompt, (itemId, itemName) ->
+					eventBus.post(new PluginMessage(
+						com.loadoutlab.model.CompanionLink.NAMESPACE, "item-picked",
+						Map.of("token", requestToken, "itemId", itemId, "name", itemName))));
+			}
+			return;
+		}
 		// A Companion command (docs/COMPANION_CONTRACT.md): executed on
 		// the shared engine; unknown commands are refused, and a refusal
 		// is logged rather than guessed at.
