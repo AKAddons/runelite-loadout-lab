@@ -787,7 +787,28 @@ public class CommandEngine
 		boolean wildy = Boolean.TRUE.equals(params.get("inWilderness"));
 		int keptSlots = wildy
 			? (Boolean.TRUE.equals(params.get("protectItem")) ? 4 : 3) : -1;
-		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots);
+		java.util.Set<Integer> simmedIds = new java.util.HashSet<>();
+		java.util.function.Supplier<Map<String, Object>> countSupplierForFlags = counts;
+		if (countSupplierForFlags != null)
+		{
+			Object simmedItems = countSupplierForFlags.get().get("simmedItems");
+			if (simmedItems instanceof List)
+			{
+				for (Object item : (List<?>) simmedItems)
+				{
+					if (item instanceof Map)
+					{
+						Object id = ((Map<?, ?>) item).get("id");
+						if (id instanceof Number)
+						{
+							simmedIds.add(((Number) id).intValue());
+						}
+					}
+				}
+			}
+		}
+		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
+			ownedCheck, simmedIds);
 		entry.put("params", params);
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));

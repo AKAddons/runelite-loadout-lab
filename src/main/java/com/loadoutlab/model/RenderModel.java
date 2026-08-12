@@ -54,12 +54,21 @@ public final class RenderModel
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots)
 	{
+		return entry(mobs, perMob, riskKeptSlots, null, java.util.Collections.emptySet());
+	}
+
+	/** Full form: ownership + simmed ids flag every gear cell for the
+	 * classic border language (gold owned-BiS / green assumed / grey). */
+	public static Map<String, Object> entry(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
+		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+	{
 		Map<String, Object> entry = new LinkedHashMap<>();
 		List<Object> mobNodes = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++)
 		{
 			Map<String, Object> node = mob(mobs.get(i));
-			node.put("styles", styles(perMob.get(i), riskKeptSlots));
+			node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
 			mobNodes.add(node);
 		}
 		entry.put("mobs", mobNodes);
@@ -81,7 +90,7 @@ public final class RenderModel
 	}
 
 	private static Map<String, Object> styles(Map<CombatStyle, OptimizerService.StyleResult> results,
-		int riskKeptSlots)
+		int riskKeptSlots, java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
 	{
 		Map<String, Object> styles = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
@@ -92,8 +101,8 @@ public final class RenderModel
 				continue;
 			}
 			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("yours", card(result, false, riskKeptSlots));
-			node.put("bis", card(result, true, riskKeptSlots));
+			node.put("yours", card(result, false, riskKeptSlots, owned, simmed));
+			node.put("bis", card(result, true, riskKeptSlots, owned, simmed));
 			node.put("boostLabel", result.boostLabel);
 			node.put("bisBoostLabel", result.gameBoostLabel);
 			styles.put(style.name().toLowerCase(), node);
@@ -103,11 +112,12 @@ public final class RenderModel
 
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis)
 	{
-		return card(result, bis, -1);
+		return card(result, bis, -1, null, java.util.Collections.emptySet());
 	}
 
 	/** One side's card: the shown set and everything rendered around it. */
-	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots)
+	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots,
+		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
 	{
 		DpsResult shown = bis ? result.overallBest
 			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
@@ -125,12 +135,29 @@ public final class RenderModel
 		card.put("antifireAssumed", shown.isAntifireAssumed());
 		card.put("counted", new ArrayList<>(shown.getCountedBonuses()));
 		Map<String, Object> gear = new LinkedHashMap<>();
+		DpsResult bisShown = result.overallBest;
 		for (GearSlot slot : GearSlot.values())
 		{
 			GearItem item = shown.getLoadout().get(slot);
 			if (item != null)
 			{
-				gear.put(slot.name().toLowerCase(), item(item));
+				Map<String, Object> node = item(item);
+				if (owned != null)
+				{
+					// The classic border language: gold = owned AND best-
+					// available (exact or stat-equivalent analog); green =
+					// gear the answer ASSUMES (simmed, or unowned on the
+					// Yours side); everything else stays quiet grey.
+					boolean owns = owned.test(item.getId());
+					boolean isSimmed = !owns && simmed.contains(item.getId());
+					node.put("owned", owns);
+					node.put("assumed", isSimmed || (!bis && !owns));
+					GearItem bisItem = bis || bisShown == null
+						? null : bisShown.getLoadout().get(slot);
+					node.put("bisMatch", owns && bisItem != null
+						&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item)));
+				}
+				gear.put(slot.name().toLowerCase(), node);
 			}
 		}
 		card.put("gear", gear);
@@ -169,6 +196,28 @@ public final class RenderModel
 			card.put("risk", riskNode);
 		}
 		return card;
+	}
+
+	/** Analogs count as best-available (any god's d'hide coif). */
+	private static boolean statEquivalent(GearItem a, GearItem b)
+	{
+		return a.getSlot() == b.getSlot()
+			&& a.getSpeed() == b.getSpeed()
+			&& a.isTwoHanded() == b.isTwoHanded()
+			&& a.getCategory().equals(b.getCategory())
+			&& sameBlock(a.getOffensive(), b.getOffensive())
+			&& sameBlock(a.getDefensive(), b.getDefensive())
+			&& sameBlock(a.getBonuses(), b.getBonuses());
+	}
+
+	private static boolean sameBlock(com.loadoutlab.data.StatBlock a, com.loadoutlab.data.StatBlock b)
+	{
+		return a.getStab() == b.getStab() && a.getSlash() == b.getSlash()
+			&& a.getCrush() == b.getCrush() && a.getMagic() == b.getMagic()
+			&& a.getRanged() == b.getRanged() && a.getStrength() == b.getStrength()
+			&& a.getRangedStrength() == b.getRangedStrength()
+			&& a.getMagicDamage() == b.getMagicDamage()
+			&& a.getPrayer() == b.getPrayer();
 	}
 
 	private static Map<String, Object> statBlock(com.loadoutlab.data.StatBlock block)

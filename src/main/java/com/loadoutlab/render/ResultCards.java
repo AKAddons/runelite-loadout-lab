@@ -242,6 +242,10 @@ public class ResultCards
 			card.add(left(supplyRow));
 		}
 		javax.swing.JTextField note = new javax.swing.JTextField(Model.str(mob, "note"), 18);
+		note.setBackground(new Color(78, 72, 50));
+		note.setForeground(new Color(215, 205, 160));
+		note.setCaretColor(new Color(215, 205, 160));
+		note.setBorder(BorderFactory.createLineBorder(new Color(98, 90, 62)));
 		note.setToolTipText("Your note for this mob - saved on Enter");
 		note.addActionListener(e -> commands.send("set-note", Map.of("text", note.getText())));
 		card.add(Box.createVerticalStrut(4));
@@ -597,9 +601,10 @@ public class ResultCards
 			if (item == null)
 			{
 				JLabel blank = new JLabel();
-				blank.setPreferredSize(new java.awt.Dimension(36, 34));
+				blank.setPreferredSize(new java.awt.Dimension(36, 36));
 				blank.setOpaque(true);
 				blank.setBackground(ColorScheme.DARK_GRAY_COLOR);
+				blank.setBorder(BorderFactory.createLineBorder(new Color(50, 50, 50)));
 				grid.add(blank);
 			}
 			else
@@ -615,17 +620,35 @@ public class ResultCards
 		return holder;
 	}
 
+	/** The classic palette (relocated with the border language). */
+	private static final Color CELL_BG = new Color(50, 50, 50);
+	private static final Color BORDER_BIS = new Color(168, 148, 88);
+	private static final Color BORDER_SPEC = new Color(120, 190, 240);
+	private static final Color BORDER_PLAIN = new Color(70, 70, 70);
+	private static final Color BORDER_UNOWNED = new Color(100, 145, 100);
+
 	private JLabel itemCell(Map<String, Object> item, String slot, boolean bis)
 	{
 		JLabel cell = new JLabel();
 		String name = Model.str(item, "name");
 		int id = Model.id(item, "id");
-		cell.setToolTipText(name + " (" + slot + ")");
-		cell.setPreferredSize(new java.awt.Dimension(36, 34));
+		// Border language (classic, field note 2026-08-05: every colour
+		// has to EARN its cell): gold = owned and best-available, green =
+		// assumed (simmed / unowned on Yours), blue = the spec cell,
+		// grey otherwise.
+		Color border = "spec".equals(slot) ? BORDER_SPEC
+			: Model.flag(item, "assumed") ? BORDER_UNOWNED
+			: Model.flag(item, "bisMatch") ? BORDER_BIS
+			: BORDER_PLAIN;
+		String flagNote = "spec".equals(slot) ? " - spec weapon"
+			: Model.flag(item, "assumed") ? " - assumed (not owned)"
+			: Model.flag(item, "bisMatch") ? " - best available" : "";
+		cell.setToolTipText(name + " (" + slot + ")" + flagNote);
+		cell.setPreferredSize(new java.awt.Dimension(36, 36));
 		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 		cell.setOpaque(true);
-		cell.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
-		cell.setBorder(BorderFactory.createLineBorder(ColorScheme.DARK_GRAY_COLOR, 1));
+		cell.setBackground(CELL_BG);
+		cell.setBorder(BorderFactory.createLineBorder(border));
 		itemManager.getImage(id).addTo(cell);
 		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 		javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + name);
