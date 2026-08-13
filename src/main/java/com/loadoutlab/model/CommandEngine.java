@@ -696,6 +696,10 @@ public class CommandEngine
 			return;
 		}
 		link.publishStatus(true);
+		// Publish the PARAMS immediately (field report 2026-08-12: the
+		// chips used to appear the moment you searched, so a wrong
+		// parameter could be fixed without waiting out the compute).
+		publishPending();
 		Object[] a = state.computeArgs();
 		boolean anyFire = false;
 		for (MonsterStats m : roster != null ? roster : List.of(mob))
@@ -825,6 +829,32 @@ public class CommandEngine
 		lastMobs = null;
 		lastPerMob = null;
 		link.publishPage(withHistory(RenderModel.page(List.of())));
+	}
+
+	/** An in-flight page: the current selection's mobs and the live
+	 * params, with no style results yet - the controls render at once
+	 * and the cards fill in when the answer lands. */
+	private void publishPending()
+	{
+		List<MonsterStats> mobs = state.rosterMobs() != null
+			? state.rosterMobs() : state.mob() == null ? null : List.of(state.mob());
+		if (mobs == null)
+		{
+			return;
+		}
+		List<Map<CombatStyle, OptimizerService.StyleResult>> empty = new java.util.ArrayList<>();
+		for (int i = 0; i < mobs.size(); i++)
+		{
+			empty.add(java.util.Collections.emptyMap());
+		}
+		Map<String, Object> entry = RenderModel.entry(mobs, empty);
+		entry.put("params", state.paramsNode());
+		entry.put("pending", true);
+		decorateProfiles(entry);
+		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
+		page.put("assumeOptions", assumeOptions());
+		page.put("supplyCatalog", supplyCatalog());
+		link.publishPage(page);
 	}
 
 	private void republish()
