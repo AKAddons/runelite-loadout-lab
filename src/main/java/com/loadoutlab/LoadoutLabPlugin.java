@@ -517,6 +517,7 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			ledger.loadScope(worldScope());
 			manualOwned.loadScope(worldScope());
+			migrateStoredToSims();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
@@ -544,7 +545,7 @@ public class LoadoutLabPlugin extends Plugin
 					List<String> simmedNames = new ArrayList<>();
 					List<Map<String, Object>> excludedItems = new ArrayList<>();
 					List<Map<String, Object>> simmedItems = new ArrayList<>();
-					List<Map<String, Object>> storedItems = new ArrayList<>();
+
 					for (int id : exclusions.snapshot())
 					{
 						excludedItems.add(Map.of("id", id, "name", itemLabel(id)));
@@ -554,10 +555,6 @@ public class LoadoutLabPlugin extends Plugin
 						simmedNames.add(itemLabel(id));
 						simmedItems.add(Map.of("id", id, "name", itemLabel(id)));
 					}
-					for (int id : manualOwned.snapshot())
-					{
-						storedItems.add(Map.of("id", id, "name", itemLabel(id)));
-					}
 					List<Map<String, Object>> filteredItems = new ArrayList<>();
 					for (Map.Entry<Integer, String> f : alwaysFilter.all().entrySet())
 					{
@@ -566,11 +563,10 @@ public class LoadoutLabPlugin extends Plugin
 					Map<String, Object> counts = new java.util.LinkedHashMap<>();
 					counts.put("excluded", excludedItems.size());
 					counts.put("simmed", simmedItems.size());
-					counts.put("stored", storedItems.size());
+
 					counts.put("simmedNames", simmedNames);
 					counts.put("excludedItems", excludedItems);
 					counts.put("simmedItems", simmedItems);
-					counts.put("storedItems", storedItems);
 					counts.put("filteredItems", filteredItems);
 					return counts;
 				});
@@ -661,12 +657,6 @@ public class LoadoutLabPlugin extends Plugin
 					public boolean toggleSim(int itemId)
 					{
 						return exec(Commands.toggleDream(dreams, itemId, itemLabel(itemId)));
-					}
-
-					@Override
-					public boolean toggleStored(int itemId)
-					{
-						return exec(Commands.toggleStored(manualOwned, itemId, itemLabel(itemId)));
 					}
 
 					@Override
@@ -2021,6 +2011,33 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
+
+	/** One-time retirement of "stored elsewhere" (2026-08-12): the
+	 * concept collapsed into sims - both meant "count this as owned" -
+	 * so any manual entries convert to sims once and the old store is
+	 * emptied. Native STASH/POH/cargo/looting-bag scanning and the DWMS
+	 * import are untouched; only the MANUAL list retires. */
+	private void migrateStoredToSims()
+	{
+		if (manualOwned == null || dreams == null)
+		{
+			return;
+		}
+		java.util.Set<Integer> stored = new java.util.HashSet<>(manualOwned.snapshot());
+		if (stored.isEmpty())
+		{
+			return;
+		}
+		for (int id : stored)
+		{
+			if (!dreams.isDreamed(id))
+			{
+				dreams.toggle(id);
+			}
+		}
+		manualOwned.clear();
+		log.info("Loadout Lab: migrated {} 'stored elsewhere' items into sims", stored.size());
+	}
 
 	/** The classic provenance memo (rebuilt only when ownership moves):
 	 * an item's primary storage NAME when a fetch trip is needed, "" at

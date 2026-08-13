@@ -50,8 +50,6 @@ public class CommandEngine
 
 		boolean toggleSim(int itemId);
 
-		boolean toggleStored(int itemId);
-
 		void toggleAlwaysFilter(int itemId);
 
 		/** Write a wrench-panel supply default (the classic grey chip). */
@@ -402,7 +400,6 @@ public class CommandEngine
 			}
 			case "toggle-exclusion":
 			case "toggle-sim":
-			case "toggle-stored":
 			{
 				StoreOps ops = stores;
 				Object itemId = args == null ? null : args.get("itemId");
@@ -411,8 +408,8 @@ public class CommandEngine
 					return false;
 				}
 				int id = ((Number) itemId).intValue();
-				boolean applied = "toggle-exclusion".equals(name) ? ops.toggleExclusion(id)
-					: "toggle-sim".equals(name) ? ops.toggleSim(id) : ops.toggleStored(id);
+				boolean applied = "toggle-exclusion".equals(name)
+					? ops.toggleExclusion(id) : ops.toggleSim(id);
 				if (!applied)
 				{
 					return false;
