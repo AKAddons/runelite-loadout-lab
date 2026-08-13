@@ -1912,16 +1912,20 @@ public class LoadoutLabPlugin extends Plugin
 				perMobSims(mobs), raidBoost, pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
 				mobProfiles.pinnedSpecFor(anchor.getId()),
 				protectOnly.snapshot(),
-				roster ->
+				roster -> SwingUtilities.invokeLater(() ->
 				{
+					// EDT-only page assembly: it reads the ledger, profile
+					// and config stores the client thread writes (deadlock
+					// report 2026-08-12 - the callback thread had been
+					// building pages under their locks).
 					com.loadoutlab.model.CommandEngine engine = commandEngine;
 					if (engine != null)
 					{
 						engine.onRosterResults(roster.mobs, roster.perMob);
 						refreshHostedView();
 					}
-					SwingUtilities.invokeLater(onDone);
-				});
+					onDone.run();
+				}));
 		});
 	}
 
@@ -1965,7 +1969,7 @@ public class LoadoutLabPlugin extends Plugin
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpecFor(monster.getId()),
 				protectOnly.snapshot(),
-				results ->
+				results -> SwingUtilities.invokeLater(() ->
 				{
 					com.loadoutlab.model.CommandEngine engine = commandEngine;
 					if (engine != null)
@@ -1973,8 +1977,8 @@ public class LoadoutLabPlugin extends Plugin
 						engine.onResults(monster, results);
 						refreshHostedView();
 					}
-					SwingUtilities.invokeLater(onDone);
-				});
+					onDone.run();
+				}));
 		});
 	}
 

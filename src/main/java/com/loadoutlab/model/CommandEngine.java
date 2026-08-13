@@ -836,6 +836,11 @@ public class CommandEngine
 	 * and the cards fill in when the answer lands. */
 	private void publishPending()
 	{
+		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		{
+			javax.swing.SwingUtilities.invokeLater(this::publishPending);
+			return;
+		}
 		List<MonsterStats> mobs = state.rosterMobs() != null
 			? state.rosterMobs() : state.mob() == null ? null : List.of(state.mob());
 		if (mobs == null)
@@ -859,6 +864,11 @@ public class CommandEngine
 
 	private void republish()
 	{
+		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		{
+			javax.swing.SwingUtilities.invokeLater(this::republish);
+			return;
+		}
 		List<MonsterStats> mobs = lastMobs;
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = lastPerMob;
 		if (mobs == null || perMob == null)

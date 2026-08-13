@@ -29,6 +29,22 @@ class CommandEngineTest
 		data = new DataService().load();
 	}
 
+	/** Page assembly marshals to the EDT (the deadlock fix); drain it
+	 * before asserting on what was published. */
+	private static void flushEdt()
+	{
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+	}
+
 	private static final class CaptureLink extends CompanionLink
 	{
 		Map<String, Object> published;
@@ -103,6 +119,7 @@ class CommandEngineTest
 
 		assertTrue(engine.execute("set-param", Map.of("param", "viewingBis", "value", true)));
 		assertEquals(1, computes.get(), "a view param never recomputes");
+		flushEdt();
 		assertNotNull(link.published, "the held results republished under the new view");
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		assertEquals(Boolean.TRUE, ((Map<?, ?>) entry.get("params")).get("viewingBis"));
@@ -159,6 +176,7 @@ class CommandEngineTest
 		engine.onResults(mob, Map.of());
 		assertTrue(engine.execute("set-param", Map.of("param", "viewingBis", "value", true)));
 		assertTrue(engine.execute("undo", Map.of()));
+		flushEdt();
 		Map<?, ?> entries0 = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		assertEquals(Boolean.FALSE, ((Map<?, ?>) entries0.get("params")).get("viewingBis"));
 		Map<?, ?> history = (Map<?, ?>) link.published.get("history");
@@ -181,6 +199,7 @@ class CommandEngineTest
 		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
 		engine.onResults(mob, Map.<CombatStyle, OptimizerService.StyleResult>of());
 
+		flushEdt();
 		assertNotNull(link.published);
 		assertEquals(RenderModel.VERSION, link.published.get("v"));
 		List<?> entries = (List<?>) link.published.get("entries");
