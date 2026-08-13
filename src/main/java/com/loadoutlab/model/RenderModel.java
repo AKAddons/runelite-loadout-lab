@@ -111,6 +111,7 @@ public final class RenderModel
 		node.put("name", mob.getName());
 		node.put("label", mob.label());
 		node.put("hp", mob.getHitpoints());
+		node.put("level", mob.getCombatLevel());
 		node.put("invocationScaled",
 			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
