@@ -134,6 +134,14 @@ public class CommandEngine
 		this.supplyDefaults = supplyDefaults;
 	}
 
+	/** Storage name for an item needing a fetch trip (source dots). */
+	private volatile java.util.function.IntFunction<String> itemLocation;
+
+	public void setItemLocation(java.util.function.IntFunction<String> itemLocation)
+	{
+		this.itemLocation = itemLocation;
+	}
+
 	/** Canonical ownership (dose variants collapse) for Detect scans. */
 	private volatile java.util.function.IntPredicate ownedCheck;
 
@@ -855,7 +863,7 @@ public class CommandEngine
 			}
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
-			ownedCheck, simmedIds);
+			ownedCheck, simmedIds, itemLocation);
 		entry.put("params", params);
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));

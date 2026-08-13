@@ -63,6 +63,34 @@ public final class RenderModel
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
 		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
 	{
+		return entry(mobs, perMob, riskKeptSlots, owned, simmed, null);
+	}
+
+	/** Per-build provenance lookup: an item's storage NAME when a fetch
+	 * trip is needed (the classic source dots), "" when at hand. */
+	private static final ThreadLocal<java.util.function.IntFunction<String>> LOCATION =
+		new ThreadLocal<>();
+
+	public static Map<String, Object> entry(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
+		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed,
+		java.util.function.IntFunction<String> locationOf)
+	{
+		LOCATION.set(locationOf);
+		try
+		{
+			return buildEntry(mobs, perMob, riskKeptSlots, owned, simmed);
+		}
+		finally
+		{
+			LOCATION.remove();
+		}
+	}
+
+	private static Map<String, Object> buildEntry(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
+		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+	{
 		Map<String, Object> entry = new LinkedHashMap<>();
 		List<Object> mobNodes = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++)
@@ -168,6 +196,17 @@ public final class RenderModel
 					node.put("bisMatch", owns && bisItem != null
 						&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item)));
 				}
+				java.util.function.IntFunction<String> locationOf = LOCATION.get();
+				if (locationOf != null)
+				{
+					// Only FETCH-TRIP storages carry a dot (the classic
+					// rule: at-hand gear stays unmarked).
+					String where = locationOf.apply(item.getId());
+					if (where != null && !where.isEmpty())
+					{
+						node.put("source", where);
+					}
+				}
 				gear.put(slot.name().toLowerCase(), node);
 			}
 		}
@@ -205,6 +244,32 @@ public final class RenderModel
 			}
 			riskNode.put("lost", lost);
 			card.put("risk", riskNode);
+			// Per-cell fate (the classic risk dots): kept / dropped.
+			for (Object slotNode : gear.values())
+			{
+				if (!(slotNode instanceof Map))
+				{
+					continue;
+				}
+				@SuppressWarnings("unchecked")
+				Map<String, Object> node = (Map<String, Object>) slotNode;
+				int id = ((Number) node.get("id")).intValue();
+				for (GearItem k : risk.kept)
+				{
+					if (k.getId() == id)
+					{
+						node.put("fate", "kept");
+					}
+				}
+				for (GearItem l : risk.lost)
+				{
+					if (l.getId() == id)
+					{
+						node.put("fate", "lost");
+						node.put("fateGp", risk.valueOf(l));
+					}
+				}
+			}
 		}
 		return card;
 	}

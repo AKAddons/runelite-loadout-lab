@@ -577,6 +577,9 @@ public class LoadoutLabPlugin extends Plugin
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setSupplyDefaults(this::buildSupplyDefaults);
 				commandEngine.setOwnedCheck(this::ownsCanonical);
+				// Source dots: the storage an item must be fetched from
+				// (at-hand gear returns "" and stays unmarked).
+				commandEngine.setItemLocation(this::primaryLocationOf);
 				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
 				// Detect (classic resolveDefaultAntifire): only for a
 				// fire-breathing selection, best owned tier wins.
@@ -2018,6 +2021,30 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
+
+	/** The classic provenance memo (rebuilt only when ownership moves):
+	 * an item's primary storage NAME when a fetch trip is needed, "" at
+	 * hand - the source dots key off it. */
+	private volatile ItemLocations cachedLocations;
+	private volatile int cachedLocationsFingerprint;
+
+	private String primaryLocationOf(int itemId)
+	{
+		if (ledger == null || manualOwned == null || dwmsLink == null)
+		{
+			return "";
+		}
+		int fingerprint = ownedFingerprint();
+		ItemLocations found = cachedLocations;
+		if (found == null || cachedLocationsFingerprint != fingerprint)
+		{
+			found = new ItemLocations(ownedBySources(), data == null ? null : data::equivalentIds);
+			cachedLocations = found;
+			cachedLocationsFingerprint = fingerprint;
+		}
+		String where = found.primary(itemId);
+		return where == null ? "" : where;
+	}
 
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */
 	private void snapshotProfileIfNeeded()
