@@ -1233,6 +1233,28 @@ public class CommandEngine
 		Map<String, Object> options = new java.util.LinkedHashMap<>();
 		options.put("prayers", prayers);
 		options.put("boosts", boosts);
+		// Icon facts for the pickers (additive): prayer name -> sprite id,
+		// boost label -> potion item id. Renderers draw, never map.
+		Map<String, Object> prayerSprites = new java.util.LinkedHashMap<>();
+		for (Object list : prayers.values())
+		{
+			for (Object name : (List<?>) list)
+			{
+				prayerSprites.put(String.valueOf(name),
+					com.loadoutlab.data.AssumeIcons.prayerSprite(String.valueOf(name)));
+			}
+		}
+		options.put("prayerSprites", prayerSprites);
+		Map<String, Object> boostItems = new java.util.LinkedHashMap<>();
+		for (Object list : boosts.values())
+		{
+			for (Object option : (List<?>) list)
+			{
+				String label = String.valueOf(((Map<?, ?>) option).get("label"));
+				boostItems.put(label, com.loadoutlab.data.AssumeIcons.boostItem(label));
+			}
+		}
+		options.put("boostItems", boostItems);
 		assumeOptionsCache = options;
 		return options;
 	}
