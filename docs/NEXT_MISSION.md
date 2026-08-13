@@ -66,3 +66,21 @@ Ordered roughly by how visible each is while daily-driving.
   renderer. When the dual-plugin question gets an answer, strip
   Core's copy to the bare fallback (one commit) and the duplication
   ends.
+
+## Feature idea born from the Virtus bug (2026-08-13)
+
+**Breakpoints.** The Virtus/Ancestral tie exposed the thing Loadout
+Lab is uniquely able to answer: an upgrade can be worth ZERO. The 1%
+magic damage gap never cleared max-hit truncation, so at these levels
+against this monster the ~100m item buys literally nothing.
+
+Surface it:
+- Mark a slot when the shown item and the next tier price IDENTICALLY
+  ("no gain here"), so a player does not buy a dead upgrade.
+- Conversely, show what WOULD move it - the level or gear threshold at
+  which the upgrade starts paying (the breakpoint).
+- The engine already has everything needed: it prices arbitrary sets;
+  this is a comparison pass plus a model fact, not new game modelling.
+
+Andrew, on the bug's resolution: "identifying breakpoints like that is
+WHY loadout lab exists."
