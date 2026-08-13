@@ -202,11 +202,24 @@ public final class LoadoutOptimizer
 				break;
 			}
 			DpsResult candidate = bestSpellResult(request, trial, spellContext);
-			if (candidate != null && candidate.getDps() >= current.getDps() - 1e-9)
+			if (candidate == null || candidate.getDps() < current.getDps() - 1e-9)
 			{
-				current = candidate.withPurchaseCost(cost);
-				break;
+				continue;
 			}
+			// A dps-NEUTRAL utility swap must not displace gear that is
+			// stronger for this style (field report 2026-08-12: Virtus
+			// robe top, +2 prayer, replaced Ancestral robe top on Vorkath
+			// because the 1% magic damage gap vanished into max-hit
+			// truncation). Utility is only free when nothing offensive is
+			// given up; a strictly better dps still wins outright.
+			boolean neutral = candidate.getDps() <= current.getDps() + 1e-9;
+			if (neutral && worn != null
+				&& worn.roughScore(request.getStyle()) > item.roughScore(request.getStyle()))
+			{
+				continue;
+			}
+			current = candidate.withPurchaseCost(cost);
+			break;
 		}
 		return current;
 	}
