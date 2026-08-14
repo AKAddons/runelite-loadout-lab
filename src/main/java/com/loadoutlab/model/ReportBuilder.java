@@ -44,6 +44,15 @@ final class ReportBuilder
 				}
 			}
 			Map<CombatStyle, OptimizerService.StyleResult> results = perMob.get(i);
+			// The kit contract (field report 2026-08-14, the Sire: "a
+			// multi-mob result needs to return 1 set of gear and the
+			// recommendations can't deviate"): full sets print ONLY for
+			// KIT-BACKED styles - what the shared trip actually
+			// assembles. Everything else compresses to the classic
+			// one-liner so an informational view never reads as a
+			// recommendation. Single-mob results are kit-backed by
+			// definition and print exactly as before.
+			StringBuilder others = new StringBuilder();
 			for (CombatStyle style : CombatStyle.concreteValues())
 			{
 				OptimizerService.StyleResult result = results == null ? null : results.get(style);
@@ -51,9 +60,29 @@ final class ReportBuilder
 				{
 					continue;
 				}
-				sb.append("-- ").append(style).append(" --\n");
-				appendSide(sb, "Yours", result, false);
-				appendSide(sb, "Best in game", result, true);
+				if (result.ownedKitBacked || result.gameKitBacked)
+				{
+					sb.append("-- ").append(style).append(" --\n");
+					if (result.ownedKitBacked)
+					{
+						appendSide(sb, "Yours", result, false);
+					}
+					if (result.gameKitBacked)
+					{
+						appendSide(sb, "Best in game", result, true);
+					}
+				}
+				if (!result.ownedKitBacked && result.owned != null && !result.owned.isEmpty())
+				{
+					others.append(others.length() == 0 ? "" : " ")
+						.append(style).append(String.format(" %.2f;",
+							result.owned.get(0).getDps()));
+				}
+			}
+			if (others.length() > 0)
+			{
+				sb.append("Other styles (your best dps, not part of the trip kit): ")
+					.append(others).append('\n');
 			}
 		}
 		return sb.toString();
@@ -74,6 +103,7 @@ final class ReportBuilder
 		int afMode = af instanceof Number ? ((Number) af).intValue() : 0;
 		sb.append("; Antifire: ").append(afMode == 2 ? "super" : afMode == 1 ? "regular" : "no");
 		sb.append("; Raid boost: ").append(yesNo(params.get("raidBoost"))).append('\n');
+		sb.append("  Inventory: ").append(params.get("maxSwaps")).append('\n');
 		sb.append("  Death charge: ").append(params.get("deathCharge"));
 		sb.append("; Invocation: ").append(params.get("toaInvocation"));
 		Object lock = params.get("spellbookLock");
