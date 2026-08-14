@@ -1006,12 +1006,33 @@ public class CommandEngine
 					state.select(mobPick);
 				}
 				java.util.function.Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+				List<MonsterStats> selected = groupPick != null
+					? groupPick.getMobs() : List.of(mobPick);
 				if (resolve != null)
 				{
-					List<MonsterStats> selected = groupPick != null
-						? groupPick.getMobs() : List.of(mobPick);
 					state.setParam("antifireMode", resolve.apply(selected));
 				}
+				// Task-only bosses are ALWAYS on task (the classic rule:
+				// the Sire cannot be fought off-task, so the search must
+				// never show it that way).
+				for (MonsterStats m : selected)
+				{
+					if (com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(m))
+					{
+						state.setParam("onTask", true);
+						break;
+					}
+				}
+				// Recommended trip inventory per selection (Andrew
+				// 2026-08-14): raids carry 8 swaps, other groups 3, a
+				// single mob 1. A fresh selection re-recommends; the
+				// slider overrides after.
+				boolean raid = !selected.isEmpty();
+				for (MonsterStats m : selected)
+				{
+					raid &= com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != null;
+				}
+				state.setParam("maxSwaps", raid ? 8 : selected.size() > 1 ? 3 : 1);
 				recompute();
 				return true;
 			}

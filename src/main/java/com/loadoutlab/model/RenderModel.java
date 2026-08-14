@@ -116,6 +116,8 @@ public final class RenderModel
 			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
 		node.put("wilderness", com.loadoutlab.data.WildernessMonsters.isWilderness(mob));
+		node.put("taskOnly", com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(mob));
+		node.put("slayerMonster", mob.isSlayerMonster());
 		node.put("wildernessExclusive", com.loadoutlab.data.WildernessMonsters.isExclusive(mob));
 		com.loadoutlab.engine.BoostProfile supplied =
 			com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob);
