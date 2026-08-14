@@ -576,6 +576,8 @@ public class LoadoutLabPlugin extends Plugin
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
+				clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName(
+					client.getVarbitValue(net.runelite.api.gameval.VarbitID.SPELLBOOK))));
 				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
 				// Detect (classic resolveDefaultAntifire): only for a
 				// fire-breathing selection, best owned tier wins.
@@ -2041,6 +2043,34 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		manualOwned.clear();
 		log.info("Loadout Lab: migrated {} 'stored elsewhere' items into sims", stored.size());
+	}
+
+	/** VarbitID.SPELLBOOK values -> the contract's book names. */
+	private static String spellbookName(int varbit)
+	{
+		switch (varbit)
+		{
+			case 1: return "ancient";
+			case 2: return "lunar";
+			case 3: return "arceuus";
+			default: return "standard";
+		}
+	}
+
+	/** The book plate reacts LIVE to a spellbook swap (classic field
+	 * bug 2026-07-21: the chip stayed red after swapping). */
+	@Subscribe
+	public void onVarbitChanged(net.runelite.api.events.VarbitChanged event)
+	{
+		if (event.getVarbitId() != net.runelite.api.gameval.VarbitID.SPELLBOOK)
+		{
+			return;
+		}
+		com.loadoutlab.model.CommandEngine engine = commandEngine;
+		if (engine != null)
+		{
+			engine.setLiveSpellbook(spellbookName(event.getValue()));
+		}
 	}
 
 	/** The classic provenance memo (rebuilt only when ownership moves):

@@ -132,6 +132,41 @@ public class CommandEngine
 		this.supplyDefaults = supplyDefaults;
 	}
 
+	/** The player's LIVE spellbook name ("standard"/"ancient"/"lunar"/
+	 * "arceuus"), pushed by the plugin's varbit subscriber - the book
+	 * plate turns red when an answer assumes a different book. */
+	private volatile String liveSpellbook = "";
+
+	public void setLiveSpellbook(String liveSpellbook)
+	{
+		String next = liveSpellbook == null ? "" : liveSpellbook;
+		boolean changed = !next.equals(this.liveSpellbook);
+		this.liveSpellbook = next;
+		if (changed)
+		{
+			republish();
+		}
+	}
+
+	/** spellName -> its book, built once from the corpus. */
+	private volatile Map<String, Object> spellbooksCache;
+
+	private Map<String, Object> spellbooks()
+	{
+		Map<String, Object> cached = spellbooksCache;
+		if (cached != null)
+		{
+			return cached;
+		}
+		Map<String, Object> books = new java.util.LinkedHashMap<>();
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			books.put(spell.getName(), spell.getSpellbook());
+		}
+		spellbooksCache = books;
+		return books;
+	}
+
 	/** Storage name for an item needing a fetch trip (source dots). */
 	private volatile java.util.function.IntFunction<String> itemLocation;
 
@@ -858,6 +893,8 @@ public class CommandEngine
 		decorateProfiles(entry);
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
 		page.put("assumeOptions", assumeOptions());
+		page.put("liveSpellbook", liveSpellbook);
+		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
 		link.publishPage(page);
 	}
@@ -925,6 +962,8 @@ public class CommandEngine
 		}
 		page.put("spells", spellNames);
 		page.put("assumeOptions", assumeOptions());
+		page.put("liveSpellbook", liveSpellbook);
+		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
