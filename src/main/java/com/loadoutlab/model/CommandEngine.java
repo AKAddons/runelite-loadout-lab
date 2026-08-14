@@ -1012,6 +1012,10 @@ public class CommandEngine
 				{
 					state.setParam("antifireMode", resolve.apply(selected));
 				}
+				// A fresh selection resets the tab so the default (the
+				// best style for THIS mob) applies - the classic made a
+				// new entry per selection, which cleared it implicitly.
+				state.setParam("selectedTab", "");
 				// Task-only bosses are ALWAYS on task (the classic rule:
 				// the Sire cannot be fought off-task, so the search must
 				// never show it that way).
