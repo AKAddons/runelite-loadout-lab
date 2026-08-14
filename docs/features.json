@@ -116,23 +116,18 @@
   },
   {
    "id": "stored-elsewhere",
-   "title": "Stored elsewhere (manual owned items)",
+   "title": "Stored elsewhere (RETIRED into sims, 0.3.6)",
    "group": "Gear sources",
    "anchor": "stored-elsewhere-manual-owned-items",
    "code": [
     "collection/ManualOwnedStore.java",
-    "collection/CollectionLedger.java",
-    "data/LoadoutData.java",
-    "render/RenderSurface.java",
     "LoadoutLabPlugin.java"
    ],
    "tests": [
-    "collection/ManualOwnedStoreTest.java",
-    "collection/CollectionLedgerTest.java",
-    "data/GearSearchTest.java"
+    "collection/ManualOwnedStoreTest.java"
    ],
    "since": "0.2.0",
-   "notes": "UIM request (Discord): count STASH/POH/cold-storage gear as owned; also adds the looting bag as an automatic ledger source."
+   "notes": "RETIRED 2026-08-12: the manual list collapsed into sims - both meant \"count this as owned\". A one-time migration converts existing entries into sims on load (logged) so nobody's answers changed; ManualOwnedStore remains only as the migration source. Native STASH/POH/cargo/looting-bag scanning and DWMS import are separate features and unaffected."
   },
   {
    "id": "dwms-import",

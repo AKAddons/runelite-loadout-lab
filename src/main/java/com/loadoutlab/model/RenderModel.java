@@ -351,6 +351,8 @@ public final class RenderModel
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("dps", incoming.totalDps);
 		node.put("unprayedDps", incoming.unprayedDps);
+		node.put("protectSprite", incoming.protectPrayer == null ? -1
+			: com.loadoutlab.data.AssumeIcons.prayerSprite(String.valueOf(incoming.protectPrayer)));
 		node.put("protectPrayer", incoming.protectPrayer);
 		node.put("fullyModeled", incoming.fullyModeled);
 		node.put("overrideNote", incoming.overrideNote);
