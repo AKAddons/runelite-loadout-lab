@@ -115,6 +115,11 @@ public final class RenderModel
 		node.put("invocationScaled",
 			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
+		node.put("wilderness", com.loadoutlab.data.WildernessMonsters.isWilderness(mob));
+		node.put("wildernessExclusive", com.loadoutlab.data.WildernessMonsters.isExclusive(mob));
+		com.loadoutlab.engine.BoostProfile supplied =
+			com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob);
+		node.put("suppliedBoost", supplied == null ? null : supplied.toString());
 		return node;
 	}
 
