@@ -899,6 +899,24 @@ public class CommandEngine
 		link.publishPage(page);
 	}
 
+	/** An idle page: no selection, but counts, catalogs and history -
+	 * so the global chips exist BEFORE the first search. */
+	public void publishIdle()
+	{
+		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		{
+			javax.swing.SwingUtilities.invokeLater(this::publishIdle);
+			return;
+		}
+		Map<String, Object> page = withHistory(
+			RenderModel.page(java.util.Collections.emptyList()));
+		page.put("assumeOptions", assumeOptions());
+		page.put("liveSpellbook", liveSpellbook);
+		page.put("spellbooks", spellbooks());
+		page.put("supplyCatalog", supplyCatalog());
+		link.publishPage(page);
+	}
+
 	private void republish()
 	{
 		if (!javax.swing.SwingUtilities.isEventDispatchThread())

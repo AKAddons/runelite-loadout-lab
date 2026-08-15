@@ -576,6 +576,8 @@ public class LoadoutLabPlugin extends Plugin
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
+				// The chips exist before the first search (idle page).
+				commandEngine.publishIdle();
 				clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName(
 					client.getVarbitValue(net.runelite.api.gameval.VarbitID.SPELLBOOK))));
 				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
