@@ -80,6 +80,19 @@ tasks.register('snapshotRun', Sync) {
 	from sourceSets.test.runtimeClasspath
 	into layout.buildDirectory.dir('run-snapshot')
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	// The snapshot is IMMUTABLE while a client runs from it - refreshing
+	// it under a live client is the exact clobber it exists to prevent.
+	doFirst {
+		def running = ['sh', '-c',
+			'ps aux | grep LoadoutLabPluginTest | grep -v grep | wc -l']
+			.execute().text.trim()
+		if (running != '0') {
+			throw new GradleException(
+				'A dev client is RUNNING off the snapshot - close it before ' +
+				'refreshing (snapshotRun/runIsolated), or the live client ' +
+				'will lose classes.')
+		}
+	}
 }
 
 // The client Andrew should ALWAYS launch: identical to `run` but off
