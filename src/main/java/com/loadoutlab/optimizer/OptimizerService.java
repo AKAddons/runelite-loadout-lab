@@ -2092,8 +2092,24 @@ public class OptimizerService
 					{
 						continue;
 					}
+					// Slot legality (field report 2026-08-15 x2, the Eclipse
+					// Moon's scythe+defender: THIS was the birthplace) - a
+					// 2h canonical evicts the shield, and a shield canonical
+					// cannot join a 2h wearer.
+					Loadout unifiedLoadout = best.get(0).getLoadout();
+					GearItem unifiedWeapon = unifiedLoadout.getWeapon();
+					if (slot == GearSlot.SHIELD && unifiedWeapon != null
+						&& unifiedWeapon.isTwoHanded())
+					{
+						continue;
+					}
+					unifiedLoadout = withSlot(unifiedLoadout, slot, canonical);
+					if (slot == GearSlot.WEAPON && canonical.isTwoHanded())
+					{
+						unifiedLoadout = withSlot(unifiedLoadout, GearSlot.SHIELD, null);
+					}
 					DpsResult unified = calcRespecting(calc, unifyReqs.get(j),
-						withSlot(best.get(0).getLoadout(), slot, canonical));
+						unifiedLoadout);
 					if (unified != null && unified.getDps() >= best.get(0).getDps() * 0.995)
 					{
 						best.set(0, unified);
