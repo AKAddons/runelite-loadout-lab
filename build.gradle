@@ -71,6 +71,32 @@ tasks.register('run', JavaExec) {
 	args "--developer-mode", "--debug"
 }
 
+// The whole runtime classpath COPIED to an immutable snapshot, so a
+// build (or gradle cache housekeeping) can never clobber classes
+// under a running client - the lazy-load NoClassDefFoundError
+// "deadlocks" of 2026-08-14/15. Class dirs merge into the snapshot
+// root; jars ride alongside.
+tasks.register('snapshotRun', Sync) {
+	from sourceSets.test.runtimeClasspath
+	into layout.buildDirectory.dir('run-snapshot')
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// The client Andrew should ALWAYS launch: identical to `run` but off
+// the snapshot - rebuilds while it is up cannot touch it.
+tasks.register('runIsolated', JavaExec) {
+	dependsOn tasks.named('snapshotRun')
+	classpath = files(layout.buildDirectory.dir('run-snapshot')) +
+		fileTree(layout.buildDirectory.dir('run-snapshot')) { include '*.jar' }
+	mainClass = pluginMainClass
+
+	jvmArgs "-ea",
+		"--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED",
+		"--add-opens=java.base/java.net=ALL-UNNAMED",
+		"--add-opens=java.base/java.io=ALL-UNNAMED"
+	args "--developer-mode", "--debug"
+}
+
 tasks.register('checkDocs', Exec) {
 	group = 'verification'
 	description = 'Audit the feature registry against the README guide, media, and source tree.'
