@@ -79,6 +79,13 @@ public class CompanionLink
 	/** Publish an assembled page (the CommandEngine builds them). */
 	public void publishPage(Map<String, Object> page)
 	{
+		// Identical pages do not republish (perf, 2026-08-15: post-boss
+		// silent refreshes usually land the SAME answer - the deep
+		// equals is pennies next to the render it prevents).
+		if (page != null && page.equals(lastPage))
+		{
+			return;
+		}
 		post(page);
 	}
 
