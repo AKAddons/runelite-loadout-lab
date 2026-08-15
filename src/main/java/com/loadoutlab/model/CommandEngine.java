@@ -624,7 +624,9 @@ public class CommandEngine
 			case "set-note":
 			{
 				StoreOps ops = stores;
-				MonsterStats mob = state.mob();
+				// The LENS mob on rosters (field report 2026-08-15: notes
+				// never saved on a trip - state.mob() is null there).
+				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
 				if (ops == null || mob == null)
 				{
 					return false;
