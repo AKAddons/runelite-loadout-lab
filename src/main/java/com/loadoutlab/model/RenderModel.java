@@ -401,6 +401,7 @@ public final class RenderModel
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("id", item.getId());
 		node.put("name", item.label());
+		node.put("price", item.getPriceOrZero());
 		return node;
 	}
 }
