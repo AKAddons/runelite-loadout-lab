@@ -403,7 +403,16 @@ public final class LoadoutOptimizer
 			return optimizeAny(data, request);
 		}
 		List<DpsResult> results = optimize(data, request, preparePools(data, request));
-		return request.isOnSlayerTask()
+		// The fold-in doubles the search, so it runs only where its
+		// mechanism exists: the salve amulet (undead-only) is the one
+		// bonus that DOMINATES the exclusive slayer-helm boost and
+		// steers the beam into a helm branch it should not take. On
+		// non-undead tasks the helm bonus is strictly the best head -
+		// the beam cannot go backwards - and the shadow optimize was
+		// pure cost (field report 2026-08-14: a task-only Sire roster
+		// ground for minutes once on-task became always-on).
+		return request.isOnSlayerTask() && request.getMonster() != null
+			&& request.getMonster().hasAttribute("undead")
 			? guaranteeTaskMonotone(data, request, results)
 			: results;
 	}
