@@ -33,7 +33,10 @@
   "Imbued heart": 20724,
   "Divine super combat": 23685,
   "Divine ranging potion": 23733,
-  "Divine magic potion": 23745
+  "Divine magic potion": 23745,
+  "Overload": 20989,
+  "Overload (+)": 20993,
+  "Smelling salts": 27345
  },
  "spells": {
   "Wind Strike": 15,

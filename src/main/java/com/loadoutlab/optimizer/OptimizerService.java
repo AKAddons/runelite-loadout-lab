@@ -788,6 +788,27 @@ public class OptimizerService
 	 * this mob's request (field decision 2026-07-17: exclusions are
 	 * per-mob - the kit may carry the scythe for the roster, but the
 	 * excluding mob's shown answer never wears it). */
+	/** The true upgrade cost of a set: the summed price of pieces the
+	 * player does NOT own (field bug 2026-08-14: kit-backed cards showed
+	 * the WHOLE set's value - calculate() defaults purchaseCost to
+	 * loadout.getCost(), and only the beam path was overwriting it). */
+	private static int unownedValue(Loadout loadout, OwnedItems owned)
+	{
+		if (loadout == null)
+		{
+			return 0;
+		}
+		long total = 0;
+		for (GearItem item : loadout.getGear().values())
+		{
+			if (item != null && (owned == null || !owned.owns(item.getId())))
+			{
+				total += item.getPriceOrZero();
+			}
+		}
+		return (int) Math.min(Integer.MAX_VALUE, total);
+	}
+
 	private static DpsResult calcRespecting(DpsCalculator calc,
 		OptimizationRequest req, Loadout loadout)
 	{
@@ -1890,6 +1911,8 @@ public class OptimizerService
 					if (ownedKitAnswers)
 					{
 						DpsResult result = ownedView.shownByMob.get(j).get(s);
+						result = result.withPurchaseCost(
+							unownedValue(result.getLoadout(), ctx.effectiveOwned));
 						ownedList = new ArrayList<>();
 						ownedList.add(result);
 						spec = ownedView.specs != null ? ownedView.specs[j] : null;
@@ -1918,6 +1941,8 @@ public class OptimizerService
 					if (gameKitAnswers)
 					{
 						gameBest = gameView.shownByMob.get(j).get(s);
+						gameBest = gameBest.withPurchaseCost(
+							unownedValue(gameBest.getLoadout(), ctx.effectiveOwned));
 						gameSpec = gameView.specs != null ? gameView.specs[j] : null;
 						gameLabel = gameBoostLabelByStyle.get(s);
 						Loadout worn = gameBest.getLoadout();
