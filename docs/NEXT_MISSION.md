@@ -95,3 +95,14 @@ soul/blood/death/chaos sets) but every family must be verified, and
 staff-provided runes (elemental staves negate their element) should
 be respected. Facts land on the card (model), the Companion renders
 rune icons in the Supplies row.
+
+## Kit ammo-slot flexibility (Andrew, 2026-08-15, engine)
+
+In hybrid/kit results the melee view refuses ranged ammo in the ammo
+slot - but keeping arrows equipped while meleeing is standard play,
+and sometimes Rada's blessing is exactly the right thing to swap
+OUT for the ranged switch. The kit solve should treat the ammo slot
+as shareable across styles (arrows ride the melee set at zero swap
+cost when a ranged switch exists) and let the blessing-vs-ammo choice
+compete on dps. Engine work: per-style ammo pools + kit slot
+unification.
