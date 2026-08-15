@@ -960,7 +960,15 @@ public class CommandEngine
 			return;
 		}
 		Map<String, Object> params = state.paramsNode();
-		boolean wildy = Boolean.TRUE.equals(params.get("inWilderness"));
+		// The classic wilderness gate: exclusives are ALWAYS in (field
+		// report 2026-08-15: Calvar'ion showed no risk - the pinned
+		// always-in chip never set the param).
+		boolean exclusive = false;
+		for (MonsterStats m : mobs)
+		{
+			exclusive |= com.loadoutlab.data.WildernessMonsters.isExclusive(m);
+		}
+		boolean wildy = exclusive || Boolean.TRUE.equals(params.get("inWilderness"));
 		int keptSlots = wildy
 			? (Boolean.TRUE.equals(params.get("protectItem")) ? 4 : 3) : -1;
 		java.util.Set<Integer> simmedIds = new java.util.HashSet<>();
