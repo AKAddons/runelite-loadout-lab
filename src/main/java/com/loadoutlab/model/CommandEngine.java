@@ -183,6 +183,17 @@ public class CommandEngine
 		this.ownedCheck = ownedCheck;
 	}
 
+	/** Classic seedAssumptionDefaults: config-driven params for a NEW
+	 * selection (spec chip, thralls when reachable+book owned, Death
+	 * Charge at Magic 80) - supplied by the plugin, which owns the
+	 * config and the live levels. */
+	private volatile java.util.function.Supplier<Map<String, Object>> assumptionSeeder;
+
+	public void setAssumptionSeeder(java.util.function.Supplier<Map<String, Object>> assumptionSeeder)
+	{
+		this.assumptionSeeder = assumptionSeeder;
+	}
+
 	/** Classic Detect: the best owned antifire tier (0/1/2) for a
 	 * fire-breathing selection - supplied by the plugin (owned scan). */
 	private volatile java.util.function.Function<List<MonsterStats>, Integer> antifireResolver;
@@ -1055,6 +1066,14 @@ public class CommandEngine
 					raid &= com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != null;
 				}
 				state.setParam("maxSwaps", raid ? 8 : selected.size() > 1 ? 3 : 1);
+				java.util.function.Supplier<Map<String, Object>> seeder = assumptionSeeder;
+				if (seeder != null)
+				{
+					for (Map.Entry<String, Object> seed : seeder.get().entrySet())
+					{
+						state.setParam(seed.getKey(), seed.getValue());
+					}
+				}
 				recompute();
 				return true;
 			}

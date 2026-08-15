@@ -576,6 +576,21 @@ public class LoadoutLabPlugin extends Plugin
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
+				// Classic seedAssumptionDefaults: spec from config
+				// (default ON), thralls when the tier is reachable and
+				// the Book of the Dead is owned, Death Charge at Magic 80.
+				commandEngine.setAssumptionSeeder(() ->
+				{
+					int magic = boostedLevels != null
+						? boostedLevels.getMagic() : PlayerLevels.MAXED.getMagic();
+					Map<String, Object> seeds = new java.util.LinkedHashMap<>();
+					seeds.put("specWeapon", config.defaultSpecWeapon());
+					seeds.put("thralls",
+						com.loadoutlab.engine.ExtraDps.thrallDps(magic) > 0
+							&& ownsCanonical(com.loadoutlab.engine.ExtraDps.BOOK_OF_THE_DEAD));
+					seeds.put("deathCharge", magic >= 80 ? 1 : 0);
+					return seeds;
+				});
 				// The chips exist before the first search (idle page).
 				commandEngine.publishIdle();
 				clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName(
