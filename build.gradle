@@ -60,8 +60,14 @@ tasks.withType(JavaCompile).configureEach {
 	options.release.set(11)
 }
 
+// `run` IS the isolated runner now (field lesson 2026-08-15: muscle
+// memory typed `run` and got the unprotected live classpath - the
+// safe path must be the only path). The old live-classpath launch
+// survives as `runLive` for classpath debugging only.
 tasks.register('run', JavaExec) {
-	classpath = sourceSets.test.runtimeClasspath
+	dependsOn tasks.named('snapshotRun')
+	classpath = files(layout.buildDirectory.dir('run-snapshot')) +
+		fileTree(layout.buildDirectory.dir('run-snapshot')) { include '*.jar' }
 	mainClass = pluginMainClass
 
 	jvmArgs "-ea",
@@ -95,12 +101,15 @@ tasks.register('snapshotRun', Sync) {
 	}
 }
 
-// The client Andrew should ALWAYS launch: identical to `run` but off
-// the snapshot - rebuilds while it is up cannot touch it.
-tasks.register('runIsolated', JavaExec) {
-	dependsOn tasks.named('snapshotRun')
-	classpath = files(layout.buildDirectory.dir('run-snapshot')) +
-		fileTree(layout.buildDirectory.dir('run-snapshot')) { include '*.jar' }
+// Alias kept so runIsolated stays a valid habit.
+tasks.register('runIsolated') {
+	dependsOn tasks.named('run')
+}
+
+// The OLD unprotected launch (live build dirs on the classpath) -
+// debugging only; rebuilds under it kill its threads.
+tasks.register('runLive', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
 	mainClass = pluginMainClass
 
 	jvmArgs "-ea",
