@@ -178,7 +178,19 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(current.getLoadout().getGear());
+			// Slot legality (field report 2026-08-15: the Eclipse Moon BiS
+			// wore Scythe + Avernic defender): a shield may not join a
+			// two-handed weapon, and a two-handed weapon evicts the shield.
+			GearItem wornWeapon = gear.get(GearSlot.WEAPON);
+			if (slot == GearSlot.SHIELD && wornWeapon != null && wornWeapon.isTwoHanded())
+			{
+				continue;
+			}
 			gear.put(slot, item);
+			if (slot == GearSlot.WEAPON && item.isTwoHanded())
+			{
+				gear.remove(GearSlot.SHIELD);
+			}
 			Loadout trial = Loadout.adopting(gear);
 			if (current.getLoadout().getQuiverAmmo() != null)
 			{
