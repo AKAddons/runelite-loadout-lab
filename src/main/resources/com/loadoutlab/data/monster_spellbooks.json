@@ -1,0 +1,13 @@
+{
+  "_note": "Fight-level spellbook requirements (wiki-verified): fights whose MECHANICS want a specific book regardless of the gear set. Keys match by lowercase name-contains, so phase/form suffixes ride along. Reason strings show in the book plate's tooltip.",
+  "byNameContains": {
+    "abyssal sire": {
+      "book": "ancient",
+      "reason": "Shadow Barrage stuns the Sire for ~27s (100%, even on a splash) - the standard subdue method"
+    },
+    "respiratory system": {
+      "book": "ancient",
+      "reason": "Shadow Barrage stuns the Sire and its tentacles, leaving the vents open to attack"
+    }
+  }
+}
