@@ -84,3 +84,14 @@ Surface it:
 
 Andrew, on the bug's resolution: "identifying breakpoints like that is
 WHY loadout lab exists."
+
+## Runes in the Supplies row (Andrew, 2026-08-15)
+
+Autocast answers should list their runes among the supplies. Needs a
+WIKI-VERIFIED rune-cost table (spell -> runes per cast) - combat
+spells are systematic (Strike=mind, Bolt=chaos, Blast=death,
+Wave=blood, Surge=wrath + elementals; Ancients have fixed
+soul/blood/death/chaos sets) but every family must be verified, and
+staff-provided runes (elemental staves negate their element) should
+be respected. Facts land on the card (model), the Companion renders
+rune icons in the Supplies row.
