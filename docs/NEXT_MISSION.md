@@ -106,3 +106,13 @@ as shareable across styles (arrows ride the melee set at zero swap
 cost when a ranged switch exists) and let the blessing-vs-ammo choice
 compete on dps. Engine work: per-style ammo pools + kit slot
 unification.
+
+## Piece-by-piece dps breakdown (Andrew, 2026-08-15, roadmap)
+
+Replace one-off lines like the spec dps with a real BREAKDOWN view:
+per contribution (set base, each situational bonus, spec, thralls),
+what it adds to the shown number - the engine already computes these
+as counted bonuses + fold terms; the model would carry a
+contributions list per card and the Companion renders it (likely
+behind the Stats hover or an expandable row). Pairs with the
+breakpoints feature: contribution granularity is the same data.
