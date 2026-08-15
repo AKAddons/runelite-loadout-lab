@@ -216,6 +216,9 @@ public class LoadoutLabPlugin extends Plugin
 	private PrayerUnlocks prayerUnlocks;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
+	/** Trailing debounce for ledger-driven recomputes (game ticks). */
+	private int ledgerRecomputeTicks;
+
 	private final EnumSet<CollectionLedger.Source> dirtySources =
 		EnumSet.noneOf(CollectionLedger.Source.class);
 
@@ -1214,6 +1217,9 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		if (dirtySources.isEmpty())
 		{
+			// Quiet tick: the debounce countdown runs HERE (the early
+			// return would starve it otherwise).
+			tickLedgerDebounce();
 			return;
 		}
 		boolean ledgerChanged = false;
@@ -1240,6 +1246,22 @@ public class LoadoutLabPlugin extends Plugin
 			// A card created before this container was known may sit on a
 			// stale DETECTED default (field report 2026-08-08: Vorkath
 			// froze on "gear only" with super antifires in the bank).
+			// DEBOUNCED (field report 2026-08-15: Moons of Peril hands out
+			// consumables every room, so presence changed per transition
+			// and the full search re-ran each time) - one recompute, five
+			// quiet ticks after the churn stops.
+			ledgerRecomputeTicks = 5;
+		}
+		else
+		{
+			tickLedgerDebounce();
+		}
+	}
+
+	private void tickLedgerDebounce()
+	{
+		if (ledgerRecomputeTicks > 0 && --ledgerRecomputeTicks == 0)
+		{
 			SwingUtilities.invokeLater(() ->
 			{
 				com.loadoutlab.model.CommandEngine engine = commandEngine;
