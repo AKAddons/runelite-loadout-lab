@@ -1931,6 +1931,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
+			long stagingStart = System.nanoTime();
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				snapshotProfileIfNeeded();
@@ -1950,6 +1951,11 @@ public class LoadoutLabPlugin extends Plugin
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
 			MonsterStats anchor = mobs.get(0);
+			long stagingMs = (System.nanoTime() - stagingStart) / 1_000_000;
+			if (stagingMs > 10)
+			{
+				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
+			}
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
@@ -1977,6 +1983,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
+			long stagingStart = System.nanoTime();
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				snapshotProfileIfNeeded();
@@ -2007,6 +2014,11 @@ public class LoadoutLabPlugin extends Plugin
 			exportProfile(new PlayerProfile(
 				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
+			long stagingMs = (System.nanoTime() - stagingStart) / 1_000_000;
+			if (stagingMs > 10)
+			{
+				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
+			}
 			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps, raidBoost,
