@@ -660,7 +660,8 @@ public class LoadoutLabPlugin extends Plugin
 					@Override
 					public boolean toggleSim(int itemId)
 					{
-						return exec(Commands.toggleDream(dreams, itemId, itemLabel(itemId)));
+						dreams.toggle(itemId);
+						return true;
 					}
 
 					@Override
