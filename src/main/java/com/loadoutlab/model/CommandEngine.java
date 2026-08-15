@@ -710,6 +710,12 @@ public class CommandEngine
 				}
 				return true;
 			}
+			case "refresh":
+			{
+				// The ledger's background refresh - silent by contract.
+				recompute(true);
+				return true;
+			}
 			case "recompute":
 				recompute();
 				return true;
@@ -734,6 +740,15 @@ public class CommandEngine
 	@SuppressWarnings("unchecked")
 	private void recompute()
 	{
+		recompute(false);
+	}
+
+	/** silent = a BACKGROUND refresh (ledger settles): no status, no
+	 * stage clear, no mascot - the fresh answer swaps in when it lands
+	 * (field report 2026-08-15: post-boss loot churn made the panel
+	 * thrash through clear/mascot/rebuild on every settle). */
+	private void recompute(boolean silent)
+	{
 		MonsterStats mob = state.mob();
 		List<MonsterStats> roster = state.rosterMobs();
 		RosterCompute rosterPath = rosterCompute;
@@ -741,11 +756,14 @@ public class CommandEngine
 		{
 			return;
 		}
-		link.publishStatus(true);
-		// Publish the PARAMS immediately (field report 2026-08-12: the
-		// chips used to appear the moment you searched, so a wrong
-		// parameter could be fixed without waiting out the compute).
-		publishPending();
+		if (!silent)
+		{
+			link.publishStatus(true);
+			// Publish the PARAMS immediately (field report 2026-08-12: the
+			// chips used to appear the moment you searched, so a wrong
+			// parameter could be fixed without waiting out the compute).
+			publishPending();
+		}
 		Object[] a = state.computeArgs();
 		boolean anyFire = false;
 		for (MonsterStats m : roster != null ? roster : List.of(mob))

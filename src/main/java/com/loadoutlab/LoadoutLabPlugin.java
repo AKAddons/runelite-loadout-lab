@@ -1250,6 +1250,7 @@ public class LoadoutLabPlugin extends Plugin
 			// consumables every room, so presence changed per transition
 			// and the full search re-ran each time) - one recompute, five
 			// quiet ticks after the churn stops.
+			log.debug("Loadout Lab: owned items changed (debouncing refresh)");
 			ledgerRecomputeTicks = 5;
 		}
 		else
@@ -1262,12 +1263,13 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		if (ledgerRecomputeTicks > 0 && --ledgerRecomputeTicks == 0)
 		{
+			log.debug("Loadout Lab: owned items settled - background refresh");
 			SwingUtilities.invokeLater(() ->
 			{
 				com.loadoutlab.model.CommandEngine engine = commandEngine;
 				if (engine != null)
 				{
-					engine.execute("recompute", Map.of());
+					engine.execute("refresh", Map.of());
 				}
 			});
 		}
