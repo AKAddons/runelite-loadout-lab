@@ -30,14 +30,15 @@
     "engine/LoadoutOptimizer.java",
     "optimizer/OptimizerService.java",
     "engine/OwnedItems.java",
-    "render/ResultCards.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/LoadoutOptimizerTest.java",
     "engine/AnalogTest.java"
    ],
    "since": "0.1.0",
-   "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot."
+   "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "incoming-damage",
@@ -49,14 +50,15 @@
     "engine/IncomingDpsCalculator.java",
     "engine/BossIncomingOverrides.java",
     "data/MonsterOffence.java",
-    "render/ResultCards.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/IncomingDpsCalculatorTest.java",
     "engine/BossIncomingOverridesTest.java"
    ],
    "since": "0.1.0",
-   "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot."
+   "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "spellbook",
@@ -68,13 +70,14 @@
     "data/SpellStats.java",
     "engine/DpsCalculator.java",
     "optimizer/OptimizerService.java",
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/SpellbookLockTest.java"
    ],
    "since": "0.1.0",
-   "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot."
+   "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "dream-items",
@@ -86,13 +89,14 @@
     "collection/DreamStore.java",
     "engine/OptimizationRequest.java",
     "engine/LoadoutOptimizer.java",
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/DreamAndBudgetTest.java"
    ],
    "since": "0.1.0",
-   "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list."
+   "capture": "Right-click menu open on an unowned game-best item showing the 'dream' toggle (or the green-highlighted dream item post-recompute). Single PNG screenshot. The green + chip above the search bar and the '...' menu offer 'Sim an item (consider as owned)...' plus a Simmed items (N) removal list.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "upgrade-budget",
@@ -262,14 +266,15 @@
    "code": [
     "collection/ExclusionStore.java",
     "engine/LoadoutOptimizer.java",
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "collection/ExclusionStoreTest.java",
     "engine/ExclusionTest.java"
    ],
    "since": "0.1.0",
-   "capture": "Right-click menu open on a suggested item showing 'Exclude ... from suggestions' (or the excluded-items count line). Single PNG screenshot."
+   "capture": "Right-click menu open on a suggested item showing 'Exclude ... from suggestions' (or the excluded-items count line). Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "bank-tools",
@@ -279,12 +284,12 @@
    "media": "docs/img/bank-tools.png",
    "code": [
     "ui/BankHighlightOverlay.java",
-    "render/BankLayout.java",
-    "LoadoutLabPlugin.java"
+    "LoadoutLabPlugin.java",
+    "model/RenderModel.java"
    ],
    "tests": [],
    "since": "0.1.0",
-   "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests.",
+   "notes": "Overlay + Bank Tags wiring is Swing/RuneLite-client bound (needs a live bank), verified in-client; the set math it draws from is covered by the optimizer tests. Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java).",
    "capture": "Bank open with 'Show in bank' outlining the set (or 'Filter bank' active); Show/Filter buttons visible in the card. Same capture moment can also serve owned-ledger. Single PNG screenshot."
   },
   {
@@ -311,11 +316,11 @@
    "anchor": "community-discord",
    "media": "docs/img/discord.png",
    "code": [
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [],
    "since": "0.1.0",
-   "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client.",
+   "notes": "Header Options menu -> 'Join our Discord' opens the community invite via LinkBrowser; Swing-only, verified in-client. Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java).",
    "capture": "Header Options (dots) menu open showing 'Join our Discord'. Single PNG screenshot."
   },
   {
@@ -329,7 +334,7 @@
     "command/CompositeCommand.java",
     "command/Commands.java",
     "LoadoutLabPlugin.java",
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "command/CommandHistoryTest.java",
@@ -337,7 +342,7 @@
     "model/CommandEngineTest.java"
    ],
    "since": "0.2.4",
-   "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward."
+   "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward. Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "trip-supplies",
@@ -351,7 +356,7 @@
     "collection/AlwaysFilterStore.java",
     "collection/MonsterProfileStore.java",
     "LoadoutLabPlugin.java",
-    "render/ResultCards.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "data/TripSuppliesTest.java",
@@ -360,7 +365,8 @@
     "collection/MonsterProfileStoreTest.java"
    ],
    "since": "0.3.3",
-   "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot."
+   "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "thralls-death-charge",
@@ -373,14 +379,15 @@
     "engine/OptimizationRequest.java",
     "optimizer/OptimizerService.java",
     "LoadoutLabPlugin.java",
-    "render/RenderSurface.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/ExtraDpsTest.java",
     "optimizer/DeathChargeTest.java"
    ],
    "since": "0.3.3",
-   "capture": "A boss card with the Thralls and D charge chips active in the params row, the style tab tooltip open showing the 'gear + thrall' breakdown. Single PNG screenshot."
+   "capture": "A boss card with the Thralls and D charge chips active in the params row, the style tab tooltip open showing the 'gear + thrall' breakdown. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "assume-pickers",
@@ -394,14 +401,15 @@
     "optimizer/BoostSelector.java",
     "engine/OptimizationRequest.java",
     "optimizer/OptimizerService.java",
-    "render/ResultCards.java"
+    "model/RenderModel.java"
    ],
    "tests": [
     "engine/PrayerPickTest.java",
     "optimizer/BoostSelectorTest.java"
    ],
    "since": "0.3.3",
-   "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot."
+   "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "panel-options",
@@ -424,9 +432,9 @@
    "anchor": "multi-mob-rosters-groups-and-raids",
    "media": "docs/img/multi-mob-roster.png",
    "code": [
-    "render/ResultCards.java",
     "optimizer/OptimizerService.java",
-    "data/MonsterGroups.java"
+    "data/MonsterGroups.java",
+    "model/RenderModel.java"
    ],
    "tests": [
     "optimizer/RosterOptimizerTest.java",
@@ -434,7 +442,8 @@
     "profile/RosterGolden.java"
    ],
    "since": "0.3.0",
-   "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot."
+   "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "inventory-budget",
@@ -443,15 +452,16 @@
    "anchor": "inventory-budget-swaps-vs-bag-space",
    "media": "docs/img/inventory-budget.png",
    "code": [
-    "render/RenderSurface.java",
-    "optimizer/OptimizerService.java"
+    "optimizer/OptimizerService.java",
+    "model/RenderModel.java"
    ],
    "tests": [
     "optimizer/RosterOptimizerTest.java",
     "optimizer/SpecValueTest.java"
    ],
    "since": "0.3.0",
-   "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot."
+   "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot.",
+   "notes": "Rich rendering lives in the Loadout Lab UI companion plugin (Core diet 2026-08-16); Core ships the bare text fallback (render/BareSurface.java)."
   },
   {
    "id": "required-gear",

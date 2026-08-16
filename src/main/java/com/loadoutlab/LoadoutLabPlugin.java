@@ -194,7 +194,7 @@ public class LoadoutLabPlugin extends Plugin
 	private volatile com.loadoutlab.model.CompanionLink companionLink;
 	private volatile com.loadoutlab.model.CommandEngine commandEngine;
 	private volatile java.util.function.Function<Map<String, Object>, javax.swing.JComponent> companionRenderer;
-	private volatile com.loadoutlab.render.RenderSurface internalSurface;
+	private volatile com.loadoutlab.render.BareSurface internalSurface;
 	private com.loadoutlab.ui.CompanionHost companionHost;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
@@ -640,20 +640,11 @@ public class LoadoutLabPlugin extends Plugin
 						engine.execute(n, a);
 					}
 				};
-				com.loadoutlab.render.ItemPicker picker = (prompt, onPicked) ->
-					itemSearchView().search(prompt, onPicked);
-				internalSurface = new com.loadoutlab.render.RenderSurface(
-					new com.loadoutlab.render.ResultCards(itemManager, sink, picker),
-					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker,
-					(query, onResults) ->
-					{
-						com.loadoutlab.model.CommandEngine engine = commandEngine;
-						onResults.accept(engine == null
-							? java.util.Collections.emptyList() : engine.searchOptions(query));
-					});
+				internalSurface = new com.loadoutlab.render.BareSurface(
+					() -> companionLink == null ? null : companionLink.lastPage(), sink);
 				companionLink.setPageListener(() ->
 				{
-					com.loadoutlab.render.RenderSurface surface = internalSurface;
+					com.loadoutlab.render.BareSurface surface = internalSurface;
 					if (surface != null)
 					{
 						surface.onModelChanged();
@@ -662,7 +653,7 @@ public class LoadoutLabPlugin extends Plugin
 				});
 				companionLink.setStatusListener(computing ->
 				{
-					com.loadoutlab.render.RenderSurface surface = internalSurface;
+					com.loadoutlab.render.BareSurface surface = internalSurface;
 					if (surface != null)
 					{
 						surface.setComputing(computing);
