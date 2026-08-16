@@ -1095,6 +1095,19 @@ public class CommandEngine
 						break;
 					}
 				}
+				// Wilderness-exclusives set the PARAM, not just the chip
+				// (field report 2026-08-15: a 75k risk cap produced a 21M
+				// recommendation - the display honored the exclusive but
+				// the COMPUTE derived tradeables=-1 from the raw param and
+				// ran unconstrained).
+				for (MonsterStats m : selected)
+				{
+					if (com.loadoutlab.data.WildernessMonsters.isExclusive(m))
+					{
+						state.setParam("inWilderness", true);
+						break;
+					}
+				}
 				// Recommended trip inventory per selection (Andrew
 				// 2026-08-14): raids carry 8 swaps, other groups 3, a
 				// single mob 1. A fresh selection re-recommends; the
