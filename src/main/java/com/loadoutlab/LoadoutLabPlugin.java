@@ -579,6 +579,7 @@ public class LoadoutLabPlugin extends Plugin
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
+				commandEngine.setComboRunes(config::preferComboRunes);
 				// Classic seedAssumptionDefaults: spec from config
 				// (default ON), thralls when the tier is reachable and
 				// the Book of the Dead is owned, Death Charge at Magic 80.

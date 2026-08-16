@@ -113,6 +113,56 @@ public final class SpellRunes
 		return out;
 	}
 
+	/** Combo-rune fold: where a combination rune covers two of the
+	 * cost's elements, ONE stack of it (the larger quantity) replaces
+	 * both - a combo rune counts as one of each element per cast. */
+	private static final String[][] COMBOS = {
+		{"smoke", "air", "fire", "4697"},
+		{"mist", "air", "water", "4695"},
+		{"dust", "air", "earth", "4696"},
+		{"mud", "water", "earth", "4698"},
+		{"steam", "water", "fire", "4694"},
+		{"lava", "earth", "fire", "4699"},
+	};
+
+	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes)
+	{
+		if (runes == null)
+		{
+			return null;
+		}
+		Map<String, Map<String, Object>> byName = new LinkedHashMap<>();
+		for (Map<String, Object> rune : runes)
+		{
+			byName.put(String.valueOf(rune.get("name")).replace(" rune", "")
+				.toLowerCase(Locale.ROOT), rune);
+		}
+		for (String[] combo : COMBOS)
+		{
+			Map<String, Object> a = byName.get(combo[1]);
+			Map<String, Object> b = byName.get(combo[2]);
+			if (a == null || b == null)
+			{
+				continue;
+			}
+			int qty = Math.max(((Number) a.get("qty")).intValue(),
+				((Number) b.get("qty")).intValue());
+			Map<String, Object> merged = new LinkedHashMap<>();
+			merged.put("id", Integer.parseInt(combo[3]));
+			merged.put("name", capitalize(combo[0]) + " rune");
+			merged.put("qty", qty);
+			Object why = a.get("why") != null ? a.get("why") : b.get("why");
+			if (why != null)
+			{
+				merged.put("why", why);
+			}
+			byName.remove(combo[1]);
+			byName.remove(combo[2]);
+			byName.put(combo[0], merged);
+		}
+		return new ArrayList<>(byName.values());
+	}
+
 	private static String capitalize(String word)
 	{
 		return Character.toUpperCase(word.charAt(0)) + word.substring(1).toLowerCase(Locale.ROOT);

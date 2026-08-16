@@ -167,6 +167,14 @@ public class CommandEngine
 		return books;
 	}
 
+	/** Combo-rune preference (config-fed) + casting-kit ownership. */
+	private volatile java.util.function.BooleanSupplier comboRunes;
+
+	public void setComboRunes(java.util.function.BooleanSupplier comboRunes)
+	{
+		this.comboRunes = comboRunes;
+	}
+
 	/** Storage name for an item needing a fetch trip (source dots). */
 	private volatile java.util.function.IntFunction<String> itemLocation;
 
@@ -1331,7 +1339,9 @@ public class CommandEngine
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
-		return out;
+		java.util.function.BooleanSupplier combo = comboRunes;
+		return combo != null && combo.getAsBoolean()
+			? com.loadoutlab.data.SpellRunes.combineCombos(out) : out;
 	}
 
 	private static void addUtilityRunes(List<Map<String, Object>> out,
@@ -1370,7 +1380,19 @@ public class CommandEngine
 					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
 					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
 					mob.put("note", ops.note(monsterId));
-					mob.put("utilityRunes", utilityRunesFor(mob));
+					List<Map<String, Object>> utility = utilityRunesFor(mob);
+					mob.put("utilityRunes", utility);
+					// The casting kit: divine rune pouch > rune pouch when
+					// owned; the Magic cape (t preferred) for the book
+					// swap perk - suggestions only when the trip casts.
+					java.util.function.IntPredicate owns = ownedCheck;
+					if (!utility.isEmpty() && owns != null)
+					{
+						mob.put("castingPouch", owns.test(27281) ? 27281
+							: owns.test(12791) ? 12791 : 12791);
+						mob.put("castingCape", owns.test(9763) ? 9763
+							: owns.test(9762) ? 9762 : -1);
+					}
 					mob.put("mobExclusions", ops.mobExclusions(monsterId));
 					mob.put("mobSims", ops.mobSims(monsterId));
 					mob.put("mobFilters", ops.mobFilters(monsterId));
