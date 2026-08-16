@@ -29,7 +29,8 @@ public final class MonsterSpellbooks
 			{
 				JsonObject node = e.getValue().getAsJsonObject();
 				BY_NAME.put(e.getKey().toLowerCase(Locale.ROOT), new String[]{
-					node.get("book").getAsString(), node.get("reason").getAsString()});
+					node.get("book").getAsString(), node.get("reason").getAsString(),
+					node.has("spell") ? node.get("spell").getAsString() : null});
 			}
 		}
 	}
@@ -50,6 +51,13 @@ public final class MonsterSpellbooks
 	{
 		String[] entry = lookup(monster);
 		return entry == null ? null : entry[1];
+	}
+
+	/** The utility cast the fight wants (its runes ride the trip). */
+	public static String spellFor(MonsterStats monster)
+	{
+		String[] entry = lookup(monster);
+		return entry == null ? null : entry[2];
 	}
 
 	private static String[] lookup(MonsterStats monster)

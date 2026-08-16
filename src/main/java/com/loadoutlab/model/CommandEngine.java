@@ -1293,6 +1293,63 @@ public class CommandEngine
 	/** Attach per-mob profile state (pinned spell/spec, note) to each
 	 * mob node so renderers can show and edit it. */
 	@SuppressWarnings("unchecked")
+	/** The trip's UTILITY casts for one mob: the fight's own spell (the
+	 * Sire's Shadow Barrage stun), the thrall resurrection at the live
+	 * tier, and Death Charge - each cast's runes tagged with why
+	 * (field report 2026-08-15: 'not seeing any runes' on a trip whose
+	 * gear never autocasts but whose FIGHT casts plenty). */
+	private List<Map<String, Object>> utilityRunesFor(Map<String, Object> mob)
+	{
+		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		Object name = mob.get("name");
+		MonsterStats stats = null;
+		for (MonsterStats m : data.getMonsters())
+		{
+			if (m.getName().equals(name))
+			{
+				stats = m;
+				break;
+			}
+		}
+		String fightSpell = com.loadoutlab.data.MonsterSpellbooks.spellFor(stats);
+		if (fightSpell != null)
+		{
+			addUtilityRunes(out, fightSpell, fightSpell + " (fight mechanic)");
+		}
+		Map<String, Object> params = state.paramsNode();
+		if (Boolean.TRUE.equals(params.get("thralls")))
+		{
+			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
+			if (tier != null)
+			{
+				addUtilityRunes(out, "Resurrect " + tier + " Ghost",
+					tier + " thrall (per resurrection)");
+			}
+		}
+		Object dCharge = params.get("deathCharge");
+		if (dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
+		{
+			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
+		}
+		return out;
+	}
+
+	private static void addUtilityRunes(List<Map<String, Object>> out,
+		String spell, String why)
+	{
+		List<Map<String, Object>> runes =
+			com.loadoutlab.data.SpellRunes.costFor(spell, null, null);
+		if (runes == null)
+		{
+			return;
+		}
+		for (Map<String, Object> rune : runes)
+		{
+			rune.put("why", why);
+			out.add(rune);
+		}
+	}
+
 	private void decorateProfiles(Map<String, Object> entry)
 	{
 		StoreOps ops = stores;
@@ -1313,6 +1370,7 @@ public class CommandEngine
 					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
 					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
 					mob.put("note", ops.note(monsterId));
+					mob.put("utilityRunes", utilityRunesFor(mob));
 					mob.put("mobExclusions", ops.mobExclusions(monsterId));
 					mob.put("mobSims", ops.mobSims(monsterId));
 					mob.put("mobFilters", ops.mobFilters(monsterId));

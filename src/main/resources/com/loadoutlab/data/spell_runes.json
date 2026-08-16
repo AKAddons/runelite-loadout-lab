@@ -1,0 +1,338 @@
+{
+ "_note": "Runes per cast, wiki-fetched 2026-08-15 from each spell's RuneReq infobox (61/61, spot-checked: Ice Barrage 6w/4d/2b, Fire Surge 10f/7a/1wrath, Iban 5f/1d). runeItems maps rune name -> item id. Utility casts (Death Charge, thrall resurrections by tier) fetched 2026-08-15 same method.",
+ "runeItems": {
+  "air": 556,
+  "water": 555,
+  "earth": 557,
+  "fire": 554,
+  "mind": 558,
+  "body": 559,
+  "chaos": 562,
+  "death": 560,
+  "blood": 565,
+  "soul": 566,
+  "wrath": 21880,
+  "nature": 561,
+  "law": 563,
+  "cosmic": 564,
+  "astral": 9075
+ },
+ "bySpell": {
+  "Bind": {
+   "earth": 3,
+   "nature": 2,
+   "water": 3
+  },
+  "Blood Barrage": {
+   "blood": 4,
+   "death": 4,
+   "soul": 1
+  },
+  "Blood Blitz": {
+   "blood": 4,
+   "death": 2
+  },
+  "Blood Burst": {
+   "blood": 2,
+   "chaos": 4,
+   "death": 2
+  },
+  "Blood Rush": {
+   "blood": 1,
+   "chaos": 2,
+   "death": 2
+  },
+  "Claws of Guthix": {
+   "air": 4,
+   "blood": 2,
+   "fire": 1
+  },
+  "Confuse": {
+   "body": 1,
+   "earth": 2,
+   "water": 3
+  },
+  "Crumble Undead": {
+   "air": 2,
+   "chaos": 1,
+   "earth": 2
+  },
+  "Curse": {
+   "body": 1,
+   "earth": 3,
+   "water": 2
+  },
+  "Dark Demonbane": {
+   "fire": 7,
+   "soul": 2
+  },
+  "Dark Lure": {
+   "death": 1,
+   "nature": 1
+  },
+  "Earth Blast": {
+   "air": 3,
+   "death": 1,
+   "earth": 4
+  },
+  "Earth Bolt": {
+   "air": 2,
+   "chaos": 1,
+   "earth": 3
+  },
+  "Earth Strike": {
+   "air": 1,
+   "earth": 2,
+   "mind": 1
+  },
+  "Earth Surge": {
+   "air": 7,
+   "earth": 10,
+   "wrath": 1
+  },
+  "Earth Wave": {
+   "air": 5,
+   "blood": 1,
+   "earth": 7
+  },
+  "Enfeeble": {
+   "earth": 8,
+   "soul": 1,
+   "water": 8
+  },
+  "Entangle": {
+   "earth": 5,
+   "nature": 4,
+   "water": 5
+  },
+  "Fire Blast": {
+   "air": 4,
+   "death": 1,
+   "fire": 5
+  },
+  "Fire Bolt": {
+   "air": 3,
+   "chaos": 1,
+   "fire": 4
+  },
+  "Fire Strike": {
+   "air": 2,
+   "fire": 3,
+   "mind": 1
+  },
+  "Fire Surge": {
+   "air": 7,
+   "fire": 10,
+   "wrath": 1
+  },
+  "Fire Wave": {
+   "air": 5,
+   "blood": 1,
+   "fire": 7
+  },
+  "Flames of Zamorak": {
+   "air": 1,
+   "blood": 2,
+   "fire": 4
+  },
+  "Ghostly Grasp": {
+   "air": 4,
+   "chaos": 1
+  },
+  "Greater Corruption": {
+   "blood": 1,
+   "soul": 3
+  },
+  "Iban Blast": {
+   "death": 1,
+   "fire": 5
+  },
+  "Ice Barrage": {
+   "blood": 2,
+   "death": 4,
+   "water": 6
+  },
+  "Ice Blitz": {
+   "blood": 2,
+   "death": 2,
+   "water": 3
+  },
+  "Ice Burst": {
+   "chaos": 4,
+   "death": 2,
+   "water": 4
+  },
+  "Ice Rush": {
+   "chaos": 2,
+   "death": 2,
+   "water": 2
+  },
+  "Inferior Demonbane": {
+   "chaos": 1,
+   "fire": 3
+  },
+  "Lesser Corruption": {
+   "death": 1,
+   "soul": 2
+  },
+  "Magic Dart": {
+   "death": 1,
+   "mind": 4
+  },
+  "Saradomin Strike": {
+   "air": 4,
+   "blood": 2,
+   "fire": 2
+  },
+  "Shadow Barrage": {
+   "air": 4,
+   "blood": 2,
+   "death": 4,
+   "soul": 3
+  },
+  "Shadow Blitz": {
+   "air": 2,
+   "blood": 2,
+   "death": 2,
+   "soul": 2
+  },
+  "Shadow Burst": {
+   "air": 1,
+   "chaos": 4,
+   "death": 2,
+   "soul": 2
+  },
+  "Shadow Rush": {
+   "air": 1,
+   "chaos": 2,
+   "death": 2,
+   "soul": 1
+  },
+  "Skeletal Grasp": {
+   "death": 1,
+   "earth": 8
+  },
+  "Smoke Barrage": {
+   "air": 4,
+   "blood": 2,
+   "death": 4,
+   "fire": 4
+  },
+  "Smoke Blitz": {
+   "air": 2,
+   "blood": 2,
+   "death": 2,
+   "fire": 2
+  },
+  "Smoke Burst": {
+   "air": 2,
+   "chaos": 4,
+   "death": 2,
+   "fire": 2
+  },
+  "Smoke Rush": {
+   "air": 1,
+   "chaos": 2,
+   "death": 2,
+   "fire": 1
+  },
+  "Snare": {
+   "earth": 4,
+   "nature": 3,
+   "water": 4
+  },
+  "Stun": {
+   "earth": 12,
+   "soul": 1,
+   "water": 12
+  },
+  "Superior Demonbane": {
+   "fire": 5,
+   "soul": 1
+  },
+  "Tele Block": {
+   "chaos": 1,
+   "death": 1,
+   "law": 1
+  },
+  "Undead Grasp": {
+   "blood": 1,
+   "fire": 12
+  },
+  "Vulnerability": {
+   "earth": 5,
+   "soul": 1,
+   "water": 5
+  },
+  "Water Blast": {
+   "air": 3,
+   "death": 1,
+   "water": 3
+  },
+  "Water Bolt": {
+   "air": 2,
+   "chaos": 1,
+   "water": 2
+  },
+  "Water Strike": {
+   "air": 1,
+   "mind": 1,
+   "water": 1
+  },
+  "Water Surge": {
+   "air": 7,
+   "water": 10,
+   "wrath": 1
+  },
+  "Water Wave": {
+   "air": 5,
+   "blood": 1,
+   "water": 7
+  },
+  "Weaken": {
+   "body": 1,
+   "earth": 2,
+   "water": 3
+  },
+  "Wind Blast": {
+   "air": 3,
+   "death": 1
+  },
+  "Wind Bolt": {
+   "air": 2,
+   "chaos": 1
+  },
+  "Wind Strike": {
+   "air": 1,
+   "mind": 1
+  },
+  "Wind Surge": {
+   "air": 7,
+   "wrath": 1
+  },
+  "Wind Wave": {
+   "air": 5,
+   "blood": 1
+  },
+  "Death Charge": {
+   "death": 1,
+   "blood": 1,
+   "soul": 1
+  },
+  "Resurrect Lesser Ghost": {
+   "air": 10,
+   "mind": 5,
+   "cosmic": 1
+  },
+  "Resurrect Superior Ghost": {
+   "earth": 10,
+   "death": 5,
+   "cosmic": 1
+  },
+  "Resurrect Greater Ghost": {
+   "fire": 10,
+   "blood": 5,
+   "cosmic": 1
+  }
+ }
+}
