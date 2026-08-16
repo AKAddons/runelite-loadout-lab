@@ -22,7 +22,10 @@ CAP = 200_000          # the bot's hard limit
 FAIL_AT = 195_000      # block submit here. The bot's tokenizer counts a touch
                        # LOWER than ours (~260k vs our 268k pre-reduction), so a
                        # 195k reading here is comfortably under the bot's 200k.
-WARN_AT = 188_000      # getting close; plan a data externalization soon
+WARN_AT = 170_000      # post-diet watermark (2026-08-16: the Core diet
+                       # closed at 151,783). Core should only grow on
+                       # ENGINE mechanics - UI belongs in the companion,
+                       # data in resources. Crossing this = investigate.
 CHARS_PER_TOKEN = 3.6  # calibrated on this Java codebase (real ratio ~3.66); low = conservative
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,3 +79,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
