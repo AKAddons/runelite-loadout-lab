@@ -35,6 +35,21 @@ public final class BlowpipeDarts
 	{
 	}
 
+	/** Every tier for the pickers: [{id (unpoisoned base), name}],
+	 * strongest first - excluding the base id protects the whole tier. */
+	public static java.util.List<java.util.Map<String, Object>> tiers()
+	{
+		java.util.List<java.util.Map<String, Object>> out = new java.util.ArrayList<>();
+		for (int tier = 0; tier < TIERS.length; tier++)
+		{
+			java.util.Map<String, Object> node = new java.util.LinkedHashMap<>();
+			node.put("id", TIERS[tier][1]);
+			node.put("name", TIER_NAMES[tier]);
+			out.add(node);
+		}
+		return out;
+	}
+
 	/** Extra ranged strength from the loaded dart, 0 for non-blowpipes. */
 	public static int strength(OptimizationRequest request, GearItem weapon)
 	{

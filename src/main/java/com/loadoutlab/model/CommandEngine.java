@@ -935,6 +935,7 @@ public class CommandEngine
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
+		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
 		link.publishPage(page);
 	}
 
@@ -953,6 +954,7 @@ public class CommandEngine
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
+		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
 		link.publishPage(page);
 	}
 
@@ -1030,6 +1032,7 @@ public class CommandEngine
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
+		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode));
