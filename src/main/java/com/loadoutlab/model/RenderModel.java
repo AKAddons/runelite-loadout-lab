@@ -178,7 +178,26 @@ public final class RenderModel
 		card.put("dps", shown.getDps());
 		card.put("maxHit", shown.getMaxHit());
 		card.put("accuracy", shown.getAccuracy());
-		card.put("attackType", shown.getAttackType());
+		// The blowpipe's loaded dart rides the attackType STRING
+		// ("ranged rapid - dragon dart") - split it into facts: a clean
+		// style line + an internalAmmo entry for the column.
+		String attackType = shown.getAttackType();
+		if (attackType != null && attackType.contains(" - "))
+		{
+			int dash = attackType.indexOf(" - ");
+			String dartTier = attackType.substring(dash + 3);
+			Integer dartId = com.loadoutlab.engine.BlowpipeDarts.baseIdForTierName(dartTier);
+			if (dartId != null)
+			{
+				Map<String, Object> dartNode = new LinkedHashMap<>();
+				dartNode.put("id", dartId);
+				dartNode.put("name", Character.toUpperCase(dartTier.charAt(0))
+					+ dartTier.substring(1) + " (loaded)");
+				card.put("internalAmmo", dartNode);
+				attackType = attackType.substring(0, dash);
+			}
+		}
+		card.put("attackType", attackType);
 		card.put("spell", shown.getSpellName());
 		card.put("purchaseCost", shown.getPurchaseCost());
 		card.put("antifireAssumed", shown.isAntifireAssumed());
