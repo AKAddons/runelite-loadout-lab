@@ -225,6 +225,11 @@ public final class RenderModel
 		card.put("spec", spec(result, bis));
 		card.put("incoming", incoming(bis ? result.gameIncoming : result.incoming));
 		card.put("bench", items(bis ? result.gameBench : result.bench));
+		GearItem runeWeapon = shown.getLoadout().getWeapon();
+		GearItem runeShield = shown.getLoadout().get(GearSlot.SHIELD);
+		card.put("runes", com.loadoutlab.data.SpellRunes.costFor(shown.getSpellName(),
+			runeWeapon == null ? null : runeWeapon.getNameLower(),
+			runeShield == null ? null : runeShield.getNameLower()));
 		card.put("kitBacked", bis ? result.gameKitBacked : result.ownedKitBacked);
 		Map<String, Object> stats = new LinkedHashMap<>();
 		stats.put("offensive", statBlock(shown.getLoadout().getOffensive()));
