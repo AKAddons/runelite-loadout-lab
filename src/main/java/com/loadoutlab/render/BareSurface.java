@@ -79,14 +79,24 @@ public class BareSurface
 			JPanel top = new JPanel();
 			top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			JLabel nudge = new JLabel("<html>This is the plain fallback - the"
-				+ " <b>Loadout Lab UI</b> plugin has the full interface.</html>");
-			nudge.setForeground(new java.awt.Color(160, 160, 160));
-			nudge.setAlignmentX(0f);
-			top.add(nudge);
 			JButton install = new JButton("Get Loadout Lab UI");
-			install.setToolTipText("Install (or enable) the companion plugin"
-				+ " from the Plugin Hub");
+			install.setToolTipText("The full interface - install or enable"
+				+ " the companion plugin from the Plugin Hub");
+			try
+			{
+				java.awt.image.BufferedImage icon = javax.imageio.ImageIO.read(
+					BareSurface.class.getResourceAsStream("/com/loadoutlab/icon.png"));
+				if (icon != null)
+				{
+					install.setIcon(new javax.swing.ImageIcon(
+						icon.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH)));
+					install.setIconTextGap(6);
+				}
+			}
+			catch (Exception ex)
+			{
+				// no icon - the words carry it
+			}
 			install.setFocusable(false);
 			install.setAlignmentX(0f);
 			install.addActionListener(e ->
