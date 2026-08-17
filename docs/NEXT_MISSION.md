@@ -116,3 +116,13 @@ as counted bonuses + fold terms; the model would carry a
 contributions list per card and the Companion renders it (likely
 behind the Stats hover or an expandable row). Pairs with the
 breakpoints feature: contribution granularity is the same data.
+
+## Ship-order rule for 0.3.6 (2026-08-17)
+
+The bare fallback's Get Loadout Lab UI button resolves: enable-if-
+disabled -> ExternalPluginManager.install('loadout-lab-ui') ->
+browser to the hub page. Both later tiers assume the companion IS
+PUBLISHED. Therefore: the companion ships to the hub FIRST, core
+0.3.6 second. Also verify on a live client whether install() on an
+unknown id throws (handled) or fails silently async (would need a
+timeout message).
