@@ -211,7 +211,7 @@ public class BareSurface
 		params.setVisible(firstParams != null);
 		Object report = current == null ? null : current.get("reportText");
 		output.setText(report instanceof String ? (String) report
-			: "Search a monster to begin.");
+			: "Search a mob, group, or raid to begin.");
 		output.setCaretPosition(0);
 		root.revalidate();
 		root.repaint();
