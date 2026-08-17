@@ -1480,6 +1480,13 @@ public class CommandEngine
 			}
 		}
 		options.put("boostItems", boostItems);
+		Map<String, Object> spellSprites = new java.util.LinkedHashMap<>();
+		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		{
+			spellSprites.put(spell.getName(),
+				com.loadoutlab.data.AssumeIcons.spellSprite(spell.getName()));
+		}
+		options.put("spellSprites", spellSprites);
 		assumeOptionsCache = options;
 		return options;
 	}
