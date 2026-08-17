@@ -34,6 +34,12 @@ public class BareSurface
 	private JTextArea output;
 	private JPanel params;
 	private JLabel status;
+	private volatile Runnable installAction;
+
+	public void setInstallAction(Runnable installAction)
+	{
+		this.installAction = installAction;
+	}
 
 	public BareSurface(java.util.function.Supplier<Map<String, Object>> page,
 		CommandSink commands)
@@ -73,11 +79,26 @@ public class BareSurface
 			JPanel top = new JPanel();
 			top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			JLabel nudge = new JLabel("<html>Install the <b>Loadout Lab UI</b> plugin"
-				+ " for the full interface - this is the plain fallback.</html>");
+			JLabel nudge = new JLabel("<html>This is the plain fallback - the"
+				+ " <b>Loadout Lab UI</b> plugin has the full interface.</html>");
 			nudge.setForeground(new java.awt.Color(160, 160, 160));
 			nudge.setAlignmentX(0f);
 			top.add(nudge);
+			JButton install = new JButton("Get Loadout Lab UI");
+			install.setToolTipText("Install (or enable) the companion plugin"
+				+ " from the Plugin Hub");
+			install.setFocusable(false);
+			install.setAlignmentX(0f);
+			install.addActionListener(e ->
+			{
+				Runnable action = installAction;
+				if (action != null)
+				{
+					action.run();
+				}
+			});
+			top.add(install);
+			top.add(Box.createVerticalStrut(4));
 			top.add(Box.createVerticalStrut(4));
 			JPanel searchRow = new JPanel(new BorderLayout(4, 0));
 			searchRow.setBackground(ColorScheme.DARK_GRAY_COLOR);

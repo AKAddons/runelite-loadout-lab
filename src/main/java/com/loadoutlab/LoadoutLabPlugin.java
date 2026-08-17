@@ -127,6 +127,9 @@ public class LoadoutLabPlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
+	private net.runelite.client.externalplugins.ExternalPluginManager externalPluginManager;
+
+	@Inject
 	private LoadoutLabConfig config;
 
 	@Inject
@@ -642,6 +645,7 @@ public class LoadoutLabPlugin extends Plugin
 				};
 				internalSurface = new com.loadoutlab.render.BareSurface(
 					() -> companionLink == null ? null : companionLink.lastPage(), sink);
+				internalSurface.setInstallAction(this::installCompanionUi);
 				companionLink.setPageListener(() ->
 				{
 					com.loadoutlab.render.BareSurface surface = internalSurface;
@@ -2089,6 +2093,39 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		manualOwned.clear();
 		log.info("Loadout Lab: migrated {} 'stored elsewhere' items into sims", stored.size());
+	}
+
+	/** The BareSurface install hook: ENABLE the companion when it is
+	 * installed-but-off, hub-INSTALL when absent, and fall back to the
+	 * hub page in a browser when the in-client install refuses (e.g.
+	 * the companion is not published yet). */
+	private void installCompanionUi()
+	{
+		for (net.runelite.client.plugins.Plugin p : pluginManager.getPlugins())
+		{
+			if ("com.loadoutlabui.LoadoutLabUiPlugin".equals(p.getClass().getName()))
+			{
+				pluginManager.setPluginEnabled(p, true);
+				try
+				{
+					pluginManager.startPlugin(p);
+				}
+				catch (net.runelite.client.plugins.PluginInstantiationException ex)
+				{
+					log.warn("could not start the companion", ex);
+				}
+				return;
+			}
+		}
+		try
+		{
+			externalPluginManager.install("loadout-lab-ui");
+		}
+		catch (Exception ex)
+		{
+			net.runelite.client.util.LinkBrowser.browse(
+				"https://runelite.net/plugin-hub/show/loadout-lab-ui");
+		}
 	}
 
 	/** VarbitID.SPELLBOOK values -> the contract's book names. */
