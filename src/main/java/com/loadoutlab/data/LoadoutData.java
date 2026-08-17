@@ -178,7 +178,13 @@ public final class LoadoutData
 		// and used to be the silent default for vorkath, the DT2 four, zuk
 		// and verzik). Stable sort - corpus order breaks ties, and every
 		// version stays reachable further down the hit list.
+		// ...and the same rule holds when the query is PARTIAL (field
+		// report 2026-08-16: "whisperer" kept returning the Awakened row -
+		// "the whisperer" is not an exact match for it, so the version
+		// sort never ran on the bucket it landed in).
 		exact.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
+		prefix.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
+		contains.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
 
 		ArrayList<MonsterStats> result = new ArrayList<>(limit);
 		addLimited(result, exact, limit);
