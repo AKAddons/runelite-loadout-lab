@@ -127,9 +127,6 @@ public class LoadoutLabPlugin extends Plugin
 	private ConfigManager configManager;
 
 	@Inject
-	private net.runelite.client.externalplugins.ExternalPluginManager externalPluginManager;
-
-	@Inject
 	private LoadoutLabConfig config;
 
 	@Inject
@@ -196,8 +193,7 @@ public class LoadoutLabPlugin extends Plugin
 	private DwmsLink dwmsLink;
 	private volatile com.loadoutlab.model.CompanionLink companionLink;
 	private volatile com.loadoutlab.model.CommandEngine commandEngine;
-	private volatile java.util.function.Function<Map<String, Object>, javax.swing.JComponent> companionRenderer;
-	private volatile com.loadoutlab.render.BareSurface internalSurface;
+	private volatile com.loadoutlab.render.RenderSurface internalSurface;
 	private com.loadoutlab.ui.CompanionHost companionHost;
 	private LoadoutData data;
 	/** Vendored STASH-unit table; loaded off-thread, read on game ticks. */
@@ -270,96 +266,6 @@ public class LoadoutLabPlugin extends Plugin
 			if (requester != null)
 			{
 				clientThread.invokeLater(() -> respondWithStorages(requester));
-			}
-			return;
-		}
-		// A Companion UI saying hello (it started second): announce back
-		// and replay the latest model page (see CompanionLink).
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& com.loadoutlab.model.CompanionLink.UI_HELLO.equals(event.getName()))
-		{
-			// Reply DEFERRED: the asker may have posted from its own
-			// startUp() before its subscribers were live - by the next EDT
-			// slot it can hear us (same race as the deferred startUp hello).
-			SwingUtilities.invokeLater(() ->
-			{
-				com.loadoutlab.model.CompanionLink link = companionLink;
-				if (link != null)
-				{
-					link.hello();
-				}
-			});
-			return;
-		}
-		// The Companion registering (or clearing) its renderer - a JDK
-		// Function passed by reference, mounted in Core's own panel shell
-		// (the one-surface ruling in ADR-0008).
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& com.loadoutlab.model.CompanionLink.SURFACE_REGISTER.equals(event.getName()))
-		{
-			Object renderer = event.getData().get("renderer");
-			if (renderer instanceof java.util.function.Function)
-			{
-				companionRenderer = (java.util.function.Function<Map<String, Object>, javax.swing.JComponent>) renderer;
-				refreshHostedView();
-			}
-			return;
-		}
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& com.loadoutlab.model.CompanionLink.SURFACE_CLEAR.equals(event.getName()))
-		{
-			companionRenderer = null;
-			refreshHostedView();
-			return;
-		}
-		// Companion monster search (contract round trip): the dropdown
-		// feed posts back with the requester's token.
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& "search".equals(event.getName()))
-		{
-			Object query = event.getData().get("query");
-			Object token = event.getData().get("token");
-			com.loadoutlab.model.CommandEngine engine = commandEngine;
-			if (query instanceof String && token instanceof Number && engine != null)
-			{
-				eventBus.post(new PluginMessage(
-					com.loadoutlab.model.CompanionLink.NAMESPACE, "search-results",
-					Map.of("token", ((Number) token).intValue(),
-						"matches", engine.searchOptions((String) query))));
-			}
-			return;
-		}
-		// Companion item search (contract round trip): Core owns the
-		// chatbox; the pick posts back with the requester's token.
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& "item-search".equals(event.getName()))
-		{
-			Object prompt = event.getData().get("prompt");
-			Object token = event.getData().get("token");
-			if (prompt instanceof String && token instanceof Number)
-			{
-				int requestToken = ((Number) token).intValue();
-				itemSearchView().search((String) prompt, (itemId, itemName) ->
-					eventBus.post(new PluginMessage(
-						com.loadoutlab.model.CompanionLink.NAMESPACE, "item-picked",
-						Map.of("token", requestToken, "itemId", itemId, "name", itemName))));
-			}
-			return;
-		}
-		// A Companion command (docs/COMPANION_CONTRACT.md): executed on
-		// the shared engine; unknown commands are refused, and a refusal
-		// is logged rather than guessed at.
-		if (com.loadoutlab.model.CompanionLink.NAMESPACE.equals(event.getNamespace())
-			&& "command".equals(event.getName()))
-		{
-			com.loadoutlab.model.CommandEngine engine = commandEngine;
-			Object commandName = event.getData().get("name");
-			Object args = event.getData().get("args");
-			if (engine == null || !(commandName instanceof String)
-				|| !engine.execute((String) commandName,
-					args instanceof Map ? (Map<String, Object>) args : null))
-			{
-				log.debug("companion command refused: {}", commandName);
 			}
 			return;
 		}
@@ -479,20 +385,7 @@ public class LoadoutLabPlugin extends Plugin
 		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
 		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
 		dwmsLink = new DwmsLink();
-		companionLink = new com.loadoutlab.model.CompanionLink(
-			eventBus, com.loadoutlab.PluginVersion.VERSION);
-		// Deferred: a PluginMessage posted from inside startUp() is lost
-		// to any plugin whose subscribers register after its startUp
-		// returns (field-observed 2026-08-09: the Companion missed our
-		// synchronous reply and kept its nudge icon forever).
-		SwingUtilities.invokeLater(() ->
-		{
-			com.loadoutlab.model.CompanionLink link = companionLink;
-			if (link != null)
-			{
-				link.hello();
-			}
-		});
+		companionLink = new com.loadoutlab.model.CompanionLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
 		overlayManager.add(bankOverlay);
 		// Bank-tag hygiene: drop the layout Bank Tag Layouts auto-enabled on
@@ -632,9 +525,8 @@ public class LoadoutLabPlugin extends Plugin
 					}
 					return 0;
 				});
-				// Path C (ADR-0008): the model-driven renderer lives IN
-				// CORE as the default; an external Companion's
-				// surface-register still overrides it.
+				// The model-driven renderer lives in core - single plugin,
+				// single surface (the 2026-08 merge-back).
 				com.loadoutlab.render.CommandSink sink = (n, a) ->
 				{
 					com.loadoutlab.model.CommandEngine engine = commandEngine;
@@ -643,12 +535,21 @@ public class LoadoutLabPlugin extends Plugin
 						engine.execute(n, a);
 					}
 				};
-				internalSurface = new com.loadoutlab.render.BareSurface(
-					() -> companionLink == null ? null : companionLink.lastPage(), sink);
-				internalSurface.setInstallAction(this::installCompanionUi);
+				com.loadoutlab.render.ItemPicker picker = (prompt, onPicked) ->
+					itemSearchView().search(prompt, onPicked);
+				internalSurface = new com.loadoutlab.render.RenderSurface(
+					new com.loadoutlab.render.ResultCards(itemManager, spriteManager, sink, picker),
+					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker,
+					(query, onResults) ->
+					{
+						com.loadoutlab.model.CommandEngine engine = commandEngine;
+						onResults.accept(engine == null
+							? java.util.Collections.emptyList() : engine.searchOptions(query));
+					});
+				internalSurface.setSpriteManager(spriteManager);
 				companionLink.setPageListener(() ->
 				{
-					com.loadoutlab.render.BareSurface surface = internalSurface;
+					com.loadoutlab.render.RenderSurface surface = internalSurface;
 					if (surface != null)
 					{
 						surface.onModelChanged();
@@ -657,7 +558,7 @@ public class LoadoutLabPlugin extends Plugin
 				});
 				companionLink.setStatusListener(computing ->
 				{
-					com.loadoutlab.render.BareSurface surface = internalSurface;
+					com.loadoutlab.render.RenderSurface surface = internalSurface;
 					if (surface != null)
 					{
 						surface.setComputing(computing);
@@ -2034,30 +1935,19 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	/** The one-surface mount (ADR-0008): Core's single nav slot always
-	 * hosts a renderer - an external Companion's registration wins,
-	 * the in-core model-driven surface is the default. */
+	/** The one-surface mount: Core's single nav slot hosts the
+	 * model-driven surface. */
 	private void refreshHostedView()
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			if (navButton == null || companionHost == null)
-			{
-				return;
-			}
-			java.util.function.Function<Map<String, Object>, javax.swing.JComponent> renderer =
-				companionRenderer;
-			if (renderer == null && internalSurface != null)
-			{
-				renderer = internalSurface.asFunction();
-			}
-			if (renderer == null)
+			if (navButton == null || companionHost == null || internalSurface == null)
 			{
 				return; // still loading
 			}
 			try
 			{
-				companionHost.mount(renderer.apply(
+				companionHost.mount(internalSurface.asFunction().apply(
 					companionLink == null ? null : companionLink.lastPage()));
 			}
 			catch (RuntimeException ex)
@@ -2093,39 +1983,6 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		manualOwned.clear();
 		log.info("Loadout Lab: migrated {} 'stored elsewhere' items into sims", stored.size());
-	}
-
-	/** The BareSurface install hook: ENABLE the companion when it is
-	 * installed-but-off, hub-INSTALL when absent, and fall back to the
-	 * hub page in a browser when the in-client install refuses (e.g.
-	 * the companion is not published yet). */
-	private void installCompanionUi()
-	{
-		for (net.runelite.client.plugins.Plugin p : pluginManager.getPlugins())
-		{
-			if ("com.loadoutlabui.LoadoutLabUiPlugin".equals(p.getClass().getName()))
-			{
-				pluginManager.setPluginEnabled(p, true);
-				try
-				{
-					pluginManager.startPlugin(p);
-				}
-				catch (net.runelite.client.plugins.PluginInstantiationException ex)
-				{
-					log.warn("could not start the companion", ex);
-				}
-				return;
-			}
-		}
-		try
-		{
-			externalPluginManager.install("loadout-lab-ui");
-		}
-		catch (Exception ex)
-		{
-			net.runelite.client.util.LinkBrowser.browse(
-				"https://runelite.net/plugin-hub/show/loadout-lab-ui");
-		}
 	}
 
 	/** VarbitID.SPELLBOOK values -> the contract's book names. */

@@ -49,10 +49,6 @@ class CommandEngineTest
 	{
 		Map<String, Object> published;
 
-		CaptureLink()
-		{
-			super(null, "test");
-		}
 
 		@Override
 		public void publishPage(Map<String, Object> page)
