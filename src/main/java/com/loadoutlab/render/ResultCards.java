@@ -303,23 +303,18 @@ public class ResultCards
 				? "<br>" + dps + " dps with " + bestStyle + " (this mob's best in the trip kit)"
 				: tabOnly ? "<br>* tab-only - the shared kit does not carry this style here" : "")
 			+ "<br>Click to show this mob</html>");
-		label.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		label.addMouseListener(new java.awt.event.MouseAdapter()
+		Ui.onClick(label, () ->
 		{
-			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
+			label.setForeground(ACCENT);
+			// Switching mobs also switches to THAT mob's suggested
+			// style (field ask 2026-08-15) - the card below always
+			// opens on the row's own recommendation.
+			if (rowStyle != null && !rowStyle.equals(tab))
 			{
-				label.setForeground(ACCENT);
-				// Switching mobs also switches to THAT mob's suggested
-				// style (field ask 2026-08-15) - the card below always
-				// opens on the row's own recommendation.
-				if (rowStyle != null && !rowStyle.equals(tab))
-				{
-					commands.send("set-param",
-						Map.of("param", "selectedTab", "value", rowStyle));
-				}
-				commands.send("set-param", Map.of("param", "lensIndex", "value", index));
+				commands.send("set-param",
+					Map.of("param", "selectedTab", "value", rowStyle));
 			}
+			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 		});
 		row.add(label, BorderLayout.CENTER);
 
@@ -436,22 +431,12 @@ public class ResultCards
 			{
 				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
 					javax.swing.SwingUtilities.invokeLater(() ->
-						prayerIcon.setIcon(new javax.swing.ImageIcon(
-							img.getScaledInstance(18, 18, java.awt.Image.SCALE_SMOOTH)))));
+						prayerIcon.setIcon(Ui.icon(img, 18))));
 			}
 			if (!bis)
 			{
-				prayerIcon.setCursor(java.awt.Cursor.getPredefinedCursor(
-					java.awt.Cursor.HAND_CURSOR));
 				String tabKey = tab;
-				prayerIcon.addMouseListener(new java.awt.event.MouseAdapter()
-				{
-					@Override
-					public void mouseClicked(java.awt.event.MouseEvent e)
-					{
-						showPrayerMenu(prayerIcon, tabKey);
-					}
-				});
+				Ui.onClick(prayerIcon, () -> showPrayerMenu(prayerIcon, tabKey));
 			}
 			headerRow.add(prayerIcon);
 			int boostItem = (int) Model.num(assume, "boostItem");
@@ -473,17 +458,8 @@ public class ResultCards
 			}
 			if (!bis)
 			{
-				boostIconCell.setCursor(java.awt.Cursor.getPredefinedCursor(
-					java.awt.Cursor.HAND_CURSOR));
 				String tabKey = tab;
-				boostIconCell.addMouseListener(new java.awt.event.MouseAdapter()
-				{
-					@Override
-					public void mouseClicked(java.awt.event.MouseEvent e)
-					{
-						showBoostMenu(boostIconCell, tabKey);
-					}
-				});
+				Ui.onClick(boostIconCell, () -> showBoostMenu(boostIconCell, tabKey));
 			}
 			headerRow.add(boostIconCell);
 		}
@@ -504,9 +480,9 @@ public class ResultCards
 			{
 				// The vents rule (2026-08-06): a tab-only fallback must
 				// never read as the trip's answer.
-				JLabel caveat = new JLabel(
-					"Tab-only view - the shared kit does not carry this style here");
-				caveat.setForeground(new Color(220, 170, 90));
+				JLabel caveat = Ui.label(
+					"Tab-only view - the shared kit does not carry this style here",
+					new Color(220, 170, 90));
 				caveat.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
 			}
@@ -542,31 +518,25 @@ public class ResultCards
 			{
 				spriteManager.getSpriteAsync(sprite, 0, img ->
 					javax.swing.SwingUtilities.invokeLater(() ->
-						icon.setIcon(new javax.swing.ImageIcon(
-							img.getScaledInstance(16, 16, java.awt.Image.SCALE_SMOOTH)))));
+						icon.setIcon(Ui.icon(img, 16))));
 			}
-			JLabel dpsLabel = new JLabel(hasSet ? String.format("%.2f", tabDps) : "-");
-			dpsLabel.setForeground(isSelected ? Color.WHITE : new Color(160, 160, 160));
+			JLabel dpsLabel = Ui.label(hasSet ? String.format("%.2f", tabDps) : "-",
+				isSelected ? Color.WHITE : new Color(160, 160, 160));
 			dpsLabel.setFont(dpsLabel.getFont().deriveFont(Font.BOLD, 12f));
 			dpsLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 			tabCell.add(icon, BorderLayout.WEST);
 			tabCell.add(dpsLabel, BorderLayout.CENTER);
 			tabCell.setToolTipText(Character.toUpperCase(style.charAt(0)) + style.substring(1)
 				+ (hasSet ? String.format(" - %.2f DPS", tabDps) : " - no set"));
-			tabCell.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
 			String styleKey = style;
-			tabCell.addMouseListener(new java.awt.event.MouseAdapter()
+			Ui.onClick(tabCell, () ->
 			{
-				@Override
-				public void mouseClicked(java.awt.event.MouseEvent e)
-				{
-					// Instant feedback, reconciled by the arriving page.
-					tabCell.setBorder(new RoundedBorder(ACCENT, 1, 2));
-					tabCell.setOpaque(true);
-					tabCell.repaint();
-					commands.send("set-param",
-						Map.of("param", "selectedTab", "value", styleKey));
-				}
+				// Instant feedback, reconciled by the arriving page.
+				tabCell.setBorder(new RoundedBorder(ACCENT, 1, 2));
+				tabCell.setOpaque(true);
+				tabCell.repaint();
+				commands.send("set-param",
+					Map.of("param", "selectedTab", "value", styleKey));
 			});
 			tabStrip.add(tabCell);
 		}
@@ -630,9 +600,8 @@ public class ResultCards
 			double ceiling = Model.num(node, "bisTabDps");
 			if (ceiling > 0)
 			{
-				JLabel gap = new JLabel(String.format("you are at %.0f%%",
-					Math.min(100.0, 100.0 * mine / ceiling)));
-				gap.setForeground(new Color(160, 160, 160));
+				JLabel gap = Ui.label(String.format("you are at %.0f%%",
+					Math.min(100.0, 100.0 * mine / ceiling)), new Color(160, 160, 160));
 				gap.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
 				viewRow.add(gap, BorderLayout.EAST);
@@ -717,21 +686,16 @@ public class ResultCards
 						+ " - right-click to change this category");
 				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 				String category = Model.str(supply, "category");
-				javax.swing.JMenuItem detect = new javax.swing.JMenuItem("Detect best");
-				detect.addActionListener(e -> commands.send("set-supply-override",
+				Ui.item(menu, "Detect best", () -> commands.send("set-supply-override",
 					Map.of("category", category, "choice", "DETECT")));
-				menu.add(detect);
-				javax.swing.JMenuItem none = new javax.swing.JMenuItem("None");
-				none.addActionListener(e -> commands.send("set-supply-override",
+				Ui.item(menu, "None", () -> commands.send("set-supply-override",
 					Map.of("category", category, "choice", "NONE")));
-				menu.add(none);
 				for (Map<String, Object> option : Model.list(supply, "options"))
 				{
 					String key = Model.str(option, "key");
-					javax.swing.JMenuItem item = new javax.swing.JMenuItem(Model.str(option, "name"));
-					item.addActionListener(e -> commands.send("set-supply-override",
-						Map.of("category", category, "choice", key)));
-					menu.add(item);
+					Ui.item(menu, Model.str(option, "name"),
+						() -> commands.send("set-supply-override",
+							Map.of("category", category, "choice", key)));
 				}
 				cell.setComponentPopupMenu(menu);
 				supplyRow.add(cell);
@@ -841,23 +805,17 @@ public class ResultCards
 		{
 			// A ghost until there is something to say - the open post-it
 			// field shouted for attention it rarely deserved.
-			JLabel addNote = new JLabel("+ note");
-			addNote.setForeground(new Color(120, 115, 95));
+			JLabel addNote = Ui.label("+ note", new Color(120, 115, 95));
 			addNote.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-			addNote.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
 			addNote.setToolTipText("Add a note for this mob");
 			JPanel noteHost = left(addNote);
-			addNote.addMouseListener(new java.awt.event.MouseAdapter()
+			Ui.onClick(addNote, () ->
 			{
-				@Override
-				public void mouseClicked(java.awt.event.MouseEvent e)
-				{
-					noteHost.removeAll();
-					noteHost.add(note);
-					note.requestFocusInWindow();
-					noteHost.revalidate();
-					noteHost.repaint();
-				}
+				noteHost.removeAll();
+				noteHost.add(note);
+				note.requestFocusInWindow();
+				noteHost.revalidate();
+				noteHost.repaint();
 			});
 			card.add(noteHost);
 		}
@@ -886,10 +844,8 @@ public class ResultCards
 			{
 				int id = Model.id(item, "id");
 				String scope = Model.str(item, "scope");
-				javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
-					"Remove " + Model.str(item, "name")
-						+ (scope == null || "ALL".equals(scope) ? "" : " (" + scope + ")"));
-				entry.addActionListener(ev ->
+				Ui.item(menu, "Remove " + Model.str(item, "name")
+					+ (scope == null || "ALL".equals(scope) ? "" : " (" + scope + ")"), () ->
 				{
 					Map<String, Object> args = new java.util.HashMap<>();
 					args.put("itemId", id);
@@ -899,16 +855,13 @@ public class ResultCards
 					}
 					commands.send(removeCommand, args);
 				});
-				menu.add(entry);
 			}
 			if (!items.isEmpty())
 			{
 				menu.addSeparator();
 			}
-			javax.swing.JMenuItem add = new javax.swing.JMenuItem(addPrompt + " (search)...");
-			add.addActionListener(ev -> picker.search(addPrompt,
+			Ui.item(menu, addPrompt + " (search)...", () -> picker.search(addPrompt,
 				(id, name) -> commands.send(addCommand, Map.of("itemId", id))));
-			menu.add(add);
 			menu.show(button, 0, button.getHeight());
 		});
 		return button;
@@ -918,24 +871,18 @@ public class ResultCards
 	 * accent edge and white text, the other a quiet outline. */
 	private static JLabel viewSide(String text, boolean selected, String tooltip, Runnable onClick)
 	{
-		JLabel side = new JLabel(text);
-		side.setForeground(selected ? Color.WHITE : new Color(150, 150, 150));
+		JLabel side = Ui.label(text, selected ? Color.WHITE : new Color(150, 150, 150));
 		side.setFont(side.getFont().deriveFont(Font.BOLD, 14f));
 		side.setBorder(new RoundedBorder(selected
 			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
 		side.setToolTipText(tooltip);
-		side.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		side.addMouseListener(new java.awt.event.MouseAdapter()
+		Ui.onClick(side, () ->
 		{
-			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
-			{
-				// Instant feedback; the arriving page confirms.
-				side.setForeground(Color.WHITE);
-				side.setBorder(new RoundedBorder(ACCENT, 5, 12));
-				side.repaint();
-				onClick.run();
-			}
+			// Instant feedback; the arriving page confirms.
+			side.setForeground(Color.WHITE);
+			side.setBorder(new RoundedBorder(ACCENT, 5, 12));
+			side.repaint();
+			onClick.run();
 		});
 		return side;
 	}
@@ -1064,8 +1011,7 @@ public class ResultCards
 			if (!names.isEmpty())
 			{
 				menu.addSeparator();
-				JPanel book = new JPanel(new GridLayout(0, 5, 2, 2));
-				book.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+				JPanel book = Ui.darker(new GridLayout(0, 5, 2, 2));
 				book.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 				for (Object option : names)
 				{
@@ -1201,8 +1147,7 @@ public class ResultCards
 			spriteManager.getSpriteAsync(spriteId, 0, img ->
 				javax.swing.SwingUtilities.invokeLater(() ->
 				{
-					line.setIcon(new javax.swing.ImageIcon(
-						img.getScaledInstance(14, 14, java.awt.Image.SCALE_SMOOTH)));
+					line.setIcon(Ui.icon(img, 14));
 					line.setIconTextGap(4);
 					line.revalidate();
 				}));
@@ -1247,8 +1192,7 @@ public class ResultCards
 		net.runelite.client.util.AsyncBufferedImage img = qty > 0
 			? itemManager.getImage(itemId, qty, true) : itemManager.getImage(itemId);
 		Runnable seat = () -> javax.swing.SwingUtilities.invokeLater(() ->
-			cell.setIcon(new javax.swing.ImageIcon(
-				img.getScaledInstance(24, 24, java.awt.Image.SCALE_SMOOTH))));
+			cell.setIcon(Ui.icon(img, 24)));
 		seat.run();
 		img.onLoaded(seat);
 		return cell;
@@ -1256,8 +1200,7 @@ public class ResultCards
 
 	private static JLabel statLine(String text, String tooltip, Color color)
 	{
-		JLabel line = new JLabel(text);
-		line.setForeground(color);
+		JLabel line = Ui.label(text, color);
 		line.setToolTipText(tooltip);
 		line.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		line.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
@@ -1323,8 +1266,7 @@ public class ResultCards
 			{
 				spriteManager.getSpriteAsync(net.runelite.api.SpriteID.TAB_MAGIC, 0, img ->
 					javax.swing.SwingUtilities.invokeLater(() ->
-						spellIcon.setIcon(new javax.swing.ImageIcon(
-							img.getScaledInstance(18, 18, java.awt.Image.SCALE_SMOOTH)))));
+						spellIcon.setIcon(Ui.icon(img, 18))));
 			}
 			JLabel spellName = new JLabel(shownSpell == null ? "Auto spell"
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
@@ -1352,8 +1294,7 @@ public class ResultCards
 						commands.send("set-pinned-spell", Map.of("name", "")));
 					menu.add(auto);
 					menu.addSeparator();
-					JPanel book = new JPanel(new GridLayout(0, 6, 2, 2));
-					book.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+					JPanel book = Ui.darker(new GridLayout(0, 6, 2, 2));
 					book.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 					for (String option : spellOptions)
 					{
@@ -1497,10 +1438,8 @@ public class ResultCards
 				boolean excluded = excludedIds.contains(tierId);
 				String label = (tierId == loadedId ? "> " : "  ")
 					+ (excluded ? "Allow " : "Exclude ") + tierName;
-				javax.swing.JMenuItem item = new javax.swing.JMenuItem(label);
-				item.addActionListener(e ->
+				Ui.item(dartMenu, label, () ->
 					commands.send("toggle-exclusion", Map.of("itemId", tierId)));
-				dartMenu.add(item);
 			}
 			dartLine.setComponentPopupMenu(dartMenu);
 			statColumn.add(dartLine);
@@ -1733,13 +1672,11 @@ public class ResultCards
 		{
 			// The pin lives ON the cell now (the spec text line retired).
 			javax.swing.JPopupMenu specMenu = new javax.swing.JPopupMenu();
-			javax.swing.JMenuItem pinSpec = new javax.swing.JMenuItem(
-				cellSpecPinned ? "Unpin spec" : "Pin as spec for this mob");
 			boolean pinnedNow = cellSpecPinned;
 			int weaponId = cellSpecWeaponId;
-			pinSpec.addActionListener(e -> commands.send("set-pinned-spec",
-				Map.of("itemId", pinnedNow ? 0 : weaponId)));
-			specMenu.add(pinSpec);
+			Ui.item(specMenu, cellSpecPinned ? "Unpin spec" : "Pin as spec for this mob",
+				() -> commands.send("set-pinned-spec",
+					Map.of("itemId", pinnedNow ? 0 : weaponId)));
 			cell.setComponentPopupMenu(specMenu);
 		}
 		cell.setPreferredSize(new java.awt.Dimension(36, 36));
@@ -1788,9 +1725,8 @@ public class ResultCards
 			});
 		}
 		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-		javax.swing.JMenuItem exclude = new javax.swing.JMenuItem("Exclude " + name);
-		exclude.addActionListener(e -> commands.send("toggle-exclusion", Map.of("itemId", id)));
-		menu.add(exclude);
+		Ui.item(menu, "Exclude " + name,
+			() -> commands.send("toggle-exclusion", Map.of("itemId", id)));
 		if (bis)
 		{
 			javax.swing.JMenuItem sim = new javax.swing.JMenuItem("Sim as owned");
@@ -1814,13 +1750,9 @@ public class ResultCards
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
 			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
 			menu.add(pin);
-			javax.swing.JMenuItem pinOther = new javax.swing.JMenuItem("Pin another item (search)...");
-			pinOther.addActionListener(e -> picker.search("Pin in " + slot,
+			Ui.item(menu, "Pin another item (search)...", () -> picker.search("Pin in " + slot,
 				(pickedId, pickedName) -> commands.send("pin", Map.of("slot", slot, "itemId", pickedId))));
-			menu.add(pinOther);
-			javax.swing.JMenuItem unpin = new javax.swing.JMenuItem("Unpin " + slot);
-			unpin.addActionListener(e -> commands.send("unpin", Map.of("slot", slot)));
-			menu.add(unpin);
+			Ui.item(menu, "Unpin " + slot, () -> commands.send("unpin", Map.of("slot", slot)));
 		}
 		cell.setComponentPopupMenu(menu);
 		return cell;

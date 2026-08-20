@@ -253,16 +253,11 @@ public class RenderSurface
 		javax.swing.JLabel label = new javax.swing.JLabel(text);
 		paintPill(label, on);
 		label.setToolTipText(tooltip);
-		label.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		label.addMouseListener(new java.awt.event.MouseAdapter()
+		Ui.onClick(label, () ->
 		{
-			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
-			{
-				paintPill(label, pendingOn);
-				label.repaint();
-				onClick.run();
-			}
+			paintPill(label, pendingOn);
+			label.repaint();
+			onClick.run();
 		});
 		return label;
 	}
@@ -274,8 +269,7 @@ public class RenderSurface
 		{
 			spriteManager.getSpriteAsync(spriteId, 0, img ->
 				javax.swing.SwingUtilities.invokeLater(() ->
-					plate.setIcon(new javax.swing.ImageIcon(
-						img.getScaledInstance(18, 18, java.awt.Image.SCALE_SMOOTH)))));
+					plate.setIcon(Ui.icon(img, 18))));
 		}
 	}
 
@@ -290,8 +284,7 @@ public class RenderSurface
 			spriteManager.getSpriteAsync(net.runelite.api.SpriteID.SKILL_SLAYER, 0, img ->
 				javax.swing.SwingUtilities.invokeLater(() ->
 				{
-					pill.setIcon(new javax.swing.ImageIcon(
-						img.getScaledInstance(14, 14, java.awt.Image.SCALE_SMOOTH)));
+					pill.setIcon(Ui.icon(img, 14));
 					pill.setIconTextGap(4);
 				}));
 		}
@@ -368,58 +361,49 @@ public class RenderSurface
 		pill.setForeground(any ? active : muted);
 		pill.setBorder(new RoundedBorder(any ? activeBorder
 			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
-		pill.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		pill.addMouseListener(new java.awt.event.MouseAdapter()
+		Ui.onClick(pill, () ->
 		{
-			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			// The classic grey chip also edits the SUPPLY DEFAULTS -
+			// one submenu per category, plus Arceuus access.
+			if (supplyCatalog != null && !supplyCatalog.isEmpty())
 			{
-				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-				// The classic grey chip also edits the SUPPLY DEFAULTS -
-				// one submenu per category, plus Arceuus access.
-				if (supplyCatalog != null && !supplyCatalog.isEmpty())
+				for (Map<String, Object> category : supplyCatalog)
 				{
-					for (Map<String, Object> category : supplyCatalog)
+					String key = Model.str(category, "category");
+					String current = Model.str(category, "current");
+					javax.swing.JMenu sub = new javax.swing.JMenu(Model.str(category, "label"));
+					if (!"arceuusAccess".equals(key))
 					{
-						String key = Model.str(category, "category");
-						String current = Model.str(category, "current");
-						javax.swing.JMenu sub = new javax.swing.JMenu(Model.str(category, "label"));
-						if (!"arceuusAccess".equals(key))
-						{
-							sub.add(supplyChoice(key, "DETECT_BEST", "Detect best",
-								current == null || current.startsWith("DETECT")));
-							sub.add(supplyChoice(key, "NONE", "None", "NONE".equals(current)));
-						}
-						for (Map<String, Object> option : Model.list(category, "options"))
-						{
-							String optionKey = Model.str(option, "key");
-							sub.add(supplyChoice(key, optionKey, Model.str(option, "name"),
-								optionKey.equals(current)
-									|| ("arceuusAccess".equals(key) && "DETECT_BEST".equals(optionKey)
-										&& (current == null || current.startsWith("DETECT")))));
-						}
-						menu.add(sub);
+						sub.add(supplyChoice(key, "DETECT_BEST", "Detect best",
+							current == null || current.startsWith("DETECT")));
+						sub.add(supplyChoice(key, "NONE", "None", "NONE".equals(current)));
 					}
-					menu.addSeparator();
+					for (Map<String, Object> option : Model.list(category, "options"))
+					{
+						String optionKey = Model.str(option, "key");
+						sub.add(supplyChoice(key, optionKey, Model.str(option, "name"),
+							optionKey.equals(current)
+								|| ("arceuusAccess".equals(key) && "DETECT_BEST".equals(optionKey)
+									&& (current == null || current.startsWith("DETECT")))));
+					}
+					menu.add(sub);
 				}
-				for (Map<String, Object> item : items)
-				{
-					int id = Model.id(item, "id");
-					javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
-						removeVerb + Model.str(item, "name"));
-					entry.addActionListener(ev -> commands.send(command, Map.of("itemId", id)));
-					menu.add(entry);
-				}
-				if (any)
-				{
-					menu.addSeparator();
-				}
-				javax.swing.JMenuItem add = new javax.swing.JMenuItem(addPrompt);
-				add.addActionListener(ev -> picker.search(addPrompt,
-					(id, name) -> commands.send(command, Map.of("itemId", id))));
-				menu.add(add);
-				menu.show(pill, 0, pill.getHeight());
+				menu.addSeparator();
 			}
+			for (Map<String, Object> item : items)
+			{
+				int id = Model.id(item, "id");
+				Ui.item(menu, removeVerb + Model.str(item, "name"),
+					() -> commands.send(command, Map.of("itemId", id)));
+			}
+			if (any)
+			{
+				menu.addSeparator();
+			}
+			Ui.item(menu, addPrompt, () -> picker.search(addPrompt,
+				(id, name) -> commands.send(command, Map.of("itemId", id))));
+			menu.show(pill, 0, pill.getHeight());
 		});
 		countsRow.add(pill);
 	}
@@ -431,8 +415,7 @@ public class RenderSurface
 	private JComponent valueChip(String label, boolean active, String tooltip,
 		String currentText, java.util.function.Consumer<String> onCommit)
 	{
-		JPanel holder = new JPanel(new java.awt.CardLayout());
-		holder.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		JPanel holder = Ui.panel(new java.awt.CardLayout());
 		javax.swing.JTextField field = new javax.swing.JTextField(currentText, 5);
 		field.setToolTipText(tooltip);
 		javax.swing.JLabel pill = pill(label, active, active, tooltip, () ->
@@ -485,10 +468,8 @@ public class RenderSurface
 			for (Map<String, Object> item : items)
 			{
 				int id = Model.id(item, "id");
-				javax.swing.JMenuItem entry = new javax.swing.JMenuItem(
-					verb + " " + Model.str(item, "name"));
-				entry.addActionListener(e -> commands.send(command, Map.of("itemId", id)));
-				menu.add(entry);
+				Ui.item(menu, verb + " " + Model.str(item, "name"),
+					() -> commands.send(command, Map.of("itemId", id)));
 			}
 			menu.show(button, 0, button.getHeight());
 		});
@@ -499,13 +480,11 @@ public class RenderSurface
 	{
 		if (root == null)
 		{
-			root = new JPanel(new BorderLayout(0, 6));
-			root.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			root = Ui.panel(new BorderLayout(0, 6));
 			JPanel top = new JPanel();
 			top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			countsRow = new JPanel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
-			countsRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			countsRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
 			top.add(countsRow);
 			search = new JTextField();
 			search.setToolTipText("Search a monster or group");
@@ -562,8 +541,7 @@ public class RenderSurface
 					root.repaint();
 				}));
 			});
-			JPanel searchArea = new JPanel(new BorderLayout(4, 0));
-			searchArea.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			JPanel searchArea = Ui.panel(new BorderLayout(4, 0));
 			// Compact history arrows ride BESIDE the search (the classic
 			// header pattern), not loose in the chip row.
 
@@ -571,8 +549,7 @@ public class RenderSurface
 				() -> commands.send("undo", Map.of()));
 			redoButton = chip(new javax.swing.JButton(">"), "Redo",
 				() -> commands.send("redo", Map.of()));
-			javax.swing.JLabel clearSearch = new javax.swing.JLabel("x");
-			clearSearch.setForeground(new java.awt.Color(150, 150, 150));
+			javax.swing.JLabel clearSearch = Ui.label("x", new java.awt.Color(150, 150, 150));
 			clearSearch.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 4, 0, 6));
 			clearSearch.setToolTipText("Clear the search");
 			clearSearch.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
@@ -617,8 +594,7 @@ public class RenderSurface
 				searchTools.add(arrow);
 			}
 			searchBox.add(searchTools, BorderLayout.EAST);
-			JPanel searchRow = new JPanel(new BorderLayout(4, 0));
-			searchRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			JPanel searchRow = Ui.darker(new BorderLayout(4, 0));
 			searchRow.add(searchBox, BorderLayout.CENTER);
 			searchArea.add(searchRow, BorderLayout.NORTH);
 			matchesBox = new JPanel();
@@ -627,16 +603,13 @@ public class RenderSurface
 			matchesBox.setVisible(false);
 			searchArea.add(matchesBox, BorderLayout.CENTER);
 			top.add(searchArea, BorderLayout.NORTH);
-			rosterArea = new JPanel(new BorderLayout());
-			rosterArea.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			rosterArea = Ui.darker(new BorderLayout());
 			rosterArea.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 0, 2, 0));
 			top.add(rosterArea);
-			chipRow = new JPanel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
-			chipRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			chipRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
 			top.add(chipRow, BorderLayout.CENTER);
 			// The inventory slider rides its own row under the chips.
-			invRow = new JPanel(new BorderLayout());
-			invRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			invRow = Ui.panel(new BorderLayout());
 			top.add(invRow);
 			root.add(top, BorderLayout.NORTH);
 			JPanel resultsArea = new JPanel();
@@ -648,15 +621,13 @@ public class RenderSurface
 			resultsArea.add(cardArea);
 			// The computing notice sits BELOW everything the pending page
 			// shows (field report: between the chips and the mob list was weird).
-			waitingSlot = new JPanel(new BorderLayout());
-			waitingSlot.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			waitingSlot = Ui.panel(new BorderLayout());
 			waitingSlot.add(new javax.swing.JLabel("Computing..."), BorderLayout.CENTER);
 			waitingSlot.setVisible(false);
 			resultsArea.add(waitingSlot);
 			root.add(resultsArea, BorderLayout.CENTER);
 			// Footer actions (the classic position): below the results.
-			footerRow = new JPanel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
-			footerRow.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			footerRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
 			root.add(footerRow, BorderLayout.SOUTH);
 		}
 		repaint();
@@ -825,10 +796,8 @@ public class RenderSurface
 			int swaps = Model.id(params, "maxSwaps");
 			// The classic inventory control is a SLIDER over the bench
 			// size - every value reachable, not four presets.
-			JPanel invBox = new JPanel(new BorderLayout(4, 0));
-			invBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			javax.swing.JLabel invLabel = new javax.swing.JLabel("Inv " + swaps);
-			invLabel.setForeground(new java.awt.Color(190, 190, 190));
+			JPanel invBox = Ui.panel(new BorderLayout(4, 0));
+			javax.swing.JLabel invLabel = Ui.label("Inv " + swaps, new java.awt.Color(190, 190, 190));
 			invBox.add(invLabel, BorderLayout.WEST);
 			javax.swing.JSlider invSlider =
 				new javax.swing.JSlider(0, 16, Math.max(0, Math.min(16, swaps)));
@@ -948,9 +917,8 @@ public class RenderSurface
 		{
 			// The empty state says what to do - never beside the
 			// computing notice.
-			javax.swing.JLabel hint = new javax.swing.JLabel(
-				"Search a mob, group, or raid to begin.");
-			hint.setForeground(new java.awt.Color(150, 150, 150));
+			javax.swing.JLabel hint = Ui.label(
+				"Search a mob, group, or raid to begin.", new java.awt.Color(150, 150, 150));
 			hint.setBorder(javax.swing.BorderFactory.createEmptyBorder(12, 8, 12, 8));
 			hint.setAlignmentX(0.5f);
 			cardArea.add(hint);

@@ -22,10 +22,11 @@ CAP = 200_000          # the bot's hard limit
 FAIL_AT = 195_000      # block submit here. The bot's tokenizer counts a touch
                        # LOWER than ours (~260k vs our 268k pre-reduction), so a
                        # 195k reading here is comfortably under the bot's 200k.
-WARN_AT = 170_000      # post-diet watermark (2026-08-16: the Core diet
-                       # closed at 151,783). Core should only grow on
-                       # ENGINE mechanics - UI belongs in the companion,
-                       # data in resources. Crossing this = investigate.
+WARN_AT = 185_000      # post-merge-back watermark (2026-08-18: the hub's
+                       # single-plugin ruling brought the renderer home at
+                       # 177,481). Data belongs in resources; big new
+                       # features budget tokens FIRST. Crossing this =
+                       # externalize before writing more code.
 CHARS_PER_TOKEN = 3.6  # calibrated on this Java codebase (real ratio ~3.66); low = conservative
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
