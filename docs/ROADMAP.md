@@ -443,8 +443,13 @@ slot outranks. Both sides - the BiS ceiling wears it too. Cave
 horrors deliberately excluded (Protect from Melee fully substitutes
 the witchwood icon; their note says so).
 
-**v0.4.0 headline (Andrew, 2026-08-09): sea combat done WELL, cannons
-included.** Capture the Sailing era's combat properly: ship-mounted
+**v0.4.0 (2026-08-20): the merge-back.** The hub's single-plugin
+ruling (PR #15129) ends the core/companion split: the rich UI lives
+in core, the mascots/animations retired, one plugin at 177.5k
+tokens.
+
+**v0.5.0 headline (Andrew, 2026-08-09; bumped from v0.4.0): sea
+combat done WELL, cannons included.** Capture the Sailing era's combat properly: ship-mounted
 cannons and sea-monster encounters (the corpus already carries sailing
 rows and the ledger tracks cargo holds), plus the land dwarf
 multicannon as the classic slayer dps adjunct - a major dps surface no
