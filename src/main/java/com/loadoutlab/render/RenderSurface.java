@@ -915,6 +915,16 @@ public class RenderSurface
 				}
 			}));
 		}
+		if (reportText != null)
+		{
+			// The exact-setup cross-check (field ask 2026-08-21: it lives
+			// with the link-outs, not the bank tools): opens the VIEWED
+			// setup - the engine derives tab and side from the view state.
+			footerRow.add(chip(new javax.swing.JButton("Wiki calc"),
+				"Open the shown setup in the official wiki calculator"
+					+ " (shares the setup via the wiki's shortlink service)", () ->
+					commands.send("wiki-calc", Map.of())));
+		}
 		footerRow.add(chip(new javax.swing.JButton("Discord"),
 			"Loadout Lab community - report issues, request features", () ->
 				net.runelite.client.util.LinkBrowser.browse("https://discord.gg/6GuS6J8em3")));

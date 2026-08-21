@@ -820,16 +820,6 @@ public class ResultCards
 			});
 			bankRow.add(filterBank);
 		}
-		// The exact-setup cross-check returns (network re-add 2026-08-20):
-		// full setups only ride a URL as a shortlink id, so the click
-		// uploads the shown setup to the wiki's share service first.
-		javax.swing.JButton wikiCalc = new javax.swing.JButton("Wiki calc");
-		wikiCalc.setToolTipText("Open this exact setup in the official wiki calculator"
-			+ " (shares the setup via the wiki's shortlink service)");
-		styleBankButton(wikiCalc);
-		wikiCalc.addActionListener(e -> commands.send("wiki-calc",
-			Map.of("style", tab, "bis", bis)));
-		bankRow.add(wikiCalc);
 		card.add(centre(bankRow));
 		String noteText = Model.str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();

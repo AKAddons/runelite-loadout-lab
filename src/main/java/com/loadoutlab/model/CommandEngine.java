@@ -521,19 +521,7 @@ public class CommandEngine
 				WikiCalcOpener opener = wikiCalcOpener;
 				List<MonsterStats> mobs = lastMobs;
 				List<Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = lastPerMob;
-				Object styleArg = args == null ? null : args.get("style");
-				if (opener == null || mobs == null || perMob == null
-					|| !(styleArg instanceof String))
-				{
-					return false;
-				}
-				CombatStyle style;
-				try
-				{
-					style = CombatStyle.valueOf(
-						((String) styleArg).toUpperCase(java.util.Locale.ROOT));
-				}
-				catch (IllegalArgumentException ex)
+				if (opener == null || mobs == null || perMob == null)
 				{
 					return false;
 				}
@@ -551,9 +539,49 @@ public class CommandEngine
 				{
 					return false;
 				}
-				com.loadoutlab.optimizer.OptimizerService.StyleResult result =
-					perMob.get(at).get(style);
-				boolean bis = Boolean.TRUE.equals(args.get("bis"));
+				boolean bis = args != null && Boolean.TRUE.equals(args.get("bis"))
+					|| Boolean.TRUE.equals(state.paramsNode().get("viewingBis"));
+				Object styleArg = args == null ? null : args.get("style");
+				String styleName = styleArg instanceof String ? (String) styleArg : null;
+				if (styleName == null)
+				{
+					// No style given (the footer button): the VIEWED tab, or
+					// on auto the strongest shown style - the card's own
+					// auto-tab rule.
+					Object tab = state.paramsNode().get("selectedTab");
+					styleName = tab instanceof String && !((String) tab).isEmpty()
+						? (String) tab : null;
+				}
+				com.loadoutlab.optimizer.OptimizerService.StyleResult result = null;
+				if (styleName != null)
+				{
+					try
+					{
+						result = perMob.get(at).get(CombatStyle.valueOf(
+							styleName.toUpperCase(java.util.Locale.ROOT)));
+					}
+					catch (IllegalArgumentException ex)
+					{
+						return false;
+					}
+				}
+				else
+				{
+					double best = -1;
+					for (com.loadoutlab.optimizer.OptimizerService.StyleResult candidate
+						: perMob.get(at).values())
+					{
+						com.loadoutlab.engine.DpsResult side = candidate == null ? null
+							: bis ? candidate.overallBest
+							: candidate.owned == null || candidate.owned.isEmpty()
+								? null : candidate.owned.get(0);
+						if (side != null && side.getDps() > best)
+						{
+							best = side.getDps();
+							result = candidate;
+						}
+					}
+				}
 				com.loadoutlab.engine.DpsResult shown = result == null ? null
 					: bis ? result.overallBest
 					: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
