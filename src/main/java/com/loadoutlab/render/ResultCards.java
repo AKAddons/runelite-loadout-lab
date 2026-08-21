@@ -1019,54 +1019,10 @@ public class ResultCards
 				for (Object option : names)
 				{
 					String name = String.valueOf(option);
-					boolean picked = name.equals(current);
-					JLabel cell = new JLabel();
-					cell.setPreferredSize(new java.awt.Dimension(26, 26));
-					cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-					cell.setOpaque(true);
-					cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
-						: ColorScheme.DARKER_GRAY_COLOR);
-					cell.setBorder(BorderFactory.createLineBorder(picked
-						? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
 					int sprite = sprites == null ? -1 : (int) Model.num(sprites, name);
-					if (sprite > 0)
-					{
-						cell.setIcon(cachedSprite(sprite));
-					}
-					else
-					{
-						cell.setText(name.substring(0, 1));
-						cell.setForeground(new Color(190, 190, 190));
-					}
-					cell.setToolTipText(name + (picked ? " (assumed)" : ""));
-					cell.setCursor(java.awt.Cursor.getPredefinedCursor(
-						java.awt.Cursor.HAND_CURSOR));
-					cell.addMouseListener(new java.awt.event.MouseAdapter()
-					{
-						@Override
-						public void mouseClicked(java.awt.event.MouseEvent e)
-						{
-							menu.setVisible(false);
-							sendPick("set-prayer-pick", tab, name);
-						}
-
-						@Override
-						public void mouseEntered(java.awt.event.MouseEvent e)
-						{
-							cell.setBorder(BorderFactory.createLineBorder(ACCENT));
-						}
-
-						@Override
-						public void mouseExited(java.awt.event.MouseEvent e)
-						{
-							if (!picked)
-							{
-								cell.setBorder(BorderFactory.createLineBorder(
-									ColorScheme.DARKER_GRAY_HOVER_COLOR));
-							}
-						}
-					});
-					book.add(cell);
+					book.add(pickCell(menu, sprite > 0 ? cachedSprite(sprite) : null,
+						name, name.equals(current), 26,
+						() -> sendPick("set-prayer-pick", tab, name)));
 				}
 				menu.add(book);
 			}
@@ -1074,7 +1030,9 @@ public class ResultCards
 		menu.show(anchor, 0, anchor.getHeight());
 	}
 
-	/** The boost picker popup (anchored to the potion icon). */
+	/** The boost picker popup - the SAME game-tab grid as the prayer
+	 * book (field ask 2026-08-20: one interface, the prayer one wins),
+	 * with potion icons for cells. */
 	private void showBoostMenu(java.awt.Component anchor, String tab)
 	{
 		Map<String, Object> boostPicks = Model.map(pageParams, "boostPicks");
@@ -1088,21 +1046,82 @@ public class ResultCards
 		Map<String, Object> potionIds = Model.map(assumeOptions, "boostItems");
 		if (boostLists != null)
 		{
-			for (Map<String, Object> option : Model.list(boostLists, tab))
+			List<Map<String, Object>> options = Model.list(boostLists, tab);
+			if (!options.isEmpty())
 			{
-				String label = Model.str(option, "label");
-				String key = Model.str(option, "key");
-				javax.swing.JMenuItem item = pickChoice(label, key != null && key.equals(current),
-					() -> sendPick("set-boost-pick", tab, key));
-				int itemId = potionIds == null ? -1 : (int) Model.num(potionIds, label);
-				if (itemId > 0)
+				menu.addSeparator();
+				JPanel rack = Ui.darker(new GridLayout(0, 5, 2, 2));
+				rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+				for (Map<String, Object> option : options)
 				{
-					item.setIcon(new javax.swing.ImageIcon(itemManager.getImage(itemId)));
+					String label = Model.str(option, "label");
+					String key = Model.str(option, "key");
+					int itemId = potionIds == null ? -1 : (int) Model.num(potionIds, label);
+					// Item images load ASYNC - hand the icon the live image,
+					// never a getScaledInstance of it (blank until reopen).
+					rack.add(pickCell(menu,
+						itemId > 0 ? new javax.swing.ImageIcon(itemManager.getImage(itemId)) : null,
+						label, key != null && key.equals(current), 38,
+						() -> sendPick("set-boost-pick", tab, key)));
 				}
-				menu.add(item);
+				menu.add(rack);
 			}
 		}
 		menu.show(anchor, 0, anchor.getHeight());
+	}
+
+	/** One cell of the game-tab picker grid (the prayer-book pattern,
+	 * shared by the prayer and boost pickers): icon or initial, accent
+	 * plate on the pick, hover ring, click picks and closes. */
+	private JLabel pickCell(javax.swing.JPopupMenu menu, javax.swing.Icon icon,
+		String tooltip, boolean picked, int size, Runnable onPick)
+	{
+		JLabel cell = new JLabel();
+		cell.setPreferredSize(new java.awt.Dimension(size, size));
+		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		cell.setOpaque(true);
+		cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
+			: ColorScheme.DARKER_GRAY_COLOR);
+		cell.setBorder(BorderFactory.createLineBorder(picked
+			? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
+		if (icon != null)
+		{
+			cell.setIcon(icon);
+		}
+		else
+		{
+			cell.setText(tooltip.substring(0, 1));
+			cell.setForeground(new Color(190, 190, 190));
+		}
+		cell.setToolTipText(tooltip + (picked ? " (assumed)" : ""));
+		cell.setCursor(java.awt.Cursor.getPredefinedCursor(
+			java.awt.Cursor.HAND_CURSOR));
+		cell.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				menu.setVisible(false);
+				onPick.run();
+			}
+
+			@Override
+			public void mouseEntered(java.awt.event.MouseEvent e)
+			{
+				cell.setBorder(BorderFactory.createLineBorder(ACCENT));
+			}
+
+			@Override
+			public void mouseExited(java.awt.event.MouseEvent e)
+			{
+				if (!picked)
+				{
+					cell.setBorder(BorderFactory.createLineBorder(
+						ColorScheme.DARKER_GRAY_HOVER_COLOR));
+				}
+			}
+		});
+		return cell;
 	}
 
 	private javax.swing.JMenuItem pickChoice(String label, boolean selected, Runnable onPick)
