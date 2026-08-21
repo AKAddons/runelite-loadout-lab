@@ -92,6 +92,39 @@ class WikiCalcLinkTest
 			"attack & strength potions = their ordinals 1 and 10");
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	@DisplayName("the blowpipe's dart rides the weapon's itemVars, never the ammo slot")
+	void blowpipeDartRidesItemVars()
+	{
+		// Their harness note (2026-08-06): an ammo-slot dart is a
+		// hand-thrown weapon; field report 2026-08-21: the cow payload
+		// carried a dartless blowpipe (the blessing owns the ammo slot).
+		MonsterStats monster = data.searchMonsters("cow", 1).get(0);
+		OptimizationRequest request = TestRequests.of(monster, CombatStyle.RANGED,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
+			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
+			OwnedItems.EMPTY, 1);
+		DpsResult best = new LoadoutOptimizer().optimize(data, request).get(0);
+
+		int dragonDart = 11230;
+		Map<String, Object> payload = WikiCalcLink.payload(monster, best, dragonDart,
+			"Rigour + Divine ranging potion", PlayerLevels.MAXED, PlayerLevels.MAXED,
+			false, false);
+		Map<String, Object> equipment = (Map<String, Object>)
+			((List<Map<String, Object>>) payload.get("loadouts")).get(0).get("equipment");
+		Map<String, Object> weapon = (Map<String, Object>) equipment.get("weapon");
+		Map<String, Object> vars = (Map<String, Object>) weapon.get("itemVars");
+		assertNotNull(vars, "the dart travels on the weapon");
+		assertEquals(dragonDart, vars.get("blowpipeDartId"));
+		Map<String, Object> ammo = (Map<String, Object>) equipment.get("ammo");
+		if (ammo != null)
+		{
+			assertNotEquals(dragonDart, ammo.get("id"),
+				"the ammo slot never carries the dart");
+		}
+	}
+
 	@Test
 	@DisplayName("attack-type strings map to their {type, stance} pairs")
 	void styleMapping()

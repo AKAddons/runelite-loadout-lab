@@ -655,6 +655,79 @@ public class RenderSurface
 		return root;
 	}
 
+	/** The Wiki calc chip's tooltip: the base line, plus - when the
+	 * viewed card folds spec or thralls into its number - the sum that
+	 * reconciles our shown dps with what the calculator will display
+	 * (the bare set). Mirrors the engine's view derivation. */
+	private static String wikiCalcTip(Map<String, Object> page)
+	{
+		String base = "Open the shown setup in the official wiki calculator"
+			+ " (shares the setup via the wiki's shortlink service)";
+		Map<String, Object> params = ResultCards.firstParams(page);
+		java.util.List<Map<String, Object>> entries = Model.list(page, "entries");
+		if (params == null || entries.isEmpty())
+		{
+			return base;
+		}
+		Map<String, Object> entry = entries.get(0);
+		java.util.List<Map<String, Object>> mobs = Model.list(entry, "mobs");
+		if (mobs.isEmpty())
+		{
+			return base;
+		}
+		int lens = Math.max(0, Math.min((int) Model.num(params, "lensIndex"), mobs.size() - 1));
+		Map<String, Object> styles = Model.map(mobs.get(lens), "styles");
+		if (styles == null)
+		{
+			return base;
+		}
+		boolean bis = Model.flag(params, "viewingBis");
+		String tab = Model.str(params, "selectedTab");
+		Map<String, Object> node = tab == null || tab.isEmpty() ? null : Model.map(styles, tab);
+		if (node == null)
+		{
+			double best = -1;
+			for (String style : new String[]{"melee", "ranged", "magic"})
+			{
+				Map<String, Object> candidate = Model.map(styles, style);
+				double dps = candidate == null ? -1
+					: Model.num(candidate, bis ? "bisTabDps" : "tabDps");
+				if (candidate != null && dps > best)
+				{
+					best = dps;
+					node = candidate;
+				}
+			}
+		}
+		Map<String, Object> card = node == null ? null : Model.map(node, bis ? "bis" : "yours");
+		if (card == null)
+		{
+			return base;
+		}
+		double set = Model.num(card, "dps");
+		Map<String, Object> spec = Model.map(card, "spec");
+		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
+		double thrallsDps = Model.num(Model.map(entry, "thralls"), "dps");
+		if (specDps <= 0 && thrallsDps <= 0)
+		{
+			return base;
+		}
+		StringBuilder sum = new StringBuilder();
+		sum.append("<html>").append(base)
+			.append("<br>the calc will show the set: ").append(String.format("%.2f", set))
+			.append(" - shown here ")
+			.append(String.format("%.2f", set + specDps + thrallsDps)).append(" = set");
+		if (specDps > 0)
+		{
+			sum.append(" + spec ").append(String.format("%.2f", specDps));
+		}
+		if (thrallsDps > 0)
+		{
+			sum.append(" + thralls ").append(String.format("%.2f", thrallsDps));
+		}
+		return sum.append("</html>").toString();
+	}
+
 	private Map<String, Object> lastRenderedPage;
 	private int skippedIdentical;
 
@@ -920,10 +993,10 @@ public class RenderSurface
 			// The exact-setup cross-check (field ask 2026-08-21: it lives
 			// with the link-outs, not the bank tools): opens the VIEWED
 			// setup - the engine derives tab and side from the view state.
+			// The tooltip carries the reconciliation sum (field ask, same
+			// day): the calc shows the bare SET; we fold spec + thralls.
 			footerRow.add(chip(new javax.swing.JButton("Wiki calc"),
-				"Open the shown setup in the official wiki calculator"
-					+ " (shares the setup via the wiki's shortlink service)", () ->
-					commands.send("wiki-calc", Map.of())));
+				wikiCalcTip(page), () -> commands.send("wiki-calc", Map.of())));
 		}
 		footerRow.add(chip(new javax.swing.JButton("Discord"),
 			"Loadout Lab community - report issues, request features", () ->

@@ -157,8 +157,7 @@ public class WikiCalcLink
 		for (GearSlot slot : GearSlot.values())
 		{
 			GearItem worn = shown.getLoadout().get(slot);
-			int id = worn != null ? worn.getId()
-				: slot == GearSlot.AMMO && dartId > 0 ? dartId : -1;
+			int id = worn != null ? worn.getId() : -1;
 			if (id > 0)
 			{
 				// Plain maps/lists ONLY in this document: gson's map adapter
@@ -168,6 +167,18 @@ public class WikiCalcLink
 				// (field-found 2026-07-23 - the button silently died).
 				Map<String, Object> idMap = new LinkedHashMap<>();
 				idMap.put("id", id);
+				if (slot == GearSlot.WEAPON && dartId > 0)
+				{
+					// The blowpipe's dart rides the WEAPON's itemVars -
+					// never the ammo slot (their own harness note: an
+					// ammo-slot dart is a hand-thrown weapon; and the
+					// blessing usually occupies ammo anyway, so the dart
+					// silently vanished - field report 2026-08-21: cow
+					// showed a dartless max 20 vs our dragon-dart 28).
+					Map<String, Object> vars = new LinkedHashMap<>();
+					vars.put("blowpipeDartId", dartId);
+					idMap.put("itemVars", vars);
+				}
 				equipment.put(slot.getJsonName(), idMap);
 			}
 		}
