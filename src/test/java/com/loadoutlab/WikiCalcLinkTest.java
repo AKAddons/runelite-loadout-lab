@@ -125,6 +125,33 @@ class WikiCalcLinkTest
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	@DisplayName("a powered staff exports Accurate - their category has no Autocast")
+	void poweredStaffCastsAccurate()
+	{
+		// Field report 2026-08-21: trident vs cow opened at 5 ticks
+		// (Longrange fallback) - exactly 4/5 of our dps. A powered
+		// staff's attackType wears the autocast prefix but carries no
+		// spell name; the payload must land stance Accurate.
+		MonsterStats monster = data.searchMonsters("cow", 1).get(0);
+		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MAGIC,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
+			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
+			OwnedItems.EMPTY, 1);
+		DpsResult best = new LoadoutOptimizer().optimize(data, request).get(0);
+		assertTrue(best.getSpellName() == null || best.getSpellName().isEmpty(),
+			"the magic best vs a cow is a powered staff (no spell)");
+
+		Map<String, Object> payload = WikiCalcLink.payload(monster, best, -1,
+			"Augury + Saturated heart", PlayerLevels.MAXED, PlayerLevels.MAXED,
+			false, false);
+		Map<String, String> style = (Map<String, String>)
+			((List<Map<String, Object>>) payload.get("loadouts")).get(0).get("style");
+		assertEquals("magic", style.get("type"));
+		assertEquals("Accurate", style.get("stance"));
+	}
+
 	@Test
 	@DisplayName("attack-type strings map to their {type, stance} pairs")
 	void styleMapping()

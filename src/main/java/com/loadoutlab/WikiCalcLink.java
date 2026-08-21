@@ -195,11 +195,22 @@ public class WikiCalcLink
 		buffs.put("inWilderness", inWilderness);
 		loadout.put("buffs", buffs);
 		Map<String, String> style = styleOf(shown.getAttackType());
+		String spell = shown.getSpellName();
+		if (style != null && "Autocast".equals(style.get("stance"))
+			&& (spell == null || spell.isEmpty()))
+		{
+			// A powered staff: its attackType wears the "magic: <name>"
+			// prefix like an autocast, but their POWERED_STAFF category
+			// has no Autocast stance - the import fell back to LONGRANGE,
+			// 5 ticks (field report 2026-08-21: trident vs cow showed
+			// exactly 4/5 of our dps). A real autocast always carries a
+			// spell name; a powered staff never does.
+			style.put("stance", "Accurate");
+		}
 		if (style != null)
 		{
 			loadout.put("style", style);
 		}
-		String spell = shown.getSpellName();
 		if (spell != null && !spell.isEmpty())
 		{
 			Map<String, Object> spellMap = new LinkedHashMap<>();
