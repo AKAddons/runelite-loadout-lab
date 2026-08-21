@@ -1,37 +1,68 @@
 package com.loadoutlab.render;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
-/** The classic painted stat icons (ported verbatim from the panel):
- * the hitsplat for max hit, the crosshair for accuracy, and the
- * fixed-width wrapper that gives every stat line one hard left edge. */
+/** The classic stat icons, baked from the original painted art (see git
+ * history for the painters): the hitsplat for max hit, the crosshair for
+ * accuracy, and the fixed-width wrapper that gives every stat line one
+ * hard left edge. */
 final class StatIcons
 {
 	private StatIcons()
 	{
 	}
 
+	/** Baked images by resource name. A missing or unreadable resource
+	 * caches a fully transparent placeholder so paint degrades to blank -
+	 * it never throws inside a Swing paint pass. */
+	private static final Map<String, BufferedImage> BAKED = new ConcurrentHashMap<>();
+
+	private static BufferedImage baked(String name, int size)
+	{
+		return BAKED.computeIfAbsent(name, n ->
+		{
+			try (InputStream in = StatIcons.class.getResourceAsStream(n))
+			{
+				if (in != null)
+				{
+					BufferedImage img = ImageIO.read(in);
+					if (img != null)
+					{
+						return img;
+					}
+				}
+			}
+			catch (IOException ignored)
+			{
+				// fall through to the transparent placeholder
+			}
+			return new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+		});
+	}
+
 	/**
-	 * Shared shape for the square painted icons: they all carry a single
-	 * pixel size used as both width and height. Subclasses keep only their
-	 * paintIcon body. Deliberately sets NO rendering hints - antialiasing
-	 * stays exactly where each subclass sets it today, because some painted
-	 * icons in this file draw aliased on purpose.
+	 * Shared shape for the square baked icons: a single pixel size used as
+	 * both width and height, drawn from a PNG baked at exactly that size
+	 * from the original paint code.
 	 */
 	abstract static class SizedIcon implements Icon
 	{
-		/** Icon edge length in pixels; readable by subclass paint code. */
+		/** Icon edge length in pixels. */
 		protected final int size;
+		private final BufferedImage image;
 
-		SizedIcon(int size)
+		SizedIcon(String bakedName, int size)
 		{
 			this.size = size;
+			this.image = baked("stat-" + bakedName + "-" + size + ".png", size);
 		}
 
 		@Override
@@ -45,69 +76,31 @@ final class StatIcons
 		{
 			return size;
 		}
+
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y)
+		{
+			g.drawImage(image, x, y, size, size, null);
+		}
 	}
 
 
-	/** A painted crosshair for the accuracy line (glyph-safe) - the
-	 * Attack staticon read as the same sword as the style icon. */
+	/** The baked crosshair for the accuracy line (glyph-safe). */
 	static final class CrosshairIcon extends SizedIcon
 	{
 		CrosshairIcon(int size)
 		{
-			super(size);
-		}
-
-		@Override
-		public void paintIcon(Component c, Graphics g, int x, int y)
-		{
-			Graphics2D g2 = (Graphics2D) g.create();
-			try
-			{
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-					RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(new Color(200, 170, 90));
-				int pad = 2;
-				g2.drawOval(x + pad, y + pad, size - 2 * pad - 1, size - 2 * pad - 1);
-				int mid = size / 2;
-				g2.drawLine(x + mid, y, x + mid, y + 3);
-				g2.drawLine(x + mid, y + size - 4, x + mid, y + size - 1);
-				g2.drawLine(x, y + mid, x + 3, y + mid);
-				g2.drawLine(x + size - 4, y + mid, x + size - 1, y + mid);
-				g2.fillOval(x + mid - 1, y + mid - 1, 3, 3);
-			}
-			finally
-			{
-				g2.dispose();
-			}
+			super("crosshair", size);
 		}
 	}
 
 
-	/** A painted red hitsplat for the max-hit line (glyph-safe). */
+	/** The baked red hitsplat for the max-hit line (glyph-safe). */
 	static final class HitsplatIcon extends SizedIcon
 	{
 		HitsplatIcon(int size)
 		{
-			super(size);
-		}
-
-		@Override
-		public void paintIcon(Component c, Graphics g, int x, int y)
-		{
-			Graphics2D g2 = (Graphics2D) g.create();
-			try
-			{
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-					RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(new Color(150, 30, 30));
-				g2.fillRoundRect(x, y + 1, size - 1, size - 2, 5, 5);
-				g2.setColor(new Color(200, 60, 60));
-				g2.drawRoundRect(x, y + 1, size - 2, size - 3, 5, 5);
-			}
-			finally
-			{
-				g2.dispose();
-			}
+			super("hitsplat", size);
 		}
 	}
 

@@ -79,6 +79,17 @@ class WikiCalcLinkTest
 		int weaponId = (Integer)
 			((Map<String, Object>) equipment.get("weapon")).get("id");
 		assertEquals(best.getLoadout().getWeapon().getId(), weaponId);
+
+		// The one multi-ordinal row - pins the JSON array parse in
+		// wiki_calc_ids.json's potionIds.
+		Map<String, Object> twoPotions = WikiCalcLink.payload(monster, best, -1,
+			"Attack & strength potions", PlayerLevels.MAXED, PlayerLevels.MAXED,
+			false, false);
+		Map<String, Object> twoLoadout =
+			((List<Map<String, Object>>) twoPotions.get("loadouts")).get(0);
+		assertEquals(List.of(1, 10),
+			((Map<String, Object>) twoLoadout.get("buffs")).get("potions"),
+			"attack & strength potions = their ordinals 1 and 10");
 	}
 
 	@Test
