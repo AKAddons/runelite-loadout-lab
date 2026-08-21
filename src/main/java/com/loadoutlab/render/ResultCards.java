@@ -845,11 +845,13 @@ public class ResultCards
 			{
 				int id = Model.id(item, "id");
 				String scope = Model.str(item, "scope");
-				Ui.item(menu, "Remove " + Model.str(item, "name")
+				String itemName = Model.str(item, "name");
+				Ui.item(menu, "Remove " + itemName
 					+ (scope == null || "ALL".equals(scope) ? "" : " (" + scope + ")"), () ->
 				{
 					Map<String, Object> args = new java.util.HashMap<>();
 					args.put("itemId", id);
+					args.put("label", itemName);
 					if (scope != null)
 					{
 						args.put("scope", scope);
@@ -862,7 +864,7 @@ public class ResultCards
 				menu.addSeparator();
 			}
 			Ui.item(menu, addPrompt + " (search)...", () -> picker.search(addPrompt,
-				(id, name) -> commands.send(addCommand, Map.of("itemId", id))));
+				(id, name) -> commands.send(addCommand, Map.of("itemId", id, "label", name))));
 			menu.show(button, 0, button.getHeight());
 		});
 		return button;
@@ -1727,12 +1729,13 @@ public class ResultCards
 		}
 		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 		Ui.item(menu, "Exclude " + name,
-			() -> commands.send("toggle-exclusion", Map.of("itemId", id)));
+			() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
 		if (bis)
 		{
 			javax.swing.JMenuItem sim = new javax.swing.JMenuItem("Sim as owned");
 			sim.setToolTipText("Pretend you own " + name + " and recompute your side");
-			sim.addActionListener(e -> commands.send("toggle-sim", Map.of("itemId", id)));
+			sim.addActionListener(e -> commands.send("toggle-sim",
+				Map.of("itemId", id, "label", name)));
 			menu.add(sim);
 		}
 		else if (!"quiver".equals(slot))
@@ -1740,12 +1743,13 @@ public class ResultCards
 			javax.swing.JMenuItem excludeMob = new javax.swing.JMenuItem("Exclude for this mob");
 			excludeMob.setToolTipText("Exclude " + name + " for this mob only (all sets)");
 			excludeMob.addActionListener(e -> commands.send("exclude-for-mob",
-				Map.of("itemId", id, "scope", "ALL")));
+				Map.of("itemId", id, "scope", "ALL", "label", name)));
 			menu.add(excludeMob);
 			javax.swing.JMenuItem simMob = new javax.swing.JMenuItem("Sim for this mob (search)...");
 			simMob.setToolTipText("Search an item and sim it as owned for this mob only");
 			simMob.addActionListener(e -> picker.search("Sim for this mob",
-				(pickedId, pickedName) -> commands.send("sim-for-mob", Map.of("itemId", pickedId))));
+				(pickedId, pickedName) -> commands.send("sim-for-mob",
+					Map.of("itemId", pickedId, "label", pickedName))));
 			menu.add(simMob);
 			javax.swing.JMenuItem pin = new javax.swing.JMenuItem("Pin " + name);
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");

@@ -174,7 +174,7 @@ public class LoadoutLabPlugin extends Plugin
 	/** Session-only undo/redo over deliberate store mutations. EDT-owned;
 	 * cleared on profile change (entries captured against another profile's
 	 * stores must never replay into this one). */
-	private final CommandHistory commandHistory = new CommandHistory();
+
 	private com.loadoutlab.collection.ProtectOnlyStore protectOnly;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
 	private volatile Set<Integer> bankHighlight;
@@ -953,13 +953,6 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			supplyDefaults.reload();
 		}
-		// Undo entries captured against the previous profile's stores must
-		// never replay into this one. The stack is EDT-owned - hop over.
-		SwingUtilities.invokeLater(() ->
-		{
-			commandHistory.clear();
-			// History buttons render from the page's history node now.
-		});
 		resetForIdentityChange();
 	}
 
@@ -1382,9 +1375,11 @@ public class LoadoutLabPlugin extends Plugin
 	/** Run a user mutation through the undo stack and sync the buttons. */
 	private boolean exec(com.loadoutlab.command.Command cmd)
 	{
-		boolean ok = commandHistory.execute(cmd);
-		// History buttons render from the page's history node now.
-		return ok;
+		// Applies WITHOUT recording: the ENGINE's history is the one live
+		// stack since the merge-back - this plugin-side stack was an
+		// orphan nothing could undo (field report 2026-08-20: Back
+		// skipped every exclude/sim).
+		return cmd.apply();
 	}
 
 	/** Item label for command descriptions, from the gear corpus (EDT-safe -

@@ -399,15 +399,16 @@ public class RenderSurface
 			for (Map<String, Object> item : items)
 			{
 				int id = Model.id(item, "id");
-				Ui.item(menu, removeVerb + Model.str(item, "name"),
-					() -> commands.send(command, Map.of("itemId", id)));
+				String itemName = Model.str(item, "name");
+				Ui.item(menu, removeVerb + itemName,
+					() -> commands.send(command, Map.of("itemId", id, "label", itemName)));
 			}
 			if (any)
 			{
 				menu.addSeparator();
 			}
 			Ui.item(menu, addPrompt, () -> picker.search(addPrompt,
-				(id, name) -> commands.send(command, Map.of("itemId", id))));
+				(id, name) -> commands.send(command, Map.of("itemId", id, "label", name))));
 			menu.show(pill, 0, pill.getHeight());
 		});
 		countsRow.add(pill);

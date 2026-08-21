@@ -257,10 +257,12 @@ class CommandEngineTest
 
 			public void removeMobExclusion(int monsterId, String scope, int itemId)
 			{
+				captured.add("removeExclude:" + monsterId + ":" + itemId);
 			}
 
 			public void removeMobSim(int monsterId, int itemId)
 			{
+				captured.add("removeSim:" + monsterId + ":" + itemId);
 			}
 
 			public void addMobFilter(int monsterId, int itemId)
@@ -289,6 +291,42 @@ class CommandEngineTest
 		assertEquals(2, captured.size());
 		assertTrue(captured.get(0).startsWith("exclude:"));
 		assertTrue(captured.get(1).startsWith("sim:"));
+
+		// Back reverses the adds (field ask 2026-08-20: "we want the
+		// back to reverse that") - undo lands on the store, not the
+		// selection.
+		assertTrue(engine.execute("undo", Map.of()));
+		assertEquals(3, captured.size());
+		assertTrue(captured.get(2).startsWith("removeSim:"), captured.get(2));
+		assertTrue(engine.execute("undo", Map.of()));
+		assertEquals(4, captured.size());
+		assertTrue(captured.get(3).startsWith("removeExclude:"), captured.get(3));
+	}
+
+	@Test
+	@DisplayName("switching the roster lens is a view gesture - never in history")
+	void lensSwitchNeverRecords()
+	{
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			new CaptureLink());
+		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
+			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			});
+		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")));
+		assertTrue(engine.execute("set-param", Map.of("param", "lensIndex", "value", 2)),
+			"the lens still switches");
+		assertEquals(2, state.paramsNode().get("lensIndex"));
+		assertTrue(engine.execute("undo", Map.of()),
+			"undo must skip the lens switch entirely");
+		// The undo undid the SELECT (the only recorded action), never a
+		// lens hop (field ask 2026-08-20: mob switching is not an action).
+		assertNull(state.mob(), "back landed on the pre-select state");
 	}
 
 	@Test

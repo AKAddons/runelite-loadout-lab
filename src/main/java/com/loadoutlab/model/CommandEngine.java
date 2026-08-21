@@ -403,6 +403,13 @@ public class CommandEngine
 				{
 					return true;
 				}
+				if ("lensIndex".equals(key))
+				{
+					// Switching which roster row is expanded is a VIEW
+					// gesture, not an action - Back must never land on it
+					// (field ask 2026-08-20).
+					return applyParam(key, next);
+				}
 				String label = PARAM_LABELS.getOrDefault(key, key);
 				return history.execute(new com.loadoutlab.command.Command()
 				{
@@ -462,14 +469,38 @@ public class CommandEngine
 					return false;
 				}
 				int id = ((Number) itemId).intValue();
-				boolean applied = "toggle-exclusion".equals(name)
-					? ops.toggleExclusion(id) : ops.toggleSim(id);
-				if (!applied)
+				boolean exclusion = "toggle-exclusion".equals(name);
+				Object labelArg = args.get("label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				// Self-inverse: a toggle undoes itself. Recorded HERE (the
+				// one live stack) - the classic recorded into the plugin's
+				// stack, orphaned since the merge-back, so Back skipped
+				// every exclude/sim (field report 2026-08-20).
+				return history.execute(new com.loadoutlab.command.Command()
 				{
-					return false;
-				}
-				recompute();
-				return true;
+					@Override
+					public boolean apply()
+					{
+						if (!(exclusion ? ops.toggleExclusion(id) : ops.toggleSim(id)))
+						{
+							return false;
+						}
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						return apply();
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return (exclusion ? "Exclude " : "Sim ") + what;
+					}
+				});
 			}
 			case "pin":
 			case "unpin":
@@ -566,18 +597,51 @@ public class CommandEngine
 					return false;
 				}
 				int id = ((Number) itemId).intValue();
-				if ("exclude-for-mob".equals(name))
+				boolean exclude = "exclude-for-mob".equals(name);
+				Object scopeArg = args.get("scope");
+				String scope = scopeArg instanceof String ? (String) scopeArg : "ALL";
+				Object labelArg = args.get("label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				int mobId = mob.getId();
+				String mobName = mob.getName();
+				return history.execute(new com.loadoutlab.command.Command()
 				{
-					Object scope = args.get("scope");
-					ops.excludeForMob(mob.getId(),
-						scope instanceof String ? (String) scope : "ALL", id);
-				}
-				else
-				{
-					ops.simForMob(mob.getId(), id);
-				}
-				recompute();
-				return true;
+					@Override
+					public boolean apply()
+					{
+						if (exclude)
+						{
+							ops.excludeForMob(mobId, scope, id);
+						}
+						else
+						{
+							ops.simForMob(mobId, id);
+						}
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						if (exclude)
+						{
+							ops.removeMobExclusion(mobId, scope, id);
+						}
+						else
+						{
+							ops.removeMobSim(mobId, id);
+						}
+						recompute();
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return (exclude ? "Exclude " : "Sim ") + what + " - " + mobName;
+					}
+				});
 			}
 			case "remove-mob-exclusion":
 			case "remove-mob-sim":
@@ -594,26 +658,76 @@ public class CommandEngine
 				int id = ((Number) itemId).intValue();
 				Object scope = args == null ? null : args.get("scope");
 				String scopeKey = scope instanceof String ? (String) scope : "ALL";
-				switch (name)
+				Object labelArg = args == null ? null : args.get("label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				int mobId = mob.getId();
+				String mobName = mob.getName();
+				String command = name;
+				return history.execute(new com.loadoutlab.command.Command()
 				{
-					case "remove-mob-exclusion":
-						ops.removeMobExclusion(mob.getId(), scopeKey, id);
-						recompute();
-						break;
-					case "remove-mob-sim":
-						ops.removeMobSim(mob.getId(), id);
-						recompute();
-						break;
-					case "add-mob-filter":
-						ops.addMobFilter(mob.getId(), id);
-						republish();
-						break;
-					default:
-						ops.removeMobFilter(mob.getId(), scopeKey, id);
-						republish();
-						break;
-				}
-				return true;
+					private void run(String cmd)
+					{
+						switch (cmd)
+						{
+							case "remove-mob-exclusion":
+								ops.removeMobExclusion(mobId, scopeKey, id);
+								recompute();
+								break;
+							case "remove-mob-sim":
+								ops.removeMobSim(mobId, id);
+								recompute();
+								break;
+							case "add-mob-filter":
+								ops.addMobFilter(mobId, id);
+								republish();
+								break;
+							case "remove-mob-filter":
+								ops.removeMobFilter(mobId, scopeKey, id);
+								republish();
+								break;
+							case "exclude-for-mob":
+								ops.excludeForMob(mobId, scopeKey, id);
+								recompute();
+								break;
+							default:
+								ops.simForMob(mobId, id);
+								recompute();
+								break;
+						}
+					}
+
+					@Override
+					public boolean apply()
+					{
+						run(command);
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						switch (command)
+						{
+							case "remove-mob-exclusion": run("exclude-for-mob"); break;
+							case "remove-mob-sim": run("sim-for-mob"); break;
+							case "add-mob-filter": run("remove-mob-filter"); break;
+							default: run("add-mob-filter"); break;
+						}
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						switch (command)
+						{
+							case "remove-mob-exclusion": return "Allow " + what + " - " + mobName;
+							case "remove-mob-sim": return "Stop simming " + what + " - " + mobName;
+							case "add-mob-filter": return "Filter " + what + " - " + mobName;
+							default: return "Unfilter " + what + " - " + mobName;
+						}
+					}
+				});
 			}
 			case "set-supply-override":
 			{
