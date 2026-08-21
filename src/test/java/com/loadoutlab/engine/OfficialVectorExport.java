@@ -111,6 +111,26 @@ public class OfficialVectorExport
 		// Negative armour off-styles (2026-08-21 armour-semantics fix):
 		// ranged keeps the flat bonus WITH its floor; magic gets neither.
 		{"tbow-bloodmoon", "Blood Moon", "", "RANGED", "Twisted bow", "Dragon arrow"},
+		// Inquisitor full set + mace (field dispute 2026-08-21: cow melee
+		// BiS 12.65 vs the calc's 12.03 - a ~5% gap smelling of the set
+		// bonus multiplier).
+		{"inqfull-cow", "Cow", "1", "MELEE", "Inquisitor's mace", null, null,
+			"Inquisitor's great helm", "Infernal cape", "Amulet of rancour",
+			"Rada's blessing 4", "Inquisitor's hauberk", "Avernic defender",
+			"Inquisitor's plateskirt", "Ferocious gloves", "Avernic treads",
+			"Ultor ring"},
+		// Bisecting the 1-point max-hit residual: same set on stable
+		// items (torture + primordials) vs the newer rancour/treads.
+		{"inqstable-cow", "Cow", "1", "MELEE", "Inquisitor's mace", null, null,
+			"Inquisitor's great helm", "Infernal cape", "Amulet of torture",
+			"Rada's blessing 4", "Inquisitor's hauberk", "Avernic defender",
+			"Inquisitor's plateskirt", "Ferocious gloves", "Primordial boots",
+			"Ultor ring"},
+		{"inqrancour-cow", "Cow", "1", "MELEE", "Inquisitor's mace", null, null,
+			"Inquisitor's great helm", "Infernal cape", "Amulet of rancour",
+			"Rada's blessing 4", "Inquisitor's hauberk", "Avernic defender",
+			"Inquisitor's plateskirt", "Ferocious gloves", "Primordial boots",
+			"Ultor ring"},
 		{"kodai-firesurge-bloodmoon", "Blood Moon", "", "MAGIC", "Kodai wand", null, "Fire Surge"},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},

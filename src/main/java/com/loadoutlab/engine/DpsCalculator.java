@@ -1487,27 +1487,26 @@ public final class DpsCalculator
 		return Math.max(0, hit - request.getMonster().getDefensive().getFlatArmour());
 	}
 
+	/** Inquisitor's set, official-calc semantics (verified 2026-08-21,
+	 * vector inqfull-cow: the old model TRIPLED the factor with the
+	 * mace - the cow BiS ran +4.3% hot): crush accuracy AND damage,
+	 * helm +1 / hauberk +2 / plateskirt +2 over 200, mace-agnostic. */
 	private static long applyInquisitorBonus(Loadout loadout, long value)
 	{
-		int pieces = 0;
+		int bonus = 0;
 		if (wearing(loadout, "inquisitor's great helm"))
 		{
-			pieces++;
+			bonus += 1;
 		}
 		if (wearing(loadout, "inquisitor's hauberk"))
 		{
-			pieces++;
+			bonus += 2;
 		}
 		if (wearing(loadout, "inquisitor's plateskirt"))
 		{
-			pieces++;
+			bonus += 2;
 		}
-		if (pieces <= 0)
-		{
-			return value;
-		}
-		int numerator = wearing(loadout, "inquisitor's mace") ? 200 + pieces * 5 : 200 + (pieces == 3 ? 5 : pieces);
-		return multiply(value, numerator, 200);
+		return bonus == 0 ? value : multiply(value, 200 + bonus, 200);
 	}
 
 	/** The twisted bow's percent multiplier (roll or hit becomes bonus% of
