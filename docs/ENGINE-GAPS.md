@@ -184,3 +184,10 @@ not "fix" it by crediting healing inside Max DPS - that was verified to
 move the ranking away from the wiki. The proper home is the roadmapped
 "Smart" mode (see ROADMAP.md), which values HP restored as offensive-
 equivalent DPS scaled by the mob's incoming DTPS.
+
+## Moons magic accuracy (found 2026-08-21, vector kodai-firesurge-bloodmoon)
+Ours 0.47 vs official 0.98 dps (Kodai + Fire Surge vs Blood Moon) - a
+~2x magic gap on the moons family, PRE-EXISTING (the 2026-08-21
+flat-armour fix moved it only ~3 points). Suspect: our magic defence
+roll vs their monster magic-level/defensive-magic pairing on these
+rows. The harness vector stands as the dispute pin.

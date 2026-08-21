@@ -71,6 +71,34 @@ public final class RollMath
 		return accuracy * (maxHit / 2.0 + 1.0 / (maxHit + 1.0));
 	}
 
+	/** Expected hit under the monster's FLAT ARMOUR, official-calc
+	 * semantics (flatAddTransformer, verified 2026-08-21): POSITIVE
+	 * armour clamps EVERY roll to max(0, k - armour) - the low rolls
+	 * become zeros, which the old shifted-bounds model missed
+	 * (Eclipse Moon overpriced ~16%, grey golem ~15%). Negative
+	 * armour (Blood/Blue Moon's flat bonus) is an exact bound shift,
+	 * delegated so armour-free numbers stay bit-identical. Bounds are
+	 * RAW (pre-armour). */
+	public static double expectedHitWithFlatArmour(double accuracy, int minHit, int maxHit,
+		int armour)
+	{
+		if (armour <= 0)
+		{
+			return expectedHit(accuracy, Math.max(0, minHit - armour), maxHit - armour);
+		}
+		if (maxHit <= 0 || accuracy <= 0.0)
+		{
+			return 0.0;
+		}
+		int lo = Math.max(0, Math.min(minHit, maxHit));
+		long sum = 0;
+		for (int k = lo; k <= maxHit; k++)
+		{
+			sum += Math.max(0, k - armour);
+		}
+		return accuracy * ((double) sum / (maxHit - lo + 1));
+	}
+
 	public static double expectedHit(double accuracy, int minHit, int maxHit)
 	{
 		if (maxHit <= 0 || accuracy <= 0.0)

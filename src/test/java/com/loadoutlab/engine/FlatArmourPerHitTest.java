@@ -79,9 +79,12 @@ public class FlatArmourPerHitTest
 		int firstRaw = rawMax / 2;
 		int secondRaw = rawMax - firstRaw;
 		double acc = result.getAccuracy();
-		double perHitExpected = RollMath.expectedHit(acc, 0, Math.max(0, firstRaw - armour))
-			+ acc * RollMath.expectedHit(acc, 0, Math.max(0, secondRaw - armour));
-		Assert.assertEquals("each hitsplat pays the armour",
+		// Per-roll clamp, NOT a bound shift (official-calc verified
+		// 2026-08-21: the shifted model overpriced Eclipse ~16% - the
+		// noxhalberd-eclipsemoon harness vector now matches to 0.00%).
+		double perHitExpected = RollMath.expectedHitWithFlatArmour(acc, 0, firstRaw, armour)
+			+ acc * RollMath.expectedHitWithFlatArmour(acc, 0, secondRaw, armour);
+		Assert.assertEquals("each hitsplat pays the armour on every roll",
 			perHitExpected, result.getExpectedHit(), 1e-9);
 	}
 }

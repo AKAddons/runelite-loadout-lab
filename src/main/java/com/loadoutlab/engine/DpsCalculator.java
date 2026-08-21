@@ -288,9 +288,11 @@ public final class DpsCalculator
 		// dual macuahuitl gets +5 twice, and the old split-after-armour
 		// order credited it only once.
 		int rawMax = maxHit;
+		int rawMin = minHit;
+		int flatArmour = request.getMonster().getDefensive().getFlatArmour();
 		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
-		double expected = RollMath.expectedHit(accuracy, minHit, maxHit);
+		double expected = RollMath.expectedHitWithFlatArmour(accuracy, rawMin, rawMax, flatArmour);
 		if (isDualMacuahuitl(loadout))
 		{
 			// Two chained hits (official calc model): the first rolls half
@@ -299,22 +301,18 @@ public final class DpsCalculator
 			// each hitsplat's own bounds.
 			int firstRaw = rawMax / 2;
 			int secondRaw = rawMax - firstRaw;
-			expected = RollMath.expectedHit(accuracy,
-					applyFlatArmour(request, 0), applyFlatArmour(request, firstRaw))
-				+ accuracy * RollMath.expectedHit(accuracy,
-					applyFlatArmour(request, 0), applyFlatArmour(request, secondRaw));
+			expected = RollMath.expectedHitWithFlatArmour(accuracy, 0, firstRaw, flatArmour)
+				+ accuracy * RollMath.expectedHitWithFlatArmour(accuracy, 0, secondRaw, flatArmour);
 		}
 		if (isScythe(loadout))
 		{
 			if (request.getMonster().getSize() >= 2)
 			{
-				expected += RollMath.expectedHit(accuracy,
-					applyFlatArmour(request, 0), applyFlatArmour(request, rawMax / 2));
+				expected += RollMath.expectedHitWithFlatArmour(accuracy, 0, rawMax / 2, flatArmour);
 			}
 			if (request.getMonster().getSize() >= 3)
 			{
-				expected += RollMath.expectedHit(accuracy,
-					applyFlatArmour(request, 0), applyFlatArmour(request, rawMax / 4));
+				expected += RollMath.expectedHitWithFlatArmour(accuracy, 0, rawMax / 4, flatArmour);
 			}
 		}
 		// Verac's set (wiki): 25% of attacks are a guaranteed hit with +1
@@ -392,11 +390,13 @@ public final class DpsCalculator
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
+		int rawRangedMax = maxHit;
 		maxHit = applyFlatArmour(request, maxHit);
 
 		long defenceRoll = npcDefenceRoll(request.getMonster(), "ranged", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
-		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		double expected = RollMath.expectedHitWithFlatArmour(accuracy, 0, rawRangedMax,
+			request.getMonster().getDefensive().getFlatArmour());
 		if (isWearingEclipseMoonSet(loadout)
 			&& !request.getMonster().hasAttribute("burn_immune"))
 		{
@@ -479,7 +479,9 @@ public final class DpsCalculator
 			attackRoll = (long) Math.floor(attackRoll * 1.10);
 			maxHit = (int) Math.floor(maxHit * 1.10);
 		}
-		maxHit = applyFlatArmour(effectiveRequest, maxHit);
+		// The official calc applies flat armour to melee and ranged ONLY
+		// (flatAddTransformer is gated styleType !== 'magic', verified
+		// 2026-08-21) - magic hits the raw bounds.
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);

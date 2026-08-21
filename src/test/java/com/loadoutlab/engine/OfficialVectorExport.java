@@ -97,6 +97,21 @@ public class OfficialVectorExport
 			"Neitiznot faceguard", "Fire cape", "Amulet of torture", "Rada's blessing 4",
 			"Bandos chestplate", "Dragon defender", "Blood moon tassets", "Ferocious gloves",
 			"Primordial boots", "Lightbearer"},
+		// Blood Moon + Noxious halberd (field dispute 2026-08-21: our set
+		// 10.45 vs the live calc's 7.746 - a 1.35x gap on the same items).
+		// Full set mirrors Andrew's exact report; the bare-weapon vector
+		// bounds whether the delta is mechanic- or gear-level.
+		{"noxfull-bloodmoon", "Blood Moon", "", "MELEE", "Noxious halberd", null, null,
+			"Neitiznot faceguard", "Fire cape", "Amulet of torture", "Rada's blessing 4",
+			"Bandos chestplate", "Blood moon tassets", "Ferocious gloves",
+			"Primordial boots", "Berserker ring (i)"},
+		{"noxhalberd-bloodmoon", "Blood Moon", "", "MELEE", "Noxious halberd", null},
+		{"noxhalberd-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Noxious halberd", null},
+		{"macuahuitl-bluemoon", "Blue Moon", "", "MELEE", "Dual macuahuitl", null},
+		// Negative armour off-styles (2026-08-21 armour-semantics fix):
+		// ranged keeps the flat bonus WITH its floor; magic gets neither.
+		{"tbow-bloodmoon", "Blood Moon", "", "RANGED", "Twisted bow", "Dragon arrow"},
+		{"kodai-firesurge-bloodmoon", "Blood Moon", "", "MAGIC", "Kodai wand", null, "Fire Surge"},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
 		{"scorchingbow-td", "Tormented Demon", "1", "RANGED", "Scorching bow", "Dragon arrow"},
