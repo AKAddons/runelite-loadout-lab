@@ -36,6 +36,7 @@ public class RenderSurface
 	private JTextField search;
 	private JPanel cardArea;
 	private JPanel waitingSlot;
+	private AsciiLoader loader;
 	private volatile boolean isComputing;
 
 	/** Compute-in-flight: shows the static Computing... slot. */
@@ -57,6 +58,10 @@ public class RenderSurface
 				cardArea.removeAll();
 				cardArea.revalidate();
 				cardArea.repaint();
+			}
+			if (loader != null)
+			{
+				loader.setRunning(isComputing);
 			}
 			waitingSlot.setVisible(isComputing);
 			waitingSlot.revalidate();
@@ -622,8 +627,14 @@ public class RenderSurface
 			// The computing notice sits BELOW everything the pending page
 			// shows (field report: between the chips and the mob list was weird).
 			waitingSlot = Ui.panel(new BorderLayout());
-			waitingSlot.add(new javax.swing.JLabel("Computing...",
-				javax.swing.SwingConstants.CENTER), BorderLayout.CENTER);
+			loader = new AsciiLoader();
+			JPanel loaderRow = Ui.panel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 4));
+			loaderRow.add(loader);
+			waitingSlot.add(loaderRow, BorderLayout.CENTER);
+			javax.swing.JLabel computing = Ui.label("Computing...",
+				new java.awt.Color(150, 150, 150));
+			computing.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+			waitingSlot.add(computing, BorderLayout.SOUTH);
 			waitingSlot.setVisible(false);
 			resultsArea.add(waitingSlot);
 			root.add(resultsArea, BorderLayout.CENTER);
