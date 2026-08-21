@@ -295,6 +295,28 @@ public class ResultCards
 		JLabel label = new JLabel(name + (level > 0 ? "  " + level : ""));
 		label.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		label.setForeground(selected ? ACCENT : new Color(200, 200, 200));
+		if (monsterIcons != null && iconsEnabled.getAsBoolean())
+		{
+			// The mob's wiki render rides the row; text-only until it
+			// loads (or when the wiki has no picture for it).
+			String mobName = Model.str(mob, "name");
+			String mobVersion = Model.str(mob, "version");
+			javax.swing.ImageIcon mobIcon = monsterIcons.get(mobName, mobVersion, 20, () ->
+			{
+				javax.swing.ImageIcon ready = monsterIcons.get(mobName, mobVersion, 20, null);
+				if (ready != null)
+				{
+					label.setIcon(ready);
+					label.setIconTextGap(6);
+					label.revalidate();
+				}
+			});
+			if (mobIcon != null)
+			{
+				label.setIcon(mobIcon);
+				label.setIconTextGap(6);
+			}
+		}
 		// The name yields first when the panel narrows - the columns to
 		// its right keep their width, so they stay aligned.
 		label.setMinimumSize(new java.awt.Dimension(20, 18));
@@ -380,6 +402,17 @@ public class ResultCards
 
 	/** The brand accent (the mascot-era green lives on as a plain constant). */
 	static final Color ACCENT = new Color(140, 200, 140);
+
+	/** Async wiki thumbnails for the roster rows (null = text-only). */
+	private com.loadoutlab.ui.MonsterIcons monsterIcons;
+	private java.util.function.BooleanSupplier iconsEnabled = () -> false;
+
+	public void setMonsterIcons(com.loadoutlab.ui.MonsterIcons icons,
+		java.util.function.BooleanSupplier enabled)
+	{
+		this.monsterIcons = icons;
+		this.iconsEnabled = enabled;
+	}
 
 	private boolean rosterView;
 	/** Set per side() render for the #spec cell's tooltip + pin menu. */
@@ -787,6 +820,16 @@ public class ResultCards
 			});
 			bankRow.add(filterBank);
 		}
+		// The exact-setup cross-check returns (network re-add 2026-08-20):
+		// full setups only ride a URL as a shortlink id, so the click
+		// uploads the shown setup to the wiki's share service first.
+		javax.swing.JButton wikiCalc = new javax.swing.JButton("Wiki calc");
+		wikiCalc.setToolTipText("Open this exact setup in the official wiki calculator"
+			+ " (shares the setup via the wiki's shortlink service)");
+		styleBankButton(wikiCalc);
+		wikiCalc.addActionListener(e -> commands.send("wiki-calc",
+			Map.of("style", tab, "bis", bis)));
+		bankRow.add(wikiCalc);
 		card.add(centre(bankRow));
 		String noteText = Model.str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();
@@ -1230,7 +1273,7 @@ public class ResultCards
 	}
 
 	/** The classic bank-action look: flat, rounded, accent on select. */
-	private static void styleBankButton(javax.swing.JToggleButton button)
+	private static void styleBankButton(javax.swing.AbstractButton button)
 	{
 		button.setFocusable(false);
 		button.setContentAreaFilled(false);

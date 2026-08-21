@@ -790,4 +790,18 @@ public interface LoadoutLabConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "fetchMonsterIcons",
+		name = "Monster pictures (wiki)",
+		description = "Fetch each mob row's picture from the OSRS wiki - one"
+			+ " request per monster, cached. Off means no wiki requests"
+			+ " and plain text rows.",
+		section = connections,
+		position = 2
+	)
+	default boolean fetchMonsterIcons()
+	{
+		return true;
+	}
+
 }

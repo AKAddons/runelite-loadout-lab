@@ -109,6 +109,7 @@ public final class RenderModel
 		node.put("id", mob.getId());
 		node.put("profileId", mob.profileId());
 		node.put("name", mob.getName());
+		node.put("version", mob.getVersion());
 		node.put("label", mob.label());
 		node.put("hp", mob.getHitpoints());
 		node.put("level", mob.getCombatLevel());

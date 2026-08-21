@@ -41,6 +41,13 @@ level you actually run.
 
 ![Multi-mob rosters](img/multi-mob-roster.png)
 
+### Monster thumbnails
+
+Each roster row carries its monster's picture from the OSRS wiki -
+per-form for versioned bosses, fetched once and cached. The Connections
+config section has the switch (on by default); off means no wiki
+requests and plain text rows.
+
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
@@ -110,6 +117,15 @@ worn set as the equipment cross, the carried kit in a 4-wide block beside
 it. Uses the core Bank Tags plugin.
 
 ![Bank tools: show and filter](img/bank-tools.png)
+
+### Wiki calc link
+
+"Wiki calc" opens the exact setup you are looking at in the official
+OSRS wiki DPS calculator - gear, levels, prayers, boosts, the loaded
+dart, even the ToA invocation level. Full setups cannot ride a URL, so
+the click shares the setup through the wiki's shortlink service first
+and opens the calculator on the returned id. Strictly click-initiated:
+no network request ever fires on its own.
 
 ## 3. Shape the fight
 

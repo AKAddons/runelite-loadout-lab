@@ -133,6 +133,11 @@ public class LoadoutLabPlugin extends Plugin
 	private Gson gson;
 
 	@Inject
+	private okhttp3.OkHttpClient okHttpClient;
+
+	private com.loadoutlab.ui.MonsterIcons monsterIcons;
+
+	@Inject
 	@javax.inject.Named("developerMode")
 	private boolean developerMode;
 
@@ -496,6 +501,15 @@ public class LoadoutLabPlugin extends Plugin
 				clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName(
 					client.getVarbitValue(net.runelite.api.gameval.VarbitID.SPELLBOOK))));
 				commandEngine.setCoreVersion(com.loadoutlab.PluginVersion.VERSION);
+				// The network features (individually reviewable): the
+				// wiki-calc shortlink is strictly CLICK-initiated; the
+				// monster thumbnails are config-gated (Connections).
+				WikiCalcLink wikiCalc = new WikiCalcLink(okHttpClient, gson);
+				commandEngine.setWikiCalcOpener((mob, shown, dartId, assumes, onTask, wildy) ->
+					wikiCalc.open(mob, shown, dartId, assumes,
+						realLevels != null ? realLevels : com.loadoutlab.engine.PlayerLevels.MAXED,
+						boostedLevels != null ? boostedLevels : com.loadoutlab.engine.PlayerLevels.MAXED,
+						onTask, wildy));
 				// Detect (classic resolveDefaultAntifire): only for a
 				// fire-breathing selection, best owned tier wins.
 				commandEngine.setAntifireResolver(mobs ->
@@ -537,8 +551,11 @@ public class LoadoutLabPlugin extends Plugin
 				};
 				com.loadoutlab.render.ItemPicker picker = (prompt, onPicked) ->
 					itemSearchView().search(prompt, onPicked);
-				internalSurface = new com.loadoutlab.render.RenderSurface(
-					new com.loadoutlab.render.ResultCards(itemManager, spriteManager, sink, picker),
+				com.loadoutlab.render.ResultCards cards =
+					new com.loadoutlab.render.ResultCards(itemManager, spriteManager, sink, picker);
+				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
+				cards.setMonsterIcons(monsterIcons, () -> config.fetchMonsterIcons());
+				internalSurface = new com.loadoutlab.render.RenderSurface(cards,
 					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker,
 					(query, onResults) ->
 					{
@@ -779,6 +796,11 @@ public class LoadoutLabPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		if (monsterIcons != null)
+		{
+			monsterIcons.shutdown();
+			monsterIcons = null;
+		}
 		if (bankOverlay != null)
 		{
 			overlayManager.remove(bankOverlay);

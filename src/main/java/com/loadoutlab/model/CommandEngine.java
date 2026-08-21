@@ -108,6 +108,22 @@ public class CommandEngine
 
 	private volatile StoreOps stores;
 
+	/** Opens the shown setup in the official wiki calculator - the
+	 * plugin wires the network side (shortlink POST + browser). Unset,
+	 * the command refuses and the button does nothing. */
+	public interface WikiCalcOpener
+	{
+		void open(MonsterStats mob, com.loadoutlab.engine.DpsResult shown, int dartId,
+			String assumes, boolean onSlayerTask, boolean inWilderness);
+	}
+
+	private volatile WikiCalcOpener wikiCalcOpener;
+
+	public void setWikiCalcOpener(WikiCalcOpener opener)
+	{
+		this.wikiCalcOpener = opener;
+	}
+
 	public void setStoreOps(StoreOps stores)
 	{
 		this.stores = stores;
@@ -445,6 +461,68 @@ public class CommandEngine
 				}
 				ops.setSupplyDefault((String) category, (String) choice);
 				recompute();
+				return true;
+			}
+			case "wiki-calc":
+			{
+				WikiCalcOpener opener = wikiCalcOpener;
+				List<MonsterStats> mobs = lastMobs;
+				List<Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = lastPerMob;
+				Object styleArg = args == null ? null : args.get("style");
+				if (opener == null || mobs == null || perMob == null
+					|| !(styleArg instanceof String))
+				{
+					return false;
+				}
+				CombatStyle style;
+				try
+				{
+					style = CombatStyle.valueOf(
+						((String) styleArg).toUpperCase(java.util.Locale.ROOT));
+				}
+				catch (IllegalArgumentException ex)
+				{
+					return false;
+				}
+				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				int at = -1;
+				for (int i = 0; mob != null && i < mobs.size(); i++)
+				{
+					if (mobs.get(i).label().equals(mob.label()))
+					{
+						at = i;
+						break;
+					}
+				}
+				if (at < 0 || perMob.size() <= at)
+				{
+					return false;
+				}
+				com.loadoutlab.optimizer.OptimizerService.StyleResult result =
+					perMob.get(at).get(style);
+				boolean bis = Boolean.TRUE.equals(args.get("bis"));
+				com.loadoutlab.engine.DpsResult shown = result == null ? null
+					: bis ? result.overallBest
+					: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
+				if (shown == null)
+				{
+					return false;
+				}
+				// The blowpipe's loaded dart rides the attackType string
+				// (same parse as the RenderModel fact).
+				int dartId = -1;
+				String attackType = shown.getAttackType();
+				if (attackType != null && attackType.contains(" - "))
+				{
+					Integer parsed = com.loadoutlab.engine.BlowpipeDarts.baseIdForTierName(
+						attackType.substring(attackType.indexOf(" - ") + 3));
+					dartId = parsed == null ? -1 : parsed;
+				}
+				// A link-out is not an action - never recorded in history.
+				opener.open(mob, shown, dartId,
+					bis ? result.gameBoostLabel : result.boostLabel,
+					Boolean.TRUE.equals(state.paramsNode().get("onTask")),
+					Boolean.TRUE.equals(state.paramsNode().get("inWilderness")));
 				return true;
 			}
 			case "toggle-always-filter":
