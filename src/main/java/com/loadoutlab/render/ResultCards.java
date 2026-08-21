@@ -417,6 +417,8 @@ public class ResultCards
 	private boolean rosterView;
 	/** Set per side() render for the #spec cell's tooltip + pin menu. */
 	private double cellSpecDps;
+	private double cellSetDps;
+	private double cellThrallsDps;
 	private int cellSpecWeaponId;
 	private boolean cellSpecPinned;
 
@@ -1421,6 +1423,8 @@ public class ResultCards
 		Map<String, Object> specWeaponForCell = specForCell == null
 			? null : Model.map(specForCell, "weapon");
 		cellSpecDps = specForCell == null ? 0 : Model.num(specForCell, "dpsAdded");
+		cellSetDps = Model.num(card, "dps");
+		cellThrallsDps = thrallsDps;
 		cellSpecWeaponId = specWeaponForCell == null ? 0 : Model.id(specWeaponForCell, "id");
 		cellSpecPinned = cellSpecWeaponId != 0
 			&& Model.id(mob, "pinnedSpec") == cellSpecWeaponId;
@@ -1699,12 +1703,31 @@ public class ResultCards
 		int itemPrice = (int) Model.num(item, "price");
 		String priceNote = Model.flag(item, "owned") || itemPrice <= 0
 			? "" : " - " + Gp.formatShort(itemPrice) + " gp";
-		String flagNote = ("spec".equals(slot)
-			? " - spec weapon (adds ~" + String.format("%.2f", cellSpecDps)
-				+ " dps)" + (cellSpecPinned ? " - pinned" : "")
-			: Model.flag(item, "assumed") ? " - assumed (not owned)"
-			: Model.flag(item, "bisMatch") ? " - best available" : "") + priceNote;
-		cell.setToolTipText(name + " (" + slot + ")" + flagNote);
+		// The reconciliation breakdown on the spec cell (field ask
+		// 2026-08-21): our shown number folds spec + thralls; the wiki
+		// calc shows the bare set - spell out the sum so the two always
+		// reconcile. tipBody is shared with the storage/fate overlay.
+		String tipBody;
+		if ("spec".equals(slot))
+		{
+			double shown = cellSetDps + cellSpecDps + cellThrallsDps;
+			tipBody = name + " (spec)"
+				+ (cellSpecPinned ? " - pinned" : "") + priceNote
+				+ "<br>shown " + String.format("%.2f", shown)
+				+ " = set " + String.format("%.2f", cellSetDps)
+				+ " + spec " + String.format("%.2f", cellSpecDps)
+				+ (cellThrallsDps > 0
+					? " + thralls " + String.format("%.2f", cellThrallsDps) : "")
+				+ "<br>the wiki calc shows the set number: "
+				+ String.format("%.2f", cellSetDps);
+		}
+		else
+		{
+			tipBody = name + " (" + slot + ")"
+				+ (Model.flag(item, "assumed") ? " - assumed (not owned)"
+				: Model.flag(item, "bisMatch") ? " - best available" : "") + priceNote;
+		}
+		cell.setToolTipText("<html>" + tipBody + "</html>");
 		if ("spec".equals(slot) && !bis && cellSpecWeaponId != 0)
 		{
 			// The pin lives ON the cell now (the spec text line retired).
@@ -1727,7 +1750,7 @@ public class ResultCards
 		if (dot != null || fate != null)
 		{
 			String where = Model.str(item, "source");
-			cell.setToolTipText("<html>" + name + " (" + slot + ")" + flagNote
+			cell.setToolTipText("<html>" + tipBody
 				+ (where == null ? "" : "<br>stored in " + where)
 				+ ("kept".equals(fate) ? "<br>protected on death"
 					: "lost".equals(fate)
