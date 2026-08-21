@@ -661,8 +661,9 @@ public class RenderSurface
 	 * (the bare set). Mirrors the engine's view derivation. */
 	private static String wikiCalcTip(Map<String, Object> page)
 	{
-		String base = "Open the shown setup in the official wiki calculator"
-			+ " (shares the setup via the wiki's shortlink service)";
+		String base = "<html><b>Open in the official wiki calculator</b><br>"
+			+ "<font color='#969696'>shares this exact setup via the wiki's"
+			+ " shortlink</font></html>";
 		Map<String, Object> params = ResultCards.firstParams(page);
 		java.util.List<Map<String, Object>> entries = Model.list(page, "entries");
 		if (params == null || entries.isEmpty())
@@ -712,20 +713,32 @@ public class RenderSurface
 		{
 			return base;
 		}
+		// The breakdown reads as a little ledger, not a sentence (field
+		// ask 2026-08-21: "less dense and more informative").
 		StringBuilder sum = new StringBuilder();
-		sum.append("<html>").append(base)
-			.append("<br>the calc will show the set: ").append(String.format("%.2f", set))
-			.append(" - shown here ")
-			.append(String.format("%.2f", set + specDps + thrallsDps)).append(" = set");
+		sum.append("<html><b>Open in the official wiki calculator</b><br>")
+			.append("<font color='#969696'>shares this exact setup via the wiki's")
+			.append(" shortlink</font><br><br>")
+			.append("<table cellpadding='1' cellspacing='0'>")
+			.append("<tr><td>set</td><td align='right'>&nbsp;&nbsp;")
+			.append(String.format("%.2f", set))
+			.append("</td><td><font color='#969696'>&nbsp;&nbsp;what the calc")
+			.append(" shows</font></td></tr>");
 		if (specDps > 0)
 		{
-			sum.append(" + spec ").append(String.format("%.2f", specDps));
+			sum.append("<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;")
+				.append(String.format("%.2f", specDps)).append("</td><td></td></tr>");
 		}
 		if (thrallsDps > 0)
 		{
-			sum.append(" + thralls ").append(String.format("%.2f", thrallsDps));
+			sum.append("<tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;")
+				.append(String.format("%.2f", thrallsDps)).append("</td><td></td></tr>");
 		}
-		return sum.append("</html>").toString();
+		sum.append("<tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>")
+			.append(String.format("%.2f", set + specDps + thrallsDps))
+			.append("</b></td><td></td></tr>")
+			.append("</table></html>");
+		return sum.toString();
 	}
 
 	private Map<String, Object> lastRenderedPage;
