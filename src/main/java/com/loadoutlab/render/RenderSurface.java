@@ -622,7 +622,8 @@ public class RenderSurface
 			// The computing notice sits BELOW everything the pending page
 			// shows (field report: between the chips and the mob list was weird).
 			waitingSlot = Ui.panel(new BorderLayout());
-			waitingSlot.add(new javax.swing.JLabel("Computing..."), BorderLayout.CENTER);
+			waitingSlot.add(new javax.swing.JLabel("Computing...",
+				javax.swing.SwingConstants.CENTER), BorderLayout.CENTER);
 			waitingSlot.setVisible(false);
 			resultsArea.add(waitingSlot);
 			root.add(resultsArea, BorderLayout.CENTER);
