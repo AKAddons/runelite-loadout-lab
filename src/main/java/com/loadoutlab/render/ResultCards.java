@@ -719,10 +719,7 @@ public class ResultCards
 			"Add a supply to this mob's bank filter"));
 		card.add(Box.createVerticalStrut(4));
 		// Centred, not left() - field ask 2026-08-20.
-		JPanel trioHost = new JPanel(new BorderLayout());
-		trioHost.setBackground(CARD);
-		trioHost.add(trioRow, BorderLayout.CENTER);
-		card.add(trioHost);
+		card.add(centre(trioRow));
 		card.add(Box.createVerticalStrut(4));
 		javax.swing.JToggleButton showBank = new javax.swing.JToggleButton("Show in bank");
 		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
@@ -790,7 +787,7 @@ public class ResultCards
 			});
 			bankRow.add(filterBank);
 		}
-		card.add(left(bankRow));
+		card.add(centre(bankRow));
 		String noteText = Model.str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();
 		javax.swing.JTextField note = new javax.swing.JTextField(noteText, 18);
@@ -803,7 +800,7 @@ public class ResultCards
 		card.add(Box.createVerticalStrut(4));
 		if (hasNote)
 		{
-			card.add(left(note));
+			card.add(centre(note));
 		}
 		else
 		{
@@ -812,7 +809,7 @@ public class ResultCards
 			JLabel addNote = Ui.label("+ note", new Color(120, 115, 95));
 			addNote.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 			addNote.setToolTipText("Add a note for this mob");
-			JPanel noteHost = left(addNote);
+			JPanel noteHost = centre(addNote);
 			Ui.onClick(addNote, () ->
 			{
 				noteHost.removeAll();
@@ -1767,6 +1764,16 @@ public class ResultCards
 		JPanel row = new JPanel(new BorderLayout());
 		row.setBackground(CARD);
 		row.add(inner, BorderLayout.WEST);
+		return row;
+	}
+
+	/** left()'s centred sibling (field asks 2026-08-20) - FlowLayout so
+	 * the inner keeps its preferred size instead of stretching. */
+	private static JPanel centre(javax.swing.JComponent inner)
+	{
+		JPanel row = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+		row.setBackground(CARD);
+		row.add(inner);
 		return row;
 	}
 }
