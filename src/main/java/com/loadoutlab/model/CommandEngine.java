@@ -240,6 +240,59 @@ public class CommandEngine
 	 * the panel leaves. */
 	private final com.loadoutlab.command.CommandHistory history =
 		new com.loadoutlab.command.CommandHistory();
+	/** Page snapshots aligned with the history stacks: undo restores
+	 * the page you were LOOKING AT instead of recomputing it (field
+	 * report 2026-08-20: undo flashed the stale result over the
+	 * loader, then recomputed an answer that was already on screen).
+	 * The empty map marks "no page yet"; deeper than the cap falls
+	 * back to a recompute. */
+	private final java.util.ArrayDeque<Map<String, Object>> undoPages =
+		new java.util.ArrayDeque<>();
+	private final java.util.ArrayDeque<Map<String, Object>> redoPages =
+		new java.util.ArrayDeque<>();
+	private static final int SNAPSHOT_CAP = 32;
+	private boolean restoringSnapshot;
+
+	/** A page the snapshot restore may publish: present, and NOT a
+	 * pending (mid-compute) page - restoring one would freeze the
+	 * loader with no compute to finish it. */
+	private static boolean restorable(Map<String, Object> page)
+	{
+		if (page == null || page.isEmpty())
+		{
+			return false;
+		}
+		Object entries = page.get("entries");
+		if (entries instanceof List)
+		{
+			for (Object entry : (List<?>) entries)
+			{
+				if (entry instanceof Map && Boolean.TRUE.equals(((Map<?, ?>) entry).get("pending")))
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/** history.execute plus the page snapshot - every recorded command
+	 * routes through here. */
+	private boolean record(com.loadoutlab.command.Command cmd)
+	{
+		Map<String, Object> before = link.lastPage();
+		boolean ok = history.execute(cmd);
+		if (ok)
+		{
+			undoPages.push(restorable(before) ? before : java.util.Collections.emptyMap());
+			while (undoPages.size() > SNAPSHOT_CAP)
+			{
+				undoPages.removeLast();
+			}
+			redoPages.clear();
+		}
+		return ok;
+	}
 
 	public CommandEngine(LoadoutData data, PageState state, Compute compute, CompanionLink link)
 	{
@@ -331,7 +384,7 @@ public class CommandEngine
 				List<MonsterStats> combined = new java.util.ArrayList<>(current);
 				combined.add(added);
 				Object[] prevSel = state.selectionSnapshot();
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -373,7 +426,7 @@ public class CommandEngine
 				List<MonsterStats> remaining = new java.util.ArrayList<>(current);
 				remaining.remove(at);
 				Object[] prevSel = state.selectionSnapshot();
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -427,7 +480,7 @@ public class CommandEngine
 					return applyParam(key, next);
 				}
 				String label = PARAM_LABELS.getOrDefault(key, key);
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -554,7 +607,7 @@ public class CommandEngine
 				// one live stack) - the classic recorded into the plugin's
 				// stack, orphaned since the merge-back, so Back skipped
 				// every exclude/sim (field report 2026-08-20).
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -635,7 +688,7 @@ public class CommandEngine
 					return true;
 				}
 				String kind = prayer ? "Prayer" : "Boost";
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -682,7 +735,7 @@ public class CommandEngine
 				String what = labelArg instanceof String ? (String) labelArg : "item";
 				int mobId = mob.getId();
 				String mobName = mob.getName();
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					@Override
 					public boolean apply()
@@ -741,7 +794,7 @@ public class CommandEngine
 				int mobId = mob.getId();
 				String mobName = mob.getName();
 				String command = name;
-				return history.execute(new com.loadoutlab.command.Command()
+				return record(new com.loadoutlab.command.Command()
 				{
 					private void run(String cmd)
 					{
@@ -927,12 +980,52 @@ public class CommandEngine
 			case "undo":
 			case "redo":
 			{
-				// The command's own publish runs BEFORE CommandHistory moves
-				// it between stacks - republish after, so the page's history
-				// node (canUndo/canRedo/labels) reflects the settled stacks.
-				boolean ok = "undo".equals(name) ? history.undo() : history.redo();
-				if (ok)
+				boolean isUndo = "undo".equals(name);
+				Map<String, Object> current = link.lastPage();
+				// The revert/apply bodies call recompute()/republish() -
+				// suppressed: the snapshot IS the result of the state we
+				// are returning to, so nothing needs computing.
+				restoringSnapshot = true;
+				boolean ok;
+				try
 				{
+					ok = isUndo ? history.undo() : history.redo();
+				}
+				finally
+				{
+					restoringSnapshot = false;
+				}
+				if (!ok)
+				{
+					return false;
+				}
+				java.util.ArrayDeque<Map<String, Object>> from = isUndo ? undoPages : redoPages;
+				java.util.ArrayDeque<Map<String, Object>> to = isUndo ? redoPages : undoPages;
+				Map<String, Object> snapshot = from.isEmpty() ? null : from.pop();
+				to.push(restorable(current) ? current : java.util.Collections.<String, Object>emptyMap());
+				if (restorable(snapshot))
+				{
+					// Instant restore: the captured page, but the CURRENT
+					// view params (lens/tab hops since are not actions and
+					// must survive the jump) and a fresh history node.
+					Object entries = snapshot.get("entries");
+					if (entries instanceof List)
+					{
+						for (Object entryNode : (List<?>) entries)
+						{
+							if (entryNode instanceof Map)
+							{
+								((Map<String, Object>) entryNode).put("params", state.paramsNode());
+							}
+						}
+					}
+					link.publishPage(withHistory(snapshot));
+				}
+				else
+				{
+					// Older than the snapshot window (or pre-first-page):
+					// the classic path - recompute and republish.
+					recompute();
 					republish();
 				}
 				return ok;
@@ -954,6 +1047,10 @@ public class CommandEngine
 	 * thrash through clear/mascot/rebuild on every settle). */
 	private void recompute(boolean silent)
 	{
+		if (restoringSnapshot)
+		{
+			return;
+		}
 		MonsterStats mob = state.mob();
 		List<MonsterStats> roster = state.rosterMobs();
 		RosterCompute rosterPath = rosterCompute;
@@ -1155,6 +1252,10 @@ public class CommandEngine
 
 	private void republish()
 	{
+		if (restoringSnapshot)
+		{
+			return;
+		}
 		if (!javax.swing.SwingUtilities.isEventDispatchThread())
 		{
 			javax.swing.SwingUtilities.invokeLater(this::republish);
@@ -1255,7 +1356,7 @@ public class CommandEngine
 	{
 		Object[] prev = state.selectionSnapshot();
 		boolean hadSelection = state.hasSelection();
-		return history.execute(new com.loadoutlab.command.Command()
+		return record(new com.loadoutlab.command.Command()
 		{
 			@Override
 			public boolean apply()

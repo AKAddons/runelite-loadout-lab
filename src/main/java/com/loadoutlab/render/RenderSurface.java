@@ -66,6 +66,14 @@ public class RenderSurface
 			waitingSlot.setVisible(isComputing);
 			waitingSlot.revalidate();
 			waitingSlot.repaint();
+			if (!isComputing)
+			{
+				// Remount whatever page landed during the compute - and
+				// reset the identical-page skip so the reveal cannot be
+				// deduped away.
+				lastRenderedPage = null;
+				repaint();
+			}
 		});
 	}
 
@@ -921,7 +929,11 @@ public class RenderSurface
 			rosterArea.setVisible(roster != null);
 		}
 		cardArea.removeAll();
-		JPanel rendered = page == null ? null : cards.render(page);
+		// Mid-compute publishes keep the stage CLEAR (field report
+		// 2026-08-20: undo drew the stale result above the loader) -
+		// the controls above still rebuild; the reveal happens on
+		// setComputing(false).
+		JPanel rendered = page == null || isComputing ? null : cards.render(page);
 		if (rendered != null && rendered.getComponentCount() > 0)
 		{
 			cardArea.add(rendered);

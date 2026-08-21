@@ -48,12 +48,19 @@ class CommandEngineTest
 	private static final class CaptureLink extends CompanionLink
 	{
 		Map<String, Object> published;
-
+		private Map<String, Object> last;
 
 		@Override
 		public void publishPage(Map<String, Object> page)
 		{
 			published = page;
+			last = page;
+		}
+
+		@Override
+		public Map<String, Object> lastPage()
+		{
+			return last;
 		}
 	}
 
@@ -301,6 +308,49 @@ class CommandEngineTest
 		assertTrue(engine.execute("undo", Map.of()));
 		assertEquals(4, captured.size());
 		assertTrue(captured.get(3).startsWith("removeExclude:"), captured.get(3));
+	}
+
+	@Test
+	@DisplayName("undo restores the captured page instantly - no recompute")
+	void undoRestoresSnapshotWithoutComputing()
+	{
+		CaptureLink link = new CaptureLink();
+		java.util.concurrent.atomic.AtomicInteger computes = new java.util.concurrent.atomic.AtomicInteger();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) -> computes.incrementAndGet(),
+			link);
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
+		engine.onResults(demon, Map.of());
+		flushEdt();
+		Map<String, Object> pageA = link.published;
+		assertNotNull(pageA);
+
+		assertTrue(engine.execute("set-param", Map.of("param", "onTask", "value", true)));
+		int computesAfterParam = computes.get();
+		engine.onResults(demon, Map.of());
+		flushEdt();
+		link.published = null;
+
+		assertTrue(engine.execute("undo", Map.of()));
+		flushEdt();
+		assertEquals(computesAfterParam, computes.get(),
+			"undo publishes the snapshot - it never recomputes");
+		assertNotNull(link.published, "the snapshot page republished");
+		assertEquals(pageA.get("entries"), link.published.get("entries"),
+			"the restored page is the one captured before the command");
+		assertEquals(Boolean.FALSE, state.paramsNode().get("onTask"),
+			"the state reverted with it");
+
+		link.published = null;
+		assertTrue(engine.execute("redo", Map.of()));
+		flushEdt();
+		assertEquals(computesAfterParam, computes.get(),
+			"redo restores the forward snapshot without computing");
+		assertNotNull(link.published);
+		assertEquals(Boolean.TRUE, state.paramsNode().get("onTask"));
 	}
 
 	@Test
