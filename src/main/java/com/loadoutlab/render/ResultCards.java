@@ -1640,28 +1640,10 @@ public class ResultCards
 				: slot == null || gear == null ? null : Model.map(gear, slot);
 			if (item == null)
 			{
-				// Empty slots stay QUIET (field ask 2026-08-15: no hard
-				// blank squares) - a faint centred dot marks the position
-				// without drawing a box. Painted, not a glyph (Tahoe tofu).
-				JLabel blank = new JLabel(new javax.swing.Icon()
-				{
-					public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y)
-					{
-						g.setColor(new Color(70, 70, 70));
-						g.fillOval(x, y, 3, 3);
-					}
-
-					public int getIconWidth()
-					{
-						return 3;
-					}
-
-					public int getIconHeight()
-					{
-						return 3;
-					}
-				});
-				blank.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+				// Empty slots are truly EMPTY (field ask 2026-08-21,
+				// superseding the 2026-08-15 faint dot): a sized blank
+				// keeps the cross geometry, nothing draws.
+				JLabel blank = new JLabel();
 				blank.setPreferredSize(new java.awt.Dimension(36, 36));
 				grid.add(blank);
 			}
