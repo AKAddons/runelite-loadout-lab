@@ -147,6 +147,151 @@ class CommandEngineTest
 	}
 
 	@Test
+	@DisplayName("mob-scoped exclude/sim work on a roster via the lensed mob")
+	void mobScopedAddsWorkOnRosters()
+	{
+		// The lensedMob-fallback family, third member (field report
+		// 2026-08-20: the card trio's add-by-search silently no-oped on
+		// the Maggot King roster): set-note and the REMOVE commands got
+		// the fallback earlier; exclude-for-mob/sim-for-mob still read
+		// bare state.mob(), null on rosters.
+		java.util.List<String> captured = new java.util.ArrayList<>();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			new CaptureLink());
+		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
+			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			});
+		engine.setStoreOps(new CommandEngine.StoreOps()
+		{
+			public boolean toggleExclusion(int itemId)
+			{
+				return true;
+			}
+
+			public boolean toggleSim(int itemId)
+			{
+				return true;
+			}
+
+			public void toggleAlwaysFilter(int itemId)
+			{
+			}
+
+			public void setSupplyDefault(String category, String choice)
+			{
+			}
+
+			public void pin(int monsterId, String slot, int itemId)
+			{
+			}
+
+			public void unpin(int monsterId, String slot)
+			{
+			}
+
+			public void showInBank(java.util.Set<Integer> itemIds)
+			{
+			}
+
+			public void filterBank(java.util.Set<Integer> itemIds, int[] layout)
+			{
+			}
+
+			public String pinnedSpell(int monsterId)
+			{
+				return null;
+			}
+
+			public int pinnedSpec(int monsterId)
+			{
+				return -1;
+			}
+
+			public List<Map<String, Object>> mobExclusions(int monsterId)
+			{
+				return java.util.Collections.emptyList();
+			}
+
+			public List<Map<String, Object>> mobSims(int monsterId)
+			{
+				return java.util.Collections.emptyList();
+			}
+
+			public List<Map<String, Object>> mobFilters(int monsterId)
+			{
+				return java.util.Collections.emptyList();
+			}
+
+			public void setPinnedSpell(int monsterId, String spellName)
+			{
+			}
+
+			public void setPinnedSpec(int monsterId, int itemId)
+			{
+			}
+
+			public String note(int monsterId)
+			{
+				return null;
+			}
+
+			public void setNote(int monsterId, String note)
+			{
+			}
+
+			public void excludeForMob(int monsterId, String scope, int itemId)
+			{
+				captured.add("exclude:" + monsterId + ":" + itemId);
+			}
+
+			public void simForMob(int monsterId, int itemId)
+			{
+				captured.add("sim:" + monsterId + ":" + itemId);
+			}
+
+			public void removeMobExclusion(int monsterId, String scope, int itemId)
+			{
+			}
+
+			public void removeMobSim(int monsterId, int itemId)
+			{
+			}
+
+			public void addMobFilter(int monsterId, int itemId)
+			{
+			}
+
+			public void removeMobFilter(int monsterId, String scope, int itemId)
+			{
+			}
+
+			public void setSupplyOverride(int profileId, String category, String choice)
+			{
+			}
+
+			public Map<String, String> supplyOverrides(int profileId)
+			{
+				return java.util.Collections.emptyMap();
+			}
+		});
+		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")),
+			"the roster opens");
+		assertTrue(engine.execute("exclude-for-mob", Map.of("itemId", 4151)),
+			"exclude-for-mob must reach the lensed mob on a roster");
+		assertTrue(engine.execute("sim-for-mob", Map.of("itemId", 11832)),
+			"sim-for-mob must reach the lensed mob on a roster");
+		assertEquals(2, captured.size());
+		assertTrue(captured.get(0).startsWith("exclude:"));
+		assertTrue(captured.get(1).startsWith("sim:"));
+	}
+
+	@Test
 	@DisplayName("engine commands are undoable and history rides the page")
 	void undoRedo()
 	{

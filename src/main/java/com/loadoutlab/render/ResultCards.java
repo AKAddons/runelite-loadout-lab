@@ -718,7 +718,11 @@ public class ResultCards
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
 			"Add a supply to this mob's bank filter"));
 		card.add(Box.createVerticalStrut(4));
-		card.add(left(trioRow));
+		// Centred, not left() - field ask 2026-08-20.
+		JPanel trioHost = new JPanel(new BorderLayout());
+		trioHost.setBackground(CARD);
+		trioHost.add(trioRow, BorderLayout.CENTER);
+		card.add(trioHost);
 		card.add(Box.createVerticalStrut(4));
 		javax.swing.JToggleButton showBank = new javax.swing.JToggleButton("Show in bank");
 		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");

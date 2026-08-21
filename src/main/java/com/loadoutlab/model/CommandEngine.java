@@ -556,7 +556,10 @@ public class CommandEngine
 			case "sim-for-mob":
 			{
 				StoreOps ops = stores;
-				MonsterStats mob = state.mob();
+				// Rosters have no state.mob() - the lensed row is the mob
+				// (the set-note lesson, third member; field report
+				// 2026-08-20: the card trio's adds no-oped on rosters).
+				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
 				Object itemId = args == null ? null : args.get("itemId");
 				if (ops == null || mob == null || !(itemId instanceof Number))
 				{
