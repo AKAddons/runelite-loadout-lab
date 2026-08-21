@@ -721,7 +721,7 @@ public class RenderSurface
 			.append(" shortlink</font><br><br>")
 			.append("<table cellpadding='1' cellspacing='0'>")
 			.append("<tr><td>set</td><td align='right'>&nbsp;&nbsp;")
-			.append(String.format("%.2f", set))
+			.append(String.format("%.3f", set))
 			.append("</td><td><font color='#969696'>&nbsp;&nbsp;what the calc")
 			.append(" shows</font></td></tr>");
 		if (specDps > 0)

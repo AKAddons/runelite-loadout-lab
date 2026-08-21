@@ -1716,7 +1716,7 @@ public class ResultCards
 				+ (cellSpecPinned ? " <font color='#969696'>pinned</font>" : "") + priceNote
 				+ "<br><br><table cellpadding='1' cellspacing='0'>"
 				+ "<tr><td>set</td><td align='right'>&nbsp;&nbsp;"
-				+ String.format("%.2f", cellSetDps)
+				+ String.format("%.3f", cellSetDps)
 				+ "</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc"
 				+ " shows</font></td></tr>"
 				+ "<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;"
