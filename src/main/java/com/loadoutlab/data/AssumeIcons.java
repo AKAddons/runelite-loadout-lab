@@ -39,10 +39,22 @@ public final class AssumeIcons
 	{
 	}
 
-	/** Prayer-book sprite id for this prayer name, or -1. */
+	/** Prayer-book sprite id for this prayer name, or -1. A compound
+	 * picker label ("Ultimate Strength + Incredible Reflexes") wears its
+	 * LEAD prayer's icon (field ask 2026-08-20: no letter fallbacks). */
 	public static int prayerSprite(String name)
 	{
-		return PRAYERS.getOrDefault(name, -1);
+		Integer exact = PRAYERS.get(name);
+		if (exact != null)
+		{
+			return exact;
+		}
+		int plus = name == null ? -1 : name.indexOf(" + ");
+		if (plus > 0)
+		{
+			return PRAYERS.getOrDefault(name.substring(0, plus), -1);
+		}
+		return -1;
 	}
 
 	/** Skill icon for a combat style - melee wears the Attack icon. Sprites,
