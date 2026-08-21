@@ -348,6 +348,17 @@ public final class DataService
 				attributes.add("burn_immune");
 			}
 
+			// The Maggot King fights at range until ~65% hp - melee CANNOT
+			// land on the Far phase (wiki: "cannot be attacked with melee
+			// until it falls below ~980 hitpoints"; field report 2026-08-20:
+			// Far recommended a melee set). The corpus carries no attribute
+			// for it, so the marker rides here like burn_immune.
+			if ("Maggot King".equals(string(row, "name"))
+				&& "Far".equalsIgnoreCase(string(row, "version")))
+			{
+				attributes.add("immune_melee");
+			}
+
 			// The ejected core is a 1x1 target - the wiki row carries the
 			// Warden's 5x5 frame, which handed the crystal halberd's sweep a
 			// phantom second hit and outranked the DDS dump (field report

@@ -66,7 +66,7 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(23, groups.size());
+		assertEquals(24, groups.size());
 		assertEquals(4, byName("Yama").getMobs().size());
 		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
 		assertEquals(3, byName("The Hueycoatl").getMobs().size());
@@ -74,6 +74,8 @@ class MonsterGroupsTest
 		assertEquals(5, byName("Nex").getMobs().size());
 		// 2 near + 2 out-of-reach phase forms + 2 elementals (2026-08-10).
 		assertEquals(6, byName("Royal Titans").getMobs().size());
+		// Far (out of reach) + Nearby + Roaring (2026-08-20).
+		assertEquals(3, byName("Maggot King").getMobs().size());
 		assertEquals(9, byName("Fortis Colosseum").getMobs().size());
 		assertEquals(4, byName("The Gauntlet").getMobs().size());
 		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());

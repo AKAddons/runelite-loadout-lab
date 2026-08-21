@@ -769,6 +769,29 @@
   "note": "The duo and their elementals."
  },
  {
+  "name": "Maggot King",
+  "members": [
+   {
+    "name": "Maggot King",
+    "version": "Far"
+   },
+   {
+    "name": "Maggot King",
+    "version": "Nearby"
+   },
+   {
+    "name": "Maggot King",
+    "version": "Roaring"
+   }
+  ],
+  "aliases": [
+   "maggot king",
+   "maggot",
+   "mk"
+  ],
+  "note": "Ranged or magic until 65% hp - melee lands when he closes in."
+ },
+ {
   "name": "Yama",
   "members": [
    {
