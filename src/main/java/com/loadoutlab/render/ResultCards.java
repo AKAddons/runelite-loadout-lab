@@ -1710,16 +1710,23 @@ public class ResultCards
 		String tipBody;
 		if ("spec".equals(slot))
 		{
-			double shown = cellSetDps + cellSpecDps + cellThrallsDps;
-			tipBody = name + " (spec)"
-				+ (cellSpecPinned ? " - pinned" : "") + priceNote
-				+ "<br>shown " + String.format("%.2f", shown)
-				+ " = set " + String.format("%.2f", cellSetDps)
-				+ " + spec " + String.format("%.2f", cellSpecDps)
+			// The same ledger shape as the Wiki calc chip's tooltip
+			// (field ask 2026-08-21) - one fact per row.
+			tipBody = "<b>" + name + " (spec)</b>"
+				+ (cellSpecPinned ? " <font color='#969696'>pinned</font>" : "") + priceNote
+				+ "<br><br><table cellpadding='1' cellspacing='0'>"
+				+ "<tr><td>set</td><td align='right'>&nbsp;&nbsp;"
+				+ String.format("%.2f", cellSetDps)
+				+ "</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc"
+				+ " shows</font></td></tr>"
+				+ "<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;"
+				+ String.format("%.2f", cellSpecDps) + "</td><td></td></tr>"
 				+ (cellThrallsDps > 0
-					? " + thralls " + String.format("%.2f", cellThrallsDps) : "")
-				+ "<br>the wiki calc shows the set number: "
-				+ String.format("%.2f", cellSetDps);
+					? "<tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;"
+						+ String.format("%.2f", cellThrallsDps) + "</td><td></td></tr>" : "")
+				+ "<tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>"
+				+ String.format("%.2f", cellSetDps + cellSpecDps + cellThrallsDps)
+				+ "</b></td><td></td></tr></table>";
 		}
 		else
 		{
