@@ -1813,6 +1813,14 @@ public class ResultCards
 				(pickedId, pickedName) -> commands.send("sim-for-mob",
 					Map.of("itemId", pickedId, "label", pickedName))));
 			menu.add(simMob);
+			// The classic GLOBAL sibling (field report 2026-08-21: it fell
+			// off in the merge-back - only the per-mob scope survived).
+			javax.swing.JMenuItem simAll = new javax.swing.JMenuItem("Sim for all mobs (search)...");
+			simAll.setToolTipText("Search an item and sim it as owned everywhere");
+			simAll.addActionListener(e -> picker.search("Sim as owned",
+				(pickedId, pickedName) -> commands.send("toggle-sim",
+					Map.of("itemId", pickedId, "label", pickedName))));
+			menu.add(simAll);
 			javax.swing.JMenuItem pin = new javax.swing.JMenuItem("Pin " + name);
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
 			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
