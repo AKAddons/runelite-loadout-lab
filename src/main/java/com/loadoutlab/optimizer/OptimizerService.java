@@ -383,7 +383,12 @@ public class OptimizerService
 	private static String optimizeKey(MonsterStats mob, CombatStyle style, boolean game,
 		ComputeContext ctx)
 	{
-		return mob.getId() + "|" + mob.getToaInvocationLevel() + "|" + style.name() + "|" + (game ? "g" : "o")
+		// getId() ALONE collides: a boss's versions share one id (Maggot
+		// King's Far/Nearby/Roaring, field report 2026-08-20 - Nearby's
+		// cached melee answer was served for the melee-IMMUNE Far row).
+		// The version string is the missing discriminator.
+		return mob.getId() + "|" + mob.getVersion() + "|" + mob.getToaInvocationLevel()
+			+ "|" + style.name() + "|" + (game ? "g" : "o")
 			+ "|" + ctxKey(ctx)
 			+ "|" + dreamsFor(ctx, mob).hashCode()
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
@@ -482,7 +487,10 @@ public class OptimizerService
 		// The invocation level scales the monster's defence but not its id
 		// (found 2026-08-09: optimizeKey carried it, this key did not, so
 		// flipping the Invocation chip served the previous level's cache).
-		return monster.getId() + "|" + monster.getToaInvocationLevel() + "|" + ctxKey(ctx)
+		// The VERSION is the same lesson (found 2026-08-20): a boss's
+		// versions share one id, so Far/Nearby/Roaring collided.
+		return monster.getId() + "|" + monster.getVersion() + "|" + monster.getToaInvocationLevel()
+			+ "|" + ctxKey(ctx)
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps + "|" + ctx.pinnedSpec;
 	}
 
