@@ -774,9 +774,9 @@ public class LoadoutLabPlugin extends Plugin
 						mobProfiles.setSupply(profileId, category, choice);
 					}
 				});
-			// The one-surface host (ADR-0008 Path C): the model-driven
-			// renderer is the panel; an external Companion's
-			// surface-register can still take the slot over.
+			// The one-surface host: the model-driven renderer IS the
+			// panel. (No cross-plugin registration exists any more - the
+			// companion split was retired in the 2026-08 merge-back.)
 			companionHost = new com.loadoutlab.ui.CompanionHost();
 			navButton = NavigationButton.builder()
 					.tooltip("Loadout Lab")

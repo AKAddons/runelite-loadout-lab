@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by [ADR-0009](0009-merge-back-single-plugin.md)
 date: 2026-08-09
 decision-makers: ajkatz
 ---

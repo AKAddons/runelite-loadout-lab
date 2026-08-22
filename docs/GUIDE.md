@@ -63,8 +63,8 @@ flip the slayer toggle, search Vorkath - back, back, back retraces
 each of those in turn. Steps cover: monster selections; the toggles
 (F2P, slayer task, wilderness, low-risk, Protect Item); the spellbook
 and risk-cap dropdowns; the upgrade budget; the antifire flip; and
-every edit (exclusions, pins, notes, simmed items, stored-elsewhere
-marks, protect-only flags, pinned spells, trip supplies). Hover for
+every edit (exclusions, pins, notes, simmed items, protect-only
+flags, pinned spells, trip supplies). Hover for
 exactly what's next ("Back: Spellbook: Ancient").
 Scan-driven changes (bank snapshots, storage captures) are never
 steps - only what you deliberately did. History is per-session and
@@ -373,8 +373,9 @@ storages it tracks are also counted as owned - useful for death storage
 installing Loadout Lab. Loadout Lab asks DWMS directly over the
 PluginMessage bus and gets its exact tracked items back, storage by
 storage, feeding both ownership and the location hints. The
-stored-elsewhere list remains the manual override, and a muted panel
-line shows how many items came in this way.
+simmed-items list remains the manual override (it absorbed the old
+"stored elsewhere" list in 2026-08), and a muted panel line shows how
+many items came in this way.
 
 
 ### Community Discord

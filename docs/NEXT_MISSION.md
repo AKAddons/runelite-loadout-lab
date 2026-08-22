@@ -1,5 +1,11 @@
 # Next mission: UI polish to classic parity
 
+> **HISTORICAL (2026-08-12).** Written during the core/companion split,
+> which the hub rejected; the merge-back retired the companion and this
+> plugin is single again. The two-plugin ship order below never
+> happened and must not be followed. The remaining ITEMS are still a
+> fair polish backlog - read them as one-plugin work.
+
 Andrew's list, 2026-08-12 (end of the Core/UI split session). All of
 this is COMPANION-ONLY renderer work under the end-state rule -
 Core's renderer is frozen and Core grows only facts (sprite ids,

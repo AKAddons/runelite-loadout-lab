@@ -56,9 +56,8 @@ At the end of your search, filter the kit in your bank and get going.
 
 1. Open your bank once so the plugin can learn what you own.
 2. Search a monster in the sidebar panel and pick a style card.
-3. Right-click items for exclusions, simmed items, and stored-elsewhere
-   marks; use the toggles for slayer tasks, spellbook locks, and
-   wilderness risk.
+3. Right-click items to exclude them or sim them as owned; use the
+   chips for slayer tasks, spellbook locks, and wilderness risk.
 
 ## Feature guide
 

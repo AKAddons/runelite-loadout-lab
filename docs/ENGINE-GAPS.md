@@ -1,7 +1,27 @@
 # Engine gaps & known issues (vs the wiki DPS calculator)
 
 From the 2026-07-05 vendoring analysis of guccifurs/best-dps, updated as
-fixes land. Items 1-4 are correctness bugs to fix FIRST.
+fixes land.
+
+## Current state (2026-08-22, 68 harness vectors)
+
+60 of 68 vectors agree with the official calculator within 0.5%; most
+are exact. What is still open, largest first - every one is pinned by a
+vector, so none can drift further unnoticed:
+
+| Vector | Delta | Note |
+|---|---|---|
+| `kodai-firesurge-bloodmoon` | -53% | the moons MAGIC family; we under-price, so it never wins a seat it should not |
+| `barronite-greygolem` | +15% | a deliberate wiki-vs-official disagreement (see below) |
+| `eyeofayak-td` / `bofa-td` / `kodai-watersurge-td` / `shadow-td` | +2.6 to +3.4% | the Tormented Demon elemental family |
+| `purging-demonbane-td` / `purging-darkdemonbane-duke` | +0.7 to +0.9% | demonbane spells: we scale the max and roll uniform, they transform every roll |
+
+Everything else - flat armour (both signs), the twisted bow, twinflame,
+Inquisitor's, the quiver, salve/avarice, autocast stance, demonbane
+vulnerability, sanguinesti - is 0.0-0.3%.
+
+The sanguinesti gap (-11.2%) and the tbow+quiver gap (+0.7%) that used
+to sit here are CLOSED (2026-08-22).
 
 ## Verification harness (the dispute resolver)
 
