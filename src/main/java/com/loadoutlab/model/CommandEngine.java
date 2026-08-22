@@ -1804,6 +1804,15 @@ public class CommandEngine
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
+		if (Boolean.TRUE.equals(params.get("spellbookSwap")))
+		{
+			// Supplies only (field ask 2026-08-22): the trip carries the
+			// runes to swap books and keep Vengeance up. Vengeance does
+			// return damage, but modelling that is its own problem - this
+			// is purely "bring more runes".
+			addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");
+			addUtilityRunes(out, "Vengeance", "Vengeance (per cast)");
+		}
 		java.util.function.BooleanSupplier combo = comboRunes;
 		return combo != null && combo.getAsBoolean()
 			? com.loadoutlab.data.SpellRunes.combineCombos(out) : out;
@@ -1919,6 +1928,9 @@ public class CommandEngine
 			}
 		}
 		options.put("prayerSprites", prayerSprites);
+		// Spellbook Swap is 96 Magic (Vengeance 94) - offer it when the
+		// player can actually reach the level, boosts included.
+		options.put("spellbookSwapAvailable", magicLevel + 5 >= 96);
 		Map<String, Object> boostItems = new java.util.LinkedHashMap<>();
 		for (Object list : boosts.values())
 		{

@@ -333,6 +333,16 @@
    "fire": 10,
    "blood": 5,
    "cosmic": 1
+  },
+  "Vengeance": {
+   "earth": 10,
+   "astral": 4,
+   "death": 2
+  },
+  "Spellbook Swap": {
+   "astral": 3,
+   "cosmic": 2,
+   "law": 1
   }
  }
 }

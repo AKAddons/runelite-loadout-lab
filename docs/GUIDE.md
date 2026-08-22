@@ -151,6 +151,17 @@ actually do.
 
 ![Assumption pickers](img/assume-pickers.png)
 
+### Spellbook Swap and Vengeance
+
+Click the spellbook plate on a card to bring the runes for a Spellbook
+Swap and a Vengeance cast, on top of whatever thralls and Death Charge
+already ask for. The option appears only if you can reach 96 Magic with
+a boost.
+
+This changes the trip's runes and nothing else - Vengeance does return
+damage, but modelling that honestly is its own problem, so no DPS
+number moves.
+
 ### Thralls and Death Charge
 
 Arceuus support, modeled honestly. The Thralls chip appears when your

@@ -509,6 +509,22 @@
       ],
       "since": "0.4.0",
       "notes": "Returned with the 0.4.0 network re-add. Each roster row carries the wiki monster picture: the file name comes from the bundled corpus (per-form for versioned mobs), so a thumbnail is exactly ONE request to Special:FilePath, cached. Config-gated under Connections (fetchMonsterIcons, default on) - off means no wiki requests and text-only rows. No dedicated screenshot."
+    },
+    {
+      "id": "spellbook-swap-runes",
+      "title": "Spellbook Swap + Vengeance runes",
+      "group": "Combat readiness",
+      "anchor": "spellbook-swap-and-vengeance",
+      "code": [
+        "model/CommandEngine.java",
+        "model/PageState.java",
+        "render/ResultCards.java"
+      ],
+      "tests": [
+        "model/SpellbookSwapTest.java"
+      ],
+      "since": "0.4.0",
+      "notes": "Click the card spellbook plate to bring the runes for a Spellbook Swap (96 Magic, 3 astral / 2 cosmic / 1 law) and Vengeance (94 Magic, 10 earth / 4 astral / 2 death), on top of whatever thralls and Death Charge already ask for. Offered only when the player can reach 96 Magic with a boost. SUPPLIES ONLY - the damage Vengeance returns is deliberately unmodelled, so no dps number moves. No dedicated screenshot."
     }
   ]
 }

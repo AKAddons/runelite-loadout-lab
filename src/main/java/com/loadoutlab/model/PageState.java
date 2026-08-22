@@ -30,6 +30,9 @@ public class PageState
 	/** Whether a cap is actually in force - never inferred from the gp
 	 * value, which collides with the engine's no-cap sentinel. */
 	private boolean riskCapped;
+	/** Bringing Spellbook Swap + Vengeance on the trip. Supplies only -
+	 * the DPS Vengeance returns is deliberately not modelled. */
+	private boolean spellbookSwap;
 	/** 0 = shield required, 1 = regular antifire, 2 = super antifire -
 	 * the classic tri-state; Detect resolves it at selection time. */
 	private int antifireMode;
@@ -53,7 +56,8 @@ public class PageState
 	public static boolean isViewParam(String param)
 	{
 		return "viewingBis".equals(param) || "selectedTab".equals(param)
-			|| "thralls".equals(param) || "lensIndex".equals(param);
+			|| "thralls".equals(param) || "lensIndex".equals(param)
+			|| "spellbookSwap".equals(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -185,6 +189,9 @@ public class PageState
 			case "thralls":
 				thralls = Boolean.TRUE.equals(value);
 				return true;
+			case "spellbookSwap":
+				spellbookSwap = Boolean.TRUE.equals(value);
+				return true;
 			case "lensIndex":
 				lensIndex = asInt(value, 0);
 				return true;
@@ -212,6 +219,7 @@ public class PageState
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);
+		node.put("spellbookSwap", spellbookSwap);
 		node.put("antifireMode", antifireMode);
 		node.put("deathCharge", deathCharge);
 		node.put("specWeapon", specWeapon);

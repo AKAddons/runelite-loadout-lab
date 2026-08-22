@@ -99,7 +99,7 @@ class UndoIntegrityTest
 			{
 			},
 			link);
-		engine.setStoreOps(new RefusingStore());
+		engine.setStoreOps(new TestStoreOps(1));
 
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		engine.onResults(data.searchMonsters("abyssal demon", 1).get(0), Map.of());
@@ -144,121 +144,6 @@ class UndoIntegrityTest
 			"undo must take the seeded params back with the selection");
 	}
 
-	/** Accepts the first toggle, refuses every later one - so the
-	 * self-inverse revert returns false and the entry is dropped. */
-	private static final class RefusingStore implements CommandEngine.StoreOps
-	{
-		private int calls;
-
-		public boolean toggleExclusion(int itemId)
-		{
-			return calls++ == 0;
-		}
-
-		public boolean toggleSim(int itemId)
-		{
-			return calls++ == 0;
-		}
-
-		public void toggleAlwaysFilter(int itemId)
-		{
-		}
-
-		public void setSupplyDefault(String category, String choice)
-		{
-		}
-
-		public void pin(int monsterId, String slot, int itemId)
-		{
-		}
-
-		public void unpin(int monsterId, String slot)
-		{
-		}
-
-		public void showInBank(java.util.Set<Integer> itemIds)
-		{
-		}
-
-		public void filterBank(java.util.Set<Integer> itemIds, int[] layout)
-		{
-		}
-
-		public String pinnedSpell(int monsterId)
-		{
-			return null;
-		}
-
-		public void setPinnedSpell(int monsterId, String spellName)
-		{
-		}
-
-		public int pinnedSpec(int monsterId)
-		{
-			return -1;
-		}
-
-		public void setPinnedSpec(int monsterId, int itemId)
-		{
-		}
-
-		public String note(int monsterId)
-		{
-			return null;
-		}
-
-		public void setNote(int monsterId, String note)
-		{
-		}
-
-		public void excludeForMob(int monsterId, String scope, int itemId)
-		{
-		}
-
-		public void simForMob(int monsterId, int itemId)
-		{
-		}
-
-		public List<Map<String, Object>> mobExclusions(int monsterId)
-		{
-			return java.util.Collections.emptyList();
-		}
-
-		public List<Map<String, Object>> mobSims(int monsterId)
-		{
-			return java.util.Collections.emptyList();
-		}
-
-		public List<Map<String, Object>> mobFilters(int monsterId)
-		{
-			return java.util.Collections.emptyList();
-		}
-
-		public void removeMobExclusion(int monsterId, String scope, int itemId)
-		{
-		}
-
-		public void removeMobSim(int monsterId, int itemId)
-		{
-		}
-
-		public void addMobFilter(int monsterId, int itemId)
-		{
-		}
-
-		public void removeMobFilter(int monsterId, String scope, int itemId)
-		{
-		}
-
-		public Map<String, String> supplyOverrides(int profileId)
-		{
-			return java.util.Collections.emptyMap();
-		}
-
-		public void setSupplyOverride(int profileId, String category, String choice)
-		{
-		}
-	}
 
 	private static final class CaptureLink extends CompanionLink
 	{

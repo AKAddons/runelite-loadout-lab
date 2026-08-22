@@ -1018,10 +1018,33 @@ public class ResultCards
 		// sprite (field confusion 2026-08-14: the live book shown in
 		// neutral read as a recommendation - a powered staff like the
 		// Shadow needs no book at all).
-		plate.setToolTipText(required == null
+		boolean swapOn = pageParams != null && Model.flag(pageParams, "spellbookSwap");
+		String bookTip = required == null
 			? "No specific spellbook required - a powered staff casts on any book"
 			: "This set wants the " + required.toUpperCase() + " book (" + reason + ")"
-				+ (offBook ? " - you are NOT on it" : " - you are on it"));
+				+ (offBook ? " - you are NOT on it" : " - you are on it");
+		// The swap+Vengeance option rides the plate, the way prayers and
+		// boosts ride their icons (field ask 2026-08-22). Supplies only:
+		// it changes which runes the trip carries, never the dps.
+		boolean swapAvailable = assumeOptions != null
+			&& Model.flag(assumeOptions, "spellbookSwapAvailable");
+		if (swapAvailable)
+		{
+			bookTip = bookTip + "<br>" + (swapOn
+				? "Bringing Spellbook Swap + Vengeance runes"
+				: "Click to bring Spellbook Swap + Vengeance runes");
+			plate.setToolTipText("<html>" + bookTip + "</html>");
+			if (swapOn)
+			{
+				plate.setBorder(new RoundedBorder(ACCENT, 2, 6));
+			}
+			Ui.onClick(plate, () -> commands.send("set-param",
+				Map.of("param", "spellbookSwap", "value", !swapOn)));
+		}
+		else
+		{
+			plate.setToolTipText(bookTip);
+		}
 		int sprite = required == null
 			? net.runelite.api.SpriteID.TAB_MAGIC : bookSprite(required);
 		boolean dim = required == null;
