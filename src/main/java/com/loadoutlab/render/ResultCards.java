@@ -327,8 +327,8 @@ public class ResultCards
 		label.setMinimumSize(new java.awt.Dimension(20, 18));
 		label.setToolTipText("<html>" + Model.str(mob, "label")
 			+ (bestStyle != null
-				? "<br>" + dps + " dps with " + bestStyle + " (this mob's best in the trip kit)"
-				: tabOnly ? "<br>* tab-only - the shared kit does not carry this style here" : "")
+				? "<br>" + dps + " dps with " + bestStyle + " (best in the trip kit)"
+				: tabOnly ? "<br>* tab-only - this style is not in the shared trip kit" : "")
 			+ "<br>Click to show this mob</html>");
 		Runnable pick = () ->
 		{
@@ -364,7 +364,7 @@ public class ResultCards
 					javax.swing.SwingUtilities.invokeLater(() ->
 						icon.setIcon(new javax.swing.ImageIcon(img))));
 			}
-			icon.setToolTipText("Best answered with " + best);
+			icon.setToolTipText("Best style: " + best);
 		}
 		JPanel iconDps = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 3, 0));
 		iconDps.setOpaque(false);
@@ -505,7 +505,16 @@ public class ResultCards
 				: "Assumes: " + text + " - click to change the boost");
 			if (boostItem > 0)
 			{
-				itemManager.getImage(boostItem).addTo(boostIconCell);
+				// Scaled to the 24px frame - the raw 36x32 item image
+				// overflowed it (field report 2026-08-21). The onLoaded
+				// re-seat is the async-image contract.
+				net.runelite.client.util.AsyncBufferedImage boostImg =
+					itemManager.getImage(boostItem);
+				Runnable seatBoost = () -> javax.swing.SwingUtilities.invokeLater(() ->
+					boostIconCell.setIcon(new javax.swing.ImageIcon(
+						boostImg.getScaledInstance(-1, 22, java.awt.Image.SCALE_SMOOTH))));
+				seatBoost.run();
+				boostImg.onLoaded(seatBoost);
 			}
 			else
 			{
@@ -540,7 +549,7 @@ public class ResultCards
 				// The vents rule (2026-08-06): a tab-only fallback must
 				// never read as the trip's answer.
 				JLabel caveat = Ui.label(
-					"Tab-only view - the shared kit does not carry this style here",
+					"Tab-only view - this style is not in the shared trip kit",
 					new Color(220, 170, 90));
 				caveat.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
@@ -742,7 +751,7 @@ public class ResultCards
 			{
 				JLabel cell = smallItemCell(Model.id(supply, "itemId"), 0,
 					Model.str(supply, "name")
-						+ " - right-click to change this category");
+						+ " - right-click to change");
 				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 				String category = Model.str(supply, "category");
 				Ui.item(menu, "Detect best", () -> commands.send("set-supply-override",
@@ -824,8 +833,8 @@ public class ResultCards
 		if (bankPlan != null)
 		{
 			javax.swing.JToggleButton filterBank = new javax.swing.JToggleButton("Filter bank");
-			filterBank.setToolTipText("Filter your open bank to this set, laid out as the"
-				+ " equipment cross with the inventory beside it");
+			filterBank.setToolTipText("Filter your open bank to this set"
+				+ " - equipment cross, inventory beside it");
 			styleBankButton(filterBank);
 			filterBank.addActionListener(e ->
 			{
@@ -1356,7 +1365,7 @@ public class ResultCards
 			spellName.setForeground(new Color(200, 200, 200));
 			spellRow.add(spellIcon);
 			spellRow.add(spellName);
-			String tip = "The autocast spell - click to pin one (icons from the book)";
+			String tip = "The autocast spell - click to pin one";
 			spellIcon.setToolTipText(tip);
 			spellName.setToolTipText(tip);
 			java.awt.event.MouseAdapter openSpells = new java.awt.event.MouseAdapter()
@@ -1473,7 +1482,7 @@ public class ResultCards
 			int protectSprite = unmodeled ? -1 : (int) Model.num(incoming, "protectSprite");
 			statColumn.add(statIconLine(
 				unmodeled ? "DTPS: ?" : String.format("~%.1f", Model.num(incoming, "dps")),
-				unmodeled ? "This monster's attacks are beyond the stat-sheet model"
+				unmodeled ? "No estimate for this monster's attacks"
 					: "Pray " + Model.str(incoming, "protectPrayer")
 						+ String.format(" - takes ~%.1f dps (%.2f unprayed)",
 							Model.num(incoming, "dps"), Model.num(incoming, "unprayedDps")),
