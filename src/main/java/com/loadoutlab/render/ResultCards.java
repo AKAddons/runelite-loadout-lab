@@ -291,12 +291,10 @@ public class ResultCards
 		row.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 28));
 
 		String name = Model.str(mob, "label");
-		int level = Model.id(mob, "level");
-		int hp = Model.id(mob, "hp");
-		// Level-versioned labels already carry "- lvl N" (Fire giant's
-		// three levels) - strip it so the meta column is the ONE place
-		// the numbers live (field report 2026-08-21: "Fire giant -
-		// lvl 109  109").
+		// The row carries NO numbers (field ask 2026-08-21: "too much
+		// clutter") - the level-versioned label suffix strips, and the
+		// card header below owns level and hp. The tooltip keeps the
+		// full label for disambiguation.
 		String cleanName = name == null ? ""
 			: name.replaceFirst(" - lvl \\d+$", "");
 		JLabel label = new JLabel(cleanName);
@@ -346,18 +344,7 @@ public class ResultCards
 			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 		};
 		Ui.onClick(label, pick);
-		// The muted meta column: level and hp, tagged so neither number
-		// is ambiguous; it survives narrowing (the name yields first).
-		JLabel meta = new JLabel((level > 0 ? "lvl " + level : "")
-			+ (level > 0 && hp > 0 ? "  " : "") + (hp > 0 ? hp + "hp" : ""));
-		meta.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-		meta.setForeground(new Color(140, 140, 140));
-		Ui.onClick(meta, pick);
-		JPanel nameBox = new JPanel(new BorderLayout(8, 0));
-		nameBox.setOpaque(false);
-		nameBox.add(label, BorderLayout.CENTER);
-		nameBox.add(meta, BorderLayout.EAST);
-		row.add(nameBox, BorderLayout.CENTER);
+		row.add(label, BorderLayout.CENTER);
 
 		// The aligned right block: [icon dps] x - the icon rides right,
 		// snug against its number.
@@ -452,7 +439,25 @@ public class ResultCards
 			BorderFactory.createEmptyBorder(8, 8, 8, 8)));
 		JLabel title = new JLabel(Model.str(mob, "label"));
 		title.setFont(title.getFont().deriveFont(Font.BOLD));
-		card.add(left(title));
+		int mobHp = Model.id(mob, "hp");
+		if (mobHp > 0)
+		{
+			// hp rides the header, muted (field ask 2026-08-21).
+			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(140, 140, 140));
+			hpLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
+			titleRow.setBackground(CARD);
+			titleRow.add(title, BorderLayout.WEST);
+			JPanel hpSeat = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
+			hpSeat.setOpaque(false);
+			hpSeat.add(hpLabel);
+			titleRow.add(hpSeat, BorderLayout.CENTER);
+			card.add(left(titleRow));
+		}
+		else
+		{
+			card.add(left(title));
+		}
 		Map<String, Object> styles = Model.map(mob, "styles");
 		Map<String, Object> node = styles == null ? null : Model.map(styles, tab);
 		if (node == null)
