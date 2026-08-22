@@ -445,14 +445,18 @@ public class ResultCards
 			// hp rides the header, muted (field ask 2026-08-21).
 			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(140, 140, 140));
 			hpLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			// Title CENTER (yields when narrow), hp EAST (survives) -
+			// WEST/CENTER clipped the title and pushed hp out entirely
+			// (field screenshot 2026-08-21: 'Duke Sucellus (Awa... lvl 1').
 			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
 			titleRow.setBackground(CARD);
-			titleRow.add(title, BorderLayout.WEST);
+			title.setMinimumSize(new java.awt.Dimension(20, 18));
+			titleRow.add(title, BorderLayout.CENTER);
 			JPanel hpSeat = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
 			hpSeat.setOpaque(false);
 			hpSeat.add(hpLabel);
-			titleRow.add(hpSeat, BorderLayout.CENTER);
-			card.add(left(titleRow));
+			titleRow.add(hpSeat, BorderLayout.EAST);
+			card.add(titleRow);
 		}
 		else
 		{
