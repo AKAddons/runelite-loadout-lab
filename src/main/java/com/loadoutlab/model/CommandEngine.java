@@ -445,7 +445,12 @@ public class CommandEngine
 			case "remove-mob":
 			{
 				Object index = args == null ? null : args.get("index");
-				List<MonsterStats> current = state.rosterMobs();
+				// A single-mob view shows its own row with an X (field ask
+				// 2026-08-22) - there is no roster behind it, so the lone
+				// selection stands in as a one-mob list.
+				List<MonsterStats> current = state.rosterMobs() != null
+					? state.rosterMobs()
+					: state.mob() == null ? null : List.of(state.mob());
 				if (!(index instanceof Number) || current == null)
 				{
 					return false;
@@ -464,6 +469,16 @@ public class CommandEngine
 					@Override
 					public boolean apply()
 					{
+						if (remaining.isEmpty())
+						{
+							// Removing the last mob returns to the start
+							// state, exactly as if nothing were searched
+							// yet (field ask 2026-08-22).
+							state.select(null);
+							clearResults();
+							publishIdle();
+							return true;
+						}
 						if (remaining.size() == 1)
 						{
 							state.select(remaining.get(0));
@@ -1441,6 +1456,10 @@ public class CommandEngine
 				// best style for THIS mob) applies - the classic made a
 				// new entry per selection, which cleared it implicitly.
 				state.setParam("selectedTab", "");
+				// A fresh search opens on YOURS - the answer you can act
+				// on now; BiS is the aspirational view you opt into
+				// (field ask 2026-08-22).
+				state.setParam("viewingBis", false);
 				// Task-only bosses are ALWAYS on task (the classic rule:
 				// the Sire cannot be fought off-task, so the search must
 				// never show it that way).
