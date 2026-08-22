@@ -117,6 +117,33 @@ class UndoIntegrityTest
 			"the page must be the pre-select one, not an orphaned snapshot");
 	}
 
+	@Test
+	@DisplayName("undoing a select also undoes the params it seeded")
+	void undoRestoresSeededParams()
+	{
+		CaptureLink link = new CaptureLink();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			link);
+
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		assertEquals(Boolean.FALSE, state.paramsNode().get("inWilderness"));
+
+		// A wilderness-exclusive forces the param on at selection.
+		assertTrue(engine.execute("select", Map.of("query", "callisto")));
+		assertEquals(Boolean.TRUE, state.paramsNode().get("inWilderness"),
+			"the exclusive forced the wilderness param");
+
+		assertTrue(engine.execute("undo", Map.of()));
+		flushEdt();
+		assertEquals(Boolean.FALSE, state.paramsNode().get("inWilderness"),
+			"undo must take the seeded params back with the selection");
+	}
+
 	/** Accepts the first toggle, refuses every later one - so the
 	 * self-inverse revert returns false and the entry is dropped. */
 	private static final class RefusingStore implements CommandEngine.StoreOps

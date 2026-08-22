@@ -994,8 +994,14 @@ public class RenderSurface
 			// setup - the engine derives tab and side from the view state.
 			// The tooltip carries the reconciliation sum (field ask, same
 			// day): the calc shows the bare SET; we fold spec + thralls.
+			// The button CARRIES the card's resolved choice - it used to
+			// send nothing and let the engine re-guess with a different
+			// rule, so it could open a style the card was not showing.
+			String wikiTab = ResultCards.effectiveTab(page);
+			boolean wikiBis = params != null && Model.flag(params, "viewingBis");
 			footerRow.add(chip(new javax.swing.JButton("Wiki calc"),
-				wikiCalcTip(page), () -> commands.send("wiki-calc", Map.of())));
+				wikiCalcTip(page), () -> commands.send("wiki-calc",
+					Map.of("style", wikiTab, "bis", wikiBis))));
 		}
 		footerRow.add(chip(new javax.swing.JButton("Discord"),
 			"Loadout Lab community - report issues, request features", () ->

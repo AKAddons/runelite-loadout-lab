@@ -376,16 +376,16 @@ public class CommandEngine
 					{
 						return false;
 					}
-					if (!(versionArg instanceof String))
+					// No version, or a version this corpus no longer
+					// spells the same way: take the row the SEARCH ranks
+					// first. Falling back to corpus order handed over the
+					// Awakened boss - strictly worse than sending no
+					// version at all (adversarial pass 2026-08-22).
+					for (MonsterStats ranked : data.searchMonsters(first.getName(), 10))
 					{
-						// Bare id: prefer the everyday version the search
-						// itself would rank first.
-						for (MonsterStats ranked : data.searchMonsters(first.getName(), 10))
+						if (ranked.getId() == wanted)
 						{
-							if (ranked.getId() == wanted)
-							{
-								return selectResolved(ranked, null);
-							}
+							return selectResolved(ranked, null);
 						}
 					}
 					return selectResolved(first, null);
@@ -1309,10 +1309,15 @@ public class CommandEngine
 	public void clearForIdentityChange()
 	{
 		state.select(null);
-		while (history.canUndo())
-		{
-			history.undo();
-		}
+		// CLEAR, never replay: reverting each entry pushed it onto the
+		// REDO stack, so Forward re-applied the previous account's
+		// commands against the new one's stores - and the snapshot
+		// deques were never touched at all (pre-release adversarial
+		// pass 2026-08-22). CommandHistory's own doc says entries from
+		// another profile "would corrupt this one".
+		history.clear();
+		undoPages.clear();
+		redoPages.clear();
 		clearResults();
 	}
 

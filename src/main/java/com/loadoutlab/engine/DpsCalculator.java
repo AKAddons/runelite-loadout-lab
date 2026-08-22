@@ -479,7 +479,14 @@ public final class DpsCalculator
 		// elementals fire a SECOND hit at 40% of the first (no extra
 		// runes) - Strike and Surge spells do not double.
 		SpellStats twinflameSpell = effectiveRequest.getSpell();
-		boolean twinflame = wearing(loadout, "twinflame") && twinflameSpell != null
+		// Their isWearingSmokeStaff family: the smoke battlestaff and its
+		// mystic sibling grant the SAME +10 accuracy / +100 magic damage
+		// on standard casts as the twinflame (they had nothing until
+		// 2026-08-22); only the twinflame also splits its hit.
+		boolean smokeStaff = wearing(loadout, "twinflame")
+			|| wearing(loadout, "smoke battlestaff")
+			|| wearing(loadout, "mystic smoke staff");
+		boolean twinflame = smokeStaff && twinflameSpell != null
 			&& "standard".equalsIgnoreCase(twinflameSpell.getSpellbook());
 		if (twinflame)
 		{
@@ -511,6 +518,14 @@ public final class DpsCalculator
 				truncSum += k * 2L / 5;
 			}
 			expected += accuracy * ((double) truncSum / (maxHit + 1));
+		}
+		if (wearing(loadout, "sanguinesti"))
+		{
+			// The staff's passive (official PlayerVsNPCCalc): a fifth of
+			// LANDED hits carry +8 flat - entirely unmodelled here until
+			// 2026-08-22, the other half of the sang-goblin gap.
+			counted("sanguinesti staff", "+8 on a fifth of landed hits");
+			expected += accuracy * 0.2 * 8;
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
@@ -563,7 +578,33 @@ public final class DpsCalculator
 		}
 		if (weaponName.contains("sanguinesti"))
 		{
-			return Math.max(1, magicLevel / 3 - 1);
+			// trunc(magic/3) - the -1 here ran the staff a full point
+			// low at every level (official-verified 2026-08-22; the
+			// sang-goblin vector was -11%, half of it this).
+			return Math.max(1, magicLevel / 3);
+		}
+		if (weaponName.contains("dawnbringer"))
+		{
+			return Math.max(1, magicLevel / 3 - 2);
+		}
+		if (weaponName.contains("starter staff"))
+		{
+			return 8;
+		}
+		if (weaponName.contains("crystal staff (basic)")
+			|| weaponName.contains("corrupted staff (basic)"))
+		{
+			return 23;
+		}
+		if (weaponName.contains("crystal staff (attuned)")
+			|| weaponName.contains("corrupted staff (attuned)"))
+		{
+			return 31;
+		}
+		if (weaponName.contains("crystal staff (perfected)")
+			|| weaponName.contains("corrupted staff (perfected)"))
+		{
+			return 39;
 		}
 		if (weaponName.contains("tumeken"))
 		{
@@ -961,7 +1002,7 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
-			roll = demonbane(request, roll, 30, "accuracy");
+			roll = demonbane(request, roll, 30, "accuracy", "scorching bow");
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
@@ -1040,7 +1081,7 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
-			maxHit = (int) demonbane(request, maxHit, 30, "damage");
+			maxHit = (int) demonbane(request, maxHit, 30, "damage", "scorching bow");
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
@@ -1107,7 +1148,8 @@ public final class DpsCalculator
 			// demonbane (field 2026-08-21: the spells bypassed the table,
 			// +31% vs the 70%-resistant Duke).
 			boolean purging = wearing(loadout, "purging staff");
-			roll = demonbane(request, roll, purging ? 80 : 40, "accuracy");
+			roll = demonbane(request, roll, purging ? 80 : 40, "accuracy",
+				"demonbane spell (Mark of Darkness)");
 		}
 		return roll;
 	}
@@ -1120,7 +1162,9 @@ public final class DpsCalculator
 		{
 			magicDamage = Math.min(1000, magicDamage * 3);
 		}
-		if (wearing(loadout, "twinflame") && request.getSpell() != null
+		if ((wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
+			|| wearing(loadout, "mystic smoke staff"))
+			&& request.getSpell() != null
 			&& "standard".equalsIgnoreCase(request.getSpell().getSpellbook()))
 		{
 			magicDamage += 100;
@@ -1180,7 +1224,8 @@ public final class DpsCalculator
 			// Mark of Darkness damage: +25%, +50% with the purging staff -
 			// vulnerability-scaled like the accuracy half.
 			boolean purging = wearing(loadout, "purging staff");
-			maxHit = (int) demonbane(request, maxHit, purging ? 50 : 25, "damage");
+			maxHit = (int) demonbane(request, maxHit, purging ? 50 : 25, "damage",
+				"demonbane spell (Mark of Darkness)");
 		}
 		return maxHit;
 	}
@@ -1351,9 +1396,19 @@ public final class DpsCalculator
 	 * (Duke resists: +70% lands as +49%; Yama amplifies). */
 	private long demonbane(OptimizationRequest request, long value, int bonusPercent, String what)
 	{
+		return demonbane(request, value, bonusPercent, what, "demonbane weapon");
+	}
+
+	/** The source NAMES itself (2026-08-22): routing every demonbane
+	 * through here made the scorching bow and the demonbane spells
+	 * both report "demonbane weapon" - naming gear the player is not
+	 * even wearing. */
+	private long demonbane(OptimizationRequest request, long value, int bonusPercent,
+		String what, String source)
+	{
 		int scaled = DemonbaneVulnerability.scaledBonus(request.getMonster(), bonusPercent);
 		int effectiveness = DemonbaneVulnerability.percentFor(request.getMonster());
-		counted("demonbane weapon", "+" + scaled + "% " + what
+		counted(source, "+" + scaled + "% " + what
 			+ (effectiveness == 100 ? "" : " (" + effectiveness + "% effectiveness)"));
 		return multiply(value, 100 + scaled, 100);
 	}

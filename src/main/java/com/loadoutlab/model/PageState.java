@@ -80,10 +80,16 @@ public class PageState
 		return rosterMobs;
 	}
 
-	/** Selection snapshot for undo: restore() reinstates it exactly. */
+	/** Selection snapshot for undo: restore() reinstates it exactly.
+	 * Carries the PARAMS a select seeds too (antifire, tab, view side,
+	 * on-task, wilderness, bench, and the config seeds) - undoing a
+	 * Callisto used to leave its wilderness and risk chips sitting on
+	 * the restored mob (pre-release adversarial pass 2026-08-22). */
 	public synchronized Object[] selectionSnapshot()
 	{
-		return new Object[]{mob, rosterMobs, rosterName};
+		return new Object[]{mob, rosterMobs, rosterName,
+			new Object[]{antifireMode, selectedTab, viewingBis, onTask, inWilderness,
+				maxSwaps, riskBudgetGp, riskCapped, protectItem, upgradeBudgetGp}};
 	}
 
 	@SuppressWarnings("unchecked")
@@ -92,6 +98,20 @@ public class PageState
 		this.mob = (MonsterStats) snapshot[0];
 		this.rosterMobs = (java.util.List<MonsterStats>) snapshot[1];
 		this.rosterName = (String) snapshot[2];
+		if (snapshot.length > 3 && snapshot[3] instanceof Object[])
+		{
+			Object[] params = (Object[]) snapshot[3];
+			this.antifireMode = (Integer) params[0];
+			this.selectedTab = (String) params[1];
+			this.viewingBis = (Boolean) params[2];
+			this.onTask = (Boolean) params[3];
+			this.inWilderness = (Boolean) params[4];
+			this.maxSwaps = (Integer) params[5];
+			this.riskBudgetGp = (Integer) params[6];
+			this.riskCapped = (Boolean) params[7];
+			this.protectItem = (Boolean) params[8];
+			this.upgradeBudgetGp = (Integer) params[9];
+		}
 	}
 
 	public synchronized boolean hasSelection()

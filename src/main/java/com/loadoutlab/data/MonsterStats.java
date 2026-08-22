@@ -232,6 +232,11 @@ public final class MonsterStats
 			Math.max(0, newDefence), magic, offensiveMagic, defensive, offence,
 			attributes, slayerMonster, weaknessElement, weaknessSeverity);
 		copy.toaInvocationLevel = toaInvocationLevel;
+		// Carry the identity its siblings carry (adversarial pass
+		// 2026-08-22): dropping wikiVersion here would silently re-open
+		// the export hole where the calculator resolved the wrong row.
+		copy.wikiVersion = getWikiVersion();
+		copy.displayName = displayName;
 		return copy;
 	}
 
