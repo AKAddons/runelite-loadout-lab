@@ -26,6 +26,19 @@ final class ReportBuilder
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, Map<String, Object> counts,
 		Map<String, Object> thralls)
 	{
+		// The wilderness kept-slots gate, same rule the page uses:
+		// exclusives are always in. Field report 2026-08-22 - the CARD
+		// showed the risk line and the copied report never mentioned it,
+		// so a wildy answer read as riskless on paper.
+		boolean exclusive = false;
+		for (MonsterStats m : mobs)
+		{
+			exclusive |= com.loadoutlab.data.WildernessMonsters.isExclusive(m);
+		}
+		boolean wildy = exclusive
+			|| Boolean.TRUE.equals(state.paramsNode().get("inWilderness"));
+		int keptSlots = wildy
+			? (Boolean.TRUE.equals(state.paramsNode().get("protectItem")) ? 4 : 3) : -1;
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
 		for (int i = 0; i < mobs.size(); i++)
@@ -65,11 +78,11 @@ final class ReportBuilder
 					sb.append("-- ").append(style).append(" --\n");
 					if (result.ownedKitBacked)
 					{
-						appendSide(sb, "Yours", result, false);
+						appendSide(sb, "Yours", result, false, keptSlots);
 					}
 					if (result.gameKitBacked)
 					{
-						appendSide(sb, "Best in game", result, true);
+						appendSide(sb, "Best in game", result, true, keptSlots);
 					}
 				}
 				if (!result.ownedKitBacked && result.owned != null && !result.owned.isEmpty())
@@ -109,7 +122,20 @@ final class ReportBuilder
 		Object lock = params.get("spellbookLock");
 		sb.append("; Spellbook lock: ").append(lock == null || String.valueOf(lock).isEmpty()
 			? "auto" : lock);
-		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp")).append('\n');
+		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp"));
+		if (Boolean.TRUE.equals(params.get("inWilderness")))
+		{
+			Object cap = params.get("riskBudgetGp");
+			int capGp = cap instanceof Number ? ((Number) cap).intValue() : -1;
+			// The default value is the NO-CAP sentinel (computeArgs only
+			// constrains tradeables when the player moves it), so it must
+			// never read as a real cap.
+			boolean capped = capGp > 0
+				&& capGp != com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+			sb.append("; Risk cap: ").append(capped ? gp(capGp) : "none")
+				.append("; Protect item: ").append(yesNo(params.get("protectItem")));
+		}
+		sb.append('\n');
 		if (counts != null)
 		{
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
@@ -129,7 +155,7 @@ final class ReportBuilder
 	}
 
 	private static void appendSide(StringBuilder sb, String caption,
-		OptimizerService.StyleResult result, boolean bis)
+		OptimizerService.StyleResult result, boolean bis, int keptSlots)
 	{
 		DpsResult shown = bis ? result.overallBest
 			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
@@ -176,6 +202,45 @@ final class ReportBuilder
 		{
 			sb.append(String.format("  Spec: %s (adds ~%.2f dps)%n", specWeapon.label(), specAdded));
 		}
+		if (keptSlots >= 0)
+		{
+			// What this answer costs you on a death out there - the same
+			// assessment the card's Risk line shows.
+			com.loadoutlab.engine.PvpRisk.Assessment risk =
+				com.loadoutlab.engine.PvpRisk.assess(shown.getLoadout(), specWeapon, keptSlots);
+			sb.append("  Risk: ").append(gp(risk.riskGp)).append(" per death");
+			if (!risk.lost.isEmpty())
+			{
+				sb.append(" - lost:");
+				for (GearItem item : risk.lost)
+				{
+					sb.append(' ').append(item.label()).append(',');
+				}
+			}
+			if (!risk.kept.isEmpty())
+			{
+				sb.append(" - kept:");
+				for (GearItem item : risk.kept)
+				{
+					sb.append(' ').append(item.label()).append(',');
+				}
+			}
+			sb.append('\n');
+		}
+	}
+
+	/** Short gp for the report line (the card's own vocabulary). */
+	private static String gp(long value)
+	{
+		if (value >= 1_000_000)
+		{
+			return String.format("%.1fm", value / 1_000_000.0);
+		}
+		if (value >= 1_000)
+		{
+			return String.format("%.0fk", value / 1_000.0);
+		}
+		return Long.toString(value);
 	}
 
 	private static String yesNo(Object value)
