@@ -494,6 +494,13 @@ public class LoadoutLabPlugin extends Plugin
 						com.loadoutlab.engine.ExtraDps.thrallDps(magic) > 0
 							&& ownsCanonical(com.loadoutlab.engine.ExtraDps.BOOK_OF_THE_DEAD));
 					seeds.put("deathCharge", magic >= 80 ? 1 : 0);
+					// The configured wilderness cap - inert since the
+					// merge-back (field report 2026-08-22: the chip showed
+					// 'Risk 75k' while nothing constrained the answer,
+					// because this default was never seeded and the value
+					// itself collided with the engine's no-cap sentinel).
+					int cap = com.loadoutlab.render.Gp.parse(config.defaultRiskCap());
+					seeds.put("riskBudgetGp", cap > 0 ? cap : null);
 					return seeds;
 				});
 				// The chips exist before the first search (idle page).

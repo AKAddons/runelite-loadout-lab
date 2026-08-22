@@ -27,6 +27,9 @@ public class PageState
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+	/** Whether a cap is actually in force - never inferred from the gp
+	 * value, which collides with the engine's no-cap sentinel. */
+	private boolean riskCapped;
 	/** 0 = shield required, 1 = regular antifire, 2 = super antifire -
 	 * the classic tri-state; Detect resolves it at selection time. */
 	private int antifireMode;
@@ -115,7 +118,22 @@ public class PageState
 				spellbookLock = value instanceof String ? (String) value : "";
 				return true;
 			case "riskBudgetGp":
-				riskBudgetGp = asInt(value, OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
+				// ONE source of truth for "is there a cap" (field report
+				// 2026-08-22): the chip lit up on riskBudgetGp > 0 while
+				// the compute asked riskBudgetGp != DEFAULT - and the
+				// DEFAULT *is* 75k, the same value the config seeds, so
+				// the UI promised a cap the optimizer ignored.
+				if (value == null)
+				{
+					riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+					riskCapped = false;
+				}
+				else
+				{
+					int cap = asInt(value, OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
+					riskBudgetGp = cap;
+					riskCapped = cap > 0;
+				}
 				return true;
 			case "antifireMode":
 				antifireMode = Math.max(0, Math.min(2, asInt(value, 0)));
@@ -173,6 +191,7 @@ public class PageState
 		node.put("f2pOnly", f2pOnly);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
+		node.put("riskCapped", riskCapped);
 		node.put("antifireMode", antifireMode);
 		node.put("deathCharge", deathCharge);
 		node.put("specWeapon", specWeapon);
@@ -225,7 +244,7 @@ public class PageState
 	{
 		// Kept-slots mirror the classic riskCap() gate: a risk cap only
 		// binds in the wilderness, and Protect Item keeps a 4th slot.
-		int tradeables = inWilderness && riskBudgetGp != OptimizationRequest.DEFAULT_RISK_BUDGET_GP
+		int tradeables = inWilderness && riskCapped
 			? (protectItem ? 4 : 3) : maxTradeables;
 		return new Object[]{
 			f2pOnly, onTask, inWilderness, spellbookLock, tradeables,

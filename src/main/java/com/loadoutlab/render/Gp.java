@@ -3,13 +3,13 @@ package com.loadoutlab.render;
 /** The classic gp field vocabulary (ported from the panel's
  * parsedBudgetGp): k/m/b suffixes, "max" or "-" = 2b, empty or
  * unparseable = 0, clamped to [0, 2b]. */
-final class Gp
+public final class Gp
 {
 	private Gp()
 	{
 	}
 
-	static int parse(String text)
+	public static int parse(String text)
 	{
 		String raw = text == null ? "" : text.trim().toLowerCase();
 		if (raw.isEmpty())

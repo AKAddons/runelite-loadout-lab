@@ -945,12 +945,17 @@ public class RenderSurface
 			if (anyWilderness && (allExclusive || Model.flag(params, "inWilderness")))
 			{
 				int riskGp = Model.id(params, "riskBudgetGp");
+				// The CAP FLAG decides, never the number: the engine's
+				// no-cap sentinel is itself 75k, so a raw > 0 test lit
+				// this chip for a cap the compute ignored (field report
+				// 2026-08-22).
+				boolean capped = Model.flag(params, "riskCapped");
 				chipRow.add(valueChip(
-					riskGp > 0 ? "Risk " + Gp.format(riskGp) : "Risk cap",
-					riskGp > 0,
+					capped ? "Risk " + Gp.format(riskGp) : "Risk cap",
+					capped,
 					"Wilderness risk cap in gp (k/m/b); empty = uncapped."
 						+ " Caps tradeables carried to 3 (4 with Protect Item)",
-					riskGp > 0 ? Gp.format(riskGp) : "", text ->
+					capped ? Gp.format(riskGp) : "", text ->
 				{
 					// Empty = clear: null falls back to uncapped.
 					Map<String, Object> args = new java.util.HashMap<>();

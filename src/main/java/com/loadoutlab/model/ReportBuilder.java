@@ -127,11 +127,7 @@ final class ReportBuilder
 		{
 			Object cap = params.get("riskBudgetGp");
 			int capGp = cap instanceof Number ? ((Number) cap).intValue() : -1;
-			// The default value is the NO-CAP sentinel (computeArgs only
-			// constrains tradeables when the player moves it), so it must
-			// never read as a real cap.
-			boolean capped = capGp > 0
-				&& capGp != com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+			boolean capped = Boolean.TRUE.equals(params.get("riskCapped"));
 			sb.append("; Risk cap: ").append(capped ? gp(capGp) : "none")
 				.append("; Protect item: ").append(yesNo(params.get("protectItem")));
 		}
