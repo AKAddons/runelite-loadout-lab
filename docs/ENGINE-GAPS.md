@@ -192,9 +192,8 @@ flat-armour fix moved it only ~3 points). Suspect: our magic defence
 roll vs their monster magic-level/defensive-magic pairing on these
 rows. The harness vector stands as the dispute pin.
 
-## Tbow + quiver sub-1% residual (2026-08-21, vectors tbowquiver-zuk +0.71%, tbowseeking-dukeawakened +0.44%)
-After the quiver's own +10/+1 bonus landed, every tbow+quiver set
-still runs ~0.5-0.7% HIGH - the attack rolls differ by ~0.7%
-(ours 28780 vs theirs 28576 at Zuk). Suspect: the +10 accuracy's
-position in the effective chain or the quiver cape's base stats
-across data sources. Vectors stand as the pin.
+## Tbow + quiver sub-1% residual - CLOSED 2026-08-21
+It was the twisted bow's missing accuracy CLAMP (141% vs their 140%
+at the 250 magic cap), not the quiver at all. tbowquiver-zuk and
+tbow-zulrah/hydra are exact; tbowseeking-dukeawakened sits at
+-0.27%.
