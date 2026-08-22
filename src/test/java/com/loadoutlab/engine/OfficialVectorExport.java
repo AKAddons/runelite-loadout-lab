@@ -148,6 +148,15 @@ public class OfficialVectorExport
 		// vs the calc's 81, set -4.9%) - the magic-input read.
 		{"tbowseeking-dukeawakened", "Duke Sucellus", "Awakened, Awake", "RANGED", "Twisted bow", "Seeking amethyst arrow"},
 		{"tbowquiver-zuk", "TzKal-Zuk", "", "RANGED", "Twisted bow", "Dragon arrow", null, "Blessed dizana's quiver"},
+		// Leviathan (melee-immune both engines) - its two live styles.
+		{"tbow-leviathan", "The Leviathan", "Post-quest", "RANGED", "Twisted bow", "Dragon arrow"},
+		// The full field BiS ranged set (2026-08-22: set dps drifts).
+		{"levranged-field", "The Leviathan", "Post-quest", "RANGED", "Twisted bow", "Dragon arrow#Poison++", null,
+			"Masori mask (f)", "Blessed dizana's quiver", "Necklace of rupture",
+			"Masori body (f)", "Masori chaps (f)", "Zaryte vambraces",
+			"Avernic treads", "Venator ring"},
+		{"shadow-leviathan", "The Leviathan", "Post-quest", "MAGIC", "Tumeken's shadow", null},
+		{"trident-leviathan", "The Leviathan", "Post-quest", "MAGIC", "Trident of the seas", null},
 		// Demonbane vulnerability, all three deliveries vs the 70%-
 		// resistant post-quest Duke (field 2026-08-21: melee +24%,
 		// ranged +31%, magic ~3x).
