@@ -866,8 +866,7 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && (wearing(loadout, "bone claws") || wearing(loadout, "burning claws")))
 		{
-			counted("demonbane weapon", "+5% damage");
-			maxHit = multiply(maxHit, 21, 20);
+			maxHit = (int) demonbane(request, maxHit, 5, "damage");
 		}
 		if (isTzhaarWeapon(loadout) && isWearingObsidian(loadout))
 		{
@@ -960,8 +959,7 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
-			counted("scorching bow", "+30% accuracy");
-			roll = multiply(roll, 13, 10);
+			roll = demonbane(request, roll, 30, "accuracy");
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
@@ -1040,8 +1038,7 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && wearing(loadout, "scorching bow"))
 		{
-			counted("scorching bow", "+30% damage");
-			maxHit = multiply(maxHit, 13, 10);
+			maxHit = (int) demonbane(request, maxHit, 30, "damage");
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
@@ -1103,11 +1100,12 @@ public final class DpsCalculator
 		{
 			// Demonbane assumes Mark of Darkness (standard practice - it is
 			// a cheap self-buff and the purging staff quintuples its
-			// duration): 40% accuracy, 80% with the purging staff.
+			// duration): 40% accuracy, 80% with the purging staff. Scaled
+			// by the monster's demonbane vulnerability like every other
+			// demonbane (field 2026-08-21: the spells bypassed the table,
+			// +31% vs the 70%-resistant Duke).
 			boolean purging = wearing(loadout, "purging staff");
-			counted("demonbane spell (Mark of Darkness)",
-				purging ? "+80% accuracy" : "+40% accuracy");
-			roll = purging ? multiply(roll, 9, 5) : multiply(roll, 7, 5);
+			roll = demonbane(request, roll, purging ? 80 : 40, "accuracy");
 		}
 		return roll;
 	}
@@ -1177,11 +1175,10 @@ public final class DpsCalculator
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
-			// Mark of Darkness damage: +25%, +50% with the purging staff.
+			// Mark of Darkness damage: +25%, +50% with the purging staff -
+			// vulnerability-scaled like the accuracy half.
 			boolean purging = wearing(loadout, "purging staff");
-			counted("demonbane spell (Mark of Darkness)",
-				purging ? "+50% damage" : "+25% damage");
-			maxHit = purging ? multiply(maxHit, 3, 2) : multiply(maxHit, 5, 4);
+			maxHit = (int) demonbane(request, maxHit, purging ? 50 : 25, "damage");
 		}
 		return maxHit;
 	}

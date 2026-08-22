@@ -148,6 +148,12 @@ public class OfficialVectorExport
 		// vs the calc's 81, set -4.9%) - the magic-input read.
 		{"tbowseeking-dukeawakened", "Duke Sucellus", "Awakened, Awake", "RANGED", "Twisted bow", "Seeking amethyst arrow"},
 		{"tbowquiver-zuk", "TzKal-Zuk", "", "RANGED", "Twisted bow", "Dragon arrow", null, "Blessed dizana's quiver"},
+		// Demonbane vulnerability, all three deliveries vs the 70%-
+		// resistant post-quest Duke (field 2026-08-21: melee +24%,
+		// ranged +31%, magic ~3x).
+		{"emberlight-duke", "Duke Sucellus", "Post-quest, Awake", "MELEE", "Emberlight", null},
+		{"scorching-duke", "Duke Sucellus", "Post-quest, Awake", "RANGED", "Scorching bow", "Dragon arrow"},
+		{"purging-darkdemonbane-duke", "Duke Sucellus", "Post-quest, Awake", "MAGIC", "Purging staff", null, "Dark Demonbane"},
 		{"swamptrident-dharok", "Dharok the Wretched", "", "MAGIC", "Trident of the swamp", null},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
