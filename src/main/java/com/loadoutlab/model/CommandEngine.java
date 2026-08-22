@@ -246,9 +246,30 @@ public class CommandEngine
 	 * loader, then recomputed an answer that was already on screen).
 	 * The empty map marks "no page yet"; deeper than the cap falls
 	 * back to a recompute. */
-	private final java.util.ArrayDeque<Map<String, Object>> undoPages =
+	/** A restore point: the page AND the results it was rendered from.
+	 * Carrying only the page left lastMobs/lastPerMob on the pre-undo
+	 * answer, so the next republish (a tab click, a chip, a note) drew
+	 * the WRONG mob's card - found by the pre-release adversarial pass
+	 * 2026-08-22. A null page means "not restorable"; the entry still
+	 * holds its place so the deques stay in phase with the history. */
+	private static final class Snapshot
+	{
+		final Map<String, Object> page;
+		final List<MonsterStats> mobs;
+		final List<Map<CombatStyle, OptimizerService.StyleResult>> perMob;
+
+		Snapshot(Map<String, Object> page, List<MonsterStats> mobs,
+			List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
+		{
+			this.page = page;
+			this.mobs = mobs;
+			this.perMob = perMob;
+		}
+	}
+
+	private final java.util.ArrayDeque<Snapshot> undoPages =
 		new java.util.ArrayDeque<>();
-	private final java.util.ArrayDeque<Map<String, Object>> redoPages =
+	private final java.util.ArrayDeque<Snapshot> redoPages =
 		new java.util.ArrayDeque<>();
 	private static final int SNAPSHOT_CAP = 32;
 	private boolean restoringSnapshot;
@@ -281,10 +302,13 @@ public class CommandEngine
 	private boolean record(com.loadoutlab.command.Command cmd)
 	{
 		Map<String, Object> before = link.lastPage();
+		List<MonsterStats> beforeMobs = lastMobs;
+		List<Map<CombatStyle, OptimizerService.StyleResult>> beforePerMob = lastPerMob;
 		boolean ok = history.execute(cmd);
 		if (ok)
 		{
-			undoPages.push(restorable(before) ? before : java.util.Collections.emptyMap());
+			undoPages.push(new Snapshot(restorable(before) ? before : null,
+				beforeMobs, beforePerMob));
 			while (undoPages.size() > SNAPSHOT_CAP)
 			{
 				undoPages.removeLast();
@@ -516,7 +540,18 @@ public class CommandEngine
 				String key = (String) param;
 				Object next = args.get("value");
 				Object prev = state.paramsNode().get(key);
-				if (java.util.Objects.equals(prev, next))
+				boolean unchanged = java.util.Objects.equals(prev, next);
+				if (unchanged && "riskBudgetGp".equals(key))
+				{
+					// 75k is BOTH a legal cap and the engine's uncapped
+					// sentinel, so the gp number alone cannot tell "set a
+					// 75k cap" from "already uncapped" - typing 75k was
+					// swallowed while the field kept showing it (found by
+					// the pre-release adversarial pass 2026-08-22).
+					boolean capped = Boolean.TRUE.equals(state.paramsNode().get("riskCapped"));
+					unchanged = capped == (next != null);
+				}
+				if (unchanged)
 				{
 					return true;
 				}
@@ -1057,7 +1092,14 @@ public class CommandEngine
 			case "redo":
 			{
 				boolean isUndo = "undo".equals(name);
-				Map<String, Object> current = link.lastPage();
+				Map<String, Object> currentPage = link.lastPage();
+				Snapshot current = new Snapshot(
+					restorable(currentPage) ? currentPage : null, lastMobs, lastPerMob);
+				// CommandHistory DROPS an entry when a revert refuses or
+				// throws (fail-open) - so a refusal consumes history depth
+				// our deques must follow, or every later restore is one
+				// step out of phase for the rest of the session.
+				boolean hadEntry = isUndo ? history.canUndo() : history.canRedo();
 				// The revert/apply bodies call recompute()/republish() -
 				// suppressed: the snapshot IS the result of the state we
 				// are returning to, so nothing needs computing.
@@ -1071,16 +1113,25 @@ public class CommandEngine
 				{
 					restoringSnapshot = false;
 				}
+				java.util.ArrayDeque<Snapshot> from = isUndo ? undoPages : redoPages;
+				java.util.ArrayDeque<Snapshot> to = isUndo ? redoPages : undoPages;
 				if (!ok)
 				{
+					if (hadEntry && !from.isEmpty())
+					{
+						from.pop();
+					}
 					return false;
 				}
-				java.util.ArrayDeque<Map<String, Object>> from = isUndo ? undoPages : redoPages;
-				java.util.ArrayDeque<Map<String, Object>> to = isUndo ? redoPages : undoPages;
-				Map<String, Object> snapshot = from.isEmpty() ? null : from.pop();
-				to.push(restorable(current) ? current : java.util.Collections.<String, Object>emptyMap());
-				if (restorable(snapshot))
+				Snapshot restored = from.isEmpty() ? null : from.pop();
+				to.push(current);
+				if (restored != null && restored.page != null)
 				{
+					// The results follow their page - anything that
+					// republishes next must read the restored answer.
+					lastMobs = restored.mobs;
+					lastPerMob = restored.perMob;
+					Map<String, Object> snapshot = restored.page;
 					// Instant restore: the captured page, but the CURRENT
 					// view params (lens/tab hops since are not actions and
 					// must survive the jump) and a fresh history node.

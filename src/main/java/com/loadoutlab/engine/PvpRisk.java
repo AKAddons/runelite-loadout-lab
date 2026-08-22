@@ -257,13 +257,22 @@ public final class PvpRisk
 			frictionAt |= (fate & 1) << count;
 			count += fate >> 1;
 		}
-		int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds, protectOnlyIds);
-		if (fate < 0)
+		// The SAME single-count rule as assess() and riskGp() (found by
+		// the pre-release adversarial pass 2026-08-22): a spec weapon
+		// already wielded is one physical item. Counting it twice here
+		// pushed protect-only gear past the kept slots and made the beam
+		// veto sets the card shows as fully protected - the display-vs-
+		// beam divergence this rule exists to prevent.
+		if (!alreadyWorn(loadout, carriedSpecWeapon))
 		{
-			return true;
+			int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds, protectOnlyIds);
+			if (fate < 0)
+			{
+				return true;
+			}
+			frictionAt |= (fate & 1) << count;
+			count += fate >> 1;
 		}
-		frictionAt |= (fate & 1) << count;
-		count += fate >> 1;
 		if (frictionAt == 0)
 		{
 			return false;

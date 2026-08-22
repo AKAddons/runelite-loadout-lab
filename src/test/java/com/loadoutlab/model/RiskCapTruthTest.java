@@ -1,6 +1,7 @@
 package com.loadoutlab.model;
 
 import com.loadoutlab.engine.OptimizationRequest;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +53,30 @@ class RiskCapTruthTest
 		assertEquals(Boolean.FALSE, state.paramsNode().get("riskCapped"),
 			"an emptied field means uncapped");
 		assertEquals(-1, state.computeArgs()[TRADEABLES]);
+	}
+
+	@Test
+	@DisplayName("a cap can be typed even when it equals the sentinel")
+	void typingTheSentinelValueTakesEffect()
+	{
+		// Found by the adversarial pass 2026-08-22: set-param's no-op
+		// guard compared only the gp number, and 75k reads identically
+		// capped or not - so typing 75k was silently swallowed.
+		PageState state = wilderness();
+		CommandEngine engine = new CommandEngine(
+			new com.loadoutlab.data.DataService().load(), state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			new CompanionLink());
+		assertEquals(Boolean.FALSE, state.paramsNode().get("riskCapped"));
+
+		assertTrue(engine.execute("set-param", Map.of(
+			"param", "riskBudgetGp", "value", OptimizationRequest.DEFAULT_RISK_BUDGET_GP)));
+		assertEquals(Boolean.TRUE, state.paramsNode().get("riskCapped"),
+			"typing 75k must bind a real cap");
+		assertEquals(3, state.computeArgs()[TRADEABLES]);
 	}
 
 	@Test

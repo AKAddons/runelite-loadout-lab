@@ -71,11 +71,24 @@ together, in the full
 
 ## Privacy
 
-Everything is local. The plugin writes two files under
-`.runelite/loadout-lab/` on your machine only: `profile.json` (your
-levels/bank snapshot, useful for bug reports) and `usage.tsv` (your own
-search history). Nothing is ever sent anywhere: the plugin makes no
-network requests at all.
+Everything is computed locally - your bank, your levels and every DPS
+answer never leave your machine. The plugin writes under
+`.runelite/loadout-lab/`: `profile.json` (your levels/bank snapshot,
+useful for bug reports) and `npc-icons/` (cached monster pictures).
+
+Two features do reach the internet, both to the OSRS wiki and nowhere
+else:
+
+- **Wiki calc** - only when you click the button. It uploads the setup
+  shown on the card (gear ids, your combat levels, prayers and boosts)
+  to the wiki's shortlink service, then opens the calculator on the
+  result. Nothing is sent unless you click.
+- **Monster pictures** - one request per monster to the wiki's file
+  path, cached on disk. Switch it off under *Connections -> Monster
+  pictures* and no wiki request is ever made.
+
+No account name, no analytics, no telemetry, and nothing at all is sent
+while the plugin sits idle.
 
 ## Data sharing (for other plugins)
 
