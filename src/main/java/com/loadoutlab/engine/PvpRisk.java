@@ -96,6 +96,24 @@ public final class PvpRisk
 		return keptSlots;
 	}
 
+	/** The carried spec weapon is already on the character (the same
+	 * item id sits in a worn slot) - it must be counted ONCE. */
+	private static boolean alreadyWorn(Loadout loadout, GearItem spec)
+	{
+		if (spec == null)
+		{
+			return false;
+		}
+		for (GearItem worn : loadout.getGear().values())
+		{
+			if (worn != null && worn.getId() == spec.getId())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static Assessment assess(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
 	{
 		// The protection pool: everything that would be LOST unprotected -
@@ -109,7 +127,14 @@ public final class PvpRisk
 		{
 			sort(item, pool, charges, valueById);
 		}
-		sort(carriedSpecWeapon, pool, charges, valueById);
+		// A spec weapon that is ALREADY WORN is the same physical item -
+		// wielding what you spec with is normal, but charging the death
+		// for it twice is not (field report 2026-08-22: the Accursed
+		// sceptre appeared twice in one lost list).
+		if (!alreadyWorn(loadout, carriedSpecWeapon))
+		{
+			sort(carriedSpecWeapon, pool, charges, valueById);
+		}
 		pool.sort(Comparator.comparingLong((GearItem g) ->
 			valueById.getOrDefault(g.getId(), 0L)).reversed());
 		charges.sort(Comparator.comparingLong((Charge c) -> c.costGp).reversed());
@@ -159,16 +184,21 @@ public final class PvpRisk
 			poolTotal += value;
 			topCount = offerTop(top, topCount, value);
 		}
-		long specValue = poolValue(carriedSpecWeapon);
-		if (specValue < 0)
+		// Same single-count rule as assess() - the beam's filter must
+		// price a death identically to the line the card shows.
+		if (!alreadyWorn(loadout, carriedSpecWeapon))
 		{
-			fees += UntradeableDeathCosts.costFor(carriedSpecWeapon)
-				+ UntradeableDeathCosts.frictionFor(carriedSpecWeapon);
-		}
-		else
-		{
-			poolTotal += specValue;
-			topCount = offerTop(top, topCount, specValue);
+			long specValue = poolValue(carriedSpecWeapon);
+			if (specValue < 0)
+			{
+				fees += UntradeableDeathCosts.costFor(carriedSpecWeapon)
+					+ UntradeableDeathCosts.frictionFor(carriedSpecWeapon);
+			}
+			else
+			{
+				poolTotal += specValue;
+				topCount = offerTop(top, topCount, specValue);
+			}
 		}
 		long keptTotal = 0;
 		for (int i = 0; i < topCount; i++)
