@@ -292,7 +292,14 @@ public class ResultCards
 
 		String name = Model.str(mob, "label");
 		int level = Model.id(mob, "level");
-		JLabel label = new JLabel(name + (level > 0 ? "  " + level : ""));
+		int hp = Model.id(mob, "hp");
+		// Level-versioned labels already carry "- lvl N" (Fire giant's
+		// three levels) - strip it so the meta column is the ONE place
+		// the numbers live (field report 2026-08-21: "Fire giant -
+		// lvl 109  109").
+		String cleanName = name == null ? ""
+			: name.replaceFirst(" - lvl \\d+$", "");
+		JLabel label = new JLabel(cleanName);
 		label.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		label.setForeground(selected ? ACCENT : new Color(200, 200, 200));
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
@@ -325,7 +332,7 @@ public class ResultCards
 				? "<br>" + dps + " dps with " + bestStyle + " (this mob's best in the trip kit)"
 				: tabOnly ? "<br>* tab-only - the shared kit does not carry this style here" : "")
 			+ "<br>Click to show this mob</html>");
-		Ui.onClick(label, () ->
+		Runnable pick = () ->
 		{
 			label.setForeground(ACCENT);
 			// Switching mobs also switches to THAT mob's suggested
@@ -337,8 +344,20 @@ public class ResultCards
 					Map.of("param", "selectedTab", "value", rowStyle));
 			}
 			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
-		});
-		row.add(label, BorderLayout.CENTER);
+		};
+		Ui.onClick(label, pick);
+		// The muted meta column: level and hp, tagged so neither number
+		// is ambiguous; it survives narrowing (the name yields first).
+		JLabel meta = new JLabel((level > 0 ? "lvl " + level : "")
+			+ (level > 0 && hp > 0 ? "  " : "") + (hp > 0 ? hp + "hp" : ""));
+		meta.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		meta.setForeground(new Color(140, 140, 140));
+		Ui.onClick(meta, pick);
+		JPanel nameBox = new JPanel(new BorderLayout(8, 0));
+		nameBox.setOpaque(false);
+		nameBox.add(label, BorderLayout.CENTER);
+		nameBox.add(meta, BorderLayout.EAST);
+		row.add(nameBox, BorderLayout.CENTER);
 
 		// The aligned right block: [icon dps] x - the icon rides right,
 		// snug against its number.
