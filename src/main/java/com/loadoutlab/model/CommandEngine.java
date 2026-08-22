@@ -184,12 +184,7 @@ public class CommandEngine
 	}
 
 	/** Combo-rune preference (config-fed) + casting-kit ownership. */
-	private volatile java.util.function.BooleanSupplier comboRunes;
 
-	public void setComboRunes(java.util.function.BooleanSupplier comboRunes)
-	{
-		this.comboRunes = comboRunes;
-	}
 
 	/** Storage name for an item needing a fetch trip (source dots). */
 	private volatile java.util.function.IntFunction<String> itemLocation;
@@ -1674,7 +1669,47 @@ public class CommandEngine
 			Map.of("key", "SPELLBOOK_SWAP",
 				"name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)")));
 		out.add(access);
+		// Combination runes are a PANEL preference now (field ask
+		// 2026-08-22), defaulting to detection - a config toggle and a
+		// panel control for one behaviour is the source-of-truth trap
+		// this release already paid for once.
+		Map<String, Object> combo = new java.util.LinkedHashMap<>();
+		combo.put("category", "comboRunes");
+		combo.put("label", "Combination runes");
+		combo.put("current", defaults.getOrDefault("comboRunes", "DETECT_BEST"));
+		combo.put("options", List.of(
+			Map.of("key", "ALWAYS", "name", "Always combine")));
+		out.add(combo);
 		return out;
+	}
+
+	/** The combination-rune preference: the panel's choice, with
+	 * DETECT meaning "combine when you own combination runes". */
+	private boolean combineRunes()
+	{
+		java.util.function.Supplier<Map<String, String>> supplier = supplyDefaults;
+		String choice = supplier == null ? null : supplier.get().get("comboRunes");
+		if ("ALWAYS".equals(choice))
+		{
+			return true;
+		}
+		if ("NONE".equals(choice))
+		{
+			return false;
+		}
+		java.util.function.IntPredicate owns = ownedCheck;
+		if (owns == null)
+		{
+			return false;
+		}
+		for (int id : com.loadoutlab.data.SpellRunes.comboRuneIds())
+		{
+			if (owns.test(id))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** The mob a card gesture acts on: the single selection when there is
@@ -1807,15 +1842,26 @@ public class CommandEngine
 		if (Boolean.TRUE.equals(params.get("spellbookSwap")))
 		{
 			// Supplies only (field ask 2026-08-22): the trip carries the
-			// runes to swap books and keep Vengeance up. Vengeance does
-			// return damage, but modelling that is its own problem - this
-			// is purely "bring more runes".
-			addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");
+			// runes to keep Vengeance up. Vengeance does return damage,
+			// but modelling that is its own problem - this is purely
+			// "bring more runes".
 			addUtilityRunes(out, "Vengeance", "Vengeance (per cast)");
+			// The SWAP is only needed when something else wants another
+			// book. Vengeance alone - no thralls, no Death Charge, no
+			// fight book - is a perfectly good setup and must not drag
+			// swap runes along (field ask 2026-08-22).
+			String fightBook = com.loadoutlab.data.MonsterSpellbooks.bookFor(stats);
+			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
+				&& !"lunar".equalsIgnoreCase(fightBook);
+			elsewhere |= Boolean.TRUE.equals(params.get("thralls"));
+			Object charge = params.get("deathCharge");
+			elsewhere |= charge instanceof Number && ((Number) charge).intValue() > 0;
+			if (elsewhere)
+			{
+				addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");
+			}
 		}
-		java.util.function.BooleanSupplier combo = comboRunes;
-		return combo != null && combo.getAsBoolean()
-			? com.loadoutlab.data.SpellRunes.combineCombos(out) : out;
+		return combineRunes() ? com.loadoutlab.data.SpellRunes.combineCombos(out) : out;
 	}
 
 	private static void addUtilityRunes(List<Map<String, Object>> out,

@@ -54,19 +54,6 @@ public interface LoadoutLabConfig extends Config
 	// --- Controls --------------------------------------------------------
 
 	@ConfigItem(
-		keyName = "preferComboRunes",
-		name = "Combo runes",
-		description = "Show combination runes instead of separate elemental"
-			+ " stacks where they cover the cost.",
-		section = defaults,
-		position = 3
-	)
-	default boolean preferComboRunes()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = "defaultSpecWeapon",
 		name = "Spec weapon",
 		description = "Seed new results with the Spec chip on.",

@@ -1004,6 +1004,23 @@ public class ResultCards
 				? "Lunar home, Spellbook Swap into Arceuus for the summons"
 				: "thralls / Death Charge live on Arceuus";
 		}
+		// The book the fight/set asks for, before any swap rewrite - the
+		// picker offers it as the "camp it directly" choice.
+		String directBook = required;
+		String directReason = reason;
+		boolean swapOn = pageParams != null && Model.flag(pageParams, "spellbookSwap");
+		// With the swap on, LUNAR is home: you cast Vengeance there and
+		// swap into whatever the fight wants (field report 2026-08-22:
+		// the Sire still demanded Ancients and said nothing about the
+		// swap being on).
+		if (swapOn)
+		{
+			required = "lunar";
+			reason = directBook == null || "lunar".equalsIgnoreCase(directBook)
+				? "Lunar home for Vengeance"
+				: "Lunar home - Spellbook Swap into " + directBook.toUpperCase()
+					+ " for the fight";
+		}
 		boolean offBook = required != null && liveSpellbook != null
 			&& !liveSpellbook.isEmpty() && !liveSpellbook.equalsIgnoreCase(required);
 		JLabel plate = new JLabel();
@@ -1018,7 +1035,6 @@ public class ResultCards
 		// sprite (field confusion 2026-08-14: the live book shown in
 		// neutral read as a recommendation - a powered staff like the
 		// Shadow needs no book at all).
-		boolean swapOn = pageParams != null && Model.flag(pageParams, "spellbookSwap");
 		String bookTip = required == null
 			? "No specific spellbook required - a powered staff casts on any book"
 			: "This set wants the " + required.toUpperCase() + " book (" + reason + ")"
@@ -1030,16 +1046,14 @@ public class ResultCards
 			&& Model.flag(assumeOptions, "spellbookSwapAvailable");
 		if (swapAvailable)
 		{
-			bookTip = bookTip + "<br>" + (swapOn
-				? "Bringing Spellbook Swap + Vengeance runes"
-				: "Click to bring Spellbook Swap + Vengeance runes");
+			bookTip = bookTip + "<br>Click to choose how you get there";
 			plate.setToolTipText("<html>" + bookTip + "</html>");
 			if (swapOn)
 			{
 				plate.setBorder(new RoundedBorder(ACCENT, 2, 6));
 			}
-			Ui.onClick(plate, () -> commands.send("set-param",
-				Map.of("param", "spellbookSwap", "value", !swapOn)));
+			String home = directBook;
+			Ui.onClick(plate, () -> showBookMenu(plate, home, swapOn));
 		}
 		else
 		{
@@ -1122,6 +1136,37 @@ public class ResultCards
 				menu.add(book);
 			}
 		}
+		menu.show(anchor, 0, anchor.getHeight());
+	}
+
+	/** How you reach the book this fight wants: camp it, or keep Lunar
+	 * home and Spellbook Swap in (which also buys Vengeance). Wears the
+	 * same game-tab grid as the prayer book and the boost rack (field
+	 * ask 2026-08-22) - the runes follow the choice, the dps never does. */
+	private void showBookMenu(java.awt.Component anchor, String directBook, boolean swapOn)
+	{
+		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		JPanel books = Ui.darker(new GridLayout(0, 2, 2, 2));
+		books.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+		String direct = directBook == null || directBook.isEmpty() ? "standard" : directBook;
+		books.add(pickCell(menu, cachedSprite(bookSprite(direct)),
+			directBook == null || directBook.isEmpty()
+				? "Any book - nothing here needs one"
+				: "Camp " + direct.toUpperCase(),
+			!swapOn, 30,
+			() -> commands.send("set-param",
+				Map.of("param", "spellbookSwap", "value", false))));
+		boolean needsSwap = directBook != null && !directBook.isEmpty()
+			&& !"lunar".equalsIgnoreCase(directBook);
+		books.add(pickCell(menu, cachedSprite(bookSprite("lunar")),
+			needsSwap
+				? "Lunar home, Spellbook Swap into " + direct.toUpperCase()
+					+ " - brings the swap and Vengeance runes"
+				: "Lunar home for Vengeance - brings Vengeance runes",
+			swapOn, 30,
+			() -> commands.send("set-param",
+				Map.of("param", "spellbookSwap", "value", true))));
+		menu.add(books);
 		menu.show(anchor, 0, anchor.getHeight());
 	}
 

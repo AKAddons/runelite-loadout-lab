@@ -125,6 +125,18 @@ public final class SpellRunes
 		{"lava", "earth", "fire", "4699"},
 	};
 
+	/** The combination-rune item ids - the ownership detection behind
+	 * the panel's "Detect" preference reads these. */
+	public static int[] comboRuneIds()
+	{
+		int[] ids = new int[COMBOS.length];
+		for (int i = 0; i < COMBOS.length; i++)
+		{
+			ids[i] = Integer.parseInt(COMBOS[i][3]);
+		}
+		return ids;
+	}
+
 	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes)
 	{
 		if (runes == null)

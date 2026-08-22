@@ -102,6 +102,8 @@ class SpellbookSwapTest
 			.noneMatch(r -> String.valueOf(r.get("why")).contains("Vengeance")),
 			"off by default");
 
+		// Thralls live on Arceuus, so this trip genuinely swaps books.
+		assertTrue(engine.execute("set-param", Map.of("param", "thralls", "value", true)));
 		assertTrue(engine.execute("set-param",
 			Map.of("param", "spellbookSwap", "value", true)));
 		flushEdt();
@@ -120,6 +122,56 @@ class SpellbookSwapTest
 		state.setParam("spellbookSwap", true);
 		// A view param: it republishes the held answer, never recomputes.
 		assertTrue(PageState.isViewParam("spellbookSwap"));
+	}
+
+	@Test
+	@DisplayName("Vengeance alone brings no Spellbook Swap runes")
+	void vengeanceStandsAlone()
+	{
+		// No thralls, no Death Charge, no fight book: nothing else wants
+		// another spellbook, so there is nothing to swap into.
+		PageState state = new PageState();
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = engine(state, link, 99);
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		engine.onResults(data.searchMonsters("abyssal demon", 1).get(0), Map.of());
+		assertTrue(engine.execute("set-param",
+			Map.of("param", "spellbookSwap", "value", true)));
+		flushEdt();
+		List<Map<String, Object>> runes = runesOf(link.published);
+		assertTrue(runes.stream().anyMatch(r ->
+			String.valueOf(r.get("why")).contains("Vengeance")), "vengeance rides alone");
+		assertTrue(runes.stream().noneMatch(r ->
+			String.valueOf(r.get("why")).contains("Spellbook Swap")),
+			"nothing to swap into: " + runes);
+
+		// Turn thralls on and the swap earns its runes.
+		assertTrue(engine.execute("set-param", Map.of("param", "thralls", "value", true)));
+		flushEdt();
+		assertTrue(runesOf(link.published).stream().anyMatch(r ->
+			String.valueOf(r.get("why")).contains("Spellbook Swap")),
+			"arceuus summons need the swap");
+	}
+
+	@Test
+	@DisplayName("combination runes are a panel preference, detected by default")
+	void comboRunesPreference()
+	{
+		// Field ask 2026-08-22: the choice belongs in the panel, and
+		// "detect" means combine when you own combination runes.
+		PageState state = new PageState();
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = engine(state, link, 99);
+		java.util.Map<String, String> defaults = new java.util.HashMap<>();
+		engine.setSupplyDefaults(() -> defaults);
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		engine.onResults(data.searchMonsters("abyssal demon", 1).get(0), Map.of());
+		flushEdt();
+
+		List<?> catalog = (List<?>) link.published.get("supplyCatalog");
+		assertTrue(catalog.stream().anyMatch(c ->
+			"comboRunes".equals(((Map<?, ?>) c).get("category"))),
+			"the preference rides the supplies menu: " + catalog);
 	}
 
 	private static final class CaptureLink extends CompanionLink
