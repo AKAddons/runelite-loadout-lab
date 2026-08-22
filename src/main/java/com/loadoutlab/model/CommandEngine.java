@@ -1085,6 +1085,11 @@ public class CommandEngine
 				recompute(true);
 				return true;
 			}
+			case "republish":
+				// Re-draw from the held results (no compute): a display
+				// setting changed and the renderer reads config at paint.
+				republish();
+				return true;
 			case "recompute":
 				recompute();
 				return true;

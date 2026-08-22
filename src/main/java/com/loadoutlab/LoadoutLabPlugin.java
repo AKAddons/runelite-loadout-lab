@@ -883,33 +883,31 @@ public class LoadoutLabPlugin extends Plugin
 		// wrench-panel keys, never a store write, or each ledger flush would
 		// rebuild the whole results panel on the EDT.
 		String key = event.getKey();
+		com.loadoutlab.model.CommandEngine engine = commandEngine;
+		if (engine == null)
+		{
+			return;
+		}
 		if ("useDwmsData".equals(key))
 		{
 			// Ownership changed -> recompute (not just re-render).
-			com.loadoutlab.model.CommandEngine engine = commandEngine;
-			if (engine != null)
-			{
-				engine.execute("recompute", Map.of());
-			}
+			engine.execute("recompute", Map.of());
+		}
+		else if (RENDER_KEYS.contains(key))
+		{
+			// A display gate the renderer reads at paint - redraw the
+			// held answer so the setting takes effect at once, without
+			// paying for a compute.
+			engine.execute("republish", Map.of());
 		}
 	}
 
-	/** The wrench-panel display/control keys (see LoadoutLabConfig) - the
-	 * only keys onConfigChanged reacts to besides useDwmsData. */
-	private static final Set<String> PANEL_CONFIG_KEYS = Set.of(
-		"displayMaxHit", "displayAccuracy", "displayBonuses", "displayAssumes",
-		"displayDamageTaken", "displayDefensivePrayer", "displayRiskOnDeath",
-		"displayPrayerBonus", "displayAttackStyle", "displayGameBest", "enableNotes",
-		"displayFootnote", "displayAddMob", "displayInventory", "specDpsOutput",
-		"thrallDpsOutput", "showSpellControls", "showUpgradeBudget", "showWildyRisk",
-		"showInBankButton", "showFilterBankButton", "showExcludeControls",
-		"showSimControls", "showFilterControls", "showPinControls",
-		"loadingAnimation", "displaySpellbookChip", "defaultUpgradeBudget",
-		"defaultRiskCap", "defaultOnTask", "defaultSpecWeapon", "defaultAutocast",
-		"defaultMeleePrayer", "defaultRangedPrayer", "defaultMagicPrayer",
-		"defaultMeleeBoost", "defaultRangedBoost", "defaultMagicBoost",
-		"defaultThralls", "defaultDeathCharge",
-		"spellbookSwapVengeance", "defaultAntifire");
+	/** Settings the RENDERER honours, so flipping one must redraw. The
+	 * old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
+	 * exists and nothing ever read it (audit 2026-08-22). */
+	private static final Set<String> RENDER_KEYS =
+		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons");
+
 
 	/** Client-thread staging push: the castability state the panel's
 	 * chips read - BOOSTED magic (field call 2026-07-21: castability
