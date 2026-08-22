@@ -144,6 +144,10 @@ public class OfficialVectorExport
 		// magic +0.23%; dhw-irondragon has sat at +0.3% since July).
 		{"dhwslayer-adamantdragon", "Adamant dragon", "", "MAGIC", "Dragon hunter wand", null, "Earth Surge", "Slayer helmet (i)"},
 		{"salvedhw-vorkath", "Vorkath", "Post-quest", "MAGIC", "Dragon hunter wand", null, "Fire Surge", "Salve amulet(ei)", "Occult necklace"},
+		// Tbow scaling vs the Awakened Duke (field 2026-08-21: our max 79
+		// vs the calc's 81, set -4.9%) - the magic-input read.
+		{"tbowseeking-dukeawakened", "Duke Sucellus", "Awakened, Awake", "RANGED", "Twisted bow", "Seeking amethyst arrow"},
+		{"tbowquiver-zuk", "TzKal-Zuk", "", "RANGED", "Twisted bow", "Dragon arrow", null, "Blessed dizana's quiver"},
 		{"swamptrident-dharok", "Dharok the Wretched", "", "MAGIC", "Trident of the swamp", null},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
@@ -280,8 +284,13 @@ public class OfficialVectorExport
 			// Our corpus collapses combat-identical versions (and blanks the
 			// label), so fall back to the first name match; s[2] stays in
 			// the vector for the official side's exact-version lookup.
+			// Version compare is FIRST-TOKEN both sides: our loader
+			// normalizes the wiki's compound strings ("Awakened, Awake"
+			// -> "Awakened") while the official data keeps them raw -
+			// the vector carries the raw string for their lookup.
 			MonsterStats monster = data.searchMonsters(s[1], 10).stream()
-				.filter(m -> s[2] == null || s[2].isEmpty() || s[2].equalsIgnoreCase(m.getVersion()))
+				.filter(m -> s[2] == null || s[2].isEmpty()
+					|| firstToken(s[2]).equalsIgnoreCase(firstToken(m.getVersion())))
 				.findFirst()
 				.orElse(data.searchMonsters(s[1], 1).stream().findFirst().orElse(null));
 			GearItem weapon = byName(data, s[4]);
@@ -399,6 +408,16 @@ public class OfficialVectorExport
 		return item.getVersion().isEmpty()
 			? item.getName()
 			: new String[]{item.getName(), item.getVersion()};
+	}
+
+	private static String firstToken(String version)
+	{
+		if (version == null)
+		{
+			return "";
+		}
+		int comma = version.indexOf(',');
+		return (comma < 0 ? version : version.substring(0, comma)).trim();
 	}
 
 	private static GearItem byName(LoadoutData data, String name)

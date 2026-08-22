@@ -41,13 +41,43 @@ public final class QuiverAmmo
 			&& RangedAmmo.strengthApplies(ammo, weapon);
 	}
 
+	/** The quiver's OWN conditional bonus (official model, verified
+	 * 2026-08-21 across the Duke/Jad/Zuk tbow reports: a CHARGED or
+	 * blessed quiver with applicable ammo grants +10 ranged accuracy
+	 * and +1 ranged strength on top of everything - our chain counted
+	 * only the stored arrows' stats and ran every quiver set low). */
+	private static boolean quiverBonusApplies(Loadout loadout)
+	{
+		GearItem cape = loadout.get(GearSlot.CAPE);
+		if (cape == null)
+		{
+			return false;
+		}
+		String name = cape.getNameLower();
+		boolean charged = name.contains("blessed dizana's quiver")
+			|| name.contains("dizana's max cape")
+			|| (name.contains("dizana's quiver")
+				&& "charged".equalsIgnoreCase(cape.getVersion()));
+		if (!charged)
+		{
+			return false;
+		}
+		GearItem weapon = loadout.getWeapon();
+		GearItem ammo = loadout.getQuiverAmmo() != null
+			? loadout.getQuiverAmmo() : loadout.get(GearSlot.AMMO);
+		return weapon != null && ammo != null
+			&& RangedAmmo.usesArrowsOrBolts(weapon)
+			&& RangedAmmo.strengthApplies(ammo, weapon);
+	}
+
 	/** The quiver-carried ammo's ranged strength - added beside
 	 * BlowpipeDarts.strength in the max-hit chain, so the arrows count
 	 * from the quiver exactly as they did from the slot. */
 	public static int strength(Loadout loadout)
 	{
 		GearItem carried = loadout.getQuiverAmmo();
-		return carried == null ? 0 : carried.getBonuses().getRangedStrength();
+		return (carried == null ? 0 : carried.getBonuses().getRangedStrength())
+			+ (quiverBonusApplies(loadout) ? 1 : 0);
 	}
 
 	/** The quiver-carried ammo's ranged ACCURACY bonus - the quiver's
@@ -58,6 +88,7 @@ public final class QuiverAmmo
 	public static int accuracy(Loadout loadout)
 	{
 		GearItem carried = loadout.getQuiverAmmo();
-		return carried == null ? 0 : carried.getOffensive().getRanged();
+		return (carried == null ? 0 : carried.getOffensive().getRanged())
+			+ (quiverBonusApplies(loadout) ? 10 : 0);
 	}
 }
