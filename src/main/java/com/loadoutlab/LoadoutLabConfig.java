@@ -187,7 +187,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "loadingAnimation",
 		name = "Loading animation",
-		description = "Show the animated mascot while computing; off = a plain line.",
+		description = "Show the animation while computing; off = a plain line.",
 		section = display,
 		position = 12
 	)

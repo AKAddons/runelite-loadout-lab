@@ -30,6 +30,20 @@ public class RenderSurface
 	{
 		this.spriteManager = spriteManager;
 	}
+
+	/** Config gates the renderer honours: the compute animation and the
+	 * wilderness risk controls. Both settings described behaviour they
+	 * did not control until 2026-08-22 - the merge-back dropped the
+	 * DisplayOptions bridge and nothing replaced it. */
+	private java.util.function.BooleanSupplier animationGate = () -> true;
+	private java.util.function.BooleanSupplier wildyRiskGate = () -> true;
+
+	public void setDisplayGates(java.util.function.BooleanSupplier animation,
+		java.util.function.BooleanSupplier wildyRisk)
+	{
+		this.animationGate = animation;
+		this.wildyRiskGate = wildyRisk;
+	}
 	private JPanel root;
 	private JPanel matchesBox;
 	private final javax.swing.Timer searchDebounce;
@@ -61,7 +75,9 @@ public class RenderSurface
 			}
 			if (loader != null)
 			{
-				loader.setRunning(isComputing);
+				boolean animate = animationGate.getAsBoolean();
+				loader.setVisible(animate);
+				loader.setRunning(isComputing && animate);
 			}
 			waitingSlot.setVisible(isComputing);
 			waitingSlot.revalidate();
@@ -923,7 +939,8 @@ public class RenderSurface
 				args.put("value", Gp.parse(text));
 				commands.send("set-param", args);
 			}));
-			if (anyWilderness && (allExclusive || Model.flag(params, "inWilderness")))
+			if (anyWilderness && wildyRiskGate.getAsBoolean()
+				&& (allExclusive || Model.flag(params, "inWilderness")))
 			{
 				int riskGp = Model.id(params, "riskBudgetGp");
 				// The CAP FLAG decides, never the number: the engine's

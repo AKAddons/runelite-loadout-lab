@@ -485,10 +485,19 @@ public class LoadoutLabPlugin extends Plugin
 						? boostedLevels.getMagic() : PlayerLevels.MAXED.getMagic();
 					Map<String, Object> seeds = new java.util.LinkedHashMap<>();
 					seeds.put("specWeapon", config.defaultSpecWeapon());
-					seeds.put("thralls",
-						com.loadoutlab.engine.ExtraDps.thrallDps(magic) > 0
-							&& ownsCanonical(com.loadoutlab.engine.ExtraDps.BOOK_OF_THE_DEAD));
-					seeds.put("deathCharge", magic >= 80 ? 1 : 0);
+					// DETECT keeps the derived answer; NONE means off, as
+					// the settings promise. Both were hardcoded and
+					// ignored the config outright (audit 2026-08-22).
+					boolean detectThralls =
+						config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
+					seeds.put("thralls", detectThralls
+						&& com.loadoutlab.engine.ExtraDps.thrallDps(magic) > 0
+						&& ownsCanonical(com.loadoutlab.engine.ExtraDps.BOOK_OF_THE_DEAD));
+					boolean detectCharge =
+						config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
+					seeds.put("deathCharge", detectCharge && magic >= 80 ? 1 : 0);
+					seeds.put("upgradeBudgetGp",
+						com.loadoutlab.render.Gp.parse(config.defaultUpgradeBudget()));
 					// The configured wilderness cap - inert since the
 					// merge-back (field report 2026-08-22: the chip showed
 					// 'Risk 75k' while nothing constrained the answer,
@@ -557,6 +566,7 @@ public class LoadoutLabPlugin extends Plugin
 					new com.loadoutlab.render.ResultCards(itemManager, spriteManager, sink, picker);
 				monsterIcons = new com.loadoutlab.ui.MonsterIcons(okHttpClient);
 				cards.setMonsterIcons(monsterIcons, () -> config.fetchMonsterIcons());
+
 				internalSurface = new com.loadoutlab.render.RenderSurface(cards,
 					() -> companionLink == null ? null : companionLink.lastPage(), sink, picker,
 					(query, onResults) ->
@@ -566,6 +576,10 @@ public class LoadoutLabPlugin extends Plugin
 							? java.util.Collections.emptyList() : engine.searchOptions(query));
 					});
 				internalSurface.setSpriteManager(spriteManager);
+				// Two display settings that described behaviour they did
+				// not control until 2026-08-22.
+				internalSurface.setDisplayGates(
+					() -> config.loadingAnimation(), () -> config.showWildyRisk());
 				companionLink.setPageListener(() ->
 				{
 					com.loadoutlab.render.RenderSurface surface = internalSurface;
