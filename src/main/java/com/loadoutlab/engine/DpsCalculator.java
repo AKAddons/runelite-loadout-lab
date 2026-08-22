@@ -475,9 +475,12 @@ public final class DpsCalculator
 			&& "standard".equalsIgnoreCase(twinflameSpell.getSpellbook());
 		if (twinflame)
 		{
+			// The damage half rides the magic-damage POOL (additive,
+			// applyMagicDamageBonuses) exactly like theirs - a separate
+			// multiplier here floors differently (verified 2026-08-21,
+			// vector twinflame-firegiant: 44 vs their 42 max).
 			counted("twinflame staff", "+10% accuracy and damage on standard spells");
 			attackRoll = (long) Math.floor(attackRoll * 1.10);
-			maxHit = (int) Math.floor(maxHit * 1.10);
 		}
 		// The official calc applies flat armour to melee and ranged ONLY
 		// (flatAddTransformer is gated styleType !== 'magic', verified
@@ -488,8 +491,18 @@ public final class DpsCalculator
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
 		if (twinflame && twinflameDoubles(twinflameSpell))
 		{
-			counted("twinflame staff", "second hit at 40% (Bolt/Blast/Wave)");
-			expected *= 1.4;
+			// Their exact model (verified 2026-08-21, vector
+			// twinflame-firegiant): the second splat rolls NOTHING of its
+			// own - it is trunc(0.4 x the first hit's roll), truncated
+			// PER ROLL. The old smooth 1.4x kept the fractions and ran
+			// +6.3% hot on a Fire giant Water Wave.
+			counted("twinflame staff", "second hit at 40% of the roll (Bolt/Blast/Wave)");
+			long truncSum = 0;
+			for (int k = 0; k <= maxHit; k++)
+			{
+				truncSum += k * 2L / 5;
+			}
+			expected += accuracy * ((double) truncSum / (maxHit + 1));
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MAGIC);
 		String spellName = effectiveRequest.getSpell() == null ? "" : effectiveRequest.getSpell().getName();
@@ -1100,6 +1113,11 @@ public final class DpsCalculator
 		if (wearing(loadout, "tumeken"))
 		{
 			magicDamage = Math.min(1000, magicDamage * 3);
+		}
+		if (wearing(loadout, "twinflame") && request.getSpell() != null
+			&& "standard".equalsIgnoreCase(request.getSpell().getSpellbook()))
+		{
+			magicDamage += 100;
 		}
 		maxHit = (int) Math.floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))

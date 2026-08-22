@@ -73,15 +73,22 @@ class TwinflameStaffTest
 	}
 
 	@Test
-	@DisplayName("vs an air-weak brother the twinflame beats a powered staff")
-	void beatsPoweredStaffVsBarrows()
+	@DisplayName("vs an air-weak brother the swamp trident legitimately wins")
+	void tridentBeatsTwinflameVsBarrows()
 	{
+		// REFEREE'D 2026-08-21 (vectors twinflame-dharok 6.02 vs
+		// swamptrident-dharok 6.53, both engines agreeing to <0.1%):
+		// the July field pin ("twinflame must beat the trident") was an
+		// artifact of the old inflated twinflame model - a separate
+		// 1.10x damage multiplier instead of +100 into the magic-damage
+		// pool, and a smooth 1.4x second hit instead of the per-roll
+		// trunc(0.4 x roll). The honest ordering flips.
 		DpsResult twinflame = calc.calculate(request().withSpell(spell("Wind Wave")), wielding(30634));
 		DpsResult trident = calc.calculate(request(), wielding(12899));
 		assertNotNull(twinflame);
 		assertNotNull(trident);
-		assertTrue(twinflame.getDps() > trident.getDps(),
-			"twinflame " + twinflame.getDps() + " must beat swamp trident " + trident.getDps()
-				+ " vs the air-weak Dharok (field report 2026-07-18)");
+		assertTrue(trident.getDps() > twinflame.getDps(),
+			"swamp trident " + trident.getDps() + " over twinflame " + twinflame.getDps()
+				+ " vs the air-weak Dharok (official-calc referee'd)");
 	}
 }

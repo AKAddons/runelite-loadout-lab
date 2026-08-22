@@ -132,6 +132,15 @@ public class OfficialVectorExport
 			"Inquisitor's plateskirt", "Ferocious gloves", "Primordial boots",
 			"Ultor ring"},
 		{"kodai-firesurge-bloodmoon", "Blood Moon", "", "MAGIC", "Kodai wand", null, "Fire Surge"},
+		// Twinflame double-hit (field dispute 2026-08-21: Fire giant magic
+		// set 9.293 vs the calc's 8.793): their second splat is
+		// trunc(0.4 x roll) at cast speed 6.
+		{"twinflame-firegiant", "Fire giant", "Level 109", "MAGIC", "Twinflame staff", null, "Water Wave"},
+		{"kodai-waterwave-firegiant", "Fire giant", "Level 109", "MAGIC", "Kodai wand", null, "Water Wave"},
+		// The July ordering pin re-referee'd under the corrected
+		// twinflame model: which staff wins vs the air-weak Dharok?
+		{"twinflame-dharok", "Dharok the Wretched", "", "MAGIC", "Twinflame staff", null, "Wind Wave"},
+		{"swamptrident-dharok", "Dharok the Wretched", "", "MAGIC", "Trident of the swamp", null},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
 		{"scorchingbow-td", "Tormented Demon", "1", "RANGED", "Scorching bow", "Dragon arrow"},
