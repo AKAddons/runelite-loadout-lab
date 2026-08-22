@@ -24,8 +24,8 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigSection(
 		name = "Defaults",
-		description = "What every NEW result assumes - the per-card chips and"
-			+ " pickers still override per mob",
+		description = "What every new result assumes - chips and pickers"
+			+ " still override per mob",
 		position = 2
 	)
 	String defaults = "defaults";
@@ -66,7 +66,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "displayBonuses",
 		name = "Counted bonuses / sets",
-		description = "Show the 'Counting:' line naming the conditional bonuses applied.",
+		description = "Show the 'Counting:' line of applied conditional bonuses.",
 		section = display,
 		position = 3
 	)
@@ -114,7 +114,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "displaySetCost",
 		name = "Cost to own",
-		description = "Show what the shown set still costs you - the BiS pieces you do not own, at wiki prices.",
+		description = "Show what the set still costs - unowned pieces at wiki prices.",
 		section = display,
 		position = 19
 	)
@@ -261,8 +261,8 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "preferComboRunes",
 		name = "Combo runes",
-		description = "Show combination runes (smoke/mist/dust/mud/steam/lava)"
-			+ " instead of separate elemental stacks where they cover the cost.",
+		description = "Show combination runes instead of separate elemental"
+			+ " stacks where they cover the cost.",
 		section = defaults,
 		position = 3
 	)
@@ -306,9 +306,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "specDpsOutput",
 		name = "Spec dps",
-		description = "Where the carried spec weapon's added dps appears:"
-			+ " folded into the shown numbers, as a footnote under the card,"
-			+ " or not shown.",
+		description = "Where the carried spec weapon's added dps appears.",
 		section = display,
 		position = 17
 	)
@@ -320,8 +318,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "thrallDpsOutput",
 		name = "Thrall dps",
-		description = "Where the assumed thrall's dps appears: folded into"
-			+ " the shown numbers, as a footnote under the card, or not shown.",
+		description = "Where the assumed thrall's dps appears.",
 		section = display,
 		position = 18
 	)
@@ -369,7 +366,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "defaultRiskCap",
 		name = "Wilderness risk cap",
-		description = "Seed new results' wilderness risk cap (empty = unconstrained).",
+		description = "Seed new results' wilderness risk cap (empty = uncapped).",
 		section = defaults,
 		position = 15
 	)
@@ -794,8 +791,8 @@ public interface LoadoutLabConfig extends Config
 		keyName = "fetchMonsterIcons",
 		name = "Monster pictures (wiki)",
 		description = "Fetch each mob row's picture from the OSRS wiki - one"
-			+ " request per monster, cached. Off means no wiki requests"
-			+ " and plain text rows.",
+			+ " request per monster, cached. Off = no wiki requests, plain"
+			+ " text rows.",
 		section = connections,
 		position = 2
 	)

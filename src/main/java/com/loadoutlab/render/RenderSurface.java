@@ -783,7 +783,7 @@ public class RenderSurface
 				new java.awt.Color(130, 200, 130), new java.awt.Color(110, 140, 110),
 				new java.awt.Color(95, 160, 95),
 				"Stop simming ", "toggle-sim",
-				"Sim an item (consider as owned)...", null);
+				"Sim an item as owned...", null);
 			pillChip(counts, "excludedItems", "-",
 				new java.awt.Color(220, 120, 120), new java.awt.Color(140, 110, 110),
 				new java.awt.Color(170, 90, 90),
@@ -911,7 +911,7 @@ public class RenderSurface
 			invSlider.setPreferredSize(new java.awt.Dimension(88, 18));
 			invSlider.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			invSlider.setFocusable(false);
-			invSlider.setToolTipText("Carried gear swaps the trip plan may use (bench size)");
+			invSlider.setToolTipText("Max gear swaps carried on the trip");
 			invSlider.addChangeListener(e ->
 			{
 				invLabel.setText("Inv " + invSlider.getValue());
@@ -974,7 +974,7 @@ public class RenderSurface
 			addMobButton.setForeground(new java.awt.Color(190, 190, 190));
 			addMobButton.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 3, 10));
 			javax.swing.JButton reload = chip(new javax.swing.JButton("Reload"),
-				"Re-run the current search (fresh bank scan, fresh answer)", () ->
+				"Re-run with a fresh bank scan", () ->
 					commands.send("recompute", Map.of()));
 			reload.setContentAreaFilled(false);
 			reload.setOpaque(false);
@@ -988,7 +988,7 @@ public class RenderSurface
 		if (reportText != null)
 		{
 			footerRow.add(chip(new javax.swing.JButton("Copy report"),
-				"Copy the shown result as a text report", () ->
+				"Copy the shown result as text", () ->
 			{
 				try
 				{
