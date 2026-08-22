@@ -324,14 +324,47 @@ public class CommandEngine
 				if (exactId instanceof Number)
 				{
 					int wanted = ((Number) exactId).intValue();
+					// Versions can SHARE an npc id (Duke's Awakened and
+					// Post-quest are both 12191, Awakened first in corpus
+					// order - field report 2026-08-21: the dropdown listed
+					// Post-quest, the click selected Awakened). The
+					// dropdown sends its row's version; a bare id (link-
+					// ins) takes the best-ranked id match via search.
+					Object versionArg = args.get("version");
+					MonsterStats first = null;
 					for (MonsterStats m : data.getMonsters())
 					{
-						if (m.getId() == wanted)
+						if (m.getId() != wanted)
+						{
+							continue;
+						}
+						if (versionArg instanceof String
+							&& ((String) versionArg).equalsIgnoreCase(m.getVersion()))
 						{
 							return selectResolved(m, null);
 						}
+						if (first == null)
+						{
+							first = m;
+						}
 					}
-					return false;
+					if (first == null)
+					{
+						return false;
+					}
+					if (!(versionArg instanceof String))
+					{
+						// Bare id: prefer the everyday version the search
+						// itself would rank first.
+						for (MonsterStats ranked : data.searchMonsters(first.getName(), 10))
+						{
+							if (ranked.getId() == wanted)
+							{
+								return selectResolved(ranked, null);
+							}
+						}
+					}
+					return selectResolved(first, null);
 				}
 				Object query = args == null ? null : args.get("query");
 				if (!(query instanceof String) || ((String) query).isBlank())
@@ -1506,6 +1539,9 @@ public class CommandEngine
 			Map<String, Object> node = new java.util.LinkedHashMap<>();
 			node.put("label", m.label());
 			node.put("id", m.getId());
+			// Versions can share an npc id - the picker must say WHICH
+			// row it means (Duke 12191, field report 2026-08-21).
+			node.put("version", m.getVersion());
 			options.add(node);
 		}
 		return options;

@@ -167,7 +167,10 @@ public class RenderSurface
 		}
 		else
 		{
-			commands.send("select", Map.of("id", Model.id(match, "id")));
+			String pickedVersion = Model.str(match, "version");
+			commands.send("select", pickedVersion == null
+				? Map.of("id", Model.id(match, "id"))
+				: Map.of("id", Model.id(match, "id"), "version", pickedVersion));
 		}
 		search.setText("");
 		matchesBox.removeAll();
