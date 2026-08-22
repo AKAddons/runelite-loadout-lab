@@ -154,9 +154,18 @@ public class WikiCalcLink
 		}
 
 		Map<String, Object> equipment = new LinkedHashMap<>();
+		GearItem quiverAmmo = shown.getLoadout().getQuiverAmmo();
 		for (GearSlot slot : GearSlot.values())
 		{
 			GearItem worn = shown.getLoadout().get(slot);
+			// The calc has no quiver concept: the bolts the quiver carries
+			// must ride the AMMO slot or their side prices an empty
+			// crossbow (field report 2026-08-21). The displaced blessing
+			// only carries prayer bonus - nothing the dps math reads.
+			if (slot == GearSlot.AMMO && quiverAmmo != null)
+			{
+				worn = quiverAmmo;
+			}
 			int id = worn != null ? worn.getId() : -1;
 			if (id > 0)
 			{
