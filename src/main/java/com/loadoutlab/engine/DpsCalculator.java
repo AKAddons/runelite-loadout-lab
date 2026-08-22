@@ -440,7 +440,13 @@ public final class DpsCalculator
 		PrayerBonuses prayers = effectiveRequest.getPrayers();
 		// Prayer floor, +2 accurate stance, +9 - matches the official
 		// calc's effective level.
-		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy()) + 2 + 9;
+		// Stance: powered staves fight on Accurate (+2); AUTOCAST casts
+		// carry NO stance bonus (official-verified 2026-08-21, vector
+		// dhwslayer-adamantdragon: the flat +2 ran every roll one
+		// effective level hot - invisible at 99% acc saturation, +0.5%
+		// acc against real defence).
+		int effectiveAccuracy = (int) Math.floor(levels.getMagic() * prayers.getMagicAccuracy())
+			+ (isPoweredStaff(loadout) ? 2 : 0) + 9;
 		boolean magicVoid = isWearingMagicVoid(loadout);
 		if (magicVoid)
 		{
@@ -1119,27 +1125,35 @@ public final class DpsCalculator
 		{
 			magicDamage += 100;
 		}
-		maxHit = (int) Math.floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
+		// Salve and avarice join the POOL additively (+200/+150 units,
+		// official-verified 2026-08-21 vector salvedhw-vorkath: the old
+		// separate 6/5 multiplier COMPOUNDED with gear magic damage,
+		// +6% on a Vorkath fire surge). The slayer head stays a separate
+		// 23/20 factor AFTER the pool - exactly their blackMaskBonus.
+		boolean slayerHeadBonus = false;
 		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
 		{
 			counted("amulet of avarice", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
+			magicDamage += 200;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
 		{
-			// The magic damage path lacked a salve branch entirely (the
-			// accuracy path had one) - wiki: (ei) +20%, (i) +15% magic damage.
 			counted("salve amulet(ei)", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
+			magicDamage += 200;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
 			counted("salve amulet(i)", "+15% damage");
-			maxHit = multiply(maxHit, 23, 20);
+			magicDamage += 150;
 		}
 		else if (isSlayerTaskEligible(request) && imbuedSlayerHead(loadout) != null)
 		{
 			counted(imbuedSlayerHead(loadout).getNameLower(), "+15% damage");
+			slayerHeadBonus = true;
+		}
+		maxHit = (int) Math.floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
+		if (slayerHeadBonus)
+		{
 			maxHit = multiply(maxHit, 23, 20);
 		}
 		if (revWeaponBuff(request, loadout, "thammaron's sceptre", "thammaron's sceptre (a)",

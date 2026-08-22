@@ -140,6 +140,10 @@ public class OfficialVectorExport
 		// The July ordering pin re-referee'd under the corrected
 		// twinflame model: which staff wins vs the air-weak Dharok?
 		{"twinflame-dharok", "Dharok the Wretched", "", "MAGIC", "Twinflame staff", null, "Wind Wave"},
+		// The dhw/slayer/weakness stack (field 2026-08-21: adamant dragon
+		// magic +0.23%; dhw-irondragon has sat at +0.3% since July).
+		{"dhwslayer-adamantdragon", "Adamant dragon", "", "MAGIC", "Dragon hunter wand", null, "Earth Surge", "Slayer helmet (i)"},
+		{"salvedhw-vorkath", "Vorkath", "Post-quest", "MAGIC", "Dragon hunter wand", null, "Fire Surge", "Salve amulet(ei)", "Occult necklace"},
 		{"swamptrident-dharok", "Dharok the Wretched", "", "MAGIC", "Trident of the swamp", null},
 		// Tormented demons: demonbane + elemental weakness (water 30)
 		{"emberlight-td", "Tormented Demon", "1", "MELEE", "Emberlight", null},
