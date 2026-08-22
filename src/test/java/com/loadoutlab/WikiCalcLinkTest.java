@@ -153,6 +153,29 @@ class WikiCalcLinkTest
 	}
 
 	@Test
+	@DisplayName("the monster travels under its RAW wiki version")
+	void monsterCarriesTheWikiVersion()
+	{
+		// The everyday Duke displays version '' but the official data
+		// keys 'Post-quest, Awake' - a display version makes their
+		// import fall back to the Awakened row (field 2026-08-21).
+		MonsterStats duke = data.searchMonsters("duke sucellus", 1).get(0);
+		assertEquals("", duke.getVersion(), "display stays clean");
+		assertEquals("Post-quest, Awake", duke.getWikiVersion());
+		OptimizationRequest request = TestRequests.of(duke, CombatStyle.MELEE,
+			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
+			0, com.loadoutlab.engine.CandidateMode.ALL_STANDARD, false, false,
+			OwnedItems.EMPTY, 1);
+		DpsResult best = new LoadoutOptimizer().optimize(data, request).get(0);
+		Map<String, Object> payload = WikiCalcLink.payload(duke, best, -1,
+			"Piety + Divine super combat", PlayerLevels.MAXED, PlayerLevels.MAXED,
+			false, false);
+		Map<String, Object> monsterDoc =
+			(Map<String, Object>) payload.get("monster");
+		assertEquals("Post-quest, Awake", monsterDoc.get("version"));
+	}
+
+	@Test
 	@DisplayName("attack-type strings map to their {type, stance} pairs")
 	void styleMapping()
 	{

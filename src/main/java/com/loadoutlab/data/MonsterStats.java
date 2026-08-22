@@ -125,9 +125,24 @@ public final class MonsterStats
 	 * normalization of quest/post-quest noise). */
 	public MonsterStats withVersion(String newVersion)
 	{
-		return new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
+		MonsterStats copy = new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
 			size, defence, magic, offensiveMagic, defensive, offence, attributes,
 			slayerMonster, weaknessElement, weaknessSeverity);
+		copy.wikiVersion = getWikiVersion();
+		return copy;
+	}
+
+	/** The RAW wiki version string ("Post-quest, Awake") - what the
+	 * official data and calculator key on. Display renames
+	 * (normalizeQuestVersions) preserve it; null = never renamed.
+	 * Field 2026-08-21: exporting the DISPLAY version made the calc's
+	 * import miss and silently fall back to the FIRST same-id row -
+	 * the post-quest Duke opened as Awakened. */
+	private String wikiVersion;
+
+	public String getWikiVersion()
+	{
+		return wikiVersion == null ? version : wikiVersion;
 	}
 
 	/** What the label SHOWS when the community name beats the in-game one
@@ -186,9 +201,11 @@ public final class MonsterStats
 	{
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(immuneAttributes);
-		return new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
+		MonsterStats copy = new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
 			size, defence, magic, offensiveMagic, defensive, offence, extended,
 			slayerMonster, weaknessElement, weaknessSeverity);
+		copy.wikiVersion = getWikiVersion();
+		return copy;
 	}
 
 	/** Lowercased monster name, cached (per-trial engine gates). */

@@ -152,6 +152,12 @@ public class OfficialVectorExport
 		// resistant post-quest Duke (field 2026-08-21: melee +24%,
 		// ranged +31%, magic ~3x).
 		{"emberlight-duke", "Duke Sucellus", "Post-quest, Awake", "MELEE", "Emberlight", null},
+		// Andrew's exact field melee set (2026-08-21: +24% vs the calc
+		// while the minimal emberlight vector is exact).
+		{"dukemelee-field", "Duke Sucellus", "Post-quest, Awake", "MELEE", "Emberlight", null, null,
+			"Neitiznot faceguard", "Fire cape", "Amulet of torture", "Rada's blessing 4",
+			"Bandos chestplate", "Dragon defender", "Blood moon tassets", "Ferocious gloves",
+			"Primordial boots", "Berserker ring (i)"},
 		{"scorching-duke", "Duke Sucellus", "Post-quest, Awake", "RANGED", "Scorching bow", "Dragon arrow"},
 		{"purging-darkdemonbane-duke", "Duke Sucellus", "Post-quest, Awake", "MAGIC", "Purging staff", null, "Dark Demonbane"},
 		{"swamptrident-dharok", "Dharok the Wretched", "", "MAGIC", "Trident of the swamp", null},

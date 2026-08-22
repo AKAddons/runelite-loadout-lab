@@ -239,17 +239,13 @@ public class WikiCalcLink
 		// profileId: a group's synthetic phase variant maps back to the
 		// real row - the calculator only knows real npc ids.
 		monster.put("id", mob.profileId());
-		// Our corpus MERGES same-stat wiki rows into comma lists
-		// ("Awakened, Awake") - their import matches exact version
-		// strings and silently falls back to the FIRST row by id on a
-		// miss (field 2026-08-21: the Awakened Duke opened as a lower
-		// Duke). The first token is the wiki's own version name.
-		String version = mob.getVersion();
-		if (version != null && version.contains(","))
-		{
-			version = version.substring(0, version.indexOf(',')).trim();
-		}
-		monster.put("version", version);
+		// The RAW wiki version - their import keys on exact strings
+		// from the shared weirdgloop data ("Post-quest, Awake") and
+		// silently falls back to the FIRST same-id row on a miss
+		// (field 2026-08-21: the post-quest Duke opened as Awakened,
+		// def 316 vs 275 - a -24% phantom). Our display labels are
+		// normalized and must never travel.
+		monster.put("version", mob.getWikiVersion());
 		Map<String, Object> inputs = new LinkedHashMap<>();
 		inputs.put("defenceReductions", new LinkedHashMap<>());
 		if (mob.getToaInvocationLevel() > 0)
