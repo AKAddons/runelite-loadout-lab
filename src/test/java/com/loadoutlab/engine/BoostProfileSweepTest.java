@@ -44,6 +44,7 @@ public class BoostProfileSweepTest
 					0);
 			case RANGING:
 			case DIVINE_RANGING: // added 2026-07-21: same numbers as the base
+			case BASTION: // added 2026-08-21: ranging numbers, defence unmodeled
 				return source.withBoosts(0, 0, 0, boost(source.getRanged(), 4, 0.10), 0);
 			case SUPER_RANGING:
 				return source.withBoosts(0, 0, 0, boost(source.getRanged(), 5, 0.15), 0);
@@ -53,6 +54,7 @@ public class BoostProfileSweepTest
 				return source.withBoosts(0, 0, 0, 0, boost(source.getMagic(), 1, 0.10));
 			case MAGIC:
 			case DIVINE_MAGIC: // added 2026-07-21: same numbers as the base
+			case BATTLEMAGE: // added 2026-08-21: magic potion's +4, defence unmodeled
 				return source.withBoosts(0, 0, 0, 0, 4);
 			case SUPER_MAGIC:
 				return source.withBoosts(0, 0, 0, 0, boost(source.getMagic(), 5, 0.15));
