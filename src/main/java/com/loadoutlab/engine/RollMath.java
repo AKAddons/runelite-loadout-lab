@@ -97,12 +97,20 @@ public final class RollMath
 			return 0.0;
 		}
 		int lo = Math.max(0, Math.min(minHit, maxHit));
-		long sum = 0;
-		for (int k = lo; k <= maxHit; k++)
-		{
-			sum += Math.max(0, k - armour);
-		}
+		// sum(max(0, k - armour)) over k in [lo, maxHit], closed form: the
+		// rolls at or under the armour contribute nothing, the rest are a
+		// run of consecutive integers. Walking the rolls gave the same
+		// total, but this runs on EVERY melee and ranged trial.
+		long first = Math.max((long) lo, (long) armour + 1);
+		long sum = first > maxHit ? 0
+			: triangle(maxHit - armour) - triangle(first - armour - 1);
 		return accuracy * ((double) sum / (maxHit - lo + 1));
+	}
+
+	/** 0 + 1 + ... + n; n below zero is an empty run. */
+	private static long triangle(long n)
+	{
+		return n <= 0 ? 0 : n * (n + 1) / 2;
 	}
 
 	public static double expectedHit(double accuracy, int minHit, int maxHit)

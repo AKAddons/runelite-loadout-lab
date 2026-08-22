@@ -287,12 +287,14 @@ public final class DpsCalculator
 		// particularly effective here"; field report 2026-08-10): the
 		// dual macuahuitl gets +5 twice, and the old split-after-armour
 		// order credited it only once.
+		// The expectation takes RAW bounds and clamps each roll itself;
+		// maxHit keeps an armoured copy because the shown max hit (and
+		// the Verac branch below) still reads it. minHit is only ever
+		// raw - nothing downstream reads an armoured floor.
 		int rawMax = maxHit;
-		int rawMin = minHit;
 		int flatArmour = request.getMonster().getDefensive().getFlatArmour();
-		minHit = applyFlatArmour(request, minHit);
 		maxHit = applyFlatArmour(request, maxHit);
-		double expected = RollMath.expectedHitWithFlatArmour(accuracy, rawMin, rawMax, flatArmour);
+		double expected = RollMath.expectedHitWithFlatArmour(accuracy, minHit, rawMax, flatArmour);
 		if (isDualMacuahuitl(loadout))
 		{
 			// Two chained hits (official calc model): the first rolls half

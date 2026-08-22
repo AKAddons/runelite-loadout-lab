@@ -573,7 +573,7 @@ public class CommandEngine
 				{
 					return false;
 				}
-				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				MonsterStats mob = shownMob();
 				int at = -1;
 				for (int i = 0; mob != null && i < mobs.size(); i++)
 				{
@@ -797,7 +797,7 @@ public class CommandEngine
 				// Rosters have no state.mob() - the lensed row is the mob
 				// (the set-note lesson, third member; field report
 				// 2026-08-20: the card trio's adds no-oped on rosters).
-				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				MonsterStats mob = shownMob();
 				Object itemId = args == null ? null : args.get("itemId");
 				if (ops == null || mob == null || !(itemId instanceof Number))
 				{
@@ -856,7 +856,7 @@ public class CommandEngine
 			case "remove-mob-filter":
 			{
 				StoreOps ops = stores;
-				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				MonsterStats mob = shownMob();
 				Object itemId = args == null ? null : args.get("itemId");
 				if (ops == null || mob == null || !(itemId instanceof Number))
 				{
@@ -958,7 +958,7 @@ public class CommandEngine
 				StoreOps ops = stores;
 				// The LENS mob on rosters (field report 2026-08-15: notes
 				// never saved on a trip - state.mob() is null there).
-				MonsterStats mob = state.mob() != null ? state.mob() : lensedMob();
+				MonsterStats mob = shownMob();
 				if (ops == null || mob == null)
 				{
 					return false;
@@ -1406,7 +1406,7 @@ public class CommandEngine
 		page.put("supplyCatalog", supplyCatalog());
 		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
-		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob,
+		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode));
 		link.publishPage(page);
 	}
@@ -1614,6 +1614,15 @@ public class CommandEngine
 				"name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)")));
 		out.add(access);
 		return out;
+	}
+
+	/** The mob a card gesture acts on: the single selection when there is
+	 * one, else the lensed roster row. Rosters have no state.mob() - the
+	 * set-note lesson (field report 2026-08-15: notes never saved on a
+	 * trip), which every per-mob command has since had to repeat. */
+	private MonsterStats shownMob()
+	{
+		return state.mob() != null ? state.mob() : lensedMob();
 	}
 
 	/** The lens-selected mob (supply overrides key off its profile). */

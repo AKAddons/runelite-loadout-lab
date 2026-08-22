@@ -22,23 +22,14 @@ final class ReportBuilder
 	{
 	}
 
+	/** keptSlots is the page's OWN wilderness gate (-1 = not out there),
+	 * handed in rather than re-derived: the CARD showed the risk line and
+	 * the copied report never mentioned it (field report 2026-08-22), so
+	 * the two must read from one derivation or they drift again. */
 	static String build(String version, PageState state, List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, Map<String, Object> counts,
-		Map<String, Object> thralls)
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
+		Map<String, Object> counts, Map<String, Object> thralls)
 	{
-		// The wilderness kept-slots gate, same rule the page uses:
-		// exclusives are always in. Field report 2026-08-22 - the CARD
-		// showed the risk line and the copied report never mentioned it,
-		// so a wildy answer read as riskless on paper.
-		boolean exclusive = false;
-		for (MonsterStats m : mobs)
-		{
-			exclusive |= com.loadoutlab.data.WildernessMonsters.isExclusive(m);
-		}
-		boolean wildy = exclusive
-			|| Boolean.TRUE.equals(state.paramsNode().get("inWilderness"));
-		int keptSlots = wildy
-			? (Boolean.TRUE.equals(state.paramsNode().get("protectItem")) ? 4 : 3) : -1;
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
 		for (int i = 0; i < mobs.size(); i++)

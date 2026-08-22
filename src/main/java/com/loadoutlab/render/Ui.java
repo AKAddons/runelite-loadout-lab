@@ -73,4 +73,35 @@ final class Ui
 		item.addActionListener(e -> action.run());
 		menu.add(item);
 	}
+
+	/** The reconciliation ledger BOTH dps tooltips wear (field ask
+	 * 2026-08-21: "less dense and more informative") - one fact per row:
+	 * the bare SET the wiki calculator shows, the parts we fold on top,
+	 * and the total the card prints. The two call sites differ only in
+	 * the set row's note and in whether a zero spec row still shows, so
+	 * both ride parameters - the table markup itself lives once.
+	 * Returns the table only; callers own the surrounding html. */
+	static String ledger(double set, String setNote, double specDps, boolean showSpec,
+		double thrallsDps)
+	{
+		StringBuilder sum = new StringBuilder();
+		sum.append("<table cellpadding='1' cellspacing='0'>")
+			.append("<tr><td>set</td><td align='right'>&nbsp;&nbsp;")
+			.append(String.format("%.3f", set))
+			.append("</td><td><font color='#969696'>&nbsp;&nbsp;").append(setNote)
+			.append("</font></td></tr>");
+		if (showSpec)
+		{
+			sum.append("<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;")
+				.append(String.format("%.2f", specDps)).append("</td><td></td></tr>");
+		}
+		if (thrallsDps > 0)
+		{
+			sum.append("<tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;")
+				.append(String.format("%.2f", thrallsDps)).append("</td><td></td></tr>");
+		}
+		return sum.append("<tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>")
+			.append(String.format("%.2f", set + specDps + thrallsDps))
+			.append("</b></td><td></td></tr></table>").toString();
+	}
 }

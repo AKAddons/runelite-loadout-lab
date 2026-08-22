@@ -9,7 +9,6 @@ import com.loadoutlab.data.TripSupplies;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.loadoutlab.collection.CollectionLedger;
-import com.loadoutlab.command.CommandHistory;
 import com.loadoutlab.command.Commands;
 import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.DwmsLink;
@@ -176,10 +175,6 @@ public class LoadoutLabPlugin extends Plugin
 
 	private CollectionLedger ledger;
 	private ExclusionStore exclusions;
-	/** Session-only undo/redo over deliberate store mutations. EDT-owned;
-	 * cleared on profile change (entries captured against another profile's
-	 * stores must never replay into this one). */
-
 	private com.loadoutlab.collection.ProtectOnlyStore protectOnly;
 	/** "Show in bank": the expanded id set the overlay outlines; null = off. */
 	private volatile Set<Integer> bankHighlight;

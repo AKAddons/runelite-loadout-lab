@@ -56,7 +56,7 @@ final class StatIcons
 	abstract static class SizedIcon implements Icon
 	{
 		/** Icon edge length in pixels. */
-		protected final int size;
+		private final int size;
 		private final BufferedImage image;
 
 		SizedIcon(String bakedName, int size)

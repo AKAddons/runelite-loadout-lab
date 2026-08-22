@@ -35,7 +35,8 @@ final class AsciiLoader extends javax.swing.JTextArea
 	{
 		if (running && !timer.isRunning())
 		{
-			frames = MOODS.get(new java.util.Random().nextInt(MOODS.size()));
+			frames = MOODS.get(java.util.concurrent.ThreadLocalRandom.current()
+				.nextInt(MOODS.size()));
 			tick = 0;
 			advance();
 			timer.start();

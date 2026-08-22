@@ -1747,23 +1747,14 @@ public class ResultCards
 		String tipBody;
 		if ("spec".equals(slot))
 		{
-			// The same ledger shape as the Wiki calc chip's tooltip
-			// (field ask 2026-08-21) - one fact per row.
+			// The same ledger the Wiki calc chip's tooltip wears (field
+			// ask 2026-08-21) - one fact per row. The spec row shows even
+			// at zero here: this cell IS the spec weapon.
 			tipBody = "<b>" + name + " (spec)</b>"
 				+ (cellSpecPinned ? " <font color='#969696'>pinned</font>" : "") + priceNote
-				+ "<br><br><table cellpadding='1' cellspacing='0'>"
-				+ "<tr><td>set</td><td align='right'>&nbsp;&nbsp;"
-				+ String.format("%.3f", cellSetDps)
-				+ "</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc"
-				+ " shows</font></td></tr>"
-				+ "<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;"
-				+ String.format("%.2f", cellSpecDps) + "</td><td></td></tr>"
-				+ (cellThrallsDps > 0
-					? "<tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;"
-						+ String.format("%.2f", cellThrallsDps) + "</td><td></td></tr>" : "")
-				+ "<tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>"
-				+ String.format("%.2f", cellSetDps + cellSpecDps + cellThrallsDps)
-				+ "</b></td><td></td></tr></table>";
+				+ "<br><br>"
+				+ Ui.ledger(cellSetDps, "what the wiki calc shows", cellSpecDps, true,
+					cellThrallsDps);
 		}
 		else
 		{
