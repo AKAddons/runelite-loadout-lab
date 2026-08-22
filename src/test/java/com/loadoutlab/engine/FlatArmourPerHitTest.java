@@ -55,15 +55,16 @@ public class FlatArmourPerHitTest
 	public void blueMoonCreditsTheMinusFiveOnBothHitsplats()
 	{
 		DpsResult result = macuahuitlVs("blue moon");
-		// Displayed max is the combined roll +5 once; the raw combined
-		// max is that minus 5, split into the two chained hitsplats, each
-		// then rolling 5..half+5 (accurate hits only).
+		// Each hitsplat carries its own +5, applied AFTER the accurate-
+		// zero rule (a landed 0 counts as 1) - repinned 2026-08-21 from
+		// the old bound-shift model, which dropped that bump and ran
+		// 0.5% low; the harness vector macuahuitl-bluemoon is now exact.
 		int rawMax = result.getMaxHit() - 5;
 		int firstRaw = rawMax / 2;
 		int secondRaw = rawMax - firstRaw;
 		double acc = result.getAccuracy();
-		double perHitExpected = RollMath.expectedHit(acc, 5, firstRaw + 5)
-			+ acc * RollMath.expectedHit(acc, 5, secondRaw + 5);
+		double perHitExpected = RollMath.expectedHitWithFlatArmour(acc, 0, firstRaw, -5)
+			+ acc * RollMath.expectedHitWithFlatArmour(acc, 0, secondRaw, -5);
 		Assert.assertEquals("each hitsplat carries its own +5",
 			perHitExpected, result.getExpectedHit(), 1e-9);
 	}

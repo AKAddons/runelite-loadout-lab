@@ -84,7 +84,13 @@ public final class RollMath
 	{
 		if (armour <= 0)
 		{
-			return expectedHit(accuracy, Math.max(0, minHit - armour), maxHit - armour);
+			// NEGATIVE armour is a flat damage BONUS, and their
+			// transformer applies it after the accurate-zero rule (a
+			// landed 0 counts as 1). Shifting the bounds instead
+			// silently dropped that bump - every Blood/Blue Moon set ran
+			// 0.1-0.5% low (field 2026-08-21). Riding the bonus on top
+			// of the normal expectation keeps the bump AND the shift.
+			return expectedHit(accuracy, minHit, maxHit) + accuracy * -armour;
 		}
 		if (maxHit <= 0 || accuracy <= 0.0)
 		{

@@ -1545,10 +1545,17 @@ public final class DpsCalculator
 	{
 		int factor = accuracyMode ? 10 : 14;
 		int base = accuracyMode ? 140 : 250;
-		int t2 = Math.floorDiv(3 * magic - factor, 100);
-		int inner = Math.floorDiv(3 * magic, 10) - (10 * factor);
-		int t3 = Math.floorDiv(inner * inner, 100);
-		return base + t2 - t3;
+		int clamp = accuracyMode ? 140 : 250;
+		// Truncate TOWARD ZERO like theirs (floorDiv would round a
+		// negative numerator down at magic <= 3).
+		int t2 = (3 * magic - factor) / 100;
+		int inner = 3 * magic / 10 - 10 * factor;
+		int t3 = inner * inner / 100;
+		// The CLAMP their formula carries and ours never did (field
+		// 2026-08-21: at the 250 magic cap the accuracy bonus computes
+		// to 141% - Zulrah and Hydra ran +0.71% on the roll, and the
+		// tbow won BiS seats it had not earned).
+		return Math.max(0, Math.min(clamp, base + t2 - t3));
 	}
 
 	private static int multiply(int value, int numerator, int denominator)
