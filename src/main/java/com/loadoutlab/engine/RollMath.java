@@ -127,6 +127,18 @@ public final class RollMath
 		return accuracy * ((minimum + maxHit) / 2.0);
 	}
 
+	/** Confliction gauntlets (official BaseCalc): casting one-handed
+	 * grants a SECOND accuracy roll, resolved as
+	 * double / (1 + double - single) - the same double-roll the fang
+	 * uses, folded so the extra roll cannot exceed certainty. */
+	public static double conflictionAccuracy(long attackRoll, long defenceRoll)
+	{
+		double single = normalAccuracy(attackRoll, defenceRoll);
+		double doubleRoll = fangAccuracy(attackRoll, defenceRoll);
+		double denominator = 1 + doubleRoll - single;
+		return denominator <= 0 ? single : doubleRoll / denominator;
+	}
+
 	public static double fangAccuracy(long attackRoll, long defenceRoll)
 	{
 		double atk = attackRoll;

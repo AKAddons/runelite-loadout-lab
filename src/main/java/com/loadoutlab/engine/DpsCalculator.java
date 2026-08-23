@@ -503,6 +503,16 @@ public final class DpsCalculator
 
 		long defenceRoll = npcDefenceRoll(effectiveRequest.getMonster(), "magic", loadout.getWeapon());
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
+		GearItem magicWeapon = loadout.getWeapon();
+		if (wearing(loadout, "confliction gauntlets")
+			&& (magicWeapon == null || !magicWeapon.isTwoHanded()))
+		{
+			// A second accuracy roll when casting one-handed (field
+			// report 2026-08-22: a Zulrah magic BiS wearing them read
+			// -0.56% with every other component identical).
+			counted("confliction gauntlets", "a second accuracy roll (one-handed)");
+			accuracy = RollMath.conflictionAccuracy(attackRoll, defenceRoll);
+		}
 		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
 		if (twinflame && twinflameDoubles(twinflameSpell))
 		{

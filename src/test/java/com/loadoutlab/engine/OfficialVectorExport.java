@@ -175,6 +175,15 @@ public class OfficialVectorExport
 		{"scorchingbow-td", "Tormented Demon", "1", "RANGED", "Scorching bow", "Dragon arrow"},
 		{"bofa-td", "Tormented Demon", "1", "RANGED", "Bow of faerdhinen", null},
 		{"eyeofayak-td", "Tormented Demon", "1", "MAGIC", "Eye of ayak", null},
+		// Eye of ayak away from demons (field ask 2026-08-22: is the item
+		// itself right, or only its demon interaction?).
+		{"eyeofayak-zulrah", "Zulrah", "Serpentine", "MAGIC", "Eye of ayak", null},
+		{"eyeofayak-goblin", "Goblin", "", "MAGIC", "Eye of ayak", null},
+		// The exact field magic BiS at Zulrah (2026-08-22: -0.44%).
+		{"ayakfull-zulrah", "Zulrah", "Serpentine", "MAGIC", "Eye of ayak", null, null,
+			"Slayer helmet (i)", "Imbued zamorak cape", "Occult necklace",
+			"Rada's blessing 4", "Ancestral robe top", "Elidinis' ward (f)",
+			"Ancestral robe bottom", "Confliction gauntlets", "Echo boots", "Magus ring"},
 		{"purging-demonbane-td", "Tormented Demon", "1", "MAGIC", "Purging staff", null, "Dark Demonbane"},
 		{"kodai-demonbane-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Dark Demonbane"},
 		{"kodai-watersurge-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Water Surge"},
