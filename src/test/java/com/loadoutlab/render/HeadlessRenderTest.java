@@ -298,6 +298,17 @@ class HeadlessRenderTest
 		{
 			out.append(" \"").append(text.replace('\n', ' ')).append('"');
 		}
+		// Tooltips ARE in the tree: setToolTipText runs at build time, not
+		// on hover. Snapshotting them is what gives REQ-007's surface - the
+		// tooltip kit - a test that can actually go red.
+		if (component instanceof javax.swing.JComponent)
+		{
+			String hover = ((javax.swing.JComponent) component).getToolTipText();
+			if (hover != null && !hover.isEmpty())
+			{
+				out.append(" tip=").append(hover.replace('\n', ' '));
+			}
+		}
 		if (!component.isVisible())
 		{
 			out.append(" (hidden)");
