@@ -1,0 +1,918 @@
+== General Graardor - lvl 624 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "General Graardor"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "3.11"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "General Graardor - lvl 624"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Melee"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "43"
+                JLabel "34%"
+                JLabel "~1.2"
+                JLabel "+12"
+                JLabel "Slash"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "3.11"
+        JPanel
+          JLabel
+          JLabel "2.57"
+        JPanel
+          JLabel
+          JLabel "2.28"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 50%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Zulrah (Serpentine) - lvl 725 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Zulrah (Serpentine)"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "4.90"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Zulrah (Serpentine) - lvl 725"
+        JPanel
+          JLabel "500hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JLabel
+              JLabel "Auto spell"
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "28"
+                JLabel "84%"
+                JLabel "~0.0"
+                JLabel "+4"
+                JLabel "Magic: Trident of the seas"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "-"
+        JPanel
+          JLabel
+          JLabel "2.85"
+        JPanel
+          JLabel
+          JLabel "4.90"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 53%"
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Vorkath - lvl 732 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Vorkath"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "4.14"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Vorkath - lvl 732"
+        JPanel
+          JLabel "750hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Ranged"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "36"
+                JLabel "68%"
+                JLabel "~4.3"
+                JLabel "+8"
+                JLabel "Ranged rapid"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "3.14"
+        JPanel
+          JLabel
+          JLabel "4.14"
+        JPanel
+          JLabel
+          JLabel "1.27"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 41%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Phantom Muspah (Melee) - lvl 741 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Phantom Muspah (Melee)"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "4.85"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Phantom Muspah (Melee) - lvl 741"
+        JPanel
+          JLabel "850hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JLabel
+              JLabel "Wind Surge"
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "39"
+                JLabel "74%"
+                JLabel "~0.0"
+                JLabel "+3"
+                JLabel "Magic: Wind Surge"
+                JLabel "Stats"
+                JLabel "+1 bonus"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "2.99"
+        JPanel
+          JLabel
+          JLabel "1.52"
+        JPanel
+          JLabel
+          JLabel "4.85"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 52%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Dagannoth Kings - 3 mobs | bench=3 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Dagannoth Rex"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "5.18"
+        JLabel "x"
+    Filler
+    JPanel
+      JLabel "Dagannoth Prime"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "4.62"
+        JLabel "x"
+    Filler
+    JPanel
+      JLabel "Dagannoth Supreme"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "6.45"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Dagannoth Rex - lvl 303"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JLabel
+              JLabel "Auto spell"
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "26"
+                JLabel "95%"
+                JLabel "~0.0"
+                JLabel "+8"
+                JLabel "Magic: Trident of the seas"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "1.12"
+        JPanel
+          JLabel
+          JLabel "1.21"
+        JPanel
+          JLabel
+          JLabel "5.18"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 80%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+          JLabel
+          JLabel
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== General Graardor - lvl 624 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "General Graardor"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "8.32"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "General Graardor - lvl 624"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Melee"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "68"
+                JLabel "53%"
+                JLabel "~1.2"
+                JLabel "+6"
+                JLabel "Slash"
+                JLabel "774m"
+                JLabel "Stats"
+                JLabel "+1 bonus"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "6.26"
+        JPanel
+          JLabel
+          JLabel "6.55"
+        JPanel
+          JLabel
+          JLabel "8.32"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 50%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Zulrah (Serpentine) - lvl 725 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Zulrah (Serpentine)"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "9.20"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Zulrah (Serpentine) - lvl 725"
+        JPanel
+          JLabel "500hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "50"
+                JLabel "96%"
+                JLabel "~0.0"
+                JLabel "+11"
+                JLabel "Magic: Tumeken's shadow"
+                JLabel "324m"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "7.44"
+        JPanel
+          JLabel
+          JLabel "8.02"
+        JPanel
+          JLabel
+          JLabel "9.20"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 53%"
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Vorkath - lvl 732 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Vorkath"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "10.02"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Vorkath - lvl 732"
+        JPanel
+          JLabel "750hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Ranged"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "31"
+                JLabel "74%"
+                JLabel "~4.2"
+                JLabel "+9"
+                JLabel "Ranged rapid"
+                JLabel "218m"
+                JLabel "Stats"
+                JLabel "+1 bonus"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "9.51"
+        JPanel
+          JLabel
+          JLabel "10.02"
+        JPanel
+          JLabel
+          JLabel "7.39"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 41%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Phantom Muspah (Melee) - lvl 741 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Phantom Muspah (Melee)"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "9.36"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Phantom Muspah (Melee) - lvl 741"
+        JPanel
+          JLabel "850hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "62"
+                JLabel "90%"
+                JLabel "~0.0"
+                JLabel "+7"
+                JLabel "Magic: Tumeken's shadow"
+                JLabel "324m"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "6.76"
+        JPanel
+          JLabel
+          JLabel "7.10"
+        JPanel
+          JLabel
+          JLabel "9.36"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 52%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
+== Dagannoth Kings - 3 mobs | bench=3 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Dagannoth Rex"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "6.47"
+        JLabel "x"
+    Filler
+    JPanel
+      JLabel "Dagannoth Prime"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "11.04"
+        JLabel "x"
+    Filler
+    JPanel
+      JLabel "Dagannoth Supreme"
+      JPanel
+        JPanel
+          JLabel
+          JLabel "7.63"
+        JLabel "x"
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Dagannoth Rex - lvl 303"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic"
+          JLabel
+          JLabel
+          JLabel
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel
+              JPanel
+                JLabel "37"
+                JLabel "99%"
+                JLabel "~0.0"
+                JLabel "+10"
+                JLabel "Magic: Tumeken's shadow"
+                JLabel "373m"
+                JLabel "Stats"
+      Filler
+      JPanel
+        JPanel
+          JLabel
+          JLabel "1.83"
+        JPanel
+          JLabel
+          JLabel "0.70"
+        JPanel
+          JLabel
+          JLabel "6.47"
+      JPanel
+        JPanel
+          JLabel "Yours"
+          JLabel "BiS"
+        JLabel "you are at 80%"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel
+          JLabel
+          JLabel
+      Filler
+      JPanel
+        JPanel
+          JButton "+0"
+          JButton "-0"
+          JButton "~0"
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank"
+          JToggleButton "Filter bank"
+      Filler
+      JPanel
+        JLabel "+ note"
+    Filler
