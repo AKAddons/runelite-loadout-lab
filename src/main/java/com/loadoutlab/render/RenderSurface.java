@@ -683,7 +683,7 @@ public class RenderSurface
 		String head = "<b>Open in the official wiki calculator</b><br>"
 			+ "<font color='#969696'>shares this exact setup via the wiki's"
 			+ " shortlink</font>";
-		String base = "<html>" + head + "</html>";
+		String base = Ui.tip(head);
 		Map<String, Object> params = ResultCards.firstParams(page);
 		java.util.List<Map<String, Object>> entries = Model.list(page, "entries");
 		if (params == null || entries.isEmpty())
@@ -736,9 +736,8 @@ public class RenderSurface
 		// The breakdown reads as a little ledger, not a sentence (field
 		// ask 2026-08-21: "less dense and more informative") - the same
 		// table the spec cell wears, built once in Ui.
-		return "<html>" + head + "<br><br>"
-			+ Ui.ledger(set, "what the calc shows", specDps, specDps > 0, thrallsDps)
-			+ "</html>";
+		return Ui.tip(head, "<br><br>",
+			Ui.ledger(set, "what the calc shows", specDps, specDps > 0, thrallsDps));
 	}
 
 	private Map<String, Object> lastRenderedPage;

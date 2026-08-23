@@ -74,6 +74,31 @@ final class Ui
 		menu.add(item);
 	}
 
+	/** A tooltip body wrapped for Swing's html renderer. Six builders
+	 * each wrote their own wrapper; this is the one. */
+	static String tip(String... parts)
+	{
+		StringBuilder out = new StringBuilder("<html>");
+		for (String part : parts)
+		{
+			out.append(part);
+		}
+		return out.append("</html>").toString();
+	}
+
+	/** A heading over one item per line - the shape the risk and
+	 * counted-bonus tips each hand-rolled. The house rule: a breakdown
+	 * is a list and numbers, never prose. */
+	static String list(String heading, Iterable<?> items)
+	{
+		StringBuilder out = new StringBuilder(heading);
+		for (Object item : items)
+		{
+			out.append("<br> ").append(item);
+		}
+		return out.toString();
+	}
+
 	/** The reconciliation ledger BOTH dps tooltips wear (field ask
 	 * 2026-08-21: "less dense and more informative") - one fact per row:
 	 * the bare SET the wiki calculator shows, the parts we fold on top,

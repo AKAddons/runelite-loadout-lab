@@ -1621,17 +1621,9 @@ public class ResultCards
 			JLabel riskLine = statLine("Risk " + Gp.formatShort(
 				(int) Math.min(Integer.MAX_VALUE, Model.num(riskNode, "riskGp"))),
 				"", new Color(220, 120, 120));
-			StringBuilder riskTip = new StringBuilder("<html>Kept on death:");
-			for (Object kept : Model.list2(riskNode, "kept"))
-			{
-				riskTip.append("<br> ").append(kept);
-			}
-			riskTip.append("<br>Lost:");
-			for (Object lost : Model.list2(riskNode, "lost"))
-			{
-				riskTip.append("<br> ").append(lost);
-			}
-			riskLine.setToolTipText(riskTip.append("</html>").toString());
+			riskLine.setToolTipText(Ui.tip(
+				Ui.list("Kept on death:", Model.list2(riskNode, "kept")),
+				Ui.list("<br>Lost:", Model.list2(riskNode, "lost"))));
 			statColumn.add(riskLine);
 		}
 		int upgradeCost = (int) Model.num(card, "purchaseCost");
@@ -1699,14 +1691,9 @@ public class ResultCards
 			// 2026-08-14: 'slayer helm shown outside the 2x5') - the
 			// count on the line, every bonus named in the tooltip.
 			List<?> bonuses = (List<?>) counted;
-			StringBuilder tip = new StringBuilder("<html>Counted for this set:");
-			for (Object bonus : bonuses)
-			{
-				tip.append("<br> ").append(bonus);
-			}
 			statColumn.add(statLine("+" + bonuses.size() + " bonus"
 				+ (bonuses.size() == 1 ? "" : "es"),
-				tip.append("</html>").toString(), ACCENT));
+				Ui.tip(Ui.list("Counted for this set:", bonuses)), ACCENT));
 		}
 		center.add(statColumn);
 		panel.add(left(center));
