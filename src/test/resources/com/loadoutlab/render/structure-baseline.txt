@@ -351,6 +351,93 @@ JPanel
       JPanel
         JLabel "+ note" tip=Add a note for this mob
     Filler
+== Callisto - lvl 470 | low-risk [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Callisto" tip=<html>Callisto - lvl 470<br>4.05 dps with magic (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: magic
+          JLabel "4.05"
+        JLabel "x" tip=Remove Callisto - lvl 470 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Callisto - lvl 470"
+        JPanel
+          JLabel "1000hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic" tip=Assumes: Mystic Might + Magic potion
+          JLabel tip=Assumes: Mystic Might + Magic potion - click to change the prayer
+          JLabel tip=Assumes: Mystic Might + Magic potion - click to change the boost
+          JLabel tip=No specific spellbook required - a powered staff casts on any book
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JLabel tip=The autocast spell - click to pin one
+              JLabel "Auto spell" tip=The autocast spell - click to pin one
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel
+                  JLabel
+                  JLabel tip=<html>Ava's accumulator (cape)</html>
+                  JLabel tip=<html>Amulet of glory (Uncharged) (neck) - 11k gp<br>lost on death (11475 gp)</html>
+                  JLabel
+                  JLabel tip=<html>Trident of the seas (Charged) (weapon) - 844k gp<br>protected on death</html>
+                  JLabel tip=<html>Mystic robe top (body) - 72k gp<br>protected on death</html>
+                  JLabel tip=<html>Mage's book (shield) - 4.1m gp<br>protected on death</html>
+                  JLabel
+                  JLabel tip=<html>Mystic robe bottom (legs) - 47k gp<br>lost on death (47228 gp)</html>
+                  JLabel
+                  JLabel tip=<html>Mystic gloves (hands) - 6k gp<br>lost on death (5999 gp)</html>
+                  JLabel tip=<html>Mystic boots (feet) - 5.9k gp<br>lost on death (5899 gp)</html>
+                  JLabel
+              JPanel
+                JLabel "27" tip=Max hit 27
+                JLabel "72%" tip=Hit chance
+                JLabel "~4.6" tip=Pray Protect from Missiles - takes ~4.6 dps (6.54 unprayed)
+                JLabel "+3" tip=Prayer bonus
+                JLabel "Magic: Trident of the seas" tip=Attack style the numbers use
+                JLabel "Risk 71k" tip=<html>Kept on death:<br> Mage's book<br> Trident of the seas (Charged)<br> Mystic robe top<br>Lost:<br> Mystic robe bottom<br> Amulet of glory (Uncharged)<br> Mystic gloves<br> Mystic boots</html>
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>+10</td><td>+10</td><td>+10</td><td>+81</td><td>+14</td></tr><tr><td><b>Defence</b></td><td>+5</td><td>+7</td><td>+4</td><td>+78</td><td>+3</td></tr></table>Strength +6 &nbsp; Ranged str +0 &nbsp; Magic dmg +20% &nbsp; Prayer +3</html>
+      Filler
+      JPanel
+        JPanel tip=Melee - 2.10 DPS
+          JLabel
+          JLabel "2.10"
+        JPanel tip=Ranged - 3.80 DPS
+          JLabel
+          JLabel "3.80"
+        JPanel tip=Magic - 4.05 DPS
+          JLabel
+          JLabel "4.05"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
 == Dagannoth Kings - 3 mobs | bench=3 [yours]
 JPanel
   JPanel
@@ -795,6 +882,91 @@ JPanel
         JPanel
           JLabel "Inventory:"
           JLabel tip=Voidwaker (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
+== Callisto - lvl 470 | low-risk [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Callisto" tip=<html>Callisto - lvl 470<br>6.68 dps with magic (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: magic
+          JLabel "6.68"
+        JLabel "x" tip=Remove Callisto - lvl 470 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Callisto - lvl 470"
+        JPanel
+          JLabel "1000hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic" tip=Assumes: Mystic Might + Magic potion
+          JLabel tip=Assumes: Augury + Saturated heart
+          JLabel tip=Assumes: Augury + Saturated heart
+          JLabel tip=No specific spellbook required - a powered staff casts on any book
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel tip=<html>Guthix mitre (head) - 13k gp<br>lost on death (13119 gp)</html>
+                  JLabel
+                  JLabel tip=<html>Guthix cape (cape)</html>
+                  JLabel tip=<html>Amulet of glory (Uncharged) (neck) - 11k gp<br>lost on death (11475 gp)</html>
+                  JLabel tip=<html>Rada's blessing 4 (ammo)</html>
+                  JLabel tip=<html>Sanguinesti staff (Charged) (weapon)<br>protected on death</html>
+                  JLabel tip=<html>Ancestral robe top (body) - 108m gp<br>protected on death</html>
+                  JLabel tip=<html>Book of darkness (shield)</html>
+                  JLabel
+                  JLabel tip=<html>Ancestral robe bottom (legs) - 72m gp<br>protected on death</html>
+                  JLabel
+                  JLabel tip=<html>Rune gloves (hands)<br>lost on death (6500 gp)</html>
+                  JLabel tip=<html>Ancient ceremonial boots (feet) - 23k gp<br>lost on death (23002 gp)</html>
+                  JLabel tip=<html>Lunar ring (ring)</html>
+              JPanel
+                JLabel "36" tip=Max hit 36
+                JLabel "82%" tip=Hit chance
+                JLabel "~3.8" tip=Pray Protect from Missiles - takes ~3.8 dps (5.74 unprayed)
+                JLabel "+16" tip=Prayer bonus
+                JLabel "Magic: Sanguinesti staff" tip=Attack style the numbers use
+                JLabel "Risk 54k" tip=<html>Kept on death:<br> Ancestral robe top<br> Ancestral robe bottom<br> Sanguinesti staff (Charged)<br>Lost:<br> Ancient ceremonial boots<br> Guthix mitre<br> Amulet of glory (Uncharged)<br> Rune gloves</html>
+                JLabel "180m" tip=Upgrade cost of unowned pieces in this set
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>+18</td><td>+18</td><td>+18</td><td>+126</td><td>-1</td></tr><tr><td><b>Defence</b></td><td>+83</td><td>+70</td><td>+95</td><td>+86</td><td>+11</td></tr></table>Strength +14 &nbsp; Ranged str +0 &nbsp; Magic dmg +60% &nbsp; Prayer +16</html>
+                JLabel "+1 bonus" tip=<html>Counted for this set:<br> sanguinesti staff: +8 on a fifth of landed hits</html>
+      Filler
+      JPanel
+        JPanel tip=Melee - 3.81 DPS
+          JLabel
+          JLabel "3.81"
+        JPanel tip=Ranged - 6.11 DPS
+          JLabel
+          JLabel "6.11"
+        JPanel tip=Magic - 6.68 DPS
+          JLabel
+          JLabel "6.68"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel

@@ -39,6 +39,12 @@ public final class ModelGolden
 	private static final String ROSTER_GROUP = "Dagannoth Kings";
 	private static final int ROSTER_BENCH = 3;
 
+	/** A wilderness boss under the kept-on-death cap, so the risk node
+	 * (and the "Kept on death:" tooltip built on it) is exercised - the
+	 * gap the render baseline measured as uncovered. */
+	private static final String WILDERNESS_MOB = "callisto";
+	private static final int LOW_RISK_TRADEABLES = 3;
+
 	private ModelGolden()
 	{
 	}
@@ -53,6 +59,11 @@ public final class ModelGolden
 			System.out.println("##### " + mob.label());
 			System.out.println(Json.write(RenderModel.page(List.of(single(data, profile, mob)))));
 		}
+		MonsterStats wildy = data.searchMonsters(WILDERNESS_MOB, 1).get(0);
+		System.out.println("##### " + wildy.label() + " | low-risk");
+		System.out.println(Json.write(RenderModel.page(
+			List.of(single(data, profile, wildy, LOW_RISK_TRADEABLES)))));
+
 		MonsterGroups.MonsterGroup group = null;
 		for (MonsterGroups.MonsterGroup candidate : MonsterGroups.load(data))
 		{
@@ -73,6 +84,12 @@ public final class ModelGolden
 	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
 		MonsterStats mob) throws Exception
 	{
+		return single(data, profile, mob, -1);
+	}
+
+	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
+		MonsterStats mob, int maxTradeables) throws Exception
+	{
 		OptimizerService service = new OptimizerService(data);
 		try
 		{
@@ -81,7 +98,7 @@ public final class ModelGolden
 			ServiceCalls.bestPerStyle(service, mob,
 				profile.realLevels, profile.boostedLevels, profile.prayerUnlocks,
 				profile.requirements, profile.ownedItems(), profile.owned.hashCode(),
-				false, false, "", new EnumMap<>(CombatStyle.class), -1,
+				false, false, "", new EnumMap<>(CombatStyle.class), maxTradeables,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0,
 				Collections.emptyMap(), null, 0, Collections.emptySet(),
@@ -94,7 +111,10 @@ public final class ModelGolden
 			{
 				throw new IllegalStateException("query timed out: " + mob.label());
 			}
-			return RenderModel.entry(List.of(mob), List.of(out.get()));
+			// riskKeptSlots >= 0 is what emits the wilderness risk node
+			// (and with it the "Kept on death:" tooltip).
+			return RenderModel.entry(List.of(mob), List.of(out.get()),
+				maxTradeables >= 0 ? maxTradeables : -1);
 		}
 		finally
 		{
