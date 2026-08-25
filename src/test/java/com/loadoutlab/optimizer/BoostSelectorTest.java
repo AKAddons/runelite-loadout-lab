@@ -23,6 +23,7 @@ class BoostSelectorTest
 	{
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(27641, 1); // saturated heart
+		owned.put(3040, 1);  // magic potion(4) - the fallback must be OWNED now
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.SATURATED_HEART,
 			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
@@ -61,16 +62,52 @@ class BoostSelectorTest
 	}
 
 	@Test
-	@DisplayName("without divine potions the base tradeables stay assumed")
-	void baselineWithoutDivine()
+	@DisplayName("an empty bank assumes NO boost - not a potion you do not own")
+	void emptyBankAssumesNothing()
 	{
+		// RE-PINNED 2026-08-25. This test previously asserted SUPER_COMBAT /
+		// RANGING / MAGIC for an EMPTY bank, encoding the old "tradeables are
+		// always assumed" rule. Field report from a fresh ironman: the card
+		// claimed "Assumes: Ranging potion" with none in the bank and the panel
+		// set to detect from bank. The old expectations were the defect.
 		OwnedItems empty = new OwnedItems(new HashMap<>(), true);
-		assertEquals(BoostProfile.SUPER_COMBAT,
+		assertEquals(BoostProfile.NONE,
 			BoostSelector.bestFor(CombatStyle.MELEE, empty, false, false));
-		assertEquals(BoostProfile.RANGING,
+		assertEquals(BoostProfile.NONE,
 			BoostSelector.bestFor(CombatStyle.RANGED, empty, false, false));
-		assertEquals(BoostProfile.MAGIC,
+		assertEquals(BoostProfile.NONE,
 			BoostSelector.bestFor(CombatStyle.MAGIC, empty, false, false));
+	}
+
+	@Test
+	@DisplayName("owning the base potion still assumes it")
+	void ownedBasePotionsAreAssumed()
+	{
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(12695, 1);  // super combat potion(4)
+		owned.put(2444, 1);   // ranging potion(4)
+		owned.put(3040, 1);   // magic potion(4)
+		OwnedItems bag = new OwnedItems(owned, true);
+		assertEquals(BoostProfile.SUPER_COMBAT,
+			BoostSelector.bestFor(CombatStyle.MELEE, bag, false, false));
+		assertEquals(BoostProfile.RANGING,
+			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+		assertEquals(BoostProfile.MAGIC,
+			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+	}
+
+	@Test
+	@DisplayName("bastion and battlemage sit between divine and base")
+	void midTierPotions()
+	{
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(22461, 1);  // bastion potion(4)
+		owned.put(22449, 1);  // battlemage potion(4)
+		OwnedItems bag = new OwnedItems(owned, true);
+		assertEquals(BoostProfile.BASTION,
+			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+		assertEquals(BoostProfile.BATTLEMAGE,
+			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
 	}
 
 	@Test

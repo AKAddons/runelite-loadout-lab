@@ -5,11 +5,19 @@ import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OwnedItems;
 
 /**
- * The best stat boost assumed per style. Tradeable potions are ALWAYS
- * assumed (cheap consumables - like prayers, you bring them); the hearts
- * (untradeable drops) and the pricier divine variants gate on ownership.
- * Raid-scoped boosts (overloads, smelling salts) are deliberately not
- * auto-assumed.
+ * The best stat boost assumed per style, given what the player actually owns.
+ *
+ * <p>Field report 2026-08-24 (a fresh ironman): the card claimed "Assumes:
+ * Ranging potion" for an account with no ranging potion in the bank. The old
+ * rule was "tradeable potions are ALWAYS assumed - cheap consumables, like
+ * prayers you just bring them", which holds for a main with a GE but is simply
+ * false for an ironman, and contradicts the panel's own "detect best in bank"
+ * setting. EVERY boost now gates on ownership and the ladder falls through to
+ * NONE.
+ *
+ * <p>Raid-scoped boosts (overloads, smelling salts) remain deliberately
+ * un-assumed. Ids verified against net.runelite.api.ItemID 2026-08-25; the
+ * divine arrays below match its DIVINE_* constants exactly.
  */
 public final class BoostSelector
 {
@@ -19,6 +27,12 @@ public final class BoostSelector
 	private static final int[] DIVINE_SUPER_COMBAT = {23685, 23688, 23691, 23694};
 	private static final int[] DIVINE_RANGING = {23733, 23736, 23739, 23742};
 	private static final int[] DIVINE_MAGIC = {23745, 23748, 23751, 23754};
+	/** Base (non-divine) potions - these used to be assumed unconditionally. */
+	private static final int[] SUPER_COMBAT = {12695, 12697, 12699, 12701};
+	private static final int[] RANGING = {2444, 169, 171, 173};
+	private static final int[] MAGIC = {3040, 3042, 3044, 3046};
+	private static final int[] BASTION = {22461, 22464, 22467, 22470};
+	private static final int[] BATTLEMAGE = {22449, 22452, 22455, 22458};
 
 	private BoostSelector()
 	{
@@ -55,14 +69,29 @@ public final class BoostSelector
 		{
 			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
 		}
+		// Each ladder walks best -> worst and ends at NONE: an unowned boost is
+		// never assumed, so a low-level account sees the numbers it can
+		// actually reach today.
 		switch (style)
 		{
 			case MELEE:
-				return ownsAny(owned, DIVINE_SUPER_COMBAT)
-					? BoostProfile.DIVINE_SUPER_COMBAT : BoostProfile.SUPER_COMBAT;
+				if (ownsAny(owned, DIVINE_SUPER_COMBAT))
+				{
+					return BoostProfile.DIVINE_SUPER_COMBAT;
+				}
+				return ownsAny(owned, SUPER_COMBAT)
+					? BoostProfile.SUPER_COMBAT : BoostProfile.NONE;
 			case RANGED:
-				return ownsAny(owned, DIVINE_RANGING)
-					? BoostProfile.DIVINE_RANGING : BoostProfile.RANGING;
+				if (ownsAny(owned, DIVINE_RANGING))
+				{
+					return BoostProfile.DIVINE_RANGING;
+				}
+				if (ownsAny(owned, BASTION))
+				{
+					return BoostProfile.BASTION;
+				}
+				return ownsAny(owned, RANGING)
+					? BoostProfile.RANGING : BoostProfile.NONE;
 			case MAGIC:
 				if (!noHearts && owned.owns(SATURATED_HEART))
 				{
@@ -72,8 +101,16 @@ public final class BoostSelector
 				{
 					return BoostProfile.IMBUED_HEART;
 				}
-				return ownsAny(owned, DIVINE_MAGIC)
-					? BoostProfile.DIVINE_MAGIC : BoostProfile.MAGIC;
+				if (ownsAny(owned, DIVINE_MAGIC))
+				{
+					return BoostProfile.DIVINE_MAGIC;
+				}
+				if (ownsAny(owned, BATTLEMAGE))
+				{
+					return BoostProfile.BATTLEMAGE;
+				}
+				return ownsAny(owned, MAGIC)
+					? BoostProfile.MAGIC : BoostProfile.NONE;
 			default:
 				return BoostProfile.NONE;
 		}
