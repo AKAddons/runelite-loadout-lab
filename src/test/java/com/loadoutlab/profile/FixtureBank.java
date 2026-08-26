@@ -113,6 +113,18 @@ public final class FixtureBank
 	public static Map<Integer, Integer> bank(LoadoutData data)
 	{
 		Map<Integer, Integer> owned = new LinkedHashMap<>();
+		// Potions are consumables, not gear, so they cannot be resolved by name
+		// from the equipment corpus - they go in by id.
+		//
+		// These are EXACTLY what the pre-0.4.1 rule assumed for free ("tradeable
+		// potions are always assumed"). Boosts now gate on ownership, so a
+		// fixture with tbow-tier gear and an empty potion shelf would have
+		// silently dropped every golden to unboosted numbers. Stocking it keeps
+		// the goldens exercising the boosted math AND makes the diff prove the
+		// point: for a bank that HAS the potions, 0.4.1 changes nothing.
+		owned.put(12695, 1);  // super combat potion(4)
+		owned.put(2444, 1);   // ranging potion(4)
+		owned.put(3040, 1);   // magic potion(4)
 		List<String> missing = new ArrayList<>();
 		for (String name : BANK_NAMES)
 		{

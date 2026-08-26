@@ -97,12 +97,36 @@ class BoostSelectorTest
 	}
 
 	@Test
-	@DisplayName("bastion and battlemage sit between divine and base")
-	void midTierPotions()
+	@DisplayName("bastion outranks ranging, battlemage outranks magic - even divine ones")
+	void bastionAndBattlemageOutrankThePlainFamily()
 	{
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(22461, 1);  // bastion potion(4)
 		owned.put(22449, 1);  // battlemage potion(4)
+		OwnedItems bag = new OwnedItems(owned, true);
+		assertEquals(BoostProfile.BASTION,
+			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
+		assertEquals(BoostProfile.BATTLEMAGE,
+			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+
+		// Same offensive numbers plus a defence half, so bastion/battlemage win
+		// even against the DIVINE plain variants (owner call 2026-08-25).
+		owned.put(23733, 1);  // divine ranging potion(4)
+		owned.put(23745, 1);  // divine magic potion(4)
+		OwnedItems both = new OwnedItems(owned, true);
+		assertEquals(BoostProfile.BASTION,
+			BoostSelector.bestFor(CombatStyle.RANGED, both, false, false));
+		assertEquals(BoostProfile.BATTLEMAGE,
+			BoostSelector.bestFor(CombatStyle.MAGIC, both, false, false));
+	}
+
+	@Test
+	@DisplayName("divine bastion and divine battlemage map onto the same profiles")
+	void divineBastionAndBattlemage()
+	{
+		Map<Integer, Integer> owned = new HashMap<>();
+		owned.put(24635, 1);  // divine bastion potion(4)
+		owned.put(24623, 1);  // divine battlemage potion(4)
 		OwnedItems bag = new OwnedItems(owned, true);
 		assertEquals(BoostProfile.BASTION,
 			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));

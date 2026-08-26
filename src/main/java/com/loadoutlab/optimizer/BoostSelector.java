@@ -31,8 +31,15 @@ public final class BoostSelector
 	private static final int[] SUPER_COMBAT = {12695, 12697, 12699, 12701};
 	private static final int[] RANGING = {2444, 169, 171, 173};
 	private static final int[] MAGIC = {3040, 3042, 3044, 3046};
+	/** Bastion and battlemage carry the SAME offensive boost as the ranging /
+	 * magic potions plus a super-defence half, so owning one means you bring
+	 * it - they rank above the plain family, divine or not. Their own divine
+	 * variants share those numbers exactly, so both id sets map to the one
+	 * profile rather than inventing a duplicate constant. */
 	private static final int[] BASTION = {22461, 22464, 22467, 22470};
+	private static final int[] DIVINE_BASTION = {24635, 24638, 24641, 24644};
 	private static final int[] BATTLEMAGE = {22449, 22452, 22455, 22458};
+	private static final int[] DIVINE_BATTLEMAGE = {24623, 24626, 24629, 24632};
 
 	private BoostSelector()
 	{
@@ -82,13 +89,13 @@ public final class BoostSelector
 				return ownsAny(owned, SUPER_COMBAT)
 					? BoostProfile.SUPER_COMBAT : BoostProfile.NONE;
 			case RANGED:
+				if (ownsAny(owned, DIVINE_BASTION) || ownsAny(owned, BASTION))
+				{
+					return BoostProfile.BASTION;
+				}
 				if (ownsAny(owned, DIVINE_RANGING))
 				{
 					return BoostProfile.DIVINE_RANGING;
-				}
-				if (ownsAny(owned, BASTION))
-				{
-					return BoostProfile.BASTION;
 				}
 				return ownsAny(owned, RANGING)
 					? BoostProfile.RANGING : BoostProfile.NONE;
@@ -101,13 +108,13 @@ public final class BoostSelector
 				{
 					return BoostProfile.IMBUED_HEART;
 				}
+				if (ownsAny(owned, DIVINE_BATTLEMAGE) || ownsAny(owned, BATTLEMAGE))
+				{
+					return BoostProfile.BATTLEMAGE;
+				}
 				if (ownsAny(owned, DIVINE_MAGIC))
 				{
 					return BoostProfile.DIVINE_MAGIC;
-				}
-				if (ownsAny(owned, BATTLEMAGE))
-				{
-					return BoostProfile.BATTLEMAGE;
 				}
 				return ownsAny(owned, MAGIC)
 					? BoostProfile.MAGIC : BoostProfile.NONE;
