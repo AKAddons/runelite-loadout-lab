@@ -35,6 +35,11 @@ public class OptimizerServiceTest
 		owned.put(4151, 1);   // whip - main weapon
 		owned.put(1215, 1);   // dragon dagger - burst spec
 		owned.put(13576, 1);  // dragon warhammer - drain spec
+		// Super combat potion: this scenario's "a goblin dies in one attack"
+		// premise depends on the boosted max hit. Boosts now gate on ownership
+		// (2026-08-25), so the bank has to actually hold the potion the test
+		// assumes - otherwise the goblin survives and a spec DOES pay.
+		owned.put(12695, 1);
 		OptimizerService service = new OptimizerService(data);
 		try
 		{

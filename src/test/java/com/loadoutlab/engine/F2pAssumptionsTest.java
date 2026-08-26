@@ -34,8 +34,11 @@ class F2pAssumptionsTest
 		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.RANGED, OwnedItems.EMPTY, true, false));
 		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MAGIC, OwnedItems.EMPTY, true, false));
 		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.ceilingFor(CombatStyle.MELEE, true));
-		// Members behaviour untouched.
-		assertEquals(BoostProfile.SUPER_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, false, false));
+		// Members with an EMPTY bank now assume nothing either (2026-08-25):
+		// this line used to expect SUPER_COMBAT, which was the same defect the
+		// ironman field report caught. The F2P assertions above are unaffected -
+		// F2P_COMBAT is a mode ceiling, not an owned item.
+		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, false, false));
 	}
 
 	@Test
