@@ -25,6 +25,7 @@ public enum BoostProfile
 	// Same ranged numbers as the ranging potion; the super-defence half
 	// is deliberately unmodeled here (outgoing dps never reads it).
 	BASTION("Bastion potion", 4, 0.10, "r"),
+	DIVINE_BASTION("Divine bastion potion", 4, 0.10, "r"),
 	SUPER_RANGING("Super ranging", 5, 0.15, "r"),
 	SATURATED_HEART("Saturated heart", 4, 0.10, "m"),
 	IMBUED_HEART("Imbued heart", 1, 0.10, "m"),
@@ -32,6 +33,7 @@ public enum BoostProfile
 	DIVINE_MAGIC("Divine magic potion", 4, 0.0, "m"),
 	// Magic potion's flat +4 with the unmodeled super-defence half.
 	BATTLEMAGE("Battlemage potion", 4, 0.0, "m"),
+	DIVINE_BATTLEMAGE("Divine battlemage potion", 4, 0.0, "m"),
 	SUPER_MAGIC("Super magic", 5, 0.15, "m"),
 	OVERLOAD("Overload", 5, 0.13, "asdrm"),
 	OVERLOAD_PLUS("Overload (+)", 6, 0.16, "asdrm"),

@@ -14,6 +14,11 @@ public abstract class IdSetStore
 	private final ConfigManager configManager;
 	private final Gson gson;
 	final Set<Integer> ids = new LinkedHashSet<>();
+	/** "std" / "seasonal", plus ".<accountHash>" once a character is known.
+	 * Field report 2026-08-25: switching from a main to a test account showed
+	 * the SAME exclude and sim lists, because these keys were global while the
+	 * bank ledger next door was already per-character. */
+	String worldScope = "std";
 
 	IdSetStore(ConfigManager configManager, Gson gson)
 	{
@@ -21,7 +26,20 @@ public abstract class IdSetStore
 		this.gson = gson;
 	}
 
-	abstract String key();
+	/** The unscoped key this store used before 0.4.1 - read once so an
+	 * existing install keeps its list when the key gains the account hash. */
+	abstract String legacyKey();
+
+	String key()
+	{
+		return worldScope + "." + legacyKey();
+	}
+
+	public synchronized void loadScope(String scope)
+	{
+		this.worldScope = scope;
+		load();
+	}
 
 	public synchronized void reload()
 	{
@@ -32,6 +50,13 @@ public abstract class IdSetStore
 	{
 		ids.clear();
 		String json = configManager.getConfiguration(CONFIG_GROUP, key());
+		if (json == null || json.isEmpty())
+		{
+			// Migration (0.4.1): fall back to the pre-scope key. Same shape as
+			// CollectionLedger's, so a single-account install carries its list
+			// forward instead of silently starting empty.
+			json = configManager.getConfiguration(CONFIG_GROUP, legacyKey());
+		}
 		if (json == null || json.isEmpty())
 		{
 			return;

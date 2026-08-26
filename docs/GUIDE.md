@@ -297,6 +297,13 @@ the requirement - your explicit choice always wins.
 Set your own defaults, teach the plugin what you own wherever it is
 stored, and pin the per-mob decisions worth remembering.
 
+Everything in this section is saved **per character**, not per RuneLite
+profile: your main's excludes, sims, filters, pins, notes, trip kit and
+panel defaults stay on your main, and an alt or an ironman starts with
+its own. Leagues and the main game count as separate characters for the
+same account. Lists made before 0.4.1 carry over to the first character
+you log in as.
+
 ### Panel options: display and controls
 
 Every card line and control is optional, across three settings sections.

@@ -43,6 +43,12 @@ MANUAL_BOOSTS = {
     "Divine super combat": 23685,       # 2026-07-21, GE-verified
     "Divine ranging potion": 23733,
     "Divine magic potion": 23745,
+    # b338f77 added the plain pair to the JSON but not here, so a regen
+    # would have silently dropped them. All four are objtypes-verified.
+    "Bastion potion": 22461,
+    "Battlemage potion": 22449,
+    "Divine bastion potion": 24635,     # 2026-08-26, objtypes-verified
+    "Divine battlemage potion": 24623,  # 2026-08-26, objtypes-verified
 }
 MAP_KEY = {"PRAYERS": "prayers", "BOOST_ITEMS": "boostItems", "SPELLS": "spells"}
 

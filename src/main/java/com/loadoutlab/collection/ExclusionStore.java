@@ -14,7 +14,7 @@ public class ExclusionStore extends IdSetStore
 	}
 
 	@Override
-	String key()
+	String legacyKey()
 	{
 		return KEY;
 	}

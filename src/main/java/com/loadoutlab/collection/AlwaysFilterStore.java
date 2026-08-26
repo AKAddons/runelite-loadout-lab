@@ -19,6 +19,21 @@ public class AlwaysFilterStore
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "alwaysFilterItems";
 
+	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
+	 * before 0.4.1, which is why a main and a test account shared this list. */
+	private String worldScope = "std";
+
+	private String key()
+	{
+		return worldScope + "." + KEY;
+	}
+
+	public synchronized void loadScope(String scope)
+	{
+		this.worldScope = scope;
+		load();
+	}
+
 	private final ConfigManager configManager;
 	private final Gson gson;
 	private final Map<Integer, String> items = new LinkedHashMap<>();
@@ -39,7 +54,13 @@ public class AlwaysFilterStore
 	private void load()
 	{
 		items.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		String json = configManager.getConfiguration(CONFIG_GROUP, key());
+		if (json == null || json.isEmpty())
+		{
+			// Migration (0.4.1): the pre-scope key, read once so an existing
+			// install keeps its entries instead of starting empty.
+			json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		}
 		if (json == null || json.isEmpty())
 		{
 			return;
@@ -80,9 +101,9 @@ public class AlwaysFilterStore
 	{
 		if (items.isEmpty())
 		{
-			configManager.unsetConfiguration(CONFIG_GROUP, KEY);
+			configManager.unsetConfiguration(CONFIG_GROUP, key());
 			return;
 		}
-		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(items));
+		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(items));
 	}
 }

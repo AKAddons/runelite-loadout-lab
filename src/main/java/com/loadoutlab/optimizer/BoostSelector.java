@@ -89,7 +89,11 @@ public final class BoostSelector
 				return ownsAny(owned, SUPER_COMBAT)
 					? BoostProfile.SUPER_COMBAT : BoostProfile.NONE;
 			case RANGED:
-				if (ownsAny(owned, DIVINE_BASTION) || ownsAny(owned, BASTION))
+				if (ownsAny(owned, DIVINE_BASTION))
+				{
+					return BoostProfile.DIVINE_BASTION;
+				}
+				if (ownsAny(owned, BASTION))
 				{
 					return BoostProfile.BASTION;
 				}
@@ -108,7 +112,11 @@ public final class BoostSelector
 				{
 					return BoostProfile.IMBUED_HEART;
 				}
-				if (ownsAny(owned, DIVINE_BATTLEMAGE) || ownsAny(owned, BATTLEMAGE))
+				if (ownsAny(owned, DIVINE_BATTLEMAGE))
+				{
+					return BoostProfile.DIVINE_BATTLEMAGE;
+				}
+				if (ownsAny(owned, BATTLEMAGE))
 				{
 					return BoostProfile.BATTLEMAGE;
 				}

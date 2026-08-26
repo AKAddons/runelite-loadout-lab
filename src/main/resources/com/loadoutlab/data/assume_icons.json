@@ -38,7 +38,9 @@
   "Overload (+)": 20993,
   "Smelling salts": 27345,
   "Bastion potion": 22461,
-  "Battlemage potion": 22449
+  "Battlemage potion": 22449,
+  "Divine bastion potion": 24635,
+  "Divine battlemage potion": 24623
  },
  "spells": {
   "Wind Strike": 15,

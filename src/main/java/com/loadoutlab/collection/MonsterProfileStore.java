@@ -34,6 +34,21 @@ public class MonsterProfileStore
 
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "monsterProfiles";
+
+	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
+	 * before 0.4.1, which is why a main and a test account shared this list. */
+	private String worldScope = "std";
+
+	private String key()
+	{
+		return worldScope + "." + KEY;
+	}
+
+	public synchronized void loadScope(String scope)
+	{
+		this.worldScope = scope;
+		load();
+	}
 	/** The every-style scope key. Style scopes use CombatStyle names. */
 	public static final String ALL = "ALL";
 
@@ -81,7 +96,13 @@ public class MonsterProfileStore
 	private void load()
 	{
 		profiles.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		String json = configManager.getConfiguration(CONFIG_GROUP, key());
+		if (json == null || json.isEmpty())
+		{
+			// Migration (0.4.1): the pre-scope key, read once so an existing
+			// install keeps its entries instead of starting empty.
+			json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		}
 		if (json == null || json.isEmpty())
 		{
 			return;
@@ -458,7 +479,7 @@ public class MonsterProfileStore
 			}
 		}
 		profiles.keySet().retainAll(out.keySet());
-		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(out));
+		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(out));
 	}
 
 	private static void prune(Map<String, ? extends Map<?, ?>> scoped)

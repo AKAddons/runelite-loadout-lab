@@ -24,6 +24,10 @@ public class PageState
 	private boolean onTask;
 	private boolean inWilderness;
 	private boolean f2pOnly;
+	/** True while the client is on a NON-members world. The chip renders from
+	 * this, not from f2pOnly - otherwise unticking the filter hides the control
+	 * that unticked it and there is no way back. */
+	private boolean f2pWorld;
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -135,6 +139,9 @@ public class PageState
 			case "inWilderness":
 				inWilderness = Boolean.TRUE.equals(value);
 				return true;
+			case "f2pWorld":
+				f2pWorld = Boolean.TRUE.equals(value);
+				return true;
 			case "f2pOnly":
 				f2pOnly = Boolean.TRUE.equals(value);
 				return true;
@@ -216,6 +223,7 @@ public class PageState
 		node.put("onTask", onTask);
 		node.put("inWilderness", inWilderness);
 		node.put("f2pOnly", f2pOnly);
+		node.put("f2pWorld", f2pWorld);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);

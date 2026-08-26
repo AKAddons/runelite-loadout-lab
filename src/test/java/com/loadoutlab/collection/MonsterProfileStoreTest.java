@@ -175,7 +175,7 @@ class MonsterProfileStoreTest
 		store.setPinnedSpell(415, null);
 		store.removeFilterItem(415, "MELEE", 385);
 
-		String json = configManager.getConfiguration("loadoutlab", "monsterProfiles");
+		String json = configManager.getConfiguration("loadoutlab", "std.monsterProfiles");
 		assertEquals("{}", json, "empty profiles must not accumulate as husks");
 	}
 
@@ -183,7 +183,7 @@ class MonsterProfileStoreTest
 	@DisplayName("corrupt config degrades to no profiles")
 	void corruptDegrades()
 	{
-		configManager.setConfiguration("loadoutlab", "monsterProfiles", "{not json!");
+		configManager.setConfiguration("loadoutlab", "std.monsterProfiles", "{not json!");
 		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
 		assertEquals("", fresh.noteFor(415));
@@ -206,7 +206,7 @@ class MonsterProfileStoreTest
 
 		store.removeSim(239, 22324);
 		assertTrue(store.allSims(239).isEmpty());
-		assertEquals("{}", configManager.getConfiguration("loadoutlab", "monsterProfiles"),
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", "std.monsterProfiles"),
 			"an emptied sims profile prunes back to nothing");
 	}
 
@@ -241,7 +241,7 @@ class MonsterProfileStoreTest
 		assertEquals(Map.of("antivenom", "ANTIVENOM_PLUS"), reloaded.supplies(8781));
 
 		store.setSupply(8781, "antivenom", "");
-		assertEquals("{}", configManager.getConfiguration("loadoutlab", "monsterProfiles"),
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", "std.monsterProfiles"),
 			"clearing the only override prunes the profile away");
 	}
 }

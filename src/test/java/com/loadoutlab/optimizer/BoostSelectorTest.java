@@ -121,16 +121,20 @@ class BoostSelectorTest
 	}
 
 	@Test
-	@DisplayName("divine bastion and divine battlemage map onto the same profiles")
+	@DisplayName("a divine bastion owner is told to bring the divine one, not the plain")
 	void divineBastionAndBattlemage()
 	{
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(24635, 1);  // divine bastion potion(4)
 		owned.put(24623, 1);  // divine battlemage potion(4)
 		OwnedItems bag = new OwnedItems(owned, true);
-		assertEquals(BoostProfile.BASTION,
+		// Same boost numbers as the plain pair, but the label drives the
+		// "what to bring" icon (AssumeIcons) - collapsing them would point a
+		// divine-only owner at a potion they do not have, which is the very
+		// bug this release fixes.
+		assertEquals(BoostProfile.DIVINE_BASTION,
 			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
-		assertEquals(BoostProfile.BATTLEMAGE,
+		assertEquals(BoostProfile.DIVINE_BATTLEMAGE,
 			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
 	}
 

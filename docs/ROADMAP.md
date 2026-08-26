@@ -448,6 +448,20 @@ ruling (PR #15129) ends the core/companion split: the rich UI lives
 in core, the mascots/animations retired, one plugin at 177.5k
 tokens.
 
+**v0.4.1 (2026-08-26): the field-report hotfix.** Three defects found
+in the field, all reported by **Not on Hand**. The boost assumption
+claimed potions the player did not own - a fresh ironman was told
+"Assumes: Ranging potion" with an empty bank - because the selector
+treated every tradeable boost as always-available; it now reads the
+collection like the prayer detect always did, and bastion/battlemage
+(and their divine variants) outrank the plain family. The saved lists -
+excludes, sims, protects, pins, notes, trip kit - were keyed per
+RuneLite profile, so a main and a test account shared one set; they are
+now per character, with pre-0.4.1 lists migrating into the first
+character seen. And the F2P chip, dropped in the merge-back, is back:
+it renders from the world type rather than the filter, so unticking it
+to preview members gear no longer hides the control that unticked it.
+
 **v0.5.0 headline (Andrew, 2026-08-09; bumped from v0.4.0): sea
 combat done WELL, cannons included.** Capture the Sailing era's combat properly: ship-mounted
 cannons and sea-monster encounters (the corpus already carries sailing

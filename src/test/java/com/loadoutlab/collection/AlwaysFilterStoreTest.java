@@ -42,7 +42,7 @@ class AlwaysFilterStoreTest
 		store.add(9790, "Construction cape");
 		store.remove(9790);
 		assertTrue(store.all().isEmpty());
-		assertNull(configManager.getConfiguration("loadoutlab", "alwaysFilterItems"),
+		assertNull(configManager.getConfiguration("loadoutlab", "std.alwaysFilterItems"),
 			"an empty list leaves no config residue");
 	}
 

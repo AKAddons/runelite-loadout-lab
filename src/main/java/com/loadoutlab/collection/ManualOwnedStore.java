@@ -6,7 +6,6 @@ import net.runelite.client.config.ConfigManager;
 
 public class ManualOwnedStore extends IdSetStore
 {
-	private String worldScope = "std";
 
 	public ManualOwnedStore(ConfigManager configManager, Gson gson)
 	{
@@ -14,15 +13,11 @@ public class ManualOwnedStore extends IdSetStore
 	}
 
 	@Override
-	String key()
+	String legacyKey()
 	{
-		return worldScope + ".manualOwned";
-	}
-
-	public synchronized void loadScope(String scope)
-	{
-		this.worldScope = scope;
-		load();
+		// Already scoped before 0.4.1, so its pre-scope key never existed as a
+		// bare "manualOwned" - the base's legacy fallback simply finds nothing.
+		return "manualOwned";
 	}
 
 	public boolean isStored(int itemId)

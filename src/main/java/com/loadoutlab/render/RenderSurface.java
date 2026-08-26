@@ -854,6 +854,14 @@ public class RenderSurface
 			{
 				chipRow.add(paramChip(entry[0], entry[1], Model.flag(params, entry[1])));
 			}
+			// F2P: shown on a non-members world so it can be turned OFF to
+			// preview members gear (field report 2026-08-25 - the merge-back
+			// dropped this chip, leaving the filter stuck on). Gated on
+			// f2pWorld, NOT f2pOnly, or unticking it would hide the control.
+			if (Model.flag(params, "f2pWorld"))
+			{
+				chipRow.add(paramChip("F2P", "f2pOnly", Model.flag(params, "f2pOnly")));
+			}
 			// The classic gates (field report 2026-08-14: Sire showed
 			// Wildy + Raid boost): Wildy only for LISTED wilderness mobs
 			// (exclusives pinned always-in), the raid chip only where the

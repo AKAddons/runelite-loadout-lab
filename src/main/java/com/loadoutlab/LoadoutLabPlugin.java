@@ -212,6 +212,9 @@ public class LoadoutLabPlugin extends Plugin
 	private RequirementProfile requirementProfile;
 	private PlayerLevels realLevels;
 	private PlayerLevels boostedLevels;
+	/** Last published world type, so the F2P filter is forced only on a flip
+	 * and a manual untick survives a loading zone. */
+	private Boolean lastF2pWorld;
 	private PrayerUnlocks prayerUnlocks;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
@@ -414,8 +417,7 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
-			ledger.loadScope(worldScope());
-			manualOwned.loadScope(worldScope());
+			loadAllScopes();
 			migrateStoredToSims();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
@@ -993,14 +995,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private void resetForIdentityChange()
 	{
-		if (ledger != null)
-		{
-			ledger.loadScope(worldScope());
-		}
-		if (manualOwned != null)
-		{
-			manualOwned.loadScope(worldScope());
-		}
+		loadAllScopes();
 		if (dwmsLink != null)
 		{
 			// The live snapshot belongs to the PREVIOUS identity; drop it and
@@ -1037,8 +1032,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		if (event.getGameState() == GameState.LOGGED_IN)
 		{
-			ledger.loadScope(worldScope());
-			manualOwned.loadScope(worldScope());
+			loadAllScopes();
 			requestDwmsStorages();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
@@ -1050,13 +1044,22 @@ public class LoadoutLabPlugin extends Plugin
 
 			// Non-members world -> show the F2P filter, default on (world type
 			// is client state, so read it here and hand the EDT a boolean).
+			// LOGGED_IN re-fires on every region change, so only FORCE the
+			// filter when the world type actually flipped - otherwise walking
+			// through a loading zone would undo a manual untick.
 			boolean f2p = onF2pWorld();
+			boolean flipped = lastF2pWorld == null || lastF2pWorld != f2p;
+			lastF2pWorld = f2p;
 			SwingUtilities.invokeLater(() ->
 			{
 				com.loadoutlab.model.CommandEngine engine = commandEngine;
 				if (engine != null)
 				{
-					engine.execute("set-param", Map.of("param", "f2pOnly", "value", f2p));
+					engine.execute("set-param", Map.of("param", "f2pWorld", "value", f2p));
+					if (flipped)
+					{
+						engine.execute("set-param", Map.of("param", "f2pOnly", "value", f2p));
+					}
 				}
 			});
 		}
@@ -2135,6 +2138,23 @@ public class LoadoutLabPlugin extends Plugin
 	 * on standard worlds must never share a scanned bank (field report:
 	 * switching characters showed the previous character's gear).
 	 */
+	/** Point every per-character store at the current account. ONE place, so a
+	 *  store added later cannot be wired into two of the three call sites and
+	 *  silently stay global on the third - which is how the exclude/sim lists
+	 *  ended up shared across characters (field report 2026-08-25). */
+	private void loadAllScopes()
+	{
+		String scope = worldScope();
+		if (ledger != null) { ledger.loadScope(scope); }
+		if (manualOwned != null) { manualOwned.loadScope(scope); }
+		if (exclusions != null) { exclusions.loadScope(scope); }
+		if (dreams != null) { dreams.loadScope(scope); }
+		if (protectOnly != null) { protectOnly.loadScope(scope); }
+		if (alwaysFilter != null) { alwaysFilter.loadScope(scope); }
+		if (mobProfiles != null) { mobProfiles.loadScope(scope); }
+		if (supplyDefaults != null) { supplyDefaults.loadScope(scope); }
+	}
+
 	private String worldScope()
 	{
 		String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";

@@ -27,7 +27,7 @@ class SupplyDefaultsStoreTest
 	{
 		assertEquals("DETECT_BEST", store.choice("food"));
 		assertEquals("DETECT_BEST", store.choice("antivenom"));
-		assertNull(configManager.getConfiguration("loadoutlab", "supplyDefaults"),
+		assertNull(configManager.getConfiguration("loadoutlab", "std.supplyDefaults"),
 			"defaults leave no config residue");
 	}
 
@@ -44,7 +44,7 @@ class SupplyDefaultsStoreTest
 		store.setChoice("prayerRestore", "DETECT_BEST");
 		store.setChoice("surge", null);
 		assertEquals("DETECT_BEST", store.choice("prayerRestore"));
-		assertNull(configManager.getConfiguration("loadoutlab", "supplyDefaults"),
+		assertNull(configManager.getConfiguration("loadoutlab", "std.supplyDefaults"),
 			"an all-default store unsets its config key");
 	}
 }

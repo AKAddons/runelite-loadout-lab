@@ -17,6 +17,21 @@ public class SupplyDefaultsStore
 {
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "supplyDefaults";
+
+	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
+	 * before 0.4.1, which is why a main and a test account shared this list. */
+	private String worldScope = "std";
+
+	private String key()
+	{
+		return worldScope + "." + KEY;
+	}
+
+	public synchronized void loadScope(String scope)
+	{
+		this.worldScope = scope;
+		load();
+	}
 	public static final String DETECT_BEST = "DETECT_BEST";
 
 	private final ConfigManager configManager;
@@ -39,7 +54,13 @@ public class SupplyDefaultsStore
 	private void load()
 	{
 		choices.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		String json = configManager.getConfiguration(CONFIG_GROUP, key());
+		if (json == null || json.isEmpty())
+		{
+			// Migration (0.4.1): the pre-scope key, read once so an existing
+			// install keeps its entries instead of starting empty.
+			json = configManager.getConfiguration(CONFIG_GROUP, KEY);
+		}
 		if (json == null || json.isEmpty())
 		{
 			return;
@@ -82,9 +103,9 @@ public class SupplyDefaultsStore
 	{
 		if (choices.isEmpty())
 		{
-			configManager.unsetConfiguration(CONFIG_GROUP, KEY);
+			configManager.unsetConfiguration(CONFIG_GROUP, key());
 			return;
 		}
-		configManager.setConfiguration(CONFIG_GROUP, KEY, gson.toJson(choices));
+		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(choices));
 	}
 }
