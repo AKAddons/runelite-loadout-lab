@@ -51,6 +51,24 @@ class ScopeRegressionTest
 	}
 
 	@Test
+	@DisplayName("whichever character logs in first claims the pre-0.4.1 list")
+	void adoptionFollowsLoginOrder()
+	{
+		// The pre-0.4.1 entry records no owner, so there is no signal for which
+		// account it belonged to - only one of them can have it, and the first
+		// to load wins. Documented because it makes the UPGRADE order matter
+		// even though steady-state scoping does not.
+		ExclusionStore store = new ExclusionStore(configManager, gson);
+
+		store.loadScope(ALT);
+		assertTrue(store.isExcluded(11832), "the first character in did not adopt");
+
+		store.loadScope(MAIN);
+		assertFalse(store.isExcluded(11832),
+			"the second character in must start clean, not inherit a copy");
+	}
+
+	@Test
 	@DisplayName("an item added on the alt survives the next region change")
 	void addOnTheAltSurvivesAReload()
 	{
