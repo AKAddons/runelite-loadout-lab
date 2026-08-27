@@ -722,7 +722,7 @@ public class CommandEngine
 						{
 							return false;
 						}
-						recompute();
+						refreshAfterStoreToggle();
 						return true;
 					}
 
@@ -1166,6 +1166,24 @@ public class CommandEngine
 	private void recompute()
 	{
 		recompute(false);
+	}
+
+	/** Recompute when there is something to compute; otherwise publish the
+	 * idle page so the global count pills still move. recompute() returns
+	 * early with no mob selected, which left a simmed item counted in the
+	 * store but not on the "+N" pill (field report 2026-08-27). */
+	private void refreshAfterStoreToggle()
+	{
+		if (state.mob() == null && (state.rosterMobs() == null || rosterCompute == null))
+		{
+			if (link != null)
+			{
+				link.publishPage(withHistory(
+					RenderModel.page(java.util.Collections.emptyList())));
+			}
+			return;
+		}
+		recompute();
 	}
 
 	/** silent = a BACKGROUND refresh (ledger settles): no status, no
