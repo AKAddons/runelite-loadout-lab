@@ -21,11 +21,11 @@ public class AlwaysFilterStore
 
 	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
 	 * before 0.4.1, which is why a main and a test account shared this list. */
-	private String worldScope = "std";
+	private String worldScope;
 
 	private String key()
 	{
-		return worldScope + "." + KEY;
+		return ScopedKeys.key(worldScope, KEY);
 	}
 
 	public synchronized void loadScope(String scope)
@@ -54,13 +54,7 @@ public class AlwaysFilterStore
 	private void load()
 	{
 		items.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, key());
-		if (json == null || json.isEmpty())
-		{
-			// Migration (0.4.1): the pre-scope key, read once so an existing
-			// install keeps its entries instead of starting empty.
-			json = configManager.getConfiguration(CONFIG_GROUP, KEY);
-		}
+		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY);
 		if (json == null || json.isEmpty())
 		{
 			return;

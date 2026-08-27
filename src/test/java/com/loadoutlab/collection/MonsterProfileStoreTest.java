@@ -16,6 +16,7 @@ class MonsterProfileStoreTest
 {
 	private static final String ALL = MonsterProfileStore.ALL;
 
+	private static final String SCOPE = "std.1111";
 	private ConfigManager configManager;
 	private MonsterProfileStore store;
 
@@ -23,7 +24,17 @@ class MonsterProfileStoreTest
 	void setUp()
 	{
 		configManager = InMemoryConfigManager.create();
-		store = new MonsterProfileStore(configManager, new Gson());
+		store = freshStore();
+	}
+
+	/** The plugin always loads a character scope before use; a store without
+	 * one writes to the pre-0.4.1 unscoped key, so an assertion on a scoped
+	 * key would pass without testing anything. */
+	private MonsterProfileStore freshStore()
+	{
+		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
+		fresh.loadScope(SCOPE);
+		return fresh;
 	}
 
 	@Test
@@ -98,7 +109,7 @@ class MonsterProfileStoreTest
 		store.exclude(415, ALL, 4151);
 		store.exclude(415, "RANGED", 12926);
 
-		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Set.of(4151, 12926), reloaded.exclusionsFor(415, "RANGED"));
 		assertEquals(Map.of(ALL, Set.of(4151), "RANGED", Set.of(12926)),
 			reloaded.allExclusions(415));
@@ -109,11 +120,11 @@ class MonsterProfileStoreTest
 	void exclusionsKeepTheProfileAlive()
 	{
 		store.exclude(415, ALL, 4151);
-		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Set.of(4151), reloaded.exclusionsFor(415, "MELEE"));
 
 		reloaded.removeExclusion(415, ALL, 4151);
-		MonsterProfileStore emptied = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore emptied = freshStore();
 		assertTrue(emptied.allExclusions(415).isEmpty());
 	}
 
@@ -125,7 +136,7 @@ class MonsterProfileStoreTest
 		store.setNote(415, "bring antidote++, pray melee after the spec");
 		store.addFilterItem(415, "MELEE", 12695, "Super combat potion(4)");
 
-		MonsterProfileStore next = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore next = freshStore();
 		assertEquals(Map.of(GearSlot.HANDS, 21183), next.pinsFor(415, "MELEE"));
 		assertEquals("bring antidote++, pray melee after the spec", next.noteFor(415));
 		assertEquals(Set.of(12695), next.filterItemsFor(415, "MELEE"));
@@ -138,7 +149,7 @@ class MonsterProfileStoreTest
 	void pinnedSpellPersists()
 	{
 		store.setPinnedSpell(415, "Wind Bolt");
-		assertEquals("Wind Bolt", new MonsterProfileStore(configManager, new Gson())
+		assertEquals("Wind Bolt", freshStore()
 			.pinnedSpellFor(415));
 		assertEquals("", store.pinnedSpellFor(9999), "other mobs stay on auto");
 		store.setPinnedSpell(415, "");
@@ -155,7 +166,7 @@ class MonsterProfileStoreTest
 		// bug, recurring). Read back from a FRESH store = the config
 		// round-trip, the path the compute actually reads.
 		store.setPinnedSpec(415, 28922);
-		assertEquals(28922, new MonsterProfileStore(configManager, new Gson())
+		assertEquals(28922, freshStore()
 			.pinnedSpecFor(415), "the spec pin must survive save + reload");
 		assertEquals(0, store.pinnedSpecFor(9999), "other mobs stay on auto");
 		store.setPinnedSpec(415, 0);
@@ -175,7 +186,7 @@ class MonsterProfileStoreTest
 		store.setPinnedSpell(415, null);
 		store.removeFilterItem(415, "MELEE", 385);
 
-		String json = configManager.getConfiguration("loadoutlab", "std.monsterProfiles");
+		String json = configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles");
 		assertEquals("{}", json, "empty profiles must not accumulate as husks");
 	}
 
@@ -183,8 +194,8 @@ class MonsterProfileStoreTest
 	@DisplayName("corrupt config degrades to no profiles")
 	void corruptDegrades()
 	{
-		configManager.setConfiguration("loadoutlab", "std.monsterProfiles", "{not json!");
-		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
+		configManager.setConfiguration("loadoutlab", SCOPE + ".monsterProfiles", "{not json!");
+		MonsterProfileStore fresh = freshStore();
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
 		assertEquals("", fresh.noteFor(415));
 	}
@@ -200,13 +211,13 @@ class MonsterProfileStoreTest
 		assertEquals(Map.of(22324, "Ghrazi rapier"), store.allSims(239));
 		assertEquals(Set.of(22324), store.simsFor(239));
 
-		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Map.of(22324, "Ghrazi rapier"), reloaded.allSims(239),
 			"the sim survives a config round-trip");
 
 		store.removeSim(239, 22324);
 		assertTrue(store.allSims(239).isEmpty());
-		assertEquals("{}", configManager.getConfiguration("loadoutlab", "std.monsterProfiles"),
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles"),
 			"an emptied sims profile prunes back to nothing");
 	}
 
@@ -220,7 +231,7 @@ class MonsterProfileStoreTest
 			store.supplies(8781));
 		assertTrue(store.supplies(9999).isEmpty(), "another mob keeps the defaults");
 
-		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore reloaded = freshStore();
 		assertEquals("SANFEW_SERUM", reloaded.supplies(8781).get("prayerRestore"),
 			"overrides survive a config round-trip");
 
@@ -237,11 +248,11 @@ class MonsterProfileStoreTest
 		// save()'s empty check, or a supplies-only profile would be erased
 		// by the very call that set it.
 		store.setSupply(8781, "antivenom", "ANTIVENOM_PLUS");
-		MonsterProfileStore reloaded = new MonsterProfileStore(configManager, new Gson());
+		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Map.of("antivenom", "ANTIVENOM_PLUS"), reloaded.supplies(8781));
 
 		store.setSupply(8781, "antivenom", "");
-		assertEquals("{}", configManager.getConfiguration("loadoutlab", "std.monsterProfiles"),
+		assertEquals("{}", configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles"),
 			"clearing the only override prunes the profile away");
 	}
 }

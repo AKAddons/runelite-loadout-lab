@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SupplyDefaultsStoreTest
 {
+	private static final String SCOPE = "std.1111";
 	private ConfigManager configManager;
 	private SupplyDefaultsStore store;
 
@@ -18,7 +19,17 @@ class SupplyDefaultsStoreTest
 	void setUp()
 	{
 		configManager = InMemoryConfigManager.create();
-		store = new SupplyDefaultsStore(configManager, new Gson());
+		store = freshStore();
+	}
+
+	/** The plugin always loads a character scope before use; a store
+	 * without one writes to the pre-0.4.1 unscoped key, so a reload
+	 * through a second instance would read a different key entirely. */
+	private SupplyDefaultsStore freshStore()
+	{
+		SupplyDefaultsStore fresh = new SupplyDefaultsStore(configManager, new Gson());
+		fresh.loadScope(SCOPE);
+		return fresh;
 	}
 
 	@Test
@@ -27,7 +38,7 @@ class SupplyDefaultsStoreTest
 	{
 		assertEquals("DETECT_BEST", store.choice("food"));
 		assertEquals("DETECT_BEST", store.choice("antivenom"));
-		assertNull(configManager.getConfiguration("loadoutlab", "std.supplyDefaults"),
+		assertNull(configManager.getConfiguration("loadoutlab", SCOPE + ".supplyDefaults"),
 			"defaults leave no config residue");
 	}
 
@@ -37,14 +48,14 @@ class SupplyDefaultsStoreTest
 	{
 		store.setChoice("prayerRestore", "SANFEW_SERUM");
 		store.setChoice("surge", "NONE");
-		SupplyDefaultsStore reloaded = new SupplyDefaultsStore(configManager, new Gson());
+		SupplyDefaultsStore reloaded = freshStore();
 		assertEquals("SANFEW_SERUM", reloaded.choice("prayerRestore"));
 		assertEquals("NONE", reloaded.choice("surge"));
 
 		store.setChoice("prayerRestore", "DETECT_BEST");
 		store.setChoice("surge", null);
 		assertEquals("DETECT_BEST", store.choice("prayerRestore"));
-		assertNull(configManager.getConfiguration("loadoutlab", "std.supplyDefaults"),
+		assertNull(configManager.getConfiguration("loadoutlab", SCOPE + ".supplyDefaults"),
 			"an all-default store unsets its config key");
 	}
 }

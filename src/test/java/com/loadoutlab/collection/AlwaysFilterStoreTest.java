@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AlwaysFilterStoreTest
 {
+	private static final String SCOPE = "std.1111";
 	private ConfigManager configManager;
 	private AlwaysFilterStore store;
 
@@ -19,7 +20,17 @@ class AlwaysFilterStoreTest
 	void setUp()
 	{
 		configManager = InMemoryConfigManager.create();
-		store = new AlwaysFilterStore(configManager, new Gson());
+		store = freshStore();
+	}
+
+	/** The plugin always loads a character scope before use; a store
+	 * without one writes to the pre-0.4.1 unscoped key, so a reload
+	 * through a second instance would read a different key entirely. */
+	private AlwaysFilterStore freshStore()
+	{
+		AlwaysFilterStore fresh = new AlwaysFilterStore(configManager, new Gson());
+		fresh.loadScope(SCOPE);
+		return fresh;
 	}
 
 	@Test
@@ -30,7 +41,7 @@ class AlwaysFilterStoreTest
 		store.add(13280, "Max cape");
 		assertEquals(Map.of(9790, "Construction cape", 13280, "Max cape"), store.all());
 
-		AlwaysFilterStore reloaded = new AlwaysFilterStore(configManager, new Gson());
+		AlwaysFilterStore reloaded = freshStore();
 		assertEquals("Construction cape", reloaded.all().get(9790),
 			"the list survives a config round-trip");
 	}
@@ -42,7 +53,7 @@ class AlwaysFilterStoreTest
 		store.add(9790, "Construction cape");
 		store.remove(9790);
 		assertTrue(store.all().isEmpty());
-		assertNull(configManager.getConfiguration("loadoutlab", "std.alwaysFilterItems"),
+		assertNull(configManager.getConfiguration("loadoutlab", SCOPE + ".alwaysFilterItems"),
 			"an empty list leaves no config residue");
 	}
 

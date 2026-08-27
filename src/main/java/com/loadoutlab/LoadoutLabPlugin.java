@@ -2145,6 +2145,14 @@ public class LoadoutLabPlugin extends Plugin
 	private void loadAllScopes()
 	{
 		String scope = worldScope();
+		if (scope == null)
+		{
+			// LOGGED_IN fires before getAccountHash() is populated. Reloading
+			// now would swap every store onto a hash-less bucket and drop
+			// whatever the player just added (field report 2026-08-26); the
+			// stores keep the last known character until the hash arrives.
+			return;
+		}
 		if (ledger != null) { ledger.loadScope(scope); }
 		if (manualOwned != null) { manualOwned.loadScope(scope); }
 		if (exclusions != null) { exclusions.loadScope(scope); }
@@ -2157,9 +2165,13 @@ public class LoadoutLabPlugin extends Plugin
 
 	private String worldScope()
 	{
-		String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
 		long account = client.getAccountHash();
-		return account == -1 ? world : world + "." + account;
+		if (account == -1)
+		{
+			return null;
+		}
+		String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
+		return world + "." + account;
 	}
 
 	/** True only when logged in to a non-members world - the F2P filter default. */

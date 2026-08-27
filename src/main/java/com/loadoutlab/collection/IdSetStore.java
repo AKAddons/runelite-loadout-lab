@@ -18,7 +18,7 @@ public abstract class IdSetStore
 	 * Field report 2026-08-25: switching from a main to a test account showed
 	 * the SAME exclude and sim lists, because these keys were global while the
 	 * bank ledger next door was already per-character. */
-	String worldScope = "std";
+	String worldScope;
 
 	IdSetStore(ConfigManager configManager, Gson gson)
 	{
@@ -32,7 +32,7 @@ public abstract class IdSetStore
 
 	String key()
 	{
-		return worldScope + "." + legacyKey();
+		return ScopedKeys.key(worldScope, legacyKey());
 	}
 
 	public synchronized void loadScope(String scope)
@@ -49,14 +49,7 @@ public abstract class IdSetStore
 	final void load()
 	{
 		ids.clear();
-		String json = configManager.getConfiguration(CONFIG_GROUP, key());
-		if (json == null || json.isEmpty())
-		{
-			// Migration (0.4.1): fall back to the pre-scope key. Same shape as
-			// CollectionLedger's, so a single-account install carries its list
-			// forward instead of silently starting empty.
-			json = configManager.getConfiguration(CONFIG_GROUP, legacyKey());
-		}
+		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey());
 		if (json == null || json.isEmpty())
 		{
 			return;

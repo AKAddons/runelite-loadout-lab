@@ -150,8 +150,12 @@ class CollectionLedgerTest
 		ledger.update(CollectionLedger.Source.BANK, java.util.Map.of(20997, 1));
 		ledger.loadScope("std.2222");
 		org.junit.jupiter.api.Assertions.assertFalse(ledger.owned().containsKey(20997));
-		// B still adopts the legacy whip, but never A's tbow.
-		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(4151));
+		// B adopts NOTHING: A already took the legacy scan, and the entry was
+		// removed with it. Letting every account adopt it (the original
+		// reading of "once") is what showed a test account the main's bank
+		// and priced its BiS off gear it does not own - field report
+		// 2026-08-26. An empty ledger until B scans is the honest state.
+		org.junit.jupiter.api.Assertions.assertFalse(ledger.owned().containsKey(4151));
 		// Back to A: the tbow is still there.
 		ledger.loadScope("std.1111");
 		org.junit.jupiter.api.Assertions.assertTrue(ledger.owned().containsKey(20997));

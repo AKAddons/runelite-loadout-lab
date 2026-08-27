@@ -140,16 +140,13 @@ public class CollectionLedger
 		for (Source s : Source.values())
 		{
 			Map<Integer, Integer> loaded = null;
-			String json = configManager.getConfiguration(CONFIG_GROUP, key(s));
-			if (json == null || json.isEmpty())
-			{
-				// One-time adoption of pre-account-scoping data ("std.*"):
-				// a single-account install keeps its scanned bank when the
-				// scope key gains the account hash.
-				int dot = scope.indexOf('.');
-				String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
-				json = configManager.getConfiguration(CONFIG_GROUP, legacy);
-			}
+			// One-time adoption of pre-account-scoping data ("std.*"): the
+			// FIRST character to load it takes it and the legacy entry is
+			// removed. Copying instead of moving is what let a second account
+			// open on the main's scanned bank (field report 2026-08-26).
+			int dot = scope.indexOf('.');
+			String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
+			String json = ScopedKeys.adopt(configManager, CONFIG_GROUP, key(s), legacy);
 			if (json != null && !json.isEmpty())
 			{
 				try
