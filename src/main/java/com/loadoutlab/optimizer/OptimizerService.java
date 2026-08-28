@@ -3341,13 +3341,20 @@ public class OptimizerService
 		return r;
 	}
 
-	/** The game-ceiling request: every obtainable item, no quest/level
-	 * gating, no pins - the pure ceiling the comparison isolates. */
+	/** The game-ceiling request: every obtainable item you can actually
+	 * equip, no pins - so Yours and BiS differ by OWNERSHIP alone, which is
+	 * the gap the comparison is meant to isolate.
+	 *
+	 * <p>This gated on RequirementProfile.MAXED until 2026-08-27. The intent
+	 * was a pure gear gap, but it introduced a second difference between the
+	 * two sides and, on a low-level account, named gear the player cannot
+	 * wear: Obor's BiS came back a rune scimitar at 10 Attack, a DPS that can
+	 * never occur, since reaching 40 Attack changes the number. */
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels)
 	{
 		OptimizationRequest r = request(
-			mob, style, gameLevels, PrayerUnlocks.ALL, RequirementProfile.MAXED,
+			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements,
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
 			.withExcludedItems(excludedFor(ctx, style, mob))
 			.withSpellbookLock(ctx.lock)
