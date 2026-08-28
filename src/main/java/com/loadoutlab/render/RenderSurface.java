@@ -798,6 +798,17 @@ public class RenderSurface
 		countsRow.setVisible(true);
 		chipRow.removeAll();
 		chipRow.setVisible(params != null);
+		// The inventory slider rides with the chips. It is a per-result
+		// control - each mob, group and raid brings its own default swap
+		// count - so on the idle panel it showed a number belonging to
+		// nothing, and any change to it was overwritten by the next search
+		// (field report 2026-08-27). Built inside the params branch below,
+		// so without this it simply kept whatever it last drew.
+		invRow.setVisible(params != null);
+		if (params == null)
+		{
+			invRow.removeAll();
+		}
 		if (params != null)
 		{
 			Map<String, Object> history = Model.map(page, "history");
