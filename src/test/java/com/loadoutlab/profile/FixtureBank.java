@@ -125,6 +125,15 @@ public final class FixtureBank
 		owned.put(12695, 1);  // super combat potion(4)
 		owned.put(2444, 1);   // ranging potion(4)
 		owned.put(3040, 1);   // magic potion(4)
+		// The premium combat runes, for the same reason - the spell gate (also
+		// 0.4.1) drops blood/death/soul/wrath spells from a bank without
+		// them, and a runeless fixture would quietly narrow the goldens to
+		// strike spells. Stocked, they prove the gate changes nothing for a
+		// player who HAS the runes.
+		owned.put(565, 10000);   // blood rune
+		owned.put(560, 10000);   // death rune
+		owned.put(566, 10000);   // soul rune
+		owned.put(21880, 10000); // wrath rune
 		List<String> missing = new ArrayList<>();
 		for (String name : BANK_NAMES)
 		{

@@ -59,6 +59,13 @@ public class SpellbookLockTest
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
 		data().getGearItems().stream().filter(g -> g.getName().equalsIgnoreCase("Purging staff"))
 			.findFirst().ifPresent(g -> owned.put(g.getId(), 1));
+		// Premium runes: the rune-ownership gate (0.4.1) would otherwise
+		// drop the blood/death spells and shift the arithmetic this test
+		// pins - rune poverty has its own net (SpellRuneWiringTest).
+		owned.put(565, 1000);   // blood
+		owned.put(560, 1000);   // death
+		owned.put(566, 1000);   // soul
+		owned.put(21880, 1000); // wrath
 		OptimizationRequest ancientLock = new OptimizationRequest(
 			graardor, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,

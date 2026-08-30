@@ -3,6 +3,7 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.engine.BoostProfile;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OwnedItems;
+import com.loadoutlab.engine.PlayerLevels;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -136,6 +137,33 @@ class BoostSelectorTest
 			BoostSelector.bestFor(CombatStyle.RANGED, bag, false, false));
 		assertEquals(BoostProfile.DIVINE_BATTLEMAGE,
 			BoostSelector.bestFor(CombatStyle.MAGIC, bag, false, false));
+	}
+
+	@Test
+	@DisplayName("reachable magic never assumes MAXED or an unowned potion")
+	void reachableMagicIsHonest()
+	{
+		// Unknown levels -> 0, never 99 (the old fallback seeded Death
+		// Charge ON for a fresh login, F2P included: field report 2026-08-27).
+		assertEquals(0, BoostSelector.reachableMagic(null, null, null));
+
+		PlayerLevels base85 = new PlayerLevels(70, 70, 70, 70, 85, 70, 70);
+		OwnedItems nothing = new OwnedItems(new HashMap<>(), true);
+		assertEquals(85, BoostSelector.reachableMagic(base85, null, nothing),
+			"no boost owned - reachable is just the base");
+
+		Map<Integer, Integer> heart = new HashMap<>();
+		heart.put(27641, 1); // saturated heart: +4 then +10% -> 85 + 12 = 97
+		assertEquals(97, BoostSelector.reachableMagic(base85, null,
+			new OwnedItems(heart, true)));
+
+		// A live boost the player already drank counts even if unowned now.
+		PlayerLevels live91 = new PlayerLevels(70, 70, 70, 70, 91, 70, 70);
+		assertEquals(91, BoostSelector.reachableMagic(base85, live91, nothing));
+
+		// A live DRAIN never drags reachable below base.
+		PlayerLevels drained = new PlayerLevels(70, 70, 70, 70, 60, 70, 70);
+		assertEquals(85, BoostSelector.reachableMagic(base85, drained, nothing));
 	}
 
 	@Test

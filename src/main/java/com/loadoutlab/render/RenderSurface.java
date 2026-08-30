@@ -811,6 +811,11 @@ public class RenderSurface
 		}
 		if (params != null)
 		{
+			// Members chips (task, thralls, D charge) disappear under the
+			// F2P lock - the computeArgs veto already keeps them out of the
+			// math, and a control that can do nothing is noise (field ask
+			// 2026-08-27). Their params survive for the untick.
+			boolean f2pLocked = Model.flag(params, "f2pOnly");
 			Map<String, Object> history = Model.map(page, "history");
 			if (history != null && undoButton != null)
 			{
@@ -848,13 +853,13 @@ public class RenderSurface
 						boostUniform = false;
 					}
 				}
-			if (anyTaskOnly)
+			if (anyTaskOnly && !f2pLocked)
 			{
 				chipRow.add(taskPill(true, true, "Task-only boss - always on", () ->
 					{
 					}));
 			}
-			else if (anySlayer)
+			else if (anySlayer && !f2pLocked)
 			{
 				chipRow.add(taskPill(Model.flag(params, "onTask"), !Model.flag(params, "onTask"),
 					"On a slayer task: slayer helmet bonuses apply",
@@ -863,6 +868,10 @@ public class RenderSurface
 			}
 			for (String[] entry : CHIPS)
 			{
+				if (f2pLocked && "thralls".equals(entry[1]))
+				{
+					continue;
+				}
 				chipRow.add(paramChip(entry[0], entry[1], Model.flag(params, entry[1])));
 			}
 			// F2P: shown on a non-members world so it can be turned OFF to
@@ -904,12 +913,14 @@ public class RenderSurface
 					() -> commands.send("set-param",
 						Map.of("param", "antifireMode", "value", (af + 1) % 3))));
 			}
-			int dChargePre = Model.id(params, "deathCharge");
-			int dCharge = dChargePre;
-			chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
-				dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",
-				() -> commands.send("set-param",
-					Map.of("param", "deathCharge", "value", (dCharge + 1) % 3))));
+			int dCharge = Model.id(params, "deathCharge");
+			if (!f2pLocked)
+			{
+				chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
+					dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",
+					() -> commands.send("set-param",
+						Map.of("param", "deathCharge", "value", (dCharge + 1) % 3))));
+			}
 			if (anyInvocationScaled(page))
 			{
 				int invo = Model.id(params, "toaInvocation");

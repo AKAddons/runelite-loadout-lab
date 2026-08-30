@@ -39,6 +39,13 @@ public class RosterOptimizerTest
 		owned.put(1215, 1);   // dragon dagger (spec)
 		owned.put(11840, 1);  // dragon boots
 		owned.put(6737, 1);   // berserker ring
+		// Premium runes: the rune-ownership gate (0.4.1) would otherwise
+		// drop the blood/death spells and shift the arithmetic this test
+		// pins - rune poverty has its own net (SpellRuneWiringTest).
+		owned.put(565, 1000);   // blood
+		owned.put(560, 1000);   // death
+		owned.put(566, 1000);   // soul
+		owned.put(21880, 1000); // wrath
 		return owned;
 	}
 
@@ -261,6 +268,13 @@ public class RosterOptimizerTest
 		owned.put(4151, 1);   // whip
 		owned.put(1215, 1);   // dragon dagger
 		owned.put(13576, 1);  // dragon warhammer
+		// Premium runes: the rune-ownership gate (0.4.1) would otherwise
+		// strip the magic rows and shift the HP-weighted seat arithmetic
+		// this test pins - rune poverty has its own net.
+		owned.put(565, 1000);   // blood
+		owned.put(560, 1000);   // death
+		owned.put(566, 1000);   // soul
+		owned.put(21880, 1000); // wrath
 		OptimizerService service = new OptimizerService(data);
 		try
 		{

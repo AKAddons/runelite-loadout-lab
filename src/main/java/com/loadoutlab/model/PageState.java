@@ -282,9 +282,14 @@ public class PageState
 		// binds in the wilderness, and Protect Item keeps a 4th slot.
 		int tradeables = inWilderness && riskCapped
 			? (protectItem ? 4 : 3) : maxTradeables;
+		// The F2P lock vetoes members mechanics WITHOUT clearing them: the
+		// params keep their values (undo history stays coherent, and
+		// unticking F2P brings the old setup straight back) - they just
+		// stop steering the math while the lock is on (field ask
+		// 2026-08-27: D charge / thralls / task have no meaning on F2P).
 		return new Object[]{
-			f2pOnly, onTask, inWilderness, spellbookLock, tradeables,
-			riskBudgetGp, antifireMode == 2, deathCharge, specWeapon,
+			f2pOnly, !f2pOnly && onTask, inWilderness, spellbookLock, tradeables,
+			riskBudgetGp, antifireMode == 2, f2pOnly ? 0 : deathCharge, specWeapon,
 			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
 			upgradeBudgetGp, maxSwaps, raidBoost,
 		};

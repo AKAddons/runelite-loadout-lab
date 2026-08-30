@@ -482,8 +482,16 @@ public class LoadoutLabPlugin extends Plugin
 				// the Book of the Dead is owned, Death Charge at Magic 80.
 				commandEngine.setAssumptionSeeder(() ->
 				{
-					int magic = boostedLevels != null
-						? boostedLevels.getMagic() : PlayerLevels.MAXED.getMagic();
+					// Both Arceuus assumptions read the level the player can
+					// actually REACH: live boost, or base + best OWNED potion
+					// (never MAXED as a stand-in for unknown levels - that
+					// fallback seeded Death Charge ON for a fresh login, and
+					// on a F2P account: field report 2026-08-27).
+					OwnedItems bag = new OwnedItems(ownedItems(),
+						ledger != null && ledger.bankKnown());
+					int magic = com.loadoutlab.optimizer.BoostSelector
+						.reachableMagic(realLevels, boostedLevels, bag);
+					boolean members = !Boolean.TRUE.equals(lastF2pWorld);
 					Map<String, Object> seeds = new java.util.LinkedHashMap<>();
 					seeds.put("specWeapon", config.defaultSpecWeapon());
 					// DETECT keeps the derived answer; NONE means off, as
@@ -491,12 +499,20 @@ public class LoadoutLabPlugin extends Plugin
 					// ignored the config outright (audit 2026-08-22).
 					boolean detectThralls =
 						config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
-					seeds.put("thralls", detectThralls
+					seeds.put("thralls", detectThralls && members
 						&& com.loadoutlab.engine.ExtraDps.thrallDps(magic) > 0
 						&& ownsCanonical(com.loadoutlab.engine.ExtraDps.BOOK_OF_THE_DEAD));
+					// Death Charge: Arceuus, Magic 90, A Kingdom Divided, and
+					// a blood + death + soul rune per cast - seed it only for
+					// a player who can actually cast it (wiki-verified).
 					boolean detectCharge =
 						config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
-					seeds.put("deathCharge", detectCharge && magic >= 80 ? 1 : 0);
+					com.loadoutlab.engine.RequirementProfile reqs = requirementProfile;
+					boolean canCharge = members && magic >= 90
+						&& reqs != null && reqs.getCompletedQuests()
+							.contains(net.runelite.api.Quest.A_KINGDOM_DIVIDED.name())
+						&& com.loadoutlab.data.SpellRunes.premiumRunesOwned("Death Charge", bag);
+					seeds.put("deathCharge", detectCharge && canCharge ? 1 : 0);
 					seeds.put("upgradeBudgetGp",
 						com.loadoutlab.render.Gp.parse(config.defaultUpgradeBudget()));
 					// The configured wilderness cap - inert since the

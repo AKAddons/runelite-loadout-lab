@@ -815,9 +815,20 @@ public final class LoadoutOptimizer
 		return best;
 	}
 
-	private static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
+	static List<SpellStats> spellsFor(LoadoutData data, OptimizationRequest request)
 	{
 		List<SpellStats> all = spellsForUnfiltered(data, request);
+		// Yours-side honesty (field report 2026-08-27): never autocast a
+		// spell whose blood/soul/death/wrath runes the bank does not hold.
+		// Runs before the mob whitelists so a nibbler/Salarin lock cannot
+		// resurrect a spell the player cannot pay for. The ceiling and the
+		// upgrade-budget mode keep every spell - one prices the game, the
+		// other already assumes purchases.
+		if (request.getCandidateMode() == CandidateMode.OWNED_ONLY)
+		{
+			all = keep(all, spell -> com.loadoutlab.data.SpellRunes
+				.premiumRunesOwned(spell.getName(), request.getOwnedItems()));
+		}
 		// Nibblers: locked to the barrages (field decision 2026-08-06) -
 		// Ice clears the trio, Blood heals off it; any other autocast is
 		// the wrong advice for the mob whose role is being barraged.

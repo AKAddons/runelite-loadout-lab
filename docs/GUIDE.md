@@ -172,7 +172,9 @@ does to a boss), folding the tier's flat dps
 (greater: 0.625, always hits) into the shown numbers, exactly like the
 official calculator's thrall toggle; the tab tooltip shows the
 gear/thrall breakdown, and the ranking never moves (a thrall adds the
-same to every set). The D charge chip (Magic 80) assumes Death Charge -
+same to every set). The D charge chip assumes Death Charge - seeded on only when you can
+actually cast it (members, Magic 90 reachable with a boost you own,
+A Kingdom Divided done, blood/death/soul runes banked) -
 15% special attack energy per killing blow, once per 60-second cast -
 feeding the spec model's energy budget, so long energy-bound fights fit
 more special attacks. Both recommendations carry their dependencies:

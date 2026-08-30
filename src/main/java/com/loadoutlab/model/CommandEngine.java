@@ -680,7 +680,7 @@ public class CommandEngine
 				// A link-out is not an action - never recorded in history.
 				opener.open(mob, shown, dartId,
 					bis ? result.gameBoostLabel : result.boostLabel,
-					Boolean.TRUE.equals(state.paramsNode().get("onTask")),
+					membersFlag("onTask"),
 					Boolean.TRUE.equals(state.paramsNode().get("inWilderness")));
 				return true;
 			}
@@ -1305,6 +1305,15 @@ public class CommandEngine
 
 	/** Route one param change: view params republish, the rest compute.
 	 * Shared by the live command and its undo/redo replays. */
+	/** A members mechanic is ON only when its param is on AND the F2P lock
+	 * is off - the lock vetoes without clearing (field ask 2026-08-27). */
+	private boolean membersFlag(String key)
+	{
+		Map<String, Object> params = state.paramsNode();
+		return Boolean.TRUE.equals(params.get(key))
+			&& !Boolean.TRUE.equals(params.get("f2pOnly"));
+	}
+
 	private boolean applyParam(String key, Object value)
 	{
 		if (!state.setParam(key, value))
@@ -1455,7 +1464,7 @@ public class CommandEngine
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));
 		Map<String, Object> thrallsNode = null;
-		if (Boolean.TRUE.equals(state.paramsNode().get("thralls")))
+		if (membersFlag("thralls"))
 		{
 			double dps = com.loadoutlab.engine.ExtraDps.thrallDps(magicLevel);
 			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
@@ -1843,7 +1852,7 @@ public class CommandEngine
 			addUtilityRunes(out, fightSpell, fightSpell + " (fight mechanic)");
 		}
 		Map<String, Object> params = state.paramsNode();
-		if (Boolean.TRUE.equals(params.get("thralls")))
+		if (membersFlag("thralls"))
 		{
 			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
 			if (tier != null)
@@ -1853,7 +1862,8 @@ public class CommandEngine
 			}
 		}
 		Object dCharge = params.get("deathCharge");
-		if (dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
+		boolean f2pLocked = Boolean.TRUE.equals(params.get("f2pOnly"));
+		if (!f2pLocked && dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
@@ -1871,9 +1881,10 @@ public class CommandEngine
 			String fightBook = com.loadoutlab.data.MonsterSpellbooks.bookFor(stats);
 			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
 				&& !"lunar".equalsIgnoreCase(fightBook);
-			elsewhere |= Boolean.TRUE.equals(params.get("thralls"));
+			elsewhere |= membersFlag("thralls");
 			Object charge = params.get("deathCharge");
-			elsewhere |= charge instanceof Number && ((Number) charge).intValue() > 0;
+			elsewhere |= !f2pLocked && charge instanceof Number
+				&& ((Number) charge).intValue() > 0;
 			if (elsewhere)
 			{
 				addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");

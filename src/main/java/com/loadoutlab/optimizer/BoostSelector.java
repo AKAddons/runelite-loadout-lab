@@ -131,6 +131,27 @@ public final class BoostSelector
 		}
 	}
 
+	/** The highest magic level this player can REACH: their live boosted
+	 * level, or their base plus the best magic boost they actually own -
+	 * never a potion they don't have, and never MAXED as a stand-in for
+	 * unknown levels (the old Death Charge seed did both). */
+	public static int reachableMagic(com.loadoutlab.engine.PlayerLevels real,
+		com.loadoutlab.engine.PlayerLevels live, OwnedItems owned)
+	{
+		if (real == null)
+		{
+			return live == null ? 0 : live.getMagic();
+		}
+		int reachable = live == null ? real.getMagic() : live.getMagic();
+		if (owned != null)
+		{
+			BoostProfile best = bestFor(com.loadoutlab.engine.CombatStyle.MAGIC,
+				owned, false, false);
+			reachable = Math.max(reachable, best.apply(real, live).getMagic());
+		}
+		return Math.max(reachable, real.getMagic());
+	}
+
 	private static boolean ownsAny(OwnedItems owned, int[] ids)
 	{
 		for (int id : ids)

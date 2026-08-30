@@ -47,6 +47,36 @@ public final class SpellRunes
 	{
 	}
 
+	/** Runes a player cannot conjure from pocket change: the high-level
+	 * combat runes. Elemental/mind/chaos-class runes are deliberately not
+	 * checked - any shop sells them. */
+	private static final java.util.Set<String> PREMIUM =
+		java.util.Set.of("blood", "soul", "death", "wrath");
+
+	/** True when the spell needs no blood/soul/death/wrath runes, or the
+	 * player owns every one it needs (field report 2026-08-27: a runeless
+	 * account was told to autocast blood-rune spells). Unknown spells fail
+	 * OPEN - the corpus, not this gate, decides what exists. */
+	public static boolean premiumRunesOwned(String spellName,
+		com.loadoutlab.engine.OwnedItems owned)
+	{
+		Map<String, Integer> cost = spellName == null
+			? null : BY_SPELL.get(spellName);
+		if (cost == null || owned == null)
+		{
+			return true;
+		}
+		for (String rune : cost.keySet())
+		{
+			Integer item = RUNE_ITEMS.get(rune);
+			if (PREMIUM.contains(rune) && item != null && !owned.owns(item))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/** The elements a worn item covers, by name (empty = none). */
 	private static List<String> covers(String nameLower)
 	{

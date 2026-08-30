@@ -51,6 +51,14 @@ class TwinflameSpellPickTest
 	{
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(staff.getId(), 1);
+		// The premium runes, so the rune-ownership gate (0.4.1) leaves the
+		// full spell ladder in play - this test is about twinflame doubling
+		// economics, and without blood/wrath runes Wave and Surge both
+		// (correctly) drop from an owned-only pool.
+		owned.put(565, 1000);   // blood
+		owned.put(560, 1000);   // death
+		owned.put(566, 1000);   // soul
+		owned.put(21880, 1000); // wrath
 		Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 		pins.put(GearSlot.WEAPON, staff.getId());
 		OptimizationRequest request = TestRequests.of(guthan,
