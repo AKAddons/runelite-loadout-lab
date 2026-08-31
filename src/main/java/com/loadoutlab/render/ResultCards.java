@@ -228,7 +228,16 @@ public class ResultCards
 				continue;
 			}
 			int shownLens = Math.min(Math.max(lens, 0), mobs.size() - 1);
-			column.add(mobCard(mobs.get(shownLens), tab, bis, thrallsDps));
+			Map<String, Object> shown = mobs.get(shownLens);
+			// Ship options follow the LENSED mob (REQ-SC-7): a land lens in
+			// a mixed roster renders none of this; lensing back to the sea
+			// mob brings it back with the params intact.
+			if (Model.flag(shown, "naval") && params != null)
+			{
+				column.add(shipRow(entry));
+				column.add(Box.createVerticalStrut(6));
+			}
+			column.add(mobCard(shown, tab, bis, thrallsDps));
 			column.add(Box.createVerticalStrut(8));
 		}
 		return column;
@@ -919,6 +928,175 @@ public class ResultCards
 
 	/** One classic local chip: "Exclude (2)" opens the mob-scoped list
 	 * (remove per entry) plus an add-by-search entry. */
+	/** The ship controls (REQ-SC-2/3/3b/5): cannon count cycles like the
+	 * D-charge chip; each cannon and the shared ammo open the SAME icon-rack
+	 * dropdown the boost/prayer pickers use; the station toggles the player
+	 * between a cannon and their gear; the crew chip cycles Privateering.
+	 * Blocked cannons wear a red ring and say why. */
+	private JPanel shipRow(Map<String, Object> entry)
+	{
+		Map<String, Object> ship = Model.map(entry, "ship");
+		int count = (int) Model.num(pageParams, "cannonCount");
+		JPanel row = new JPanel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
+		row.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		javax.swing.JButton countChip = new javax.swing.JButton("Cannons " + count);
+		countChip.setForeground(count > 0 ? new Color(130, 200, 130) : new Color(150, 150, 150));
+		countChip.setContentAreaFilled(false);
+		countChip.setBorder(new RoundedBorder(count > 0
+			? new Color(95, 160, 95) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
+		countChip.setFocusable(false);
+		countChip.setToolTipText("Ship cannons carried - cycles 0 / 1 / 2");
+		countChip.addActionListener(e -> commands.send("set-param",
+			Map.of("param", "cannonCount", "value", (count + 1) % 3)));
+		row.add(countChip);
+		if (count > 0)
+		{
+			List<Map<String, Object>> cannonNodes = ship == null
+				? java.util.Collections.emptyList() : Model.list(ship, "cannons");
+			for (int i = 0; i < count; i++)
+			{
+				row.add(cannonButton(i, i < cannonNodes.size() ? cannonNodes.get(i) : null));
+			}
+			row.add(ammoButton());
+			boolean manned = "cannon".equals(Model.str(pageParams, "playerStation"));
+			javax.swing.JButton station = new javax.swing.JButton(manned ? "On cannon" : "With gear");
+			station.setForeground(manned ? new Color(130, 200, 130) : new Color(190, 190, 190));
+			station.setContentAreaFilled(false);
+			station.setBorder(new RoundedBorder(manned
+				? new Color(95, 160, 95) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
+			station.setFocusable(false);
+			station.setToolTipText(manned
+				? "You man cannon 1 - your ranged level fires it, no gear set"
+				: "You fight with gear while the crew fires the cannons");
+			station.addActionListener(e -> commands.send("set-param",
+				Map.of("param", "playerStation", "value", manned ? "gear" : "cannon")));
+			row.add(station);
+			boolean anyCrew = count == 2 || !manned;
+			if (anyCrew)
+			{
+				int priv = Math.max(1, (int) Model.num(pageParams, "crewPrivateering"));
+				javax.swing.JButton crew = new javax.swing.JButton("Crew P" + priv);
+				crew.setForeground(new Color(190, 190, 190));
+				crew.setContentAreaFilled(false);
+				crew.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
+				crew.setFocusable(false);
+				crew.setToolTipText("Crew Privateering (1-4) - cycles; rune and dragon cannons need P4"
+					+ (ship != null && Model.flag(ship, "estimated")
+						? ". Crew damage is an estimate - the formula is under review on the wiki" : ""));
+				crew.addActionListener(e -> commands.send("set-param",
+					Map.of("param", "crewPrivateering", "value", priv % 4 + 1)));
+				row.add(crew);
+			}
+			if (ship != null)
+			{
+				double dps = Model.num(ship, "dps");
+				JLabel total = Ui.label(String.format(java.util.Locale.ROOT, "+%.1f dps", dps),
+					new Color(120, 175, 215));
+				total.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+				total.setToolTipText("Cannon dps added"
+					+ (Model.flag(ship, "estimated") ? " (crew estimate)" : ""));
+				row.add(total);
+			}
+		}
+		return row;
+	}
+
+	/** One cannon's icon button: the skill-guide item illustration, a red
+	 * ring + reason when the operate gate blocks it, and the boost-picker
+	 * rack of all seven materials on click. */
+	private javax.swing.JButton cannonButton(int index, Map<String, Object> node)
+	{
+		String param = index == 0 ? "cannon1Material" : "cannon2Material";
+		String tier = Model.str(pageParams, param);
+		com.loadoutlab.data.NavalCombat.Cannon cannon =
+			com.loadoutlab.data.NavalCombat.cannon(tier == null ? "bronze" : tier);
+		String blocked = node == null ? null : Model.str(node, "blocked");
+		javax.swing.JButton button = new javax.swing.JButton(
+			new javax.swing.ImageIcon(itemManager.getImage(cannon.itemId)));
+		button.setContentAreaFilled(false);
+		button.setFocusable(false);
+		button.setBorder(new RoundedBorder(blocked != null
+			? new Color(200, 100, 100) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+		String fired = node == null ? null : Model.str(node, "firedBy");
+		button.setToolTipText("Cannon " + (index + 1) + ": "
+			+ cap(cannon.tier) + ("player".equals(fired) ? " - you" : " - crew")
+			+ (blocked != null ? ". " + blocked : ""));
+		button.addActionListener(e ->
+		{
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
+			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+			for (com.loadoutlab.data.NavalCombat.Cannon option
+				: com.loadoutlab.data.NavalCombat.cannons())
+			{
+				rack.add(pickCell(menu,
+					new javax.swing.ImageIcon(itemManager.getImage(option.itemId)),
+					cap(option.tier) + " cannon (Sailing " + option.sailing + ")",
+					option.tier.equals(cannon.tier), 38,
+					() -> commands.send("set-param",
+						Map.of("param", param, "value", option.tier))));
+			}
+			menu.add(rack);
+			menu.show(button, 0, button.getHeight());
+		});
+		return button;
+	}
+
+	/** The shared ammo's icon button: only tiers EVERY carried cannon can
+	 * fire are offered (a mithril + dragon pair tops out at mithril). */
+	private javax.swing.JButton ammoButton()
+	{
+		String ammo = Model.str(pageParams, "cannonAmmo");
+		com.loadoutlab.data.NavalCombat.Ball ball =
+			com.loadoutlab.data.NavalCombat.ball(ammo == null ? "bronze" : ammo);
+		javax.swing.JButton button = new javax.swing.JButton(
+			new javax.swing.ImageIcon(itemManager.getImage(ball.itemId)));
+		button.setContentAreaFilled(false);
+		button.setFocusable(false);
+		button.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+		button.setToolTipText("Cannonballs: " + cap(ball.tier) + " - one tier for every cannon");
+		button.addActionListener(e ->
+		{
+			int count = (int) Model.num(pageParams, "cannonCount");
+			List<String> tiers = new java.util.ArrayList<>();
+			for (int i = 0; i < count; i++)
+			{
+				tiers.add(Model.str(pageParams, i == 0 ? "cannon1Material" : "cannon2Material"));
+			}
+			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
+			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+			for (com.loadoutlab.data.NavalCombat.Ball option
+				: com.loadoutlab.data.NavalCombat.balls())
+			{
+				boolean everyone = true;
+				for (String t : tiers)
+				{
+					everyone &= com.loadoutlab.data.NavalCombat.canFire(t, option.tier);
+				}
+				if (!everyone)
+				{
+					continue;
+				}
+				rack.add(pickCell(menu,
+					new javax.swing.ImageIcon(itemManager.getImage(option.itemId)),
+					cap(option.tier) + " cannonball",
+					option.tier.equals(ball.tier), 38,
+					() -> commands.send("set-param",
+						Map.of("param", "cannonAmmo", "value", option.tier))));
+			}
+			menu.add(rack);
+			menu.show(button, 0, button.getHeight());
+		});
+		return button;
+	}
+
+	private static String cap(String tier)
+	{
+		return tier == null || tier.isEmpty() ? ""
+			: Character.toUpperCase(tier.charAt(0)) + tier.substring(1);
+	}
+
 	private javax.swing.JButton trioButton(Map<String, Object> mob, String sigil,
 		String listKey, Color active, Color muted, Color activeBorder,
 		String noun, String removeCommand, String addCommand, String addPrompt)
