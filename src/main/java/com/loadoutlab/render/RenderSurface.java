@@ -143,6 +143,15 @@ public class RenderSurface
 		{
 			row.setFont(row.getFont().deriveFont(java.awt.Font.BOLD));
 		}
+		// Ship-combat rows announce themselves before selection: a sea-blue
+		// row plus a plain-text suffix (REQ-SC-1; icons would trip the
+		// ASCII glyph gate, colour alone would not survive a glance).
+		if (Model.flag(match, "naval"))
+		{
+			row.setText(Model.str(match, "label") + "  - naval");
+			row.setForeground(new java.awt.Color(120, 175, 215));
+			row.setToolTipText("Ship combat: fought from your boat");
+		}
 		row.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 8, 3, 8));
 		row.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 		row.setMaximumSize(new java.awt.Dimension(

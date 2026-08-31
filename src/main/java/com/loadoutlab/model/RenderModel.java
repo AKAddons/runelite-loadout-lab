@@ -103,7 +103,7 @@ public final class RenderModel
 		return entry;
 	}
 
-	private static Map<String, Object> mob(MonsterStats mob)
+	static Map<String, Object> mob(MonsterStats mob)
 	{
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("id", mob.getId());
@@ -117,6 +117,7 @@ public final class RenderModel
 			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
 		node.put("wilderness", com.loadoutlab.data.WildernessMonsters.isWilderness(mob));
+		node.put("naval", com.loadoutlab.data.NavalCombat.isNaval(mob.getName()));
 		node.put("taskOnly", com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(mob));
 		node.put("fightBook", com.loadoutlab.data.MonsterSpellbooks.bookFor(mob));
 		node.put("fightBookReason", com.loadoutlab.data.MonsterSpellbooks.reasonFor(mob));

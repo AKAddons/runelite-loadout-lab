@@ -1641,6 +1641,10 @@ public class CommandEngine
 			Map<String, Object> node = new java.util.LinkedHashMap<>();
 			node.put("label", m.label());
 			node.put("id", m.getId());
+			if (com.loadoutlab.data.NavalCombat.isNaval(m.getName()))
+			{
+				node.put("naval", true);
+			}
 			// Versions can share an npc id - the picker must say WHICH
 			// row it means (Duke 12191, field report 2026-08-21).
 			node.put("version", m.getVersion());

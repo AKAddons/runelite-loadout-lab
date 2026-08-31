@@ -439,6 +439,16 @@ public class ResultCards
 			BorderFactory.createEmptyBorder(8, 8, 8, 8)));
 		JLabel title = new JLabel(Model.str(mob, "label"));
 		title.setFont(title.getFont().deriveFont(Font.BOLD));
+		// Naval marker (REQ-SC-6): the output says this fight happens from
+		// your boat. Rides the header's EAST seat beside hp, same muted
+		// small-font treatment, sea-blue.
+		JLabel navalTag = null;
+		if (Model.flag(mob, "naval"))
+		{
+			navalTag = Ui.label("naval", new Color(120, 175, 215));
+			navalTag.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			navalTag.setToolTipText("Ship combat: fought from your boat");
+		}
 		int mobHp = Model.id(mob, "hp");
 		if (mobHp > 0)
 		{
@@ -452,10 +462,22 @@ public class ResultCards
 			titleRow.setBackground(CARD);
 			title.setMinimumSize(new java.awt.Dimension(20, 18));
 			titleRow.add(title, BorderLayout.CENTER);
-			JPanel hpSeat = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
+			JPanel hpSeat = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 2));
 			hpSeat.setOpaque(false);
+			if (navalTag != null)
+			{
+				hpSeat.add(navalTag);
+			}
 			hpSeat.add(hpLabel);
 			titleRow.add(hpSeat, BorderLayout.EAST);
+			card.add(titleRow);
+		}
+		else if (navalTag != null)
+		{
+			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
+			titleRow.setBackground(CARD);
+			titleRow.add(title, BorderLayout.CENTER);
+			titleRow.add(navalTag, BorderLayout.EAST);
 			card.add(titleRow);
 		}
 		else
