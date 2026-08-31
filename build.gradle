@@ -44,7 +44,7 @@ tasks.named('test', Test) {
 }
 
 group = 'com.loadoutlab'
-version = '0.4.1'
+version = '0.4.2'
 
 // Stamp the build version into a readable resource: the panel's issue
 // report reads it at runtime. Replaces a hand-synced constant that went

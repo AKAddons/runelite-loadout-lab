@@ -334,11 +334,21 @@ public final class RenderModel
 	/** Facts for the header assume icons: the label "Piety + Divine
 	 * super combat" resolves to a prayer sprite id and a boost potion
 	 * item id (renderers draw, never map). */
-	private static Map<String, Object> assumeNode(String boostLabel)
+	static Map<String, Object> assumeNode(String boostLabel)
 	{
 		if (boostLabel == null || boostLabel.isEmpty())
 		{
-			return null;
+			// "None + none" must still be a node: the assume icons ARE the
+			// pickers, and a null here erased both - picking None removed
+			// the only control that could undo it (field report 2026-08-31,
+			// Not on Hand). The sentinel sprites render from -1: the prayer
+			// cell falls back to the prayer-book wings, the boost cell to
+			// the muted dash, and both stay clickable.
+			Map<String, Object> none = new LinkedHashMap<>();
+			none.put("text", "No prayer or boost");
+			none.put("prayerSprite", -1);
+			none.put("boostItem", -1);
+			return none;
 		}
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("text", boostLabel);
