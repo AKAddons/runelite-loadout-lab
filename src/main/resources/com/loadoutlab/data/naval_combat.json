@@ -1,0 +1,33 @@
+{
+ "$comment": "Ship combat data, wiki-verified 2026-08-31 (Boat combat / Dragon cannon / Dragon cannonball pages). Dragon ball strength is the CURRENT +270, buffed from +174 on 2026-03-18 (Update: Boat Combat Fixes). crewFormulaStale: the wiki flags the crewmate max-hit formula as out-of-date ('the exact formula is currently unknown'); we ship the last documented one, isolated in ShipCannon.crewMaxHit, and this flag marks every crew-fired number as an estimate until corrected.",
+ "attackTicks": 7,
+ "crewFormulaStale": true,
+ "cannons": [
+  {"tier": "bronze",  "itemId": 32199, "sailing": 28, "construction": 21, "ranged": 1,  "accuracy": 30,  "heavyAccuracy": 30,  "strength": 8,  "privateering": 1},
+  {"tier": "iron",    "itemId": 32200, "sailing": 35, "construction": 28, "ranged": 1,  "accuracy": 42,  "heavyAccuracy": 40,  "strength": 10, "privateering": 2},
+  {"tier": "steel",   "itemId": 32201, "sailing": 47, "construction": 39, "ranged": 5,  "accuracy": 60,  "heavyAccuracy": 60,  "strength": 12, "privateering": 2},
+  {"tier": "mithril", "itemId": 32202, "sailing": 57, "construction": 50, "ranged": 20, "accuracy": 78,  "heavyAccuracy": 70,  "strength": 15, "privateering": 3},
+  {"tier": "adamant", "itemId": 32203, "sailing": 69, "construction": 61, "ranged": 30, "accuracy": 98,  "heavyAccuracy": 85,  "strength": 23, "privateering": 3},
+  {"tier": "rune",    "itemId": 32204, "sailing": 80, "construction": 76, "ranged": 40, "accuracy": 163, "heavyAccuracy": 110, "strength": 26, "privateering": 4},
+  {"tier": "dragon",  "itemId": 32205, "sailing": 92, "construction": 84, "ranged": 60, "accuracy": 194, "heavyAccuracy": 150, "strength": 32, "privateering": 4}
+ ],
+ "cannonballs": [
+  {"tier": "bronze",  "itemId": 31906, "accuracy": 12, "strength": 43},
+  {"tier": "iron",    "itemId": 31908, "accuracy": 16, "strength": 56},
+  {"tier": "steel",   "itemId": 2,     "accuracy": 20, "strength": 74},
+  {"tier": "mithril", "itemId": 31910, "accuracy": 30, "strength": 105},
+  {"tier": "granite", "itemId": 21728, "accuracy": 30, "strength": 125},
+  {"tier": "adamant", "itemId": 31912, "accuracy": 50, "strength": 157},
+  {"tier": "rune",    "itemId": 31914, "accuracy": 64, "strength": 201},
+  {"tier": "dragon",  "itemId": 31916, "accuracy": 80, "strength": 270}
+ ],
+ "ballTierOrder": ["bronze", "iron", "steel", "mithril", "granite", "adamant", "rune", "dragon"],
+ "$ballTierNote": "A cannon fires balls at or below its own tier; granite sits between mithril and adamant in the firing order (adamant cannons and up may fire it). Steel ball is the classic Cannonball (item 2).",
+ "navalMonsters": [
+  "Bull shark", "Hammerhead shark", "Tiger shark", "Great white shark",
+  "Dolphin", "Mogre (sea)", "Narwhal", "Orca",
+  "Pygmy kraken", "Spined kraken", "Armoured kraken", "Veiled kraken", "Vampyre kraken",
+  "Eagle ray", "Butterfly ray", "Stingray", "Manta ray (monster)",
+  "Tern", "Osprey", "Frigatebird", "Albatross"
+ ]
+}
