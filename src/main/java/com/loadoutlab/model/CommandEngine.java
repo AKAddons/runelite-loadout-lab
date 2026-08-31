@@ -1463,6 +1463,11 @@ public class CommandEngine
 		entry.put("params", params);
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));
+		Map<String, Object> shipNode = shipNode(mobs);
+		if (shipNode != null)
+		{
+			entry.put("ship", shipNode);
+		}
 		Map<String, Object> thrallsNode = null;
 		if (membersFlag("thralls"))
 		{
@@ -1497,10 +1502,22 @@ public class CommandEngine
 	private volatile String coreVersion = "dev";
 	/** The account's live Magic level - thrall dps scales off it. */
 	private volatile int magicLevel = 99;
+	private volatile int rangedLevel = 99;
+	private volatile int sailingLevel = 1;
 
 	public void setMagicLevel(int magicLevel)
 	{
 		this.magicLevel = magicLevel;
+	}
+
+	public void setRangedLevel(int rangedLevel)
+	{
+		this.rangedLevel = rangedLevel;
+	}
+
+	public void setSailingLevel(int sailingLevel)
+	{
+		this.sailingLevel = sailingLevel;
 	}
 
 	public void setCoreVersion(String coreVersion)
@@ -2029,6 +2046,116 @@ public class CommandEngine
 		options.put("spellSprites", spellSprites);
 		assumeOptionsCache = options;
 		return options;
+	}
+
+	/**
+	 * The ship node (REQ-SC-2/3/3b/4/7): cannons priced for a NAVAL mob only
+	 * - the params persist for land mobs but are never read, the same veto
+	 * shape as the F2P lock. Post-compute additive like thralls: cannons
+	 * never steer the gear search.
+	 *
+	 * <p>Cannon 1 is the player's when the station is "cannon" (visible
+	 * ranged level, wiki formula); every other cannon is crew-fired - the
+	 * documented-but-stale Privateering scaling over a Sailing-level base,
+	 * marked estimated while NavalCombat.crewFormulaStale(). A crew below
+	 * the cannon's Privateering gate, or a player below its Ranged gate,
+	 * cannot operate it: that cannon prices at zero and says why. Worn-gear
+	 * bonuses join in the render slice; this node prices bare cannons.
+	 */
+	private Map<String, Object> shipNode(List<MonsterStats> mobs)
+	{
+		if (mobs == null || mobs.size() != 1
+			|| !com.loadoutlab.data.NavalCombat.isNaval(mobs.get(0).getName()))
+		{
+			return null;
+		}
+		Map<String, Object> params = state.paramsNode();
+		int count = params.get("cannonCount") instanceof Number
+			? ((Number) params.get("cannonCount")).intValue() : 0;
+		if (count <= 0)
+		{
+			return null;
+		}
+		MonsterStats mob = mobs.get(0);
+		String ammo = String.valueOf(params.get("cannonAmmo"));
+		String station = String.valueOf(params.get("playerStation"));
+		int priv = params.get("crewPrivateering") instanceof Number
+			? ((Number) params.get("crewPrivateering")).intValue() : 1;
+		Map<String, Object> node = new java.util.LinkedHashMap<>();
+		node.put("station", station);
+		node.put("ammo", ammo);
+		List<Map<String, Object>> cannonNodes = new java.util.ArrayList<>();
+		boolean anyCrew = false;
+		double total = 0;
+		for (int i = 0; i < count; i++)
+		{
+			String tier = String.valueOf(params.get(i == 0 ? "cannon1Material" : "cannon2Material"));
+			com.loadoutlab.data.NavalCombat.Cannon cannon =
+				com.loadoutlab.data.NavalCombat.cannon(tier);
+			if (cannon == null)
+			{
+				continue;
+			}
+			// Shared ammo, clamped to what THIS cannon can fire (a mithril
+			// cannon handed dragon balls fires mithril ones).
+			String ballTier = com.loadoutlab.data.NavalCombat.canFire(tier, ammo)
+				? ammo : com.loadoutlab.data.NavalCombat.bestSharedBall(List.of(tier));
+			com.loadoutlab.data.NavalCombat.Ball ball =
+				com.loadoutlab.data.NavalCombat.ball(ballTier);
+			boolean playerFired = i == 0 && "cannon".equals(station);
+			Map<String, Object> c = new java.util.LinkedHashMap<>();
+			c.put("tier", tier);
+			c.put("itemId", cannon.itemId);
+			c.put("ball", ballTier);
+			c.put("firedBy", playerFired ? "player" : "crew");
+			String blocked = null;
+			if (playerFired && rangedLevel < cannon.ranged)
+			{
+				blocked = "Needs " + cannon.ranged + " Ranged to operate";
+			}
+			if (!playerFired)
+			{
+				anyCrew = true;
+				if (priv < cannon.privateering)
+				{
+					blocked = "Crew needs Privateering " + cannon.privateering;
+				}
+			}
+			if (blocked != null)
+			{
+				c.put("blocked", blocked);
+				c.put("maxHit", 0);
+				c.put("dps", 0.0);
+				cannonNodes.add(c);
+				continue;
+			}
+			int maxHit;
+			if (playerFired)
+			{
+				maxHit = com.loadoutlab.engine.ShipCannon.playerMaxHit(
+					rangedLevel, cannon.strength, ball.strength, 0, false);
+			}
+			else
+			{
+				int base = com.loadoutlab.engine.ShipCannon.playerMaxHit(
+					sailingLevel, cannon.strength, ball.strength, 0, false);
+				maxHit = com.loadoutlab.engine.ShipCannon.crewMaxHit(base, priv);
+			}
+			double chance = com.loadoutlab.engine.ShipCannon.hitChance(
+				playerFired ? rangedLevel : sailingLevel,
+				com.loadoutlab.engine.ShipCannon.equipmentAccuracy(
+					cannon.heavyAccuracy, ball.accuracy, 0),
+				mob.getDefence(), mob.getDefensive().get("heavy"));
+			double dps = com.loadoutlab.engine.ShipCannon.dps(maxHit, chance);
+			c.put("maxHit", maxHit);
+			c.put("dps", dps);
+			total += dps;
+			cannonNodes.add(c);
+		}
+		node.put("cannons", cannonNodes);
+		node.put("dps", total);
+		node.put("estimated", anyCrew && com.loadoutlab.data.NavalCombat.crewFormulaStale());
+		return node;
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page)

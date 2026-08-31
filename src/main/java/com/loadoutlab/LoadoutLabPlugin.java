@@ -939,6 +939,11 @@ public class LoadoutLabPlugin extends Plugin
 		if (engine != null)
 		{
 			engine.setMagicLevel(live.getMagic());
+			engine.setRangedLevel(live.getRanged());
+			// Sailing is not a PlayerLevels combat stat - read it straight
+			// off the client for the crew cannon's (stale-formula) base.
+			engine.setSailingLevel(client.getBoostedSkillLevel(
+				net.runelite.api.Skill.SAILING));
 		}
 	}
 

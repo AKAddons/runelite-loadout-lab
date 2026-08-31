@@ -54,6 +54,21 @@ public final class ShipCannon
 		return cannonHeavyAccuracy + ballAccuracy + wornRangedAccuracy;
 	}
 
+	/**
+	 * Hit chance vs the monster's HEAVY ranged defence, through the same
+	 * roll math the land engine uses. Effective level is visible ranged
+	 * + 8 (no stance bonus at a cannon); prayer accuracy multipliers are
+	 * the caller's concern, matching how the wiki's calculator treats
+	 * prayer as an input to the level term.
+	 */
+	public static double hitChance(int effectiveRanged, int equipmentAccuracy,
+		int monsterDefence, int monsterHeavyBonus)
+	{
+		long attack = RollMath.attackRoll(effectiveRanged + 8, equipmentAccuracy);
+		long defence = RollMath.defenceRoll(monsterDefence + 9, monsterHeavyBonus);
+		return RollMath.normalAccuracy(attack, defence);
+	}
+
 	/** DPS of one cannon: average landed damage over the 7-tick cycle.
 	 * hitChance in [0,1]; a landed hit averages (maxHit / 2) with the
 	 * uniform damage roll the game uses. */

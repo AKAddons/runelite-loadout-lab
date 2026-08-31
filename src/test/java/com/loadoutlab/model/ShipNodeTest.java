@@ -1,0 +1,172 @@
+package com.loadoutlab.model;
+
+import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.LoadoutData;
+import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.engine.ShipCannon;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * REQ-SC-2/3/3b/4/7 at the engine seam: the ship node prices cannons for a
+ * NAVAL mob only, cannon 1 belongs to the player when the station says so,
+ * shared ammo clamps per cannon, and the operate gates (player Ranged, crew
+ * Privateering) zero a cannon they block - with the reason on the node.
+ */
+class ShipNodeTest
+{
+	private static LoadoutData data;
+
+	@BeforeAll
+	static void load()
+	{
+		data = new DataService().load();
+	}
+
+	private static final class CaptureLink extends CompanionLink
+	{
+		Map<String, Object> published;
+
+		@Override
+		public void publishPage(Map<String, Object> page)
+		{
+			published = page;
+		}
+	}
+
+	private static CommandEngine engine(PageState state, CaptureLink link)
+	{
+		return new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			link);
+	}
+
+	private static void flushEdt()
+	{
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+	}
+
+	private static Map<String, Object> shipNodeFor(String mobName,
+		Map<String, Object> shipParams, int ranged, int sailing)
+	{
+		PageState state = new PageState();
+		for (Map.Entry<String, Object> e : shipParams.entrySet())
+		{
+			state.setParam(e.getKey(), e.getValue());
+		}
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = engine(state, link);
+		engine.setRangedLevel(ranged);
+		engine.setSailingLevel(sailing);
+		MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+		engine.execute("select", Map.of("id", mob.getId()));
+		engine.onResults(mob, Map.of());
+		flushEdt();
+		assertNotNull(link.published, "nothing published");
+		List<?> entries = (List<?>) link.published.get("entries");
+		Map<?, ?> entry = (Map<?, ?>) entries.get(0);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> ship = (Map<String, Object>) entry.get("ship");
+		return ship;
+	}
+
+	@Test
+	@DisplayName("a manned dragon cannon prices at the hand-computed wiki numbers")
+	void mannedCannonPrices()
+	{
+		Map<String, Object> ship = shipNodeFor("hammerhead shark",
+			Map.of("cannonCount", 1, "cannon1Material", "dragon",
+				"cannonAmmo", "dragon", "playerStation", "cannon"),
+			99, 1);
+		assertNotNull(ship, "a naval mob with a cannon must carry the ship node");
+		assertEquals("cannon", ship.get("station"));
+		List<?> cannons = (List<?>) ship.get("cannons");
+		Map<?, ?> c1 = (Map<?, ?>) cannons.get(0);
+		assertEquals("player", c1.get("firedBy"));
+		assertEquals(57, c1.get("maxHit"), "99 ranged, dragon/dragon: the pinned 57");
+		// Hammerhead: def 50, heavy 40. Equipment accuracy 150 + 80.
+		double expected = ShipCannon.dps(57,
+			ShipCannon.hitChance(99, ShipCannon.equipmentAccuracy(150, 80, 0), 50, 40));
+		assertEquals(expected, (Double) c1.get("dps"), 1e-9);
+		assertEquals(expected, (Double) ship.get("dps"), 1e-9);
+		// No crew involved: nothing is estimated.
+		assertEquals(Boolean.FALSE, ship.get("estimated"));
+	}
+
+	@Test
+	@DisplayName("gear station: both cannons are crew-fired; mixed tiers clamp the shared ammo per cannon")
+	void gearStationCrewsAndClamps()
+	{
+		Map<String, Object> ship = shipNodeFor("hammerhead shark",
+			Map.of("cannonCount", 2, "cannon1Material", "dragon",
+				"cannon2Material", "mithril", "cannonAmmo", "dragon",
+				"playerStation", "gear", "crewPrivateering", 4),
+			99, 80);
+		List<?> cannons = (List<?>) ship.get("cannons");
+		Map<?, ?> c1 = (Map<?, ?>) cannons.get(0);
+		Map<?, ?> c2 = (Map<?, ?>) cannons.get(1);
+		assertEquals("crew", c1.get("firedBy"));
+		assertEquals("crew", c2.get("firedBy"));
+		assertEquals("dragon", c1.get("ball"));
+		assertEquals("mithril", c2.get("ball"),
+			"a mithril cannon handed dragon balls fires mithril ones");
+		// Crew numbers ride the stale formula: flagged estimated.
+		assertEquals(Boolean.TRUE, ship.get("estimated"));
+		// Crew base is Sailing-level driven, scaled by Privateering 4.
+		int base = ShipCannon.playerMaxHit(80, 32, 270, 0, false);
+		assertEquals(ShipCannon.crewMaxHit(base, 4), c1.get("maxHit"));
+	}
+
+	@Test
+	@DisplayName("the operate gates zero a blocked cannon and say why")
+	void operateGates()
+	{
+		// Crew Privateering 3 cannot fire a dragon cannon.
+		Map<String, Object> ship = shipNodeFor("hammerhead shark",
+			Map.of("cannonCount", 1, "cannon1Material", "dragon",
+				"cannonAmmo", "dragon", "playerStation", "gear",
+				"crewPrivateering", 3),
+			99, 80);
+		Map<?, ?> crewBlocked = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
+		assertEquals("Crew needs Privateering 4", crewBlocked.get("blocked"));
+		assertEquals(0, crewBlocked.get("maxHit"));
+
+		// A 40-Ranged player cannot operate a dragon cannon either.
+		ship = shipNodeFor("hammerhead shark",
+			Map.of("cannonCount", 1, "cannon1Material", "dragon",
+				"cannonAmmo", "dragon", "playerStation", "cannon"),
+			40, 1);
+		Map<?, ?> playerBlocked = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
+		assertEquals("Needs 60 Ranged to operate", playerBlocked.get("blocked"));
+		assertEquals(0.0, (Double) ship.get("dps"), 1e-9);
+	}
+
+	@Test
+	@DisplayName("land mobs and cannonless ships carry no node - the params survive unread")
+	void landAndZeroVeto()
+	{
+		assertNull(shipNodeFor("general graardor",
+			Map.of("cannonCount", 2, "cannon1Material", "dragon",
+				"cannonAmmo", "dragon", "playerStation", "cannon"),
+			99, 99), "REQ-SC-7: ship options never price a land mob");
+		assertNull(shipNodeFor("hammerhead shark", Map.of("cannonCount", 0), 99, 99),
+			"no cannons, no node");
+	}
+}

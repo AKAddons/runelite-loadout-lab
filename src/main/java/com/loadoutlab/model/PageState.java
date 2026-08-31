@@ -28,6 +28,16 @@ public class PageState
 	 * this, not from f2pOnly - otherwise unticking the filter hides the control
 	 * that unticked it and there is no way back. */
 	private boolean f2pWorld;
+	/** Ship combat (REQ-SC-2/3/3b). Post-compute additive like thralls -
+	 * none of these enter the optimizer request, so none ride computeArgs.
+	 * They persist across lens changes; the ENGINE only reads them for a
+	 * naval mob (REQ-SC-7's veto, same shape as the F2P lock). */
+	private int cannonCount;
+	private String cannon1Material = "bronze";
+	private String cannon2Material = "bronze";
+	private String cannonAmmo = "bronze";
+	private String playerStation = "gear";
+	private int crewPrivateering = 1;
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -139,6 +149,24 @@ public class PageState
 			case "inWilderness":
 				inWilderness = Boolean.TRUE.equals(value);
 				return true;
+			case "cannonCount":
+				cannonCount = Math.max(0, Math.min(2, asInt(value, 0)));
+				return true;
+			case "cannon1Material":
+				cannon1Material = String.valueOf(value);
+				return true;
+			case "cannon2Material":
+				cannon2Material = String.valueOf(value);
+				return true;
+			case "cannonAmmo":
+				cannonAmmo = String.valueOf(value);
+				return true;
+			case "playerStation":
+				playerStation = "cannon".equals(value) ? "cannon" : "gear";
+				return true;
+			case "crewPrivateering":
+				crewPrivateering = Math.max(1, Math.min(4, asInt(value, 1)));
+				return true;
 			case "f2pWorld":
 				f2pWorld = Boolean.TRUE.equals(value);
 				return true;
@@ -224,6 +252,12 @@ public class PageState
 		node.put("inWilderness", inWilderness);
 		node.put("f2pOnly", f2pOnly);
 		node.put("f2pWorld", f2pWorld);
+		node.put("cannonCount", cannonCount);
+		node.put("cannon1Material", cannon1Material);
+		node.put("cannon2Material", cannon2Material);
+		node.put("cannonAmmo", cannonAmmo);
+		node.put("playerStation", playerStation);
+		node.put("crewPrivateering", crewPrivateering);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);
