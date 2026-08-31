@@ -159,6 +159,37 @@ class ShipNodeTest
 	}
 
 	@Test
+	@DisplayName("a mixed roster prices cannons only under the sea lens (REQ-SC-7)")
+	void mixedRosterFollowsTheLens()
+	{
+		PageState state = new PageState();
+		state.setParam("cannonCount", 1);
+		state.setParam("cannon1Material", "dragon");
+		state.setParam("cannonAmmo", "dragon");
+		state.setParam("playerStation", "cannon");
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = engine(state, link);
+		engine.setRangedLevel(99);
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+
+		state.setParam("lensIndex", 0);
+		engine.onRosterResults(List.of(graardor, shark), List.of(Map.of(), Map.of()));
+		flushEdt();
+		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		assertNull(entry.get("ship"), "the land lens must render no ship options");
+
+		state.setParam("lensIndex", 1);
+		engine.onRosterResults(List.of(graardor, shark), List.of(Map.of(), Map.of()));
+		flushEdt();
+		entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		Map<?, ?> ship = (Map<?, ?>) entry.get("ship");
+		assertNotNull(ship, "the sea lens must bring the ship options back");
+		Map<?, ?> c1 = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
+		assertEquals(57, c1.get("maxHit"), "priced against the LENSED shark");
+	}
+
+	@Test
 	@DisplayName("land mobs and cannonless ships carry no node - the params survive unread")
 	void landAndZeroVeto()
 	{

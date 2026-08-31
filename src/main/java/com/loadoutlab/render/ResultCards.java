@@ -232,12 +232,27 @@ public class ResultCards
 			// Ship options follow the LENSED mob (REQ-SC-7): a land lens in
 			// a mixed roster renders none of this; lensing back to the sea
 			// mob brings it back with the params intact.
-			if (Model.flag(shown, "naval") && params != null)
+			Map<String, Object> ship = Model.map(entry, "ship");
+			boolean naval = Model.flag(shown, "naval") && params != null;
+			if (naval)
 			{
 				column.add(shipRow(entry));
 				column.add(Box.createVerticalStrut(6));
 			}
-			column.add(mobCard(shown, tab, bis, thrallsDps));
+			if (naval && ship != null
+				&& "cannon".equals(Model.str(pageParams, "playerStation")))
+			{
+				// Manned (REQ-SC-4): no gear set - the output IS the cannons.
+				column.add(cannonOnlyCard(shown, ship));
+			}
+			else
+			{
+				// Gear station: cannon dps folds into the shown numbers the
+				// way thralls already does - the card IS the trip total; the
+				// ship row right above carries the cannon attribution.
+				double shipDps = naval && ship != null ? Model.num(ship, "dps") : 0;
+				column.add(mobCard(shown, tab, bis, thrallsDps + shipDps));
+			}
 			column.add(Box.createVerticalStrut(8));
 		}
 		return column;
@@ -928,6 +943,52 @@ public class ResultCards
 
 	/** One classic local chip: "Exclude (2)" opens the mob-scoped list
 	 * (remove per entry) plus an add-by-search entry. */
+	/** Manned output (REQ-SC-4): the player fires cannon 1, so there is no
+	 * gear set to show - the card lists each cannon's pricing and the total,
+	 * with the estimate caveat when crew numbers are aboard. */
+	private JPanel cannonOnlyCard(Map<String, Object> mob, Map<String, Object> ship)
+	{
+		JPanel card = new JPanel();
+		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+		card.setBackground(CARD);
+		card.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 1, true),
+			BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+		JLabel title = new JLabel(Model.str(mob, "label"));
+		title.setFont(title.getFont().deriveFont(Font.BOLD));
+		card.add(left(title));
+		JLabel mode = Ui.label("On the cannon - no gear set", new Color(120, 175, 215));
+		mode.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		card.add(left(mode));
+		card.add(Box.createVerticalStrut(6));
+		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
+		{
+			String blocked = Model.str(cannon, "blocked");
+			String line = cap(Model.str(cannon, "tier")) + " cannon ("
+				+ ("player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew") + "): "
+				+ (blocked != null ? blocked
+					: "max " + (int) Model.num(cannon, "maxHit")
+						+ ", " + String.format(java.util.Locale.ROOT, "%.2f", Model.num(cannon, "dps"))
+						+ " dps (" + cap(Model.str(cannon, "ball")) + " balls)");
+			JLabel row = Ui.label(line, blocked != null
+				? new Color(220, 140, 120) : new Color(190, 190, 190));
+			card.add(left(row));
+		}
+		card.add(Box.createVerticalStrut(4));
+		JLabel total = new JLabel(String.format(java.util.Locale.ROOT, "%.2f dps", Model.num(ship, "dps")));
+		total.setFont(total.getFont().deriveFont(Font.BOLD));
+		total.setForeground(new Color(130, 200, 130));
+		card.add(left(total));
+		if (Model.flag(ship, "estimated"))
+		{
+			JLabel est = Ui.label("Crew damage is an estimate - formula under review on the wiki",
+				new Color(150, 150, 150));
+			est.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			card.add(left(est));
+		}
+		return card;
+	}
+
 	/** The ship controls (REQ-SC-2/3/3b/5): cannon count cycles like the
 	 * D-charge chip; each cannon and the shared ammo open the SAME icon-rack
 	 * dropdown the boost/prayer pickers use; the station toggles the player

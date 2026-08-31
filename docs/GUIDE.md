@@ -398,6 +398,26 @@ simmed-items list remains the manual override (it absorbed the old
 many items came in this way.
 
 
+### Ship combat (cannons)
+
+Sea monsters from the Sailing update - sharks, krakens, rays, orcas and
+the rest - are fought from your boat, and their search rows say so with a
+sea-blue "- naval" tag. Selecting one adds the ship row above the card:
+Cannons cycles 0 / 1 / 2, each carried cannon is an icon that opens the
+same picker rack as the boosts and prayers (all seven materials, bronze
+to dragon), and the cannonball picker offers one shared tier - only
+tiers every carried cannon can fire, so a mithril + dragon pair tops out
+at mithril balls. "On cannon" puts you at cannon 1 (your visible Ranged
+level fires it, and the card shows cannon-only output - no gear set);
+"With gear" keeps your gear cards and folds the cannon dps into the
+shown numbers, the same way thralls fold in. Crew-fired cannons scale
+with the Crew P1-P4 pick, and rune/dragon cannons need P4 crew to
+operate - a blocked cannon wears a red ring that says why. Crew damage
+is marked as an estimate while the crewmate formula is under review on
+the wiki; player-fired numbers are exact to the documented formula.
+
+![Ship combat](img/ship-combat.png)
+
 ### Community Discord
 
 The header Options menu has a "Join our Discord" link to the plugin's

@@ -2064,19 +2064,27 @@ public class CommandEngine
 	 */
 	private Map<String, Object> shipNode(List<MonsterStats> mobs)
 	{
-		if (mobs == null || mobs.size() != 1
-			|| !com.loadoutlab.data.NavalCombat.isNaval(mobs.get(0).getName()))
+		if (mobs == null || mobs.isEmpty())
 		{
 			return null;
 		}
 		Map<String, Object> params = state.paramsNode();
+		// The LENSED mob decides (REQ-SC-7): a mixed roster prices cannons
+		// only while a sea mob is under the lens.
+		Object lensObj = params.get("lensIndex");
+		int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
+		MonsterStats lensed = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
+		if (!com.loadoutlab.data.NavalCombat.isNaval(lensed.getName()))
+		{
+			return null;
+		}
 		int count = params.get("cannonCount") instanceof Number
 			? ((Number) params.get("cannonCount")).intValue() : 0;
 		if (count <= 0)
 		{
 			return null;
 		}
-		MonsterStats mob = mobs.get(0);
+		MonsterStats mob = lensed;
 		String ammo = String.valueOf(params.get("cannonAmmo"));
 		String station = String.valueOf(params.get("playerStation"));
 		int priv = params.get("crewPrivateering") instanceof Number
