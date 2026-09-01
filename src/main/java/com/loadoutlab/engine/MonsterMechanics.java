@@ -119,6 +119,16 @@ public final class MonsterMechanics
 				return true;
 			}
 		}
+		// Boat combat (wiki, verified 2026-08-31): "only ranged and magic
+		// can be used; melee weapons cannot attack enemies, even if they
+		// are in range to do so." A sea monster simply has no melee style
+		// card - the same shape as Zulrah's rejection. (The salamander
+		// scorch curiosity is deliberately unmodeled.)
+		if (style == CombatStyle.MELEE
+			&& com.loadoutlab.data.NavalCombat.isNaval(monster.getName()))
+		{
+			return true;
+		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();
 		String category = weapon == null ? "" : weapon.getCategory();
