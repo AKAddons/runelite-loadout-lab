@@ -16,7 +16,22 @@ import java.util.List;
 final class AsciiLoader extends javax.swing.JTextArea
 {
 	private static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
-	private static final List<List<String>> MOODS = load();
+	private static final List<List<String>> MOODS = new ArrayList<>();
+	/** Sea moods ("==sea" sections): played for ship-eligible selections
+	 * only, so a kraken never greets Graardor. Land computes use MOODS. */
+	private static final List<List<String>> SEA_MOODS = new ArrayList<>();
+
+	static
+	{
+		load(MOODS, SEA_MOODS);
+	}
+
+	private boolean sea;
+
+	void setSea(boolean sea)
+	{
+		this.sea = sea;
+	}
 
 	private final javax.swing.Timer timer = new javax.swing.Timer(140, e -> advance());
 	private List<String> frames = MOODS.get(0);
@@ -35,8 +50,9 @@ final class AsciiLoader extends javax.swing.JTextArea
 	{
 		if (running && !timer.isRunning())
 		{
-			frames = MOODS.get(java.util.concurrent.ThreadLocalRandom.current()
-				.nextInt(MOODS.size()));
+			List<List<String>> pool = sea && !SEA_MOODS.isEmpty() ? SEA_MOODS : MOODS;
+			frames = pool.get(java.util.concurrent.ThreadLocalRandom.current()
+				.nextInt(pool.size()));
 			tick = 0;
 			advance();
 			timer.start();
@@ -60,12 +76,13 @@ final class AsciiLoader extends javax.swing.JTextArea
 	}
 
 	/** Package for the parse test. Fail-soft: a missing or empty
-	 * resource degrades to the plain text line, never a crash. */
-	static List<List<String>> load()
+	 * resource degrades to the plain text line, never a crash. A mood
+	 * separator of "==sea" routes that mood to the SEA pool. */
+	static void load(List<List<String>> land, List<List<String>> seaPool)
 	{
-		List<List<String>> moods = new ArrayList<>();
 		List<String> frames = new ArrayList<>();
 		StringBuilder frame = new StringBuilder();
+		boolean seaMood = false;
 		try (java.io.BufferedReader reader = new java.io.BufferedReader(
 			new java.io.InputStreamReader(
 				AsciiLoader.class.getResourceAsStream(RESOURCE),
@@ -79,7 +96,10 @@ final class AsciiLoader extends javax.swing.JTextArea
 					continue;
 				}
 				boolean mood = line.startsWith("==");
-				if (mood || line.startsWith("--"))
+				// Frame separators are EXACTLY "--": sea art legitimately
+				// starts lines with dashes (waves), and a prefix match ate
+				// them as separators.
+				if (mood || line.equals("--"))
 				{
 					if (frame.length() > 0)
 					{
@@ -88,8 +108,12 @@ final class AsciiLoader extends javax.swing.JTextArea
 					}
 					if (mood && !frames.isEmpty())
 					{
-						moods.add(frames);
+						(seaMood ? seaPool : land).add(frames);
 						frames = new ArrayList<>();
+					}
+					if (mood)
+					{
+						seaMood = line.startsWith("==sea");
 					}
 					continue;
 				}
@@ -110,12 +134,11 @@ final class AsciiLoader extends javax.swing.JTextArea
 		}
 		if (!frames.isEmpty())
 		{
-			moods.add(frames);
+			(seaMood ? seaPool : land).add(frames);
 		}
-		if (moods.isEmpty())
+		if (land.isEmpty())
 		{
-			moods.add(List.of("Computing..."));
+			land.add(List.of("Computing..."));
 		}
-		return moods;
 	}
 }

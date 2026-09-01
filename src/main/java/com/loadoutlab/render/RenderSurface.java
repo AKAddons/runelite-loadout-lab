@@ -35,7 +35,27 @@ public class RenderSurface
 		this.sailingIcon = icon;
 	}
 
-	javax.swing.Icon sailingIconSmall()
+	/** True when the LENSED mob of any entry is ship-eligible. */
+	private static boolean lensedNaval(Map<String, Object> page)
+	{
+		Map<String, Object> params = ResultCards.firstParams(page);
+		int lens = params == null ? 0 : Model.id(params, "lensIndex");
+		for (Map<String, Object> entry : Model.list(page, "entries"))
+		{
+			java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
+			if (!entryMobs.isEmpty())
+			{
+				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
+				if (Model.flag(entryMobs.get(shown), "naval"))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+		javax.swing.Icon sailingIconSmall()
 	{
 		java.util.function.Supplier<java.awt.image.BufferedImage> supplier = sailingIcon;
 		java.awt.image.BufferedImage img = supplier == null ? null : supplier.get();
@@ -93,6 +113,9 @@ public class RenderSurface
 			{
 				boolean animate = animationGate.getAsBoolean();
 				loader.setVisible(animate);
+				// A sea compute draws from the sea moods (REQ-SC-17): the
+				// pending page already carries the selection, so peek it.
+				loader.setSea(lensedNaval(page.get()));
 				loader.setRunning(isComputing && animate);
 			}
 			waitingSlot.setVisible(isComputing);
@@ -945,19 +968,7 @@ public class RenderSurface
 			}
 			// Cannons ride the chips section (Andrew, v2) for the LENSED
 			// ship-eligible mob; the per-cannon pickers live on the card.
-			boolean lensNaval = false;
-			{
-				int lens = Model.id(params, "lensIndex");
-				for (Map<String, Object> entry : Model.list(page, "entries"))
-				{
-					java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
-					if (!entryMobs.isEmpty())
-					{
-						int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
-						lensNaval |= Model.flag(entryMobs.get(shown), "naval");
-					}
-				}
-			}
+			boolean lensNaval = lensedNaval(page);
 			if (lensNaval)
 			{
 				int cannons = Model.id(params, "cannonCount");

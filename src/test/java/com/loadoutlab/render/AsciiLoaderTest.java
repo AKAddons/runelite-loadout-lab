@@ -12,8 +12,13 @@ class AsciiLoaderTest
 	@DisplayName("the frames resource parses into steady-sized moods")
 	void framesParseSteady()
 	{
-		List<List<String>> moods = AsciiLoader.load();
-		assertFalse(moods.isEmpty());
+		List<List<String>> land = new java.util.ArrayList<>();
+		List<List<String>> sea = new java.util.ArrayList<>();
+		AsciiLoader.load(land, sea);
+		assertFalse(land.isEmpty());
+		assertFalse(sea.isEmpty(), "the sea pool ships with at least one mood");
+		List<List<String>> moods = new java.util.ArrayList<>(land);
+		moods.addAll(sea);
 		for (List<String> frames : moods)
 		{
 			assertTrue(frames.size() > 1, "a mood animates - two frames minimum");
