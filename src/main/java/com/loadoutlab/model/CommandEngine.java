@@ -1320,7 +1320,7 @@ public class CommandEngine
 	 * store and re-seeded on every new selection. */
 	private static final java.util.Set<String> SHIP_PERSISTED = java.util.Set.of(
 		"cannonCount", "cannon1Material", "cannon2Material",
-		"cannon1Operator", "cannon2Operator", "cannonAmmo");
+		"cannon1Operator", "cannon2Operator", "cannonAmmo", "shipKeel");
 
 	private boolean applyParam(String key, Object value)
 	{
@@ -2103,10 +2103,6 @@ public class CommandEngine
 		}
 		int count = params.get("cannonCount") instanceof Number
 			? ((Number) params.get("cannonCount")).intValue() : 0;
-		if (count <= 0)
-		{
-			return null;
-		}
 		MonsterStats mob = lensed;
 		String ammoPick = String.valueOf(params.get("cannonAmmo"));
 		java.util.List<String> carriedTiers = new java.util.ArrayList<>();
@@ -2118,6 +2114,24 @@ public class CommandEngine
 		boolean detect = "detect".equals(ammoPick);
 		String ammo = ammoPick;
 		String ammoBlocked = null;
+		if (!detect && count > 0)
+		{
+			// The RESOLUTION downranks, never the pick (field report
+			// 2026-08-31: dragon -> rune swap still showed a dragon ball):
+			// the effective tier is the pick when every carried cannon can
+			// fire it, else the best they can all share - one tier for the
+			// whole ship (REQ-SC-2). The pick itself stays put, so
+			// upgrading the cannon back restores it.
+			boolean everyone = true;
+			for (String t : carriedTiers)
+			{
+				everyone &= com.loadoutlab.data.NavalCombat.canFire(t, ammoPick);
+			}
+			if (!everyone)
+			{
+				ammo = com.loadoutlab.data.NavalCombat.bestSharedBall(carriedTiers);
+			}
+		}
 		if (detect)
 		{
 			// Best BANKED ball every carried cannon can fire - never a ball
@@ -2221,8 +2235,7 @@ public class CommandEngine
 				cannonNodes.add(dry);
 				continue;
 			}
-			String ballTier = com.loadoutlab.data.NavalCombat.canFire(tier, ammo)
-				? ammo : com.loadoutlab.data.NavalCombat.bestSharedBall(List.of(tier));
+			String ballTier = ammo;
 			com.loadoutlab.data.NavalCombat.Ball ball =
 				com.loadoutlab.data.NavalCombat.ball(ballTier);
 			String operator = i == 0 ? op1 : op2;
@@ -2290,6 +2303,21 @@ public class CommandEngine
 		node.put("cannons", cannonNodes);
 		node.put("dps", total);
 		node.put("estimated", anyCrew && com.loadoutlab.data.NavalCombat.crewFormulaStale());
+		// Ship damage taken (REQ-SC-15): the mob attacks the BOAT, so the
+		// number is per keel from the wiki table (armour pre-applied) and
+		// protection prayers do not apply. Always-hit is assumed - ship
+		// defence rolls are undocumented - so this reads as a ceiling.
+		String keel = String.valueOf(params.get("shipKeel"));
+		int keelMax = com.loadoutlab.data.NavalCombat.keelMaxHit(mob.getName(), keel);
+		if (keelMax >= 0)
+		{
+			Map<String, Object> in = new java.util.LinkedHashMap<>();
+			in.put("keel", keel);
+			in.put("maxHit", keelMax);
+			int speed = Math.max(1, mob.getOffence().getSpeedTicks());
+			in.put("dtps", keelMax / 2.0 / (speed * 0.6));
+			node.put("incoming", in);
+		}
 		return node;
 	}
 

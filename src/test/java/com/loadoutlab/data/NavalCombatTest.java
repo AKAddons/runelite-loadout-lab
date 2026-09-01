@@ -54,4 +54,24 @@ class NavalCombatTest
 		// count, never substring matches.
 		assertFalse(NavalCombat.isNaval("Shark"));
 	}
+
+	@Test
+	@DisplayName("every roster mob carries an 8-keel max-hit row")
+	void keelRowsCoverTheRoster()
+	{
+		assertEquals(8, NavalCombat.keels().size());
+		for (String name : NavalCombat.navalNames())
+		{
+			for (String keel : NavalCombat.keels())
+			{
+				assertTrue(NavalCombat.keelMaxHit(name, keel) >= 0,
+					name + " has no keel row for " + keel);
+			}
+		}
+		// Spot pins straight off the wiki table.
+		assertEquals(7, NavalCombat.keelMaxHit("Hammerhead shark", "regular"));
+		assertEquals(0, NavalCombat.keelMaxHit("Hammerhead shark", "dragon"));
+		assertEquals(12, NavalCombat.keelMaxHit("Vampyre kraken", "dragon"));
+		assertEquals(-1, NavalCombat.keelMaxHit("General Graardor", "regular"));
+	}
 }

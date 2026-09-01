@@ -532,7 +532,8 @@ public class LoadoutLabPlugin extends Plugin
 					{
 						for (String key : new String[]{"cannonCount",
 							"cannon1Material", "cannon2Material",
-							"cannon1Operator", "cannon2Operator", "cannonAmmo"})
+							"cannon1Operator", "cannon2Operator", "cannonAmmo",
+							"shipKeel"})
 						{
 							String saved = supplyDefaults.choice("ship." + key);
 							if (saved != null

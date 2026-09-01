@@ -146,4 +146,41 @@ class AmmoDetectTest
 		engine.execute("set-param", Map.of("param", "cannon1Operator", "value", "crew2"));
 		assertEquals("crew4", saved.get("ship.cannon1Operator"));
 	}
+
+	@Test
+	@DisplayName("ship damage taken rides the node per keel - even with no cannons")
+	void shipIncomingPerKeel()
+	{
+		// Hammerhead: keel row 7,6,5,4,3,1,0,0; speed 4 ticks (2.4s).
+		Map<String, Object> ship = shipWith(Set.of(),
+			Map.of("cannonCount", 0, "shipKeel", "regular"));
+		assertNotNull(ship, "a sea lens carries the ship node for DTPS alone");
+		Map<?, ?> in = (Map<?, ?>) ship.get("incoming");
+		assertEquals("regular", in.get("keel"));
+		assertEquals(7, in.get("maxHit"));
+		assertEquals(7 / 2.0 / 2.4, (Double) in.get("dtps"), 1e-9);
+
+		Map<?, ?> rosewood = (Map<?, ?>) shipWith(Set.of(),
+			Map.of("cannonCount", 0, "shipKeel", "rosewood")).get("incoming");
+		assertEquals(0, rosewood.get("maxHit"),
+			"a rosewood keel cannot be hit by a hammerhead (wiki table)");
+		assertEquals(0.0, (Double) rosewood.get("dtps"), 1e-9);
+	}
+
+	@Test
+	@DisplayName("an explicit pick downranks at resolution and springs back")
+	void explicitPickDownranksAtResolution()
+	{
+		// Dragon pick on a rune cannon resolves to rune...
+		Map<String, Object> ship = shipWith(Set.of(),
+			Map.of("cannonCount", 1, "cannon1Material", "rune",
+				"cannonAmmo", "dragon", "cannon1Operator", "you"));
+		assertEquals("rune", ship.get("ammo"));
+		// ...and the pick itself never mutated: back on a dragon cannon the
+		// dragon ball returns.
+		ship = shipWith(Set.of(),
+			Map.of("cannonCount", 1, "cannon1Material", "dragon",
+				"cannonAmmo", "dragon", "cannon1Operator", "you"));
+		assertEquals("dragon", ship.get("ammo"));
+	}
 }

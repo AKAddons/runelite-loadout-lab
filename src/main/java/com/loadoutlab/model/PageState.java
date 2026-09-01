@@ -44,6 +44,7 @@ public class PageState
 	 * RAISES a crew operator to the minimum Privateering that can man it
 	 * (Andrew: "automatically assume you are going to pick a crew member at
 	 * minimum that can man the cannon") and never lowers an explicit pick. */
+	private String shipKeel = "regular";
 	private String cannon1Operator = "crew1";
 	private String cannon2Operator = "crew1";
 	private String spellbookLock = "";
@@ -159,17 +160,17 @@ public class PageState
 				return true;
 			case "cannonCount":
 				cannonCount = Math.max(0, Math.min(2, asInt(value, 0)));
-				clampAmmoToCarried();
 				return true;
 			case "cannon1Material":
 				cannon1Material = String.valueOf(value);
 				cannon1Operator = raiseCrewToGate(cannon1Operator, cannon1Material);
-				clampAmmoToCarried();
 				return true;
 			case "cannon2Material":
 				cannon2Material = String.valueOf(value);
 				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
-				clampAmmoToCarried();
+				return true;
+			case "shipKeel":
+				shipKeel = String.valueOf(value);
 				return true;
 			case "cannonAmmo":
 				cannonAmmo = String.valueOf(value);
@@ -259,33 +260,6 @@ public class PageState
 		}
 	}
 
-	/** An explicit ammo pick DOWNRANKS when a carried cannon can no longer
-	 * fire it (field report 2026-08-31: dragon -> rune swap kept showing a
-	 * dragon ball) - the mirror of the crew auto-raise. Detect is untouched;
-	 * it re-resolves on its own. */
-	private void clampAmmoToCarried()
-	{
-		if ("detect".equals(cannonAmmo) || cannonCount <= 0)
-		{
-			return;
-		}
-		java.util.List<String> carried = new java.util.ArrayList<>();
-		carried.add(cannon1Material);
-		if (cannonCount > 1)
-		{
-			carried.add(cannon2Material);
-		}
-		for (String tier : carried)
-		{
-			if (!com.loadoutlab.data.NavalCombat.canFire(tier, cannonAmmo))
-			{
-				String best = com.loadoutlab.data.NavalCombat.bestSharedBall(carried);
-				cannonAmmo = best == null ? "detect" : best;
-				return;
-			}
-		}
-	}
-
 	/** Normalize an operator pick; a crew pick is clamped 1-4 and then
 	 * raised to the material's gate. */
 	private static String operator(Object value, String material)
@@ -352,6 +326,7 @@ public class PageState
 		node.put("cannon1Material", cannon1Material);
 		node.put("cannon2Material", cannon2Material);
 		node.put("cannonAmmo", cannonAmmo);
+		node.put("shipKeel", shipKeel);
 		node.put("cannon1Operator", cannon1Operator);
 		node.put("cannon2Operator", cannon2Operator);
 		node.put("spellbookLock", spellbookLock);

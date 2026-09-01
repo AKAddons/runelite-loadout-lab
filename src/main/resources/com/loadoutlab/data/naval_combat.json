@@ -3,31 +3,389 @@
  "attackTicks": 7,
  "crewFormulaStale": true,
  "cannons": [
-  {"tier": "bronze",  "itemId": 32199, "sailing": 28, "construction": 21, "ranged": 1,  "accuracy": 30,  "heavyAccuracy": 30,  "strength": 8,  "privateering": 1},
-  {"tier": "iron",    "itemId": 32200, "sailing": 35, "construction": 28, "ranged": 1,  "accuracy": 42,  "heavyAccuracy": 40,  "strength": 10, "privateering": 2},
-  {"tier": "steel",   "itemId": 32201, "sailing": 47, "construction": 39, "ranged": 5,  "accuracy": 60,  "heavyAccuracy": 60,  "strength": 12, "privateering": 2},
-  {"tier": "mithril", "itemId": 32202, "sailing": 57, "construction": 50, "ranged": 20, "accuracy": 78,  "heavyAccuracy": 70,  "strength": 15, "privateering": 3},
-  {"tier": "adamant", "itemId": 32203, "sailing": 69, "construction": 61, "ranged": 30, "accuracy": 98,  "heavyAccuracy": 85,  "strength": 23, "privateering": 3},
-  {"tier": "rune",    "itemId": 32204, "sailing": 80, "construction": 76, "ranged": 40, "accuracy": 163, "heavyAccuracy": 110, "strength": 26, "privateering": 4},
-  {"tier": "dragon",  "itemId": 32205, "sailing": 92, "construction": 84, "ranged": 60, "accuracy": 194, "heavyAccuracy": 150, "strength": 32, "privateering": 4}
+  {
+   "tier": "bronze",
+   "itemId": 32199,
+   "sailing": 28,
+   "construction": 21,
+   "ranged": 1,
+   "accuracy": 30,
+   "heavyAccuracy": 30,
+   "strength": 8,
+   "privateering": 1
+  },
+  {
+   "tier": "iron",
+   "itemId": 32200,
+   "sailing": 35,
+   "construction": 28,
+   "ranged": 1,
+   "accuracy": 42,
+   "heavyAccuracy": 40,
+   "strength": 10,
+   "privateering": 2
+  },
+  {
+   "tier": "steel",
+   "itemId": 32201,
+   "sailing": 47,
+   "construction": 39,
+   "ranged": 5,
+   "accuracy": 60,
+   "heavyAccuracy": 60,
+   "strength": 12,
+   "privateering": 2
+  },
+  {
+   "tier": "mithril",
+   "itemId": 32202,
+   "sailing": 57,
+   "construction": 50,
+   "ranged": 20,
+   "accuracy": 78,
+   "heavyAccuracy": 70,
+   "strength": 15,
+   "privateering": 3
+  },
+  {
+   "tier": "adamant",
+   "itemId": 32203,
+   "sailing": 69,
+   "construction": 61,
+   "ranged": 30,
+   "accuracy": 98,
+   "heavyAccuracy": 85,
+   "strength": 23,
+   "privateering": 3
+  },
+  {
+   "tier": "rune",
+   "itemId": 32204,
+   "sailing": 80,
+   "construction": 76,
+   "ranged": 40,
+   "accuracy": 163,
+   "heavyAccuracy": 110,
+   "strength": 26,
+   "privateering": 4
+  },
+  {
+   "tier": "dragon",
+   "itemId": 32205,
+   "sailing": 92,
+   "construction": 84,
+   "ranged": 60,
+   "accuracy": 194,
+   "heavyAccuracy": 150,
+   "strength": 32,
+   "privateering": 4
+  }
  ],
  "cannonballs": [
-  {"tier": "bronze",  "itemId": 31906, "accuracy": 12, "strength": 43},
-  {"tier": "iron",    "itemId": 31908, "accuracy": 16, "strength": 56},
-  {"tier": "steel",   "itemId": 2,     "accuracy": 20, "strength": 74},
-  {"tier": "mithril", "itemId": 31910, "accuracy": 30, "strength": 105},
-  {"tier": "granite", "itemId": 21728, "accuracy": 30, "strength": 125},
-  {"tier": "adamant", "itemId": 31912, "accuracy": 50, "strength": 157},
-  {"tier": "rune",    "itemId": 31914, "accuracy": 64, "strength": 201},
-  {"tier": "dragon",  "itemId": 31916, "accuracy": 80, "strength": 270}
+  {
+   "tier": "bronze",
+   "itemId": 31906,
+   "accuracy": 12,
+   "strength": 43
+  },
+  {
+   "tier": "iron",
+   "itemId": 31908,
+   "accuracy": 16,
+   "strength": 56
+  },
+  {
+   "tier": "steel",
+   "itemId": 2,
+   "accuracy": 20,
+   "strength": 74
+  },
+  {
+   "tier": "mithril",
+   "itemId": 31910,
+   "accuracy": 30,
+   "strength": 105
+  },
+  {
+   "tier": "granite",
+   "itemId": 21728,
+   "accuracy": 30,
+   "strength": 125
+  },
+  {
+   "tier": "adamant",
+   "itemId": 31912,
+   "accuracy": 50,
+   "strength": 157
+  },
+  {
+   "tier": "rune",
+   "itemId": 31914,
+   "accuracy": 64,
+   "strength": 201
+  },
+  {
+   "tier": "dragon",
+   "itemId": 31916,
+   "accuracy": 80,
+   "strength": 270
+  }
  ],
- "ballTierOrder": ["bronze", "iron", "steel", "mithril", "granite", "adamant", "rune", "dragon"],
+ "ballTierOrder": [
+  "bronze",
+  "iron",
+  "steel",
+  "mithril",
+  "granite",
+  "adamant",
+  "rune",
+  "dragon"
+ ],
  "$ballTierNote": "A cannon fires balls at or below its own tier; granite sits between mithril and adamant in the firing order (adamant cannons and up may fire it). Steel ball is the classic Cannonball (item 2).",
  "navalMonsters": [
-  "Bull shark", "Hammerhead shark", "Tiger shark", "Great white shark",
-  "Dolphin", "Mogre (sea)", "Narwhal", "Orca",
-  "Pygmy kraken", "Spined kraken", "Armoured kraken", "Veiled kraken", "Vampyre kraken",
-  "Eagle ray", "Butterfly ray", "Stingray", "Manta ray (monster)",
-  "Tern", "Osprey", "Frigatebird", "Albatross"
- ]
+  "Bull shark",
+  "Hammerhead shark",
+  "Tiger shark",
+  "Great white shark",
+  "Dolphin",
+  "Mogre (sea)",
+  "Narwhal",
+  "Orca",
+  "Pygmy kraken",
+  "Spined kraken",
+  "Armoured kraken",
+  "Veiled kraken",
+  "Vampyre kraken",
+  "Eagle ray",
+  "Butterfly ray",
+  "Stingray",
+  "Manta ray (monster)",
+  "Tern",
+  "Osprey",
+  "Frigatebird",
+  "Albatross"
+ ],
+ "keels": [
+  "regular",
+  "oak",
+  "teak",
+  "mahogany",
+  "camphor",
+  "ironwood",
+  "rosewood",
+  "dragon"
+ ],
+ "$keelNote": "Effective max hit PER KEEL from the wiki's Boat combat monster table (armour already applied; a 0 means that keel is not hittable by this monster). Column order is the wood ladder up to dragon. Parsed 2026-08-31.",
+ "keelMaxHits": {
+  "Dolphin": [
+   2,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "Tern": [
+   3,
+   2,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "Eagle ray": [
+   3,
+   2,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "Butterfly ray": [
+   4,
+   3,
+   2,
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "Bull shark": [
+   5,
+   4,
+   3,
+   2,
+   1,
+   0,
+   0,
+   0
+  ],
+  "Mogre (sea)": [
+   6,
+   5,
+   4,
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "Osprey": [
+   6,
+   5,
+   4,
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "Stingray": [
+   6,
+   5,
+   4,
+   3,
+   2,
+   0,
+   0,
+   0
+  ],
+  "Hammerhead shark": [
+   7,
+   6,
+   5,
+   4,
+   3,
+   1,
+   0,
+   0
+  ],
+  "Narwhal": [
+   7,
+   6,
+   5,
+   4,
+   3,
+   1,
+   0,
+   0
+  ],
+  "Frigatebird": [
+   8,
+   7,
+   6,
+   5,
+   4,
+   2,
+   0,
+   0
+  ],
+  "Manta ray (monster)": [
+   8,
+   7,
+   6,
+   5,
+   4,
+   2,
+   0,
+   0
+  ],
+  "Tiger shark": [
+   9,
+   8,
+   7,
+   6,
+   5,
+   3,
+   1,
+   0
+  ],
+  "Pygmy kraken": [
+   10,
+   9,
+   8,
+   7,
+   6,
+   4,
+   2,
+   0
+  ],
+  "Albatross": [
+   10,
+   9,
+   8,
+   7,
+   6,
+   4,
+   2,
+   0
+  ],
+  "Orca": [
+   13,
+   12,
+   11,
+   10,
+   9,
+   7,
+   5,
+   3
+  ],
+  "Spined kraken": [
+   14,
+   13,
+   12,
+   11,
+   10,
+   8,
+   6,
+   4
+  ],
+  "Great white shark": [
+   15,
+   14,
+   13,
+   12,
+   11,
+   9,
+   7,
+   5
+  ],
+  "Armoured kraken": [
+   18,
+   17,
+   16,
+   15,
+   14,
+   12,
+   10,
+   8
+  ],
+  "Veiled kraken": [
+   19,
+   18,
+   17,
+   16,
+   15,
+   13,
+   11,
+   9
+  ],
+  "Vampyre kraken": [
+   22,
+   21,
+   20,
+   19,
+   18,
+   16,
+   14,
+   12
+  ]
+ }
 }

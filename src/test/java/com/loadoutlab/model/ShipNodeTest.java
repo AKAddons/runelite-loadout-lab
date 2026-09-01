@@ -124,13 +124,16 @@ class ShipNodeTest
 		Map<?, ?> c2 = (Map<?, ?>) cannons.get(1);
 		assertEquals("crew", c1.get("firedBy"));
 		assertEquals("crew", c2.get("firedBy"));
-		assertEquals("dragon", c1.get("ball"));
-		assertEquals("mithril", c2.get("ball"),
-			"a mithril cannon handed dragon balls fires mithril ones");
+		// ONE tier for the whole ship (REQ-SC-2): the dragon pick downranks
+		// at RESOLUTION to what both cannons can fire.
+		assertEquals("mithril", ship.get("ammo"));
+		assertEquals("mithril", c1.get("ball"));
+		assertEquals("mithril", c2.get("ball"));
 		// Crew numbers ride the stale formula: flagged estimated.
 		assertEquals(Boolean.TRUE, ship.get("estimated"));
-		// Crew base is Sailing-level driven, scaled by Privateering 4.
-		int base = ShipCannon.playerMaxHit(80, 32, 270, 0, false);
+		// Crew base is Sailing-level driven with the SHARED mithril ball
+		// (105 str - the downranked tier), scaled by Privateering 4.
+		int base = ShipCannon.playerMaxHit(80, 32, 105, 0, false);
 		assertEquals(ShipCannon.crewMaxHit(base, 4), c1.get("maxHit"));
 	}
 
@@ -218,7 +221,12 @@ class ShipNodeTest
 			Map.of("cannonCount", 2, "cannon1Material", "dragon",
 				"cannonAmmo", "dragon", "cannon1Operator", "you"),
 			99, 99), "REQ-SC-7: ship options never price a land mob");
-		assertNull(shipNodeFor("hammerhead shark", Map.of("cannonCount", 0), 99, 99),
-			"no cannons, no node");
+		// A sea lens with no cannons still carries the node - ship damage
+		// taken (the keel line) applies with or without cannons.
+		Map<String, Object> dtpsOnly = shipNodeFor("hammerhead shark",
+			Map.of("cannonCount", 0), 99, 99);
+		assertNotNull(dtpsOnly);
+		assertTrue(((List<?>) dtpsOnly.get("cannons")).isEmpty());
+		assertNotNull(dtpsOnly.get("incoming"));
 	}
 }

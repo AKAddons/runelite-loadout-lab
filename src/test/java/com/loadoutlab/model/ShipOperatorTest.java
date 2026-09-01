@@ -52,37 +52,4 @@ class ShipOperatorTest
 			"cannon 1 falls back to crew AT ITS GATE (dragon -> P4)");
 	}
 
-	@Test
-	@DisplayName("an explicit ammo pick downranks when the cannon can no longer fire it")
-	void ammoDownranks()
-	{
-		PageState state = new PageState();
-		state.setParam("cannonCount", 1);
-		state.setParam("cannon1Material", "dragon");
-		state.setParam("cannonAmmo", "dragon");
-		// Swap the cannon down: the dragon ball is unfireable, the pick
-		// follows the cannon (field report 2026-08-31).
-		state.setParam("cannon1Material", "rune");
-		assertEquals("rune", state.paramsNode().get("cannonAmmo"));
-		// Detect never clamps - it re-resolves.
-		state.setParam("cannonAmmo", "detect");
-		state.setParam("cannon1Material", "steel");
-		assertEquals("detect", state.paramsNode().get("cannonAmmo"));
-	}
-
-	@Test
-	@DisplayName("adding a lower second cannon drags a shared explicit pick down")
-	void secondCannonDragsAmmo()
-	{
-		PageState state = new PageState();
-		state.setParam("cannonCount", 1);
-		state.setParam("cannon1Material", "dragon");
-		state.setParam("cannonAmmo", "dragon");
-		state.setParam("cannon2Material", "mithril");
-		// cannon 2 not carried yet - the pick holds...
-		assertEquals("dragon", state.paramsNode().get("cannonAmmo"));
-		// ...until it is.
-		state.setParam("cannonCount", 2);
-		assertEquals("mithril", state.paramsNode().get("cannonAmmo"));
-	}
 }

@@ -69,6 +69,8 @@ public final class NavalCombat
 	private static final Map<String, Ball> BALLS = new LinkedHashMap<>();
 	private static final List<String> BALL_ORDER = new ArrayList<>();
 	private static final Set<String> NAVAL = new java.util.HashSet<>();
+	private static final List<String> KEELS = new ArrayList<>();
+	private static final Map<String, int[]> KEEL_MAX_HITS = new LinkedHashMap<>();
 	private static final boolean CREW_FORMULA_STALE;
 	public static final int ATTACK_TICKS;
 
@@ -101,6 +103,21 @@ public final class NavalCombat
 		for (JsonElement e : root.getAsJsonArray("navalMonsters"))
 		{
 			NAVAL.add(e.getAsString().toLowerCase(Locale.ROOT));
+		}
+		for (JsonElement e : root.getAsJsonArray("keels"))
+		{
+			KEELS.add(e.getAsString());
+		}
+		for (Map.Entry<String, JsonElement> row
+			: root.getAsJsonObject("keelMaxHits").entrySet())
+		{
+			JsonArray hits = row.getValue().getAsJsonArray();
+			int[] out = new int[hits.size()];
+			for (int i = 0; i < out.length; i++)
+			{
+				out[i] = hits.get(i).getAsInt();
+			}
+			KEEL_MAX_HITS.put(row.getKey().toLowerCase(Locale.ROOT), out);
 		}
 	}
 
@@ -171,7 +188,23 @@ public final class NavalCombat
 		return Collections.unmodifiableSet(NAVAL);
 	}
 
-	/** Crew-fired numbers are estimates while the wiki flags the crewmate
+	public static List<String> keels()
+	{
+		return Collections.unmodifiableList(KEELS);
+	}
+
+	/** The monster's effective max hit against this keel (armour already
+	 * applied, from the wiki's Boat combat table), or -1 for an unknown
+	 * monster/keel. A 0 means this keel cannot be hit by it at all. */
+	public static int keelMaxHit(String monsterName, String keelTier)
+	{
+		int[] row = monsterName == null ? null
+			: KEEL_MAX_HITS.get(monsterName.toLowerCase(Locale.ROOT));
+		int i = KEELS.indexOf(keelTier);
+		return row == null || i < 0 || i >= row.length ? -1 : row[i];
+	}
+
+		/** Crew-fired numbers are estimates while the wiki flags the crewmate
 	 * formula out-of-date; the UI cites this on crew tooltips. */
 	public static boolean crewFormulaStale()
 	{

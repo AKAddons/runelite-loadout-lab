@@ -650,9 +650,9 @@ public class ResultCards
 				caveat.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
 			}
-			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab)));
+			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab, ship)));
 		}
-		if (naval && ship != null)
+		if (naval && ship != null && !Model.list(ship, "cannons").isEmpty())
 		{
 			card.add(left(shipBreakdown(ship, shown)));
 		}
@@ -1688,6 +1688,12 @@ public class ResultCards
 	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,
 		Map<String, Object> mob, String tab)
 	{
+		return side(caption, card, bis, thrallsDps, mob, tab, null);
+	}
+
+	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,
+		Map<String, Object> mob, String tab, Map<String, Object> ship)
+	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBackground(CARD);
@@ -1826,12 +1832,50 @@ public class ResultCards
 		statColumn.setBackground(CARD);
 		Color statText = new Color(200, 200, 200);
 		Map<String, Object> incoming = Model.map(card, "incoming");
+		Map<String, Object> shipIncoming = ship == null ? null : Model.map(ship, "incoming");
 		statColumn.add(paintedStatLine("" + (int) Model.num(card, "maxHit"),
 			"Max hit " + (int) Model.num(card, "maxHit"), statText,
 			new StatIcons.HitsplatIcon(12)));
 		statColumn.add(paintedStatLine(Math.round(Model.num(card, "accuracy") * 100) + "%",
 			"Hit chance", statText, new StatIcons.CrosshairIcon(13)));
-		if (incoming != null)
+		if (shipIncoming != null)
+		{
+			// Sea mobs hit the BOAT (REQ-SC-15): the number is ship damage
+			// taken for the picked keel, protection prayers do not apply,
+			// and clicking the line picks the keel (Andrew: "a drop down
+			// next to the dtps value").
+			String keel = Model.str(shipIncoming, "keel");
+			int keelMax = (int) Model.num(shipIncoming, "maxHit");
+			JLabel shipLine = statIconLine(
+				String.format(java.util.Locale.ROOT, "~%.1f (%s)",
+					Model.num(shipIncoming, "dtps"), cap(keel)),
+				keelMax == 0
+					? "Ship damage taken: a " + cap(keel)
+						+ " keel cannot be hit by this monster - click to change the keel"
+					: "Ship damage taken with a " + cap(keel) + " keel - max "
+						+ keelMax + " per hit, prayers do not reduce it. Click to change the keel",
+				statText, -1);
+			shipLine.setForeground(new Color(120, 175, 215));
+			javax.swing.Icon sail = sailingIconSmall();
+			if (sail != null)
+			{
+				shipLine.setIcon(sail);
+				shipLine.setIconTextGap(4);
+			}
+			Ui.onClick(shipLine, () ->
+			{
+				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				for (String option : com.loadoutlab.data.NavalCombat.keels())
+				{
+					menu.add(pickChoice(cap(option) + " keel", option.equals(keel),
+						() -> commands.send("set-param",
+							Map.of("param", "shipKeel", "value", option))));
+				}
+				menu.show(shipLine, 0, shipLine.getHeight());
+			});
+			statColumn.add(shipLine);
+		}
+		else if (incoming != null)
 		{
 			// Classic honesty rule: an unmodeled monster's DTPS reads "?" -
 			// silence must read as unknown, never safe.
