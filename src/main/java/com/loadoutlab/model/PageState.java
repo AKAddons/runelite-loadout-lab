@@ -28,6 +28,9 @@ public class PageState
 	 * this, not from f2pOnly - otherwise unticking the filter hides the control
 	 * that unticked it and there is no way back. */
 	private boolean f2pWorld;
+	/** True while the selection is a RAID group (ToB included - the boost
+	 * heuristic missed it): raids are never a slayer-task context. */
+	private boolean raidSelection;
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -66,6 +69,7 @@ public class PageState
 
 	public synchronized void select(MonsterStats mob)
 	{
+		this.raidSelection = false;
 		this.mob = mob;
 		this.rosterMobs = null;
 		this.rosterName = null;
@@ -73,6 +77,13 @@ public class PageState
 
 	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name)
 	{
+		selectRoster(mobs, name, false);
+	}
+
+	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name,
+		boolean raid)
+	{
+		this.raidSelection = raid;
 		this.mob = null;
 		this.rosterMobs = mobs;
 		this.rosterName = name;
@@ -224,6 +235,7 @@ public class PageState
 		node.put("inWilderness", inWilderness);
 		node.put("f2pOnly", f2pOnly);
 		node.put("f2pWorld", f2pWorld);
+		node.put("raidSelection", raidSelection);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);
