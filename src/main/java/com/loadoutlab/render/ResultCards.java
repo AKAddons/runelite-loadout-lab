@@ -1004,7 +1004,7 @@ public class ResultCards
 		JPanel strip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 6, 0));
 		strip.setBackground(CARD);
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
-		strip.add(ammoButton());
+		strip.add(ammoButton(ship));
 		if (count > 1)
 		{
 			strip.add(cannonButton(1, cannonNodes.size() > 1 ? cannonNodes.get(1) : null));
@@ -1053,13 +1053,8 @@ public class ResultCards
 		sum.setFont(sum.getFont().deriveFont(Font.BOLD, 12f));
 		sum.setForeground(new Color(130, 200, 130));
 		box.add(left(sum));
-		if (Model.flag(ship, "estimated"))
-		{
-			JLabel est = Ui.label("Crew damage is an estimate - formula under review on the wiki",
-				new Color(150, 150, 150));
-			est.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-			box.add(left(est));
-		}
+		// The estimated flag stays on the node (crew formula is wiki-flagged
+		// stale) but no longer renders a line - Andrew's call, 2026-08-31.
 		return box;
 	}
 
@@ -1121,17 +1116,28 @@ public class ResultCards
 
 	/** The shared ammo's icon button: only tiers EVERY carried cannon can
 	 * fire are offered (a mithril + dragon pair tops out at mithril). */
-	private javax.swing.JButton ammoButton()
+	private javax.swing.JButton ammoButton(Map<String, Object> ship)
 	{
-		String ammo = Model.str(pageParams, "cannonAmmo");
+		String pick = Model.str(pageParams, "cannonAmmo");
+		boolean detect = pick == null || "detect".equals(pick);
+		// Detect shows what it RESOLVED to (the boost idiom); a dry bank
+		// shows the reason on a red ring.
+		String resolved = ship == null ? null : Model.str(ship, "ammo");
+		String ammoBlocked = ship == null ? null : Model.str(ship, "ammoBlocked");
+		String shownTier = resolved != null ? resolved : detect ? "bronze" : pick;
 		com.loadoutlab.data.NavalCombat.Ball ball =
-			com.loadoutlab.data.NavalCombat.ball(ammo == null ? "bronze" : ammo);
+			com.loadoutlab.data.NavalCombat.ball(shownTier == null ? "bronze" : shownTier);
 		javax.swing.JButton button = new javax.swing.JButton(
 			new javax.swing.ImageIcon(itemManager.getImage(ball.itemId)));
 		button.setContentAreaFilled(false);
 		button.setFocusable(false);
-		button.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
-		button.setToolTipText("Cannonballs: " + cap(ball.tier) + " - one tier for every cannon");
+		button.setBorder(new RoundedBorder(ammoBlocked != null
+			? new Color(200, 100, 100) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+		button.setToolTipText("Cannonballs: "
+			+ (ammoBlocked != null ? ammoBlocked
+				: detect ? "Detect best - " + cap(ball.tier) + " (best banked)"
+					: cap(ball.tier))
+			+ " - one tier for every cannon");
 		button.addActionListener(e ->
 		{
 			int count = (int) Model.num(pageParams, "cannonCount");
@@ -1141,6 +1147,10 @@ public class ResultCards
 				tiers.add(Model.str(pageParams, i == 0 ? "cannon1Material" : "cannon2Material"));
 			}
 			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			menu.add(pickChoice("Detect best in bank", detect,
+				() -> commands.send("set-param",
+					Map.of("param", "cannonAmmo", "value", "detect"))));
+			menu.addSeparator();
 			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
 			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 			for (com.loadoutlab.data.NavalCombat.Ball option
@@ -1158,7 +1168,7 @@ public class ResultCards
 				rack.add(pickCell(menu,
 					new javax.swing.ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannonball",
-					option.tier.equals(ball.tier), 38,
+					!detect && option.tier.equals(ball.tier), 38,
 					() -> commands.send("set-param",
 						Map.of("param", "cannonAmmo", "value", option.tier))));
 			}

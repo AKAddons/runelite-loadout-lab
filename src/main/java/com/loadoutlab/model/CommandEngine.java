@@ -1314,11 +1314,31 @@ public class CommandEngine
 			&& !Boolean.TRUE.equals(params.get("f2pOnly"));
 	}
 
+	/** Ship-config params persist PER CHARACTER (Andrew 2026-08-31: "like
+	 * sim/exclude... once you set your cannon/crew/cannonball type it always
+	 * shows as that") - stored under ship.* in the scoped supply-defaults
+	 * store and re-seeded on every new selection. */
+	private static final java.util.Set<String> SHIP_PERSISTED = java.util.Set.of(
+		"cannonCount", "cannon1Material", "cannon2Material",
+		"cannon1Operator", "cannon2Operator", "cannonAmmo");
+
 	private boolean applyParam(String key, Object value)
 	{
 		if (!state.setParam(key, value))
 		{
 			return false;
+		}
+		if (SHIP_PERSISTED.contains(key))
+		{
+			StoreOps ops = stores;
+			if (ops != null)
+			{
+				// Persist what the state SETTLED on (clamps applied), not the
+				// raw input - undo re-applies through here too, so the store
+				// always mirrors the live params.
+				ops.setSupplyDefault("ship." + key,
+					String.valueOf(state.paramsNode().get(key)));
+			}
 		}
 		if (PageState.isViewParam(key))
 		{
@@ -2088,7 +2108,47 @@ public class CommandEngine
 			return null;
 		}
 		MonsterStats mob = lensed;
-		String ammo = String.valueOf(params.get("cannonAmmo"));
+		String ammoPick = String.valueOf(params.get("cannonAmmo"));
+		java.util.List<String> carriedTiers = new java.util.ArrayList<>();
+		for (int i = 0; i < count; i++)
+		{
+			carriedTiers.add(String.valueOf(
+				params.get(i == 0 ? "cannon1Material" : "cannon2Material")));
+		}
+		boolean detect = "detect".equals(ammoPick);
+		String ammo = ammoPick;
+		String ammoBlocked = null;
+		if (detect)
+		{
+			// Best BANKED ball every carried cannon can fire - never a ball
+			// the bank does not hold (the 0.4.1 rule, applied to ammo).
+			java.util.function.IntPredicate owns = ownedCheck;
+			String best = null;
+			for (com.loadoutlab.data.NavalCombat.Ball ball
+				: com.loadoutlab.data.NavalCombat.balls())
+			{
+				boolean everyone = true;
+				for (String t : carriedTiers)
+				{
+					everyone &= com.loadoutlab.data.NavalCombat.canFire(t, ball.tier);
+				}
+				if (everyone && owns != null && owns.test(ball.itemId))
+				{
+					best = ball.tier;
+				}
+			}
+			if (best == null)
+			{
+				String top = com.loadoutlab.data.NavalCombat.bestSharedBall(carriedTiers);
+				ammoBlocked = "No cannonballs banked"
+					+ (top == null ? "" : " (up to " + top + ")");
+				ammo = null;
+			}
+			else
+			{
+				ammo = best;
+			}
+		}
 		String op1 = String.valueOf(params.get("cannon1Operator"));
 		String op2 = String.valueOf(params.get("cannon2Operator"));
 		String station = "you".equals(op1) || "you".equals(op2) ? "cannon" : "gear";
@@ -2127,6 +2187,11 @@ public class CommandEngine
 		Map<String, Object> node = new java.util.LinkedHashMap<>();
 		node.put("station", station);
 		node.put("ammo", ammo);
+		node.put("ammoDetected", detect);
+		if (ammoBlocked != null)
+		{
+			node.put("ammoBlocked", ammoBlocked);
+		}
 		node.put("wornAccuracy", wornAcc);
 		node.put("wornStrength", wornStr);
 		List<Map<String, Object>> cannonNodes = new java.util.ArrayList<>();
@@ -2143,6 +2208,19 @@ public class CommandEngine
 			}
 			// Shared ammo, clamped to what THIS cannon can fire (a mithril
 			// cannon handed dragon balls fires mithril ones).
+			if (ammo == null)
+			{
+				Map<String, Object> dry = new java.util.LinkedHashMap<>();
+				dry.put("tier", tier);
+				dry.put("itemId", cannon.itemId);
+				dry.put("firedBy", (i == 0 ? "you".equals(op1) : "you".equals(op2))
+					? "player" : "crew");
+				dry.put("blocked", ammoBlocked);
+				dry.put("maxHit", 0);
+				dry.put("dps", 0.0);
+				cannonNodes.add(dry);
+				continue;
+			}
 			String ballTier = com.loadoutlab.data.NavalCombat.canFire(tier, ammo)
 				? ammo : com.loadoutlab.data.NavalCombat.bestSharedBall(List.of(tier));
 			com.loadoutlab.data.NavalCombat.Ball ball =

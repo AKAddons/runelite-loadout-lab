@@ -35,7 +35,9 @@ public class PageState
 	private int cannonCount;
 	private String cannon1Material = "bronze";
 	private String cannon2Material = "bronze";
-	private String cannonAmmo = "bronze";
+	/** "detect" resolves to the best BANKED ball every carried cannon can
+	 * fire (the boost idiom, Andrew 2026-08-31); a tier name pins it. */
+	private String cannonAmmo = "detect";
 	/** Per-cannon operator (REQ-SC-9): "you", or "crew1".."crew4" for a
 	 * crewmate of that Privateering. At most one cannon is yours - picking
 	 * "you" on one flips the other back to crew. Picking a material auto-
@@ -157,14 +159,17 @@ public class PageState
 				return true;
 			case "cannonCount":
 				cannonCount = Math.max(0, Math.min(2, asInt(value, 0)));
+				clampAmmoToCarried();
 				return true;
 			case "cannon1Material":
 				cannon1Material = String.valueOf(value);
 				cannon1Operator = raiseCrewToGate(cannon1Operator, cannon1Material);
+				clampAmmoToCarried();
 				return true;
 			case "cannon2Material":
 				cannon2Material = String.valueOf(value);
 				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
+				clampAmmoToCarried();
 				return true;
 			case "cannonAmmo":
 				cannonAmmo = String.valueOf(value);
@@ -251,6 +256,33 @@ public class PageState
 				return true;
 			default:
 				return false;
+		}
+	}
+
+	/** An explicit ammo pick DOWNRANKS when a carried cannon can no longer
+	 * fire it (field report 2026-08-31: dragon -> rune swap kept showing a
+	 * dragon ball) - the mirror of the crew auto-raise. Detect is untouched;
+	 * it re-resolves on its own. */
+	private void clampAmmoToCarried()
+	{
+		if ("detect".equals(cannonAmmo) || cannonCount <= 0)
+		{
+			return;
+		}
+		java.util.List<String> carried = new java.util.ArrayList<>();
+		carried.add(cannon1Material);
+		if (cannonCount > 1)
+		{
+			carried.add(cannon2Material);
+		}
+		for (String tier : carried)
+		{
+			if (!com.loadoutlab.data.NavalCombat.canFire(tier, cannonAmmo))
+			{
+				String best = com.loadoutlab.data.NavalCombat.bestSharedBall(carried);
+				cannonAmmo = best == null ? "detect" : best;
+				return;
+			}
 		}
 	}
 

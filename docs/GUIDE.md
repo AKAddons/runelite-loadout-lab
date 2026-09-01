@@ -415,9 +415,9 @@ balls. The card never hides: a breakdown under the gear view says what
 each cannon adds and what your gear adds - manning a cannon means your
 armour still counts (its ranged bonuses boost your cannon) while your
 weapon does not, and cannon dps folds into the shown numbers only while
-the crew does all the firing. Crew damage is marked as an estimate
-while the crewmate formula is under review on the wiki; player-fired
-numbers are exact to the documented formula.
+the crew does all the firing. Player-fired numbers follow the
+wiki's documented formula exactly; the crewmate formula is under
+review on the wiki, so crew numbers track the last documented one.
 
 ![Ship combat](img/ship-combat.png)
 

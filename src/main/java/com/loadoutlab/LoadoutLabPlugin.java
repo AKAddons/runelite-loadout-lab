@@ -525,6 +525,36 @@ public class LoadoutLabPlugin extends Plugin
 					// itself collided with the engine's no-cap sentinel).
 					int cap = com.loadoutlab.render.Gp.parse(config.defaultRiskCap());
 					seeds.put("riskBudgetGp", cap > 0 ? cap : null);
+					// The per-character ship config (cannons/crew/ammo)
+					// stays consistent across all ship combat - seeded from
+					// the scoped store on every new selection.
+					if (supplyDefaults != null)
+					{
+						for (String key : new String[]{"cannonCount",
+							"cannon1Material", "cannon2Material",
+							"cannon1Operator", "cannon2Operator", "cannonAmmo"})
+						{
+							String saved = supplyDefaults.choice("ship." + key);
+							if (saved != null
+								&& !com.loadoutlab.collection.SupplyDefaultsStore.DETECT_BEST.equals(saved))
+							{
+								if ("cannonCount".equals(key))
+								{
+									try
+									{
+										seeds.put(key, Integer.parseInt(saved));
+									}
+									catch (NumberFormatException ignored)
+									{
+									}
+								}
+								else
+								{
+									seeds.put(key, saved);
+								}
+							}
+						}
+					}
 					return seeds;
 				});
 				// The chips exist before the first search (idle page).
