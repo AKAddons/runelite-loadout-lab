@@ -2089,9 +2089,9 @@ public class CommandEngine
 		}
 		MonsterStats mob = lensed;
 		String ammo = String.valueOf(params.get("cannonAmmo"));
-		String station = String.valueOf(params.get("playerStation"));
-		int priv = params.get("crewPrivateering") instanceof Number
-			? ((Number) params.get("crewPrivateering")).intValue() : 1;
+		String op1 = String.valueOf(params.get("cannon1Operator"));
+		String op2 = String.valueOf(params.get("cannon2Operator"));
+		String station = "you".equals(op1) || "you".equals(op2) ? "cannon" : "gear";
 		// The wiki rule: the player's worn ranged accuracy and strength join
 		// their cannon fire, EXCLUDING the weapon, shield and ammo slots.
 		// The manned player still wears armour - the best owned ranged set
@@ -2147,7 +2147,19 @@ public class CommandEngine
 				? ammo : com.loadoutlab.data.NavalCombat.bestSharedBall(List.of(tier));
 			com.loadoutlab.data.NavalCombat.Ball ball =
 				com.loadoutlab.data.NavalCombat.ball(ballTier);
-			boolean playerFired = i == 0 && "cannon".equals(station);
+			String operator = i == 0 ? op1 : op2;
+			boolean playerFired = "you".equals(operator);
+			int priv = 1;
+			if (operator.startsWith("crew"))
+			{
+				try
+				{
+					priv = Integer.parseInt(operator.substring(4));
+				}
+				catch (NumberFormatException ignored)
+				{
+				}
+			}
 			Map<String, Object> c = new java.util.LinkedHashMap<>();
 			c.put("tier", tier);
 			c.put("itemId", cannon.itemId);

@@ -36,8 +36,14 @@ public class PageState
 	private String cannon1Material = "bronze";
 	private String cannon2Material = "bronze";
 	private String cannonAmmo = "bronze";
-	private String playerStation = "gear";
-	private int crewPrivateering = 1;
+	/** Per-cannon operator (REQ-SC-9): "you", or "crew1".."crew4" for a
+	 * crewmate of that Privateering. At most one cannon is yours - picking
+	 * "you" on one flips the other back to crew. Picking a material auto-
+	 * RAISES a crew operator to the minimum Privateering that can man it
+	 * (Andrew: "automatically assume you are going to pick a crew member at
+	 * minimum that can man the cannon") and never lowers an explicit pick. */
+	private String cannon1Operator = "crew1";
+	private String cannon2Operator = "crew1";
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -154,18 +160,28 @@ public class PageState
 				return true;
 			case "cannon1Material":
 				cannon1Material = String.valueOf(value);
+				cannon1Operator = raiseCrewToGate(cannon1Operator, cannon1Material);
 				return true;
 			case "cannon2Material":
 				cannon2Material = String.valueOf(value);
+				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
 				return true;
 			case "cannonAmmo":
 				cannonAmmo = String.valueOf(value);
 				return true;
-			case "playerStation":
-				playerStation = "cannon".equals(value) ? "cannon" : "gear";
+			case "cannon1Operator":
+				cannon1Operator = operator(value, cannon1Material);
+				if ("you".equals(cannon1Operator) && "you".equals(cannon2Operator))
+				{
+					cannon2Operator = raiseCrewToGate("crew1", cannon2Material);
+				}
 				return true;
-			case "crewPrivateering":
-				crewPrivateering = Math.max(1, Math.min(4, asInt(value, 1)));
+			case "cannon2Operator":
+				cannon2Operator = operator(value, cannon2Material);
+				if ("you".equals(cannon2Operator) && "you".equals(cannon1Operator))
+				{
+					cannon1Operator = raiseCrewToGate("crew1", cannon1Material);
+				}
 				return true;
 			case "f2pWorld":
 				f2pWorld = Boolean.TRUE.equals(value);
@@ -238,6 +254,54 @@ public class PageState
 		}
 	}
 
+	/** Normalize an operator pick; a crew pick is clamped 1-4 and then
+	 * raised to the material's gate. */
+	private static String operator(Object value, String material)
+	{
+		String v = String.valueOf(value);
+		if ("you".equals(v))
+		{
+			return "you";
+		}
+		int priv = 1;
+		if (v.startsWith("crew"))
+		{
+			try
+			{
+				priv = Math.max(1, Math.min(4, Integer.parseInt(v.substring(4))));
+			}
+			catch (NumberFormatException ignored)
+			{
+			}
+		}
+		return raiseCrewToGate("crew" + priv, material);
+	}
+
+	/** Crew operators rise to the minimum Privateering the material demands;
+	 * "you" and already-sufficient crew pass through untouched. */
+	private static String raiseCrewToGate(String operator, String material)
+	{
+		if ("you".equals(operator))
+		{
+			return operator;
+		}
+		com.loadoutlab.data.NavalCombat.Cannon cannon =
+			com.loadoutlab.data.NavalCombat.cannon(material);
+		int gate = cannon == null ? 1 : cannon.privateering;
+		int priv = 1;
+		if (operator != null && operator.startsWith("crew"))
+		{
+			try
+			{
+				priv = Integer.parseInt(operator.substring(4));
+			}
+			catch (NumberFormatException ignored)
+			{
+			}
+		}
+		return "crew" + Math.max(priv, gate);
+	}
+
 	private static int asInt(Object value, int fallback)
 	{
 		return value instanceof Number ? ((Number) value).intValue() : fallback;
@@ -256,8 +320,8 @@ public class PageState
 		node.put("cannon1Material", cannon1Material);
 		node.put("cannon2Material", cannon2Material);
 		node.put("cannonAmmo", cannonAmmo);
-		node.put("playerStation", playerStation);
-		node.put("crewPrivateering", crewPrivateering);
+		node.put("cannon1Operator", cannon1Operator);
+		node.put("cannon2Operator", cannon2Operator);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);

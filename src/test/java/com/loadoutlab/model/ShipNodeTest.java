@@ -93,7 +93,7 @@ class ShipNodeTest
 	{
 		Map<String, Object> ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
-				"cannonAmmo", "dragon", "playerStation", "cannon"),
+				"cannonAmmo", "dragon", "cannon1Operator", "you"),
 			99, 1);
 		assertNotNull(ship, "a naval mob with a cannon must carry the ship node");
 		assertEquals("cannon", ship.get("station"));
@@ -117,7 +117,7 @@ class ShipNodeTest
 		Map<String, Object> ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 2, "cannon1Material", "dragon",
 				"cannon2Material", "mithril", "cannonAmmo", "dragon",
-				"playerStation", "gear", "crewPrivateering", 4),
+				"cannon1Operator", "crew4", "cannon2Operator", "crew4"),
 			99, 80);
 		List<?> cannons = (List<?>) ship.get("cannons");
 		Map<?, ?> c1 = (Map<?, ?>) cannons.get(0);
@@ -135,23 +135,25 @@ class ShipNodeTest
 	}
 
 	@Test
-	@DisplayName("the operate gates zero a blocked cannon and say why")
+	@DisplayName("crew auto-raises to the cannon's gate; the player Ranged gate still blocks")
 	void operateGates()
 	{
-		// Crew Privateering 3 cannot fire a dragon cannon.
+		// REQ-SC-9: picking crew3 for a dragon cannon is auto-raised to the
+		// minimum that can man it - the under-crewed state is unreachable,
+		// so the cannon prices instead of blocking.
 		Map<String, Object> ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
-				"cannonAmmo", "dragon", "playerStation", "gear",
-				"crewPrivateering", 3),
+				"cannonAmmo", "dragon", "cannon1Operator", "crew3"),
 			99, 80);
-		Map<?, ?> crewBlocked = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
-		assertEquals("Crew needs Privateering 4", crewBlocked.get("blocked"));
-		assertEquals(0, crewBlocked.get("maxHit"));
+		Map<?, ?> crewCannon = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
+		assertNull(crewCannon.get("blocked"),
+			"auto-min-crew must make the dragon cannon operable");
+		assertTrue((Integer) crewCannon.get("maxHit") > 0);
 
 		// A 40-Ranged player cannot operate a dragon cannon either.
 		ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
-				"cannonAmmo", "dragon", "playerStation", "cannon"),
+				"cannonAmmo", "dragon", "cannon1Operator", "you"),
 			40, 1);
 		Map<?, ?> playerBlocked = (Map<?, ?>) ((List<?>) ship.get("cannons")).get(0);
 		assertEquals("Needs 60 Ranged to operate", playerBlocked.get("blocked"));
@@ -165,7 +167,7 @@ class ShipNodeTest
 		// Without a ranged result the cannon prices bare: the 57 pin.
 		Map<String, Object> bare = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
-				"cannonAmmo", "dragon", "playerStation", "cannon"),
+				"cannonAmmo", "dragon", "cannon1Operator", "you"),
 			99, 1);
 		assertEquals(0, bare.get("wornStrength"));
 		Map<?, ?> c1 = (Map<?, ?>) ((List<?>) bare.get("cannons")).get(0);
@@ -185,7 +187,7 @@ class ShipNodeTest
 		state.setParam("cannonCount", 1);
 		state.setParam("cannon1Material", "dragon");
 		state.setParam("cannonAmmo", "dragon");
-		state.setParam("playerStation", "cannon");
+		state.setParam("cannon1Operator", "you");
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = engine(state, link);
 		engine.setRangedLevel(99);
@@ -214,7 +216,7 @@ class ShipNodeTest
 	{
 		assertNull(shipNodeFor("general graardor",
 			Map.of("cannonCount", 2, "cannon1Material", "dragon",
-				"cannonAmmo", "dragon", "playerStation", "cannon"),
+				"cannonAmmo", "dragon", "cannon1Operator", "you"),
 			99, 99), "REQ-SC-7: ship options never price a land mob");
 		assertNull(shipNodeFor("hammerhead shark", Map.of("cannonCount", 0), 99, 99),
 			"no cannons, no node");
