@@ -957,7 +957,10 @@ public class ResultCards
 		JLabel title = new JLabel(Model.str(mob, "label"));
 		title.setFont(title.getFont().deriveFont(Font.BOLD));
 		card.add(left(title));
-		JLabel mode = Ui.label("On the cannon - no gear set", new Color(120, 175, 215));
+		int wornStr = (int) Model.num(ship, "wornStrength");
+		JLabel mode = Ui.label(wornStr > 0
+			? "On the cannon - wearing your best ranged armour (+" + wornStr + " str)"
+			: "On the cannon - no gear set", new Color(120, 175, 215));
 		mode.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		card.add(left(mode));
 		card.add(Box.createVerticalStrut(6));

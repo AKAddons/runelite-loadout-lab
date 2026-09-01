@@ -1463,7 +1463,7 @@ public class CommandEngine
 		entry.put("params", params);
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));
-		Map<String, Object> shipNode = shipNode(mobs);
+		Map<String, Object> shipNode = shipNode(mobs, perMob);
 		if (shipNode != null)
 		{
 			entry.put("ship", shipNode);
@@ -2059,10 +2059,13 @@ public class CommandEngine
 	 * documented-but-stale Privateering scaling over a Sailing-level base,
 	 * marked estimated while NavalCombat.crewFormulaStale(). A crew below
 	 * the cannon's Privateering gate, or a player below its Ranged gate,
-	 * cannot operate it: that cannon prices at zero and says why. Worn-gear
-	 * bonuses join in the render slice; this node prices bare cannons.
+	 * cannot operate it: that cannon prices at zero and says why. The
+	 * player-fired cannon borrows the worn ranged bonuses of the engine's
+	 * best owned ranged set (weapon/shield/ammo excluded, per the wiki);
+	 * crew cannons price bare.
 	 */
-	private Map<String, Object> shipNode(List<MonsterStats> mobs)
+	private Map<String, Object> shipNode(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
 		if (mobs == null || mobs.isEmpty())
 		{
@@ -2089,9 +2092,43 @@ public class CommandEngine
 		String station = String.valueOf(params.get("playerStation"));
 		int priv = params.get("crewPrivateering") instanceof Number
 			? ((Number) params.get("crewPrivateering")).intValue() : 1;
+		// The wiki rule: the player's worn ranged accuracy and strength join
+		// their cannon fire, EXCLUDING the weapon, shield and ammo slots.
+		// The manned player still wears armour - the best owned ranged set
+		// the engine already computed - so the cannon borrows its bonuses.
+		// Crew gear is unknowable and stays at zero.
+		int wornAcc = 0;
+		int wornStr = 0;
+		Object lensForGear = params.get("lensIndex");
+		int gearLens = lensForGear instanceof Number ? ((Number) lensForGear).intValue() : 0;
+		gearLens = Math.min(Math.max(gearLens, 0), (perMob == null ? 1 : perMob.size()) - 1);
+		OptimizerService.StyleResult rangedResult = perMob == null || perMob.size() <= gearLens
+			|| perMob.get(gearLens) == null ? null
+			: perMob.get(gearLens).get(CombatStyle.RANGED);
+		if (rangedResult != null && rangedResult.overallBest != null)
+		{
+			com.loadoutlab.engine.Loadout worn = rangedResult.overallBest.getLoadout();
+			for (com.loadoutlab.data.GearSlot slot : com.loadoutlab.data.GearSlot.values())
+			{
+				if (slot == com.loadoutlab.data.GearSlot.WEAPON
+					|| slot == com.loadoutlab.data.GearSlot.SHIELD
+					|| slot == com.loadoutlab.data.GearSlot.AMMO)
+				{
+					continue;
+				}
+				com.loadoutlab.data.GearItem item = worn.get(slot);
+				if (item != null)
+				{
+					wornAcc += item.getOffensive().getRanged();
+					wornStr += item.getBonuses().getRangedStrength();
+				}
+			}
+		}
 		Map<String, Object> node = new java.util.LinkedHashMap<>();
 		node.put("station", station);
 		node.put("ammo", ammo);
+		node.put("wornAccuracy", wornAcc);
+		node.put("wornStrength", wornStr);
 		List<Map<String, Object>> cannonNodes = new java.util.ArrayList<>();
 		boolean anyCrew = false;
 		double total = 0;
@@ -2141,7 +2178,7 @@ public class CommandEngine
 			if (playerFired)
 			{
 				maxHit = com.loadoutlab.engine.ShipCannon.playerMaxHit(
-					rangedLevel, cannon.strength, ball.strength, 0, false);
+					rangedLevel, cannon.strength, ball.strength, wornStr, false);
 			}
 			else
 			{
@@ -2152,7 +2189,7 @@ public class CommandEngine
 			double chance = com.loadoutlab.engine.ShipCannon.hitChance(
 				playerFired ? rangedLevel : sailingLevel,
 				com.loadoutlab.engine.ShipCannon.equipmentAccuracy(
-					cannon.heavyAccuracy, ball.accuracy, 0),
+					cannon.heavyAccuracy, ball.accuracy, playerFired ? wornAcc : 0),
 				mob.getDefence(), mob.getDefensive().get("heavy"));
 			double dps = com.loadoutlab.engine.ShipCannon.dps(maxHit, chance);
 			c.put("maxHit", maxHit);
