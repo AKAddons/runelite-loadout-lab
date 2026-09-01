@@ -922,9 +922,9 @@ public class RenderSurface
 			}
 			for (String[] entry : CHIPS)
 			{
-				// Thralls hide under the F2P lock AND for a sea lens (at sea
-				// they are unverified and vetoed - a chip that does nothing
-				// is noise, the F2P-chip rule).
+				// Thralls hide under the F2P lock AND for a sea lens (thrall
+				// resurrections cannot be cast on a boat - confirmed
+				// 2026-08-31; a chip that does nothing is noise).
 				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval))
 				{
 					continue;

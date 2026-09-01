@@ -1489,10 +1489,10 @@ public class CommandEngine
 			entry.put("ship", shipNode);
 		}
 		Map<String, Object> thrallsNode = null;
-		// Thralls at sea are UNVERIFIED (Andrew, 2026-08-31: "i don't know
-		// if thrals work") - unverified mechanics add no dps, so the fold
-		// and the trip runes are vetoed for a sea lens until a voyage
-		// confirms them. The param persists; flip = removing this check.
+		// Thralls cannot be cast on a sailing boat (confirmed 2026-08-31;
+		// community-documented, not on the wiki's Boat combat page) - the
+		// fold and the trip runes are permanently vetoed for a sea lens.
+		// The param persists for the land half of a mixed roster.
 		boolean seaLens = false;
 		{
 			Object lensObj = state.paramsNode().get("lensIndex");

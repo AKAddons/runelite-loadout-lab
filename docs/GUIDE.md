@@ -418,6 +418,9 @@ weapon does not, and cannon dps folds into the shown numbers only while
 the crew does all the firing. Player-fired numbers follow the
 wiki's documented formula exactly; the crewmate formula is under
 review on the wiki, so crew numbers track the last documented one.
+Melee cannot attack from a boat, so sea monsters carry no melee card
+and melee spec weapons never ride a sea trip; thrall resurrections
+cannot be cast on a boat, so thralls add nothing at sea.
 
 ![Ship combat](img/ship-combat.png)
 

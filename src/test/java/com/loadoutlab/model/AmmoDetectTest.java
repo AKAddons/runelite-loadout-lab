@@ -185,7 +185,7 @@ class AmmoDetectTest
 	}
 
 	@Test
-	@DisplayName("thralls add nothing at sea until a voyage verifies them")
+	@DisplayName("thralls cannot be cast on a boat - they add nothing at sea")
 	void thrallsVetoedAtSea()
 	{
 		PageState state = new PageState();
@@ -213,7 +213,7 @@ class AmmoDetectTest
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		assertNull(entry.get("thralls"),
-			"unverified mechanics must not add dps at sea");
+			"thrall resurrections cannot be cast on a boat (confirmed 2026-08-31)");
 
 		// The land path keeps its fold.
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
