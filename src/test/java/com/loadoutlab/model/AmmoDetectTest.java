@@ -183,4 +183,53 @@ class AmmoDetectTest
 				"cannonAmmo", "dragon", "cannon1Operator", "you"));
 		assertEquals("dragon", ship.get("ammo"));
 	}
+
+	@Test
+	@DisplayName("thralls add nothing at sea until a voyage verifies them")
+	void thrallsVetoedAtSea()
+	{
+		PageState state = new PageState();
+		state.setParam("thralls", true);
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, raid, onDone) ->
+			{
+			},
+			link);
+		engine.setMagicLevel(99);
+		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		engine.execute("select", Map.of("id", shark.getId()));
+		engine.onResults(shark, Map.of());
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		assertNull(entry.get("thralls"),
+			"unverified mechanics must not add dps at sea");
+
+		// The land path keeps its fold.
+		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		engine.execute("select", Map.of("id", graardor.getId()));
+		engine.onResults(graardor, Map.of());
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+		entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		assertNotNull(entry.get("thralls"), "the land fold must survive the veto");
+	}
 }

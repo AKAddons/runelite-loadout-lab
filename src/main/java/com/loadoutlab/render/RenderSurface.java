@@ -869,6 +869,7 @@ public class RenderSurface
 			// math, and a control that can do nothing is noise (field ask
 			// 2026-08-27). Their params survive for the untick.
 			boolean f2pLocked = Model.flag(params, "f2pOnly");
+			boolean lensNaval = lensedNaval(page);
 			Map<String, Object> history = Model.map(page, "history");
 			if (history != null && undoButton != null)
 			{
@@ -921,7 +922,10 @@ public class RenderSurface
 			}
 			for (String[] entry : CHIPS)
 			{
-				if (f2pLocked && "thralls".equals(entry[1]))
+				// Thralls hide under the F2P lock AND for a sea lens (at sea
+				// they are unverified and vetoed - a chip that does nothing
+				// is noise, the F2P-chip rule).
+				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval))
 				{
 					continue;
 				}
@@ -968,7 +972,6 @@ public class RenderSurface
 			}
 			// Cannons ride the chips section (Andrew, v2) for the LENSED
 			// ship-eligible mob; the per-cannon pickers live on the card.
-			boolean lensNaval = lensedNaval(page);
 			if (lensNaval)
 			{
 				int cannons = Model.id(params, "cannonCount");

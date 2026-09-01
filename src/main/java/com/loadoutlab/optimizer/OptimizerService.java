@@ -3000,6 +3000,7 @@ public class OptimizerService
 			{
 				continue;
 			}
+
 			// In a wilderness low-risk set the carried spec weapon competes
 			// for kept slots like everything else - the whole package (worn
 			// set + this weapon) must stay within the total risk budget.
@@ -3014,6 +3015,16 @@ public class OptimizerService
 			GearItem[] ammoOut = new GearItem[1];
 			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned, request, ammoOut);
 			if (loadout == null)
+			{
+				continue;
+			}
+			// A spec fires under ITS OWN style, so a style the monster is
+			// immune to bars the spec outright. At sea that is the melee
+			// ban (field-verified, Andrew 2026-08-31: "ranged spec weapons
+			// work but not mele"); on land it bars e.g. a chally spec at a
+			// melee-immune mob the cross-style rule used to let through.
+			if (com.loadoutlab.engine.MonsterMechanics.isImmune(
+				monster, spec.getStyle(), loadout, null))
 			{
 				continue;
 			}

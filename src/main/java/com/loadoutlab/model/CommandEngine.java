@@ -1489,7 +1489,21 @@ public class CommandEngine
 			entry.put("ship", shipNode);
 		}
 		Map<String, Object> thrallsNode = null;
-		if (membersFlag("thralls"))
+		// Thralls at sea are UNVERIFIED (Andrew, 2026-08-31: "i don't know
+		// if thrals work") - unverified mechanics add no dps, so the fold
+		// and the trip runes are vetoed for a sea lens until a voyage
+		// confirms them. The param persists; flip = removing this check.
+		boolean seaLens = false;
+		{
+			Object lensObj = state.paramsNode().get("lensIndex");
+			int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
+			if (mobs != null && !mobs.isEmpty())
+			{
+				MonsterStats lensedMob = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
+				seaLens = com.loadoutlab.data.NavalCombat.isNaval(lensedMob.getName());
+			}
+		}
+		if (!seaLens && membersFlag("thralls"))
 		{
 			double dps = com.loadoutlab.engine.ExtraDps.thrallDps(magicLevel);
 			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
@@ -1893,7 +1907,9 @@ public class CommandEngine
 			addUtilityRunes(out, fightSpell, fightSpell + " (fight mechanic)");
 		}
 		Map<String, Object> params = state.paramsNode();
-		if (membersFlag("thralls"))
+		boolean seaMob = stats != null
+			&& com.loadoutlab.data.NavalCombat.isNaval(stats.getName());
+		if (!seaMob && membersFlag("thralls"))
 		{
 			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
 			if (tier != null)
@@ -1922,7 +1938,7 @@ public class CommandEngine
 			String fightBook = com.loadoutlab.data.MonsterSpellbooks.bookFor(stats);
 			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
 				&& !"lunar".equalsIgnoreCase(fightBook);
-			elsewhere |= membersFlag("thralls");
+			elsewhere |= !seaMob && membersFlag("thralls");
 			Object charge = params.get("deathCharge");
 			elsewhere |= !f2pLocked && charge instanceof Number
 				&& ((Number) charge).intValue() > 0;
