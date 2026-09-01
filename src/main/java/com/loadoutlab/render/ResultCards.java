@@ -39,6 +39,22 @@ public class ResultCards
 	private List<Map<String, Object>> dartTiers = List.of();
 	private Map<String, Object> pageWide;
 	private Map<String, Object> pageParams;
+	/** Small sailing skill icon for ship-eligible rows/markers ("naval" is
+	 * not player vernacular - the icon speaks instead). */
+	private java.util.function.Supplier<java.awt.image.BufferedImage> sailingIcon;
+
+	public void setSailingIcon(java.util.function.Supplier<java.awt.image.BufferedImage> icon)
+	{
+		this.sailingIcon = icon;
+	}
+
+	private javax.swing.Icon sailingIconSmall()
+	{
+		java.util.function.Supplier<java.awt.image.BufferedImage> supplier = sailingIcon;
+		java.awt.image.BufferedImage img = supplier == null ? null : supplier.get();
+		return img == null ? null : Ui.icon(img, 14);
+	}
+
 	private javax.swing.JButton addMob;
 
 	void setAddMob(javax.swing.JButton addMob)
@@ -234,25 +250,16 @@ public class ResultCards
 			// mob brings it back with the params intact.
 			Map<String, Object> ship = Model.map(entry, "ship");
 			boolean naval = Model.flag(shown, "naval") && params != null;
-			if (naval)
-			{
-				column.add(shipRow(entry));
-				column.add(Box.createVerticalStrut(6));
-			}
-			if (naval && ship != null
-				&& "cannon".equals(Model.str(pageParams, "playerStation")))
-			{
-				// Manned (REQ-SC-4): no gear set - the output IS the cannons.
-				column.add(cannonOnlyCard(shown, ship));
-			}
-			else
-			{
-				// Gear station: cannon dps folds into the shown numbers the
-				// way thralls already does - the card IS the trip total; the
-				// ship row right above carries the cannon attribution.
-				double shipDps = naval && ship != null ? Model.num(ship, "dps") : 0;
-				column.add(mobCard(shown, tab, bis, thrallsDps + shipDps));
-			}
+			// The card never hides (Andrew, v2): cannons live INSIDE it -
+			// the 1x3 strip above the gear grid, the breakdown below.
+			// Cannon dps folds into the shown numbers only while nobody
+			// mans one; a manned trip's gear is not attacking.
+			boolean manned = ship != null
+				&& "cannon".equals(Model.str(ship, "station"));
+			double shipDps = naval && ship != null && !manned
+				? Model.num(ship, "dps") : 0;
+			column.add(mobCard(shown, tab, bis, thrallsDps + shipDps,
+				naval ? ship : null, naval));
 			column.add(Box.createVerticalStrut(8));
 		}
 		return column;
@@ -304,13 +311,17 @@ public class ResultCards
 		JPanel row = new JPanel(new BorderLayout(4, 0));
 		// Selection is an EDGE, not a box: the active mob wears a 3px
 		// accent bar and a faint tint; the rest stay transparent.
+		boolean sea = Model.flag(mob, "naval");
+		Color edge = sea ? new Color(120, 175, 215) : ACCENT;
 		row.setOpaque(selected);
 		if (selected)
 		{
-			row.setBackground(new Color(46, 56, 46));
+			// A ship mob's selection wears the sea, not the accent green
+			// (REQ-SC-16).
+			row.setBackground(sea ? new Color(40, 50, 60) : new Color(46, 56, 46));
 		}
 		row.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, selected ? 3 : 0, 0, 0, ACCENT),
+			BorderFactory.createMatteBorder(0, selected ? 3 : 0, 0, 0, edge),
 			BorderFactory.createEmptyBorder(4, selected ? 7 : 10, 4, 4)));
 		row.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 28));
 
@@ -323,7 +334,7 @@ public class ResultCards
 			: name.replaceFirst(" - lvl \\d+$", "");
 		JLabel label = new JLabel(cleanName);
 		label.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-		label.setForeground(selected ? ACCENT : new Color(200, 200, 200));
+		label.setForeground(selected ? edge : new Color(200, 200, 200));
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
 		{
 			// The mob's wiki render rides the row; text-only until it
@@ -368,7 +379,28 @@ public class ResultCards
 			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 		};
 		Ui.onClick(label, pick);
-		row.add(label, BorderLayout.CENTER);
+		JLabel sailTag = null;
+		if (sea)
+		{
+			javax.swing.Icon sail = sailingIconSmall();
+			if (sail != null)
+			{
+				sailTag = new JLabel(sail);
+				sailTag.setToolTipText("Ship combat: fought from your boat");
+			}
+		}
+		if (sailTag != null)
+		{
+			JPanel nameSeat = new JPanel(new BorderLayout(4, 0));
+			nameSeat.setOpaque(false);
+			nameSeat.add(label, BorderLayout.CENTER);
+			nameSeat.add(sailTag, BorderLayout.EAST);
+			row.add(nameSeat, BorderLayout.CENTER);
+		}
+		else
+		{
+			row.add(label, BorderLayout.CENTER);
+		}
 
 		// The aligned right block: [icon dps] x - the icon rides right,
 		// snug against its number.
@@ -454,6 +486,12 @@ public class ResultCards
 
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps)
 	{
+		return mobCard(mob, tab, bis, thrallsDps, null, false);
+	}
+
+	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps,
+		Map<String, Object> ship, boolean naval)
+	{
 		JPanel card = new JPanel();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 		card.setBackground(CARD);
@@ -469,8 +507,9 @@ public class ResultCards
 		JLabel navalTag = null;
 		if (Model.flag(mob, "naval"))
 		{
-			navalTag = Ui.label("naval", new Color(120, 175, 215));
-			navalTag.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			javax.swing.Icon sail = sailingIconSmall();
+			navalTag = sail != null ? new JLabel(sail)
+				: Ui.label("sea", new Color(120, 175, 215));
 			navalTag.setToolTipText("Ship combat: fought from your boat");
 		}
 		int mobHp = Model.id(mob, "hp");
@@ -583,6 +622,13 @@ public class ResultCards
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
+		// The cannon strip rides between the assume row and the gear grid
+		// (Andrew's v2 vision): left cannon / shared ammo / right cannon,
+		// each the boost-rack picker, operators inside the rack.
+		if (naval && !bis && (int) Model.num(pageParams, "cannonCount") > 0)
+		{
+			card.add(left(cannonStrip(ship)));
+		}
 		Map<String, Object> shown = Model.map(node, bis ? "bis" : "yours");
 		if (shown == null)
 		{
@@ -605,6 +651,10 @@ public class ResultCards
 				card.add(left(caveat));
 			}
 			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab)));
+		}
+		if (naval && ship != null)
+		{
+			card.add(left(shipBreakdown(ship, shown)));
 		}
 		// The classic style strip sits BELOW the gear view: one tab per
 		// style carrying its icon and that style's shown dps.
@@ -943,126 +993,74 @@ public class ResultCards
 
 	/** One classic local chip: "Exclude (2)" opens the mob-scoped list
 	 * (remove per entry) plus an add-by-search entry. */
-	/** Manned output (REQ-SC-4): the player fires cannon 1, so there is no
-	 * gear set to show - the card lists each cannon's pricing and the total,
-	 * with the estimate caveat when crew numbers are aboard. */
-	private JPanel cannonOnlyCard(Map<String, Object> mob, Map<String, Object> ship)
+	/** The in-card cannon strip (REQ-SC-8): left cannon / shared ammo /
+	 * right cannon, sized like the assume icons, each opening the boost-rack
+	 * picker. Operators live inside each cannon's rack. */
+	private JPanel cannonStrip(Map<String, Object> ship)
 	{
-		JPanel card = new JPanel();
-		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-		card.setBackground(CARD);
-		card.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 1, true),
-			BorderFactory.createEmptyBorder(8, 8, 8, 8)));
-		JLabel title = new JLabel(Model.str(mob, "label"));
-		title.setFont(title.getFont().deriveFont(Font.BOLD));
-		card.add(left(title));
-		int wornStr = (int) Model.num(ship, "wornStrength");
-		JLabel mode = Ui.label(wornStr > 0
-			? "On the cannon - wearing your best ranged armour (+" + wornStr + " str)"
-			: "On the cannon - no gear set", new Color(120, 175, 215));
-		mode.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-		card.add(left(mode));
-		card.add(Box.createVerticalStrut(6));
+		int count = (int) Model.num(pageParams, "cannonCount");
+		List<Map<String, Object>> cannonNodes = ship == null
+			? java.util.Collections.emptyList() : Model.list(ship, "cannons");
+		JPanel strip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 6, 0));
+		strip.setBackground(CARD);
+		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
+		strip.add(ammoButton());
+		if (count > 1)
+		{
+			strip.add(cannonButton(1, cannonNodes.size() > 1 ? cannonNodes.get(1) : null));
+		}
+		return strip;
+	}
+
+	/** The plain-words dps breakdown (Andrew, v2): what each cannon adds,
+	 * what the gear adds, and the total - the card never hides. */
+	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
+	{
+		JPanel box = new JPanel();
+		box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+		box.setBackground(CARD);
+		box.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
+		boolean manned = "cannon".equals(Model.str(ship, "station"));
+		double total = 0;
+		int i = 1;
 		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
 		{
 			String blocked = Model.str(cannon, "blocked");
-			String line = cap(Model.str(cannon, "tier")) + " cannon ("
-				+ ("player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew") + "): "
-				+ (blocked != null ? blocked
-					: "max " + (int) Model.num(cannon, "maxHit")
-						+ ", " + String.format(java.util.Locale.ROOT, "%.2f", Model.num(cannon, "dps"))
-						+ " dps (" + cap(Model.str(cannon, "ball")) + " balls)");
+			double dps = Model.num(cannon, "dps");
+			total += dps;
+			String who = "player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew";
+			String line = "Cannon " + i + " (" + cap(Model.str(cannon, "tier")) + ", "
+				+ who + "): " + (blocked != null ? blocked
+					: String.format(java.util.Locale.ROOT, "+%.2f dps", dps));
 			JLabel row = Ui.label(line, blocked != null
-				? new Color(220, 140, 120) : new Color(190, 190, 190));
-			card.add(left(row));
+				? new Color(220, 140, 120) : new Color(150, 190, 220));
+			row.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			box.add(left(row));
+			i++;
 		}
-		card.add(Box.createVerticalStrut(4));
-		JLabel total = new JLabel(String.format(java.util.Locale.ROOT, "%.2f dps", Model.num(ship, "dps")));
-		total.setFont(total.getFont().deriveFont(Font.BOLD));
-		total.setForeground(new Color(130, 200, 130));
-		card.add(left(total));
+		double gearDps = shownSide == null ? 0 : Model.num(shownSide, "dps");
+		JLabel gear = Ui.label(manned
+			? "Gear: manning cannon 1 - armour bonuses count, attacks do not"
+			: String.format(java.util.Locale.ROOT, "Gear: +%.2f dps", gearDps),
+			new Color(190, 190, 190));
+		gear.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		box.add(left(gear));
+		if (!manned)
+		{
+			total += gearDps;
+		}
+		JLabel sum = new JLabel(String.format(java.util.Locale.ROOT, "Trip total: %.2f dps", total));
+		sum.setFont(sum.getFont().deriveFont(Font.BOLD, 12f));
+		sum.setForeground(new Color(130, 200, 130));
+		box.add(left(sum));
 		if (Model.flag(ship, "estimated"))
 		{
 			JLabel est = Ui.label("Crew damage is an estimate - formula under review on the wiki",
 				new Color(150, 150, 150));
 			est.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-			card.add(left(est));
+			box.add(left(est));
 		}
-		return card;
-	}
-
-	/** The ship controls (REQ-SC-2/3/3b/5): cannon count cycles like the
-	 * D-charge chip; each cannon and the shared ammo open the SAME icon-rack
-	 * dropdown the boost/prayer pickers use; the station toggles the player
-	 * between a cannon and their gear; the crew chip cycles Privateering.
-	 * Blocked cannons wear a red ring and say why. */
-	private JPanel shipRow(Map<String, Object> entry)
-	{
-		Map<String, Object> ship = Model.map(entry, "ship");
-		int count = (int) Model.num(pageParams, "cannonCount");
-		JPanel row = new JPanel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
-		row.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		javax.swing.JButton countChip = new javax.swing.JButton("Cannons " + count);
-		countChip.setForeground(count > 0 ? new Color(130, 200, 130) : new Color(150, 150, 150));
-		countChip.setContentAreaFilled(false);
-		countChip.setBorder(new RoundedBorder(count > 0
-			? new Color(95, 160, 95) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
-		countChip.setFocusable(false);
-		countChip.setToolTipText("Ship cannons carried - cycles 0 / 1 / 2");
-		countChip.addActionListener(e -> commands.send("set-param",
-			Map.of("param", "cannonCount", "value", (count + 1) % 3)));
-		row.add(countChip);
-		if (count > 0)
-		{
-			List<Map<String, Object>> cannonNodes = ship == null
-				? java.util.Collections.emptyList() : Model.list(ship, "cannons");
-			for (int i = 0; i < count; i++)
-			{
-				row.add(cannonButton(i, i < cannonNodes.size() ? cannonNodes.get(i) : null));
-			}
-			row.add(ammoButton());
-			boolean manned = "cannon".equals(Model.str(pageParams, "playerStation"));
-			javax.swing.JButton station = new javax.swing.JButton(manned ? "On cannon" : "With gear");
-			station.setForeground(manned ? new Color(130, 200, 130) : new Color(190, 190, 190));
-			station.setContentAreaFilled(false);
-			station.setBorder(new RoundedBorder(manned
-				? new Color(95, 160, 95) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
-			station.setFocusable(false);
-			station.setToolTipText(manned
-				? "You man cannon 1 - your ranged level fires it, no gear set"
-				: "You fight with gear while the crew fires the cannons");
-			station.addActionListener(e -> commands.send("set-param",
-				Map.of("param", "playerStation", "value", manned ? "gear" : "cannon")));
-			row.add(station);
-			boolean anyCrew = count == 2 || !manned;
-			if (anyCrew)
-			{
-				int priv = Math.max(1, (int) Model.num(pageParams, "crewPrivateering"));
-				javax.swing.JButton crew = new javax.swing.JButton("Crew P" + priv);
-				crew.setForeground(new Color(190, 190, 190));
-				crew.setContentAreaFilled(false);
-				crew.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 14));
-				crew.setFocusable(false);
-				crew.setToolTipText("Crew Privateering (1-4) - cycles; rune and dragon cannons need P4"
-					+ (ship != null && Model.flag(ship, "estimated")
-						? ". Crew damage is an estimate - the formula is under review on the wiki" : ""));
-				crew.addActionListener(e -> commands.send("set-param",
-					Map.of("param", "crewPrivateering", "value", priv % 4 + 1)));
-				row.add(crew);
-			}
-			if (ship != null)
-			{
-				double dps = Model.num(ship, "dps");
-				JLabel total = Ui.label(String.format(java.util.Locale.ROOT, "+%.1f dps", dps),
-					new Color(120, 175, 215));
-				total.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-				total.setToolTipText("Cannon dps added"
-					+ (Model.flag(ship, "estimated") ? " (crew estimate)" : ""));
-				row.add(total);
-			}
-		}
-		return row;
+		return box;
 	}
 
 	/** One cannon's icon button: the skill-guide item illustration, a red
@@ -1101,6 +1099,21 @@ public class ResultCards
 						Map.of("param", param, "value", option.tier))));
 			}
 			menu.add(rack);
+			// The double rack (Andrew, v2): who fires it, right under the
+			// materials. A crew pick below the cannon's gate auto-raises.
+			menu.addSeparator();
+			String opParam = index == 0 ? "cannon1Operator" : "cannon2Operator";
+			String current = Model.str(pageParams, opParam);
+			menu.add(pickChoice("You man this cannon", "you".equals(current),
+				() -> commands.send("set-param", Map.of("param", opParam, "value", "you"))));
+			for (int p = 1; p <= 4; p++)
+			{
+				final String pick = "crew" + p;
+				String label = "Crewmate - Privateering " + p
+					+ (p < cannon.privateering ? " (raises to " + cannon.privateering + ")" : "");
+				menu.add(pickChoice(label, pick.equals(current),
+					() -> commands.send("set-param", Map.of("param", opParam, "value", pick))));
+			}
 			menu.show(button, 0, button.getHeight());
 		});
 		return button;
@@ -1945,8 +1958,21 @@ public class ResultCards
 				Model.id(def, "magic"), Model.id(def, "ranged"),
 				Model.id(stats, "strength"), Model.id(stats, "rangedStrength"),
 				Model.id(stats, "magicDamage"), Model.id(stats, "prayer"));
-			statColumn.add(statIconLine("Stats", fullBonuses, statText,
-				net.runelite.api.SpriteID.TAB_COMBAT));
+			JLabel statsLine = statIconLine("Stats", fullBonuses, statText,
+				net.runelite.api.SpriteID.TAB_COMBAT);
+			// The line LOOKS like its clickable neighbours, so it answers a
+			// click with the same table the hover shows (field report
+			// 2026-08-31: "clicking the stats button doesn't do anything").
+			final String statsHtml = fullBonuses;
+			Ui.onClick(statsLine, () ->
+			{
+				javax.swing.JPopupMenu pop = new javax.swing.JPopupMenu();
+				JLabel body = new JLabel(statsHtml);
+				body.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+				pop.add(body);
+				pop.show(statsLine, 0, statsLine.getHeight());
+			});
+			statColumn.add(statsLine);
 		}
 		Object counted = card.get("counted");
 		if (counted instanceof List && !((List<?>) counted).isEmpty())

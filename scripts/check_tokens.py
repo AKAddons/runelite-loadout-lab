@@ -18,11 +18,14 @@ import os
 import re
 import sys
 
-CAP = 200_000          # the bot's hard limit
-FAIL_AT = 195_000      # block submit here. The bot's tokenizer counts a touch
-                       # LOWER than ours (~260k vs our 268k pre-reduction), so a
-                       # 195k reading here is comfortably under the bot's 200k.
-WARN_AT = 185_000      # post-merge-back watermark (2026-08-18: the hub's
+CAP = 200_000          # the bot's hard limit, in the BOT's tokens
+# Ratio measured AT THE EDGE, 2026-08-31: Goal Planner hub PR #15763 passed
+# the bot's size check at 202,482 of OUR tokens (bot ~0.97x ours => ~196k to
+# its 200k). FAIL_AT sits in OUR tokens with that margin: 202k here is ~196k
+# there. Relaxed from 195k for the 0.5.0 design arc (Andrew, 2026-08-31);
+# revisit before submitting anything above the old 195k line.
+FAIL_AT = 202_000      # block submit here (~196k in bot tokens)
+WARN_AT = 195_000      # post-merge-back watermark (2026-08-18: the hub's
                        # single-plugin ruling brought the renderer home at
                        # 177,481). Data belongs in resources; big new
                        # features budget tokens FIRST. Crossing this =

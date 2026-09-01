@@ -162,6 +162,9 @@ public class LoadoutLabPlugin extends Plugin
 	private SpriteManager spriteManager;
 
 	@Inject
+	private net.runelite.client.game.SkillIconManager skillIconManager;
+
+	@Inject
 	private ChatboxItemSearch chatboxItemSearch;
 
 	@Inject
@@ -593,6 +596,10 @@ public class LoadoutLabPlugin extends Plugin
 							? java.util.Collections.emptyList() : engine.searchOptions(query));
 					});
 				internalSurface.setSpriteManager(spriteManager);
+				internalSurface.setSailingIcon(() ->
+					skillIconManager.getSkillImage(net.runelite.api.Skill.SAILING, true));
+				cards.setSailingIcon(() ->
+					skillIconManager.getSkillImage(net.runelite.api.Skill.SAILING, true));
 				// Two display settings that described behaviour they did
 				// not control until 2026-08-22.
 				internalSurface.setDisplayGates(

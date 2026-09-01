@@ -26,6 +26,22 @@ public class RenderSurface
 	private final Searcher searcher;
 	private net.runelite.client.game.SpriteManager spriteManager;
 
+	/** The small sailing skill icon - ship-eligible rows wear it instead of
+	 * any text: "naval" is not player vernacular (Andrew, v2 review). */
+	private java.util.function.Supplier<java.awt.image.BufferedImage> sailingIcon;
+
+	public void setSailingIcon(java.util.function.Supplier<java.awt.image.BufferedImage> icon)
+	{
+		this.sailingIcon = icon;
+	}
+
+	javax.swing.Icon sailingIconSmall()
+	{
+		java.util.function.Supplier<java.awt.image.BufferedImage> supplier = sailingIcon;
+		java.awt.image.BufferedImage img = supplier == null ? null : supplier.get();
+		return img == null ? null : Ui.icon(img, 14);
+	}
+
 	public void setSpriteManager(net.runelite.client.game.SpriteManager spriteManager)
 	{
 		this.spriteManager = spriteManager;
@@ -143,14 +159,20 @@ public class RenderSurface
 		{
 			row.setFont(row.getFont().deriveFont(java.awt.Font.BOLD));
 		}
-		// Ship-combat rows announce themselves before selection: a sea-blue
-		// row plus a plain-text suffix (REQ-SC-1; icons would trip the
-		// ASCII glyph gate, colour alone would not survive a glance).
+		// Ship-combat rows announce themselves before selection: sea-blue
+		// with the sailing skill icon after the name (REQ-SC-1/16; an image
+		// icon, so the ASCII glyph gate stays clean).
 		if (Model.flag(match, "naval"))
 		{
-			row.setText(Model.str(match, "label") + "  - naval");
 			row.setForeground(new java.awt.Color(120, 175, 215));
 			row.setToolTipText("Ship combat: fought from your boat");
+			javax.swing.Icon sail = sailingIconSmall();
+			if (sail != null)
+			{
+				row.setIcon(sail);
+				row.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+				row.setIconTextGap(5);
+			}
 		}
 		row.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 8, 3, 8));
 		row.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
@@ -920,6 +942,29 @@ public class RenderSurface
 					"Cycles: dragonfire shield required / regular / super antifire",
 					() -> commands.send("set-param",
 						Map.of("param", "antifireMode", "value", (af + 1) % 3))));
+			}
+			// Cannons ride the chips section (Andrew, v2) for the LENSED
+			// ship-eligible mob; the per-cannon pickers live on the card.
+			boolean lensNaval = false;
+			{
+				int lens = Model.id(params, "lensIndex");
+				for (Map<String, Object> entry : Model.list(page, "entries"))
+				{
+					java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
+					if (!entryMobs.isEmpty())
+					{
+						int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
+						lensNaval |= Model.flag(entryMobs.get(shown), "naval");
+					}
+				}
+			}
+			if (lensNaval)
+			{
+				int cannons = Model.id(params, "cannonCount");
+				chipRow.add(pill("Cannons " + cannons, cannons > 0, (cannons + 1) % 3 > 0,
+					"Ship cannons carried - cycles 0 / 1 / 2",
+					() -> commands.send("set-param",
+						Map.of("param", "cannonCount", "value", (cannons + 1) % 3))));
 			}
 			int dCharge = Model.id(params, "deathCharge");
 			if (!f2pLocked)

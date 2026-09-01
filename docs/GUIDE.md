@@ -401,20 +401,23 @@ many items came in this way.
 ### Ship combat (cannons)
 
 Sea monsters from the Sailing update - sharks, krakens, rays, orcas and
-the rest - are fought from your boat, and their search rows say so with a
-sea-blue "- naval" tag. Selecting one adds the ship row above the card:
-Cannons cycles 0 / 1 / 2, each carried cannon is an icon that opens the
-same picker rack as the boosts and prayers (all seven materials, bronze
-to dragon), and the cannonball picker offers one shared tier - only
-tiers every carried cannon can fire, so a mithril + dragon pair tops out
-at mithril balls. "On cannon" puts you at cannon 1 (your visible Ranged
-level fires it, and the card shows cannon-only output - no gear set);
-"With gear" keeps your gear cards and folds the cannon dps into the
-shown numbers, the same way thralls fold in. Crew-fired cannons scale
-with the Crew P1-P4 pick, and rune/dragon cannons need P4 crew to
-operate - a blocked cannon wears a red ring that says why. Crew damage
-is marked as an estimate while the crewmate formula is under review on
-the wiki; player-fired numbers are exact to the documented formula.
+the rest - are fought from your boat: their search rows turn sea-blue and
+wear the sailing icon, and the selected row and card header carry it too. The Cannons chip (0 / 1 / 2) rides the chip
+row; the cannons themselves live on the card - a cannon / ammo / cannon
+strip between the assume icons and the gear grid, each opening the same
+picker rack as the boosts and prayers. A cannon's rack picks its
+material (all seven, bronze to dragon) AND who fires it: you, or a
+crewmate at Privateering 1-4 - picking a material automatically raises
+the crew to the minimum that can man it, and rune/dragon cannons demand
+P4. The cannonball picker offers one shared tier - only tiers every
+carried cannon can fire, so a mithril + dragon pair tops out at mithril
+balls. The card never hides: a breakdown under the gear view says what
+each cannon adds and what your gear adds - manning a cannon means your
+armour still counts (its ranged bonuses boost your cannon) while your
+weapon does not, and cannon dps folds into the shown numbers only while
+the crew does all the firing. Crew damage is marked as an estimate
+while the crewmate formula is under review on the wiki; player-fired
+numbers are exact to the documented formula.
 
 ![Ship combat](img/ship-combat.png)
 
