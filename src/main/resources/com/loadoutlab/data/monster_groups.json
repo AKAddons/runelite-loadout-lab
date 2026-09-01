@@ -332,7 +332,8 @@
    "tob entry",
    "entry mode tob"
   ],
-  "note": "Entry-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style."
+  "note": "Entry-mode rows for all six rooms. Each Nylocas Vasilias form takes damage only from its own style.",
+  "raid": true
  },
  {
   "name": "Theatre of Blood (Hard)",
@@ -401,7 +402,8 @@
    "verzik",
    "hmt"
   ],
-  "note": "Hard-mode rows for all six rooms; the corpus merges normal-mode stats into these labels, so this is also the closest fit for the regular raid. Each Nylocas Vasilias form takes damage only from its own style."
+  "note": "Hard-mode rows for all six rooms; the corpus merges normal-mode stats into these labels, so this is also the closest fit for the regular raid. Each Nylocas Vasilias form takes damage only from its own style.",
+  "raid": true
  },
  {
   "name": "Tombs of Amascut",
@@ -482,7 +484,8 @@
    "amascut",
    "wardens"
   ],
-  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), the ejected core (the spec-dump window - melee always maxes there), and the P3 enraged Wardens. The Invocation chip applies the official defence scaling to every row; kill-time (hp) scaling is not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them."
+  "note": "The four paths (Akkha as his three prayer phases - one style live at a time) (Kephri's bigger scarabs included), the P1 Obelisk, the P2 Wardens (each takes one style only), the ejected core (the spec-dump window - melee always maxes there), and the P3 enraged Wardens. The Invocation chip applies the official defence scaling to every row; kill-time (hp) scaling is not modeled yet. Kephri's scarab adds are deliberately OUT - players walk or ignore them (field decision 2026-08-06); + Add mob covers whoever kills them.",
+  "raid": true
  },
  {
   "name": "Chambers of Xeric",
@@ -549,7 +552,8 @@
    "xeric",
    "olm"
   ],
-  "note": "The common combat rooms and Olm (head + both claws). A Vanguard's label is its OWN attack style - each is weak to the next step of the combat triangle (mage Vanguard to ranged, melee to magic, ranged to melee). Rooms roll per raid - treat the roster as the pool."
+  "note": "The common combat rooms and Olm (head + both claws). A Vanguard's label is its OWN attack style - each is weak to the next step of the combat triangle (mage Vanguard to ranged, melee to magic, ranged to melee). Rooms roll per raid - treat the roster as the pool.",
+  "raid": true
  },
  {
   "name": "Fortis Colosseum",

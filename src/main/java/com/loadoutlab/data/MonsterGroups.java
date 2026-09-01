@@ -32,9 +32,10 @@ public final class MonsterGroups
 		private final List<String> aliases;
 		private final int inventory;
 		private final boolean comingSoon;
+		private final boolean raid;
 
 		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases,
-			int inventory, boolean comingSoon)
+			int inventory, boolean comingSoon, boolean raid)
 		{
 			this.comingSoon = comingSoon;
 			this.name = name;
@@ -42,6 +43,7 @@ public final class MonsterGroups
 			this.mobs = Collections.unmodifiableList(mobs);
 			this.aliases = Collections.unmodifiableList(aliases);
 			this.inventory = inventory;
+			this.raid = raid;
 		}
 
 		/** The curated Inventory default for this group (0 = none - the
@@ -49,6 +51,13 @@ public final class MonsterGroups
 		public int getInventory()
 		{
 			return inventory;
+		}
+
+		/** A raid selection: shared supplied boosts, big inventories, and
+		 * never a slayer-task context (Andrew, 2026-08-31). */
+		public boolean isRaid()
+		{
+			return raid;
 		}
 
 		public String getName()
@@ -170,8 +179,9 @@ public final class MonsterGroups
 				if (!mobs.isEmpty())
 				{
 					int inventory = row.has("inventory") ? row.get("inventory").getAsInt() : 0;
+					boolean raid = row.has("raid") && row.get("raid").getAsBoolean();
 					boolean comingSoon = row.has("comingSoon") && row.get("comingSoon").getAsBoolean();
-					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory, comingSoon));
+					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory, comingSoon, raid));
 				}
 			}
 		}

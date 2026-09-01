@@ -1483,6 +1483,8 @@ public class CommandEngine
 		entry.put("params", params);
 		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));
+		entry.put("raidSelection",
+			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
 		if (shipNode != null)
 		{
@@ -1573,7 +1575,8 @@ public class CommandEngine
 			{
 				if (groupPick != null)
 				{
-					state.selectRoster(groupPick.getMobs(), groupPick.getName());
+					state.selectRoster(groupPick.getMobs(), groupPick.getName(),
+						groupPick.isRaid());
 				}
 				else
 				{
@@ -1610,24 +1613,42 @@ public class CommandEngine
 				// recommendation - the display honored the exclusive but
 				// the COMPUTE derived tradeables=-1 from the raw param and
 				// ran unconstrained).
+				boolean anyWilderness = false;
 				for (MonsterStats m : selected)
 				{
+					anyWilderness |= com.loadoutlab.data.WildernessMonsters.isWilderness(m);
 					if (com.loadoutlab.data.WildernessMonsters.isExclusive(m))
 					{
 						state.setParam("inWilderness", true);
-						break;
 					}
 				}
-				// Recommended trip inventory per selection (Andrew
-				// 2026-08-14): raids carry 8 swaps, other groups 3, a
-				// single mob 1. A fresh selection re-recommends; the
-				// slider overrides after.
-				boolean raid = !selected.isEmpty();
-				for (MonsterStats m : selected)
+				// A selection with NO wilderness-capable member cannot be a
+				// wilderness trip: the param resets, or a stale wildy
+				// session warps the next one (field report 2026-08-31: a
+				// ToA roster under "Wilderness: yes" + a 75k risk cap chose
+				// cheap-to-lose junk - Ring of shadows, Shayzien boots -
+				// over real gear; the risk optimizer working in the wrong
+				// context).
+				if (!anyWilderness)
 				{
-					raid &= com.loadoutlab.engine.RaidBoosts.suppliedBoost(m) != null;
+					state.setParam("inWilderness", false);
 				}
-				state.setParam("maxSwaps", raid ? 8 : selected.size() > 1 ? 3 : 1);
+				// Raids are never a slayer-task context: the chip is
+				// suppressed elsewhere, and the PARAM resets too so slayer
+				// helm math never leaks in (same report: "On task: yes").
+				if (groupPick != null && groupPick.isRaid())
+				{
+					state.setParam("onTask", false);
+				}
+				// Recommended trip inventory per selection (Andrew
+				// 2026-08-14: raids 8, other groups 3, singles 1). The
+				// GROUP DATA declares its inventory - deriving raid-ness
+				// from supplied-boost coverage missed Theatre of Blood,
+				// which has no supplied boost (field report 2026-08-31).
+				state.setParam("maxSwaps",
+					groupPick != null && groupPick.getInventory() > 0
+						? groupPick.getInventory()
+						: selected.size() > 1 ? 3 : 1);
 				java.util.function.Supplier<Map<String, Object>> seeder = assumptionSeeder;
 				if (seeder != null)
 				{

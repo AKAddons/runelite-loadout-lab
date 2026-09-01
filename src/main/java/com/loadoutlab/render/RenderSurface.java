@@ -907,6 +907,18 @@ public class RenderSurface
 						boostUniform = false;
 					}
 				}
+			// Raids are never a slayer-task context (Andrew, 2026-08-31:
+			// Skeletal Mystic's corpus slayer flag lit the chip for CoX).
+			boolean raidSelection = false;
+			for (Map<String, Object> entry : Model.list(page, "entries"))
+			{
+				raidSelection |= Model.flag(entry, "raidSelection");
+			}
+			if (raidSelection)
+			{
+				anySlayer = false;
+				anyTaskOnly = false;
+			}
 			if (anyTaskOnly && !f2pLocked)
 			{
 				chipRow.add(taskPill(true, true, "Task-only boss - always on", () ->

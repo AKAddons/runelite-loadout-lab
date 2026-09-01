@@ -45,6 +45,9 @@ public class PageState
 	 * (Andrew: "automatically assume you are going to pick a crew member at
 	 * minimum that can man the cannon") and never lowers an explicit pick. */
 	private String shipKeel = "regular";
+	/** True while the selection is a RAID group (ToB included - the boost
+	 * heuristic missed it): raids are never a slayer-task context. */
+	private boolean raidSelection;
 	private String cannon1Operator = "crew1";
 	private String cannon2Operator = "crew1";
 	private String spellbookLock = "";
@@ -85,6 +88,7 @@ public class PageState
 
 	public synchronized void select(MonsterStats mob)
 	{
+		this.raidSelection = false;
 		this.mob = mob;
 		this.rosterMobs = null;
 		this.rosterName = null;
@@ -92,6 +96,13 @@ public class PageState
 
 	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name)
 	{
+		selectRoster(mobs, name, false);
+	}
+
+	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name,
+		boolean raid)
+	{
+		this.raidSelection = raid;
 		this.mob = null;
 		this.rosterMobs = mobs;
 		this.rosterName = name;
@@ -327,6 +338,7 @@ public class PageState
 		node.put("cannon2Material", cannon2Material);
 		node.put("cannonAmmo", cannonAmmo);
 		node.put("shipKeel", shipKeel);
+		node.put("raidSelection", raidSelection);
 		node.put("cannon1Operator", cannon1Operator);
 		node.put("cannon2Operator", cannon2Operator);
 		node.put("spellbookLock", spellbookLock);
