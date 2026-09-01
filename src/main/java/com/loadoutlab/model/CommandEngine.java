@@ -1841,6 +1841,18 @@ public class CommandEngine
 			{
 				continue;
 			}
+			if (com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT.equals(category))
+			{
+				// Repair kits are the ship's food - recommended only for a
+				// sea mob that can actually damage YOUR keel (Andrew,
+				// 2026-08-31: ">0 damage"). A dragon keel at a hammerhead
+				// carries nothing.
+				String keel = String.valueOf(state.paramsNode().get("shipKeel"));
+				if (com.loadoutlab.data.NavalCombat.keelMaxHit(lensed.getName(), keel) <= 0)
+				{
+					continue;
+				}
+			}
 			if (com.loadoutlab.data.TripSupplies.ANTIVENOM.equals(category))
 			{
 				boolean venomous = false;

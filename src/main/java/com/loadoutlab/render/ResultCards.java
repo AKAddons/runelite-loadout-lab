@@ -1847,8 +1847,8 @@ public class ResultCards
 			String keel = Model.str(shipIncoming, "keel");
 			int keelMax = (int) Model.num(shipIncoming, "maxHit");
 			JLabel shipLine = statIconLine(
-				String.format(java.util.Locale.ROOT, "~%.1f (%s)",
-					Model.num(shipIncoming, "dtps"), cap(keel)),
+				String.format(java.util.Locale.ROOT, "~%.1f (max %d, %s)",
+					Model.num(shipIncoming, "dtps"), keelMax, cap(keel)),
 				keelMax == 0
 					? "Ship damage taken: a " + cap(keel)
 						+ " keel cannot be hit by this monster - click to change the keel"

@@ -999,6 +999,7 @@ public class LoadoutLabPlugin extends Plugin
 			TripSupplies.SURGE,
 			TripSupplies.SPELLBOOK_CAPE,
 			TripSupplies.ANTIVENOM,
+			TripSupplies.SHIP_REPAIR_KIT,
 			"arceuusAccess"})
 		{
 			defaults.put(category, supplyDefaults == null

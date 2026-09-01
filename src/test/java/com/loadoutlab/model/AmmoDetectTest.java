@@ -232,4 +232,55 @@ class AmmoDetectTest
 		entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		assertNotNull(entry.get("thralls"), "the land fold must survive the veto");
 	}
+
+	@Test
+	@DisplayName("repair kits recommend only when the mob can damage YOUR keel")
+	void repairKitsFollowTheKeel()
+	{
+		java.util.function.BiFunction<String, String, Boolean> kitShown = (mobName, keel) ->
+		{
+			PageState state = new PageState();
+			state.setParam("shipKeel", keel);
+			CaptureLink link = new CaptureLink();
+			CommandEngine engine = new CommandEngine(data, state,
+				(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+					boosts, prayers, budget, swaps, raid, onDone) ->
+				{
+				},
+				link);
+			engine.setStoreOps(new TestStoreOps());
+			engine.setOwnedCheck(id -> id == 31982); // a rosewood kit banked
+			engine.setSupplyDefaults(() -> Map.of(
+				com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT, "DETECT_BEST"));
+			MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
+			engine.execute("select", Map.of("id", mob.getId()));
+			engine.onResults(mob, Map.of());
+			try
+			{
+				javax.swing.SwingUtilities.invokeAndWait(() ->
+				{
+				});
+			}
+			catch (Exception ex)
+			{
+				throw new AssertionError(ex);
+			}
+			Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+			for (Object node : (List<?>) entry.get("supplies"))
+			{
+				if ("shipRepairKit".equals(((Map<?, ?>) node).get("category")))
+				{
+					return true;
+				}
+			}
+			return false;
+		};
+		// A hammerhead dents a regular keel (max 7): kits recommended.
+		assertTrue(kitShown.apply("hammerhead shark", "regular"));
+		// The same shark cannot touch a dragon keel (max 0): no kits.
+		assertFalse(kitShown.apply("hammerhead shark", "dragon"),
+			"a mob doing 0 damage to your keel needs no repair kits");
+		// Land mobs never see the category.
+		assertFalse(kitShown.apply("general graardor", "regular"));
+	}
 }
