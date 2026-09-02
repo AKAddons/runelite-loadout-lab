@@ -92,7 +92,14 @@ class MonsterGroupsTest
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
 		// Kephri's scarab adds are deliberately absent, same call as the
 		// Sire's spawn/scion (field decision 2026-08-06).
-		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
+		// P3 is ONE enraged Warden - the one left alive after P2 (Andrew
+		// 2026-09-02); both carry the same stats, so a single row.
+		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
+		java.util.List<MonsterStats> enraged = byName("Tombs of Amascut").getMobs().stream()
+			.filter(m -> "Enraged".equals(m.getVersion()))
+			.collect(java.util.stream.Collectors.toList());
+		assertEquals(1, enraged.size());
+		assertTrue(enraged.get(0).label().contains("left alive"), enraged.get(0).label());
 		assertTrue(byName("Tombs of Amascut").getMobs().stream()
 			.noneMatch(m -> m.getName().contains("Scarab")));
 		// The P2 spec-dump window rides the Core-ejected row, nicked so
