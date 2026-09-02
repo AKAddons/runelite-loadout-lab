@@ -44,7 +44,7 @@ public class PageState
 	 * RAISES a crew operator to the minimum Privateering that can man it
 	 * (Andrew: "automatically assume you are going to pick a crew member at
 	 * minimum that can man the cannon") and never lowers an explicit pick. */
-	private String shipKeel = "regular";
+	private String shipKeel = "none";
 	/** True while the selection is a RAID group (ToB included - the boost
 	 * heuristic missed it): raids are never a slayer-task context. */
 	private boolean raidSelection;
@@ -180,7 +180,7 @@ public class PageState
 				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
 				return true;
 			case "shipKeel":
-				shipKeel = String.valueOf(value);
+				shipKeel = com.loadoutlab.data.NavalCombat.normalizeKeel(String.valueOf(value));
 				return true;
 			case "cannonAmmo":
 				cannonAmmo = String.valueOf(value);

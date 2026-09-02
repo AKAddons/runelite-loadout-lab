@@ -166,16 +166,16 @@
   "Albatross"
  ],
  "keels": [
-  "regular",
-  "oak",
-  "teak",
-  "mahogany",
-  "camphor",
-  "ironwood",
-  "rosewood",
+  "none",
+  "bronze",
+  "iron",
+  "steel",
+  "mithril",
+  "adamant",
+  "rune",
   "dragon"
  ],
- "$keelNote": "Effective max hit PER KEEL from the wiki's Boat combat monster table (armour already applied; a 0 means that keel is not hittable by this monster). Column order is the wood ladder up to dragon. Parsed 2026-08-31.",
+ "$keelNote": "Effective max hit PER KEEL from the wiki's Boat combat monster table (armour already applied; a 0 means that keel is not hittable by this monster). Column order is the table's icon order: none, then the metal ladder bronze..rune, then dragon (wiki Keel page; corrected 2026-09-02 - the first parse labelled these columns with the hull wood ladder). Parsed 2026-08-31.",
  "keelMaxHits": {
   "Dolphin": [
    2,

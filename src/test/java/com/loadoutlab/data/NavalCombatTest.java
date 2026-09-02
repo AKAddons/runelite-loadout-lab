@@ -60,6 +60,18 @@ class NavalCombatTest
 	void keelRowsCoverTheRoster()
 	{
 		assertEquals(8, NavalCombat.keels().size());
+		// Keels are METAL tiers (wiki Keel page; Andrew 2026-09-02: "there is
+		// a rune keel but not a mahogany keel"). The Boat combat table's
+		// columns read None, Bronze, Iron, Steel, Mithril, Adamant, Rune,
+		// Dragon - the numbers were parsed right, the names were the hull
+		// wood ladder.
+		assertEquals(java.util.List.of("none", "bronze", "iron", "steel", "mithril",
+			"adamant", "rune", "dragon"), NavalCombat.keels());
+		// A persisted pre-0.5.0 wood name lands on the same column.
+		assertEquals("rune", NavalCombat.normalizeKeel("rosewood"));
+		assertEquals("none", NavalCombat.normalizeKeel("regular"));
+		assertEquals("dragon", NavalCombat.normalizeKeel("dragon"));
+		assertEquals("steel", NavalCombat.normalizeKeel("steel"));
 		for (String name : NavalCombat.navalNames())
 		{
 			for (String keel : NavalCombat.keels())
@@ -69,7 +81,8 @@ class NavalCombatTest
 			}
 		}
 		// Spot pins straight off the wiki table.
-		assertEquals(7, NavalCombat.keelMaxHit("Hammerhead shark", "regular"));
+		assertEquals(7, NavalCombat.keelMaxHit("Hammerhead shark", "none"));
+		assertEquals(0, NavalCombat.keelMaxHit("Hammerhead shark", "rune"));
 		assertEquals(0, NavalCombat.keelMaxHit("Hammerhead shark", "dragon"));
 		assertEquals(12, NavalCombat.keelMaxHit("Vampyre kraken", "dragon"));
 		assertEquals(-1, NavalCombat.keelMaxHit("General Graardor", "regular"));

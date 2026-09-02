@@ -1917,7 +1917,8 @@ public class ResultCards
 				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
 				for (String option : com.loadoutlab.data.NavalCombat.keels())
 				{
-					menu.add(pickChoice(cap(option) + " keel", option.equals(keel),
+					menu.add(pickChoice("none".equals(option) ? "No keel" : cap(option) + " keel",
+						option.equals(keel),
 						() -> commands.send("set-param",
 							Map.of("param", "shipKeel", "value", option))));
 				}

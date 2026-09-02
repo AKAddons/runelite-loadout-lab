@@ -193,6 +193,18 @@ public final class NavalCombat
 		return Collections.unmodifiableList(KEELS);
 	}
 
+	/** Pre-0.5.0 builds named the keel columns after the hull woods; a
+	 * character's persisted ship.shipKeel may still say so. Same column,
+	 * right name - nobody's saved keel resets. */
+	private static final List<String> LEGACY_WOOD_KEELS = List.of(
+		"regular", "oak", "teak", "mahogany", "camphor", "ironwood", "rosewood", "dragon");
+
+	public static String normalizeKeel(String keel)
+	{
+		int i = keel == null ? -1 : LEGACY_WOOD_KEELS.indexOf(keel.toLowerCase(Locale.ROOT));
+		return i >= 0 && i < KEELS.size() ? KEELS.get(i) : keel;
+	}
+
 	/** The monster's effective max hit against this keel (armour already
 	 * applied, from the wiki's Boat combat table), or -1 for an unknown
 	 * monster/keel. A 0 means this keel cannot be hit by it at all. */

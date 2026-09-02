@@ -153,18 +153,18 @@ class AmmoDetectTest
 	{
 		// Hammerhead: keel row 7,6,5,4,3,1,0,0; speed 4 ticks (2.4s).
 		Map<String, Object> ship = shipWith(Set.of(),
-			Map.of("cannonCount", 0, "shipKeel", "regular"));
+			Map.of("cannonCount", 0, "shipKeel", "none"));
 		assertNotNull(ship, "a sea lens carries the ship node for DTPS alone");
 		Map<?, ?> in = (Map<?, ?>) ship.get("incoming");
-		assertEquals("regular", in.get("keel"));
+		assertEquals("none", in.get("keel"));
 		assertEquals(7, in.get("maxHit"));
 		assertEquals(7 / 2.0 / 2.4, (Double) in.get("dtps"), 1e-9);
 
-		Map<?, ?> rosewood = (Map<?, ?>) shipWith(Set.of(),
-			Map.of("cannonCount", 0, "shipKeel", "rosewood")).get("incoming");
-		assertEquals(0, rosewood.get("maxHit"),
-			"a rosewood keel cannot be hit by a hammerhead (wiki table)");
-		assertEquals(0.0, (Double) rosewood.get("dtps"), 1e-9);
+		Map<?, ?> rune = (Map<?, ?>) shipWith(Set.of(),
+			Map.of("cannonCount", 0, "shipKeel", "rune")).get("incoming");
+		assertEquals(0, rune.get("maxHit"),
+			"a rune keel cannot be hit by a hammerhead (wiki table)");
+		assertEquals(0.0, (Double) rune.get("dtps"), 1e-9);
 	}
 
 	@Test
@@ -275,12 +275,12 @@ class AmmoDetectTest
 			}
 			return false;
 		};
-		// A hammerhead dents a regular keel (max 7): kits recommended.
-		assertTrue(kitShown.apply("hammerhead shark", "regular"));
+		// A hammerhead dents a keel-less boat (max 7): kits recommended.
+		assertTrue(kitShown.apply("hammerhead shark", "none"));
 		// The same shark cannot touch a dragon keel (max 0): no kits.
 		assertFalse(kitShown.apply("hammerhead shark", "dragon"),
 			"a mob doing 0 damage to your keel needs no repair kits");
 		// Land mobs never see the category.
-		assertFalse(kitShown.apply("general graardor", "regular"));
+		assertFalse(kitShown.apply("general graardor", "none"));
 	}
 }
