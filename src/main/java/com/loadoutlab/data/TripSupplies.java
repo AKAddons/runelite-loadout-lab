@@ -45,14 +45,19 @@ public final class TripSupplies
 		 * (spellbook capes): the bank layout's third strip, below the
 		 * cross and the inventory block (field spec 2026-07-20). */
 		public final boolean utility;
+		/** True = usable only in the wilderness (blighted supplies): detect
+		 * prefers it on a wilderness trip and never picks it elsewhere. */
+		public final boolean wildyOnly;
 
-		Option(String key, String name, int[] ids, boolean detect, boolean utility)
+		Option(String key, String name, int[] ids, boolean detect, boolean utility,
+			boolean wildyOnly)
 		{
 			this.key = key;
 			this.name = name;
 			this.ids = ids;
 			this.detect = detect;
 			this.utility = utility;
+			this.wildyOnly = wildyOnly;
 		}
 	}
 
@@ -85,7 +90,8 @@ public final class TripSupplies
 							o.get("name").getAsString(),
 							ids,
 							!o.has("detect") || o.get("detect").getAsBoolean(),
-							o.has("placement") && "utility".equals(o.get("placement").getAsString())));
+							o.has("placement") && "utility".equals(o.get("placement").getAsString()),
+							o.has("wildyOnly") && o.get("wildyOnly").getAsBoolean()));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
@@ -132,13 +138,15 @@ public final class TripSupplies
 		return null;
 	}
 
-	/** Detect best: the first detectable option the player owns any dose
-	 * of, or null when they own none. */
-	public static Option detectBest(String category, IntPredicate owns)
+	/** Detect best for a trip: in the wilderness a banked blighted variant
+	 * wins outright (cheap to lose, wilderness-only); on land no
+	 * wilderness-only option is ever picked (Andrew 2026-09-01). */
+	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness)
 	{
+		Option pick = null;
 		for (Option o : options(category))
 		{
-			if (!o.detect)
+			if (!o.detect || (o.wildyOnly && !inWilderness))
 			{
 				continue;
 			}
@@ -146,11 +154,26 @@ public final class TripSupplies
 			{
 				if (owns.test(id))
 				{
-					return o;
+					if (o.wildyOnly)
+					{
+						return o;
+					}
+					if (pick == null)
+					{
+						pick = o;
+					}
+					break;
 				}
 			}
 		}
-		return null;
+		return pick;
+	}
+
+	/** Detect best on land: the first detectable option the player owns
+	 * any dose of, or null when they own none. */
+	public static Option detectBest(String category, IntPredicate owns)
+	{
+		return detectBest(category, owns, false);
 	}
 
 	/** An Arceuus casting dependency kit ("thrallGreaterRunes",

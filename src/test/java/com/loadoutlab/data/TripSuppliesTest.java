@@ -45,6 +45,34 @@ public class TripSuppliesTest
 			TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains).key);
 	}
 
+	/** Andrew 2026-09-01: "wildy food / supplies should prefer blighted
+	 * options". Blighted variants are wilderness-only (wiki), so a trip
+	 * there takes a banked one over any tradeable tier, and a land trip
+	 * never picks one (ids objtypes-verified 2026-09-02). */
+	@Test
+	public void blightedSuppliesWinInTheWildernessAndNeverOnLand()
+	{
+		Set<Integer> bank = new HashSet<>(List.of(29143, 24592, 3024, 24598, 3144, 24595));
+		Assert.assertEquals("BLIGHTED_ANGLERFISH",
+			TripSupplies.detectBest(TripSupplies.FOOD, bank::contains, true).key);
+		Assert.assertEquals("BLIGHTED_SUPER_RESTORE",
+			TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, bank::contains, true).key);
+		Assert.assertEquals("BLIGHTED_KARAMBWAN",
+			TripSupplies.detectBest(TripSupplies.FAST_FOOD, bank::contains, true).key);
+		// Land: the best tradeable tier, blighted ignored even when owned.
+		Assert.assertEquals("MOONLIGHT_ANTELOPE",
+			TripSupplies.detectBest(TripSupplies.FOOD, bank::contains, false).key);
+		Set<Integer> onlyBlighted = Set.of(24592);
+		Assert.assertNull("blighted cannot be eaten outside the wilderness",
+			TripSupplies.detectBest(TripSupplies.FOOD, onlyBlighted::contains, false));
+		// Wilderness without a blighted stack falls through to the tiers.
+		Set<Integer> sharks = Set.of(385);
+		Assert.assertEquals("SHARK",
+			TripSupplies.detectBest(TripSupplies.FOOD, sharks::contains, true).key);
+		// The two-arg detect is the land rule.
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, onlyBlighted::contains));
+	}
+
 	@Test
 	public void detectBestReturnsNullWhenNothingIsOwned()
 	{

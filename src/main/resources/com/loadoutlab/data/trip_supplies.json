@@ -30,6 +30,14 @@
    ]
   },
   {
+   "key": "BLIGHTED_ANGLERFISH",
+   "name": "Blighted anglerfish",
+   "ids": [
+    24592
+   ],
+   "wildyOnly": true
+  },
+  {
    "key": "DARK_CRAB",
    "name": "Dark crab",
    "ids": [
@@ -42,6 +50,14 @@
    "ids": [
     391
    ]
+  },
+  {
+   "key": "BLIGHTED_MANTA_RAY",
+   "name": "Blighted manta ray",
+   "ids": [
+    24589
+   ],
+   "wildyOnly": true
   },
   {
    "key": "TUNA_POTATO",
@@ -67,6 +83,14 @@
    ]
   },
   {
+   "key": "BLIGHTED_KARAMBWAN",
+   "name": "Blighted karambwan",
+   "ids": [
+    24595
+   ],
+   "wildyOnly": true
+  },
+  {
    "key": "HALIBUT",
    "name": "Halibut",
    "ids": [
@@ -84,6 +108,17 @@
     3028,
     3030
    ]
+  },
+  {
+   "key": "BLIGHTED_SUPER_RESTORE",
+   "name": "Blighted super restore",
+   "ids": [
+    24598,
+    24601,
+    24603,
+    24605
+   ],
+   "wildyOnly": true
   },
   {
    "key": "SANFEW_SERUM",

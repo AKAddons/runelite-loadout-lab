@@ -207,9 +207,12 @@ restore, surge potion, spellbook-swap cape and anti-venom every trip
 brings, plus an always-filter list for items like teleport capes that
 belong in every bank view. Detect best picks the highest tier your
 collection has; anti-venom only joins the kit against monsters that can
-actually inflict venom (Zulrah, Araxxor, Vorkath and friends). Chosen
-supplies ride the result card's consumable cells, the bank filter (every
-dose matches) and the filtered bank's inventory block.
+actually inflict venom (Zulrah, Araxxor, Vorkath and friends). On a
+wilderness trip a banked blighted variant (anglerfish, manta ray,
+karambwan, super restore) wins detection outright - cheap to lose, and
+only edible there - and on land it is never picked. Chosen supplies
+ride the result card's consumable cells, the bank filter (every dose
+matches) and the filtered bank's inventory block.
 
 ![Trip supplies](img/trip-supplies.png)
 

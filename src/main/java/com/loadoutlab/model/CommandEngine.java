@@ -1922,7 +1922,8 @@ public class CommandEngine
 			}
 			com.loadoutlab.data.TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
-					? com.loadoutlab.data.TripSupplies.detectBest(category, owns)
+					? com.loadoutlab.data.TripSupplies.detectBest(category, owns,
+						Boolean.TRUE.equals(state.paramsNode().get("inWilderness")))
 					: com.loadoutlab.data.TripSupplies.option(category, mode);
 			if (pick == null)
 			{
