@@ -1481,8 +1481,8 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds, itemLocation);
 		entry.put("params", params);
-		decorateProfiles(entry);
 		entry.put("supplies", suppliesNode(mobs));
+		decorateProfiles(entry);
 		entry.put("raidSelection",
 			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
@@ -1841,6 +1841,40 @@ public class CommandEngine
 	 * by the lensed mob's overrides, Detect = best owned tier, antivenom
 	 * only for venomous rosters. Each node carries the category's full
 	 * option list for the override menu. */
+	/** Wilderness carried-kit fates for the risk lists (Andrew 2026-08-31:
+	 * the inventory is part of what is lost/kept). Trip quantities are
+	 * unknown, so items are listed by fate, not priced: a trouver-locked
+	 * pouch and the untradeable cape are kept; the runes (a locked pouch
+	 * does not protect its contents - wiki (l)) and every supply pick are
+	 * lost. Keys "kept" and "lost". */
+	static Map<String, List<String>> wildyCarriedFates(int pouch, boolean cape,
+		List<String> supplies, boolean utilityRunes)
+	{
+		List<String> kept = new java.util.ArrayList<>();
+		List<String> lost = new java.util.ArrayList<>();
+		if (pouch == 27509)
+		{
+			kept.add("Divine rune pouch (locked - kept)");
+		}
+		else if (pouch == 24416)
+		{
+			kept.add("Rune pouch (locked - kept)");
+		}
+		if (cape)
+		{
+			kept.add("Magic cape (kept)");
+		}
+		if (utilityRunes)
+		{
+			lost.add("Trip runes (lost)");
+		}
+		for (String supply : supplies)
+		{
+			lost.add(supply + " (lost)");
+		}
+		return Map.of("kept", kept, "lost", lost);
+	}
+
 	private List<Map<String, Object>> suppliesNode(List<MonsterStats> mobs)
 	{
 		java.util.function.Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
@@ -2050,53 +2084,51 @@ public class CommandEngine
 						{
 							mob.put("castingPouch", pouch);
 						}
-						// Narrow trouver model (Andrew 2026-08-31): carried
-						// kit items JOIN the lost/kept display. In the
-						// wilderness the pouch is only ever a locked one
-						// (kept), and the casting cape is untradeable
-						// (kept) - so the risk lists say so instead of
-						// silently ignoring the inventory.
+						// Carried-kit fates (Andrew 2026-08-31): the inventory
+						// joins the lost/kept lists - see wildyCarriedFates.
 						if (wildyTrip)
 						{
-							List<String> carried = new java.util.ArrayList<>();
-							if (pouch == 27509)
+							List<String> supplyNames = new java.util.ArrayList<>();
+							Object supplies = entry.get("supplies");
+							if (supplies instanceof List)
 							{
-								carried.add("Divine rune pouch (locked - kept)");
-							}
-							else if (pouch == 24416)
-							{
-								carried.add("Rune pouch (locked - kept)");
-							}
-							if (owns.test(9763) || owns.test(9762))
-							{
-								carried.add("Magic cape (kept)");
-							}
-							if (!carried.isEmpty())
-							{
-								Map<String, Object> mobStyles =
-									(Map<String, Object>) mob.get("styles");
-								if (mobStyles != null)
+								for (Object supply : (List<?>) supplies)
 								{
-									for (Object styleNode : mobStyles.values())
+									if (supply instanceof Map)
 									{
-										if (!(styleNode instanceof Map))
+										supplyNames.add(String.valueOf(((Map<?, ?>) supply).get("name")));
+									}
+								}
+							}
+							Map<String, List<String>> fates = wildyCarriedFates(pouch,
+								owns.test(9763) || owns.test(9762), supplyNames, !utility.isEmpty());
+							Map<String, Object> mobStyles =
+								(Map<String, Object>) mob.get("styles");
+							if (mobStyles != null)
+							{
+								for (Object styleNode : mobStyles.values())
+								{
+									if (!(styleNode instanceof Map))
+									{
+										continue;
+									}
+									for (String side : new String[]{"yours", "bis"})
+									{
+										Object card = ((Map<?, ?>) styleNode).get(side);
+										Object riskNode = card instanceof Map
+											? ((Map<?, ?>) card).get("risk") : null;
+										if (!(riskNode instanceof Map))
 										{
 											continue;
 										}
-										for (String side : new String[]{"yours", "bis"})
+										for (String fate : new String[]{"kept", "lost"})
 										{
-											Object card = ((Map<?, ?>) styleNode).get(side);
-											Object riskNode = card instanceof Map
-												? ((Map<?, ?>) card).get("risk") : null;
-											if (riskNode instanceof Map)
+											@SuppressWarnings("unchecked")
+											List<Object> list = (List<Object>)
+												((Map<?, ?>) riskNode).get(fate);
+											if (list != null)
 											{
-												@SuppressWarnings("unchecked")
-												List<Object> kept = (List<Object>)
-													((Map<?, ?>) riskNode).get("kept");
-												if (kept != null)
-												{
-													kept.addAll(carried);
-												}
+												list.addAll(fates.get(fate));
 											}
 										}
 									}

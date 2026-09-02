@@ -89,4 +89,25 @@ class WildyPouchTest
 		assertEquals(27509, pouchFor(Set.of(27281, 27509), true));
 		assertEquals(24416, pouchFor(Set.of(24416), true));
 	}
+
+	/** Andrew's rule 2026-08-31: the inventory is part of what is lost or
+	 * kept. Trip quantities are unknown, so the kit is listed by FATE:
+	 * locked pouch and untradeable cape kept; the runes (a locked pouch
+	 * does not protect its contents - wiki) and every supply pick lost. */
+	@Test
+	@DisplayName("the carried kit joins the lost/kept lists by fate")
+	void carriedKitFates()
+	{
+		Map<String, List<String>> fates = CommandEngine.wildyCarriedFates(
+			27509, true, List.of("Anglerfish", "Super restore"), true);
+		assertEquals(List.of("Divine rune pouch (locked - kept)", "Magic cape (kept)"),
+			fates.get("kept"));
+		assertEquals(List.of("Trip runes (lost)", "Anglerfish (lost)", "Super restore (lost)"),
+			fates.get("lost"));
+		assertEquals(List.of("Rune pouch (locked - kept)"),
+			CommandEngine.wildyCarriedFates(24416, false, List.of(), false).get("kept"));
+		// No pouch, no cape, no casts, no supplies: nothing to say.
+		Map<String, List<String>> none = CommandEngine.wildyCarriedFates(-1, false, List.of(), false);
+		assertTrue(none.get("kept").isEmpty() && none.get("lost").isEmpty());
+	}
 }

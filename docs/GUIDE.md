@@ -259,6 +259,13 @@ suggestion shown with the death skull and pick "Only bring if protected
 on death". The optimizer then keeps that item protected or leaves it out
 of the set - never risking it - just like the rebuild-friction gear.
 
+On a wilderness trip the inventory joins the kept/lost lists too. A
+trouver-locked rune pouch and an untradeable casting cape read as kept;
+the runes you cast with (a locked pouch does not protect its contents)
+and every supply pick read as lost. Those lines are fates, not gp: the
+risk total still prices worn gear and the spec weapon, because a trip's
+food and rune counts are yours to decide.
+
 ![Wilderness low-risk sets](img/wilderness-risk.png)
 
 ### Revenant and wilderness gear conditionals
