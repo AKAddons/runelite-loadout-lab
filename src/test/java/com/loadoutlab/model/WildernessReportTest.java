@@ -50,6 +50,13 @@ class WildernessReportTest
 	private static Map<com.loadoutlab.engine.CombatStyle,
 		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(MonsterStats mob)
 	{
+		return styles(data, mob);
+	}
+
+	/** Real per-style results for a mob - shared with WikiCalcExportTest. */
+	static Map<com.loadoutlab.engine.CombatStyle,
+		com.loadoutlab.optimizer.OptimizerService.StyleResult> styles(LoadoutData data, MonsterStats mob)
+	{
 		com.loadoutlab.optimizer.OptimizerService service =
 			new com.loadoutlab.optimizer.OptimizerService(data);
 		try

@@ -78,6 +78,13 @@ public class OfficialVectorExport
 		// both sides of the flip.
 		{"bofaset-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs", "INVO:300"},
 		{"bp-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Toxic blowpipe#Charged", "DART:Dragon dart", null, "INVO:300"},
+		// Obelisk dispute (Andrew 2026-09-02: melee 3.88 vs calc 6.468, ranged
+		// off too): the exact shown melee set and the crystal bofa set, at
+		// invocation 0 and the card's 300.
+		{"nox-obelisk", "Obelisk (Tombs of Amascut)", "", "MELEE", "Noxious halberd", null, null, "Neitiznot faceguard", "Amulet of torture", "Ferocious gloves", "Berserker ring (i)", "Fire cape"},
+		{"nox-obelisk-i300", "Obelisk (Tombs of Amascut)", "", "MELEE", "Noxious halberd", null, null, "Neitiznot faceguard", "Amulet of torture", "Ferocious gloves", "Berserker ring (i)", "Fire cape", "INVO:300"},
+		{"bofaset-obelisk", "Obelisk (Tombs of Amascut)", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs"},
+		{"bofaset-obelisk-i300", "Obelisk (Tombs of Amascut)", "", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs", "INVO:300"},
 		{"msbi-goblin", "Goblin", "", "RANGED", "Magic shortbow (i)", "Amethyst arrow"},
 		{"sang-goblin", "Goblin", "", "MAGIC", "Sanguinesti staff", null},
 		{"shadow-zulrah", "Zulrah", "Serpentine", "MAGIC", "Tumeken's shadow", null},

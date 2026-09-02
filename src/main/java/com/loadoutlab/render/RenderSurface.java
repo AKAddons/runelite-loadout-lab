@@ -732,7 +732,7 @@ public class RenderSurface
 	 * viewed card folds spec or thralls into its number - the sum that
 	 * reconciles our shown dps with what the calculator will display
 	 * (the bare set). Mirrors the engine's view derivation. */
-	private static String wikiCalcTip(Map<String, Object> page)
+	static String wikiCalcTip(Map<String, Object> page)
 	{
 		String head = "<b>Open in the official wiki calculator</b><br>"
 			+ "<font color='#969696'>shares this exact setup via the wiki's"
@@ -783,15 +783,19 @@ public class RenderSurface
 		Map<String, Object> spec = Model.map(card, "spec");
 		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
 		double thrallsDps = Model.num(Model.map(entry, "thralls"), "dps");
-		if (specDps <= 0 && thrallsDps <= 0)
-		{
-			return base;
-		}
 		// The breakdown reads as a little ledger, not a sentence (field
 		// ask 2026-08-21: "less dense and more informative") - the same
-		// table the spec cell wears, built once in Ui.
-		return Ui.tip(head, "<br><br>",
-			Ui.ledger(set, "what the calc shows", specDps, specDps > 0, thrallsDps));
+		// table the spec cell wears, built once in Ui. ALWAYS shown
+		// (Andrew 2026-09-02): the number they will see is the subtext.
+		String ledger = Ui.ledger(set, "what the calc shows", specDps, specDps > 0, thrallsDps);
+		// ToA: the link carries the card's raid level; say so, and where
+		// their field lives for anyone who wants a different one.
+		int invo = Model.id(params, "toaInvocation");
+		String toa = Model.flag(mobs.get(lens), "invocationScaled") && invo > 0
+			? "<br><font color='#969696'>ToA: opens at Invocation " + invo
+				+ " (their Raid level field, top of the monster panel)</font>"
+			: "";
+		return Ui.tip(head, "<br><br>", ledger, toa);
 	}
 
 	private Map<String, Object> lastRenderedPage;

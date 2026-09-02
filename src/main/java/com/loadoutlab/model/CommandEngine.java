@@ -678,7 +678,10 @@ public class CommandEngine
 					dartId = parsed == null ? -1 : parsed;
 				}
 				// A link-out is not an action - never recorded in history.
-				opener.open(mob, shown, dartId,
+				// The card's raid level rides the exported mob (field dispute
+				// 2026-09-02: the base row opened the calculator at 0 while
+				// the card sat at 300 - the engine was byte-exact all along).
+				opener.open(atInvocation(mob), shown, dartId,
 					bis ? result.gameBoostLabel : result.boostLabel,
 					membersFlag("onTask"),
 					Boolean.TRUE.equals(state.paramsNode().get("inWilderness")));
