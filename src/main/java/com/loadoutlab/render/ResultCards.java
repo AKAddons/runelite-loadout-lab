@@ -859,7 +859,12 @@ public class ResultCards
 		List<Map<String, Object>> castRunes = Model.list(
 			Model.map(node, bis ? "bis" : "yours"), "runes");
 		List<Map<String, Object>> tripRunes = Model.list(mob, "utilityRunes");
-		if (!supplies.isEmpty() || !castRunes.isEmpty() || !tripRunes.isEmpty())
+		// The potion this card assumes is a supply to bring (Andrew
+		// 2026-09-02) - unless the raid hands it out.
+		Map<String, Object> cardAssume = Model.map(node, bis ? "bisAssume" : "assume");
+		int boostId = cardAssume == null || Model.flag(cardAssume, "boostSupplied") ? -1
+			: Model.id(cardAssume, "boostItem");
+		if (!supplies.isEmpty() || !castRunes.isEmpty() || !tripRunes.isEmpty() || boostId > 0)
 		{
 			JPanel supplyRow = new JPanel(new WrapLayout(java.awt.FlowLayout.CENTER, 2, 1));
 			supplyRow.setBackground(CARD);
@@ -896,6 +901,13 @@ public class ResultCards
 			{
 				supplyRow.add(smallItemCell(capeId, 0,
 					"Magic cape - swap spellbooks up to 5x daily (owned)"));
+			}
+			if (boostId > 0)
+			{
+				String text = Model.str(cardAssume, "text");
+				int plus = text.indexOf(" + ");
+				supplyRow.add(smallItemCell(boostId, 0, (plus > 0 ? text.substring(plus + 3) : text)
+					+ " - the boost this card assumes; change it on the boost picker"));
 			}
 			for (Map<String, Object> supply : supplies)
 			{

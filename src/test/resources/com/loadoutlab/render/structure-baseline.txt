@@ -73,6 +73,11 @@ JPanel
       Filler
       JPanel
         JPanel
+          JLabel "Supplies:"
+          JLabel tip=Super combat - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
@@ -156,6 +161,11 @@ JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
         JLabel "you are at 53%" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Magic potion - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -243,6 +253,11 @@ JPanel
         JPanel
           JLabel "Inventory:"
           JLabel tip=Magic shortbow (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Ranging potion - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -336,6 +351,7 @@ JPanel
           JLabel "Supplies:"
           JLabel tip=Air rune - the autocast spell
           JLabel tip=Wrath rune - the autocast spell
+          JLabel tip=Magic potion - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -423,6 +439,11 @@ JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
         JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Magic potion - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -536,6 +557,11 @@ JPanel
       Filler
       JPanel
         JPanel
+          JLabel "Supplies:"
+          JLabel tip=Magic potion - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
@@ -625,6 +651,11 @@ JPanel
       Filler
       JPanel
         JPanel
+          JLabel "Supplies:"
+          JLabel tip=Divine super combat - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
@@ -705,6 +736,11 @@ JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
         JLabel "you are at 53%" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Saturated heart - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -797,6 +833,11 @@ JPanel
       Filler
       JPanel
         JPanel
+          JLabel "Supplies:"
+          JLabel tip=Divine ranging potion - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
@@ -885,6 +926,11 @@ JPanel
       Filler
       JPanel
         JPanel
+          JLabel "Supplies:"
+          JLabel tip=Saturated heart - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
@@ -967,6 +1013,11 @@ JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
         JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Saturated heart - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel
@@ -1073,6 +1124,11 @@ JPanel
           JLabel tip=Voidwaker (carried swap)
           JLabel tip=Twisted bow (carried swap)
           JLabel tip=Soulreaper axe (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Saturated heart - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel

@@ -1941,11 +1941,20 @@ public class CommandEngine
 		}
 		Map<String, String> defaults = defaultsSupplier.get();
 		Map<String, String> overrides = ops.supplyOverrides(lensed.profileId());
+		// At sea the BOAT takes the hits (Andrew 2026-09-02): a sea-only
+		// trip packs repair kits and nothing edible; a mixed roster keeps
+		// the land categories for its land half.
+		boolean seaOnly = !mobs.isEmpty();
+		for (MonsterStats m : mobs)
+		{
+			seaOnly &= com.loadoutlab.data.NavalCombat.isNaval(m.getName());
+		}
 		for (Map.Entry<String, String> e : defaults.entrySet())
 		{
 			String category = e.getKey();
 			String mode = overrides.getOrDefault(category, e.getValue());
-			if ("NONE".equals(mode))
+			if ("NONE".equals(mode)
+				|| (seaOnly && !com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT.equals(category)))
 			{
 				continue;
 			}

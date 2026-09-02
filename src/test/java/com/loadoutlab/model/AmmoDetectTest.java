@@ -233,6 +233,50 @@ class AmmoDetectTest
 		assertNotNull(entry.get("thralls"), "the land fold must survive the veto");
 	}
 
+	/** Andrew 2026-09-02: "i don't think you need actual food supplies for
+	 * boat combat mobs just ship repair" - a sea-only trip carries repair
+	 * kits only; food and the rest stay on land trips. */
+	@Test
+	@DisplayName("a sea-only trip carries repair kits, never food")
+	void seaTripsCarryRepairKitsOnly()
+	{
+		PageState state = new PageState();
+		state.setParam("shipKeel", "none");
+		CaptureLink link = new CaptureLink();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, onDone) ->
+			{
+			},
+			link);
+		engine.setStoreOps(new TestStoreOps());
+		engine.setOwnedCheck(id -> id == 31982 || id == 13441); // a kit and anglerfish banked
+		engine.setSupplyDefaults(() -> Map.of(
+			com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT, "DETECT_BEST",
+			com.loadoutlab.data.TripSupplies.FOOD, "DETECT_BEST"));
+		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
+		engine.execute("select", Map.of("id", shark.getId()));
+		engine.onResults(shark, Map.of());
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
+		java.util.List<Object> categories = new java.util.ArrayList<>();
+		for (Object node : (List<?>) entry.get("supplies"))
+		{
+			categories.add(((Map<?, ?>) node).get("category"));
+		}
+		assertEquals(List.of("shipRepairKit"), categories,
+			"at sea the boat takes the hits - repair kits, no food");
+	}
+
 	@Test
 	@DisplayName("repair kits recommend only when the mob can damage YOUR keel")
 	void repairKitsFollowTheKeel()

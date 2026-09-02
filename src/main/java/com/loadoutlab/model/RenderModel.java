@@ -346,6 +346,7 @@ public final class RenderModel
 			none.put("text", "No prayer or boost");
 			none.put("prayerSprite", -1);
 			none.put("boostItem", -1);
+			none.put("boostSupplied", false);
 			return none;
 		}
 		Map<String, Object> node = new LinkedHashMap<>();
@@ -356,6 +357,12 @@ public final class RenderModel
 		node.put("prayerSprite", com.loadoutlab.data.AssumeIcons.prayerSprite(prayerPart));
 		node.put("boostItem", boostPart == null ? -1
 			: com.loadoutlab.data.AssumeIcons.boostItem(boostPart));
+		// The raid hands these out (CoX overloads, ToA salts): assumed, never
+		// packed (Andrew 2026-09-02: potions are supplies to bring).
+		node.put("boostSupplied", boostPart != null
+			&& (boostPart.equals(com.loadoutlab.engine.BoostProfile.OVERLOAD.toString())
+			|| boostPart.equals(com.loadoutlab.engine.BoostProfile.OVERLOAD_PLUS.toString())
+			|| boostPart.equals(com.loadoutlab.engine.BoostProfile.SMELLING_SALTS.toString())));
 		return node;
 	}
 

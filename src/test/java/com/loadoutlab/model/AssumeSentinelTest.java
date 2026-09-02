@@ -41,4 +41,18 @@ class AssumeSentinelTest
 		assertTrue((int) node.get("prayerSprite") > 0, "Piety resolves a sprite");
 		assertTrue((int) node.get("boostItem") > 0, "Super combat resolves an item");
 	}
+
+	/** Andrew 2026-09-02: the boost potion is a supply to bring - unless
+	 * the raid hands it out (CoX overloads, ToA salts). */
+	@Test
+	@DisplayName("a raid-supplied boost is flagged so the supplies row does not pack it")
+	void raidSuppliedBoostsAreFlagged()
+	{
+		Map<String, Object> potion = RenderModel.assumeNode("Rigour + Divine ranging potion");
+		assertEquals(23733, potion.get("boostItem"));
+		assertEquals(false, potion.get("boostSupplied"));
+		assertEquals(true, RenderModel.assumeNode("Piety + Overload (+)").get("boostSupplied"));
+		assertEquals(true, RenderModel.assumeNode("Piety + Smelling salts").get("boostSupplied"));
+		assertEquals(false, RenderModel.assumeNode("Augury + Saturated heart").get("boostSupplied"));
+	}
 }
