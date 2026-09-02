@@ -66,6 +66,35 @@ final class Ui
 		return new ImageIcon(image.getScaledInstance(size, size, Image.SCALE_SMOOTH));
 	}
 
+	/** The image scaled to size, dimmed, with a red X painted over it - the
+	 * "none picked" sentinel (Andrew 2026-09-01: a plain prayer book read as
+	 * a prayer being ON). Drawn graphics, so the ASCII glyph gate is not in
+	 * play. */
+	static ImageIcon crossedOut(Image image, int size)
+	{
+		java.awt.image.BufferedImage out = new java.awt.image.BufferedImage(
+			size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = out.createGraphics();
+		g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+			java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+			java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+		// The base icon, dimmed so the X reads as the foreground.
+		java.awt.Composite base = g.getComposite();
+		g.setComposite(java.awt.AlphaComposite.getInstance(
+			java.awt.AlphaComposite.SRC_OVER, 0.55f));
+		g.drawImage(image, 0, 0, size, size, null);
+		g.setComposite(base);
+		int m = Math.max(2, size / 6);
+		g.setStroke(new java.awt.BasicStroke(Math.max(2f, size / 9f),
+			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+		g.setColor(new java.awt.Color(210, 70, 70));
+		g.drawLine(m, m, size - m, size - m);
+		g.drawLine(size - m, m, m, size - m);
+		g.dispose();
+		return new ImageIcon(out);
+	}
+
 	/** A menu item wired to an action, added to the menu. */
 	static void item(JPopupMenu menu, String label, Runnable action)
 	{

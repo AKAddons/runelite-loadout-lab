@@ -488,13 +488,18 @@ public class ResultCards
 			prayerIcon.setPreferredSize(new java.awt.Dimension(20, 20));
 			prayerIcon.setToolTipText(bis ? "Assumes: " + text
 				: "Assumes: " + text + " - click to change the prayer");
-			int shownPrayerSprite = prayerSprite > 0 ? prayerSprite
-				: net.runelite.api.SpriteID.TAB_PRAYER;
+			// No prayer assumed -> the prayer book with a red X, so the
+			// sentinel reads as "none" not "prayer on" (field ask
+			// 2026-09-01). A real prayer shows its own sprite plainly.
+			boolean noPrayer = prayerSprite <= 0;
+			int shownPrayerSprite = noPrayer
+				? net.runelite.api.SpriteID.TAB_PRAYER : prayerSprite;
 			if (spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
 					javax.swing.SwingUtilities.invokeLater(() ->
-						prayerIcon.setIcon(Ui.icon(img, 18))));
+						prayerIcon.setIcon(noPrayer
+							? Ui.crossedOut(img, 18) : Ui.icon(img, 18))));
 			}
 			if (!bis)
 			{
