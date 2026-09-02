@@ -17,6 +17,15 @@ class AsciiLoaderTest
 		AsciiLoader.load(land, sea);
 		assertFalse(land.isEmpty());
 		assertFalse(sea.isEmpty(), "the sea pool ships with at least one mood");
+		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
+		// land flask's 19x9, so the compute block keeps one shape.
+		assertEquals(3, sea.size(), "sail, cannon, kraken");
+		for (List<String> frames : sea)
+		{
+			String[] lines = frames.get(0).split("\n");
+			assertEquals(9, lines.length, "sea frames are 9 rows like the land flask");
+			assertEquals(19, lines[0].length(), "sea frames are 19 wide");
+		}
 		List<List<String>> moods = new java.util.ArrayList<>(land);
 		moods.addAll(sea);
 		for (List<String> frames : moods)
