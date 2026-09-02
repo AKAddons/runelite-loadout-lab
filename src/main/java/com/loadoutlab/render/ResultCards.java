@@ -1638,6 +1638,13 @@ public class ResultCards
 	}
 
 	/** A stat line led by its game-sprite icon (async, 14px). */
+	/** The ship damage line, sized for the stat column. */
+	static String shipDamageText(double dtps, int keelMax)
+	{
+		return keelMax == 0 ? "no damage"
+			: String.format(java.util.Locale.ROOT, "~%.1f max %d", dtps, keelMax);
+	}
+
 	private JLabel statIconLine(String text, String tooltip, Color color, int spriteId)
 	{
 		JLabel line = statLine(text, tooltip, color);
@@ -1896,13 +1903,16 @@ public class ResultCards
 			// next to the dtps value").
 			String keel = Model.str(shipIncoming, "keel");
 			int keelMax = (int) Model.num(shipIncoming, "maxHit");
+			String keelName = "none".equals(keel) ? "no keel" : cap(keel) + " keel";
+			// As terse as the land incoming line: the column fits ~12
+			// characters (designer pass 2026-09-02: "~1.0 (max 5, Rune)"
+			// clipped); the keel lives in the tooltip and the click menu.
 			JLabel shipLine = statIconLine(
-				String.format(java.util.Locale.ROOT, "~%.1f (max %d, %s)",
-					Model.num(shipIncoming, "dtps"), keelMax, cap(keel)),
+				shipDamageText(Model.num(shipIncoming, "dtps"), keelMax),
 				keelMax == 0
-					? "Ship damage taken: a " + cap(keel)
-						+ " keel cannot be hit by this monster - click to change the keel"
-					: "Ship damage taken with a " + cap(keel) + " keel - max "
+					? "Ship damage taken: with " + keelName
+						+ " this monster cannot hit the boat - click to change the keel"
+					: "Ship damage taken with " + keelName + " - max "
 						+ keelMax + " per hit, prayers do not reduce it. Click to change the keel",
 				statText, -1);
 			shipLine.setForeground(new Color(120, 175, 215));
