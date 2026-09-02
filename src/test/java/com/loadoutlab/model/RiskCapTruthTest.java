@@ -66,7 +66,7 @@ class RiskCapTruthTest
 		CommandEngine engine = new CommandEngine(
 			new com.loadoutlab.data.DataService().load(), state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			new CompanionLink());

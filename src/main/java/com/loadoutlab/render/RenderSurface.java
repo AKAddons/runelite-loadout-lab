@@ -884,8 +884,6 @@ public class RenderSurface
 			boolean anySlayer = false;
 			boolean anyWilderness = false;
 			boolean allExclusive = true;
-			String suppliedBoost = null;
-			boolean boostUniform = true;
 			boolean sawMob = false;
 			for (Map<String, Object> pageEntry : Model.list(page, "entries"))
 			{
@@ -895,17 +893,7 @@ public class RenderSurface
 					anySlayer |= Model.flag(mob, "slayerMonster");
 					anyWilderness |= Model.flag(mob, "wilderness");
 					allExclusive &= Model.flag(mob, "wildernessExclusive");
-					String supplied = Model.str(mob, "suppliedBoost");
-					if (!sawMob)
-					{
-						suppliedBoost = supplied;
-						sawMob = true;
-					}
-					else if (supplied == null ? suppliedBoost != null
-						: !supplied.equals(suppliedBoost))
-					{
-						boostUniform = false;
-					}
+					sawMob = true;
 				}
 			// Raids are never a slayer-task context (Andrew, 2026-08-31:
 			// Skeletal Mystic's corpus slayer flag lit the chip for CoX).
@@ -967,11 +955,6 @@ public class RenderSurface
 			{
 				chipRow.add(paramChip("Wildy", "inWilderness",
 					Model.flag(params, "inWilderness")));
-			}
-			if (suppliedBoost != null && boostUniform)
-			{
-				chipRow.add(paramChip(suppliedBoost, "raidBoost",
-					Model.flag(params, "raidBoost")));
 			}
 			if (anyBreathesFire(page))
 			{

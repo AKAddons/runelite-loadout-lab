@@ -29,7 +29,7 @@ class DukeSelectTest
 		PageState state = new PageState();
 		return new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> computed.set(mob),
+				boosts, prayers, budget, swaps, onDone) -> computed.set(mob),
 			new CompanionLink());
 	}
 

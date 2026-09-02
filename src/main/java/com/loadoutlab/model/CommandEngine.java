@@ -25,7 +25,7 @@ public class CommandEngine
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone);
+			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
 	}
 
 	private final LoadoutData data;
@@ -136,7 +136,7 @@ public class CommandEngine
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
 			boolean antifirePotion, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp, int maxSwaps, boolean raidBoost, Runnable onDone);
+			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
 	}
 
 	/** Wrench-panel supply defaults (category -> config enum name),
@@ -324,7 +324,7 @@ public class CommandEngine
 	private static final Map<String, String> PARAM_LABELS = Map.ofEntries(
 		Map.entry("onTask", "On task"), Map.entry("inWilderness", "Wilderness"),
 		Map.entry("f2pOnly", "F2P"), Map.entry("specWeapon", "Spec weapon"),
-		Map.entry("antifirePotion", "Antifire"), Map.entry("raidBoost", "Raid boost"),
+		Map.entry("antifirePotion", "Antifire"),
 		Map.entry("deathCharge", "Death charge"), Map.entry("viewingBis", "View"),
 		Map.entry("selectedTab", "Tab"), Map.entry("spellbookLock", "Spellbook"),
 		Map.entry("riskBudgetGp", "Risk cap"), Map.entry("upgradeBudgetGp", "Upgrade budget"),
@@ -1224,8 +1224,7 @@ public class CommandEngine
 			compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
 				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
-				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12],
-				(Boolean) a[13], () ->
+				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
 				{
 				});
 		}
@@ -1240,8 +1239,7 @@ public class CommandEngine
 			rosterPath.computeRoster(roster, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
 				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
-				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12],
-				(Boolean) a[13], () ->
+				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
 				{
 				});
 		}

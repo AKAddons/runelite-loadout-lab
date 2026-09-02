@@ -66,7 +66,6 @@ public class PageState
 	private boolean specWeapon;
 	private int upgradeBudgetGp;
 	private int maxSwaps = 1;
-	private boolean raidBoost;
 	private int toaInvocation = 300;
 	private boolean protectItem;
 	// View state - core-owned like everything else (ADR-0008), but a
@@ -242,9 +241,6 @@ public class PageState
 			case "maxSwaps":
 				maxSwaps = asInt(value, 1);
 				return true;
-			case "raidBoost":
-				raidBoost = Boolean.TRUE.equals(value);
-				return true;
 			case "toaInvocation":
 				toaInvocation = asInt(value, 300);
 				return true;
@@ -357,7 +353,6 @@ public class PageState
 		node.put("specWeapon", specWeapon);
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
 		node.put("maxSwaps", maxSwaps);
-		node.put("raidBoost", raidBoost);
 		node.put("toaInvocation", toaInvocation);
 		node.put("protectItem", protectItem);
 		node.put("viewingBis", viewingBis);
@@ -415,7 +410,7 @@ public class PageState
 			f2pOnly, !f2pOnly && onTask, inWilderness, spellbookLock, tradeables,
 			riskBudgetGp, antifireMode == 2, f2pOnly ? 0 : deathCharge, specWeapon,
 			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
-			upgradeBudgetGp, maxSwaps, raidBoost,
+			upgradeBudgetGp, maxSwaps,
 		};
 	}
 }

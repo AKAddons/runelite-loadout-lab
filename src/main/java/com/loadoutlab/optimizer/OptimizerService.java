@@ -226,8 +226,6 @@ public class OptimizerService
 	 * best set against a monster. Cached; the callback runs on the worker
 	 * thread on a miss and synchronously on a hit.
 	 */
-	/** raidBoostAssumed=false falls back to the bank's own potions even
-	 * inside a raid. */
 	public void bestPerStyle(
 		MonsterStats monster,
 		PlayerLevels realLevels,
@@ -251,7 +249,6 @@ public class OptimizerService
 		Set<Integer> dreamItems,
 		int upgradeBudgetGp,
 		int maxSwaps,
-		boolean raidBoostAssumed,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
 		SpellStats pinnedSpell,
 		int pinnedSpec,
@@ -262,7 +259,6 @@ public class OptimizerService
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
-		ctx.raidBoostAssumed = raidBoostAssumed;
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
@@ -331,9 +327,6 @@ public class OptimizerService
 		int maxSwaps = 1;
 		Map<CombatStyle, Map<GearSlot, Integer>> pins;
 		Map<CombatStyle, Set<Integer>> excluded;
-		/** Assume the raid-supplied boost (CoX overload+, ToA salts) when
-		 * fighting inside - OFF falls back to the bank's own potions. */
-		boolean raidBoostAssumed = true;
 		/** PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
 		 * (field decision 2026-07-17): each mob's request carries its own
 		 * exclusions on top of the global set - the group may still use the
@@ -405,7 +398,7 @@ public class OptimizerService
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge
 			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
-			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode() + "|" + ctx.raidBoostAssumed
+			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
 	}
 
@@ -519,11 +512,11 @@ public class OptimizerService
 					results.put(style, cachedStyle);
 					continue;
 				}
-				// Assume the best boost the player OWNS (drink what you
-				// bring), never below what is already live - unless the
-				// RAID supplies its own (CoX overload+, ToA salts).
-				BoostProfile supplied = ctx.raidBoostAssumed
-					? RaidBoosts.suppliedBoost(monster) : null;
+				// DETECT assumes the best boost the player OWNS (drink what
+				// you bring), never below what is already live - unless the
+				// RAID supplies its own (CoX overload+, ToA salts). A picked
+				// tier beats both (Andrew 2026-09-02: the picker owns it).
+				BoostProfile supplied = RaidBoosts.suppliedBoost(monster);
 				StylePlan plan = stylePlan(ctx, style, supplied);
 				PlayerLevels styleLevels = plan.levels;
 				String boostLabel = plan.label;
@@ -1545,8 +1538,7 @@ public class OptimizerService
 			// boost and labels depend on style + owned + real, not the mob).
 			// The roster assumes the raid's own boost when EVERY mob is
 			// inside the same raid (CoX overload+, ToA salts).
-			BoostProfile supplied = ctx.raidBoostAssumed
-				? RaidBoosts.suppliedBoost(mobs.get(0)) : null;
+			BoostProfile supplied = RaidBoosts.suppliedBoost(mobs.get(0));
 			for (MonsterStats mob : mobs)
 			{
 				if (RaidBoosts.suppliedBoost(mob) != supplied)
@@ -2513,9 +2505,6 @@ public class OptimizerService
 	 * per-mob display bundle. Parameters mirror bestPerStyle (result-level
 	 * params shared across the roster; exclusions/pins apply uniformly).
 	 */
-	/** raidBoostAssumed=false falls back to the bank's own potions even
-	 * inside a raid (field spec 2026-07-18: overloads/salts are a
-	 * toggle, not a promise). */
 	public void bestPerStyleAcross(
 		List<MonsterStats> mobs,
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
@@ -2525,7 +2514,7 @@ public class OptimizerService
 		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
-		Map<Integer, Set<Integer>> dreamsByMob, boolean raidBoostAssumed,
+		Map<Integer, Set<Integer>> dreamsByMob,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
 		SpellStats pinnedSpell, int pinnedSpec, Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
@@ -2569,7 +2558,7 @@ public class OptimizerService
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
 				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
-				maxSwaps, raidBoostAssumed, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems,
+				maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
@@ -2577,7 +2566,6 @@ public class OptimizerService
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
-		ctx.raidBoostAssumed = raidBoostAssumed;
 		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Collections.emptyMap() : dreamsByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);

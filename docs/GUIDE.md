@@ -33,8 +33,9 @@ list - the kit you actually bring - with each mob shown as its own row:
 its dps in that shared set, the style that answers it, and a lens that
 flips every card and number to that mob on click. Any mob can leave via
 its row's X (the last one closes the result), so a raid roster can be
-trimmed to the rooms you actually fight. Inside raids, the supplied
-boost (CoX overloads, ToA salts) is a toggle, not a promise - and ToA
+trimmed to the rooms you actually fight. Inside raids, Detect on the
+boost picker assumes the raid's own boost (CoX overload (+), ToA salts);
+pick any other tier to bring your own potions instead - and ToA
 results carry an Invocation chip (0/150/300/540) applying the official
 calculator's defence scaling, so weapon rankings hold at the raid
 level you actually run.

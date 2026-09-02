@@ -47,7 +47,7 @@ class WildyPouchTest
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			link);

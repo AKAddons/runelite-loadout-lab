@@ -106,7 +106,7 @@ final class ReportBuilder
 		Object af = params.get("antifireMode");
 		int afMode = af instanceof Number ? ((Number) af).intValue() : 0;
 		sb.append("; Antifire: ").append(afMode == 2 ? "super" : afMode == 1 ? "regular" : "no");
-		sb.append("; Raid boost: ").append(yesNo(params.get("raidBoost"))).append('\n');
+		sb.append('\n');
 		sb.append("  Inventory: ").append(params.get("maxSwaps")).append('\n');
 		sb.append("  Death charge: ").append(params.get("deathCharge"));
 		sb.append("; Invocation: ").append(params.get("toaInvocation"));

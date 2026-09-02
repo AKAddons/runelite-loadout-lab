@@ -73,7 +73,7 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 				computed.set(mob);
 				taskFlag.set(onTask);
@@ -94,7 +94,7 @@ class CommandEngineTest
 	{
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> fail("must not compute"),
+				boosts, prayers, budget, swaps, onDone) -> fail("must not compute"),
 			new CaptureLink());
 		assertFalse(engine.execute("no-such-command", Map.of()));
 		assertFalse(engine.execute("select", Map.of("query", "")));
@@ -112,7 +112,7 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> computes.incrementAndGet(),
+				boosts, prayers, budget, swaps, onDone) -> computes.incrementAndGet(),
 			link);
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		assertEquals(1, computes.get());
@@ -137,10 +137,10 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> singleRuns.add(mob.getName()),
+				boosts, prayers, budget, swaps, onDone) -> singleRuns.add(mob.getName()),
 			new CaptureLink());
 		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
-			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			antifire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 			rosterRuns.add(mobs.size() + " mobs"));
 
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
@@ -166,12 +166,12 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			new CaptureLink());
 		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
-			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			antifire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 			{
 			});
 		engine.setStoreOps(new CommandEngine.StoreOps()
@@ -319,7 +319,7 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> computes.incrementAndGet(),
+				boosts, prayers, budget, swaps, onDone) -> computes.incrementAndGet(),
 			link);
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
@@ -360,12 +360,12 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			new CaptureLink());
 		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
-			antifire, dc, spec, boosts, prayers, budget, swaps, raid, onDone) ->
+			antifire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 			{
 			});
 		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")));
@@ -388,7 +388,7 @@ class CommandEngineTest
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) -> computedMobs.add(mob.getName()),
+				boosts, prayers, budget, swaps, onDone) -> computedMobs.add(mob.getName()),
 			link);
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
 		assertTrue(engine.execute("select", Map.of("query", "black demon")));
@@ -422,7 +422,7 @@ class CommandEngineTest
 		state.setParam("specWeapon", true);
 		CommandEngine engine = new CommandEngine(data, state,
 			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
-				boosts, prayers, budget, swaps, raid, onDone) ->
+				boosts, prayers, budget, swaps, onDone) ->
 			{
 			}, link);
 		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);

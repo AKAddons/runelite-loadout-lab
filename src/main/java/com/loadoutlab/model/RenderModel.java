@@ -123,9 +123,6 @@ public final class RenderModel
 		node.put("fightBookReason", com.loadoutlab.data.MonsterSpellbooks.reasonFor(mob));
 		node.put("slayerMonster", mob.isSlayerMonster());
 		node.put("wildernessExclusive", com.loadoutlab.data.WildernessMonsters.isExclusive(mob));
-		com.loadoutlab.engine.BoostProfile supplied =
-			com.loadoutlab.engine.RaidBoosts.suppliedBoost(mob);
-		node.put("suppliedBoost", supplied == null ? null : supplied.toString());
 		return node;
 	}
 
