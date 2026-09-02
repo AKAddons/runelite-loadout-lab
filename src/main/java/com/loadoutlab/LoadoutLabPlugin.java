@@ -219,6 +219,10 @@ public class LoadoutLabPlugin extends Plugin
 	 * and a manual untick survives a loading zone. */
 	private Boolean lastF2pWorld;
 	private PrayerUnlocks prayerUnlocks;
+	/** False until the live client has been read this login: a snapshot
+	 * restored from the store is last-known, and the live read still wins. */
+	private boolean snapshotLive;
+	private com.loadoutlab.collection.ProfileStore profiles;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
 	/** Trailing debounce for ledger-driven recomputes (game ticks). */
@@ -390,6 +394,7 @@ public class LoadoutLabPlugin extends Plugin
 		mobProfiles = new com.loadoutlab.collection.MonsterProfileStore(configManager, gson);
 		alwaysFilter = new com.loadoutlab.collection.AlwaysFilterStore(configManager, gson);
 		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
+		profiles = new com.loadoutlab.collection.ProfileStore(configManager, gson);
 		dwmsLink = new DwmsLink();
 		companionLink = new com.loadoutlab.model.CompanionLink();
 		bankOverlay = new com.loadoutlab.ui.BankHighlightOverlay(() -> bankHighlight);
@@ -424,6 +429,19 @@ public class LoadoutLabPlugin extends Plugin
 			migrateStoredToSims();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+		}
+		else
+		{
+			// Every client start is logged out. Point every store at the
+			// character seen LAST, so browsing before login prices that
+			// character wearing their bank - not a MAXED stranger (field
+			// report 2026-09-01: Piety suggested to a 45-prayer account).
+			String last = profiles.lastScope();
+			if (last != null)
+			{
+				applyScope(last);
+				restoreSnapshot();
+			}
 		}
 
 		// The dataset is ~3MB of gzipped JSON - parse off the startup path.
@@ -898,6 +916,7 @@ public class LoadoutLabPlugin extends Plugin
 		protectOnly = null;
 		manualOwned = null;
 		mobProfiles = null;
+		profiles = null;
 		dwmsLink = null;
 		stashUnits = null;
 		stashChartSeen = false;
@@ -905,6 +924,7 @@ public class LoadoutLabPlugin extends Plugin
 		realLevels = null;
 		boostedLevels = null;
 		prayerUnlocks = null;
+		snapshotLive = false;
 		dirtySources.clear();
 		pendingScans.clear();
 		log.info("Loadout Lab stopped");
@@ -1050,6 +1070,10 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			supplyDefaults.reload();
 		}
+		if (profiles != null)
+		{
+			profiles.reload();
+		}
 		resetForIdentityChange();
 	}
 
@@ -1063,10 +1087,7 @@ public class LoadoutLabPlugin extends Plugin
 			dwmsLink.reset();
 			requestDwmsStorages();
 		}
-		requirementProfile = null;
-		realLevels = null;
-		boostedLevels = null;
-		prayerUnlocks = null;
+		restoreSnapshot();
 		canonicalOwnedCache = null;
 		bankHighlight = null;
 		bankFilter = null;
@@ -1096,11 +1117,9 @@ public class LoadoutLabPlugin extends Plugin
 			requestDwmsStorages();
 			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
 			dirtySources.add(CollectionLedger.Source.INVENTORY);
-			// New login = possibly a different account/levels: re-snapshot lazily.
-			requirementProfile = null;
-			realLevels = null;
-			boostedLevels = null;
-			prayerUnlocks = null;
+			// New login = possibly a different account/levels: the stored
+			// snapshot stands in until the live read on the next compute.
+			restoreSnapshot();
 
 			// Non-members world -> show the F2P filter, default on (world type
 			// is client state, so read it here and hand the EDT a boolean).
@@ -2133,7 +2152,7 @@ public class LoadoutLabPlugin extends Plugin
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */
 	private void snapshotProfileIfNeeded()
 	{
-		if (requirementProfile != null && boostedLevels != null && realLevels != null)
+		if (snapshotLive)
 		{
 			return;
 		}
@@ -2189,6 +2208,24 @@ public class LoadoutLabPlugin extends Plugin
 			client.getVarbitValue(5452) == 1,
 			client.getVarbitValue(16097) == 1,
 			client.getVarbitValue(16098) == 1);
+		snapshotLive = true;
+		if (worldScope() != null)
+		{
+			profiles.save(real, quests, prayerUnlocks);
+		}
+	}
+
+	/** The snapshot for whoever the stores point at now: their last-known
+	 * levels, quests and unlocks, or nothing for a character never seen
+	 * (the compute sites then fall back to MAXED). A boost does not
+	 * survive a logout, so the boosted levels restore as the real ones. */
+	private void restoreSnapshot()
+	{
+		snapshotLive = false;
+		requirementProfile = profiles == null ? null : profiles.profile();
+		realLevels = profiles == null ? null : profiles.levels();
+		boostedLevels = realLevels;
+		prayerUnlocks = profiles == null ? null : profiles.unlocks();
 	}
 
 	// ------------------------------------------------------------------
@@ -2213,6 +2250,11 @@ public class LoadoutLabPlugin extends Plugin
 			// stores keep the last known character until the hash arrives.
 			return;
 		}
+		applyScope(scope);
+	}
+
+	private void applyScope(String scope)
+	{
 		if (ledger != null) { ledger.loadScope(scope); }
 		if (manualOwned != null) { manualOwned.loadScope(scope); }
 		if (exclusions != null) { exclusions.loadScope(scope); }
@@ -2221,6 +2263,7 @@ public class LoadoutLabPlugin extends Plugin
 		if (alwaysFilter != null) { alwaysFilter.loadScope(scope); }
 		if (mobProfiles != null) { mobProfiles.loadScope(scope); }
 		if (supplyDefaults != null) { supplyDefaults.loadScope(scope); }
+		if (profiles != null) { profiles.loadScope(scope); }
 	}
 
 	private String worldScope()
