@@ -1888,7 +1888,8 @@ public class CommandEngine
 			}
 			com.loadoutlab.data.TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
-					? com.loadoutlab.data.TripSupplies.detectBest(category, owns)
+					? com.loadoutlab.data.TripSupplies.detectBest(category, owns,
+						Boolean.TRUE.equals(state.paramsNode().get("inWilderness")))
 					: com.loadoutlab.data.TripSupplies.option(category, mode);
 			if (pick == null)
 			{
@@ -2071,32 +2072,39 @@ public class CommandEngine
 							{
 								carried.add("Magic cape (kept)");
 							}
-							if (!carried.isEmpty())
+							// A locked pouch keeps itself, never its runes
+							// (wiki: the parchment "does not protect runes
+							// stored within"), so the carried runes are lost.
+							Map<String, Object> mobStyles =
+								(Map<String, Object>) mob.get("styles");
+							if (mobStyles != null)
 							{
-								Map<String, Object> mobStyles =
-									(Map<String, Object>) mob.get("styles");
-								if (mobStyles != null)
+								for (Object styleNode : mobStyles.values())
 								{
-									for (Object styleNode : mobStyles.values())
+									if (!(styleNode instanceof Map))
 									{
-										if (!(styleNode instanceof Map))
+										continue;
+									}
+									for (String side : new String[]{"yours", "bis"})
+									{
+										Object card = ((Map<?, ?>) styleNode).get(side);
+										Object riskNode = card instanceof Map
+											? ((Map<?, ?>) card).get("risk") : null;
+										if (riskNode instanceof Map)
 										{
-											continue;
-										}
-										for (String side : new String[]{"yours", "bis"})
-										{
-											Object card = ((Map<?, ?>) styleNode).get(side);
-											Object riskNode = card instanceof Map
-												? ((Map<?, ?>) card).get("risk") : null;
-											if (riskNode instanceof Map)
+											@SuppressWarnings("unchecked")
+											List<Object> kept = (List<Object>)
+												((Map<?, ?>) riskNode).get("kept");
+											if (kept != null)
 											{
-												@SuppressWarnings("unchecked")
-												List<Object> kept = (List<Object>)
-													((Map<?, ?>) riskNode).get("kept");
-												if (kept != null)
-												{
-													kept.addAll(carried);
-												}
+												kept.addAll(carried);
+											}
+											@SuppressWarnings("unchecked")
+											List<Object> lost = (List<Object>)
+												((Map<?, ?>) riskNode).get("lost");
+											if (lost != null)
+											{
+												lost.add("Utility runes (lost)");
 											}
 										}
 									}
