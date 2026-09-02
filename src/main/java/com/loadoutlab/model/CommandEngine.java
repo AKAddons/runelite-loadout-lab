@@ -461,6 +461,58 @@ public class CommandEngine
 					}
 				});
 			}
+			case "move-mob":
+			{
+				// Reorder a roster row (Andrew 2026-09-02): presentation
+				// only - the shared set is the same kit - but the lens must
+				// follow the row it was on, and undo puts both back.
+				Object index = args == null ? null : args.get("index");
+				Object delta = args == null ? null : args.get("delta");
+				List<MonsterStats> current = state.rosterMobs();
+				if (!(index instanceof Number) || !(delta instanceof Number) || current == null)
+				{
+					return false;
+				}
+				int at = ((Number) index).intValue();
+				int to = at + ((Number) delta).intValue();
+				if (at < 0 || at >= current.size() || to < 0 || to >= current.size() || to == at)
+				{
+					return false;
+				}
+				List<MonsterStats> reordered = new java.util.ArrayList<>(current);
+				reordered.add(to, reordered.remove(at));
+				Object[] prevSel = state.selectionSnapshot();
+				Object lensObj = state.paramsNode().get("lensIndex");
+				int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
+				int movedLens = lens == at ? to : lens == to ? at : lens;
+				boolean raid = Boolean.TRUE.equals(state.paramsNode().get("raidSelection"));
+				return record(new com.loadoutlab.command.Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						state.selectRoster(reordered, (String) prevSel[2], raid);
+						state.setParam("lensIndex", movedLens);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						state.restoreSelection(prevSel);
+						state.setParam("lensIndex", lens);
+						recompute();
+						return true;
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return "Move " + current.get(at).getName() + (to < at ? " up" : " down");
+					}
+				});
+			}
 			case "remove-mob":
 			{
 				Object index = args == null ? null : args.get("index");

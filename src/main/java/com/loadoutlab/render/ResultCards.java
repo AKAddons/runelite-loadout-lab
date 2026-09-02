@@ -194,7 +194,7 @@ public class ResultCards
 			int shownLens = Math.min(Math.max(lens, 0), mobs.size() - 1);
 			for (int i = 0; i < mobs.size(); i++)
 			{
-				box.add(lensRow(mobs.get(i), tab, bis, i, i == shownLens, rosterThralls));
+				box.add(lensRow(mobs.get(i), tab, bis, i, mobs.size(), i == shownLens, rosterThralls));
 				if (i < mobs.size() - 1)
 				{
 					box.add(Box.createVerticalStrut(2));
@@ -269,7 +269,7 @@ public class ResultCards
 	 * fit) with its level, then a FIXED-WIDTH block - style icon, dps,
 	 * remove - so those line up down the whole list. */
 	private JPanel lensRow(Map<String, Object> mob, String tab, boolean bis, int index,
-		boolean selected, double thrallsDps)
+		int rosterSize, boolean selected, double thrallsDps)
 	{
 		Map<String, Object> styles = Model.map(mob, "styles");
 		// The row reports ITS OWN recommendation (field report
@@ -437,12 +437,56 @@ public class ResultCards
 		remove.setForeground(new Color(150, 150, 150));
 		remove.setToolTipText("Remove " + name + " from this result");
 		remove.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		// Right-click on the row or its x: Move up / Move down (Andrew
+		// 2026-09-02 - a menu, not drag handles: no Swing drag layer).
+		java.awt.event.MouseAdapter reorder = new java.awt.event.MouseAdapter()
+		{
+			@Override
+			public void mousePressed(java.awt.event.MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			@Override
+			public void mouseReleased(java.awt.event.MouseEvent e)
+			{
+				maybeShow(e);
+			}
+
+			private void maybeShow(java.awt.event.MouseEvent e)
+			{
+				if (!e.isPopupTrigger())
+				{
+					return;
+				}
+				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				if (index > 0)
+				{
+					Ui.item(menu, "Move up", () -> commands.send("move-mob",
+						Map.of("index", index, "delta", -1)));
+				}
+				if (index < rosterSize - 1)
+				{
+					Ui.item(menu, "Move down", () -> commands.send("move-mob",
+						Map.of("index", index, "delta", 1)));
+				}
+				if (menu.getComponentCount() > 0)
+				{
+					menu.show(e.getComponent(), e.getX(), e.getY());
+				}
+			}
+		};
+		row.addMouseListener(reorder);
+		remove.addMouseListener(reorder);
 		remove.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(java.awt.event.MouseEvent e)
 			{
-				commands.send("remove-mob", Map.of("index", index));
+				if (!e.isPopupTrigger() && javax.swing.SwingUtilities.isLeftMouseButton(e))
+				{
+					commands.send("remove-mob", Map.of("index", index));
+				}
 			}
 
 			@Override
