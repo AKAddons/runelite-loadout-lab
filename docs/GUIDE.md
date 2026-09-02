@@ -212,7 +212,10 @@ collection has; anti-venom only joins the kit against monsters that can
 actually inflict venom (Zulrah, Araxxor, Vorkath and friends). On a
 wilderness trip a banked blighted variant (anglerfish, manta ray,
 karambwan, super restore) wins detection outright - cheap to lose, and
-only edible there - and on land it is never picked. Chosen supplies
+only edible there - and on land it is never picked. The potion a card
+assumes rides its Supplies row too (raid-supplied overloads and salts
+do not; the raid hands those out), and a sea-only trip packs repair
+kits and nothing edible, since the boat takes the hits. Chosen supplies
 ride the result card's consumable cells, the bank filter (every dose
 matches) and the filtered bank's inventory block.
 
