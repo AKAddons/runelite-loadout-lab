@@ -45,14 +45,18 @@ public final class TripSupplies
 		 * (spellbook capes): the bank layout's third strip, below the
 		 * cross and the inventory block (field spec 2026-07-20). */
 		public final boolean utility;
+		/** True = usable only in the Wilderness (the blighted variants):
+		 * detect prefers an owned one there and never picks one elsewhere. */
+		public final boolean wildyOnly;
 
-		Option(String key, String name, int[] ids, boolean detect, boolean utility)
+		Option(String key, String name, int[] ids, boolean detect, boolean utility, boolean wildyOnly)
 		{
 			this.key = key;
 			this.name = name;
 			this.ids = ids;
 			this.detect = detect;
 			this.utility = utility;
+			this.wildyOnly = wildyOnly;
 		}
 	}
 
@@ -85,7 +89,8 @@ public final class TripSupplies
 							o.get("name").getAsString(),
 							ids,
 							!o.has("detect") || o.get("detect").getAsBoolean(),
-							o.has("placement") && "utility".equals(o.get("placement").getAsString())));
+							o.has("placement") && "utility".equals(o.get("placement").getAsString()),
+							o.has("wildy") && o.get("wildy").getAsBoolean()));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
@@ -133,12 +138,14 @@ public final class TripSupplies
 	}
 
 	/** Detect best: the first detectable option the player owns any dose
-	 * of, or null when they own none. */
-	public static Option detectBest(String category, IntPredicate owns)
+	 * of, or null when they own none. A wilderness trip prefers the
+	 * blighted variants (cheap to lose, listed first); off the wilderness
+	 * they are skipped, since they cannot be used there. */
+	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness)
 	{
 		for (Option o : options(category))
 		{
-			if (!o.detect)
+			if (!o.detect || (o.wildyOnly && !inWilderness))
 			{
 				continue;
 			}

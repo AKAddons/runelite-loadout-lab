@@ -20,9 +20,10 @@ public class TripSuppliesTest
 		// Spot-check the verified tier heads (wiki 2026-07-20): moonlight
 		// antelope 26 hp leads food, karambwan leads fast food, super
 		// restore leads prayer, extended anti-venom+ leads anti-venom.
-		Assert.assertEquals("MOONLIGHT_ANTELOPE", TripSupplies.options(TripSupplies.FOOD).get(0).key);
-		Assert.assertEquals("KARAMBWAN", TripSupplies.options(TripSupplies.FAST_FOOD).get(0).key);
-		Assert.assertEquals("SUPER_RESTORE", TripSupplies.options(TripSupplies.PRAYER_RESTORE).get(0).key);
+		// The blighted (wilderness-only) variants sit ahead of each head.
+		Assert.assertEquals("MOONLIGHT_ANTELOPE", firstLandOption(TripSupplies.FOOD).key);
+		Assert.assertEquals("KARAMBWAN", firstLandOption(TripSupplies.FAST_FOOD).key);
+		Assert.assertEquals("SUPER_RESTORE", firstLandOption(TripSupplies.PRAYER_RESTORE).key);
 		Assert.assertEquals("SURGE_POTION", TripSupplies.options(TripSupplies.SURGE).get(0).key);
 		Assert.assertEquals("MAX_CAPE", TripSupplies.options(TripSupplies.SPELLBOOK_CAPE).get(0).key);
 		Assert.assertEquals("EXTENDED_ANTIVENOM", TripSupplies.options(TripSupplies.ANTIVENOM).get(0).key);
@@ -35,20 +36,80 @@ public class TripSuppliesTest
 		// PRAYER_POTION - the filter and detection cover every dose.
 		Set<Integer> owned = new HashSet<>();
 		owned.add(143);
-		TripSupplies.Option pick = TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains);
+		TripSupplies.Option pick = TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains, false);
 		Assert.assertNotNull(pick);
 		Assert.assertEquals("PRAYER_POTION", pick.key);
 
 		// Adding a super restore (3-dose, 3026) upgrades the pick.
 		owned.add(3026);
 		Assert.assertEquals("SUPER_RESTORE",
-			TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains).key);
+			TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains, false).key);
 	}
 
 	@Test
 	public void detectBestReturnsNullWhenNothingIsOwned()
 	{
-		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, id -> false));
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, id -> false, false));
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, id -> false, true));
+	}
+
+	/** Andrew, 2026-09-01: "wildy food / supplies should prefer blighted
+	 * options" - usable only in the Wilderness, cheap to lose there. Ids
+	 * from the cache (gameval ItemID, 2026-09-02): blighted anglerfish
+	 * 24592, manta 24589, karambwan 24595, super restore 24598-24605. */
+	@Test
+	public void wildernessTripPrefersBankedBlightedSupplies()
+	{
+		Set<Integer> owned = new HashSet<>();
+		owned.add(13441); // anglerfish
+		owned.add(24592); // blighted anglerfish
+		owned.add(3144);  // karambwan
+		owned.add(24595); // blighted karambwan
+		owned.add(3024);  // super restore(4)
+		owned.add(24605); // blighted super restore(1)
+		Assert.assertEquals("BLIGHTED_ANGLERFISH",
+			TripSupplies.detectBest(TripSupplies.FOOD, owned::contains, true).key);
+		Assert.assertEquals("BLIGHTED_KARAMBWAN",
+			TripSupplies.detectBest(TripSupplies.FAST_FOOD, owned::contains, true).key);
+		Assert.assertEquals("BLIGHTED_SUPER_RESTORE",
+			TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains, true).key);
+		// Without a banked blighted variant the wilderness falls back to
+		// the tradeable tier.
+		owned.remove(24592);
+		Assert.assertEquals("ANGLERFISH",
+			TripSupplies.detectBest(TripSupplies.FOOD, owned::contains, true).key);
+	}
+
+	@Test
+	public void blightedSuppliesAreNeverPickedOffTheWilderness()
+	{
+		Set<Integer> owned = new HashSet<>();
+		owned.add(24592); // blighted anglerfish only
+		owned.add(24598); // blighted super restore(4) only
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, owned::contains, false));
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains, false));
+		// The explicit per-category default still resolves (the user's call).
+		Assert.assertNotNull(TripSupplies.option(TripSupplies.FOOD, "BLIGHTED_ANGLERFISH"));
+		for (String category : new String[]{TripSupplies.SURGE, TripSupplies.SPELLBOOK_CAPE,
+			TripSupplies.ANTIVENOM})
+		{
+			for (TripSupplies.Option o : TripSupplies.options(category))
+			{
+				Assert.assertFalse(o.key + " has no blighted variant", o.wildyOnly);
+			}
+		}
+	}
+
+	private static TripSupplies.Option firstLandOption(String category)
+	{
+		for (TripSupplies.Option o : TripSupplies.options(category))
+		{
+			if (!o.wildyOnly)
+			{
+				return o;
+			}
+		}
+		return null;
 	}
 
 	@Test
@@ -58,7 +119,7 @@ public class TripSuppliesTest
 		// selectable only (detect:false in the resource).
 		Set<Integer> owned = new HashSet<>();
 		owned.add(30125); // Prayer regeneration potion(4)
-		Assert.assertNull(TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains));
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.PRAYER_RESTORE, owned::contains, false));
 		Assert.assertNotNull(TripSupplies.option(TripSupplies.PRAYER_RESTORE, "PRAYER_REGENERATION"));
 	}
 
@@ -68,10 +129,10 @@ public class TripSuppliesTest
 		Set<Integer> owned = new HashSet<>();
 		owned.add(9763); // Magic cape(t)
 		Assert.assertEquals("MAGIC_CAPE",
-			TripSupplies.detectBest(TripSupplies.SPELLBOOK_CAPE, owned::contains).key);
+			TripSupplies.detectBest(TripSupplies.SPELLBOOK_CAPE, owned::contains, false).key);
 		owned.add(13280); // Max cape
 		Assert.assertEquals("MAX_CAPE",
-			TripSupplies.detectBest(TripSupplies.SPELLBOOK_CAPE, owned::contains).key);
+			TripSupplies.detectBest(TripSupplies.SPELLBOOK_CAPE, owned::contains, false).key);
 	}
 
 	@Test

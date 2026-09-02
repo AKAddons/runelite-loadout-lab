@@ -1,6 +1,22 @@
 {
- "_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely).",
+ "_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. wildy:true = usable ONLY in the Wilderness (the blighted variants, ids from the cache 2026-09-02): detect prefers an owned one on a wilderness trip and never picks one elsewhere. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely).",
  "food": [
+  {
+   "key": "BLIGHTED_ANGLERFISH",
+   "name": "Blighted anglerfish",
+   "ids": [
+    24592
+   ],
+   "wildy": true
+  },
+  {
+   "key": "BLIGHTED_MANTA_RAY",
+   "name": "Blighted manta ray",
+   "ids": [
+    24589
+   ],
+   "wildy": true
+  },
   {
    "key": "MOONLIGHT_ANTELOPE",
    "name": "Cooked moonlight antelope",
@@ -60,6 +76,14 @@
  ],
  "fastFood": [
   {
+   "key": "BLIGHTED_KARAMBWAN",
+   "name": "Blighted karambwan",
+   "ids": [
+    24595
+   ],
+   "wildy": true
+  },
+  {
    "key": "KARAMBWAN",
    "name": "Cooked karambwan",
    "ids": [
@@ -75,6 +99,17 @@
   }
  ],
  "prayerRestore": [
+  {
+   "key": "BLIGHTED_SUPER_RESTORE",
+   "name": "Blighted super restore",
+   "ids": [
+    24598,
+    24601,
+    24603,
+    24605
+   ],
+   "wildy": true
+  },
   {
    "key": "SUPER_RESTORE",
    "name": "Super restore",
