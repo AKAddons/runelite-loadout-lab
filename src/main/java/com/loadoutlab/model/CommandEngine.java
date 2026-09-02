@@ -2024,11 +2024,85 @@ public class CommandEngine
 					// The casting kit: divine rune pouch > rune pouch when
 					// owned; the Magic cape (t preferred) for the book
 					// swap perk - suggestions only when the trip casts.
+					// WILDERNESS (field report 2026-08-31 + wiki): an
+					// unlocked pouch is LOST on a pvp death, so only the
+					// trouver-locked variants are ever recommended there -
+					// locked divine, locked regular, or no pouch at all.
 					java.util.function.IntPredicate owns = ownedCheck;
 					if (!utility.isEmpty() && owns != null)
 					{
-						mob.put("castingPouch", owns.test(27281) ? 27281
-							: owns.test(12791) ? 12791 : 12791);
+						boolean wildyTrip = Boolean.TRUE.equals(
+							state.paramsNode().get("inWilderness"));
+						int pouch;
+						if (wildyTrip)
+						{
+							pouch = owns.test(27509) ? 27509
+								: owns.test(24416) ? 24416 : -1;
+						}
+						else
+						{
+							pouch = owns.test(27281) ? 27281
+								: owns.test(27509) ? 27509
+								: owns.test(12791) ? 12791
+								: owns.test(24416) ? 24416 : 12791;
+						}
+						if (pouch > 0)
+						{
+							mob.put("castingPouch", pouch);
+						}
+						// Narrow trouver model (Andrew 2026-08-31): carried
+						// kit items JOIN the lost/kept display. In the
+						// wilderness the pouch is only ever a locked one
+						// (kept), and the casting cape is untradeable
+						// (kept) - so the risk lists say so instead of
+						// silently ignoring the inventory.
+						if (wildyTrip)
+						{
+							List<String> carried = new java.util.ArrayList<>();
+							if (pouch == 27509)
+							{
+								carried.add("Divine rune pouch (locked - kept)");
+							}
+							else if (pouch == 24416)
+							{
+								carried.add("Rune pouch (locked - kept)");
+							}
+							if (owns.test(9763) || owns.test(9762))
+							{
+								carried.add("Magic cape (kept)");
+							}
+							if (!carried.isEmpty())
+							{
+								Map<String, Object> mobStyles =
+									(Map<String, Object>) mob.get("styles");
+								if (mobStyles != null)
+								{
+									for (Object styleNode : mobStyles.values())
+									{
+										if (!(styleNode instanceof Map))
+										{
+											continue;
+										}
+										for (String side : new String[]{"yours", "bis"})
+										{
+											Object card = ((Map<?, ?>) styleNode).get(side);
+											Object riskNode = card instanceof Map
+												? ((Map<?, ?>) card).get("risk") : null;
+											if (riskNode instanceof Map)
+											{
+												@SuppressWarnings("unchecked")
+												List<Object> kept = (List<Object>)
+													((Map<?, ?>) riskNode).get("kept");
+												if (kept != null)
+												{
+													kept.addAll(carried);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 						mob.put("castingCape", owns.test(9763) ? 9763
 							: owns.test(9762) ? 9762 : -1);
 					}

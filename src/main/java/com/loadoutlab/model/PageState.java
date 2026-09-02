@@ -262,6 +262,13 @@ public class PageState
 				return true;
 			case "lensIndex":
 				lensIndex = asInt(value, 0);
+				// Switching mobs opens on THAT mob's recommended style (the
+				// 2026-08-15 rule) - the row click already did this, but
+				// arrow-nav kept the old tab, so a magic-only Warden left
+				// "magic" stuck on the Obelisk as a tab-only view (community
+				// report, issue #15). The row pick re-sets the tab AFTER the
+				// lens, so explicit picks still land.
+				selectedTab = "";
 				return true;
 			case "selectedTab":
 				selectedTab = value instanceof String ? (String) value : "";

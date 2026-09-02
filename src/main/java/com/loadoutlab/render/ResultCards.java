@@ -371,12 +371,12 @@ public class ResultCards
 			// Switching mobs also switches to THAT mob's suggested
 			// style (field ask 2026-08-15) - the card below always
 			// opens on the row's own recommendation.
+			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 			if (rowStyle != null && !rowStyle.equals(tab))
 			{
 				commands.send("set-param",
 					Map.of("param", "selectedTab", "value", rowStyle));
 			}
-			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
 		};
 		Ui.onClick(label, pick);
 		JLabel sailTag = null;
@@ -573,13 +573,18 @@ public class ResultCards
 			prayerIcon.setPreferredSize(new java.awt.Dimension(20, 20));
 			prayerIcon.setToolTipText(bis ? "Assumes: " + text
 				: "Assumes: " + text + " - click to change the prayer");
-			int shownPrayerSprite = prayerSprite > 0 ? prayerSprite
-				: net.runelite.api.SpriteID.TAB_PRAYER;
+			// No prayer assumed -> the prayer book with a red X, so the
+			// sentinel reads as "none" not "prayer on" (field ask
+			// 2026-09-01). A real prayer shows its own sprite plainly.
+			boolean noPrayer = prayerSprite <= 0;
+			int shownPrayerSprite = noPrayer
+				? net.runelite.api.SpriteID.TAB_PRAYER : prayerSprite;
 			if (spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
 					javax.swing.SwingUtilities.invokeLater(() ->
-						prayerIcon.setIcon(Ui.icon(img, 18))));
+						prayerIcon.setIcon(noPrayer
+							? Ui.crossedOut(img, 18) : Ui.icon(img, 18))));
 			}
 			if (!bis)
 			{
@@ -800,7 +805,8 @@ public class ResultCards
 			if (pouchId > 0 && (!runes.isEmpty() || !utilityRunes.isEmpty()))
 			{
 				invRow.add(smallItemCell(pouchId, 0,
-					(pouchId == 27281 ? "Divine rune pouch" : "Rune pouch")
+					(pouchId == 27281 || pouchId == 27509
+						? "Divine rune pouch" : "Rune pouch")
 						+ " - carries the trip's runes"));
 			}
 			card.add(Box.createVerticalStrut(4));

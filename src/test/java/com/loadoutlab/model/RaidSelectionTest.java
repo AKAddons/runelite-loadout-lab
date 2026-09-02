@@ -140,4 +140,15 @@ class RaidSelectionTest
 		assertEquals(Boolean.FALSE, params.get("onTask"),
 			"raids are never a slayer-task context");
 	}
+
+	@Test
+	@DisplayName("arrow-nav opens each mob on its own recommended style (issue #15)")
+	void lensClearsTheStickyTab()
+	{
+		PageState state = new PageState();
+		state.setParam("selectedTab", "magic");
+		state.setParam("lensIndex", 1);
+		assertEquals("", state.paramsNode().get("selectedTab"),
+			"a lens change must drop the previous mob's explicit tab");
+	}
 }
