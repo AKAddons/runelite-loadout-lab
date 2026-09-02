@@ -20,12 +20,17 @@ class AsciiLoaderTest
 		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
 		// land flask's 19x9, so the compute block keeps one shape.
 		assertEquals(3, sea.size(), "sail, cannon, kraken");
+		boolean wideMood = false;
 		for (List<String> frames : sea)
 		{
 			String[] lines = frames.get(0).split("\n");
 			assertEquals(9, lines.length, "sea frames are 9 rows like the land flask");
-			assertEquals(19, lines[0].length(), "sea frames are 19 wide");
+			assertTrue(lines[0].length() >= 19, "sea frames are at least the flask's width");
+			wideMood |= lines[0].length() > 19;
 		}
+		// The cannon mood spreads out so the shot has a real trajectory
+		// (Andrew 2026-09-02); moods may differ in width, one plays per compute.
+		assertTrue(wideMood, "the cannon mood is wider than the flask");
 		List<List<String>> moods = new java.util.ArrayList<>(land);
 		moods.addAll(sea);
 		for (List<String> frames : moods)
