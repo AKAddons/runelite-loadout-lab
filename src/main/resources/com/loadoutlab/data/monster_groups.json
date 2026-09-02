@@ -441,6 +441,14 @@
     "label": "Magic only"
    },
    {
+    "name": "Akkha",
+    "immuneTo": [
+     "ranged",
+     "magic"
+    ],
+    "label": "Final stand (melee only)"
+   },
+   {
     "name": "Zebak"
    },
    {

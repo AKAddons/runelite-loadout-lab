@@ -92,7 +92,7 @@ class MonsterGroupsTest
 		assertEquals(10, byName("Theatre of Blood (Hard)").getMobs().size());
 		// Kephri's scarab adds are deliberately absent, same call as the
 		// Sire's spawn/scion (field decision 2026-08-06).
-		assertEquals(12, byName("Tombs of Amascut").getMobs().size());
+		assertEquals(13, byName("Tombs of Amascut").getMobs().size());
 		assertTrue(byName("Tombs of Amascut").getMobs().stream()
 			.noneMatch(m -> m.getName().contains("Scarab")));
 		// The P2 spec-dump window rides the Core-ejected row, nicked so
@@ -264,7 +264,13 @@ class MonsterGroupsTest
 		java.util.List<MonsterStats> akkha = byName("Tombs of Amascut").getMobs().stream()
 			.filter(m -> m.getName().equals("Akkha"))
 			.collect(java.util.stream.Collectors.toList());
-		assertEquals(3, akkha.size());
+		// ...and makes his final stand melee-only at 20% hp with Protect from
+		// Magic and Missiles both up (wiki; Andrew 2026-09-02: "missing the
+		// final phase of akkha").
+		assertEquals(4, akkha.size());
+		assertEquals("Final stand (melee only)", akkha.get(3).getVersion());
+		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
+			akkha.get(3), com.loadoutlab.engine.CombatStyle.MELEE));
 		for (MonsterStats phase : akkha)
 		{
 			int immune = 0;
