@@ -55,4 +55,22 @@ public class PlayerProfileTest
 		Assert.assertTrue(out, out.contains("Abyssal whip"));
 		Assert.assertTrue(out, out.contains("Amulet of glory"));
 	}
+
+	/** Field report 2026-09-01: a 45-prayer account saw Piety after logging
+	 * out - the snapshot was dropped and the MAXED fallback priced a
+	 * stranger wearing its bank. Logout keeps the last character; only a
+	 * different character replaces it. */
+	@Test
+	public void theLastCharactersSnapshotSurvivesLogoutButNotASwitch()
+	{
+		long me = 1234L;
+		Assert.assertTrue("logout keeps the last character",
+			PlayerProfile.snapshotSurvives(me, -1));
+		Assert.assertTrue("same character re-login keeps it",
+			PlayerProfile.snapshotSurvives(me, me));
+		Assert.assertFalse("a different character replaces it",
+			PlayerProfile.snapshotSurvives(me, 5678L));
+		Assert.assertFalse("a hashless snapshot is replaced once the hash arrives",
+			PlayerProfile.snapshotSurvives(-1, me));
+	}
 }

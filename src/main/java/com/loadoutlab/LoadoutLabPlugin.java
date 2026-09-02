@@ -219,6 +219,8 @@ public class LoadoutLabPlugin extends Plugin
 	 * and a manual untick survives a loading zone. */
 	private Boolean lastF2pWorld;
 	private PrayerUnlocks prayerUnlocks;
+	/** Account the snapshot above was taken for (-1 = none/hashless). */
+	private long snapshotAccount = -1;
 
 	/** Container-change coalescing - events mark, the per-tick drain scans. */
 	/** Trailing debounce for ledger-driven recomputes (game ticks). */
@@ -1063,10 +1065,17 @@ public class LoadoutLabPlugin extends Plugin
 			dwmsLink.reset();
 			requestDwmsStorages();
 		}
-		requirementProfile = null;
-		realLevels = null;
-		boostedLevels = null;
-		prayerUnlocks = null;
+		if (!PlayerProfile.snapshotSurvives(snapshotAccount, client.getAccountHash()))
+		{
+			// A different character: their levels must not price this one's
+			// bank. Plain logout KEEPS the snapshot - a logged-out browse
+			// prices the last character, not a maxed stranger (field report
+			// 2026-09-01: Piety suggested at 45 prayer).
+			requirementProfile = null;
+			realLevels = null;
+			boostedLevels = null;
+			prayerUnlocks = null;
+		}
 		canonicalOwnedCache = null;
 		bankHighlight = null;
 		bankFilter = null;
@@ -2189,6 +2198,7 @@ public class LoadoutLabPlugin extends Plugin
 			client.getVarbitValue(5452) == 1,
 			client.getVarbitValue(16097) == 1,
 			client.getVarbitValue(16098) == 1);
+		snapshotAccount = client.getAccountHash();
 	}
 
 	// ------------------------------------------------------------------

@@ -185,6 +185,18 @@ public final class PlayerProfile
 		return object;
 	}
 
+	/** Whether the plugin's cached level/prayer/quest snapshot, taken while
+	 * {@code snapshotAccount} was logged in, may still serve now that the
+	 * client reports {@code currentAccount} (-1 = logged out). */
+	public static boolean snapshotSurvives(long snapshotAccount, long currentAccount)
+	{
+		// Logout keeps the last character (field report 2026-09-01: Piety at
+		// 45 prayer once the snapshot was dropped and MAXED filled in); only
+		// a DIFFERENT account replaces it - including a hashless snapshot
+		// taken before the login hash arrived.
+		return currentAccount == -1 || currentAccount == snapshotAccount;
+	}
+
 	private static PlayerLevels parseLevels(JsonObject object)
 	{
 		return new PlayerLevels(
