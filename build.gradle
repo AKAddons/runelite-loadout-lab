@@ -41,6 +41,10 @@ dependencies {
 
 tasks.named('test', Test) {
 	useJUnitPlatform()
+	// The roster optimizer tests ran the 512m default worker out of heap
+	// (2026-09-03: 26 OutOfMemoryErrors in one run) - and a starved worker
+	// is the likely cause of the silent partial suites seen the same day.
+	maxHeapSize = '2g'
 }
 
 group = 'com.loadoutlab'

@@ -1561,7 +1561,8 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds, itemLocation);
 		entry.put("params", params);
-		entry.put("supplies", suppliesNode(mobs));
+		List<Map<String, Object>> supplies = suppliesNode(mobs);
+		entry.put("supplies", supplies);
 		decorateProfiles(entry);
 		entry.put("raidSelection",
 			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
@@ -1622,7 +1623,7 @@ public class CommandEngine
 		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
 		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
-			countSupplier == null ? null : countSupplier.get(), thrallsNode));
+			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies));
 		link.publishPage(page);
 	}
 

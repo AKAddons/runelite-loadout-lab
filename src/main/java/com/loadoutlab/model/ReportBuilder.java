@@ -28,7 +28,8 @@ final class ReportBuilder
 	 * the two must read from one derivation or they drift again. */
 	static String build(String version, PageState state, List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
-		Map<String, Object> counts, Map<String, Object> thralls)
+		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
+		List<Map<String, Object>> supplies)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
@@ -46,6 +47,28 @@ final class ReportBuilder
 						.append(String.format(" (dps shown includes it: %.2f)%n",
 							((Number) thralls.get("dps")).doubleValue()));
 				}
+				if (ship != null)
+				{
+					appendShip(sb, ship);
+				}
+				if (supplies != null && !supplies.isEmpty())
+				{
+					sb.append("  Supplies:");
+					for (Map<String, Object> supply : supplies)
+					{
+						sb.append(' ').append(supply.get("name")).append(',');
+					}
+					sb.append('\n');
+				}
+			}
+			// Each sea mob's own cannon dps (the row's fold, 2026-09-03).
+			Object byMob = ship == null ? null : ship.get("byMob");
+			if (byMob instanceof List && i < ((List<?>) byMob).size()
+				&& ((List<?>) byMob).get(i) instanceof Number
+				&& ((Number) ((List<?>) byMob).get(i)).doubleValue() > 0)
+			{
+				sb.append(String.format("  Cannons vs this mob: +%.2f dps%n",
+					((Number) ((List<?>) byMob).get(i)).doubleValue()));
 			}
 			Map<CombatStyle, OptimizerService.StyleResult> results = perMob.get(i);
 			// The kit contract (field report 2026-08-14, the Sire: "a
@@ -217,6 +240,66 @@ final class ReportBuilder
 	}
 
 	/** Short gp for the report line (the card's own vocabulary). */
+	/** The ship, for a sea report (Andrew 2026-09-03: the copied report
+	 * had none of it): keel and damage taken, ammo, every cannon with its
+	 * operator and dps or its blocking reason, and the station. */
+	private static void appendShip(StringBuilder sb, Map<String, Object> ship)
+	{
+		Object inObj = ship.get("incoming");
+		if (inObj instanceof Map)
+		{
+			Map<?, ?> in = (Map<?, ?>) inObj;
+			int max = in.get("maxHit") instanceof Number ? ((Number) in.get("maxHit")).intValue() : 0;
+			sb.append("  Ship: ").append(in.get("keel")).append(" keel - ");
+			sb.append(max <= 0 ? "this monster cannot hit the boat"
+				: String.format("damage taken ~%.2f/tick, max %d per hit (always-hit ceiling)",
+					in.get("dtps") instanceof Number ? ((Number) in.get("dtps")).doubleValue() : 0.0, max));
+			sb.append('\n');
+		}
+		boolean manned = "cannon".equals(ship.get("station"));
+		sb.append("  Station: ").append(manned ? "manning cannon 1 (armour counts, attacks do not)" : "helm");
+		Object ammo = ship.get("ammo");
+		if (ammo != null)
+		{
+			sb.append("; ammo: ").append(ammo)
+				.append(Boolean.TRUE.equals(ship.get("ammoDetected")) ? " (detected)" : "");
+		}
+		if (ship.get("ammoBlocked") != null)
+		{
+			sb.append("; ").append(ship.get("ammoBlocked"));
+		}
+		sb.append('\n');
+		Object cannons = ship.get("cannons");
+		if (cannons instanceof List && !((List<?>) cannons).isEmpty())
+		{
+			sb.append("  Cannons:");
+			int i = 1;
+			for (Object c : (List<?>) cannons)
+			{
+				if (!(c instanceof Map))
+				{
+					continue;
+				}
+				Map<?, ?> cannon = (Map<?, ?>) c;
+				sb.append(i > 1 ? "; " : " ").append("cannon ").append(i++).append(": ")
+					.append(cannon.get("tier")).append(", ")
+					.append("player".equals(cannon.get("firedBy")) ? "you" : "crew").append(", ");
+				if (cannon.get("blocked") != null)
+				{
+					sb.append("blocked: ").append(cannon.get("blocked"));
+				}
+				else
+				{
+					sb.append(String.format("%.2f dps", cannon.get("dps") instanceof Number
+						? ((Number) cannon.get("dps")).doubleValue() : 0.0));
+				}
+			}
+			sb.append(String.format(" (total %.2f%s)%n", ship.get("dps") instanceof Number
+				? ((Number) ship.get("dps")).doubleValue() : 0.0,
+				Boolean.TRUE.equals(ship.get("estimated")) ? ", crew formula wiki-flagged stale" : ""));
+		}
+	}
+
 	private static String gp(long value)
 	{
 		if (value >= 1_000_000)
