@@ -1260,11 +1260,15 @@ public class CommandEngine
 		}
 		if (!silent)
 		{
-			link.publishStatus(true);
 			// Publish the PARAMS immediately (field report 2026-08-12: the
 			// chips used to appear the moment you searched, so a wrong
-			// parameter could be fixed without waiting out the compute).
+			// parameter could be fixed without waiting out the compute) -
+			// and BEFORE the status: the loader picks its animation pool
+			// by peeking the page when computing starts (field report
+			// 2026-09-02: raid moods played the flask, the peek saw the
+			// previous page).
 			publishPending();
+			link.publishStatus(true);
 		}
 		Object[] a = state.computeArgs();
 		boolean anyFire = false;
@@ -1453,6 +1457,7 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, empty);
 		entry.put("params", state.paramsNode());
 		entry.put("pending", true);
+		entry.put("rosterName", state.rosterName());
 		decorateProfiles(entry);
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
 		page.put("assumeOptions", assumeOptions());
