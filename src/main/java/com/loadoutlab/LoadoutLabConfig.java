@@ -78,6 +78,18 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showTripBreakdown",
+		name = "Sea trip breakdown",
+		description = "Show the set, spec and cannon lines under a sea card, or just the total. Clicking the lines flips this too.",
+		section = controls,
+		position = 3
+	)
+	default boolean showTripBreakdown()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "showWildyRisk",
 		name = "Wilderness risk options",
 		description = "Show the low-risk, Protect Item and risk-cap controls.",

@@ -631,6 +631,8 @@ public class LoadoutLabPlugin extends Plugin
 				internalSurface.setSpriteManager(spriteManager);
 				internalSurface.setSailingIcon(() ->
 					skillIconManager.getSkillImage(net.runelite.api.Skill.SAILING, true));
+				cards.setBreakdown(() -> config.showTripBreakdown(),
+					shown -> configManager.setConfiguration("loadoutlab", "showTripBreakdown", shown));
 				cards.setSailingIcon(() ->
 					skillIconManager.getSkillImage(net.runelite.api.Skill.SAILING, true));
 				// Two display settings that described behaviour they did
@@ -963,7 +965,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
 	 * exists and nothing ever read it (audit 2026-08-22). */
 	private static final Set<String> RENDER_KEYS =
-		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons");
+		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown");
 
 
 	/** Client-thread staging push: the castability state the panel's

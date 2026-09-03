@@ -43,6 +43,19 @@ public class ResultCards
 	 * not player vernacular - the icon speaks instead). */
 	private java.util.function.Supplier<java.awt.image.BufferedImage> sailingIcon;
 
+	/** The trip breakdown's show/hide: a per-profile setting the plugin
+	 * owns; the card reads it and a click on the ledger flips it. */
+	private java.util.function.BooleanSupplier breakdownShown = () -> true;
+	private java.util.function.Consumer<Boolean> breakdownToggle = shown ->
+	{
+	};
+
+	public void setBreakdown(java.util.function.BooleanSupplier shown, java.util.function.Consumer<Boolean> toggle)
+	{
+		this.breakdownShown = shown;
+		this.breakdownToggle = toggle;
+	}
+
 	public void setSailingIcon(java.util.function.Supplier<java.awt.image.BufferedImage> icon)
 	{
 		this.sailingIcon = icon;
@@ -1089,11 +1102,19 @@ public class ResultCards
 	 * 2026-09-02: "too many different output numbers"). */
 	static String tripLedger(Map<String, Object> ship, Map<String, Object> side)
 	{
+		return tripLedger(ship, side, true);
+	}
+
+	/** full = every line; collapsed = the total alone (the show/hide is a
+	 * per-profile setting, Andrew 2026-09-03). */
+	static String tripLedger(Map<String, Object> ship, Map<String, Object> side, boolean full)
+	{
 		boolean manned = "cannon".equals(Model.str(ship, "station"));
 		double set = side == null ? 0 : Model.num(side, "dps");
 		Map<String, Object> spec = side == null ? null : Model.map(side, "spec");
 		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
 		StringBuilder t = new StringBuilder("<html><table cellpadding='1' cellspacing='0'>");
+		int body = t.length();
 		double total = 0;
 		if (manned)
 		{
@@ -1120,7 +1141,11 @@ public class ResultCards
 				blocked != null ? blocked : String.format(java.util.Locale.ROOT, "%.2f", dps),
 				Model.str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
-		t.append(ledgerRow("<b>= trip</b>", "<b>" + String.format(java.util.Locale.ROOT, "%.2f", total) + "</b>",
+		if (!full)
+		{
+			t.setLength(body);
+		}
+		t.append(ledgerRow("<b>= total</b>", "<b>" + String.format(java.util.Locale.ROOT, "%.2f", total) + "</b>",
 			"", "#82c882"));
 		return t.append("</table></html>").toString();
 	}
@@ -1134,12 +1159,15 @@ public class ResultCards
 
 	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
 	{
-		JLabel ledger = new JLabel(tripLedger(ship, shownSide));
+		boolean full = breakdownShown.getAsBoolean();
+		JLabel ledger = new JLabel(tripLedger(ship, shownSide, full));
 		// Notes stay short (Andrew 2026-09-03: "player manning cannon causes
-		// text cutoff") - the why lives here.
-		ledger.setToolTipText("cannon".equals(Model.str(ship, "station"))
+		// text cutoff") - the why lives here, with the show/hide.
+		ledger.setToolTipText(("cannon".equals(Model.str(ship, "station"))
 			? "Manning cannon 1: armour bonuses count, attacks do not"
-			: "Set + spec = the row; + cannons = the tab");
+			: "Set + spec = the row; + cannons = the tab")
+			+ " - click to " + (full ? "hide" : "show") + " the breakdown");
+		Ui.onClick(ledger, () -> breakdownToggle.accept(!full));
 		ledger.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		ledger.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		return left(ledger);
