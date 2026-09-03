@@ -64,7 +64,8 @@ class AsciiLoaderTest
 						// to the ASCII rule, pending Andrew's tofu check in the
 						// client (Swing on macOS Tahoe boxed symbol glyphs once).
 						boolean braille = c >= 0x2800 && c <= 0x28FF;
-						assertTrue((c >= 32 && c < 127) || braille, "frame char outside ASCII/Braille: " + (int) c);
+						boolean block = c >= 0x2580 && c <= 0x259F;  // solid fills by brightness
+						assertTrue((c >= 32 && c < 127) || braille || block, "frame char outside ASCII/Braille/blocks: " + (int) c);
 					}
 				}
 			}
