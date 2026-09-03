@@ -30,6 +30,10 @@ At the end of your search, filter the kit in your bank and get going.
   Inferno nibblers' barrage lock, Salarin's flat Strikes, the ToA
   Wardens' core spec dump, ToA invocation scaling with an on-card
   control - each modeled in the numbers and explained on the card.
+- **Ship combat**: sea monsters from the Sailing update are fought from
+  your boat - pick each cannon's material and who fires it, the shared
+  cannonball tier, your keel for the damage the boat takes - and the
+  card adds it up: set, spec, each cannon, total.
 - **Wilderness risk**: low-risk sets built around the items-kept-on-death
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates

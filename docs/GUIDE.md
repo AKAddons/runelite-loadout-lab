@@ -34,7 +34,13 @@ its dps in that shared set, the style that answers it, and a lens that
 flips every card and number to that mob on click. Any mob can leave via
 its row's X (the last one closes the result), so a raid roster can be
 trimmed to the rooms you actually fight, and a right-click on a row
-offers Move up / Move down to put the list in the order you run it. Inside raids, Detect on the
+offers Move up / Move down to put the list in the order you run it -
+a reorder never recomputes, the results simply follow their rows. A
+group opens with an Inventory of 4 swaps and a raid with 10 (a single
+mob with 1); the Tombs of Amascut roster runs Akkha through his final
+stand and ends on one enraged Warden, the one you left alive. Raids
+compute under their own animation - the Obelisk charging, Verzik, Olm's
+turning head - and Zulrah under his. Inside raids, Detect on the
 boost picker assumes the raid's own boost (CoX overload (+), ToA salts);
 pick any other tier to bring your own potions instead - and ToA
 results carry an Invocation chip (0/150/300/540) applying the official
@@ -116,7 +122,9 @@ spellbook to your setup and the suggested spell and set adjust to match.
 "Show in bank" outlines the set's items in your bank; "Filter bank" shows
 only them, arranged like the in-game equipment and inventory tabs - the
 worn set as the equipment cross, the carried kit in a 4-wide block beside
-it. Uses the core Bank Tags plugin.
+it: the inventory swaps, the trip's runes with their pouch and casting
+cape, every dose of each supply pick, the potion the card assumes, and
+the mob's own "~" filter list. Uses the core Bank Tags plugin.
 
 ![Bank tools: show and filter](img/bank-tools.png)
 
@@ -330,7 +338,8 @@ inventory row, game best, notes, the '+ Add mob' row, the footnote, the
 loading animation, and where the spec and thrall dps appear - in the
 numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
-wilderness controls). Defaults sets what every NEW result assumes: On
+wilderness controls, and whether a sea card's trip ledger opens expanded
+or as its total line). Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost PER
 STYLE (Detect best, None, or a named pick for each of melee, ranged and
@@ -426,11 +435,22 @@ crewmate at Privateering 1-4 - picking a material automatically raises
 the crew to the minimum that can man it, and rune/dragon cannons demand
 P4. The cannonball picker offers one shared tier - only tiers every
 carried cannon can fire, so a mithril + dragon pair tops out at mithril
-balls. The card never hides: a breakdown under the gear view says what
-each cannon adds and what your gear adds - manning a cannon means your
-armour still counts (its ranged bonuses boost your cannon) while your
-weapon does not, and cannon dps folds into the shown numbers only while
-the crew does all the firing. Player-fired numbers follow the
+balls. The card never hides: a ledger under the gear view adds it up in
+plain lines - set, spec, gear, each cannon, total - and the total is the
+number on the style tab and on the mob's roster row, so a sea row ranks
+player plus cannon like the card does. Click the ledger to collapse it to
+the total line alone (the Sea trip breakdown setting remembers the
+choice per profile). Manning a cannon means your armour still counts
+(its ranged bonuses boost your cannon) while your weapon does not, and
+the ledger says so. Sea monsters hit the BOAT, not you: the damage-taken
+line prices your keel (bronze through dragon, or none) from the wiki's
+boat combat table, click it to change the keel, and a sea-only trip's
+Supplies row packs ship repair kits only when that keel can actually be
+hurt. "Copy report" carries the whole ship - keel, damage taken, station,
+ammo, every cannon with its operator and dps or blocking reason, and
+each mob's own cannon dps - so a sea bug report needs nothing else.
+While a sea result computes, the loading animation sails: a sloop under
+gulls, a pivoting cannon, a kraken rising beside the boat. Player-fired numbers follow the
 wiki's documented formula exactly; the crewmate formula is under
 review on the wiki, so crew numbers track the last documented one.
 Melee cannot attack from a boat, so sea monsters carry no melee card

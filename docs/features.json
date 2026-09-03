@@ -538,17 +538,23 @@
     "model/CommandEngine.java",
     "model/PageState.java",
     "render/ResultCards.java",
-    "render/RenderSurface.java"
+    "render/RenderSurface.java",
+    "model/ReportBuilder.java",
+    "render/BankLayout.java"
    ],
    "tests": [
     "engine/ShipCannonTest.java",
     "data/NavalCombatTest.java",
     "model/ShipNodeTest.java",
-    "model/NavalMarkerTest.java"
+    "model/NavalMarkerTest.java",
+    "render/TripLedgerTest.java",
+    "model/SeaRowDpsTest.java",
+    "model/ReportShipSectionTest.java",
+    "render/BankFilterStacksTest.java"
    ],
    "since": "0.5.0",
-   "capture": "A hammerhead shark selected: the ship row with two cannon icons, the ammo picker open showing the rack, and the +dps tag. ~8s or a still.",
-   "notes": "Wiki-verified 2026-08-31. Crew numbers ride a wiki-flagged stale formula (naval_combat.json crewFormulaStale) and are labelled estimates."
+   "capture": "A sea mob selected: the cannon strip above the gear, the ledger under it (set, spec, gear, cannons, total), the keel line in the stat column. A still.",
+   "notes": "Wiki-verified 2026-08-31. Crew numbers ride a wiki-flagged stale formula (naval_combat.json crewFormulaStale) and are labelled estimates. 0.5.0 field pass 2026-09-03: trip ledger with per-profile show/hide, sea rows fold cannon dps, keel-priced damage taken, the copied report carries the ship."
   }
  ]
 }
