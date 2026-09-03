@@ -83,5 +83,10 @@ class RaidMoodRoutingTest
 		assertEquals("zulrah", keyFor("Zulrah"));
 		assertEquals("sea", keyFor("Hammerhead shark"));
 		assertNull(keyFor("General Graardor"));
+		// A single raid monster keys its raid: they live nowhere else
+		// (Andrew 2026-09-02: "searching zebak should give the obelisk").
+		assertEquals("toa", keyFor("Zebak"));
+		assertEquals("cox", keyFor("Tekton"));
+		assertEquals("tob", keyFor("Xarpus"));
 	}
 }

@@ -1457,7 +1457,6 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, empty);
 		entry.put("params", state.paramsNode());
 		entry.put("pending", true);
-		entry.put("rosterName", state.rosterName());
 		decorateProfiles(entry);
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
 		page.put("assumeOptions", assumeOptions());
@@ -1543,7 +1542,6 @@ public class CommandEngine
 		decorateProfiles(entry);
 		entry.put("raidSelection",
 			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
-		entry.put("rosterName", state.rosterName());
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
 		if (shipNode != null)
 		{

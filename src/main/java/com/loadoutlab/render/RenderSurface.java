@@ -37,8 +37,9 @@ public class RenderSurface
 
 	/** True when the LENSED mob of any entry is ship-eligible. */
 	/** The compute animation's pool: a sea lens draws the sea moods; a
-	 * raid roster its raid's (Andrew 2026-09-02: "hit raids first"); a
-	 * Zulrah lens hers; anything else the land flask. */
+	 * raid MONSTER its raid's - they live nowhere else, so a single Zebak
+	 * search charges the Obelisk (Andrew 2026-09-02); a Zulrah lens hers;
+	 * anything else the land flask. */
 	static String moodKey(Map<String, Object> page)
 	{
 		if (lensedNaval(page))
@@ -49,25 +50,17 @@ public class RenderSurface
 		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
-			String roster = Model.str(entry, "rosterName");
-			roster = roster == null ? "" : roster;
-			if (roster.contains("Amascut"))
-			{
-				return "toa";
-			}
-			if (roster.contains("Theatre of Blood"))
-			{
-				return "tob";
-			}
-			if (roster.contains("Chambers of Xeric"))
-			{
-				return "cox";
-			}
 			java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
 			if (!entryMobs.isEmpty())
 			{
 				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
-				String name = Model.str(entryMobs.get(shown), "name");
+				Map<String, Object> mob = entryMobs.get(shown);
+				String raid = Model.str(mob, "raid");
+				if (raid != null)
+				{
+					return raid;
+				}
+				String name = Model.str(mob, "name");
 				if (name != null && name.startsWith("Zulrah"))
 				{
 					return "zulrah";

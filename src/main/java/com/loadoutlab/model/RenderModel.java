@@ -118,6 +118,7 @@ public final class RenderModel
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
 		node.put("wilderness", com.loadoutlab.data.WildernessMonsters.isWilderness(mob));
 		node.put("naval", com.loadoutlab.data.NavalCombat.isNaval(mob.getName()));
+		node.put("raid", com.loadoutlab.engine.RaidBoosts.raidKey(mob));
 		node.put("taskOnly", com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(mob));
 		node.put("fightBook", com.loadoutlab.data.MonsterSpellbooks.bookFor(mob));
 		node.put("fightBookReason", com.loadoutlab.data.MonsterSpellbooks.reasonFor(mob));
