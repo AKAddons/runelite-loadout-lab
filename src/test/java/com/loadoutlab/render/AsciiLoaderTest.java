@@ -18,11 +18,13 @@ class AsciiLoaderTest
 		assertFalse(land.isEmpty());
 		List<List<String>> sea = pools.getOrDefault("sea", List.of());
 		assertFalse(sea.isEmpty(), "the sea pool ships with at least one mood");
-		// Raid pools (Andrew 2026-09-02: "hit raids first"): the Obelisk
-		// ships; Verzik, Olm and Zulrah return as renders of the real
-		// sprites ("only the obelisk looks acceptable"). An empty pool
-		// falls back to the flask, so their keys need no frames yet.
-		assertFalse(pools.getOrDefault("toa", List.of()).isEmpty(), "toa pool has a mood");
+		// Raid pools (Andrew 2026-09-02: "hit raids first"): the Obelisk is
+		// hand-drawn; Verzik, Olm and Zulrah are Braille renders of the real
+		// wiki sprites ("make these look like the actual monster sprites").
+		for (String key : new String[]{"toa", "tob", "cox", "zulrah"})
+		{
+			assertFalse(pools.getOrDefault(key, List.of()).isEmpty(), key + " pool has a mood");
+		}
 		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
 		// land flask's 19x9, so the compute block keeps one shape.
 		assertEquals(3, sea.size(), "sail, cannon, kraken");
@@ -57,7 +59,12 @@ class AsciiLoaderTest
 					assertEquals(first[0].length(), line.length(), "frame width drifted");
 					for (char c : line.toCharArray())
 					{
-						assertTrue(c >= 32 && c < 127, "non-ASCII frame char: " + (int) c);
+						// ASCII, or the Braille block: the sprite renders use
+						// U+2800 dots for detail. Braille is the ONE exception
+						// to the ASCII rule, pending Andrew's tofu check in the
+						// client (Swing on macOS Tahoe boxed symbol glyphs once).
+						boolean braille = c >= 0x2800 && c <= 0x28FF;
+						assertTrue((c >= 32 && c < 127) || braille, "frame char outside ASCII/Braille: " + (int) c);
 					}
 				}
 			}
