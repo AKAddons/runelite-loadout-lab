@@ -47,14 +47,27 @@ final class AsciiLoader extends javax.swing.JTextArea
 		setForeground(ResultCards.ACCENT);
 	}
 
+	/** The key the current frames were picked for (a sentinel while idle). */
+	private String playingKey = "-";
+
+	String playingKey()
+	{
+		return playingKey;
+	}
+
 	void setRunning(boolean running)
 	{
-		if (running && !timer.isRunning())
+		// A search started while the last one still animates re-picks from
+		// the NEW selection's pool (field report 2026-09-02: an interrupted
+		// search kept the first search's animation).
+		boolean repick = running && !java.util.Objects.equals(key, playingKey);
+		if (running && (!timer.isRunning() || repick))
 		{
 			List<List<String>> keyed = key == null ? null : POOLS.get(key);
 			List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : MOODS;
 			frames = pool.get(java.util.concurrent.ThreadLocalRandom.current()
 				.nextInt(pool.size()));
+			playingKey = key;
 			tick = 0;
 			advance();
 			timer.start();
@@ -62,6 +75,7 @@ final class AsciiLoader extends javax.swing.JTextArea
 		else if (!running)
 		{
 			timer.stop();
+			playingKey = "-";
 		}
 	}
 
