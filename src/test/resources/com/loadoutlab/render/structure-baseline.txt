@@ -64,7 +64,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 50%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 50% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -160,7 +160,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 53%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 53% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -247,7 +247,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 41%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 41% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -344,7 +344,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 52%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 52% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -438,7 +438,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 61% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -545,7 +545,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 80%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 80% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -642,7 +642,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 50%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 50% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -735,7 +735,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 53%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 53% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -824,7 +824,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 41%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 41% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -917,7 +917,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 52%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 52% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -1012,7 +1012,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 61%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 61% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel
@@ -1116,7 +1116,7 @@ JPanel
         JPanel
           JLabel "Yours" tip=Your best owned set
           JLabel "BiS" tip=The game-wide best set at your levels
-        JLabel "you are at 80%" tip=Your best owned set vs the game-wide best, at your levels
+        JLabel "set at 80% of BiS" tip=Your best owned set vs the game-wide best, at your levels
       Filler
       JPanel
         JPanel

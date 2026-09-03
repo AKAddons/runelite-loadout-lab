@@ -817,7 +817,7 @@ public class ResultCards
 			double ceiling = Model.num(node, "bisTabDps");
 			if (ceiling > 0)
 			{
-				JLabel gap = Ui.label(String.format("you are at %.0f%%",
+				JLabel gap = Ui.label(String.format("set at %.0f%% of BiS",
 					Math.min(100.0, 100.0 * mine / ceiling)), new Color(160, 160, 160));
 				gap.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
@@ -1074,16 +1074,31 @@ public class ResultCards
 		return strip;
 	}
 
-	/** The plain-words dps breakdown (Andrew, v2): what each cannon adds,
-	 * what the gear adds, and the total - the card never hides. */
-	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
+	/** The trip ledger under a sea card: every part, summing to the TAB's
+	 * number, with the roster row's number named on the way (Andrew
+	 * 2026-09-02: "too many different output numbers"). */
+	static String tripLedger(Map<String, Object> ship, Map<String, Object> side)
 	{
-		JPanel box = new JPanel();
-		box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-		box.setBackground(CARD);
-		box.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		boolean manned = "cannon".equals(Model.str(ship, "station"));
+		double set = side == null ? 0 : Model.num(side, "dps");
+		Map<String, Object> spec = side == null ? null : Model.map(side, "spec");
+		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
+		StringBuilder t = new StringBuilder("<html><table cellpadding='1' cellspacing='0'>");
 		double total = 0;
+		if (manned)
+		{
+			t.append(ledgerRow("gear", "manning cannon 1", "armour counts, attacks do not", "#bebebe"));
+		}
+		else
+		{
+			t.append(ledgerRow("set", String.format(java.util.Locale.ROOT, "%.2f", set), "", "#bebebe"));
+			if (specDps > 0)
+			{
+				t.append(ledgerRow("+ spec", String.format(java.util.Locale.ROOT, "%.2f", specDps), "", "#bebebe"));
+			}
+			total = set + specDps;
+			t.append(ledgerRow("= gear", String.format(java.util.Locale.ROOT, "%.2f", total), "the row's number", "#bebebe"));
+		}
 		int i = 1;
 		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
 		{
@@ -1091,33 +1106,28 @@ public class ResultCards
 			double dps = Model.num(cannon, "dps");
 			total += dps;
 			String who = "player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew";
-			String line = "Cannon " + i + " (" + cap(Model.str(cannon, "tier")) + ", "
-				+ who + "): " + (blocked != null ? blocked
-					: String.format(java.util.Locale.ROOT, "+%.2f dps", dps));
-			JLabel row = Ui.label(line, blocked != null
-				? new Color(220, 140, 120) : new Color(150, 190, 220));
-			row.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-			box.add(left(row));
-			i++;
+			t.append(ledgerRow("+ cannon " + i++,
+				blocked != null ? blocked : String.format(java.util.Locale.ROOT, "%.2f", dps),
+				Model.str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
-		double gearDps = shownSide == null ? 0 : Model.num(shownSide, "dps");
-		JLabel gear = Ui.label(manned
-			? "Gear: manning cannon 1 - armour bonuses count, attacks do not"
-			: String.format(java.util.Locale.ROOT, "Gear: +%.2f dps", gearDps),
-			new Color(190, 190, 190));
-		gear.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-		box.add(left(gear));
-		if (!manned)
-		{
-			total += gearDps;
-		}
-		JLabel sum = new JLabel(String.format(java.util.Locale.ROOT, "Trip total: %.2f dps", total));
-		sum.setFont(sum.getFont().deriveFont(Font.BOLD, 12f));
-		sum.setForeground(new Color(130, 200, 130));
-		box.add(left(sum));
-		// The estimated flag stays on the node (crew formula is wiki-flagged
-		// stale) but no longer renders a line - Andrew's call, 2026-08-31.
-		return box;
+		t.append(ledgerRow("<b>= trip</b>", "<b>" + String.format(java.util.Locale.ROOT, "%.2f", total) + "</b>",
+			"the tab's number", "#82c882"));
+		return t.append("</table></html>").toString();
+	}
+
+	private static String ledgerRow(String key, String value, String note, String color)
+	{
+		return "<tr><td><font color='" + color + "'>" + key + "</font></td><td align='right'><font color='"
+			+ color + "'>&nbsp;&nbsp;" + value + "</font></td><td><font color='#969696'>&nbsp;&nbsp;"
+			+ note + "</font></td></tr>";
+	}
+
+	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
+	{
+		JLabel ledger = new JLabel(tripLedger(ship, shownSide));
+		ledger.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		ledger.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
+		return left(ledger);
 	}
 
 	/** One cannon's icon button: the skill-guide item illustration, a red
