@@ -32,7 +32,7 @@ class AsciiLoaderTest
 		for (List<String> frames : sea)
 		{
 			String[] lines = frames.get(0).split("\n");
-			assertEquals(9, lines.length, "sea frames are 9 rows like the land flask");
+			assertEquals(12, lines.length, "sea frames are 12 rows like every mood since pass eight");
 			assertTrue(lines[0].length() >= 19, "sea frames are at least the flask's width");
 			wideMood |= lines[0].length() > 19;
 		}
