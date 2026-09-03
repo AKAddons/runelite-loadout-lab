@@ -300,12 +300,14 @@ public class ResultCards
 		Map<String, Object> shown = node == null ? null : Model.map(node, bis ? "bis" : "yours");
 		boolean tabOnly = shown != null && !Model.flag(shown, "kitBacked");
 		// Rows and tab buttons COUNT THE SAME THINGS (field report
-		// 2026-08-15): set + spec (in the tab facts) + thralls.
+		// 2026-08-15): set + spec (in the tab facts) + thralls, and a
+		// sea row's cannons (Andrew 2026-09-03).
+		double ride = thrallsDps + Model.num(mob, "shipDps");
 		String dps = bestStyle != null
-			? String.format("%.2f", bestDps + (bestDps > 0 ? thrallsDps : 0))
+			? String.format("%.2f", bestDps + (bestDps > 0 ? ride : 0))
 			: shown == null ? "-"
 			: String.format("%.2f%s",
-				Model.num(shown, "dps") + thrallsDps, tabOnly ? "*" : "");
+				Model.num(shown, "dps") + ride, tabOnly ? "*" : "");
 
 		String rowStyle = bestStyle;
 		JPanel row = new JPanel(new BorderLayout(4, 0));
@@ -817,7 +819,7 @@ public class ResultCards
 			double ceiling = Model.num(node, "bisTabDps");
 			if (ceiling > 0)
 			{
-				JLabel gap = Ui.label(String.format("set at %.0f%% of BiS",
+				JLabel gap = Ui.label(String.format("%.0f%% of BiS",
 					Math.min(100.0, 100.0 * mine / ceiling)), new Color(160, 160, 160));
 				gap.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
@@ -1095,7 +1097,7 @@ public class ResultCards
 		double total = 0;
 		if (manned)
 		{
-			t.append(ledgerRow("gear", "manning cannon 1", "armour counts, attacks do not", "#bebebe"));
+			t.append(ledgerRow("gear", "manning", "cannon 1", "#bebebe"));
 		}
 		else
 		{
@@ -1105,7 +1107,7 @@ public class ResultCards
 				t.append(ledgerRow("+ spec", String.format(java.util.Locale.ROOT, "%.2f", specDps), "", "#bebebe"));
 			}
 			total = set + specDps;
-			t.append(ledgerRow("= gear", String.format(java.util.Locale.ROOT, "%.2f", total), "the row's number", "#bebebe"));
+			t.append(ledgerRow("= gear", String.format(java.util.Locale.ROOT, "%.2f", total), "", "#bebebe"));
 		}
 		int i = 1;
 		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
@@ -1119,7 +1121,7 @@ public class ResultCards
 				Model.str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
 		t.append(ledgerRow("<b>= trip</b>", "<b>" + String.format(java.util.Locale.ROOT, "%.2f", total) + "</b>",
-			"the tab's number", "#82c882"));
+			"", "#82c882"));
 		return t.append("</table></html>").toString();
 	}
 
@@ -1133,6 +1135,11 @@ public class ResultCards
 	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
 	{
 		JLabel ledger = new JLabel(tripLedger(ship, shownSide));
+		// Notes stay short (Andrew 2026-09-03: "player manning cannon causes
+		// text cutoff") - the why lives here.
+		ledger.setToolTipText("cannon".equals(Model.str(ship, "station"))
+			? "Manning cannon 1: armour bonuses count, attacks do not"
+			: "Set + spec = the row; + cannons = the tab");
 		ledger.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
 		ledger.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		return left(ledger);

@@ -1546,6 +1546,17 @@ public class CommandEngine
 		if (shipNode != null)
 		{
 			entry.put("ship", shipNode);
+			// Each sea row carries its own cannon dps (zero while the
+			// player mans a cannon - the gear is not attacking then).
+			boolean manned = "cannon".equals(shipNode.get("station"));
+			List<?> byMob = (List<?>) shipNode.get("byMob");
+			List<?> mobNodes = (List<?>) entry.get("mobs");
+			for (int i = 0; byMob != null && i < mobNodes.size() && i < byMob.size(); i++)
+			{
+				@SuppressWarnings("unchecked")
+				Map<String, Object> mobNode = (Map<String, Object>) mobNodes.get(i);
+				mobNode.put("shipDps", manned ? 0.0 : byMob.get(i));
+			}
 		}
 		Map<String, Object> thrallsNode = null;
 		// Thralls cannot be cast on a sailing boat (confirmed 2026-08-31;
@@ -2440,6 +2451,7 @@ public class CommandEngine
 		List<Map<String, Object>> cannonNodes = new java.util.ArrayList<>();
 		boolean anyCrew = false;
 		double total = 0;
+		double[] byMob = new double[mobs.size()];
 		for (int i = 0; i < count; i++)
 		{
 			String tier = String.valueOf(params.get(i == 0 ? "cannon1Material" : "cannon2Material"));
@@ -2518,10 +2530,22 @@ public class CommandEngine
 					sailingLevel, cannon.strength, ball.strength, 0, false);
 				maxHit = com.loadoutlab.engine.ShipCannon.crewMaxHit(base, priv);
 			}
-			double chance = com.loadoutlab.engine.ShipCannon.hitChance(
-				playerFired ? rangedLevel : sailingLevel,
-				com.loadoutlab.engine.ShipCannon.equipmentAccuracy(
-					cannon.heavyAccuracy, ball.accuracy, playerFired ? wornAcc : 0),
+			int level = playerFired ? rangedLevel : sailingLevel;
+			int acc = com.loadoutlab.engine.ShipCannon.equipmentAccuracy(
+				cannon.heavyAccuracy, ball.accuracy, playerFired ? wornAcc : 0);
+			// One roll per roster mob (Andrew 2026-09-03: sea rows show
+			// player + cannon): the max hit is shared, the accuracy is not.
+			for (int m = 0; m < mobs.size(); m++)
+			{
+				MonsterStats target = mobs.get(m);
+				if (com.loadoutlab.data.NavalCombat.isNaval(target.getName()))
+				{
+					byMob[m] += com.loadoutlab.engine.ShipCannon.dps(maxHit,
+						com.loadoutlab.engine.ShipCannon.hitChance(level, acc,
+							target.getDefence(), target.getDefensive().get("heavy")));
+				}
+			}
+			double chance = com.loadoutlab.engine.ShipCannon.hitChance(level, acc,
 				mob.getDefence(), mob.getDefensive().get("heavy"));
 			double dps = com.loadoutlab.engine.ShipCannon.dps(maxHit, chance);
 			c.put("maxHit", maxHit);
@@ -2531,6 +2555,12 @@ public class CommandEngine
 		}
 		node.put("cannons", cannonNodes);
 		node.put("dps", total);
+		List<Double> byMobDps = new java.util.ArrayList<>();
+		for (double d : byMob)
+		{
+			byMobDps.add(d);
+		}
+		node.put("byMob", byMobDps);
 		node.put("estimated", anyCrew && com.loadoutlab.data.NavalCombat.crewFormulaStale());
 		// Ship damage taken (REQ-SC-15): the mob attacks the BOAT, so the
 		// number is per keel from the wiki table (armour pre-applied) and

@@ -50,7 +50,7 @@ class TripLedgerTest
 	{
 		String html = ResultCards.tripLedger(
 			ship("cannon", cannon("rune", "player", 5.10, null), cannon("rune", "crew", 4.02, null)), SIDE);
-		assertTrue(html.contains("attacks do not"), html);
+		assertTrue(html.contains("manning"), html);
 		assertTrue(html.contains("9.12"), html);
 		assertFalse(html.contains("9.94"), html);
 	}
