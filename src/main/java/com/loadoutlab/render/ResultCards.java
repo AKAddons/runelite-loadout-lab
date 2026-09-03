@@ -897,7 +897,14 @@ public class ResultCards
 					runeNames.get(rune.getKey()) + " - " + rune.getValue()));
 			}
 			int capeId = Model.id(mob, "castingCape");
-			if (capeId > 0 && (!castRunes.isEmpty() || !tripRunes.isEmpty()))
+			boolean capeSupplied = false;
+			for (Map<String, Object> supply : supplies)
+			{
+				capeSupplied |= "spellbookCape".equals(Model.str(supply, "category"));
+			}
+			// Once, not twice (Andrew 2026-09-02): the spellbook-cape supply
+			// already draws the cape.
+			if (capeId > 0 && !capeSupplied && (!castRunes.isEmpty() || !tripRunes.isEmpty()))
 			{
 				supplyRow.add(smallItemCell(capeId, 0,
 					"Magic cape - swap spellbooks up to 5x daily (owned)"));
@@ -991,7 +998,8 @@ public class ResultCards
 		bankRow.setBackground(CARD);
 		styleBankButton(showBank);
 		bankRow.add(showBank);
-		Map<String, Object> bankPlan = BankLayout.build(shownForInv, utilityRunes);
+		Map<String, Object> bankPlan = BankLayout.build(shownForInv,
+			BankLayout.tripStacks(mob, cardAssume, supplies, castRunes, utilityRunes));
 		if (bankPlan != null)
 		{
 			javax.swing.JToggleButton filterBank = new javax.swing.JToggleButton("Filter bank");

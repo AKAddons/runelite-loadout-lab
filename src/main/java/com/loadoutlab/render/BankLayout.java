@@ -31,6 +31,66 @@ final class BankLayout
 	}
 
 	/** ids + positions for the shown card; null when the card is empty. */
+	/** Everything the Supplies and Inventory rows draw, as stacks for the
+	 * filter (Andrew 2026-09-02: "not seeing all of the supplies in the
+	 * filter view"): the trip's runes, the pouch and casting cape when it
+	 * casts, the assumed potion unless the raid supplies it, every dose of
+	 * each supply pick, and the mob's own "~" filter list. */
+	static List<Map<String, Object>> tripStacks(Map<String, Object> mob, Map<String, Object> cardAssume,
+		List<Map<String, Object>> supplies, List<Map<String, Object>> castRunes,
+		List<Map<String, Object>> utilityRunes)
+	{
+		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
+		for (Map<String, Object> rune : castRunes)
+		{
+			ids.add(Model.id(rune, "id"));
+		}
+		for (Map<String, Object> rune : utilityRunes)
+		{
+			ids.add(Model.id(rune, "id"));
+		}
+		boolean casts = !ids.isEmpty();
+		for (String key : new String[]{"castingPouch", "castingCape"})
+		{
+			int id = Model.id(mob, key);
+			if (id > 0 && casts)
+			{
+				ids.add(id);
+			}
+		}
+		int boost = cardAssume == null || Model.flag(cardAssume, "boostSupplied") ? 0
+			: Model.id(cardAssume, "boostItem");
+		if (boost > 0)
+		{
+			ids.add(boost);
+		}
+		for (Map<String, Object> supply : supplies)
+		{
+			Object all = supply.get("ids");
+			if (all instanceof List && !((List<?>) all).isEmpty())
+			{
+				for (Object o : (List<?>) all)
+				{
+					ids.add(((Number) o).intValue());
+				}
+			}
+			else
+			{
+				ids.add(Model.id(supply, "itemId"));
+			}
+		}
+		for (Map<String, Object> item : Model.list(mob, "mobFilters"))
+		{
+			ids.add(Model.id(item, "id"));
+		}
+		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		for (int id : ids)
+		{
+			out.add(Map.of("id", id));
+		}
+		return out;
+	}
+
 	static Map<String, Object> build(Map<String, Object> card)
 	{
 		return build(card, java.util.Collections.emptyList());

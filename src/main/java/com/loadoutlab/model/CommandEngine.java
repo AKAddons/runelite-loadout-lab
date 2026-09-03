@@ -1999,6 +1999,12 @@ public class CommandEngine
 			node.put("category", category);
 			node.put("name", pick.name);
 			node.put("itemId", pick.ids.length > 0 ? pick.ids[0] : 0);
+			List<Integer> doses = new java.util.ArrayList<>();
+			for (int id : pick.ids)
+			{
+				doses.add(id);
+			}
+			node.put("ids", doses);
 			List<Map<String, Object>> options = new java.util.ArrayList<>();
 			for (com.loadoutlab.data.TripSupplies.Option option
 				: com.loadoutlab.data.TripSupplies.options(category))
