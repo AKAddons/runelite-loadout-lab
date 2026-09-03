@@ -1538,6 +1538,7 @@ public class CommandEngine
 		decorateProfiles(entry);
 		entry.put("raidSelection",
 			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
+		entry.put("rosterName", state.rosterName());
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
 		if (shipNode != null)
 		{

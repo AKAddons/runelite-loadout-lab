@@ -17,20 +17,21 @@ final class AsciiLoader extends javax.swing.JTextArea
 {
 	private static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
 	private static final List<List<String>> MOODS = new ArrayList<>();
-	/** Sea moods ("==sea" sections): played for ship-eligible selections
-	 * only, so a kraken never greets Graardor. Land computes use MOODS. */
-	private static final List<List<String>> SEA_MOODS = new ArrayList<>();
-
+	/** Keyed pools ("==sea ...", "==toa ...", "==tob", "==cox", "==zulrah"
+	 * sections): played only for the matching selection, so a kraken never
+	 * greets Graardor and the Obelisk charges only for a ToA trip. Land
+	 * computes use MOODS. */
+	private static final java.util.Map<String, List<List<String>>> POOLS = new java.util.HashMap<>();
 	static
 	{
-		load(MOODS, SEA_MOODS);
+		load(MOODS, POOLS);
 	}
+	private String key;
 
-	private boolean sea;
-
-	void setSea(boolean sea)
+	/** The pool key for the pending selection, or null for land. */
+	void setKey(String key)
 	{
-		this.sea = sea;
+		this.key = key;
 	}
 
 	private final javax.swing.Timer timer = new javax.swing.Timer(140, e -> advance());
@@ -50,7 +51,8 @@ final class AsciiLoader extends javax.swing.JTextArea
 	{
 		if (running && !timer.isRunning())
 		{
-			List<List<String>> pool = sea && !SEA_MOODS.isEmpty() ? SEA_MOODS : MOODS;
+			List<List<String>> keyed = key == null ? null : POOLS.get(key);
+			List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : MOODS;
 			frames = pool.get(java.util.concurrent.ThreadLocalRandom.current()
 				.nextInt(pool.size()));
 			tick = 0;
@@ -77,12 +79,18 @@ final class AsciiLoader extends javax.swing.JTextArea
 
 	/** Package for the parse test. Fail-soft: a missing or empty
 	 * resource degrades to the plain text line, never a crash. A mood
-	 * separator of "==sea" routes that mood to the SEA pool. */
-	static void load(List<List<String>> land, List<List<String>> seaPool)
+	 * separator of "==<key> ..." routes that mood to the keyed pool. */
+	private static List<List<String>> poolFor(List<List<String>> land,
+		java.util.Map<String, List<List<String>>> pools, String key)
+	{
+		return key == null ? land : pools.computeIfAbsent(key, k -> new ArrayList<>());
+	}
+
+	static void load(List<List<String>> land, java.util.Map<String, List<List<String>>> pools)
 	{
 		List<String> frames = new ArrayList<>();
 		StringBuilder frame = new StringBuilder();
-		boolean seaMood = false;
+		String moodKey = null;
 		try (java.io.BufferedReader reader = new java.io.BufferedReader(
 			new java.io.InputStreamReader(
 				AsciiLoader.class.getResourceAsStream(RESOURCE),
@@ -108,12 +116,14 @@ final class AsciiLoader extends javax.swing.JTextArea
 					}
 					if (mood && !frames.isEmpty())
 					{
-						(seaMood ? seaPool : land).add(frames);
+						poolFor(land, pools, moodKey).add(frames);
 						frames = new ArrayList<>();
 					}
 					if (mood)
 					{
-						seaMood = line.startsWith("==sea");
+						String name = line.substring(2).trim();
+						int space = name.indexOf(' ');
+						moodKey = name.isEmpty() ? null : space > 0 ? name.substring(0, space) : name;
 					}
 					continue;
 				}
@@ -134,7 +144,7 @@ final class AsciiLoader extends javax.swing.JTextArea
 		}
 		if (!frames.isEmpty())
 		{
-			(seaMood ? seaPool : land).add(frames);
+			poolFor(land, pools, moodKey).add(frames);
 		}
 		if (land.isEmpty())
 		{

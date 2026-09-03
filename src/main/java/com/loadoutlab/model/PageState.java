@@ -117,6 +117,11 @@ public class PageState
 		return rosterMobs;
 	}
 
+	public synchronized String rosterName()
+	{
+		return rosterName;
+	}
+
 	/** Selection snapshot for undo: restore() reinstates it exactly.
 	 * Carries the PARAMS a select seeds too (antifire, tab, view side,
 	 * on-task, wilderness, bench, and the config seeds) - undoing a

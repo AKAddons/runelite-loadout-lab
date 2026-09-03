@@ -36,6 +36,47 @@ public class RenderSurface
 	}
 
 	/** True when the LENSED mob of any entry is ship-eligible. */
+	/** The compute animation's pool: a sea lens draws the sea moods; a
+	 * raid roster its raid's (Andrew 2026-09-02: "hit raids first"); a
+	 * Zulrah lens hers; anything else the land flask. */
+	static String moodKey(Map<String, Object> page)
+	{
+		if (lensedNaval(page))
+		{
+			return "sea";
+		}
+		Map<String, Object> params = ResultCards.firstParams(page);
+		int lens = params == null ? 0 : Model.id(params, "lensIndex");
+		for (Map<String, Object> entry : Model.list(page, "entries"))
+		{
+			String roster = Model.str(entry, "rosterName");
+			roster = roster == null ? "" : roster;
+			if (roster.contains("Amascut"))
+			{
+				return "toa";
+			}
+			if (roster.contains("Theatre of Blood"))
+			{
+				return "tob";
+			}
+			if (roster.contains("Chambers of Xeric"))
+			{
+				return "cox";
+			}
+			java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
+			if (!entryMobs.isEmpty())
+			{
+				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
+				String name = Model.str(entryMobs.get(shown), "name");
+				if (name != null && name.startsWith("Zulrah"))
+				{
+					return "zulrah";
+				}
+			}
+		}
+		return null;
+	}
+
 	private static boolean lensedNaval(Map<String, Object> page)
 	{
 		Map<String, Object> params = ResultCards.firstParams(page);
@@ -115,7 +156,7 @@ public class RenderSurface
 				loader.setVisible(animate);
 				// A sea compute draws from the sea moods (REQ-SC-17): the
 				// pending page already carries the selection, so peek it.
-				loader.setSea(lensedNaval(page.get()));
+				loader.setKey(moodKey(page.get()));
 				loader.setRunning(isComputing && animate);
 			}
 			waitingSlot.setVisible(isComputing);

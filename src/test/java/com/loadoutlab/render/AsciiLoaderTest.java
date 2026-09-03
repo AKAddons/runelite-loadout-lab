@@ -13,10 +13,16 @@ class AsciiLoaderTest
 	void framesParseSteady()
 	{
 		List<List<String>> land = new java.util.ArrayList<>();
-		List<List<String>> sea = new java.util.ArrayList<>();
-		AsciiLoader.load(land, sea);
+		java.util.Map<String, List<List<String>>> pools = new java.util.HashMap<>();
+		AsciiLoader.load(land, pools);
 		assertFalse(land.isEmpty());
+		List<List<String>> sea = pools.getOrDefault("sea", List.of());
 		assertFalse(sea.isEmpty(), "the sea pool ships with at least one mood");
+		// Raid pools (Andrew 2026-09-02: "hit raids first") and Zulrah.
+		for (String key : new String[]{"toa", "tob", "cox", "zulrah"})
+		{
+			assertFalse(pools.getOrDefault(key, List.of()).isEmpty(), key + " pool has a mood");
+		}
 		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
 		// land flask's 19x9, so the compute block keeps one shape.
 		assertEquals(3, sea.size(), "sail, cannon, kraken");
@@ -32,7 +38,10 @@ class AsciiLoaderTest
 		// (Andrew 2026-09-02); moods may differ in width, one plays per compute.
 		assertTrue(wideMood, "the cannon mood is wider than the flask");
 		List<List<String>> moods = new java.util.ArrayList<>(land);
-		moods.addAll(sea);
+		for (List<List<String>> pool : pools.values())
+		{
+			moods.addAll(pool);
+		}
 		for (List<String> frames : moods)
 		{
 			assertTrue(frames.size() > 1, "a mood animates - two frames minimum");
