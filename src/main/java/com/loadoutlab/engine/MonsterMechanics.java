@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
+import com.loadoutlab.data.JsonResources;
 
 /**
  * Per-NPC combat mechanics the stat sheets cannot express: style
@@ -47,21 +48,21 @@ public final class MonsterMechanics
 			InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
 		{
 			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			com.loadoutlab.data.JsonResources.ints(root, "immuneMagic", IMMUNE_MAGIC);
-			com.loadoutlab.data.JsonResources.ints(root, "immuneRanged", IMMUNE_RANGED);
-			com.loadoutlab.data.JsonResources.ints(root, "immuneMelee", IMMUNE_MELEE);
-			com.loadoutlab.data.JsonResources.ints(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
-			com.loadoutlab.data.JsonResources.ints(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
-			com.loadoutlab.data.JsonResources.ints(root, "zulrah", ZULRAH);
-			com.loadoutlab.data.JsonResources.ints(root, "vespula", VESPULA);
-			com.loadoutlab.data.JsonResources.ints(root, "guardians", GUARDIANS);
-			com.loadoutlab.data.JsonResources.ints(root, "tekton", TEKTON);
-			com.loadoutlab.data.JsonResources.ints(root, "iceDemon", ICE_DEMON);
-			com.loadoutlab.data.JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
-			com.loadoutlab.data.JsonResources.ints(root, "salarin", SALARIN);
-			com.loadoutlab.data.JsonResources.ints(root, "nibblers", NIBBLERS);
-			com.loadoutlab.data.JsonResources.ints(root, "wardenCores", WARDEN_CORES);
-			com.loadoutlab.data.JsonResources.ints(root, "toaInvocationScaled", TOA_INVOCATION_SCALED);
+			JsonResources.ints(root, "immuneMagic", IMMUNE_MAGIC);
+			JsonResources.ints(root, "immuneRanged", IMMUNE_RANGED);
+			JsonResources.ints(root, "immuneMelee", IMMUNE_MELEE);
+			JsonResources.ints(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
+			JsonResources.ints(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
+			JsonResources.ints(root, "zulrah", ZULRAH);
+			JsonResources.ints(root, "vespula", VESPULA);
+			JsonResources.ints(root, "guardians", GUARDIANS);
+			JsonResources.ints(root, "tekton", TEKTON);
+			JsonResources.ints(root, "iceDemon", ICE_DEMON);
+			JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
+			JsonResources.ints(root, "salarin", SALARIN);
+			JsonResources.ints(root, "nibblers", NIBBLERS);
+			JsonResources.ints(root, "wardenCores", WARDEN_CORES);
+			JsonResources.ints(root, "toaInvocationScaled", TOA_INVOCATION_SCALED);
 		}
 		catch (Exception ex)
 		{

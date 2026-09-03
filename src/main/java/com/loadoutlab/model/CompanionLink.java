@@ -1,6 +1,7 @@
 package com.loadoutlab.model;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * The in-process page store between the CommandEngine and the
@@ -13,14 +14,14 @@ public class CompanionLink
 {
 	private volatile Map<String, Object> lastPage;
 	private volatile Runnable pageListener;
-	private volatile java.util.function.Consumer<Boolean> statusListener;
+	private volatile Consumer<Boolean> statusListener;
 
 	public void setPageListener(Runnable pageListener)
 	{
 		this.pageListener = pageListener;
 	}
 
-	public void setStatusListener(java.util.function.Consumer<Boolean> statusListener)
+	public void setStatusListener(Consumer<Boolean> statusListener)
 	{
 		this.statusListener = statusListener;
 	}
@@ -28,7 +29,7 @@ public class CompanionLink
 	/** Compute-in-flight signal - drives the renderer's waiting state. */
 	public void publishStatus(boolean computing)
 	{
-		java.util.function.Consumer<Boolean> listener = statusListener;
+		Consumer<Boolean> listener = statusListener;
 		if (listener != null)
 		{
 			listener.accept(computing);

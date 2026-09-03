@@ -11,6 +11,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.loadoutlab.data.AssumeIcons;
+import com.loadoutlab.data.MonsterSpellbooks;
+import com.loadoutlab.data.StatBlock;
+import com.loadoutlab.data.WildernessMonsters;
+import com.loadoutlab.engine.BoostProfile;
+import com.loadoutlab.engine.PvpRisk;
+import java.util.Collections;
+import java.util.Set;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 
 /**
  * The generic render-model of ADR-0008: everything a UI needs to draw,
@@ -54,27 +64,27 @@ public final class RenderModel
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots)
 	{
-		return entry(mobs, perMob, riskKeptSlots, null, java.util.Collections.emptySet());
+		return entry(mobs, perMob, riskKeptSlots, null, Collections.emptySet());
 	}
 
 	/** Full form: ownership + simmed ids flag every gear cell for the
 	 * classic border language (gold owned-BiS / green assumed / grey). */
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
-		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+		IntPredicate owned, Set<Integer> simmed)
 	{
 		return entry(mobs, perMob, riskKeptSlots, owned, simmed, null);
 	}
 
 	/** Per-build provenance lookup: an item's storage NAME when a fetch
 	 * trip is needed (the classic source dots), "" when at hand. */
-	private static final ThreadLocal<java.util.function.IntFunction<String>> LOCATION =
+	private static final ThreadLocal<IntFunction<String>> LOCATION =
 		new ThreadLocal<>();
 
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
-		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed,
-		java.util.function.IntFunction<String> locationOf)
+		IntPredicate owned, Set<Integer> simmed,
+		IntFunction<String> locationOf)
 	{
 		LOCATION.set(locationOf);
 		try
@@ -89,7 +99,7 @@ public final class RenderModel
 
 	private static Map<String, Object> buildEntry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
-		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+		IntPredicate owned, Set<Integer> simmed)
 	{
 		Map<String, Object> entry = new LinkedHashMap<>();
 		List<Object> mobNodes = new ArrayList<>();
@@ -116,19 +126,19 @@ public final class RenderModel
 		node.put("invocationScaled",
 			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
 		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
-		node.put("wilderness", com.loadoutlab.data.WildernessMonsters.isWilderness(mob));
+		node.put("wilderness", WildernessMonsters.isWilderness(mob));
 		node.put("naval", com.loadoutlab.data.NavalCombat.isNaval(mob.getName()));
 		node.put("raid", com.loadoutlab.engine.RaidBoosts.raidKey(mob));
 		node.put("taskOnly", com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(mob));
-		node.put("fightBook", com.loadoutlab.data.MonsterSpellbooks.bookFor(mob));
-		node.put("fightBookReason", com.loadoutlab.data.MonsterSpellbooks.reasonFor(mob));
+		node.put("fightBook", MonsterSpellbooks.bookFor(mob));
+		node.put("fightBookReason", MonsterSpellbooks.reasonFor(mob));
 		node.put("slayerMonster", mob.isSlayerMonster());
-		node.put("wildernessExclusive", com.loadoutlab.data.WildernessMonsters.isExclusive(mob));
+		node.put("wildernessExclusive", WildernessMonsters.isExclusive(mob));
 		return node;
 	}
 
 	private static Map<String, Object> styles(Map<CombatStyle, OptimizerService.StyleResult> results,
-		int riskKeptSlots, java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed)
 	{
 		Map<String, Object> styles = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
@@ -147,7 +157,7 @@ public final class RenderModel
 			node.put("bisAssume", assumeNode(result.gameBoostLabel));
 			// Tab facts: the sprite and each side's SHOWN dps (set + spec)
 			// so a renderer can label the strip without re-deriving.
-			node.put("styleSprite", com.loadoutlab.data.AssumeIcons.styleSprite(style));
+			node.put("styleSprite", AssumeIcons.styleSprite(style));
 			DpsResult ownedShown = result.owned == null || result.owned.isEmpty()
 				? null : result.owned.get(0);
 			node.put("tabDps", ownedShown == null ? 0
@@ -161,12 +171,12 @@ public final class RenderModel
 
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis)
 	{
-		return card(result, bis, -1, null, java.util.Collections.emptySet());
+		return card(result, bis, -1, null, Collections.emptySet());
 	}
 
 	/** One side's card: the shown set and everything rendered around it. */
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots,
-		java.util.function.IntPredicate owned, java.util.Set<Integer> simmed)
+		IntPredicate owned, Set<Integer> simmed)
 	{
 		DpsResult shown = bis ? result.overallBest
 			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
@@ -225,7 +235,7 @@ public final class RenderModel
 					node.put("bisMatch", owns && bisItem != null
 						&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item)));
 				}
-				java.util.function.IntFunction<String> locationOf = LOCATION.get();
+				IntFunction<String> locationOf = LOCATION.get();
 				if (locationOf != null)
 				{
 					// Only FETCH-TRIP storages carry a dot (the classic
@@ -253,7 +263,7 @@ public final class RenderModel
 		Map<String, Object> stats = new LinkedHashMap<>();
 		stats.put("offensive", statBlock(shown.getLoadout().getOffensive()));
 		stats.put("defensive", statBlock(shown.getLoadout().getDefensive()));
-		com.loadoutlab.data.StatBlock bonuses = shown.getLoadout().getBonuses();
+		StatBlock bonuses = shown.getLoadout().getBonuses();
 		stats.put("strength", bonuses.getStrength());
 		stats.put("rangedStrength", bonuses.getRangedStrength());
 		stats.put("magicDamage", bonuses.getMagicDamage());
@@ -261,7 +271,7 @@ public final class RenderModel
 		card.put("stats", stats);
 		if (riskKeptSlots >= 0)
 		{
-			com.loadoutlab.engine.PvpRisk.Assessment risk = com.loadoutlab.engine.PvpRisk.assess(
+			PvpRisk.Assessment risk = PvpRisk.assess(
 				shown.getLoadout(), bis ? result.gameSpecWeapon : result.specWeapon, riskKeptSlots);
 			Map<String, Object> riskNode = new LinkedHashMap<>();
 			riskNode.put("riskGp", risk.riskGp);
@@ -320,7 +330,7 @@ public final class RenderModel
 			&& sameBlock(a.getBonuses(), b.getBonuses());
 	}
 
-	private static boolean sameBlock(com.loadoutlab.data.StatBlock a, com.loadoutlab.data.StatBlock b)
+	private static boolean sameBlock(StatBlock a, StatBlock b)
 	{
 		return a.getStab() == b.getStab() && a.getSlash() == b.getSlash()
 			&& a.getCrush() == b.getCrush() && a.getMagic() == b.getMagic()
@@ -355,19 +365,19 @@ public final class RenderModel
 		int plus = boostLabel.indexOf(" + ");
 		String prayerPart = plus > 0 ? boostLabel.substring(0, plus) : boostLabel;
 		String boostPart = plus > 0 ? boostLabel.substring(plus + 3) : null;
-		node.put("prayerSprite", com.loadoutlab.data.AssumeIcons.prayerSprite(prayerPart));
+		node.put("prayerSprite", AssumeIcons.prayerSprite(prayerPart));
 		node.put("boostItem", boostPart == null ? -1
-			: com.loadoutlab.data.AssumeIcons.boostItem(boostPart));
+			: AssumeIcons.boostItem(boostPart));
 		// The raid hands these out (CoX overloads, ToA salts): assumed, never
 		// packed (Andrew 2026-09-02: potions are supplies to bring).
 		node.put("boostSupplied", boostPart != null
-			&& (boostPart.equals(com.loadoutlab.engine.BoostProfile.OVERLOAD.toString())
-			|| boostPart.equals(com.loadoutlab.engine.BoostProfile.OVERLOAD_PLUS.toString())
-			|| boostPart.equals(com.loadoutlab.engine.BoostProfile.SMELLING_SALTS.toString())));
+			&& (boostPart.equals(BoostProfile.OVERLOAD.toString())
+			|| boostPart.equals(BoostProfile.OVERLOAD_PLUS.toString())
+			|| boostPart.equals(BoostProfile.SMELLING_SALTS.toString())));
 		return node;
 	}
 
-	private static Map<String, Object> statBlock(com.loadoutlab.data.StatBlock block)
+	private static Map<String, Object> statBlock(StatBlock block)
 	{
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("stab", block.getStab());
@@ -402,7 +412,7 @@ public final class RenderModel
 		node.put("dps", incoming.totalDps);
 		node.put("unprayedDps", incoming.unprayedDps);
 		node.put("protectSprite", incoming.protectPrayer == null ? -1
-			: com.loadoutlab.data.AssumeIcons.prayerSprite(String.valueOf(incoming.protectPrayer)));
+			: AssumeIcons.prayerSprite(String.valueOf(incoming.protectPrayer)));
 		node.put("protectPrayer", incoming.protectPrayer);
 		node.put("fullyModeled", incoming.fullyModeled);
 		node.put("overrideNote", incoming.overrideNote);

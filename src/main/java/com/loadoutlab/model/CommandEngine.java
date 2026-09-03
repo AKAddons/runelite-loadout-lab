@@ -6,6 +6,35 @@ import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.List;
 import java.util.Map;
+import com.loadoutlab.command.Command;
+import com.loadoutlab.command.CommandHistory;
+import com.loadoutlab.data.AssumeIcons;
+import com.loadoutlab.data.GearSlot;
+import com.loadoutlab.data.MonsterGroups;
+import com.loadoutlab.data.MonsterSpellbooks;
+import com.loadoutlab.data.NavalCombat;
+import com.loadoutlab.data.SpellRunes;
+import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.data.TripSupplies;
+import com.loadoutlab.data.WildernessMonsters;
+import com.loadoutlab.engine.BlowpipeDarts;
+import com.loadoutlab.engine.BoostProfile;
+import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.ExtraDps;
+import com.loadoutlab.engine.MonsterMechanics;
+import com.loadoutlab.engine.ShipCannon;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
+import java.util.function.Supplier;
+import javax.swing.SwingUtilities;
 
 /**
  * Executes contract commands (docs/COMPANION_CONTRACT.md) against the
@@ -34,9 +63,9 @@ public class CommandEngine
 	private final CompanionLink link;
 	/** Live global-store counts (excluded/simmed/stored) - supplied by
 	 * the plugin, read at page-build time so chips are never stale. */
-	private volatile java.util.function.Supplier<Map<String, Object>> counts;
+	private volatile Supplier<Map<String, Object>> counts;
 
-	public void setCounts(java.util.function.Supplier<Map<String, Object>> counts)
+	public void setCounts(Supplier<Map<String, Object>> counts)
 	{
 		this.counts = counts;
 	}
@@ -61,10 +90,10 @@ public class CommandEngine
 		void unpin(int monsterId, String slot);
 
 		/** Highlight these ids in the open bank; null clears. */
-		void showInBank(java.util.Set<Integer> itemIds);
+		void showInBank(Set<Integer> itemIds);
 
 		/** Filter the open bank to these ids in this layout; nulls clear. */
-		void filterBank(java.util.Set<Integer> itemIds, int[] layout);
+		void filterBank(Set<Integer> itemIds, int[] layout);
 
 		/** Per-mob profile reads/writes (MonsterProfileStore-backed). */
 		String pinnedSpell(int monsterId);
@@ -113,7 +142,7 @@ public class CommandEngine
 	 * the command refuses and the button does nothing. */
 	public interface WikiCalcOpener
 	{
-		void open(MonsterStats mob, com.loadoutlab.engine.DpsResult shown, int dartId,
+		void open(MonsterStats mob, DpsResult shown, int dartId,
 			String assumes, boolean onSlayerTask, boolean inWilderness);
 	}
 
@@ -141,9 +170,9 @@ public class CommandEngine
 
 	/** Wrench-panel supply defaults (category -> config enum name),
 	 * re-read per publish so config changes land immediately. */
-	private volatile java.util.function.Supplier<Map<String, String>> supplyDefaults;
+	private volatile Supplier<Map<String, String>> supplyDefaults;
 
-	public void setSupplyDefaults(java.util.function.Supplier<Map<String, String>> supplyDefaults)
+	public void setSupplyDefaults(Supplier<Map<String, String>> supplyDefaults)
 	{
 		this.supplyDefaults = supplyDefaults;
 	}
@@ -174,8 +203,8 @@ public class CommandEngine
 		{
 			return cached;
 		}
-		Map<String, Object> books = new java.util.LinkedHashMap<>();
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		Map<String, Object> books = new LinkedHashMap<>();
+		for (SpellStats spell : data.getSpells())
 		{
 			books.put(spell.getName(), spell.getSpellbook());
 		}
@@ -187,17 +216,17 @@ public class CommandEngine
 
 
 	/** Storage name for an item needing a fetch trip (source dots). */
-	private volatile java.util.function.IntFunction<String> itemLocation;
+	private volatile IntFunction<String> itemLocation;
 
-	public void setItemLocation(java.util.function.IntFunction<String> itemLocation)
+	public void setItemLocation(IntFunction<String> itemLocation)
 	{
 		this.itemLocation = itemLocation;
 	}
 
 	/** Canonical ownership (dose variants collapse) for Detect scans. */
-	private volatile java.util.function.IntPredicate ownedCheck;
+	private volatile IntPredicate ownedCheck;
 
-	public void setOwnedCheck(java.util.function.IntPredicate ownedCheck)
+	public void setOwnedCheck(IntPredicate ownedCheck)
 	{
 		this.ownedCheck = ownedCheck;
 	}
@@ -206,24 +235,24 @@ public class CommandEngine
 	 * selection (spec chip, thralls when reachable+book owned, Death
 	 * Charge at Magic 80) - supplied by the plugin, which owns the
 	 * config and the live levels. */
-	private volatile java.util.function.Supplier<Map<String, Object>> assumptionSeeder;
+	private volatile Supplier<Map<String, Object>> assumptionSeeder;
 
-	public void setAssumptionSeeder(java.util.function.Supplier<Map<String, Object>> assumptionSeeder)
+	public void setAssumptionSeeder(Supplier<Map<String, Object>> assumptionSeeder)
 	{
 		this.assumptionSeeder = assumptionSeeder;
 	}
 
 	/** Classic Detect: the best owned antifire tier (0/1/2) for a
 	 * fire-breathing selection - supplied by the plugin (owned scan). */
-	private volatile java.util.function.Function<List<MonsterStats>, Integer> antifireResolver;
+	private volatile Function<List<MonsterStats>, Integer> antifireResolver;
 
-	public void setAntifireResolver(java.util.function.Function<List<MonsterStats>, Integer> antifireResolver)
+	public void setAntifireResolver(Function<List<MonsterStats>, Integer> antifireResolver)
 	{
 		this.antifireResolver = antifireResolver;
 	}
 
 	private volatile RosterCompute rosterCompute;
-	private volatile List<com.loadoutlab.data.MonsterGroups.MonsterGroup> groups;
+	private volatile List<MonsterGroups.MonsterGroup> groups;
 
 	public void setRosterCompute(RosterCompute rosterCompute)
 	{
@@ -233,8 +262,8 @@ public class CommandEngine
 	 * old panel's stack during the transition (its commands re-sync
 	 * Swing controls the engine does not know about); they merge when
 	 * the panel leaves. */
-	private final com.loadoutlab.command.CommandHistory history =
-		new com.loadoutlab.command.CommandHistory();
+	private final CommandHistory history =
+		new CommandHistory();
 	/** Page snapshots aligned with the history stacks: undo restores
 	 * the page you were LOOKING AT instead of recomputing it (field
 	 * report 2026-08-20: undo flashed the stale result over the
@@ -262,10 +291,10 @@ public class CommandEngine
 		}
 	}
 
-	private final java.util.ArrayDeque<Snapshot> undoPages =
-		new java.util.ArrayDeque<>();
-	private final java.util.ArrayDeque<Snapshot> redoPages =
-		new java.util.ArrayDeque<>();
+	private final ArrayDeque<Snapshot> undoPages =
+		new ArrayDeque<>();
+	private final ArrayDeque<Snapshot> redoPages =
+		new ArrayDeque<>();
 	private static final int SNAPSHOT_CAP = 32;
 	private boolean restoringSnapshot;
 
@@ -294,7 +323,7 @@ public class CommandEngine
 
 	/** history.execute plus the page snapshot - every recorded command
 	 * routes through here. */
-	private boolean record(com.loadoutlab.command.Command cmd)
+	private boolean record(Command cmd)
 	{
 		Map<String, Object> before = link.lastPage();
 		List<MonsterStats> beforeMobs = lastMobs;
@@ -339,7 +368,7 @@ public class CommandEngine
 		{
 			case "select":
 			{
-				Object exactId = args == null ? null : args.get("id");
+				Object exactId = arg(args, "id");
 				if (exactId instanceof Number)
 				{
 					int wanted = ((Number) exactId).intValue();
@@ -385,7 +414,7 @@ public class CommandEngine
 					}
 					return selectResolved(first, null);
 				}
-				Object query = args == null ? null : args.get("query");
+				Object query = arg(args, "query");
 				if (!(query instanceof String) || ((String) query).isBlank())
 				{
 					return false;
@@ -393,7 +422,7 @@ public class CommandEngine
 				// Groups first on an exact-ish name hit, else single mobs -
 				// mirrors the classic search's dropdown priorities loosely;
 				// a group named like the query opens the roster.
-				com.loadoutlab.data.MonsterGroups.MonsterGroup group = groupFor((String) query);
+				MonsterGroups.MonsterGroup group = groupFor((String) query);
 				MonsterStats next = null;
 				if (group == null)
 				{
@@ -413,7 +442,7 @@ public class CommandEngine
 			}
 			case "add-mob":
 			{
-				Object query = args == null ? null : args.get("query");
+				Object query = arg(args, "query");
 				if (!(query instanceof String) || ((String) query).isBlank() || !state.hasSelection())
 				{
 					return false;
@@ -433,10 +462,10 @@ public class CommandEngine
 						return false;
 					}
 				}
-				List<MonsterStats> combined = new java.util.ArrayList<>(current);
+				List<MonsterStats> combined = new ArrayList<>(current);
 				combined.add(added);
 				Object[] prevSel = state.selectionSnapshot();
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -466,8 +495,8 @@ public class CommandEngine
 				// Reorder a roster row (Andrew 2026-09-02): presentation
 				// only - the shared set is the same kit - but the lens must
 				// follow the row it was on, and undo puts both back.
-				Object index = args == null ? null : args.get("index");
-				Object delta = args == null ? null : args.get("delta");
+				Object index = arg(args, "index");
+				Object delta = arg(args, "delta");
 				List<MonsterStats> current = state.rosterMobs();
 				if (!(index instanceof Number) || !(delta instanceof Number) || current == null)
 				{
@@ -479,14 +508,14 @@ public class CommandEngine
 				{
 					return false;
 				}
-				List<MonsterStats> reordered = new java.util.ArrayList<>(current);
+				List<MonsterStats> reordered = new ArrayList<>(current);
 				reordered.add(to, reordered.remove(at));
 				Object[] prevSel = state.selectionSnapshot();
 				Object lensObj = state.paramsNode().get("lensIndex");
 				int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
 				int movedLens = lens == at ? to : lens == to ? at : lens;
 				boolean raid = Boolean.TRUE.equals(state.paramsNode().get("raidSelection"));
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -515,7 +544,7 @@ public class CommandEngine
 			}
 			case "remove-mob":
 			{
-				Object index = args == null ? null : args.get("index");
+				Object index = arg(args, "index");
 				// A single-mob view shows its own row with an X (field ask
 				// 2026-08-22) - there is no roster behind it, so the lone
 				// selection stands in as a one-mob list.
@@ -532,10 +561,10 @@ public class CommandEngine
 					return false;
 				}
 				MonsterStats removed = current.get(at);
-				List<MonsterStats> remaining = new java.util.ArrayList<>(current);
+				List<MonsterStats> remaining = new ArrayList<>(current);
 				remaining.remove(at);
 				Object[] prevSel = state.selectionSnapshot();
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -579,7 +608,7 @@ public class CommandEngine
 			}
 			case "set-param":
 			{
-				Object param = args == null ? null : args.get("param");
+				Object param = arg(args, "param");
 				if (!(param instanceof String))
 				{
 					return false;
@@ -587,7 +616,7 @@ public class CommandEngine
 				String key = (String) param;
 				Object next = args.get("value");
 				Object prev = state.paramsNode().get(key);
-				boolean unchanged = java.util.Objects.equals(prev, next);
+				boolean unchanged = Objects.equals(prev, next);
 				if (unchanged && "riskBudgetGp".equals(key))
 				{
 					// 75k is BOTH a legal cap and the engine's uncapped
@@ -610,7 +639,7 @@ public class CommandEngine
 					return applyParam(key, next);
 				}
 				String label = PARAM_LABELS.getOrDefault(key, key);
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -636,8 +665,8 @@ public class CommandEngine
 			case "set-supply-default":
 			{
 				StoreOps ops = stores;
-				Object category = args == null ? null : args.get("category");
-				Object choice = args == null ? null : args.get("choice");
+				Object category = arg(args, "category");
+				Object choice = arg(args, "choice");
 				if (ops == null || !(category instanceof String) || !(choice instanceof String))
 				{
 					return false;
@@ -650,7 +679,7 @@ public class CommandEngine
 			{
 				WikiCalcOpener opener = wikiCalcOpener;
 				List<MonsterStats> mobs = lastMobs;
-				List<Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = lastPerMob;
+				List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = lastPerMob;
 				if (opener == null || mobs == null || perMob == null)
 				{
 					return false;
@@ -671,7 +700,7 @@ public class CommandEngine
 				}
 				boolean bis = args != null && Boolean.TRUE.equals(args.get("bis"))
 					|| Boolean.TRUE.equals(state.paramsNode().get("viewingBis"));
-				Object styleArg = args == null ? null : args.get("style");
+				Object styleArg = arg(args, "style");
 				String styleName = styleArg instanceof String ? (String) styleArg : null;
 				if (styleName == null)
 				{
@@ -682,7 +711,7 @@ public class CommandEngine
 					styleName = tab instanceof String && !((String) tab).isEmpty()
 						? (String) tab : null;
 				}
-				com.loadoutlab.optimizer.OptimizerService.StyleResult result = null;
+				OptimizerService.StyleResult result = null;
 				if (styleName != null)
 				{
 					try
@@ -698,10 +727,10 @@ public class CommandEngine
 				else
 				{
 					double best = -1;
-					for (com.loadoutlab.optimizer.OptimizerService.StyleResult candidate
+					for (OptimizerService.StyleResult candidate
 						: perMob.get(at).values())
 					{
-						com.loadoutlab.engine.DpsResult side = candidate == null ? null
+						DpsResult side = candidate == null ? null
 							: bis ? candidate.overallBest
 							: candidate.owned == null || candidate.owned.isEmpty()
 								? null : candidate.owned.get(0);
@@ -712,7 +741,7 @@ public class CommandEngine
 						}
 					}
 				}
-				com.loadoutlab.engine.DpsResult shown = result == null ? null
+				DpsResult shown = result == null ? null
 					: bis ? result.overallBest
 					: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
 				if (shown == null)
@@ -725,7 +754,7 @@ public class CommandEngine
 				String attackType = shown.getAttackType();
 				if (attackType != null && attackType.contains(" - "))
 				{
-					Integer parsed = com.loadoutlab.engine.BlowpipeDarts.baseIdForTierName(
+					Integer parsed = BlowpipeDarts.baseIdForTierName(
 						attackType.substring(attackType.indexOf(" - ") + 3));
 					dartId = parsed == null ? -1 : parsed;
 				}
@@ -742,7 +771,7 @@ public class CommandEngine
 			case "toggle-always-filter":
 			{
 				StoreOps ops = stores;
-				Object itemId = args == null ? null : args.get("itemId");
+				Object itemId = arg(args, "itemId");
 				if (ops == null || !(itemId instanceof Number))
 				{
 					return false;
@@ -755,7 +784,7 @@ public class CommandEngine
 			case "toggle-sim":
 			{
 				StoreOps ops = stores;
-				Object itemId = args == null ? null : args.get("itemId");
+				Object itemId = arg(args, "itemId");
 				if (ops == null || !(itemId instanceof Number))
 				{
 					return false;
@@ -768,7 +797,7 @@ public class CommandEngine
 				// one live stack) - the classic recorded into the plugin's
 				// stack, orphaned since the merge-back, so Back skipped
 				// every exclude/sim (field report 2026-08-20).
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -799,7 +828,7 @@ public class CommandEngine
 			{
 				StoreOps ops = stores;
 				MonsterStats mob = state.mob();
-				Object slot = args == null ? null : args.get("slot");
+				Object slot = arg(args, "slot");
 				if (ops == null || mob == null || !(slot instanceof String))
 				{
 					return false;
@@ -823,7 +852,7 @@ public class CommandEngine
 			case "set-prayer-pick":
 			case "set-boost-pick":
 			{
-				Object style = args == null ? null : args.get("style");
+				Object style = arg(args, "style");
 				if (!(style instanceof String))
 				{
 					return false;
@@ -844,12 +873,12 @@ public class CommandEngine
 					.get(prayer ? "prayerPicks" : "boostPicks");
 				Object prevRaw = picks == null ? null : picks.get(combatStyle.name().toLowerCase());
 				String prev = prevRaw instanceof String ? (String) prevRaw : null;
-				if (java.util.Objects.equals(prev, next))
+				if (Objects.equals(prev, next))
 				{
 					return true;
 				}
 				String kind = prayer ? "Prayer" : "Boost";
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -883,7 +912,7 @@ public class CommandEngine
 				// (the set-note lesson, third member; field report
 				// 2026-08-20: the card trio's adds no-oped on rosters).
 				MonsterStats mob = shownMob();
-				Object itemId = args == null ? null : args.get("itemId");
+				Object itemId = arg(args, "itemId");
 				if (ops == null || mob == null || !(itemId instanceof Number))
 				{
 					return false;
@@ -896,7 +925,7 @@ public class CommandEngine
 				String what = labelArg instanceof String ? (String) labelArg : "item";
 				int mobId = mob.getId();
 				String mobName = mob.getName();
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					@Override
 					public boolean apply()
@@ -942,20 +971,20 @@ public class CommandEngine
 			{
 				StoreOps ops = stores;
 				MonsterStats mob = shownMob();
-				Object itemId = args == null ? null : args.get("itemId");
+				Object itemId = arg(args, "itemId");
 				if (ops == null || mob == null || !(itemId instanceof Number))
 				{
 					return false;
 				}
 				int id = ((Number) itemId).intValue();
-				Object scope = args == null ? null : args.get("scope");
+				Object scope = arg(args, "scope");
 				String scopeKey = scope instanceof String ? (String) scope : "ALL";
-				Object labelArg = args == null ? null : args.get("label");
+				Object labelArg = arg(args, "label");
 				String what = labelArg instanceof String ? (String) labelArg : "item";
 				int mobId = mob.getId();
 				String mobName = mob.getName();
 				String command = name;
-				return record(new com.loadoutlab.command.Command()
+				return record(new Command()
 				{
 					private void run(String cmd)
 					{
@@ -1024,8 +1053,8 @@ public class CommandEngine
 			case "set-supply-override":
 			{
 				StoreOps ops = stores;
-				Object category = args == null ? null : args.get("category");
-				Object choice = args == null ? null : args.get("choice");
+				Object category = arg(args, "category");
+				Object choice = arg(args, "choice");
 				MonsterStats lensed = lensedMob();
 				if (ops == null || lensed == null || !(category instanceof String))
 				{
@@ -1050,20 +1079,20 @@ public class CommandEngine
 				}
 				if ("set-pinned-spell".equals(name))
 				{
-					Object spell = args == null ? null : args.get("name");
+					Object spell = arg(args, "name");
 					ops.setPinnedSpell(mob.getId(), spell instanceof String ? (String) spell : "");
 					recompute();
 				}
 				else if ("set-pinned-spec".equals(name))
 				{
-					Object itemId = args == null ? null : args.get("itemId");
+					Object itemId = arg(args, "itemId");
 					ops.setPinnedSpec(mob.getId(),
 						itemId instanceof Number ? ((Number) itemId).intValue() : 0);
 					recompute();
 				}
 				else
 				{
-					Object text = args == null ? null : args.get("text");
+					Object text = arg(args, "text");
 					ops.setNote(mob.getId(), text instanceof String ? (String) text : "");
 					republish();
 				}
@@ -1076,10 +1105,10 @@ public class CommandEngine
 				{
 					return false;
 				}
-				Object ids = args == null ? null : args.get("ids");
+				Object ids = arg(args, "ids");
 				if (ids instanceof List)
 				{
-					java.util.Set<Integer> itemIds = new java.util.HashSet<>();
+					Set<Integer> itemIds = new HashSet<>();
 					for (Object id : (List<?>) ids)
 					{
 						if (id instanceof Number)
@@ -1102,11 +1131,11 @@ public class CommandEngine
 				{
 					return false;
 				}
-				Object ids = args == null ? null : args.get("ids");
-				Object layout = args == null ? null : args.get("layout");
+				Object ids = arg(args, "ids");
+				Object layout = arg(args, "layout");
 				if (ids instanceof List && layout instanceof List)
 				{
-					java.util.Set<Integer> itemIds = new java.util.LinkedHashSet<>();
+					Set<Integer> itemIds = new java.util.LinkedHashSet<>();
 					for (Object id : (List<?>) ids)
 					{
 						if (id instanceof Number)
@@ -1168,8 +1197,8 @@ public class CommandEngine
 				{
 					restoringSnapshot = false;
 				}
-				java.util.ArrayDeque<Snapshot> from = isUndo ? undoPages : redoPages;
-				java.util.ArrayDeque<Snapshot> to = isUndo ? redoPages : undoPages;
+				ArrayDeque<Snapshot> from = isUndo ? undoPages : redoPages;
+				ArrayDeque<Snapshot> to = isUndo ? redoPages : undoPages;
 				if (!ok)
 				{
 					if (hadEntry && !from.isEmpty())
@@ -1234,7 +1263,7 @@ public class CommandEngine
 			if (link != null)
 			{
 				link.publishPage(withHistory(
-					RenderModel.page(java.util.Collections.emptyList())));
+					RenderModel.page(Collections.emptyList())));
 			}
 			return;
 		}
@@ -1289,7 +1318,7 @@ public class CommandEngine
 		}
 		else
 		{
-			List<MonsterStats> scaled = new java.util.ArrayList<>();
+			List<MonsterStats> scaled = new ArrayList<>();
 			for (MonsterStats m : roster)
 			{
 				scaled.add(atInvocation(m));
@@ -1308,19 +1337,19 @@ public class CommandEngine
 	 * the classic panel applies before every compute. */
 	private MonsterStats atInvocation(MonsterStats mob)
 	{
-		return com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob)
-			? com.loadoutlab.engine.MonsterMechanics.atToaInvocation(mob, state.toaInvocation())
+		return MonsterMechanics.isToaInvocationScaled(mob)
+			? MonsterMechanics.atToaInvocation(mob, state.toaInvocation())
 			: mob;
 	}
 
 	/** A curated group whose name matches the query (contains, both
 	 * directions) - loaded once, resolved like the classic dropdown. */
-	private com.loadoutlab.data.MonsterGroups.MonsterGroup groupFor(String query)
+	private MonsterGroups.MonsterGroup groupFor(String query)
 	{
-		List<com.loadoutlab.data.MonsterGroups.MonsterGroup> loaded = groups;
+		List<MonsterGroups.MonsterGroup> loaded = groups;
 		if (loaded == null)
 		{
-			loaded = com.loadoutlab.data.MonsterGroups.load(data);
+			loaded = MonsterGroups.load(data);
 			groups = loaded;
 		}
 		String q = query.toLowerCase();
@@ -1328,7 +1357,7 @@ public class CommandEngine
 		{
 			return null;
 		}
-		for (com.loadoutlab.data.MonsterGroups.MonsterGroup candidate : loaded)
+		for (MonsterGroups.MonsterGroup candidate : loaded)
 		{
 			String name = candidate.getName().toLowerCase();
 			if (name.contains(q) || q.contains(name))
@@ -1355,18 +1384,24 @@ public class CommandEngine
 	 * never change the result"): the results already in hand follow their
 	 * mobs into the new order and the page republishes; only a roster
 	 * whose results are missing or stale computes. */
+	/** One command argument, null when the command carried none. */
+	private static Object arg(Map<String, Object> args, String key)
+	{
+		return args == null ? null : args.get(key);
+	}
+
 	private void republishReordered()
 	{
 		List<MonsterStats> order = state.rosterMobs();
 		List<MonsterStats> had = lastMobs;
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = lastPerMob;
 		if (order == null || had == null || perMob == null || had.size() != order.size()
-			|| perMob.size() != had.size() || !new java.util.HashSet<>(had).equals(new java.util.HashSet<>(order)))
+			|| perMob.size() != had.size() || !new HashSet<>(had).equals(new HashSet<>(order)))
 		{
 			recompute();
 			return;
 		}
-		List<Map<CombatStyle, OptimizerService.StyleResult>> moved = new java.util.ArrayList<>();
+		List<Map<CombatStyle, OptimizerService.StyleResult>> moved = new ArrayList<>();
 		for (MonsterStats mob : order)
 		{
 			moved.add(perMob.get(had.indexOf(mob)));
@@ -1398,7 +1433,7 @@ public class CommandEngine
 	 * sim/exclude... once you set your cannon/crew/cannonball type it always
 	 * shows as that") - stored under ship.* in the scoped supply-defaults
 	 * store and re-seeded on every new selection. */
-	private static final java.util.Set<String> SHIP_PERSISTED = java.util.Set.of(
+	private static final Set<String> SHIP_PERSISTED = Set.of(
 		"cannonCount", "cannon1Material", "cannon2Material",
 		"cannon1Operator", "cannon2Operator", "cannonAmmo", "shipKeel");
 
@@ -1461,9 +1496,9 @@ public class CommandEngine
 	 * and the cards fill in when the answer lands. */
 	private void publishPending()
 	{
-		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		if (!SwingUtilities.isEventDispatchThread())
 		{
-			javax.swing.SwingUtilities.invokeLater(this::publishPending);
+			SwingUtilities.invokeLater(this::publishPending);
 			return;
 		}
 		List<MonsterStats> mobs = state.rosterMobs() != null
@@ -1472,10 +1507,10 @@ public class CommandEngine
 		{
 			return;
 		}
-		List<Map<CombatStyle, OptimizerService.StyleResult>> empty = new java.util.ArrayList<>();
+		List<Map<CombatStyle, OptimizerService.StyleResult>> empty = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++)
 		{
-			empty.add(java.util.Collections.emptyMap());
+			empty.add(Collections.emptyMap());
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, empty);
 		entry.put("params", state.paramsNode());
@@ -1486,7 +1521,7 @@ public class CommandEngine
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
+		page.put("dartTiers", BlowpipeDarts.tiers());
 		link.publishPage(page);
 	}
 
@@ -1494,18 +1529,18 @@ public class CommandEngine
 	 * so the global chips exist BEFORE the first search. */
 	public void publishIdle()
 	{
-		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		if (!SwingUtilities.isEventDispatchThread())
 		{
-			javax.swing.SwingUtilities.invokeLater(this::publishIdle);
+			SwingUtilities.invokeLater(this::publishIdle);
 			return;
 		}
 		Map<String, Object> page = withHistory(
-			RenderModel.page(java.util.Collections.emptyList()));
+			RenderModel.page(Collections.emptyList()));
 		page.put("assumeOptions", assumeOptions());
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
+		page.put("dartTiers", BlowpipeDarts.tiers());
 		link.publishPage(page);
 	}
 
@@ -1515,9 +1550,9 @@ public class CommandEngine
 		{
 			return;
 		}
-		if (!javax.swing.SwingUtilities.isEventDispatchThread())
+		if (!SwingUtilities.isEventDispatchThread())
 		{
-			javax.swing.SwingUtilities.invokeLater(this::republish);
+			SwingUtilities.invokeLater(this::republish);
 			return;
 		}
 		List<MonsterStats> mobs = lastMobs;
@@ -1533,13 +1568,13 @@ public class CommandEngine
 		boolean exclusive = false;
 		for (MonsterStats m : mobs)
 		{
-			exclusive |= com.loadoutlab.data.WildernessMonsters.isExclusive(m);
+			exclusive |= WildernessMonsters.isExclusive(m);
 		}
 		boolean wildy = exclusive || Boolean.TRUE.equals(params.get("inWilderness"));
 		int keptSlots = wildy
 			? (Boolean.TRUE.equals(params.get("protectItem")) ? 4 : 3) : -1;
-		java.util.Set<Integer> simmedIds = new java.util.HashSet<>();
-		java.util.function.Supplier<Map<String, Object>> countSupplierForFlags = counts;
+		Set<Integer> simmedIds = new HashSet<>();
+		Supplier<Map<String, Object>> countSupplierForFlags = counts;
 		if (countSupplierForFlags != null)
 		{
 			Object simmedItems = countSupplierForFlags.get().get("simmedItems");
@@ -1594,24 +1629,24 @@ public class CommandEngine
 			if (mobs != null && !mobs.isEmpty())
 			{
 				MonsterStats lensedMob = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
-				seaLens = com.loadoutlab.data.NavalCombat.isNaval(lensedMob.getName());
+				seaLens = NavalCombat.isNaval(lensedMob.getName());
 			}
 		}
 		if (!seaLens && membersFlag("thralls"))
 		{
-			double dps = com.loadoutlab.engine.ExtraDps.thrallDps(magicLevel);
-			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
+			double dps = ExtraDps.thrallDps(magicLevel);
+			String tier = ExtraDps.thrallTier(magicLevel);
 			if (dps > 0 && tier != null)
 			{
-				thrallsNode = new java.util.LinkedHashMap<>();
+				thrallsNode = new LinkedHashMap<>();
 				thrallsNode.put("dps", dps);
 				thrallsNode.put("tier", tier);
 				entry.put("thralls", thrallsNode);
 			}
 		}
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
-		List<String> spellNames = new java.util.ArrayList<>();
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		List<String> spellNames = new ArrayList<>();
+		for (SpellStats spell : data.getSpells())
 		{
 			spellNames.add(spell.getName());
 		}
@@ -1620,8 +1655,8 @@ public class CommandEngine
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
 		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", com.loadoutlab.engine.BlowpipeDarts.tiers());
-		java.util.function.Supplier<Map<String, Object>> countSupplier = counts;
+		page.put("dartTiers", BlowpipeDarts.tiers());
+		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies));
 		link.publishPage(page);
@@ -1656,11 +1691,11 @@ public class CommandEngine
 	/** Shared by query- and id-resolved selects: the undoable command
 	 * with detect-antifire at selection, exactly like the classic. */
 	private boolean selectResolved(MonsterStats mobPick,
-		com.loadoutlab.data.MonsterGroups.MonsterGroup groupPick)
+		MonsterGroups.MonsterGroup groupPick)
 	{
 		Object[] prev = state.selectionSnapshot();
 		boolean hadSelection = state.hasSelection();
-		return record(new com.loadoutlab.command.Command()
+		return record(new Command()
 		{
 			@Override
 			public boolean apply()
@@ -1674,7 +1709,7 @@ public class CommandEngine
 				{
 					state.select(mobPick);
 				}
-				java.util.function.Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+				Function<List<MonsterStats>, Integer> resolve = antifireResolver;
 				List<MonsterStats> selected = groupPick != null
 					? groupPick.getMobs() : List.of(mobPick);
 				if (resolve != null)
@@ -1708,8 +1743,8 @@ public class CommandEngine
 				boolean anyWilderness = false;
 				for (MonsterStats m : selected)
 				{
-					anyWilderness |= com.loadoutlab.data.WildernessMonsters.isWilderness(m);
-					if (com.loadoutlab.data.WildernessMonsters.isExclusive(m))
+					anyWilderness |= WildernessMonsters.isWilderness(m);
+					if (WildernessMonsters.isExclusive(m))
 					{
 						state.setParam("inWilderness", true);
 					}
@@ -1742,7 +1777,7 @@ public class CommandEngine
 					groupPick != null && groupPick.getInventory() > 0
 						? groupPick.getInventory()
 						: selected.size() > 1 ? 4 : 1);
-				java.util.function.Supplier<Map<String, Object>> seeder = assumptionSeeder;
+				Supplier<Map<String, Object>> seeder = assumptionSeeder;
 				if (seeder != null)
 				{
 					for (Map.Entry<String, Object> seed : seeder.get().entrySet())
@@ -1781,32 +1816,32 @@ public class CommandEngine
 	 * up to 3 matching groups followed by up to 25 monsters. */
 	public List<Map<String, Object>> searchOptions(String query)
 	{
-		List<Map<String, Object>> options = new java.util.ArrayList<>();
+		List<Map<String, Object>> options = new ArrayList<>();
 		String q = query == null ? "" : query.trim();
 		if (q.length() < 2)
 		{
 			return options;
 		}
-		List<com.loadoutlab.data.MonsterGroups.MonsterGroup> loaded = groups;
+		List<MonsterGroups.MonsterGroup> loaded = groups;
 		if (loaded == null)
 		{
-			loaded = com.loadoutlab.data.MonsterGroups.load(data);
+			loaded = MonsterGroups.load(data);
 			groups = loaded;
 		}
-		for (com.loadoutlab.data.MonsterGroups.MonsterGroup group
-			: com.loadoutlab.data.MonsterGroups.search(loaded, q, 3))
+		for (MonsterGroups.MonsterGroup group
+			: MonsterGroups.search(loaded, q, 3))
 		{
-			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("label", group.label());
 			node.put("group", group.getName());
 			options.add(node);
 		}
 		for (MonsterStats m : data.searchMonsters(q, 25))
 		{
-			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("label", m.label());
 			node.put("id", m.getId());
-			if (com.loadoutlab.data.NavalCombat.isNaval(m.getName()))
+			if (NavalCombat.isNaval(m.getName()))
 			{
 				node.put("naval", true);
 			}
@@ -1822,32 +1857,32 @@ public class CommandEngine
 	 * list - the grey chip's menu (global defaults, not per-mob). */
 	private List<Map<String, Object>> supplyCatalog()
 	{
-		java.util.function.Supplier<Map<String, String>> supplier = supplyDefaults;
-		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		Supplier<Map<String, String>> supplier = supplyDefaults;
+		List<Map<String, Object>> out = new ArrayList<>();
 		if (supplier == null)
 		{
 			return out;
 		}
 		Map<String, String> defaults = supplier.get();
 		String[][] categories = {
-			{com.loadoutlab.data.TripSupplies.FOOD, "Food"},
-			{com.loadoutlab.data.TripSupplies.FAST_FOOD, "Fast food"},
-			{com.loadoutlab.data.TripSupplies.PRAYER_RESTORE, "Prayer restore"},
-			{com.loadoutlab.data.TripSupplies.SURGE, "Surge potion"},
-			{com.loadoutlab.data.TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
-			{com.loadoutlab.data.TripSupplies.ANTIVENOM, "Anti-venom"},
+			{TripSupplies.FOOD, "Food"},
+			{TripSupplies.FAST_FOOD, "Fast food"},
+			{TripSupplies.PRAYER_RESTORE, "Prayer restore"},
+			{TripSupplies.SURGE, "Surge potion"},
+			{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
+			{TripSupplies.ANTIVENOM, "Anti-venom"},
 		};
 		for (String[] category : categories)
 		{
-			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("category", category[0]);
 			node.put("label", category[1]);
 			node.put("current", defaults.getOrDefault(category[0], "DETECT_BEST"));
-			List<Map<String, Object>> options = new java.util.ArrayList<>();
-			for (com.loadoutlab.data.TripSupplies.Option option
-				: com.loadoutlab.data.TripSupplies.options(category[0]))
+			List<Map<String, Object>> options = new ArrayList<>();
+			for (TripSupplies.Option option
+				: TripSupplies.options(category[0]))
 			{
-				Map<String, Object> opt = new java.util.LinkedHashMap<>();
+				Map<String, Object> opt = new LinkedHashMap<>();
 				opt.put("key", option.key);
 				opt.put("name", option.name);
 				options.add(opt);
@@ -1856,7 +1891,7 @@ public class CommandEngine
 			out.add(node);
 		}
 		// The Arceuus-access choice rides the same menu in the classic.
-		Map<String, Object> access = new java.util.LinkedHashMap<>();
+		Map<String, Object> access = new LinkedHashMap<>();
 		access.put("category", "arceuusAccess");
 		access.put("label", "Arceuus access");
 		access.put("current", defaults.getOrDefault("arceuusAccess", "DETECT_BEST"));
@@ -1869,7 +1904,7 @@ public class CommandEngine
 		// 2026-08-22), defaulting to detection - a config toggle and a
 		// panel control for one behaviour is the source-of-truth trap
 		// this release already paid for once.
-		Map<String, Object> combo = new java.util.LinkedHashMap<>();
+		Map<String, Object> combo = new LinkedHashMap<>();
 		combo.put("category", "comboRunes");
 		combo.put("label", "Combination runes");
 		combo.put("current", defaults.getOrDefault("comboRunes", "DETECT_BEST"));
@@ -1883,7 +1918,7 @@ public class CommandEngine
 	 * DETECT meaning "combine when you own combination runes". */
 	private boolean combineRunes()
 	{
-		java.util.function.Supplier<Map<String, String>> supplier = supplyDefaults;
+		Supplier<Map<String, String>> supplier = supplyDefaults;
 		String choice = supplier == null ? null : supplier.get().get("comboRunes");
 		if ("ALWAYS".equals(choice))
 		{
@@ -1893,12 +1928,12 @@ public class CommandEngine
 		{
 			return false;
 		}
-		java.util.function.IntPredicate owns = ownedCheck;
+		IntPredicate owns = ownedCheck;
 		if (owns == null)
 		{
 			return false;
 		}
-		for (int id : com.loadoutlab.data.SpellRunes.comboRuneIds())
+		for (int id : SpellRunes.comboRuneIds())
 		{
 			if (owns.test(id))
 			{
@@ -1943,8 +1978,8 @@ public class CommandEngine
 	static Map<String, List<String>> wildyCarriedFates(int pouch, boolean cape,
 		List<String> supplies, boolean utilityRunes)
 	{
-		List<String> kept = new java.util.ArrayList<>();
-		List<String> lost = new java.util.ArrayList<>();
+		List<String> kept = new ArrayList<>();
+		List<String> lost = new ArrayList<>();
 		if (pouch == 27509)
 		{
 			kept.add("Divine rune pouch (locked - kept)");
@@ -1970,11 +2005,11 @@ public class CommandEngine
 
 	private List<Map<String, Object>> suppliesNode(List<MonsterStats> mobs)
 	{
-		java.util.function.Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
+		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
 		StoreOps ops = stores;
-		java.util.function.IntPredicate owns = ownedCheck;
+		IntPredicate owns = ownedCheck;
 		MonsterStats lensed = lensedMob();
-		List<Map<String, Object>> nodes = new java.util.ArrayList<>();
+		List<Map<String, Object>> nodes = new ArrayList<>();
 		if (defaultsSupplier == null || ops == null || owns == null || lensed == null)
 		{
 			return nodes;
@@ -1987,65 +2022,65 @@ public class CommandEngine
 		boolean seaOnly = !mobs.isEmpty();
 		for (MonsterStats m : mobs)
 		{
-			seaOnly &= com.loadoutlab.data.NavalCombat.isNaval(m.getName());
+			seaOnly &= NavalCombat.isNaval(m.getName());
 		}
 		for (Map.Entry<String, String> e : defaults.entrySet())
 		{
 			String category = e.getKey();
 			String mode = overrides.getOrDefault(category, e.getValue());
 			if ("NONE".equals(mode)
-				|| (seaOnly && !com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT.equals(category)))
+				|| (seaOnly && !TripSupplies.SHIP_REPAIR_KIT.equals(category)))
 			{
 				continue;
 			}
-			if (com.loadoutlab.data.TripSupplies.SHIP_REPAIR_KIT.equals(category))
+			if (TripSupplies.SHIP_REPAIR_KIT.equals(category))
 			{
 				// Repair kits are the ship's food - recommended only for a
 				// sea mob that can actually damage YOUR keel (Andrew,
 				// 2026-08-31: ">0 damage"). A dragon keel at a hammerhead
 				// carries nothing.
 				String keel = String.valueOf(state.paramsNode().get("shipKeel"));
-				if (com.loadoutlab.data.NavalCombat.keelMaxHit(lensed.getName(), keel) <= 0)
+				if (NavalCombat.keelMaxHit(lensed.getName(), keel) <= 0)
 				{
 					continue;
 				}
 			}
-			if (com.loadoutlab.data.TripSupplies.ANTIVENOM.equals(category))
+			if (TripSupplies.ANTIVENOM.equals(category))
 			{
 				boolean venomous = false;
 				for (MonsterStats m : mobs)
 				{
-					venomous |= com.loadoutlab.data.TripSupplies.inflictsVenom(m);
+					venomous |= TripSupplies.inflictsVenom(m);
 				}
 				if (!venomous)
 				{
 					continue;
 				}
 			}
-			com.loadoutlab.data.TripSupplies.Option pick =
+			TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
-					? com.loadoutlab.data.TripSupplies.detectBest(category, owns,
+					? TripSupplies.detectBest(category, owns,
 						Boolean.TRUE.equals(state.paramsNode().get("inWilderness")))
-					: com.loadoutlab.data.TripSupplies.option(category, mode);
+					: TripSupplies.option(category, mode);
 			if (pick == null)
 			{
 				continue;
 			}
-			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("category", category);
 			node.put("name", pick.name);
 			node.put("itemId", pick.ids.length > 0 ? pick.ids[0] : 0);
-			List<Integer> doses = new java.util.ArrayList<>();
+			List<Integer> doses = new ArrayList<>();
 			for (int id : pick.ids)
 			{
 				doses.add(id);
 			}
 			node.put("ids", doses);
-			List<Map<String, Object>> options = new java.util.ArrayList<>();
-			for (com.loadoutlab.data.TripSupplies.Option option
-				: com.loadoutlab.data.TripSupplies.options(category))
+			List<Map<String, Object>> options = new ArrayList<>();
+			for (TripSupplies.Option option
+				: TripSupplies.options(category))
 			{
-				Map<String, Object> opt = new java.util.LinkedHashMap<>();
+				Map<String, Object> opt = new LinkedHashMap<>();
 				opt.put("key", option.key);
 				opt.put("name", option.name);
 				options.add(opt);
@@ -2066,7 +2101,7 @@ public class CommandEngine
 	 * gear never autocasts but whose FIGHT casts plenty). */
 	private List<Map<String, Object>> utilityRunesFor(Map<String, Object> mob)
 	{
-		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		List<Map<String, Object>> out = new ArrayList<>();
 		Object name = mob.get("name");
 		MonsterStats stats = null;
 		for (MonsterStats m : data.getMonsters())
@@ -2077,17 +2112,17 @@ public class CommandEngine
 				break;
 			}
 		}
-		String fightSpell = com.loadoutlab.data.MonsterSpellbooks.spellFor(stats);
+		String fightSpell = MonsterSpellbooks.spellFor(stats);
 		if (fightSpell != null)
 		{
 			addUtilityRunes(out, fightSpell, fightSpell + " (fight mechanic)");
 		}
 		Map<String, Object> params = state.paramsNode();
 		boolean seaMob = stats != null
-			&& com.loadoutlab.data.NavalCombat.isNaval(stats.getName());
+			&& NavalCombat.isNaval(stats.getName());
 		if (!seaMob && membersFlag("thralls"))
 		{
-			String tier = com.loadoutlab.engine.ExtraDps.thrallTier(magicLevel);
+			String tier = ExtraDps.thrallTier(magicLevel);
 			if (tier != null)
 			{
 				addUtilityRunes(out, "Resurrect " + tier + " Ghost",
@@ -2111,7 +2146,7 @@ public class CommandEngine
 			// book. Vengeance alone - no thralls, no Death Charge, no
 			// fight book - is a perfectly good setup and must not drag
 			// swap runes along (field ask 2026-08-22).
-			String fightBook = com.loadoutlab.data.MonsterSpellbooks.bookFor(stats);
+			String fightBook = MonsterSpellbooks.bookFor(stats);
 			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
 				&& !"lunar".equalsIgnoreCase(fightBook);
 			elsewhere |= !seaMob && membersFlag("thralls");
@@ -2123,14 +2158,14 @@ public class CommandEngine
 				addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");
 			}
 		}
-		return combineRunes() ? com.loadoutlab.data.SpellRunes.combineCombos(out) : out;
+		return combineRunes() ? SpellRunes.combineCombos(out) : out;
 	}
 
 	private static void addUtilityRunes(List<Map<String, Object>> out,
 		String spell, String why)
 	{
 		List<Map<String, Object>> runes =
-			com.loadoutlab.data.SpellRunes.costFor(spell, null, null);
+			SpellRunes.costFor(spell, null, null);
 		if (runes == null)
 		{
 			return;
@@ -2171,7 +2206,7 @@ public class CommandEngine
 					// unlocked pouch is LOST on a pvp death, so only the
 					// trouver-locked variants are ever recommended there -
 					// locked divine, locked regular, or no pouch at all.
-					java.util.function.IntPredicate owns = ownedCheck;
+					IntPredicate owns = ownedCheck;
 					if (!utility.isEmpty() && owns != null)
 					{
 						boolean wildyTrip = Boolean.TRUE.equals(
@@ -2197,7 +2232,7 @@ public class CommandEngine
 						// joins the lost/kept lists - see wildyCarriedFates.
 						if (wildyTrip)
 						{
-							List<String> supplyNames = new java.util.ArrayList<>();
+							List<String> supplyNames = new ArrayList<>();
 							Object supplies = entry.get("supplies");
 							if (supplies instanceof List)
 							{
@@ -2266,17 +2301,17 @@ public class CommandEngine
 		{
 			return cached;
 		}
-		Map<String, Object> prayers = new java.util.LinkedHashMap<>();
-		Map<String, Object> boosts = new java.util.LinkedHashMap<>();
+		Map<String, Object> prayers = new LinkedHashMap<>();
+		Map<String, Object> boosts = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			prayers.put(style.name().toLowerCase(), java.util.Arrays.asList(
 				com.loadoutlab.engine.PrayerBonuses.optionsFor(style)));
-			List<Map<String, Object>> styleBoosts = new java.util.ArrayList<>();
-			for (com.loadoutlab.engine.BoostProfile b : com.loadoutlab.engine.BoostProfile.values())
+			List<Map<String, Object>> styleBoosts = new ArrayList<>();
+			for (BoostProfile b : BoostProfile.values())
 			{
-				if (b == com.loadoutlab.engine.BoostProfile.NONE
-					|| b == com.loadoutlab.engine.BoostProfile.LIVE_CURRENT)
+				if (b == BoostProfile.NONE
+					|| b == BoostProfile.LIVE_CURRENT)
 				{
 					continue;
 				}
@@ -2285,7 +2320,7 @@ public class CommandEngine
 					: style == CombatStyle.RANGED ? b.boosts('r') : b.boosts('m');
 				if (universal || forStyle)
 				{
-					Map<String, Object> option = new java.util.LinkedHashMap<>();
+					Map<String, Object> option = new LinkedHashMap<>();
 					option.put("key", b.name());
 					option.put("label", b.toString());
 					styleBoosts.add(option);
@@ -2293,39 +2328,39 @@ public class CommandEngine
 			}
 			boosts.put(style.name().toLowerCase(), styleBoosts);
 		}
-		Map<String, Object> options = new java.util.LinkedHashMap<>();
+		Map<String, Object> options = new LinkedHashMap<>();
 		options.put("prayers", prayers);
 		options.put("boosts", boosts);
 		// Icon facts for the pickers (additive): prayer name -> sprite id,
 		// boost label -> potion item id. Renderers draw, never map.
-		Map<String, Object> prayerSprites = new java.util.LinkedHashMap<>();
+		Map<String, Object> prayerSprites = new LinkedHashMap<>();
 		for (Object list : prayers.values())
 		{
 			for (Object name : (List<?>) list)
 			{
 				prayerSprites.put(String.valueOf(name),
-					com.loadoutlab.data.AssumeIcons.prayerSprite(String.valueOf(name)));
+					AssumeIcons.prayerSprite(String.valueOf(name)));
 			}
 		}
 		options.put("prayerSprites", prayerSprites);
 		// Spellbook Swap is 96 Magic (Vengeance 94) - offer it when the
 		// player can actually reach the level, boosts included.
 		options.put("spellbookSwapAvailable", magicLevel + 5 >= 96);
-		Map<String, Object> boostItems = new java.util.LinkedHashMap<>();
+		Map<String, Object> boostItems = new LinkedHashMap<>();
 		for (Object list : boosts.values())
 		{
 			for (Object option : (List<?>) list)
 			{
 				String label = String.valueOf(((Map<?, ?>) option).get("label"));
-				boostItems.put(label, com.loadoutlab.data.AssumeIcons.boostItem(label));
+				boostItems.put(label, AssumeIcons.boostItem(label));
 			}
 		}
 		options.put("boostItems", boostItems);
-		Map<String, Object> spellSprites = new java.util.LinkedHashMap<>();
-		for (com.loadoutlab.data.SpellStats spell : data.getSpells())
+		Map<String, Object> spellSprites = new LinkedHashMap<>();
+		for (SpellStats spell : data.getSpells())
 		{
 			spellSprites.put(spell.getName(),
-				com.loadoutlab.data.AssumeIcons.spellSprite(spell.getName()));
+				AssumeIcons.spellSprite(spell.getName()));
 		}
 		options.put("spellSprites", spellSprites);
 		assumeOptionsCache = options;
@@ -2361,7 +2396,7 @@ public class CommandEngine
 		Object lensObj = params.get("lensIndex");
 		int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
 		MonsterStats lensed = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
-		if (!com.loadoutlab.data.NavalCombat.isNaval(lensed.getName()))
+		if (!NavalCombat.isNaval(lensed.getName()))
 		{
 			return null;
 		}
@@ -2369,7 +2404,7 @@ public class CommandEngine
 			? ((Number) params.get("cannonCount")).intValue() : 0;
 		MonsterStats mob = lensed;
 		String ammoPick = String.valueOf(params.get("cannonAmmo"));
-		java.util.List<String> carriedTiers = new java.util.ArrayList<>();
+		List<String> carriedTiers = new ArrayList<>();
 		for (int i = 0; i < count; i++)
 		{
 			carriedTiers.add(String.valueOf(
@@ -2389,26 +2424,26 @@ public class CommandEngine
 			boolean everyone = true;
 			for (String t : carriedTiers)
 			{
-				everyone &= com.loadoutlab.data.NavalCombat.canFire(t, ammoPick);
+				everyone &= NavalCombat.canFire(t, ammoPick);
 			}
 			if (!everyone)
 			{
-				ammo = com.loadoutlab.data.NavalCombat.bestSharedBall(carriedTiers);
+				ammo = NavalCombat.bestSharedBall(carriedTiers);
 			}
 		}
 		if (detect)
 		{
 			// Best BANKED ball every carried cannon can fire - never a ball
 			// the bank does not hold (the 0.4.1 rule, applied to ammo).
-			java.util.function.IntPredicate owns = ownedCheck;
+			IntPredicate owns = ownedCheck;
 			String best = null;
-			for (com.loadoutlab.data.NavalCombat.Ball ball
-				: com.loadoutlab.data.NavalCombat.balls())
+			for (NavalCombat.Ball ball
+				: NavalCombat.balls())
 			{
 				boolean everyone = true;
 				for (String t : carriedTiers)
 				{
-					everyone &= com.loadoutlab.data.NavalCombat.canFire(t, ball.tier);
+					everyone &= NavalCombat.canFire(t, ball.tier);
 				}
 				if (everyone && owns != null && owns.test(ball.itemId))
 				{
@@ -2417,7 +2452,7 @@ public class CommandEngine
 			}
 			if (best == null)
 			{
-				String top = com.loadoutlab.data.NavalCombat.bestSharedBall(carriedTiers);
+				String top = NavalCombat.bestSharedBall(carriedTiers);
 				ammoBlocked = "No cannonballs banked"
 					+ (top == null ? "" : " (up to " + top + ")");
 				ammo = null;
@@ -2446,11 +2481,11 @@ public class CommandEngine
 		if (rangedResult != null && rangedResult.overallBest != null)
 		{
 			com.loadoutlab.engine.Loadout worn = rangedResult.overallBest.getLoadout();
-			for (com.loadoutlab.data.GearSlot slot : com.loadoutlab.data.GearSlot.values())
+			for (GearSlot slot : GearSlot.values())
 			{
-				if (slot == com.loadoutlab.data.GearSlot.WEAPON
-					|| slot == com.loadoutlab.data.GearSlot.SHIELD
-					|| slot == com.loadoutlab.data.GearSlot.AMMO)
+				if (slot == GearSlot.WEAPON
+					|| slot == GearSlot.SHIELD
+					|| slot == GearSlot.AMMO)
 				{
 					continue;
 				}
@@ -2462,7 +2497,7 @@ public class CommandEngine
 				}
 			}
 		}
-		Map<String, Object> node = new java.util.LinkedHashMap<>();
+		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("station", station);
 		node.put("ammo", ammo);
 		node.put("ammoDetected", detect);
@@ -2472,15 +2507,15 @@ public class CommandEngine
 		}
 		node.put("wornAccuracy", wornAcc);
 		node.put("wornStrength", wornStr);
-		List<Map<String, Object>> cannonNodes = new java.util.ArrayList<>();
+		List<Map<String, Object>> cannonNodes = new ArrayList<>();
 		boolean anyCrew = false;
 		double total = 0;
 		double[] byMob = new double[mobs.size()];
 		for (int i = 0; i < count; i++)
 		{
 			String tier = String.valueOf(params.get(i == 0 ? "cannon1Material" : "cannon2Material"));
-			com.loadoutlab.data.NavalCombat.Cannon cannon =
-				com.loadoutlab.data.NavalCombat.cannon(tier);
+			NavalCombat.Cannon cannon =
+				NavalCombat.cannon(tier);
 			if (cannon == null)
 			{
 				continue;
@@ -2489,7 +2524,7 @@ public class CommandEngine
 			// cannon handed dragon balls fires mithril ones).
 			if (ammo == null)
 			{
-				Map<String, Object> dry = new java.util.LinkedHashMap<>();
+				Map<String, Object> dry = new LinkedHashMap<>();
 				dry.put("tier", tier);
 				dry.put("itemId", cannon.itemId);
 				dry.put("firedBy", (i == 0 ? "you".equals(op1) : "you".equals(op2))
@@ -2501,8 +2536,8 @@ public class CommandEngine
 				continue;
 			}
 			String ballTier = ammo;
-			com.loadoutlab.data.NavalCombat.Ball ball =
-				com.loadoutlab.data.NavalCombat.ball(ballTier);
+			NavalCombat.Ball ball =
+				NavalCombat.ball(ballTier);
 			String operator = i == 0 ? op1 : op2;
 			boolean playerFired = "you".equals(operator);
 			int priv = 1;
@@ -2516,7 +2551,7 @@ public class CommandEngine
 				{
 				}
 			}
-			Map<String, Object> c = new java.util.LinkedHashMap<>();
+			Map<String, Object> c = new LinkedHashMap<>();
 			c.put("tier", tier);
 			c.put("itemId", cannon.itemId);
 			c.put("ball", ballTier);
@@ -2545,33 +2580,33 @@ public class CommandEngine
 			int maxHit;
 			if (playerFired)
 			{
-				maxHit = com.loadoutlab.engine.ShipCannon.playerMaxHit(
+				maxHit = ShipCannon.playerMaxHit(
 					rangedLevel, cannon.strength, ball.strength, wornStr, false);
 			}
 			else
 			{
-				int base = com.loadoutlab.engine.ShipCannon.playerMaxHit(
+				int base = ShipCannon.playerMaxHit(
 					sailingLevel, cannon.strength, ball.strength, 0, false);
-				maxHit = com.loadoutlab.engine.ShipCannon.crewMaxHit(base, priv);
+				maxHit = ShipCannon.crewMaxHit(base, priv);
 			}
 			int level = playerFired ? rangedLevel : sailingLevel;
-			int acc = com.loadoutlab.engine.ShipCannon.equipmentAccuracy(
+			int acc = ShipCannon.equipmentAccuracy(
 				cannon.heavyAccuracy, ball.accuracy, playerFired ? wornAcc : 0);
 			// One roll per roster mob (Andrew 2026-09-03: sea rows show
 			// player + cannon): the max hit is shared, the accuracy is not.
 			for (int m = 0; m < mobs.size(); m++)
 			{
 				MonsterStats target = mobs.get(m);
-				if (com.loadoutlab.data.NavalCombat.isNaval(target.getName()))
+				if (NavalCombat.isNaval(target.getName()))
 				{
-					byMob[m] += com.loadoutlab.engine.ShipCannon.dps(maxHit,
-						com.loadoutlab.engine.ShipCannon.hitChance(level, acc,
+					byMob[m] += ShipCannon.dps(maxHit,
+						ShipCannon.hitChance(level, acc,
 							target.getDefence(), target.getDefensive().get("heavy")));
 				}
 			}
-			double chance = com.loadoutlab.engine.ShipCannon.hitChance(level, acc,
+			double chance = ShipCannon.hitChance(level, acc,
 				mob.getDefence(), mob.getDefensive().get("heavy"));
-			double dps = com.loadoutlab.engine.ShipCannon.dps(maxHit, chance);
+			double dps = ShipCannon.dps(maxHit, chance);
 			c.put("maxHit", maxHit);
 			c.put("dps", dps);
 			total += dps;
@@ -2579,22 +2614,22 @@ public class CommandEngine
 		}
 		node.put("cannons", cannonNodes);
 		node.put("dps", total);
-		List<Double> byMobDps = new java.util.ArrayList<>();
+		List<Double> byMobDps = new ArrayList<>();
 		for (double d : byMob)
 		{
 			byMobDps.add(d);
 		}
 		node.put("byMob", byMobDps);
-		node.put("estimated", anyCrew && com.loadoutlab.data.NavalCombat.crewFormulaStale());
+		node.put("estimated", anyCrew && NavalCombat.crewFormulaStale());
 		// Ship damage taken (REQ-SC-15): the mob attacks the BOAT, so the
 		// number is per keel from the wiki table (armour pre-applied) and
 		// protection prayers do not apply. Always-hit is assumed - ship
 		// defence rolls are undocumented - so this reads as a ceiling.
 		String keel = String.valueOf(params.get("shipKeel"));
-		int keelMax = com.loadoutlab.data.NavalCombat.keelMaxHit(mob.getName(), keel);
+		int keelMax = NavalCombat.keelMaxHit(mob.getName(), keel);
 		if (keelMax >= 0)
 		{
-			Map<String, Object> in = new java.util.LinkedHashMap<>();
+			Map<String, Object> in = new LinkedHashMap<>();
 			in.put("keel", keel);
 			in.put("maxHit", keelMax);
 			int speed = Math.max(1, mob.getOffence().getSpeedTicks());
@@ -2606,13 +2641,13 @@ public class CommandEngine
 
 	private Map<String, Object> withHistory(Map<String, Object> page)
 	{
-		Map<String, Object> node = new java.util.LinkedHashMap<>();
+		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("canUndo", history.canUndo());
 		node.put("canRedo", history.canRedo());
 		node.put("undoLabel", history.peekUndoDescription());
 		node.put("redoLabel", history.peekRedoDescription());
 		page.put("history", node);
-		java.util.function.Supplier<Map<String, Object>> supplier = counts;
+		Supplier<Map<String, Object>> supplier = counts;
 		if (supplier != null)
 		{
 			page.put("counts", supplier.get());

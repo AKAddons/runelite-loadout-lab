@@ -9,6 +9,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import net.runelite.client.ui.ColorScheme;
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Cursor;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import javax.swing.JMenuItem;
 
 /**
  * The shared UI kit (merge-back dedupe): the handful of Swing recipes
@@ -49,7 +55,7 @@ final class Ui
 	/** Hand cursor + a click action (the classic clickable label). */
 	static void onClick(Component component, Runnable action)
 	{
-		component.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		component.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
@@ -72,23 +78,23 @@ final class Ui
 	 * play. */
 	static ImageIcon crossedOut(Image image, int size)
 	{
-		java.awt.image.BufferedImage out = new java.awt.image.BufferedImage(
-			size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+		BufferedImage out = new BufferedImage(
+			size, size, BufferedImage.TYPE_INT_ARGB);
 		java.awt.Graphics2D g = out.createGraphics();
-		g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
-			java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-			java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+			RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_ON);
 		// The base icon, dimmed so the X reads as the foreground.
 		java.awt.Composite base = g.getComposite();
-		g.setComposite(java.awt.AlphaComposite.getInstance(
-			java.awt.AlphaComposite.SRC_OVER, 0.55f));
+		g.setComposite(AlphaComposite.getInstance(
+			AlphaComposite.SRC_OVER, 0.55f));
 		g.drawImage(image, 0, 0, size, size, null);
 		g.setComposite(base);
 		int m = Math.max(2, size / 6);
-		g.setStroke(new java.awt.BasicStroke(Math.max(2f, size / 9f),
-			java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
-		g.setColor(new java.awt.Color(210, 70, 70));
+		g.setStroke(new BasicStroke(Math.max(2f, size / 9f),
+			BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		g.setColor(new Color(210, 70, 70));
 		g.drawLine(m, m, size - m, size - m);
 		g.drawLine(size - m, m, m, size - m);
 		g.dispose();
@@ -98,7 +104,7 @@ final class Ui
 	/** A menu item wired to an action, added to the menu. */
 	static void item(JPopupMenu menu, String label, Runnable action)
 	{
-		javax.swing.JMenuItem item = new javax.swing.JMenuItem(label);
+		JMenuItem item = new JMenuItem(label);
 		item.addActionListener(e -> action.run());
 		menu.add(item);
 	}

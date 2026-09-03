@@ -42,6 +42,9 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.EnumSet;
 import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Runs BiS searches off the game threads and caches results.
@@ -70,10 +73,10 @@ public class OptimizerService
 
 	/** Roster optimize-cache traffic, cumulative - the per-compute debug
 	 * line logs the deltas so a field log shows warm vs cold plainly. */
-	private final java.util.concurrent.atomic.AtomicLong optimizeHits =
-		new java.util.concurrent.atomic.AtomicLong();
-	private final java.util.concurrent.atomic.AtomicLong optimizeMisses =
-		new java.util.concurrent.atomic.AtomicLong();
+	private final AtomicLong optimizeHits =
+		new AtomicLong();
+	private final AtomicLong optimizeMisses =
+		new AtomicLong();
 
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
@@ -165,7 +168,7 @@ public class OptimizerService
 	 * until a widening is deliberately decided and re-verified - a wider
 	 * pool rode along uninvited once (2026-08-05, reverted same day). */
 	private static final int ROSTER_POOL_SIZE = 4;
-	private final java.util.concurrent.ExecutorService rosterPool =
+	private final ExecutorService rosterPool =
 		Executors.newFixedThreadPool(
 			ROSTER_POOL_SIZE, r ->
 			{
@@ -1531,7 +1534,7 @@ public class OptimizerService
 		Map<CombatStyle, List<OptimizationRequest>> gameReqsBy = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, List<DpsResult>[]> ownedArrBy = new EnumMap<>(CombatStyle.class);
 		Map<CombatStyle, List<DpsResult>[]> gameArrBy = new EnumMap<>(CombatStyle.class);
-		List<java.util.concurrent.Callable<Void>> optimizeTasks = new ArrayList<>();
+		List<Callable<Void>> optimizeTasks = new ArrayList<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
 		{
 			// Mob-independent plan - MUST mirror computeAllStyles (levels,
@@ -1596,13 +1599,13 @@ public class OptimizerService
 			// renders as "-" with no trace (field bug 2026-08-05: the
 			// Sire roster's ranged and magic buttons dashed while every
 			// member answered fine alone).
-			for (java.util.concurrent.Future<Void> f : rosterPool.invokeAll(optimizeTasks))
+			for (Future<Void> f : rosterPool.invokeAll(optimizeTasks))
 			{
 				try
 				{
 					f.get();
 				}
-				catch (java.util.concurrent.ExecutionException e)
+				catch (ExecutionException e)
 				{
 					log.warn("roster optimize task failed", e.getCause());
 				}
@@ -2205,7 +2208,7 @@ public class OptimizerService
 		// shared state - fan them out (each task owns its calculator; the
 		// kit search is the second half of the raid load-time wall).
 		List<CombatStyle> primaries = new ArrayList<>(sharedByStyle.keySet());
-		List<java.util.concurrent.Callable<Object[]>> primaryTasks = new ArrayList<>();
+		List<Callable<Object[]>> primaryTasks = new ArrayList<>();
 		for (CombatStyle primary : primaries)
 		{
 			primaryTasks.add(() ->
@@ -2307,14 +2310,14 @@ public class OptimizerService
 		double bestScore = -1;
 		try
 		{
-			for (java.util.concurrent.Future<Object[]> future : rosterPool.invokeAll(primaryTasks))
+			for (Future<Object[]> future : rosterPool.invokeAll(primaryTasks))
 			{
 				Object[] outcome;
 				try
 				{
 					outcome = future.get();
 				}
-				catch (java.util.concurrent.ExecutionException e)
+				catch (ExecutionException e)
 				{
 					continue; // one primary failed - the others still answer
 				}

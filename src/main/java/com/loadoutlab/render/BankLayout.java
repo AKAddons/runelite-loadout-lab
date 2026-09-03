@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * The bank-tag layout for a card (ported from the classic panel's
@@ -83,7 +84,7 @@ final class BankLayout
 		{
 			ids.add(Model.id(item, "id"));
 		}
-		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		List<Map<String, Object>> out = new ArrayList<>();
 		for (int id : ids)
 		{
 			out.add(Map.of("id", id));
@@ -99,7 +100,7 @@ final class BankLayout
 	/** extraStacks: rune stacks (autocast + the trip's utility casts)
 	 * that join the carried block, so Filter bank shows them too. */
 	static Map<String, Object> build(Map<String, Object> card,
-		java.util.List<Map<String, Object>> extraStacks)
+		List<Map<String, Object>> extraStacks)
 	{
 		Map<String, Object> gear = Model.map(card, "gear");
 		if (gear == null)
@@ -160,7 +161,7 @@ final class BankLayout
 			layout[entry.getKey()] = entry.getValue();
 		}
 		Map<String, Object> out = new LinkedHashMap<>();
-		out.put("ids", new java.util.ArrayList<>(ids));
+		out.put("ids", new ArrayList<>(ids));
 		out.put("layout", layout);
 		return out;
 	}

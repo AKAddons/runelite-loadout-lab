@@ -5,6 +5,8 @@ import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OptimizationRequest;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import com.loadoutlab.data.NavalCombat;
+import java.util.List;
 
 /**
  * Core-owned page state for the Companion seam (ADR-0008: Core owns
@@ -18,7 +20,7 @@ import java.util.Map;
 public class PageState
 {
 	private MonsterStats mob;
-	private java.util.List<MonsterStats> rosterMobs;
+	private List<MonsterStats> rosterMobs;
 	private String rosterName;
 
 	private boolean onTask;
@@ -93,12 +95,12 @@ public class PageState
 		this.rosterName = null;
 	}
 
-	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name)
+	public synchronized void selectRoster(List<MonsterStats> mobs, String name)
 	{
 		selectRoster(mobs, name, false);
 	}
 
-	public synchronized void selectRoster(java.util.List<MonsterStats> mobs, String name,
+	public synchronized void selectRoster(List<MonsterStats> mobs, String name,
 		boolean raid)
 	{
 		this.raidSelection = raid;
@@ -112,7 +114,7 @@ public class PageState
 		return mob;
 	}
 
-	public synchronized java.util.List<MonsterStats> rosterMobs()
+	public synchronized List<MonsterStats> rosterMobs()
 	{
 		return rosterMobs;
 	}
@@ -133,7 +135,7 @@ public class PageState
 	public synchronized void restoreSelection(Object[] snapshot)
 	{
 		this.mob = (MonsterStats) snapshot[0];
-		this.rosterMobs = (java.util.List<MonsterStats>) snapshot[1];
+		this.rosterMobs = (List<MonsterStats>) snapshot[1];
 		this.rosterName = (String) snapshot[2];
 		if (snapshot.length > 3 && snapshot[3] instanceof Object[])
 		{
@@ -180,7 +182,7 @@ public class PageState
 				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
 				return true;
 			case "shipKeel":
-				shipKeel = com.loadoutlab.data.NavalCombat.normalizeKeel(String.valueOf(value));
+				shipKeel = NavalCombat.normalizeKeel(String.valueOf(value));
 				return true;
 			case "cannonAmmo":
 				cannonAmmo = String.valueOf(value);
@@ -305,8 +307,8 @@ public class PageState
 		{
 			return operator;
 		}
-		com.loadoutlab.data.NavalCombat.Cannon cannon =
-			com.loadoutlab.data.NavalCombat.cannon(material);
+		NavalCombat.Cannon cannon =
+			NavalCombat.cannon(material);
 		int gate = cannon == null ? 1 : cannon.privateering;
 		int priv = 1;
 		if (operator != null && operator.startsWith("crew"))

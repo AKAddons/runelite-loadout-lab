@@ -88,7 +88,7 @@ public final class PvpRisk
 		{
 			return keptSlots;
 		}
-		GearItem neck = loadout.get(com.loadoutlab.data.GearSlot.NECK);
+		GearItem neck = loadout.get(GearSlot.NECK);
 		if (neck != null && "amulet of avarice".equals(neck.getNameLower()))
 		{
 			return keptSlots >= 4 ? 1 : 0;

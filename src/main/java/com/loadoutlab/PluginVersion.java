@@ -1,5 +1,7 @@
 package com.loadoutlab;
 
+import java.util.Properties;
+
 /** The build-stamped plugin version (processResources writes
  * version.properties; VersionStampTest pins it to the hub manifest).
  * Neutral home - the report builder, seam hello and UIs all read it. */
@@ -16,7 +18,7 @@ public final class PluginVersion
 		try (java.io.InputStream in = PluginVersion.class.getResourceAsStream(
 			"/com/loadoutlab/version.properties"))
 		{
-			java.util.Properties props = new java.util.Properties();
+			Properties props = new Properties();
 			props.load(in);
 			return props.getProperty("version", "unknown");
 		}

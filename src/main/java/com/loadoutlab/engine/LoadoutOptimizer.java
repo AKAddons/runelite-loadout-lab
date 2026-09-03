@@ -898,7 +898,7 @@ public final class LoadoutOptimizer
 		// cannot see the weapon - so both tier-groups survive to the
 		// per-loadout evaluation, which prices the second hit correctly.
 		int[] best = new int[4];
-		java.util.Arrays.fill(best, -1);
+		Arrays.fill(best, -1);
 		for (SpellStats spell : spells)
 		{
 			if (!DpsCalculator.isPlainElemental(spell))

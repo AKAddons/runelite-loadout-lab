@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Runes per cast for every corpus spell (wiki-fetched, see the
@@ -50,8 +51,8 @@ public final class SpellRunes
 	/** Runes a player cannot conjure from pocket change: the high-level
 	 * combat runes. Elemental/mind/chaos-class runes are deliberately not
 	 * checked - any shop sells them. */
-	private static final java.util.Set<String> PREMIUM =
-		java.util.Set.of("blood", "soul", "death", "wrath");
+	private static final Set<String> PREMIUM =
+		Set.of("blood", "soul", "death", "wrath");
 
 	/** True when the spell needs no blood/soul/death/wrath runes, or the
 	 * player owns every one it needs (field report 2026-08-27: a runeless

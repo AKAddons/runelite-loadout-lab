@@ -13,6 +13,40 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
+import com.loadoutlab.data.NavalCombat;
+import com.loadoutlab.ui.MonsterIcons;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import net.runelite.api.SpriteID;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.ui.FontManager;
+import net.runelite.client.util.AsyncBufferedImage;
 
 /**
  * The first rich renderer over the render-model: per mob, per style,
@@ -28,7 +62,7 @@ public class ResultCards
 	private static final String[] STYLES = {"melee", "ranged", "magic"};
 
 	private final ItemManager itemManager;
-	private final net.runelite.client.game.SpriteManager spriteManager;
+	private final SpriteManager spriteManager;
 	private final CommandSink commands;
 	private final ItemPicker picker;
 	private List<String> spellOptions = List.of();
@@ -41,49 +75,49 @@ public class ResultCards
 	private Map<String, Object> pageParams;
 	/** Small sailing skill icon for ship-eligible rows/markers ("naval" is
 	 * not player vernacular - the icon speaks instead). */
-	private java.util.function.Supplier<java.awt.image.BufferedImage> sailingIcon;
+	private Supplier<BufferedImage> sailingIcon;
 
 	/** The trip breakdown's show/hide: a per-profile setting the plugin
 	 * owns; the card reads it and a click on the ledger flips it. */
-	private java.util.function.BooleanSupplier breakdownShown = () -> true;
-	private java.util.function.Consumer<Boolean> breakdownToggle = shown ->
+	private BooleanSupplier breakdownShown = () -> true;
+	private Consumer<Boolean> breakdownToggle = shown ->
 	{
 	};
 
-	public void setBreakdown(java.util.function.BooleanSupplier shown, java.util.function.Consumer<Boolean> toggle)
+	public void setBreakdown(BooleanSupplier shown, Consumer<Boolean> toggle)
 	{
 		this.breakdownShown = shown;
 		this.breakdownToggle = toggle;
 	}
 
-	public void setSailingIcon(java.util.function.Supplier<java.awt.image.BufferedImage> icon)
+	public void setSailingIcon(Supplier<BufferedImage> icon)
 	{
 		this.sailingIcon = icon;
 	}
 
-	private javax.swing.Icon sailingIconSmall()
+	private Icon sailingIconSmall()
 	{
-		java.util.function.Supplier<java.awt.image.BufferedImage> supplier = sailingIcon;
-		java.awt.image.BufferedImage img = supplier == null ? null : supplier.get();
+		Supplier<BufferedImage> supplier = sailingIcon;
+		BufferedImage img = supplier == null ? null : supplier.get();
 		return img == null ? null : Ui.icon(img, 14);
 	}
 
-	private javax.swing.JButton addMob;
+	private JButton addMob;
 
-	void setAddMob(javax.swing.JButton addMob)
+	void setAddMob(JButton addMob)
 	{
 		this.addMob = addMob;
 	}
 
-	private javax.swing.JButton reload;
+	private JButton reload;
 
-	void setReload(javax.swing.JButton reload)
+	void setReload(JButton reload)
 	{
 		this.reload = reload;
 	}
 
 	public ResultCards(ItemManager itemManager,
-		net.runelite.client.game.SpriteManager spriteManager,
+		SpriteManager spriteManager,
 		CommandSink commands, ItemPicker picker)
 	{
 		this.itemManager = itemManager;
@@ -215,7 +249,7 @@ public class ResultCards
 			}
 			if (addMob != null)
 			{
-				JPanel addRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
+				JPanel addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
 				addRow.setOpaque(false);
 				addRow.add(addMob);
 				if (reload != null)
@@ -338,7 +372,7 @@ public class ResultCards
 		row.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, selected ? 3 : 0, 0, 0, edge),
 			BorderFactory.createEmptyBorder(4, selected ? 7 : 10, 4, 4)));
-		row.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 28));
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 
 		String name = Model.str(mob, "label");
 		// The row carries NO numbers (field ask 2026-08-21: "too much
@@ -348,7 +382,7 @@ public class ResultCards
 		String cleanName = name == null ? ""
 			: name.replaceFirst(" - lvl \\d+$", "");
 		JLabel label = new JLabel(cleanName);
-		label.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setForeground(selected ? edge : new Color(200, 200, 200));
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
 		{
@@ -356,9 +390,9 @@ public class ResultCards
 			// loads (or when the wiki has no picture for it).
 			String mobName = Model.str(mob, "name");
 			String mobVersion = Model.str(mob, "version");
-			javax.swing.ImageIcon mobIcon = monsterIcons.get(mobName, mobVersion, 20, () ->
+			ImageIcon mobIcon = monsterIcons.get(mobName, mobVersion, 20, () ->
 			{
-				javax.swing.ImageIcon ready = monsterIcons.get(mobName, mobVersion, 20, null);
+				ImageIcon ready = monsterIcons.get(mobName, mobVersion, 20, null);
 				if (ready != null)
 				{
 					label.setIcon(ready);
@@ -374,7 +408,7 @@ public class ResultCards
 		}
 		// The name yields first when the panel narrows - the columns to
 		// its right keep their width, so they stay aligned.
-		label.setMinimumSize(new java.awt.Dimension(20, 18));
+		label.setMinimumSize(new Dimension(20, 18));
 		label.setToolTipText("<html>" + Model.str(mob, "label")
 			+ (bestStyle != null
 				? "<br>" + dps + " dps with " + bestStyle + " (best in the trip kit)"
@@ -397,7 +431,7 @@ public class ResultCards
 		JLabel sailTag = null;
 		if (sea)
 		{
-			javax.swing.Icon sail = sailingIconSmall();
+			Icon sail = sailingIconSmall();
 			if (sail != null)
 			{
 				sailTag = new JLabel(sail);
@@ -423,8 +457,8 @@ public class ResultCards
 		columns.setOpaque(false);
 
 		JLabel icon = new JLabel();
-		icon.setPreferredSize(new java.awt.Dimension(18, 18));
-		icon.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		icon.setPreferredSize(new Dimension(18, 18));
+		icon.setHorizontalAlignment(SwingConstants.CENTER);
 		if (bestStyle != null && spriteManager != null)
 		{
 			int sprite = (int) Model.num(Model.map(styles, bestStyle), "styleSprite");
@@ -432,49 +466,49 @@ public class ResultCards
 			if (sprite > 0)
 			{
 				spriteManager.getSpriteAsync(sprite, 0, img ->
-					javax.swing.SwingUtilities.invokeLater(() ->
-						icon.setIcon(new javax.swing.ImageIcon(img))));
+					SwingUtilities.invokeLater(() ->
+						icon.setIcon(new ImageIcon(img))));
 			}
 			icon.setToolTipText("Best style: " + best);
 		}
-		JPanel iconDps = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 3, 0));
+		JPanel iconDps = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
 		iconDps.setOpaque(false);
 		iconDps.add(icon);
 
 		JLabel dpsLabel = new JLabel(dps);
-		dpsLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		dpsLabel.setFont(FontManager.getRunescapeSmallFont());
 		dpsLabel.setForeground(selected ? Color.WHITE : new Color(170, 170, 170));
 		iconDps.add(dpsLabel);
 		columns.add(iconDps, BorderLayout.CENTER);
 
-		JLabel remove = new JLabel("x", javax.swing.SwingConstants.CENTER);
-		remove.setPreferredSize(new java.awt.Dimension(14, 18));
+		JLabel remove = new JLabel("x", SwingConstants.CENTER);
+		remove.setPreferredSize(new Dimension(14, 18));
 		remove.setForeground(new Color(150, 150, 150));
 		remove.setToolTipText("Remove " + name + " from this result");
-		remove.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+		remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		// Right-click on the row or its x: Move up / Move down (Andrew
 		// 2026-09-02 - a menu, not drag handles: no Swing drag layer).
-		java.awt.event.MouseAdapter reorder = new java.awt.event.MouseAdapter()
+		MouseAdapter reorder = new MouseAdapter()
 		{
 			@Override
-			public void mousePressed(java.awt.event.MouseEvent e)
+			public void mousePressed(MouseEvent e)
 			{
 				maybeShow(e);
 			}
 
 			@Override
-			public void mouseReleased(java.awt.event.MouseEvent e)
+			public void mouseReleased(MouseEvent e)
 			{
 				maybeShow(e);
 			}
 
-			private void maybeShow(java.awt.event.MouseEvent e)
+			private void maybeShow(MouseEvent e)
 			{
 				if (!e.isPopupTrigger())
 				{
 					return;
 				}
-				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				JPopupMenu menu = new JPopupMenu();
 				if (index > 0)
 				{
 					Ui.item(menu, "Move up", () -> commands.send("move-mob",
@@ -493,25 +527,25 @@ public class ResultCards
 		};
 		row.addMouseListener(reorder);
 		remove.addMouseListener(reorder);
-		remove.addMouseListener(new java.awt.event.MouseAdapter()
+		remove.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
+			public void mouseClicked(MouseEvent e)
 			{
-				if (!e.isPopupTrigger() && javax.swing.SwingUtilities.isLeftMouseButton(e))
+				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e))
 				{
 					commands.send("remove-mob", Map.of("index", index));
 				}
 			}
 
 			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e)
+			public void mouseEntered(MouseEvent e)
 			{
 				remove.setForeground(new Color(220, 120, 120));
 			}
 
 			@Override
-			public void mouseExited(java.awt.event.MouseEvent e)
+			public void mouseExited(MouseEvent e)
 			{
 				remove.setForeground(new Color(150, 150, 150));
 			}
@@ -525,11 +559,11 @@ public class ResultCards
 	static final Color ACCENT = new Color(140, 200, 140);
 
 	/** Async wiki thumbnails for the roster rows (null = text-only). */
-	private com.loadoutlab.ui.MonsterIcons monsterIcons;
-	private java.util.function.BooleanSupplier iconsEnabled = () -> false;
+	private MonsterIcons monsterIcons;
+	private BooleanSupplier iconsEnabled = () -> false;
 
-	public void setMonsterIcons(com.loadoutlab.ui.MonsterIcons icons,
-		java.util.function.BooleanSupplier enabled)
+	public void setMonsterIcons(MonsterIcons icons,
+		BooleanSupplier enabled)
 	{
 		this.monsterIcons = icons;
 		this.iconsEnabled = enabled;
@@ -566,7 +600,7 @@ public class ResultCards
 		JLabel navalTag = null;
 		if (Model.flag(mob, "naval"))
 		{
-			javax.swing.Icon sail = sailingIconSmall();
+			Icon sail = sailingIconSmall();
 			navalTag = sail != null ? new JLabel(sail)
 				: Ui.label("sea", new Color(120, 175, 215));
 			navalTag.setToolTipText("Ship combat: fought from your boat");
@@ -576,15 +610,15 @@ public class ResultCards
 		{
 			// hp rides the header, muted (field ask 2026-08-21).
 			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(140, 140, 140));
-			hpLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			hpLabel.setFont(FontManager.getRunescapeSmallFont());
 			// Title CENTER (yields when narrow), hp EAST (survives) -
 			// WEST/CENTER clipped the title and pushed hp out entirely
 			// (field screenshot 2026-08-21: 'Duke Sucellus (Awa... lvl 1').
 			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
 			titleRow.setBackground(CARD);
-			title.setMinimumSize(new java.awt.Dimension(20, 18));
+			title.setMinimumSize(new Dimension(20, 18));
 			titleRow.add(title, BorderLayout.CENTER);
-			JPanel hpSeat = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 4, 2));
+			JPanel hpSeat = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
 			hpSeat.setOpaque(false);
 			if (navalTag != null)
 			{
@@ -615,7 +649,7 @@ public class ResultCards
 			return card;
 		}
 		card.add(Box.createVerticalStrut(6));
-		JPanel headerRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 4, 0));
+		JPanel headerRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		headerRow.setBackground(CARD);
 		headerRow.add(styleHeader(tab, node));
 		// Assume icons ride the header (the vertical-space rule): the
@@ -629,7 +663,7 @@ public class ResultCards
 			// potion to pick the boost. BiS icons stay informational.
 			int prayerSprite = (int) Model.num(assume, "prayerSprite");
 			JLabel prayerIcon = new JLabel();
-			prayerIcon.setPreferredSize(new java.awt.Dimension(20, 20));
+			prayerIcon.setPreferredSize(new Dimension(20, 20));
 			prayerIcon.setToolTipText(bis ? "Assumes: " + text
 				: "Assumes: " + text + " - click to change the prayer");
 			// No prayer assumed -> the prayer book with a red X, so the
@@ -637,11 +671,11 @@ public class ResultCards
 			// 2026-09-01). A real prayer shows its own sprite plainly.
 			boolean noPrayer = prayerSprite <= 0;
 			int shownPrayerSprite = noPrayer
-				? net.runelite.api.SpriteID.TAB_PRAYER : prayerSprite;
+				? SpriteID.TAB_PRAYER : prayerSprite;
 			if (spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
-					javax.swing.SwingUtilities.invokeLater(() ->
+					SwingUtilities.invokeLater(() ->
 						prayerIcon.setIcon(noPrayer
 							? Ui.crossedOut(img, 18) : Ui.icon(img, 18))));
 			}
@@ -653,7 +687,7 @@ public class ResultCards
 			headerRow.add(prayerIcon);
 			int boostItem = (int) Model.num(assume, "boostItem");
 			JLabel boostIconCell = new JLabel();
-			boostIconCell.setPreferredSize(new java.awt.Dimension(24, 24));
+			boostIconCell.setPreferredSize(new Dimension(24, 24));
 			boostIconCell.setToolTipText(bis ? "Assumes: " + text
 				: "Assumes: " + text + " - click to change the boost");
 			if (boostItem > 0)
@@ -661,11 +695,11 @@ public class ResultCards
 				// Scaled to the 24px frame - the raw 36x32 item image
 				// overflowed it (field report 2026-08-21). The onLoaded
 				// re-seat is the async-image contract.
-				net.runelite.client.util.AsyncBufferedImage boostImg =
+				AsyncBufferedImage boostImg =
 					itemManager.getImage(boostItem);
-				Runnable seatBoost = () -> javax.swing.SwingUtilities.invokeLater(() ->
-					boostIconCell.setIcon(new javax.swing.ImageIcon(
-						boostImg.getScaledInstance(-1, 22, java.awt.Image.SCALE_SMOOTH))));
+				Runnable seatBoost = () -> SwingUtilities.invokeLater(() ->
+					boostIconCell.setIcon(new ImageIcon(
+						boostImg.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
 				seatBoost.run();
 				boostImg.onLoaded(seatBoost);
 			}
@@ -675,7 +709,7 @@ public class ResultCards
 				// keeps the toggle reachable.
 				boostIconCell.setText("-");
 				boostIconCell.setForeground(new Color(140, 140, 140));
-				boostIconCell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+				boostIconCell.setHorizontalAlignment(SwingConstants.CENTER);
 			}
 			if (!bis)
 			{
@@ -711,7 +745,7 @@ public class ResultCards
 				JLabel caveat = Ui.label(
 					"Tab-only view - this style is not in the shared trip kit",
 					new Color(220, 170, 90));
-				caveat.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+				caveat.setFont(FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
 			}
 			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab, ship)));
@@ -722,7 +756,7 @@ public class ResultCards
 		}
 		// The classic style strip sits BELOW the gear view: one tab per
 		// style carrying its icon and that style's shown dps.
-		JPanel tabStrip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 2, 0));
+		JPanel tabStrip = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
 		tabStrip.setBackground(CARD);
 		for (String style : STYLES)
 		{
@@ -739,7 +773,7 @@ public class ResultCards
 			boolean isSelected = style.equals(tab);
 			JPanel tabCell = new JPanel(new BorderLayout(2, 0));
 			tabCell.setBorder(BorderFactory.createEmptyBorder(3, 4, 3, 4));
-			tabCell.setPreferredSize(new java.awt.Dimension(64, 26));
+			tabCell.setPreferredSize(new Dimension(64, 26));
 			tabCell.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			tabCell.setOpaque(isSelected);
 			tabCell.setBorder(new RoundedBorder(isSelected
@@ -749,13 +783,13 @@ public class ResultCards
 			if (sprite > 0 && spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(sprite, 0, img ->
-					javax.swing.SwingUtilities.invokeLater(() ->
+					SwingUtilities.invokeLater(() ->
 						icon.setIcon(Ui.icon(img, 16))));
 			}
 			JLabel dpsLabel = Ui.label(hasSet ? String.format("%.2f", tabDps) : "-",
 				isSelected ? Color.WHITE : new Color(160, 160, 160));
 			dpsLabel.setFont(dpsLabel.getFont().deriveFont(Font.BOLD, 12f));
-			dpsLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+			dpsLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			tabCell.add(icon, BorderLayout.WEST);
 			tabCell.add(dpsLabel, BorderLayout.CENTER);
 			tabCell.setToolTipText(Character.toUpperCase(style.charAt(0)) + style.substring(1)
@@ -772,7 +806,7 @@ public class ResultCards
 			});
 			tabStrip.add(tabCell);
 		}
-		java.util.LinkedHashMap<String, Color> present = new java.util.LinkedHashMap<>();
+		LinkedHashMap<String, Color> present = new LinkedHashMap<>();
 		Map<String, Object> shownGear = Model.map(
 			Model.map(node, bis ? "bis" : "yours"), "gear");
 		if (shownGear != null)
@@ -795,7 +829,7 @@ public class ResultCards
 		{
 			// "When we show a legend for colors only show for the colors
 			// shown" (the classic rule).
-			JPanel legend = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 6, 0));
+			JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 			legend.setBackground(CARD);
 			legend.add(statLine("Stored:", "Gear that needs a fetch trip",
 				new Color(160, 160, 160)));
@@ -816,8 +850,8 @@ public class ResultCards
 		JPanel viewRow = new JPanel(new BorderLayout());
 		viewRow.setBackground(CARD);
 		viewRow.setBorder(BorderFactory.createEmptyBorder(4, 2, 2, 2));
-		viewRow.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 32));
-		JPanel sides = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 6, 0));
+		viewRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
+		JPanel sides = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		sides.setBackground(CARD);
 		sides.add(viewSide("Yours", !bis, "Your best owned set",
 			() -> commands.send("set-param", Map.of("param", "viewingBis", "value", false))));
@@ -834,7 +868,7 @@ public class ResultCards
 			{
 				JLabel gap = Ui.label(String.format("%.0f%% of BiS",
 					Math.min(100.0, 100.0 * mine / ceiling)), new Color(160, 160, 160));
-				gap.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+				gap.setFont(FontManager.getRunescapeSmallFont());
 				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
 				viewRow.add(gap, BorderLayout.EAST);
 			}
@@ -850,10 +884,10 @@ public class ResultCards
 		{
 			// 24px icons on a WRAPPING row - eight carried items fit
 			// (field report: only 4 of 8 visible at full item size).
-			JPanel invRow = new JPanel(new WrapLayout(java.awt.FlowLayout.CENTER, 2, 1));
+			JPanel invRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
 			invRow.setBackground(CARD);
 			JLabel invLabel = new JLabel("Inventory:");
-			invLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			invLabel.setFont(FontManager.getRunescapeSmallFont());
 			invRow.add(invLabel);
 			for (Map<String, Object> carried : bench)
 			{
@@ -881,15 +915,15 @@ public class ResultCards
 			: Model.id(cardAssume, "boostItem");
 		if (!supplies.isEmpty() || !castRunes.isEmpty() || !tripRunes.isEmpty() || boostId > 0)
 		{
-			JPanel supplyRow = new JPanel(new WrapLayout(java.awt.FlowLayout.CENTER, 2, 1));
+			JPanel supplyRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
 			supplyRow.setBackground(CARD);
 			JLabel supplyLabel = new JLabel("Supplies:");
-			supplyLabel.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			supplyLabel.setFont(FontManager.getRunescapeSmallFont());
 			supplyRow.add(supplyLabel);
 			// One icon per rune TYPE (field call: no triple blood runes)
 			// - the tooltip collects every reason it rides.
-			java.util.Map<Integer, StringBuilder> runeWhy = new java.util.LinkedHashMap<>();
-			java.util.Map<Integer, String> runeNames = new java.util.HashMap<>();
+			Map<Integer, StringBuilder> runeWhy = new LinkedHashMap<>();
+			Map<Integer, String> runeNames = new HashMap<>();
 			for (Map<String, Object> rune : castRunes)
 			{
 				int id = Model.id(rune, "id");
@@ -906,7 +940,7 @@ public class ResultCards
 					.append(runeWhy.get(id).length() == 0 ? "" : "; ")
 					.append(Model.str(rune, "why"));
 			}
-			for (java.util.Map.Entry<Integer, StringBuilder> rune : runeWhy.entrySet())
+			for (Map.Entry<Integer, StringBuilder> rune : runeWhy.entrySet())
 			{
 				supplyRow.add(smallItemCell(rune.getKey(), 0,
 					runeNames.get(rune.getKey()) + " - " + rune.getValue()));
@@ -936,7 +970,7 @@ public class ResultCards
 				JLabel cell = smallItemCell(Model.id(supply, "itemId"), 0,
 					Model.str(supply, "name")
 						+ " - right-click to change");
-				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+				JPopupMenu menu = new JPopupMenu();
 				String category = Model.str(supply, "category");
 				Ui.item(menu, "Detect best", () -> commands.send("set-supply-override",
 					Map.of("category", category, "choice", "DETECT")));
@@ -955,7 +989,7 @@ public class ResultCards
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(supplyRow));
 		}
-		JPanel trioRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 4, 0));
+		JPanel trioRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		trioRow.setBackground(CARD);
 		trioRow.add(trioButton(mob, "+", "mobSims",
 			new Color(130, 200, 130), new Color(110, 140, 110), new Color(95, 160, 95),
@@ -973,7 +1007,7 @@ public class ResultCards
 		// Centred, not left() - field ask 2026-08-20.
 		card.add(centre(trioRow));
 		card.add(Box.createVerticalStrut(4));
-		javax.swing.JToggleButton showBank = new javax.swing.JToggleButton("Show in bank");
+		JToggleButton showBank = new JToggleButton("Show in bank");
 		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
 		showBank.setFocusable(false);
 		showBank.setMargin(new java.awt.Insets(1, 6, 1, 6));
@@ -981,7 +1015,7 @@ public class ResultCards
 		{
 			if (showBank.isSelected())
 			{
-				List<Integer> ids = new java.util.ArrayList<>();
+				List<Integer> ids = new ArrayList<>();
 				Map<String, Object> gearMap = Model.map(shownForInv, "gear");
 				if (gearMap != null)
 				{
@@ -1009,7 +1043,7 @@ public class ResultCards
 				commands.send("bank-show", Map.of());
 			}
 		});
-		JPanel bankRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 4, 0));
+		JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		bankRow.setBackground(CARD);
 		styleBankButton(showBank);
 		bankRow.add(showBank);
@@ -1017,7 +1051,7 @@ public class ResultCards
 			BankLayout.tripStacks(mob, cardAssume, supplies, castRunes, utilityRunes));
 		if (bankPlan != null)
 		{
-			javax.swing.JToggleButton filterBank = new javax.swing.JToggleButton("Filter bank");
+			JToggleButton filterBank = new JToggleButton("Filter bank");
 			filterBank.setToolTipText("Filter your open bank to this set"
 				+ " - equipment cross, inventory beside it");
 			styleBankButton(filterBank);
@@ -1025,7 +1059,7 @@ public class ResultCards
 			{
 				if (filterBank.isSelected())
 				{
-					List<Integer> layoutList = new java.util.ArrayList<>();
+					List<Integer> layoutList = new ArrayList<>();
 					for (int pos : (int[]) bankPlan.get("layout"))
 					{
 						layoutList.add(pos);
@@ -1043,7 +1077,7 @@ public class ResultCards
 		card.add(centre(bankRow));
 		String noteText = Model.str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();
-		javax.swing.JTextField note = new javax.swing.JTextField(noteText, 18);
+		JTextField note = new JTextField(noteText, 18);
 		note.setBackground(new Color(78, 72, 50));
 		note.setForeground(new Color(215, 205, 160));
 		note.setCaretColor(new Color(215, 205, 160));
@@ -1060,7 +1094,7 @@ public class ResultCards
 			// A ghost until there is something to say - the open post-it
 			// field shouted for attention it rarely deserved.
 			JLabel addNote = Ui.label("+ note", new Color(120, 115, 95));
-			addNote.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			addNote.setFont(FontManager.getRunescapeSmallFont());
 			addNote.setToolTipText("Add a note for this mob");
 			JPanel noteHost = centre(addNote);
 			Ui.onClick(addNote, () ->
@@ -1086,7 +1120,7 @@ public class ResultCards
 		int count = (int) Model.num(pageParams, "cannonCount");
 		List<Map<String, Object>> cannonNodes = ship == null
 			? java.util.Collections.emptyList() : Model.list(ship, "cannons");
-		JPanel strip = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 6, 0));
+		JPanel strip = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		strip.setBackground(CARD);
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
 		strip.add(ammoButton(ship));
@@ -1122,13 +1156,13 @@ public class ResultCards
 		}
 		else
 		{
-			t.append(ledgerRow("set", String.format(java.util.Locale.ROOT, "%.2f", set), "", "#bebebe"));
+			t.append(ledgerRow("set", String.format(Locale.ROOT, "%.2f", set), "", "#bebebe"));
 			if (specDps > 0)
 			{
-				t.append(ledgerRow("+ spec", String.format(java.util.Locale.ROOT, "%.2f", specDps), "", "#bebebe"));
+				t.append(ledgerRow("+ spec", String.format(Locale.ROOT, "%.2f", specDps), "", "#bebebe"));
 			}
 			total = set + specDps;
-			t.append(ledgerRow("= gear", String.format(java.util.Locale.ROOT, "%.2f", total), "", "#bebebe"));
+			t.append(ledgerRow("= gear", String.format(Locale.ROOT, "%.2f", total), "", "#bebebe"));
 		}
 		int i = 1;
 		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
@@ -1138,14 +1172,14 @@ public class ResultCards
 			total += dps;
 			String who = "player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew";
 			t.append(ledgerRow("+ cannon " + i++,
-				blocked != null ? blocked : String.format(java.util.Locale.ROOT, "%.2f", dps),
+				blocked != null ? blocked : String.format(Locale.ROOT, "%.2f", dps),
 				Model.str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
 		if (!full)
 		{
 			t.setLength(body);
 		}
-		t.append(ledgerRow("<b>= total</b>", "<b>" + String.format(java.util.Locale.ROOT, "%.2f", total) + "</b>",
+		t.append(ledgerRow("<b>= total</b>", "<b>" + String.format(Locale.ROOT, "%.2f", total) + "</b>",
 			"", "#82c882"));
 		return t.append("</table></html>").toString();
 	}
@@ -1168,7 +1202,7 @@ public class ResultCards
 			: "Set + spec = the row; + cannons = the tab")
 			+ " - click to " + (full ? "hide" : "show") + " the breakdown");
 		Ui.onClick(ledger, () -> breakdownToggle.accept(!full));
-		ledger.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+		ledger.setFont(FontManager.getRunescapeSmallFont());
 		ledger.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		return left(ledger);
 	}
@@ -1176,15 +1210,15 @@ public class ResultCards
 	/** One cannon's icon button: the skill-guide item illustration, a red
 	 * ring + reason when the operate gate blocks it, and the boost-picker
 	 * rack of all seven materials on click. */
-	private javax.swing.JButton cannonButton(int index, Map<String, Object> node)
+	private JButton cannonButton(int index, Map<String, Object> node)
 	{
 		String param = index == 0 ? "cannon1Material" : "cannon2Material";
 		String tier = Model.str(pageParams, param);
-		com.loadoutlab.data.NavalCombat.Cannon cannon =
-			com.loadoutlab.data.NavalCombat.cannon(tier == null ? "bronze" : tier);
+		NavalCombat.Cannon cannon =
+			NavalCombat.cannon(tier == null ? "bronze" : tier);
 		String blocked = node == null ? null : Model.str(node, "blocked");
-		javax.swing.JButton button = new javax.swing.JButton(
-			new javax.swing.ImageIcon(itemManager.getImage(cannon.itemId)));
+		JButton button = new JButton(
+			new ImageIcon(itemManager.getImage(cannon.itemId)));
 		button.setContentAreaFilled(false);
 		button.setFocusable(false);
 		button.setBorder(new RoundedBorder(blocked != null
@@ -1195,14 +1229,14 @@ public class ResultCards
 			+ (blocked != null ? ". " + blocked : ""));
 		button.addActionListener(e ->
 		{
-			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPopupMenu menu = new JPopupMenu();
 			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
 			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-			for (com.loadoutlab.data.NavalCombat.Cannon option
-				: com.loadoutlab.data.NavalCombat.cannons())
+			for (NavalCombat.Cannon option
+				: NavalCombat.cannons())
 			{
 				rack.add(pickCell(menu,
-					new javax.swing.ImageIcon(itemManager.getImage(option.itemId)),
+					new ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannon (Sailing " + option.sailing + ")",
 					option.tier.equals(cannon.tier), 38,
 					() -> commands.send("set-param",
@@ -1231,7 +1265,7 @@ public class ResultCards
 
 	/** The shared ammo's icon button: only tiers EVERY carried cannon can
 	 * fire are offered (a mithril + dragon pair tops out at mithril). */
-	private javax.swing.JButton ammoButton(Map<String, Object> ship)
+	private JButton ammoButton(Map<String, Object> ship)
 	{
 		String pick = Model.str(pageParams, "cannonAmmo");
 		boolean detect = pick == null || "detect".equals(pick);
@@ -1240,10 +1274,10 @@ public class ResultCards
 		String resolved = ship == null ? null : Model.str(ship, "ammo");
 		String ammoBlocked = ship == null ? null : Model.str(ship, "ammoBlocked");
 		String shownTier = resolved != null ? resolved : detect ? "bronze" : pick;
-		com.loadoutlab.data.NavalCombat.Ball ball =
-			com.loadoutlab.data.NavalCombat.ball(shownTier == null ? "bronze" : shownTier);
-		javax.swing.JButton button = new javax.swing.JButton(
-			new javax.swing.ImageIcon(itemManager.getImage(ball.itemId)));
+		NavalCombat.Ball ball =
+			NavalCombat.ball(shownTier == null ? "bronze" : shownTier);
+		JButton button = new JButton(
+			new ImageIcon(itemManager.getImage(ball.itemId)));
 		button.setContentAreaFilled(false);
 		button.setFocusable(false);
 		button.setBorder(new RoundedBorder(ammoBlocked != null
@@ -1256,32 +1290,32 @@ public class ResultCards
 		button.addActionListener(e ->
 		{
 			int count = (int) Model.num(pageParams, "cannonCount");
-			List<String> tiers = new java.util.ArrayList<>();
+			List<String> tiers = new ArrayList<>();
 			for (int i = 0; i < count; i++)
 			{
 				tiers.add(Model.str(pageParams, i == 0 ? "cannon1Material" : "cannon2Material"));
 			}
-			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPopupMenu menu = new JPopupMenu();
 			menu.add(pickChoice("Detect best in bank", detect,
 				() -> commands.send("set-param",
 					Map.of("param", "cannonAmmo", "value", "detect"))));
 			menu.addSeparator();
 			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
 			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-			for (com.loadoutlab.data.NavalCombat.Ball option
-				: com.loadoutlab.data.NavalCombat.balls())
+			for (NavalCombat.Ball option
+				: NavalCombat.balls())
 			{
 				boolean everyone = true;
 				for (String t : tiers)
 				{
-					everyone &= com.loadoutlab.data.NavalCombat.canFire(t, option.tier);
+					everyone &= NavalCombat.canFire(t, option.tier);
 				}
 				if (!everyone)
 				{
 					continue;
 				}
 				rack.add(pickCell(menu,
-					new javax.swing.ImageIcon(itemManager.getImage(option.itemId)),
+					new ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannonball",
 					!detect && option.tier.equals(ball.tier), 38,
 					() -> commands.send("set-param",
@@ -1299,22 +1333,22 @@ public class ResultCards
 			: Character.toUpperCase(tier.charAt(0)) + tier.substring(1);
 	}
 
-	private javax.swing.JButton trioButton(Map<String, Object> mob, String sigil,
+	private JButton trioButton(Map<String, Object> mob, String sigil,
 		String listKey, Color active, Color muted, Color activeBorder,
 		String noun, String removeCommand, String addCommand, String addPrompt)
 	{
 		List<Map<String, Object>> items = Model.list(mob, listKey);
-		javax.swing.JButton button = new javax.swing.JButton(sigil + items.size());
+		JButton button = new JButton(sigil + items.size());
 		boolean any = !items.isEmpty();
 		button.setForeground(any ? active : muted);
 		button.setContentAreaFilled(false);
 		button.setBorder(any ? new RoundedBorder(activeBorder, 2, 14)
-			: javax.swing.BorderFactory.createEmptyBorder(3, 15, 3, 15));
+			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
 		button.setToolTipText(noun + " - click to manage");
 		button.setFocusable(false);
 		button.addActionListener(e ->
 		{
-			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPopupMenu menu = new JPopupMenu();
 			for (Map<String, Object> item : items)
 			{
 				int id = Model.id(item, "id");
@@ -1323,7 +1357,7 @@ public class ResultCards
 				Ui.item(menu, "Remove " + itemName
 					+ (scope == null || "ALL".equals(scope) ? "" : " (" + scope + ")"), () ->
 				{
-					Map<String, Object> args = new java.util.HashMap<>();
+					Map<String, Object> args = new HashMap<>();
 					args.put("itemId", id);
 					args.put("label", itemName);
 					if (scope != null)
@@ -1364,8 +1398,8 @@ public class ResultCards
 		return side;
 	}
 
-	private final java.util.Map<Integer, javax.swing.ImageIcon> spriteIconCache =
-		new java.util.HashMap<>();
+	private final Map<Integer, ImageIcon> spriteIconCache =
+		new HashMap<>();
 
 	/** The set's spellbook plate, ALWAYS shown (field report x3): the
 	 * autocast spell's book, else arceuus/lunar when thralls or Death
@@ -1426,8 +1460,8 @@ public class ResultCards
 		boolean offBook = required != null && liveSpellbook != null
 			&& !liveSpellbook.isEmpty() && !liveSpellbook.equalsIgnoreCase(required);
 		JLabel plate = new JLabel();
-		plate.setPreferredSize(new java.awt.Dimension(24, 22));
-		plate.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		plate.setPreferredSize(new Dimension(24, 22));
+		plate.setHorizontalAlignment(SwingConstants.CENTER);
 		if (offBook)
 		{
 			plate.setOpaque(true);
@@ -1462,54 +1496,54 @@ public class ResultCards
 			plate.setToolTipText(bookTip);
 		}
 		int sprite = required == null
-			? net.runelite.api.SpriteID.TAB_MAGIC : bookSprite(required);
+			? SpriteID.TAB_MAGIC : bookSprite(required);
 		boolean dim = required == null;
 		if (sprite > 0 && spriteManager != null)
 		{
 			spriteManager.getSpriteAsync(sprite, 0, img ->
-				javax.swing.SwingUtilities.invokeLater(() ->
+				SwingUtilities.invokeLater(() ->
 				{
-					java.awt.Image scaled =
-						img.getScaledInstance(18, 18, java.awt.Image.SCALE_SMOOTH);
+					Image scaled =
+						img.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
 					plate.setIcon(dim
-						? new javax.swing.ImageIcon(javax.swing.GrayFilter
+						? new ImageIcon(javax.swing.GrayFilter
 							.createDisabledImage(toBuffered(scaled)))
-						: new javax.swing.ImageIcon(scaled));
+						: new ImageIcon(scaled));
 				}));
 		}
 		return plate;
 	}
 
-	private static java.awt.image.BufferedImage toBuffered(java.awt.Image image)
+	private static BufferedImage toBuffered(Image image)
 	{
-		java.awt.image.BufferedImage out = new java.awt.image.BufferedImage(
-			18, 18, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-		java.awt.Graphics2D g = out.createGraphics();
+		BufferedImage out = new BufferedImage(
+			18, 18, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = out.createGraphics();
 		g.drawImage(image, 0, 0, null);
 		g.dispose();
 		return out;
 	}
 
-	/** The book tab sprites (net.runelite.api.SpriteID). */
+	/** The book tab sprites (SpriteID). */
 	private static int bookSprite(String book)
 	{
 		switch (book == null ? "" : book.toLowerCase())
 		{
-			case "ancient": return net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_ANCIENT_MAGICKS;
-			case "lunar": return net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR;
-			case "arceuus": return net.runelite.api.SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS;
-			case "standard": return net.runelite.api.SpriteID.TAB_MAGIC;
+			case "ancient": return SpriteID.TAB_MAGIC_SPELLBOOK_ANCIENT_MAGICKS;
+			case "lunar": return SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR;
+			case "arceuus": return SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS;
+			case "standard": return SpriteID.TAB_MAGIC;
 			default: return -1;
 		}
 	}
 
 	/** The prayer picker popup (anchored to the wings icon): Detect /
 	 * None / each prayer with its sprite, checkmarked at the pick. */
-	private void showPrayerMenu(java.awt.Component anchor, String tab)
+	private void showPrayerMenu(Component anchor, String tab)
 	{
 		Map<String, Object> prayerPicks = Model.map(pageParams, "prayerPicks");
 		String current = prayerPicks == null ? null : Model.str(prayerPicks, tab);
-		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		JPopupMenu menu = new JPopupMenu();
 		menu.add(pickChoice("Detect best", current == null,
 			() -> sendPick("set-prayer-pick", tab, null)));
 		menu.add(pickChoice("None (prayerless)", "NONE".equals(current),
@@ -1545,9 +1579,9 @@ public class ResultCards
 	 * home and Spellbook Swap in (which also buys Vengeance). Wears the
 	 * same game-tab grid as the prayer book and the boost rack (field
 	 * ask 2026-08-22) - the runes follow the choice, the dps never does. */
-	private void showBookMenu(java.awt.Component anchor, String directBook, boolean swapOn)
+	private void showBookMenu(Component anchor, String directBook, boolean swapOn)
 	{
-		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		JPopupMenu menu = new JPopupMenu();
 		JPanel books = Ui.darker(new GridLayout(0, 2, 2, 2));
 		books.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 		String direct = directBook == null || directBook.isEmpty() ? "standard" : directBook;
@@ -1575,11 +1609,11 @@ public class ResultCards
 	/** The boost picker popup - the SAME game-tab grid as the prayer
 	 * book (field ask 2026-08-20: one interface, the prayer one wins),
 	 * with potion icons for cells. */
-	private void showBoostMenu(java.awt.Component anchor, String tab)
+	private void showBoostMenu(Component anchor, String tab)
 	{
 		Map<String, Object> boostPicks = Model.map(pageParams, "boostPicks");
 		String current = boostPicks == null ? null : Model.str(boostPicks, tab);
-		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		JPopupMenu menu = new JPopupMenu();
 		menu.add(pickChoice("Detect best in bank", current == null,
 			() -> sendPick("set-boost-pick", tab, null)));
 		menu.add(pickChoice("None (unboosted)", "NONE".equals(current),
@@ -1602,7 +1636,7 @@ public class ResultCards
 					// Item images load ASYNC - hand the icon the live image,
 					// never a getScaledInstance of it (blank until reopen).
 					rack.add(pickCell(menu,
-						itemId > 0 ? new javax.swing.ImageIcon(itemManager.getImage(itemId)) : null,
+						itemId > 0 ? new ImageIcon(itemManager.getImage(itemId)) : null,
 						label, key != null && key.equals(current), 38,
 						() -> sendPick("set-boost-pick", tab, key)));
 				}
@@ -1615,12 +1649,12 @@ public class ResultCards
 	/** One cell of the game-tab picker grid (the prayer-book pattern,
 	 * shared by the prayer and boost pickers): icon or initial, accent
 	 * plate on the pick, hover ring, click picks and closes. */
-	private JLabel pickCell(javax.swing.JPopupMenu menu, javax.swing.Icon icon,
+	private JLabel pickCell(JPopupMenu menu, Icon icon,
 		String tooltip, boolean picked, int size, Runnable onPick)
 	{
 		JLabel cell = new JLabel();
-		cell.setPreferredSize(new java.awt.Dimension(size, size));
-		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		cell.setPreferredSize(new Dimension(size, size));
+		cell.setHorizontalAlignment(SwingConstants.CENTER);
 		cell.setOpaque(true);
 		cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
 			: ColorScheme.DARKER_GRAY_COLOR);
@@ -1636,25 +1670,25 @@ public class ResultCards
 			cell.setForeground(new Color(190, 190, 190));
 		}
 		cell.setToolTipText(tooltip + (picked ? " (assumed)" : ""));
-		cell.setCursor(java.awt.Cursor.getPredefinedCursor(
-			java.awt.Cursor.HAND_CURSOR));
-		cell.addMouseListener(new java.awt.event.MouseAdapter()
+		cell.setCursor(Cursor.getPredefinedCursor(
+			Cursor.HAND_CURSOR));
+		cell.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
+			public void mouseClicked(MouseEvent e)
 			{
 				menu.setVisible(false);
 				onPick.run();
 			}
 
 			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e)
+			public void mouseEntered(MouseEvent e)
 			{
 				cell.setBorder(BorderFactory.createLineBorder(ACCENT));
 			}
 
 			@Override
-			public void mouseExited(java.awt.event.MouseEvent e)
+			public void mouseExited(MouseEvent e)
 			{
 				if (!picked)
 				{
@@ -1666,16 +1700,16 @@ public class ResultCards
 		return cell;
 	}
 
-	private javax.swing.JMenuItem pickChoice(String label, boolean selected, Runnable onPick)
+	private JMenuItem pickChoice(String label, boolean selected, Runnable onPick)
 	{
-		javax.swing.JCheckBoxMenuItem item = new javax.swing.JCheckBoxMenuItem(label, selected);
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
 		item.addActionListener(e -> onPick.run());
 		return item;
 	}
 
 	private void sendPick(String command, String tab, String value)
 	{
-		Map<String, Object> args = new java.util.HashMap<>();
+		Map<String, Object> args = new HashMap<>();
 		args.put("style", tab);
 		args.put("value", value);
 		commands.send(command, args);
@@ -1683,21 +1717,21 @@ public class ResultCards
 
 	/** A sprite icon from the shared cache (primed async; a menu opened
 	 * before the load shows it on its next open). */
-	private javax.swing.Icon cachedSprite(int spriteId)
+	private Icon cachedSprite(int spriteId)
 	{
-		javax.swing.ImageIcon icon = spriteIconCache.get(spriteId);
+		ImageIcon icon = spriteIconCache.get(spriteId);
 		if (icon != null)
 		{
 			return icon;
 		}
-		javax.swing.ImageIcon fresh = new javax.swing.ImageIcon(
-			new java.awt.image.BufferedImage(15, 15, java.awt.image.BufferedImage.TYPE_INT_ARGB));
+		ImageIcon fresh = new ImageIcon(
+			new BufferedImage(15, 15, BufferedImage.TYPE_INT_ARGB));
 		spriteIconCache.put(spriteId, fresh);
 		if (spriteManager != null)
 		{
 			spriteManager.getSpriteAsync(spriteId, 0, img ->
-				javax.swing.SwingUtilities.invokeLater(() -> fresh.setImage(
-					img.getScaledInstance(15, 15, java.awt.Image.SCALE_SMOOTH))));
+				SwingUtilities.invokeLater(() -> fresh.setImage(
+					img.getScaledInstance(15, 15, Image.SCALE_SMOOTH))));
 		}
 		return fresh;
 	}
@@ -1707,7 +1741,7 @@ public class ResultCards
 	static String shipDamageText(double dtps, int keelMax)
 	{
 		return keelMax == 0 ? "no damage"
-			: String.format(java.util.Locale.ROOT, "~%.1f max %d", dtps, keelMax);
+			: String.format(Locale.ROOT, "~%.1f max %d", dtps, keelMax);
 	}
 
 	private JLabel statIconLine(String text, String tooltip, Color color, int spriteId)
@@ -1716,7 +1750,7 @@ public class ResultCards
 		if (spriteId > 0 && spriteManager != null)
 		{
 			spriteManager.getSpriteAsync(spriteId, 0, img ->
-				javax.swing.SwingUtilities.invokeLater(() ->
+				SwingUtilities.invokeLater(() ->
 				{
 					line.setIcon(Ui.icon(img, 14));
 					line.setIconTextGap(4);
@@ -1728,7 +1762,7 @@ public class ResultCards
 
 	/** A stat line with a PAINTED classic icon in the fixed column. */
 	private static JLabel paintedStatLine(String text, String tooltip, Color color,
-		javax.swing.Icon icon)
+		Icon icon)
 	{
 		JLabel line = statLine(text, tooltip, color);
 		line.setIcon(new StatIcons.FixedWidthIcon(icon));
@@ -1740,11 +1774,11 @@ public class ResultCards
 	private JLabel statItemLine(int itemId, String text, String tooltip, Color color)
 	{
 		JLabel line = statLine(text, tooltip, color);
-		net.runelite.client.util.AsyncBufferedImage img = itemManager.getImage(itemId);
-		Runnable seat = () -> javax.swing.SwingUtilities.invokeLater(() ->
+		AsyncBufferedImage img = itemManager.getImage(itemId);
+		Runnable seat = () -> SwingUtilities.invokeLater(() ->
 		{
-			line.setIcon(new StatIcons.FixedWidthIcon(new javax.swing.ImageIcon(
-				img.getScaledInstance(-1, 16, java.awt.Image.SCALE_SMOOTH))));
+			line.setIcon(new StatIcons.FixedWidthIcon(new ImageIcon(
+				img.getScaledInstance(-1, 16, Image.SCALE_SMOOTH))));
 			line.setIconTextGap(2);
 		});
 		seat.run();
@@ -1757,12 +1791,12 @@ public class ResultCards
 	private JLabel smallItemCell(int itemId, int qty, String tooltip)
 	{
 		JLabel cell = new JLabel();
-		cell.setPreferredSize(new java.awt.Dimension(26, 26));
-		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		cell.setPreferredSize(new Dimension(26, 26));
+		cell.setHorizontalAlignment(SwingConstants.CENTER);
 		cell.setToolTipText(tooltip);
-		net.runelite.client.util.AsyncBufferedImage img = qty > 0
+		AsyncBufferedImage img = qty > 0
 			? itemManager.getImage(itemId, qty, true) : itemManager.getImage(itemId);
-		Runnable seat = () -> javax.swing.SwingUtilities.invokeLater(() ->
+		Runnable seat = () -> SwingUtilities.invokeLater(() ->
 			cell.setIcon(Ui.icon(img, 24)));
 		seat.run();
 		img.onLoaded(seat);
@@ -1773,8 +1807,8 @@ public class ResultCards
 	{
 		JLabel line = Ui.label(text, color);
 		line.setToolTipText(tooltip);
-		line.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-		line.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+		line.setFont(FontManager.getRunescapeSmallFont());
+		line.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return line;
 	}
 
@@ -1830,41 +1864,41 @@ public class ResultCards
 			Map<String, Object> spellSprites = Model.map(assumeOptions, "spellSprites");
 			int shownSprite = shownSpell == null || spellSprites == null ? -1
 				: (int) Model.num(spellSprites, shownSpell);
-			JPanel spellRow = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 4, 0));
+			JPanel spellRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
 			spellRow.setBackground(CARD);
 			JLabel spellIcon = new JLabel();
-			spellIcon.setPreferredSize(new java.awt.Dimension(22, 22));
-			spellIcon.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+			spellIcon.setPreferredSize(new Dimension(22, 22));
+			spellIcon.setHorizontalAlignment(SwingConstants.CENTER);
 			if (shownSprite > 0)
 			{
 				spellIcon.setIcon(cachedSprite(shownSprite));
 			}
 			else if (spriteManager != null)
 			{
-				spriteManager.getSpriteAsync(net.runelite.api.SpriteID.TAB_MAGIC, 0, img ->
-					javax.swing.SwingUtilities.invokeLater(() ->
+				spriteManager.getSpriteAsync(SpriteID.TAB_MAGIC, 0, img ->
+					SwingUtilities.invokeLater(() ->
 						spellIcon.setIcon(Ui.icon(img, 18))));
 			}
 			JLabel spellName = new JLabel(shownSpell == null ? "Auto spell"
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
 					? " (pinned)" : ""));
-			spellName.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			spellName.setFont(FontManager.getRunescapeSmallFont());
 			spellName.setForeground(new Color(200, 200, 200));
 			spellRow.add(spellIcon);
 			spellRow.add(spellName);
 			String tip = "The autocast spell - click to pin one";
 			spellIcon.setToolTipText(tip);
 			spellName.setToolTipText(tip);
-			java.awt.event.MouseAdapter openSpells = new java.awt.event.MouseAdapter()
+			MouseAdapter openSpells = new MouseAdapter()
 			{
 				@Override
-				public void mouseClicked(java.awt.event.MouseEvent e)
+				public void mouseClicked(MouseEvent e)
 				{
 					// The SPELLBOOK grid (the prayer-book pattern - the list
 					// form scrolled off the screen): sprite cells six wide,
 					// names in tooltips, the pick on the accent plate.
-					javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-					javax.swing.JCheckBoxMenuItem auto = new javax.swing.JCheckBoxMenuItem(
+					JPopupMenu menu = new JPopupMenu();
+					JCheckBoxMenuItem auto = new JCheckBoxMenuItem(
 						"Auto spell (best castable)",
 						pinnedSpell == null || pinnedSpell.isEmpty());
 					auto.addActionListener(ev ->
@@ -1877,8 +1911,8 @@ public class ResultCards
 					{
 						boolean picked = option.equals(pinnedSpell);
 						JLabel cell = new JLabel();
-						cell.setPreferredSize(new java.awt.Dimension(26, 26));
-						cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+						cell.setPreferredSize(new Dimension(26, 26));
+						cell.setHorizontalAlignment(SwingConstants.CENTER);
 						cell.setOpaque(true);
 						cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
 							: ColorScheme.DARKER_GRAY_COLOR);
@@ -1896,25 +1930,25 @@ public class ResultCards
 							cell.setForeground(new Color(190, 190, 190));
 						}
 						cell.setToolTipText(option + (picked ? " (pinned)" : ""));
-						cell.setCursor(java.awt.Cursor.getPredefinedCursor(
-							java.awt.Cursor.HAND_CURSOR));
-						cell.addMouseListener(new java.awt.event.MouseAdapter()
+						cell.setCursor(Cursor.getPredefinedCursor(
+							Cursor.HAND_CURSOR));
+						cell.addMouseListener(new MouseAdapter()
 						{
 							@Override
-							public void mouseClicked(java.awt.event.MouseEvent ev)
+							public void mouseClicked(MouseEvent ev)
 							{
 								menu.setVisible(false);
 								commands.send("set-pinned-spell", Map.of("name", option));
 							}
 
 							@Override
-							public void mouseEntered(java.awt.event.MouseEvent ev)
+							public void mouseEntered(MouseEvent ev)
 							{
 								cell.setBorder(BorderFactory.createLineBorder(ACCENT));
 							}
 
 							@Override
-							public void mouseExited(java.awt.event.MouseEvent ev)
+							public void mouseExited(MouseEvent ev)
 							{
 								if (!picked)
 								{
@@ -1926,18 +1960,18 @@ public class ResultCards
 						book.add(cell);
 					}
 					menu.add(book);
-					menu.show((java.awt.Component) e.getSource(), 0,
-						((java.awt.Component) e.getSource()).getHeight());
+					menu.show((Component) e.getSource(), 0,
+						((Component) e.getSource()).getHeight());
 				}
 			};
-			spellIcon.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-			spellName.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+			spellIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			spellName.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			spellIcon.addMouseListener(openSpells);
 			spellName.addMouseListener(openSpells);
 			panel.add(left(spellRow));
 		}
 		// The classic card centre: the cross LEFT, the stat column RIGHT.
-		JPanel center = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 2));
+		JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
 		center.setBackground(CARD);
 		Map<String, Object> specForCell = Model.map(card, "spec");
 		Map<String, Object> specWeaponForCell = specForCell == null
@@ -1981,7 +2015,7 @@ public class ResultCards
 						+ keelMax + " per hit, prayers do not reduce it. Click to change the keel",
 				statText, -1);
 			shipLine.setForeground(new Color(120, 175, 215));
-			javax.swing.Icon sail = sailingIconSmall();
+			Icon sail = sailingIconSmall();
 			if (sail != null)
 			{
 				shipLine.setIcon(sail);
@@ -1989,8 +2023,8 @@ public class ResultCards
 			}
 			Ui.onClick(shipLine, () ->
 			{
-				javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-				for (String option : com.loadoutlab.data.NavalCombat.keels())
+				JPopupMenu menu = new JPopupMenu();
+				for (String option : NavalCombat.keels())
 				{
 					menu.add(pickChoice("none".equals(option) ? "No keel" : cap(option) + " keel",
 						option.equals(keel),
@@ -2021,7 +2055,7 @@ public class ResultCards
 		if (statsNode != null)
 		{
 			statColumn.add(statIconLine("+" + Model.id(statsNode, "prayer"),
-				"Prayer bonus", statText, net.runelite.api.SpriteID.SKILL_PRAYER));
+				"Prayer bonus", statText, SpriteID.SKILL_PRAYER));
 		}
 		String atkType = Model.str(card, "attackType");
 		if (atkType != null)
@@ -2051,7 +2085,7 @@ public class ResultCards
 				excludedIds.add(Model.id(ex, "id"));
 			}
 			int loadedId = Model.id(internalAmmo, "id");
-			javax.swing.JPopupMenu dartMenu = new javax.swing.JPopupMenu();
+			JPopupMenu dartMenu = new JPopupMenu();
 			for (Map<String, Object> tier : dartTiers)
 			{
 				int tierId = Model.id(tier, "id");
@@ -2092,24 +2126,24 @@ public class ResultCards
 			// fixed-width column so every value shares one left edge
 			// (design note 2026-08-15: the raw 32px item image dwarfed
 			// the painted icons).
-			net.runelite.client.util.AsyncBufferedImage coinImg =
+			AsyncBufferedImage coinImg =
 				itemManager.getImage(995, 10_000, false);
-			Runnable seatCoin = () -> javax.swing.SwingUtilities.invokeLater(() ->
+			Runnable seatCoin = () -> SwingUtilities.invokeLater(() ->
 			{
-				javax.swing.ImageIcon scaled = new javax.swing.ImageIcon(
-					coinImg.getScaledInstance(-1, 16, java.awt.Image.SCALE_SMOOTH));
+				ImageIcon scaled = new ImageIcon(
+					coinImg.getScaledInstance(-1, 16, Image.SCALE_SMOOTH));
 				costLine.setIcon(new StatIcons.FixedWidthIcon(scaled));
 				costLine.revalidate();
 			});
 			seatCoin.run();
 			coinImg.onLoaded(seatCoin);
 			costLine.setIconTextGap(2);
-			costLine.setHorizontalAlignment(javax.swing.SwingConstants.LEADING);
-			costLine.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-			costLine.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
+			costLine.setHorizontalAlignment(SwingConstants.LEADING);
+			costLine.setAlignmentX(Component.LEFT_ALIGNMENT);
+			costLine.setFont(FontManager.getRunescapeSmallFont());
 			costLine.setForeground(statText);
 			costLine.setToolTipText("Upgrade cost of unowned pieces in this set");
-			costLine.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+			costLine.setAlignmentX(Component.LEFT_ALIGNMENT);
 			statColumn.add(costLine);
 		}
 		Map<String, Object> stats = Model.map(card, "stats");
@@ -2139,14 +2173,14 @@ public class ResultCards
 				Model.id(stats, "strength"), Model.id(stats, "rangedStrength"),
 				Model.id(stats, "magicDamage"), Model.id(stats, "prayer"));
 			JLabel statsLine = statIconLine("Stats", fullBonuses, statText,
-				net.runelite.api.SpriteID.TAB_COMBAT);
+				SpriteID.TAB_COMBAT);
 			// The line LOOKS like its clickable neighbours, so it answers a
 			// click with the same table the hover shows (field report
 			// 2026-08-31: "clicking the stats button doesn't do anything").
 			final String statsHtml = fullBonuses;
 			Ui.onClick(statsLine, () ->
 			{
-				javax.swing.JPopupMenu pop = new javax.swing.JPopupMenu();
+				JPopupMenu pop = new JPopupMenu();
 				JLabel body = new JLabel(statsHtml);
 				body.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
 				pop.add(body);
@@ -2200,7 +2234,7 @@ public class ResultCards
 				// superseding the 2026-08-15 faint dot): a sized blank
 				// keeps the cross geometry, nothing draws.
 				JLabel blank = new JLabel();
-				blank.setPreferredSize(new java.awt.Dimension(36, 36));
+				blank.setPreferredSize(new Dimension(36, 36));
 				grid.add(blank);
 			}
 			else
@@ -2210,7 +2244,7 @@ public class ResultCards
 				grid.add(itemCell(item, slotName, bis));
 			}
 		}
-		JPanel holder = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 2));
+		JPanel holder = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
 		holder.setBackground(CARD);
 		holder.add(grid);
 		return holder;
@@ -2291,7 +2325,7 @@ public class ResultCards
 		if ("spec".equals(slot) && !bis && cellSpecWeaponId != 0)
 		{
 			// The pin lives ON the cell now (the spec text line retired).
-			javax.swing.JPopupMenu specMenu = new javax.swing.JPopupMenu();
+			JPopupMenu specMenu = new JPopupMenu();
 			boolean pinnedNow = cellSpecPinned;
 			int weaponId = cellSpecWeaponId;
 			Ui.item(specMenu, cellSpecPinned ? "Unpin spec" : "Pin as spec for this mob",
@@ -2299,8 +2333,8 @@ public class ResultCards
 					Map.of("itemId", pinnedNow ? 0 : weaponId)));
 			cell.setComponentPopupMenu(specMenu);
 		}
-		cell.setPreferredSize(new java.awt.Dimension(36, 36));
-		cell.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+		cell.setPreferredSize(new Dimension(36, 36));
+		cell.setHorizontalAlignment(SwingConstants.CENTER);
 		cell.setOpaque(true);
 		cell.setBackground(CELL_BG);
 		cell.setBorder(BorderFactory.createLineBorder(border));
@@ -2320,12 +2354,12 @@ public class ResultCards
 			cell.setUI(new javax.swing.plaf.basic.BasicLabelUI()
 			{
 				@Override
-				public void paint(java.awt.Graphics g, javax.swing.JComponent c)
+				public void paint(java.awt.Graphics g, JComponent c)
 				{
 					super.paint(g, c);
-					java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-					g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
-						java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+					Graphics2D g2 = (Graphics2D) g.create();
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+						RenderingHints.VALUE_ANTIALIAS_ON);
 					if (dot != null)
 					{
 						// The classic source dot: bottom-right corner.
@@ -2344,12 +2378,12 @@ public class ResultCards
 				}
 			});
 		}
-		javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+		JPopupMenu menu = new JPopupMenu();
 		Ui.item(menu, "Exclude " + name,
 			() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
 		if (bis)
 		{
-			javax.swing.JMenuItem sim = new javax.swing.JMenuItem("Sim as owned");
+			JMenuItem sim = new JMenuItem("Sim as owned");
 			sim.setToolTipText("Pretend you own " + name + " and recompute your side");
 			sim.addActionListener(e -> commands.send("toggle-sim",
 				Map.of("itemId", id, "label", name)));
@@ -2357,12 +2391,12 @@ public class ResultCards
 		}
 		else if (!"quiver".equals(slot))
 		{
-			javax.swing.JMenuItem excludeMob = new javax.swing.JMenuItem("Exclude for this mob");
+			JMenuItem excludeMob = new JMenuItem("Exclude for this mob");
 			excludeMob.setToolTipText("Exclude " + name + " for this mob only (all sets)");
 			excludeMob.addActionListener(e -> commands.send("exclude-for-mob",
 				Map.of("itemId", id, "scope", "ALL", "label", name)));
 			menu.add(excludeMob);
-			javax.swing.JMenuItem simMob = new javax.swing.JMenuItem("Sim for this mob (search)...");
+			JMenuItem simMob = new JMenuItem("Sim for this mob (search)...");
 			simMob.setToolTipText("Search an item and sim it as owned for this mob only");
 			simMob.addActionListener(e -> picker.search("Sim for this mob",
 				(pickedId, pickedName) -> commands.send("sim-for-mob",
@@ -2370,13 +2404,13 @@ public class ResultCards
 			menu.add(simMob);
 			// The classic GLOBAL sibling (field report 2026-08-21: it fell
 			// off in the merge-back - only the per-mob scope survived).
-			javax.swing.JMenuItem simAll = new javax.swing.JMenuItem("Sim for all mobs (search)...");
+			JMenuItem simAll = new JMenuItem("Sim for all mobs (search)...");
 			simAll.setToolTipText("Search an item and sim it as owned everywhere");
 			simAll.addActionListener(e -> picker.search("Sim as owned",
 				(pickedId, pickedName) -> commands.send("toggle-sim",
 					Map.of("itemId", pickedId, "label", pickedName))));
 			menu.add(simAll);
-			javax.swing.JMenuItem pin = new javax.swing.JMenuItem("Pin " + name);
+			JMenuItem pin = new JMenuItem("Pin " + name);
 			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
 			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
 			menu.add(pin);
@@ -2388,7 +2422,7 @@ public class ResultCards
 		return cell;
 	}
 
-	private static JPanel left(javax.swing.JComponent inner)
+	private static JPanel left(JComponent inner)
 	{
 		JPanel row = new JPanel(new BorderLayout());
 		row.setBackground(CARD);
@@ -2398,9 +2432,9 @@ public class ResultCards
 
 	/** left()'s centred sibling (field asks 2026-08-20) - FlowLayout so
 	 * the inner keeps its preferred size instead of stretching. */
-	private static JPanel centre(javax.swing.JComponent inner)
+	private static JPanel centre(JComponent inner)
 	{
-		JPanel row = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		row.setBackground(CARD);
 		row.add(inner);
 		return row;

@@ -3,6 +3,9 @@ package com.loadoutlab.render;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.BufferedReader;
+import java.util.Map;
+import javax.swing.Timer;
 
 /**
  * The compute animation, ASCII edition (the pixel mascots retired in
@@ -21,7 +24,7 @@ final class AsciiLoader extends javax.swing.JTextArea
 	 * sections): played only for the matching selection, so a kraken never
 	 * greets Graardor and the Obelisk charges only for a ToA trip. Land
 	 * computes use MOODS. */
-	private static final java.util.Map<String, List<List<String>>> POOLS = new java.util.HashMap<>();
+	private static final Map<String, List<List<String>>> POOLS = new java.util.HashMap<>();
 	static
 	{
 		load(MOODS, POOLS);
@@ -34,7 +37,7 @@ final class AsciiLoader extends javax.swing.JTextArea
 		this.key = key;
 	}
 
-	private final javax.swing.Timer timer = new javax.swing.Timer(140, e -> advance());
+	private final Timer timer = new Timer(140, e -> advance());
 	private List<String> frames = MOODS.get(0);
 	private int tick;
 
@@ -95,17 +98,17 @@ final class AsciiLoader extends javax.swing.JTextArea
 	 * resource degrades to the plain text line, never a crash. A mood
 	 * separator of "==<key> ..." routes that mood to the keyed pool. */
 	private static List<List<String>> poolFor(List<List<String>> land,
-		java.util.Map<String, List<List<String>>> pools, String key)
+		Map<String, List<List<String>>> pools, String key)
 	{
 		return key == null ? land : pools.computeIfAbsent(key, k -> new ArrayList<>());
 	}
 
-	static void load(List<List<String>> land, java.util.Map<String, List<List<String>>> pools)
+	static void load(List<List<String>> land, Map<String, List<List<String>>> pools)
 	{
 		List<String> frames = new ArrayList<>();
 		StringBuilder frame = new StringBuilder();
 		String moodKey = null;
-		try (java.io.BufferedReader reader = new java.io.BufferedReader(
+		try (BufferedReader reader = new BufferedReader(
 			new java.io.InputStreamReader(
 				AsciiLoader.class.getResourceAsStream(RESOURCE),
 				java.nio.charset.StandardCharsets.UTF_8)))

@@ -8,6 +8,7 @@ import com.loadoutlab.engine.DpsResult;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.List;
 import java.util.Map;
+import com.loadoutlab.engine.PvpRisk;
 
 /**
  * The copy-report for the hosted view, built CORE-SIDE at page
@@ -216,8 +217,8 @@ final class ReportBuilder
 		{
 			// What this answer costs you on a death out there - the same
 			// assessment the card's Risk line shows.
-			com.loadoutlab.engine.PvpRisk.Assessment risk =
-				com.loadoutlab.engine.PvpRisk.assess(shown.getLoadout(), specWeapon, keptSlots);
+			PvpRisk.Assessment risk =
+				PvpRisk.assess(shown.getLoadout(), specWeapon, keptSlots);
 			sb.append("  Risk: ").append(gp(risk.riskGp)).append(" per death");
 			if (!risk.lost.isEmpty())
 			{

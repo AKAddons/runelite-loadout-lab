@@ -8,6 +8,35 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import net.runelite.client.ui.ColorScheme;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.JSlider;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.event.DocumentEvent;
+import net.runelite.client.game.SpriteManager;
 
 /**
  * The renderer handed to Core by reference (one-surface ruling): Core
@@ -20,17 +49,17 @@ import net.runelite.client.ui.ColorScheme;
 public class RenderSurface
 {
 	private final ResultCards cards;
-	private final java.util.function.Supplier<Map<String, Object>> page;
+	private final Supplier<Map<String, Object>> page;
 	private final CommandSink commands;
 	private final ItemPicker picker;
 	private final Searcher searcher;
-	private net.runelite.client.game.SpriteManager spriteManager;
+	private SpriteManager spriteManager;
 
 	/** The small sailing skill icon - ship-eligible rows wear it instead of
 	 * any text: "naval" is not player vernacular (Andrew, v2 review). */
-	private java.util.function.Supplier<java.awt.image.BufferedImage> sailingIcon;
+	private Supplier<BufferedImage> sailingIcon;
 
-	public void setSailingIcon(java.util.function.Supplier<java.awt.image.BufferedImage> icon)
+	public void setSailingIcon(Supplier<BufferedImage> icon)
 	{
 		this.sailingIcon = icon;
 	}
@@ -50,7 +79,7 @@ public class RenderSurface
 		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
-			java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
+			List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
 			if (!entryMobs.isEmpty())
 			{
 				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
@@ -76,7 +105,7 @@ public class RenderSurface
 		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
-			java.util.List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
+			List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
 			if (!entryMobs.isEmpty())
 			{
 				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
@@ -89,14 +118,14 @@ public class RenderSurface
 		return false;
 	}
 
-		javax.swing.Icon sailingIconSmall()
+		Icon sailingIconSmall()
 	{
-		java.util.function.Supplier<java.awt.image.BufferedImage> supplier = sailingIcon;
-		java.awt.image.BufferedImage img = supplier == null ? null : supplier.get();
+		Supplier<BufferedImage> supplier = sailingIcon;
+		BufferedImage img = supplier == null ? null : supplier.get();
 		return img == null ? null : Ui.icon(img, 14);
 	}
 
-	public void setSpriteManager(net.runelite.client.game.SpriteManager spriteManager)
+	public void setSpriteManager(SpriteManager spriteManager)
 	{
 		this.spriteManager = spriteManager;
 	}
@@ -105,18 +134,18 @@ public class RenderSurface
 	 * wilderness risk controls. Both settings described behaviour they
 	 * did not control until 2026-08-22 - the merge-back dropped the
 	 * DisplayOptions bridge and nothing replaced it. */
-	private java.util.function.BooleanSupplier animationGate = () -> true;
-	private java.util.function.BooleanSupplier wildyRiskGate = () -> true;
+	private BooleanSupplier animationGate = () -> true;
+	private BooleanSupplier wildyRiskGate = () -> true;
 
-	public void setDisplayGates(java.util.function.BooleanSupplier animation,
-		java.util.function.BooleanSupplier wildyRisk)
+	public void setDisplayGates(BooleanSupplier animation,
+		BooleanSupplier wildyRisk)
 	{
 		this.animationGate = animation;
 		this.wildyRiskGate = wildyRisk;
 	}
 	private JPanel root;
 	private JPanel matchesBox;
-	private final javax.swing.Timer searchDebounce;
+	private final Timer searchDebounce;
 	private JTextField search;
 	private JPanel cardArea;
 	private JPanel waitingSlot;
@@ -127,7 +156,7 @@ public class RenderSurface
 	public void setComputing(boolean computing)
 	{
 		isComputing = computing;
-		javax.swing.SwingUtilities.invokeLater(() ->
+		SwingUtilities.invokeLater(() ->
 		{
 			if (waitingSlot == null)
 			{
@@ -166,7 +195,7 @@ public class RenderSurface
 		});
 	}
 
-	public RenderSurface(ResultCards cards, java.util.function.Supplier<Map<String, Object>> page,
+	public RenderSurface(ResultCards cards, Supplier<Map<String, Object>> page,
 		CommandSink commands, ItemPicker picker, Searcher searcher)
 	{
 		this.cards = cards;
@@ -175,7 +204,7 @@ public class RenderSurface
 		this.picker = picker;
 		this.searcher = searcher;
 		// The classic search cadence: 150ms debounce, 2+ characters.
-		this.searchDebounce = new javax.swing.Timer(150, e -> runSearch());
+		this.searchDebounce = new Timer(150, e -> runSearch());
 		this.searchDebounce.setRepeats(false);
 	}
 
@@ -193,7 +222,7 @@ public class RenderSurface
 			root.revalidate();
 			return;
 		}
-		searcher.search(query, matches -> javax.swing.SwingUtilities.invokeLater(() ->
+		searcher.search(query, matches -> SwingUtilities.invokeLater(() ->
 		{
 			matchesBox.removeAll();
 			for (Map<String, Object> match : matches)
@@ -208,9 +237,9 @@ public class RenderSurface
 
 	/** One dropdown row: the label, group rows bold - click selects.
 	 * Full width, so the hover highlight spans the whole view. */
-	private javax.swing.JComponent matchRow(Map<String, Object> match)
+	private JComponent matchRow(Map<String, Object> match)
 	{
-		javax.swing.JLabel row = new javax.swing.JLabel(Model.str(match, "label"));
+		JLabel row = new JLabel(Model.str(match, "label"));
 		boolean group = match.get("group") != null;
 		if (group)
 		{
@@ -221,31 +250,31 @@ public class RenderSurface
 		// icon, so the ASCII glyph gate stays clean).
 		if (Model.flag(match, "naval"))
 		{
-			row.setForeground(new java.awt.Color(120, 175, 215));
+			row.setForeground(new Color(120, 175, 215));
 			row.setToolTipText("Ship combat: fought from your boat");
-			javax.swing.Icon sail = sailingIconSmall();
+			Icon sail = sailingIconSmall();
 			if (sail != null)
 			{
 				row.setIcon(sail);
-				row.setHorizontalTextPosition(javax.swing.SwingConstants.LEADING);
+				row.setHorizontalTextPosition(SwingConstants.LEADING);
 				row.setIconTextGap(5);
 			}
 		}
-		row.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 8, 3, 8));
-		row.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-		row.setMaximumSize(new java.awt.Dimension(
+		row.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(
 			Integer.MAX_VALUE, row.getPreferredSize().height));
-		row.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-		row.addMouseListener(new java.awt.event.MouseAdapter()
+		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		row.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(java.awt.event.MouseEvent e)
+			public void mouseClicked(MouseEvent e)
 			{
 				pick(match);
 			}
 
 			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e)
+			public void mouseEntered(MouseEvent e)
 			{
 				row.setOpaque(true);
 				row.setBackground(ColorScheme.DARKER_GRAY_HOVER_COLOR);
@@ -253,7 +282,7 @@ public class RenderSurface
 			}
 
 			@Override
-			public void mouseExited(java.awt.event.MouseEvent e)
+			public void mouseExited(MouseEvent e)
 			{
 				row.setOpaque(false);
 				row.repaint();
@@ -296,18 +325,18 @@ public class RenderSurface
 	 * event-flooded EDT with huge cpu=). A 50ms debounce turns any storm
 	 * into at most ~20 rebuilds a second, and logs bursts so a publish
 	 * loop shows itself instead of freezing the client. */
-	private final java.util.concurrent.atomic.AtomicInteger pendingRepaints =
-		new java.util.concurrent.atomic.AtomicInteger();
-	private javax.swing.Timer repaintDebounce;
+	private final AtomicInteger pendingRepaints =
+		new AtomicInteger();
+	private Timer repaintDebounce;
 
 	public void onModelChanged()
 	{
 		pendingRepaints.incrementAndGet();
-		javax.swing.SwingUtilities.invokeLater(() ->
+		SwingUtilities.invokeLater(() ->
 		{
 			if (repaintDebounce == null)
 			{
-				repaintDebounce = new javax.swing.Timer(50, e ->
+				repaintDebounce = new Timer(50, e ->
 				{
 					int burst = pendingRepaints.getAndSet(0);
 					if (burst > 20)
@@ -331,14 +360,14 @@ public class RenderSurface
 	};
 
 	/** Built per repaint; ResultCards mounts it under the mob list. */
-	javax.swing.JButton addMobButton;
+	JButton addMobButton;
 	private JPanel chipRow;
 	private JPanel invRow;
 	private JPanel rosterArea;
 	private JPanel countsRow;
 	private JPanel footerRow;
-	private javax.swing.JButton undoButton;
-	private javax.swing.JButton redoButton;
+	private JButton undoButton;
+	private JButton redoButton;
 
 	/** Uniform chip config: every control in the row shares it. */
 	private static <T extends javax.swing.AbstractButton> T chip(T button, String tooltip, Runnable onClick)
@@ -353,11 +382,11 @@ public class RenderSurface
 		return button;
 	}
 
-	private static final java.awt.Color CHIP_ON = ResultCards.ACCENT;
-	private static final java.awt.Color CHIP_OFF = new java.awt.Color(150, 150, 150);
+	private static final Color CHIP_ON = ResultCards.ACCENT;
+	private static final Color CHIP_OFF = new Color(150, 150, 150);
 
 	/** The classic parameter pill: flat, rounded, accent when active. */
-	static javax.swing.JLabel pill(String text, boolean on, String tooltip, Runnable onClick)
+	static JLabel pill(String text, boolean on, String tooltip, Runnable onClick)
 	{
 		return pill(text, on, !on, tooltip, onClick);
 	}
@@ -367,10 +396,10 @@ public class RenderSurface
 	 * is complete") - the arriving page then rewrites every pill from
 	 * Core's truth, so an optimistic guess that Core refuses corrects
 	 * itself on the next publish. */
-	static javax.swing.JLabel pill(String text, boolean on, boolean pendingOn,
+	static JLabel pill(String text, boolean on, boolean pendingOn,
 		String tooltip, Runnable onClick)
 	{
-		javax.swing.JLabel label = new javax.swing.JLabel(text);
+		JLabel label = new JLabel(text);
 		paintPill(label, on);
 		label.setToolTipText(tooltip);
 		Ui.onClick(label, () ->
@@ -382,27 +411,16 @@ public class RenderSurface
 		return label;
 	}
 
-	/** Async sprite into a plate label (18px). */
-	private void spriteManagerPlate(javax.swing.JLabel plate, int spriteId)
-	{
-		if (spriteManager != null)
-		{
-			spriteManager.getSpriteAsync(spriteId, 0, img ->
-				javax.swing.SwingUtilities.invokeLater(() ->
-					plate.setIcon(Ui.icon(img, 18))));
-		}
-	}
-
 	/** The Task chip: the slayer skill icon + "Task" (field ask
 	 * 2026-08-15), always the FIRST chip. */
-	private javax.swing.JLabel taskPill(boolean on, boolean pendingOn,
+	private JLabel taskPill(boolean on, boolean pendingOn,
 		String tooltip, Runnable onClick)
 	{
-		javax.swing.JLabel pill = pill("Task", on, pendingOn, tooltip, onClick);
+		JLabel pill = pill("Task", on, pendingOn, tooltip, onClick);
 		if (spriteManager != null)
 		{
 			spriteManager.getSpriteAsync(net.runelite.api.SpriteID.SKILL_SLAYER, 0, img ->
-				javax.swing.SwingUtilities.invokeLater(() ->
+				SwingUtilities.invokeLater(() ->
 				{
 					pill.setIcon(Ui.icon(img, 14));
 					pill.setIconTextGap(4);
@@ -411,7 +429,7 @@ public class RenderSurface
 		return pill;
 	}
 
-	private javax.swing.JLabel taskPill(boolean on, boolean pendingOn,
+	private JLabel taskPill(boolean on, boolean pendingOn,
 		String tooltip)
 	{
 		return taskPill(on, pendingOn, tooltip, () ->
@@ -420,19 +438,19 @@ public class RenderSurface
 	}
 
 	/** Paint a pill as inactive (a sibling losing the selection). */
-	static void dimPill(javax.swing.JLabel label)
+	static void dimPill(JLabel label)
 	{
 		paintPill(label, false);
 		label.repaint();
 	}
 
-	private static void paintPill(javax.swing.JLabel label, boolean on)
+	private static void paintPill(JLabel label, boolean on)
 	{
 		label.setForeground(on ? CHIP_ON : CHIP_OFF);
 		label.setBorder(new RoundedBorder(on ? CHIP_ON : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
 	}
 
-	private javax.swing.JLabel paramChip(String label, String key, boolean selected)
+	private JLabel paramChip(String label, String key, boolean selected)
 	{
 		return pill(label, selected, label + (selected ? " on" : " off"),
 			() -> commands.send("set-param", Map.of("param", key, "value", !selected)));
@@ -471,19 +489,19 @@ public class RenderSurface
 	/** A classic count pill: "-N" red / "+N" green / "~N" grey, muted at
 	 * zero, always visible; click = the manage menu + add-by-search. */
 	private void pillChip(Map<String, Object> counts, String listKey, String sigil,
-		java.awt.Color active, java.awt.Color muted, java.awt.Color activeBorder,
+		Color active, Color muted, Color activeBorder,
 		String removeVerb, String command, String addPrompt,
-		java.util.List<Map<String, Object>> supplyCatalog)
+		List<Map<String, Object>> supplyCatalog)
 	{
-		java.util.List<Map<String, Object>> items = Model.list(counts, listKey);
-		javax.swing.JLabel pill = new javax.swing.JLabel(sigil + items.size());
+		List<Map<String, Object>> items = Model.list(counts, listKey);
+		JLabel pill = new JLabel(sigil + items.size());
 		boolean any = !items.isEmpty();
 		pill.setForeground(any ? active : muted);
 		pill.setBorder(new RoundedBorder(any ? activeBorder
 			: ColorScheme.MEDIUM_GRAY_COLOR, 2, 22));
 		Ui.onClick(pill, () ->
 		{
-			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+			JPopupMenu menu = new JPopupMenu();
 			// The classic grey chip also edits the SUPPLY DEFAULTS -
 			// one submenu per category, plus Arceuus access.
 			if (supplyCatalog != null && !supplyCatalog.isEmpty())
@@ -492,7 +510,7 @@ public class RenderSurface
 				{
 					String key = Model.str(category, "category");
 					String current = Model.str(category, "current");
-					javax.swing.JMenu sub = new javax.swing.JMenu(Model.str(category, "label"));
+					JMenu sub = new JMenu(Model.str(category, "label"));
 					if (!"arceuusAccess".equals(key))
 					{
 						sub.add(supplyChoice(key, "DETECT_BEST", "Detect best",
@@ -536,12 +554,12 @@ public class RenderSurface
 	private JComponent valueChip(String label, boolean active, String tooltip,
 		String currentText, java.util.function.Consumer<String> onCommit)
 	{
-		JPanel holder = Ui.panel(new java.awt.CardLayout());
-		javax.swing.JTextField field = new javax.swing.JTextField(currentText, 5);
+		JPanel holder = Ui.panel(new CardLayout());
+		JTextField field = new JTextField(currentText, 5);
 		field.setToolTipText(tooltip);
-		javax.swing.JLabel pill = pill(label, active, active, tooltip, () ->
+		JLabel pill = pill(label, active, active, tooltip, () ->
 		{
-			((java.awt.CardLayout) holder.getLayout()).show(holder, "field");
+			((CardLayout) holder.getLayout()).show(holder, "field");
 			field.requestFocusInWindow();
 			field.selectAll();
 		});
@@ -551,15 +569,15 @@ public class RenderSurface
 		field.addKeyListener(new java.awt.event.KeyAdapter()
 		{
 			@Override
-			public void keyPressed(java.awt.event.KeyEvent e)
+			public void keyPressed(KeyEvent e)
 			{
-				if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE)
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
 				{
-					((java.awt.CardLayout) holder.getLayout()).show(holder, "pill");
+					((CardLayout) holder.getLayout()).show(holder, "pill");
 				}
 			}
 		});
-		((java.awt.CardLayout) holder.getLayout()).show(holder, "pill");
+		((CardLayout) holder.getLayout()).show(holder, "pill");
 		return holder;
 	}
 
@@ -567,34 +585,10 @@ public class RenderSurface
 	private javax.swing.JMenuItem supplyChoice(String category, String key,
 		String label, boolean selected)
 	{
-		javax.swing.JCheckBoxMenuItem item = new javax.swing.JCheckBoxMenuItem(label, selected);
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
 		item.addActionListener(e -> commands.send("set-supply-default",
 			Map.of("category", category, "choice", key)));
 		return item;
-	}
-
-	/** One store's count chip: click lists the entries, each removable. */
-	private void storeChip(Map<String, Object> counts, String listKey, String sigil,
-		String noun, String command, String verb)
-	{
-		java.util.List<Map<String, Object>> items = Model.list(counts, listKey);
-		if (items.isEmpty())
-		{
-			return;
-		}
-		javax.swing.JButton button = new javax.swing.JButton(sigil + items.size());
-		chip(button, items.size() + " " + noun + " - click to manage", () ->
-		{
-			javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
-			for (Map<String, Object> item : items)
-			{
-				int id = Model.id(item, "id");
-				Ui.item(menu, verb + " " + Model.str(item, "name"),
-					() -> commands.send(command, Map.of("itemId", id)));
-			}
-			menu.show(button, 0, button.getHeight());
-		});
-		countsRow.add(button);
 	}
 
 	private synchronized JComponent root()
@@ -605,7 +599,7 @@ public class RenderSurface
 			JPanel top = new JPanel();
 			top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
 			top.setBackground(ColorScheme.DARK_GRAY_COLOR);
-			countsRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
+			countsRow = Ui.panel(new WrapLayout(FlowLayout.CENTER, 4, 2));
 			top.add(countsRow);
 			search = new JTextField();
 			search.setToolTipText("Search a monster or group");
@@ -614,17 +608,17 @@ public class RenderSurface
 			// row, or Enter (field refinement 2026-08-15).
 			search.getDocument().addDocumentListener(new javax.swing.event.DocumentListener()
 			{
-				public void insertUpdate(javax.swing.event.DocumentEvent e)
+				public void insertUpdate(DocumentEvent e)
 				{
 					searchDebounce.restart();
 				}
 
-				public void removeUpdate(javax.swing.event.DocumentEvent e)
+				public void removeUpdate(DocumentEvent e)
 				{
 					searchDebounce.restart();
 				}
 
-				public void changedUpdate(javax.swing.event.DocumentEvent e)
+				public void changedUpdate(DocumentEvent e)
 				{
 					searchDebounce.restart();
 				}
@@ -633,7 +627,7 @@ public class RenderSurface
 			{
 				if (matchesBox.getComponentCount() > 0)
 				{
-					java.awt.Component first = matchesBox.getComponent(0);
+					Component first = matchesBox.getComponent(0);
 					for (java.awt.event.MouseListener l : first.getMouseListeners())
 					{
 						l.mouseClicked(null);
@@ -645,7 +639,7 @@ public class RenderSurface
 				{
 					return;
 				}
-				searcher.search(query, matches -> javax.swing.SwingUtilities.invokeLater(() ->
+				searcher.search(query, matches -> SwingUtilities.invokeLater(() ->
 				{
 					matchesBox.removeAll();
 					if (matches.size() == 1)
@@ -666,18 +660,18 @@ public class RenderSurface
 			// Compact history arrows ride BESIDE the search (the classic
 			// header pattern), not loose in the chip row.
 
-			undoButton = chip(new javax.swing.JButton("<"), "Undo",
+			undoButton = chip(new JButton("<"), "Undo",
 				() -> commands.send("undo", Map.of()));
-			redoButton = chip(new javax.swing.JButton(">"), "Redo",
+			redoButton = chip(new JButton(">"), "Redo",
 				() -> commands.send("redo", Map.of()));
-			javax.swing.JLabel clearSearch = Ui.label("x", new java.awt.Color(150, 150, 150));
-			clearSearch.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 4, 0, 6));
+			JLabel clearSearch = Ui.label("x", new Color(150, 150, 150));
+			clearSearch.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 6));
 			clearSearch.setToolTipText("Clear the search");
-			clearSearch.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
-			clearSearch.addMouseListener(new java.awt.event.MouseAdapter()
+			clearSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			clearSearch.addMouseListener(new MouseAdapter()
 			{
 				@Override
-				public void mouseClicked(java.awt.event.MouseEvent e)
+				public void mouseClicked(MouseEvent e)
 				{
 					search.setText("");
 					matchesBox.removeAll();
@@ -687,31 +681,31 @@ public class RenderSurface
 				}
 
 				@Override
-				public void mouseEntered(java.awt.event.MouseEvent e)
+				public void mouseEntered(MouseEvent e)
 				{
-					clearSearch.setForeground(new java.awt.Color(220, 120, 120));
+					clearSearch.setForeground(new Color(220, 120, 120));
 				}
 
 				@Override
-				public void mouseExited(java.awt.event.MouseEvent e)
+				public void mouseExited(MouseEvent e)
 				{
-					clearSearch.setForeground(new java.awt.Color(150, 150, 150));
+					clearSearch.setForeground(new Color(150, 150, 150));
 				}
 			});
 			JPanel searchBox = new JPanel(new BorderLayout());
-			searchBox.setBackground(new java.awt.Color(43, 43, 43));
-			searchBox.setBorder(new RoundedBorder(new java.awt.Color(80, 78, 70), 3, 4));
+			searchBox.setBackground(new Color(43, 43, 43));
+			searchBox.setBorder(new RoundedBorder(new Color(80, 78, 70), 3, 4));
 			search.setOpaque(false);
-			search.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 2));
+			search.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 2));
 			searchBox.add(search, BorderLayout.CENTER);
-			JPanel searchTools = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 2, 0));
+			JPanel searchTools = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
 			searchTools.setOpaque(false);
 			searchTools.add(clearSearch);
-			for (javax.swing.JButton arrow : new javax.swing.JButton[]{undoButton, redoButton})
+			for (JButton arrow : new JButton[]{undoButton, redoButton})
 			{
 				arrow.setContentAreaFilled(false);
-				arrow.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 4));
-				arrow.setForeground(new java.awt.Color(150, 150, 150));
+				arrow.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+				arrow.setForeground(new Color(150, 150, 150));
 				searchTools.add(arrow);
 			}
 			searchBox.add(searchTools, BorderLayout.EAST);
@@ -725,9 +719,9 @@ public class RenderSurface
 			searchArea.add(matchesBox, BorderLayout.CENTER);
 			top.add(searchArea, BorderLayout.NORTH);
 			rosterArea = Ui.darker(new BorderLayout());
-			rosterArea.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 0, 2, 0));
+			rosterArea.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 			top.add(rosterArea);
-			chipRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.LEFT, 4, 2));
+			chipRow = Ui.panel(new WrapLayout(FlowLayout.LEFT, 4, 2));
 			top.add(chipRow, BorderLayout.CENTER);
 			// The inventory slider rides its own row under the chips.
 			invRow = Ui.panel(new BorderLayout());
@@ -744,18 +738,18 @@ public class RenderSurface
 			// shows (field report: between the chips and the mob list was weird).
 			waitingSlot = Ui.panel(new BorderLayout());
 			loader = new AsciiLoader();
-			JPanel loaderRow = Ui.panel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 4));
+			JPanel loaderRow = Ui.panel(new FlowLayout(FlowLayout.CENTER, 0, 4));
 			loaderRow.add(loader);
 			waitingSlot.add(loaderRow, BorderLayout.CENTER);
-			javax.swing.JLabel computing = Ui.label("Computing...",
-				new java.awt.Color(150, 150, 150));
-			computing.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+			JLabel computing = Ui.label("Computing...",
+				new Color(150, 150, 150));
+			computing.setHorizontalAlignment(SwingConstants.CENTER);
 			waitingSlot.add(computing, BorderLayout.SOUTH);
 			waitingSlot.setVisible(false);
 			resultsArea.add(waitingSlot);
 			root.add(resultsArea, BorderLayout.CENTER);
 			// Footer actions (the classic position): below the results.
-			footerRow = Ui.panel(new WrapLayout(java.awt.FlowLayout.CENTER, 4, 2));
+			footerRow = Ui.panel(new WrapLayout(FlowLayout.CENTER, 4, 2));
 			root.add(footerRow, BorderLayout.SOUTH);
 		}
 		repaint();
@@ -773,13 +767,13 @@ public class RenderSurface
 			+ " shortlink</font>";
 		String base = Ui.tip(head);
 		Map<String, Object> params = ResultCards.firstParams(page);
-		java.util.List<Map<String, Object>> entries = Model.list(page, "entries");
+		List<Map<String, Object>> entries = Model.list(page, "entries");
 		if (params == null || entries.isEmpty())
 		{
 			return base;
 		}
 		Map<String, Object> entry = entries.get(0);
-		java.util.List<Map<String, Object>> mobs = Model.list(entry, "mobs");
+		List<Map<String, Object>> mobs = Model.list(entry, "mobs");
 		if (mobs.isEmpty())
 		{
 			return base;
@@ -871,18 +865,18 @@ public class RenderSurface
 		{
 			// The classic trio: always visible, muted at zero.
 			pillChip(counts, "simmedItems", "+",
-				new java.awt.Color(130, 200, 130), new java.awt.Color(110, 140, 110),
-				new java.awt.Color(95, 160, 95),
+				new Color(130, 200, 130), new Color(110, 140, 110),
+				new Color(95, 160, 95),
 				"Stop simming ", "toggle-sim",
 				"Sim an item as owned...", null);
 			pillChip(counts, "excludedItems", "-",
-				new java.awt.Color(220, 120, 120), new java.awt.Color(140, 110, 110),
-				new java.awt.Color(170, 90, 90),
+				new Color(220, 120, 120), new Color(140, 110, 110),
+				new Color(170, 90, 90),
 				"Allow again: ", "toggle-exclusion",
 				"Exclude an item (search)...", null);
 			pillChip(counts, "filteredItems", "~",
-				new java.awt.Color(190, 190, 190), new java.awt.Color(130, 130, 130),
-				new java.awt.Color(150, 150, 150),
+				new Color(190, 190, 190), new Color(130, 130, 130),
+				new Color(150, 150, 150),
 				"Stop filtering: ", "toggle-always-filter",
 				"Always filter an item...", Model.list(page, "supplyCatalog"));
 		}
@@ -1034,11 +1028,11 @@ public class RenderSurface
 			// The classic inventory control is a SLIDER over the bench
 			// size - every value reachable, not four presets.
 			JPanel invBox = Ui.panel(new BorderLayout(4, 0));
-			javax.swing.JLabel invLabel = Ui.label("Inv " + swaps, new java.awt.Color(190, 190, 190));
+			JLabel invLabel = Ui.label("Inv " + swaps, new Color(190, 190, 190));
 			invBox.add(invLabel, BorderLayout.WEST);
-			javax.swing.JSlider invSlider =
-				new javax.swing.JSlider(0, 16, Math.max(0, Math.min(16, swaps)));
-			invSlider.setPreferredSize(new java.awt.Dimension(88, 18));
+			JSlider invSlider =
+				new JSlider(0, 16, Math.max(0, Math.min(16, swaps)));
+			invSlider.setPreferredSize(new Dimension(88, 18));
 			invSlider.setBackground(ColorScheme.DARK_GRAY_COLOR);
 			invSlider.setFocusable(false);
 			invSlider.setToolTipText("Max gear swaps carried on the trip");
@@ -1054,7 +1048,7 @@ public class RenderSurface
 				}
 			});
 			invBox.add(invSlider, BorderLayout.CENTER);
-			invBox.setBorder(javax.swing.BorderFactory.createEmptyBorder(2, 4, 2, 4));
+			invBox.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
 			invRow.removeAll();
 			invRow.add(invBox, BorderLayout.CENTER);
 			int budgetGp = Model.id(params, "upgradeBudgetGp");
@@ -1064,7 +1058,7 @@ public class RenderSurface
 				"Upgrade budget (k/m/b, 'max'); empty = owned gear only",
 				Gp.format(budgetGp), text ->
 			{
-				Map<String, Object> args = new java.util.HashMap<>();
+				Map<String, Object> args = new HashMap<>();
 				args.put("param", "upgradeBudgetGp");
 				args.put("value", Gp.parse(text));
 				commands.send("set-param", args);
@@ -1086,7 +1080,7 @@ public class RenderSurface
 					capped ? Gp.format(riskGp) : "", text ->
 				{
 					// Empty = clear: null falls back to uncapped.
-					Map<String, Object> args = new java.util.HashMap<>();
+					Map<String, Object> args = new HashMap<>();
 					args.put("param", "riskBudgetGp");
 					args.put("value", text.isEmpty() ? null : Gp.parse(text));
 					commands.send("set-param", args);
@@ -1094,12 +1088,12 @@ public class RenderSurface
 				chipRow.add(paramChip("Protect item", "protectItem",
 					Model.flag(params, "protectItem")));
 			}
-			addMobButton = chip(new javax.swing.JButton("+ Mob"),
+			addMobButton = chip(new JButton("+ Mob"),
 				"Add another monster to this result (shared trip plan)", () ->
 			{
-				String query = javax.swing.JOptionPane.showInputDialog(root,
+				String query = JOptionPane.showInputDialog(root,
 					"Add a monster to this result:", "Add mob",
-					javax.swing.JOptionPane.PLAIN_MESSAGE);
+					JOptionPane.PLAIN_MESSAGE);
 				if (query != null && !query.trim().isEmpty())
 				{
 					commands.send("add-mob", Map.of("query", query.trim()));
@@ -1107,15 +1101,15 @@ public class RenderSurface
 			});
 			addMobButton.setContentAreaFilled(false);
 			addMobButton.setOpaque(false);
-			addMobButton.setForeground(new java.awt.Color(190, 190, 190));
+			addMobButton.setForeground(new Color(190, 190, 190));
 			addMobButton.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 3, 10));
-			javax.swing.JButton reload = chip(new javax.swing.JButton("Reload"),
+			JButton reload = chip(new JButton("Reload"),
 				"Re-run with a fresh bank scan", () ->
 					commands.send("recompute", Map.of()));
 			reload.setContentAreaFilled(false);
 			reload.setOpaque(false);
-			reload.setForeground(new java.awt.Color(140, 140, 140));
-			reload.setBorder(javax.swing.BorderFactory.createEmptyBorder(3, 8, 3, 8));
+			reload.setForeground(new Color(140, 140, 140));
+			reload.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
 			cards.setReload(reload);
 			cards.setAddMob(addMobButton);
 		}
@@ -1123,7 +1117,7 @@ public class RenderSurface
 		String reportText = Model.str(page, "reportText");
 		if (reportText != null)
 		{
-			footerRow.add(chip(new javax.swing.JButton("Copy report"),
+			footerRow.add(chip(new JButton("Copy report"),
 				"Copy the shown result as text", () ->
 			{
 				try
@@ -1146,11 +1140,11 @@ public class RenderSurface
 			// rule, so it could open a style the card was not showing.
 			String wikiTab = ResultCards.effectiveTab(page);
 			boolean wikiBis = params != null && Model.flag(params, "viewingBis");
-			footerRow.add(chip(new javax.swing.JButton("Wiki calc"),
+			footerRow.add(chip(new JButton("Wiki calc"),
 				wikiCalcTip(page), () -> commands.send("wiki-calc",
 					Map.of("style", wikiTab, "bis", wikiBis))));
 		}
-		footerRow.add(chip(new javax.swing.JButton("Discord"),
+		footerRow.add(chip(new JButton("Discord"),
 			"Loadout Lab community - report issues, request features", () ->
 				net.runelite.client.util.LinkBrowser.browse("https://discord.gg/6GuS6J8em3")));
 		if (rosterArea != null)
@@ -1177,9 +1171,9 @@ public class RenderSurface
 		{
 			// The empty state says what to do - never beside the
 			// computing notice.
-			javax.swing.JLabel hint = Ui.label(
-				"Search a mob, group, or raid to begin.", new java.awt.Color(150, 150, 150));
-			hint.setBorder(javax.swing.BorderFactory.createEmptyBorder(12, 8, 12, 8));
+			JLabel hint = Ui.label(
+				"Search a mob, group, or raid to begin.", new Color(150, 150, 150));
+			hint.setBorder(BorderFactory.createEmptyBorder(12, 8, 12, 8));
 			hint.setAlignmentX(0.5f);
 			cardArea.add(hint);
 		}

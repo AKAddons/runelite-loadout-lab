@@ -1433,7 +1433,7 @@ public final class DpsCalculator
 	 * do). */
 	private static boolean isFarTitan(OptimizationRequest request)
 	{
-		com.loadoutlab.data.MonsterStats monster = request.getMonster();
+		MonsterStats monster = request.getMonster();
 		if (monster == null || !monster.hasAttribute("immune_melee"))
 		{
 			return false;
@@ -1492,7 +1492,7 @@ public final class DpsCalculator
 	 */
 	private double frostweaverBonus(OptimizationRequest request, Loadout loadout)
 	{
-		com.loadoutlab.data.SpellStats spell = request.getSpell();
+		SpellStats spell = request.getSpell();
 		if (spell == null || !isWearingBlueMoonSet(loadout))
 		{
 			return 0;

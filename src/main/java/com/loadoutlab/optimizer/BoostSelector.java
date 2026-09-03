@@ -3,6 +3,7 @@ package com.loadoutlab.optimizer;
 import com.loadoutlab.engine.BoostProfile;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OwnedItems;
+import com.loadoutlab.engine.PlayerLevels;
 
 /**
  * The best stat boost assumed per style, given what the player actually owns.
@@ -135,8 +136,8 @@ public final class BoostSelector
 	 * level, or their base plus the best magic boost they actually own -
 	 * never a potion they don't have, and never MAXED as a stand-in for
 	 * unknown levels (the old Death Charge seed did both). */
-	public static int reachableMagic(com.loadoutlab.engine.PlayerLevels real,
-		com.loadoutlab.engine.PlayerLevels live, OwnedItems owned)
+	public static int reachableMagic(PlayerLevels real,
+		PlayerLevels live, OwnedItems owned)
 	{
 		if (real == null)
 		{
@@ -145,7 +146,7 @@ public final class BoostSelector
 		int reachable = live == null ? real.getMagic() : live.getMagic();
 		if (owned != null)
 		{
-			BoostProfile best = bestFor(com.loadoutlab.engine.CombatStyle.MAGIC,
+			BoostProfile best = bestFor(CombatStyle.MAGIC,
 				owned, false, false);
 			reachable = Math.max(reachable, best.apply(real, live).getMagic());
 		}

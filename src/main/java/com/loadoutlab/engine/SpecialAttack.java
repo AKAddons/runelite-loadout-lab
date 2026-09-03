@@ -7,6 +7,7 @@ import com.loadoutlab.data.MonsterStats;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import com.loadoutlab.data.JsonResources;
 
 /**
  * Special-attack definitions and expected-damage math.
@@ -111,12 +112,12 @@ public final class SpecialAttack
 		List<SpecialAttack> specs = new ArrayList<>();
 		try
 		{
-			for (com.google.gson.JsonElement element : com.loadoutlab.data.JsonResources.array(
+			for (com.google.gson.JsonElement element : JsonResources.array(
 				"/com/loadoutlab/data/special_attacks.json"))
 			{
 				com.google.gson.JsonObject row = element.getAsJsonObject();
 				List<String> prefixes = new ArrayList<>();
-				com.loadoutlab.data.JsonResources.strings(row, "prefixes", prefixes);
+				JsonResources.strings(row, "prefixes", prefixes);
 				specs.add(new SpecialAttack(prefixes.toArray(new String[0]),
 					row.get("name").getAsString(),
 					CombatStyle.valueOf(row.get("style").getAsString()),
@@ -396,7 +397,7 @@ public final class SpecialAttack
 	/** Monster-aware drain: the Division spec measures its DEFENCE drain
 	 * off the target's MAGIC level, so it shines exactly where a DWH
 	 * cannot reach (the wiki's example: Zulrah's 300 Magic). */
-	public int drainedDefence(com.loadoutlab.data.MonsterStats monster, double specExpectedDamage)
+	public int drainedDefence(MonsterStats monster, double specExpectedDamage)
 	{
 		if (magicDrainFraction > 0)
 		{

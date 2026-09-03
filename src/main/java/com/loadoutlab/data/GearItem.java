@@ -4,6 +4,7 @@ package com.loadoutlab.data;
 import java.util.Locale;
 
 import lombok.Getter;
+import com.loadoutlab.engine.CombatStyle;
 
 public final class GearItem
 {
@@ -121,7 +122,7 @@ public final class GearItem
 
 	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
 
-	public boolean isWeaponFor(com.loadoutlab.engine.CombatStyle style)
+	public boolean isWeaponFor(CombatStyle style)
 	{
 		if (slot != GearSlot.WEAPON)
 		{
@@ -153,7 +154,7 @@ public final class GearItem
 		}
 	}
 
-	public double roughScore(com.loadoutlab.engine.CombatStyle style)
+	public double roughScore(CombatStyle style)
 	{
 		switch (style)
 		{
