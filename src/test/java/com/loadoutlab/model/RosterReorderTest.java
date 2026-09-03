@@ -80,4 +80,72 @@ class RosterReorderTest
 		assertEquals(before, labels(state));
 		assertEquals(1, ((Number) state.paramsNode().get("lensIndex")).intValue());
 	}
+
+	@Test
+	@DisplayName("moving a row reorders the results it already has - no recompute, and undo does not recompute either")
+	void moveDoesNotRecompute()
+	{
+		java.util.concurrent.atomic.AtomicInteger searches = new java.util.concurrent.atomic.AtomicInteger();
+		PageState state = new PageState();
+		CapturePages link = new CapturePages();
+		CommandEngine engine = new CommandEngine(data, state,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, onDone) -> searches.incrementAndGet(),
+			link);
+		engine.setStoreOps(new TestStoreOps());
+		assertTrue(engine.execute("select", Map.of("query", "Tombs of Amascut")));
+		List<MonsterStats> mobs = state.rosterMobs();
+		List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = new ArrayList<>();
+		for (int i = 0; i < mobs.size(); i++)
+		{
+			perMob.add(Map.of());
+		}
+		engine.onRosterResults(mobs, perMob);
+		flush();
+		int after = searches.get();
+		List<String> before = labels(state);
+
+		assertTrue(engine.execute("move-mob", Map.of("index", 1, "delta", -1)));
+		flush();
+		assertEquals(after, searches.get(), "a reorder is presentation only");
+		assertEquals(before.get(1), labels(state).get(0));
+		assertEquals(before.get(1), link.firstMobName(), "the page shows the reordered roster without a search");
+
+		assertTrue(engine.execute("undo", Map.of()));
+		flush();
+		assertEquals(after, searches.get(), "undo of a reorder is presentation only");
+		assertEquals(before.get(0), link.firstMobName());
+	}
+
+	private static final class CapturePages extends CompanionLink
+	{
+		Map<String, Object> page;
+
+		@Override
+		public void publishPage(Map<String, Object> page)
+		{
+			this.page = page;
+		}
+
+		String firstMobName()
+		{
+			Map<?, ?> entry = (Map<?, ?>) ((List<?>) page.get("entries")).get(0);
+			Map<?, ?> mob = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(0);
+			return String.valueOf(mob.get("label"));
+		}
+	}
+
+	private static void flush()
+	{
+		try
+		{
+			javax.swing.SwingUtilities.invokeAndWait(() ->
+			{
+			});
+		}
+		catch (Exception ex)
+		{
+			throw new AssertionError(ex);
+		}
+	}
 }

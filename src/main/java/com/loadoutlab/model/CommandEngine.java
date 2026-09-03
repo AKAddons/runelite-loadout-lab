@@ -493,7 +493,7 @@ public class CommandEngine
 					{
 						state.selectRoster(reordered, (String) prevSel[2], raid);
 						state.setParam("lensIndex", movedLens);
-						recompute();
+						republishReordered();
 						return true;
 					}
 
@@ -502,7 +502,7 @@ public class CommandEngine
 					{
 						state.restoreSelection(prevSel);
 						state.setParam("lensIndex", lens);
-						recompute();
+						republishReordered();
 						return true;
 					}
 
@@ -1351,6 +1351,29 @@ public class CommandEngine
 	}
 
 	/** Roster computes: published with the shared params node. */
+	/** A roster reorder is presentation only (Andrew 2026-09-03: "should
+	 * never change the result"): the results already in hand follow their
+	 * mobs into the new order and the page republishes; only a roster
+	 * whose results are missing or stale computes. */
+	private void republishReordered()
+	{
+		List<MonsterStats> order = state.rosterMobs();
+		List<MonsterStats> had = lastMobs;
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob = lastPerMob;
+		if (order == null || had == null || perMob == null || had.size() != order.size()
+			|| perMob.size() != had.size() || !new java.util.HashSet<>(had).equals(new java.util.HashSet<>(order)))
+		{
+			recompute();
+			return;
+		}
+		List<Map<CombatStyle, OptimizerService.StyleResult>> moved = new java.util.ArrayList<>();
+		for (MonsterStats mob : order)
+		{
+			moved.add(perMob.get(had.indexOf(mob)));
+		}
+		onRosterResults(order, moved);
+	}
+
 	public void onRosterResults(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
