@@ -65,7 +65,11 @@ class AsciiLoaderTest
 						// client (Swing on macOS Tahoe boxed symbol glyphs once).
 						boolean braille = c >= 0x2800 && c <= 0x28FF;
 						boolean block = c >= 0x2580 && c <= 0x259F;  // solid fills by brightness
-						assertTrue((c >= 32 && c < 127) || braille || block, "frame char outside ASCII/Braille/blocks: " + (int) c);
+						// CP437 flavour (Andrew 2026-09-02): double box strokes and
+						// corners, the triple bar, and yen for scale texture.
+						boolean cp437 = (c >= 0x2550 && c <= 0x256C) || c == 0x2261 || c == 0xA5;
+						assertTrue((c >= 32 && c < 127) || braille || block || cp437,
+							"frame char outside the palette: " + (int) c);
 					}
 				}
 			}
