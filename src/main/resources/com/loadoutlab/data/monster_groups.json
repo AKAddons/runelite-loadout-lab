@@ -270,7 +270,7 @@
  },
  {
   "name": "Theatre of Blood (Entry)",
-  "inventory": 8,
+  "inventory": 10,
   "members": [
    {
     "name": "The Maiden of Sugadinti",
@@ -337,7 +337,7 @@
  },
  {
   "name": "Theatre of Blood (Hard)",
-  "inventory": 8,
+  "inventory": 10,
   "members": [
    {
     "name": "The Maiden of Sugadinti",
@@ -407,7 +407,7 @@
  },
  {
   "name": "Tombs of Amascut",
-  "inventory": 8,
+  "inventory": 10,
   "members": [
    {
     "name": "Ba-Ba"
@@ -494,7 +494,7 @@
  },
  {
   "name": "Chambers of Xeric",
-  "inventory": 8,
+  "inventory": 10,
   "members": [
    {
     "name": "Tekton",

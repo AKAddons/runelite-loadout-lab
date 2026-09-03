@@ -1698,14 +1698,15 @@ public class CommandEngine
 					state.setParam("onTask", false);
 				}
 				// Recommended trip inventory per selection (Andrew
-				// 2026-08-14: raids 8, other groups 3, singles 1). The
+				// 2026-09-03: raids 10, other groups 4, singles 1 - "bad
+				// results at 3/8"). The
 				// GROUP DATA declares its inventory - deriving raid-ness
 				// from supplied-boost coverage missed Theatre of Blood,
 				// which has no supplied boost (field report 2026-08-31).
 				state.setParam("maxSwaps",
 					groupPick != null && groupPick.getInventory() > 0
 						? groupPick.getInventory()
-						: selected.size() > 1 ? 3 : 1);
+						: selected.size() > 1 ? 4 : 1);
 				java.util.function.Supplier<Map<String, Object>> seeder = assumptionSeeder;
 				if (seeder != null)
 				{

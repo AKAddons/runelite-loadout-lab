@@ -64,25 +64,25 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("every raid opens at its declared inventory - ToB included")
-	void raidsOpenAtEight()
+	void raidsOpenAtTen()
 	{
 		for (String raidName : new String[]{"Theatre of Blood (Entry)",
 			"Theatre of Blood (Hard)", "Chambers of Xeric", "Tombs of Amascut"})
 		{
 			PageState state = new PageState();
 			Map<String, Object> params = selectGroup(raidName, state, new CaptureLink());
-			assertEquals(8, params.get("maxSwaps"), raidName + " must open at 8");
+			assertEquals(10, params.get("maxSwaps"), raidName + " must open at 10");
 			assertEquals(Boolean.TRUE, params.get("raidSelection"), raidName);
 		}
 	}
 
 	@Test
-	@DisplayName("non-raid groups keep the 3-swap default and no raid flag")
-	void groupsKeepThree()
+	@DisplayName("non-raid groups keep the 4-swap default and no raid flag")
+	void groupsKeepFour()
 	{
 		PageState state = new PageState();
 		Map<String, Object> params = selectGroup("Dagannoth Kings", state, new CaptureLink());
-		assertEquals(3, params.get("maxSwaps"));
+		assertEquals(4, params.get("maxSwaps"));
 		assertEquals(Boolean.FALSE, params.get("raidSelection"));
 	}
 

@@ -300,10 +300,10 @@ class MonsterGroupsTest
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());
 		// Raids preset a bigger Inventory default; other groups do not.
-		assertEquals(8, byName("Theatre of Blood (Entry)").getInventory());
-		assertEquals(8, byName("Theatre of Blood (Hard)").getInventory());
-		assertEquals(8, byName("Tombs of Amascut").getInventory());
-		assertEquals(8, byName("Chambers of Xeric").getInventory());
+		assertEquals(10, byName("Theatre of Blood (Entry)").getInventory());
+		assertEquals(10, byName("Theatre of Blood (Hard)").getInventory());
+		assertEquals(10, byName("Tombs of Amascut").getInventory());
+		assertEquals(10, byName("Chambers of Xeric").getInventory());
 		assertEquals(0, byName("Fight Caves").getInventory());
 	}
 
