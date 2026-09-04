@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None, bg_dark=0.0):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None, bg_dark=0.0, blank=()):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -158,6 +158,8 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
         return sx, sy
     def isfg(sx, sy):
         if not (0 <= sx < w and 0 <= sy < h and fg[sy][sx]): return False
+        for (bx0, by0, bx1, by1) in blank:   # image-fraction boxes treated as background (a lost head)
+            if bx0 * w <= sx < bx1 * w and by0 * h <= sy < by1 * h: return False
         return bg_dark <= 0 or (lum[sy][sx] - lo) / (hi - lo) >= bg_dark
     def filled(ax, ay):
         if ax < 0 or ay < 0 or ax >= used or ay >= rows: return False

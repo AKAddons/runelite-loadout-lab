@@ -519,25 +519,26 @@ def vardorvis():
             a = 2 * math.pi * ((t + k * 5) / 16)
             r = int(round(5 + 4.5 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
             if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "|/-\\"[(t + k) % 4], "#d0d0c0")
-        # the head: the pin pad pops up
+        # the head: the red click box pops up over him and pulses
         if 9 <= t <= 14:
-            box = ["╔═══════╗", "║  PIN  ║", "║ * * * ║", "╚═══════╝"]
-            for i, line in enumerate(box):
-                for j, ch in enumerate(line):
-                    if ch != " ": f = put(f, i, 22 + j, ch, "#ffe060" if ch == "*" and (t + j) % 3 == 0 else "#e8e8e8")
+            red = "#ff2a2a" if t % 2 else "#c81e1e"
+            f = put(f, 1, 22, "▄▄▄▄▄▄", red)
+            f = put(f, 2, 22, "██████", red)
+            f = put(f, 3, 22, "▀▀▀▀▀▀", red)
         out.append(finish(f))
-    return "vardorvis", "the axes and the pin", out
+    return "vardorvis", "the axes and the head", out
 
 def leviathan():
     lev = render("The_Leviathan.png", 31, 12, edge_blocks=True, crop_norm=False)
     out = []
     for t in range(12):
         f = centred(lev, dx=(0, 1, 1, 0, -1, -1)[t % 6])
-        # a stream of orbs arcs out, red, blue, green in turn
+        # a stream of orbs arcs out of its HEAD (top left, the two eyes), red, blue, green in turn
         for k in range(4):
             age = (t + k * 3) % 12
-            if age < 9:
-                c = 14 + age * 2; r = int(round(7 - 3.2 * math.sin(math.pi * age / 8)))
+            if age < 8:
+                # the head faces left: the stream leaves the mouth and climbs away to the upper left
+                c = 11 - int(age * 1.4); r = max(0, 2 - (age + 1) // 3)
                 if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "@", ("#ff4a4a", "#5ab8ff", "#5fd46a")[k % 3])
         out.append(finish(f))
     return "leviathan", "the orb stream", out
@@ -647,10 +648,12 @@ def simple(sprite, key, name, cols=31, rows=12, sway=(0, 1, 1, 0, -1, -1), overl
     return key, name, out
 
 def vorkath():
+    # the acid trail: one pool lands per frame along a snaking path, the older ones stay
+    PATH = [(11, 2), (11, 5), (10, 8), (11, 11), (10, 14), (11, 17), (10, 20), (11, 23), (10, 26), (11, 29), (10, 30), (9, 28), (9, 25), (9, 22), (9, 19), (9, 16)]
     def over(f, t):
-        # the acid pool spreads, the fire bomb drops and bursts
-        for c in range(max(0, 15 - t * 2), min(W, 16 + t * 2)):
-            if f[H - 1][c] == " ": f = put(f, H - 1, c, "░", "#8fd44a")
+        for i, (r, c) in enumerate(PATH[:t + 2]):
+            if f[r][c] == " ": f = put(f, r, c, "▒" if i == t + 1 else "░", "#b8ff4a" if i == t + 1 else "#6fb03a")
+        # the fire bomb drops and bursts
         age = t % 12
         if age < 5:
             r = age * 2; c = 5
@@ -658,14 +661,16 @@ def vorkath():
         elif age < 8 and f[H - 2][5] == " ":
             f = put(f, H - 2, 4, "* *" if age == 5 else " * ", "#ffe060")
         return f
-    return simple("Vorkath.png", "vorkath", "acid and the bomb", overlay=over)
+    return simple("Vorkath.png", "vorkath", "the acid trail", overlay=over, frames=16)
 
 def hydra():
     out = []
     phases = [("#5ab8ff", "|"), ("#ff5a2a", "^"), ("#5fd46a", "~"), ("#9a9a9a", ".")]   # electric, fire, serpentine, extinguished
+    # the heads, as image-fraction boxes: left, right, top middle; the lower middle one is the last to go
+    HEADS = [(0.0, 0.0, 0.26, 0.22), (0.44, 0.08, 0.70, 0.27), (0.26, 0.0, 0.56, 0.20)]
     for t in range(16):
-        colour, ch = phases[t // 4]
-        h = tint(render("Alchemical_Hydra_(electric).png", 31, 12, edge_blocks=True, crop_norm=False), colour, 0.4)
+        phase = t // 4; colour, ch = phases[phase]
+        h = tint(render("Alchemical_Hydra_(electric).png", 31, 12, box=(0.0, 0.0, 1.0, 0.62), edge_blocks=True, crop_norm=False, blank=tuple(HEADS[:phase])), colour, 0.4)
         f = centred(h)
         for k in range(4):
             r = (t * 3 + k * 5) % 5; c = (k * 8 + t * 2) % W
@@ -674,14 +679,20 @@ def hydra():
     return "hydra", "four phases", out
 
 def araxxor():
-    def over(f, t):
-        for k in range(3):
-            age = (t + k * 4) % 12
-            if age < 5:
-                r = 2 + age * 2; c = 24 + k * 2
-                if r < H and f[r][c] == " ": f = put(f, r, c, "~", "#8fd44a")
-        return f
-    return simple("Araxxor.png", "araxxor", "acid spit", overlay=over)
+    # it faces left: the spider sits right of centre so the venom has room to fly
+    beast = render("Araxxor.png", 25, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(beast, dx=3)
+        # a bright green venom stream from the mouth, with a short fading trail
+        age = t % 6
+        for k, colour in enumerate(("#7aff3a", "#5fd46a", "#3f8a4a")):
+            a = age - k
+            if a >= 0:
+                c = 6 - a * 2; r = 5 - (a + 1) // 2
+                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "~" if k else "o", colour)
+        out.append(finish(f))
+    return "araxxor", "venom", out
 
 def fanatic():
     def over(f, t):
@@ -739,12 +750,24 @@ def zilyana():
     return simple("Commander_Zilyana.png", "zilyana", "lightning", cols=25, overlay=over)
 
 def corp():
-    def over(f, t):
-        a = 2 * math.pi * (t / 12)
-        r = int(round(5 + 4 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
-        if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "@", "#4a4a5a")
-        return f
-    return simple("Corporeal_Beast.png", "corp", "the dark core", sway=(0, 0, 1, 1, 0, 0), overlay=over)
+    # strokes and a dark carve for the edges (Andrew 2026-09-04: "needs more edge work")
+    beast = render("Corporeal_Beast.png", 29, 12, edge_blocks=False, crop_norm=True, bg_dark=0.15)
+    core = render("Dark_energy_core.png", 5, 2, edge_blocks=True, crop_norm=False)
+    out = []
+    # the dark energy core hops between spots in arcs, six frames a hop
+    spots = [(9, 1), (9, 25), (9, 12), (9, 26)]
+    for t in range(24):
+        f = centred(beast, dx=(0, 0, 1, 1, 0, 0)[t % 6], dy=0)
+        hop = t // 6; k = t % 6
+        (r0, c0), (r1, c1) = spots[hop % 4], spots[(hop + 1) % 4]
+        c = int(round(c0 + (c1 - c0) * k / 5)); r = int(round(r0 - 4 * math.sin(math.pi * k / 5)))
+        f = place(f, core, max(0, r), max(0, min(W - 5, c)))
+        if k in (1, 2):
+            for j in range(k):
+                cc = c0 + (1 if c1 > c0 else -1) * (j + 1) * 2
+                if 0 <= cc < W and f[9][cc] == " ": f = put(f, 9, cc, ".", "#6a5a8a")
+        out.append(finish(f))
+    return "corp", "the hopping core", out
 
 def archaeologist():
     def over(f, t):
@@ -779,15 +802,25 @@ def nightmare():
     return simple("The_Nightmare.png", "nightmare", "sleep", cols=27, overlay=over)
 
 def mimic():
+    # the chest sits on its hoard: gold mounds, coins, gems, a 3rd age glint
+    GOLD, GOLD2, COIN = "#e0b030", "#a07a20", "#ffd84a"
     out = []
     for t in range(12):
-        chest = render("The_Mimic.png", 25, 12, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 6 < 3 else 0.9))
-        f = centred(chest)
+        chest = render("The_Mimic.png", 21, 8, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 6 < 3 else 0.9))
+        f = place(start(), chest, 1, (W - 21) // 2)
+        pile = ["        ▄▄▓▓▓▓▓▓▓▓▓▓▓▄▄       ", "   ▄▄▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▄▄    ", "▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓"]
+        for i, line in enumerate(pile):
+            for c, ch in enumerate(line):
+                if ch != " " and f[9 + i][c] == " ": f = put(f, 9 + i, c, ch, GOLD if (c + i) % 3 else GOLD2)
+        for k, (r, c, ch, col) in enumerate(((9, 6, "o", COIN), (10, 3, "O", COIN), (10, 27, "o", COIN), (9, 24, "*", "#ff4a4a"), (10, 14, "*", "#5ab8ff"), (11, 20, "o", COIN), (11, 9, "*", "#5fd46a"))):
+            if (t + k) % 4: f = put(f, r, c, ch, col)
+        # the 3rd age piece glints white
+        if t % 3 == 0: f = put(f, 9, 16, "*", "#ffffff")
         if t % 6 >= 3:
             for c in range(9, 22, 2):
-                if f[5][c] == " ": f = put(f, 5, c, "v", "#ffffff")
+                if f[4][c] == " ": f = put(f, 4, c, "v", "#ffffff")
         out.append(finish(f))
-    return "mimic", "the teeth", out
+    return "mimic", "the hoard", out
 
 def shaman():
     def over(f, t):
@@ -800,14 +833,25 @@ def shaman():
     return simple("Lizardman_shaman_(Lizardman_Temple).png", "shaman", "the jump", sway=(0, 0, 0, 0, 0, 0), overlay=over, dy0=0)
 
 def hespori():
-    def over(f, t):
-        for k in range(3):
-            age = (t + k * 4) % 12
-            if age < 6:
-                c = 20 + age; r = 5 - age // 2 + k
-                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "o", "#8fd44a")
-        return f
-    return simple("Hespori.png", "hespori", "seeds", overlay=over)
+    # the four flowers in the corners bloom and close in turn (Andrew 2026-09-04)
+    beast = render("Hespori.png", 21, 12, edge_blocks=True, crop_norm=False)
+    FLOWERS = [((0, 1), "#ff4a4a"), ((0, 27), "#5ab8ff"), ((9, 1), "#ffe060"), ((9, 27), "#e8e8ff")]
+    out = []
+    for t in range(16):
+        f = centred(beast, dx=(0, 0, 1, 1)[t % 4])
+        for k, ((r, c), colour) in enumerate(FLOWERS):
+            phase = (t // 2 + k) % 4      # closed, opening, open, closing
+            bloom = ["'", "*", "@", "*"][phase]
+            f = put(f, r, c + 1, bloom, colour)
+            f = put(f, r + 1, c, "\\¥/" if phase in (1, 2) else " ¥ ", "#5fb36a")
+            f = put(f, r + 2, c + 1, "|", "#3f8a4a")
+        # a seed still flies now and then
+        age = t % 8
+        if age < 5:
+            cc = 20 + age; rr = 5 - age // 2
+            if f[rr][cc] == " ": f = put(f, rr, cc, "o", "#8fd44a")
+        out.append(finish(f))
+    return "hespori", "the four flowers", out
 
 def sarachnis():
     def over(f, t):
