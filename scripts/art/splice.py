@@ -10,7 +10,7 @@ if names == ["all"]:
     # every generator in turn: the standalone ones, then every bosses.py recipe
     import importlib.util
     spec = importlib.util.spec_from_file_location("bosses", ROOT / "scripts/art/bosses.py"); mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
-    names = ["obelisk", "olm", "tob", "cannon"] + ["bosses:" + k for k in mod.RECIPES]
+    names = ["obelisk", "cox", "tob", "cannon"] + ["bosses:" + k for k in mod.RECIPES]
 for name in names:
     script, _, arg = name.partition(":")   # "bosses:kbd" runs bosses.py kbd
     out = subprocess.run([sys.executable, str(ROOT / "scripts/art" / (script + ".py"))] + ([arg] if arg else []), capture_output=True, text=True, check=True).stdout

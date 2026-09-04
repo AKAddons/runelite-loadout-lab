@@ -33,6 +33,6 @@ Sarachnis, gryphon, Skotizo.
 
 ## Legacy, colour by glyph rules only
 
-The flask, the sea sail and kraken moods, Olm, Zulrah (their generators
+The flask, the sea sail and kraken moods, Zulrah (their generators
 were lost with a session scratchpad; the frames are the source of
 truth, colourise.py paints them).

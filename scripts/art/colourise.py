@@ -31,7 +31,7 @@ RULES = {
                ("░▒▓█≡¥|/\\-_'.()⣿", SERP, (0, 12, 0, 31, 0, 19)), ("░▒▓█≡¥|/\\-_'.()⣿", MAGMA, (0, 12, 0, 31, 19, 38)),
                ("░▒▓█≡¥|/\\-_'.()⣿", TANZ, (0, 12, 0, 31, 38, 999))],
 }
-SELF_PAINTED = {"sea cannon", "toa obelisk", "tob verzik"}
+SELF_PAINTED = {"sea cannon", "toa obelisk", "tob verzik", "cox olm"}
 
 def pick(ch, r, c, f, rules):
     for chars, col, region in rules:
