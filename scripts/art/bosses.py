@@ -87,7 +87,7 @@ def centred(frame, dx=0, dy=0):
 # ---- recipes ---------------------------------------------------------------
 def cerberus():
     # the three heads: the top-left of the image; eyes pinned (yellow, not red)
-    heads = render("Cerberus.png", 31, 12, box=(0.0, 0.0, 0.58, 0.52), eye_points=((520, 385), (650, 385), (190, 450), (55, 290)), auto_eyes=False, edge_blocks=True)
+    heads = render("Cerberus.png", 31, 12, box=(0.0, 0.14, 0.53, 0.50), eye_points=((520, 385), (650, 385), (190, 450), (55, 290)), auto_eyes=False, edge_blocks=True, crop_norm=False)
     out = []
     # the flame front: height in rows, 0 = clear, 12 = engulfed; rises, holds, falls
     heights = [0, 0, 2, 4, 6, 8, 10, 12, 12, 12, 10, 8, 6, 4, 2, 0, 0, 0]
@@ -107,8 +107,14 @@ def brutus():
     # the face: horns, the red eye, the snout - tossing its head and snorting
     out = []
     for t in range(12):
-        head = render("Brutus.png", 31, 12, edge_blocks=True, auto_eyes=True)
-        f = centred(head, dy=(-1 if t % 6 in (2, 3) else 0), dx=(1 if t % 6 in (3, 4) else 0))
+        bull = render("Brutus.png", 31, 12, edge_blocks=True, auto_eyes=True, crop_norm=False, solid="▓")
+        # a cow: white patches on the flat hide, kept off the horns and the eye
+        seeds = [(3, 9), (4, 14), (6, 11), (5, 20), (8, 16), (3, 24), (7, 24), (9, 20)]
+        for (sr, sc) in seeds:
+            for (r, c) in ((sr, sc), (sr, sc + 1), (sr, sc + 2), (sr + 1, sc + 1), (sr + 1, sc + 2), (sr - 1, sc + 1)):
+                if 0 <= r < len(bull) and 0 <= c < len(bull[r]) and bull[r][c] == "▓":
+                    bull[r] = bull[r][:c] + "█" + bull[r][c + 1:]; bull.paint[(r, c)] = "#f0ece4"
+        f = centred(bull, dy=(-1 if t % 6 in (2, 3) else 0), dx=(1 if t % 6 in (3, 4) else 0))
         if t % 6 in (4, 5):
             for k, ch in enumerate("~~"):
                 r = 8 + k; c = 2 - k - (t % 2)

@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -213,6 +213,7 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
             elif edge and not up: ch = "-"
             elif edge and not down: ch = "_"
             elif edge and (not left or not right): ch = "|"
+            if ch is None and solid: ch = solid   # a flat body: the colour does the shading
             if ch is None:
                 avg = light / n
                 if not shades: ch = chr(0x2800 + dots) if dots else " "
