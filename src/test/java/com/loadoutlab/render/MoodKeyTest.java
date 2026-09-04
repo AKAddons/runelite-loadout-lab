@@ -55,7 +55,15 @@ class MoodKeyTest
 		{
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
-		assertNull(RenderSurface.moodKey(page(null, "Demonic Brutus", false)), "a prefix, not a substring");
+		assertNull(RenderSurface.moodKey(page(null, "Big Brutus", false)), "a prefix, not a substring");
 		assertNull(RenderSurface.moodKey(page(null, "Pygmy kraken", false)), "the sea krakens keep their own lens");
+	}
+
+	@Test
+	@DisplayName("Demonic Brutus wears the demonic reskin of the Brutus mood")
+	void demonicBrutusReskin()
+	{
+		assertEquals("dbrutus", RenderSurface.moodKey(page(null, "Demonic Brutus", false)));
+		assertEquals("brutus", RenderSurface.moodKey(page(null, "Brutus", false)));
 	}
 }

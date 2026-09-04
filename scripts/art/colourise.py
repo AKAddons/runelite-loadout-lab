@@ -23,7 +23,7 @@ RULES = {
                     "⢀⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿"
                     "⣀⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿"
                     "░▒▓█|/\\-=_'.()^v≡¥", KRAKEN, (0, 10, 19, 31, 0, 999)), ("@", EYE, (0, 10, 19, 31, 0, 999))] + SEA,
-    "toa": [("/\\|_", STONE, None), ("*", RED, None), ("~^=()'.", WATER, None), ("@o", RED, None)],
+    # toa: the obelisk paints itself (scripts/art/obelisk.py)
     "tob": [("░▒▓█", "#9a5adf", None), ("≡", "#c89aff", None), ("¥", "#7a3fbf", None), ("@", EYE, None)],
     "cox": [("█▓⣿⣷⣯⣟⣽⣾⣶⣭", OLM_PALE, None), ("▒≡", OLM_MID, None), ("░¥", OLM_DARK, None), ("@", EYE, None)],
     # Zulrah: 19 frames a form - serpentine, magma, tanzanite

@@ -103,27 +103,32 @@ def cerberus():
         out.append(finish(f))
     return "cerberus", "three heads in the fire", out
 
-def brutus():
-    # the face: horns, the red eye, the snout - tossing its head and snorting
+def brutus(demonic=False):
+    # the whole bull with a flat hide, tossing its head and snorting; the
+    # demonic one is the same beast in a hellish palette (Andrew 2026-09-03)
+    hide, spot, snort = ("#4a1020", "#ff7a2a", "#ff4a1a") if demonic else ("#7a4a2e", "#f0ece4", "#d0d0d0")
     out = []
     for t in range(12):
         bull = render("Brutus.png", 31, 12, edge_blocks=True, auto_eyes=True, crop_norm=False, solid="▓")
         # a cow: white patches on the flat hide, kept off the horns and the eye
         # a brown hide: the sprite's near-black reads as no colour on the panel
         for (r, c) in list(bull.paint):
-            if bull[r][c] == "▓": bull.paint[(r, c)] = "#7a4a2e"
+            if bull[r][c] == "▓": bull.paint[(r, c)] = hide
         seeds = [(3, 9), (4, 14), (6, 11), (5, 20), (8, 16), (3, 24), (7, 24), (9, 20)]
         for (sr, sc) in seeds:
             for (r, c) in ((sr, sc), (sr, sc + 1), (sr, sc + 2), (sr + 1, sc + 1), (sr + 1, sc + 2), (sr - 1, sc + 1)):
                 if 0 <= r < len(bull) and 0 <= c < len(bull[r]) and bull[r][c] == "▓":
-                    bull[r] = bull[r][:c] + "█" + bull[r][c + 1:]; bull.paint[(r, c)] = "#f0ece4"
+                    bull[r] = bull[r][:c] + "█" + bull[r][c + 1:]; bull.paint[(r, c)] = spot
         f = centred(bull, dy=(-1 if t % 6 in (2, 3) else 0), dx=(1 if t % 6 in (3, 4) else 0))
         if t % 6 in (4, 5):
             for k, ch in enumerate("~~"):
                 r = 8 + k; c = 2 - k - (t % 2)
-                if 0 <= c < W and f[r][c] == " ": f = put(f, r, c, ch, "#d0d0d0")
+                if 0 <= c < W and f[r][c] == " ": f = put(f, r, c, ch, snort)
         out.append(finish(f))
-    return "brutus", "snort", out
+    return ("dbrutus", "demonic snort", out) if demonic else ("brutus", "snort", out)
+
+def dbrutus():
+    return brutus(demonic=True)
 
 def madangel():
     angel = render("Mad_Angel.png", 24, 12, box=(0, 0, 1, 0.82))
@@ -244,7 +249,7 @@ def muspah():
         out.append(finish(centred(face, dx=(1 if 8 <= t < 12 else 0))))
     return "muspah", "stoic", out
 
-RECIPES = {"cerberus": cerberus, "brutus": brutus, "madangel": madangel, "guardians": guardians, "kraken": kraken,
+RECIPES = {"cerberus": cerberus, "brutus": brutus, "dbrutus": dbrutus, "madangel": madangel, "guardians": guardians, "kraken": kraken,
            "thermy": thermy, "vetion": vetion, "kbd": kbd, "kq": kq, "muspah": muspah}
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "show"
