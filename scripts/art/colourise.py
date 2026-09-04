@@ -31,6 +31,8 @@ RULES = {
                ("░▒▓█≡¥|/\\-_'.()⣿", SERP, (0, 12, 0, 31, 0, 19)), ("░▒▓█≡¥|/\\-_'.()⣿", MAGMA, (0, 12, 0, 31, 19, 38)),
                ("░▒▓█≡¥|/\\-_'.()⣿", TANZ, (0, 12, 0, 31, 38, 999))],
 }
+SELF_PAINTED = {"sea cannon", "toa obelisk"}
+
 def pick(ch, r, c, f, rules):
     for chars, col, region in rules:
         if ch not in chars: continue
@@ -62,6 +64,7 @@ def run(show=None, frame=0):
         if line == "--": f += 1; r = 0; out.append(line); continue
         if line.startswith("#") or (name not in RULES and key not in RULES): out.append(line); continue
         # a pool the rules cover: sprite-painted boss pools are NOT in RULES, so their markup is kept
+        if name in SELF_PAINTED: out.append(line); continue   # these pools carry their own pixel colours
         rules = RULES.get(name) or RULES[key]
         out.append(colour_row(strip(line), r, f, rules)); r += 1
     text = "\n".join(out)
