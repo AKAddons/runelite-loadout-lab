@@ -66,4 +66,22 @@ class MoodKeyTest
 		assertEquals("dbrutus", RenderSurface.moodKey(page(null, "Demonic Brutus", false)));
 		assertEquals("brutus", RenderSurface.moodKey(page(null, "Brutus", false)));
 	}
+
+	@Test
+	@DisplayName("the fifteen group pools route from every member of their group")
+	void groupsRoute()
+	{
+		String[][] routes = {
+			{"TzTok-Jad", "jad"}, {"Tz-Kih", "jad"}, {"TzKal-Zuk", "zuk"}, {"Jal-Nib", "zuk"},
+			{"Dagannoth Rex", "dks"}, {"Dharok the Wretched", "barrows"}, {"Verac the Defiled", "barrows"},
+			{"Blood Moon", "moons"}, {"Tormented Demon", "tormented"}, {"Demonic gorilla", "gorilla"},
+			{"Abyssal Sire", "sire"}, {"Respiratory system", "sire"}, {"Sol Heredit", "sol"}, {"Manticore", "sol"},
+			{"Crystalline Hunllef", "hunllef"}, {"Corrupted Hunllef", "hunllef"}, {"The Hueycoatl", "huey"},
+			{"Nex", "nex"}, {"Cruor", "nex"}, {"Branda the Fire Queen", "titans"}, {"Eldric the Ice King", "titans"},
+			{"Maggot King", "maggot"}, {"Yama", "yama"}, {"Judge of Yama", "yama"}};
+		for (String[] route : routes)
+		{
+			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
+		}
+	}
 }

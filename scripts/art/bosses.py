@@ -249,8 +249,197 @@ def muspah():
         out.append(finish(centred(face, dx=(1 if 8 <= t < 12 else 0))))
     return "muspah", "stoic", out
 
+
+# ---- the group punch list (Andrew 2026-09-03: "that's our next punch list") --
+
+def tint(sprite, colour, mix=0.55):
+    """a copy of a Sprite with every cell colour pulled toward one colour"""
+    tr, tg, tb = int(colour[1:3], 16), int(colour[3:5], 16), int(colour[5:7], 16)
+    out = Sprite(list(sprite), {})
+    for k, v in sprite.paint.items():
+        r, g, bb = int(v[1:3], 16), int(v[3:5], 16), int(v[5:7], 16)
+        out.paint[k] = "#%02x%02x%02x" % (int(r + (tr - r) * mix), int(g + (tg - g) * mix), int(bb + (tb - bb) * mix))
+    return out
+
+def jad():
+    jad = render("TzTok-Jad.png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(jad, dy=(-1 if 3 <= t <= 6 else 0))
+        # the mage attack: a rock arcs down and bursts on the floor
+        age = (t + 6) % 12
+        if age < 5:
+            r = age * 2; c = 4 + age * 2
+            if f[r][c] == " ": f = put(f, r, c, "O", "#c8c0a0")
+        elif age < 7 and f[H - 1][14] == " ":
+            f = put(f, H - 1, 12, "*  *" if age == 5 else " ** ", "#ff8a2a")
+        out.append(finish(f))
+    return "jad", "the mage rock", out
+
+def zuk():
+    zuk = render("TzKal-Zuk.png", 31, 11, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(zuk, dy=-1)
+        # the glyph shield slides in front of him
+        x = 2 + int(abs(6 - t) * 20 / 6)
+        for i in range(7):
+            if 0 <= x + i < W: f = put(f, H - 1, x + i, "═", "#6ad0ff")
+        out.append(finish(f))
+    return "zuk", "the glyph shield", out
+
+def dks():
+    out = []
+    for sprite in ("Dagannoth_Rex.png", "Dagannoth_Prime.png", "Dagannoth_Supreme.png"):
+        king = render(sprite, 31, 12, edge_blocks=True, crop_norm=False)
+        for t in range(5): out.append(finish(centred(king, dx=(1 if t % 2 else 0))))
+    return "dks", "three kings", out
+
+def barrows():
+    out = []
+    for sprite in ("Dharok_the_Wretched.png", "Ahrim_the_Blighted.png", "Karil_the_Tainted.png"):
+        bro = render(sprite, 31, 12, edge_blocks=True, crop_norm=False)
+        for rv in (0.3, 0.55, 0.8, 1.0, 1.0, 1.0, 0.7, 0.4):
+            shown = Sprite(list(bro)[-max(1, int(len(bro) * rv)):], {(r - (len(bro) - max(1, int(len(bro) * rv))), c): v for (r, c), v in bro.paint.items() if r >= len(bro) - max(1, int(len(bro) * rv))})
+            f = place(start(), shown, H - len(shown), (W - max(len(l) for l in shown)) // 2)
+            f = put(f, H - 1, 0, "_" * W, "#6a5a4a")
+            out.append(finish(f))
+    return "barrows", "the brothers rise", out
+
+def moons():
+    out = []
+    phases = [" (  ) ", " (( ) ", " (()) ", " ( )) "]
+    for i, (sprite, glow) in enumerate((("Blood_Moon.png", "#ff4a4a"), ("Blue_Moon.png", "#5ab8ff"), ("Eclipse_Moon.png", "#c8a84a"))):
+        moon = render(sprite, 31, 11, edge_blocks=True, crop_norm=False)
+        for t in range(5):
+            f = centred(moon, dy=1)
+            f = put(f, 0, 12, phases[(t + i) % 4], glow)
+            out.append(finish(f))
+    return "moons", "three moons", out
+
+def tormented():
+    demon = render("Tormented_Demon_(1).png", 27, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(demon)
+        if t % 4 < 2:
+            for r in range(1, H - 1):
+                for c in (1 + (t % 2), W - 2 - (t % 2)):
+                    if f[r][c] == " ": f = put(f, r, c, "(" if c < 15 else ")", "#ff8a2a")
+        out.append(finish(f))
+    return "tormented", "the shield", out
+
+def gorilla():
+    ape = render("Demonic_gorilla.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(ape, dx=(1 if t % 2 else 0))
+        # boulders drop from above, one every third frame
+        for k in range(2):
+            age = (t + k * 6) % 12
+            if age < 6:
+                r = age * 2; c = 5 + k * 20
+                if f[r][c] == " ": f = put(f, r, c, "O", "#a09070")
+        out.append(finish(f))
+    return "gorilla", "boulders", out
+
+def sire():
+    sire = render("Abyssal_Sire_(phase_1).png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(sire, dx=(1 if t % 4 in (1, 2) else 0))
+        for k, col in enumerate((3, 15, 27)):
+            r = H - 1 - ((t + k * 4) % 8)
+            if f[r][col] == " ": f = put(f, r, col, "^" if (t + k) % 2 else "'", "#9ad46a")
+        out.append(finish(f))
+    return "sire", "the vents", out
+
+def sol():
+    sol = render("Sol_Heredit.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    lunge = (0, 0, 0, 2, 4, 4, 2, 0, 0, 0, 0, 0)
+    for t in range(12):
+        f = centred(sol, dx=lunge[t])
+        if lunge[t] == 4:
+            for r in (4, 6, 8):
+                if f[r][W - 2] == " ": f = put(f, r, W - 2, "*", "#ffe060")
+        out.append(finish(f))
+    return "sol", "the lunge", out
+
+def hunllef():
+    hun = render("Crystalline_Hunllef.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(16):
+        form = tint(hun, "#5ab8ff" if (t // 4) % 2 == 0 else "#5fd46a", 0.45)
+        f = centred(form)
+        a = 2 * math.pi * (t / 16)
+        r = int(round(5 + 4 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
+        if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "@", "#e8e8ff")
+        out.append(finish(f))
+    return "hunllef", "prayer swaps", out
+
+def huey():
+    body = render("Hueycoatl_body.png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(body, dx=(0, 1, 2, 1, 0, -1, -2, -1, 0, 1, 2, 1)[t])
+        if t in (4, 10):
+            col = 6 if t == 4 else 24
+            for r in range(0, 5):
+                if f[r][col] == " ": f = put(f, r, col, "|", "#6ad0ff")
+        out.append(finish(f))
+    return "huey", "the serpent", out
+
+def nex():
+    out = []
+    phases = ["#9a9a9a", "#8a5adf", "#ff3a3a", "#5ab8ff", "#ffd24a"]   # smoke, shadow, blood, ice, zaros
+    for t in range(20):
+        nex = render("Nex.png", 31, 12, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 2 else 0.92))
+        out.append(finish(centred(tint(nex, phases[t // 4], 0.5))))
+    return "nex", "five phases", out
+
+def titans():
+    fire = render("Branda_the_Fire_Queen.png", 14, 11, edge_blocks=True, crop_norm=False)
+    ice = render("Eldric_the_Ice_King.png", 14, 11, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = place(start(), fire, 1, 1); f = place(f, ice, 1, 16)
+        hot = (t // 3) % 2 == 0
+        for k in range(3):
+            c = (3 if hot else 19) + k * 4
+            if f[0][c] == " ": f = put(f, 0, c, "*" if (t + k) % 2 else "'", "#ff7a2a" if hot else "#9ae0ff")
+        out.append(finish(f))
+    return "titans", "fire and ice", out
+
+def maggot():
+    out = []
+    for t in range(12):
+        king = render("Maggot_King.png", 29, 11, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 4 < 2 else 0.95))
+        f = centred(king, dy=-1)
+        for k in range(4):
+            c = (k * 8 + t * 2) % W
+            if f[H - 1][c] == " ": f = put(f, H - 1, c, "~", "#e8e0b0")
+        out.append(finish(f))
+    return "maggot", "maggots", out
+
+def yama():
+    yama = render("Yama.png", 25, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(yama)
+        for side, col in ((0, 1), (1, W - 2)):
+            hgt = ((t + side * 6) % 12)
+            hgt = hgt if hgt <= 6 else 12 - hgt
+            for r in range(H - hgt, H):
+                ch = "^" if r == H - hgt else "|"
+                if f[r][col] == " ": f = put(f, r, col, ch, "#ff5a2a" if r % 2 else "#ffb03a")
+        out.append(finish(f))
+    return "yama", "fire pillars", out
+
 RECIPES = {"cerberus": cerberus, "brutus": brutus, "dbrutus": dbrutus, "madangel": madangel, "guardians": guardians, "kraken": kraken,
-           "thermy": thermy, "vetion": vetion, "kbd": kbd, "kq": kq, "muspah": muspah}
+           "thermy": thermy, "vetion": vetion, "kbd": kbd, "kq": kq, "muspah": muspah,
+           "jad": jad, "zuk": zuk, "dks": dks, "barrows": barrows, "moons": moons, "tormented": tormented, "gorilla": gorilla,
+           "sire": sire, "sol": sol, "hunllef": hunllef, "huey": huey, "nex": nex, "titans": titans, "maggot": maggot, "yama": yama}
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "show"
     if arg == "show":
