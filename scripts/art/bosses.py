@@ -379,7 +379,8 @@ def hunllef():
     return "hunllef", "prayer swaps", out
 
 def huey():
-    body = render("Hueycoatl_body.png", 31, 12, edge_blocks=True, crop_norm=False)
+    # the whole serpent (Andrew 2026-09-03: "the normal sprite instead of the tail")
+    body = render("The_Hueycoatl.png", 31, 12, edge_blocks=True, crop_norm=False)
     out = []
     for t in range(12):
         f = centred(body, dx=(0, 1, 2, 1, 0, -1, -2, -1, 0, 1, 2, 1)[t])
