@@ -16,7 +16,7 @@ import javax.swing.Timer;
  * runs ONLY while computing and dies on unmount (the mascot-era
  * lesson: a hidden component's timer still burns the EDT).
  */
-final class AsciiLoader extends javax.swing.JTextArea
+final class AsciiLoader extends javax.swing.JEditorPane
 {
 	private static final String RESOURCE = "/com/loadoutlab/render/loader_frames.txt";
 	private static final List<List<String>> MOODS = new ArrayList<>();
@@ -43,11 +43,22 @@ final class AsciiLoader extends javax.swing.JTextArea
 
 	AsciiLoader()
 	{
+		// Frames are HTML: a cell may carry its own <font color> run, so a
+		// mood can be coloured per glyph with no main-source cost (Andrew
+		// 2026-09-03). Plain frames draw in the accent as before.
+		setContentType("text/html");
+		putClientProperty(HONOR_DISPLAY_PROPERTIES, true);
 		setEditable(false);
 		setFocusable(false);
 		setOpaque(false);
 		setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		setForeground(ResultCards.ACCENT);
+	}
+
+	/** One frame onto the pane: fixed pitch, no margins, markup honoured. */
+	void show(String frame)
+	{
+		setText("<html><body style='margin:0'><pre style='margin:0'>" + frame + "</pre></body></html>");
 	}
 
 	/** The key the current frames were picked for (a sentinel while idle). */
@@ -91,7 +102,7 @@ final class AsciiLoader extends javax.swing.JTextArea
 
 	private void advance()
 	{
-		setText(frames.get(tick++ % frames.size()));
+		show(frames.get(tick++ % frames.size()));
 	}
 
 	/** Package for the parse test. Fail-soft: a missing or empty

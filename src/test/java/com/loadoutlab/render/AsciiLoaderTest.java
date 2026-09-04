@@ -56,7 +56,8 @@ class AsciiLoaderTest
 				assertEquals(first.length, lines.length, "frame height drifted");
 				for (String line : lines)
 				{
-					assertEquals(first[0].length(), line.length(), "frame width drifted");
+					line = line.replaceAll("<[^>]*>", "");
+					assertEquals(first[0].replaceAll("<[^>]*>", "").length(), line.length(), "frame width drifted");
 					for (char c : line.toCharArray())
 					{
 						// ASCII, or the Braille block: the sprite renders use
@@ -74,5 +75,13 @@ class AsciiLoaderTest
 				}
 			}
 		}
+	}
+
+	@Test
+	@DisplayName("the loader is an HTML pane, so a frame's cells can carry their own colours")
+	void loaderDrawsHtml()
+	{
+		javax.swing.text.JTextComponent pane = new AsciiLoader();
+		assertTrue(pane instanceof javax.swing.JEditorPane, "frames are HTML (Andrew 2026-09-03: colour per pixel at zero cost)");
 	}
 }

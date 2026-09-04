@@ -46,6 +46,7 @@ def decode(path):
     return w, h, px
 
 _CACHE = {}
+_RGB = {}
 def load(path):
     if path not in _CACHE:
         w, h, px = decode(path)
@@ -58,6 +59,7 @@ def load(path):
         vals = sorted(lum[y][x] for y in range(h) for x in range(w) if fg[y][x])
         lo = vals[len(vals) // 20] if vals else 0; hi = vals[-max(1, len(vals) // 20)] if vals else 1
         _CACHE[path] = (w, h, fg, lum, lo, max(hi, lo + 1), green, red)
+        _RGB[path] = px
     return _CACHE[path]
 
 BRAILLE = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]]
@@ -139,7 +141,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -222,5 +224,41 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
                 elif avg < 0.92: ch = "▓"
                 else: ch = "█"
             r = cy + dy0
-            if 0 <= off + cx < cols and 0 <= r < rows: grid[r][off + cx] = ch
+            if 0 <= off + cx < cols and 0 <= r < rows:
+                grid[r][off + cx] = ch
+                if paint is not None:
+                    paint[(r, off + cx)] = cell_colour(path, xa, ya, xb, yb, fg)
     return ["".join(r) for r in grid]
+
+
+def cell_colour(path, xa, ya, xb, yb, fg):
+    """The average foreground colour under a cell, brightened a step so
+    dark sprites still read on the dark panel, snapped to 5 bits a channel
+    so neighbouring cells share a run."""
+    px = _RGB[path]; n = 0; rr = gg = bb = 0
+    for y in range(max(0, ya), min(len(px), yb)):
+        for x in range(max(0, xa), min(len(px[0]), xb)):
+            if fg[y][x]:
+                r, g, b, a = px[y][x]; rr += r; gg += g; bb += b; n += 1
+    if n == 0: return None
+    lift = lambda v: min(255, int(v / n * 0.8 + 56))
+    q = lambda v: (v >> 4) << 4
+    return "#%02x%02x%02x" % (q(lift(rr)), q(lift(gg)), q(lift(bb)))
+
+def emit(rows, paint):
+    """Rows + a {(r,c): '#rrggbb'} map -> HTML-safe rows with <font> runs
+    (adjacent cells of one colour share a run; uncoloured cells inherit
+    the loader's accent)."""
+    out = []
+    for r, line in enumerate(rows):
+        html = ""; cur = None
+        for c, ch in enumerate(line):
+            col = paint.get((r, c)) if ch != " " else None
+            if col != cur:
+                if cur is not None: html += "</font>"
+                if col is not None: html += "<font color=" + col + ">"
+                cur = col
+            html += ch.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if cur is not None: html += "</font>"
+        out.append(html)
+    return out
