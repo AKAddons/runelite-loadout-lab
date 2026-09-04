@@ -633,6 +633,208 @@ def dragon(kind):
         out.append(finish(f))
     return "dr" + kind, kind + " dragon", out
 
+
+# ---- pass twelve: Vorkath to Skotizo ---------------------------------------------
+
+def simple(sprite, key, name, cols=31, rows=12, sway=(0, 1, 1, 0, -1, -1), overlay=None, frames=12, **kw):
+    """a rendered boss with a small sway and an overlay(f, t) hook"""
+    beast = render(sprite, cols, rows, edge_blocks=True, crop_norm=False, **kw)
+    out = []
+    for t in range(frames):
+        f = centred(beast, dx=sway[t % len(sway)])
+        if overlay: f = overlay(f, t)
+        out.append(finish(f))
+    return key, name, out
+
+def vorkath():
+    def over(f, t):
+        # the acid pool spreads, the fire bomb drops and bursts
+        for c in range(max(0, 15 - t * 2), min(W, 16 + t * 2)):
+            if f[H - 1][c] == " ": f = put(f, H - 1, c, "░", "#8fd44a")
+        age = t % 12
+        if age < 5:
+            r = age * 2; c = 5
+            if f[r][c] == " ": f = put(f, r, c, "O", "#ff8a2a")
+        elif age < 8 and f[H - 2][5] == " ":
+            f = put(f, H - 2, 4, "* *" if age == 5 else " * ", "#ffe060")
+        return f
+    return simple("Vorkath.png", "vorkath", "acid and the bomb", overlay=over)
+
+def hydra():
+    out = []
+    phases = [("#5ab8ff", "|"), ("#ff5a2a", "^"), ("#5fd46a", "~"), ("#9a9a9a", ".")]   # electric, fire, serpentine, extinguished
+    for t in range(16):
+        colour, ch = phases[t // 4]
+        h = tint(render("Alchemical_Hydra_(electric).png", 31, 12, edge_blocks=True, crop_norm=False), colour, 0.4)
+        f = centred(h)
+        for k in range(4):
+            r = (t * 3 + k * 5) % 5; c = (k * 8 + t * 2) % W
+            if f[r][c] == " ": f = put(f, r, c, ch, colour)
+        out.append(finish(f))
+    return "hydra", "four phases", out
+
+def araxxor():
+    def over(f, t):
+        for k in range(3):
+            age = (t + k * 4) % 12
+            if age < 5:
+                r = 2 + age * 2; c = 24 + k * 2
+                if r < H and f[r][c] == " ": f = put(f, r, c, "~", "#8fd44a")
+        return f
+    return simple("Araxxor.png", "araxxor", "acid spit", overlay=over)
+
+def fanatic():
+    def over(f, t):
+        age = t % 6
+        c = 18 + age * 2; r = int(round(6 - 2.5 * math.sin(math.pi * age / 5)))
+        if 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "@", "#5fd46a")
+        if age == 5 and f[8][29] == " ": f = put(f, 8, 28, "* *", "#5fd46a")
+        return f
+    return simple("Chaos_Fanatic.png", "fanatic", "the green bolt", cols=21, overlay=over)
+
+def graardor():
+    def over(f, t):
+        if 4 <= t <= 8:
+            k = t - 4
+            for c in (11 - k * 3, 19 + k * 3):
+                if 0 <= c < W and f[H - 1][c] == " ": f = put(f, H - 1, c, "▂▃▂"[k % 3], "#b0a090")
+        return f
+    return simple("General_Graardor.png", "graardor", "the stomp", sway=(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0), overlay=over)
+
+def kree():
+    out = []
+    for t in range(12):
+        bird = render("Kree'arra.png", 31, 12, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 2 else 0.92))
+        f = centred(bird)
+        a = 2 * math.pi * (t / 12)
+        r = int(round(5 + 4 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
+        if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "@", "#e8e8f0")
+        for k in range(3):
+            age = (t + k * 4) % 12
+            r2 = age; c2 = 3 + k * 12 + (age % 3)
+            if r2 < H and f[r2][c2] == " ": f = put(f, r2, c2, "'", "#e8e8f0")
+        out.append(finish(f))
+    return "kree", "the whirlwind", out
+
+def kril():
+    def over(f, t):
+        if t % 6 < 2:
+            for (r, c) in ((1, 2), (1, 28)):
+                if f[r][c] == " ": f = put(f, r, c, "!", "#ff4a4a")
+        for k in range(3):
+            age = (t + k * 4) % 12
+            r = H - 1 - age % 4; c = 2 + k * 13
+            if age < 4 and f[r][c] == " ": f = put(f, r, c, "^" if age % 2 else "'", "#ff6a2a")
+        return f
+    return simple("K'ril_Tsutsaroth.png", "kril", "flames and the drain", overlay=over)
+
+def zilyana():
+    def over(f, t):
+        if t % 4 == 0:
+            col = 3 + (t // 4) * 12
+            for r in range(0, 6):
+                if f[r][col] == " ": f = put(f, r, col, "|", "#9ad4ff")
+            if f[6][col] == " ": f = put(f, 6, col - 1, "* *", "#ffffff")
+        return f
+    return simple("Commander_Zilyana.png", "zilyana", "lightning", cols=25, overlay=over)
+
+def corp():
+    def over(f, t):
+        a = 2 * math.pi * (t / 12)
+        r = int(round(5 + 4 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
+        if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "@", "#4a4a5a")
+        return f
+    return simple("Corporeal_Beast.png", "corp", "the dark core", sway=(0, 0, 1, 1, 0, 0), overlay=over)
+
+def archaeologist():
+    def over(f, t):
+        for k in range(3):
+            age = (t + k * 4) % 12
+            if age < 5:
+                r = age * 2; c = 4 + k * 10
+                if r < H and f[r][c] == " ": f = put(f, r, c, "▄", "#c8a060")
+            elif age < 7 and f[H - 2][4 + k * 10] == " ":
+                f = put(f, H - 2, 3 + k * 10, "* *" if age == 5 else " * ", "#ffe060")
+        return f
+    return simple("Crazy_archaeologist.png", "archaeologist", "rain of knowledge", cols=17, overlay=over)
+
+def doom():
+    out = []
+    for t in range(16):
+        d = render("Doom_of_Mokhaiotl.png", 31, 12, edge_blocks=True, crop_norm=False)
+        f = centred(tint(d, "#2a1a3a", 0.15 + 0.1 * (t // 4)), dx=(-1, 0, 1, 0)[t % 4])
+        for k in range(3):
+            c = (k * 10 + t * 3) % W
+            if f[H - 1][c] == " ": f = put(f, H - 1, c, "▂", "#6a4a8a")
+        out.append(finish(f))
+    return "doom", "the delve deepens", out
+
+def nightmare():
+    def over(f, t):
+        for k in range(3):
+            age = (t + k * 4) % 12
+            r = 3 - age // 3; c = 22 + k * 3 + age // 4
+            if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "z" if age % 2 else "Z", "#c8a8ff")
+        return f
+    return simple("The_Nightmare.png", "nightmare", "sleep", cols=27, overlay=over)
+
+def mimic():
+    out = []
+    for t in range(12):
+        chest = render("The_Mimic.png", 25, 12, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 6 < 3 else 0.9))
+        f = centred(chest)
+        if t % 6 >= 3:
+            for c in range(9, 22, 2):
+                if f[5][c] == " ": f = put(f, 5, c, "v", "#ffffff")
+        out.append(finish(f))
+    return "mimic", "the teeth", out
+
+def shaman():
+    def over(f, t):
+        for k in range(2):
+            age = (t + k * 6) % 12
+            if age < 4:
+                r = H - 1 - age % 2; c = 3 + k * 24
+                if f[r][c] == " ": f = put(f, r, c, "o", "#8fd44a")
+        return f
+    return simple("Lizardman_shaman_(Lizardman_Temple).png", "shaman", "the jump", sway=(0, 0, 0, 0, 0, 0), overlay=over, dy0=0)
+
+def hespori():
+    def over(f, t):
+        for k in range(3):
+            age = (t + k * 4) % 12
+            if age < 6:
+                c = 20 + age; r = 5 - age // 2 + k
+                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "o", "#8fd44a")
+        return f
+    return simple("Hespori.png", "hespori", "seeds", overlay=over)
+
+def sarachnis():
+    def over(f, t):
+        for k in range(4):
+            c = (k * 8 + t * 2) % W
+            if f[H - 1][c] == " ": f = put(f, H - 1, c, ".", "#e0e0e0")
+        return f
+    return simple("Sarachnis.png", "sarachnis", "the spawn", overlay=over)
+
+def gryphon():
+    out = []
+    for t in range(12):
+        g = render("Shellbane_gryphon.png", 29, 11, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 2 else 0.94))
+        f = centred(g, dy=(0, -1, -1, 0, 1, 1)[t % 6])
+        for k in range(3):
+            c = (k * 10 + t * 3) % W
+            if f[H - 1][c] == " ": f = put(f, H - 1, c, "~", "#c8d8e8")
+        out.append(finish(f))
+    return "gryphon", "the swoop", out
+
+def skotizo():
+    def over(f, t):
+        for k, (r, c) in enumerate(((0, 1), (0, 29), (10, 1), (10, 29))):
+            if (t + k) % 4 < 2 and f[r][c] == " ": f = put(f, r, c, "^", "#ff4a4a")
+        return f
+    return simple("Skotizo.png", "skotizo", "the altars", overlay=over)
+
 RECIPES = {"cerberus": cerberus, "brutus": brutus, "dbrutus": dbrutus, "madangel": madangel, "guardians": guardians, "kraken": kraken,
            "thermy": thermy, "vetion": vetion, "kbd": kbd, "kq": kq, "muspah": muspah,
            "jad": jad, "zuk": zuk, "dks": dks, "barrows": barrows, "moons": moons, "tormented": tormented, "gorilla": gorilla,
@@ -640,7 +842,10 @@ RECIPES = {"cerberus": cerberus, "brutus": brutus, "dbrutus": dbrutus, "madangel
            "scurrius": scurrius, "obor": obor, "bryophyta": bryophyta, "crab": crab, "duke": duke, "vardorvis": vardorvis,
            "leviathan": leviathan, "whisperer": whisperer, "callisto": callisto, "artio": artio, "venenatis": venenatis, "spindel": spindel,
            "scorpia": scorpia, "chaos": chaos, "drgreen": lambda: dragon("green"), "drblue": lambda: dragon("blue"), "drred": lambda: dragon("red"),
-           "drblack": lambda: dragon("black"), "drmetal": lambda: dragon("metal")}
+           "drblack": lambda: dragon("black"), "drmetal": lambda: dragon("metal"),
+           "vorkath": vorkath, "hydra": hydra, "araxxor": araxxor, "fanatic": fanatic, "graardor": graardor, "kree": kree, "kril": kril,
+           "zilyana": zilyana, "corp": corp, "archaeologist": archaeologist, "doom": doom, "nightmare": nightmare, "mimic": mimic,
+           "shaman": shaman, "hespori": hespori, "sarachnis": sarachnis, "gryphon": gryphon, "skotizo": skotizo}
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "show"
     if arg == "show":

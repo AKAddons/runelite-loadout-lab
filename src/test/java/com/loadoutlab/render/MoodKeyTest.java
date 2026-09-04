@@ -37,8 +37,8 @@ class MoodKeyTest
 		assertEquals("tob", RenderSurface.moodKey(page("tob", "Verzik Vitur", false)));
 		assertEquals("cox", RenderSurface.moodKey(page("cox", "Tekton", false)));
 		assertEquals("zulrah", RenderSurface.moodKey(page(null, "Zulrah", false)));
-		assertNull(RenderSurface.moodKey(page(null, "General Graardor", false)), "land keeps the flask");
-		assertNull(RenderSurface.moodKey(page(null, "Vorkath", false)));
+		assertNull(RenderSurface.moodKey(page(null, "Cow", false)), "land keeps the flask");
+		assertNull(RenderSurface.moodKey(page(null, "Cow", false)));
 	}
 
 	@Test
@@ -104,5 +104,22 @@ class MoodKeyTest
 		assertEquals("kbd", RenderSurface.moodKey(page(null, "King Black Dragon", false)), "the boss dragon keeps its own");
 		assertEquals("hunllef", RenderSurface.moodKey(page(null, "Crystalline Dragon", false)), "the Gauntlet's dragon stays in the Gauntlet");
 		assertNull(RenderSurface.moodKey(page(null, "Dragon impling", false)), "not a dragon");
+	}
+
+	@Test
+	@DisplayName("Vorkath through Skotizo route to their pools; both Nightmares share one")
+	void passTwelveRoutes()
+	{
+		String[][] routes = {
+			{"Vorkath", "vorkath"}, {"Alchemical Hydra", "hydra"}, {"Araxxor", "araxxor"}, {"Chaos Fanatic", "fanatic"},
+			{"General Graardor", "graardor"}, {"Kree'arra", "kree"}, {"K'ril Tsutsaroth", "kril"}, {"Commander Zilyana", "zilyana"},
+			{"Corporeal Beast", "corp"}, {"Crazy archaeologist", "archaeologist"}, {"Doom of Mokhaiotl", "doom"},
+			{"The Nightmare", "nightmare"}, {"Phosani's Nightmare", "nightmare"}, {"The Mimic", "mimic"},
+			{"Lizardman shaman", "shaman"}, {"Lizardman shaman (Chambers of Xeric)", "shaman"}, {"Hespori", "hespori"},
+			{"Sarachnis", "sarachnis"}, {"Shellbane gryphon", "gryphon"}, {"Gryphon", "gryphon"}, {"Skotizo", "skotizo"}};
+		for (String[] route : routes)
+		{
+			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
+		}
 	}
 }
