@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -158,6 +158,11 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
         if ax < 0 or ay < 0 or ax >= used or ay >= rows: return False
         sx, sy = src(ax, ay); return 0 <= sx < w and 0 <= sy < h and fg[sy][sx]
     limit = int(rows * reveal)
+    if crop_norm:
+        # normalise the shades to THIS crop: a red head against a black body spreads over the whole ramp
+        vals = sorted(lum[y][x] for y in range(max(0, y0), min(h, y1), 2) for x in range(max(0, x0), min(w, x1), 2) if fg[y][x])
+        if len(vals) > 20:
+            lo = vals[len(vals) // 20]; hi = max(vals[-max(1, len(vals) // 20)], lo + 1)
     for cy in range(rows):
         if cy >= limit: break
         for cx in range(used):
@@ -186,7 +191,16 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
                             if red[sy][sx]: rd += 1
                 return rd / tot if tot else 0.0
             if any(xa <= ex < xb and ya <= ey < yb for ex, ey in eye_points): ch = "@"
-            elif redfrac(cx, cy) >= 0.12 and sum(1 for ax in (cx - 1, cx + 1) for ay in (cy - 1, cy, cy + 1) if redfrac(ax, ay) >= 0.12) <= 1: ch = "@"
+            elif auto_eyes and redfrac(cx, cy) >= 0.12 and sum(1 for ax in (cx - 1, cx + 1) for ay in (cy - 1, cy, cy + 1) if redfrac(ax, ay) >= 0.12) <= 1: ch = "@"
+            elif edge_blocks and edge and n >= 3:
+                # half blocks follow which half of the cell the sprite fills
+                lcol = sum(1 for dy in range(4) if dots & BRAILLE[dy][0]); rcol = sum(1 for dy in range(4) if dots & BRAILLE[dy][1])
+                top = sum(1 for dy in range(2) for dx in range(2) if dots & BRAILLE[dy][dx]); bot = sum(1 for dy in range(2, 4) for dx in range(2) if dots & BRAILLE[dy][dx])
+                if not right and lcol > rcol: ch = "▌"
+                elif not left and rcol > lcol: ch = "▐"
+                elif not down and top > bot: ch = "▀"
+                elif not up and bot > top: ch = "▄"
+                else: ch = "▒"
             elif n < 3: ch = "'" if not up else "." if not down else "-"
             elif edge and not up and not down: ch = "="
             elif edge and not left and not right: ch = "|"

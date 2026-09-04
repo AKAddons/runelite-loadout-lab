@@ -285,6 +285,13 @@ public final class DataService
 		return out;
 	}
 
+	/** Leagues echo bosses are seasonal, never main-game (Andrew 2026-09-03:
+	 * "should not be able to search 'echo' version in main mode"). */
+	private static boolean isEcho(JsonObject row)
+	{
+		return string(row, "name").contains("(Echo)");
+	}
+
 	private List<MonsterStats> loadMonsters()
 	{
 		JsonArray rows = readArray(MONSTER_RESOURCE);
@@ -299,6 +306,10 @@ public final class DataService
 		for (JsonElement element : rows)
 		{
 			JsonObject row = element.getAsJsonObject();
+			if (isEcho(row))
+			{
+				continue;
+			}
 			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
 			statKeysByName
 				.computeIfAbsent(nameKey, k -> new LinkedHashSet<>())
@@ -312,6 +323,10 @@ public final class DataService
 		for (JsonElement element : rows)
 		{
 			JsonObject row = element.getAsJsonObject();
+			if (isEcho(row))
+			{
+				continue;
+			}
 			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
 			String groupKey = nameKey + "|" + monsterStatKey(row);
 			// Emit the HIGHEST-LEVEL spawn of each collapsed group, so the

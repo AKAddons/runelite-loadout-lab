@@ -65,36 +65,36 @@ def centred(frame, dx=0, dy=0):
 
 # ---- recipes ---------------------------------------------------------------
 def cerberus():
-    heads = render("Cerberus.png", 29, 12, box=(0.0, 0.0, 1.0, 0.55))
+    # the three heads: the top-left of the image; eyes pinned (yellow, not red)
+    heads = render("Cerberus.png", 31, 12, box=(0.0, 0.0, 0.58, 0.52), eye_points=((520, 385), (650, 385), (190, 450), (55, 290)), auto_eyes=False, edge_blocks=True)
     base = centred(heads, dy=0)
     out = []
     # the flame front: height in rows, 0 = clear, 12 = engulfed; rises, holds, falls
     heights = [0, 0, 2, 4, 6, 8, 10, 12, 12, 12, 10, 8, 6, 4, 2, 0, 0, 0]
     for t, hgt in enumerate(heights):
         f = [r for r in base]
-        for r in range(H - hgt, H):
-            line = ""
-            for c in range(W):
-                k = (c * 7 + r * 3 + t * 5) % 11
-                line += "^" if k < 3 else "*" if k < 5 else "'" if k < 7 else "▒" if r >= H - 2 else " "
-            # flames sit over the hound; the front row flickers
-            merged = "".join(ch if ch != " " else f[r][c] for c, ch in enumerate(line))
-            f[r] = merged
+        # a flame skyline: every column burns to its own height, tips flicker
+        for c in range(W):
+            tall = hgt + ((c * 5 + t * 3) % 4) - 2 if hgt > 0 else 0
+            for r in range(max(0, H - tall), H):
+                depth = H - r
+                ch = "▓" if depth <= 2 else "▒" if depth <= 4 else "░" if depth <= tall - 2 else ("^" if (c + t) % 2 else "*")
+                f[r] = f[r][:c] + ch + f[r][c + 1:]
         out.append(ok(f))
     return "cerberus", "three heads in the fire", out
 
 def brutus():
-    bull = render("Brutus.png", 24, 10)
+    # the face: horns, the red eye, the snout - tossing its head and snorting
     out = []
     for t in range(12):
-        dx = -9 + int(t * 18 / 11)
-        f = centred(bull, dx=dx, dy=(1 if t % 2 else 0))
-        # dust behind the hooves
-        for k in range(3):
-            c = dx + 3 - k * 3 - (t % 3)
-            if 0 <= c < W and f[H - 1][c] == " ": f = put(f, H - 1, c, ".,'"[k])
+        head = render("Brutus.png", 31, 12, edge_blocks=True, auto_eyes=True)
+        f = centred(head, dy=(-1 if t % 6 in (2, 3) else 0), dx=(1 if t % 6 in (3, 4) else 0))
+        if t % 6 in (4, 5):
+            for k, ch in enumerate("~~"):
+                r = 8 + k; c = 2 - k - (t % 2)
+                if 0 <= c < W and f[r][c] == " ": f = put(f, r, c, ch)
         out.append(ok(f))
-    return "brutus", "charge", out
+    return "brutus", "snort", out
 
 def madangel():
     angel = render("Mad_Angel.png", 24, 12, box=(0, 0, 1, 0.82))
@@ -142,14 +142,15 @@ def kraken():
 def thermy():
     out = []
     for t in range(12):
-        dev = render("Thermonuclear_smoke_devil.png", 22, 10, xscale=(1.0 if t % 4 < 2 else 0.92))
-        f = centred(dev, dy=1)
-        # smoke climbs and thins
-        for k in range(4):
-            age = (t + k * 3) % 12
-            r = 1 - age // 4 + 2; c = 13 + k * 2 + age // 3
-            ch = "@Oo."[min(3, age // 3)]
-            if 0 <= r < H and f[r][c % W] == " ": f = put(f, r, c % W, ch)
+        dev = render("Thermonuclear_smoke_devil.png", 31, 12, xscale=(1.0 if t % 4 < 2 else 0.94), edge_blocks=True, eye_points=((580, 450),))
+        f = blank()
+        # a smoke field behind it, drifting up and right
+        for k in range(18):
+            r = (H - 1 - (t + k * 5) % 14); c = (k * 7 + (t + k) // 2) % W
+            if 0 <= r < H:
+                ch = "░" if k % 3 == 0 else "o" if k % 3 == 1 else "."
+                f = put(f, r, c, ch)
+        f = place(f, dev, (H - len(dev)) // 2, (W - max(len(l) for l in dev)) // 2)
         out.append(ok(f))
     return "thermy", "smoke", out
 
@@ -168,17 +169,17 @@ def vetion():
     return "vetion", "lightning", out
 
 def kbd():
-    dragon = render("King_Black_Dragon.png", 26, 10)
+    # heads and wings fill the frame; the three heads breathe from the lower left
+    dragon = render("King_Black_Dragon.png", 31, 12, box=(0.0, 0.0, 0.74, 1.0), edge_blocks=True, crop_norm=False)
     out = []
     breaths = ["*", "~", "="]   # fire, poison, shock
     for t in range(12):
-        f = centred(dragon, dx=2)
+        f = centred(dragon, dx=3)
         ch = breaths[t // 4]; k = t % 4
-        # the head is the sprite's upper left: the breath cones leftward from it
-        for i in range(1 + k * 2):
-            for r in (2, 3, 4):
-                c = 7 - i - (r - 3) * 0
-                if 0 <= c < W and f[r][c] == " " and (i < 2 or r == 3 or i % 2 == 0): f = put(f, r, c, ch)
+        for r0 in (7, 9, 11):
+            for i in range(k * 3):
+                c = 3 - i; r = r0 - (i // 3)
+                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, ch)
         out.append(ok(f))
     return "kbd", "three breaths", out
 
