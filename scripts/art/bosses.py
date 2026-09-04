@@ -444,15 +444,15 @@ def scurrius():
     rat = render("Scurrius.png", 29, 12, edge_blocks=True, crop_norm=False)
     out = []
     for t in range(12):
-        f = centred(rat, dx=(0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1)[t])
-        # rubble falls from the sewer ceiling
+        f = centred(rat, dx=(1 if t % 4 in (1, 2) else 0))
+        # the heads shoot: bolts stream out from the front in a rising arc
         for k in range(3):
             age = (t + k * 4) % 12
-            if age < 4:
-                r = age * 2; c = 3 + k * 11 + age
-                if f[r][c] == " ": f = put(f, r, c, ".", "#9a8a70")
+            if age < 6:
+                c = 24 + age; r = 5 - age // 2 + (k % 2)
+                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "o" if age % 2 else "O", "#9ad4ff")
         out.append(finish(f))
-    return "scurrius", "the sewer", out
+    return "scurrius", "the heads shoot", out
 
 def obor():
     giant = render("Obor.png", 29, 12, edge_blocks=True, crop_norm=False)
@@ -469,16 +469,18 @@ def obor():
     return "obor", "the slam", out
 
 def bryophyta():
-    moss = render("Bryophyta.png", 29, 12, edge_blocks=True, crop_norm=False)
+    moss = render("Bryophyta.png", 23, 12, edge_blocks=True, crop_norm=False)
+    sprout = render("Growthling.png", 7, 4, edge_blocks=True, crop_norm=False)
     out = []
     for t in range(12):
         f = centred(moss, dx=(1 if t % 4 in (1, 2) else 0))
-        # growthlings sprout around her
-        for k, col in enumerate((2, 6, 24, 28)):
-            age = (t + k * 3) % 12
-            if age < 6:
-                r = H - 1 - age // 2
-                if f[r][col] == " ": f = put(f, r, col, "¥" if age % 2 else "'", "#6ad46a")
+        # the pesky growthlings pop up at her feet, one after another
+        for k, left in enumerate((0, 24, 12)):
+            age = (t + k * 4) % 12
+            if age < 8:
+                rows_shown = min(4, age + 1)
+                part = Sprite(list(sprout)[-rows_shown:], {(r - (4 - rows_shown), c): v for (r, c), v in sprout.paint.items() if r >= 4 - rows_shown})
+                f = place(f, part, H - rows_shown, left)
         out.append(finish(f))
     return "bryophyta", "growthlings", out
 
@@ -508,36 +510,37 @@ def duke():
     return "duke", "the vents", out
 
 def vardorvis():
-    var = render("Vardorvis.png", 29, 12, edge_blocks=True, crop_norm=False)
+    var = render("Vardorvis.png", 23, 12, edge_blocks=True, crop_norm=False)
     out = []
-    for t in range(12):
-        f = centred(var, dx=(1 if t in (4, 5) else 0))
-        # the spikes burst from the ground
-        if 3 <= t <= 7:
-            for col in (2, 27, 5, 24):
-                h = min(4, t - 2)
-                for r in range(H - h, H):
-                    if f[r][col] == " ": f = put(f, r, col, "^" if r == H - h else "|", "#c83a3a")
+    for t in range(16):
+        f = centred(var, dx=(1 if t % 8 in (3, 4) else 0))
+        # the axes spin around him
+        for k in range(3):
+            a = 2 * math.pi * ((t + k * 5) / 16)
+            r = int(round(5 + 4.5 * math.sin(a))); c = int(round(15 + 13 * math.cos(a)))
+            if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "|/-\\"[(t + k) % 4], "#d0d0c0")
+        # the head: the pin pad pops up
+        if 9 <= t <= 14:
+            box = ["╔═══════╗", "║  PIN  ║", "║ * * * ║", "╚═══════╝"]
+            for i, line in enumerate(box):
+                for j, ch in enumerate(line):
+                    if ch != " ": f = put(f, i, 22 + j, ch, "#ffe060" if ch == "*" and (t + j) % 3 == 0 else "#e8e8e8")
         out.append(finish(f))
-    return "vardorvis", "the spikes", out
+    return "vardorvis", "the axes and the pin", out
 
 def leviathan():
     lev = render("The_Leviathan.png", 31, 12, edge_blocks=True, crop_norm=False)
     out = []
     for t in range(12):
         f = centred(lev, dx=(0, 1, 1, 0, -1, -1)[t % 6])
-        # rocks fall and lightning strikes the sand
-        for k in range(2):
-            age = (t + k * 6) % 12
-            if age < 5:
-                r = age * 2; c = 4 + k * 22
-                if f[r][c] == " ": f = put(f, r, c, "O", "#b0a080")
-        if t in (3, 9):
-            col = 15
-            for r in range(0, 5):
-                if f[r][col] == " ": f = put(f, r, col, "|", "#6ad0ff")
+        # a stream of orbs arcs out, red, blue, green in turn
+        for k in range(4):
+            age = (t + k * 3) % 12
+            if age < 9:
+                c = 14 + age * 2; r = int(round(7 - 3.2 * math.sin(math.pi * age / 8)))
+                if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "@", ("#ff4a4a", "#5ab8ff", "#5fd46a")[k % 3])
         out.append(finish(f))
-    return "leviathan", "rocks and lightning", out
+    return "leviathan", "the orb stream", out
 
 def whisperer():
     base = render("The_Whisperer.png", 27, 12, edge_blocks=True, crop_norm=False)

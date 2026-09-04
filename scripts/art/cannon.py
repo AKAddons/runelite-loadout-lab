@@ -70,9 +70,9 @@ def frame(t, angle, fired, ball, splash, smoke, hit=0):
     if hit:
         # the hitsplat, drawn last so nothing overwrites the number: red brackets, a white number, rising
         r = 3 - (hit - 1)
-        put(r - 1, 18, "▄▄▄▄", HIT)
-        put(r, 17, "▐", HIT); put(r, 18, "4", "#ffffff"); put(r, 19, "2", "#ffffff"); put(r, 20, "▌", HIT)
-        put(r + 1, 18, "▀▀▀▀", HIT)
+        put(r - 1, 18, "▄▄▄", HIT)
+        put(r, 18, "▐", HIT); put(r, 19, "6", "#ffffff"); put(r, 20, "▌", HIT)
+        put(r + 1, 18, "▀▀▀", HIT)
     for r in rows: assert len(r) == W
     return st.emit(rows, paint)
 
