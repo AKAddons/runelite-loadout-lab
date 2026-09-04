@@ -490,6 +490,18 @@ public class CommandEngine
 					}
 				});
 			}
+			case "cancel":
+			{
+				// Back to the start state mid-compute (Andrew 2026-09-04: "it is
+				// hard to reach the search box for a raid search"); a result
+				// that lands afterwards is dropped.
+				cancelled = true;
+				state.select(null);
+				clearResults();
+				link.publishStatus(false);
+				publishIdle();
+				return true;
+			}
 			case "move-mob":
 			{
 				// Reorder a roster row (Andrew 2026-09-02): presentation
@@ -1276,6 +1288,7 @@ public class CommandEngine
 	 * thrash through clear/mascot/rebuild on every settle). */
 	private void recompute(boolean silent)
 	{
+		cancelled = false;
 		if (restoringSnapshot)
 		{
 			return;
@@ -1370,6 +1383,8 @@ public class CommandEngine
 
 	private volatile List<MonsterStats> lastMobs;
 	private volatile List<Map<CombatStyle, OptimizerService.StyleResult>> lastPerMob;
+	/** Set by cancel; a fresh compute clears it. Results arriving while set are dropped. */
+	private volatile boolean cancelled;
 
 	/** Every single-mob compute lands here (engine-driven or old-panel
 	 * driven) - assemble the page, attach the params the state holds,
@@ -1412,6 +1427,10 @@ public class CommandEngine
 	public void onRosterResults(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
+		if (cancelled)
+		{
+			return;
+		}
 		lastMobs = mobs;
 		lastPerMob = perMob;
 		link.publishStatus(false);

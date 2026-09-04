@@ -1180,6 +1180,12 @@ public class RenderSurface
 		footerRow.add(chip(new JButton("Discord"),
 			"Loadout Lab community - report issues, request features", () ->
 				net.runelite.client.util.LinkBrowser.browse("https://discord.gg/6GuS6J8em3")));
+		if (isComputing)
+		{
+			// Reachable mid-compute, beside Discord (Andrew 2026-09-04).
+			footerRow.add(chip(new JButton("Cancel"),
+				"Stop this search and go back to the start", () -> commands.send("cancel", Map.of())));
+		}
 		if (rosterArea != null)
 		{
 			rosterArea.removeAll();
