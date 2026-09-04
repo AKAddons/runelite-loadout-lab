@@ -54,9 +54,10 @@ def load(path):
         lum = [[(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]) for p in row] for row in px]
         # colour class: green specks (eyes, mouth, crystals) read as accents
         green = [[(p[1] > 70 and p[1] > 1.25 * p[0] and p[1] > 1.4 * p[2]) for p in row] for row in px]
+        red = [[(p[0] > 120 and p[0] > 1.7 * p[1] and p[0] > 1.7 * p[2]) for p in row] for row in px]
         vals = sorted(lum[y][x] for y in range(h) for x in range(w) if fg[y][x])
         lo = vals[len(vals) // 20] if vals else 0; hi = vals[-max(1, len(vals) // 20)] if vals else 1
-        _CACHE[path] = (w, h, fg, lum, lo, max(hi, lo + 1), green)
+        _CACHE[path] = (w, h, fg, lum, lo, max(hi, lo + 1), green, red)
     return _CACHE[path]
 
 BRAILLE = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]]
@@ -69,7 +70,7 @@ def render(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, eyes=T
     dx0 shifts the drawing right. Silhouette cells get keyboard strokes
     by edge direction, interior cells Braille dither by luminance, eyes
     '@' where the sprite's brightest specks are."""
-    w, h, fg, lum, lo, hi, green = load(path)
+    w, h, fg, lum, lo, hi, green, red = load(path)
     x0, y0, x1, y1 = int(crop[0] * w), int(crop[1] * h), int(crop[2] * w), int(crop[3] * h)
     cw, chh = x1 - x0, y1 - y0
     used = max(1, int(round(cols * xscale))); off = (cols - used) // 2 + dx0
@@ -135,3 +136,77 @@ if __name__ == "__main__":
     for line in render(sys.argv[1], 31, 12, crop=(0.12, 0.0, 0.44, 0.52)): print(line)
     print("-" * 31)
     for line in render(sys.argv[1], 31, 12, crop=(0.0, 0.0, 1.0, 1.0)): print(line)
+
+# ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
+def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0):
+    """The style Andrew kept (raid pass seven): silhouette cells wear
+    keyboard strokes by edge direction; interior cells shade by luminance -
+    dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
+    ▒ ▓ █; eyes '@' by sprite coordinate. reveal < 1 draws only the top
+    fraction of the rows (a monster rising)."""
+    w, h, fg, lum, lo, hi, green, red = load(path)
+    x0, y0, x1, y1 = int(crop[0] * w), int(crop[1] * h), int(crop[2] * w), int(crop[3] * h)
+    cw, chh = x1 - x0, y1 - y0
+    used = max(1, int(round(cols * xscale))); off = (cols - used) // 2 + dx0
+    grid = [[" "] * cols for _ in range(rows)]
+    def src(ax, ay, dx=1, dy=2):
+        sx = x0 + int((ax * 2 + dx) / (used * 2) * cw); sy = y0 + int((ay * 4 + dy) / (rows * 4) * chh)
+        if mirror: sx = x0 + x1 - 1 - (sx - x0)
+        return sx, sy
+    def filled(ax, ay):
+        if ax < 0 or ay < 0 or ax >= used or ay >= rows: return False
+        sx, sy = src(ax, ay); return 0 <= sx < w and 0 <= sy < h and fg[sy][sx]
+    limit = int(rows * reveal)
+    for cy in range(rows):
+        if cy >= limit: break
+        for cx in range(used):
+            dots = 0; n = 0; light = 0.0
+            for dy in range(4):
+                for dx in range(2):
+                    sx, sy = src(cx, cy, dx + 0.5, dy + 0.5)
+                    if 0 <= sx < w and 0 <= sy < h and fg[sy][sx]:
+                        n += 1; l = (lum[sy][sx] - lo) / (hi - lo); light += l
+                        if l > THRESH[dy][dx]: dots |= BRAILLE[dy][dx]
+            if n == 0: continue
+            xa, ya = src(cx, cy, 0, 0); xb, yb = src(cx, cy, 2, 4)
+            if mirror: xa, xb = xb, xa
+            up, down, left, right = filled(cx, cy - 1), filled(cx, cy + 1), filled(cx - 1, cy), filled(cx + 1, cy)
+            ch = None
+            edge = n <= 5
+            def redfrac(ax, ay):
+                if ax < 0 or ay < 0 or ax >= used or ay >= rows: return 0.0
+                qa, ra = src(ax, ay, 0, 0); qb, rb = src(ax, ay, 2, 4)
+                if mirror: qa, qb = qb, qa
+                tot = 0; rd = 0
+                for sy in range(max(0, ra), min(h, rb)):
+                    for sx in range(max(0, qa), min(w, qb)):
+                        if fg[sy][sx]:
+                            tot += 1
+                            if red[sy][sx]: rd += 1
+                return rd / tot if tot else 0.0
+            if any(xa <= ex < xb and ya <= ey < yb for ex, ey in eye_points): ch = "@"
+            elif redfrac(cx, cy) >= 0.12 and sum(1 for ax in (cx - 1, cx + 1) for ay in (cy - 1, cy, cy + 1) if redfrac(ax, ay) >= 0.12) <= 1: ch = "@"
+            elif n < 3: ch = "'" if not up else "." if not down else "-"
+            elif edge and not up and not down: ch = "="
+            elif edge and not left and not right: ch = "|"
+            elif edge and not up and not left: ch = "/"
+            elif edge and not up and not right: ch = "\\"
+            elif edge and not down and not left: ch = "\\"
+            elif edge and not down and not right: ch = "/"
+            elif edge and not up: ch = "-"
+            elif edge and not down: ch = "_"
+            elif edge and (not left or not right): ch = "|"
+            if ch is None:
+                avg = light / n
+                if not shades: ch = chr(0x2800 + dots) if dots else " "
+                elif avg < 0.10: ch = chr(0x2800 + dots) if dots else " "
+                elif avg < scale_band[0]: ch = "░"
+                elif avg < scale_band[1]: ch = "¥" if (cx + cy) % 2 == 0 else "░"
+                elif avg < band_range[1] and band_range[0] <= avg: ch = band_char
+                elif avg < 0.8: ch = "▒"
+                elif avg < 0.92: ch = "▓"
+                else: ch = "█"
+            r = cy + dy0
+            if 0 <= off + cx < cols and 0 <= r < rows: grid[r][off + cx] = ch
+    return ["".join(r) for r in grid]

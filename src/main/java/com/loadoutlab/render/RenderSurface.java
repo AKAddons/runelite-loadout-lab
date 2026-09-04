@@ -69,6 +69,33 @@ public class RenderSurface
 	 * raid MONSTER its raid's - they live nowhere else, so a single Zebak
 	 * search charges the Obelisk (Andrew 2026-09-02); a Zulrah lens hers;
 	 * anything else the land flask. */
+	/** Monster-name prefix -> pool key, from mood_routes.tsv (Andrew
+	 * 2026-09-03: ten bosses join Zulrah; the raids route by group data). */
+	private static final Map<String, String> MOOD_ROUTES = loadMoodRoutes();
+
+	private static Map<String, String> loadMoodRoutes()
+	{
+		Map<String, String> out = new java.util.LinkedHashMap<>();
+		try (java.io.InputStream in = RenderSurface.class.getResourceAsStream("mood_routes.tsv"))
+		{
+			if (in != null)
+			{
+				for (String line : new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).split("\n"))
+				{
+					int tab = line.indexOf('\t');
+					if (tab > 0 && !line.startsWith("#"))
+					{
+						out.put(line.substring(0, tab), line.substring(tab + 1).trim());
+					}
+				}
+			}
+		}
+		catch (java.io.IOException ignored)
+		{
+		}
+		return out;
+	}
+
 	static String moodKey(Map<String, Object> page)
 	{
 		if (lensedNaval(page))
@@ -90,9 +117,15 @@ public class RenderSurface
 					return raid;
 				}
 				String name = Model.str(mob, "name");
-				if (name != null && name.startsWith("Zulrah"))
+				if (name != null)
 				{
-					return "zulrah";
+					for (Map.Entry<String, String> route : MOOD_ROUTES.entrySet())
+					{
+						if (name.startsWith(route.getKey()))
+						{
+							return route.getValue();
+						}
+					}
 				}
 			}
 		}

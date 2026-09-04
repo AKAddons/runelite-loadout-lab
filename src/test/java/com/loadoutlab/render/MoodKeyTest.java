@@ -40,4 +40,22 @@ class MoodKeyTest
 		assertNull(RenderSurface.moodKey(page(null, "General Graardor", false)), "land keeps the flask");
 		assertNull(RenderSurface.moodKey(page(null, "Vorkath", false)));
 	}
+
+	@Test
+	@DisplayName("the ten bosses route to their own pools by name, Echo and companion forms included")
+	void bossesRouteByName()
+	{
+		String[][] routes = {
+			{"Cerberus", "cerberus"}, {"Cerberus (Echo)", "cerberus"}, {"Brutus", "brutus"},
+			{"Mad Angel", "madangel"}, {"Dusk", "guardians"}, {"Dawn", "guardians"}, {"Kraken", "kraken"},
+			{"Thermonuclear smoke devil", "thermy"}, {"Vet'ion", "vetion"}, {"Calvar'ion", "vetion"},
+			{"King Black Dragon", "kbd"}, {"Kalphite Queen", "kq"}, {"Kalphite Queen (Echo)", "kq"},
+			{"Phantom Muspah", "muspah"}, {"Zulrah", "zulrah"}};
+		for (String[] route : routes)
+		{
+			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
+		}
+		assertNull(RenderSurface.moodKey(page(null, "Demonic Brutus", false)), "a prefix, not a substring");
+		assertNull(RenderSurface.moodKey(page(null, "Pygmy kraken", false)), "the sea krakens keep their own lens");
+	}
 }

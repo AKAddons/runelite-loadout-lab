@@ -20,3 +20,5 @@ dev-plugins/
 
 # Python
 scripts/__pycache__/
+__pycache__/
+*.pyc
