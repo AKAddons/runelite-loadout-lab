@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None, bg_dark=0.0):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -156,9 +156,12 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
         sx = x0 + int((ax * 2 + dx) / (used * 2) * cw); sy = y0 + int((ay * 4 + dy) / (rows * 4) * chh)
         if mirror: sx = x0 + x1 - 1 - (sx - x0)
         return sx, sy
+    def isfg(sx, sy):
+        if not (0 <= sx < w and 0 <= sy < h and fg[sy][sx]): return False
+        return bg_dark <= 0 or (lum[sy][sx] - lo) / (hi - lo) >= bg_dark
     def filled(ax, ay):
         if ax < 0 or ay < 0 or ax >= used or ay >= rows: return False
-        sx, sy = src(ax, ay); return 0 <= sx < w and 0 <= sy < h and fg[sy][sx]
+        sx, sy = src(ax, ay); return isfg(sx, sy)
     limit = int(rows * reveal)
     if crop_norm:
         # normalise the shades to THIS crop: a red head against a black body spreads over the whole ramp
@@ -172,7 +175,7 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
             for dy in range(4):
                 for dx in range(2):
                     sx, sy = src(cx, cy, dx + 0.5, dy + 0.5)
-                    if 0 <= sx < w and 0 <= sy < h and fg[sy][sx]:
+                    if isfg(sx, sy):
                         n += 1; l = (lum[sy][sx] - lo) / (hi - lo); light += l
                         if l > THRESH[dy][dx]: dots |= BRAILLE[dy][dx]
             if n == 0: continue
