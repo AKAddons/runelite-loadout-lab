@@ -21,7 +21,7 @@ class AsciiLoaderTest
 		// Raid pools (Andrew 2026-09-02: "hit raids first"): the Obelisk is
 		// hand-drawn; Verzik, Olm and Zulrah are Braille renders of the real
 		// wiki sprites ("make these look like the actual monster sprites").
-		for (String key : new String[]{"toa", "tob", "cox", "zulrah", "cerberus", "brutus", "dbrutus", "madangel", "guardians", "kraken", "thermy", "vetion", "kbd", "kq", "muspah", "jad", "zuk", "dks", "barrows", "moons", "tormented", "gorilla", "sire", "sol", "hunllef", "huey", "nex", "titans", "maggot", "yama"})
+		for (String key : new String[]{"toa", "tob", "cox", "zulrah", "cerberus", "brutus", "dbrutus", "madangel", "guardians", "kraken", "thermy", "vetion", "kbd", "kq", "muspah", "jad", "zuk", "dks", "barrows", "moons", "tormented", "gorilla", "sire", "sol", "hunllef", "huey", "nex", "titans", "maggot", "yama", "scurrius", "obor", "bryophyta", "crab", "duke", "vardorvis", "leviathan", "whisperer", "callisto", "artio", "venenatis", "spindel", "scorpia", "chaos", "drgreen", "drblue", "drred", "drblack", "drmetal"})
 		{
 			assertFalse(pools.getOrDefault(key, List.of()).isEmpty(), key + " pool has a mood");
 		}

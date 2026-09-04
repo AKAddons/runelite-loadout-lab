@@ -84,4 +84,25 @@ class MoodKeyTest
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
 	}
+
+	@Test
+	@DisplayName("Scurrius, Obor, Bryophyta, the crab, the DT2 four, the wilderness bosses and the dragon family route to their pools")
+	void passTenRoutes()
+	{
+		String[][] routes = {
+			{"Scurrius", "scurrius"}, {"Giant rat (Scurrius)", "scurrius"}, {"Obor", "obor"}, {"Bryophyta", "bryophyta"},
+			{"Gemstone Crab", "crab"}, {"Duke Sucellus", "duke"}, {"Vardorvis", "vardorvis"}, {"The Leviathan", "leviathan"},
+			{"The Whisperer", "whisperer"}, {"Callisto", "callisto"}, {"Artio", "artio"}, {"Venenatis", "venenatis"},
+			{"Spindel", "spindel"}, {"Scorpia", "scorpia"}, {"Chaos Elemental", "chaos"},
+			{"Green dragon", "drgreen"}, {"Brutal green dragon", "drgreen"}, {"Baby blue dragon", "drblue"}, {"Frost dragon", "drblue"},
+			{"Red dragon", "drred"}, {"Lava dragon", "drred"}, {"Brutal black dragon", "drblack"}, {"Rune dragon", "drmetal"},
+			{"Steel dragon (Construction)", "drmetal"}};
+		for (String[] route : routes)
+		{
+			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
+		}
+		assertEquals("kbd", RenderSurface.moodKey(page(null, "King Black Dragon", false)), "the boss dragon keeps its own");
+		assertEquals("hunllef", RenderSurface.moodKey(page(null, "Crystalline Dragon", false)), "the Gauntlet's dragon stays in the Gauntlet");
+		assertNull(RenderSurface.moodKey(page(null, "Dragon impling", false)), "not a dragon");
+	}
 }

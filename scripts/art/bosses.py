@@ -437,10 +437,207 @@ def yama():
         out.append(finish(f))
     return "yama", "fire pillars", out
 
+
+# ---- pass ten: Scurrius, Obor, Bryophyta, the Gemstone Crab, DT2, the wilderness, the dragons --
+
+def scurrius():
+    rat = render("Scurrius.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(rat, dx=(0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1)[t])
+        # rubble falls from the sewer ceiling
+        for k in range(3):
+            age = (t + k * 4) % 12
+            if age < 4:
+                r = age * 2; c = 3 + k * 11 + age
+                if f[r][c] == " ": f = put(f, r, c, ".", "#9a8a70")
+        out.append(finish(f))
+    return "scurrius", "the sewer", out
+
+def obor():
+    giant = render("Obor.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        slam = t in (4, 5)
+        f = centred(giant, dy=(1 if slam else 0))
+        if 4 <= t <= 8:
+            # the shockwave spreads along the floor from the club
+            k = t - 4
+            for c in (10 - k * 3, 20 + k * 3):
+                if 0 <= c < W and f[H - 1][c] == " ": f = put(f, H - 1, c, "▂▃▂"[k % 3], "#c8b090")
+        out.append(finish(f))
+    return "obor", "the slam", out
+
+def bryophyta():
+    moss = render("Bryophyta.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(moss, dx=(1 if t % 4 in (1, 2) else 0))
+        # growthlings sprout around her
+        for k, col in enumerate((2, 6, 24, 28)):
+            age = (t + k * 3) % 12
+            if age < 6:
+                r = H - 1 - age // 2
+                if f[r][col] == " ": f = put(f, r, col, "¥" if age % 2 else "'", "#6ad46a")
+        out.append(finish(f))
+    return "bryophyta", "growthlings", out
+
+def crab():
+    crab = render("Gemstone_Crab.png", 31, 12, edge_blocks=True, crop_norm=False)
+    gems = ["#ff4a4a", "#5ab8ff", "#5fd46a", "#ffe060", "#c090ff"]
+    out = []
+    for t in range(12):
+        f = centred(crab, dx=(0, 1, 1, 0, -1, -1)[t % 6])
+        # gems glint on the shell in turn
+        for k, (r, c) in enumerate(((2, 10), (3, 18), (2, 24), (4, 14), (3, 6))):
+            if (t + k) % 5 == 0 and f[r][c] != " ": f = put(f, r, c, "*", gems[k])
+        out.append(finish(f))
+    return "crab", "gem glints", out
+
+def duke():
+    duke = render("Duke_Sucellus.png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(duke, dy=(1 if t % 6 < 3 else 0))
+        # the gas vents at his sides
+        for k, col in enumerate((1, 29)):
+            age = (t + k * 3) % 6
+            r = H - 2 - age
+            if 0 <= r < H and f[r][col] == " ": f = put(f, r, col, "░" if age < 3 else "o", "#8fd49a")
+        out.append(finish(f))
+    return "duke", "the vents", out
+
+def vardorvis():
+    var = render("Vardorvis.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(var, dx=(1 if t in (4, 5) else 0))
+        # the spikes burst from the ground
+        if 3 <= t <= 7:
+            for col in (2, 27, 5, 24):
+                h = min(4, t - 2)
+                for r in range(H - h, H):
+                    if f[r][col] == " ": f = put(f, r, col, "^" if r == H - h else "|", "#c83a3a")
+        out.append(finish(f))
+    return "vardorvis", "the spikes", out
+
+def leviathan():
+    lev = render("The_Leviathan.png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(lev, dx=(0, 1, 1, 0, -1, -1)[t % 6])
+        # rocks fall and lightning strikes the sand
+        for k in range(2):
+            age = (t + k * 6) % 12
+            if age < 5:
+                r = age * 2; c = 4 + k * 22
+                if f[r][c] == " ": f = put(f, r, c, "O", "#b0a080")
+        if t in (3, 9):
+            col = 15
+            for r in range(0, 5):
+                if f[r][col] == " ": f = put(f, r, col, "|", "#6ad0ff")
+        out.append(finish(f))
+    return "leviathan", "rocks and lightning", out
+
+def whisperer():
+    base = render("The_Whisperer.png", 27, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(tint(base, "#6a4a9a", 0.3 if t % 4 < 2 else 0.6))
+        # tendrils of shadow rise around her
+        for k, col in enumerate((1, 4, 26, 29)):
+            age = (t + k * 3) % 8
+            for r in range(H - 1 - age, H):
+                if f[r][col] == " ": f = put(f, r, col, "~" if r % 2 else "'", "#7a5abf")
+        out.append(finish(f))
+    return "whisperer", "the shadow", out
+
+def bear(sprite, key, name, colour=None):
+    beast = render(sprite, 31, 12, edge_blocks=True, crop_norm=False)
+    if colour: beast = tint(beast, colour, 0.35)
+    out = []
+    for t in range(12):
+        roar = t in (4, 5, 6)
+        f = centred(render(sprite, 31, 12, edge_blocks=True, crop_norm=False, xscale=(1.06 if roar else 1.0)) if not colour else tint(render(sprite, 31, 12, edge_blocks=True, crop_norm=False, xscale=(1.06 if roar else 1.0)), colour, 0.35))
+        if roar:
+            for (r, c) in ((1, 3), (2, 1), (1, 27), (2, 29)):
+                if f[r][c] == " ": f = put(f, r, c, "!", "#ffe060")
+        out.append(finish(f))
+    return key, name, out
+
+def callisto(): return bear("Callisto.png", "callisto", "the roar")
+def artio(): return bear("Artio.png", "artio", "the roar, smaller", "#c8a070")
+
+def spider(sprite, key, name, colour=None):
+    web = render(sprite, 29, 12, edge_blocks=True, crop_norm=False)
+    if colour: web = tint(web, colour, 0.4)
+    out = []
+    for t in range(12):
+        f = centred(web, dy=(1 if t % 6 < 3 else 0))
+        # strands of web spun to the corners
+        for k, (r0, c0, dr, dc) in enumerate(((0, 0, 1, 1), (0, 30, 1, -1), (11, 0, -1, 1), (11, 30, -1, -1))):
+            n = (t + k * 3) % 6
+            for i in range(n):
+                r = r0 + dr * i; c = c0 + dc * i * 2
+                if 0 <= r < H and 0 <= c < W and f[r][c] == " ": f = put(f, r, c, "*" if i == n - 1 else ".", "#e8e8f0")
+        out.append(finish(f))
+    return key, name, out
+
+def venenatis(): return spider("Venenatis.png", "venenatis", "the web")
+def spindel(): return spider("Spindel.png", "spindel", "the web, purple", "#a070d0")
+
+def scorpia():
+    scorp = render("Scorpia.png", 31, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    for t in range(12):
+        f = centred(scorp, dx=(1 if t % 4 in (2, 3) else 0))
+        # poison drips from the sting
+        for k in range(3):
+            age = (t + k * 4) % 12
+            if age < 5:
+                r = 1 + age * 2; c = 26 + k
+                if r < H and f[r][c] == " ": f = put(f, r, c, "~" if age % 2 else "'", "#6ad46a")
+        out.append(finish(f))
+    return "scorpia", "the sting", out
+
+def chaos():
+    chaos = render("Chaos_Elemental.png", 29, 12, edge_blocks=True, crop_norm=False)
+    out = []
+    glyphs = "?*%@!"; colours = ["#ff4a4a", "#5ab8ff", "#5fd46a", "#ffe060", "#c090ff"]
+    for t in range(12):
+        f = centred(chaos, dx=(-1, 0, 1, 0)[t % 4])
+        # chaos: glyphs blink in and out around it
+        for k in range(6):
+            r = (k * 7 + t * 5) % H; c = (k * 11 + t * 3) % W
+            if f[r][c] == " ": f = put(f, r, c, glyphs[(k + t) % 5], colours[(k + t) % 5])
+        out.append(finish(f))
+    return "chaos", "chaos", out
+
+def dragon(kind):
+    """the dragon family: one recipe, the King Black Dragon's settings, tinted by colour"""
+    tints = {"green": "#5fb36a", "blue": "#5ab8ff", "red": "#e04040", "black": "#404048", "metal": "#b0b0b8"}
+    breath = {"green": "#ff6a2a", "blue": "#ff6a2a", "red": "#ff6a2a", "black": "#ff6a2a", "metal": "#ff6a2a"}[kind]
+    out = []
+    for t in range(12):
+        drag = tint(render("Green_dragon.png", 31, 12, edge_blocks=True, crop_norm=False, xscale=(1.0 if t % 2 else 0.95)), tints[kind], 0.55)
+        f = centred(drag, dx=2)
+        k = t % 6
+        if t >= 6:
+            for r0 in (5, 7):
+                for i in range(k * 2):
+                    c = 4 - i; r = r0 - (i // 3)
+                    if 0 <= c < W and 0 <= r < H and f[r][c] == " ": f = put(f, r, c, "*", breath)
+        out.append(finish(f))
+    return "dr" + kind, kind + " dragon", out
+
 RECIPES = {"cerberus": cerberus, "brutus": brutus, "dbrutus": dbrutus, "madangel": madangel, "guardians": guardians, "kraken": kraken,
            "thermy": thermy, "vetion": vetion, "kbd": kbd, "kq": kq, "muspah": muspah,
            "jad": jad, "zuk": zuk, "dks": dks, "barrows": barrows, "moons": moons, "tormented": tormented, "gorilla": gorilla,
-           "sire": sire, "sol": sol, "hunllef": hunllef, "huey": huey, "nex": nex, "titans": titans, "maggot": maggot, "yama": yama}
+           "sire": sire, "sol": sol, "hunllef": hunllef, "huey": huey, "nex": nex, "titans": titans, "maggot": maggot, "yama": yama,
+           "scurrius": scurrius, "obor": obor, "bryophyta": bryophyta, "crab": crab, "duke": duke, "vardorvis": vardorvis,
+           "leviathan": leviathan, "whisperer": whisperer, "callisto": callisto, "artio": artio, "venenatis": venenatis, "spindel": spindel,
+           "scorpia": scorpia, "chaos": chaos, "drgreen": lambda: dragon("green"), "drblue": lambda: dragon("blue"), "drred": lambda: dragon("red"),
+           "drblack": lambda: dragon("black"), "drmetal": lambda: dragon("metal")}
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "show"
     if arg == "show":
