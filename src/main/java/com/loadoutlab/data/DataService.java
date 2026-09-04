@@ -289,7 +289,10 @@ public final class DataService
 	 * "should not be able to search 'echo' version in main mode"). */
 	private static boolean isEcho(JsonObject row)
 	{
-		return string(row, "name").contains("(Echo)");
+		String name = string(row, "name");
+		// Nightmare Zone versions too (Andrew 2026-09-04: "nobody needs theory
+		// crafting for that") - they swamped a search for the Nightmare.
+		return name.contains("(Echo)") || name.contains("(Nightmare Zone)");
 	}
 
 	private List<MonsterStats> loadMonsters()

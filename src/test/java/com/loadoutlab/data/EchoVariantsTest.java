@@ -25,4 +25,16 @@ class EchoVariantsTest
 			assertFalse(m.getName().contains("(Echo)"), m.getName());
 		}
 	}
+
+	@Test
+	@DisplayName("no Nightmare Zone version enters the corpus - nobody theorycrafts the dream")
+	void noNightmareZone()
+	{
+		LoadoutData data = new DataService().load();
+		for (MonsterStats m : data.getMonsters())
+		{
+			assertFalse(m.getName().contains("(Nightmare Zone)"), m.getName());
+		}
+		assertFalse(data.searchMonsters("nightmare", 10).isEmpty(), "The Nightmare still answers");
+	}
 }
