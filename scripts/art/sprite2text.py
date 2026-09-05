@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
 # ---- the pass-seven hybrid: blocks, scales, bands, strokes, eyes, Braille ----
 def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0, dy0=0, eye_points=(),
-           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None, bg_dark=0.0, blank=()):
+           shades=True, scale_band=(0.45, 0.62), band_char="≡", band_range=(0.62, 0.7), reveal=1.0, edge_blocks=False, auto_eyes=True, crop_norm=True, paint=None, solid=None, bg_dark=0.0, blank=(), nails=None):
     """The style Andrew kept (raid pass seven): silhouette cells wear
     keyboard strokes by edge direction; interior cells shade by luminance -
     dark: Braille dither, low-mid: ░, mid: ¥ scale texture, band: ≡, high:
@@ -180,9 +180,24 @@ def hybrid(path, cols, rows, crop=(0, 0, 1, 1), xscale=1.0, mirror=False, dx0=0,
                     if isfg(sx, sy):
                         n += 1; l = (lum[sy][sx] - lo) / (hi - lo); light += l
                         if l > THRESH[dy][dx]: dots |= BRAILLE[dy][dx]
-            if n == 0: continue
             xa, ya = src(cx, cy, 0, 0); xb, yb = src(cx, cy, 2, 4)
             if mirror: xa, xb = xb, xa
+            if nails:
+                # dark GREY pixels (talons, not the green rock the dark carve drops) come back as a block
+                px = _RGB[path]; tot = 0; grey = 0
+                for sy in range(max(0, ya), min(h, yb)):
+                    for sx in range(max(0, xa), min(w, xb)):
+                        if fg[sy][sx]:
+                            tot += 1; rr, gg, bb, _ = px[sy][sx]
+                            # talon grey: dark but not the cave-black shadow, and no colour cast
+                            if 24 <= max(rr, gg, bb) <= 80 and max(rr, gg, bb) - min(rr, gg, bb) < 20: grey += 1
+                if tot and grey / tot >= 0.25:
+                    r = cy + dy0
+                    if 0 <= off + cx < cols and 0 <= r < rows:
+                        grid[r][off + cx] = nails[0]
+                        if paint is not None: paint[(r, off + cx)] = nails[1]
+                    continue
+            if n == 0: continue
             up, down, left, right = filled(cx, cy - 1), filled(cx, cy + 1), filled(cx - 1, cy), filled(cx + 1, cy)
             ch = None
             edge = n <= 5
