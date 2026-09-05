@@ -17,7 +17,11 @@ trip you are planning.
 
 Right-click a monster in the world and choose "Search in Loadout Lab":
 the panel opens and computes the best owned set for it. Other plugins can
-send a monster the same way (Goal Planner's boss cards do).
+send a monster the same way (Goal Planner's boss cards do). Search never
+lists a Leagues echo boss or a Nightmare Zone version - nobody
+theorycrafts the dream. A raid compute can take a while: a Cancel chip
+sits beside Discord in the footer until it lands, and puts the panel
+straight back to the start.
 
 ![Search in Loadout Lab (cross-plugin)](img/link-in.png)
 
@@ -458,6 +462,18 @@ and melee spec weapons never ride a sea trip; thrall resurrections
 cannot be cast on a boat, so thralls add nothing at sea.
 
 ![Ship combat](img/ship-combat.png)
+
+### Compute animations
+
+Every compute plays a mood in the panel while the numbers cook, drawn
+from the monsters' own wiki renders in colour: sixty-odd bosses, groups
+and raids have their own - the King Black Dragon breathing three fires,
+Zulrah changing colour as its forms cycle, the Theatre and the Chambers
+in cuts, Vorkath's acid trail, the Hydra losing a head a phase - every
+non-boss dragon shares a tinted family mood, sea trips sail, and
+anything else keeps the flask with the Loadout Lab legs. The frames
+live in a resource, so they cost the plugin nothing at review; the
+generators live under scripts/art and every mood is a work in progress.
 
 ### Community Discord
 

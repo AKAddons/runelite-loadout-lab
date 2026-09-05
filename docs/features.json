@@ -555,6 +555,26 @@
    "since": "0.5.0",
    "capture": "A sea mob selected: the cannon strip above the gear, the ledger under it (set, spec, gear, cannons, total), the keel line in the stat column. A still.",
    "notes": "Wiki-verified 2026-08-31. Crew numbers ride a wiki-flagged stale formula (naval_combat.json crewFormulaStale) and are labelled estimates. 0.5.0 field pass 2026-09-03: trip ledger with per-profile show/hide, sea rows fold cannon dps, keel-priced damage taken, the copied report carries the ship."
+  },
+  {
+   "id": "compute-moods",
+   "title": "Compute animations",
+   "group": "Look",
+   "anchor": "compute-animations",
+   "since": "0.5.1",
+   "code": [
+    "render/AsciiLoader.java",
+    "render/RenderSurface.java"
+   ],
+   "tests": [
+    "render/AsciiLoaderTest.java",
+    "render/MoodKeyTest.java",
+    "render/RaidMoodRoutingTest.java",
+    "render/LoaderHtmlTest.java",
+    "render/LoaderRepickTest.java"
+   ],
+   "notes": "Frames are HTML with per-cell colour runs in loader_frames.txt (resource, outside the hub cap); mood_routes.tsv routes by monster-name prefix, raids by group data, the sea by lens. Generators: scripts/art (sprite2text.py hybrid renderer, bosses.py recipes, tob.py, cox.py, obelisk.py, cannon.py, colourise.py for legacy pools, splice.py all). QUALITY.md is the ledger: every mood is a work in progress.",
+   "capture": "A raid search mid-compute: the Theatre sequence playing under the controls with the Cancel chip in the footer. ~8s."
   }
  ]
 }

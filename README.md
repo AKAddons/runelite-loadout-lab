@@ -30,6 +30,8 @@ At the end of your search, filter the kit in your bank and get going.
   Inferno nibblers' barrage lock, Salarin's flat Strikes, the ToA
   Wardens' core spec dump, ToA invocation scaling with an on-card
   control - each modeled in the numbers and explained on the card.
+- **Compute animations**: every boss, group and raid plays its own
+  mood while the numbers cook, drawn in colour from the wiki renders.
 - **Ship combat**: sea monsters from the Sailing update are fought from
   your boat - pick each cannon's material and who fires it, the shared
   cannonball tier, your keel for the damage the boat takes - and the
