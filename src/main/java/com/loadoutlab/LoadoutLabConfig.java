@@ -104,7 +104,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "showDegradableChip",
 		name = "Degradable chip",
-		description = "Show the Degrades chip on cards whose set wears down or burns charges.",
+		description = "Show the Degrades chip on cards.",
 		section = controls,
 		position = 4
 	)
@@ -116,7 +116,7 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "skipDegradableDefault",
 		name = "Skip degradable gear",
-		description = "New mobs start with degradable gear skipped; the Degrades chip flips it per mob.",
+		description = "New mobs start with degradable gear skipped.",
 		section = defaults,
 		position = 16
 	)

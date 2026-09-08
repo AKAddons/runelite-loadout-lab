@@ -1915,9 +1915,11 @@ public class ResultCards
 					SwingUtilities.invokeLater(() ->
 						spellIcon.setIcon(Ui.icon(img, 18))));
 			}
-			JLabel spellName = new JLabel(shownSpell == null ? "Auto spell"
+			String lock = Model.str(pageParams, "spellbookLock");
+			String lockText = lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
+			JLabel spellName = new JLabel((shownSpell == null ? "Auto spell"
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
-					? " (pinned)" : ""));
+					? " (pinned)" : "")) + lockText);
 			spellName.setFont(FontManager.getRunescapeSmallFont());
 			spellName.setForeground(new Color(200, 200, 200));
 			spellRow.add(spellIcon);
@@ -1940,6 +1942,23 @@ public class ResultCards
 					auto.addActionListener(ev ->
 						commands.send("set-pinned-spell", Map.of("name", "")));
 					menu.add(auto);
+					menu.addSeparator();
+					// The spellbook lock (Apathy, Discord 2026-09-06: "use to be
+					// a way to set a specific spellbook"): any book, or one
+					// of the four. A book with no autocast spell (Lunar) leaves
+					// the card to the powered staves.
+					JPanel books = Ui.darker(new GridLayout(0, 5, 2, 2));
+					books.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+					String current = lock == null ? "" : lock;
+					for (String option : new String[]{"", "standard", "ancient", "lunar", "arceuus"})
+					{
+						boolean any = option.isEmpty();
+						books.add(pickCell(menu, any ? null : cachedSprite(bookSprite(option)),
+							any ? "Any book (auto)" : "Lock to the " + option + " book",
+							option.equals(current), 26,
+							() -> commands.send("set-param", Map.of("param", "spellbookLock", "value", option))));
+					}
+					menu.add(books);
 					menu.addSeparator();
 					JPanel book = Ui.darker(new GridLayout(0, 6, 2, 2));
 					book.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));

@@ -789,7 +789,13 @@ public final class LoadoutOptimizer
 			if (request.getStyle() == CombatStyle.MAGIC && request.getSpell() != null
 				&& !spellAllowed(request, loadout, request.getSpell()))
 			{
-				return null;
+				// A PINNED powered staff is the stronger intent: it casts
+				// its built-in (Apathy, Discord 2026-09-06: the sceptre pin
+				// vanished under a pinned spell).
+				if (!isPoweredStaff(loadout.getWeapon()) || !request.isPinned(loadout.getWeapon().getId()))
+				{
+					return null;
+				}
 			}
 			return calculator.calculate(request, loadout);
 		}
@@ -928,18 +934,8 @@ public final class LoadoutOptimizer
 
 	private static boolean elementAmuletInPool(OptimizationRequest request)
 	{
-		if (request.getCandidateMode() != CandidateMode.OWNED_ONLY)
-		{
-			return true;
-		}
-		for (int id : ELEMENT_AMULETS)
-		{
-			if (request.getOwnedItems().owns(id))
-			{
-				return true;
-			}
-		}
-		return false;
+		return request.getCandidateMode() != CandidateMode.OWNED_ONLY
+			|| Arrays.stream(ELEMENT_AMULETS).anyMatch(request.getOwnedItems()::owns);
 	}
 
 	private static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request)

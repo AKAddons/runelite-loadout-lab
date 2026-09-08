@@ -291,19 +291,13 @@ public class MonsterProfileStore
 		{
 			merged.addAll(degradableIds);
 		}
-		if (profile.exclusions == null)
+		for (String scope : new String[]{ALL, style})
 		{
-			return merged.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(merged);
-		}
-		Set<Integer> all = profile.exclusions.get(ALL);
-		if (all != null)
-		{
-			merged.addAll(all);
-		}
-		Set<Integer> scoped = profile.exclusions.get(style);
-		if (scoped != null)
-		{
-			merged.addAll(scoped);
+			Set<Integer> ids = profile.exclusions == null ? null : profile.exclusions.get(scope);
+			if (ids != null)
+			{
+				merged.addAll(ids);
+			}
 		}
 		return merged.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(merged);
 	}

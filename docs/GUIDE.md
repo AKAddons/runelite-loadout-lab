@@ -116,8 +116,12 @@ attacks partially pierce prayer.
 
 ### Spell and spellbook recommendation
 
-On the magic card, Loadout Lab shows the spell to autocast. Lock the
-spellbook to your setup and the suggested spell and set adjust to match.
+On the magic card, Loadout Lab shows the spell to autocast. Click it to
+pin a spell, or lock the spellbook (standard, ancient, lunar or arceuus)
+so the suggested spell and set adjust to match. Locking a book with no
+autocast spell, like Lunar for Cure Me, leaves the card to built-in
+staves such as the trident or the warped sceptre. A pinned built-in staff
+always casts its own spell, even with another spell pinned.
 Bolt spells count chaos gauntlets (+3 max hit), and every elemental spell
 counts the elemental amulet or its own element's amulet (+2), so a Fire
 Bolt set can beat a Fire Blast one when you own the gauntlets.
@@ -222,7 +226,10 @@ on every card that override the global level. The grey member manages
 the trip kit: persistent defaults for the food, fast food, prayer
 restore, surge potion, spellbook-swap cape and anti-venom every trip
 brings, plus an always-filter list for items like teleport capes that
-belong in every bank view. Detect best picks the highest tier your
+belong in every bank view. Against venomous monsters the anti-venom slot
+also offers Cure Me (Lunar runes; venom becomes poison) and the prayer
+book with a holy symbol (cures for prayer points), as choices rather than
+detected tiers. Detect best picks the highest tier your
 collection has; anti-venom only joins the kit against monsters that can
 actually inflict venom (Zulrah, Araxxor, Vorkath and friends). On a
 wilderness trip a banked blighted variant (anglerfish, manta ray,

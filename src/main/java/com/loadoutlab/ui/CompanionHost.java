@@ -11,8 +11,6 @@ import net.runelite.client.ui.PluginPanel;
  */
 public class CompanionHost extends PluginPanel
 {
-	private JComponent content;
-
 	public CompanionHost()
 	{
 		setLayout(new BorderLayout());
@@ -20,12 +18,7 @@ public class CompanionHost extends PluginPanel
 
 	public void mount(JComponent component)
 	{
-		if (content == component)
-		{
-			return;
-		}
 		removeAll();
-		content = component;
 		if (component != null)
 		{
 			add(component, BorderLayout.NORTH);

@@ -186,4 +186,21 @@ public class TripSuppliesTest
 		}
 		return new MonsterStats(1, name, "", 100, 100, 1, 1, null, null);
 	}
+
+	@Test
+	public void cureMeAndThePrayerBookAreChoicesNeverADetectBestPick()
+	{
+		TripSupplies.Option cureMe = TripSupplies.option(TripSupplies.ANTIVENOM, "CURE_ME");
+		TripSupplies.Option book = TripSupplies.option(TripSupplies.ANTIVENOM, "PRAYER_BOOK");
+		org.junit.jupiter.api.Assertions.assertNotNull(cureMe, "Cure Me option");
+		org.junit.jupiter.api.Assertions.assertNotNull(book, "Prayer book option");
+		org.junit.jupiter.api.Assertions.assertFalse(cureMe.detect);
+		org.junit.jupiter.api.Assertions.assertFalse(book.detect);
+		org.junit.jupiter.api.Assertions.assertEquals(9075, cureMe.ids[0], "astral rune leads the Cure Me kit");
+		org.junit.jupiter.api.Assertions.assertEquals(10890, book.ids[0], "the prayer book itself leads its kit");
+		// Owning every rune and the book still leaves Detect-best on the potions.
+		TripSupplies.Option detected = TripSupplies.detectBest(TripSupplies.ANTIVENOM,
+			id -> id == 9075 || id == 564 || id == 10890 || id == 1718);
+		org.junit.jupiter.api.Assertions.assertNull(detected);
+	}
 }

@@ -73,11 +73,13 @@
         "model/RenderModel.java"
       ],
       "tests": [
-        "engine/SpellbookLockTest.java"
+        "engine/SpellbookLockTest.java",
+        "optimizer/SpellbookLockTest.java",
+        "optimizer/PinnedPoweredStaffTest.java"
       ],
       "since": "0.1.0",
       "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: the spellbook LOCK control returns to the spell picker (a Spellbook row: any / standard / ancient / lunar / arceuus -> set-param spellbookLock; the merge-back had dropped the control while the engine kept honouring the param). A lock with no autocast spell (Lunar for Cure Me) leaves the card to built-in staves; a pinned built-in staff casts its own spell even under a pinned spell (Apathy, Discord 2026-09-06)."
     },
     {
       "id": "dream-items",
@@ -386,7 +388,7 @@
       ],
       "since": "0.3.3",
       "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: anti-venom gains two choices, never Detect-best picks - Cure Me (Lunar runes; venom becomes poison) and the prayer book with a holy symbol (cures for prayer points; venom to poison up to 50). Andrew's call for Apathy's ironman Zulrah strat."
     },
     {
       "id": "thralls-death-charge",

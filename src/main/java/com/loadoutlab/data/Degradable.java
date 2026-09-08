@@ -20,10 +20,6 @@ public final class Degradable
 		JsonResources.strings(root, "except", EXCEPT);
 	}
 
-	private Degradable()
-	{
-	}
-
 	public static boolean matches(String nameLower)
 	{
 		return EXCEPT.stream().noneMatch(nameLower::contains) && FAMILIES.stream().anyMatch(nameLower::contains);
@@ -32,13 +28,13 @@ public final class Degradable
 	public static Set<Integer> ids(LoadoutData data)
 	{
 		Set<Integer> ids = new HashSet<>();
-		for (GearItem item : data.getGearItems())
+		data.getGearItems().forEach(item ->
 		{
 			if (matches(item.getNameLower()))
 			{
 				ids.add(item.getId());
 			}
-		}
+		});
 		return ids;
 	}
 }
