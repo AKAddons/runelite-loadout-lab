@@ -564,7 +564,7 @@ public final class DpsCalculator
 				int base = magicLevel / 10 + 10;
 				return wearing(loadout, "slayer's staff (e)") ? magicLevel / 6 + 13 : base;
 			}
-			return elementalSpellMax(spell, magicLevel);
+			return elementalSpellMax(spell, magicLevel) + flatSpellBonus(loadout, spell);
 		}
 		if (!poweredStaff)
 		{
@@ -676,6 +676,31 @@ public final class DpsCalculator
 			case "Wave": return 17 + tier;
 			default: return 21 + tier;
 		}
+	}
+
+	/** Flat adds before the magic damage %: chaos gauntlets +3 on bolts,
+	 * elemental amulet +2 on every element, amulet of X +2 on its own
+	 * (official-verified 2026-09-08). */
+	private int flatSpellBonus(Loadout loadout, SpellStats spell)
+	{
+		String element = spell.getElement();
+		if (element.isEmpty())
+		{
+			return 0;
+		}
+		int bonus = 0;
+		if ("Bolt".equals(spell.getNameSecondWord()) && wearing(loadout, "chaos gauntlets"))
+		{
+			counted("chaos gauntlets", "+3 max hit on bolt spells");
+			bonus += 3;
+		}
+		String amulet = wearing(loadout, "elemental amulet") ? "elemental amulet" : "amulet of " + element;
+		if (wearing(loadout, amulet))
+		{
+			counted(amulet, "+2 max hit");
+			bonus += 2;
+		}
+		return bonus;
 	}
 
 	private static boolean isElementWord(String word)

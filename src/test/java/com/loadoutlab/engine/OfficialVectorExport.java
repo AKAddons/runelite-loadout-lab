@@ -33,6 +33,11 @@ public class OfficialVectorExport
 	private static final String[][] SCENARIOS = {
 		// name | monster | version | style | weapon | ammo | forced spell | extra gear (slayer helm implies on-task)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
+		// Bolt spell flat adds (Mike, Discord 2026-09-07): chaos gauntlets +3
+		// on bolts, elemental amulet +2 on elemental spells, before magic dmg %.
+		{"firebolt-gauntlets-goblin", "Goblin", "", "MAGIC", "Staff of fire", null, "Fire Bolt", "Chaos gauntlets"},
+		{"firebolt-gauntlets-elemental-goblin", "Goblin", "", "MAGIC", "Staff of fire", null, "Fire Bolt", "Chaos gauntlets", "Elemental amulet"},
+		{"windblast-airamulet-goblin", "Goblin", "", "MAGIC", "Staff of air", null, "Wind Blast", "Amulet of air"},
 		// Elemental weakness stacking (field dispute 2026-07-23, first Wiki
 		// calc button catch): the +severity% adds from the BASE roll after
 		// slayer helm + DHW multiply - Iron dragon is earth-weak 50%.

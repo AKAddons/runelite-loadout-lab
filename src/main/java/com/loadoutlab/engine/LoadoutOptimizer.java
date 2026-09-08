@@ -897,7 +897,10 @@ public final class LoadoutOptimizer
 		// autocast the worse spell. The prune runs request-level - it
 		// cannot see the weapon - so both tier-groups survive to the
 		// per-loadout evaluation, which prices the second hit correctly.
-		int[] best = new int[4];
+		// An amulet of air/water/earth/fire in the pool lifts one element
+		// only: keep a cell per element then.
+		boolean perElement = elementAmuletInPool(request);
+		int[] best = new int[perElement ? 16 : 4];
 		Arrays.fill(best, -1);
 		for (SpellStats spell : spells)
 		{
@@ -907,7 +910,8 @@ public final class LoadoutOptimizer
 				continue;
 			}
 			boolean match = spell.getElement().equals(weakness);
-			int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0);
+			int cell = (match ? 2 : 0) + (DpsCalculator.twinflameDoubles(spell) ? 1 : 0)
+				+ (perElement ? 4 * ELEMENTS.indexOf(spell.getElement()) : 0);
 			int effective = DpsCalculator.elementalSpellMax(spell, magicLevel);
 			if (effective > best[cell])
 			{
@@ -916,6 +920,26 @@ public final class LoadoutOptimizer
 			}
 		}
 		return kept;
+	}
+
+	private static final List<String> ELEMENTS = List.of("air", "water", "earth", "fire");
+	/** Amulet of air, water, earth, fire (gameval ids). */
+	private static final int[] ELEMENT_AMULETS = {34407, 34413, 34419, 34425};
+
+	private static boolean elementAmuletInPool(OptimizationRequest request)
+	{
+		if (request.getCandidateMode() != CandidateMode.OWNED_ONLY)
+		{
+			return true;
+		}
+		for (int id : ELEMENT_AMULETS)
+		{
+			if (request.getOwnedItems().owns(id))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static List<SpellStats> spellsForUnfiltered(LoadoutData data, OptimizationRequest request)

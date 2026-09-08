@@ -118,6 +118,9 @@ attacks partially pierce prayer.
 
 On the magic card, Loadout Lab shows the spell to autocast. Lock the
 spellbook to your setup and the suggested spell and set adjust to match.
+Bolt spells count chaos gauntlets (+3 max hit), and every elemental spell
+counts the elemental amulet or its own element's amulet (+2), so a Fire
+Bolt set can beat a Fire Blast one when you own the gauntlets.
 
 ![Spell and spellbook recommendation](img/spellbook.png)
 
