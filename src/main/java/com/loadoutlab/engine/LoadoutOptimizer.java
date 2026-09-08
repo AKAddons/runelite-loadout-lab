@@ -1207,6 +1207,24 @@ public final class LoadoutOptimizer
 			score += 10_000.0;
 		}
 		String name = label(item);
+		if (request.getStyle() == CombatStyle.MAGIC)
+		{
+			// Flat spell adds live in the DPS model, not the raw stats: the
+			// gauntlets score zero here and the element amulets tie a crowd
+			// of glories, so the pool cut dropped them (field report
+			// 2026-09-08: simmed chaos gauntlets lost to the bracelet).
+			SpellStats spell = request.getSpell();
+			if (name.contains("chaos gauntlets") && (spell == null || "Bolt".equals(spell.getNameSecondWord())))
+			{
+				score += 2_000.0;
+			}
+			String element = spell == null ? "" : spell.getElement();
+			if (name.equals("elemental amulet") && (spell == null || !element.isEmpty())
+				|| name.startsWith("amulet of ") && (spell == null ? ELEMENTS.contains(name.substring(10)) : name.equals("amulet of " + element)))
+			{
+				score += 2_000.0;
+			}
+		}
 		if (request.getMonster() != null)
 		{
 			if (request.getMonster().hasAttribute("undead") && name.contains("salve amulet"))
