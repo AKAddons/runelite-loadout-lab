@@ -1,0 +1,16 @@
+{
+  "$comment": "Gear that costs to use in combat: it wears down (Barrows, Moons, crystal) or burns charges per hit or cast. Matched as name substrings (lower-case) against the gear corpus; 'except' substrings veto a match. Charge-once items (dragonfire shield, ward, ancient wyvern shield) and teleport/skilling charges are deliberately absent. Definition: Andrew, 2026-09-08 - corrupted crystal, emberlight and the plain whip are not charged.",
+  "families": [
+    "ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's",
+    "blood moon", "blue moon", "eclipse moon", "amulet of the damned",
+    "crystal helm", "crystal body", "crystal legs", "crystal bow", "crystal halberd", "crystal shield",
+    "vesta's blighted", "blade of saeldor", "bow of faerdhinen",
+    "abyssal tentacle", "arclight", "serpentine helm", "magma helm", "tanzanite helm", "blowpipe",
+    "trident of the", "toxic staff", "sanguinesti staff", "scythe of vitur", "tumeken's shadow",
+    "venator bow", "craw's bow", "webweaver bow", "viggora's chainmace", "ursine chainmace",
+    "thammaron's sceptre", "accursed sceptre", "bryophyta's staff", "warped sceptre",
+    "tonalztics of ralos", "eye of ayak", "saradomin's blessed sword", "amulet of blood fury",
+    "ring of suffering", "tome of fire", "tome of water", "tome of earth", "iban's staff", "slayer's staff (e)"
+  ],
+  "except": ["(c)", "(historical)", "crystal bow (i)", "crystal shield (i)"]
+}

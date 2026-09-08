@@ -84,38 +84,4 @@ public final class ItemLocations
 		}
 	}
 
-	/**
-	 * One tooltip clause: "" when the item is at hand (equipped, inventory,
-	 * bank) or not owned at all; otherwise "stored in X" naming the
-	 * storage(s) to fetch from. DWMS-attributed origins are dropped when a
-	 * natively tracked storage already names the location.
-	 */
-	public String fetchHint(int itemId)
-	{
-		List<String> where = where(itemId);
-		if (where.isEmpty())
-		{
-			return "";
-		}
-		for (String label : where)
-		{
-			if (AT_HAND.contains(label))
-			{
-				return "";
-			}
-		}
-		List<String> named = new ArrayList<>();
-		for (String label : where)
-		{
-			if (!label.endsWith(VIA_DWMS))
-			{
-				named.add(label);
-			}
-		}
-		if (named.isEmpty())
-		{
-			named = where;
-		}
-		return "stored in " + String.join(" + ", named);
-	}
 }

@@ -454,6 +454,10 @@ public final class RenderModel
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("id", item.getId());
 		node.put("name", item.label());
+		if (com.loadoutlab.data.Degradable.matches(item.getNameLower()))
+		{
+			node.put("degrades", true);
+		}
 		node.put("price", item.getPriceOrZero());
 		return node;
 	}

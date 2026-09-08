@@ -98,29 +98,6 @@ class CommandsTest
 		assertFalse(history.canUndo());
 	}
 
-	@Test
-	@DisplayName("dream, stored-elsewhere and protect-only toggles all round-trip")
-	void otherToggles()
-	{
-		DreamStore dreams = new DreamStore(cfg, new Gson());
-		history.execute(Commands.toggleDream(dreams, FANG, "Osmumten's fang"));
-		assertTrue(dreams.isDreamed(FANG));
-		history.undo();
-		assertFalse(dreams.isDreamed(FANG));
-
-		ManualOwnedStore stored = new ManualOwnedStore(cfg, new Gson());
-		stored.loadScope("test-account");
-		history.execute(Commands.toggleStored(stored, WHIP, "Abyssal whip"));
-		assertTrue(stored.isStored(WHIP));
-		history.undo();
-		assertFalse(stored.isStored(WHIP));
-
-		ProtectOnlyStore protect = new ProtectOnlyStore(cfg, new Gson());
-		history.execute(Commands.toggleProtectOnly(protect, WHIP, "Abyssal whip"));
-		assertTrue(protect.isProtectOnly(WHIP));
-		history.undo();
-		assertFalse(protect.isProtectOnly(WHIP));
-	}
 
 	@Test
 	@DisplayName("pin with no prior pin: undo empties the slot")

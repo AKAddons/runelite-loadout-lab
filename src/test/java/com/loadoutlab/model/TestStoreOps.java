@@ -132,6 +132,17 @@ class TestStoreOps implements CommandEngine.StoreOps
 		return Collections.emptyMap();
 	}
 
+	@Override
+	public boolean skipDegradable(int monsterId)
+	{
+		return false;
+	}
+
+	@Override
+	public void setSkipDegradable(int monsterId, boolean skip)
+	{
+	}
+
 	public void setSupplyOverride(int profileId, String category, String choice)
 	{
 	}

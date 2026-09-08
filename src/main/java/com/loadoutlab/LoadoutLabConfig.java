@@ -102,6 +102,30 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showDegradableChip",
+		name = "Degradable chip",
+		description = "Show the Degrades chip on cards whose set wears down or burns charges.",
+		section = controls,
+		position = 4
+	)
+	default boolean showDegradableChip()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "skipDegradableDefault",
+		name = "Skip degradable gear",
+		description = "New mobs start with degradable gear skipped; the Degrades chip flips it per mob.",
+		section = defaults,
+		position = 16
+	)
+	default boolean skipDegradableDefault()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "defaultRiskCap",
 		name = "Wilderness risk cap",
 		description = "Seed new results' wilderness risk cap (empty = uncapped).",

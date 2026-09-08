@@ -63,9 +63,9 @@ class MonsterProfileStoreTest
 		store.addFilterItem(415, "MELEE", 12695, "Super combat potion(4)");
 		store.addFilterItem(415, "RANGED", 2444, "Ranging potion(4)");
 
-		assertEquals(Set.of(385, 12695), store.filterItemsFor(415, "MELEE"));
-		assertEquals(Set.of(385, 2444), store.filterItemsFor(415, "RANGED"));
-		assertEquals(Set.of(385), store.filterItemsFor(415, "MAGIC"));
+		assertEquals(Set.of(385, 12695), filterItemsFor(store, 415, "MELEE"));
+		assertEquals(Set.of(385, 2444), filterItemsFor(store, 415, "RANGED"));
+		assertEquals(Set.of(385), filterItemsFor(store, 415, "MAGIC"));
 	}
 
 	@Test
@@ -139,7 +139,7 @@ class MonsterProfileStoreTest
 		MonsterProfileStore next = freshStore();
 		assertEquals(Map.of(GearSlot.HANDS, 21183), next.pinsFor(415, "MELEE"));
 		assertEquals("bring antidote++, pray melee after the spec", next.noteFor(415));
-		assertEquals(Set.of(12695), next.filterItemsFor(415, "MELEE"));
+		assertEquals(Set.of(12695), filterItemsFor(next, 415, "MELEE"));
 		assertEquals("Super combat potion(4)",
 			next.allFilterItems(415).get("MELEE").get(12695));
 	}
@@ -254,5 +254,42 @@ class MonsterProfileStoreTest
 		store.setSupply(8781, "antivenom", "");
 		assertEquals("{}", configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles"),
 			"clearing the only override prunes the profile away");
+	}
+
+	@Test
+	@DisplayName("skipping degradable gear for a mob folds the degradable ids into every scope's exclusions, keeps the manage list clean, and survives a reload")
+	void skipDegradable()
+	{
+		MonsterProfileStore store = new MonsterProfileStore(configManager, new Gson());
+		store.setDegradableIds(Set.of(4716, 12006));
+		assertFalse(store.skipDegradable(7, false), "unset follows the panel default");
+		assertTrue(store.skipDegradable(7, true), "unset follows the panel default");
+		store.setSkipDegradable(7, true);
+		assertTrue(store.exclusionsFor(7, "MELEE").containsAll(Set.of(4716, 12006)));
+		assertTrue(store.exclusionsFor(7, MonsterProfileStore.ALL_SETS).contains(4716));
+		assertTrue(store.allExclusions(7).isEmpty(), "the manage menu lists only hand-picked exclusions");
+		assertTrue(store.exclusionsFor(8, "MELEE").isEmpty(), "other mobs are untouched");
+		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
+		fresh.setDegradableIds(Set.of(4716));
+		assertTrue(fresh.skipDegradable(7, false), "persisted");
+		assertTrue(fresh.exclusionsFor(7, "RANGED").contains(4716));
+		store.setSkipDegradable(7, false);
+		assertFalse(store.skipDegradable(7, true));
+		assertTrue(store.exclusionsFor(7, "MELEE").isEmpty());
+	}
+
+	/** ALL plus the style, as the card sees it. */
+	private static Set<Integer> filterItemsFor(MonsterProfileStore store, int monsterId, String style)
+	{
+		Set<Integer> ids = new java.util.LinkedHashSet<>();
+		Map<String, Map<Integer, String>> all = store.allFilterItems(monsterId);
+		for (String scope : new String[]{MonsterProfileStore.ALL_SETS, style})
+		{
+			if (all.get(scope) != null)
+			{
+				ids.addAll(all.get(scope).keySet());
+			}
+		}
+		return ids;
 	}
 }

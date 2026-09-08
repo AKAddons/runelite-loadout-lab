@@ -74,6 +74,27 @@ public class MonsterProfileStore
 		 * mode/option key ("DETECT_BEST", "NONE", "SANFEW_SERUM"...).
 		 * Absent category = the wrench-panel default applies. */
 		Map<String, String> supplies;
+		/** Degrades chip: skip degradable gear here (null = panel default). */
+		Boolean skipDegradable;
+	}
+
+	private Set<Integer> degradableIds = Collections.emptySet();
+
+	public synchronized void setDegradableIds(Set<Integer> ids)
+	{
+		degradableIds = ids;
+	}
+
+	public synchronized boolean skipDegradable(int monsterId, boolean fallback)
+	{
+		Stored profile = profiles.get(monsterId);
+		return profile == null || profile.skipDegradable == null ? fallback : profile.skipDegradable;
+	}
+
+	public synchronized void setSkipDegradable(int monsterId, boolean skip)
+	{
+		profiles.computeIfAbsent(monsterId, id -> new Stored()).skipDegradable = skip;
+		save();
 	}
 
 	private final ConfigManager configManager;
@@ -235,27 +256,6 @@ public class MonsterProfileStore
 		save();
 	}
 
-	/** Effective filter-item ids for one style card: ALL plus the style. */
-	public synchronized Set<Integer> filterItemsFor(int monsterId, String style)
-	{
-		Stored profile = profiles.get(monsterId);
-		if (profile == null || profile.filterItems == null)
-		{
-			return Collections.emptySet();
-		}
-		Set<Integer> ids = new LinkedHashSet<>();
-		Map<Integer, String> all = profile.filterItems.get(ALL);
-		if (all != null)
-		{
-			ids.addAll(all.keySet());
-		}
-		Map<Integer, String> styled = profile.filterItems.get(style);
-		if (styled != null)
-		{
-			ids.addAll(styled.keySet());
-		}
-		return ids.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(ids);
-	}
 
 	/** Raw filter items by scope: scope -> id -> display name. */
 	public synchronized Map<String, Map<Integer, String>> allFilterItems(int monsterId)
@@ -282,11 +282,19 @@ public class MonsterProfileStore
 	public synchronized Set<Integer> exclusionsFor(int monsterId, String style)
 	{
 		Stored profile = profiles.get(monsterId);
-		if (profile == null || profile.exclusions == null)
+		if (profile == null)
 		{
 			return Collections.emptySet();
 		}
 		LinkedHashSet<Integer> merged = new LinkedHashSet<>();
+		if (Boolean.TRUE.equals(profile.skipDegradable))
+		{
+			merged.addAll(degradableIds);
+		}
+		if (profile.exclusions == null)
+		{
+			return merged.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(merged);
+		}
 		Set<Integer> all = profile.exclusions.get(ALL);
 		if (all != null)
 		{
@@ -466,7 +474,8 @@ public class MonsterProfileStore
 				&& (profile.filterItems == null || profile.filterItems.isEmpty())
 				&& (profile.exclusions == null || profile.exclusions.isEmpty())
 				&& (profile.sims == null || profile.sims.isEmpty())
-				&& (profile.supplies == null || profile.supplies.isEmpty());
+				&& (profile.supplies == null || profile.supplies.isEmpty())
+				&& profile.skipDegradable == null;
 			if (!empty)
 			{
 				out.put(entry.getKey(), profile);

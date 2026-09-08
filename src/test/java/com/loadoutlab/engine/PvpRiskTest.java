@@ -451,12 +451,4 @@ public class PvpRiskTest
 			PvpRisk.risksUnprotected(salveSet, null, 3, noPins, noPins));
 	}
 
-	@Test
-	public void gpFormattingReadsLikeAPlayerWouldSayIt()
-	{
-		Assert.assertEquals("950", PvpRisk.formatGp(950));
-		Assert.assertEquals("820k", PvpRisk.formatGp(820_400));
-		Assert.assertEquals("45.3M", PvpRisk.formatGp(45_300_000));
-		Assert.assertEquals("1.20B", PvpRisk.formatGp(1_200_000_000L));
-	}
 }

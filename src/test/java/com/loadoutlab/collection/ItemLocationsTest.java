@@ -1,5 +1,6 @@
 package com.loadoutlab.collection;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +52,9 @@ class ItemLocationsTest
 	void noHintWhenAtHandOrUnowned()
 	{
 		ItemLocations locations = locations(origins());
-		assertEquals("", locations.fetchHint(1), "equipped is at hand");
-		assertEquals("", locations.fetchHint(2), "banked is at hand");
-		assertEquals("", locations.fetchHint(99), "unowned items get no hint");
+		assertEquals("", fetchHint(locations, 1), "equipped is at hand");
+		assertEquals("", fetchHint(locations, 2), "banked is at hand");
+		assertEquals("", fetchHint(locations, 99), "unowned items get no hint");
 	}
 
 	@Test
@@ -61,10 +62,10 @@ class ItemLocationsTest
 	void hintNamesRemoteStores()
 	{
 		ItemLocations locations = locations(origins());
-		assertEquals("stored in STASH + POH costume room", locations.fetchHint(3));
-		assertEquals("stored in STASH" + ItemLocations.VIA_DWMS, locations.fetchHint(4),
+		assertEquals("stored in STASH + POH costume room", fetchHint(locations, 3));
+		assertEquals("stored in STASH" + ItemLocations.VIA_DWMS, fetchHint(locations, 4),
 			"a DWMS-only origin still names itself");
-		assertEquals("stored in death storage" + ItemLocations.VIA_DWMS, locations.fetchHint(5));
+		assertEquals("stored in death storage" + ItemLocations.VIA_DWMS, fetchHint(locations, 5));
 	}
 
 	@Test
@@ -87,5 +88,35 @@ class ItemLocationsTest
 		ItemLocations locations = new ItemLocations(origins(), null);
 		assertTrue(locations.where(100).isEmpty(), "101 no longer answers for 100");
 		assertEquals(List.of("STASH"), locations.where(101));
+	}
+
+	/** The tooltip clause the plugin once built here; kept as the test's oracle. */
+	private static String fetchHint(ItemLocations locations, int itemId)
+	{
+		List<String> where = locations.where(itemId);
+		if (where.isEmpty())
+		{
+			return "";
+		}
+		for (String label : where)
+		{
+			if (java.util.Set.of("equipped", "inventory", "bank").contains(label))
+			{
+				return "";
+			}
+		}
+		List<String> named = new ArrayList<>();
+		for (String label : where)
+		{
+			if (!label.endsWith(ItemLocations.VIA_DWMS))
+			{
+				named.add(label);
+			}
+		}
+		if (named.isEmpty())
+		{
+			named = where;
+		}
+		return "stored in " + String.join(" + ", named);
 	}
 }

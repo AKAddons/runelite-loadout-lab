@@ -288,6 +288,17 @@ class CommandEngineTest
 			{
 				return java.util.Collections.emptyMap();
 			}
+
+			@Override
+			public boolean skipDegradable(int monsterId)
+			{
+				return false;
+			}
+
+			@Override
+			public void setSkipDegradable(int monsterId, boolean skip)
+			{
+			}
 		});
 		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")),
 			"the roster opens");

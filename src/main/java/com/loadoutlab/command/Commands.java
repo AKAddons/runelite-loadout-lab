@@ -1,10 +1,7 @@
 package com.loadoutlab.command;
 
-import com.loadoutlab.collection.DreamStore;
 import com.loadoutlab.collection.ExclusionStore;
-import com.loadoutlab.collection.ManualOwnedStore;
 import com.loadoutlab.collection.MonsterProfileStore;
-import com.loadoutlab.collection.ProtectOnlyStore;
 import com.loadoutlab.data.GearSlot;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -50,22 +47,8 @@ public final class Commands
 		return toggleFlag(store::isExcluded, store::toggle, itemId, "Exclude ", "Include ", label);
 	}
 
-	public static Command toggleDream(DreamStore store, int itemId, String label)
-	{
-		return toggleFlag(store::isDreamed, store::toggle, itemId, "Sim item ", "Stop simming ", label);
-	}
 
-	public static Command toggleStored(ManualOwnedStore store, int itemId, String label)
-	{
-		return toggleFlag(store::isStored, store::toggle, itemId,
-			"Mark stored elsewhere: ", "Unmark stored elsewhere: ", label);
-	}
 
-	public static Command toggleProtectOnly(ProtectOnlyStore store, int itemId, String label)
-	{
-		return toggleFlag(store::isProtectOnly, store::toggle, itemId,
-			"Only bring protected: ", "Bring even unprotected: ", label);
-	}
 
 	/**
 	 * Shared body for the four global item-flag toggles. The stores each name

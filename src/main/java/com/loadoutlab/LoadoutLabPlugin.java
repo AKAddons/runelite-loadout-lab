@@ -456,9 +456,11 @@ public class LoadoutLabPlugin extends Plugin
 				log.warn("STASH unit table unavailable; chart scans disabled", ex);
 			}
 			LoadoutData loaded = new DataService().load();
+			Set<Integer> degradable = com.loadoutlab.data.Degradable.ids(loaded);
 			SwingUtilities.invokeLater(() ->
 			{
 				data = loaded;
+				mobProfiles.setDegradableIds(degradable);
 				optimizerService = new OptimizerService(loaded);
 				commandEngine = new CommandEngine(
 					loaded, new com.loadoutlab.model.PageState(), this::compute, companionLink);
@@ -647,6 +649,7 @@ public class LoadoutLabPlugin extends Plugin
 				internalSurface.setSpriteManager(spriteManager);
 				internalSurface.setSailingIcon(() ->
 					skillIconManager.getSkillImage(Skill.SAILING, true));
+				cards.setDegradableChip(() -> config.showDegradableChip());
 				cards.setBreakdown(() -> config.showTripBreakdown(),
 					shown -> configManager.setConfiguration("loadoutlab", "showTripBreakdown", shown));
 				cards.setSailingIcon(() ->
@@ -862,6 +865,18 @@ public class LoadoutLabPlugin extends Plugin
 					{
 						mobProfiles.setSupply(profileId, category, choice);
 					}
+
+					@Override
+					public boolean skipDegradable(int monsterId)
+					{
+						return mobProfiles.skipDegradable(monsterId, config.skipDegradableDefault());
+					}
+
+					@Override
+					public void setSkipDegradable(int monsterId, boolean skip)
+					{
+						mobProfiles.setSkipDegradable(monsterId, skip);
+					}
 				});
 			// The one-surface host: the model-driven renderer IS the
 			// panel. (No cross-plugin registration exists any more - the
@@ -981,7 +996,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
 	 * exists and nothing ever read it (audit 2026-08-22). */
 	private static final Set<String> RENDER_KEYS =
-		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown");
+		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip");
 
 
 	/** Client-thread staging push: the castability state the panel's

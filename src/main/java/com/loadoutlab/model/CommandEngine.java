@@ -132,6 +132,10 @@ public class CommandEngine
 		/** Per-mob supply overrides (profileId-keyed, like the classic). */
 		Map<String, String> supplyOverrides(int profileId);
 
+		boolean skipDegradable(int monsterId);
+
+		void setSkipDegradable(int monsterId, boolean skip);
+
 		void setSupplyOverride(int profileId, String category, String choice);
 	}
 
@@ -673,6 +677,18 @@ public class CommandEngine
 							: label + " " + next;
 					}
 				});
+			}
+			case "toggle-degradable":
+			{
+				StoreOps ops = stores;
+				MonsterStats mob = shownMob();
+				if (ops == null || mob == null)
+				{
+					return false;
+				}
+				ops.setSkipDegradable(mob.getId(), !ops.skipDegradable(mob.getId()));
+				recompute();
+				return true;
 			}
 			case "set-supply-default":
 			{
@@ -2216,6 +2232,7 @@ public class CommandEngine
 					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
 					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
 					mob.put("note", ops.note(monsterId));
+					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);
 					// The casting kit: divine rune pouch > rune pouch when

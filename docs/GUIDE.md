@@ -264,6 +264,17 @@ exclusions are managed from the "This mob" line.
 
 ![Exclude items from suggestions](img/exclusions.png)
 
+### Degradable gear chip
+
+A card whose set wears down or burns charges (Barrows, Moons, crystal,
+tentacle, blowpipe, tridents, charged raid weapons) shows a "Degrades N"
+chip on its "This mob" line. Click it to skip that gear for the mob and
+the card recomputes from what is left, so a set of moon tassets gives way
+to dragon platelegs. Click again to allow it. Charge-once items (the
+dragonfire shield and ward, the ancient wyvern shield) and corrupted
+crystal never count. The chip lives in the Controls settings; Defaults
+can start every mob with degradable gear skipped.
+
 ### Wilderness low-risk sets
 
 Build low-risk sets around the items-kept-on-death rules: your most
@@ -345,8 +356,8 @@ inventory row, game best, notes, the '+ Add mob' row, the footnote, the
 loading animation, and where the spec and thrall dps appear - in the
 numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
-wilderness controls, and whether a sea card's trip ledger opens expanded
-or as its total line). Defaults sets what every NEW result assumes: On
+wilderness controls, the Degrades chip, and whether a sea card's trip
+ledger opens expanded or as its total line). Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost PER
 STYLE (Detect best, None, or a named pick for each of melee, ranged and

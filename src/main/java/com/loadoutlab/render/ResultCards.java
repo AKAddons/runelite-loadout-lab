@@ -90,6 +90,37 @@ public class ResultCards
 		this.breakdownToggle = toggle;
 	}
 
+	private BooleanSupplier degradableChip = () -> true;
+
+	public void setDegradableChip(BooleanSupplier shown)
+	{
+		this.degradableChip = shown;
+	}
+
+	/** The Degrades chip (Mike, Discord 2026-09-07): N degrading items in
+	 * the shown set; on = that gear is skipped for this mob. */
+	private JLabel degradesChip(Map<String, Object> mob, Map<String, Object> card)
+	{
+		int n = 0;
+		Map<String, Object> gear = Model.map(card, "gear");
+		for (Object slot : gear == null ? List.of() : gear.values())
+		{
+			if (slot instanceof Map && Model.flag((Map<String, Object>) slot, "degrades"))
+			{
+				n++;
+			}
+		}
+		boolean skip = Model.flag(mob, "skipDegradable");
+		if (!degradableChip.getAsBoolean() || (n == 0 && !skip))
+		{
+			return null;
+		}
+		return RenderSurface.pill(skip ? "No degradables" : "Degrades " + n, skip,
+			skip ? "Degradable gear is skipped for this mob - click to allow it"
+				: "Click to skip gear that wears down or burns charges for this mob",
+			() -> commands.send("toggle-degradable", new HashMap<>()));
+	}
+
 	public void setSailingIcon(Supplier<BufferedImage> icon)
 	{
 		this.sailingIcon = icon;
@@ -1003,6 +1034,11 @@ public class ResultCards
 			new Color(190, 190, 190), new Color(130, 130, 130), new Color(150, 150, 150),
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
 			"Add a supply to this mob's bank filter"));
+		JLabel degrades = degradesChip(mob, Model.map(node, bis ? "bis" : "yours"));
+		if (degrades != null)
+		{
+			trioRow.add(degrades);
+		}
 		card.add(Box.createVerticalStrut(4));
 		// Centred, not left() - field ask 2026-08-20.
 		card.add(centre(trioRow));

@@ -172,7 +172,7 @@ public final class HeadlessQuery
 				{
 					PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), result.specWeapon, lowRisk);
 					sb.append(String.format("    risk    %s gp (%d kept)%n",
-						PvpRisk.formatGp(risk.riskGp), lowRisk));
+						formatGp(risk.riskGp), lowRisk));
 				}
 			}
 			if (result != null && result.overallBest != null)
@@ -182,5 +182,19 @@ public final class HeadlessQuery
 			}
 		}
 		return sb.toString();
+	}
+
+	/** Compact gp: 1.20B / 45.3M / 820k / 950. */
+	private static String formatGp(long gp)
+	{
+		if (gp >= 1_000_000_000L)
+		{
+			return String.format("%.2fB", gp / 1_000_000_000.0);
+		}
+		if (gp >= 1_000_000L)
+		{
+			return String.format("%.1fM", gp / 1_000_000.0);
+		}
+		return gp >= 1_000L ? gp / 1_000L + "k" : String.valueOf(gp);
 	}
 }
