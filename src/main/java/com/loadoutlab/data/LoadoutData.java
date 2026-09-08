@@ -120,28 +120,12 @@ public final class LoadoutData
 	 * anchor for "what do I wear there". Keys and values are in
 	 * normalizeQuery form.
 	 */
-	private static final Map<String, String> SEARCH_ALIASES = Map.ofEntries(
-		Map.entry("thermy", "thermonuclear smoke devil"),
-		Map.entry("grotesque guardians", "dusk"),
-		Map.entry("fight caves", "tztokjad"),
-		Map.entry("the fight caves", "tztokjad"),
-		Map.entry("inferno", "tzkalzuk"),
-		Map.entry("the inferno", "tzkalzuk"),
-		Map.entry("gauntlet", "crystalline hunllef"),
-		Map.entry("the gauntlet", "crystalline hunllef"),
-		Map.entry("corrupted gauntlet", "corrupted hunllef"),
-		Map.entry("cox", "great olm"),
-		Map.entry("chambers of xeric", "great olm"),
-		Map.entry("toa", "tumekens warden"),
-		Map.entry("tombs of amascut", "tumekens warden"),
-		Map.entry("tob", "verzik vitur"),
-		Map.entry("theatre of blood", "verzik vitur"),
-		Map.entry("colosseum", "sol heredit"),
-		Map.entry("fortis colosseum", "sol heredit"),
-		Map.entry("fortis colosseum waves", "sol heredit"),
-		Map.entry("duke", "duke sucellus"),
-		Map.entry("kbd", "king black dragon"),
-		Map.entry("kq", "kalphite queen"));
+	private static final Map<String, String> SEARCH_ALIASES = new HashMap<>();
+
+	static
+	{
+		JsonResources.stringMap(JsonResources.objectOrThrow("search_aliases.json"), "aliases", SEARCH_ALIASES);
+	}
 
 	public List<MonsterStats> searchMonsters(String query, int limit)
 	{

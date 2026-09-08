@@ -384,11 +384,12 @@
         "data/TripSuppliesTest.java",
         "collection/AlwaysFilterStoreTest.java",
         "collection/SupplyDefaultsStoreTest.java",
-        "collection/MonsterProfileStoreTest.java"
+        "collection/MonsterProfileStoreTest.java",
+        "model/CureMeLockTest.java"
       ],
       "since": "0.3.3",
       "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: anti-venom gains two choices, never Detect-best picks - Cure Me (Lunar runes; venom becomes poison) and the prayer book with a holy symbol (cures for prayer points; venom to poison up to 50). Andrew's call for Apathy's ironman Zulrah strat."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: anti-venom gains two choices, never Detect-best picks - Cure Me (Lunar runes; venom becomes poison) and the prayer book with a holy symbol (cures for prayer points; venom to poison up to 50). Andrew's call for Apathy's ironman Zulrah strat. Cure Me camps the trip on Lunar (Andrew 2026-09-08): the compute locks the book, Death Charge and thralls stand down, and the option is withheld while a pinned spell or a book lock relies on another book (CureMeLockTest)."
     },
     {
       "id": "thralls-death-charge",

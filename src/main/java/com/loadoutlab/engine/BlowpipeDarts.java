@@ -1,6 +1,10 @@
 package com.loadoutlab.engine;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.JsonResources;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -17,21 +21,27 @@ import java.util.Map;
 public final class BlowpipeDarts
 {
 	/** Dart tiers, strongest first: {ranged strength, ids...} (all poison variants). */
-	private static final int[][] TIERS = {
-		{35, 11230, 11231, 11233, 11234},   // dragon
-		{28, 25849, 25851, 25855, 25857},   // amethyst
-		{26, 811, 817, 5634, 5641},         // rune
-		{17, 810, 816, 5633, 5640},         // adamant
-		{9, 809, 815, 5632, 5639},          // mithril
-		{6, 3093, 3094, 5631, 5638},        // black
-		{3, 808, 814, 5630, 5637},          // steel
-		{2, 807, 813, 5629, 5636},          // iron
-		{1, 806, 812, 5628, 5635},          // bronze
-	};
-	private static final String[] TIER_NAMES = {
-		"dragon darts", "amethyst darts", "rune darts", "adamant darts",
-		"mithril darts", "black darts", "steel darts", "iron darts", "bronze darts",
-	};
+	private static final int[][] TIERS;
+	private static final String[] TIER_NAMES;
+
+	static
+	{
+		JsonObject root = JsonResources.objectOrThrow("blowpipe_darts.json");
+		List<String> names = new ArrayList<>();
+		JsonResources.strings(root, "names", names);
+		TIER_NAMES = names.toArray(new String[0]);
+		JsonArray rows = root.getAsJsonArray("rows");
+		TIERS = new int[rows.size()][];
+		for (int t = 0; t < rows.size(); t++)
+		{
+			JsonArray row = rows.get(t).getAsJsonArray();
+			TIERS[t] = new int[row.size()];
+			for (int i = 0; i < row.size(); i++)
+			{
+				TIERS[t][i] = row.get(i).getAsInt();
+			}
+		}
+	}
 
 	private BlowpipeDarts()
 	{

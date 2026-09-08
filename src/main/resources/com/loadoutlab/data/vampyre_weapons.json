@@ -1,0 +1,31 @@
+{
+	"_comment": "Vampyre weapon sets (wiki): tier3 = the only weapons that harm tier-3 vampyres (Vyrewatch Sentinel page); silver = full damage vs tier 2 (others deal half).",
+	"tier3": [
+		"ivandis flail",
+		"blisterwood flail",
+		"blisterwood sickle",
+		"blisterwood stake",
+		"sunspear",
+		"hallowed flail"
+	],
+	"silver": [
+		"silverlight",
+		"darklight",
+		"arclight",
+		"wolfbane",
+		"rod of ivandis",
+		"silver sickle",
+		"emerald sickle",
+		"enchanted emerald sickle",
+		"diamond sickle",
+		"enchanted diamond sickle",
+		"blessed axe",
+		"silvthrill",
+		"ivandis flail",
+		"blisterwood flail",
+		"blisterwood sickle",
+		"blisterwood stake",
+		"sunspear",
+		"hallowed flail"
+	]
+}

@@ -15,6 +15,7 @@ import com.loadoutlab.data.MonsterSpellbooks;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.data.SpellRunes;
 import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.TripSupplies;
 import com.loadoutlab.data.WildernessMonsters;
 import com.loadoutlab.engine.BlowpipeDarts;
@@ -354,14 +355,12 @@ public class CommandEngine
 		this.link = link;
 	}
 
-	private static final Map<String, String> PARAM_LABELS = Map.ofEntries(
-		Map.entry("onTask", "On task"), Map.entry("inWilderness", "Wilderness"),
-		Map.entry("f2pOnly", "F2P"), Map.entry("specWeapon", "Spec weapon"),
-		Map.entry("antifirePotion", "Antifire"),
-		Map.entry("deathCharge", "Death charge"), Map.entry("viewingBis", "View"),
-		Map.entry("selectedTab", "Tab"), Map.entry("spellbookLock", "Spellbook"),
-		Map.entry("riskBudgetGp", "Risk cap"), Map.entry("upgradeBudgetGp", "Upgrade budget"),
-		Map.entry("maxSwaps", "Inventory"), Map.entry("toaInvocation", "Invocation"));
+	private static final Map<String, String> PARAM_LABELS = new LinkedHashMap<>();
+
+	static
+	{
+		JsonResources.stringMap(JsonResources.objectOrThrow("param_labels.json"), "labels", PARAM_LABELS);
+	}
 
 	/** Handle one contract command; returns false for an unknown or
 	 * malformed command (refused loudly at the seam, never guessed). */
@@ -1335,6 +1334,11 @@ public class CommandEngine
 			anyFire |= com.loadoutlab.engine.DragonfireRules.breathesFire(m);
 		}
 		a[6] = ((Boolean) a[6]) && anyFire;
+		if (cureMe(roster != null ? roster : List.of(mob)))
+		{
+			a[3] = "lunar";
+			a[7] = 0;
+		}
 		if (mob != null)
 		{
 			mob = atInvocation(mob);
@@ -1457,6 +1461,36 @@ public class CommandEngine
 	 * Shared by the live command and its undo/redo replays. */
 	/** A members mechanic is ON only when its param is on AND the F2P lock
 	 * is off - the lock vetoes without clearing (field ask 2026-08-27). */
+	/** Cure Me chosen for a venomous mob camps Lunar (Andrew 2026-09-08):
+	 * the lock, thralls and Death Charge follow. A pinned spell or a lock
+	 * to another book means the setup relies on that book - Cure Me
+	 * steps aside there (and is not offered). */
+	private boolean reliesOnAnotherBook(MonsterStats mob)
+	{
+		String pinned = stores == null || mob == null ? "" : stores.pinnedSpell(mob.getId());
+		String lock = String.valueOf(state.paramsNode().get("spellbookLock"));
+		return pinned != null && !pinned.isEmpty() || List.of("standard", "ancient", "arceuus").contains(lock);
+	}
+
+	private boolean cureMe(MonsterStats mob)
+	{
+		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
+		StoreOps ops = stores;
+		if (mob == null || ops == null || defaultsSupplier == null || !TripSupplies.inflictsVenom(mob)
+			|| reliesOnAnotherBook(mob))
+		{
+			return false;
+		}
+		String mode = ops.supplyOverrides(mob.profileId()).getOrDefault(TripSupplies.ANTIVENOM,
+			defaultsSupplier.get().getOrDefault(TripSupplies.ANTIVENOM, ""));
+		return "CURE_ME".equals(mode);
+	}
+
+	private boolean cureMe(List<MonsterStats> mobs)
+	{
+		return mobs != null && mobs.stream().anyMatch(this::cureMe);
+	}
+
 	private boolean membersFlag(String key)
 	{
 		Map<String, Object> params = state.paramsNode();
@@ -1667,7 +1701,7 @@ public class CommandEngine
 				seaLens = NavalCombat.isNaval(lensedMob.getName());
 			}
 		}
-		if (!seaLens && membersFlag("thralls"))
+		if (!seaLens && membersFlag("thralls") && !cureMe(mobs))
 		{
 			double dps = ExtraDps.thrallDps(magicLevel);
 			String tier = ExtraDps.thrallTier(magicLevel);
@@ -2063,6 +2097,11 @@ public class CommandEngine
 		{
 			String category = e.getKey();
 			String mode = overrides.getOrDefault(category, e.getValue());
+			boolean otherBook = reliesOnAnotherBook(lensed);
+			if (otherBook && "CURE_ME".equals(mode))
+			{
+				mode = "DETECT_BEST";
+			}
 			if ("NONE".equals(mode)
 				|| (seaOnly && !TripSupplies.SHIP_REPAIR_KIT.equals(category)))
 			{
@@ -2115,6 +2154,10 @@ public class CommandEngine
 			for (TripSupplies.Option option
 				: TripSupplies.options(category))
 			{
+				if (otherBook && "CURE_ME".equals(option.key))
+				{
+					continue;
+				}
 				Map<String, Object> opt = new LinkedHashMap<>();
 				opt.put("key", option.key);
 				opt.put("name", option.name);
@@ -2155,7 +2198,8 @@ public class CommandEngine
 		Map<String, Object> params = state.paramsNode();
 		boolean seaMob = stats != null
 			&& NavalCombat.isNaval(stats.getName());
-		if (!seaMob && membersFlag("thralls"))
+		boolean lunarCamp = cureMe(stats);
+		if (!seaMob && membersFlag("thralls") && !lunarCamp)
 		{
 			String tier = ExtraDps.thrallTier(magicLevel);
 			if (tier != null)
@@ -2166,7 +2210,7 @@ public class CommandEngine
 		}
 		Object dCharge = params.get("deathCharge");
 		boolean f2pLocked = Boolean.TRUE.equals(params.get("f2pOnly"));
-		if (!f2pLocked && dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
+		if (!f2pLocked && !lunarCamp && dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
@@ -2184,9 +2228,9 @@ public class CommandEngine
 			String fightBook = MonsterSpellbooks.bookFor(stats);
 			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
 				&& !"lunar".equalsIgnoreCase(fightBook);
-			elsewhere |= !seaMob && membersFlag("thralls");
+			elsewhere |= !seaMob && !lunarCamp && membersFlag("thralls");
 			Object charge = params.get("deathCharge");
-			elsewhere |= !f2pLocked && charge instanceof Number
+			elsewhere |= !f2pLocked && !lunarCamp && charge instanceof Number
 				&& ((Number) charge).intValue() > 0;
 			if (elsewhere)
 			{
@@ -2233,6 +2277,7 @@ public class CommandEngine
 					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
 					mob.put("note", ops.note(monsterId));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
+					mob.put("cureMe", cureMe(lensedMob()));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);
 					// The casting kit: divine rune pouch > rune pouch when

@@ -1916,7 +1916,8 @@ public class ResultCards
 						spellIcon.setIcon(Ui.icon(img, 18))));
 			}
 			String lock = Model.str(pageParams, "spellbookLock");
-			String lockText = lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
+			String lockText = Model.flag(mob, "cureMe") ? " - lunar book (Cure Me)"
+				: lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
 			JLabel spellName = new JLabel((shownSpell == null ? "Auto spell"
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
 					? " (pinned)" : "")) + lockText);

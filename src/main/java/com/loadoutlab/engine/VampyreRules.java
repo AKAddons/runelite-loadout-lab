@@ -1,5 +1,8 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.JsonResources;
+import java.util.ArrayList;
+import java.util.List;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.MonsterStats;
 
@@ -16,36 +19,10 @@ import com.loadoutlab.data.MonsterStats;
 public final class VampyreRules
 {
 	/** The only weapons that harm tier-3 vampyres (Vyrewatch Sentinel page). */
-	private static final String[] TIER3_WEAPONS = {
-		"ivandis flail",
-		"blisterwood flail",
-		"blisterwood sickle",
-		"blisterwood stake",
-		"sunspear",
-		"hallowed flail",
-	};
+	private static final String[] TIER3_WEAPONS = weapons("tier3");
 
 	/** Silver weaponry: full damage vs tier 2 (regular weapons deal half). */
-	private static final String[] SILVER_WEAPONS = {
-		"silverlight",
-		"darklight",
-		"arclight",
-		"wolfbane",
-		"rod of ivandis",
-		"silver sickle",
-		"emerald sickle",
-		"enchanted emerald sickle",
-		"diamond sickle",
-		"enchanted diamond sickle",
-		"blessed axe",
-		"silvthrill",
-		"ivandis flail",
-		"blisterwood flail",
-		"blisterwood sickle",
-		"blisterwood stake",
-		"sunspear",
-		"hallowed flail",
-	};
+	private static final String[] SILVER_WEAPONS = weapons("silver");
 
 	private VampyreRules()
 	{
@@ -69,6 +46,13 @@ public final class VampyreRules
 			return 1.0;
 		}
 		return 0.5;
+	}
+
+	private static String[] weapons(String key)
+	{
+		List<String> names = new ArrayList<>();
+		JsonResources.strings(JsonResources.objectOrThrow("vampyre_weapons.json"), key, names);
+		return names.toArray(new String[0]);
 	}
 
 	private static boolean matches(GearItem weapon, String[] prefixes)

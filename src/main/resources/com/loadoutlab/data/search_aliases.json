@@ -1,0 +1,26 @@
+{
+	"_comment": "Community nicknames and activity names -> the monster to show (normalizeQuery form). Raids and wave activities map to their final boss.",
+	"aliases": {
+		"thermy": "thermonuclear smoke devil",
+		"grotesque guardians": "dusk",
+		"fight caves": "tztokjad",
+		"the fight caves": "tztokjad",
+		"inferno": "tzkalzuk",
+		"the inferno": "tzkalzuk",
+		"gauntlet": "crystalline hunllef",
+		"the gauntlet": "crystalline hunllef",
+		"corrupted gauntlet": "corrupted hunllef",
+		"cox": "great olm",
+		"chambers of xeric": "great olm",
+		"toa": "tumekens warden",
+		"tombs of amascut": "tumekens warden",
+		"tob": "verzik vitur",
+		"theatre of blood": "verzik vitur",
+		"colosseum": "sol heredit",
+		"fortis colosseum": "sol heredit",
+		"fortis colosseum waves": "sol heredit",
+		"duke": "duke sucellus",
+		"kbd": "king black dragon",
+		"kq": "kalphite queen"
+	}
+}

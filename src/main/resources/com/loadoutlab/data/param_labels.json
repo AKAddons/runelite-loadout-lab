@@ -1,0 +1,18 @@
+{
+	"_comment": "Back/Forward history labels per page param.",
+	"labels": {
+		"onTask": "On task",
+		"inWilderness": "Wilderness",
+		"f2pOnly": "F2P",
+		"specWeapon": "Spec weapon",
+		"antifirePotion": "Antifire",
+		"deathCharge": "Death charge",
+		"viewingBis": "View",
+		"selectedTab": "Tab",
+		"spellbookLock": "Spellbook",
+		"riskBudgetGp": "Risk cap",
+		"upgradeBudgetGp": "Upgrade budget",
+		"maxSwaps": "Inventory",
+		"toaInvocation": "Invocation"
+	}
+}

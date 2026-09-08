@@ -1,0 +1,15 @@
+{
+	"_comment": "Task-only slayer monsters (wiki-verified 2026-07-18): off-task kills do not exist, or only via an elite clue step (shellbane gryphon; its quest copy '(Troubled Tortugans)' is a different row and stays free).",
+	"names": [
+		"kraken",
+		"cave kraken",
+		"cerberus",
+		"abyssal sire",
+		"thermonuclear smoke devil",
+		"alchemical hydra",
+		"araxxor",
+		"dusk",
+		"dawn",
+		"shellbane gryphon"
+	]
+}

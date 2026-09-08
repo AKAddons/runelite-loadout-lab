@@ -1,0 +1,79 @@
+{
+	"_comment": "Blowpipe dart tiers, best first: ranged strength and the dart item ids (plain, p, p+, p++). Wiki-verified; regenerate by hand when a tier is added. rows = [strength, plain, p, p+, p++].",
+	"names": [
+		"dragon darts",
+		"amethyst darts",
+		"rune darts",
+		"adamant darts",
+		"mithril darts",
+		"black darts",
+		"steel darts",
+		"iron darts",
+		"bronze darts"
+	],
+	"rows": [
+		[
+			35,
+			11230,
+			11231,
+			11233,
+			11234
+		],
+		[
+			28,
+			25849,
+			25851,
+			25855,
+			25857
+		],
+		[
+			26,
+			811,
+			817,
+			5634,
+			5641
+		],
+		[
+			17,
+			810,
+			816,
+			5633,
+			5640
+		],
+		[
+			9,
+			809,
+			815,
+			5632,
+			5639
+		],
+		[
+			6,
+			3093,
+			3094,
+			5631,
+			5638
+		],
+		[
+			3,
+			808,
+			814,
+			5630,
+			5637
+		],
+		[
+			2,
+			807,
+			813,
+			5629,
+			5636
+		],
+		[
+			1,
+			806,
+			812,
+			5628,
+			5635
+		]
+	]
+}

@@ -1,5 +1,6 @@
 package com.loadoutlab.data;
 
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -11,21 +12,12 @@ import java.util.Set;
  */
 public final class SlayerLockedMonsters
 {
-	private static final Set<String> NAMES = Set.of(
-		"kraken",
-		"cave kraken",
-		"cerberus",
-		"abyssal sire",
-		"thermonuclear smoke devil",
-		"alchemical hydra",
-		"araxxor",
-		"dusk",
-		"dawn",
-		// Wiki-verified 2026-07-18: off-task kills exist only via an elite
-		// clue step, and the boss stops respawning once the task ends -
-		// task-locked for all practical purposes. The quest copy is a
-		// different row name ("(Troubled Tortugans)") and stays free.
-		"shellbane gryphon");
+	private static final Set<String> NAMES = new HashSet<>();
+
+	static
+	{
+		JsonResources.strings(JsonResources.objectOrThrow("slayer_locked_monsters.json"), "names", NAMES);
+	}
 
 	private SlayerLockedMonsters()
 	{

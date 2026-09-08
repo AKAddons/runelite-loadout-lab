@@ -91,6 +91,15 @@ public final class JsonResources
 	}
 
 	/** Copy the {"name": int} object at root[key] into the map. */
+	public static void stringMap(JsonObject root, String key, Map<String, String> into)
+	{
+		JsonObject obj = root == null ? null : root.getAsJsonObject(key);
+		if (obj != null)
+		{
+			obj.entrySet().forEach(e -> into.put(e.getKey(), e.getValue().getAsString()));
+		}
+	}
+
 	public static void stringIntMap(JsonObject root, String key, Map<String, Integer> into)
 	{
 		if (root == null || !root.has(key))

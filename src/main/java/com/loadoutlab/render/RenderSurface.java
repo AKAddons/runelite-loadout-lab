@@ -470,13 +470,6 @@ public class RenderSurface
 		});
 	}
 
-	/** Paint a pill as inactive (a sibling losing the selection). */
-	static void dimPill(JLabel label)
-	{
-		paintPill(label, false);
-		label.repaint();
-	}
-
 	private static void paintPill(JLabel label, boolean on)
 	{
 		label.setForeground(on ? CHIP_ON : CHIP_OFF);
