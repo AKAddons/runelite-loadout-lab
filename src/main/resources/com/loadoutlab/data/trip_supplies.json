@@ -1,5 +1,5 @@
 {
-	"_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely). Cure Me (2 astral 2 cosmic, Lunar) converts venom to poison; the Prayer book cures poison for prayer points and venom to poison for up to 50 while a holy/hallowed symbol is worn (wiki 2026-09-08; Apathy's ironman ask) - both detect:false, choices only.",
+	"_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely). Cure Me (2 astral 2 cosmic 1 law, Lunar) converts venom to poison; the Prayer book cures poison for prayer points and venom to poison for up to 50 while a holy/hallowed symbol is worn (wiki 2026-09-08; Apathy's ironman ask) - both detect:false, choices only.",
 	"food": [
 		{
 			"key": "MOONLIGHT_ANTELOPE",
@@ -229,12 +229,14 @@
 			"name": "Cure Me (Lunar) - venom becomes poison",
 			"ids": [
 				9075,
-				564
+				564,
+				563
 			],
 			"detect": false,
 			"names": [
 				"Astral rune (Cure Me)",
-				"Cosmic rune (Cure Me)"
+				"Cosmic rune (Cure Me)",
+				"Law rune (Cure Me)"
 			]
 		},
 		{

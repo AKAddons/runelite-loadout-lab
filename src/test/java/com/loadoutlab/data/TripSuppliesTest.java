@@ -199,12 +199,12 @@ public class TripSuppliesTest
 		org.junit.jupiter.api.Assertions.assertEquals(9075, cureMe.ids[0], "astral rune leads the Cure Me kit");
 		org.junit.jupiter.api.Assertions.assertEquals(10890, book.ids[0], "the prayer book itself leads its kit");
 		// Kits name every item so the card shows each one (field 2026-09-08: the holy symbol was filter-only).
-		org.junit.jupiter.api.Assertions.assertArrayEquals(new String[]{"Astral rune (Cure Me)", "Cosmic rune (Cure Me)"}, cureMe.names);
+		org.junit.jupiter.api.Assertions.assertArrayEquals(new String[]{"Astral rune (Cure Me)", "Cosmic rune (Cure Me)", "Law rune (Cure Me)"}, cureMe.names);
 		org.junit.jupiter.api.Assertions.assertArrayEquals(new String[]{"Prayer book", "Holy symbol"}, book.names);
 		org.junit.jupiter.api.Assertions.assertEquals(0, TripSupplies.option(TripSupplies.ANTIVENOM, "ANTIVENOM_PLUS").names.length, "potions are one cell");
 		// Owning every rune and the book still leaves Detect-best on the potions.
 		TripSupplies.Option detected = TripSupplies.detectBest(TripSupplies.ANTIVENOM,
-			id -> id == 9075 || id == 564 || id == 10890 || id == 1718);
+			id -> id == 9075 || id == 564 || id == 563 || id == 10890 || id == 1718);
 		org.junit.jupiter.api.Assertions.assertNull(detected);
 	}
 }
