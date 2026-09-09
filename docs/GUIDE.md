@@ -74,7 +74,7 @@ searches, panel settings, AND edits in one history: search Zulrah,
 flip the slayer toggle, search Vorkath - back, back, back retraces
 each of those in turn. Steps cover: monster selections; the toggles
 (F2P, slayer task, wilderness, low-risk, Protect Item); the spellbook
-and risk-cap dropdowns; the upgrade budget; and
+and risk-cap dropdowns; the upgrade budget; the dragonfire pick; and
 every edit (exclusions, pins, notes, simmed items, protect-only
 flags, pinned spells, trip supplies). Hover for
 exactly what's next ("Back: Spellbook: Ancient").

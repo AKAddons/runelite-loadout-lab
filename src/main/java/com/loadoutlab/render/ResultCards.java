@@ -719,7 +719,8 @@ public class ResultCards
 				Ui.onClick(boostIconCell, () -> showBoostMenu(boostIconCell, tabKey));
 			}
 			headerRow.add(boostIconCell);
-			if (!Model.str(mob, "antivenom").isEmpty())
+			String antivenom = Model.str(mob, "antivenom");
+			if (antivenom != null && !antivenom.isEmpty())
 			{
 				headerRow.add(poisonPlate(mob, bis));
 			}

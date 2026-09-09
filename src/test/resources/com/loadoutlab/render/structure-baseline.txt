@@ -203,6 +203,7 @@ JPanel
           JLabel "Ranged" tip=Assumes: Rigour + Ranging potion
           JLabel tip=Assumes: Rigour + Ranging potion - click to change the prayer
           JLabel tip=Assumes: Rigour + Ranging potion - click to change the boost
+          JLabel tip=Dragonfire: Dragonfire shield required - click to change
           JLabel tip=No specific spellbook required - a powered staff casts on any book
       JPanel
         JPanel
@@ -778,6 +779,7 @@ JPanel
           JLabel "Ranged" tip=Assumes: Rigour + Ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
+          JLabel tip=Dragonfire: Dragonfire shield required
           JLabel tip=No specific spellbook required - a powered staff casts on any book
       JPanel
         JPanel
