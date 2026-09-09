@@ -97,4 +97,24 @@ class CureMeLockTest
 		assertEquals("", lock.get(), "no venom, no Cure Me");
 		assertEquals(1, charge.get());
 	}
+
+	@Test
+	@DisplayName("a fight book elsewhere blocks Arceuus casts: the Sire (Ancients) computes without Death Charge until Spellbook Swap is on")
+	void fightBookBlocksArceuus()
+	{
+		AtomicInteger charge = new AtomicInteger(-1);
+		CommandEngine engine = new CommandEngine(data, new PageState(),
+			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, onDone) -> charge.set(dc), new CompanionLink());
+		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+			boosts, prayers, budget, swaps, onDone) -> charge.set(dc));
+		engine.setStoreOps(new TestStoreOps());
+		engine.setSupplyDefaults(() -> Map.of("antivenom", "DETECT_BEST"));
+		assertTrue(engine.execute("set-param", Map.of("param", "deathCharge", "value", 1)));
+		assertTrue(engine.execute("select", Map.of("query", "abyssal sire")));
+		assertEquals(0, charge.get(), "Ancients fight book, no swap: Death Charge cannot be cast");
+		assertTrue(engine.execute("set-param", Map.of("param", "spellbookSwap", "value", true)));
+		assertTrue(engine.execute("select", Map.of("query", "abyssal sire")));
+		assertEquals(1, charge.get(), "Lunar home + swap: Arceuus casts are back");
+	}
 }

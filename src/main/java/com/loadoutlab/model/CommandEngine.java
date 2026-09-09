@@ -1317,9 +1317,13 @@ public class CommandEngine
 			anyFire |= com.loadoutlab.engine.DragonfireRules.breathesFire(m);
 		}
 		a[6] = ((Boolean) a[6]) && anyFire;
-		if (cureMe(roster != null ? roster : List.of(mob)))
+		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
+		if (cureMe(computed))
 		{
 			a[3] = "lunar";
+		}
+		if (arceuusBlocked(computed))
+		{
 			a[7] = 0;
 		}
 		if (mob != null)
@@ -1482,6 +1486,34 @@ public class CommandEngine
 		return mobs != null && mobs.stream().anyMatch(this::cureMe);
 	}
 
+	/** Arceuus casts (thralls, Death Charge) stand down: Cure Me camps Lunar,
+	 * or the fight book is elsewhere (the Sire's Ancients) with no Spellbook
+	 * Swap to reach Arceuus (Andrew 2026-09-09). */
+	private boolean arceuusBlocked(MonsterStats mob)
+	{
+		if (cureMe(mob))
+		{
+			return true;
+		}
+		String fightBook = mob == null ? null : MonsterSpellbooks.bookFor(mob);
+		Supplier<Map<String, String>> defaults = supplyDefaults;
+		boolean swap = Boolean.TRUE.equals(state.paramsNode().get("spellbookSwap"))
+			|| defaults != null && "SPELLBOOK_SWAP".equals(defaults.get().get("arceuusAccess"));
+		return fightBook != null && !fightBook.isEmpty() && !"arceuus".equals(fightBook) && !swap;
+	}
+
+	private boolean fightBookElsewhere()
+	{
+		List<MonsterStats> mobs = lastMobs != null ? lastMobs : shownMob() == null ? List.of() : List.of(shownMob());
+		return mobs.stream().map(MonsterSpellbooks::bookFor)
+			.anyMatch(b -> b != null && !b.isEmpty() && !"arceuus".equals(b));
+	}
+
+	private boolean arceuusBlocked(List<MonsterStats> mobs)
+	{
+		return mobs != null && mobs.stream().anyMatch(this::arceuusBlocked);
+	}
+
 	private boolean membersFlag(String key)
 	{
 		Map<String, Object> params = state.paramsNode();
@@ -1515,7 +1547,10 @@ public class CommandEngine
 					String.valueOf(state.paramsNode().get(key)));
 			}
 		}
-		if (PageState.isViewParam(key))
+		// The swap is supplies-only, except where it unlocks Arceuus casts
+		// under a fight book elsewhere (the Sire): Death Charge rides the
+		// compute there (Andrew 2026-09-09).
+		if (PageState.isViewParam(key) && !("spellbookSwap".equals(key) && fightBookElsewhere()))
 		{
 			republish();
 		}
@@ -1692,7 +1727,7 @@ public class CommandEngine
 				seaLens = NavalCombat.isNaval(lensedMob.getName());
 			}
 		}
-		if (!seaLens && membersFlag("thralls") && !cureMe(mobs))
+		if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs))
 		{
 			double dps = ExtraDps.thrallDps(magicLevel);
 			String tier = ExtraDps.thrallTier(magicLevel);
@@ -2195,7 +2230,7 @@ public class CommandEngine
 		Map<String, Object> params = state.paramsNode();
 		boolean seaMob = stats != null
 			&& NavalCombat.isNaval(stats.getName());
-		boolean lunarCamp = cureMe(stats);
+		boolean lunarCamp = arceuusBlocked(stats);
 		if (!seaMob && membersFlag("thralls") && !lunarCamp)
 		{
 			String tier = ExtraDps.thrallTier(magicLevel);
@@ -2275,6 +2310,7 @@ public class CommandEngine
 					mob.put("note", ops.note(monsterId));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					mob.put("cureMe", cureMe(lensedMob()));
+					mob.put("arceuusBlocked", arceuusBlocked(lensedMob()));
 					mob.put("antivenom", antivenomMode(lensedMob()));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);

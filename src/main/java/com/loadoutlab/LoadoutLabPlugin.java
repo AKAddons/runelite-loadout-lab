@@ -724,15 +724,8 @@ public class LoadoutLabPlugin extends Plugin
 					public List<Map<String, Object>> mobExclusions(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
-						for (Map.Entry<String, Set<Integer>> scope
-							: mobProfiles.allExclusions(monsterId).entrySet())
-						{
-							for (int id : scope.getValue())
-							{
-								out.add(Map.of("id", id, "name", itemLabel(id),
-									"scope", scope.getKey()));
-							}
-						}
+						mobProfiles.allExclusions(monsterId).forEach((scope, ids) ->
+							ids.forEach(id -> out.add(row(id, itemLabel(id), scope))));
 						return out;
 					}
 
@@ -740,11 +733,7 @@ public class LoadoutLabPlugin extends Plugin
 					public List<Map<String, Object>> mobSims(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
-						for (Map.Entry<Integer, String> sim
-							: mobProfiles.allSims(monsterId).entrySet())
-						{
-							out.add(Map.of("id", sim.getKey(), "name", sim.getValue()));
-						}
+						mobProfiles.allSims(monsterId).forEach((id, name) -> out.add(row(id, name, null)));
 						return out;
 					}
 
@@ -752,15 +741,8 @@ public class LoadoutLabPlugin extends Plugin
 					public List<Map<String, Object>> mobFilters(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
-						for (Map.Entry<String, Map<Integer, String>> scope
-							: mobProfiles.allFilterItems(monsterId).entrySet())
-						{
-							for (Map.Entry<Integer, String> item : scope.getValue().entrySet())
-							{
-								out.add(Map.of("id", item.getKey(), "name", item.getValue(),
-									"scope", scope.getKey()));
-							}
-						}
+						mobProfiles.allFilterItems(monsterId).forEach((scope, items) ->
+							items.forEach((id, name) -> out.add(row(id, name, scope))));
 						return out;
 					}
 
@@ -1442,6 +1424,12 @@ public class LoadoutLabPlugin extends Plugin
 
 	/** Item label for command descriptions, from the gear corpus (EDT-safe -
 	 * never ItemManager, which is client-thread-only). */
+	/** One trio-menu row: {id, name[, scope]}. */
+	private static Map<String, Object> row(int id, String name, String scope)
+	{
+		return scope == null ? Map.of("id", id, "name", name) : Map.of("id", id, "name", name, "scope", scope);
+	}
+
 	private String itemLabel(int itemId)
 	{
 		com.loadoutlab.data.GearItem item = data == null ? null : data.getGear(itemId);

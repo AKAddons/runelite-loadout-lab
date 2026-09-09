@@ -894,9 +894,10 @@ public class RenderSurface
 			// 2026-08-27). Their params survive for the untick.
 			boolean f2pLocked = Model.flag(params, "f2pOnly");
 			boolean lensNaval = lensedNaval(page);
-			// Cure Me camps Lunar: the Arceuus chips do nothing there and hide,
-			// like on a boat (Andrew 2026-09-09: "it should disable it").
-			boolean lensLunar = lensedFlag(page, "cureMe");
+			// Arceuus casts blocked (Cure Me camps Lunar; a fight book elsewhere
+			// with no swap - the Sire): the chips do nothing and hide, like on
+			// a boat (Andrew 2026-09-09: "it should disable it").
+			boolean lensLunar = lensedFlag(page, "arceuusBlocked");
 			Map<String, Object> history = Model.map(page, "history");
 			if (history != null && undoButton != null)
 			{
