@@ -67,9 +67,10 @@ public class ResultCards
 		this.degradableChip = shown;
 	}
 
-	/** The Degrades chip (Mike, Discord 2026-09-07): N degrading items in
-	 * the shown set; on = that gear is skipped for this mob. */
-	private JLabel degradesChip(Map<String, Object> mob, Map<String, Object> card)
+	/** The trio's fourth sigil (Mike, Discord 2026-09-07; Andrew 2026-09-08:
+	 * the text pill clipped): *N = N degrading items in the shown set,
+	 * amber when that gear is skipped for this mob. */
+	private JButton degradesButton(Map<String, Object> mob, Map<String, Object> card)
 	{
 		int n = 0;
 		Map<String, Object> gear = Model.map(card, "gear");
@@ -85,10 +86,16 @@ public class ResultCards
 		{
 			return null;
 		}
-		return RenderSurface.pill(skip ? "No degradables" : "Degrades " + n, skip,
-			skip ? "Degradable gear is skipped for this mob - click to allow it"
-				: "Click to skip gear that wears down or burns charges for this mob",
-			() -> commands.send("toggle-degradable", new HashMap<>()));
+		JButton button = new JButton("*" + n);
+		button.setForeground(skip ? new Color(230, 180, 90) : new Color(150, 140, 120));
+		button.setContentAreaFilled(false);
+		button.setBorder(skip ? new RoundedBorder(new Color(190, 150, 70), 2, 14)
+			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
+		button.setToolTipText(skip ? "Degradable gear skipped for this mob - click to allow it"
+			: n + " here wear down or burn charges - click to skip them for this mob");
+		button.setFocusable(false);
+		button.addActionListener(e -> commands.send("toggle-degradable", new HashMap<>()));
+		return button;
 	}
 
 	public void setSailingIcon(Supplier<BufferedImage> icon)
@@ -1004,7 +1011,7 @@ public class ResultCards
 			new Color(190, 190, 190), new Color(130, 130, 130), new Color(150, 150, 150),
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
 			"Add a supply to this mob's bank filter"));
-		JLabel degrades = degradesChip(mob, Model.map(node, bis ? "bis" : "yours"));
+		JButton degrades = degradesButton(mob, Model.map(node, bis ? "bis" : "yours"));
 		if (degrades != null)
 		{
 			trioRow.add(degrades);

@@ -277,8 +277,9 @@ exclusions are managed from the "This mob" line.
 ### Degradable gear chip
 
 A card whose set wears down or burns charges (Barrows, Moons, crystal,
-tentacle, blowpipe, tridents, charged raid weapons) shows a "Degrades N"
-chip on its "This mob" line. Click it to skip that gear for the mob and
+tentacle, blowpipe, tridents, charged raid weapons) shows a fourth sigil
+on its "This mob" trio: "*2" means two such items are in the set. Click
+it to skip that gear for the mob (it turns amber) and
 the card recomputes from what is left, so a set of moon tassets gives way
 to dragon platelegs. Click again to allow it. Charge-once items (the
 dragonfire shield and ward, the ancient wyvern shield) and corrupted

@@ -296,7 +296,7 @@
         "collection/MonsterProfileStoreTest.java",
         "optimizer/DegradableChipTest.java"
       ],
-      "notes": "Mike (Discord 2026-09-07) asked to exclude degradable gear; Andrew made it a per-mob chip (2026-09-08). One group: wear-down (Barrows, Moons, crystal, Vesta's, amulet of the damned) plus per-hit/cast charges (tentacle, blowpipe, tridents, sang, scythe, shadow, arclight, serp, blood fury, tomes); charge-once shields, teleport/skilling charges and corrupted crystal are out. The list is degradable_gear.json (name substrings + vetoes); skipping folds the ids into the mob's exclusions in MonsterProfileStore.exclusionsFor so both single-mob and roster computes see it and the manage menu stays hand-picked. No dedicated screenshot yet."
+      "notes": "Mike (Discord 2026-09-07) asked to exclude degradable gear; Andrew made it a per-mob chip (2026-09-08). One group: wear-down (Barrows, Moons, crystal, Vesta's, amulet of the damned) plus per-hit/cast charges (tentacle, blowpipe, tridents, sang, scythe, shadow, arclight, serp, blood fury, tomes); charge-once shields, teleport/skilling charges and corrupted crystal are out. The list is degradable_gear.json (name substrings + vetoes); skipping folds the ids into the mob's exclusions in MonsterProfileStore.exclusionsFor so both single-mob and roster computes see it and the manage menu stays hand-picked. No dedicated screenshot yet. 2026-09-08 field: the text pill clipped in the trio row; now the trio's fourth sigil (*N, amber when skipping)."
     },
     {
       "id": "bank-tools",
