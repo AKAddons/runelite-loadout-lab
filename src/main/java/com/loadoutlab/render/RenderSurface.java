@@ -110,6 +110,11 @@ public class RenderSurface
 
 	private static boolean lensedNaval(Map<String, Object> page)
 	{
+		return lensedFlag(page, "naval");
+	}
+
+	private static boolean lensedFlag(Map<String, Object> page, String flag)
+	{
 		Map<String, Object> params = ResultCards.firstParams(page);
 		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
@@ -118,7 +123,7 @@ public class RenderSurface
 			if (!entryMobs.isEmpty())
 			{
 				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
-				if (Model.flag(entryMobs.get(shown), "naval"))
+				if (Model.flag(entryMobs.get(shown), flag))
 				{
 					return true;
 				}
@@ -889,6 +894,9 @@ public class RenderSurface
 			// 2026-08-27). Their params survive for the untick.
 			boolean f2pLocked = Model.flag(params, "f2pOnly");
 			boolean lensNaval = lensedNaval(page);
+			// Cure Me camps Lunar: the Arceuus chips do nothing there and hide,
+			// like on a boat (Andrew 2026-09-09: "it should disable it").
+			boolean lensLunar = lensedFlag(page, "cureMe");
 			Map<String, Object> history = Model.map(page, "history");
 			if (history != null && undoButton != null)
 			{
@@ -944,7 +952,7 @@ public class RenderSurface
 				// Thralls hide under the F2P lock AND for a sea lens (thrall
 				// resurrections cannot be cast on a boat - confirmed
 				// 2026-08-31; a chip that does nothing is noise).
-				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval))
+				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval || lensLunar))
 				{
 					continue;
 				}
@@ -986,7 +994,7 @@ public class RenderSurface
 						Map.of("param", "cannonCount", "value", (cannons + 1) % 3))));
 			}
 			int dCharge = Model.id(params, "deathCharge");
-			if (!f2pLocked)
+			if (!f2pLocked && !lensLunar)
 			{
 				chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
 					dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",
