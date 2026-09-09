@@ -50,9 +50,26 @@ class BoltSpellModifiersTest
 	}
 
 	/** Max hit for a spell on a staff of fire, plus any named extras. */
+	@Test
+	@DisplayName("Salarin honours the elemental amulet alone: strikes stay a flat 12 for every other item, 14 with it")
+	void salarin()
+	{
+		MonsterStats salarin = data.searchMonsters("Salarin", 1).iterator().next();
+		assertEquals(12, maxHitVs(salarin, "Fire Strike"));
+		assertEquals(12, maxHitVs(salarin, "Fire Strike", "occult necklace"), "spell damage items do nothing");
+		assertEquals(14, maxHitVs(salarin, "Fire Strike", "elemental amulet"), "the sole exception (wiki)");
+		assertEquals(12, maxHitVs(salarin, "Fire Strike", "amulet of fire"), "the wiki names the elemental amulet only");
+		assertEquals(14, maxHitVs(salarin, "Wind Strike", "elemental amulet"), "every strike is treated as the top bolt");
+	}
+
 	private static int maxHit(String spellName, String... extras)
 	{
-		OptimizationRequest request = TestRequests.of(goblin, CombatStyle.MAGIC, PlayerLevels.MAXED,
+		return maxHitVs(goblin, spellName, extras);
+	}
+
+	private static int maxHitVs(MonsterStats monster, String spellName, String... extras)
+	{
+		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, spell(spellName), 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);

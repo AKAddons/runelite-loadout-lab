@@ -174,7 +174,13 @@ public final class DpsCalculator
 		{
 			int magic = request.getLevels().getMagic();
 			int flat = magic >= 13 ? 12 : magic >= 9 ? 11 : magic >= 5 ? 10 : 9;
-			counted("salarin", "strikes deal a flat " + flat + " - gear does not matter");
+			// The one item Salarin honours (wiki): the elemental amulet's +2.
+			if (wearing(loadout, "elemental amulet"))
+			{
+				flat += 2;
+				counted("elemental amulet", "+2 max hit - the one item Salarin honours");
+			}
+			counted("salarin", "strikes deal a flat " + flat + " - other gear does not matter");
 			result = result.withHitModel(
 				flat / (result.getAttackSpeed() * RollMath.SECONDS_PER_TICK),
 				1.0, flat, flat);
