@@ -1452,7 +1452,9 @@ public class CommandEngine
 	{
 		String pinned = stores == null || mob == null ? "" : stores.pinnedSpell(mob.getId());
 		String lock = String.valueOf(state.paramsNode().get("spellbookLock"));
-		return pinned != null && !pinned.isEmpty() || List.of("standard", "ancient", "arceuus").contains(lock);
+		String fightBook = mob == null ? "" : String.valueOf(MonsterSpellbooks.bookFor(mob));
+		List<String> others = List.of("standard", "ancient", "arceuus");
+		return pinned != null && !pinned.isEmpty() || others.contains(lock) || others.contains(fightBook);
 	}
 
 	/** The mob's resolved anti-venom choice ("" off venom); Cure Me under
@@ -1716,7 +1718,7 @@ public class CommandEngine
 		page.put("dartTiers", BlowpipeDarts.tiers());
 		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
-			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies));
+			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies, cureMe(mobs)));
 		link.publishPage(page);
 	}
 

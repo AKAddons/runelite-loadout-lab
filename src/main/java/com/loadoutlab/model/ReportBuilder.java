@@ -26,7 +26,7 @@ final class ReportBuilder
 	static String build(String version, PageState state, List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
 		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
-		List<Map<String, Object>> supplies)
+		List<Map<String, Object>> supplies, boolean lunarCamp)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
@@ -37,7 +37,7 @@ final class ReportBuilder
 				.append(" - ").append(mob.getHitpoints()).append(" hp\n");
 			if (i == 0)
 			{
-				appendParams(sb, state, counts);
+				appendParams(sb, state, counts, lunarCamp);
 				if (thralls != null)
 				{
 					sb.append("  Thralls: ").append(thralls.get("tier"))
@@ -112,7 +112,7 @@ final class ReportBuilder
 		return sb.toString();
 	}
 
-	private static void appendParams(StringBuilder sb, PageState state, Map<String, Object> counts)
+	private static void appendParams(StringBuilder sb, PageState state, Map<String, Object> counts, boolean lunarCamp)
 	{
 		Map<String, Object> params = state.paramsNode();
 		String tab = String.valueOf(params.getOrDefault("selectedTab", ""));
@@ -131,8 +131,8 @@ final class ReportBuilder
 		sb.append("  Death charge: ").append(params.get("deathCharge"));
 		sb.append("; Invocation: ").append(params.get("toaInvocation"));
 		Object lock = params.get("spellbookLock");
-		sb.append("; Spellbook lock: ").append(lock == null || String.valueOf(lock).isEmpty()
-			? "auto" : lock);
+		sb.append("; Spellbook lock: ").append(lunarCamp ? "lunar (Cure Me)"
+			: lock == null || String.valueOf(lock).isEmpty() ? "auto" : lock);
 		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp"));
 		if (Boolean.TRUE.equals(params.get("inWilderness")))
 		{

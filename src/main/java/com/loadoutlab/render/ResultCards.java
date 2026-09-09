@@ -1427,6 +1427,12 @@ public class ResultCards
 			required = fightBook;
 			reason = Model.str(mob, "fightBookReason");
 		}
+		if (Model.flag(mob, "cureMe"))
+		{
+			// Cure Me camps Lunar and outranks the thralls rule below.
+			required = "lunar";
+			reason = "Cure Me";
+		}
 		if (required == null && pageParams != null
 			&& (Model.flag(pageParams, "thralls") || Model.id(pageParams, "deathCharge") > 0))
 		{
