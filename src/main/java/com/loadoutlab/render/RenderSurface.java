@@ -458,21 +458,6 @@ public class RenderSurface
 			() -> commands.send("set-param", Map.of("param", key, "value", !selected)));
 	}
 
-	private static boolean anyBreathesFire(Map<String, Object> page)
-	{
-		for (Map<String, Object> entry : Model.list(page, "entries"))
-		{
-			for (Map<String, Object> mob : Model.list(entry, "mobs"))
-			{
-				if (Model.flag(mob, "breathesFire"))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	private static boolean anyInvocationScaled(Map<String, Object> page)
 	{
 		for (Map<String, Object> entry : Model.list(page, "entries"))
@@ -989,15 +974,6 @@ public class RenderSurface
 			{
 				chipRow.add(paramChip("Wildy", "inWilderness",
 					Model.flag(params, "inWilderness")));
-			}
-			if (anyBreathesFire(page))
-			{
-				int af = Model.id(params, "antifireMode");
-				chipRow.add(pill(af == 0 ? "No antifire" : af == 1 ? "Antifire" : "Super antifire",
-					af > 0, (af + 1) % 3 > 0,
-					"Cycles: dragonfire shield required / regular / super antifire",
-					() -> commands.send("set-param",
-						Map.of("param", "antifireMode", "value", (af + 1) % 3))));
 			}
 			// Cannons ride the chips section (Andrew, v2) for the LENSED
 			// ship-eligible mob; the per-cannon pickers live on the card.

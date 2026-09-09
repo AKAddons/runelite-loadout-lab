@@ -74,7 +74,7 @@ searches, panel settings, AND edits in one history: search Zulrah,
 flip the slayer toggle, search Vorkath - back, back, back retraces
 each of those in turn. Steps cover: monster selections; the toggles
 (F2P, slayer task, wilderness, low-risk, Protect Item); the spellbook
-and risk-cap dropdowns; the upgrade budget; the antifire flip; and
+and risk-cap dropdowns; the upgrade budget; and
 every edit (exclusions, pins, notes, simmed items, protect-only
 flags, pinned spells, trip supplies). Hover for
 exactly what's next ("Back: Spellbook: Ancient").
@@ -231,7 +231,8 @@ also offers Cure Me (Lunar runes; venom becomes poison) and the prayer
 book with a holy symbol (cures for prayer points), as choices rather than
 detected tiers. On a venomous mob the poison plan also sits in the card's Assumes row,
 right after the boost: the Cure Me spell, the chosen potion or the prayer
-book; click it to change. Choosing Cure Me camps the trip on Lunar: the
+book; click it to change. A fire-breather gets a dragonfire plate beside
+it: the shield the set must carry, an antifire potion or a super antifire. Choosing Cure Me camps the trip on Lunar: the
 magic card locks to built-in staves and thralls and Death Charge stand
 down. It is
 not offered while a pinned spell or a spellbook lock relies on another

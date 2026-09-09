@@ -723,6 +723,10 @@ public class ResultCards
 			{
 				headerRow.add(poisonPlate(mob, bis));
 			}
+			if (Model.flag(mob, "breathesFire"))
+			{
+				headerRow.add(firePlate(bis));
+			}
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
@@ -1856,6 +1860,36 @@ public class ResultCards
 				}
 			}
 			JPopupMenu menu = supplyMenu("antivenom", options);
+			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
+		}
+		return plate;
+	}
+
+	/** Dragonfire protection beside the poison plan (Andrew 2026-09-09:
+	 * "follow suit"): the shield the set must carry, the antifire potion
+	 * or the super antifire; click picks. Replaces the chip-row pill. */
+	private JLabel firePlate(boolean bis)
+	{
+		int mode = Model.id(pageParams, "antifireMode");
+		String[] names = {"Dragonfire shield required", "Antifire potion", "Super antifire"};
+		int[] items = {11283, 2452, 21978};
+		JLabel plate = new JLabel();
+		plate.setPreferredSize(new Dimension(24, 24));
+		plate.setHorizontalAlignment(SwingConstants.CENTER);
+		plate.setToolTipText("Dragonfire: " + names[mode] + (bis ? "" : " - click to change"));
+		if (itemManager != null)
+		{
+			seatItem(plate, items[mode]);
+		}
+		if (!bis)
+		{
+			JPopupMenu menu = new JPopupMenu();
+			for (int i = 0; i < names.length; i++)
+			{
+				int value = i;
+				Ui.item(menu, names[i], () -> commands.send("set-param",
+					Map.of("param", "antifireMode", "value", value)));
+			}
 			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
 		}
 		return plate;
