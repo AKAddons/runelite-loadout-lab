@@ -1064,7 +1064,15 @@ public class CommandEngine
 				}
 				ops.setSupplyOverride(lensed.profileId(), (String) category,
 					choice instanceof String ? (String) choice : "DETECT");
-				republish();
+				// Anti-venom can camp Lunar (Cure Me): the lock rides the compute.
+				if (TripSupplies.ANTIVENOM.equals(category))
+				{
+					recompute();
+				}
+				else
+				{
+					republish();
+				}
 				return true;
 			}
 			case "set-pinned-spell":
@@ -2115,16 +2123,6 @@ public class CommandEngine
 			{
 				continue;
 			}
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("category", category);
-			node.put("name", pick.name);
-			node.put("itemId", pick.ids.length > 0 ? pick.ids[0] : 0);
-			List<Integer> doses = new ArrayList<>();
-			for (int id : pick.ids)
-			{
-				doses.add(id);
-			}
-			node.put("ids", doses);
 			List<Map<String, Object>> options = new ArrayList<>();
 			for (TripSupplies.Option option
 				: TripSupplies.options(category))
@@ -2138,8 +2136,24 @@ public class CommandEngine
 				opt.put("name", option.name);
 				options.add(opt);
 			}
-			node.put("options", options);
-			nodes.add(node);
+			// A kit names every item and gets a cell each (field 2026-09-08:
+			// the holy symbol was filter-only); doses share one cell.
+			boolean kit = pick.names.length == pick.ids.length && pick.names.length > 1;
+			for (int i = 0; i < (kit ? pick.ids.length : 1); i++)
+			{
+				Map<String, Object> node = new LinkedHashMap<>();
+				node.put("category", category);
+				node.put("name", kit ? pick.names[i] : pick.name);
+				node.put("itemId", pick.ids.length > 0 ? pick.ids[i] : 0);
+				List<Integer> doses = new ArrayList<>();
+				for (int id : kit ? new int[]{pick.ids[i]} : pick.ids)
+				{
+					doses.add(id);
+				}
+				node.put("ids", doses);
+				node.put("options", options);
+				nodes.add(node);
+			}
 		}
 		return nodes;
 	}

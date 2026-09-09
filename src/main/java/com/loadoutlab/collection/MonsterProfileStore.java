@@ -51,6 +51,11 @@ public class MonsterProfileStore
 	/** Serialized form: scope -> slot-name -> id for pins; scope -> id ->
 	 * display name for filter items (names captured at add time - id
 	 * resolution later needs the client thread). */
+	private Stored stored(int monsterId)
+	{
+		return profiles.computeIfAbsent(monsterId, id -> new Stored());
+	}
+
 	private static final class Stored
 	{
 		Map<String, Map<String, Integer>> pins;
@@ -89,7 +94,7 @@ public class MonsterProfileStore
 
 	public synchronized void setSkipDegradable(int monsterId, boolean skip)
 	{
-		profiles.computeIfAbsent(monsterId, id -> new Stored()).skipDegradable = skip;
+		stored(monsterId).skipDegradable = skip;
 		save();
 	}
 
@@ -189,7 +194,7 @@ public class MonsterProfileStore
 
 	public synchronized void pin(int monsterId, String scope, GearSlot slot, int itemId)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		if (profile.pins == null)
 		{
 			profile.pins = new LinkedHashMap<>();
@@ -218,7 +223,7 @@ public class MonsterProfileStore
 
 	public synchronized void setNote(int monsterId, String note)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		profile.note = note == null || note.trim().isEmpty() ? null : note.trim();
 		save();
 	}
@@ -232,7 +237,7 @@ public class MonsterProfileStore
 
 	public synchronized void setPinnedSpell(int monsterId, String spellName)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		profile.spell = spellName == null || spellName.trim().isEmpty()
 			? null : spellName.trim();
 		save();
@@ -247,7 +252,7 @@ public class MonsterProfileStore
 
 	public synchronized void setPinnedSpec(int monsterId, int itemId)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		profile.spec = itemId <= 0 ? null : itemId;
 		save();
 	}
@@ -342,7 +347,7 @@ public class MonsterProfileStore
 
 	public synchronized void addSim(int monsterId, int itemId, String name)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		if (profile.sims == null)
 		{
 			profile.sims = new LinkedHashMap<>();
@@ -387,7 +392,7 @@ public class MonsterProfileStore
 			}
 			return;
 		}
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		if (profile.supplies == null)
 		{
 			profile.supplies = new LinkedHashMap<>();
@@ -398,7 +403,7 @@ public class MonsterProfileStore
 
 	public synchronized void exclude(int monsterId, String scope, int itemId)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		if (profile.exclusions == null)
 		{
 			profile.exclusions = new LinkedHashMap<>();
@@ -420,7 +425,7 @@ public class MonsterProfileStore
 
 	public synchronized void addFilterItem(int monsterId, String scope, int itemId, String name)
 	{
-		Stored profile = profiles.computeIfAbsent(monsterId, id -> new Stored());
+		Stored profile = stored(monsterId);
 		if (profile.filterItems == null)
 		{
 			profile.filterItems = new LinkedHashMap<>();

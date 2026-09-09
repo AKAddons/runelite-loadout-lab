@@ -42,10 +42,13 @@ public final class TripSupplies
 		/** True = usable only in the wilderness (blighted supplies): detect
 		 * prefers it on a wilderness trip and never picks it elsewhere. */
 		public final boolean wildyOnly;
+		/** Per-item names for a kit (one card cell each); empty for doses. */
+		public final String[] names;
 
 		Option(String key, String name, int[] ids, boolean detect, boolean utility,
-			boolean wildyOnly)
+			boolean wildyOnly, String[] names)
 		{
+			this.names = names;
 			this.key = key;
 			this.name = name;
 			this.ids = ids;
@@ -85,7 +88,8 @@ public final class TripSupplies
 							ids,
 							!o.has("detect") || o.get("detect").getAsBoolean(),
 							o.has("placement") && "utility".equals(o.get("placement").getAsString()),
-							o.has("wildyOnly") && o.get("wildyOnly").getAsBoolean()));
+							o.has("wildyOnly") && o.get("wildyOnly").getAsBoolean(),
+							kitNames(o)));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
@@ -106,6 +110,13 @@ public final class TripSupplies
 			}
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
 		}
+	}
+
+	private static String[] kitNames(JsonObject o)
+	{
+		List<String> names = new ArrayList<>();
+		JsonResources.strings(o, "names", names);
+		return names.toArray(new String[0]);
 	}
 
 	private TripSupplies()

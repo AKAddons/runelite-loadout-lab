@@ -231,7 +231,11 @@
 				9075,
 				564
 			],
-			"detect": false
+			"detect": false,
+			"names": [
+				"Astral rune (Cure Me)",
+				"Cosmic rune (Cure Me)"
+			]
 		},
 		{
 			"key": "PRAYER_BOOK",
@@ -240,7 +244,11 @@
 				10890,
 				1718
 			],
-			"detect": false
+			"detect": false,
+			"names": [
+				"Prayer book",
+				"Holy symbol"
+			]
 		}
 	],
 	"_spellKits_comment": "Arceuus casting dependencies (wiki-verified 2026-07-21): greater resurrect = 10 fire 5 blood 1 cosmic + book of the dead; Death Charge = 1 death 1 blood 1 soul; Mark of Darkness = 1 cosmic 1 soul (joins when the magic card casts Demonbane); Spellbook Swap (Lunar 96, Dream Mentor) = 3 astral 2 cosmic 1 law; Vengeance = 10 earth 4 astral 2 death - both join under the Arceuus-via-swap option. runePouch is a detect list, best first (divine + trouver locked variants ahead of the base pouch).",
