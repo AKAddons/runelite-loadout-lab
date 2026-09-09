@@ -1818,7 +1818,9 @@ public class ResultCards
 				break;
 			}
 		}
-		String name = chosen != null ? Model.str(chosen, "name") : "NONE".equals(mode) ? "none" : mode;
+		boolean none = "NONE".equals(mode);
+		String name = chosen != null ? Model.str(chosen, "name")
+			: none ? "none" : "Detect best - no anti-venom in the bank";
 		JLabel plate = new JLabel();
 		plate.setPreferredSize(new Dimension(24, 24));
 		plate.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1827,9 +1829,16 @@ public class ResultCards
 		{
 			plate.setIcon(cachedSprite(SpriteID.SPELL_CURE_ME));
 		}
-		else if (chosen != null && itemManager != null)
+		else if (itemManager != null && !none)
 		{
-			seatItem(plate, Model.id(chosen, "itemId"));
+			// Detect best with nothing banked (field 2026-09-09: the grey
+			// dash read as an empty box): the potion, crossed out.
+			AsyncBufferedImage img = itemManager.getImage(chosen != null ? Model.id(chosen, "itemId") : 12913);
+			boolean missing = chosen == null;
+			Runnable seat = () -> SwingUtilities.invokeLater(() -> plate.setIcon(missing
+				? Ui.crossedOut(img, 22) : new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
+			seat.run();
+			img.onLoaded(seat);
 		}
 		else
 		{
