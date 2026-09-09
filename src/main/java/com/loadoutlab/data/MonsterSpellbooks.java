@@ -2,8 +2,7 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.LinkedHashMap;
-import java.util.Locale;
+import java.util.*;
 import java.util.Map;
 
 /**

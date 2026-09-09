@@ -2,10 +2,8 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Curated monster groups (M-3): a group is the ROSTER of distinct mob

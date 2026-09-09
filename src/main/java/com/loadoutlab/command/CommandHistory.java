@@ -1,10 +1,8 @@
 package com.loadoutlab.command;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import lombok.extern.slf4j.Slf4j;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * In-memory undo / redo stack for {@link Command} entries.

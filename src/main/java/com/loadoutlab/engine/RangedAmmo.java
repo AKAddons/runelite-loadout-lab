@@ -5,8 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.JsonResources;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.Map;
 import java.util.Set;
 

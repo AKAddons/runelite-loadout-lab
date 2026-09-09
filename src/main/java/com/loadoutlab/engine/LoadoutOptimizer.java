@@ -3,23 +3,11 @@ package com.loadoutlab.engine;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.RequiredGear;
-import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.data.StatBlock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 
 public final class LoadoutOptimizer
 {

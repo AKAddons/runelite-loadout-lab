@@ -1,19 +1,11 @@
 package com.loadoutlab.profile;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.loadoutlab.engine.OwnedItems;
-import com.loadoutlab.engine.PlayerLevels;
-import com.loadoutlab.engine.PrayerUnlocks;
-import com.loadoutlab.engine.RequirementProfile;
-import java.util.HashMap;
-import java.util.HashSet;
+import com.google.gson.*;
+import com.loadoutlab.engine.*;
+import java.util.*;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Skill;
-import java.util.LinkedHashMap;
-import java.util.Collections;
 
 /**
  * A player as data: levels (real and live-boosted), prayer unlocks,

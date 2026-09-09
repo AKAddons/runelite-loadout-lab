@@ -1,50 +1,16 @@
 package com.loadoutlab.optimizer;
 
-import com.loadoutlab.data.DefenceFloors;
-import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.engine.RaidBoosts;
+import com.loadoutlab.data.*;
+import com.loadoutlab.engine.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.CandidateMode;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.DpsCalculator;
-import com.loadoutlab.engine.DpsResult;
-import com.loadoutlab.engine.IncomingDpsCalculator;
-import com.loadoutlab.engine.Loadout;
-import com.loadoutlab.engine.LoadoutOptimizer;
-import com.loadoutlab.engine.OptimizationRequest;
-import com.loadoutlab.engine.OwnedItems;
-import com.loadoutlab.engine.PlayerLevels;
-import com.loadoutlab.engine.PrayerBonuses;
-import com.loadoutlab.engine.PrayerUnlocks;
-import com.loadoutlab.engine.PvpRisk;
-import com.loadoutlab.engine.RangedAmmo;
-import com.loadoutlab.engine.RequirementProfile;
-import com.loadoutlab.engine.SpecialAttack;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.LinkedHashSet;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.EnumSet;
-import java.util.Collection;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * Runs BiS searches off the game threads and caches results.

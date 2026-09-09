@@ -1,10 +1,6 @@
 package com.loadoutlab.render;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Insets;
+import java.awt.*;
 
 /** The classic chip-row layout (ported verbatim): FlowLayout that
  * actually wraps, so no control silently clips off the row's end. */

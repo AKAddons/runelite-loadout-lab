@@ -2,11 +2,8 @@
 package com.loadoutlab.engine;
 
 import lombok.Getter;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.StatBlock;
-import java.util.Collections;
-import java.util.EnumMap;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.Map;
 
 public final class Loadout

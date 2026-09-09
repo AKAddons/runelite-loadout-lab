@@ -4,8 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.StatBlock;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 import java.util.Map;
 
 /**

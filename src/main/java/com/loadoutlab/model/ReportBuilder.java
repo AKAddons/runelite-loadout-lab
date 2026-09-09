@@ -1,14 +1,10 @@
 package com.loadoutlab.model;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.data.*;
+import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.List;
 import java.util.Map;
-import com.loadoutlab.engine.PvpRisk;
 
 /**
  * The copy-report for the hosted view, built CORE-SIDE at page

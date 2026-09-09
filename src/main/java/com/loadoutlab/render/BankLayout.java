@@ -1,10 +1,8 @@
 package com.loadoutlab.render;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 /**
  * The bank-tag layout for a card (ported from the classic panel's

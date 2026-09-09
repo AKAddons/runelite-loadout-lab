@@ -1,8 +1,7 @@
 package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
 import java.util.Set;
 

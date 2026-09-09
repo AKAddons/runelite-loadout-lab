@@ -2,9 +2,8 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Curated per-monster mechanics the stat data cannot express - finishing

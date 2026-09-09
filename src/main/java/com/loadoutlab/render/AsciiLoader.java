@@ -1,10 +1,10 @@
 package com.loadoutlab.render;
 
 import java.awt.Font;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.io.BufferedReader;
 import java.util.Map;
+import java.io.BufferedReader;
 import javax.swing.Timer;
 
 /**

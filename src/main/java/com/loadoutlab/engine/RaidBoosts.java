@@ -2,9 +2,8 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.MonsterStats;
-import java.util.Locale;
+import java.util.*;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Raids SUPPLY their own boosts (field spec 2026-07-18): Chambers of

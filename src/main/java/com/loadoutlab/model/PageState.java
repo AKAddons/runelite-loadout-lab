@@ -1,11 +1,11 @@
 package com.loadoutlab.model;
 
 import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OptimizationRequest;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.Map;
-import com.loadoutlab.data.NavalCombat;
 import java.util.List;
 
 /**

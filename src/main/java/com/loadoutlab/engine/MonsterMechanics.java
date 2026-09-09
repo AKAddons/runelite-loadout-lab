@@ -2,18 +2,13 @@ package com.loadoutlab.engine;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.data.SpellStats;
+import com.loadoutlab.data.*;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.*;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-import com.loadoutlab.data.JsonResources;
 
 /**
  * Per-NPC combat mechanics the stat sheets cannot express: style

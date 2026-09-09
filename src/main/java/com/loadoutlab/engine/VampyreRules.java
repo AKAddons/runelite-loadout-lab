@@ -1,10 +1,8 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.JsonResources;
+import com.loadoutlab.data.*;
 import java.util.ArrayList;
 import java.util.List;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.MonsterStats;
 
 /**
  * Vampyre tier weapon rules, verified against the OSRS Wiki 2026-07-05:

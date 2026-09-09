@@ -1,20 +1,9 @@
 package com.loadoutlab.render;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Image;
-import java.awt.LayoutManager;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
+import java.awt.*;
+import javax.swing.*;
 import net.runelite.client.ui.ColorScheme;
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Cursor;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import javax.swing.JMenuItem;
 
 /**
  * The shared UI kit (merge-back dedupe): the handful of Swing recipes

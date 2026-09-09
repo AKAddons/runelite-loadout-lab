@@ -1,40 +1,15 @@
 package com.loadoutlab.model;
 
-import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.data.*;
+import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.loadoutlab.command.Command;
 import com.loadoutlab.command.CommandHistory;
-import com.loadoutlab.data.AssumeIcons;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterGroups;
-import com.loadoutlab.data.MonsterSpellbooks;
-import com.loadoutlab.data.NavalCombat;
-import com.loadoutlab.data.SpellRunes;
-import com.loadoutlab.data.SpellStats;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.TripSupplies;
-import com.loadoutlab.data.WildernessMonsters;
-import com.loadoutlab.engine.BlowpipeDarts;
-import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.DpsResult;
-import com.loadoutlab.engine.ExtraDps;
-import com.loadoutlab.engine.MonsterMechanics;
-import com.loadoutlab.engine.ShipCannon;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import javax.swing.SwingUtilities;
 
 /**

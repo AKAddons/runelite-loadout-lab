@@ -1,23 +1,11 @@
 package com.loadoutlab.model;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.DpsResult;
-import com.loadoutlab.engine.IncomingDpsCalculator;
+import com.loadoutlab.data.*;
+import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import com.loadoutlab.data.AssumeIcons;
-import com.loadoutlab.data.MonsterSpellbooks;
-import com.loadoutlab.data.StatBlock;
-import com.loadoutlab.data.WildernessMonsters;
-import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.PvpRisk;
-import java.util.Collections;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;

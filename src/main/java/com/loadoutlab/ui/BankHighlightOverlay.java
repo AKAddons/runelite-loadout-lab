@@ -1,8 +1,6 @@
 package com.loadoutlab.ui;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.util.Set;
 import java.util.function.Supplier;
 import net.runelite.api.widgets.WidgetItem;

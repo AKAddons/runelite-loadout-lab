@@ -1,9 +1,6 @@
 package com.loadoutlab.optimizer;
 
-import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.OwnedItems;
-import com.loadoutlab.engine.PlayerLevels;
+import com.loadoutlab.engine.*;
 
 /**
  * The best stat boost assumed per style, given what the player actually owns.

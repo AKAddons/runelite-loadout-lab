@@ -2,8 +2,7 @@ package com.loadoutlab.collection;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.*;
 import java.util.Set;
 import net.runelite.client.config.ConfigManager;
 

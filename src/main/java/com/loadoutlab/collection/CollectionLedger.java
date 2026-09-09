@@ -3,11 +3,10 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Map;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.config.ConfigManager;
-import java.util.Collections;
 
 /**
  * The persistent "what I own" ledger - Loadout Lab's first differentiator.

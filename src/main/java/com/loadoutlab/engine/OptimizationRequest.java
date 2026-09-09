@@ -2,10 +2,8 @@
 package com.loadoutlab.engine;
 
 import lombok.Getter;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.data.SpellStats;
-import java.util.Collections;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.Map;
 import java.util.Set;
 

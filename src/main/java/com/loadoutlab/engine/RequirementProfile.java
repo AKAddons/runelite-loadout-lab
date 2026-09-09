@@ -2,10 +2,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearRequirements;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.*;
 import java.util.Map;
 import java.util.Set;
 import net.runelite.api.Quest;

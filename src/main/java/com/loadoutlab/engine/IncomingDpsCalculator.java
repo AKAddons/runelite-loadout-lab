@@ -2,15 +2,10 @@ package com.loadoutlab.engine;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import com.loadoutlab.data.MonsterOffence;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.data.StatBlock;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Locale;
-import java.util.LinkedHashMap;
 
 /**
  * The other direction: how hard the monster hits YOU in a given set.

@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.JsonResources;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 

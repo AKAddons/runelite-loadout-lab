@@ -1,13 +1,9 @@
 package com.loadoutlab.engine;
 
 import lombok.Getter;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import com.loadoutlab.data.JsonResources;
 
 /**
  * Special-attack definitions and expected-damage math.

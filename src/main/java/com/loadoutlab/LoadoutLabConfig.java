@@ -1,9 +1,6 @@
 package com.loadoutlab;
 
-import net.runelite.client.config.Config;
-import net.runelite.client.config.ConfigGroup;
-import net.runelite.client.config.ConfigItem;
-import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
 public interface LoadoutLabConfig extends Config

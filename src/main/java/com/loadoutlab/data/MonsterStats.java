@@ -1,12 +1,9 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
 
 import lombok.Getter;
 

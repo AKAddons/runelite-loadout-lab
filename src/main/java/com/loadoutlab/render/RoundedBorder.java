@@ -1,11 +1,6 @@
 package com.loadoutlab.render;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.RenderingHints;
+import java.awt.*;
 
 /** The classic pill border (ported verbatim from the panel). */
 final class RoundedBorder extends javax.swing.border.AbstractBorder

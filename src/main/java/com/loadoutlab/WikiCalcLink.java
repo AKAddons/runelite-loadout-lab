@@ -1,30 +1,15 @@
 package com.loadoutlab;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.engine.BoostProfile;
-import com.loadoutlab.engine.DpsResult;
-import com.loadoutlab.engine.PlayerLevels;
+import com.google.gson.*;
+import com.loadoutlab.data.*;
+import com.loadoutlab.engine.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.util.LinkBrowser;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 
 /**
  * One-click "open this exact setup in the official wiki calculator":
