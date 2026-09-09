@@ -229,8 +229,11 @@ brings, plus an always-filter list for items like teleport capes that
 belong in every bank view. Against venomous monsters the anti-venom slot
 also offers Cure Me (Lunar runes; venom becomes poison) and the prayer
 book with a holy symbol (cures for prayer points), as choices rather than
-detected tiers. Choosing Cure Me camps the trip on Lunar: the magic card
-locks to built-in staves and thralls and Death Charge stand down. It is
+detected tiers. On a venomous mob the poison plan also sits in the card's Assumes row,
+right after the boost: the Cure Me spell, the chosen potion or the prayer
+book; click it to change. Choosing Cure Me camps the trip on Lunar: the
+magic card locks to built-in staves and thralls and Death Charge stand
+down. It is
 not offered while a pinned spell or a spellbook lock relies on another
 book. Detect best picks the highest tier your
 collection has; anti-venom only joins the kit against monsters that can

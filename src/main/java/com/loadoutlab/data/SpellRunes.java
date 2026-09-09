@@ -1,5 +1,6 @@
 package com.loadoutlab.data;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.*;
@@ -145,14 +146,18 @@ public final class SpellRunes
 	/** Combo-rune fold: where a combination rune covers two of the
 	 * cost's elements, ONE stack of it (the larger quantity) replaces
 	 * both - a combo rune counts as one of each element per cast. */
-	private static final String[][] COMBOS = {
-		{"smoke", "air", "fire", "4697"},
-		{"mist", "air", "water", "4695"},
-		{"dust", "air", "earth", "4696"},
-		{"mud", "water", "earth", "4698"},
-		{"steam", "water", "fire", "4694"},
-		{"lava", "earth", "fire", "4699"},
-	};
+	private static final String[][] COMBOS;
+
+	static
+	{
+		JsonArray rows = JsonResources.objectOrThrow("combo_runes.json").getAsJsonArray("combos");
+		COMBOS = new String[rows.size()][];
+		for (int i = 0; i < COMBOS.length; i++)
+		{
+			JsonArray row = rows.get(i).getAsJsonArray();
+			COMBOS[i] = new String[]{row.get(0).getAsString(), row.get(1).getAsString(), row.get(2).getAsString(), row.get(3).getAsString()};
+		}
+	}
 
 	/** The combination-rune item ids - the ownership detection behind
 	 * the panel's "Detect" preference reads these. */

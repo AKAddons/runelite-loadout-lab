@@ -1455,18 +1455,24 @@ public class CommandEngine
 		return pinned != null && !pinned.isEmpty() || List.of("standard", "ancient", "arceuus").contains(lock);
 	}
 
-	private boolean cureMe(MonsterStats mob)
+	/** The mob's resolved anti-venom choice ("" off venom); Cure Me under
+	 * another book falls back to Detect best. */
+	private String antivenomMode(MonsterStats mob)
 	{
 		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
 		StoreOps ops = stores;
-		if (mob == null || ops == null || defaultsSupplier == null || !TripSupplies.inflictsVenom(mob)
-			|| reliesOnAnotherBook(mob))
+		if (mob == null || ops == null || defaultsSupplier == null || !TripSupplies.inflictsVenom(mob))
 		{
-			return false;
+			return "";
 		}
 		String mode = ops.supplyOverrides(mob.profileId()).getOrDefault(TripSupplies.ANTIVENOM,
-			defaultsSupplier.get().getOrDefault(TripSupplies.ANTIVENOM, ""));
-		return "CURE_ME".equals(mode);
+			defaultsSupplier.get().getOrDefault(TripSupplies.ANTIVENOM, "DETECT_BEST"));
+		return "CURE_ME".equals(mode) && reliesOnAnotherBook(mob) ? "DETECT_BEST" : mode;
+	}
+
+	private boolean cureMe(MonsterStats mob)
+	{
+		return "CURE_ME".equals(antivenomMode(mob));
 	}
 
 	private boolean cureMe(List<MonsterStats> mobs)
@@ -2267,6 +2273,7 @@ public class CommandEngine
 					mob.put("note", ops.note(monsterId));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					mob.put("cureMe", cureMe(lensedMob()));
+					mob.put("antivenom", antivenomMode(lensedMob()));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);
 					// The casting kit: divine rune pouch > rune pouch when

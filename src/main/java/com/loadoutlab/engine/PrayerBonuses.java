@@ -1,6 +1,12 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.loadoutlab.data.JsonResources;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import lombok.Getter;
 import java.util.List;
 import java.util.ArrayList;
@@ -145,22 +151,28 @@ public final class PrayerBonuses
 	 * irrelevant to a single-style request). Unknown names fall back. */
 	/** name -> {accuracy, strength-or-damage} per style, best first -
 	 * mirrors bestAvailable's cascade exactly. */
-	private static final Object[][] MELEE_PICKS = {
-		{"Piety", 1.20, 1.23}, {"Chivalry", 1.15, 1.18},
-		{"Ultimate Strength + Incredible Reflexes", 1.15, 1.15},
-		{"Superhuman Strength + Improved Reflexes", 1.10, 1.10},
-		{"Burst of Strength + Clarity of Thought", 1.05, 1.05}};
-	private static final Object[][] RANGED_PICKS = {
-		{"Rigour", 1.20, 1.23}, {"Deadeye", 1.18, 1.18}, {"Eagle Eye", 1.15, 1.15},
-		{"Hawk Eye", 1.10, 1.10}, {"Sharp Eye", 1.05, 1.05}};
-	private static final Object[][] MAGIC_PICKS = {
-		{"Augury", 1.25, 4.0}, {"Mystic Vigour", 1.18, 3.0}, {"Mystic Might", 1.15, 2.0},
-		{"Mystic Lore", 1.10, 1.0}, {"Mystic Will", 1.05, 0.0}};
+
+	private static final Map<String, Object[][]> PICKS = new HashMap<>();
+
+	static
+	{
+		JsonObject root = JsonResources.objectOrThrow("prayer_picks.json");
+		for (String style : new String[]{"melee", "ranged", "magic"})
+		{
+			JsonArray rows = root.getAsJsonArray(style);
+			Object[][] picks = new Object[rows.size()][];
+			for (int i = 0; i < picks.length; i++)
+			{
+				JsonArray row = rows.get(i).getAsJsonArray();
+				picks[i] = new Object[]{row.get(0).getAsString(), row.get(1).getAsDouble(), row.get(2).getAsDouble()};
+			}
+			PICKS.put(style, picks);
+		}
+	}
 
 	private static Object[][] picksFor(CombatStyle style)
 	{
-		return style == CombatStyle.RANGED ? RANGED_PICKS
-			: style == CombatStyle.MAGIC ? MAGIC_PICKS : MELEE_PICKS;
+		return PICKS.get(style.name().toLowerCase(Locale.ROOT));
 	}
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with

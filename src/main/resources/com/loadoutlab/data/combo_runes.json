@@ -1,0 +1,41 @@
+{
+	"_comment": "Combination runes: [name, element a, element b, item id].",
+	"combos": [
+		[
+			"smoke",
+			"air",
+			"fire",
+			"4697"
+		],
+		[
+			"mist",
+			"air",
+			"water",
+			"4695"
+		],
+		[
+			"dust",
+			"air",
+			"earth",
+			"4696"
+		],
+		[
+			"mud",
+			"water",
+			"earth",
+			"4698"
+		],
+		[
+			"steam",
+			"water",
+			"fire",
+			"4694"
+		],
+		[
+			"lava",
+			"earth",
+			"fire",
+			"4699"
+		]
+	]
+}

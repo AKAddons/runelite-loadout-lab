@@ -703,13 +703,7 @@ public class ResultCards
 				// Scaled to the 24px frame - the raw 36x32 item image
 				// overflowed it (field report 2026-08-21). The onLoaded
 				// re-seat is the async-image contract.
-				AsyncBufferedImage boostImg =
-					itemManager.getImage(boostItem);
-				Runnable seatBoost = () -> SwingUtilities.invokeLater(() ->
-					boostIconCell.setIcon(new ImageIcon(
-						boostImg.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
-				seatBoost.run();
-				boostImg.onLoaded(seatBoost);
+				seatItem(boostIconCell, boostItem);
 			}
 			else
 			{
@@ -725,6 +719,10 @@ public class ResultCards
 				Ui.onClick(boostIconCell, () -> showBoostMenu(boostIconCell, tabKey));
 			}
 			headerRow.add(boostIconCell);
+			if (!Model.str(mob, "antivenom").isEmpty())
+			{
+				headerRow.add(poisonPlate(mob, bis));
+			}
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
@@ -978,20 +976,7 @@ public class ResultCards
 				JLabel cell = smallItemCell(Model.id(supply, "itemId"), 0,
 					Model.str(supply, "name")
 						+ " - right-click to change");
-				JPopupMenu menu = new JPopupMenu();
-				String category = Model.str(supply, "category");
-				Ui.item(menu, "Detect best", () -> commands.send("set-supply-override",
-					Map.of("category", category, "choice", "DETECT")));
-				Ui.item(menu, "None", () -> commands.send("set-supply-override",
-					Map.of("category", category, "choice", "NONE")));
-				for (Map<String, Object> option : Model.list(supply, "options"))
-				{
-					String key = Model.str(option, "key");
-					Ui.item(menu, Model.str(option, "name"),
-						() -> commands.send("set-supply-override",
-							Map.of("category", category, "choice", key)));
-				}
-				cell.setComponentPopupMenu(menu);
+				cell.setComponentPopupMenu(supplyMenu(Model.str(supply, "category"), Model.list(supply, "options")));
 				supplyRow.add(cell);
 			}
 			card.add(Box.createVerticalStrut(4));
@@ -1801,6 +1786,83 @@ public class ResultCards
 
 	/** A 24px inventory cell: the item image (quantity overlay when
 	 * qty > 0) scaled down so a full trip fits the row. */
+	private JPopupMenu supplyMenu(String category, List<Map<String, Object>> options)
+	{
+		JPopupMenu menu = new JPopupMenu();
+		Ui.item(menu, "Detect best", () -> commands.send("set-supply-override",
+			Map.of("category", category, "choice", "DETECT")));
+		Ui.item(menu, "None", () -> commands.send("set-supply-override",
+			Map.of("category", category, "choice", "NONE")));
+		for (Map<String, Object> option : options)
+		{
+			String key = Model.str(option, "key");
+			Ui.item(menu, Model.str(option, "name"),
+				() -> commands.send("set-supply-override",
+					Map.of("category", category, "choice", key)));
+		}
+		return menu;
+	}
+
+	/** The poison plan beside prayer and boost (Andrew 2026-09-08: "a more
+	 * obvious spot"): the Cure Me spell, the chosen potion or the prayer
+	 * book, "-" for none; click opens the anti-venom chooser. */
+	private JLabel poisonPlate(Map<String, Object> mob, boolean bis)
+	{
+		String mode = Model.str(mob, "antivenom");
+		Map<String, Object> chosen = null;
+		for (Map<String, Object> supply : supplies)
+		{
+			if ("antivenom".equals(Model.str(supply, "category")))
+			{
+				chosen = supply;
+				break;
+			}
+		}
+		String name = chosen != null ? Model.str(chosen, "name") : "NONE".equals(mode) ? "none" : mode;
+		JLabel plate = new JLabel();
+		plate.setPreferredSize(new Dimension(24, 24));
+		plate.setHorizontalAlignment(SwingConstants.CENTER);
+		plate.setToolTipText("Poison: " + name + (bis ? "" : " - click to change"));
+		if ("CURE_ME".equals(mode))
+		{
+			plate.setIcon(cachedSprite(SpriteID.SPELL_CURE_ME));
+		}
+		else if (chosen != null && itemManager != null)
+		{
+			seatItem(plate, Model.id(chosen, "itemId"));
+		}
+		else
+		{
+			plate.setText("-");
+			plate.setForeground(new Color(140, 140, 140));
+		}
+		if (!bis)
+		{
+			List<Map<String, Object>> options = List.of();
+			for (Map<String, Object> entry : supplyCatalog)
+			{
+				if ("antivenom".equals(Model.str(entry, "category")))
+				{
+					options = Model.list(entry, "options");
+				}
+			}
+			JPopupMenu menu = supplyMenu("antivenom", options);
+			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
+		}
+		return plate;
+	}
+
+	/** An item image scaled into a 24px frame (the raw 36x32 overflowed it,
+	 * field 2026-08-21); the onLoaded re-seat is the async-image contract. */
+	private void seatItem(JLabel target, int itemId)
+	{
+		AsyncBufferedImage img = itemManager.getImage(itemId);
+		Runnable seat = () -> SwingUtilities.invokeLater(() ->
+			target.setIcon(new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
+		seat.run();
+		img.onLoaded(seat);
+	}
+
 	private JLabel smallItemCell(int itemId, int qty, String tooltip)
 	{
 		JLabel cell = new JLabel();

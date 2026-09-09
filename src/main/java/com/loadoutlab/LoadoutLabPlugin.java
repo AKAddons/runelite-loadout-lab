@@ -963,15 +963,9 @@ public class LoadoutLabPlugin extends Plugin
 	private Map<String, String> buildSupplyDefaults()
 	{
 		Map<String, String> defaults = new LinkedHashMap<>();
-		for (String category : new String[]{
-			TripSupplies.FOOD,
-			TripSupplies.FAST_FOOD,
-			TripSupplies.PRAYER_RESTORE,
-			TripSupplies.SURGE,
-			TripSupplies.SPELLBOOK_CAPE,
-			TripSupplies.ANTIVENOM,
-			TripSupplies.SHIP_REPAIR_KIT,
-			"arceuusAccess"})
+		List<String> categories = new ArrayList<>(List.of(TripSupplies.CATEGORY_KEYS));
+		categories.add("arceuusAccess");
+		for (String category : categories)
 		{
 			defaults.put(category, supplyDefaults == null
 				? SupplyDefaultsStore.DETECT_BEST

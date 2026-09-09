@@ -24,6 +24,7 @@ public final class TripSupplies
 	public static final String SPELLBOOK_CAPE = "spellbookCape";
 	public static final String ANTIVENOM = "antivenom";
 	public static final String SHIP_REPAIR_KIT = "shipRepairKit";
+	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, SHIP_REPAIR_KIT};
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
@@ -67,7 +68,7 @@ public final class TripSupplies
 		JsonObject root = JsonResources.object("/com/loadoutlab/data/trip_supplies.json");
 		if (root != null)
 		{
-			for (String category : new String[]{FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, SHIP_REPAIR_KIT})
+			for (String category : CATEGORY_KEYS)
 			{
 				List<Option> options = new ArrayList<>();
 				JsonArray arr = root.getAsJsonArray(category);
