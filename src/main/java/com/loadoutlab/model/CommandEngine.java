@@ -71,18 +71,12 @@ public class CommandEngine
 		/** Filter the open bank to these ids in this layout; nulls clear. */
 		void filterBank(Set<Integer> itemIds, int[] layout);
 
-		/** Per-mob profile reads/writes (MonsterProfileStore-backed). */
-		String pinnedSpell(int monsterId);
 
-		void setPinnedSpell(int monsterId, String spellName);
 
-		int pinnedSpec(int monsterId);
 
 		void setPinnedSpec(int monsterId, int itemId);
 
-		String note(int monsterId);
 
-		void setNote(int monsterId, String note);
 
 		/** Mob-scoped exclusion/sim (undoable Commands-factory backed). */
 		void excludeForMob(int monsterId, String scope, int itemId);
@@ -97,22 +91,46 @@ public class CommandEngine
 
 		List<Map<String, Object>> mobFilters(int monsterId);
 
+
+
+		void addMobFilter(int monsterId, int itemId);
+
+
+
+		boolean skipDegradable(int monsterId);
+
+
+	
+
+		/** The per-mob profile store, spoken to directly (the plugin wired
+		 * eleven one-line delegations here before 2026-09-09). */
+		MobProfiles mobs();
+	}
+
+	/** What MonsterProfileStore implements for the engine. */
+	public interface MobProfiles
+	{
+		String pinnedSpell(int monsterId);
+
+		void setPinnedSpell(int monsterId, String spellName);
+
+		int pinnedSpec(int monsterId);
+
+		String note(int monsterId);
+
+		void setNote(int monsterId, String note);
+
 		void removeMobExclusion(int monsterId, String scope, int itemId);
 
 		void removeMobSim(int monsterId, int itemId);
 
-		void addMobFilter(int monsterId, int itemId);
-
 		void removeMobFilter(int monsterId, String scope, int itemId);
 
-		/** Per-mob supply overrides (profileId-keyed, like the classic). */
 		Map<String, String> supplyOverrides(int profileId);
 
-		boolean skipDegradable(int monsterId);
+		void setSupplyOverride(int profileId, String category, String choice);
 
 		void setSkipDegradable(int monsterId, boolean skip);
-
-		void setSupplyOverride(int profileId, String category, String choice);
 	}
 
 	private volatile StoreOps stores;
@@ -660,7 +678,7 @@ public class CommandEngine
 				{
 					return false;
 				}
-				ops.setSkipDegradable(mob.getId(), !ops.skipDegradable(mob.getId()));
+				ops.mobs().setSkipDegradable(mob.getId(), !ops.skipDegradable(mob.getId()));
 				recompute();
 				return true;
 			}
@@ -949,11 +967,11 @@ public class CommandEngine
 					{
 						if (exclude)
 						{
-							ops.removeMobExclusion(mobId, scope, id);
+							ops.mobs().removeMobExclusion(mobId, scope, id);
 						}
 						else
 						{
-							ops.removeMobSim(mobId, id);
+							ops.mobs().removeMobSim(mobId, id);
 						}
 						recompute();
 						return true;
@@ -993,11 +1011,11 @@ public class CommandEngine
 						switch (cmd)
 						{
 							case "remove-mob-exclusion":
-								ops.removeMobExclusion(mobId, scopeKey, id);
+								ops.mobs().removeMobExclusion(mobId, scopeKey, id);
 								recompute();
 								break;
 							case "remove-mob-sim":
-								ops.removeMobSim(mobId, id);
+								ops.mobs().removeMobSim(mobId, id);
 								recompute();
 								break;
 							case "add-mob-filter":
@@ -1005,7 +1023,7 @@ public class CommandEngine
 								republish();
 								break;
 							case "remove-mob-filter":
-								ops.removeMobFilter(mobId, scopeKey, id);
+								ops.mobs().removeMobFilter(mobId, scopeKey, id);
 								republish();
 								break;
 							case "exclude-for-mob":
@@ -1062,10 +1080,10 @@ public class CommandEngine
 				{
 					return false;
 				}
-				ops.setSupplyOverride(lensed.profileId(), (String) category,
+				ops.mobs().setSupplyOverride(lensed.profileId(), (String) category,
 					choice instanceof String ? (String) choice : "DETECT");
-				// Anti-venom can camp Lunar (Cure Me): the lock rides the compute.
-				if (TripSupplies.ANTIVENOM.equals(category))
+				// A cure choice can camp Lunar (Cure Me): the lock rides the compute.
+				if (TripSupplies.ANTIVENOM.equals(category) || TripSupplies.ANTIPOISON.equals(category))
 				{
 					recompute();
 				}
@@ -1090,7 +1108,7 @@ public class CommandEngine
 				if ("set-pinned-spell".equals(name))
 				{
 					Object spell = arg(args, "name");
-					ops.setPinnedSpell(mob.getId(), spell instanceof String ? (String) spell : "");
+					ops.mobs().setPinnedSpell(mob.getId(), spell instanceof String ? (String) spell : "");
 					recompute();
 				}
 				else if ("set-pinned-spec".equals(name))
@@ -1103,7 +1121,7 @@ public class CommandEngine
 				else
 				{
 					Object text = arg(args, "text");
-					ops.setNote(mob.getId(), text instanceof String ? (String) text : "");
+					ops.mobs().setNote(mob.getId(), text instanceof String ? (String) text : "");
 					republish();
 				}
 				return true;
@@ -1454,25 +1472,33 @@ public class CommandEngine
 	 * steps aside there (and is not offered). */
 	private boolean reliesOnAnotherBook(MonsterStats mob)
 	{
-		String pinned = stores == null || mob == null ? "" : stores.pinnedSpell(mob.getId());
+		String pinned = stores == null || mob == null ? "" : stores.mobs().pinnedSpell(mob.getId());
 		String lock = String.valueOf(state.paramsNode().get("spellbookLock"));
 		String fightBook = mob == null ? "" : String.valueOf(MonsterSpellbooks.bookFor(mob));
 		List<String> others = List.of("standard", "ancient", "arceuus");
 		return pinned != null && !pinned.isEmpty() || others.contains(lock) || others.contains(fightBook);
 	}
 
-	/** The mob's resolved anti-venom choice ("" off venom); Cure Me under
-	 * another book falls back to Detect best. */
+	/** The cure category a mob needs: anti-venom, antipoison, or "". */
+	private static String cureCategory(MonsterStats mob)
+	{
+		return TripSupplies.inflictsVenom(mob) ? TripSupplies.ANTIVENOM
+			: TripSupplies.inflictsPoison(mob) ? TripSupplies.ANTIPOISON : "";
+	}
+
+	/** The mob's resolved cure choice ("" when it neither poisons nor
+	 * envenoms); Cure Me under another book falls back to Detect best. */
 	private String antivenomMode(MonsterStats mob)
 	{
 		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
 		StoreOps ops = stores;
-		if (mob == null || ops == null || defaultsSupplier == null || !TripSupplies.inflictsVenom(mob))
+		String category = cureCategory(mob);
+		if (mob == null || ops == null || defaultsSupplier == null || category.isEmpty())
 		{
 			return "";
 		}
-		String mode = ops.supplyOverrides(mob.profileId()).getOrDefault(TripSupplies.ANTIVENOM,
-			defaultsSupplier.get().getOrDefault(TripSupplies.ANTIVENOM, "DETECT_BEST"));
+		String mode = ops.mobs().supplyOverrides(mob.profileId()).getOrDefault(category,
+			defaultsSupplier.get().getOrDefault(category, "DETECT_BEST"));
 		return "CURE_ME".equals(mode) && reliesOnAnotherBook(mob) ? "DETECT_BEST" : mode;
 	}
 
@@ -1966,6 +1992,7 @@ public class CommandEngine
 			{TripSupplies.SURGE, "Surge potion"},
 			{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
 			{TripSupplies.ANTIVENOM, "Anti-venom"},
+			{TripSupplies.ANTIPOISON, "Antipoison"},
 		};
 		for (String[] category : categories)
 		{
@@ -2110,7 +2137,7 @@ public class CommandEngine
 			return nodes;
 		}
 		Map<String, String> defaults = defaultsSupplier.get();
-		Map<String, String> overrides = ops.supplyOverrides(lensed.profileId());
+		Map<String, String> overrides = ops.mobs().supplyOverrides(lensed.profileId());
 		// At sea the BOAT takes the hits (Andrew 2026-09-02): a sea-only
 		// trip packs repair kits and nothing edible; a mixed roster keeps
 		// the land categories for its land half.
@@ -2145,17 +2172,10 @@ public class CommandEngine
 					continue;
 				}
 			}
-			if (TripSupplies.ANTIVENOM.equals(category))
+			if (TripSupplies.ANTIVENOM.equals(category) && mobs.stream().noneMatch(TripSupplies::inflictsVenom)
+				|| TripSupplies.ANTIPOISON.equals(category) && mobs.stream().noneMatch(TripSupplies::inflictsPoison))
 			{
-				boolean venomous = false;
-				for (MonsterStats m : mobs)
-				{
-					venomous |= TripSupplies.inflictsVenom(m);
-				}
-				if (!venomous)
-				{
-					continue;
-				}
+				continue;
 			}
 			TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
@@ -2305,13 +2325,14 @@ public class CommandEngine
 				if (id instanceof Number)
 				{
 					int monsterId = ((Number) id).intValue();
-					mob.put("pinnedSpell", ops.pinnedSpell(monsterId));
-					mob.put("pinnedSpec", ops.pinnedSpec(monsterId));
-					mob.put("note", ops.note(monsterId));
+					mob.put("pinnedSpell", ops.mobs().pinnedSpell(monsterId));
+					mob.put("pinnedSpec", ops.mobs().pinnedSpec(monsterId));
+					mob.put("note", ops.mobs().note(monsterId));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					mob.put("cureMe", cureMe(lensedMob()));
 					mob.put("arceuusBlocked", arceuusBlocked(lensedMob()));
 					mob.put("antivenom", antivenomMode(lensedMob()));
+					mob.put("cureCategory", cureCategory(lensedMob()));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);
 					// The casting kit: divine rune pouch > rune pouch when

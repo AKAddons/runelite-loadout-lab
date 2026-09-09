@@ -174,8 +174,9 @@ class CommandEngineTest
 			antifire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 			{
 			});
-		engine.setStoreOps(new CommandEngine.StoreOps()
+		engine.setStoreOps(new TestStoreOps()
 		{
+
 			public boolean toggleExclusion(int itemId)
 			{
 				return true;
@@ -295,7 +296,7 @@ class CommandEngineTest
 				return false;
 			}
 
-			@Override
+			
 			public void setSkipDegradable(int monsterId, boolean skip)
 			{
 			}

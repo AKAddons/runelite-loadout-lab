@@ -226,7 +226,9 @@ on every card that override the global level. The grey member manages
 the trip kit: persistent defaults for the food, fast food, prayer
 restore, surge potion, spellbook-swap cape and anti-venom every trip
 brings, plus an always-filter list for items like teleport capes that
-belong in every bank view. Against venomous monsters the anti-venom slot
+belong in every bank view. Poisoners that do not envenom (the Dagannoth Kings' spinolyps, Kalphite
+Queen, Sarachnis, Scorpia) get an antipoison slot: Antidote++ down to
+Antipoison by what you own. Against venomous monsters the anti-venom slot
 also offers Cure Me (Lunar runes; venom becomes poison) and the prayer
 book with a holy symbol (cures for prayer points), as choices rather than
 detected tiers. On a venomous mob the poison plan also sits in the card's Assumes row,

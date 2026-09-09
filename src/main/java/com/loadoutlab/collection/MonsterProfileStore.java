@@ -22,7 +22,7 @@ import net.runelite.client.config.ConfigManager;
  * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
  * follow the player. Empty profiles are pruned on save.
  */
-public class MonsterProfileStore
+public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.MobProfiles
 {
 	/** The every-set pin/filter scope key (relocated from the panel;
 	 * the panel's ALL_SETS remains an alias until it exits). */
@@ -215,7 +215,7 @@ public class MonsterProfileStore
 	}
 
 	/** The user's note for this monster ("" when none). */
-	public synchronized String noteFor(int monsterId)
+	public synchronized String note(int monsterId)
 	{
 		Stored profile = profiles.get(monsterId);
 		return profile == null || profile.note == null ? "" : profile.note;
@@ -229,7 +229,7 @@ public class MonsterProfileStore
 	}
 
 	/** The pinned autocast spell for this monster ("" = auto-pick). */
-	public synchronized String pinnedSpellFor(int monsterId)
+	public synchronized String pinnedSpell(int monsterId)
 	{
 		Stored profile = profiles.get(monsterId);
 		return profile == null || profile.spell == null ? "" : profile.spell;
@@ -244,7 +244,7 @@ public class MonsterProfileStore
 	}
 
 	/** The pinned SPEC weapon id for this monster (0 = auto-pick). */
-	public synchronized int pinnedSpecFor(int monsterId)
+	public synchronized int pinnedSpec(int monsterId)
 	{
 		Stored profile = profiles.get(monsterId);
 		return profile == null || profile.spec == null ? 0 : profile.spec;
@@ -356,7 +356,7 @@ public class MonsterProfileStore
 		save();
 	}
 
-	public synchronized void removeSim(int monsterId, int itemId)
+	public synchronized void removeMobSim(int monsterId, int itemId)
 	{
 		Stored profile = profiles.get(monsterId);
 		if (profile != null && profile.sims != null)
@@ -368,7 +368,7 @@ public class MonsterProfileStore
 
 	/** Per-mob trip-supply overrides (category -> mode/option key);
 	 * empty when the wrench-panel defaults apply untouched. */
-	public synchronized Map<String, String> supplies(int monsterId)
+	public synchronized Map<String, String> supplyOverrides(int monsterId)
 	{
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.supplies == null || profile.supplies.isEmpty())
@@ -380,7 +380,7 @@ public class MonsterProfileStore
 
 	/** Set one category's override; null/empty choice returns the category
 	 * to the wrench-panel default. */
-	public synchronized void setSupply(int monsterId, String category, String choice)
+	public synchronized void setSupplyOverride(int monsterId, String category, String choice)
 	{
 		if (choice == null || choice.isEmpty())
 		{
@@ -412,7 +412,7 @@ public class MonsterProfileStore
 		save();
 	}
 
-	public synchronized void removeExclusion(int monsterId, String scope, int itemId)
+	public synchronized void removeMobExclusion(int monsterId, String scope, int itemId)
 	{
 		Stored profile = profiles.get(monsterId);
 		if (profile != null && profile.exclusions != null
@@ -435,7 +435,7 @@ public class MonsterProfileStore
 		save();
 	}
 
-	public synchronized void removeFilterItem(int monsterId, String scope, int itemId)
+	public synchronized void removeMobFilter(int monsterId, String scope, int itemId)
 	{
 		Stored profile = profiles.get(monsterId);
 		if (profile != null && profile.filterItems != null

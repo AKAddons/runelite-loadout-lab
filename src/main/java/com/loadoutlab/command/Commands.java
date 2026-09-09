@@ -129,7 +129,7 @@ public final class Commands
 
 	public static Command setNote(MonsterProfileStore store, int monsterId, String note)
 	{
-		String before = store.noteFor(monsterId);
+		String before = store.note(monsterId);
 		String after = note == null ? "" : note;
 		return of("Edit note",
 			() ->
@@ -146,7 +146,7 @@ public final class Commands
 
 	public static Command setPinnedSpell(MonsterProfileStore store, int monsterId, String spellName)
 	{
-		String before = store.pinnedSpellFor(monsterId);
+		String before = store.pinnedSpell(monsterId);
 		String after = spellName == null ? "" : spellName;
 		return of(after.isEmpty() ? "Clear pinned spell" : "Pin spell " + after,
 			() ->
@@ -164,7 +164,7 @@ public final class Commands
 	public static Command setPinnedSpec(MonsterProfileStore store, int monsterId,
 		int itemId, String label)
 	{
-		int before = store.pinnedSpecFor(monsterId);
+		int before = store.pinnedSpec(monsterId);
 		return of(itemId <= 0 ? "Unpin spec weapon" : "Pin spec " + label,
 			() ->
 			{
@@ -183,14 +183,14 @@ public final class Commands
 	{
 		return of("Exclude here: " + label,
 			() -> { store.exclude(monsterId, scope, itemId); return true; },
-			() -> { store.removeExclusion(monsterId, scope, itemId); return true; });
+			() -> { store.removeMobExclusion(monsterId, scope, itemId); return true; });
 	}
 
 	public static Command removeMobExclusion(MonsterProfileStore store, int monsterId, String scope,
 		int itemId, String label)
 	{
 		return of("Allow here: " + label,
-			() -> { store.removeExclusion(monsterId, scope, itemId); return true; },
+			() -> { store.removeMobExclusion(monsterId, scope, itemId); return true; },
 			() -> { store.exclude(monsterId, scope, itemId); return true; });
 	}
 
@@ -199,14 +199,14 @@ public final class Commands
 	{
 		return of("Sim here: " + label,
 			() -> { store.addSim(monsterId, itemId, label); return true; },
-			() -> { store.removeSim(monsterId, itemId); return true; });
+			() -> { store.removeMobSim(monsterId, itemId); return true; });
 	}
 
 	public static Command removeMobSim(MonsterProfileStore store, int monsterId,
 		int itemId, String label)
 	{
 		return of("Unsim here: " + label,
-			() -> { store.removeSim(monsterId, itemId); return true; },
+			() -> { store.removeMobSim(monsterId, itemId); return true; },
 			() -> { store.addSim(monsterId, itemId, label); return true; });
 	}
 
@@ -215,7 +215,7 @@ public final class Commands
 	{
 		return of("Add trip supply " + name,
 			() -> { store.addFilterItem(monsterId, scope, itemId, name); return true; },
-			() -> { store.removeFilterItem(monsterId, scope, itemId); return true; });
+			() -> { store.removeMobFilter(monsterId, scope, itemId); return true; });
 	}
 
 	public static Command removeFilterItem(MonsterProfileStore store, int monsterId, String scope,
@@ -226,7 +226,7 @@ public final class Commands
 			.getOrDefault(scope, Map.of())
 			.getOrDefault(itemId, "item " + itemId);
 		return of("Remove trip supply " + name,
-			() -> { store.removeFilterItem(monsterId, scope, itemId); return true; },
+			() -> { store.removeMobFilter(monsterId, scope, itemId); return true; },
 			() -> { store.addFilterItem(monsterId, scope, itemId, name); return true; });
 	}
 }

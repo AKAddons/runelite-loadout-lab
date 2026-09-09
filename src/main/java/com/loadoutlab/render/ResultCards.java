@@ -1820,10 +1820,11 @@ public class ResultCards
 	private JLabel poisonPlate(Map<String, Object> mob, boolean bis)
 	{
 		String mode = Model.str(mob, "antivenom");
+		String category = Model.str(mob, "cureCategory");
 		Map<String, Object> chosen = null;
 		for (Map<String, Object> supply : supplies)
 		{
-			if ("antivenom".equals(Model.str(supply, "category")))
+			if (category.equals(Model.str(supply, "category")))
 			{
 				chosen = supply;
 				break;
@@ -1831,7 +1832,7 @@ public class ResultCards
 		}
 		boolean none = "NONE".equals(mode);
 		String name = chosen != null ? Model.str(chosen, "name")
-			: none ? "none" : "Detect best - no anti-venom in the bank";
+			: none ? "none" : "Detect best - nothing for it in the bank";
 		JLabel plate = new JLabel();
 		plate.setPreferredSize(new Dimension(24, 24));
 		plate.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1844,7 +1845,8 @@ public class ResultCards
 		{
 			// Detect best with nothing banked (field 2026-09-09: the grey
 			// dash read as an empty box): the potion, crossed out.
-			AsyncBufferedImage img = itemManager.getImage(chosen != null ? Model.id(chosen, "itemId") : 12913);
+			AsyncBufferedImage img = itemManager.getImage(chosen != null ? Model.id(chosen, "itemId")
+				: "antipoison".equals(category) ? 5952 : 12913);
 			boolean missing = chosen == null;
 			Runnable seat = () -> SwingUtilities.invokeLater(() -> plate.setIcon(missing
 				? Ui.crossedOut(img, 22) : new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
@@ -1861,12 +1863,12 @@ public class ResultCards
 			List<Map<String, Object>> options = List.of();
 			for (Map<String, Object> entry : supplyCatalog)
 			{
-				if ("antivenom".equals(Model.str(entry, "category")))
+				if (category.equals(Model.str(entry, "category")))
 				{
 					options = Model.list(entry, "options");
 				}
 			}
-			JPopupMenu menu = supplyMenu("antivenom", options);
+			JPopupMenu menu = supplyMenu(category, options);
 			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
 		}
 		return plate;

@@ -24,7 +24,8 @@ public final class TripSupplies
 	public static final String SPELLBOOK_CAPE = "spellbookCape";
 	public static final String ANTIVENOM = "antivenom";
 	public static final String SHIP_REPAIR_KIT = "shipRepairKit";
-	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, SHIP_REPAIR_KIT};
+	public static final String ANTIPOISON = "antipoison";
+	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT};
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
@@ -61,6 +62,7 @@ public final class TripSupplies
 
 	private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
 	private static final Set<String> VENOMOUS = new HashSet<>();
+	private static final Set<String> POISONOUS = new HashSet<>();
 	private static final Map<String, int[]> SPELL_KITS = new LinkedHashMap<>();
 
 	static
@@ -110,6 +112,7 @@ public final class TripSupplies
 				}
 			}
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
+			JsonResources.strings(root, "poisonMonsters", POISONOUS);
 		}
 	}
 
@@ -194,18 +197,23 @@ public final class TripSupplies
 	 * list, matched by name so araxyte/snakeling variants count). */
 	public static boolean inflictsVenom(MonsterStats monster)
 	{
+		return named(monster, VENOMOUS);
+	}
+
+	/** Poisons but does not envenom (the Kings' spinolyps, KQ...) - the
+	 * antipoison category; venomous mobs keep anti-venom. */
+	public static boolean inflictsPoison(MonsterStats monster)
+	{
+		return named(monster, POISONOUS) && !named(monster, VENOMOUS);
+	}
+
+	private static boolean named(MonsterStats monster, Set<String> tokens)
+	{
 		if (monster == null)
 		{
 			return false;
 		}
 		String name = monster.getName().toLowerCase(Locale.ROOT);
-		for (String token : VENOMOUS)
-		{
-			if (name.contains(token))
-			{
-				return true;
-			}
-		}
-		return false;
+		return tokens.stream().anyMatch(name::contains);
 	}
 }

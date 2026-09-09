@@ -207,4 +207,20 @@ public class TripSuppliesTest
 			id -> id == 9075 || id == 564 || id == 563 || id == 10890 || id == 1718);
 		org.junit.jupiter.api.Assertions.assertNull(detected);
 	}
+
+	@Test
+	public void antipoisonCoversThePoisonersTheVenomListDoesNot()
+	{
+		LoadoutData data = new DataService().load();
+		MonsterStats rex = data.searchMonsters("Dagannoth Rex", 1).get(0);
+		MonsterStats zulrah = data.searchMonsters("Zulrah", 1).get(0);
+		Assert.assertTrue(TripSupplies.inflictsPoison(rex));
+		Assert.assertFalse(TripSupplies.inflictsVenom(rex));
+		Assert.assertFalse("venom is its own category", TripSupplies.inflictsPoison(zulrah));
+		Assert.assertEquals("ANTIDOTE_PP", TripSupplies.options(TripSupplies.ANTIPOISON).get(0).key);
+		Assert.assertEquals("ANTIPOISON",
+			TripSupplies.detectBest(TripSupplies.ANTIPOISON, id -> id == 175 || id == 9075).key);
+		Assert.assertNotNull(TripSupplies.option(TripSupplies.ANTIPOISON, "CURE_ME"));
+		Assert.assertTrue(java.util.Arrays.asList(TripSupplies.CATEGORY_KEYS).contains(TripSupplies.ANTIPOISON));
+	}
 }

@@ -92,11 +92,11 @@ class MonsterProfileStoreTest
 		store.exclude(415, ALL, 4151);
 		store.exclude(415, "MELEE", 4151);
 
-		store.removeExclusion(415, "MELEE", 4151);
+		store.removeMobExclusion(415, "MELEE", 4151);
 		assertEquals(Set.of(4151), store.exclusionsFor(415, "MELEE"),
 			"the all-sets exclusion still applies after the style one is removed");
 
-		store.removeExclusion(415, ALL, 4151);
+		store.removeMobExclusion(415, ALL, 4151);
 		assertTrue(store.exclusionsFor(415, "MELEE").isEmpty());
 		assertTrue(store.allExclusions(415).isEmpty(),
 			"raw view empties once every scope is removed");
@@ -123,7 +123,7 @@ class MonsterProfileStoreTest
 		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Set.of(4151), reloaded.exclusionsFor(415, "MELEE"));
 
-		reloaded.removeExclusion(415, ALL, 4151);
+		reloaded.removeMobExclusion(415, ALL, 4151);
 		MonsterProfileStore emptied = freshStore();
 		assertTrue(emptied.allExclusions(415).isEmpty());
 	}
@@ -138,7 +138,7 @@ class MonsterProfileStoreTest
 
 		MonsterProfileStore next = freshStore();
 		assertEquals(Map.of(GearSlot.HANDS, 21183), next.pinsFor(415, "MELEE"));
-		assertEquals("bring antidote++, pray melee after the spec", next.noteFor(415));
+		assertEquals("bring antidote++, pray melee after the spec", next.note(415));
 		assertEquals(Set.of(12695), filterItemsFor(next, 415, "MELEE"));
 		assertEquals("Super combat potion(4)",
 			next.allFilterItems(415).get("MELEE").get(12695));
@@ -150,10 +150,10 @@ class MonsterProfileStoreTest
 	{
 		store.setPinnedSpell(415, "Wind Bolt");
 		assertEquals("Wind Bolt", freshStore()
-			.pinnedSpellFor(415));
-		assertEquals("", store.pinnedSpellFor(9999), "other mobs stay on auto");
+			.pinnedSpell(415));
+		assertEquals("", store.pinnedSpell(9999), "other mobs stay on auto");
 		store.setPinnedSpell(415, "");
-		assertEquals("", store.pinnedSpellFor(415));
+		assertEquals("", store.pinnedSpell(415));
 	}
 
 	@Test
@@ -167,10 +167,10 @@ class MonsterProfileStoreTest
 		// round-trip, the path the compute actually reads.
 		store.setPinnedSpec(415, 28922);
 		assertEquals(28922, freshStore()
-			.pinnedSpecFor(415), "the spec pin must survive save + reload");
-		assertEquals(0, store.pinnedSpecFor(9999), "other mobs stay on auto");
+			.pinnedSpec(415), "the spec pin must survive save + reload");
+		assertEquals(0, store.pinnedSpec(9999), "other mobs stay on auto");
 		store.setPinnedSpec(415, 0);
-		assertEquals(0, store.pinnedSpecFor(415), "clearing returns to auto");
+		assertEquals(0, store.pinnedSpec(415), "clearing returns to auto");
 	}
 
 	@Test
@@ -184,7 +184,7 @@ class MonsterProfileStoreTest
 		store.unpin(415, ALL, GearSlot.HANDS);
 		store.setNote(415, "  ");
 		store.setPinnedSpell(415, null);
-		store.removeFilterItem(415, "MELEE", 385);
+		store.removeMobFilter(415, "MELEE", 385);
 
 		String json = configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles");
 		assertEquals("{}", json, "empty profiles must not accumulate as husks");
@@ -197,7 +197,7 @@ class MonsterProfileStoreTest
 		configManager.setConfiguration("loadoutlab", SCOPE + ".monsterProfiles", "{not json!");
 		MonsterProfileStore fresh = freshStore();
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
-		assertEquals("", fresh.noteFor(415));
+		assertEquals("", fresh.note(415));
 	}
 
 	@Test
@@ -215,7 +215,7 @@ class MonsterProfileStoreTest
 		assertEquals(Map.of(22324, "Ghrazi rapier"), reloaded.allSims(239),
 			"the sim survives a config round-trip");
 
-		store.removeSim(239, 22324);
+		store.removeMobSim(239, 22324);
 		assertTrue(store.allSims(239).isEmpty());
 		assertEquals("{}", configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles"),
 			"an emptied sims profile prunes back to nothing");
@@ -225,18 +225,18 @@ class MonsterProfileStoreTest
 	@DisplayName("supply overrides persist per mob and clear back to the global default")
 	void supplyOverridesPersistAndClear()
 	{
-		store.setSupply(8781, "prayerRestore", "SANFEW_SERUM");
-		store.setSupply(8781, "food", "NONE");
+		store.setSupplyOverride(8781, "prayerRestore", "SANFEW_SERUM");
+		store.setSupplyOverride(8781, "food", "NONE");
 		assertEquals(Map.of("prayerRestore", "SANFEW_SERUM", "food", "NONE"),
-			store.supplies(8781));
-		assertTrue(store.supplies(9999).isEmpty(), "another mob keeps the defaults");
+			store.supplyOverrides(8781));
+		assertTrue(store.supplyOverrides(9999).isEmpty(), "another mob keeps the defaults");
 
 		MonsterProfileStore reloaded = freshStore();
-		assertEquals("SANFEW_SERUM", reloaded.supplies(8781).get("prayerRestore"),
+		assertEquals("SANFEW_SERUM", reloaded.supplyOverrides(8781).get("prayerRestore"),
 			"overrides survive a config round-trip");
 
-		store.setSupply(8781, "prayerRestore", null);
-		assertEquals(Map.of("food", "NONE"), store.supplies(8781),
+		store.setSupplyOverride(8781, "prayerRestore", null);
+		assertEquals(Map.of("food", "NONE"), store.supplyOverrides(8781),
 			"a null choice returns the category to the global default");
 	}
 
@@ -247,11 +247,11 @@ class MonsterProfileStoreTest
 		// The Sim-here field bug's lesson: every Stored field must join
 		// save()'s empty check, or a supplies-only profile would be erased
 		// by the very call that set it.
-		store.setSupply(8781, "antivenom", "ANTIVENOM_PLUS");
+		store.setSupplyOverride(8781, "antivenom", "ANTIVENOM_PLUS");
 		MonsterProfileStore reloaded = freshStore();
-		assertEquals(Map.of("antivenom", "ANTIVENOM_PLUS"), reloaded.supplies(8781));
+		assertEquals(Map.of("antivenom", "ANTIVENOM_PLUS"), reloaded.supplyOverrides(8781));
 
-		store.setSupply(8781, "antivenom", "");
+		store.setSupplyOverride(8781, "antivenom", "");
 		assertEquals("{}", configManager.getConfiguration("loadoutlab", SCOPE + ".monsterProfiles"),
 			"clearing the only override prunes the profile away");
 	}

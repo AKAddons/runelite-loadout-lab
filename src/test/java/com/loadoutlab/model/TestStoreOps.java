@@ -12,8 +12,13 @@ import java.util.Map;
  * <p>{@code acceptedToggles} caps how many store TOGGLES succeed; past
  * it they refuse, which is how a revert is made to fail on purpose.
  */
-class TestStoreOps implements CommandEngine.StoreOps
+class TestStoreOps implements CommandEngine.StoreOps, CommandEngine.MobProfiles
 {
+	public CommandEngine.MobProfiles mobs()
+	{
+		return this;
+	}
+
 	private final int acceptedToggles;
 	private int toggles;
 

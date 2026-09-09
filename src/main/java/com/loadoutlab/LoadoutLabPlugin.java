@@ -672,39 +672,9 @@ public class LoadoutLabPlugin extends Plugin
 					}
 
 					@Override
-					public String pinnedSpell(int monsterId)
-					{
-						return mobProfiles.pinnedSpellFor(monsterId);
-					}
-
-					@Override
-					public void setPinnedSpell(int monsterId, String spellName)
-					{
-						mobProfiles.setPinnedSpell(monsterId, spellName);
-					}
-
-					@Override
-					public int pinnedSpec(int monsterId)
-					{
-						return mobProfiles.pinnedSpecFor(monsterId);
-					}
-
-					@Override
 					public void setPinnedSpec(int monsterId, int itemId)
 					{
 						exec(Commands.setPinnedSpec(mobProfiles, monsterId, itemId, itemLabel(itemId)));
-					}
-
-					@Override
-					public String note(int monsterId)
-					{
-						return mobProfiles.noteFor(monsterId);
-					}
-
-					@Override
-					public void setNote(int monsterId, String note)
-					{
-						mobProfiles.setNote(monsterId, note);
 					}
 
 					@Override
@@ -747,18 +717,6 @@ public class LoadoutLabPlugin extends Plugin
 					}
 
 					@Override
-					public void removeMobExclusion(int monsterId, String scope, int itemId)
-					{
-						mobProfiles.removeExclusion(monsterId, scope, itemId);
-					}
-
-					@Override
-					public void removeMobSim(int monsterId, int itemId)
-					{
-						mobProfiles.removeSim(monsterId, itemId);
-					}
-
-					@Override
 					public void addMobFilter(int monsterId, int itemId)
 					{
 						mobProfiles.addFilterItem(monsterId,
@@ -767,21 +725,9 @@ public class LoadoutLabPlugin extends Plugin
 					}
 
 					@Override
-					public void removeMobFilter(int monsterId, String scope, int itemId)
+					public CommandEngine.MobProfiles mobs()
 					{
-						mobProfiles.removeFilterItem(monsterId, scope, itemId);
-					}
-
-					@Override
-					public Map<String, String> supplyOverrides(int profileId)
-					{
-						return mobProfiles.supplies(profileId);
-					}
-
-					@Override
-					public void setSupplyOverride(int profileId, String category, String choice)
-					{
-						mobProfiles.setSupply(profileId, category, choice);
+						return mobProfiles;
 					}
 
 					@Override
@@ -790,11 +736,6 @@ public class LoadoutLabPlugin extends Plugin
 						return mobProfiles.skipDegradable(monsterId, config.skipDegradableDefault());
 					}
 
-					@Override
-					public void setSkipDegradable(int monsterId, boolean skip)
-					{
-						mobProfiles.setSkipDegradable(monsterId, skip);
-					}
 				});
 			// The one-surface host: the model-driven renderer IS the
 			// panel. (No cross-plugin registration exists any more - the
@@ -916,7 +857,6 @@ public class LoadoutLabPlugin extends Plugin
 	private static final Set<String> RENDER_KEYS =
 		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip");
 
-
 	/** Client-thread staging push: the castability state the panel's
 	 * chips read - BOOSTED magic (field call 2026-07-21: castability
 	 * follows the boosted stat), the Yama rite unlock, the live book. */
@@ -938,7 +878,6 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-
 	/** The persistent trip-supply defaults (choice keys by TripSupplies
 	 * category) - store-backed, every category DETECT_BEST until the grey
 	 * chip's menu changes it. The panel resolves them per result. */
@@ -955,7 +894,6 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		return defaults;
 	}
-
 
 	/** The RuneLite config profile changed: config-backed stores re-read. */
 	@Subscribe
@@ -1436,8 +1374,6 @@ public class LoadoutLabPlugin extends Plugin
 		return item == null ? ("item " + itemId) : item.label();
 	}
 
-
-
 	/** Effective exclusions per style: the global list unioned with this
 	 * mob's ALL + style scopes. Styles with no mob exclusions share the
 	 * global set instance, so their cache keys stay stable. */
@@ -1545,11 +1481,10 @@ public class LoadoutLabPlugin extends Plugin
 		return byStyle;
 	}
 
-
 	/** The mob's pinned autocast spell resolved to the dataset, or null. */
 	private SpellStats resolvedPinnedSpell(int monsterId)
 	{
-		String name = mobProfiles == null ? "" : mobProfiles.pinnedSpellFor(monsterId);
+		String name = mobProfiles == null ? "" : mobProfiles.pinnedSpell(monsterId);
 		if (name.isEmpty() || data == null)
 		{
 			return null;
@@ -1588,7 +1523,6 @@ public class LoadoutLabPlugin extends Plugin
 			clientUI.requestFocus();
 		};
 	}
-
 
 	/**
 	 * Fire-and-forget: ask DWMS for its tracked storages (see DwmsLink).
@@ -1898,7 +1832,7 @@ public class LoadoutLabPlugin extends Plugin
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
 				perMobSims(mobs), pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
-				mobProfiles.pinnedSpecFor(anchor.getId()),
+				mobProfiles.pinnedSpec(anchor.getId()),
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{
@@ -1961,7 +1895,7 @@ public class LoadoutLabPlugin extends Plugin
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps,
 				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
-				mobProfiles.pinnedSpecFor(monster.getId()),
+				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
 				{
@@ -1997,7 +1931,6 @@ public class LoadoutLabPlugin extends Plugin
 			}
 		});
 	}
-
 
 	/** One-time retirement of "stored elsewhere" (2026-08-12): the
 	 * concept collapsed into sims - both meant "count this as owned" -

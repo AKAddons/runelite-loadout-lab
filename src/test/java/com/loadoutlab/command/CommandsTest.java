@@ -152,9 +152,9 @@ class CommandsTest
 		mobs.setNote(MOB, "bring antivenom");
 
 		history.execute(Commands.setNote(mobs, MOB, "bring antivenom + house tabs"));
-		assertEquals("bring antivenom + house tabs", mobs.noteFor(MOB));
+		assertEquals("bring antivenom + house tabs", mobs.note(MOB));
 		history.undo();
-		assertEquals("bring antivenom", mobs.noteFor(MOB));
+		assertEquals("bring antivenom", mobs.note(MOB));
 
 		assertFalse(history.execute(Commands.setNote(mobs, MOB, "bring antivenom")),
 			"no-op note save must not land on the stack");
@@ -166,9 +166,9 @@ class CommandsTest
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		history.execute(Commands.setPinnedSpell(mobs, MOB, "Ice Barrage"));
-		assertEquals("Ice Barrage", mobs.pinnedSpellFor(MOB));
+		assertEquals("Ice Barrage", mobs.pinnedSpell(MOB));
 		history.undo();
-		assertTrue(mobs.pinnedSpellFor(MOB) == null || mobs.pinnedSpellFor(MOB).isEmpty());
+		assertTrue(mobs.pinnedSpell(MOB) == null || mobs.pinnedSpell(MOB).isEmpty());
 	}
 
 	@Test

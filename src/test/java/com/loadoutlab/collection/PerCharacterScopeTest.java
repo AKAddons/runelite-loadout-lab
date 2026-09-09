@@ -103,13 +103,13 @@ class PerCharacterScopeTest
 		supplies.loadScope("std.1111");
 		profiles.setNote(2215, "bring a dds");
 		supplies.setChoice("food", "shark");
-		assertEquals("bring a dds", profiles.noteFor(2215));
+		assertEquals("bring a dds", profiles.note(2215));
 		assertEquals("shark", supplies.choice("food"));
 
 		profiles.loadScope("std.2222");
 		supplies.loadScope("std.2222");
 		// noteFor returns "" for absent, never null.
-		assertEquals("", profiles.noteFor(2215), "the alt inherited the main's mob notes");
+		assertEquals("", profiles.note(2215), "the alt inherited the main's mob notes");
 		assertNotEquals("shark", supplies.choice("food"),
 			"the alt inherited the main's supply defaults");
 	}

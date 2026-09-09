@@ -117,4 +117,27 @@ class CureMeLockTest
 		assertTrue(engine.execute("select", Map.of("query", "abyssal sire")));
 		assertEquals(1, charge.get(), "Lunar home + swap: Arceuus casts are back");
 	}
+
+	@Test
+	@DisplayName("Cure Me chosen for a poisoner (Dagannoth Rex, antipoison) camps Lunar like it does for venom")
+	void cureMeForPoison()
+	{
+		AtomicReference<String> lock = new AtomicReference<>();
+		CommandEngine engine = new CommandEngine(data, new PageState(),
+			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+				boosts, prayers, budget, swaps, onDone) -> lock.set(book), new CompanionLink());
+		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+			boosts, prayers, budget, swaps, onDone) -> lock.set(book));
+		engine.setStoreOps(new TestStoreOps()
+		{
+			@Override
+			public Map<String, String> supplyOverrides(int profileId)
+			{
+				return Map.of("antipoison", "CURE_ME");
+			}
+		});
+		engine.setSupplyDefaults(() -> Map.of("antipoison", "DETECT_BEST"));
+		assertTrue(engine.execute("select", Map.of("query", "dagannoth rex")));
+		assertEquals("lunar", lock.get());
+	}
 }
