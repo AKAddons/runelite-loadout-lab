@@ -100,7 +100,8 @@ class LowLevelCeilingTest
 				{
 					continue;
 				}
-				assertTrue(fresh.canEquip(worn.getRequirements()),
+				// Levels only: the ceiling never trims on the quest log (2026-09-09).
+				assertTrue(fresh.withAllQuests().canEquip(worn.getRequirements()),
 					"the ceiling put on " + worn.getName()
 						+ ", which a 10 Attack account cannot equip");
 			}

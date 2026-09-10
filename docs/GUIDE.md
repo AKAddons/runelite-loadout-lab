@@ -101,8 +101,10 @@ same weapon tie on stats, the strongest venom wins the suggestion
 ### Game-best ceiling comparison
 
 Every style card can show the true best-in-slot ceiling set beside yours,
-so you see how close your kit is. Slots where you already own the best (or
-a stat-identical analog) get a gold border.
+so you see how close your kit is. The ceiling honours your levels but never
+your quest log: Barrows gloves sit in it before you finish Recipe for
+Disaster. Slots where you already own the best (or a stat-identical
+analog) get a gold border.
 
 ![Game-best ceiling comparison](img/game-best.png)
 

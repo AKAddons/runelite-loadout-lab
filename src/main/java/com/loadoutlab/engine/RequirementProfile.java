@@ -26,6 +26,13 @@ public final class RequirementProfile
 		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Collections.emptySet() : completedQuests));
 	}
 
+	/** The same levels with every quest done - the game-best ceiling never
+	 * trims on the quest log (Andrew 2026-09-09). */
+	public RequirementProfile withAllQuests()
+	{
+		return new RequirementProfile(levels, allQuests());
+	}
+
 	public Map<Skill, Integer> getLevels()
 	{
 		return Collections.unmodifiableMap(levels);

@@ -3322,7 +3322,7 @@ public class OptimizerService
 		CombatStyle style, PlayerLevels gameLevels)
 	{
 		OptimizationRequest r = request(
-			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements,
+			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
 			.withExcludedItems(excludedFor(ctx, style, mob))
 			.withSpellbookLock(ctx.lock)

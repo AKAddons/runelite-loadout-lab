@@ -34,11 +34,12 @@
       ],
       "tests": [
         "engine/LoadoutOptimizerTest.java",
-        "engine/AnalogTest.java"
+        "engine/AnalogTest.java",
+        "optimizer/GameBestIgnoresQuestsTest.java"
       ],
       "since": "0.1.0",
       "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-09: the ceiling ignores the quest log (Barrows gloves before RFD) while still honouring levels - Discord: gold rune gloves at the crab; GameBestIgnoresQuestsTest."
     },
     {
       "id": "incoming-damage",
