@@ -91,8 +91,8 @@ public class ResultCards
 		button.setContentAreaFilled(false);
 		button.setBorder(skip ? new RoundedBorder(new Color(190, 150, 70), 2, 14)
 			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
-		button.setToolTipText(skip ? "Degradable gear skipped for this mob - click to allow it"
-			: n + " here wear down or burn charges - click to skip them for this mob");
+		button.setToolTipText(skip ? "Degradable gear skipped here - click to allow"
+			: n + " degrade or burn charges - click to skip them here");
 		button.setFocusable(false);
 		button.addActionListener(e -> commands.send("toggle-degradable", new HashMap<>()));
 		return button;
@@ -1832,7 +1832,7 @@ public class ResultCards
 		}
 		boolean none = "NONE".equals(mode);
 		String name = chosen != null ? Model.str(chosen, "name")
-			: none ? "none" : "Detect best - nothing for it in the bank";
+			: none ? "none" : "Detect best - none banked";
 		JLabel plate = new JLabel();
 		plate.setPreferredSize(new Dimension(24, 24));
 		plate.setHorizontalAlignment(SwingConstants.CENTER);

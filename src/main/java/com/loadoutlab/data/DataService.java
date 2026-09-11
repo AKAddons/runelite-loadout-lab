@@ -149,15 +149,21 @@ public final class DataService
 	 * Trailblazer outfits, banners, and trophies are zero-stat cosmetics.
 	 * The wiki examine text says "league" only on leagues rewards.
 	 */
+	private static final List<String> LEAGUES_PREFIXES = new ArrayList<>();
+	private static final List<String> LEAGUES_CONTAINS = new ArrayList<>();
+
+	static
+	{
+		JsonObject leagues = JsonResources.objectOrThrow("leagues_items.json");
+		JsonResources.strings(leagues, "prefixes", LEAGUES_PREFIXES);
+		JsonResources.strings(leagues, "contains", LEAGUES_CONTAINS);
+	}
+
 	private static boolean isLeaguesReward(String name, String examine)
 	{
 		String n = name == null ? "" : name.toLowerCase();
-		// Only the actual Leagues V echo line - 'Echo boots' (Colosseum: echo crystal + guardian boots) is
-		// a main-game recoil item and must stay in the corpus.
-		return n.startsWith("echo venator") || n.startsWith("echo virtus")
-			|| n.startsWith("echo ahrim") || n.startsWith("echo axe")
-			|| n.startsWith("echo pickaxe") || n.startsWith("echo harpoon")
-			|| n.contains("trailblazer")
+		return LEAGUES_PREFIXES.stream().anyMatch(n::startsWith)
+			|| LEAGUES_CONTAINS.stream().anyMatch(n::contains)
 			|| (examine != null && examine.toLowerCase().contains("league"));
 	}
 

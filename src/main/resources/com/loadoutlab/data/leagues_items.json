@@ -1,0 +1,16 @@
+{
+	"_comment": "Leagues-only rewards never enter the corpus (DataService.isLeaguesReward). prefixes / contains match the lower-cased name; the examine check ('league') still runs where the corpus carries examine text. Echo boots (Colosseum) and the Rosewood/Blazing blowpipes are main-game and stay. Drygore blowpipe: Demonic Pacts League, Echo Kalphite Queen (wiki 2026-09-10).",
+	"prefixes": [
+		"echo venator",
+		"echo virtus",
+		"echo ahrim",
+		"echo axe",
+		"echo pickaxe",
+		"echo harpoon",
+		"drygore blowpipe",
+		"raging echoes"
+	],
+	"contains": [
+		"trailblazer"
+	]
+}

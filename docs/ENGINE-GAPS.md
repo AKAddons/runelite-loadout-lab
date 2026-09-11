@@ -140,6 +140,9 @@ listed below.
 15. **Style immunities not in the data**: Dusk is immune to Magic (wiki) but weirdgloop encodes neither that nor gargoyle-type finishing requirements (rock/granite hammer). A curated per-monster note table would cover: Dusk magic immunity + hammer-to-finish, gargoyles, rockslugs/salt, etc.
 14. ~~Slayer-monster detection is a name heuristic~~ FIXED 2026-07-05: the data regen restored `is_slayer_monster` (the loader reads it; the name fallback remains as a safety net).
 
+
+**Leagues filter (2026-09-10):** the corpus drops Leagues-only rewards by name list (`leagues_items.json`) plus the examine text where the wiki carries it. Drygore blowpipe (Demonic Pacts League) joined the list after a Discord BiS report; Rosewood/Blazing blowpipes are main-game and stay.
+
 ## Data snapshot
 
 Bundled JSON regenerated **2026-07-05** by `scripts/refresh_data.py`:

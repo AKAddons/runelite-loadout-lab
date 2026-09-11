@@ -232,4 +232,27 @@ public class DataServiceTest
 		Assert.assertEquals(70, whip.getRequirements().getSkills().get("attack").intValue());
 		Assert.assertEquals(65, bandosChestplate.getRequirements().getSkills().get("defence").intValue());
 	}
+
+	@Test
+	public void leaguesOnlyRewardsNeverEnterTheCorpus()
+	{
+		// Discord 2026-09-09: a Drygore blowpipe (Demonic Pacts League, Echo
+		// Kalphite Queen) showed as ranged BiS. The examine text is not in
+		// the corpus, so the filter is a name list (leagues_items.json).
+		LoadoutData data = new DataService().load();
+		java.util.Set<Integer> ids = new java.util.HashSet<>();
+		java.util.Set<String> names = new java.util.HashSet<>();
+		for (GearItem item : data.getGearItems())
+		{
+			ids.add(item.getId());
+			names.add(item.getNameLower());
+		}
+		Assert.assertFalse("Drygore blowpipe (Echo Kalphite Queen)", ids.contains(30374));
+		Assert.assertTrue("Rosewood blowpipe is fletched in the main game", ids.contains(31583));
+		Assert.assertTrue("Blazing blowpipe is a Trailblazer ornament on a main-game pipe", ids.contains(28688));
+		Assert.assertFalse("Raging echoes cosmetics", names.stream().anyMatch(n -> n.startsWith("raging echoes")));
+		Assert.assertFalse("Echo venator bow", names.contains("echo venator bow"));
+		Assert.assertTrue("Toxic blowpipe stays", ids.contains(12926));
+		Assert.assertTrue("Echo boots (Colosseum) stay", names.contains("echo boots"));
+	}
 }
