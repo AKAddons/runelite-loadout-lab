@@ -330,4 +330,27 @@ class MonsterGroupsTest
 		assertNull(MonsterGroups.linkMatch(groups, "Abyssal demon"),
 			"the Sire's 'abyssal' alias must not swallow the slayer mob");
 	}
+
+	@Test
+	@DisplayName("Tombs of Amascut carries its stipulations: the P2 Wardens weigh 3x in the kit and the Wardens' spec is the dragon dagger")
+	void toaStipulations()
+	{
+		int weighted = 0;
+		int dagger = 0;
+		for (MonsterStats mob : byName("Tombs of Amascut").getMobs())
+		{
+			if ("3".equals(mob.attributeValue("weight:")))
+			{
+				weighted++;
+				assertTrue(mob.getVersion().startsWith("P2"), mob.label());
+				assertEquals(3 * mob.getHitpoints(), (int) com.loadoutlab.engine.MonsterMechanics.kitWeight(mob));
+			}
+			if ("dragon dagger".equals(com.loadoutlab.engine.MonsterMechanics.specStipulation(mob)))
+			{
+				dagger++;
+			}
+		}
+		assertEquals(2, weighted, "both P2 Wardens");
+		assertEquals(2, dagger, "the core and the enraged Warden");
+	}
 }

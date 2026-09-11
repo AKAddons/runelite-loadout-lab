@@ -149,6 +149,33 @@ public final class MonsterStats
 	 * pins/exclusions follow the real row. */
 	private String displayName;
 
+	/** The value after a "prefix:" attribute (group stipulations), or null. */
+	public String attributeValue(String prefix)
+	{
+		for (String a : attributes)
+		{
+			if (a.startsWith(prefix))
+			{
+				return a.substring(prefix.length());
+			}
+		}
+		return null;
+	}
+
+	/** A copy carrying extra attributes (the group's stipulations). */
+	public MonsterStats withAttributes(List<String> extra)
+	{
+		List<String> extended = new ArrayList<>(attributes);
+		extended.addAll(extra);
+		MonsterStats copy = new MonsterStats(id, name, version, combatLevel, hitpoints,
+			size, defence, magic, offensiveMagic, defensive, offence, extended,
+			slayerMonster, weaknessElement, weaknessSeverity);
+		copy.wikiVersion = getWikiVersion();
+		copy.displayName = displayName;
+		copy.toaInvocationLevel = toaInvocationLevel;
+		return copy;
+	}
+
 	public MonsterStats withDisplayName(String nick)
 	{
 		MonsterStats copy = withVersion(version);

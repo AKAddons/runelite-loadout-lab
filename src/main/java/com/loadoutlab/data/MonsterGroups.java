@@ -164,6 +164,21 @@ public final class MonsterGroups
 					{
 						resolved = resolved.withDisplayName(member.get("nick").getAsString());
 					}
+					// Raid stipulations (Andrew 2026-09-10): a kit weight (the
+					// fight that decides the raid) and a spec weapon family.
+					List<String> extra = new ArrayList<>();
+					if (member.has("weight"))
+					{
+						extra.add("weight:" + member.get("weight").getAsInt());
+					}
+					if (member.has("spec"))
+					{
+						extra.add("spec:" + member.get("spec").getAsString().toLowerCase(Locale.ROOT));
+					}
+					if (!extra.isEmpty())
+					{
+						resolved = resolved.withAttributes(extra);
+					}
 					mobs.add(resolved);
 				}
 				List<String> aliases = new ArrayList<>();

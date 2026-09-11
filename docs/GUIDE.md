@@ -53,6 +53,12 @@ level you actually run.
 
 ![Multi-mob rosters](img/multi-mob-roster.png)
 
+Curated raid groups can carry stipulations the shared kit obeys: at
+Tombs of Amascut the P2 Wardens weigh three times their hitpoints when
+the kit is chosen, so the shadow set survives a small inventory, and the
+Wardens' spec is always the dragon dagger, the community's proven choice
+for breaking into the next phase.
+
 ### Monster thumbnails
 
 Each roster row carries its monster's picture from the OSRS wiki -

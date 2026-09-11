@@ -749,7 +749,7 @@ public class OptimizerService
 		for (int j = 0; j < reqs.size(); j++)
 		{
 			DpsResult worn = calcRespecting(calc, reqs.get(j), bestWorn(calc, reqs.get(j), base, carried));
-			sum += (worn == null ? 0 : worn.getDps()) * Math.max(1, mobs.get(j).getHitpoints());
+			sum += (worn == null ? 0 : worn.getDps()) * MonsterMechanics.kitWeight(mobs.get(j));
 		}
 		return sum;
 	}
@@ -1154,7 +1154,7 @@ public class OptimizerService
 			{
 				continue;
 			}
-			idealTotal += winner.get(0).getDps() * Math.max(1, mobs.get(j).getHitpoints());
+			idealTotal += winner.get(0).getDps() * MonsterMechanics.kitWeight(mobs.get(j));
 			for (GearItem item : winner.get(0).getLoadout().getGear().values())
 			{
 				GearItem baseItem = item == null ? null : base.get(item.getSlot());
@@ -1211,7 +1211,7 @@ public class OptimizerService
 		double[] hp = new double[n];
 		for (int j = 0; j < n; j++)
 		{
-			hp[j] = Math.max(1, mobs.get(j).getHitpoints());
+			hp[j] = MonsterMechanics.kitWeight(mobs.get(j));
 		}
 		KitAnswer kit = new KitAnswer();
 		int used = 0;
@@ -1443,7 +1443,7 @@ public class OptimizerService
 			for (OptimizationRequest req : reqs)
 			{
 				DpsResult r = calcRespecting(calc, req, loadout);
-				double hp = Math.max(1, req.getMonster().getHitpoints());
+				double hp = MonsterMechanics.kitWeight(req.getMonster());
 				sum += (r == null ? 0 : r.getDps()) * hp;
 			}
 			if (sum > bestScore + 1e-9)
@@ -1667,13 +1667,13 @@ public class OptimizerService
 						if (shown != null)
 						{
 							list.add(shown);
-							lbTotal += shown.getDps() * Math.max(1, mobs.get(j).getHitpoints());
+							lbTotal += shown.getDps() * MonsterMechanics.kitWeight(mobs.get(j));
 						}
 						lbShown.add(list);
 						if (!shownOwned.get(j).isEmpty())
 						{
 							baseTotal += shownOwned.get(j).get(0).getDps()
-								* Math.max(1, mobs.get(j).getHitpoints());
+								* MonsterMechanics.kitWeight(mobs.get(j));
 						}
 					}
 					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
@@ -1698,12 +1698,12 @@ public class OptimizerService
 						lbGameShown.add(shown);
 						if (shown != null)
 						{
-							lbTotal += shown.getDps() * Math.max(1, mobs.get(j).getHitpoints());
+							lbTotal += shown.getDps() * MonsterMechanics.kitWeight(mobs.get(j));
 						}
 						if (shownGame.get(j) != null)
 						{
 							baseTotal += shownGame.get(j).getDps()
-								* Math.max(1, mobs.get(j).getHitpoints());
+								* MonsterMechanics.kitWeight(mobs.get(j));
 						}
 					}
 					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
@@ -2258,7 +2258,7 @@ public class OptimizerService
 							if (option[j] != null)
 							{
 								shownSpec += option[j].dpsAdded
-									* Math.max(1, mobs.get(j).getHitpoints());
+									* MonsterMechanics.kitWeight(mobs.get(j));
 							}
 						}
 						score = kitSpec.total + shownSpec;
@@ -2670,7 +2670,7 @@ public class OptimizerService
 					mobs.get(j), levels, owned, Collections.singleton(id), specPin != null);
 				if (perMob[j] != null)
 				{
-					score += perMob[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
+					score += perMob[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
 				}
 			}
 			// A pinned weapon is the player's explicit choice - it stays an
@@ -2784,7 +2784,7 @@ public class OptimizerService
 		{
 			if (top[j] != null)
 			{
-				score += top[j].dpsAdded * Math.max(1, mobs.get(j).getHitpoints());
+				score += top[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
 			}
 		}
 		return score;
@@ -2931,9 +2931,17 @@ public class OptimizerService
 		boolean lightbearer = ring != null && ring.getNameLower().contains("lightbearer");
 		// Spec weapons are weapons by definition (SpecialAttack.match rejects
 		// every other slot), so only the weapon partition needs scanning.
+		// A group's spec stipulation (the Wardens' dragon dagger: nothing
+		// breaks into the next phase faster - Andrew 2026-09-10) narrows the
+		// pool to that family whenever one is at hand; otherwise the free pick.
+		String family = MonsterMechanics.specStipulation(monster);
+		boolean stipulated = family != null && dataset.getGearItems(GearSlot.WEAPON).stream()
+			.anyMatch(i -> i.getNameLower().contains(family)
+				&& (owned == null || owned.owns(i.getId()) || request.isDream(i.getId())));
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
 		{
-			if (restrictTo != null && !restrictTo.contains(item.getId()))
+			if (restrictTo != null && !restrictTo.contains(item.getId())
+				|| stipulated && !item.getNameLower().contains(family))
 			{
 				continue;
 			}

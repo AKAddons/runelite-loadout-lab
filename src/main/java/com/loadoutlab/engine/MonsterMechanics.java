@@ -288,6 +288,19 @@ public final class MonsterMechanics
 	 * (vendored from the official calc, which excludes the Kephri
 	 * overlords). profileId maps the group's synthetic phase variants
 	 * back to their real rows. */
+	/** HP times the group's kit weight - the shared-kit currency. */
+	public static double kitWeight(MonsterStats monster)
+	{
+		String w = monster == null ? null : monster.attributeValue("weight:");
+		return Math.max(1, monster == null ? 1 : monster.getHitpoints()) * (w == null ? 1 : Integer.parseInt(w));
+	}
+
+	/** The spec weapon family a group stipulates for this mob, or null. */
+	public static String specStipulation(MonsterStats monster)
+	{
+		return monster == null ? null : monster.attributeValue("spec:");
+	}
+
 	public static boolean isToaInvocationScaled(MonsterStats monster)
 	{
 		return monster != null && TOA_INVOCATION_SCALED.contains(monster.profileId());

@@ -463,11 +463,12 @@
       "tests": [
         "optimizer/RosterOptimizerTest.java",
         "optimizer/GroupSimScopingTest.java",
-        "profile/RosterGolden.java"
+        "profile/RosterGolden.java",
+        "optimizer/ToaStipulationsTest.java"
       ],
       "since": "0.3.0",
       "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
     },
     {
       "id": "inventory-budget",
