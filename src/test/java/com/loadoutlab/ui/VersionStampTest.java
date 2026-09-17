@@ -1,5 +1,7 @@
 package com.loadoutlab.ui;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -30,5 +32,18 @@ class VersionStampTest
 				+ " have drifted - bump them together");
 		assertNotEquals("unknown", com.loadoutlab.PluginVersion.VERSION,
 			"the stamped resource must be readable at runtime");
+	}
+
+	@Test
+	@DisplayName("hub builds never show ${version}: the source fallback matches build.gradle and the stamp is never a placeholder")
+	void fallbackMatchesBuild() throws Exception
+	{
+		String gradle = java.nio.file.Files.readString(java.nio.file.Path.of("build.gradle"));
+		java.util.regex.Matcher m = java.util.regex.Pattern.compile("version = '([^']+)'").matcher(gradle);
+		assertTrue(m.find(), "build.gradle declares the version");
+		assertEquals(m.group(1), com.loadoutlab.PluginVersion.FALLBACK, "bump FALLBACK with the release");
+		assertFalse(com.loadoutlab.PluginVersion.VERSION.contains("${"), com.loadoutlab.PluginVersion.VERSION);
+		assertEquals(com.loadoutlab.PluginVersion.FALLBACK, com.loadoutlab.PluginVersion.stamp("version=${version}"));
+		assertEquals("9.9.9", com.loadoutlab.PluginVersion.stamp("version=9.9.9"));
 	}
 }

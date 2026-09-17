@@ -131,6 +131,8 @@ public class CommandEngine
 		void setSupplyOverride(int profileId, String category, String choice);
 
 		void setSkipDegradable(int monsterId, boolean skip);
+
+		Map<String, Map<GearSlot, Integer>> allPins(int monsterId);
 	}
 
 	private volatile StoreOps stores;
@@ -1779,7 +1781,8 @@ public class CommandEngine
 		page.put("dartTiers", BlowpipeDarts.tiers());
 		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
-			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies, cureMe(mobs)));
+			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies, cureMe(mobs),
+			(List<Map<String, Object>>) entry.get("mobs")));
 		link.publishPage(page);
 	}
 
@@ -2419,6 +2422,15 @@ public class CommandEngine
 							: owns.test(9762) ? 9762 : -1);
 					}
 					mob.put("mobExclusions", ops.mobExclusions(monsterId));
+					Map<String, Map<String, String>> pins = new LinkedHashMap<>();
+					ops.mobs().allPins(monsterId).forEach((scope, slots) ->
+					{
+						Map<String, String> named = new LinkedHashMap<>();
+						slots.forEach((slot, itemId) -> named.put(slot.name().toLowerCase(Locale.ROOT),
+							data.getGear(itemId) == null ? String.valueOf(itemId) : data.getGear(itemId).label()));
+						pins.put(scope, named);
+					});
+					mob.put("pins", pins);
 					mob.put("mobSims", ops.mobSims(monsterId));
 					mob.put("mobFilters", ops.mobFilters(monsterId));
 				}

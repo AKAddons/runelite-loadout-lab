@@ -19,6 +19,11 @@ class TestStoreOps implements CommandEngine.StoreOps, CommandEngine.MobProfiles
 		return this;
 	}
 
+	public java.util.Map<String, java.util.Map<com.loadoutlab.data.GearSlot, Integer>> allPins(int monsterId)
+	{
+		return java.util.Map.of();
+	}
+
 	private final int acceptedToggles;
 	private int toggles;
 

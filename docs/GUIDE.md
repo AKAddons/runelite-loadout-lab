@@ -163,6 +163,10 @@ the chips on each card, the prayer and boost pickers, the inventory
 budget, simulated gear, budgets and risk caps - tune them and the
 optimizer re-answers.
 
+The copy report names your global excludes and, under each mob, its
+pins by slot, per-mob excludes and sims, note and Degrades skip, so an
+empty card can be diagnosed from the report alone.
+
 ### Assumption pickers: prayer and boost
 
 The prayer and potion icons on each style card are pickers. Detect best
@@ -372,6 +376,12 @@ its own. Leagues and the main game count as separate characters for the
 same account. Lists made before 0.4.1 carry over to the first character
 you log in as.
 
+Outside the Chambers of Xeric, lizardman shamans require the full tier-5
+Shayzien set: it negates their acid spit and its prayer-ignoring poison,
+where lower tiers only soften it. The hard Kourend & Kebos diary lets a
+slayer helmet stand in for the helm, so on task the helm slot may keep it.
+A piece you do not own frees only its slot, and the note says so.
+
 ### Panel options: display and controls
 
 Every card line and control is optional, across three settings sections.
@@ -382,7 +392,12 @@ loading animation, and where the spec and thrall dps appear - in the
 numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
 wilderness controls, the Degrades chip, and whether a sea card's trip
-ledger opens expanded or as its total line). Defaults sets what every NEW result assumes: On
+ledger opens expanded or as its total line). Controls also holds **Reset
+all customizations**: tick it to wipe this profile's excludes, sims,
+stored-elsewhere and protect-only marks, filters, every mob's pins and
+notes, and the supply defaults; bank memory stays, and the tick clears
+itself. Customisations live in your RuneLite profile, so reinstalling the
+plugin never clears them - this does. Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost PER
 STYLE (Detect best, None, or a named pick for each of melee, ranged and

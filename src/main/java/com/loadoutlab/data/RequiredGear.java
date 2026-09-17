@@ -72,7 +72,7 @@ public final class RequiredGear
 		}
 	}
 
-	private static final Map<String, Rule> BY_NAME = new HashMap<>();
+	private static final Map<String, List<Rule>> BY_NAME = new HashMap<>();
 
 	static
 	{
@@ -91,7 +91,7 @@ public final class RequiredGear
 				Collections.unmodifiableList(items));
 			for (JsonElement m : row.getAsJsonArray("monsters"))
 			{
-				BY_NAME.put(m.getAsString(), rule);
+				BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
 			}
 		}
 		if (BY_NAME.isEmpty())
@@ -106,17 +106,22 @@ public final class RequiredGear
 
 	/** The requirement for this monster, or null. Name-keyed like the
 	 * notes, so RequiredGearTest pins every key against loaded rows. */
-	public static Rule ruleFor(MonsterStats monster)
+	/** Every rule for the monster (a full armour set is one rule per slot). */
+	public static List<Rule> rulesFor(MonsterStats monster)
 	{
-		return monster == null ? null
-			: BY_NAME.get(monster.getName().toLowerCase(Locale.ROOT));
+		return monster == null ? Collections.emptyList()
+			: BY_NAME.getOrDefault(monster.getName().toLowerCase(Locale.ROOT), Collections.emptyList());
 	}
 
-	/** The requirement's explanation for the stat panel, or null. */
-	public static String noteFor(MonsterStats monster)
+	/** slot -> acceptable ids, empty when nothing is required. */
+	public static Map<GearSlot, Set<Integer>> requiredIds(MonsterStats monster, LoadoutData data)
 	{
-		Rule rule = ruleFor(monster);
-		return rule == null ? null : rule.note;
+		Map<GearSlot, Set<Integer>> out = new EnumMap<>(GearSlot.class);
+		for (Rule rule : rulesFor(monster))
+		{
+			out.put(rule.slot, rule.ids(data));
+		}
+		return out;
 	}
 
 	/** Every curated monster key (test seam). */

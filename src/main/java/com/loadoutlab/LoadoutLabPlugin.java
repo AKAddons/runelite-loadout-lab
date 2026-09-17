@@ -849,6 +849,21 @@ public class LoadoutLabPlugin extends Plugin
 			// paying for a compute.
 			engine.execute("republish", Map.of());
 		}
+		else if ("resetCustomizations".equals(key) && config.resetCustomizations())
+		{
+			// Lostmind (Discord 2026-09-17): customisations live in the
+			// RuneLite profile, so a reinstall cannot clear them. Bank
+			// memory is not a customisation and stays.
+			for (IdSetStore store : new IdSetStore[]{exclusions, protectOnly, dreams, manualOwned})
+			{
+				store.clear();
+			}
+			alwaysFilter.clear();
+			mobProfiles.clear();
+			supplyDefaults.clear();
+			configManager.setConfiguration("loadoutlab", "resetCustomizations", false);
+			engine.execute("recompute", Map.of());
+		}
 	}
 
 	/** Settings the RENDERER honours, so flipping one must redraw. The

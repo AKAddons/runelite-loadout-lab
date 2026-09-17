@@ -26,7 +26,7 @@ final class ReportBuilder
 	static String build(String version, PageState state, List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
 		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
-		List<Map<String, Object>> supplies, boolean lunarCamp)
+		List<Map<String, Object>> supplies, boolean lunarCamp, List<Map<String, Object>> mobNodes)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
@@ -35,6 +35,7 @@ final class ReportBuilder
 			MonsterStats mob = mobs.get(i);
 			sb.append(mobs.size() == 1 ? "Target: " : "Mob: ").append(mob.label())
 				.append(" - ").append(mob.getHitpoints()).append(" hp\n");
+			appendProfile(sb, mobNodes != null && i < mobNodes.size() ? mobNodes.get(i) : null);
 			if (i == 0)
 			{
 				appendParams(sb, state, counts, lunarCamp);
@@ -112,6 +113,62 @@ final class ReportBuilder
 		return sb.toString();
 	}
 
+	/** What the player customised for this mob - the empty-card diagnosis
+	 * (Lostmind, Discord 2026-09-17). */
+	@SuppressWarnings("unchecked")
+	private static void appendProfile(StringBuilder sb, Map<String, Object> mob)
+	{
+		if (mob == null)
+		{
+			return;
+		}
+		Object pins = mob.get("pins");
+		if (pins instanceof Map)
+		{
+			((Map<String, Map<String, String>>) pins).forEach((scope, slots) ->
+			{
+				if (!slots.isEmpty())
+				{
+					sb.append("  Pins").append("ALL".equals(scope) ? "" : " (" + scope + ")").append(": ");
+					slots.forEach((slot, name) -> sb.append(slot).append('=').append(name).append(", "));
+					sb.setLength(sb.length() - 2);
+					sb.append('\n');
+				}
+			});
+		}
+		names(sb, "  Excluded here: ", mob.get("mobExclusions"), true);
+		names(sb, "  Simmed here: ", mob.get("mobSims"), false);
+		Object note = mob.get("note");
+		if (note instanceof String && !((String) note).isEmpty())
+		{
+			sb.append("  Note: ").append(note).append('\n');
+		}
+		if (Boolean.TRUE.equals(mob.get("skipDegradable")))
+		{
+			sb.append("  Degradable gear skipped\n");
+		}
+	}
+
+	/** "label: name (scope), name" from a [{name, scope?}] list; nothing when empty. */
+	@SuppressWarnings("unchecked")
+	private static void names(StringBuilder sb, String label, Object list, boolean scoped)
+	{
+		if (!(list instanceof List) || ((List<?>) list).isEmpty())
+		{
+			return;
+		}
+		sb.append(label);
+		for (Object o : (List<?>) list)
+		{
+			Map<String, Object> item = (Map<String, Object>) o;
+			Object scope = item.get("scope");
+			sb.append(item.get("name"))
+				.append(scoped && scope != null && !"ALL".equals(scope) ? " (" + scope + ")" : "").append(", ");
+		}
+		sb.setLength(sb.length() - 2);
+		sb.append('\n');
+	}
+
 	private static void appendParams(StringBuilder sb, PageState state, Map<String, Object> counts, boolean lunarCamp)
 	{
 		Map<String, Object> params = state.paramsNode();
@@ -148,6 +205,7 @@ final class ReportBuilder
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed, ")
 				.append(counts.getOrDefault("stored", 0)).append(" stored elsewhere\n");
+			names(sb, "  Excluded: ", counts.get("excludedItems"), false);
 			Object names = counts.get("simmedNames");
 			if (names instanceof List && !((List<?>) names).isEmpty())
 			{

@@ -447,7 +447,8 @@
       ],
       "tests": [],
       "since": "0.3.3",
-      "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot."
+      "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot.",
+      "notes": " 2026-09-17: Reset all customizations (Controls) wipes every store but the ledger and unticks itself - Lostmind: a reinstall cannot clear a RuneLite profile."
     },
     {
       "id": "multi-mob-roster",
@@ -499,10 +500,12 @@
       ],
       "tests": [
         "data/RequiredGearTest.java",
-        "optimizer/RequiredGearOptimizerTest.java"
+        "optimizer/RequiredGearOptimizerTest.java",
+        "engine/ShamanShayzienTest.java"
       ],
       "since": "0.3.5",
-      "capture": "A basilisk result with the mirror shield forced into the shield slot on both sides, the info line explaining the gaze requirement."
+      "capture": "A basilisk result with the mirror shield forced into the shield slot on both sides, the info line explaining the gaze requirement.",
+      "notes": " 2026-09-17: a monster may carry one rule per slot (RequiredGear.rulesFor / requiredIds map); lizardman shamans outside CoX require the tier-5 Shayzien set (slayer helmet stands in for the helm) - Andrew, from Lostmind's report. ShamanShayzienTest."
     },
     {
       "id": "wiki-calc-link",
@@ -518,7 +521,7 @@
         "WikiCalcLinkTest.java"
       ],
       "since": "0.4.0",
-      "notes": "Returned with the 0.4.0 network re-add (cut from the 0.3.4/0.3.5 hub builds). Strictly CLICK-initiated: the Wiki calc button POSTs the shown setup as osrs-dps-calc ImportableData to the wiki shortlink service and opens the calculator on the returned id. Payload carries real npc ids (synthetic phase variants map back) and the ToA invocation level when set. No dedicated screenshot; the button rides the bank row."
+      "notes": "Returned with the 0.4.0 network re-add (cut from the 0.3.4/0.3.5 hub builds). Strictly CLICK-initiated: the Wiki calc button POSTs the shown setup as osrs-dps-calc ImportableData to the wiki shortlink service and opens the calculator on the returned id. Payload carries real npc ids (synthetic phase variants map back) and the ToA invocation level when set. No dedicated screenshot; the button rides the bank row. 2026-09-17: the copy report prints the global excludes by name and each mob's pins / excludes / sims / note / Degrades skip (ReportProfileSectionTest); the version stamp falls back to PluginVersion.FALLBACK in hub builds (VersionStampTest)."
     },
     {
       "id": "monster-thumbnails",

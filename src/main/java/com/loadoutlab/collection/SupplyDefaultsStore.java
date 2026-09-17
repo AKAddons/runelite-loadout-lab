@@ -46,6 +46,12 @@ public class SupplyDefaultsStore
 	}
 
 	/** Re-read from config - the active RuneLite profile may have changed. */
+	public synchronized void clear()
+	{
+		choices.clear();
+		save();
+	}
+
 	public synchronized void reload()
 	{
 		load();

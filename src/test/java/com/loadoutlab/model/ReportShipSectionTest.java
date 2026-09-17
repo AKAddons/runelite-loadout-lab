@@ -41,7 +41,7 @@ class ReportShipSectionTest
 	{
 		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		String report = ReportBuilder.build("test", new PageState(), List.of(shark), List.of(Map.of()), 0,
-			null, null, ship(), List.of(Map.of("name", "Ship repair kit")), false);
+			null, null, ship(), List.of(Map.of("name", "Ship repair kit")), false, null);
 		assertTrue(report.contains("Ship: rune keel"), report);
 		assertTrue(report.contains("damage taken"), report);
 		assertTrue(report.contains("cannon 1: rune, crew, 4.02 dps"), report);
@@ -58,7 +58,7 @@ class ReportShipSectionTest
 	{
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		String report = ReportBuilder.build("test", new PageState(), List.of(graardor), List.of(Map.of()), 0,
-			null, null, null, List.of(), false);
+			null, null, null, List.of(), false, null);
 		assertFalse(report.contains("Ship:"), report);
 		assertFalse(report.contains("Cannons"), report);
 	}

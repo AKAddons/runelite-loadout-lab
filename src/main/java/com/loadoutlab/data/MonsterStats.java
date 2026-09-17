@@ -122,10 +122,17 @@ public final class MonsterStats
 	 * normalization of quest/post-quest noise). */
 	public MonsterStats withVersion(String newVersion)
 	{
+		return copy(newVersion, attributes);
+	}
+
+	private MonsterStats copy(String newVersion, List<String> newAttributes)
+	{
 		MonsterStats copy = new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
-			size, defence, magic, offensiveMagic, defensive, offence, attributes,
+			size, defence, magic, offensiveMagic, defensive, offence, newAttributes,
 			slayerMonster, weaknessElement, weaknessSeverity);
 		copy.wikiVersion = getWikiVersion();
+		copy.displayName = displayName;
+		copy.toaInvocationLevel = toaInvocationLevel;
 		return copy;
 	}
 
@@ -167,13 +174,7 @@ public final class MonsterStats
 	{
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(extra);
-		MonsterStats copy = new MonsterStats(id, name, version, combatLevel, hitpoints,
-			size, defence, magic, offensiveMagic, defensive, offence, extended,
-			slayerMonster, weaknessElement, weaknessSeverity);
-		copy.wikiVersion = getWikiVersion();
-		copy.displayName = displayName;
-		copy.toaInvocationLevel = toaInvocationLevel;
-		return copy;
+		return copy(version, extended);
 	}
 
 	public MonsterStats withDisplayName(String nick)

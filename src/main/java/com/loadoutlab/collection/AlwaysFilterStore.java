@@ -45,6 +45,12 @@ public class AlwaysFilterStore
 	}
 
 	/** Re-read from config - the active RuneLite profile may have changed. */
+	public synchronized void clear()
+	{
+		items.clear();
+		save();
+	}
+
 	public synchronized void reload()
 	{
 		load();

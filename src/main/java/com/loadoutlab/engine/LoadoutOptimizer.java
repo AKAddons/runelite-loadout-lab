@@ -76,8 +76,7 @@ public final class LoadoutOptimizer
 			protectOnly = request.getProtectOnlyItems();
 		}
 		boolean dragonShield = DragonfireRules.shieldRequired(request);
-		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
-		Set<Integer> requiredIds = requiredRule == null ? null : requiredRule.ids(data);
+		Map<GearSlot, Set<Integer>> required = RequiredGear.requiredIds(request.getMonster(), data);
 		// Dizana's quiver carries the arrows (field report 2026-08-07):
 		// relocate them BEFORE the sweep so the freed ammo slot is filled
 		// like any other dps-neutral slot. Shared with the roster shown-set
@@ -86,7 +85,7 @@ public final class LoadoutOptimizer
 		for (GearSlot slot : GearSlot.values())
 		{
 			current = fillSlot(data, request, current, slot, spellContext,
-				dragonShield, requiredRule, requiredIds, riskCapGp, pinnedIds, protectOnly);
+				dragonShield, required, riskCapGp, pinnedIds, protectOnly);
 		}
 		return current;
 	}
@@ -99,7 +98,7 @@ public final class LoadoutOptimizer
 	 * slot because the roster path never ran the sweep). */
 	private DpsResult fillSlot(LoadoutData data, OptimizationRequest request,
 		DpsResult current, GearSlot slot, SpellContext spellContext,
-		boolean dragonShield, RequiredGear.Rule requiredRule, Set<Integer> requiredIds,
+		boolean dragonShield, Map<GearSlot, Set<Integer>> required,
 		long riskCapGp, Set<Integer> pinnedIds, Set<Integer> protectOnly)
 	{
 		// A pinned slot is the player's explicit choice - never swapped.
@@ -141,9 +140,9 @@ public final class LoadoutOptimizer
 					&& !DragonfireRules.isProtectiveShield(item))
 				// Same for a worn required-protection item (mirror
 				// shield, earmuffs): only acceptable swaps may touch it.
-				|| (requiredIds != null && requiredRule.slot == slot
-					&& worn != null && requiredIds.contains(worn.getId())
-					&& !requiredIds.contains(item.getId())))
+				|| (required.containsKey(slot)
+					&& worn != null && required.get(slot).contains(worn.getId())
+					&& !required.get(slot).contains(item.getId())))
 			{
 				continue;
 			}
@@ -257,10 +256,8 @@ public final class LoadoutOptimizer
 			return result; // relocation must be dps-neutral, or leave it
 		}
 		moved = moved.withPurchaseCost(result.getPurchaseCost());
-		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
-		Set<Integer> requiredIds = requiredRule == null ? null : requiredRule.ids(data);
 		return fillSlot(data, request, moved, GearSlot.AMMO, spellContext,
-			DragonfireRules.shieldRequired(request), requiredRule, requiredIds,
+			DragonfireRules.shieldRequired(request), RequiredGear.requiredIds(request.getMonster(), data),
 			riskCapGp, pinnedIds, protectOnly);
 	}
 
@@ -543,14 +540,14 @@ public final class LoadoutOptimizer
 		// the pool (unowned on the owned side), fall back to the
 		// unconstrained hunt and let the mechanics note explain the gap. A
 		// pin on the slot outranks - the player's explicit choice.
-		RequiredGear.Rule required = RequiredGear.ruleFor(request.getMonster());
-		Set<Integer> requiredIds = null;
-		if (required != null && request.pinnedFor(required.slot) == null)
+		Map<GearSlot, Set<Integer>> required = new EnumMap<>(GearSlot.class);
+		for (RequiredGear.Rule rule : RequiredGear.rulesFor(request.getMonster()))
 		{
-			Set<Integer> acceptable = required.ids(data);
-			if (!onlyIds(pools.slotCandidates.get(required.slot), acceptable).isEmpty())
+			Set<Integer> acceptable = rule.ids(data);
+			if (request.pinnedFor(rule.slot) == null
+				&& !onlyIds(pools.slotCandidates.get(rule.slot), acceptable).isEmpty())
 			{
-				requiredIds = acceptable;
+				required.put(rule.slot, acceptable);
 			}
 		}
 		// Request-level risk constants, hoisted out of the beam (they were
@@ -574,8 +571,7 @@ public final class LoadoutOptimizer
 			}
 			// Same for a required protective shield (basilisk gaze, the
 			// harpies' lantern): a two-hander cannot comply.
-			if (requiredIds != null && required.slot == GearSlot.SHIELD
-				&& weapon.isTwoHanded())
+			if (required.containsKey(GearSlot.SHIELD) && weapon.isTwoHanded())
 			{
 				continue;
 			}
@@ -605,9 +601,9 @@ public final class LoadoutOptimizer
 						break; // no owned protection - this weapon line dies
 					}
 				}
-				if (requiredIds != null && slot == required.slot)
+				if (required.containsKey(slot))
 				{
-					candidates = onlyIds(candidates, requiredIds);
+					candidates = onlyIds(candidates, required.get(slot));
 					if (candidates.isEmpty())
 					{
 						break; // cannot comply on this line - it dies
@@ -998,9 +994,8 @@ public final class LoadoutOptimizer
 		// Required slayer protection rides the same rescue: a mirror shield
 		// or earmuffs would die at the score cut, and the beam's enforcement
 		// needs them present in the pool.
-		RequiredGear.Rule requiredRule = RequiredGear.ruleFor(request.getMonster());
-		Set<Integer> requiredKeep = requiredRule != null && requiredRule.slot == slot
-			&& request.pinnedFor(slot) == null ? requiredRule.ids(data) : null;
+		Set<Integer> requiredKeep = request.pinnedFor(slot) == null
+			? RequiredGear.requiredIds(request.getMonster(), data).get(slot) : null;
 		List<GearItem> protectives = new ArrayList<>();
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems(slot))

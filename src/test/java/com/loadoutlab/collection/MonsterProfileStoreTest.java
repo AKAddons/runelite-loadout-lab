@@ -292,4 +292,18 @@ class MonsterProfileStoreTest
 		}
 		return ids;
 	}
+
+	@Test
+	@DisplayName("clear() empties every profile in the scope and persists the wipe (the reset-customisations control)")
+	void clearWipesTheScope()
+	{
+		MonsterProfileStore store = new MonsterProfileStore(configManager, new Gson());
+		store.setNote(415, "keep away");
+		store.setSkipDegradable(416, true);
+		store.clear();
+		assertEquals("", store.note(415) == null ? "" : store.note(415));
+		assertFalse(store.skipDegradable(416, false));
+		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
+		assertTrue(fresh.note(415) == null || fresh.note(415).isEmpty(), "the wipe persisted");
+	}
 }

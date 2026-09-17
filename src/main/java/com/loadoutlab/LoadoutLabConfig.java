@@ -123,6 +123,18 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "resetCustomizations",
+		name = "Reset all customizations",
+		description = "Tick to wipe this profile's excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults. Bank memory stays. Unticks itself.",
+		section = controls,
+		position = 5
+	)
+	default boolean resetCustomizations()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "defaultRiskCap",
 		name = "Wilderness risk cap",
 		description = "Seed new results' wilderness risk cap (empty = uncapped).",

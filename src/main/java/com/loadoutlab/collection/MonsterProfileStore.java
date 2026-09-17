@@ -110,6 +110,13 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	}
 
 	/** Re-read from config - the active RuneLite profile may have changed. */
+	/** The reset-customisations control: every profile in this scope goes. */
+	public synchronized void clear()
+	{
+		profiles.clear();
+		save();
+	}
+
 	public synchronized void reload()
 	{
 		load();

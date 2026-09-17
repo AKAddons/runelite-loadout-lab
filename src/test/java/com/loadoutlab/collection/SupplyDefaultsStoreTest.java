@@ -58,4 +58,15 @@ class SupplyDefaultsStoreTest
 		assertNull(configManager.getConfiguration("loadoutlab", SCOPE + ".supplyDefaults"),
 			"an all-default store unsets its config key");
 	}
+
+	@Test
+	@DisplayName("clear() returns every category to Detect best and persists it")
+	void clearReturnsToDetect()
+	{
+		SupplyDefaultsStore store = new SupplyDefaultsStore(configManager, new Gson());
+		store.setChoice("food", "SHARK");
+		store.clear();
+		assertEquals(SupplyDefaultsStore.DETECT_BEST, store.choice("food"));
+		assertEquals(SupplyDefaultsStore.DETECT_BEST, new SupplyDefaultsStore(configManager, new Gson()).choice("food"));
+	}
 }
