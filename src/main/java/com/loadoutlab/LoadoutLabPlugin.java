@@ -852,8 +852,11 @@ public class LoadoutLabPlugin extends Plugin
 		else if ("resetCustomizations".equals(key) && config.resetCustomizations())
 		{
 			// Lostmind (Discord 2026-09-17): customisations live in the
-			// RuneLite profile, so a reinstall cannot clear them. Bank
-			// memory is not a customisation and stays.
+			// RuneLite profile, so a reinstall cannot clear them. Andrew
+			// (2026-09-18): a just-installed state - settings back to their
+			// defaults and the page back to empty as well. Bank memory is
+			// not a customisation and stays.
+			configManager.setConfiguration("loadoutlab", "resetCustomizations", false);
 			for (IdSetStore store : new IdSetStore[]{exclusions, protectOnly, dreams, manualOwned})
 			{
 				store.clear();
@@ -861,8 +864,11 @@ public class LoadoutLabPlugin extends Plugin
 			alwaysFilter.clear();
 			mobProfiles.clear();
 			supplyDefaults.clear();
-			configManager.setConfiguration("loadoutlab", "resetCustomizations", false);
-			engine.execute("recompute", Map.of());
+			for (String setting : LoadoutLabConfig.settingKeys())
+			{
+				configManager.unsetConfiguration("loadoutlab", setting);
+			}
+			engine.clearForIdentityChange();
 		}
 	}
 

@@ -395,11 +395,13 @@ numbers, as a footnote, or not shown). Controls picks which chips and buttons ap
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
 wilderness controls, the Degrades chip, and whether a sea card's trip
 ledger opens expanded or as its total line). Controls also holds **Reset
-all customizations**: tick it to wipe this profile's excludes, sims,
-stored-elsewhere and protect-only marks, filters, every mob's pins and
-notes, and the supply defaults; bank memory stays, and the tick clears
-itself. Customisations live in your RuneLite profile, so reinstalling the
-plugin never clears them - this does. Defaults sets what every NEW result assumes: On
+to fresh install**: tick it to put this profile back to a just-installed
+state - every setting to its default, the page emptied, and all excludes,
+sims, stored-elsewhere and protect-only marks, filters, every mob's pins
+and notes, and the supply defaults wiped. Bank memory stays (it is what
+the plugin learned, not what you chose), and the tick clears itself.
+Customisations live in your RuneLite profile, so reinstalling the plugin
+never clears them - this does. Defaults sets what every NEW result assumes: On
 task, the Spec chip, thralls and Death Charge (Detect best or None),
 autocast (Detect or powered staves only), a prayer tier and a boost PER
 STYLE (Detect best, None, or a named pick for each of melee, ranged and

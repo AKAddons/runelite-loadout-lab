@@ -448,7 +448,7 @@
       "tests": [],
       "since": "0.3.3",
       "capture": "The plugin settings panel scrolled to the Controls section showing the Detect/None dropdowns beside the panel with a seeded result. Single PNG screenshot.",
-      "notes": " 2026-09-17: Reset all customizations (Controls) wipes every store but the ledger and unticks itself - Lostmind: a reinstall cannot clear a RuneLite profile."
+      "notes": " 2026-09-17: Reset all customizations (Controls) wipes every store but the ledger and unticks itself - Lostmind: a reinstall cannot clear a RuneLite profile. 2026-09-18 (Andrew: 'reset the user back to a neutral/just installed state'): renamed Reset to fresh install; also unsets every setting (LoadoutLabConfig.settingKeys, pinned by ResetSettingsTest) and clears the page, selection and undo history via clearForIdentityChange. The ledger is the one deliberate survivor."
     },
     {
       "id": "multi-mob-roster",

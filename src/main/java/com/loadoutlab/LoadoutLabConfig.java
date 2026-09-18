@@ -1,5 +1,6 @@
 package com.loadoutlab;
 
+import java.util.*;
 import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
@@ -124,14 +125,30 @@ public interface LoadoutLabConfig extends Config
 
 	@ConfigItem(
 		keyName = "resetCustomizations",
-		name = "Reset all customizations",
-		description = "Tick to wipe this profile's excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults. Bank memory stays. Unticks itself.",
+		name = "Reset to fresh install",
+		description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself.",
 		section = controls,
 		position = 5
 	)
 	default boolean resetCustomizations()
 	{
 		return false;
+	}
+
+	/** Every setting's key but the reset tick itself: what the reset unsets
+	 * so each goes back to its default. */
+	static List<String> settingKeys()
+	{
+		List<String> keys = new ArrayList<>();
+		for (java.lang.reflect.Method m : LoadoutLabConfig.class.getDeclaredMethods())
+		{
+			ConfigItem item = m.getAnnotation(ConfigItem.class);
+			if (item != null && !"resetCustomizations".equals(item.keyName()))
+			{
+				keys.add(item.keyName());
+			}
+		}
+		return keys;
 	}
 
 	@ConfigItem(
