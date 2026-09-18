@@ -288,7 +288,9 @@ source quest named.
 Right-click a suggestion to protect rare supplies (like dragon darts) so
 the optimizer stops recommending them - everywhere, only against this
 monster, or only against this monster's melee/ranged/magic set. Per-mob
-exclusions are managed from the "This mob" line.
+exclusions are managed from the "This mob" line: each of its lists
+(excluded, simmed, bank-filter items) has a "Clear all" entry, one undo
+step for the whole list.
 
 ![Exclude items from suggestions](img/exclusions.png)
 

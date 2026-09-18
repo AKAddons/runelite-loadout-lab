@@ -1373,6 +1373,9 @@ public class ResultCards
 			if (!items.isEmpty())
 			{
 				menu.addSeparator();
+				Ui.item(menu, "Clear all (" + items.size() + ")",
+					() -> commands.send("clear-mob-list", Map.of("kind", listKey)));
+				menu.addSeparator();
 			}
 			Ui.item(menu, addPrompt + " (search)...", () -> picker.search(addPrompt,
 				(id, name) -> commands.send(addCommand, Map.of("itemId", id, "label", name))));

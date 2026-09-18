@@ -986,6 +986,85 @@ public class CommandEngine
 					}
 				});
 			}
+			case "clear-mob-list":
+			{
+				// Andrew, 2026-09-18: "for each of the exclude/sim/item filters can
+				// you have a reset all in list option". One recompute, one undo step.
+				StoreOps ops = stores;
+				MonsterStats mob = shownMob();
+				Object kindArg = arg(args, "kind");
+				if (ops == null || mob == null || !(kindArg instanceof String))
+				{
+					return false;
+				}
+				String kind = (String) kindArg;
+				int mobId = mob.getId();
+				List<Map<String, Object>> entries = new ArrayList<>(
+					"mobSims".equals(kind) ? ops.mobSims(mobId)
+						: "mobFilters".equals(kind) ? ops.mobFilters(mobId) : ops.mobExclusions(mobId));
+				if (entries.isEmpty())
+				{
+					return false;
+				}
+				String noun = "mobSims".equals(kind) ? "sims" : "mobFilters".equals(kind) ? "filters" : "exclusions";
+				String mobName = mob.getName();
+				return record(new Command()
+				{
+					@Override
+					public boolean apply()
+					{
+						for (Map<String, Object> e : entries)
+						{
+							int id = ((Number) e.get("id")).intValue();
+							String scope = e.get("scope") instanceof String ? (String) e.get("scope") : "ALL";
+							switch (kind)
+							{
+								case "mobSims": ops.mobs().removeMobSim(mobId, id); break;
+								case "mobFilters": ops.mobs().removeMobFilter(mobId, scope, id); break;
+								default: ops.mobs().removeMobExclusion(mobId, scope, id); break;
+							}
+						}
+						finish();
+						return true;
+					}
+
+					@Override
+					public boolean revert()
+					{
+						for (Map<String, Object> e : entries)
+						{
+							int id = ((Number) e.get("id")).intValue();
+							String scope = e.get("scope") instanceof String ? (String) e.get("scope") : "ALL";
+							switch (kind)
+							{
+								case "mobSims": ops.simForMob(mobId, id); break;
+								case "mobFilters": ops.addMobFilter(mobId, id); break;
+								default: ops.excludeForMob(mobId, scope, id); break;
+							}
+						}
+						finish();
+						return true;
+					}
+
+					private void finish()
+					{
+						if ("mobFilters".equals(kind))
+						{
+							republish();
+						}
+						else
+						{
+							recompute();
+						}
+					}
+
+					@Override
+					public String getDescription()
+					{
+						return "Clear " + noun + " (" + entries.size() + ") - " + mobName;
+					}
+				});
+			}
 			case "remove-mob-exclusion":
 			case "remove-mob-sim":
 			case "add-mob-filter":
