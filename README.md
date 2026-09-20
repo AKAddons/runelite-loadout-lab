@@ -21,7 +21,8 @@ At the end of your search, filter the kit in your bank and get going.
 - **What to bring**: the prayer and boost the numbers assume (icons), the
   spell to autocast, the special-attack weapon to weave, and what to PRAY
   against the boss - including bosses whose attacks partially pierce
-  protection prayers.
+  protection prayers. Poison and dragonfire protection sit in the same
+  row: antipoison, Cure Me or the prayer book, picked per mob.
 - **Incoming damage**: how hard the boss hits YOU in that set, with
   curated per-boss attack data (GWD, Zulrah, Vorkath, Cerberus, the
   wilderness ring, and more).
@@ -47,7 +48,8 @@ At the end of your search, filter the kit in your bank and get going.
 - **Bank tools**: "Show in bank" outlines the set's items; "Filter bank"
   shows only them (uses the core Bank Tags plugin).
 - **Exclusions**: right-click any suggestion to protect rare supplies
-  (dragon darts) from being recommended.
+  (dragon darts) from being recommended. A per-mob sigil skips gear
+  that degrades or burns charges, and every per-mob list has a Clear all.
 - **Mob profiles**: per-monster pins ("always bring my Bracelet of
   slaughter HERE"), your own notes, and trip supplies that join the
   bank Show/Filter views - remembered per mob.
