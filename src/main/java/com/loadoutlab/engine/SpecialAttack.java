@@ -76,12 +76,6 @@ public final class SpecialAttack
 	private final double magicDrainFraction;
 
 	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
-		int energyCost, double accuracyMultiplier, double damageMultiplier, String note)
-	{
-		this(namePrefixes, displayName, style, kind, energyCost, accuracyMultiplier, damageMultiplier, note, 0, false, 0);
-	}
-
-	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
 		int energyCost, double accuracyMultiplier, double damageMultiplier, String note,
 		double defenceDrainFraction, boolean drainsByDamage, double magicDrainFraction)
 	{

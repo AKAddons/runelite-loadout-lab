@@ -80,15 +80,10 @@ public class OptimizerService
 		public final boolean ownedKitBacked;
 		/** Same contract for the BiS half. */
 		public final boolean gameKitBacked;
-
-		StyleResult(List<DpsResult> owned, DpsResult overallBest,
-			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
-			IncomingDpsCalculator.Result incoming, IncomingDpsCalculator.Result gameIncoming,
-			List<GearItem> bench, List<GearItem> gameBench)
-		{
-			this(owned, overallBest, spec, gameSpec, boostLabel, gameBoostLabel,
-				incoming, gameIncoming, bench, gameBench, true, true);
-		}
+		/** Slots of the Yours set where some item in the game beats the
+		 * worn one with the rest of the set fixed - no gold border there
+		 * (Andrew, field 2026-09-27: an occult on a Fire Bolt card). */
+		public Set<GearSlot> beaten = Collections.emptySet();
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
@@ -121,6 +116,17 @@ public class OptimizerService
 
 	private final LoadoutData data;
 	private final LoadoutOptimizer optimizer = new LoadoutOptimizer();
+
+	/** Stamp the Yours set's beaten slots on a fresh result. */
+	private StyleResult verified(StyleResult result, LoadoutData dataset,
+		OptimizationRequest own, OptimizationRequest game)
+	{
+		if (own != null && game != null && !emptyBest(result.owned))
+		{
+			result.beaten = optimizer.beatenSlots(dataset, own, game, result.owned.get(0));
+		}
+		return result;
+	}
 
 	/** Roster fan-out pool (field fix 2026-07-17: a 15-mob raid ran ~90
 	 * independent optimize() calls serially - THE wall, not the kit
@@ -527,9 +533,10 @@ public class OptimizerService
 				// The BiS side's inventory mirrors it (field fix 2026-07-18:
 				// a single mob's BiS view showed no carried spec).
 				List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
-				StyleResult styleResult = new StyleResult(
+				StyleResult styleResult = verified(new StyleResult(
 					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench);
+					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
+					ctx.dataset, ownedRequest, gameRequest);
 				// Store per style as computed - even a superseded job donates
 				// the styles it finished.
 				synchronized (cache)
@@ -1836,8 +1843,9 @@ public class OptimizerService
 					? Collections.emptyList()
 					: gameSlots[2] == null ? Collections.singletonList(gameSpecCarried)
 					: Arrays.asList(gameSpecCarried, gameSlots[2]);
-				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench);
+				StyleResult sr = verified(new StyleResult(ownedList, gameShown, spec, gameSpec,
+					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
+					ctx.dataset, ownedReqs.get(j), gameReqs.get(j));
 				perMob.get(j).put(style, sr);
 			}
 		}
@@ -1941,28 +1949,28 @@ public class OptimizerService
 					// (base-shared or kit-backed): quiver relocation and the
 					// mandatory-recoil swap - the kit's shownByMob sets bypass
 					// the earlier per-mob pass (field reports 2026-08-09).
-					if (ownedList != null && !ownedList.isEmpty() && reqsByStyle.get(s) != null)
+					OptimizationRequest own = reqsByStyle.get(s) == null
+						? null : reqsByStyle.get(s).get(j);
+					OptimizationRequest game = gameReqsByStyle.get(s) == null
+						? null : gameReqsByStyle.get(s).get(j);
+					if (ownedList != null && !ownedList.isEmpty() && own != null)
 					{
 						ownedList = new ArrayList<>(ownedList);
-						ownedList.set(0, optimizer.ensureRequiredUtility(
-							ctx.dataset, reqsByStyle.get(s).get(j),
-							optimizer.relocateQuiverAmmo(
-								ctx.dataset, reqsByStyle.get(s).get(j), ownedList.get(0))));
+						ownedList.set(0, optimizer.ensureRequiredUtility(ctx.dataset, own,
+							optimizer.relocateQuiverAmmo(ctx.dataset, own, ownedList.get(0))));
 					}
-					if (gameBest != null && gameReqsByStyle.get(s) != null)
+					if (gameBest != null && game != null)
 					{
-						gameBest = optimizer.ensureRequiredUtility(
-							ctx.dataset, gameReqsByStyle.get(s).get(j),
-							optimizer.relocateQuiverAmmo(
-								ctx.dataset, gameReqsByStyle.get(s).get(j), gameBest));
+						gameBest = optimizer.ensureRequiredUtility(ctx.dataset, game,
+							optimizer.relocateQuiverAmmo(ctx.dataset, game, gameBest));
 					}
 					// A side is kit-backed when it has no kit at all (nothing
 					// to contradict) or the kit just answered this style.
 					boolean ownedKitBacked = ownedView == null || ownedKitAnswers;
 					boolean gameKitBacked = gameView == null || gameKitAnswers;
-					perMob.get(j).put(s, new StyleResult(ownedList, gameBest, spec, gameSpec,
+					perMob.get(j).put(s, verified(new StyleResult(ownedList, gameBest, spec, gameSpec,
 						label, gameLabel, incoming, gameIncoming, bench, gameBench,
-						ownedKitBacked, gameKitBacked));
+						ownedKitBacked, gameKitBacked), ctx.dataset, own, game));
 				}
 			}
 		}
@@ -2679,7 +2687,7 @@ public class OptimizerService
 					continue;
 				}
 				SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
-					mobs.get(j), levels, owned, null);
+					mobs.get(j), levels, owned, null, false);
 				if (free != null && free.weapon != null)
 				{
 					candidates.add(free.weapon.getId());
@@ -2925,19 +2933,6 @@ public class OptimizerService
 			return variantSpec;
 		}
 		return spec;
-	}
-
-	SpecPick bestSpec(
-		LoadoutData dataset,
-		OptimizationRequest request,
-		List<DpsResult> baseResults,
-		CombatStyle style,
-		MonsterStats monster,
-		PlayerLevels levels,
-		OwnedItems owned,
-		Set<Integer> restrictTo)
-	{
-		return bestSpec(dataset, request, baseResults, style, monster, levels, owned, restrictTo, false);
 	}
 
 	/** keepZero: keep a restricted (user-PINNED) weapon even when it adds

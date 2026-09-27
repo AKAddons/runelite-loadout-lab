@@ -37,7 +37,7 @@ class TripLedgerTest
 	void sumsToTheTab()
 	{
 		String html = ResultCards.tripLedger(
-			ship("helm", cannon("rune", "crew", 4.02, null), cannon("rune", "crew", 4.02, null)), SIDE);
+			ship("helm", cannon("rune", "crew", 4.02, null), cannon("rune", "crew", 4.02, null)), SIDE, true);
 		assertTrue(html.contains("18.38"), html);
 		assertTrue(html.contains("10.34"), html);
 		assertFalse(html.contains("17.98"), html);
@@ -49,7 +49,7 @@ class TripLedgerTest
 	void manned()
 	{
 		String html = ResultCards.tripLedger(
-			ship("cannon", cannon("rune", "player", 5.10, null), cannon("rune", "crew", 4.02, null)), SIDE);
+			ship("cannon", cannon("rune", "player", 5.10, null), cannon("rune", "crew", 4.02, null)), SIDE, true);
 		assertTrue(html.contains("manning"), html);
 		assertTrue(html.contains("9.12"), html);
 		assertFalse(html.contains("9.94"), html);
@@ -60,7 +60,7 @@ class TripLedgerTest
 	void blocked()
 	{
 		String html = ResultCards.tripLedger(
-			ship("helm", cannon("rune", "crew", 0, "Crew needs Privateering 40")), SIDE);
+			ship("helm", cannon("rune", "crew", 0, "Crew needs Privateering 40")), SIDE, true);
 		assertTrue(html.contains("Crew needs Privateering 40"), html);
 		assertTrue(html.contains("10.34"), html);
 	}

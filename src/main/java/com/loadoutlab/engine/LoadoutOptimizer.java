@@ -303,6 +303,42 @@ public final class LoadoutOptimizer
 	}
 
 	/** The beam's objective: pure dps, with a tiny attack-roll nudge. */
+	/** The slots of a shown set where some game candidate beats the worn
+	 * item with every other slot fixed: the gold border does not stand
+	 * there (Andrew, field 2026-09-27: an occult on a Fire Bolt card,
+	 * bordered because the game-best Shadow wears one). The weapon and
+	 * protective requirements are never contested. */
+	public Set<GearSlot> beatenSlots(LoadoutData data, OptimizationRequest own,
+		OptimizationRequest game, DpsResult shown)
+	{
+		Set<GearSlot> beaten = EnumSet.noneOf(GearSlot.class);
+		SpellContext context = new SpellContext(own, spellsFor(data, own));
+		Loadout worn = shown.getLoadout();
+		DpsResult base = bestSpellResult(own, worn, context);
+		Set<GearSlot> locked = RequiredGear.requiredIds(own.getMonster(), data).keySet();
+		for (GearSlot slot : worn.getGear().keySet())
+		{
+			if (base == null || slot == GearSlot.WEAPON || locked.contains(slot)
+				|| slot == GearSlot.SHIELD && DragonfireRules.shieldRequired(own))
+			{
+				continue;
+			}
+			for (GearItem item : candidates(data, game, slot, SLOT_LIMIT, worn.getWeapon()))
+			{
+				EnumMap<GearSlot, GearItem> gear = new EnumMap<>(worn.getGear());
+				gear.put(slot, item);
+				DpsResult swapped = bestSpellResult(own,
+					Loadout.adopting(gear).withQuiverAmmo(worn.getQuiverAmmo()), context);
+				if (swapped != null && swapped.getDps() > base.getDps() + 1e-6)
+				{
+					beaten.add(slot);
+					break;
+				}
+			}
+		}
+		return beaten;
+	}
+
 	private static double beamScore(DpsResult score)
 	{
 		return score.getDps() + score.getAttackRoll() * 1e-9;
@@ -1570,7 +1606,12 @@ public final class LoadoutOptimizer
 
 		private StatKey(GearItem item)
 		{
-			this.category = item.getCategory();
+			// The element amulets are stat-identical and differ only in the
+			// spell they lift: collapsed, the pool kept air and lost fire
+			// (field 2026-09-27). Their name keeps them apart.
+			String name = item.getNameLower();
+			this.category = item.getCategory() + (name.equals("elemental amulet")
+				|| name.startsWith("amulet of ") && ELEMENTS.contains(name.substring(10)) ? name : "");
 			this.twoHanded = item.isTwoHanded();
 			this.stats = new int[]{
 				item.getSpeed(),

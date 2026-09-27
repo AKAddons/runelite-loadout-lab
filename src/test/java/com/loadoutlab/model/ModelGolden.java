@@ -114,7 +114,8 @@ public final class ModelGolden
 			// riskKeptSlots >= 0 is what emits the wilderness risk node
 			// (and with it the "Kept on death:" tooltip).
 			return RenderModel.entry(List.of(mob), List.of(out.get()),
-				maxTradeables >= 0 ? maxTradeables : -1);
+				maxTradeables >= 0 ? maxTradeables : -1, null,
+				java.util.Collections.emptySet(), null);
 		}
 		finally
 		{

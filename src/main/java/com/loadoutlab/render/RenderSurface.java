@@ -443,14 +443,6 @@ public class RenderSurface
 		return pill;
 	}
 
-	private JLabel taskPill(boolean on, boolean pendingOn,
-		String tooltip)
-	{
-		return taskPill(on, pendingOn, tooltip, () ->
-		{
-		});
-	}
-
 	private static void paintPill(JLabel label, boolean on)
 	{
 		label.setForeground(on ? CHIP_ON : CHIP_OFF);

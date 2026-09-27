@@ -47,7 +47,7 @@ class SalarinTest
 	}
 
 	@Test
-	@DisplayName("the magic answer is a Strike at a flat 12, gear be damned")
+	@DisplayName("the magic answer is a Strike at a flat 12, plus the elemental amulet's 2")
 	void magicIsAFlatStrike()
 	{
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC));
@@ -56,8 +56,14 @@ class SalarinTest
 		assertNotNull(best.getSpellName());
 		assertTrue(best.getSpellName().endsWith("Strike"),
 			"picked: " + best.getSpellName());
-		assertEquals(12, best.getMaxHit(), "flat 12 at maxed magic");
-		assertEquals(12.0, best.getExpectedHit(), 1e-9, "guaranteed, no roll");
+		// Wiki: "The sole exception is the Elemental amulet, which increases
+		// the player's max hit by 2." The ceiling wears it since the pool
+		// stopped merging it into the amulet of magic (2026-09-27); before,
+		// this read a flat 12 only because the amulet never reached the beam.
+		assertEquals("elemental amulet",
+			best.getLoadout().get(com.loadoutlab.data.GearSlot.NECK).getNameLower());
+		assertEquals(14, best.getMaxHit(), "flat 12 at maxed magic, +2 from the amulet");
+		assertEquals(14.0, best.getExpectedHit(), 1e-9, "guaranteed, no roll");
 		assertNotNull(MonsterNotes.noteFor(salarin));
 	}
 }

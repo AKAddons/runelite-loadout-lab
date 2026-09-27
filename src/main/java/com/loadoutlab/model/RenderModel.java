@@ -45,27 +45,14 @@ public final class RenderModel
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
-		return entry(mobs, perMob, -1);
-	}
-
-	/** riskKeptSlots >= 0 adds a wilderness risk node per card. */
-	public static Map<String, Object> entry(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots)
-	{
-		return entry(mobs, perMob, riskKeptSlots, null, Collections.emptySet());
-	}
-
-	/** Full form: ownership + simmed ids flag every gear cell for the
-	 * classic border language (gold owned-BiS / green assumed / grey). */
-	public static Map<String, Object> entry(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
-		IntPredicate owned, Set<Integer> simmed)
-	{
-		return entry(mobs, perMob, riskKeptSlots, owned, simmed, null);
+		return entry(mobs, perMob, -1, null, Collections.emptySet(), null);
 	}
 
 	/** Per-build provenance lookup: an item's storage NAME when a fetch
-	 * trip is needed (the classic source dots), "" when at hand. */
+	 * trip is needed (the classic source dots), "" when at hand.
+	 * riskKeptSlots >= 0 adds a wilderness risk node per card; ownership +
+	 * simmed ids flag every gear cell for the classic border language
+	 * (gold owned-BiS / green assumed / grey). */
 	private static final ThreadLocal<IntFunction<String>> LOCATION =
 		new ThreadLocal<>();
 
@@ -157,11 +144,6 @@ public final class RenderModel
 		return styles;
 	}
 
-	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis)
-	{
-		return card(result, bis, -1, null, Collections.emptySet());
-	}
-
 	/** One side's card: the shown set and everything rendered around it. */
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed)
@@ -220,7 +202,7 @@ public final class RenderModel
 					node.put("assumed", isSimmed || (!bis && !owns));
 					GearItem bisItem = bis || bisShown == null
 						? null : bisShown.getLoadout().get(slot);
-					node.put("bisMatch", owns && bisItem != null
+					node.put("bisMatch", owns && bisItem != null && !result.beaten.contains(slot)
 						&& (bisItem.getId() == item.getId() || statEquivalent(bisItem, item)));
 				}
 				IntFunction<String> locationOf = LOCATION.get();

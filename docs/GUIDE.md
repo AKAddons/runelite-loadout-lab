@@ -110,7 +110,10 @@ Every style card can show the true best-in-slot ceiling set beside yours,
 so you see how close your kit is. The ceiling honours your levels but never
 your quest log: Barrows gloves sit in it before you finish Recipe for
 Disaster. Slots where you already own the best (or a stat-identical
-analog) get a gold border.
+analog) get a gold border - but only where nothing in the game would
+raise the dps of the set you are wearing. An occult necklace under a
+Fire Bolt staff gets no border: a fire amulet beats it there, even
+though the ceiling set (a Shadow) wears the occult.
 
 ![Game-best ceiling comparison](img/game-best.png)
 

@@ -31,11 +31,6 @@ public final class PrayerBonuses
 	@Getter
 	private final double magicDamagePercent;
 
-	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy)
-	{
-		this(meleeAccuracy, meleeStrength, rangedAccuracy, rangedStrength, magicAccuracy, 0.0);
-	}
-
 	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy, double magicDamagePercent)
 	{
 		this.meleeAccuracy = meleeAccuracy;

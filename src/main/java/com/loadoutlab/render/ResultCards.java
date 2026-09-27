@@ -585,11 +585,6 @@ public class ResultCards
 	private int cellSpecWeaponId;
 	private boolean cellSpecPinned;
 
-	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps)
-	{
-		return mobCard(mob, tab, bis, thrallsDps, null, false);
-	}
-
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps,
 		Map<String, Object> ship, boolean naval)
 	{
@@ -1137,11 +1132,6 @@ public class ResultCards
 	/** The trip ledger under a sea card: every part, summing to the TAB's
 	 * number, with the roster row's number named on the way (Andrew
 	 * 2026-09-02: "too many different output numbers"). */
-	static String tripLedger(Map<String, Object> ship, Map<String, Object> side)
-	{
-		return tripLedger(ship, side, true);
-	}
-
 	/** full = every line; collapsed = the total alone (the show/hide is a
 	 * per-profile setting, Andrew 2026-09-03). */
 	static String tripLedger(Map<String, Object> ship, Map<String, Object> side, boolean full)
@@ -1969,12 +1959,6 @@ public class ResultCards
 			label.setToolTipText("Assumes: " + boost);
 		}
 		return label;
-	}
-
-	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,
-		Map<String, Object> mob, String tab)
-	{
-		return side(caption, card, bis, thrallsDps, mob, tab, null);
 	}
 
 	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,

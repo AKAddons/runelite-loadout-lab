@@ -36,11 +36,12 @@
       "tests": [
         "engine/LoadoutOptimizerTest.java",
         "engine/AnalogTest.java",
-        "optimizer/GameBestIgnoresQuestsTest.java"
+        "optimizer/GameBestIgnoresQuestsTest.java",
+        "model/BisBorderTest.java"
       ],
       "since": "0.1.0",
       "capture": "Game-best comparison expanded; a gold-bordered slot hovered so the you-own-BiS tooltip is visible. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-09: the ceiling ignores the quest log (Barrows gloves before RFD) while still honouring levels - Discord: gold rune gloves at the crab; GameBestIgnoresQuestsTest."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-27 (Andrew, field): the gold border also requires that no game candidate for the slot raises the dps of the YOURS set with the other slots fixed (LoadoutOptimizer.beatenSlots, StyleResult.beaten) - an occult on a Fire Bolt card matched the Shadow ceiling's neck while a fire amulet beat it; weapon, required-gear slots and a required dragonfire shield are never contested. 2026-09-09: the ceiling ignores the quest log (Barrows gloves before RFD) while still honouring levels - Discord: gold rune gloves at the crab; GameBestIgnoresQuestsTest."
     },
     {
       "id": "incoming-damage",
