@@ -51,10 +51,10 @@ public final class BlowpipeDarts
 	 * strongest first - excluding the base id protects the whole tier. */
 	public static List<Map<String, Object>> tiers()
 	{
-		List<Map<String, Object>> out = new java.util.ArrayList<>();
+		List<Map<String, Object>> out = new ArrayList<>();
 		for (int tier = 0; tier < TIERS.length; tier++)
 		{
-			Map<String, Object> node = new java.util.LinkedHashMap<>();
+			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("id", TIERS[tier][1]);
 			node.put("name", TIER_NAMES[tier]);
 			out.add(node);

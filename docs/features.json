@@ -15,10 +15,11 @@
       ],
       "tests": [
         "optimizer/OptimizerServiceTest.java",
-        "engine/LoadoutOptimizerTest.java"
+        "engine/LoadoutOptimizerTest.java",
+        "engine/TwoHitWeaponsTest.java"
       ],
       "since": "0.1.0",
-      "notes": "No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs). 2026-07-31 (0.3.4): the footnote's 'Wiki calc' chip and its shortlink POST (WikiCalcLink) are held out of the Plugin Hub build - new network I/O forces manual maintainer review; it returns in its own hub PR."
+      "notes": "2026-09-27 (N, Discord): two-hit weapons - sulphur blades, glacial temotli, earthbound tecpatl and Torag's hammers roll two independent hits on the halved max (flat armour per hitsplat); the dark bow fires two full arrows; Tonalztics roll 75% and the charged pair throws twice (wiki Multi-hit weapons, official calc agrees). No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs). 2026-07-31 (0.3.4): the footnote's 'Wiki calc' chip and its shortlink POST (WikiCalcLink) are held out of the Plugin Hub build - new network I/O forces manual maintainer review; it returns in its own hub PR."
     },
     {
       "id": "game-best",
@@ -483,11 +484,12 @@
       ],
       "tests": [
         "optimizer/RosterOptimizerTest.java",
-        "optimizer/SpecValueTest.java"
+        "optimizer/SpecValueTest.java",
+        "optimizer/SpecOffhandTest.java"
       ],
       "since": "0.3.0",
       "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-27 (N, Discord): a one-handed spec weapon off a two-handed main brings its best offhand when the inventory has the slot (weapon + offhand, + ammo where needed); SpecPick.upgraded carries the numbers, the bare pick still ranks, risk-capped sets skip it."
     },
     {
       "id": "required-gear",

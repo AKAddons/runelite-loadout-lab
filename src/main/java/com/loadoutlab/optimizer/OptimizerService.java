@@ -512,10 +512,10 @@ public class OptimizerService
 				// Bench 0 = strictly one worn set: no spec swap is carried.
 				Set<Integer> specPin = restrictSpec(ctx, style);
 				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin)
+					? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), ctx.maxSwaps)
 					: null;
 				SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin)
+					? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), ctx.maxSwaps)
 					: null;
 				// The defensive story of the shown set: what the boss does
 				// back to you, at your REAL levels (protection prayer up).
@@ -561,6 +561,10 @@ public class OptimizerService
 				|| best.get(0).getLoadout().getWeapon().getId() != spec.weapon.getId()))
 		{
 			bench.add(spec.weapon);
+			if (spec.offhand != null)
+			{
+				bench.add(spec.offhand);
+			}
 		}
 		return bench;
 	}
@@ -1729,9 +1733,12 @@ public class OptimizerService
 			GearItem[] carriedSlots = carriedSpecOf(specs, sharedOwned);
 			GearItem specCarried = carriedSlots[0];
 			GearItem specAmmoCarried = carriedSlots[1];
-			GearItem gameSpecCarried = carriedSpecOf(gameSpecs, sharedGame)[0];
+			GearItem specOffhand = carriedSlots[2];
+			GearItem[] gameSlots = carriedSpecOf(gameSpecs, sharedGame);
+			GearItem gameSpecCarried = gameSlots[0];
 			int benchForSwaps = Math.max(0, ctx.maxSwaps
-				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0));
+				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0)
+				- (specOffhand != null ? 1 : 0));
 			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			specsByStyle.put(style, specs);
@@ -1819,11 +1826,16 @@ public class OptimizerService
 				{
 					plan.putIfAbsent(specAmmoCarried.getId(), specAmmoCarried);
 				}
+				if (specOffhand != null)
+				{
+					plan.putIfAbsent(specOffhand.getId(), specOffhand);
+				}
 				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
 					: inventoryFor(plan.values(), specCarried, worn);
 				List<GearItem> gameBench = gameSpecCarried == null
 					? Collections.emptyList()
-					: Collections.singletonList(gameSpecCarried);
+					: gameSlots[2] == null ? Collections.singletonList(gameSpecCarried)
+					: Arrays.asList(gameSpecCarried, gameSlots[2]);
 				StyleResult sr = new StyleResult(ownedList, gameShown, spec, gameSpec,
 					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench);
 				perMob.get(j).put(style, sr);
@@ -2209,6 +2221,7 @@ public class OptimizerService
 				SpecPick[] keptSpecs = null;
 				GearItem keptCarried = null;
 				GearItem keptAmmo = null;
+				GearItem keptOffhand = null;
 				double score = kitFree.total;
 				// A pinned spec is seated unconditionally - the player's
 				// explicit choice overrides the seat economics, so it always
@@ -2217,7 +2230,8 @@ public class OptimizerService
 				for (SpecPick[] option : specOptions)
 				{
 					GearItem[] slots = carriedSpecOf(option, base);
-					int specSlots = (slots[0] != null ? 1 : 0) + (slots[1] != null ? 1 : 0);
+					int specSlots = (slots[0] != null ? 1 : 0) + (slots[1] != null ? 1 : 0)
+						+ (slots[2] != null ? 1 : 0);
 					KitAnswer kitSpec = specSlots == 0 ? kitFree
 						: chooseKit(localCalc, base, primary, singlePool,
 							bundleCandidates(primary, base, slots[0], sharedByStyle, bestsByStyle),
@@ -2244,6 +2258,7 @@ public class OptimizerService
 						keptSpecs = option;
 						keptCarried = slots[0];
 						keptAmmo = slots[1];
+						keptOffhand = slots[2];
 						// The PRIMARY contest scores what the card SHOWS -
 						// kit total plus the kept spec's honest dpsAdded
 						// value - not the damage-blind seat currency (field
@@ -2265,7 +2280,7 @@ public class OptimizerService
 						break;
 					}
 				}
-				return new Object[]{primary, kit, keptSpecs, score, keptCarried, keptAmmo};
+				return new Object[]{primary, kit, keptSpecs, score, keptCarried, keptAmmo, keptOffhand};
 			});
 		}
 		CombatStyle bestPrimary = null;
@@ -2273,6 +2288,7 @@ public class OptimizerService
 		SpecPick[] bestSpecs = null;
 		GearItem bestSpecCarried = null;
 		GearItem bestSpecAmmo = null;
+		GearItem bestSpecOffhand = null;
 		double bestScore = -1;
 		try
 		{
@@ -2299,6 +2315,7 @@ public class OptimizerService
 					bestSpecs = (SpecPick[]) outcome[2];
 					bestSpecCarried = (GearItem) outcome[4];
 					bestSpecAmmo = (GearItem) outcome[5];
+					bestSpecOffhand = (GearItem) outcome[6];
 					bestScore = score;
 				}
 			}
@@ -2323,6 +2340,7 @@ public class OptimizerService
 		Loadout base = sharedByStyle.get(bestPrimary);
 		GearItem specCarried = bestSpecCarried;
 		GearItem specAmmo = bestSpecAmmo;
+		GearItem specOffhand = bestSpecOffhand;
 		SpecPick[] specs = bestSpecs;
 		List<GearItem> carried = carriedOf(bestKit);
 		// THE BREAKPOINT CURVE (field spec 2026-07-18): one more greedy to
@@ -2335,7 +2353,8 @@ public class OptimizerService
 			List<GearItem> curvePool =
 				crossStylePool(base, bestPrimary, sharedByStyle, bestsByStyle);
 			List<double[]> raw = new ArrayList<>();
-			int curveSpecSlots = (specCarried != null ? 1 : 0) + (specAmmo != null ? 1 : 0);
+			int curveSpecSlots = (specCarried != null ? 1 : 0) + (specAmmo != null ? 1 : 0)
+				+ (specOffhand != null ? 1 : 0);
 			chooseKit(calc, base, bestPrimary, curvePool,
 				bundleCandidates(bestPrimary, base, specCarried, sharedByStyle, bestsByStyle),
 				reqsByStyle, bestsByStyle, mobs,
@@ -2434,6 +2453,10 @@ public class OptimizerService
 		if (specAmmo != null)
 		{
 			plan.putIfAbsent(specAmmo.getId(), specAmmo);
+		}
+		if (specOffhand != null)
+		{
+			plan.putIfAbsent(specOffhand.getId(), specOffhand);
 		}
 		if (log.isDebugEnabled())
 		{
@@ -2596,6 +2619,20 @@ public class OptimizerService
 		/** Non-null when the spec needs its own ammo carried (a dark bow
 		 * next to a chargebow base needs arrows - an extra slot). */
 		final GearItem ammo;
+		/** The offhand brought for the switch - a one-handed spec weapon
+		 * off a two-handed main (N, Discord 2026-09-26). An extra slot. */
+		final GearItem offhand;
+		/** This pick WITH its best offhand and the numbers that follow;
+		 * null when none applies. The bare pick is what ranks. */
+		final SpecPick upgraded;
+	}
+
+	/** The pick the inventory can seat: the offhand rides only when the
+	 * weapon, its ammo and the offhand all have a slot. */
+	private static SpecPick seat(SpecPick pick, int slots)
+	{
+		return pick != null && pick.upgraded != null
+			&& slots >= (pick.ammo == null ? 2 : 3) ? pick.upgraded : pick;
 	}
 
 	/**
@@ -2657,29 +2694,40 @@ public class OptimizerService
 		List<SpecPick[]> perCandidate = new ArrayList<>();
 		for (Integer id : candidates)
 		{
-			SpecPick[] perMob = new SpecPick[n];
-			double score = 0;
+			SpecPick[] bare = new SpecPick[n];
 			for (int j = 0; j < n; j++)
 			{
 				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
-				if (base == null)
+				if (base != null)
 				{
-					continue;
-				}
-				perMob[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
-					mobs.get(j), levels, owned, Collections.singleton(id), specPin != null);
-				if (perMob[j] != null)
-				{
-					score += perMob[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
+					bare[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
+						mobs.get(j), levels, owned, Collections.singleton(id), specPin != null);
 				}
 			}
-			// A pinned weapon is the player's explicit choice - it stays an
-			// option even at zero trip value, so the card can show it (with
-			// an honest ~0.00) instead of silently dropping it.
-			if (score > 1e-9 || specPin != null)
+			// The switch WITH its offhand is its own option, ranked beside
+			// the bare weapon: the seat check keeps whichever pays for its
+			// slots. A pinned weapon is the player's explicit choice - it
+			// stays an option even at zero trip value, so the card can show
+			// it (with an honest ~0.00) instead of silently dropping it.
+			for (int pass = 0; pass < 2; pass++)
 			{
-				scores.add(new double[]{score, perCandidate.size()});
-				perCandidate.add(perMob);
+				SpecPick[] perMob = new SpecPick[n];
+				double score = 0;
+				boolean differs = false;
+				for (int j = 0; j < n; j++)
+				{
+					perMob[j] = pass == 0 ? bare[j] : seat(bare[j], ctx.maxSwaps);
+					differs |= perMob[j] != bare[j];
+					if (perMob[j] != null)
+					{
+						score += perMob[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
+					}
+				}
+				if ((pass == 0 || differs) && (score > 1e-9 || specPin != null))
+				{
+					scores.add(new double[]{score, perCandidate.size()});
+					perCandidate.add(perMob);
+				}
 			}
 		}
 		scores.sort((a, b) -> Double.compare(b[0], a[0]));
@@ -2790,8 +2838,8 @@ public class OptimizerService
 		return score;
 	}
 
-	/** The carried slots a shared-spec option costs: [weapon, ammo], both
-	 * null when the base already wears the spec weapon (it rides free). A
+	/** The carried slots a shared-spec option costs: [weapon, ammo,
+	 * offhand], all null when the base already wears the spec weapon (it rides free). A
 	 * dark bow next to a chargebow base needs its arrows carried too - the
 	 * spec spends TWO slots when the base quiver cannot feed it (field
 	 * spec 2026-07-18). */
@@ -2803,10 +2851,10 @@ public class OptimizerService
 				&& (shared.getWeapon() == null
 					|| shared.getWeapon().getId() != pick.weapon.getId()))
 			{
-				return new GearItem[]{pick.weapon, pick.ammo};
+				return new GearItem[]{pick.weapon, pick.ammo, pick.offhand};
 			}
 		}
-		return new GearItem[]{null, null};
+		return new GearItem[3];
 	}
 
 	/** restrictTo non-null: only these weapon ids are scanned - the roster
@@ -2988,7 +3036,7 @@ public class OptimizerService
 			// ban (field-verified, Andrew 2026-08-31: "ranged spec weapons
 			// work but not mele"); on land it bars e.g. a chally spec at a
 			// melee-immune mob the cross-style rule used to let through.
-			if (com.loadoutlab.engine.MonsterMechanics.isImmune(
+			if (MonsterMechanics.isImmune(
 				monster, spec.getStyle(), loadout, null))
 			{
 				continue;
@@ -3020,7 +3068,33 @@ public class OptimizerService
 			if (best == null || added > bestAdded + 1e-9
 				|| (added > bestAdded - 1e-9 && item.poisonTier() > best.weapon.poisonTier()))
 			{
-				best = new SpecPick(spec, item, expected, added, ammoOut[0]);
+				SpecPick up = null;
+				if (loadout.get(GearSlot.SHIELD) == null && !item.isTwoHanded()
+					&& !request.isRiskConstrained())
+				{
+					for (GearItem shield : dataset.getGearItems(GearSlot.SHIELD))
+					{
+						StatBlock b = shield.getBonuses();
+						if (Math.max(Math.max(b.getStrength(), b.getRangedStrength()), b.getMagicDamage()) <= 0
+							|| !shield.isStandardGear() || dataset.isVariant(shield.getId())
+							|| request.isExcluded(shield.getId())
+							|| owned != null && !owned.owns(shield.getId()) && !request.isDream(shield.getId())
+							|| !request.getRequirementProfile().canEquip(shield.getRequirements()))
+						{
+							continue;
+						}
+						DpsResult with = calculator.calculate(baseRequest,
+							withSlot(loadout, GearSlot.SHIELD, shield));
+						double damage = with == null ? 0 : spec.expectedDamage(with, monster, levels);
+						if (damage > (up == null ? expected : up.expectedDamage) + 1e-9)
+						{
+							up = new SpecPick(spec, item, damage, specDpsAdded(calculator, spec, with,
+								damage, request, baseResults.get(0), monster, lightbearer),
+								ammoOut[0], shield, null);
+						}
+					}
+				}
+				best = new SpecPick(spec, item, expected, added, ammoOut[0], null, up);
 			}
 		}
 		return best;

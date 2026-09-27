@@ -92,7 +92,7 @@ final class BankLayout
 
 	static Map<String, Object> build(Map<String, Object> card)
 	{
-		return build(card, java.util.Collections.emptyList());
+		return build(card, Collections.emptyList());
 	}
 
 	/** extraStacks: rune stacks (autocast + the trip's utility casts)
@@ -153,7 +153,7 @@ final class BankLayout
 			maxPos = Math.max(maxPos, pos);
 		}
 		int[] layout = new int[maxPos + 1];
-		java.util.Arrays.fill(layout, -1);
+		Arrays.fill(layout, -1);
 		for (Map.Entry<Integer, Integer> entry : place.entrySet())
 		{
 			layout[entry.getKey()] = entry.getValue();

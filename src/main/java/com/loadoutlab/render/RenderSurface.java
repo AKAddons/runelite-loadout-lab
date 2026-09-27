@@ -51,7 +51,7 @@ public class RenderSurface
 
 	private static Map<String, String> loadMoodRoutes()
 	{
-		Map<String, String> out = new java.util.LinkedHashMap<>();
+		Map<String, String> out = new LinkedHashMap<>();
 		try (java.io.InputStream in = RenderSurface.class.getResourceAsStream("mood_routes.tsv"))
 		{
 			if (in != null)
@@ -384,10 +384,10 @@ public class RenderSurface
 	private JButton redoButton;
 
 	/** Uniform chip config: every control in the row shares it. */
-	private static <T extends javax.swing.AbstractButton> T chip(T button, String tooltip, Runnable onClick)
+	private static <T extends AbstractButton> T chip(T button, String tooltip, Runnable onClick)
 	{
 		button.setFocusable(false);
-		button.setMargin(new java.awt.Insets(1, 6, 1, 6));
+		button.setMargin(new Insets(1, 6, 1, 6));
 		if (tooltip != null)
 		{
 			button.setToolTipText(tooltip);
@@ -544,7 +544,7 @@ public class RenderSurface
 	 * Enter commits (the page repaint restores the pill), Escape just
 	 * collapses. */
 	private JComponent valueChip(String label, boolean active, String tooltip,
-		String currentText, java.util.function.Consumer<String> onCommit)
+		String currentText, Consumer<String> onCommit)
 	{
 		JPanel holder = Ui.panel(new CardLayout());
 		JTextField field = new JTextField(currentText, 5);
@@ -558,7 +558,7 @@ public class RenderSurface
 		holder.add(pill, "pill");
 		holder.add(field, "field");
 		field.addActionListener(e -> onCommit.accept(field.getText().trim()));
-		field.addKeyListener(new java.awt.event.KeyAdapter()
+		field.addKeyListener(new KeyAdapter()
 		{
 			@Override
 			public void keyPressed(KeyEvent e)
@@ -574,7 +574,7 @@ public class RenderSurface
 	}
 
 	/** One radio-style supply-default choice (checked = current). */
-	private javax.swing.JMenuItem supplyChoice(String category, String key,
+	private JMenuItem supplyChoice(String category, String key,
 		String label, boolean selected)
 	{
 		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
@@ -620,7 +620,7 @@ public class RenderSurface
 				if (matchesBox.getComponentCount() > 0)
 				{
 					Component first = matchesBox.getComponent(0);
-					for (java.awt.event.MouseListener l : first.getMouseListeners())
+					for (MouseListener l : first.getMouseListeners())
 					{
 						l.mouseClicked(null);
 						return;
@@ -1109,7 +1109,7 @@ public class RenderSurface
 			{
 				try
 				{
-					java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
+					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(
 						new java.awt.datatransfer.StringSelection(reportText), null);
 				}
 				catch (IllegalStateException ex)

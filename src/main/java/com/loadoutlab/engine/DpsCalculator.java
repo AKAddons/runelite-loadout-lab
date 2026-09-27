@@ -295,16 +295,21 @@ public final class DpsCalculator
 		int flatArmour = request.getMonster().getDefensive().getFlatArmour();
 		maxHit = applyFlatArmour(request, maxHit);
 		double expected = RollMath.expectedHitWithFlatArmour(accuracy, minHit, rawMax, flatArmour);
-		if (isDualMacuahuitl(loadout))
+		boolean chained = isDualMacuahuitl(loadout);
+		String melee = name(loadout.getWeapon());
+		if (chained || Set.of("sulphur blades", "glacial temotli", "earthbound tecpatl",
+			"torag's hammers").contains(melee))
 		{
-			// Two chained hits (official calc model): the first rolls half
-			// the max; the second (the remainder) only rolls when the
-			// first lands, with its own accuracy roll. Armour applies to
-			// each hitsplat's own bounds.
+			// Two hits on the halved max, armour on each hitsplat's own
+			// bounds. The macuahuitl CHAINS them (official calc model): the
+			// second only rolls when the first lands. The twin weapons and
+			// Torag's hammers roll both independently (wiki Multi-hit
+			// weapons; N, Discord 2026-09-26).
 			int firstRaw = rawMax / 2;
 			int secondRaw = rawMax - firstRaw;
 			expected = RollMath.expectedHitWithFlatArmour(accuracy, 0, firstRaw, flatArmour)
-				+ accuracy * RollMath.expectedHitWithFlatArmour(accuracy, 0, secondRaw, flatArmour);
+				+ (chained ? accuracy : 1)
+					* RollMath.expectedHitWithFlatArmour(accuracy, 0, secondRaw, flatArmour);
 		}
 		if (isScythe(loadout))
 		{
@@ -392,6 +397,15 @@ public final class DpsCalculator
 		attackRoll = applyRangedAccuracyBonuses(request, loadout, attackRoll);
 		maxHit = applyRangedDamageBonuses(request, loadout, maxHit);
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
+		// Tonalztics roll 75% of the max (every version); the charged pair
+		// throws twice and the dark bow fires two arrows, each its own full
+		// roll (wiki Multi-hit weapons; official calc: two standard dists).
+		String bow = name(loadout.getWeapon());
+		boolean glaives = bow.startsWith("tonalztics");
+		if (glaives)
+		{
+			maxHit = maxHit * 3 / 4;
+		}
 		int rawRangedMax = maxHit;
 		maxHit = applyFlatArmour(request, maxHit);
 
@@ -399,6 +413,11 @@ public final class DpsCalculator
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.expectedHitWithFlatArmour(accuracy, 0, rawRangedMax,
 			request.getMonster().getDefensive().getFlatArmour());
+		if (bow.startsWith("dark bow")
+			|| glaives && !"uncharged".equals(loadout.getWeapon().getVersionLower()))
+		{
+			expected *= 2;
+		}
 		if (isWearingEclipseMoonSet(loadout)
 			&& !request.getMonster().hasAttribute("burn_immune"))
 		{

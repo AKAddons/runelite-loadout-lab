@@ -226,7 +226,9 @@ up and the optimizer may answer different mobs with different weapons or
 armour pieces - more dps, more slots. Pull it down and it hunts the best
 single set that needs nothing carried - more room for food and loot on a
 long trip. The special-attack weapon occupies a swap slot whenever it
-differs from the worn weapon, so the spec is never free bag space.
+differs from the worn weapon, so the spec is never free bag space. When
+the main weapon is two-handed and the spec weapon is not, a second slot
+brings the best offhand (a defender, say) for the switch.
 
 ![Inventory budget](img/inventory-budget.png)
 

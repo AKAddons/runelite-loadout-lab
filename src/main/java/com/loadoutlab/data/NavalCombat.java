@@ -63,7 +63,7 @@ public final class NavalCombat
 	private static final Map<String, Cannon> CANNONS = new LinkedHashMap<>();
 	private static final Map<String, Ball> BALLS = new LinkedHashMap<>();
 	private static final List<String> BALL_ORDER = new ArrayList<>();
-	private static final Set<String> NAVAL = new java.util.HashSet<>();
+	private static final Set<String> NAVAL = new HashSet<>();
 	private static final List<String> KEELS = new ArrayList<>();
 	private static final Map<String, int[]> KEEL_MAX_HITS = new LinkedHashMap<>();
 	private static final boolean CREW_FORMULA_STALE;

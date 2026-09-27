@@ -1,5 +1,5 @@
 {
-	"_comment": "Leagues-only rewards never enter the corpus (DataService.isLeaguesReward). prefixes / contains match the lower-cased name; the examine check ('league') still runs where the corpus carries examine text. Echo boots (Colosseum) and the Rosewood/Blazing blowpipes are main-game and stay. Drygore blowpipe: Demonic Pacts League, Echo Kalphite Queen (wiki 2026-09-10).",
+	"_comment": "Leagues-only rewards never enter the corpus (DataService.isLeaguesReward). prefixes / contains match the lower-cased name; the examine check ('league') still runs where the corpus carries examine text. Echo boots (Colosseum) and the Rosewood/Blazing blowpipes are main-game and stay. Drygore blowpipe: Demonic Pacts League, Echo Kalphite Queen (wiki 2026-09-10). The five Demonic Pacts echo weapons: wiki Echo bosses and echo equipment, 2026-09-27.",
 	"prefixes": [
 		"echo venator",
 		"echo virtus",
@@ -8,7 +8,12 @@
 		"echo pickaxe",
 		"echo harpoon",
 		"drygore blowpipe",
-		"raging echoes"
+		"raging echoes",
+		"infernal tecpatl",
+		"fang of the hound",
+		"nature's recurve",
+		"king's barrage",
+		"lithic sceptre"
 	],
 	"contains": [
 		"trailblazer"

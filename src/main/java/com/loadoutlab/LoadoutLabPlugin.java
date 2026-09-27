@@ -57,7 +57,7 @@ import java.util.function.IntUnaryOperator;
  * inventory, and equipment, and a local DPS engine.
  */
 @Slf4j
-@net.runelite.client.plugins.PluginDependency(net.runelite.client.plugins.banktags.BankTagsPlugin.class)
+@PluginDependency(net.runelite.client.plugins.banktags.BankTagsPlugin.class)
 @PluginDescriptor(
 	name = "Loadout Lab",
 	description = "Best-in-slot sets from the gear you own, per enemy and combat style, with exact DPS",
@@ -392,7 +392,7 @@ public class LoadoutLabPlugin extends Plugin
 				log.warn("STASH unit table unavailable; chart scans disabled", ex);
 			}
 			LoadoutData loaded = new DataService().load();
-			Set<Integer> degradable = com.loadoutlab.data.Degradable.ids(loaded);
+			Set<Integer> degradable = Degradable.ids(loaded);
 			SwingUtilities.invokeLater(() ->
 			{
 				data = loaded;
@@ -470,7 +470,7 @@ public class LoadoutLabPlugin extends Plugin
 					boolean canCharge = members && magic >= 90
 						&& reqs != null && reqs.getCompletedQuests()
 							.contains(Quest.A_KINGDOM_DIVIDED.name())
-						&& com.loadoutlab.data.SpellRunes.premiumRunesOwned("Death Charge", bag);
+						&& SpellRunes.premiumRunesOwned("Death Charge", bag);
 					seeds.put("deathCharge", detectCharge && canCharge ? 1 : 0);
 					seeds.put("upgradeBudgetGp",
 						Gp.parse(config.defaultUpgradeBudget()));
@@ -559,7 +559,7 @@ public class LoadoutLabPlugin extends Plugin
 				});
 				// The model-driven renderer lives in core - single plugin,
 				// single surface (the 2026-08 merge-back).
-				com.loadoutlab.render.CommandSink sink = (n, a) ->
+				CommandSink sink = (n, a) ->
 				{
 					CommandEngine engine = commandEngine;
 					if (engine != null)
@@ -1391,7 +1391,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private String itemLabel(int itemId)
 	{
-		com.loadoutlab.data.GearItem item = data == null ? null : data.getGear(itemId);
+		GearItem item = data == null ? null : data.getGear(itemId);
 		return item == null ? ("item " + itemId) : item.label();
 	}
 

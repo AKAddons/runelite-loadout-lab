@@ -192,7 +192,7 @@ public class CommandHistory
 	 * unrecorded start. */
 	public String peekUndoTarget()
 	{
-		java.util.Iterator<Command> it = undoStack.iterator();
+		Iterator<Command> it = undoStack.iterator();
 		if (!it.hasNext())
 		{
 			return null;

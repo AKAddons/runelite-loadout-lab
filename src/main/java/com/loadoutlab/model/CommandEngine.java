@@ -739,7 +739,7 @@ public class CommandEngine
 					try
 					{
 						result = perMob.get(at).get(CombatStyle.valueOf(
-							styleName.toUpperCase(java.util.Locale.ROOT)));
+							styleName.toUpperCase(Locale.ROOT)));
 					}
 					catch (IllegalArgumentException ex)
 					{
@@ -1244,7 +1244,7 @@ public class CommandEngine
 				Object layout = arg(args, "layout");
 				if (ids instanceof List && layout instanceof List)
 				{
-					Set<Integer> itemIds = new java.util.LinkedHashSet<>();
+					Set<Integer> itemIds = new LinkedHashSet<>();
 					for (Object id : (List<?>) ids)
 					{
 						if (id instanceof Number)
@@ -1413,7 +1413,7 @@ public class CommandEngine
 		boolean anyFire = false;
 		for (MonsterStats m : roster != null ? roster : List.of(mob))
 		{
-			anyFire |= com.loadoutlab.engine.DragonfireRules.breathesFire(m);
+			anyFire |= DragonfireRules.breathesFire(m);
 		}
 		a[6] = ((Boolean) a[6]) && anyFire;
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
@@ -1932,7 +1932,7 @@ public class CommandEngine
 				// never show it that way).
 				for (MonsterStats m : selected)
 				{
-					if (com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(m))
+					if (SlayerLockedMonsters.isTaskOnly(m))
 					{
 						state.setParam("onTask", true);
 						break;
@@ -2532,8 +2532,8 @@ public class CommandEngine
 		Map<String, Object> boosts = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
 		{
-			prayers.put(style.name().toLowerCase(), java.util.Arrays.asList(
-				com.loadoutlab.engine.PrayerBonuses.optionsFor(style)));
+			prayers.put(style.name().toLowerCase(), Arrays.asList(
+				PrayerBonuses.optionsFor(style)));
 			List<Map<String, Object>> styleBoosts = new ArrayList<>();
 			for (BoostProfile b : BoostProfile.values())
 			{
@@ -2707,7 +2707,7 @@ public class CommandEngine
 			: perMob.get(gearLens).get(CombatStyle.RANGED);
 		if (rangedResult != null && rangedResult.overallBest != null)
 		{
-			com.loadoutlab.engine.Loadout worn = rangedResult.overallBest.getLoadout();
+			Loadout worn = rangedResult.overallBest.getLoadout();
 			for (GearSlot slot : GearSlot.values())
 			{
 				if (slot == GearSlot.WEAPON
@@ -2716,7 +2716,7 @@ public class CommandEngine
 				{
 					continue;
 				}
-				com.loadoutlab.data.GearItem item = worn.get(slot);
+				GearItem item = worn.get(slot);
 				if (item != null)
 				{
 					wornAcc += item.getOffensive().getRanged();

@@ -121,7 +121,7 @@ public final class MonsterMechanics
 		// card - the same shape as Zulrah's rejection. (The salamander
 		// scorch curiosity is deliberately unmodeled.)
 		if (style == CombatStyle.MELEE
-			&& com.loadoutlab.data.NavalCombat.isNaval(monster.getName()))
+			&& NavalCombat.isNaval(monster.getName()))
 		{
 			return true;
 		}

@@ -254,5 +254,12 @@ public class DataServiceTest
 		Assert.assertFalse("Echo venator bow", names.contains("echo venator bow"));
 		Assert.assertTrue("Toxic blowpipe stays", ids.contains(12926));
 		Assert.assertTrue("Echo boots (Colosseum) stay", names.contains("echo boots"));
+		// Demonic Pacts echo weapons (wiki "Echo bosses and echo equipment",
+		// 2026-09-27; found chasing N's temotli report).
+		for (String echo : new String[]{"infernal tecpatl", "fang of the hound",
+			"nature's recurve", "king's barrage", "lithic sceptre"})
+		{
+			Assert.assertFalse(echo, names.contains(echo));
+		}
 	}
 }

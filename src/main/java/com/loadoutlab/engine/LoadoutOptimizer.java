@@ -816,7 +816,7 @@ public final class LoadoutOptimizer
 		// other already assumes purchases.
 		if (request.getCandidateMode() == CandidateMode.OWNED_ONLY)
 		{
-			all = keep(all, spell -> com.loadoutlab.data.SpellRunes
+			all = keep(all, spell -> SpellRunes
 				.premiumRunesOwned(spell.getName(), request.getOwnedItems()));
 		}
 		// Nibblers: locked to the barrages (field decision 2026-08-06) -

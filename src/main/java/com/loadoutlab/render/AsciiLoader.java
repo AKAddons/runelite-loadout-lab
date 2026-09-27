@@ -24,7 +24,7 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	 * sections): played only for the matching selection, so a kraken never
 	 * greets Graardor and the Obelisk charges only for a ToA trip. Land
 	 * computes use MOODS. */
-	private static final Map<String, List<List<String>>> POOLS = new java.util.HashMap<>();
+	private static final Map<String, List<List<String>>> POOLS = new HashMap<>();
 	static
 	{
 		load(MOODS, POOLS);
@@ -74,7 +74,7 @@ final class AsciiLoader extends javax.swing.JEditorPane
 		// A search started while the last one still animates re-picks from
 		// the NEW selection's pool (field report 2026-09-02: an interrupted
 		// search kept the first search's animation).
-		boolean repick = running && !java.util.Objects.equals(key, playingKey);
+		boolean repick = running && !Objects.equals(key, playingKey);
 		if (running && (!timer.isRunning() || repick))
 		{
 			List<List<String>> keyed = key == null ? null : POOLS.get(key);

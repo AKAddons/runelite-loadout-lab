@@ -69,13 +69,13 @@ final class Ui
 	{
 		BufferedImage out = new BufferedImage(
 			size, size, BufferedImage.TYPE_INT_ARGB);
-		java.awt.Graphics2D g = out.createGraphics();
+		Graphics2D g = out.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
 			RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_ON);
 		// The base icon, dimmed so the X reads as the foreground.
-		java.awt.Composite base = g.getComposite();
+		Composite base = g.getComposite();
 		g.setComposite(AlphaComposite.getInstance(
 			AlphaComposite.SRC_OVER, 0.55f));
 		g.drawImage(image, 0, 0, size, size, null);

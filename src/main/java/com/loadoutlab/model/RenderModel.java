@@ -112,12 +112,12 @@ public final class RenderModel
 		node.put("hp", mob.getHitpoints());
 		node.put("level", mob.getCombatLevel());
 		node.put("invocationScaled",
-			com.loadoutlab.engine.MonsterMechanics.isToaInvocationScaled(mob));
-		node.put("breathesFire", com.loadoutlab.engine.DragonfireRules.breathesFire(mob));
+			MonsterMechanics.isToaInvocationScaled(mob));
+		node.put("breathesFire", DragonfireRules.breathesFire(mob));
 		node.put("wilderness", WildernessMonsters.isWilderness(mob));
-		node.put("naval", com.loadoutlab.data.NavalCombat.isNaval(mob.getName()));
-		node.put("raid", com.loadoutlab.engine.RaidBoosts.raidKey(mob));
-		node.put("taskOnly", com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(mob));
+		node.put("naval", NavalCombat.isNaval(mob.getName()));
+		node.put("raid", RaidBoosts.raidKey(mob));
+		node.put("taskOnly", SlayerLockedMonsters.isTaskOnly(mob));
 		node.put("fightBook", MonsterSpellbooks.bookFor(mob));
 		node.put("fightBookReason", MonsterSpellbooks.reasonFor(mob));
 		node.put("slayerMonster", mob.isSlayerMonster());
@@ -184,7 +184,7 @@ public final class RenderModel
 		{
 			int dash = attackType.indexOf(" - ");
 			String dartTier = attackType.substring(dash + 3);
-			Integer dartId = com.loadoutlab.engine.BlowpipeDarts.baseIdForTierName(dartTier);
+			Integer dartId = BlowpipeDarts.baseIdForTierName(dartTier);
 			if (dartId != null)
 			{
 				Map<String, Object> dartNode = new LinkedHashMap<>();
@@ -244,7 +244,7 @@ public final class RenderModel
 		card.put("bench", items(bis ? result.gameBench : result.bench));
 		GearItem runeWeapon = shown.getLoadout().getWeapon();
 		GearItem runeShield = shown.getLoadout().get(GearSlot.SHIELD);
-		card.put("runes", com.loadoutlab.data.SpellRunes.costFor(shown.getSpellName(),
+		card.put("runes", SpellRunes.costFor(shown.getSpellName(),
 			runeWeapon == null ? null : runeWeapon.getNameLower(),
 			runeShield == null ? null : runeShield.getNameLower()));
 		card.put("kitBacked", bis ? result.gameKitBacked : result.ownedKitBacked);
@@ -442,7 +442,7 @@ public final class RenderModel
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("id", item.getId());
 		node.put("name", item.label());
-		if (com.loadoutlab.data.Degradable.matches(item.getNameLower()))
+		if (Degradable.matches(item.getNameLower()))
 		{
 			node.put("degrades", true);
 		}

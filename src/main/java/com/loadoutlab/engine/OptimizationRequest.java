@@ -125,7 +125,7 @@ public final class OptimizationRequest implements Cloneable
 		this.dreamItems = Collections.emptySet();
 		this.pinnedItems = Collections.emptyMap();
 		this.protectOnlyItems = Collections.emptySet();
-		this.inWilderness = com.loadoutlab.data.WildernessMonsters.isExclusive(monster);
+		this.inWilderness = WildernessMonsters.isExclusive(monster);
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
 		this.resultLimit = Math.max(1, Math.min(50, resultLimit));

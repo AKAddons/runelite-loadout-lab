@@ -1013,7 +1013,7 @@ public class ResultCards
 		JToggleButton showBank = new JToggleButton("Show in bank");
 		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
 		showBank.setFocusable(false);
-		showBank.setMargin(new java.awt.Insets(1, 6, 1, 6));
+		showBank.setMargin(new Insets(1, 6, 1, 6));
 		showBank.addActionListener(e ->
 		{
 			if (showBank.isSelected())
@@ -1122,7 +1122,7 @@ public class ResultCards
 	{
 		int count = (int) Model.num(pageParams, "cannonCount");
 		List<Map<String, Object>> cannonNodes = ship == null
-			? java.util.Collections.emptyList() : Model.list(ship, "cannons");
+			? Collections.emptyList() : Model.list(ship, "cannons");
 		JPanel strip = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		strip.setBackground(CARD);
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
@@ -1518,7 +1518,7 @@ public class ResultCards
 					Image scaled =
 						img.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
 					plate.setIcon(dim
-						? new ImageIcon(javax.swing.GrayFilter
+						? new ImageIcon(GrayFilter
 							.createDisabledImage(toBuffered(scaled)))
 						: new ImageIcon(scaled));
 				}));
@@ -1943,7 +1943,7 @@ public class ResultCards
 	}
 
 	/** The classic bank-action look: flat, rounded, accent on select. */
-	private static void styleBankButton(javax.swing.AbstractButton button)
+	private static void styleBankButton(AbstractButton button)
 	{
 		button.setFocusable(false);
 		button.setContentAreaFilled(false);
@@ -2228,7 +2228,7 @@ public class ResultCards
 				Model.str(internalAmmo, "name"),
 				"Loaded in the blowpipe - right-click to pin or exclude dart tiers",
 				statText);
-			java.util.Set<Integer> excludedIds = new java.util.HashSet<>();
+			Set<Integer> excludedIds = new HashSet<>();
 			Map<String, Object> pageCounts = Model.map(pageWide, "counts");
 			for (Map<String, Object> ex : Model.list(pageCounts, "excludedItems"))
 			{
@@ -2504,7 +2504,7 @@ public class ResultCards
 			cell.setUI(new javax.swing.plaf.basic.BasicLabelUI()
 			{
 				@Override
-				public void paint(java.awt.Graphics g, JComponent c)
+				public void paint(Graphics g, JComponent c)
 				{
 					super.paint(g, c);
 					Graphics2D g2 = (Graphics2D) g.create();

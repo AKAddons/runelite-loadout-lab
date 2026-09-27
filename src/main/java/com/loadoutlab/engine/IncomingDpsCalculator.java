@@ -399,7 +399,7 @@ public final class IncomingDpsCalculator
 
 	private static boolean wearsChargedEthereum(Loadout loadout)
 	{
-		com.loadoutlab.data.GearItem hands = loadout.get(com.loadoutlab.data.GearSlot.HANDS);
+		GearItem hands = loadout.get(GearSlot.HANDS);
 		return hands != null
 			&& "bracelet of ethereum".equals(hands.getNameLower())
 			&& "charged".equals(hands.getVersionLower());

@@ -120,6 +120,11 @@ public class OfficialVectorExport
 		{"noxhalberd-bloodmoon", "Blood Moon", "", "MELEE", "Noxious halberd", null},
 		{"noxhalberd-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Noxious halberd", null},
 		{"macuahuitl-bluemoon", "Blue Moon", "", "MELEE", "Dual macuahuitl", null},
+		// Two-hit weapons (N, Discord 2026-09-26): independent hitsplats.
+		{"temotli-bluemoon", "Blue Moon", "", "MELEE", "Glacial temotli", null},
+		{"toraghammers-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Torag's hammers", null},
+		{"darkbow-goblin", "Goblin", "", "RANGED", "Dark bow", "Dragon arrow"},
+		{"tonalztics-goblin", "Goblin", "", "RANGED", "Tonalztics of Ralos", null},
 		// Negative armour off-styles (2026-08-21 armour-semantics fix):
 		// ranged keeps the flat bonus WITH its floor; magic gets neither.
 		{"tbow-bloodmoon", "Blood Moon", "", "RANGED", "Twisted bow", "Dragon arrow"},
@@ -447,9 +452,12 @@ public class OfficialVectorExport
 
 	private static Object gearRef(GearItem item)
 	{
+		// The official data capitalises Ralos; our corpus keeps the wiki's
+		// page casing.
+		String name = item.getName().replace("of ralos", "of Ralos");
 		return item.getVersion().isEmpty()
-			? item.getName()
-			: new String[]{item.getName(), item.getVersion()};
+			? name
+			: new String[]{name, item.getVersion()};
 	}
 
 	private static String firstToken(String version)
