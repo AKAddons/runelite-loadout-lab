@@ -120,6 +120,12 @@ public class OfficialVectorExport
 		{"noxhalberd-bloodmoon", "Blood Moon", "", "MELEE", "Noxious halberd", null},
 		{"noxhalberd-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Noxious halberd", null},
 		{"macuahuitl-bluemoon", "Blue Moon", "", "MELEE", "Dual macuahuitl", null},
+		// Barrows air weakness vs a trident's speed (Andrew, field 2026-09-28:
+		// "surprised it's recommending trident on barrows instead of air magic").
+		{"kodai-windsurge-dharok", "Dharok the Wretched", "", "MAGIC", "Kodai wand", null, "Wind Surge"},
+		{"staffair-windwave-dharok", "Dharok the Wretched", "", "MAGIC", "Staff of air", null, "Wind Wave"},
+		{"kodai-windsurge-ahrim", "Ahrim the Blighted", "", "MAGIC", "Kodai wand", null, "Wind Surge"},
+		{"swamptrident-ahrim", "Ahrim the Blighted", "", "MAGIC", "Trident of the swamp", null},
 		// Two-hit weapons (N, Discord 2026-09-26): independent hitsplats.
 		{"temotli-bluemoon", "Blue Moon", "", "MELEE", "Glacial temotli", null},
 		{"toraghammers-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Torag's hammers", null},
@@ -452,12 +458,10 @@ public class OfficialVectorExport
 
 	private static Object gearRef(GearItem item)
 	{
-		// The official data capitalises Ralos; our corpus keeps the wiki's
-		// page casing.
-		String name = item.getName().replace("of ralos", "of Ralos");
-		return item.getVersion().isEmpty()
-			? name
-			: new String[]{name, item.getVersion()};
+		// [name, version, id]: the harness looks the piece up by id first -
+		// the official data cases names differently (Tonalztics of Ralos,
+		// Trident of the Swamp) and a name miss drops the vector.
+		return new Object[]{item.getName(), item.getVersion(), item.getId()};
 	}
 
 	private static String firstToken(String version)

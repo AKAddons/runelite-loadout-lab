@@ -5,7 +5,7 @@ fixes land.
 
 ## Current state (2026-08-22, 68 harness vectors)
 
-60 of 68 vectors agree with the official calculator within 0.5%; most
+78 of 86 vectors agree with the official calculator within 0.5%; most
 are exact. What is still open, largest first - every one is pinned by a
 vector, so none can drift further unnoticed:
 

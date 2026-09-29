@@ -15,7 +15,7 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'fs';
 import {
-  calculatePlayerVsNpc, findEquipment, findSpell, getTestMonster, getTestPlayer,
+  calculatePlayerVsNpc, findEquipment, findEquipmentById, findSpell, getTestMonster, getTestPlayer,
 } from '@/tests/utils/TestUtils';
 import { EquipmentPiece } from '@/types/Player';
 import { Prayer } from '@/enums/Prayer';
@@ -47,8 +47,16 @@ describe('loadout lab vectors', () => {
           : base;
         const equipment: Record<string, EquipmentPiece> = {};
         for (const entry of v.gear || []) {
-          const [name, version] = Array.isArray(entry) ? entry : [entry, ''];
-          const piece = findEquipment(name, version);
+          // [name, version, id]: the id wins - the official data re-cased
+          // its names (Trident of the Swamp, Bow of Faerdhinen, Eye of
+          // Ayak) and 25 vectors silently stopped comparing (2026-09-28).
+          const [name, version, id] = Array.isArray(entry) ? entry : [entry, '', 0];
+          let piece: EquipmentPiece;
+          try {
+            piece = id ? findEquipmentById(id) : findEquipment(name, version || '');
+          } catch (e) {
+            piece = findEquipment(name, version || '');
+          }
           const slot = SLOT_KEYS[piece.slot];
           if (slot) {
             equipment[slot] = piece;
