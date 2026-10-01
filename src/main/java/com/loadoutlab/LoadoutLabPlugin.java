@@ -856,7 +856,6 @@ public class LoadoutLabPlugin extends Plugin
 			// (2026-09-18): a just-installed state - settings back to their
 			// defaults and the page back to empty as well. Bank memory is
 			// not a customisation and stays.
-			configManager.setConfiguration("loadoutlab", "resetCustomizations", false);
 			for (IdSetStore store : new IdSetStore[]{exclusions, protectOnly, dreams, manualOwned})
 			{
 				store.clear();
@@ -864,10 +863,7 @@ public class LoadoutLabPlugin extends Plugin
 			alwaysFilter.clear();
 			mobProfiles.clear();
 			supplyDefaults.clear();
-			for (String setting : LoadoutLabConfig.settingKeys())
-			{
-				configManager.unsetConfiguration("loadoutlab", setting);
-			}
+			LoadoutLabConfig.unsetAll(configManager, config);
 			engine.clearForIdentityChange();
 		}
 	}

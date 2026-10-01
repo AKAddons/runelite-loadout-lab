@@ -1,6 +1,5 @@
 package com.loadoutlab;
 
-import java.util.*;
 import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
@@ -135,20 +134,15 @@ public interface LoadoutLabConfig extends Config
 		return false;
 	}
 
-	/** Every setting's key but the reset tick itself: what the reset unsets
-	 * so each goes back to its default. */
-	static List<String> settingKeys()
+	/** Unset every setting so each goes back to its default (the reset
+	 * tick included). The key list is RuneLite's own config descriptor -
+	 * the hub allows no reflection in plugin code. */
+	static void unsetAll(ConfigManager manager, Config config)
 	{
-		List<String> keys = new ArrayList<>();
-		for (java.lang.reflect.Method m : LoadoutLabConfig.class.getDeclaredMethods())
+		for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems())
 		{
-			ConfigItem item = m.getAnnotation(ConfigItem.class);
-			if (item != null && !"resetCustomizations".equals(item.keyName()))
-			{
-				keys.add(item.keyName());
-			}
+			manager.unsetConfiguration("loadoutlab", item.key());
 		}
-		return keys;
 	}
 
 	@ConfigItem(

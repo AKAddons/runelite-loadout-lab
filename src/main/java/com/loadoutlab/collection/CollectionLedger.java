@@ -2,7 +2,6 @@ package com.loadoutlab.collection;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.Map;
 import net.runelite.api.gameval.InventoryID;
@@ -32,7 +31,7 @@ import net.runelite.client.config.ConfigManager;
 public class CollectionLedger
 {
 	static final String CONFIG_GROUP = "loadoutlab";
-	private static final Type MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {}.getType();
+	private static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
 
 	/** Ledger sources, each persisted under its own key. */
 	public enum Source
@@ -150,7 +149,7 @@ public class CollectionLedger
 			{
 				try
 				{
-					loaded = gson.fromJson(json, MAP_TYPE);
+					loaded = gson.fromJson(json, MAP_TYPE.getType());
 				}
 				catch (RuntimeException e)
 				{
@@ -175,7 +174,7 @@ public class CollectionLedger
 			return false;
 		}
 		snapshots.put(source, next);
-		configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE));
+		configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE.getType()));
 		fingerprint = null;
 		return true;
 	}

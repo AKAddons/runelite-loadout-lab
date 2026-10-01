@@ -1,36 +1,38 @@
 package com.loadoutlab;
 
-import java.lang.reflect.Method;
-import java.util.List;
-import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /** Andrew, 2026-09-18: "does the reset button in the panel actually reset
- * the user back to a neutral/just installed state?" The reset now unsets
- * every setting too; this pins the key list to the config interface. */
+ * the user back to a neutral/just installed state?" The reset unsets every
+ * setting. Hub review of 0.5.2 (Psychemaster, 2026-09-29): "Reflection is
+ * not allowed" - the key list now comes from RuneLite's own config
+ * descriptor, never from walking the interface ourselves. */
 class ResetSettingsTest
 {
 	@Test
-	@DisplayName("the reset's setting list is every @ConfigItem key except the reset tick itself")
-	void settingKeysCoverTheConfig()
+	@DisplayName("the reset unsets every setting the config descriptor lists, in our group")
+	void unsetsEverySetting()
 	{
-		List<String> keys = LoadoutLabConfig.settingKeys();
-		int items = 0;
-		for (Method m : LoadoutLabConfig.class.getDeclaredMethods())
+		ConfigManager manager = mock(ConfigManager.class);
+		LoadoutLabConfig config = new LoadoutLabConfig()
 		{
-			if (m.getAnnotation(ConfigItem.class) != null)
-			{
-				items++;
-			}
-		}
-		assertEquals(items - 1, keys.size(), "one key per setting, minus the tick");
-		assertFalse(keys.contains("resetCustomizations"), "the tick is set false separately");
-		assertTrue(keys.contains("defaultThralls"), "defaults go back");
-		assertTrue(keys.contains("showDegradableChip"), "controls go back");
-		assertTrue(keys.contains("useDwmsData"), "unsectioned settings go back");
+		};
+		when(manager.getConfigDescriptor(config)).thenCallRealMethod();
+
+		LoadoutLabConfig.unsetAll(manager, config);
+
+		verify(manager).unsetConfiguration("loadoutlab", "defaultThralls");
+		verify(manager).unsetConfiguration("loadoutlab", "showDegradableChip");
+		verify(manager).unsetConfiguration("loadoutlab", "useDwmsData");
+		verify(manager).unsetConfiguration("loadoutlab", "resetCustomizations");
+		verify(manager, atLeast(10)).unsetConfiguration(eq("loadoutlab"), anyString());
 	}
 }
