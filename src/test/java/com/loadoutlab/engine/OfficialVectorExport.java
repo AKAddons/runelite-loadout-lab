@@ -126,6 +126,12 @@ public class OfficialVectorExport
 		{"staffair-windwave-dharok", "Dharok the Wretched", "", "MAGIC", "Staff of air", null, "Wind Wave"},
 		{"kodai-windsurge-ahrim", "Ahrim the Blighted", "", "MAGIC", "Kodai wand", null, "Wind Surge"},
 		{"swamptrident-ahrim", "Ahrim the Blighted", "", "MAGIC", "Trident of the swamp", null},
+		// ToA-only stats (Kendyy / Micah, Discord 2026-09-29): the Amascut
+		// partisan drops to base stats outside; the shadow is x4 inside.
+		{"kerisamascut-aquanite", "Aquanite", "No lure", "MELEE", "Keris partisan of amascut", null},
+		{"kerisamascut-akkha", "Akkha", "", "MELEE", "Keris partisan of amascut", null},
+		{"shadow-akkha", "Akkha", "", "MAGIC", "Tumeken's shadow", null, null, "Occult necklace"},
+		{"shadow-goblin", "Goblin", "", "MAGIC", "Tumeken's shadow", null, null, "Occult necklace"},
 		// Two-hit weapons (N, Discord 2026-09-26): independent hitsplats.
 		{"temotli-bluemoon", "Blue Moon", "", "MELEE", "Glacial temotli", null},
 		{"toraghammers-eclipsemoon", "Eclipse Moon", "Regular", "MELEE", "Torag's hammers", null},

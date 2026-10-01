@@ -5,7 +5,7 @@ fixes land.
 
 ## Current state (2026-08-22, 68 harness vectors)
 
-78 of 86 vectors agree with the official calculator within 0.5%; most
+82 of 90 vectors agree with the official calculator within 0.5%; most
 are exact. What is still open, largest first - every one is pinned by a
 vector, so none can drift further unnoticed:
 
@@ -40,6 +40,9 @@ listed below.
   per-category style table; melee converged to <=0.2%.
 - ~~Tumeken's shadow~~ FIXED: the shadow now triples the magic ATTACK bonus
   too (was damage only); shadow-zulrah converged to -2.3%.
+- ~~ToA-only stats~~ FIXED 2026-10-01: the shadow multiplies by four inside
+  the Tombs of Amascut; the keris partisan of Amascut drops to the base
+  partisan's stats outside them (vectors shadow-akkha, kerisamascut-*).
 - ~~Sanguinesti / prayer stacking~~ CORRECTED 2026-07-16: the earlier
   "fix" stacked Augury (4%) + Mystic Vigour (3%) to 7% magic damage and
   converged vs the official calc - but only because the harness fed the

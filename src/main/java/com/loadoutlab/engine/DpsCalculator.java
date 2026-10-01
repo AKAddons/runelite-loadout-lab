@@ -262,9 +262,16 @@ public final class DpsCalculator
 			effectiveStrength += levels.getStrength() * 30 / 100;
 		}
 
-		long attackRoll = RollMath.attackRoll(effectiveAttack, loadout.getOffensive().getAttackBonus(attackType));
+		// The keris partisan of Amascut is +108 stab / +67 strength only
+		// INSIDE the Tombs; outside it is the base partisan's +58 / +45
+		// (wiki; official calc; Kendyy and Micah, Discord 2026-09-29: the
+		// "black keris" won cards it had no business on).
+		boolean dulled = wearing(loadout, "keris partisan of amascut") && !inToa(request);
+		long attackRoll = RollMath.attackRoll(effectiveAttack,
+			loadout.getOffensive().getAttackBonus(attackType) - (dulled && attackType.equals("stab") ? 50 : 0));
 		long baseAttackRoll = attackRoll;
-		int maxHit = RollMath.maxHitFromEffective(effectiveStrength, loadout.getBonuses().getStrength());
+		int maxHit = RollMath.maxHitFromEffective(effectiveStrength,
+			loadout.getBonuses().getStrength() - (dulled ? 22 : 0));
 		int baseMaxHit = maxHit;
 		attackRoll = applyMeleeAccuracyBonuses(request, loadout, attackRoll, baseAttackRoll, attackType);
 		maxHit = applyMeleeDamageBonuses(request, loadout, maxHit, baseMaxHit, attackType);
@@ -478,9 +485,10 @@ public final class DpsCalculator
 		int magicAttackBonus = loadout.getOffensive().getMagic();
 		if (wearing(loadout, "tumeken"))
 		{
-			// The shadow triples the magic attack bonus of ALL equipment
-			// (it triples magic damage too - handled in the damage path).
-			magicAttackBonus *= 3;
+			// The shadow triples the magic attack bonus of ALL equipment,
+			// quadruples it inside the Tombs of Amascut (wiki) - and the
+			// magic damage with it, in the damage path.
+			magicAttackBonus *= inToa(request) ? 4 : 3;
 		}
 		long attackRoll = RollMath.attackRoll(effectiveAccuracy, magicAttackBonus);
 		int maxHit = magicMaxHit(effectiveRequest, loadout);
@@ -1214,7 +1222,7 @@ public final class DpsCalculator
 		int magicDamage = loadout.getBonuses().getMagicDamage();
 		if (wearing(loadout, "tumeken"))
 		{
-			magicDamage = Math.min(1000, magicDamage * 3);
+			magicDamage = Math.min(1000, magicDamage * (inToa(request) ? 4 : 3));
 		}
 		if ((wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
 			|| wearing(loadout, "mystic smoke staff"))
@@ -1399,6 +1407,11 @@ public final class DpsCalculator
 	private static boolean isDemon(OptimizationRequest request)
 	{
 		return request.getMonster().hasAttribute("demon");
+	}
+
+	private static boolean inToa(OptimizationRequest request)
+	{
+		return "toa".equals(RaidBoosts.raidKey(request.getMonster()));
 	}
 
 	private static boolean isKalphite(OptimizationRequest request)
