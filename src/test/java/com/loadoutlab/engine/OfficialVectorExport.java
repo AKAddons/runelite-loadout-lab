@@ -126,6 +126,9 @@ public class OfficialVectorExport
 		{"staffair-windwave-dharok", "Dharok the Wretched", "", "MAGIC", "Staff of air", null, "Wind Wave"},
 		{"kodai-windsurge-ahrim", "Ahrim the Blighted", "", "MAGIC", "Kodai wand", null, "Wind Surge"},
 		{"swamptrident-ahrim", "Ahrim the Blighted", "", "MAGIC", "Trident of the swamp", null},
+		// Seeking arrows (The Blood Moon Rises): minimum hit 3 on a landed arrow.
+		{"msb-seekingrune-goblin", "Goblin", "", "RANGED", "Magic shortbow", "Seeking rune arrow"},
+		{"msb-seekingamethyst-graardor", "General Graardor", "", "RANGED", "Magic shortbow", "Seeking amethyst arrow"},
 		// ToA-only stats (Kendyy / Micah, Discord 2026-09-29): the Amascut
 		// partisan drops to base stats outside; the shadow is x4 inside.
 		{"kerisamascut-aquanite", "Aquanite", "No lure", "MELEE", "Keris partisan of amascut", null},

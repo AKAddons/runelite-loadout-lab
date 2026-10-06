@@ -420,6 +420,18 @@ public final class DpsCalculator
 		double accuracy = RollMath.normalAccuracy(attackRoll, defenceRoll);
 		double expected = RollMath.expectedHitWithFlatArmour(accuracy, 0, rawRangedMax,
 			request.getMonster().getDefensive().getFlatArmour());
+		GearItem arrows = loadout.get(GearSlot.AMMO) != null ? loadout.get(GearSlot.AMMO) : loadout.getQuiverAmmo();
+		if (arrows != null && name(arrows).startsWith("seeking") && rawRangedMax >= 3
+			&& RangedAmmo.strengthApplies(arrows, loadout.getWeapon())
+			&& request.getMonster().getDefensive().getFlatArmour() == 0)
+		{
+			// Seeking arrows (The Blood Moon Rises; wiki): a landed arrow
+			// deals at least 3. The expectation already counts a landed 0
+			// as 1, so the 0, 1 and 2 rolls lift by 2, 2 and 1 (official
+			// calc: the clamp runs before the accurate-zero rule).
+			counted("seeking arrows", "minimum hit 3");
+			expected += accuracy * 5.0 / (rawRangedMax + 1);
+		}
 		if (bow.startsWith("dark bow")
 			|| glaives && !"uncharged".equals(loadout.getWeapon().getVersionLower()))
 		{
