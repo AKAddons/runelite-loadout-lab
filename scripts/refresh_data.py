@@ -130,6 +130,21 @@ NONSTANDARD_OVERRIDES = {
     26694: "Elite calamity breeches (Broken)",
     26759: "Elite calamity breeches (Normal)",
     26760: "Elite calamity breeches (Locked)",
+    # Wristbands of the Arena: a PROPOSED Emir's Arena reward handed out on
+    # a tournament world as a test item, never released (wiki). Barrows
+    # glove stats at a Defence 20 requirement would win every glove slot
+    # (refresh 2026-10-06). Normal/Broken/Locked/Charged/Charged+Locked,
+    # plain and (i).
+    26723: "Wristbands of the Arena (Normal)",
+    26696: "Wristbands of the Arena (Broken)",
+    26724: "Wristbands of the Arena (Locked)",
+    26725: "Wristbands of the Arena (Charged)",
+    26726: "Wristbands of the Arena (Charged and Locked)",
+    26727: "Wristbands of the Arena (i) (Normal)",
+    26697: "Wristbands of the Arena (i) (Broken)",
+    26728: "Wristbands of the Arena (i) (Locked)",
+    26729: "Wristbands of the Arena (i) (Charged)",
+    26730: "Wristbands of the Arena (i) (Charged and Locked)",
 }
 
 assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \

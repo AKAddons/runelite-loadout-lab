@@ -78,7 +78,7 @@ public class QuestRewardPoolTest
 			.optimize(data, owned(Map.of(WHIP, 1), 1)).get(0);
 		GearItem head = best.getLoadout().get(GearSlot.HEAD);
 		Assert.assertNotNull(head);
-		Assert.assertEquals("Helm of neitiznot", head.getName());
+		Assert.assertEquals("Helm of Neitiznot", head.getName());
 		Assert.assertTrue("spent " + best.getPurchaseCost(), best.getPurchaseCost() <= 1);
 	}
 

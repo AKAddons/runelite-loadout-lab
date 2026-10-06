@@ -102,7 +102,7 @@ public class SpellbookLockTest
 			new com.loadoutlab.engine.OwnedItems(data.canonicalizeOwned(owned), true), 1);
 		java.util.List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
 		org.junit.Assert.assertFalse(out.isEmpty());
-		org.junit.Assert.assertEquals("Eye of ayak", out.get(0).getLoadout().getWeapon().getName());
+		org.junit.Assert.assertEquals("Eye of Ayak", out.get(0).getLoadout().getWeapon().getName());
 		org.junit.Assert.assertNull("powered staff results carry no spell name",
 			out.get(0).getSpellName());
 		org.junit.Assert.assertTrue(out.get(0).getDps() > 0);

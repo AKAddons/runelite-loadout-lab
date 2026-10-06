@@ -237,7 +237,8 @@ public class SpecialAttackTest
 		SpecialAttack burningClaws = SpecialAttack.match(byName("Burning claws"), CombatStyle.MELEE);
 		Assert.assertNotNull(burningClaws);
 		Assert.assertEquals("Burning claws", burningClaws.getDisplayName());
-		Assert.assertEquals(30, burningClaws.getEnergyCost());
+		// 35% since the Summer Sweep-Up gear changes (wiki, 7 August 2026).
+		Assert.assertEquals(35, burningClaws.getEnergyCost());
 	}
 
 	@Test

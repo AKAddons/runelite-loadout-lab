@@ -231,7 +231,7 @@
   "name": "Burning claws",
   "style": "MELEE",
   "kind": "CASCADE_CLAWS",
-  "cost": 30,
+  "cost": 35,
   "accuracy": 1.0,
   "damage": 1.0,
   "note": "plus a burn (10 per stack) not counted here",

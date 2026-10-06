@@ -68,7 +68,9 @@ public class DataServiceTest
 		// attack-bonus stats that put the breeches into melee BiS legs
 		// (field report 2026-08-07: Elite calamity breeches at Nex).
 		LoadoutData data = new DataService().load();
-		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751})
+		// Wristbands of the Arena (2026-10-06 refresh): a never-released
+		// tournament-world test item with Barrows glove stats.
+		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751, 26723, 26725, 26727, 26729})
 		{
 			GearItem piece = data.getGear(id);
 			Assert.assertNotNull("calamity row missing: " + id, piece);
