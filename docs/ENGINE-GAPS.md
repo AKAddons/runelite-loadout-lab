@@ -5,7 +5,7 @@ fixes land.
 
 ## Current state (2026-08-22, 68 harness vectors)
 
-82 of 90 vectors agree with the official calculator within 0.5%; most
+84 of 92 vectors agree with the official calculator within 0.5%; most
 are exact. What is still open, largest first - every one is pinned by a
 vector, so none can drift further unnoticed:
 
@@ -40,6 +40,8 @@ listed below.
   per-category style table; melee converged to <=0.2%.
 - ~~Tumeken's shadow~~ FIXED: the shadow now triples the magic ATTACK bonus
   too (was damage only); shadow-zulrah converged to -2.3%.
+- ~~Seeking arrows~~ FIXED 2026-10-06: a landed seeking arrow deals at least
+  3 (vectors msb-seekingrune-goblin, msb-seekingdragon-graardor).
 - ~~ToA-only stats~~ FIXED 2026-10-01: the shadow multiplies by four inside
   the Tombs of Amascut; the keris partisan of Amascut drops to the base
   partisan's stats outside them (vectors shadow-akkha, kerisamascut-*).
@@ -148,7 +150,11 @@ listed below.
 
 ## Data snapshot
 
-Bundled JSON regenerated **2026-07-05** by `scripts/refresh_data.py`:
+Bundled JSON regenerated **2026-10-06** by `scripts/refresh_data.py`
+(weirdgloop corpus @ 89c3e25, 2026-09-02: 37 gear rows and 6 monster rows
+new, 9 monster stat changes, dragon hunter wand speed 4; the never-released
+Wristbands of the Arena join the non-standard overrides). Previous
+regeneration 2026-07-05:
 weirdgloop cdn/json (equipment/monsters/spells, ALL fields kept — 2,851
 monsters incl. Maggot King; 41 new items incl. Necklace of rupture) merged
 with wiki mapping metadata + live GE prices. `isStandardGear` carries over
