@@ -80,6 +80,20 @@ public class DataServiceTest
 	}
 
 	@Test
+	public void dawnbringerIsNotStandardGear()
+	{
+		// Caia (Discord 2026-10-07): "its suggesting the dawnbringer in a
+		// setup lol" - game-best magic at Gemstone Crab. The Dawnbringer
+		// breaks Verzik's shield and is destroyed if it leaves the Theatre
+		// (wiki); it is never a DPS pick, inside the raid included.
+		LoadoutData data = new DataService().load();
+		GearItem staff = data.getGear(22516);
+		Assert.assertNotNull("Dawnbringer row missing", staff);
+		Assert.assertFalse("the Dawnbringer must never be recommended: " + staff.label(),
+			staff.isStandardGear());
+	}
+
+	@Test
 	public void questIssueKitIsNotStandardGear()
 	{
 		// The Silvthrill ballista and its javelins ship upstream as ordinary

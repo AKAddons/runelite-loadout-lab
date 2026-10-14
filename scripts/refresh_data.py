@@ -145,6 +145,11 @@ NONSTANDARD_OVERRIDES = {
     26728: "Wristbands of the Arena (i) (Locked)",
     26729: "Wristbands of the Arena (i) (Charged)",
     26730: "Wristbands of the Arena (i) (Charged and Locked)",
+    # Dawnbringer: breaks Verzik's shield in the Theatre's last room and is
+    # destroyed if it leaves the raid (wiki); max hit is the trident's halved.
+    # Never a DPS pick anywhere (Caia, Discord 2026-10-07: game-best magic at
+    # Gemstone Crab).
+    22516: "Dawnbringer",
 }
 
 assert not (set(STANDARD_OVERRIDES) & set(NONSTANDARD_OVERRIDES)), \
