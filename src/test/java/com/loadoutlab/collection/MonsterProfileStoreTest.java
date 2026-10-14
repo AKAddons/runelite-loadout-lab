@@ -37,6 +37,43 @@ class MonsterProfileStoreTest
 		return fresh;
 	}
 
+	/** Apathy (Discord 2026-10-09), on the Tormented Demons roster: "pinning a
+	 * new spell doesnt change the spell??" - the pin was written under the
+	 * lensed card's synthetic phase id and read back under the first card's. */
+	@Test
+	@DisplayName("a pin made on a phase-variant card is the real monster's pin, seen from every variant")
+	void variantPinsLandOnTheRealMonster()
+	{
+		int demon = 13600;
+		int rangedPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
+		int magicPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 4;
+		store.setPinnedSpell(rangedPhase, "Fire Surge");
+		store.pin(rangedPhase, ALL, GearSlot.WEAPON, 24424);
+		store.setPinnedSpec(magicPhase, 13652);
+
+		assertEquals("Fire Surge", store.pinnedSpell(demon), "the plain demon carries the pin");
+		assertEquals("Fire Surge", store.pinnedSpell(magicPhase), "so does every other phase");
+		assertEquals(Integer.valueOf(24424), store.pinsFor(demon, "MAGIC").get(GearSlot.WEAPON));
+		assertEquals(13652, store.pinnedSpec(rangedPhase));
+	}
+
+	@Test
+	@DisplayName("a profile saved under a variant id before the fix is adopted by the real monster on load")
+	void strandedVariantProfilesFoldOnLoad()
+	{
+		int demon = 13600;
+		int gorilla = 7144;
+		int demonPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
+		int gorillaPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + gorilla * 10 + 1;
+		configManager.setConfiguration("loadoutlab", SCOPE + ".monsterProfiles",
+			"{\"" + demonPhase + "\":{\"spell\":\"Fire Surge\"},\"" + demon + "\":{\"note\":\"bring brews\"},"
+				+ "\"" + gorillaPhase + "\":{\"spell\":\"Fire Wave\"}}");
+		MonsterProfileStore loaded = freshStore();
+		assertEquals("Fire Wave", loaded.pinnedSpell(gorilla), "a stranded profile is adopted when the real monster has none");
+		assertEquals("bring brews", loaded.note(demon), "the real monster's own profile wins outright");
+		assertEquals("", loaded.pinnedSpell(demon), "so the stranded variant entry beside it is dropped, not merged");
+	}
+
 	@Test
 	@DisplayName("pins are per monster AND per scope: a style pin overlays the all-sets pin")
 	void pinsScopeAndOverlay()

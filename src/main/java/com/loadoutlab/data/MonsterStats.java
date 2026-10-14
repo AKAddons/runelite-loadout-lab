@@ -302,6 +302,14 @@ public final class MonsterStats
 	 * profile set on the plain mob follows it into groups. */
 	public int profileId()
 	{
+		return profileIdOf(id);
+	}
+
+	/** The same mapping for a bare id (the profile store normalises every
+	 * read and write through it, so a pin made on a phase card is the
+	 * real monster's pin - Apathy, Discord 2026-10-09, Tormented Demons). */
+	public static int profileIdOf(int id)
+	{
 		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
 	}
 

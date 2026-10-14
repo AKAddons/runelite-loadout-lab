@@ -3,6 +3,7 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.loadoutlab.data.GearSlot;
+import com.loadoutlab.data.MonsterStats;
 import java.util.*;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +54,12 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	 * resolution later needs the client thread). */
 	private Stored stored(int monsterId)
 	{
-		return profiles.computeIfAbsent(monsterId, id -> new Stored());
+		return profiles.computeIfAbsent(MonsterStats.profileIdOf(monsterId), id -> new Stored());
+	}
+
+	private Stored get(int monsterId)
+	{
+		return profiles.get(MonsterStats.profileIdOf(monsterId));
 	}
 
 	private static final class Stored
@@ -88,7 +94,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized boolean skipDegradable(int monsterId, boolean fallback)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		return profile == null || profile.skipDegradable == null ? fallback : profile.skipDegradable;
 	}
 
@@ -136,7 +142,17 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 				new TypeToken<Map<Integer, Stored>>(){}.getType());
 			if (stored != null)
 			{
-				profiles.putAll(stored);
+				// Entries saved under a phase variant's synthetic id (before
+				// 2026-10-14 every write keyed the lensed card's raw id) fold
+				// into the real monster's profile; its own entry wins.
+				stored.forEach((id, profile) ->
+				{
+					if (id < MonsterStats.SYNTHETIC_ID_BASE)
+					{
+						profiles.put(id, profile);
+					}
+				});
+				stored.forEach((id, profile) -> profiles.putIfAbsent(MonsterStats.profileIdOf(id), profile));
 			}
 		}
 		catch (RuntimeException ex)
@@ -148,7 +164,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Effective pins for one style card: ALL overlaid by the style scope. */
 	public synchronized Map<GearSlot, Integer> pinsFor(int monsterId, String style)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.pins == null)
 		{
 			return Map.of();
@@ -181,7 +197,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw pins by scope, for the manage menu: scope -> slot -> id. */
 	public synchronized Map<String, Map<GearSlot, Integer>> allPins(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.pins == null || profile.pins.isEmpty())
 		{
 			return Map.of();
@@ -213,7 +229,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void unpin(int monsterId, String scope, GearSlot slot)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile != null && profile.pins != null && profile.pins.get(scope) != null)
 		{
 			profile.pins.get(scope).remove(slot.name());
@@ -224,7 +240,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The user's note for this monster ("" when none). */
 	public synchronized String note(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		return profile == null || profile.note == null ? "" : profile.note;
 	}
 
@@ -238,7 +254,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The pinned autocast spell for this monster ("" = auto-pick). */
 	public synchronized String pinnedSpell(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		return profile == null || profile.spell == null ? "" : profile.spell;
 	}
 
@@ -253,7 +269,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The pinned SPEC weapon id for this monster (0 = auto-pick). */
 	public synchronized int pinnedSpec(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		return profile == null || profile.spec == null ? 0 : profile.spec;
 	}
 
@@ -268,7 +284,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw filter items by scope: scope -> id -> display name. */
 	public synchronized Map<String, Map<Integer, String>> allFilterItems(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.filterItems == null || profile.filterItems.isEmpty())
 		{
 			return Map.of();
@@ -289,7 +305,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	 * scope. The caller unions in the global exclusion list. */
 	public synchronized Set<Integer> exclusionsFor(int monsterId, String style)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null)
 		{
 			return Set.of();
@@ -313,7 +329,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw per-mob exclusions by scope, for the manage menu. */
 	public synchronized Map<String, Set<Integer>> allExclusions(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.exclusions == null || profile.exclusions.isEmpty())
 		{
 			return Map.of();
@@ -333,7 +349,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Per-mob sims: counted as owned for THIS mob only. */
 	public synchronized Set<Integer> simsFor(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.sims == null || profile.sims.isEmpty())
 		{
 			return Set.of();
@@ -344,7 +360,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw per-mob sims (id -> add-time name), for the manage menu. */
 	public synchronized Map<Integer, String> allSims(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.sims == null || profile.sims.isEmpty())
 		{
 			return Map.of();
@@ -365,7 +381,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobSim(int monsterId, int itemId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile != null && profile.sims != null)
 		{
 			profile.sims.remove(itemId);
@@ -377,7 +393,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	 * empty when the wrench-panel defaults apply untouched. */
 	public synchronized Map<String, String> supplyOverrides(int monsterId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile == null || profile.supplies == null || profile.supplies.isEmpty())
 		{
 			return Map.of();
@@ -391,7 +407,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	{
 		if (choice == null || choice.isEmpty())
 		{
-			Stored existing = profiles.get(monsterId);
+			Stored existing = get(monsterId);
 			if (existing != null && existing.supplies != null)
 			{
 				existing.supplies.remove(category);
@@ -421,7 +437,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobExclusion(int monsterId, String scope, int itemId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile != null && profile.exclusions != null
 			&& profile.exclusions.get(scope) != null)
 		{
@@ -444,7 +460,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobFilter(int monsterId, String scope, int itemId)
 	{
-		Stored profile = profiles.get(monsterId);
+		Stored profile = get(monsterId);
 		if (profile != null && profile.filterItems != null
 			&& profile.filterItems.get(scope) != null)
 		{

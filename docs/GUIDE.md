@@ -432,7 +432,11 @@ line manages everything, and each style card collapses to its DPS
 header - sets a standard deviation under your best start collapsed.
 The magic card hosts its own controls: PIN THE SPELL ("I am casting
 Wind Bolt") and the gear optimizes around it, with the spellbook lock
-shown while the spell is on Auto.
+shown while the spell is on Auto. A profile belongs to the monster,
+not the card: on a phase roster like the Tormented Demons, a pin or
+spell set on any phase card is the demon's and shows on every phase
+(and on the plain mob); a group roster reads its pins from its first
+member.
 
 
 ### Stored elsewhere (manual owned items)
