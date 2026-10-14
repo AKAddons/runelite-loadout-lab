@@ -131,18 +131,21 @@ tasks.register('runLive', JavaExec) {
 tasks.register('checkDocs', Exec) {
 	group = 'verification'
 	description = 'Audit the feature registry against the README guide, media, and source tree.'
+	environment 'PYTHONIOENCODING', 'utf-8'
 	commandLine 'python3', 'scripts/check_docs.py'
 }
 
 tasks.register('checkTokens', Exec) {
 	group = 'verification'
 	description = 'Plugin Hub 200k-token source-size gate.'
+	environment 'PYTHONIOENCODING', 'utf-8'
 	commandLine 'python3', 'scripts/check_tokens.py'
 }
 
 tasks.register('checkGlyphs', Exec) {
 	group = 'verification'
 	description = 'Flag macOS-Tahoe tofu-prone glyphs in UI/chat strings.'
+	environment 'PYTHONIOENCODING', 'utf-8'
 	commandLine 'python3', 'scripts/check_glyphs.py'
 }
 

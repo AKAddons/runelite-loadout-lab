@@ -20,11 +20,15 @@ import sys
 import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JAVA_HOME = "/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home"
+MAC_JAVA_HOME = "/Library/Java/JavaVirtualMachines/zulu-21.jdk/Contents/Home"
+JAVA_HOME = MAC_JAVA_HOME if os.path.isdir(MAC_JAVA_HOME) else os.environ.get("JAVA_HOME", "")
+WIN = sys.platform == "win32"
+GRADLEW = os.path.join(REPO, "gradlew.bat" if WIN else "gradlew")
+COREPACK = "corepack.cmd" if WIN else "corepack"
 
 
 def run(cmd, cwd, env=None):
-    e = dict(os.environ, JAVA_HOME=JAVA_HOME)
+    e = dict(os.environ, JAVA_HOME=JAVA_HOME) if JAVA_HOME else dict(os.environ)
     if env:
         e.update(env)
     result = subprocess.run(cmd, cwd=cwd, env=e, capture_output=True, text=True)
@@ -49,11 +53,11 @@ def main():
     export_env = {"LOADOUT_LAB_VECTORS": work}
     if args.sweep:
         export_env["LOADOUT_LAB_SWEEP"] = "1"
-    run(["./gradlew", "cleanTest", "test", "--tests", "*OfficialVectorExport"],
+    run([GRADLEW, "cleanTest", "test", "--tests", "*OfficialVectorExport"],
         cwd=REPO, env=export_env)
 
     print("2/3 running the official calculator on the same vectors...")
-    run(["corepack", "yarn", "jest", "src/tests/harness/LoadoutLabVectors.test.ts"],
+    run([COREPACK, "yarn", "jest", "src/tests/harness/LoadoutLabVectors.test.ts"],
         cwd=args.calc_dir,
         env={
             "LOADOUT_LAB_VECTORS": os.path.join(work, "vectors.json"),
