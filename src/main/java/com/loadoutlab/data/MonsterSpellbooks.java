@@ -20,7 +20,7 @@ public final class MonsterSpellbooks
 	static
 	{
 		JsonObject root = JsonResources.object(
-			"/com/loadoutlab/data/monster_spellbooks.json");
+			"monster_spellbooks.json");
 		if (root != null && root.has("byNameContains"))
 		{
 			for (Map.Entry<String, JsonElement> e

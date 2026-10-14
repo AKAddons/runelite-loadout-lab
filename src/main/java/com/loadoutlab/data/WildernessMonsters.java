@@ -37,7 +37,7 @@ public final class WildernessMonsters
 	static
 	{
 		com.google.gson.JsonObject root = JsonResources.object(
-			"/com/loadoutlab/data/wilderness_monsters.json");
+			"wilderness_monsters.json");
 		JsonResources.strings(root, "names", NAMES);
 		JsonResources.strings(root, "exclusive", EXCLUSIVE);
 	}

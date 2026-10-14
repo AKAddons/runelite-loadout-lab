@@ -24,7 +24,7 @@ public final class DefenceFloors
 	static
 	{
 		JsonObject root = JsonResources.objectOrThrow(
-			"/com/loadoutlab/data/defence_floors.json");
+			"defence_floors.json");
 		for (JsonElement e : root.getAsJsonArray("rules"))
 		{
 			JsonObject row = e.getAsJsonObject();

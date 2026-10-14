@@ -19,7 +19,7 @@ import java.util.List;
  */
 public final class MonsterGroups
 {
-	private static final String RESOURCE = "/com/loadoutlab/data/monster_groups.json";
+	private static final String RESOURCE = "monster_groups.json";
 
 	/** One curated group, resolved to loaded rows. */
 	public static final class MonsterGroup

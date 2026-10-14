@@ -25,7 +25,7 @@ public final class RangedAmmo
 
 	static
 	{
-		JsonObject root = JsonResources.object("/com/loadoutlab/data/ranged_ammo.json");
+		JsonObject root = JsonResources.object("ranged_ammo.json");
 		JsonResources.intMap(root, "arrowTierByWeapon", ARROW_TIER_BY_WEAPON);
 		JsonResources.intMap(root, "boltTierByWeapon", BOLT_TIER_BY_WEAPON);
 		JsonResources.intMap(root, "arrowTierByAmmo", ARROW_TIER_BY_AMMO);

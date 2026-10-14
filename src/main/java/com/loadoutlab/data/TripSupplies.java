@@ -67,7 +67,7 @@ public final class TripSupplies
 
 	static
 	{
-		JsonObject root = JsonResources.object("/com/loadoutlab/data/trip_supplies.json");
+		JsonObject root = JsonResources.object("trip_supplies.json");
 		if (root != null)
 		{
 			for (String category : CATEGORY_KEYS)

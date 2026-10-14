@@ -2160,9 +2160,9 @@ public class LoadoutLabPlugin extends Plugin
 		BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = img.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g.setColor(new Color(45, 45, 55));
+		g.setColor(new Color(0x2D2D37));
 		g.fillRoundRect(0, 0, 16, 16, 4, 4);
-		g.setColor(new Color(140, 200, 140));
+		g.setColor(new Color(0x8CC88C));
 		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
 		g.drawString("LL", 2, 12);
 		g.dispose();

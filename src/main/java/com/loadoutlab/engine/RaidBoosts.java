@@ -21,7 +21,7 @@ public final class RaidBoosts
 
 	static
 	{
-		com.google.gson.JsonObject root = JsonResources.object("/com/loadoutlab/data/raid_boosts.json");
+		com.google.gson.JsonObject root = JsonResources.object("raid_boosts.json");
 		JsonResources.strings(root, "xeric", XERIC);
 		JsonResources.strings(root, "amascut", AMASCUT);
 		JsonResources.strings(root, "blood", BLOOD);

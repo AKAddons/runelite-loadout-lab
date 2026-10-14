@@ -264,7 +264,7 @@ public class RenderSurface
 		// icon, so the ASCII glyph gate stays clean).
 		if (Model.flag(match, "naval"))
 		{
-			row.setForeground(new Color(120, 175, 215));
+			row.setForeground(new Color(0x78AFD7));
 			row.setToolTipText("Ship combat: fought from your boat");
 			Icon sail = sailingIconSmall();
 			if (sail != null)
@@ -397,7 +397,7 @@ public class RenderSurface
 	}
 
 	private static final Color CHIP_ON = ResultCards.ACCENT;
-	private static final Color CHIP_OFF = new Color(150, 150, 150);
+	private static final Color CHIP_OFF = new Color(0x969696);
 
 	/** The classic parameter pill: flat, rounded, accent when active. */
 	static JLabel pill(String text, boolean on, String tooltip, Runnable onClick)
@@ -648,7 +648,7 @@ public class RenderSurface
 				() -> commands.send("undo", Map.of()));
 			redoButton = chip(new JButton(">"), "Redo",
 				() -> commands.send("redo", Map.of()));
-			JLabel clearSearch = Ui.label("x", new Color(150, 150, 150));
+			JLabel clearSearch = Ui.label("x", new Color(0x969696));
 			clearSearch.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 6));
 			clearSearch.setToolTipText("Clear the search");
 			clearSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -667,18 +667,18 @@ public class RenderSurface
 				@Override
 				public void mouseEntered(MouseEvent e)
 				{
-					clearSearch.setForeground(new Color(220, 120, 120));
+					clearSearch.setForeground(new Color(0xDC7878));
 				}
 
 				@Override
 				public void mouseExited(MouseEvent e)
 				{
-					clearSearch.setForeground(new Color(150, 150, 150));
+					clearSearch.setForeground(new Color(0x969696));
 				}
 			});
 			JPanel searchBox = new JPanel(new BorderLayout());
-			searchBox.setBackground(new Color(43, 43, 43));
-			searchBox.setBorder(new RoundedBorder(new Color(80, 78, 70), 3, 4));
+			searchBox.setBackground(new Color(0x2B2B2B));
+			searchBox.setBorder(new RoundedBorder(new Color(0x504E46), 3, 4));
 			search.setOpaque(false);
 			search.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 2));
 			searchBox.add(search, BorderLayout.CENTER);
@@ -689,7 +689,7 @@ public class RenderSurface
 			{
 				arrow.setContentAreaFilled(false);
 				arrow.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
-				arrow.setForeground(new Color(150, 150, 150));
+				arrow.setForeground(new Color(0x969696));
 				searchTools.add(arrow);
 			}
 			searchBox.add(searchTools, BorderLayout.EAST);
@@ -726,7 +726,7 @@ public class RenderSurface
 			loaderRow.add(loader);
 			waitingSlot.add(loaderRow, BorderLayout.CENTER);
 			JLabel computing = Ui.label("Computing...",
-				new Color(150, 150, 150));
+				new Color(0x969696));
 			computing.setHorizontalAlignment(SwingConstants.CENTER);
 			waitingSlot.add(computing, BorderLayout.SOUTH);
 			waitingSlot.setVisible(false);
@@ -849,18 +849,18 @@ public class RenderSurface
 		{
 			// The classic trio: always visible, muted at zero.
 			pillChip(counts, "simmedItems", "+",
-				new Color(130, 200, 130), new Color(110, 140, 110),
-				new Color(95, 160, 95),
+				new Color(0x82C882), new Color(0x6E8C6E),
+				new Color(0x5FA05F),
 				"Stop simming ", "toggle-sim",
 				"Sim an item as owned...", null);
 			pillChip(counts, "excludedItems", "-",
-				new Color(220, 120, 120), new Color(140, 110, 110),
-				new Color(170, 90, 90),
+				new Color(0xDC7878), new Color(0x8C6E6E),
+				new Color(0xAA5A5A),
 				"Allow again: ", "toggle-exclusion",
 				"Exclude an item (search)...", null);
 			pillChip(counts, "filteredItems", "~",
-				new Color(190, 190, 190), new Color(130, 130, 130),
-				new Color(150, 150, 150),
+				new Color(0xBEBEBE), new Color(0x828282),
+				new Color(0x969696),
 				"Stop filtering: ", "toggle-always-filter",
 				"Always filter an item...", Model.list(page, "supplyCatalog"));
 		}
@@ -1007,7 +1007,7 @@ public class RenderSurface
 			// The classic inventory control is a SLIDER over the bench
 			// size - every value reachable, not four presets.
 			JPanel invBox = Ui.panel(new BorderLayout(4, 0));
-			JLabel invLabel = Ui.label("Inv " + swaps, new Color(190, 190, 190));
+			JLabel invLabel = Ui.label("Inv " + swaps, new Color(0xBEBEBE));
 			invBox.add(invLabel, BorderLayout.WEST);
 			JSlider invSlider =
 				new JSlider(0, 16, Math.max(0, Math.min(16, swaps)));
@@ -1080,14 +1080,14 @@ public class RenderSurface
 			});
 			addMobButton.setContentAreaFilled(false);
 			addMobButton.setOpaque(false);
-			addMobButton.setForeground(new Color(190, 190, 190));
+			addMobButton.setForeground(new Color(0xBEBEBE));
 			addMobButton.setBorder(new RoundedBorder(ColorScheme.DARKER_GRAY_HOVER_COLOR, 3, 10));
 			JButton reload = chip(new JButton("Reload"),
 				"Re-run with a fresh bank scan", () ->
 					commands.send("recompute", Map.of()));
 			reload.setContentAreaFilled(false);
 			reload.setOpaque(false);
-			reload.setForeground(new Color(140, 140, 140));
+			reload.setForeground(new Color(0x8C8C8C));
 			reload.setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
 			cards.setReload(reload);
 			cards.setAddMob(addMobButton);
@@ -1157,7 +1157,7 @@ public class RenderSurface
 			// The empty state says what to do - never beside the
 			// computing notice.
 			JLabel hint = Ui.label(
-				"Search a mob, group, or raid to begin.", new Color(150, 150, 150));
+				"Search a mob, group, or raid to begin.", new Color(0x969696));
 			hint.setBorder(BorderFactory.createEmptyBorder(12, 8, 12, 8));
 			hint.setAlignmentX(0.5f);
 			cardArea.add(hint);

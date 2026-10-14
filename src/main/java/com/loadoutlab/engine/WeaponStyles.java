@@ -44,7 +44,7 @@ public final class WeaponStyles
 		}
 	}
 
-	private static final String RESOURCE = "/com/loadoutlab/data/weapon_styles.json";
+	private static final String RESOURCE = "weapon_styles.json";
 	/** Resource key of the unknown-category fallback row - not a real weapon
 	 * category, so it can never collide with one. */
 	private static final String FALLBACK = "*";

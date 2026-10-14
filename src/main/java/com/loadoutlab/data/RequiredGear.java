@@ -79,7 +79,7 @@ public final class RequiredGear
 		// Fail LOUD (the name_rules pattern): a silently empty table would
 		// drop every requirement with no visible error.
 		JsonObject root = JsonResources.objectOrThrow(
-			"/com/loadoutlab/data/required_gear.json");
+			"required_gear.json");
 		for (JsonElement e : root.getAsJsonArray("rules"))
 		{
 			JsonObject row = e.getAsJsonObject();

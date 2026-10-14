@@ -83,7 +83,7 @@ final class Ui
 		int m = Math.max(2, size / 6);
 		g.setStroke(new BasicStroke(Math.max(2f, size / 9f),
 			BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-		g.setColor(new Color(210, 70, 70));
+		g.setColor(new Color(0xD24646));
 		g.drawLine(m, m, size - m, size - m);
 		g.drawLine(size - m, m, m, size - m);
 		g.dispose();

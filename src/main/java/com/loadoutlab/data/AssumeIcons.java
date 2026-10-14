@@ -19,7 +19,7 @@ public final class AssumeIcons
 	 * AssumeIconsDriftTest, which re-reflects the SpriteID constants at
 	 * build time so an upstream renumbering goes red instead of quietly
 	 * painting the wrong icon. */
-	private static final String RESOURCE = "/com/loadoutlab/data/assume_icons.json";
+	private static final String RESOURCE = "assume_icons.json";
 
 	private static final Map<String, Integer> PRAYERS = new HashMap<>();
 	private static final Map<String, Integer> BOOST_ITEMS = new HashMap<>();

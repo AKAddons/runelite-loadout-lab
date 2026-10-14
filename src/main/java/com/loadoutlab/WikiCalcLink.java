@@ -37,7 +37,7 @@ public class WikiCalcLink
 
 	static
 	{
-		JsonObject root = JsonResources.object("/com/loadoutlab/data/wiki_calc_ids.json");
+		JsonObject root = JsonResources.object("wiki_calc_ids.json");
 		JsonResources.stringIntMap(root, "prayerIds", PRAYER_IDS);
 		if (root != null && root.has("potionIds"))
 		{

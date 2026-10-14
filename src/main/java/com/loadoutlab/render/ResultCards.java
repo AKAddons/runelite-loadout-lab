@@ -87,9 +87,9 @@ public class ResultCards
 			return null;
 		}
 		JButton button = new JButton("*" + n);
-		button.setForeground(skip ? new Color(230, 180, 90) : new Color(150, 140, 120));
+		button.setForeground(skip ? new Color(0xE6B45A) : new Color(0x968C78));
 		button.setContentAreaFilled(false);
-		button.setBorder(skip ? new RoundedBorder(new Color(190, 150, 70), 2, 14)
+		button.setBorder(skip ? new RoundedBorder(new Color(0xBE9646), 2, 14)
 			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
 		button.setToolTipText(skip ? "Degradable gear skipped here - click to allow"
 			: n + " degrade or burn charges - click to skip them here");
@@ -369,13 +369,13 @@ public class ResultCards
 		// Selection is an EDGE, not a box: the active mob wears a 3px
 		// accent bar and a faint tint; the rest stay transparent.
 		boolean sea = Model.flag(mob, "naval");
-		Color edge = sea ? new Color(120, 175, 215) : ACCENT;
+		Color edge = sea ? new Color(0x78AFD7) : ACCENT;
 		row.setOpaque(selected);
 		if (selected)
 		{
 			// A ship mob's selection wears the sea, not the accent green
 			// (REQ-SC-16).
-			row.setBackground(sea ? new Color(40, 50, 60) : new Color(46, 56, 46));
+			row.setBackground(sea ? new Color(0x28323C) : new Color(0x2E382E));
 		}
 		row.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(0, selected ? 3 : 0, 0, 0, edge),
@@ -391,7 +391,7 @@ public class ResultCards
 			: name.replaceFirst(" - lvl \\d+$", "");
 		JLabel label = new JLabel(cleanName);
 		label.setFont(FontManager.getRunescapeSmallFont());
-		label.setForeground(selected ? edge : new Color(200, 200, 200));
+		label.setForeground(selected ? edge : new Color(0xC8C8C8));
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
 		{
 			// The mob's wiki render rides the row; text-only until it
@@ -485,13 +485,13 @@ public class ResultCards
 
 		JLabel dpsLabel = new JLabel(dps);
 		dpsLabel.setFont(FontManager.getRunescapeSmallFont());
-		dpsLabel.setForeground(selected ? Color.WHITE : new Color(170, 170, 170));
+		dpsLabel.setForeground(selected ? Color.WHITE : new Color(0xAAAAAA));
 		iconDps.add(dpsLabel);
 		columns.add(iconDps, BorderLayout.CENTER);
 
 		JLabel remove = new JLabel("x", SwingConstants.CENTER);
 		remove.setPreferredSize(new Dimension(14, 18));
-		remove.setForeground(new Color(150, 150, 150));
+		remove.setForeground(new Color(0x969696));
 		remove.setToolTipText("Remove " + name + " from this result");
 		remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		// Right-click on the row or its x: Move up / Move down (Andrew
@@ -549,13 +549,13 @@ public class ResultCards
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
-				remove.setForeground(new Color(220, 120, 120));
+				remove.setForeground(new Color(0xDC7878));
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				remove.setForeground(new Color(150, 150, 150));
+				remove.setForeground(new Color(0x969696));
 			}
 		});
 		columns.add(remove, BorderLayout.EAST);
@@ -564,7 +564,7 @@ public class ResultCards
 	}
 
 	/** The brand accent (the mascot-era green lives on as a plain constant). */
-	static final Color ACCENT = new Color(140, 200, 140);
+	static final Color ACCENT = new Color(0x8CC88C);
 
 	/** Async wiki thumbnails for the roster rows (null = text-only). */
 	private MonsterIcons monsterIcons;
@@ -605,14 +605,14 @@ public class ResultCards
 		{
 			Icon sail = sailingIconSmall();
 			navalTag = sail != null ? new JLabel(sail)
-				: Ui.label("sea", new Color(120, 175, 215));
+				: Ui.label("sea", new Color(0x78AFD7));
 			navalTag.setToolTipText("Ship combat: fought from your boat");
 		}
 		int mobHp = Model.id(mob, "hp");
 		if (mobHp > 0)
 		{
 			// hp rides the header, muted (field ask 2026-08-21).
-			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(140, 140, 140));
+			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(0x8C8C8C));
 			hpLabel.setFont(FontManager.getRunescapeSmallFont());
 			// Title CENTER (yields when narrow), hp EAST (survives) -
 			// WEST/CENTER clipped the title and pushed hp out entirely
@@ -705,7 +705,7 @@ public class ResultCards
 				// No potion assumed (None/prayer-only): a muted vial
 				// keeps the toggle reachable.
 				boostIconCell.setText("-");
-				boostIconCell.setForeground(new Color(140, 140, 140));
+				boostIconCell.setForeground(new Color(0x8C8C8C));
 				boostIconCell.setHorizontalAlignment(SwingConstants.CENTER);
 			}
 			if (!bis)
@@ -750,7 +750,7 @@ public class ResultCards
 				// never read as the trip's answer.
 				JLabel caveat = Ui.label(
 					"Tab-only view - this style is not in the shared trip kit",
-					new Color(220, 170, 90));
+					new Color(0xDCAA5A));
 				caveat.setFont(FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
 			}
@@ -793,7 +793,7 @@ public class ResultCards
 						icon.setIcon(Ui.icon(img, 16))));
 			}
 			JLabel dpsLabel = Ui.label(hasSet ? String.format("%.2f", tabDps) : "-",
-				isSelected ? Color.WHITE : new Color(160, 160, 160));
+				isSelected ? Color.WHITE : new Color(0xA0A0A0));
 			dpsLabel.setFont(dpsLabel.getFont().deriveFont(Font.BOLD, 12f));
 			dpsLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			tabCell.add(icon, BorderLayout.WEST);
@@ -838,7 +838,7 @@ public class ResultCards
 			JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
 			legend.setBackground(CARD);
 			legend.add(statLine("Stored:", "Gear that needs a fetch trip",
-				new Color(160, 160, 160)));
+				new Color(0xA0A0A0)));
 			for (Map.Entry<String, Color> source : present.entrySet())
 			{
 				JLabel tag = statLine(source.getKey(), "Fetch from " + source.getKey(),
@@ -873,7 +873,7 @@ public class ResultCards
 			if (ceiling > 0)
 			{
 				JLabel gap = Ui.label(String.format("%.0f%% of BiS",
-					Math.min(100.0, 100.0 * mine / ceiling)), new Color(160, 160, 160));
+					Math.min(100.0, 100.0 * mine / ceiling)), new Color(0xA0A0A0));
 				gap.setFont(FontManager.getRunescapeSmallFont());
 				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
 				viewRow.add(gap, BorderLayout.EAST);
@@ -985,15 +985,15 @@ public class ResultCards
 		JPanel trioRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		trioRow.setBackground(CARD);
 		trioRow.add(trioButton(mob, "+", "mobSims",
-			new Color(130, 200, 130), new Color(110, 140, 110), new Color(95, 160, 95),
+			new Color(0x82C882), new Color(0x6E8C6E), new Color(0x5FA05F),
 			"Simmed for this mob", "remove-mob-sim", "sim-for-mob",
 			"Sim an item as owned for this mob"));
 		trioRow.add(trioButton(mob, "-", "mobExclusions",
-			new Color(220, 120, 120), new Color(140, 110, 110), new Color(170, 90, 90),
+			new Color(0xDC7878), new Color(0x8C6E6E), new Color(0xAA5A5A),
 			"Excluded for this mob", "remove-mob-exclusion", "exclude-for-mob",
 			"Exclude an item for this mob"));
 		trioRow.add(trioButton(mob, "~", "mobFilters",
-			new Color(190, 190, 190), new Color(130, 130, 130), new Color(150, 150, 150),
+			new Color(0xBEBEBE), new Color(0x828282), new Color(0x969696),
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
 			"Add a supply to this mob's bank filter"));
 		JButton degrades = degradesButton(mob, Model.map(node, bis ? "bis" : "yours"));
@@ -1076,10 +1076,10 @@ public class ResultCards
 		String noteText = Model.str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();
 		JTextField note = new JTextField(noteText, 18);
-		note.setBackground(new Color(78, 72, 50));
-		note.setForeground(new Color(215, 205, 160));
-		note.setCaretColor(new Color(215, 205, 160));
-		note.setBorder(BorderFactory.createLineBorder(new Color(98, 90, 62)));
+		note.setBackground(new Color(0x4E4832));
+		note.setForeground(new Color(0xD7CDA0));
+		note.setCaretColor(new Color(0xD7CDA0));
+		note.setBorder(BorderFactory.createLineBorder(new Color(0x625A3E)));
 		note.setToolTipText("Your note for this mob - saved on Enter");
 		note.addActionListener(e -> commands.send("set-note", Map.of("text", note.getText())));
 		card.add(Box.createVerticalStrut(4));
@@ -1091,7 +1091,7 @@ public class ResultCards
 		{
 			// A ghost until there is something to say - the open post-it
 			// field shouted for attention it rarely deserved.
-			JLabel addNote = Ui.label("+ note", new Color(120, 115, 95));
+			JLabel addNote = Ui.label("+ note", new Color(0x78735F));
 			addNote.setFont(FontManager.getRunescapeSmallFont());
 			addNote.setToolTipText("Add a note for this mob");
 			JPanel noteHost = centre(addNote);
@@ -1215,7 +1215,7 @@ public class ResultCards
 		button.setContentAreaFilled(false);
 		button.setFocusable(false);
 		button.setBorder(new RoundedBorder(blocked != null
-			? new Color(200, 100, 100) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+			? new Color(0xC86464) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
 		String fired = node == null ? null : Model.str(node, "firedBy");
 		button.setToolTipText("Cannon " + (index + 1) + ": "
 			+ cap(cannon.tier) + ("player".equals(fired) ? " - you" : " - crew")
@@ -1274,7 +1274,7 @@ public class ResultCards
 		button.setContentAreaFilled(false);
 		button.setFocusable(false);
 		button.setBorder(new RoundedBorder(ammoBlocked != null
-			? new Color(200, 100, 100) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+			? new Color(0xC86464) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
 		button.setToolTipText("Cannonballs: "
 			+ (ammoBlocked != null ? ammoBlocked
 				: detect ? "Detect best - " + cap(ball.tier) + " (best banked)"
@@ -1378,7 +1378,7 @@ public class ResultCards
 	 * accent edge and white text, the other a quiet outline. */
 	private static JLabel viewSide(String text, boolean selected, String tooltip, Runnable onClick)
 	{
-		JLabel side = Ui.label(text, selected ? Color.WHITE : new Color(150, 150, 150));
+		JLabel side = Ui.label(text, selected ? Color.WHITE : new Color(0x969696));
 		side.setFont(side.getFont().deriveFont(Font.BOLD, 14f));
 		side.setBorder(new RoundedBorder(selected
 			? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 5, 12));
@@ -1467,7 +1467,7 @@ public class ResultCards
 		if (offBook)
 		{
 			plate.setOpaque(true);
-			plate.setBackground(new Color(120, 40, 40));
+			plate.setBackground(new Color(0x782828));
 		}
 		// No required book = a DIMMED generic tab, never a real book's
 		// sprite (field confusion 2026-08-14: the live book shown in
@@ -1669,7 +1669,7 @@ public class ResultCards
 		else
 		{
 			cell.setText(tooltip.substring(0, 1));
-			cell.setForeground(new Color(190, 190, 190));
+			cell.setForeground(new Color(0xBEBEBE));
 		}
 		cell.setToolTipText(tooltip + (picked ? " (assumed)" : ""));
 		cell.setCursor(Cursor.getPredefinedCursor(
@@ -1849,7 +1849,7 @@ public class ResultCards
 		else
 		{
 			plate.setText("-");
-			plate.setForeground(new Color(140, 140, 140));
+			plate.setForeground(new Color(0x8C8C8C));
 		}
 		if (!bis)
 		{
@@ -1937,12 +1937,12 @@ public class ResultCards
 	{
 		button.setFocusable(false);
 		button.setContentAreaFilled(false);
-		button.setForeground(new Color(190, 190, 190));
+		button.setForeground(new Color(0xBEBEBE));
 		button.setBorder(new RoundedBorder(ColorScheme.MEDIUM_GRAY_COLOR, 3, 10));
 		button.addItemListener(e ->
 		{
 			boolean on = button.isSelected();
-			button.setForeground(on ? Color.WHITE : new Color(190, 190, 190));
+			button.setForeground(on ? Color.WHITE : new Color(0xBEBEBE));
 			button.setBorder(new RoundedBorder(on ? ACCENT
 				: ColorScheme.MEDIUM_GRAY_COLOR, 3, 10));
 		});
@@ -2000,7 +2000,7 @@ public class ResultCards
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
 					? " (pinned)" : "")) + lockText);
 			spellName.setFont(FontManager.getRunescapeSmallFont());
-			spellName.setForeground(new Color(200, 200, 200));
+			spellName.setForeground(new Color(0xC8C8C8));
 			spellRow.add(spellIcon);
 			spellRow.add(spellName);
 			String tip = "The autocast spell - click to pin one";
@@ -2061,7 +2061,7 @@ public class ResultCards
 						else
 						{
 							cell.setText(option.substring(0, 1));
-							cell.setForeground(new Color(190, 190, 190));
+							cell.setForeground(new Color(0xBEBEBE));
 						}
 						cell.setToolTipText(option + (picked ? " (pinned)" : ""));
 						cell.setCursor(Cursor.getPredefinedCursor(
@@ -2120,7 +2120,7 @@ public class ResultCards
 		JPanel statColumn = new JPanel();
 		statColumn.setLayout(new BoxLayout(statColumn, BoxLayout.Y_AXIS));
 		statColumn.setBackground(CARD);
-		Color statText = new Color(200, 200, 200);
+		Color statText = new Color(0xC8C8C8);
 		Map<String, Object> incoming = Model.map(card, "incoming");
 		Map<String, Object> shipIncoming = ship == null ? null : Model.map(ship, "incoming");
 		statColumn.add(paintedStatLine("" + (int) Model.num(card, "maxHit"),
@@ -2148,7 +2148,7 @@ public class ResultCards
 					: "Ship damage taken with " + keelName + " - max "
 						+ keelMax + " per hit, prayers do not reduce it. Click to change the keel",
 				statText, -1);
-			shipLine.setForeground(new Color(120, 175, 215));
+			shipLine.setForeground(new Color(0x78AFD7));
 			Icon sail = sailingIconSmall();
 			if (sail != null)
 			{
@@ -2245,7 +2245,7 @@ public class ResultCards
 		{
 			JLabel riskLine = statLine("Risk " + Gp.formatShort(
 				(int) Math.min(Integer.MAX_VALUE, Model.num(riskNode, "riskGp"))),
-				"", new Color(220, 120, 120));
+				"", new Color(0xDC7878));
 			riskLine.setToolTipText(Ui.tip(
 				Ui.list("Kept on death:", Model.list2(riskNode, "kept")),
 				Ui.list("<br>Lost:", Model.list2(riskNode, "lost"))));
@@ -2387,12 +2387,12 @@ public class ResultCards
 	/** The classic storage palette - only FETCH-TRIP sources have an
 	 * entry, so at-hand gear can never draw a dot. */
 	private static final Map<String, Color> SOURCE_COLORS = Map.of(
-		"looting bag", new Color(180, 130, 80),
-		"POH costume room", new Color(190, 130, 230),
-		"STASH", new Color(230, 120, 120),
-		"cargo hold", new Color(100, 200, 190),
-		"stored elsewhere", new Color(180, 210, 110),
-		"DWMS", new Color(160, 160, 210));
+		"looting bag", new Color(0xB48250),
+		"POH costume room", new Color(0xBE82E6),
+		"STASH", new Color(0xE67878),
+		"cargo hold", new Color(0x64C8BE),
+		"stored elsewhere", new Color(0xB4D26E),
+		"DWMS", new Color(0xA0A0D2));
 
 	private static Color sourceColor(String source)
 	{
@@ -2411,11 +2411,11 @@ public class ResultCards
 	}
 
 	/** The classic palette (relocated with the border language). */
-	private static final Color CELL_BG = new Color(50, 50, 50);
-	private static final Color BORDER_BIS = new Color(168, 148, 88);
-	private static final Color BORDER_SPEC = new Color(120, 190, 240);
-	private static final Color BORDER_PLAIN = new Color(70, 70, 70);
-	private static final Color BORDER_UNOWNED = new Color(100, 145, 100);
+	private static final Color CELL_BG = new Color(0x323232);
+	private static final Color BORDER_BIS = new Color(0xA89458);
+	private static final Color BORDER_SPEC = new Color(0x78BEF0);
+	private static final Color BORDER_PLAIN = new Color(0x464646);
+	private static final Color BORDER_UNOWNED = new Color(0x649164);
 
 	private JLabel itemCell(Map<String, Object> item, String slot, boolean bis)
 	{
@@ -2505,7 +2505,7 @@ public class ResultCards
 						// Fate mark, top-left: green = kept on death,
 						// red = dropped to the killer.
 						g2.setColor("kept".equals(fate)
-							? new Color(120, 200, 120) : new Color(220, 110, 110));
+							? new Color(0x78C878) : new Color(0xDC6E6E));
 						g2.fillRect(3, 3, 4, 4);
 					}
 					g2.dispose();

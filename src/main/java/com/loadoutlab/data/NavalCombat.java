@@ -71,7 +71,7 @@ public final class NavalCombat
 
 	static
 	{
-		JsonObject root = JsonResources.object("/com/loadoutlab/data/naval_combat.json");
+		JsonObject root = JsonResources.object("naval_combat.json");
 		ATTACK_TICKS = root.get("attackTicks").getAsInt();
 		CREW_FORMULA_STALE = root.get("crewFormulaStale").getAsBoolean();
 		for (JsonElement e : root.getAsJsonArray("cannons"))

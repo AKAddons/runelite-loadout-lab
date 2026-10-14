@@ -25,7 +25,7 @@ import java.util.Set;
  */
 public final class QuestRewardItems
 {
-	private static final String RESOURCE = "/com/loadoutlab/data/quest_rewards.json";
+	private static final String RESOURCE = "quest_rewards.json";
 
 	private static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
 

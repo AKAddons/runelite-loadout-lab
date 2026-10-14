@@ -122,13 +122,13 @@ public final class MonsterStats
 	 * normalization of quest/post-quest noise). */
 	public MonsterStats withVersion(String newVersion)
 	{
-		return copy(newVersion, attributes);
+		return copy(id, newVersion, attributes, defence);
 	}
 
-	private MonsterStats copy(String newVersion, List<String> newAttributes)
+	private MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence)
 	{
-		MonsterStats copy = new MonsterStats(id, name, newVersion, combatLevel, hitpoints,
-			size, defence, magic, offensiveMagic, defensive, offence, newAttributes,
+		MonsterStats copy = new MonsterStats(newId, name, newVersion, combatLevel, hitpoints,
+			size, newDefence, magic, offensiveMagic, defensive, offence, newAttributes,
 			slayerMonster, weaknessElement, weaknessSeverity);
 		copy.wikiVersion = getWikiVersion();
 		copy.displayName = displayName;
@@ -174,14 +174,13 @@ public final class MonsterStats
 	{
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(extra);
-		return copy(version, extended);
+		return copy(id, version, extended, defence);
 	}
 
 	public MonsterStats withDisplayName(String nick)
 	{
 		MonsterStats copy = withVersion(version);
 		copy.displayName = nick;
-		copy.toaInvocationLevel = toaInvocationLevel;
 		return copy;
 	}
 
@@ -207,7 +206,6 @@ public final class MonsterStats
 			return this;
 		}
 		MonsterStats copy = withVersion(version);
-		copy.displayName = displayName;
 		copy.toaInvocationLevel = clamped;
 		return copy;
 	}
@@ -226,11 +224,7 @@ public final class MonsterStats
 	{
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(immuneAttributes);
-		MonsterStats copy = new MonsterStats(syntheticId, name, versionLabel, combatLevel, hitpoints,
-			size, defence, magic, offensiveMagic, defensive, offence, extended,
-			slayerMonster, weaknessElement, weaknessSeverity);
-		copy.wikiVersion = getWikiVersion();
-		return copy;
+		return copy(syntheticId, versionLabel, extended, defence);
 	}
 
 	/** Lowercased monster name, cached (per-trial engine gates). */
@@ -253,16 +247,7 @@ public final class MonsterStats
 	 * scaling or the drain would be valued at invocation 0. */
 	public MonsterStats withDefence(int newDefence)
 	{
-		MonsterStats copy = new MonsterStats(id, name, version, combatLevel, hitpoints, size,
-			Math.max(0, newDefence), magic, offensiveMagic, defensive, offence,
-			attributes, slayerMonster, weaknessElement, weaknessSeverity);
-		copy.toaInvocationLevel = toaInvocationLevel;
-		// Carry the identity its siblings carry (adversarial pass
-		// 2026-08-22): dropping wikiVersion here would silently re-open
-		// the export hole where the calculator resolved the wrong row.
-		copy.wikiVersion = getWikiVersion();
-		copy.displayName = displayName;
-		return copy;
+		return copy(id, version, attributes, Math.max(0, newDefence));
 	}
 
 	public boolean hasAttribute(String attribute)

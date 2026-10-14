@@ -22,7 +22,7 @@ public final class SpellRunes
 
 	static
 	{
-		JsonObject root = JsonResources.object("/com/loadoutlab/data/spell_runes.json");
+		JsonObject root = JsonResources.object("spell_runes.json");
 		if (root != null)
 		{
 			JsonResources.stringIntMap(root, "runeItems", RUNE_ITEMS);

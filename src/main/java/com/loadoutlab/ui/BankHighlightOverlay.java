@@ -14,8 +14,8 @@ import net.runelite.client.ui.overlay.WidgetItemOverlay;
  */
 public class BankHighlightOverlay extends WidgetItemOverlay
 {
-	private static final Color GLOW = new Color(140, 200, 140);
-	private static final Color FILL = new Color(140, 200, 140, 40);
+	private static final Color GLOW = new Color(0x8CC88C);
+	private static final Color FILL = new Color(0x288CC88C, true);
 
 	private final Supplier<Set<Integer>> highlighted;
 

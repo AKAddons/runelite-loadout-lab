@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public final class UntradeableDeathCosts
 {
-	private static final String RESOURCE = "/com/loadoutlab/data/untradeable_death.json";
+	private static final String RESOURCE = "untradeable_death.json";
 
 	/** Conservative fallback for combat untradeables we have not curated. */
 	public static final long UNKNOWN_COMBAT_UNTRADEABLE_GP = 500_000L;

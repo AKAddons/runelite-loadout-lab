@@ -103,7 +103,7 @@ public final class SpecialAttack
 		try
 		{
 			for (com.google.gson.JsonElement element : JsonResources.array(
-				"/com/loadoutlab/data/special_attacks.json"))
+				"special_attacks.json"))
 			{
 				com.google.gson.JsonObject row = element.getAsJsonObject();
 				List<String> prefixes = new ArrayList<>();

@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public final class BossIncomingOverrides
 {
-	private static final String RESOURCE = "/com/loadoutlab/data/boss_incoming.json";
+	private static final String RESOURCE = "boss_incoming.json";
 
 	/** One curated attack in the boss's rotation. */
 	public static final class Attack

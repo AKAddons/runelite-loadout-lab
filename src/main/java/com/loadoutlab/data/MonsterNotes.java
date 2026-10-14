@@ -37,7 +37,7 @@ public final class MonsterNotes
 		// Fail LOUD (the name_rules pattern): silently-empty prose would
 		// drop every warning with no visible error.
 		JsonObject root = JsonResources.objectOrThrow(
-			"/com/loadoutlab/data/monster_notes.json");
+			"monster_notes.json");
 		for (JsonElement e : root.getAsJsonArray("rules"))
 		{
 			JsonObject row = e.getAsJsonObject();
