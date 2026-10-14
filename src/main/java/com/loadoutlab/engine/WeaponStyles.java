@@ -53,7 +53,7 @@ public final class WeaponStyles
 
 	/** Every attack type x stance a full search would try - the fallback. */
 	private static final List<MeleeStyle> ALL =
-		BY_CATEGORY.getOrDefault(FALLBACK, Collections.emptyList());
+		BY_CATEGORY.getOrDefault(FALLBACK, List.of());
 
 	private static Map<String, List<MeleeStyle>> load()
 	{

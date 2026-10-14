@@ -45,7 +45,7 @@ public final class RenderModel
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
 	{
-		return entry(mobs, perMob, -1, null, Collections.emptySet(), null);
+		return entry(mobs, perMob, -1, null, Set.of(), null);
 	}
 
 	/** Per-build provenance lookup: an item's storage NAME when a fetch

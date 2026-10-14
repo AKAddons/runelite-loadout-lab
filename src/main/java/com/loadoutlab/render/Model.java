@@ -28,14 +28,14 @@ final class Model
 	static List<Map<String, Object>> list(Map<String, Object> node, String key)
 	{
 		Object v = node == null ? null : node.get(key);
-		return v instanceof List ? (List<Map<String, Object>>) v : Collections.emptyList();
+		return v instanceof List ? (List<Map<String, Object>>) v : List.of();
 	}
 
 	/** A list of plain (non-map) values under the key. */
 	static List<Object> list2(Map<String, Object> node, String key)
 	{
 		Object v = node == null ? null : node.get(key);
-		return v instanceof List ? (List<Object>) v : Collections.emptyList();
+		return v instanceof List ? (List<Object>) v : List.of();
 	}
 
 	static String str(Map<String, Object> node, String key)

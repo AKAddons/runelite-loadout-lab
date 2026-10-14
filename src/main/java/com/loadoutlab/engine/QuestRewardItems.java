@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.Names;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
@@ -36,7 +37,7 @@ public final class QuestRewardItems
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
 		for (Map.Entry<String, JsonElement> entry : root.entrySet())
 		{
-			QUEST_BY_NAME.put(entry.getKey().toLowerCase(Locale.ROOT),
+			QUEST_BY_NAME.put(Names.lower(entry.getKey()),
 				entry.getValue().getAsJsonObject().get("quest").getAsString());
 		}
 	}

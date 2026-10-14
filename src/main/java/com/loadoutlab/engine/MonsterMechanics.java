@@ -79,7 +79,7 @@ public final class MonsterMechanics
 		}
 		// Data-driven immunity (synthetic group variants - the tormented
 		// demon shield phases): the attribute wins before the id lists.
-		if (monster.hasAttribute("immune_" + style.name().toLowerCase(Locale.ROOT)))
+		if (monster.hasAttribute("immune_" + Names.lower(style.name())))
 		{
 			return true;
 		}
@@ -104,7 +104,7 @@ public final class MonsterMechanics
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
 		// pierced by Verac's set - the flail gates entry here, and the
 		// calculator prices set-complete-or-zero.
-		if (monster.hasAttribute("immune_" + style.name().toLowerCase(Locale.ROOT)))
+		if (monster.hasAttribute("immune_" + Names.lower(style.name())))
 		{
 			boolean veracPierce = style == CombatStyle.MELEE
 				&& monster.hasAttribute("prayer_immunity")

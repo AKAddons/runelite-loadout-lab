@@ -211,6 +211,6 @@ public final class SpellRunes
 
 	private static String capitalize(String word)
 	{
-		return Character.toUpperCase(word.charAt(0)) + word.substring(1).toLowerCase(Locale.ROOT);
+		return Character.toUpperCase(word.charAt(0)) + Names.lower(word.substring(1));
 	}
 }

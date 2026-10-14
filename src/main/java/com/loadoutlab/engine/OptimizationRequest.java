@@ -117,14 +117,14 @@ public final class OptimizationRequest implements Cloneable
 		this.candidateMode = candidateMode == null ? CandidateMode.BUDGET : candidateMode;
 		this.includeUntradeables = includeUntradeables;
 		this.onSlayerTask = onSlayerTask;
-		this.excludedItems = Collections.emptySet();
+		this.excludedItems = Set.of();
 		this.spellbookLock = "";
 		this.maxTradeables = -1;
 		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
-		this.dreamItems = Collections.emptySet();
-		this.pinnedItems = Collections.emptyMap();
-		this.protectOnlyItems = Collections.emptySet();
+		this.dreamItems = Set.of();
+		this.pinnedItems = Map.of();
+		this.protectOnlyItems = Set.of();
 		this.inWilderness = WildernessMonsters.isExclusive(monster);
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
@@ -155,7 +155,7 @@ public final class OptimizationRequest implements Cloneable
 	 * door a null can come through. */
 	private static <T> Set<T> orEmpty(Set<T> set)
 	{
-		return set == null ? Collections.emptySet() : set;
+		return set == null ? Set.of() : set;
 	}
 
 	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids)
@@ -272,7 +272,7 @@ public final class OptimizationRequest implements Cloneable
 	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems)
 	{
 		OptimizationRequest c = copy();
-		c.pinnedItems = pinnedItems == null ? Collections.emptyMap() : pinnedItems;
+		c.pinnedItems = pinnedItems == null ? Map.of() : pinnedItems;
 		return c;
 	}
 

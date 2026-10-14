@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.Names;
 import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.MonsterStats;
 import java.util.*;
@@ -36,7 +37,7 @@ public final class RaidBoosts
 	 * compute animation (Andrew 2026-09-02). */
 	public static String raidKey(MonsterStats monster)
 	{
-		String name = monster.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(monster.getName());
 		return XERIC.contains(name) ? "cox" : AMASCUT.contains(name) ? "toa"
 			: BLOOD.contains(name) ? "tob" : null;
 	}
@@ -44,7 +45,7 @@ public final class RaidBoosts
 	/** The raid-supplied boost for a fight inside, or null outside. */
 	public static BoostProfile suppliedBoost(MonsterStats monster)
 	{
-		String name = monster.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(monster.getName());
 		if (XERIC.contains(name))
 		{
 			return BoostProfile.OVERLOAD_PLUS;

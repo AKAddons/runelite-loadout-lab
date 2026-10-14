@@ -53,6 +53,8 @@ public class CollectionLedger
 		 * check clear a stray dirty flag, and keeps STASH out of the
 		 * {@link #forContainer} reverse lookup. */
 		STASH("stash", -1),
+		/** The rune pouch: varbit-backed (RunePouchScan), never a container. */
+		RUNE_POUCH("runePouch", -1),
 		/** Sailing boat cargo holds, one container per boat slot. */
 		CARGO_HOLD_1("cargoHold1", InventoryID.SAILING_BOAT_1_CARGOHOLD),
 		CARGO_HOLD_2("cargoHold2", InventoryID.SAILING_BOAT_2_CARGOHOLD),

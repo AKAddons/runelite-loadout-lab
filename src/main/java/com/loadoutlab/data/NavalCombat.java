@@ -97,7 +97,7 @@ public final class NavalCombat
 		}
 		for (JsonElement e : root.getAsJsonArray("navalMonsters"))
 		{
-			NAVAL.add(e.getAsString().toLowerCase(Locale.ROOT));
+			NAVAL.add(Names.lower(e.getAsString()));
 		}
 		for (JsonElement e : root.getAsJsonArray("keels"))
 		{
@@ -112,7 +112,7 @@ public final class NavalCombat
 			{
 				out[i] = hits.get(i).getAsInt();
 			}
-			KEEL_MAX_HITS.put(row.getKey().toLowerCase(Locale.ROOT), out);
+			KEEL_MAX_HITS.put(Names.lower(row.getKey()), out);
 		}
 	}
 
@@ -175,7 +175,7 @@ public final class NavalCombat
 	 * has no naval attribute). Case-insensitive on the corpus name. */
 	public static boolean isNaval(String monsterName)
 	{
-		return monsterName != null && NAVAL.contains(monsterName.toLowerCase(Locale.ROOT));
+		return monsterName != null && NAVAL.contains(Names.lower(monsterName));
 	}
 
 	public static Set<String> navalNames()
@@ -196,7 +196,7 @@ public final class NavalCombat
 
 	public static String normalizeKeel(String keel)
 	{
-		int i = keel == null ? -1 : LEGACY_WOOD_KEELS.indexOf(keel.toLowerCase(Locale.ROOT));
+		int i = keel == null ? -1 : LEGACY_WOOD_KEELS.indexOf(Names.lower(keel));
 		return i >= 0 && i < KEELS.size() ? KEELS.get(i) : keel;
 	}
 
@@ -206,7 +206,7 @@ public final class NavalCombat
 	public static int keelMaxHit(String monsterName, String keelTier)
 	{
 		int[] row = monsterName == null ? null
-			: KEEL_MAX_HITS.get(monsterName.toLowerCase(Locale.ROOT));
+			: KEEL_MAX_HITS.get(Names.lower(monsterName));
 		int i = KEELS.indexOf(keelTier);
 		return row == null || i < 0 || i >= row.length ? -1 : row[i];
 	}

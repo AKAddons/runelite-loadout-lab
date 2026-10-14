@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.Names;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
@@ -57,7 +58,7 @@ public final class UntradeableDeathCosts
 			for (Map.Entry<String, JsonElement> entry : root.entrySet())
 			{
 				JsonObject row = entry.getValue().getAsJsonObject();
-				String name = entry.getKey().toLowerCase(Locale.ROOT);
+				String name = Names.lower(entry.getKey());
 				COST_BY_NAME.put(name, row.get("costGp").getAsLong());
 				CATEGORY_BY_NAME.put(name, row.get("category").getAsInt());
 				if (row.has("frictionGp"))

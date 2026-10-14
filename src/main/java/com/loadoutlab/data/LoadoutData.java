@@ -127,7 +127,7 @@ public final class LoadoutData
 		text = SEARCH_ALIASES.getOrDefault(text, text);
 		if (text.isEmpty())
 		{
-			return Collections.emptyList();
+			return List.of();
 		}
 
 		ArrayList<MonsterStats> exact = new ArrayList<>();
@@ -178,7 +178,7 @@ public final class LoadoutData
 		{
 			return 1;
 		}
-		String v = version.toLowerCase(Locale.ROOT);
+		String v = Names.lower(version);
 		if (v.contains("post-quest"))
 		{
 			return 0;   // the everyday fight

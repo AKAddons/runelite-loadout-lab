@@ -469,7 +469,7 @@ public final class DpsCalculator
 		{
 			return false;
 		}
-		String name = spell.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(spell.getName());
 		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
 	}
 
@@ -1306,7 +1306,7 @@ public final class DpsCalculator
 
 	private static boolean wearing(Loadout loadout, String marker)
 	{
-		return loadout.namesLower().contains(marker.toLowerCase(Locale.ROOT));
+		return loadout.namesLower().contains(Names.lower(marker));
 	}
 
 	/** Revenants: the avarice and wilderness-weapon conditionals key off
@@ -1567,7 +1567,7 @@ public final class DpsCalculator
 			return 0;
 		}
 		String spellName = spell.getName();
-		String book = spell.getSpellbook() == null ? "" : spell.getSpellbook().toLowerCase(Locale.ROOT);
+		String book = spell.getSpellbook() == null ? "" : Names.lower(spell.getSpellbook());
 		double chance;
 		if ("arceuus".equals(book) && "Grasp".equalsIgnoreCase(spell.getNameSecondWord()))
 		{
@@ -1628,7 +1628,7 @@ public final class DpsCalculator
 	/** wearing(), but "Inactive" versions (uncharged crystal) never match. */
 	private static boolean wearingActive(Loadout loadout, String marker)
 	{
-		return loadout.activeNamesLower().contains(marker.toLowerCase(Locale.ROOT));
+		return loadout.activeNamesLower().contains(Names.lower(marker));
 	}
 
 	private static boolean isTzhaarWeapon(Loadout loadout)

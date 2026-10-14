@@ -27,7 +27,7 @@ public final class MonsterSpellbooks
 				: root.getAsJsonObject("byNameContains").entrySet())
 			{
 				JsonObject node = e.getValue().getAsJsonObject();
-				BY_NAME.put(e.getKey().toLowerCase(Locale.ROOT), new String[]{
+				BY_NAME.put(Names.lower(e.getKey()), new String[]{
 					node.get("book").getAsString(), node.get("reason").getAsString(),
 					node.has("spell") ? node.get("spell").getAsString() : null});
 			}
@@ -65,7 +65,7 @@ public final class MonsterSpellbooks
 		{
 			return null;
 		}
-		String name = monster.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(monster.getName());
 		for (Map.Entry<String, String[]> e : BY_NAME.entrySet())
 		{
 			if (name.contains(e.getKey()))

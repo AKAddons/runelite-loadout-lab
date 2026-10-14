@@ -92,7 +92,7 @@ final class BankLayout
 
 	static Map<String, Object> build(Map<String, Object> card)
 	{
-		return build(card, Collections.emptyList());
+		return build(card, List.of());
 	}
 
 	/** extraStacks: rune stacks (autocast + the trip's utility casts)

@@ -35,7 +35,7 @@ public enum GearSlot
 			return null;
 		}
 
-		String normalized = value.toLowerCase(Locale.ROOT);
+		String normalized = Names.lower(value);
 		for (GearSlot slot : values())
 		{
 			if (slot.jsonName.equals(normalized))

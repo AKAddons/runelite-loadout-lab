@@ -83,7 +83,7 @@ public class OptimizerService
 		/** Slots of the Yours set where some item in the game beats the
 		 * worn one with the rest of the set fixed - no gold border there
 		 * (Andrew, field 2026-09-27: an occult on a Fire Bolt card). */
-		public Set<GearSlot> beaten = Collections.emptySet();
+		public Set<GearSlot> beaten = Set.of();
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
@@ -93,9 +93,9 @@ public class OptimizerService
 		{
 			this.ownedKitBacked = ownedKitBacked;
 			this.gameKitBacked = gameKitBacked;
-			this.bench = bench == null ? Collections.emptyList()
+			this.bench = bench == null ? List.of()
 				: Collections.unmodifiableList(bench);
-			this.gameBench = gameBench == null ? Collections.emptyList()
+			this.gameBench = gameBench == null ? List.of()
 				: Collections.unmodifiableList(gameBench);
 			this.boostLabel = boostLabel;
 			this.gameBoostLabel = gameBoostLabel;
@@ -287,8 +287,8 @@ public class OptimizerService
 		boolean antifirePotion;
 		int deathCharge;
 		boolean specWeapon = true;
-		Map<CombatStyle, String> boostPicks = Collections.emptyMap();
-		Map<CombatStyle, String> prayerPicks = Collections.emptyMap();
+		Map<CombatStyle, String> boostPicks = Map.of();
+		Map<CombatStyle, String> prayerPicks = Map.of();
 		boolean inWilderness;
 		String lock;
 		int maxTradeables;
@@ -306,10 +306,10 @@ public class OptimizerService
 		 * (field decision 2026-07-17): each mob's request carries its own
 		 * exclusions on top of the global set - the group may still use the
 		 * item, the excluding mob's answer never does. */
-		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob = Collections.emptyMap();
+		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob = Map.of();
 		/** PER-MOB sims (profileId -> ids): counted as owned for that mob
 		 * only - the local twin of the global dream items. */
-		Map<Integer, Set<Integer>> dreamsByMob = Collections.emptyMap();
+		Map<Integer, Set<Integer>> dreamsByMob = Map.of();
 		SpellStats pinnedSpell;
 		/** A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
 		 * the card whose style the weapon serves, leaving other styles to
@@ -360,7 +360,7 @@ public class OptimizerService
 			+ "|" + ctxKey(ctx)
 			+ "|" + dreamsFor(ctx, mob).hashCode()
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
-			+ "|" + ctx.pins.getOrDefault(style, Collections.emptyMap()).hashCode()
+			+ "|" + ctx.pins.getOrDefault(style, Map.of()).hashCode()
 			+ "|" + (style == CombatStyle.MAGIC && ctx.pinnedSpell != null
 				? ctx.pinnedSpell.getName() : "");
 	}
@@ -435,7 +435,7 @@ public class OptimizerService
 	/** The style's exclusions for ONE mob: global plus that mob's own. */
 	private static Set<Integer> excludedFor(ComputeContext ctx, CombatStyle style, MonsterStats mob)
 	{
-		Set<Integer> global = ctx.excluded.getOrDefault(style, Collections.emptySet());
+		Set<Integer> global = ctx.excluded.getOrDefault(style, Set.of());
 		Map<CombatStyle, Set<Integer>> byMob = ctx.excludedByMob.get(mob.profileId());
 		Set<Integer> per = byMob == null ? null : byMob.get(style);
 		if (per == null || per.isEmpty())
@@ -591,10 +591,10 @@ public class OptimizerService
 	{
 		ComputeContext ctx = new ComputeContext();
 		ctx.maxSwaps = Math.max(0, maxSwaps);
-		ctx.pins = pinnedByStyle == null ? Collections.emptyMap() : pinnedByStyle;
-		ctx.excluded = excludedByStyle == null ? Collections.emptyMap() : excludedByStyle;
-		ctx.dreams = dreamItems == null ? Collections.emptySet() : dreamItems;
-		ctx.protectOnly = protectOnlyItems == null ? Collections.emptySet() : protectOnlyItems;
+		ctx.pins = pinnedByStyle == null ? Map.of() : pinnedByStyle;
+		ctx.excluded = excludedByStyle == null ? Map.of() : excludedByStyle;
+		ctx.dreams = dreamItems == null ? Set.of() : dreamItems;
+		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
 		ctx.lock = spellbookLock == null ? "" : spellbookLock;
 		ctx.real = realLevels == null ? boostedLevels : realLevels;
 		ctx.boostedLevels = boostedLevels;
@@ -614,8 +614,8 @@ public class OptimizerService
 		ctx.antifirePotion = antifirePotion;
 		ctx.deathCharge = deathCharge;
 		ctx.specWeapon = specWeapon;
-		ctx.boostPicks = boostPicks == null ? Collections.emptyMap() : boostPicks;
-		ctx.prayerPicks = prayerPicks == null ? Collections.emptyMap() : prayerPicks;
+		ctx.boostPicks = boostPicks == null ? Map.of() : boostPicks;
+		ctx.prayerPicks = prayerPicks == null ? Map.of() : prayerPicks;
 		ctx.inWilderness = inWilderness;
 		ctx.maxTradeables = maxTradeables;
 		ctx.upgradeBudgetGp = upgradeBudgetGp;
@@ -1649,11 +1649,11 @@ public class OptimizerService
 			List<SpecPick[]> specOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, ownedReqs,
 					shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame)
-				: Collections.emptyList();
+				: List.of();
 			List<SpecPick[]> gameSpecOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
 				? chooseSharedSpec(ctx, style, mobs, gameReqs,
 					shownOwned, gameLevels, null, true, shownGame)
-				: Collections.emptyList();
+				: List.of();
 			// ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
 			// group recommended Ring of shadows over the Lightbearer): the
 			// shared ring falls out of raw-stat set construction, which the
@@ -1746,7 +1746,7 @@ public class OptimizerService
 			int benchForSwaps = Math.max(0, ctx.maxSwaps
 				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0)
 				- (specOffhand != null ? 1 : 0));
-			List<GearItem> swaps = sharedOwned == null ? Collections.emptyList()
+			List<GearItem> swaps = sharedOwned == null ? List.of()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
 			specsByStyle.put(style, specs);
 			gameSpecsByStyle.put(style, gameSpecs);
@@ -1837,10 +1837,10 @@ public class OptimizerService
 				{
 					plan.putIfAbsent(specOffhand.getId(), specOffhand);
 				}
-				List<GearItem> bench = sharedOwned == null ? Collections.emptyList()
+				List<GearItem> bench = sharedOwned == null ? List.of()
 					: inventoryFor(plan.values(), specCarried, worn);
 				List<GearItem> gameBench = gameSpecCarried == null
-					? Collections.emptyList()
+					? List.of()
 					: gameSlots[2] == null ? Collections.singletonList(gameSpecCarried)
 					: Arrays.asList(gameSpecCarried, gameSlots[2]);
 				StyleResult sr = verified(new StyleResult(ownedList, gameShown, spec, gameSpec,
@@ -2208,7 +2208,7 @@ public class OptimizerService
 				List<GearItem> singlePool =
 					crossStylePool(base, primary, sharedByStyle, bestsByStyle);
 				List<SpecPick[]> specOptions = specOptionsByStyle.getOrDefault(
-					primary, Collections.emptyList());
+					primary, List.of());
 				// One memo per primary base, shared across the spec-compete
 				// evaluations - keys carry the bundle set, so options with
 				// different spec weapons never collide.
@@ -2540,7 +2540,7 @@ public class OptimizerService
 				for (Map.Entry<CombatStyle, Set<Integer>> e : perMobExcl.entrySet())
 				{
 					Set<Integer> union = new HashSet<>(
-						merged.getOrDefault(e.getKey(), Collections.emptySet()));
+						merged.getOrDefault(e.getKey(), Set.of()));
 					union.addAll(e.getValue());
 					merged.put(e.getKey(), union);
 				}
@@ -2566,8 +2566,8 @@ public class OptimizerService
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
-		ctx.excludedByMob = excludedByMob == null ? Collections.emptyMap() : excludedByMob;
-		ctx.dreamsByMob = dreamsByMob == null ? Collections.emptyMap() : dreamsByMob;
+		ctx.excludedByMob = excludedByMob == null ? Map.of() : excludedByMob;
+		ctx.dreamsByMob = dreamsByMob == null ? Map.of() : dreamsByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
@@ -2596,8 +2596,8 @@ public class OptimizerService
 		SpellStats pinnedSpell)
 	{
 		return baseKey + "|" + style.name()
-			+ "|" + pins.getOrDefault(style, Collections.emptyMap()).hashCode()
-			+ "|" + excluded.getOrDefault(style, Collections.emptySet()).hashCode()
+			+ "|" + pins.getOrDefault(style, Map.of()).hashCode()
+			+ "|" + excluded.getOrDefault(style, Set.of()).hashCode()
 			+ "|" + (style == CombatStyle.MAGIC && pinnedSpell != null ? pinnedSpell.getName() : "");
 	}
 
@@ -2696,7 +2696,7 @@ public class OptimizerService
 		}
 		if (candidates.isEmpty())
 		{
-			return Collections.emptyList();
+			return List.of();
 		}
 		List<double[]> scores = new ArrayList<>();
 		List<SpecPick[]> perCandidate = new ArrayList<>();
@@ -2907,7 +2907,7 @@ public class OptimizerService
 			&& (PvpRisk.riskGp(variantLoadout, null, request.getMaxTradeables())
 					> request.getRiskBudgetGp() + LoadoutOptimizer.pinnedRiskFloor(dataset, request)
 				|| PvpRisk.risksUnprotected(variantLoadout, null, request.getMaxTradeables(),
-					request.getPinnedItems().isEmpty() ? Collections.emptySet()
+					request.getPinnedItems().isEmpty() ? Set.of()
 						: new HashSet<>(request.getPinnedItems().values()),
 					request.getProtectOnlyItems())))
 		{
@@ -2959,13 +2959,13 @@ public class OptimizerService
 		// Request-level risk constants, hoisted out of the weapon scan (they
 		// were rebuilt - floor Loadout + a HashSet - per candidate weapon).
 		long riskCapGp = 0;
-		Set<Integer> pinnedIds = Collections.emptySet();
+		Set<Integer> pinnedIds = Set.of();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp()
 				+ LoadoutOptimizer.pinnedRiskFloor(dataset, request);
 			pinnedIds = request.getPinnedItems().isEmpty()
-				? Collections.emptySet()
+				? Set.of()
 				: new HashSet<>(request.getPinnedItems().values());
 		}
 		// A Lightbearer in the set doubles special-energy regen (10%/15s vs
@@ -3377,7 +3377,7 @@ public class OptimizerService
 			.withInWilderness(ctx.inWilderness)
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
-			.withPinnedItems(ctx.pins.getOrDefault(style, Collections.emptyMap()));
+			.withPinnedItems(ctx.pins.getOrDefault(style, Map.of()));
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
 		if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
 		{

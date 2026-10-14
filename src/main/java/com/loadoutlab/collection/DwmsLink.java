@@ -36,10 +36,10 @@ public class DwmsLink
 	/** Our display name - sent as "source", echoed back as "target". */
 	static final String SOURCE = "Loadout Lab";
 
-	private volatile Map<Integer, Integer> items = Collections.emptyMap();
+	private volatile Map<Integer, Integer> items = Map.of();
 	/** Response "category" (carryable/death/poh/stash/world...) -> items -
 	 * the location-hint provenance families. */
-	private volatile Map<String, Map<Integer, Integer>> families = Collections.emptyMap();
+	private volatile Map<String, Map<Integer, Integer>> families = Map.of();
 	/** True once DWMS has answered for the current identity. */
 	@Getter
 	private volatile boolean live;
@@ -88,8 +88,8 @@ public class DwmsLink
 				mergeItem(item, family);
 			}
 		}
-		items = next.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(next);
-		families = nextFamilies.isEmpty() ? Collections.emptyMap()
+		items = next.isEmpty() ? Map.of() : Collections.unmodifiableMap(next);
+		families = nextFamilies.isEmpty() ? Map.of()
 			: Collections.unmodifiableMap(nextFamilies);
 		live = true;
 		return true;
@@ -121,8 +121,8 @@ public class DwmsLink
 	/** A different account/profile: nothing from the previous one survives. */
 	public void reset()
 	{
-		items = Collections.emptyMap();
-		families = Collections.emptyMap();
+		items = Map.of();
+		families = Map.of();
 		live = false;
 	}
 

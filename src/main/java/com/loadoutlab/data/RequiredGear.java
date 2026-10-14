@@ -109,8 +109,8 @@ public final class RequiredGear
 	/** Every rule for the monster (a full armour set is one rule per slot). */
 	public static List<Rule> rulesFor(MonsterStats monster)
 	{
-		return monster == null ? Collections.emptyList()
-			: BY_NAME.getOrDefault(monster.getName().toLowerCase(Locale.ROOT), Collections.emptyList());
+		return monster == null ? List.of()
+			: BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of());
 	}
 
 	/** slot -> acceptable ids, empty when nothing is required. */

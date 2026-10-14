@@ -460,6 +460,10 @@ once and the contents count as owned from then on:
   treasure chest, cape rack) in your house once.
 - **Cargo holds**: open a boat's cargo hold once - cannonballs stored
   there count for ranged setups.
+- **Rune pouch**: the runes inside your rune pouch (divine or plain)
+  count the moment they change, wherever the pouch sits - so moving
+  every blood rune into the pouch no longer drops Fire Wave from the
+  magic set.
 
 
 ### Where your gear is (location hints)

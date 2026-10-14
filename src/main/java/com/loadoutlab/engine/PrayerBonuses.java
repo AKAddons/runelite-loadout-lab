@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.Names;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.JsonResources;
@@ -167,7 +168,7 @@ public final class PrayerBonuses
 
 	private static Object[][] picksFor(CombatStyle style)
 	{
-		return PICKS.get(style.name().toLowerCase(Locale.ROOT));
+		return PICKS.get(Names.lower(style.name()));
 	}
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with

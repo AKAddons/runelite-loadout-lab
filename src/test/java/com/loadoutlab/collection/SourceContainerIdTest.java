@@ -27,6 +27,8 @@ class SourceContainerIdTest
 		m.put(CollectionLedger.Source.POH_COSTUMES, InventoryID.POH_COSTUMES);
 		// STASH is chart-driven, never container-scanned.
 		m.put(CollectionLedger.Source.STASH, -1);
+		// The rune pouch is varbit-driven, never container-scanned.
+		m.put(CollectionLedger.Source.RUNE_POUCH, -1);
 		m.put(CollectionLedger.Source.CARGO_HOLD_1, InventoryID.SAILING_BOAT_1_CARGOHOLD);
 		m.put(CollectionLedger.Source.CARGO_HOLD_2, InventoryID.SAILING_BOAT_2_CARGOHOLD);
 		m.put(CollectionLedger.Source.CARGO_HOLD_3, InventoryID.SAILING_BOAT_3_CARGOHOLD);
@@ -40,9 +42,9 @@ class SourceContainerIdTest
 	void containerIdMatchesTheOldSwitch()
 	{
 		Map<CollectionLedger.Source, Integer> oracle = oracle();
-		assertEquals(11, CollectionLedger.Source.values().length,
+		assertEquals(12, CollectionLedger.Source.values().length,
 			"the oracle covers exactly the sources that exist");
-		assertEquals(11, oracle.size());
+		assertEquals(12, oracle.size());
 		for (CollectionLedger.Source s : CollectionLedger.Source.values())
 		{
 			assertEquals(oracle.get(s).intValue(), s.containerId(), s.name());

@@ -125,12 +125,12 @@ public final class MonsterGroups
 						{
 							for (JsonElement e : immuneTo.getAsJsonArray())
 							{
-								styles.add(e.getAsString().toLowerCase(Locale.ROOT));
+								styles.add(Names.lower(e.getAsString()));
 							}
 						}
 						else
 						{
-							styles.add(immuneTo.getAsString().toLowerCase(Locale.ROOT));
+							styles.add(Names.lower(immuneTo.getAsString()));
 						}
 						int mask = 0;
 						List<String> attributes = new ArrayList<>();
@@ -173,7 +173,7 @@ public final class MonsterGroups
 					}
 					if (member.has("spec"))
 					{
-						extra.add("spec:" + member.get("spec").getAsString().toLowerCase(Locale.ROOT));
+						extra.add("spec:" + Names.lower(member.get("spec").getAsString()));
 					}
 					if (!extra.isEmpty())
 					{
@@ -186,7 +186,7 @@ public final class MonsterGroups
 				{
 					for (JsonElement a : row.getAsJsonArray("aliases"))
 					{
-						aliases.add(a.getAsString().toLowerCase(Locale.ROOT));
+						aliases.add(Names.lower(a.getAsString()));
 					}
 				}
 				if (!mobs.isEmpty())
@@ -249,14 +249,14 @@ public final class MonsterGroups
 	 * group by name; "toa" by alias. */
 	public static MonsterGroup linkMatch(List<MonsterGroup> groups, String query)
 	{
-		String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+		String text = query == null ? "" : Names.lower(query.trim());
 		if (text.length() < 2)
 		{
 			return null;
 		}
 		for (MonsterGroup group : groups)
 		{
-			if (group.getName().toLowerCase(Locale.ROOT).contains(text)
+			if (Names.lower(group.getName()).contains(text)
 				|| group.aliases.contains(text))
 			{
 				return group;
@@ -268,7 +268,7 @@ public final class MonsterGroups
 	/** Name-contains search over the groups, hits in curated order. */
 	public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit)
 	{
-		String text = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+		String text = query == null ? "" : Names.lower(query.trim());
 		List<MonsterGroup> hits = new ArrayList<>();
 		if (text.length() < 2)
 		{
@@ -276,7 +276,7 @@ public final class MonsterGroups
 		}
 		for (MonsterGroup group : groups)
 		{
-			boolean hit = group.getName().toLowerCase(Locale.ROOT).contains(text);
+			boolean hit = Names.lower(group.getName()).contains(text);
 			if (!hit)
 			{
 				// Player vocabulary ("jad", "zuk", "dks") reaches the group.

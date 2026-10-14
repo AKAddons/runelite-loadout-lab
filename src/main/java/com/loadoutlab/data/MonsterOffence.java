@@ -14,7 +14,7 @@ import lombok.Getter;
 public final class MonsterOffence
 {
 	public static final MonsterOffence NONE = new MonsterOffence(
-		1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, Collections.emptyList());
+		1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, List.of());
 
 	@Getter
 	private final int attackLevel;
@@ -66,7 +66,7 @@ public final class MonsterOffence
 		this.magicBonus = magicBonus;
 		this.magicStrengthBonus = magicStrengthBonus;
 		this.speedTicks = Math.max(1, speedTicks);
-		this.styles = styles == null ? Collections.emptyList()
+		this.styles = styles == null ? List.of()
 			: Collections.unmodifiableList(styles);
 	}
 

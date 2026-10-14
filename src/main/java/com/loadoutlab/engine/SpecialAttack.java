@@ -126,7 +126,7 @@ public final class SpecialAttack
 		{
 			// A malformed table must never take the client down; the spec
 			// tests fail loudly on an empty registry instead.
-			return Collections.emptyList();
+			return List.of();
 		}
 		return specs;
 	}

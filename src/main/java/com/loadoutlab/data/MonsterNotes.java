@@ -66,7 +66,7 @@ public final class MonsterNotes
 		{
 			return null;
 		}
-		String name = monster.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(monster.getName());
 		StringBuilder sb = new StringBuilder();
 		for (Rule rule : RULES)
 		{

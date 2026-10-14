@@ -130,7 +130,7 @@ public final class TripSupplies
 	/** The category's options, best first. */
 	public static List<Option> options(String category)
 	{
-		return CATEGORIES.getOrDefault(category, Collections.emptyList());
+		return CATEGORIES.getOrDefault(category, List.of());
 	}
 
 	/** The option a config-enum constant names, or null (NONE/DETECT_BEST
@@ -213,7 +213,7 @@ public final class TripSupplies
 		{
 			return false;
 		}
-		String name = monster.getName().toLowerCase(Locale.ROOT);
+		String name = Names.lower(monster.getName());
 		return tokens.stream().anyMatch(name::contains);
 	}
 }

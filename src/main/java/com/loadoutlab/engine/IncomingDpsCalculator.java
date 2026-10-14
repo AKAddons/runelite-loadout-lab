@@ -282,7 +282,7 @@ public final class IncomingDpsCalculator
 	/** The KIND_* for a sheet/override style string (never "typeless"). */
 	private static int kindOf(String rawStyle)
 	{
-		String style = rawStyle.toLowerCase(Locale.ROOT);
+		String style = Names.lower(rawStyle);
 		switch (style)
 		{
 			case "stab": return KIND_STAB;
@@ -386,7 +386,7 @@ public final class IncomingDpsCalculator
 		// is worn - an absolute rule that outranks every other model.
 		if (monster.isRevenantMonster() && wearsChargedEthereum(loadout))
 		{
-			return new Result(0, 0, null, Collections.emptyList(), true,
+			return new Result(0, 0, null, List.of(), true,
 				"Bracelet of ethereum blocks all revenant damage");
 		}
 		BossIncomingOverrides.BossOverride override = BossIncomingOverrides.overridesFor(monster);
@@ -413,7 +413,7 @@ public final class IncomingDpsCalculator
 		List<String> styles = off.getStyles();
 		if (styles.isEmpty())
 		{
-			return new Result(0, 0, null, Collections.emptyList(), false, null);
+			return new Result(0, 0, null, List.of(), false, null);
 		}
 
 		StatBlock def = loadout.getDefensive();
@@ -579,7 +579,7 @@ public final class IncomingDpsCalculator
 	 *   ranged melee        -> Melee (rolls vs ranged def, swings melee) */
 	private static String protectPrayerFor(String rawStyle)
 	{
-		String style = rawStyle.toLowerCase(Locale.ROOT);
+		String style = Names.lower(rawStyle);
 		if (style.contains("melee"))
 		{
 			return "Protect from Melee";

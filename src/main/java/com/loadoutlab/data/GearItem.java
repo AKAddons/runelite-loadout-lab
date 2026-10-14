@@ -88,10 +88,10 @@ public final class GearItem
 		this.defensive = defensive == null ? StatBlock.ZERO : defensive;
 		this.bonuses = bonuses == null ? StatBlock.ZERO : bonuses;
 		this.requirements = requirements == null ? GearRequirements.NONE : requirements;
-		this.nameLower = this.name.toLowerCase(Locale.ROOT);
-		this.versionLower = this.version.toLowerCase(Locale.ROOT);
-		this.categoryLower = this.category.toLowerCase(Locale.ROOT);
-		this.labelLower = label().toLowerCase(Locale.ROOT);
+		this.nameLower = Names.lower(this.name);
+		this.versionLower = Names.lower(this.version);
+		this.categoryLower = Names.lower(this.category);
+		this.labelLower = Names.lower(label());
 		this.nameVersionLower = (this.name + " " + this.version).toLowerCase(Locale.ROOT);
 		// Precomputed once: the optimizer asks this on every trial, and the
 		// name-fragment chain was the single hottest call in the profile.

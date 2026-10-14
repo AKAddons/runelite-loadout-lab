@@ -16,7 +16,6 @@ import java.util.function.Function;
 public final class ItemLocations
 {
 	/** Sources the player can grab from without a fetch trip. */
-	private static final Set<String> AT_HAND = Set.of("equipped", "inventory", "bank");
 
 	/** Suffix convention for origins the DWMS import contributed. */
 	public static final String VIA_DWMS = " (via DWMS)";

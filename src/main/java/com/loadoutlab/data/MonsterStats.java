@@ -88,9 +88,9 @@ public final class MonsterStats
 		this.offensiveMagic = offensiveMagic;
 		this.defensive = defensive == null ? MonsterDefences.ZERO : defensive;
 		this.offence = offence == null ? MonsterOffence.NONE : offence;
-		this.attributes = attributes == null ? Collections.emptyList() : Collections.unmodifiableList(attributes);
+		this.attributes = attributes == null ? List.of() : Collections.unmodifiableList(attributes);
 		this.slayerMonster = slayerMonster;
-		this.weaknessElement = weaknessElement == null ? "" : weaknessElement.toLowerCase(Locale.ROOT);
+		this.weaknessElement = weaknessElement == null ? "" : Names.lower(weaknessElement);
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
@@ -99,13 +99,13 @@ public final class MonsterStats
 		{
 			if (value != null)
 			{
-				lower.add(value.toLowerCase(Locale.ROOT));
+				lower.add(Names.lower(value));
 			}
 		}
 		this.attributesLower = lower;
 		// The revenant/wilderness gates lowercase the name per DPS trial -
 		// that allocation was ~20% of optimizer samples. Once, here.
-		this.nameLower = this.name.toLowerCase(Locale.ROOT);
+		this.nameLower = Names.lower(this.name);
 		this.wilderness = WildernessMonsters.containsName(this.nameLower);
 		this.revenant = this.nameLower.startsWith("revenant");
 	}
@@ -252,7 +252,7 @@ public final class MonsterStats
 
 	public boolean hasAttribute(String attribute)
 	{
-		return attributesLower.contains(attribute.toLowerCase(Locale.ROOT));
+		return attributesLower.contains(Names.lower(attribute));
 	}
 
 	/** True when this variant's version label starts with the prefix - the
@@ -282,7 +282,7 @@ public final class MonsterStats
 	public static String normalizeQuery(String text)
 	{
 		StringBuilder sb = new StringBuilder(text.length());
-		for (char c : text.toLowerCase(Locale.ROOT).toCharArray())
+		for (char c : Names.lower(text).toCharArray())
 		{
 			if (Character.isLetterOrDigit(c) || c == ' ')
 			{

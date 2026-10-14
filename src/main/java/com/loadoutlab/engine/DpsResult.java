@@ -2,7 +2,6 @@
 package com.loadoutlab.engine;
 import lombok.Getter;
 import java.util.List;
-import java.util.Collections;
 
 public final class DpsResult
 {
@@ -66,7 +65,7 @@ public final class DpsResult
 		String spellName)
 	{
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
-			attackRoll, defenceRoll, purchaseCost, spellName, Collections.emptyList(), false);
+			attackRoll, defenceRoll, purchaseCost, spellName, List.of(), false);
 	}
 
 	private DpsResult(
@@ -96,7 +95,7 @@ public final class DpsResult
 		this.purchaseCost = Math.max(0, purchaseCost);
 		this.spellName = spellName == null ? "" : spellName;
 		this.countedBonuses = countedBonuses == null
-			? Collections.emptyList() : countedBonuses;
+			? List.of() : countedBonuses;
 		this.antifireAssumed = antifireAssumed;
 	}
 

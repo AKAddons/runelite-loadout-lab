@@ -1,5 +1,6 @@
 package com.loadoutlab.engine;
 
+import com.loadoutlab.data.Names;
 import lombok.Getter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -90,7 +91,7 @@ public final class BossIncomingOverrides
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
 		for (Map.Entry<String, JsonElement> entry : root.entrySet())
 		{
-			OVERRIDES.put(entry.getKey().toLowerCase(Locale.ROOT),
+			OVERRIDES.put(Names.lower(entry.getKey()),
 				parse(entry.getValue().getAsJsonObject()));
 		}
 	}
@@ -117,7 +118,7 @@ public final class BossIncomingOverrides
 			double prayerFactor = a.has("prayerFactor") ? a.get("prayerFactor").getAsDouble()
 				: (prayable ? 0.0 : 1.0);
 			attacks.add(new Attack(
-				a.get("style").getAsString().toLowerCase(Locale.ROOT),
+				Names.lower(a.get("style").getAsString()),
 				a.get("maxHit").getAsInt(),
 				a.get("share").getAsDouble(),
 				prayable,

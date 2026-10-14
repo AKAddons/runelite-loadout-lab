@@ -23,7 +23,7 @@ public final class RequirementProfile
 			copy.putAll(levels);
 		}
 		this.levels = Collections.unmodifiableMap(copy);
-		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Collections.emptySet() : completedQuests));
+		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Set.of() : completedQuests));
 	}
 
 	/** The same levels with every quest done - the game-best ceiling never

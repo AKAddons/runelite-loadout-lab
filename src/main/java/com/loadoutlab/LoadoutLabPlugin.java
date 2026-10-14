@@ -181,6 +181,13 @@ public class LoadoutLabPlugin extends Plugin
 	private final EnumSet<CollectionLedger.Source> dirtySources =
 		EnumSet.noneOf(CollectionLedger.Source.class);
 
+	/** The rune pouch's six slots: a type varbit (RUNEPOUCH_RUNE enum key)
+	 * and a quantity varbit each, as RuneLite's own pouch overlay reads them. */
+	private static final int[] POUCH_TYPES = {VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2,
+		VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4, VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6};
+	private static final int[] POUCH_QUANTITIES = {VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2,
+		VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4, VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6};
+
 	/** Event-time snapshots for storage containers that cannot be
 	 * re-fetched by id at drain time (see onItemContainerChanged). */
 	private final Map<CollectionLedger.Source, Map<Integer, Integer>> pendingScans =
@@ -580,7 +587,7 @@ public class LoadoutLabPlugin extends Plugin
 					{
 						CommandEngine engine = commandEngine;
 						onResults.accept(engine == null
-							? Collections.emptyList() : engine.searchOptions(query));
+							? List.of() : engine.searchOptions(query));
 					});
 				internalSurface.setSpriteManager(spriteManager);
 				internalSurface.setSailingIcon(() ->
@@ -1095,6 +1102,10 @@ public class LoadoutLabPlugin extends Plugin
 			return;
 		}
 		scanStashChart();
+		// The pouch is read every tick (twelve varbits; the ledger writes only
+		// on a change) rather than filtered out of the per-tick varbit spray.
+		pendingScans.put(CollectionLedger.Source.RUNE_POUCH, scanRunePouch());
+		dirtySources.add(CollectionLedger.Source.RUNE_POUCH);
 		if (lootingBagScanTicks > 0)
 		{
 			lootingBagScanTicks--;
@@ -1158,6 +1169,21 @@ public class LoadoutLabPlugin extends Plugin
 				}
 			});
 		}
+	}
+
+	/** The pouch's runes by item id (Mumblerit, Discord 2026-10-10: runes
+	 * moved into the pouch vanished and Fire Wave fell off the magic set). */
+	private Map<Integer, Integer> scanRunePouch()
+	{
+		int[] types = new int[POUCH_TYPES.length];
+		int[] quantities = new int[POUCH_TYPES.length];
+		for (int i = 0; i < POUCH_TYPES.length; i++)
+		{
+			types[i] = client.getVarbitValue(POUCH_TYPES[i]);
+			quantities[i] = client.getVarbitValue(POUCH_QUANTITIES[i]);
+		}
+		EnumComposition runes = client.getEnum(EnumID.RUNEPOUCH_RUNE);
+		return RunePouchScan.items(types, quantities, type -> runes == null ? 0 : runes.getIntValue(type));
 	}
 
 	private static Map<Integer, Integer> itemsOf(ItemContainer container)
@@ -1455,7 +1481,7 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		Set<Integer> global = dreams.snapshot();
 		Set<Integer> local = mobProfiles == null
-			? Collections.emptySet() : mobProfiles.simsFor(monster.profileId());
+			? Set.of() : mobProfiles.simsFor(monster.profileId());
 		if (local.isEmpty())
 		{
 			return global;

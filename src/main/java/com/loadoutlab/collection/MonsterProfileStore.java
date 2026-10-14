@@ -79,7 +79,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Boolean skipDegradable;
 	}
 
-	private Set<Integer> degradableIds = Collections.emptySet();
+	private Set<Integer> degradableIds = Set.of();
 
 	public synchronized void setDegradableIds(Set<Integer> ids)
 	{
@@ -151,12 +151,12 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.pins == null)
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		EnumMap<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 		copyPins(profile.pins.get(ALL), pins);
 		copyPins(profile.pins.get(style), pins);
-		return pins.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(pins);
+		return pins.isEmpty() ? Map.of() : Collections.unmodifiableMap(pins);
 	}
 
 	private static void copyPins(Map<String, Integer> from, EnumMap<GearSlot, Integer> into)
@@ -184,7 +184,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.pins == null || profile.pins.isEmpty())
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		Map<String, Map<GearSlot, Integer>> out = new LinkedHashMap<>();
 		for (Map.Entry<String, Map<String, Integer>> scope : profile.pins.entrySet())
@@ -271,7 +271,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.filterItems == null || profile.filterItems.isEmpty())
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		Map<String, Map<Integer, String>> out = new LinkedHashMap<>();
 		for (Map.Entry<String, Map<Integer, String>> scope : profile.filterItems.entrySet())
@@ -292,7 +292,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null)
 		{
-			return Collections.emptySet();
+			return Set.of();
 		}
 		LinkedHashSet<Integer> merged = new LinkedHashSet<>();
 		if (Boolean.TRUE.equals(profile.skipDegradable))
@@ -307,7 +307,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 				merged.addAll(ids);
 			}
 		}
-		return merged.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(merged);
+		return merged.isEmpty() ? Set.of() : Collections.unmodifiableSet(merged);
 	}
 
 	/** Raw per-mob exclusions by scope, for the manage menu. */
@@ -316,7 +316,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.exclusions == null || profile.exclusions.isEmpty())
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		Map<String, Set<Integer>> out = new LinkedHashMap<>();
 		for (Map.Entry<String, Set<Integer>> scope : profile.exclusions.entrySet())
@@ -336,7 +336,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.sims == null || profile.sims.isEmpty())
 		{
-			return Collections.emptySet();
+			return Set.of();
 		}
 		return Collections.unmodifiableSet(new LinkedHashSet<>(profile.sims.keySet()));
 	}
@@ -347,7 +347,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.sims == null || profile.sims.isEmpty())
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.sims));
 	}
@@ -380,7 +380,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		Stored profile = profiles.get(monsterId);
 		if (profile == null || profile.supplies == null || profile.supplies.isEmpty())
 		{
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.supplies));
 	}

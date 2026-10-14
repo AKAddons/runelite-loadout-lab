@@ -7,7 +7,7 @@ import java.util.Map;
 
 public final class OwnedItems
 {
-	public static final OwnedItems EMPTY = new OwnedItems(Collections.emptyMap(), false);
+	public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
 
 	@Getter
 	private final Map<Integer, Integer> quantities;

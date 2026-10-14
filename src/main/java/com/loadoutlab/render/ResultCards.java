@@ -1117,7 +1117,7 @@ public class ResultCards
 	{
 		int count = (int) Model.num(pageParams, "cannonCount");
 		List<Map<String, Object>> cannonNodes = ship == null
-			? Collections.emptyList() : Model.list(ship, "cannons");
+			? List.of() : Model.list(ship, "cannons");
 		JPanel strip = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		strip.setBackground(CARD);
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));

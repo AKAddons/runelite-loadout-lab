@@ -56,8 +56,8 @@ At the end of your search, filter the kit in your bank and get going.
   slaughter HERE"), your own notes, and trip supplies that join the
   bank Show/Filter views - remembered per mob.
 - **UIM storages**: the looting bag, POH costume room, sailing cargo
-  holds, and STASH units (one read of the chart) are tracked
-  automatically - no extra plugin needed. Anything else (cold storage,
+  holds, STASH units (one read of the chart) and the runes in your
+  rune pouch are tracked automatically - no extra plugin needed. Anything else (cold storage,
   nest storage) can be counted as owned by name, or imported from the
   Dude, Where's My Stuff plugin (togglable under the plugin's settings,
   in the Connections section).

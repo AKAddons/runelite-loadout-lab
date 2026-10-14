@@ -1372,7 +1372,7 @@ public class CommandEngine
 			if (link != null)
 			{
 				link.publishPage(withHistory(
-					RenderModel.page(Collections.emptyList())));
+					RenderModel.page(List.of())));
 			}
 			return;
 		}
@@ -1712,7 +1712,7 @@ public class CommandEngine
 		List<Map<CombatStyle, OptimizerService.StyleResult>> empty = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++)
 		{
-			empty.add(Collections.emptyMap());
+			empty.add(Map.of());
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, empty);
 		entry.put("params", state.paramsNode());
@@ -1737,7 +1737,7 @@ public class CommandEngine
 			return;
 		}
 		Map<String, Object> page = withHistory(
-			RenderModel.page(Collections.emptyList()));
+			RenderModel.page(List.of()));
 		page.put("assumeOptions", assumeOptions());
 		page.put("liveSpellbook", liveSpellbook);
 		page.put("spellbooks", spellbooks());
@@ -2505,7 +2505,7 @@ public class CommandEngine
 					ops.mobs().allPins(monsterId).forEach((scope, slots) ->
 					{
 						Map<String, String> named = new LinkedHashMap<>();
-						slots.forEach((slot, itemId) -> named.put(slot.name().toLowerCase(Locale.ROOT),
+						slots.forEach((slot, itemId) -> named.put(Names.lower(slot.name()),
 							data.getGear(itemId) == null ? String.valueOf(itemId) : data.getGear(itemId).label()));
 						pins.put(scope, named);
 					});

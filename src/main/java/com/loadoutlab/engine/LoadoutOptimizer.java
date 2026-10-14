@@ -67,8 +67,8 @@ public final class LoadoutOptimizer
 		// Request-level risk constants, hoisted out of the trial loops (they
 		// were recomputed - EnumMap, Loadout, riskGp - per candidate).
 		long riskCapGp = 0;
-		Set<Integer> pinnedIds = Collections.emptySet();
-		Set<Integer> protectOnly = Collections.emptySet();
+		Set<Integer> pinnedIds = Set.of();
+		Set<Integer> protectOnly = Set.of();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
@@ -238,8 +238,8 @@ public final class LoadoutOptimizer
 		}
 		SpellContext spellContext = new SpellContext(request, spellsFor(data, request));
 		long riskCapGp = 0;
-		Set<Integer> pinnedIds = Collections.emptySet();
-		Set<Integer> protectOnly = Collections.emptySet();
+		Set<Integer> pinnedIds = Set.of();
+		Set<Integer> protectOnly = Set.of();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
@@ -429,7 +429,7 @@ public final class LoadoutOptimizer
 	{
 		if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null)
 		{
-			return Collections.emptyList();
+			return List.of();
 		}
 		if (request.getStyle() == CombatStyle.ANY)
 		{
@@ -544,7 +544,7 @@ public final class LoadoutOptimizer
 	{
 		if (request.getMonster() == null || request.getStyle() == null || request.getLevels() == null)
 		{
-			return Collections.emptyList();
+			return List.of();
 		}
 		List<SpellStats> spells = pools.spells;
 		List<GearItem> weapons = pools.weapons;
@@ -589,8 +589,8 @@ public final class LoadoutOptimizer
 		// Request-level risk constants, hoisted out of the beam (they were
 		// recomputed - EnumMap, Loadout, riskGp, a HashSet - per trial).
 		long riskCapGp = 0;
-		Set<Integer> pinnedIds = Collections.emptySet();
-		Set<Integer> protectOnly = Collections.emptySet();
+		Set<Integer> pinnedIds = Set.of();
+		Set<Integer> protectOnly = Set.of();
 		if (request.isRiskConstrained())
 		{
 			riskCapGp = request.getRiskBudgetGp() + pinnedRiskFloor(data, request);
@@ -962,7 +962,7 @@ public final class LoadoutOptimizer
 	{
 		if (request.getStyle() != CombatStyle.MAGIC || !request.isAutoSpell())
 		{
-			return Collections.emptyList();
+			return List.of();
 		}
 		List<SpellStats> spells = new ArrayList<>();
 		for (SpellStats spell : data.getSpells())
@@ -1379,7 +1379,7 @@ public final class LoadoutOptimizer
 	private static Set<Integer> pinnedIds(OptimizationRequest request)
 	{
 		return request.getPinnedItems().isEmpty()
-			? Collections.emptySet()
+			? Set.of()
 			: new HashSet<>(request.getPinnedItems().values());
 	}
 

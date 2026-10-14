@@ -214,7 +214,7 @@ public final class DataService
 
 	private static GearRequirements requirementsFor(int id, String name, String version, Map<Integer, Map<String, Integer>> skillRequirements)
 	{
-		Map<String, Integer> skills = skillRequirements.getOrDefault(id, Collections.emptyMap());
+		Map<String, Integer> skills = skillRequirements.getOrDefault(id, Map.of());
 		Set<String> quests = questsFor(name, version);
 		return skills.isEmpty() && quests.isEmpty() ? GearRequirements.NONE : new GearRequirements(skills, quests);
 	}
@@ -237,7 +237,7 @@ public final class DataService
 		for (List<MonsterStats> group : byName.values())
 		{
 			boolean pairWithPostQuest = group.size() == 2 && group.stream()
-				.anyMatch(m -> m.getVersion().toLowerCase(Locale.ROOT).contains("post-quest"));
+				.anyMatch(m -> Names.lower(m.getVersion()).contains("post-quest"));
 			for (MonsterStats monster : group)
 			{
 				String version = monster.getVersion();
@@ -262,7 +262,7 @@ public final class DataService
 					kept.add(token);
 				}
 				if (pairWithPostQuest && !quest
-					&& !version.toLowerCase(Locale.ROOT).contains("post-quest"))
+					&& !Names.lower(version).contains("post-quest"))
 				{
 					// The non-post-quest half of the pair IS the quest fight.
 					quest = true;
@@ -307,7 +307,7 @@ public final class DataService
 			{
 				continue;
 			}
-			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
+			String nameKey = Names.lower(string(row, "name"));
 			statKeysByName
 				.computeIfAbsent(nameKey, k -> new LinkedHashSet<>())
 				.add(monsterStatKey(row));
@@ -324,7 +324,7 @@ public final class DataService
 			{
 				continue;
 			}
-			String nameKey = string(row, "name").toLowerCase(Locale.ROOT);
+			String nameKey = Names.lower(string(row, "name"));
 			String groupKey = nameKey + "|" + monsterStatKey(row);
 			// Emit the HIGHEST-LEVEL spawn of each collapsed group, so the
 			// offensive sheet (used for incoming dps) matches the combat
@@ -641,7 +641,7 @@ public final class DataService
 
 	private static boolean knownSlayerMonster(String name)
 	{
-		String normalized = name == null ? "" : name.toLowerCase(Locale.ROOT);
+		String normalized = name == null ? "" : Names.lower(name);
 		for (String term : SLAYER_CONTAINS)
 		{
 			if (normalized.contains(term))
