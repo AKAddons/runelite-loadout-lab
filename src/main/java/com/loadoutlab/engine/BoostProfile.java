@@ -87,7 +87,6 @@ public enum BoostProfile
 		return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
 	}
 
-	@Override
 	public String toString()
 	{
 		return label;

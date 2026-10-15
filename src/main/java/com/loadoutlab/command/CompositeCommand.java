@@ -25,7 +25,6 @@ public final class CompositeCommand implements Command
 		this.description = description != null ? description : "Compound action";
 	}
 
-	@Override
 	public boolean apply()
 	{
 		boolean any = false;
@@ -36,7 +35,6 @@ public final class CompositeCommand implements Command
 		return any;
 	}
 
-	@Override
 	public boolean revert()
 	{
 		boolean any = false;
@@ -47,7 +45,6 @@ public final class CompositeCommand implements Command
 		return any;
 	}
 
-	@Override
 	public String getDescription()
 	{
 		return description;

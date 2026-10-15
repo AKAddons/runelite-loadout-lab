@@ -281,13 +281,11 @@ public class RenderSurface
 		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		row.addMouseListener(new MouseAdapter()
 		{
-			@Override
 			public void mouseClicked(MouseEvent e)
 			{
 				pick(match);
 			}
 
-			@Override
 			public void mouseEntered(MouseEvent e)
 			{
 				row.setOpaque(true);
@@ -295,7 +293,6 @@ public class RenderSurface
 				row.repaint();
 			}
 
-			@Override
 			public void mouseExited(MouseEvent e)
 			{
 				row.setOpaque(false);
@@ -552,7 +549,6 @@ public class RenderSurface
 		field.addActionListener(e -> onCommit.accept(field.getText().trim()));
 		field.addKeyListener(new KeyAdapter()
 		{
-			@Override
 			public void keyPressed(KeyEvent e)
 			{
 				if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
@@ -654,7 +650,6 @@ public class RenderSurface
 			clearSearch.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			clearSearch.addMouseListener(new MouseAdapter()
 			{
-				@Override
 				public void mouseClicked(MouseEvent e)
 				{
 					search.setText("");
@@ -664,13 +659,11 @@ public class RenderSurface
 					root.repaint();
 				}
 
-				@Override
 				public void mouseEntered(MouseEvent e)
 				{
 					clearSearch.setForeground(new Color(0xDC7878));
 				}
 
-				@Override
 				public void mouseExited(MouseEvent e)
 				{
 					clearSearch.setForeground(new Color(0x969696));

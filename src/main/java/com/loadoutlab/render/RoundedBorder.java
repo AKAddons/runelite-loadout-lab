@@ -16,7 +16,6 @@ final class RoundedBorder extends javax.swing.border.AbstractBorder
 		this.hPad = hPad;
 	}
 
-	@Override
 	public void paintBorder(Component c, Graphics g, int x, int y, int width, int height)
 	{
 		Graphics2D g2 = (Graphics2D) g.create();
@@ -33,13 +32,11 @@ final class RoundedBorder extends javax.swing.border.AbstractBorder
 		}
 	}
 
-	@Override
 	public Insets getBorderInsets(Component c)
 	{
 		return new Insets(vPad, hPad, vPad, hPad);
 	}
 
-	@Override
 	public Insets getBorderInsets(Component c, Insets insets)
 	{
 		insets.set(vPad, hPad, vPad, hPad);

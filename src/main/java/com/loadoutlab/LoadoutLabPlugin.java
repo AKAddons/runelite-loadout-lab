@@ -340,7 +340,6 @@ public class LoadoutLabPlugin extends Plugin
 		return false;
 	}
 
-	@Override
 	protected void startUp()
 	{
 		ledger = new CollectionLedger(configManager, gson);
@@ -620,26 +619,22 @@ public class LoadoutLabPlugin extends Plugin
 				});
 				commandEngine.setStoreOps(new CommandEngine.StoreOps()
 				{
-					@Override
 					public boolean toggleExclusion(int itemId)
 					{
 						return exec(Commands.toggleExclusion(exclusions, itemId, itemLabel(itemId)));
 					}
 
-					@Override
 					public boolean toggleSim(int itemId)
 					{
 						dreams.toggle(itemId);
 						return true;
 					}
 
-					@Override
 					public void setSupplyDefault(String category, String choice)
 					{
 						supplyDefaults.setChoice(category, choice);
 					}
 
-					@Override
 					public void toggleAlwaysFilter(int itemId)
 					{
 						if (alwaysFilter.all().containsKey(itemId))
@@ -652,52 +647,44 @@ public class LoadoutLabPlugin extends Plugin
 						}
 					}
 
-					@Override
 					public void pin(int monsterId, String slot, int itemId)
 					{
 						mobProfiles.pin(monsterId, MonsterProfileStore.ALL_SETS,
 							GearSlot.valueOf(slot.toUpperCase()), itemId);
 					}
 
-					@Override
 					public void unpin(int monsterId, String slot)
 					{
 						mobProfiles.unpin(monsterId, MonsterProfileStore.ALL_SETS,
 							GearSlot.valueOf(slot.toUpperCase()));
 					}
 
-					@Override
 					public void showInBank(Set<Integer> itemIds)
 					{
 						setBankHighlight(itemIds);
 					}
 
-					@Override
 					public void filterBank(Set<Integer> itemIds, int[] layout)
 					{
 						setBankFilter(itemIds, layout);
 					}
 
-					@Override
 					public void setPinnedSpec(int monsterId, int itemId)
 					{
 						exec(Commands.setPinnedSpec(mobProfiles, monsterId, itemId, itemLabel(itemId)));
 					}
 
-					@Override
 					public void excludeForMob(int monsterId, String scope, int itemId)
 					{
 						exec(Commands.excludeForMob(mobProfiles, monsterId, scope, itemId,
 							itemLabel(itemId)));
 					}
 
-					@Override
 					public void simForMob(int monsterId, int itemId)
 					{
 						exec(Commands.simForMob(mobProfiles, monsterId, itemId, itemLabel(itemId)));
 					}
 
-					@Override
 					public List<Map<String, Object>> mobExclusions(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
@@ -706,7 +693,6 @@ public class LoadoutLabPlugin extends Plugin
 						return out;
 					}
 
-					@Override
 					public List<Map<String, Object>> mobSims(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
@@ -714,7 +700,6 @@ public class LoadoutLabPlugin extends Plugin
 						return out;
 					}
 
-					@Override
 					public List<Map<String, Object>> mobFilters(int monsterId)
 					{
 						List<Map<String, Object>> out = new ArrayList<>();
@@ -723,7 +708,6 @@ public class LoadoutLabPlugin extends Plugin
 						return out;
 					}
 
-					@Override
 					public void addMobFilter(int monsterId, int itemId)
 					{
 						mobProfiles.addFilterItem(monsterId,
@@ -731,13 +715,11 @@ public class LoadoutLabPlugin extends Plugin
 							itemId, itemLabel(itemId));
 					}
 
-					@Override
 					public CommandEngine.MobProfiles mobs()
 					{
 						return mobProfiles;
 					}
 
-					@Override
 					public boolean skipDegradable(int monsterId)
 					{
 						return mobProfiles.skipDegradable(monsterId, config.skipDegradableDefault());
@@ -765,7 +747,6 @@ public class LoadoutLabPlugin extends Plugin
 		log.info("Loadout Lab started");
 	}
 
-	@Override
 	protected void shutDown()
 	{
 		if (monsterIcons != null)
@@ -1376,15 +1357,24 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/** The mob's effective pins per style (ALL overlaid by each style) -
-	 * what the optimizer request for each card carries. */
+	 * what the optimizer request for each card carries. A pin whose item
+	 * has left the corpus (a data refresh) is no pin: the optimizer
+	 * ignores it, and a roster member's shown set is refused over a pin
+	 * it cannot wear (calcRespecting), so it must not travel. */
 	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(int monsterId)
 	{
 		EnumMap<CombatStyle, Map<GearSlot, Integer>> byStyle =
 			new EnumMap<>(CombatStyle.class);
 		for (CombatStyle style : CombatStyle.values())
 		{
-			Map<GearSlot, Integer> pins =
-				mobProfiles.pinsFor(monsterId, style.name());
+			Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
+			mobProfiles.pinsFor(monsterId, style.name()).forEach((slot, id) ->
+			{
+				if (data == null || data.getGear(id) != null)
+				{
+					pins.put(slot, id);
+				}
+			});
 			if (!pins.isEmpty())
 			{
 				byStyle.put(style, pins);
@@ -1838,9 +1828,10 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/** Roster mirror of compute: same client-thread staging, then
-	 * ONE shared set per style across the mobs (bestPerStyleAcross). The
-	 * FIRST mob anchors per-mob state (exclusions, pins, pinned spell) in
-	 * v1 - roster-wide per-mob preferences come later. */
+	 * ONE shared set per style across the mobs (bestPerStyleAcross). Each
+	 * member's own profile travels keyed by profileId: exclusions, sims,
+	 * pins, the pinned spell and the pinned spec (the first member's spec
+	 * is the roster's shared spec). */
 
 	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
 	{
@@ -1865,7 +1856,16 @@ public class LoadoutLabPlugin extends Plugin
 			int fingerprint = owned.presenceFingerprint();
 			PrayerUnlocks unlocks = prayerUnlocks != null
 				? prayerUnlocks : PrayerUnlocks.ALL;
-			MonsterStats anchor = mobs.get(0);
+			Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob = new HashMap<>();
+			Map<Integer, SpellStats> spellByMob = new HashMap<>();
+			Map<Integer, Integer> specByMob = new HashMap<>();
+			for (MonsterStats mob : mobs)
+			{
+				int id = mob.profileId();
+				pinsByMob.put(id, pinnedByStyle(id));
+				spellByMob.put(id, resolvedPinnedSpell(id));
+				specByMob.put(id, mobProfiles.pinnedSpec(id));
+			}
 			long stagingMs = (System.nanoTime() - stagingStart) / 1_000_000;
 			if (stagingMs > 10)
 			{
@@ -1874,8 +1874,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
-				perMobSims(mobs), pinnedByStyle(anchor.getId()), resolvedPinnedSpell(anchor.getId()),
-				mobProfiles.pinnedSpec(anchor.getId()),
+				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
 				{

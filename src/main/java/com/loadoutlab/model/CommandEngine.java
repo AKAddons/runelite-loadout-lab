@@ -465,7 +465,6 @@ public class CommandEngine
 				Object[] prevSel = state.selectionSnapshot();
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						state.selectRoster(combined, "Custom roster");
@@ -473,7 +472,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						state.restoreSelection(prevSel);
@@ -481,7 +479,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return "Add " + added.getName() + " to result";
@@ -527,7 +524,6 @@ public class CommandEngine
 				boolean raid = Boolean.TRUE.equals(state.paramsNode().get("raidSelection"));
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						state.selectRoster(reordered, (String) prevSel[2], raid);
@@ -536,7 +532,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						state.restoreSelection(prevSel);
@@ -545,7 +540,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return "Move " + current.get(at).getName() + (to < at ? " up" : " down");
@@ -576,7 +570,6 @@ public class CommandEngine
 				Object[] prevSel = state.selectionSnapshot();
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						if (remaining.isEmpty())
@@ -601,7 +594,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						state.restoreSelection(prevSel);
@@ -609,7 +601,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return "Remove " + removed.getName() + " from result";
@@ -651,19 +642,16 @@ public class CommandEngine
 				String label = PARAM_LABELS.getOrDefault(key, key);
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						return applyParam(key, next);
 					}
 
-					@Override
 					public boolean revert()
 					{
 						return applyParam(key, prev);
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return Boolean.TRUE.equals(next) ? label + " on"
@@ -821,7 +809,6 @@ public class CommandEngine
 				// every exclude/sim (field report 2026-08-20).
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						if (!(exclusion ? ops.toggleExclusion(id) : ops.toggleSim(id)))
@@ -832,13 +819,11 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						return apply();
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return (exclusion ? "Exclude " : "Sim ") + what;
@@ -902,7 +887,6 @@ public class CommandEngine
 				String kind = prayer ? "Prayer" : "Boost";
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						state.setPick(prayer, combatStyle, next);
@@ -910,7 +894,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						state.setPick(prayer, combatStyle, prev);
@@ -918,7 +901,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return kind + " " + (next == null ? "detect" : next.toLowerCase())
@@ -949,7 +931,6 @@ public class CommandEngine
 				String mobName = mob.getName();
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						if (exclude)
@@ -964,7 +945,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						if (exclude)
@@ -979,7 +959,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return (exclude ? "Exclude " : "Sim ") + what + " - " + mobName;
@@ -1010,7 +989,6 @@ public class CommandEngine
 				String mobName = mob.getName();
 				return record(new Command()
 				{
-					@Override
 					public boolean apply()
 					{
 						for (Map<String, Object> e : entries)
@@ -1028,7 +1006,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						for (Map<String, Object> e : entries)
@@ -1058,7 +1035,6 @@ public class CommandEngine
 						}
 					}
 
-					@Override
 					public String getDescription()
 					{
 						return "Clear " + noun + " (" + entries.size() + ") - " + mobName;
@@ -1118,14 +1094,12 @@ public class CommandEngine
 						}
 					}
 
-					@Override
 					public boolean apply()
 					{
 						run(command);
 						return true;
 					}
 
-					@Override
 					public boolean revert()
 					{
 						switch (command)
@@ -1138,7 +1112,6 @@ public class CommandEngine
 						return true;
 					}
 
-					@Override
 					public String getDescription()
 					{
 						switch (command)
@@ -1900,7 +1873,6 @@ public class CommandEngine
 		boolean hadSelection = state.hasSelection();
 		return record(new Command()
 		{
-			@Override
 			public boolean apply()
 			{
 				if (groupPick != null)
@@ -1992,7 +1964,6 @@ public class CommandEngine
 				return true;
 			}
 
-			@Override
 			public boolean revert()
 			{
 				state.restoreSelection(prev);
@@ -2007,7 +1978,6 @@ public class CommandEngine
 				return true;
 			}
 
-			@Override
 			public String getDescription()
 			{
 				return "vs " + (groupPick != null ? groupPick.getName() : mobPick.label());

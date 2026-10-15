@@ -47,7 +47,6 @@ final class Ui
 		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		component.addMouseListener(new java.awt.event.MouseAdapter()
 		{
-			@Override
 			public void mouseClicked(java.awt.event.MouseEvent e)
 			{
 				action.run();

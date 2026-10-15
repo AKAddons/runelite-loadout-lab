@@ -46,7 +46,6 @@ public final class SpellStats
 
 
 
-	@Override
 	public String toString()
 	{
 		return name;

@@ -93,7 +93,6 @@ final class AsciiLoader extends javax.swing.JEditorPane
 		}
 	}
 
-	@Override
 	public void removeNotify()
 	{
 		timer.stop();

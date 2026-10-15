@@ -13,7 +13,6 @@ public class ExclusionStore extends IdSetStore
 		load();
 	}
 
-	@Override
 	String legacyKey()
 	{
 		return KEY;

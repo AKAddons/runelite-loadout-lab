@@ -15,7 +15,6 @@ public enum CandidateMode
 		this.label = label;
 	}
 
-	@Override
 	public String toString()
 	{
 		return label;

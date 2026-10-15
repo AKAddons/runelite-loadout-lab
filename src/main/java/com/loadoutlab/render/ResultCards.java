@@ -498,13 +498,11 @@ public class ResultCards
 		// 2026-09-02 - a menu, not drag handles: no Swing drag layer).
 		MouseAdapter reorder = new MouseAdapter()
 		{
-			@Override
 			public void mousePressed(MouseEvent e)
 			{
 				maybeShow(e);
 			}
 
-			@Override
 			public void mouseReleased(MouseEvent e)
 			{
 				maybeShow(e);
@@ -537,7 +535,6 @@ public class ResultCards
 		remove.addMouseListener(reorder);
 		remove.addMouseListener(new MouseAdapter()
 		{
-			@Override
 			public void mouseClicked(MouseEvent e)
 			{
 				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e))
@@ -546,13 +543,11 @@ public class ResultCards
 				}
 			}
 
-			@Override
 			public void mouseEntered(MouseEvent e)
 			{
 				remove.setForeground(new Color(0xDC7878));
 			}
 
-			@Override
 			public void mouseExited(MouseEvent e)
 			{
 				remove.setForeground(new Color(0x969696));
@@ -1676,20 +1671,17 @@ public class ResultCards
 			Cursor.HAND_CURSOR));
 		cell.addMouseListener(new MouseAdapter()
 		{
-			@Override
 			public void mouseClicked(MouseEvent e)
 			{
 				menu.setVisible(false);
 				onPick.run();
 			}
 
-			@Override
 			public void mouseEntered(MouseEvent e)
 			{
 				cell.setBorder(BorderFactory.createLineBorder(ACCENT));
 			}
 
-			@Override
 			public void mouseExited(MouseEvent e)
 			{
 				if (!picked)
@@ -2008,7 +2000,6 @@ public class ResultCards
 			spellName.setToolTipText(tip);
 			MouseAdapter openSpells = new MouseAdapter()
 			{
-				@Override
 				public void mouseClicked(MouseEvent e)
 				{
 					// The SPELLBOOK grid (the prayer-book pattern - the list
@@ -2068,20 +2059,17 @@ public class ResultCards
 							Cursor.HAND_CURSOR));
 						cell.addMouseListener(new MouseAdapter()
 						{
-							@Override
 							public void mouseClicked(MouseEvent ev)
 							{
 								menu.setVisible(false);
 								commands.send("set-pinned-spell", Map.of("name", option));
 							}
 
-							@Override
 							public void mouseEntered(MouseEvent ev)
 							{
 								cell.setBorder(BorderFactory.createLineBorder(ACCENT));
 							}
 
-							@Override
 							public void mouseExited(MouseEvent ev)
 							{
 								if (!picked)
@@ -2487,7 +2475,6 @@ public class ResultCards
 				+ "</html>");
 			cell.setUI(new javax.swing.plaf.basic.BasicLabelUI()
 			{
-				@Override
 				public void paint(Graphics g, JComponent c)
 				{
 					super.paint(g, c);

@@ -11,7 +11,6 @@ final class WrapLayout extends FlowLayout
 		super(align, hgap, vgap);
 	}
 
-	@Override
 	public Dimension preferredLayoutSize(Container target)
 	{
 		synchronized (target.getTreeLock())

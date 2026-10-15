@@ -1634,7 +1634,6 @@ public final class LoadoutOptimizer
 				+ Arrays.hashCode(stats);
 		}
 
-		@Override
 		public boolean equals(Object other)
 		{
 			if (!(other instanceof StatKey))
@@ -1646,7 +1645,6 @@ public final class LoadoutOptimizer
 				&& category.equals(that.category) && Arrays.equals(stats, that.stats);
 		}
 
-		@Override
 		public int hashCode()
 		{
 			return hash;

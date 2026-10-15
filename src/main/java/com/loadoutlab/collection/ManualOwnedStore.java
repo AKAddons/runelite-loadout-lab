@@ -12,7 +12,6 @@ public class ManualOwnedStore extends IdSetStore
 		super(configManager, gson);
 	}
 
-	@Override
 	String legacyKey()
 	{
 		// Already scoped before 0.4.1, so its pre-scope key never existed as a

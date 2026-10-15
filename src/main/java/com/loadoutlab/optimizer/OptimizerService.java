@@ -184,7 +184,6 @@ public class OptimizerService
 	private final Map<String, StyleResult> cache =
 		new LinkedHashMap<String, StyleResult>(32, 0.75f, true)
 		{
-			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, StyleResult> eldest)
 			{
 				return size() > CACHE_MAX;
@@ -233,14 +232,17 @@ public class OptimizerService
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
+			dreamItems, upgradeBudgetGp, maxSwaps,
+			Collections.singletonMap(monster.profileId(), pinnedByStyle),
+			Collections.singletonMap(monster.profileId(), pinnedSpell),
+			Collections.singletonMap(monster.profileId(), pinnedSpec), protectOnlyItems);
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
 		{
 			for (CombatStyle style : CombatStyle.concreteValues())
 			{
-				StyleResult hit = cache.get(styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell));
+				StyleResult hit = cache.get(styleKey(baseKey, style, ctx, monster));
 				if (hit == null)
 				{
 					allCached = null;
@@ -300,7 +302,17 @@ public class OptimizerService
 		/** The bench size: carried items beyond the worn set; the spec
 		 * weapon occupies a slot when it differs from the worn weapon. */
 		int maxSwaps = 1;
-		Map<CombatStyle, Map<GearSlot, Integer>> pins;
+		/** PER-MOB pins (profileId -> style -> slot -> item), pinned spell
+		 * and pinned spec, keyed like excludedByMob: a mixed roster reads
+		 * each member's own (ISS-01M4Y2VJ8DWBBKFR1HP9NR45NG); the single-mob
+		 * path wraps its three arguments into one-entry maps. */
+		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob;
+		Map<Integer, SpellStats> spellByMob;
+		/** A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
+		 * the card whose style the weapon serves, leaving other styles to
+		 * pick freely. The pin machinery's carried-slot twin; a roster
+		 * seats its FIRST member's as the shared spec. */
+		Map<Integer, Integer> specByMob;
 		Map<CombatStyle, Set<Integer>> excluded;
 		/** PER-MOB exclusions for rosters, keyed by MonsterStats.profileId()
 		 * (field decision 2026-07-17): each mob's request carries its own
@@ -310,11 +322,6 @@ public class OptimizerService
 		/** PER-MOB sims (profileId -> ids): counted as owned for that mob
 		 * only - the local twin of the global dream items. */
 		Map<Integer, Set<Integer>> dreamsByMob = Map.of();
-		SpellStats pinnedSpell;
-		/** A pinned SPEC weapon id (0 = auto-pick): forces the spec slot on
-		 * the card whose style the weapon serves, leaving other styles to
-		 * pick freely. The pin machinery's carried-slot twin. */
-		int pinnedSpec;
 	}
 
 	/** The spec-weapon restriction (0 = none): a user PIN forces the spec
@@ -324,15 +331,37 @@ public class OptimizerService
 	 * style read as "the pin doesn't take" when viewing another card
 	 * (field report 2026-08-09). A card the weapon cannot serve shows the
 	 * pinned spec at its honest ~0 (keepZero), never a different auto pick. */
-	private static Set<Integer> restrictSpec(ComputeContext ctx, CombatStyle style)
+	private static Set<Integer> restrictSpec(ComputeContext ctx, CombatStyle style, MonsterStats mob)
 	{
-		if (ctx.pinnedSpec == 0)
+		int id = ctx.specByMob.getOrDefault(mob.profileId(), 0);
+		if (id == 0)
 		{
 			return null;
 		}
-		GearItem pinned = ctx.dataset.getGear(ctx.pinnedSpec);
+		GearItem pinned = ctx.dataset.getGear(id);
 		return pinned != null && SpecialAttack.match(pinned) != null
-			? Collections.singleton(ctx.pinnedSpec) : null;
+			? Collections.singleton(id) : null;
+	}
+
+	/** The style's pins for ONE mob (its own profile's). */
+	private static Map<GearSlot, Integer> pinsFor(ComputeContext ctx, CombatStyle style, MonsterStats mob)
+	{
+		Map<CombatStyle, Map<GearSlot, Integer>> byStyle = ctx.pinsByMob.get(mob.profileId());
+		return byStyle == null ? Map.of() : byStyle.getOrDefault(style, Map.of());
+	}
+
+	private static SpellStats spellFor(ComputeContext ctx, MonsterStats mob)
+	{
+		return ctx.spellByMob.get(mob.profileId());
+	}
+
+	/** The per-style pin state that shapes a cached answer: the mob's pins
+	 * and, on magic, its pinned spell. */
+	private static String pinKey(ComputeContext ctx, CombatStyle style, MonsterStats mob)
+	{
+		SpellStats spell = spellFor(ctx, mob);
+		return pinsFor(ctx, style, mob).hashCode()
+			+ "|" + (style == CombatStyle.MAGIC && spell != null ? spell.getName() : "");
 	}
 
 	/** Per-(mob, style, side) optimize results for the roster path, LRU.
@@ -341,7 +370,6 @@ public class OptimizerService
 	private final Map<String, List<DpsResult>> optimizeCache =
 		new LinkedHashMap<String, List<DpsResult>>(256, 0.75f, true)
 		{
-			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, List<DpsResult>> eldest)
 			{
 				return size() > 1024;
@@ -360,9 +388,7 @@ public class OptimizerService
 			+ "|" + ctxKey(ctx)
 			+ "|" + dreamsFor(ctx, mob).hashCode()
 			+ "|" + excludedFor(ctx, style, mob).hashCode()
-			+ "|" + ctx.pins.getOrDefault(style, Map.of()).hashCode()
-			+ "|" + (style == CombatStyle.MAGIC && ctx.pinnedSpell != null
-				? ctx.pinnedSpell.getName() : "");
+			+ "|" + pinKey(ctx, style, mob);
 	}
 
 	/** The query-wide ctx fields every cache key shares (keys only need
@@ -459,7 +485,8 @@ public class OptimizerService
 		// versions share one id, so Far/Nearby/Roaring collided.
 		return monster.getId() + "|" + monster.getVersion() + "|" + monster.getToaInvocationLevel()
 			+ "|" + ctxKey(ctx)
-			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps + "|" + ctx.pinnedSpec;
+			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps
+			+ "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0);
 	}
 
 	private Map<CombatStyle, StyleResult> computeAllStyles(
@@ -476,7 +503,7 @@ public class OptimizerService
 				}
 				// Styles cache independently: a pin or per-set exclusion on
 				// one style leaves the other two answers standing.
-				String styleKey = styleKey(baseKey, style, ctx.pins, ctx.excluded, ctx.pinnedSpell);
+				String styleKey = styleKey(baseKey, style, ctx, monster);
 				StyleResult cachedStyle;
 				synchronized (cache)
 				{
@@ -516,7 +543,7 @@ public class OptimizerService
 				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
 				polish(optimizer, ctx.dataset, gameRequest, gameBest);
 				// Bench 0 = strictly one worn set: no spec swap is carried.
-				Set<Integer> specPin = restrictSpec(ctx, style);
+				Set<Integer> specPin = restrictSpec(ctx, style, monster);
 				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
 					? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), ctx.maxSwaps)
 					: null;
@@ -586,12 +613,15 @@ public class OptimizerService
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
 		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
-		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
-		SpellStats pinnedSpell, int pinnedSpec, Set<Integer> protectOnlyItems)
+		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob,
+		Map<Integer, SpellStats> spellByMob, Map<Integer, Integer> specByMob,
+		Set<Integer> protectOnlyItems)
 	{
 		ComputeContext ctx = new ComputeContext();
 		ctx.maxSwaps = Math.max(0, maxSwaps);
-		ctx.pins = pinnedByStyle == null ? Map.of() : pinnedByStyle;
+		ctx.pinsByMob = pinsByMob == null ? Map.of() : pinsByMob;
+		ctx.spellByMob = spellByMob == null ? Map.of() : spellByMob;
+		ctx.specByMob = specByMob == null ? Map.of() : specByMob;
 		ctx.excluded = excludedByStyle == null ? Map.of() : excludedByStyle;
 		ctx.dreams = dreamItems == null ? Set.of() : dreamItems;
 		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
@@ -620,8 +650,6 @@ public class OptimizerService
 		ctx.maxTradeables = maxTradeables;
 		ctx.upgradeBudgetGp = upgradeBudgetGp;
 		ctx.collectionFingerprint = collectionFingerprint;
-		ctx.pinnedSpell = pinnedSpell;
-		ctx.pinnedSpec = pinnedSpec;
 		return ctx;
 	}
 
@@ -813,6 +841,18 @@ public class OptimizerService
 				}
 				if (ownedOnly && !req.getOwnedItems().owns(item.getId())
 					&& !req.isDream(item.getId()))
+				{
+					return null;
+				}
+			}
+			// A member's PIN binds its own shown set the same way (ISS-
+			// 01M4Y2VJ8DWBBKFR1HP9NR45NG): the shared set and the swap
+			// passes are dps-greedy, so without this a second member's
+			// pin would never be worn against it.
+			for (Map.Entry<GearSlot, Integer> pin : req.getPinnedItems().entrySet())
+			{
+				GearItem worn = loadout.get(pin.getKey());
+				if (worn == null || worn.getId() != pin.getValue())
 				{
 					return null;
 				}
@@ -2234,7 +2274,7 @@ public class OptimizerService
 				// A pinned spec is seated unconditionally - the player's
 				// explicit choice overrides the seat economics, so it always
 				// shows (even adding ~0.00, field report 2026-08-09).
-				boolean specPinned = restrictSpec(ctx, primary) != null;
+				boolean specPinned = restrictSpec(ctx, primary, mobs.get(0)) != null;
 				for (SpecPick[] option : specOptions)
 				{
 					GearItem[] slots = carriedSpecOf(option, base);
@@ -2503,7 +2543,9 @@ public class OptimizerService
 	 * rosters take the exact bestPerStyle path (wrapped as a 1-mob answer);
 	 * multi-mob rosters choose the shared set by average dps and deliver a
 	 * per-mob display bundle. Parameters mirror bestPerStyle (result-level
-	 * params shared across the roster; exclusions/pins apply uniformly).
+	 * params shared across the roster; exclusions, sims, pins, the pinned
+	 * spell and the pinned spec are per member, keyed by profileId - the
+	 * spec seats the FIRST member's).
 	 */
 	public void bestPerStyleAcross(
 		List<MonsterStats> mobs,
@@ -2515,8 +2557,9 @@ public class OptimizerService
 		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob,
-		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
-		SpellStats pinnedSpell, int pinnedSpec, Set<Integer> protectOnlyItems,
+		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob,
+		Map<Integer, SpellStats> spellByMob, Map<Integer, Integer> specByMob,
+		Set<Integer> protectOnlyItems,
 		Consumer<RosterResult> callback)
 	{
 		if (mobs == null || mobs.isEmpty())
@@ -2525,6 +2568,7 @@ public class OptimizerService
 		}
 		if (mobs.size() == 1)
 		{
+			int p = mobs.get(0).profileId();
 			// The single-mob fast path merges the mob's own exclusions into
 			// the style map - one request, same semantics. (EnumMap's copy
 			// constructor rejects an empty plain map - build then putAll.)
@@ -2534,7 +2578,7 @@ public class OptimizerService
 				merged.putAll(excludedByStyle);
 			}
 			Map<CombatStyle, Set<Integer>> perMobExcl = excludedByMob == null ? null
-				: excludedByMob.get(mobs.get(0).profileId());
+				: excludedByMob.get(p);
 			if (perMobExcl != null)
 			{
 				for (Map.Entry<CombatStyle, Set<Integer>> e : perMobExcl.entrySet())
@@ -2549,7 +2593,7 @@ public class OptimizerService
 				? new HashSet<>() : new HashSet<>(dreamItems);
 			if (dreamsByMob != null)
 			{
-				Set<Integer> localSims = dreamsByMob.get(mobs.get(0).profileId());
+				Set<Integer> localSims = dreamsByMob.get(p);
 				if (localSims != null)
 				{
 					mergedDreams.addAll(localSims);
@@ -2558,14 +2602,14 @@ public class OptimizerService
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
 				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
-				maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems,
+				maxSwaps, pinsByMob.get(p), spellByMob.get(p), specByMob.getOrDefault(p, 0), protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems);
+			dreamItems, upgradeBudgetGp, maxSwaps, pinsByMob, spellByMob, specByMob, protectOnlyItems);
 		ctx.excludedByMob = excludedByMob == null ? Map.of() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Map.of() : dreamsByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);
@@ -2591,14 +2635,11 @@ public class OptimizerService
 	/** The per-style cache key: the query key minus per-style state, plus
 	 * this style and the pins/exclusions/pinned-spell that shape ITS answer. */
 	private static String styleKey(String baseKey, CombatStyle style,
-		Map<CombatStyle, Map<GearSlot, Integer>> pins,
-		Map<CombatStyle, Set<Integer>> excluded,
-		SpellStats pinnedSpell)
+		ComputeContext ctx, MonsterStats mob)
 	{
 		return baseKey + "|" + style.name()
-			+ "|" + pins.getOrDefault(style, Map.of()).hashCode()
-			+ "|" + excluded.getOrDefault(style, Set.of()).hashCode()
-			+ "|" + (style == CombatStyle.MAGIC && pinnedSpell != null ? pinnedSpell.getName() : "");
+			+ "|" + ctx.excluded.getOrDefault(style, Set.of()).hashCode()
+			+ "|" + pinKey(ctx, style, mob);
 	}
 
 	private static String joinAssumes(String prayer, String boost)
@@ -2672,7 +2713,7 @@ public class OptimizerService
 		// A pinned spec weapon (serving this style) is the ONLY candidate:
 		// the player's explicit choice, priced across the trip like any
 		// other but never contested by the free picks.
-		Set<Integer> specPin = restrictSpec(ctx, style);
+		Set<Integer> specPin = restrictSpec(ctx, style, mobs.get(0));
 		if (specPin != null)
 		{
 			candidates.addAll(specPin);
@@ -3377,11 +3418,12 @@ public class OptimizerService
 			.withInWilderness(ctx.inWilderness)
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
-			.withPinnedItems(ctx.pins.getOrDefault(style, Map.of()));
+			.withPinnedItems(pinsFor(ctx, style, mob));
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
-		if (style == CombatStyle.MAGIC && ctx.pinnedSpell != null)
+		SpellStats spell = spellFor(ctx, mob);
+		if (style == CombatStyle.MAGIC && spell != null)
 		{
-			r = r.withSpell(ctx.pinnedSpell);
+			r = r.withSpell(spell);
 		}
 		return r;
 	}

@@ -77,13 +77,11 @@ public class WikiCalcLink
 			.build();
 		http.newCall(request).enqueue(new Callback()
 		{
-			@Override
 			public void onFailure(Call call, IOException e)
 			{
 				log.warn("wiki calc shortlink failed", e);
 			}
 
-			@Override
 			public void onResponse(Call call, Response response) throws IOException
 			{
 				try (Response r = response)

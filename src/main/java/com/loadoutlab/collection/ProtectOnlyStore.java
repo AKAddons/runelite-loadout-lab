@@ -13,7 +13,6 @@ public class ProtectOnlyStore extends IdSetStore
 		load();
 	}
 
-	@Override
 	String legacyKey()
 	{
 		return KEY;

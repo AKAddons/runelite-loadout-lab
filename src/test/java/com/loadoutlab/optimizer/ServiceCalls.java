@@ -9,6 +9,7 @@ import com.loadoutlab.engine.PrayerUnlocks;
 import com.loadoutlab.engine.RequirementProfile;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -265,6 +266,37 @@ public final class ServiceCalls
 		return out.get();
 	}
 
+	/** The per-member harness (ISS-01M4Y2VJ8DWBBKFR1HP9NR45NG): pins, the
+	 * pinned spell and the pinned spec keyed by MonsterStats.profileId(),
+	 * the way excludedByMob travels. Same latch as runRoster. */
+	public static OptimizerService.RosterResult runRosterPinned(
+		OptimizerService service, List<MonsterStats> mobs,
+		Map<Integer, Integer> owned, int maxSwaps,
+		Map<Integer, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob,
+		Map<Integer, com.loadoutlab.data.SpellStats> spellByMob,
+		Map<Integer, Integer> specByMob)
+		throws InterruptedException
+	{
+		CountDownLatch done = new CountDownLatch(1);
+		AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
+		service.bestPerStyleAcross(mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
+			RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
+			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
+			false, 0, true, Collections.emptyMap(), Collections.emptyMap(), false,
+			Collections.emptySet(), 0, maxSwaps, Collections.emptyMap(), Collections.emptyMap(),
+			pinsByMob, spellByMob, specByMob, Collections.emptySet(),
+			roster ->
+			{
+				out.set(roster);
+				done.countDown();
+			});
+		if (!done.await(120, TimeUnit.SECONDS))
+		{
+			throw new AssertionError("roster compute timed out");
+		}
+		return out.get();
+	}
+
 	/** Per-mob exclusions; per-mob sims empty, raid boost assumed. */
 	public static void bestPerStyleAcross(
 		OptimizerService service,
@@ -280,11 +312,19 @@ public final class ServiceCalls
 		com.loadoutlab.data.SpellStats pinnedSpell, Set<Integer> protectOnlyItems,
 		Consumer<OptimizerService.RosterResult> callback)
 	{
+		// A roster-wide pin reaches every member (today's test semantics).
+		Map<Integer, Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>>> pinsByMob = new HashMap<>();
+		Map<Integer, com.loadoutlab.data.SpellStats> spellByMob = new HashMap<>();
+		for (MonsterStats mob : mobs)
+		{
+			pinsByMob.put(mob.profileId(), pinnedByStyle);
+			spellByMob.put(mob.profileId(), pinnedSpell);
+		}
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
 			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, excludedByMob,
 			Collections.emptyMap(),
-			pinnedByStyle, pinnedSpell, 0, protectOnlyItems, callback);
+			pinsByMob, spellByMob, Collections.emptyMap(), protectOnlyItems, callback);
 	}
 }

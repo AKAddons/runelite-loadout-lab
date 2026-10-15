@@ -435,8 +435,12 @@ Wind Bolt") and the gear optimizes around it, with the spellbook lock
 shown while the spell is on Auto. A profile belongs to the monster,
 not the card: on a phase roster like the Tormented Demons, a pin or
 spell set on any phase card is the demon's and shows on every phase
-(and on the plain mob); a group roster reads its pins from its first
-member.
+(and on the plain mob). A mixed roster (Graardor and his minions, a
+Tombs trip) reads each member's own profile: a spell pinned on the
+fire giant's card is cast against the fire giant alone, and an item
+pinned on one member binds that member's own set, with the shared set
+and the carried swaps working around it. The pinned spec weapon is
+the trip's one shared spec, taken from the first member.
 
 
 ### Stored elsewhere (manual owned items)

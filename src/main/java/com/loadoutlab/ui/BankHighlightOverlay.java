@@ -26,7 +26,6 @@ public class BankHighlightOverlay extends WidgetItemOverlay
 		showOnInventory();
 	}
 
-	@Override
 	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
 	{
 		Set<Integer> ids = highlighted.get();

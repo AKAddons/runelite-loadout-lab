@@ -32,9 +32,9 @@ public final class Commands
 	{
 		return new Command()
 		{
-			@Override public boolean apply() { return apply.getAsBoolean(); }
-			@Override public boolean revert() { return revert.getAsBoolean(); }
-			@Override public String getDescription() { return description; }
+			public boolean apply() { return apply.getAsBoolean(); }
+			public boolean revert() { return revert.getAsBoolean(); }
+			public String getDescription() { return description; }
 		};
 	}
 

@@ -23,7 +23,6 @@ public enum CombatStyle
 		return new CombatStyle[]{MELEE, RANGED, MAGIC};
 	}
 
-	@Override
 	public String toString()
 	{
 		return label;

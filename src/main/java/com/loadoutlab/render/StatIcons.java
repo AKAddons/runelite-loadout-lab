@@ -65,19 +65,16 @@ final class StatIcons
 			this.image = baked("stat-" + bakedName + "-" + size + ".png", size);
 		}
 
-		@Override
 		public int getIconWidth()
 		{
 			return size;
 		}
 
-		@Override
 		public int getIconHeight()
 		{
 			return size;
 		}
 
-		@Override
 		public void paintIcon(Component c, Graphics g, int x, int y)
 		{
 			g.drawImage(image, x, y, size, size, null);
@@ -119,19 +116,16 @@ final class StatIcons
 			this.delegate = delegate;
 		}
 
-		@Override
 		public int getIconWidth()
 		{
 			return WIDTH;
 		}
 
-		@Override
 		public int getIconHeight()
 		{
 			return Math.max(HEIGHT, delegate.getIconHeight());
 		}
 
-		@Override
 		public void paintIcon(Component c, Graphics g, int x, int y)
 		{
 			delegate.paintIcon(c,

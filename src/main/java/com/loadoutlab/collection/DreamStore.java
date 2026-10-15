@@ -13,7 +13,6 @@ public class DreamStore extends IdSetStore
 		load();
 	}
 
-	@Override
 	String legacyKey()
 	{
 		return KEY;
