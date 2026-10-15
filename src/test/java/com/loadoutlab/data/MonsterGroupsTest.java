@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -66,7 +67,7 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(24, groups.size());
+		assertEquals(25, groups.size(), "24 plus the Fossil Island Wyverns (2026-10-15)");
 		assertEquals(4, byName("Yama").getMobs().size());
 		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
 		assertEquals(3, byName("The Hueycoatl").getMobs().size());
@@ -168,6 +169,21 @@ class MonsterGroupsTest
 			MonsterGroups.search(groups, "zuk", 5).get(0).getName());
 		assertEquals("Dagannoth Kings",
 			MonsterGroups.search(groups, "dks", 5).get(0).getName());
+		// Andrew (2026-10-15, first 0.5.4 field pass): "just fossil island
+		// wyvern didn't come up with anything" - the four cave wyverns carry
+		// their own names, so the slayer task's name needs a group.
+		assertEquals("Fossil Island Wyverns",
+			MonsterGroups.search(groups, "fossil island wyvern", 5).get(0).getName());
+		assertEquals("Fossil Island Wyverns",
+			MonsterGroups.search(groups, "fossil wyverns", 5).get(0).getName());
+		List<String> wyverns = new ArrayList<>();
+		for (MonsterStats m : byName("Fossil Island Wyverns").getMobs())
+		{
+			wyverns.add(m.getName());
+		}
+		assertEquals(List.of("Spitting Wyvern", "Taloned Wyvern", "Long-tailed Wyvern", "Ancient Wyvern"), wyverns);
+		assertEquals("Skeletal Wyvern",
+			data.searchMonsters("skeletal wyvern", 1).get(0).getName(), "no wyvern alias swallows the skeletal one");
 	}
 
 	@Test

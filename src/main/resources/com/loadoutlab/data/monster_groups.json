@@ -128,6 +128,31 @@
 		]
 	},
 	{
+		"name": "Fossil Island Wyverns",
+		"members": [
+			{
+				"name": "Spitting Wyvern"
+			},
+			{
+				"name": "Taloned Wyvern"
+			},
+			{
+				"name": "Long-tailed Wyvern"
+			},
+			{
+				"name": "Ancient Wyvern"
+			}
+		],
+		"note": "The Wyvern Cave on Fossil Island - the slayer task counts any of the four (the ancient needs 82 Slayer); the task-only northern cavern is quieter. Bring a shield that stops icy breath (elemental, mind, dragonfire, ward or ancient wyvern shield).",
+		"aliases": [
+			"fossil island wyverns",
+			"fossil island wyvern",
+			"fossil wyverns",
+			"fossil wyvern",
+			"wyvern cave"
+		]
+	},
+	{
 		"name": "Barrows",
 		"members": [
 			{
