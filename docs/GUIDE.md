@@ -198,6 +198,11 @@ This changes the trip's runes and nothing else - Vengeance does return
 damage, but modelling that honestly is its own problem, so no DPS
 number moves.
 
+A fight whose mechanics want a particular book (the Sire's Shadow
+Barrage stun on Ancients) shows that book on the plate, and its magic
+card autocasts from that book too; lock a book yourself or pin a spell
+and your choice wins.
+
 ### Thralls and Death Charge
 
 Arceuus support, modeled honestly. The Thralls chip appears when your

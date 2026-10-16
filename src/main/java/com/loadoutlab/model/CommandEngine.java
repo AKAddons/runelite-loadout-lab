@@ -1390,9 +1390,26 @@ public class CommandEngine
 		}
 		a[6] = ((Boolean) a[6]) && anyFire;
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
+		MonsterStats lensed = shownMob();
+		String pinnedSpell = stores == null || lensed == null ? "" : stores.mobs().pinnedSpell(lensed.getId());
 		if (cureMe(computed))
 		{
 			a[3] = "lunar";
+		}
+		else if (String.valueOf(a[3]).isEmpty() && (pinnedSpell == null || pinnedSpell.isEmpty()))
+		{
+			// The fight book is the autocast lock too (Andrew 2026-10-15: the
+			// Sire's magic set cast Dark Demonbane while the plate said Ancients).
+			// The player's own lock or pinned spell wins.
+			for (MonsterStats m : computed)
+			{
+				String book = MonsterSpellbooks.bookFor(m);
+				if (book != null && !book.isEmpty())
+				{
+					a[3] = book;
+					break;
+				}
+			}
 		}
 		if (arceuusBlocked(computed))
 		{
