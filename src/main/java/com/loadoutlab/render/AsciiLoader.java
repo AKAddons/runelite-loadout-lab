@@ -31,22 +31,31 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	}
 	private String key;
 
-	/** The mood face, bundled: Java's logical Monospaced draws ASCII in one
+	/** The mood faces, bundled: Java's logical Monospaced draws ASCII in one
 	 * font and borrows Braille, blocks and shades from another at other
 	 * widths on Windows (Andrew 2026-10-15: the flask's rows slid sideways).
-	 * Cascadia Mono (OFL) carries ASCII, box drawing, blocks, shades and all
-	 * 256 Braille cells at one width (DejaVu Sans Mono, Menlo's ancestor, has
-	 * no Braille). Missing resource = the logical font as before. */
-	private static final Font MOOD_FONT = loadMoodFont();
+	 * The ART draws in DejaVu Sans Mono, Menlo's parent, so the shades ink
+	 * the cells the frames were tuned on (Cascadia's medium shade inks 21%
+	 * against DejaVu's 48%: "the color tone is off in the potion"); it has no
+	 * Braille, so Braille runs draw in Cascadia Mono, same advance and line
+	 * height at 12 pt. A missing resource = the logical font as before. */
+	private static final Font MOOD_FONT = loadFont("DejaVuSansMono.ttf");
+	private static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
+	private static final java.util.regex.Pattern BRAILLE = java.util.regex.Pattern.compile("[\u2800-\u28ff]+");
 
 	static Font moodFont()
 	{
 		return MOOD_FONT;
 	}
 
-	private static Font loadMoodFont()
+	static Font brailleFont()
 	{
-		try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream("CascadiaMono.ttf"))
+		return BRAILLE_FONT;
+	}
+
+	private static Font loadFont(String resource)
+	{
+		try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream(resource))
 		{
 			Font font = Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
 			// Registered so the HTML stylesheet can name it: Swing's own rule for
@@ -88,9 +97,11 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	/** One frame onto the pane: fixed pitch, no margins, markup honoured. */
 	void show(String frame)
 	{
-		// The family goes on the pre itself, unquoted (Swing keeps quotes).
+		// The family goes on the pre itself, unquoted (Swing keeps quotes); Braille
+		// runs switch face inline (a tag never splits a run, so colour runs survive).
+		String runs = BRAILLE.matcher(frame).replaceAll("<font face=\"" + BRAILLE_FONT.getFamily() + "\">$0</font>");
 		setText("<html><body style='margin:0'><pre style='margin:0;font-family:" + MOOD_FONT.getFamily()
-			+ "'>" + frame + "</pre></body></html>");
+			+ "'>" + runs + "</pre></body></html>");
 	}
 
 	/** The key the current frames were picked for (a sentinel while idle). */

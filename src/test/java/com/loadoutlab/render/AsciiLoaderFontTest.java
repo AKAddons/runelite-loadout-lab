@@ -26,12 +26,37 @@ class AsciiLoaderFontTest
 	private static final String FRAMES = "/com/loadoutlab/render/loader_frames.txt";
 
 	@Test
-	@DisplayName("the bundled mood font loads and is Cascadia Mono")
-	void bundledFontLoads()
+	@DisplayName("the art draws in DejaVu Sans Mono (Menlo's parent: the shades the frames were tuned on) and Braille in Cascadia Mono")
+	void bundledFontsLoad()
 	{
-		Font font = AsciiLoader.moodFont();
-		assertEquals("Cascadia Mono", font.getFamily(), "the bundled face, not a platform fallback");
-		assertEquals(12, font.getSize());
+		// Andrew (2026-10-15): "looks better shape wise but the color tone is off in the
+		// potion" - Cascadia's medium shade inks 21% of its cell, DejaVu's 48%.
+		Font art = AsciiLoader.moodFont();
+		assertEquals("DejaVu Sans Mono", art.getFamily(), "the art face, not a platform fallback");
+		assertEquals(12, art.getSize());
+		assertEquals("Cascadia Mono", AsciiLoader.brailleFont().getFamily());
+		assertTrue(shadeInk(art, '\u2592') >= 0.40, "the medium shade must read dark: " + shadeInk(art, '\u2592'));
+	}
+
+	/** Ink coverage of one glyph's cell at 12 pt, 0..1. */
+	private static double shadeInk(Font font, char glyph)
+	{
+		BufferedImage img = new BufferedImage(20, 24, BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = img.createGraphics();
+		g.setFont(font);
+		g.setColor(java.awt.Color.WHITE);
+		FontMetrics m = g.getFontMetrics();
+		g.drawString(String.valueOf(glyph), 2, m.getAscent() + 2);
+		g.dispose();
+		long ink = 0;
+		for (int y = 0; y < img.getHeight(); y++)
+		{
+			for (int x = 0; x < img.getWidth(); x++)
+			{
+				ink += img.getRGB(x, y) >>> 24;
+			}
+		}
+		return ink / 255.0 / (m.charWidth(glyph) * (m.getAscent() + m.getDescent()));
 	}
 
 	@Test
@@ -39,6 +64,7 @@ class AsciiLoaderFontTest
 	void framesFitTheFont() throws Exception
 	{
 		Font font = AsciiLoader.moodFont();
+		Font braille = AsciiLoader.brailleFont();
 		Set<Integer> glyphs = new LinkedHashSet<>();
 		try (InputStream in = AsciiLoaderFontTest.class.getResourceAsStream(FRAMES))
 		{
@@ -53,15 +79,20 @@ class AsciiLoaderFontTest
 		int width = metrics.charWidth('M');
 		StringBuilder missing = new StringBuilder();
 		StringBuilder uneven = new StringBuilder();
+		FontMetrics brailleMetrics = new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(braille);
 		for (int cp : glyphs)
 		{
-			if (!font.canDisplay(cp))
+			// Braille cells draw in the Braille face; everything else in the art face.
+			boolean isBraille = cp >= 0x2800 && cp <= 0x28FF;
+			Font face = isBraille ? braille : font;
+			int w = (isBraille ? brailleMetrics : metrics).charWidth(cp);
+			if (!face.canDisplay(cp))
 			{
 				missing.append(String.format(" U+%04X", cp));
 			}
-			else if (metrics.charWidth(cp) != width)
+			else if (w != width)
 			{
-				uneven.append(String.format(" U+%04X=%d", cp, metrics.charWidth(cp)));
+				uneven.append(String.format(" U+%04X=%d", cp, w));
 			}
 		}
 		assertEquals("", missing.toString(), "glyphs the font cannot draw");
@@ -80,6 +111,7 @@ class AsciiLoaderFontTest
 		loader.setSize(400, 200);
 		String text = loader.getDocument().getText(0, loader.getDocument().getLength());
 		Set<Integer> ends = new LinkedHashSet<>();
+		Set<Integer> heights = new LinkedHashSet<>();
 		int start = 0;
 		for (int i = 0; i <= text.length(); i++)
 		{
@@ -88,10 +120,12 @@ class AsciiLoaderFontTest
 				if (i > start)
 				{
 					ends.add((int) loader.modelToView2D(i).getX());
+					heights.add((int) loader.modelToView2D(start).getHeight());
 				}
 				start = i + 1;
 			}
 		}
 		assertEquals(1, ends.size(), "line ends at x = " + ends);
+		assertEquals(1, heights.size(), "a Braille row must not be taller than the others: " + heights);
 	}
 }
