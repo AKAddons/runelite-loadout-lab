@@ -1083,10 +1083,18 @@ public class LoadoutLabPlugin extends Plugin
 			return;
 		}
 		scanStashChart();
-		// The pouch is read every tick (twelve varbits; the ledger writes only
-		// on a change) rather than filtered out of the per-tick varbit spray.
-		pendingScans.put(CollectionLedger.Source.RUNE_POUCH, scanRunePouch());
-		dirtySources.add(CollectionLedger.Source.RUNE_POUCH);
+		// The pouch is read every tick (twelve varbits) rather than filtered out
+		// of the per-tick varbit spray - but it goes DIRTY only on a change:
+		// a dirty source every tick starved the quiet-tick branch below, so the
+		// ledger-settled refresh never fired and a card computed before the
+		// bank scan kept its empty Detect-best supplies (Andrew, 2026-10-15,
+		// live in 0.5.4).
+		Map<Integer, Integer> pouch = scanRunePouch();
+		if (!pouch.equals(ledger.snapshot(CollectionLedger.Source.RUNE_POUCH)))
+		{
+			pendingScans.put(CollectionLedger.Source.RUNE_POUCH, pouch);
+			dirtySources.add(CollectionLedger.Source.RUNE_POUCH);
+		}
 		if (lootingBagScanTicks > 0)
 		{
 			lootingBagScanTicks--;
