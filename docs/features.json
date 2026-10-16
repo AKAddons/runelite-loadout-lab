@@ -476,7 +476,7 @@
       ],
       "since": "0.3.0",
       "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
+      "notes": "2026-10-15 (Andrew, first 0.5.4 field pass): a Fossil Island Wyverns group (Spitting, Taloned, Long-tailed, Ancient) with the task's own name as aliases - the four carried only their own names, so \"fossil island wyvern\" found nothing. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
     },
     {
       "id": "inventory-budget",
@@ -509,11 +509,12 @@
       "tests": [
         "data/RequiredGearTest.java",
         "optimizer/RequiredGearOptimizerTest.java",
-        "engine/ShamanShayzienTest.java"
+        "engine/ShamanShayzienTest.java",
+        "engine/WyvernShieldTest.java"
       ],
       "since": "0.3.5",
       "capture": "A basilisk result with the mirror shield forced into the shield slot on both sides, the info line explaining the gaze requirement.",
-      "notes": " 2026-09-17: a monster may carry one rule per slot (RequiredGear.rulesFor / requiredIds map); lizardman shamans outside CoX require the tier-5 Shayzien set (slayer helmet stands in for the helm) - Andrew, from Lostmind's report. ShamanShayzienTest."
+      "notes": "2026-10-15 (Andrew, first 0.5.4 field pass): the five wyverns require an icy-breath shield (elemental, mind, dragonfire shield or ward, ancient wyvern shield; wiki: max hit 44 -> 10), so two-handed weapons leave their cards (WyvernShieldTest).  2026-09-17: a monster may carry one rule per slot (RequiredGear.rulesFor / requiredIds map); lizardman shamans outside CoX require the tier-5 Shayzien set (slayer helmet stands in for the helm) - Andrew, from Lostmind's report. ShamanShayzienTest."
     },
     {
       "id": "wiki-calc-link",
@@ -607,9 +608,10 @@
         "render/MoodKeyTest.java",
         "render/RaidMoodRoutingTest.java",
         "render/LoaderHtmlTest.java",
-        "render/LoaderRepickTest.java"
+        "render/LoaderRepickTest.java",
+        "render/AsciiLoaderFontTest.java"
       ],
-      "notes": "Frames are HTML with per-cell colour runs in loader_frames.txt (resource, outside the hub cap); mood_routes.tsv routes by monster-name prefix, raids by group data, the sea by lens. Generators: scripts/art (sprite2text.py hybrid renderer, bosses.py recipes, tob.py, cox.py, obelisk.py, cannon.py, colourise.py for legacy pools, splice.py all). QUALITY.md is the ledger: every mood is a work in progress.",
+      "notes": "2026-10-15 (Andrew, first Windows run: 'the animation is fucked up'): the frames draw in a bundled Cascadia Mono (OFL; DejaVu Sans Mono, Menlo's ancestor, has no Braille) - Java's logical Monospaced on Windows borrows Braille, blocks and shades from Segoe UI Symbol at other widths and the rows slid sideways; AsciiLoaderFontTest proves every frame glyph draws at one width. Frames are HTML with per-cell colour runs in loader_frames.txt (resource, outside the hub cap); mood_routes.tsv routes by monster-name prefix, raids by group data, the sea by lens. Generators: scripts/art (sprite2text.py hybrid renderer, bosses.py recipes, tob.py, cox.py, obelisk.py, cannon.py, colourise.py for legacy pools, splice.py all). QUALITY.md is the ledger: every mood is a work in progress.",
       "capture": "A raid search mid-compute: the Theatre sequence playing under the controls with the Cancel chip in the footer. ~8s."
     }
   ]

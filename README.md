@@ -139,4 +139,6 @@ a NEW key, and existing shapes keep their meaning.
 
 BSD 2-Clause. DPS engine derived from
 [best-dps](https://github.com/guccifurs/best-dps) (BSD-2-Clause);
-monster and gear data from the OSRS Wiki.
+monster and gear data from the OSRS Wiki. The compute animations are drawn
+in [Cascadia Mono](https://github.com/microsoft/cascadia-code) (SIL Open Font
+Licence, bundled beside the font).

@@ -31,6 +31,31 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	}
 	private String key;
 
+	/** The mood face, bundled: Java's logical Monospaced draws ASCII in one
+	 * font and borrows Braille, blocks and shades from another at other
+	 * widths on Windows (Andrew 2026-10-15: the flask's rows slid sideways).
+	 * Cascadia Mono (OFL) carries ASCII, box drawing, blocks, shades and all
+	 * 256 Braille cells at one width (DejaVu Sans Mono, Menlo's ancestor, has
+	 * no Braille). Missing resource = the logical font as before. */
+	private static final Font MOOD_FONT = loadMoodFont();
+
+	static Font moodFont()
+	{
+		return MOOD_FONT;
+	}
+
+	private static Font loadMoodFont()
+	{
+		try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream("CascadiaMono.ttf"))
+		{
+			return Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
+		}
+		catch (Exception e)
+		{
+			return new Font(Font.MONOSPACED, Font.PLAIN, 12);
+		}
+	}
+
 	/** The pool key for the pending selection, or null for land. */
 	void setKey(String key)
 	{
@@ -51,7 +76,7 @@ final class AsciiLoader extends javax.swing.JEditorPane
 		setEditable(false);
 		setFocusable(false);
 		setOpaque(false);
-		setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		setFont(moodFont());
 		setForeground(ResultCards.ACCENT);
 	}
 
