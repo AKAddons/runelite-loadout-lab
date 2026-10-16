@@ -193,6 +193,24 @@
 				"shayzien boots (5)"
 			],
 			"note": "Outside the Chambers, a full tier-5 Shayzien set negates the shamans' acid attack (tiers 1-4 only reduce it) and its prayer-ignoring poison; the hard Kourend & Kebos diary lets a slayer helmet stand in for the helm."
+		},
+		{
+			"monsters": [
+				"ancient wyvern",
+				"spitting wyvern",
+				"taloned wyvern",
+				"long-tailed wyvern",
+				"skeletal wyvern"
+			],
+			"slot": "SHIELD",
+			"items": [
+				"elemental shield",
+				"mind shield",
+				"dragonfire shield",
+				"dragonfire ward",
+				"ancient wyvern shield"
+			],
+			"note": "An elemental, mind, dragonfire shield or ward, or the ancient wyvern shield is REQUIRED - it cuts the icy breath's max hit from 44 to 10 (Protect from Magic alone only halves it); the ancient wyvern shield also stops the freeze (wiki, 2026-10-15)."
 		}
 	]
 }

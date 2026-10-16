@@ -77,6 +77,22 @@ class RequiredGearTest
 	}
 
 	@Test
+	@DisplayName("every wyvern requires one of the five icy-breath shields")
+	void wyvernsRequireABreathShield()
+	{
+		// Andrew (2026-10-15): "for the ancient wyvern it's not recommending wyvern shield".
+		Set<Integer> shields = Set.of(2890, 9731, 11283, 11284, 22002, 22003, 21633, 21634);
+		for (String name : new String[]{"ancient wyvern", "spitting wyvern", "taloned wyvern", "long-tailed wyvern", "skeletal wyvern"})
+		{
+			MonsterStats wyvern = data.searchMonsters(name, 1).get(0);
+			List<RequiredGear.Rule> rules = RequiredGear.rulesFor(wyvern);
+			assertEquals(1, rules.size(), name + ": one shield rule");
+			assertEquals(GearSlot.SHIELD, rules.get(0).slot, name);
+			assertEquals(shields, rules.get(0).ids(data), name + ": elemental, mind, dragonfire shield and ward, ancient wyvern shield");
+		}
+	}
+
+	@Test
 	@DisplayName("Lizardman shamans outside CoX require the full tier-5 Shayzien set; the slayer helmet may stand in for the helm; the CoX shaman needs nothing")
 	void shamansRequireShayzien()
 	{
