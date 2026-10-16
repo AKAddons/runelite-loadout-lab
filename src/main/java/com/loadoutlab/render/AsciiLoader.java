@@ -48,7 +48,12 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	{
 		try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream("CascadiaMono.ttf"))
 		{
-			return Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
+			Font font = Font.createFont(Font.TRUETYPE_FONT, in).deriveFont(12f);
+			// Registered so the HTML stylesheet can name it: Swing's own rule for
+			// pre (font-family: Monospaced) overrides the component font, which
+			// is why setFont alone changed nothing (Andrew 2026-10-15, still bad).
+			java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+			return font;
 		}
 		catch (Exception e)
 		{
@@ -83,7 +88,9 @@ final class AsciiLoader extends javax.swing.JEditorPane
 	/** One frame onto the pane: fixed pitch, no margins, markup honoured. */
 	void show(String frame)
 	{
-		setText("<html><body style='margin:0'><pre style='margin:0'>" + frame + "</pre></body></html>");
+		// The family goes on the pre itself, unquoted (Swing keeps quotes).
+		setText("<html><body style='margin:0'><pre style='margin:0;font-family:" + MOOD_FONT.getFamily()
+			+ "'>" + frame + "</pre></body></html>");
 	}
 
 	/** The key the current frames were picked for (a sentinel while idle). */

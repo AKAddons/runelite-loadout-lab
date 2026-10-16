@@ -67,4 +67,31 @@ class AsciiLoaderFontTest
 		assertEquals("", missing.toString(), "glyphs the font cannot draw");
 		assertEquals("", uneven.toString(), "glyphs drawn at a width other than " + width);
 	}
+
+	@Test
+	@DisplayName("a frame's lines end at the same x whatever glyph class they use - the pre element draws in the bundled face")
+	void preDrawsInTheBundledFace() throws Exception
+	{
+		// Andrew (2026-10-15), after the bundled font: "the animation of the flask
+		// is still bad". Swing's stylesheet gives pre its own font-family rule,
+		// which overrode the component font the pane was given.
+		AsciiLoader loader = new AsciiLoader();
+		loader.show("ABCDEFGHIJ\n" + "█".repeat(10) + "\n" + "⣿".repeat(10) + "\n" + "░".repeat(10));
+		loader.setSize(400, 200);
+		String text = loader.getDocument().getText(0, loader.getDocument().getLength());
+		Set<Integer> ends = new LinkedHashSet<>();
+		int start = 0;
+		for (int i = 0; i <= text.length(); i++)
+		{
+			if (i == text.length() || text.charAt(i) == '\n')
+			{
+				if (i > start)
+				{
+					ends.add((int) loader.modelToView2D(i).getX());
+				}
+				start = i + 1;
+			}
+		}
+		assertEquals(1, ends.size(), "line ends at x = " + ends);
+	}
 }
