@@ -122,23 +122,22 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void spellKitsCarryTheVerifiedArceuusCosts()
+	public void theCannonIsAnExplicitFiveCellKit()
 	{
-		// Wiki-verified 2026-07-21: greater resurrect 10 fire 5 blood
-		// 1 cosmic; Death Charge 1 death 1 blood 1 soul; Mark of Darkness
-		// 1 cosmic 1 soul; pouch detect order divine > base.
-		org.junit.Assert.assertArrayEquals(new int[]{554, 565, 564},
-			TripSupplies.spellKit("thrallGreaterRunes"));
-		org.junit.Assert.assertArrayEquals(new int[]{560, 565, 566},
-			TripSupplies.spellKit("deathChargeRunes"));
-		org.junit.Assert.assertArrayEquals(new int[]{564, 566},
-			TripSupplies.spellKit("markOfDarknessRunes"));
-		org.junit.Assert.assertEquals(27281, TripSupplies.spellKit("runePouch")[0]);
-		org.junit.Assert.assertArrayEquals(new int[]{9075, 564, 563},
-			TripSupplies.spellKit("spellbookSwapRunes"));
-		org.junit.Assert.assertArrayEquals(new int[]{9075, 557, 560},
-			TripSupplies.spellKit("vengeanceRunes"));
-		org.junit.Assert.assertEquals(0, TripSupplies.spellKit("noSuchKit").length);
+		// miko (Discord 2026-10-17) wanted the cannon in every setup; AKAddons:
+		// "an easy option to include it in inventory" - no dps modelled, so
+		// Detect best never picks it; chosen, it is one cell per part.
+		List<TripSupplies.Option> cannon = TripSupplies.options(TripSupplies.CANNON);
+		Assert.assertEquals(1, cannon.size());
+		Assert.assertEquals("DWARF_MULTICANNON", cannon.get(0).key);
+		Assert.assertArrayEquals(new int[]{6, 8, 10, 12, 2}, cannon.get(0).ids);
+		Assert.assertEquals(5, cannon.get(0).names.length);
+		Assert.assertFalse(cannon.get(0).detect);
+		Assert.assertNull(TripSupplies.detectBest(TripSupplies.CANNON, id -> true));
+		Assert.assertEquals("Cannon", TripSupplies.label(TripSupplies.CANNON));
+		Assert.assertEquals("Food", TripSupplies.label(TripSupplies.FOOD));
+		Assert.assertNull("repair kits never show in the chip menu",
+			TripSupplies.label(TripSupplies.SHIP_REPAIR_KIT));
 	}
 
 	@Test

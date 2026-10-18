@@ -217,16 +217,4 @@ public final class Commands
 			() -> { store.addFilterItem(monsterId, scope, itemId, name); return true; },
 			() -> { store.removeMobFilter(monsterId, scope, itemId); return true; });
 	}
-
-	public static Command removeFilterItem(MonsterProfileStore store, int monsterId, String scope,
-		int itemId)
-	{
-		// Capture the persisted display name so undo can restore it intact.
-		String name = store.allFilterItems(monsterId)
-			.getOrDefault(scope, Map.of())
-			.getOrDefault(itemId, "item " + itemId);
-		return of("Remove trip supply " + name,
-			() -> { store.removeMobFilter(monsterId, scope, itemId); return true; },
-			() -> { store.addFilterItem(monsterId, scope, itemId, name); return true; });
-	}
 }

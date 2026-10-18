@@ -1,5 +1,6 @@
 package com.loadoutlab;
 
+import com.loadoutlab.engine.TaskBracelet;
 import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
@@ -173,6 +174,18 @@ public interface LoadoutLabConfig extends Config
 	default AssumeDefault defaultThralls()
 	{
 		return AssumeDefault.DETECT;
+	}
+
+	@ConfigItem(
+		keyName = "slayerTaskBracelet",
+		name = "Slayer task bracelet",
+		description = "Worn by every slayer-task set unless the mob pins its own hands slot.",
+		section = defaults,
+		position = 11
+	)
+	default TaskBracelet slayerTaskBracelet()
+	{
+		return TaskBracelet.NONE;
 	}
 
 	@ConfigItem(

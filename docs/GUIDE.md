@@ -40,7 +40,7 @@ its row's X (the last one closes the result), so a raid roster can be
 trimmed to the rooms you actually fight, and a right-click on a row
 offers Move up / Move down to put the list in the order you run it -
 a reorder never recomputes, the results simply follow their rows. A
-group opens with an Inventory of 4 swaps and a raid with 10 (a single
+group opens with an Inventory of 4 swaps and a raid with 12 (a single
 mob with 1); the Tombs of Amascut roster runs Akkha through his final
 stand and ends on one enraged Warden, the one you left alive. Raids
 compute under their own animation - the Obelisk charging, Verzik, Olm's
@@ -69,7 +69,12 @@ requests and plain text rows.
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
-behind an active task are greyed out.
+behind an active task are greyed out. The Slayer task bracelet setting
+(Defaults section, or right-click any card's bracelet cell: "On slayer
+tasks: ...") pins the Expeditious bracelet or the Bracelet of slaughter
+into every on-task set's hands slot. A mob's own hands pin wins, raids
+never count as a task, and like any pin it is unpriced and brought
+owned or not.
 
 ![Slayer task toggle](img/slayer-toggle.png)
 
@@ -219,7 +224,8 @@ A Kingdom Divided done, blood/death/soul runes banked) -
 15% special attack energy per killing blow, once per 60-second cast -
 feeding the spec model's energy budget, so long energy-bound fights fit
 more special attacks. Both recommendations carry their dependencies:
-the book of the dead and your best rune pouch join the trip cells, and
+the book of the dead (a thrall is cast from it with any weapon - no
+powered staff needed) and your best rune pouch join the trip cells, and
 the resurrect / Death Charge / Mark of Darkness runes (the last when
 your magic card casts Demonbane) join the bank filter and setup layout.
 (Vengeance modeling is roadmapped.)
@@ -247,8 +253,9 @@ two levels: global chips above the search bar, and per-mob "here" chips
 on every card that override the global level. The grey member manages
 the trip kit: persistent defaults for the food, fast food, prayer
 restore, surge potion, spellbook-swap cape and anti-venom every trip
-brings, plus an always-filter list for items like teleport capes that
-belong in every bank view. Poisoners that do not envenom (the Dagannoth Kings' spinolyps, Kalphite
+brings, plus an always-filter list ("Always show in bank filter...")
+for items like teleport capes that belong in every bank view - it shapes
+the bank view only, never the recommended set. Poisoners that do not envenom (the Dagannoth Kings' spinolyps, Kalphite
 Queen, Sarachnis, Scorpia) get an antipoison slot: Antidote++ down to
 Antipoison by what you own. Against venomous monsters the anti-venom slot
 also offers Cure Me (Lunar runes; venom becomes poison) and the prayer
@@ -270,7 +277,11 @@ assumes rides its Supplies row too (raid-supplied overloads and salts
 do not; the raid hands those out), and a sea-only trip packs repair
 kits and nothing edible, since the boat takes the hits. Chosen supplies
 ride the result card's consumable cells, the bank filter (every dose
-matches) and the filtered bank's inventory block.
+matches) and the filtered bank's inventory block. The Cannon submenu
+brings a dwarf multicannon - base, stand, barrels, furnace and
+cannonballs, five cells in the Supplies row and the bank filter - on
+land, non-raid trips. It is never detected, adds nothing to the dps
+numbers, and does not know where cannons are allowed.
 
 ![Trip supplies](img/trip-supplies.png)
 

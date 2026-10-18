@@ -434,6 +434,7 @@ public class LoadoutLabPlugin extends Plugin
 					counts.put("excludedItems", excludedItems);
 					counts.put("simmedItems", simmedItems);
 					counts.put("filteredItems", filteredItems);
+					counts.put("taskBracelet", config.slayerTaskBracelet().name());
 					return counts;
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
@@ -635,6 +636,13 @@ public class LoadoutLabPlugin extends Plugin
 						supplyDefaults.setChoice(category, choice);
 					}
 
+					@Override
+					public void setTaskBracelet(String choice)
+					{
+						configManager.setConfiguration("loadoutlab", "slayerTaskBracelet", choice);
+					}
+
+					@Override
 					public void toggleAlwaysFilter(int itemId)
 					{
 						if (alwaysFilter.all().containsKey(itemId))
@@ -825,9 +833,9 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			return;
 		}
-		if ("useDwmsData".equals(key))
+		if ("useDwmsData".equals(key) || "slayerTaskBracelet".equals(key))
 		{
-			// Ownership changed -> recompute (not just re-render).
+			// Ownership or the task bracelet changed -> recompute (not just re-render).
 			engine.execute("recompute", Map.of());
 		}
 		else if (RENDER_KEYS.contains(key))
@@ -1369,7 +1377,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * has left the corpus (a data refresh) is no pin: the optimizer
 	 * ignores it, and a roster member's shown set is refused over a pin
 	 * it cannot wear (calcRespecting), so it must not travel. */
-	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(int monsterId)
+	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(int monsterId, boolean onTask)
 	{
 		EnumMap<CombatStyle, Map<GearSlot, Integer>> byStyle =
 			new EnumMap<>(CombatStyle.class);
@@ -1388,7 +1396,7 @@ public class LoadoutLabPlugin extends Plugin
 				byStyle.put(style, pins);
 			}
 		}
-		return byStyle;
+		return TaskBracelet.overlay(byStyle, onTask, config.slayerTaskBracelet());
 	}
 
 	/** Run a user mutation through the undo stack and sync the buttons. */
@@ -1841,11 +1849,22 @@ public class LoadoutLabPlugin extends Plugin
 	 * pins, the pinned spell and the pinned spec (the first member's spec
 	 * is the roster's shared spec). */
 
-	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	/** Client-thread staging shared by both computes: the profile snapshot,
+	 * the DWMS re-read, levels, the one owned-items merge and its presence
+	 * fingerprint (the optimizer cache keys on presence, not quantities). */
+	private final class Staging
 	{
-		clientThread.invokeLater(() ->
+		final RequirementProfile profile;
+		final PlayerLevels live;
+		final PlayerLevels real;
+		final Map<Integer, Integer> mergedOwned;
+		final OwnedItems owned;
+		final int fingerprint;
+		final PrayerUnlocks unlocks;
+
+		Staging()
 		{
-			long stagingStart = System.nanoTime();
+			long start = System.nanoTime();
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				snapshotProfileIfNeeded();
@@ -1854,32 +1873,38 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				requestDwmsStorages();
 			}
-			RequirementProfile profile = requirementProfile != null
-				? requirementProfile : RequirementProfile.MAXED;
-			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
-			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			profile = requirementProfile != null ? requirementProfile : RequirementProfile.MAXED;
+			live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			pushPanelCastState(live);
-			Map<Integer, Integer> mergedOwned = ownedItems();
-			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
-			int fingerprint = owned.presenceFingerprint();
-			PrayerUnlocks unlocks = prayerUnlocks != null
-				? prayerUnlocks : PrayerUnlocks.ALL;
+			mergedOwned = ownedItems();
+			owned = new OwnedItems(mergedOwned, ledger.bankKnown());
+			fingerprint = owned.presenceFingerprint();
+			unlocks = prayerUnlocks != null ? prayerUnlocks : PrayerUnlocks.ALL;
+			long stagingMs = (System.nanoTime() - start) / 1_000_000;
+			if (stagingMs > 10)
+			{
+				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
+			}
+		}
+	}
+
+	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	{
+		clientThread.invokeLater(() ->
+		{
+			Staging s = new Staging();
 			Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob = new HashMap<>();
 			Map<Integer, SpellStats> spellByMob = new HashMap<>();
 			Map<Integer, Integer> specByMob = new HashMap<>();
 			for (MonsterStats mob : mobs)
 			{
 				int id = mob.profileId();
-				pinsByMob.put(id, pinnedByStyle(id));
+				pinsByMob.put(id, pinnedByStyle(id, onSlayerTask));
 				spellByMob.put(id, resolvedPinnedSpell(id));
 				specByMob.put(id, mobProfiles.pinnedSpec(id));
 			}
-			long stagingMs = (System.nanoTime() - stagingStart) / 1_000_000;
-			if (stagingMs > 10)
-			{
-				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
-			}
-			optimizerService.bestPerStyleAcross(mobs, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
+			optimizerService.bestPerStyleAcross(mobs, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
 				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
@@ -1905,46 +1930,17 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			long stagingStart = System.nanoTime();
-			if (client.getGameState() == GameState.LOGGED_IN)
-			{
-				snapshotProfileIfNeeded();
-			}
-			// DWMS saves on its own cadence (ConfigSync/shutdown); a per-query
-			// re-read keeps imported storages as fresh as they can be. The
-			// PluginMessage re-request refreshes the live snapshot the same
-			// way (its reply lands after this compute - one-query lag, and
-			// DWMS-tracked storages change rarely).
-			if (config.useDwmsData())
-			{
-				requestDwmsStorages();
-			}
-			RequirementProfile profile = requirementProfile != null
-				? requirementProfile : RequirementProfile.MAXED;
-			PlayerLevels live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
-			PlayerLevels real = realLevels != null ? realLevels : PlayerLevels.MAXED;
-			pushPanelCastState(live);
-			// One merge, shared by the optimizer request and the export - this
-			// runs on the client thread, where every merge is a frame tax.
-			Map<Integer, Integer> mergedOwned = ownedItems();
-			OwnedItems owned = new OwnedItems(mergedOwned, ledger.bankKnown());
-			// The optimizer cache keys on ownership PRESENCE, not quantities
-			// - firing an arrow must not re-pay a full compute.
-			int fingerprint = owned.presenceFingerprint();
-			PrayerUnlocks unlocks = prayerUnlocks != null
-				? prayerUnlocks : PrayerUnlocks.ALL;
+			// DWMS saves on its own cadence (ConfigSync/shutdown); the staging
+			// re-read keeps imported storages as fresh as they can be (its
+			// reply lands after this compute - one-query lag).
+			Staging s = new Staging();
 			exportProfile(new PlayerProfile(
-				real, live, unlocks, profile, mergedOwned, ledger.bankKnown(),
+				s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
-			long stagingMs = (System.nanoTime() - stagingStart) / 1_000_000;
-			if (stagingMs > 10)
-			{
-				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
-			}
-			optimizerService.bestPerStyle(monster, real, live, unlocks, profile, owned, fingerprint, f2pOnly,
+			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps,
-				pinnedByStyle(monster.getId()), resolvedPinnedSpell(monster.getId()),
+				pinnedByStyle(monster.getId(), onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->

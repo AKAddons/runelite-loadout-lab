@@ -190,7 +190,7 @@ class CommandsTest
 	}
 
 	@Test
-	@DisplayName("filter item: undo of a removal restores the item WITH its original name")
+	@DisplayName("filter item: an add is one undo step and keeps its display name")
 	void filterItemKeepsName()
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
@@ -199,13 +199,6 @@ class CommandsTest
 		history.undo();
 		assertTrue(mobs.allFilterItems(MOB).isEmpty()
 			|| !mobs.allFilterItems(MOB).getOrDefault("ALL", java.util.Map.of()).containsKey(12695));
-
-		mobs.addFilterItem(MOB, "ALL", 12695, "Super combat potion(4)");
-		history.execute(Commands.removeFilterItem(mobs, MOB, "ALL", 12695));
-		assertFalse(mobs.allFilterItems(MOB).getOrDefault("ALL", java.util.Map.of()).containsKey(12695));
-		history.undo();
-		assertEquals("Super combat potion(4)", mobs.allFilterItems(MOB).get("ALL").get(12695),
-			"the persisted display name must survive the undo");
 	}
 
 	@Test

@@ -260,13 +260,17 @@
         "data/SlayerLockedMonsters.java",
         "engine/OptimizationRequest.java",
         "optimizer/OptimizerService.java",
-        "data/DataService.java"
+        "data/DataService.java",
+        "engine/TaskBracelet.java",
+        "LoadoutLabConfig.java"
       ],
       "tests": [
-        "engine/SlayerInvariantTest.java"
+        "engine/SlayerInvariantTest.java",
+        "engine/TaskBraceletTest.java"
       ],
       "since": "0.1.0",
-      "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot."
+      "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot.",
+      "notes": "2026-10-18 (miko, Discord: 'include ... Expeditious bracelet for all setups'; Andrew: a slayer-task option reachable from the settings panel and the bracelet slot): the Slayer task bracelet setting (None / Expeditious bracelet / Bracelet of slaughter, Defaults section) overlays a HANDS pin on every concrete style when the result is on task (TaskBracelet.overlay, in the plugin's pinnedByStyle); a mob's own hands pin wins; raids force the task flag off so never see it; the hands cell's right-click menu writes the same setting ('On slayer tasks: ...', set-task-bracelet -> StoreOps.setTaskBracelet -> config), and the config change recomputes (TaskBraceletTest)."
     },
     {
       "id": "exclusions",
@@ -387,18 +391,20 @@
         "collection/AlwaysFilterStore.java",
         "collection/MonsterProfileStore.java",
         "LoadoutLabPlugin.java",
-        "model/RenderModel.java"
+        "model/RenderModel.java",
+        "model/CommandEngine.java"
       ],
       "tests": [
         "data/TripSuppliesTest.java",
         "collection/AlwaysFilterStoreTest.java",
         "collection/SupplyDefaultsStoreTest.java",
         "collection/MonsterProfileStoreTest.java",
-        "model/CureMeLockTest.java"
+        "model/CureMeLockTest.java",
+        "model/CannonKitTest.java"
       ],
       "since": "0.3.3",
       "capture": "The grey ~ chip's menu open above the search bar showing the six supply submenus and the always-filter entries, beside a card with the red/green/grey trio chips. Single PNG screenshot.",
-      "notes": "2026-10-15 (Andrew, live in 0.5.4): the rune pouch source marked the ledger dirty every tick, which starved the quiet-tick refresh, so a card computed before the bank scan kept empty Detect-best supplies; the pouch now goes dirty only on a change (LoadoutLabPlugin.onGameTick). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: anti-venom gains two choices, never Detect-best picks - Cure Me (Lunar runes; venom becomes poison) and the prayer book with a holy symbol (cures for prayer points; venom to poison up to 50). Andrew's call for Apathy's ironman Zulrah strat. Cure Me camps the trip on Lunar (Andrew 2026-09-08): the compute locks the book, Death Charge and thralls stand down, and the option is withheld while a pinned spell or a book lock relies on another book (CureMeLockTest). 2026-09-09: the poison plan is a plate in the Assumes row beside prayer and boost (Cure Me spell sprite / potion / prayer book, click = the anti-venom chooser) - Andrew asked for a more obvious spot. Dragonfire protection followed suit the same day: the antifireMode pill left the chip row for a plate beside the poison plan (shield / antifire / super antifire, click picks). 2026-09-09: an antipoison category for poisoning-not-venomous mobs (the Kings' spinolyps, KQ, Sarachnis, Scorpia; Antidote++ down to Antipoison, Cure Me / prayer book as choices) replaces the bring chips, which had been dead in main since the monolith swap (finding F-01M22K0BD31VCGAZ4BFKM0QB54). Store delegations split: the engine speaks to MonsterProfileStore directly via StoreOps.mobs()."
+      "notes": "2026-10-15 (Andrew, live in 0.5.4): the rune pouch source marked the ledger dirty every tick, which starved the quiet-tick refresh, so a card computed before the bank scan kept empty Detect-best supplies; the pouch now goes dirty only on a change (LoadoutLabPlugin.onGameTick). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: anti-venom gains two choices, never Detect-best picks - Cure Me (Lunar runes; venom becomes poison) and the prayer book with a holy symbol (cures for prayer points; venom to poison up to 50). Andrew's call for Apathy's ironman Zulrah strat. Cure Me camps the trip on Lunar (Andrew 2026-09-08): the compute locks the book, Death Charge and thralls stand down, and the option is withheld while a pinned spell or a book lock relies on another book (CureMeLockTest). 2026-09-09: the poison plan is a plate in the Assumes row beside prayer and boost (Cure Me spell sprite / potion / prayer book, click = the anti-venom chooser) - Andrew asked for a more obvious spot. Dragonfire protection followed suit the same day: the antifireMode pill left the chip row for a plate beside the poison plan (shield / antifire / super antifire, click picks). 2026-09-09: an antipoison category for poisoning-not-venomous mobs (the Kings' spinolyps, KQ, Sarachnis, Scorpia; Antidote++ down to Antipoison, Cure Me / prayer book as choices) replaces the bring chips, which had been dead in main since the monolith swap (finding F-01M22K0BD31VCGAZ4BFKM0QB54). Store delegations split: the engine speaks to MonsterProfileStore directly via StoreOps.mobs(). 2026-10-18 (miko, Discord; AKAddons: 'an easy option to include it in inventory'): a Cannon category - one explicit-only option, Dwarf multicannon, a five-cell kit (base 6, stand 8, barrels 10, furnace 12, cannonballs 2; gameval TWPART1-4 / MCANNONBALL) that Detect best never packs; it rides the Supplies row, the bank filter and the setup layout on land, non-raid selections (suppliesNode skips it under raidSelection); no dps, no placement rules (CannonKitTest, TripSuppliesTest). Category labels now live in trip_supplies.json ('labels'; a category without one, ship repair kits, stays out of the chip menu). The grey chip's add entry reads 'Always show in bank filter...' (was 'Always filter an item...' - miko read it as 'always include')."
     },
     {
       "id": "thralls-death-charge",
@@ -411,15 +417,17 @@
         "engine/OptimizationRequest.java",
         "optimizer/OptimizerService.java",
         "LoadoutLabPlugin.java",
-        "model/RenderModel.java"
+        "model/RenderModel.java",
+        "model/CommandEngine.java"
       ],
       "tests": [
         "engine/ExtraDpsTest.java",
-        "optimizer/DeathChargeTest.java"
+        "optimizer/DeathChargeTest.java",
+        "model/ThrallBookTest.java"
       ],
       "since": "0.3.3",
       "capture": "A boss card with the Thralls and D charge chips active in the params row, the style tab tooltip open showing the 'gear + thrall' breakdown. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-10-18 (mrapw, Discord: 'cox seems to be missing the botd given thralls is selected?'): the Book of the Dead (25818) joins the mob's utility stacks beside the resurrection runes whenever the thrall fold is on for a land, non-Lunar-camped mob - Supplies row, bank filter, setup layout (ThrallBookTest); the guide had promised it since 0.3.3. A thrall is cast from the book with any weapon (mrapw: 'thralls wont work because no powered staff?')."
     },
     {
       "id": "assume-pickers",
@@ -496,7 +504,7 @@
       ],
       "since": "0.3.0",
       "capture": "A roster with the Inventory slider at 2+, the Inventory row showing carried swaps, beside the same roster at 0 with none. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-27 (N, Discord): a one-handed spec weapon off a two-handed main brings its best offhand when the inventory has the slot (weapon + offhand, + ammo where needed); SpecPick.upgraded carries the numbers, the bare pick still ranks, risk-capped sets skip it."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-27 (N, Discord): a one-handed spec weapon off a two-handed main brings its best offhand when the inventory has the slot (weapon + offhand, + ammo where needed); SpecPick.upgraded carries the numbers, the bare pick still ranks, risk-capped sets skip it. 2026-10-18 (mrapw, Discord: the ToA kit dropped the mage set at 10): raids open at 12 (the four raid rows in monster_groups.json; groups 4, singles 1 unchanged; RaidSelectionTest, MonsterGroupsTest)."
     },
     {
       "id": "required-gear",

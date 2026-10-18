@@ -54,6 +54,9 @@ class TestStoreOps implements CommandEngine.StoreOps, CommandEngine.MobProfiles
 	public void setSupplyDefault(String category, String choice)
 	{
 	}
+	public void setTaskBracelet(String choice)
+	{
+	}
 
 	public void pin(int monsterId, String slot, int itemId)
 	{

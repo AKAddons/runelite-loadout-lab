@@ -82,9 +82,9 @@ class MonsterGroupsTest
 		assertEquals(4, byName("Corrupted Gauntlet").getMobs().size());
 		// The gauntlets stay flagged until the crystal-cost tiering lands
 		// (the note renders in the result card, not the search label).
-		assertTrue(byName("The Gauntlet").isComingSoon());
-		assertTrue(byName("Corrupted Gauntlet").isComingSoon());
-		assertFalse(byName("Fight Caves").isComingSoon());
+		assertTrue(byName("The Gauntlet").comingSoon);
+		assertTrue(byName("Corrupted Gauntlet").comingSoon);
+		assertFalse(byName("Fight Caves").comingSoon);
 		assertFalse(byName("The Gauntlet").label().contains("coming soon"));
 		assertEquals(7, byName("Fight Caves").getMobs().size());
 		assertEquals(9, byName("Inferno").getMobs().size());
@@ -316,10 +316,10 @@ class MonsterGroupsTest
 		assertEquals(3, byName("Chambers of Xeric").getMobs().stream()
 			.filter(m -> m.getName().equals("Great Olm")).count());
 		// Raids preset a bigger Inventory default; other groups do not.
-		assertEquals(10, byName("Theatre of Blood (Entry)").getInventory());
-		assertEquals(10, byName("Theatre of Blood (Hard)").getInventory());
-		assertEquals(10, byName("Tombs of Amascut").getInventory());
-		assertEquals(10, byName("Chambers of Xeric").getInventory());
+		assertEquals(12, byName("Theatre of Blood (Entry)").getInventory());
+		assertEquals(12, byName("Theatre of Blood (Hard)").getInventory());
+		assertEquals(12, byName("Tombs of Amascut").getInventory());
+		assertEquals(12, byName("Chambers of Xeric").getInventory());
 		assertEquals(0, byName("Fight Caves").getInventory());
 	}
 

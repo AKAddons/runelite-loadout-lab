@@ -92,7 +92,13 @@ final class Ui
 	/** A menu item wired to an action, added to the menu. */
 	static void item(JPopupMenu menu, String label, Runnable action)
 	{
+		item(menu, label, null, action);
+	}
+
+	static void item(JPopupMenu menu, String label, String tip, Runnable action)
+	{
 		JMenuItem item = new JMenuItem(label);
+		item.setToolTipText(tip);
 		item.addActionListener(e -> action.run());
 		menu.add(item);
 	}

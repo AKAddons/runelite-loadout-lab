@@ -51,7 +51,7 @@ public class QuestRewardItemsTest
 		{
 			corpus.add(item.getName().toLowerCase(Locale.ROOT));
 		}
-		for (String name : QuestRewardItems.itemNames())
+		for (String name : QuestRewardItems.QUEST_BY_NAME.keySet())
 		{
 			Assert.assertTrue("quest_rewards.json entry '" + name
 				+ "' does not match any gear corpus item name", corpus.contains(name));

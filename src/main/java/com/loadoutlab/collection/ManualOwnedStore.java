@@ -19,11 +19,6 @@ public class ManualOwnedStore extends IdSetStore
 		return "manualOwned";
 	}
 
-	public boolean isStored(int itemId)
-	{
-		return contains(itemId);
-	}
-
 	public synchronized Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned)
 	{
 		for (int id : ids)

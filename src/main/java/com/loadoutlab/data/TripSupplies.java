@@ -25,7 +25,9 @@ public final class TripSupplies
 	public static final String ANTIVENOM = "antivenom";
 	public static final String SHIP_REPAIR_KIT = "shipRepairKit";
 	public static final String ANTIPOISON = "antipoison";
-	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT};
+	/** The dwarf multicannon as a five-cell kit (miko 2026-10-17): no dps, no placement rules, never auto-detected. */
+	public static final String CANNON = "cannon";
+	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT, CANNON};
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
@@ -61,9 +63,9 @@ public final class TripSupplies
 	}
 
 	private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
+	private static final Map<String, String> LABELS = new LinkedHashMap<>();
 	private static final Set<String> VENOMOUS = new HashSet<>();
 	private static final Set<String> POISONOUS = new HashSet<>();
-	private static final Map<String, int[]> SPELL_KITS = new LinkedHashMap<>();
 
 	static
 	{
@@ -97,19 +99,10 @@ public final class TripSupplies
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
 			}
-			JsonObject kits = root.getAsJsonObject("spellKits");
-			if (kits != null)
+			JsonObject labels = root.getAsJsonObject("labels");
+			for (String key : labels == null ? Set.<String>of() : labels.keySet())
 			{
-				for (String key : kits.keySet())
-				{
-					JsonArray idArr = kits.getAsJsonArray(key);
-					int[] ids = new int[idArr.size()];
-					for (int i = 0; i < ids.length; i++)
-					{
-						ids[i] = idArr.get(i).getAsInt();
-					}
-					SPELL_KITS.put(key, ids);
-				}
+				LABELS.put(key, labels.get(key).getAsString());
 			}
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
 			JsonResources.strings(root, "poisonMonsters", POISONOUS);
@@ -125,6 +118,13 @@ public final class TripSupplies
 
 	private TripSupplies()
 	{
+	}
+
+	/** The grey chip's submenu label, or null for a category the menu never
+	 * shows (ship repair kits ride the sea card). */
+	public static String label(String category)
+	{
+		return LABELS.get(category);
 	}
 
 	/** The category's options, best first. */
@@ -183,14 +183,6 @@ public final class TripSupplies
 	public static Option detectBest(String category, IntPredicate owns)
 	{
 		return detectBest(category, owns, false);
-	}
-
-	/** An Arceuus casting dependency kit ("thrallGreaterRunes",
-	 * "deathChargeRunes", "markOfDarknessRunes", "bookOfTheDead",
-	 * "runePouch" - the pouch list is detect-ordered, best first). */
-	public static int[] spellKit(String name)
-	{
-		return SPELL_KITS.getOrDefault(name, new int[0]);
 	}
 
 	/** True when the monster can inflict venom (wiki Venom page inflictor

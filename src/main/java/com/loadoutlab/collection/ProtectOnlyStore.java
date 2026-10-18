@@ -17,9 +17,4 @@ public class ProtectOnlyStore extends IdSetStore
 	{
 		return KEY;
 	}
-
-	public boolean isProtectOnly(int itemId)
-	{
-		return contains(itemId);
-	}
 }

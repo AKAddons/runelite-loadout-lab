@@ -106,7 +106,7 @@ public class IncomingDpsCalculatorTest
 			armour(200, 180, 210, 40, 150),
 			armour(-20, 300, 5, 120, 60),
 		};
-		IncomingDpsCalculator.Prepared prepared = IncomingDpsCalculator.prepare(sheet, 82, 91);
+		IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(sheet, BossIncomingOverrides.overridesFor(sheet), 82, 91);
 		for (Loadout loadout : armours)
 		{
 			IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(sheet, loadout, 82, 91);
@@ -121,7 +121,7 @@ public class IncomingDpsCalculatorTest
 		for (String name : new String[]{"Callisto", "Zulrah", "Corporeal Beast"})
 		{
 			MonsterStats boss = data.searchMonsters(name, 1).get(0);
-			IncomingDpsCalculator.Prepared prepared = IncomingDpsCalculator.prepare(boss, 85, 89);
+			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(boss, BossIncomingOverrides.overridesFor(boss), 85, 89);
 			for (Loadout loadout : new Loadout[]{
 				armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)})
 			{

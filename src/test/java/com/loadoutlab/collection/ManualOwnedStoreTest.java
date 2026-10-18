@@ -29,13 +29,13 @@ class ManualOwnedStoreTest
 	void togglePersistsAcrossInstances()
 	{
 		assertTrue(store.toggle(4151));
-		assertTrue(store.isStored(4151));
+		assertTrue(store.contains(4151));
 
 		ManualOwnedStore next = new ManualOwnedStore(configManager, new Gson());
 		next.loadScope("std.1111");
-		assertTrue(next.isStored(4151));
+		assertTrue(next.contains(4151));
 		assertFalse(next.toggle(4151));
-		assertFalse(next.isStored(4151));
+		assertFalse(next.contains(4151));
 	}
 
 	@Test
@@ -52,8 +52,8 @@ class ManualOwnedStoreTest
 		assertTrue(store.snapshot().isEmpty(), "seasonal scope starts empty");
 
 		store.loadScope("std.1111");
-		assertTrue(store.isStored(4151));
-		assertFalse(store.isStored(11802), "account B's item must not leak into A");
+		assertTrue(store.contains(4151));
+		assertFalse(store.contains(11802), "account B's item must not leak into A");
 	}
 
 	@Test

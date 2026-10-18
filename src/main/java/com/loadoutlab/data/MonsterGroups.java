@@ -29,7 +29,7 @@ public final class MonsterGroups
 		private final List<MonsterStats> mobs;
 		private final List<String> aliases;
 		private final int inventory;
-		private final boolean comingSoon;
+		final boolean comingSoon;
 		private final boolean raid;
 
 		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases,
@@ -71,11 +71,6 @@ public final class MonsterGroups
 		public List<MonsterStats> getMobs()
 		{
 			return mobs;
-		}
-
-		public boolean isComingSoon()
-		{
-			return comingSoon;
 		}
 
 		/** "Fight Caves - 7 mobs" for list rows (the coming-soon note

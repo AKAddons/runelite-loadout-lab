@@ -428,11 +428,10 @@ public class ResultCards
 			// Switching mobs also switches to THAT mob's suggested
 			// style (field ask 2026-08-15) - the card below always
 			// opens on the row's own recommendation.
-			commands.send("set-param", Map.of("param", "lensIndex", "value", index));
+			commands.set("lensIndex", index);
 			if (rowStyle != null && !rowStyle.equals(tab))
 			{
-				commands.send("set-param",
-					Map.of("param", "selectedTab", "value", rowStyle));
+				commands.set("selectedTab", rowStyle);
 			}
 		};
 		Ui.onClick(label, pick);
@@ -802,8 +801,7 @@ public class ResultCards
 				tabCell.setBorder(new RoundedBorder(ACCENT, 1, 2));
 				tabCell.setOpaque(true);
 				tabCell.repaint();
-				commands.send("set-param",
-					Map.of("param", "selectedTab", "value", styleKey));
+				commands.set("selectedTab", styleKey);
 			});
 			tabStrip.add(tabCell);
 		}
@@ -855,9 +853,9 @@ public class ResultCards
 		JPanel sides = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		sides.setBackground(CARD);
 		sides.add(viewSide("Yours", !bis, "Your best owned set",
-			() -> commands.send("set-param", Map.of("param", "viewingBis", "value", false))));
+			() -> commands.set("viewingBis", false)));
 		sides.add(viewSide("BiS", bis, "The game-wide best set at your levels",
-			() -> commands.send("set-param", Map.of("param", "viewingBis", "value", true))));
+			() -> commands.set("viewingBis", true)));
 		viewRow.add(sides, BorderLayout.WEST);
 		Map<String, Object> yoursNode = Model.map(node, "yours");
 		Map<String, Object> bisNode = Model.map(node, "bis");
@@ -1227,8 +1225,7 @@ public class ResultCards
 					new ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannon (Sailing " + option.sailing + ")",
 					option.tier.equals(cannon.tier), 38,
-					() -> commands.send("set-param",
-						Map.of("param", param, "value", option.tier))));
+					() -> commands.set(param, option.tier)));
 			}
 			menu.add(rack);
 			// The double rack (Andrew, v2): who fires it, right under the
@@ -1237,14 +1234,14 @@ public class ResultCards
 			String opParam = index == 0 ? "cannon1Operator" : "cannon2Operator";
 			String current = Model.str(pageParams, opParam);
 			menu.add(pickChoice("You man this cannon", "you".equals(current),
-				() -> commands.send("set-param", Map.of("param", opParam, "value", "you"))));
+				() -> commands.set(opParam, "you")));
 			for (int p = 1; p <= 4; p++)
 			{
 				final String pick = "crew" + p;
 				String label = "Crewmate - Privateering " + p
 					+ (p < cannon.privateering ? " (raises to " + cannon.privateering + ")" : "");
 				menu.add(pickChoice(label, pick.equals(current),
-					() -> commands.send("set-param", Map.of("param", opParam, "value", pick))));
+					() -> commands.set(opParam, pick)));
 			}
 			menu.show(button, 0, button.getHeight());
 		});
@@ -1285,8 +1282,7 @@ public class ResultCards
 			}
 			JPopupMenu menu = new JPopupMenu();
 			menu.add(pickChoice("Detect best in bank", detect,
-				() -> commands.send("set-param",
-					Map.of("param", "cannonAmmo", "value", "detect"))));
+				() -> commands.set("cannonAmmo", "detect")));
 			menu.addSeparator();
 			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
 			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
@@ -1306,8 +1302,7 @@ public class ResultCards
 					new ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannonball",
 					!detect && option.tier.equals(ball.tier), 38,
-					() -> commands.send("set-param",
-						Map.of("param", "cannonAmmo", "value", option.tier))));
+					() -> commands.set("cannonAmmo", option.tier)));
 			}
 			menu.add(rack);
 			menu.show(button, 0, button.getHeight());
@@ -1587,8 +1582,7 @@ public class ResultCards
 				? "Any book - nothing here needs one"
 				: "Camp " + direct.toUpperCase(),
 			!swapOn, 30,
-			() -> commands.send("set-param",
-				Map.of("param", "spellbookSwap", "value", false))));
+			() -> commands.set("spellbookSwap", false)));
 		boolean needsSwap = directBook != null && !directBook.isEmpty()
 			&& !"lunar".equalsIgnoreCase(directBook);
 		books.add(pickCell(menu, cachedSprite(bookSprite("lunar")),
@@ -1597,8 +1591,7 @@ public class ResultCards
 					+ " - brings the swap and Vengeance runes"
 				: "Lunar home for Vengeance - brings Vengeance runes",
 			swapOn, 30,
-			() -> commands.send("set-param",
-				Map.of("param", "spellbookSwap", "value", true))));
+			() -> commands.set("spellbookSwap", true)));
 		menu.add(books);
 		menu.show(anchor, 0, anchor.getHeight());
 	}
@@ -1881,8 +1874,7 @@ public class ResultCards
 			for (int i = 0; i < names.length; i++)
 			{
 				int value = i;
-				Ui.item(menu, names[i], () -> commands.send("set-param",
-					Map.of("param", "antifireMode", "value", value)));
+				Ui.item(menu, names[i], () -> commands.set("antifireMode", value));
 			}
 			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
 		}
@@ -2026,7 +2018,7 @@ public class ResultCards
 						books.add(pickCell(menu, any ? null : cachedSprite(bookSprite(option)),
 							any ? "Any book (auto)" : "Lock to the " + option + " book",
 							option.equals(current), 26,
-							() -> commands.send("set-param", Map.of("param", "spellbookLock", "value", option))));
+							() -> commands.set("spellbookLock", option)));
 					}
 					menu.add(books);
 					menu.addSeparator();
@@ -2150,8 +2142,7 @@ public class ResultCards
 				{
 					menu.add(pickChoice("none".equals(option) ? "No keel" : cap(option) + " keel",
 						option.equals(keel),
-						() -> commands.send("set-param",
-							Map.of("param", "shipKeel", "value", option))));
+						() -> commands.set("shipKeel", option)));
 				}
 				menu.show(shipLine, 0, shipLine.getHeight());
 			});
@@ -2504,40 +2495,45 @@ public class ResultCards
 			() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
 		if (bis)
 		{
-			JMenuItem sim = new JMenuItem("Sim as owned");
-			sim.setToolTipText("Pretend you own " + name + " and recompute your side");
-			sim.addActionListener(e -> commands.send("toggle-sim",
+			Ui.item(menu, "Sim as owned", "Pretend you own " + name + " and recompute your side",
+				() -> commands.send("toggle-sim",
 				Map.of("itemId", id, "label", name)));
-			menu.add(sim);
 		}
 		else if (!"quiver".equals(slot))
 		{
-			JMenuItem excludeMob = new JMenuItem("Exclude for this mob");
-			excludeMob.setToolTipText("Exclude " + name + " for this mob only (all sets)");
-			excludeMob.addActionListener(e -> commands.send("exclude-for-mob",
+			Ui.item(menu, "Exclude for this mob", "Exclude " + name + " for this mob only (all sets)",
+				() -> commands.send("exclude-for-mob",
 				Map.of("itemId", id, "scope", "ALL", "label", name)));
-			menu.add(excludeMob);
-			JMenuItem simMob = new JMenuItem("Sim for this mob (search)...");
-			simMob.setToolTipText("Search an item and sim it as owned for this mob only");
-			simMob.addActionListener(e -> picker.search("Sim for this mob",
+			Ui.item(menu, "Sim for this mob (search)...", "Search an item and sim it as owned for this mob only",
+				() -> picker.search("Sim for this mob",
 				(pickedId, pickedName) -> commands.send("sim-for-mob",
 					Map.of("itemId", pickedId, "label", pickedName))));
-			menu.add(simMob);
 			// The classic GLOBAL sibling (field report 2026-08-21: it fell
 			// off in the merge-back - only the per-mob scope survived).
-			JMenuItem simAll = new JMenuItem("Sim for all mobs (search)...");
-			simAll.setToolTipText("Search an item and sim it as owned everywhere");
-			simAll.addActionListener(e -> picker.search("Sim as owned",
+			Ui.item(menu, "Sim for all mobs (search)...", "Search an item and sim it as owned everywhere",
+				() -> picker.search("Sim as owned",
 				(pickedId, pickedName) -> commands.send("toggle-sim",
 					Map.of("itemId", pickedId, "label", pickedName))));
-			menu.add(simAll);
-			JMenuItem pin = new JMenuItem("Pin " + name);
-			pin.setToolTipText("Force this item into the " + slot + " slot for this mob (all sets)");
-			pin.addActionListener(e -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
-			menu.add(pin);
+			Ui.item(menu, "Pin " + name, "Force this item into the " + slot + " slot for this mob (all sets)",
+				() -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
 			Ui.item(menu, "Pin another item (search)...", () -> picker.search("Pin in " + slot,
 				(pickedId, pickedName) -> commands.send("pin", Map.of("slot", slot, "itemId", pickedId))));
 			Ui.item(menu, "Unpin " + slot, () -> commands.send("unpin", Map.of("slot", slot)));
+			if ("hands".equals(slot))
+			{
+				// The slayer-task bracelet setting, reachable from the slot
+				// it fills (miko 2026-10-17; the settings panel has it too).
+				String current = Model.str(Model.map(pageWide, "counts"), "taskBracelet");
+				for (String[] choice : new String[][]{{"NONE", "none"},
+					{"EXPEDITIOUS_BRACELET", "Expeditious bracelet"},
+					{"BRACELET_OF_SLAUGHTER", "Bracelet of slaughter"}})
+				{
+					JCheckBoxMenuItem task = new JCheckBoxMenuItem("On slayer tasks: " + choice[1],
+						choice[0].equals(current));
+					task.addActionListener(e -> commands.send("set-task-bracelet", Map.of("choice", choice[0])));
+					menu.add(task);
+				}
+			}
 		}
 		cell.setComponentPopupMenu(menu);
 		return cell;

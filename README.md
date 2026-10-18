@@ -48,13 +48,16 @@ At the end of your search, filter the kit in your bank and get going.
   had a tbow?") or let a gp budget suggest buyable upgrades - quest
   rewards join free with their source quest named.
 - **Bank tools**: "Show in bank" outlines the set's items; "Filter bank"
-  shows only them (uses the core Bank Tags plugin).
+  shows only them (uses the core Bank Tags plugin) with the trip kit -
+  food, potions, runes, and a dwarf multicannon when you choose to bring one.
 - **Exclusions**: right-click any suggestion to protect rare supplies
   (dragon darts) from being recommended. A per-mob sigil skips gear
   that degrades or burns charges, and every per-mob list has a Clear all.
 - **Mob profiles**: per-monster pins ("always bring my Bracelet of
   slaughter HERE"), your own notes, and trip supplies that join the
-  bank Show/Filter views - remembered per mob.
+  bank Show/Filter views - remembered per mob. A Slayer task bracelet
+  setting (also on any card's bracelet cell) wears the Expeditious
+  bracelet or the Bracelet of slaughter on every on-task set.
 - **UIM storages**: the looting bag, POH costume room, sailing cargo
   holds, STASH units (one read of the chart) and the runes in your
   rune pouch are tracked automatically - no extra plugin needed. Anything else (cold storage,

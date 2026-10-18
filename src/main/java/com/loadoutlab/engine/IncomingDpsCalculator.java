@@ -129,7 +129,7 @@ public final class IncomingDpsCalculator
 		 * never choose the bracelet (field report: not recommended). */
 		private final boolean revenant;
 
-		private Prepared(MonsterStats monster, BossIncomingOverrides.BossOverride override,
+		Prepared(MonsterStats monster, BossIncomingOverrides.BossOverride override,
 			int defenceLevel, int magicLevel)
 		{
 			this.revenant = monster.isRevenantMonster();
@@ -271,12 +271,6 @@ public final class IncomingDpsCalculator
 			}
 			return total;
 		}
-	}
-
-	public static Prepared prepare(MonsterStats monster, int defenceLevel, int magicLevel)
-	{
-		return new Prepared(monster,
-			BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel);
 	}
 
 	/** The KIND_* for a sheet/override style string (never "typeless"). */

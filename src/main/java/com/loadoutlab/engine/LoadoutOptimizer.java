@@ -1214,7 +1214,7 @@ public final class LoadoutOptimizer
 		return result;
 	}
 
-	private static double candidateScore(OptimizationRequest request, GearItem item)
+	static double candidateScore(OptimizationRequest request, GearItem item)
 	{
 		double score = item.roughScore(request.getStyle());
 		if (slayerTaskHeadCandidate(request, item))
@@ -1381,12 +1381,6 @@ public final class LoadoutOptimizer
 		return request.getPinnedItems().isEmpty()
 			? Set.of()
 			: new HashSet<>(request.getPinnedItems().values());
-	}
-
-	/** Test seam: RevenantPoolTest pins the conditional pool boosts. */
-	static double candidateScoreForTest(OptimizationRequest request, GearItem item)
-	{
-		return candidateScore(request, item);
 	}
 
 	private static boolean isRevenantMonster(OptimizationRequest request)

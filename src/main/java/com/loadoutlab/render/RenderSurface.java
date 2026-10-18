@@ -78,6 +78,29 @@ public class RenderSurface
 		{
 			return "sea";
 		}
+		Map<String, Object> mob = lensedMob(page);
+		String raid = Model.str(mob, "raid");
+		if (raid != null)
+		{
+			return raid;
+		}
+		String name = Model.str(mob, "name");
+		if (name != null)
+		{
+			for (Map.Entry<String, String> route : MOOD_ROUTES.entrySet())
+			{
+				if (name.startsWith(route.getKey()))
+				{
+					return route.getValue();
+				}
+			}
+		}
+		return null;
+	}
+
+	/** The lensed mob of the first entry that has mobs, or null. */
+	private static Map<String, Object> lensedMob(Map<String, Object> page)
+	{
 		Map<String, Object> params = ResultCards.firstParams(page);
 		int lens = params == null ? 0 : Model.id(params, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
@@ -85,24 +108,7 @@ public class RenderSurface
 			List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
 			if (!entryMobs.isEmpty())
 			{
-				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
-				Map<String, Object> mob = entryMobs.get(shown);
-				String raid = Model.str(mob, "raid");
-				if (raid != null)
-				{
-					return raid;
-				}
-				String name = Model.str(mob, "name");
-				if (name != null)
-				{
-					for (Map.Entry<String, String> route : MOOD_ROUTES.entrySet())
-					{
-						if (name.startsWith(route.getKey()))
-						{
-							return route.getValue();
-						}
-					}
-				}
+				return entryMobs.get(Math.min(Math.max(lens, 0), entryMobs.size() - 1));
 			}
 		}
 		return null;
@@ -115,21 +121,8 @@ public class RenderSurface
 
 	private static boolean lensedFlag(Map<String, Object> page, String flag)
 	{
-		Map<String, Object> params = ResultCards.firstParams(page);
-		int lens = params == null ? 0 : Model.id(params, "lensIndex");
-		for (Map<String, Object> entry : Model.list(page, "entries"))
-		{
-			List<Map<String, Object>> entryMobs = Model.list(entry, "mobs");
-			if (!entryMobs.isEmpty())
-			{
-				int shown = Math.min(Math.max(lens, 0), entryMobs.size() - 1);
-				if (Model.flag(entryMobs.get(shown), flag))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
+		Map<String, Object> mob = lensedMob(page);
+		return mob != null && Model.flag(mob, flag);
 	}
 
 		Icon sailingIconSmall()
@@ -449,7 +442,7 @@ public class RenderSurface
 	private JLabel paramChip(String label, String key, boolean selected)
 	{
 		return pill(label, selected, label + (selected ? " on" : " off"),
-			() -> commands.send("set-param", Map.of("param", key, "value", !selected)));
+			() -> commands.set(key, !selected));
 	}
 
 	private static boolean anyInvocationScaled(Map<String, Object> page)
@@ -855,7 +848,7 @@ public class RenderSurface
 				new Color(0xBEBEBE), new Color(0x828282),
 				new Color(0x969696),
 				"Stop filtering: ", "toggle-always-filter",
-				"Always filter an item...", Model.list(page, "supplyCatalog"));
+				"Always show in bank filter...", Model.list(page, "supplyCatalog"));
 		}
 		countsRow.setVisible(true);
 		chipRow.removeAll();
@@ -930,8 +923,7 @@ public class RenderSurface
 			{
 				chipRow.add(taskPill(Model.flag(params, "onTask"), !Model.flag(params, "onTask"),
 					"On a slayer task: slayer helmet bonuses apply",
-					() -> commands.send("set-param",
-						Map.of("param", "onTask", "value", !Model.flag(params, "onTask")))));
+					() -> commands.set("onTask", !Model.flag(params, "onTask"))));
 			}
 			for (String[] entry : CHIPS)
 			{
@@ -976,16 +968,14 @@ public class RenderSurface
 				int cannons = Model.id(params, "cannonCount");
 				chipRow.add(pill("Cannons " + cannons, cannons > 0, (cannons + 1) % 3 > 0,
 					"Ship cannons carried - cycles 0 / 1 / 2",
-					() -> commands.send("set-param",
-						Map.of("param", "cannonCount", "value", (cannons + 1) % 3))));
+					() -> commands.set("cannonCount", (cannons + 1) % 3)));
 			}
 			int dCharge = Model.id(params, "deathCharge");
 			if (!f2pLocked && !lensLunar)
 			{
 				chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
 					dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",
-					() -> commands.send("set-param",
-						Map.of("param", "deathCharge", "value", (dCharge + 1) % 3))));
+					() -> commands.set("deathCharge", (dCharge + 1) % 3)));
 			}
 			if (anyInvocationScaled(page))
 			{
@@ -993,8 +983,7 @@ public class RenderSurface
 				int nextInvo = invo >= 540 ? 0 : invo >= 300 ? 540 : invo >= 150 ? 300 : 150;
 				chipRow.add(pill("Invo " + invo, invo > 0, nextInvo > 0,
 					"ToA invocation level - cycles 0/150/300/540",
-					() -> commands.send("set-param",
-						Map.of("param", "toaInvocation", "value", nextInvo))));
+					() -> commands.set("toaInvocation", nextInvo)));
 			}
 			int swaps = Model.id(params, "maxSwaps");
 			// The classic inventory control is a SLIDER over the bench
@@ -1015,8 +1004,7 @@ public class RenderSurface
 				// change - a slider fires continuously.
 				if (!invSlider.getValueIsAdjusting() && invSlider.getValue() != swaps)
 				{
-					commands.send("set-param",
-						Map.of("param", "maxSwaps", "value", invSlider.getValue()));
+					commands.set("maxSwaps", invSlider.getValue());
 				}
 			});
 			invBox.add(invSlider, BorderLayout.CENTER);

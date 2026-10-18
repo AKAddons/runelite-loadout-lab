@@ -60,6 +60,9 @@ public class CommandEngine
 		/** Write a wrench-panel supply default (the classic grey chip). */
 		void setSupplyDefault(String category, String choice);
 
+		/** The slayer-task bracelet setting, by TaskBracelet name. */
+		void setTaskBracelet(String choice);
+
 		/** ALL-sets-scope pin/unpin on the given mob's profile. */
 		void pin(int monsterId, String slot, int itemId);
 
@@ -776,6 +779,16 @@ public class CommandEngine
 					bis ? result.gameBoostLabel : result.boostLabel,
 					membersFlag("onTask"),
 					Boolean.TRUE.equals(state.paramsNode().get("inWilderness")));
+				return true;
+			}
+			case "set-task-bracelet":
+			{
+				StoreOps ops = stores;
+				if (ops == null)
+				{
+					return false;
+				}
+				ops.setTaskBracelet(String.valueOf(arg(args, "choice")));
 				return true;
 			}
 			case "toggle-always-filter":
@@ -2054,24 +2067,20 @@ public class CommandEngine
 			return out;
 		}
 		Map<String, String> defaults = supplier.get();
-		String[][] categories = {
-			{TripSupplies.FOOD, "Food"},
-			{TripSupplies.FAST_FOOD, "Fast food"},
-			{TripSupplies.PRAYER_RESTORE, "Prayer restore"},
-			{TripSupplies.SURGE, "Surge potion"},
-			{TripSupplies.SPELLBOOK_CAPE, "Spellbook cape"},
-			{TripSupplies.ANTIVENOM, "Anti-venom"},
-			{TripSupplies.ANTIPOISON, "Antipoison"},
-		};
-		for (String[] category : categories)
+		for (String category : TripSupplies.CATEGORY_KEYS)
 		{
+			String label = TripSupplies.label(category);
+			if (label == null)
+			{
+				continue;
+			}
 			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("category", category[0]);
-			node.put("label", category[1]);
-			node.put("current", defaults.getOrDefault(category[0], "DETECT_BEST"));
+			node.put("category", category);
+			node.put("label", label);
+			node.put("current", defaults.getOrDefault(category, "DETECT_BEST"));
 			List<Map<String, Object>> options = new ArrayList<>();
 			for (TripSupplies.Option option
-				: TripSupplies.options(category[0]))
+				: TripSupplies.options(category))
 			{
 				Map<String, Object> opt = new LinkedHashMap<>();
 				opt.put("key", option.key);
@@ -2225,7 +2234,9 @@ public class CommandEngine
 				mode = "DETECT_BEST";
 			}
 			if ("NONE".equals(mode)
-				|| (seaOnly && !TripSupplies.SHIP_REPAIR_KIT.equals(category)))
+				|| (seaOnly && !TripSupplies.SHIP_REPAIR_KIT.equals(category))
+				|| (TripSupplies.CANNON.equals(category)
+					&& Boolean.TRUE.equals(state.paramsNode().get("raidSelection"))))
 			{
 				continue;
 			}
@@ -2327,6 +2338,14 @@ public class CommandEngine
 			{
 				addUtilityRunes(out, "Resurrect " + tier + " Ghost",
 					tier + " thrall (per resurrection)");
+				// The book the thrall is cast from (mrapw 2026-10-18: the
+				// kit had the runes but not the book; any weapon casts it).
+				Map<String, Object> book = new LinkedHashMap<>();
+				book.put("id", ExtraDps.BOOK_OF_THE_DEAD);
+				book.put("name", "Book of the Dead");
+				book.put("qty", 1);
+				book.put("why", tier + " thrall - cast from the book, any weapon");
+				out.add(book);
 			}
 		}
 		Object dCharge = params.get("deathCharge");

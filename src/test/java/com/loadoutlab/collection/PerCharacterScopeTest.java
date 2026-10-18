@@ -47,7 +47,7 @@ class PerCharacterScopeTest
 		protect.toggle(4151);       // whip
 		assertTrue(exclusions.isExcluded(11832));
 		assertTrue(dreams.isDreamed(20997));
-		assertTrue(protect.isProtectOnly(4151));
+		assertTrue(protect.contains(4151));
 
 		// Switch character - the same store objects, a new scope.
 		exclusions.loadScope("std.2222");
@@ -55,7 +55,7 @@ class PerCharacterScopeTest
 		protect.loadScope("std.2222");
 		assertFalse(exclusions.isExcluded(11832), "the alt inherited the main's excludes");
 		assertFalse(dreams.isDreamed(20997), "the alt inherited the main's sims");
-		assertFalse(protect.isProtectOnly(4151), "the alt inherited the main's protect list");
+		assertFalse(protect.contains(4151), "the alt inherited the main's protect list");
 
 		// ...and switching back finds the main's lists intact.
 		exclusions.loadScope("std.1111");
@@ -63,7 +63,7 @@ class PerCharacterScopeTest
 		protect.loadScope("std.1111");
 		assertTrue(exclusions.isExcluded(11832), "the main lost its excludes on return");
 		assertTrue(dreams.isDreamed(20997), "the main lost its sims on return");
-		assertTrue(protect.isProtectOnly(4151), "the main lost its protect list on return");
+		assertTrue(protect.contains(4151), "the main lost its protect list on return");
 	}
 
 	@Test

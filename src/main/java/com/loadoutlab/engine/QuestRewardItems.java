@@ -28,7 +28,7 @@ public final class QuestRewardItems
 {
 	private static final String RESOURCE = "quest_rewards.json";
 
-	private static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
+	static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
 
 	static
 	{
@@ -60,11 +60,5 @@ public final class QuestRewardItems
 			return null;
 		}
 		return QUEST_BY_NAME.get(item.getNameLower());
-	}
-
-	/** Every curated item name (lowercase) - for corpus validation tests. */
-	public static Set<String> itemNames()
-	{
-		return Collections.unmodifiableSet(QUEST_BY_NAME.keySet());
 	}
 }

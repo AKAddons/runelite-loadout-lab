@@ -120,10 +120,10 @@ class RevenantPoolTest
 		assertNotNull(ethereum);
 		assertNotNull(avarice);
 
-		assertTrue(LoadoutOptimizer.candidateScoreForTest(atRevs, ethereum) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(atRevs, ethereum) > 0,
 			"ethereum must survive the zero-score prune at revenants");
-		assertTrue(LoadoutOptimizer.candidateScoreForTest(atRevs, avarice)
-			> LoadoutOptimizer.candidateScoreForTest(atGoblin, avarice) + 4_000,
+		assertTrue(LoadoutOptimizer.candidateScore(atRevs, avarice)
+			> LoadoutOptimizer.candidateScore(atGoblin, avarice) + 4_000,
 			"avarice gets its boost only at revenants");
 	}
 }

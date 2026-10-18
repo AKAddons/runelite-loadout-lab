@@ -64,14 +64,15 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("every raid opens at its declared inventory - ToB included")
-	void raidsOpenAtTen()
+	void raidsOpenAtTwelve()
 	{
 		for (String raidName : new String[]{"Theatre of Blood (Entry)",
 			"Theatre of Blood (Hard)", "Chambers of Xeric", "Tombs of Amascut"})
 		{
 			PageState state = new PageState();
 			Map<String, Object> params = selectGroup(raidName, state, new CaptureLink());
-			assertEquals(10, params.get("maxSwaps"), raidName + " must open at 10");
+			// 12 since 2026-10-18 (mrapw: the shadow set lost at 10 in ToA).
+			assertEquals(12, params.get("maxSwaps"), raidName + " must open at 12");
 			assertEquals(Boolean.TRUE, params.get("raidSelection"), raidName);
 		}
 	}

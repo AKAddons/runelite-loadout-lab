@@ -1,5 +1,25 @@
 {
 	"_comment": "Trip-supply tiers, best first per category (wiki-verified 2026-07-20). placement:utility = fight-relevant gear that is neither worn nor carried (spellbook capes) - the bank layout gives it a third strip below the cross and inventory. ids[0] is the display id (4-dose potion / cooked food); the full list joins the bank filter so every dose matches. detect:false = only selectable explicitly, never auto-picked. venomousMonsters = the wiki Venom page's exhaustive inflictor list (Ungael 'Spider' omitted: the bare name is too generic to match safely). Cure Me (2 astral 2 cosmic 1 law, Lunar) converts venom to poison; the Prayer book cures poison for prayer points and venom to poison for up to 50 while a holy/hallowed symbol is worn (wiki 2026-09-08; Apathy's ironman ask) - both detect:false, choices only. antipoison (2026-09-09, replacing the dead bring chips): poisoning-not-venomous mobs (poisonMonsters, name tokens - the Kings' spinolyps, KQ, Sarachnis, Scorpia); tiers best first, ids from gameval; Cure Me and the prayer book are choices here too.",
+	"labels": {
+		"food": "Food",
+		"fastFood": "Fast food",
+		"prayerRestore": "Prayer restore",
+		"surge": "Surge potion",
+		"spellbookCape": "Spellbook cape",
+		"antivenom": "Anti-venom",
+		"antipoison": "Antipoison",
+		"cannon": "Cannon"
+	},
+	"_cannon_comment": "cannon (2026-10-18, miko): the dwarf multicannon as one explicit-only five-cell kit - ids from gameval (TWPART1-4 = base 6, stand 8, barrels 10, furnace 12; MCANNONBALL 2). detect:false so Detect best never packs it; no dps and no placement rules are modelled; a raid selection skips the category.",
+	"cannon": [
+		{
+			"key": "DWARF_MULTICANNON",
+			"name": "Dwarf multicannon",
+			"ids": [6, 8, 10, 12, 2],
+			"names": ["Cannon base", "Cannon stand", "Cannon barrels", "Cannon furnace", "Cannonballs"],
+			"detect": false
+		}
+	],
 	"food": [
 		{
 			"key": "MOONLIGHT_ANTELOPE",
