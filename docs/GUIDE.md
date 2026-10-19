@@ -439,8 +439,9 @@ loading animation, and where the spec and thrall dps appear - in the
 numbers, as a footnote, or not shown). Controls picks which chips and buttons appear
 (exclude / sim / filter / pins, bank buttons, spell selection, budget and
 wilderness controls, the Degrades chip, and whether a sea card's trip
-ledger opens expanded or as its total line). Controls also holds **Reset
-to fresh install**: tick it to put this profile back to a just-installed
+ledger opens expanded or as its total line). The last section, Reset,
+is folded by default and holds only **Reset to fresh install**, kept
+away from the everyday toggles: tick it to put this profile back to a just-installed
 state - every setting to its default, the page emptied, and all excludes,
 sims, stored-elsewhere and protect-only marks, filters, every mob's pins
 and notes, and the supply defaults wiped. Bank memory stays (it is what

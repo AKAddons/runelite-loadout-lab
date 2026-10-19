@@ -35,6 +35,16 @@ public interface LoadoutLabConfig extends Config
 	)
 	String connections = "connections";
 
+	/** Its own section, last and folded (Andrew 2026-10-19: the reset tick
+	 * sat between two ordinary chip toggles in Controls). */
+	@ConfigSection(
+		name = "Reset",
+		description = "Put this profile back to a just-installed state",
+		position = 4,
+		closedByDefault = true
+	)
+	String reset = "reset";
+
 	// --- Display ---------------------------------------------------------
 
 	@ConfigItem(
@@ -126,9 +136,9 @@ public interface LoadoutLabConfig extends Config
 	@ConfigItem(
 		keyName = "resetCustomizations",
 		name = "Reset to fresh install",
-		description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself.",
-		section = controls,
-		position = 5
+		description = "Tick to put this profile back to a just-installed state: every setting to its default, and all excludes, sims, stored-elsewhere, protect-only, filters, mob pins and notes, and supply defaults wiped. Bank memory stays. Unticks itself. Cannot be undone.",
+		section = reset,
+		position = 1
 	)
 	default boolean resetCustomizations()
 	{
