@@ -5,7 +5,8 @@ the way a trip actually comes together - pick the target, read the
 answer, shape it to the fight, then make the defaults yours. Each ###
 heading below is mirrored in `features.json`; `./gradlew checkDocs`
 audits the two against the source tree and flags drift or missing
-screenshots.
+screenshots. For a one-minute tour first, see Rune Nexus Group's
+[short](https://youtube.com/shorts/3WulAJfStyg).
 
 ## 1. Pick the target
 
