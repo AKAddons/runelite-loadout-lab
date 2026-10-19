@@ -3,9 +3,9 @@
 From the 2026-07-05 vendoring analysis of guccifurs/best-dps, updated as
 fixes land.
 
-## Current state (2026-08-22, 68 harness vectors)
+## Current state (2026-10-18, 97 harness vectors)
 
-84 of 92 vectors agree with the official calculator within 0.5%; most
+88 of 97 vectors agree with the official calculator within 0.5%; most
 are exact. What is still open, largest first - every one is pinned by a
 vector, so none can drift further unnoticed:
 
@@ -102,6 +102,15 @@ listed below.
 - TD emberlight melee -3.7% (max 52 vs 54): demonbane add-factor rounding
   order. Scythe rows: our maxHit reports the first hit, theirs the 3-hit
   total - display-only, dps exact.
+
+## Osmumten's fang inside the Tombs - CLOSED 2026-10-18
+
+Vectors fang-baba-i300 and fang-warden3-i300 (invocation 300) ran the
+fang 17.4% and 23.7% under the calc on hit chance while the sulphur
+blades matched exactly (TRIPLEKILLTRENT, YouTube: "salad blade is
+better than my fang at toa"). Inside the Tombs the fang rolls accuracy
+twice (1 - (1-p)^2, official PLAYER_ACCURACY_FANG_TOA); we applied the
+outside reroll formula everywhere. Both vectors are exact now.
 
 ## Elemental tomes (2026-10-18, vector watersurge-tome-drake)
 

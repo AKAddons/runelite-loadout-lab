@@ -83,6 +83,13 @@ public class OfficialVectorExport
 		// both sides of the flip.
 		{"bofaset-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Bow of faerdhinen", null, null, "Crystal helm", "Crystal body", "Crystal legs", "INVO:300"},
 		{"bp-warden3-i300", "Tumeken's Warden", "Enraged", "RANGED", "Toxic blowpipe#Charged", "DART:Dragon dart", null, "INVO:300"},
+		// Two-hit sulphur blades vs the fang at ToA (TRIPLEKILLTRENT, YouTube
+		// 2026-10-18: "salad blade is better than my fang at toa"). Melee
+		// rows only where melee lands: Ba-Ba and the Enraged Warden.
+		{"fang-baba-i300", "Ba-Ba", "", "MELEE", "Osmumten's fang", null, null, "INVO:300"},
+		{"sulphur-baba-i300", "Ba-Ba", "", "MELEE", "Sulphur blades", null, null, "INVO:300"},
+		{"fang-warden3-i300", "Elidinis' Warden", "Enraged", "MELEE", "Osmumten's fang", null, null, "INVO:300"},
+		{"sulphur-warden3-i300", "Elidinis' Warden", "Enraged", "MELEE", "Sulphur blades", null, null, "INVO:300"},
 		// Obelisk dispute (Andrew 2026-09-02: melee 3.88 vs calc 6.468, ranged
 		// off too): the exact shown melee set and the crystal bofa set, at
 		// invocation 0 and the card's 300.

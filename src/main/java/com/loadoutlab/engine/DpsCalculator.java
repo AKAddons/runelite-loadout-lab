@@ -278,9 +278,14 @@ public final class DpsCalculator
 		maxHit += RatBoneRules.flatMaxHitBonus(request.getMonster(), loadout.getWeapon());
 
 		long defenceRoll = npcDefenceRoll(request.getMonster(), attackType, loadout.getWeapon());
-		double accuracy = isFang(loadout) && "stab".equals(attackType)
-			? RollMath.fangAccuracy(attackRoll, defenceRoll)
-			: RollMath.normalAccuracy(attackRoll, defenceRoll);
+		// The fang rerolls a miss against a reduced defence roll - except
+		// inside the Tombs, where it simply rolls twice (wiki; official calc
+		// PLAYER_ACCURACY_FANG_TOA; TRIPLEKILLTRENT 2026-10-18: the outside
+		// formula ran the fang 17-24% under the calc at invocation 300).
+		double normal = RollMath.normalAccuracy(attackRoll, defenceRoll);
+		double accuracy = !isFang(loadout) || !"stab".equals(attackType) ? normal
+			: inToa(request) ? 1 - (1 - normal) * (1 - normal)
+			: RollMath.fangAccuracy(attackRoll, defenceRoll);
 		int minHit = 0;
 		if (isFang(loadout) && "stab".equals(attackType))
 		{
