@@ -1838,7 +1838,7 @@ public class ResultCards
 	 * or the super antifire; click picks. Replaces the chip-row pill. */
 	private JLabel firePlate(boolean bis)
 	{
-		int mode = Model.id(pageParams, "antifireMode");
+		int mode = bis ? 2 : Model.id(pageParams, "antifireMode");
 		String[] names = {"Dragonfire shield required (no antifire potion banked)", "Antifire potion", "Super antifire"};
 		int[] items = {11283, 2452, 21978};
 		JLabel plate = new JLabel();

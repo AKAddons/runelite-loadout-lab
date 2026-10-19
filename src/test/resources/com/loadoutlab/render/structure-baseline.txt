@@ -779,7 +779,7 @@ JPanel
           JLabel "Ranged" tip=Assumes: Rigour + Ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
-          JLabel tip=Dragonfire: Dragonfire shield required (no antifire potion banked)
+          JLabel tip=Dragonfire: Super antifire
           JLabel tip=No specific spellbook required - a powered staff casts on any book
       JPanel
         JPanel

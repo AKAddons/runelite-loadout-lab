@@ -3431,7 +3431,9 @@ public class OptimizerService
 		OptimizationRequest r = inContext(request(
 			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0), ctx, style, mob)
-			.withProtectOnlyItems(ctx.protectOnly);
+			// The ceiling drinks a super antifire: its shield slot is for dps
+			// (Andrew 2026-10-19: best aligns with the highest-dps option).
+			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true);
 		return withPrayerPick(r, ctx, style, gameLevels,
 			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
 	}
