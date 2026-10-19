@@ -114,13 +114,14 @@ outside reroll formula everywhere. Both vectors are exact now.
 
 ## Elemental tomes (2026-10-18, vector watersurge-tome-drake)
 
-The wiki (Tome of Water, 29 May 2024 update) gives a charged tome +10%
-accuracy and +10% damage on a standard-spellbook spell of its element
-against NPCs, for all three tomes. The official calc multiplies the max
-hit by 11/10 for all three (we match it exactly, 44/44) but still
-applies a 6/5 accuracy factor to the Tome of Water alone, before the
-elemental weakness, under its own "todo does this go here?" comment
-(PlayerVsNPCCalc.ts). We apply the wiki's 10% to all three tomes after
+The wiki gives a charged tome +10% damage on a standard-spellbook spell
+of its element against NPCs for all three tomes, and the Tome of Water
++10% accuracy as well (29 May 2024 update; the fire and earth pages
+carry no accuracy term). The official calc multiplies the max hit by
+11/10 for all three (we match it exactly, 44/44) and applies a 6/5
+accuracy factor to the Tome of Water alone, before the elemental
+weakness, under its own "todo does this go here?" comment
+(PlayerVsNPCCalc.ts). We apply the wiki's 10% to the water tome after
 the weakness step, so this vector sits 0.9% under the calc on hit
 chance. If the calc moves to 11/10 the gap closes by itself.
 

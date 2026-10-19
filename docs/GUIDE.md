@@ -143,10 +143,10 @@ Bolt spells count chaos gauntlets (+3 max hit), and every elemental spell
 counts the elemental amulet or its own element's amulet (+2), so a Fire
 Bolt set can beat a Fire Blast one when you own the gauntlets.
 A charged tome of water, fire or earth in the shield slot adds 10%
-accuracy and 10% damage to a standard-spellbook spell of its element
-(an empty tome, an off-element spell or an Ancients spell gets
-nothing), so Water Surge with the tome beats the fortified ward at a
-drake.
+damage to a standard-spellbook spell of its element, and the water tome
+10% accuracy as well (an empty tome, an off-element spell or an
+Ancients spell gets nothing), so Water Surge with the tome beats the
+fortified ward at a drake.
 
 ![Spell and spellbook recommendation](img/spellbook.png)
 

@@ -1174,7 +1174,9 @@ public final class DpsCalculator
 			counted("elemental weakness", "+" + severity + "% of base accuracy");
 			roll += multiply(baseRoll, severity, 100);
 		}
-		if (tomeMatches(request, loadout))
+		// Only the water tome adds accuracy; fire and earth boost damage alone
+		// (the three wiki pages, 2026-10-19; Kendyy's follow-up).
+		if (tomeMatches(request, loadout) && "water".equals(request.getSpell().getElement()))
 		{
 			counted(loadout.get(GearSlot.SHIELD).getNameLower(), "+10% accuracy");
 			roll = multiply(roll, 11, 10);
@@ -1352,9 +1354,10 @@ public final class DpsCalculator
 	}
 
 	/** A charged elemental tome worn with a standard-spellbook spell of its
-	 * element: +10% accuracy and damage against NPCs (wiki Tome of Water,
-	 * 2026-10-18; rakaykhan1512's drakes). Empty tomes, off-element spells
-	 * and Ancients get nothing. */
+	 * element: +10% damage against NPCs, and for the water tome +10%
+	 * accuracy too (wiki, the three tome pages; rakaykhan1512's drakes,
+	 * Kendyy's follow-up). Empty tomes, off-element spells and Ancients
+	 * get nothing. */
 	static boolean tomeMatches(OptimizationRequest request, Loadout loadout)
 	{
 		GearItem shield = loadout.get(GearSlot.SHIELD);

@@ -110,6 +110,22 @@ class TomeTest
 	}
 
 	@Test
+	@DisplayName("the fire and earth tomes boost damage only; the water tome alone adds accuracy (wiki)")
+	void onlyTheWaterTomeAddsAccuracy()
+	{
+		// The empty tome carries the same +8 magic attack, so it isolates
+		// the charge's own effect.
+		DpsResult empty = best(spell("Fire Surge"), "kodai wand", "tome of fire#empty");
+		DpsResult fire = best(spell("Fire Surge"), "kodai wand", "tome of fire#charged");
+		assertEquals("tome of fire", fire.getLoadout().get(GearSlot.SHIELD).getNameLower());
+		assertTrue(fire.getMaxHit() > empty.getMaxHit(), "the fire tome still lifts the max hit");
+		assertEquals(empty.getAccuracy(), fire.getAccuracy(), 1e-9, "no accuracy term on the fire tome");
+		DpsResult emptyWater = best(spell("Water Surge"), "kodai wand", "tome of water#empty");
+		DpsResult water = best(spell("Water Surge"), "kodai wand", "tome of water#charged");
+		assertTrue(water.getAccuracy() > emptyWater.getAccuracy(), "the water tome adds accuracy");
+	}
+
+	@Test
 	@DisplayName("with both owned, the drake's magic card wears the charged tome, not the ward")
 	void optimizerPicksTheTome()
 	{
