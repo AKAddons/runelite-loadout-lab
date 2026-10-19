@@ -227,4 +227,15 @@ public class TripSuppliesTest
 		Assert.assertNotNull(TripSupplies.option(TripSupplies.ANTIPOISON, "CURE_ME"));
 		Assert.assertTrue(java.util.Arrays.asList(TripSupplies.CATEGORY_KEYS).contains(TripSupplies.ANTIPOISON));
 	}
+
+	/** Kendyy (Discord 2026-10-19): antipoison rode the Sarachnis trip; her
+	 * wiki infobox says poisonous = No. The name had been on the list. */
+	@Test
+	public void sarachnisDoesNotPoison()
+	{
+		MonsterStats sarachnis = new DataService().load().searchMonsters("sarachnis", 1).get(0);
+		Assert.assertEquals("Sarachnis", sarachnis.getName());
+		Assert.assertFalse("wiki infobox: poisonous = No", TripSupplies.inflictsPoison(sarachnis));
+		Assert.assertFalse(TripSupplies.inflictsVenom(sarachnis));
+	}
 }
