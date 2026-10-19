@@ -108,7 +108,9 @@ Pick a monster and Loadout Lab computes the strongest set you actually
 OWN for melee, ranged, and magic - with exact DPS, max hit, and accuracy,
 verified against the official wiki calculator. When poison tiers of the
 same weapon tie on stats, the strongest venom wins the suggestion
-(dragon dagger p++ over plain, main hand and spec alike).
+(dragon dagger p++ over plain, main hand and spec alike). When a Rada's
+blessing stat-ties with a god blessing you also own, Rada's rides: the
+teleports are the free edge.
 
 ### Game-best ceiling comparison
 

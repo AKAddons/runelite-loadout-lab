@@ -1681,6 +1681,14 @@ public final class LoadoutOptimizer
 				return candidate.poisonTier() > current.poisonTier();
 			}
 		}
+		// A Rada's blessing beats the god blessing it stat-ties with: the
+		// teleports are the free edge (Muuffin, Discord 2026-10-19 - the
+		// tradeable rule below had been handing the slot to a holy blessing).
+		boolean candidateRadas = candidate.getNameLower().startsWith("rada's blessing");
+		if (candidateRadas != current.getNameLower().startsWith("rada's blessing"))
+		{
+			return candidateRadas;
+		}
 		// Stat ties prefer the tradeable base item: untradeable stat-clones
 		// (fire arrows, locked variants) read as 'cost 0' and would shadow
 		// the item players actually recognize.
