@@ -75,17 +75,19 @@
         "data/SpellStats.java",
         "engine/DpsCalculator.java",
         "optimizer/OptimizerService.java",
-        "model/RenderModel.java"
+        "model/RenderModel.java",
+        "engine/LoadoutOptimizer.java"
       ],
       "tests": [
         "engine/SpellbookLockTest.java",
         "optimizer/SpellbookLockTest.java",
         "optimizer/PinnedPoweredStaffTest.java",
-        "model/FightBookLockTest.java"
+        "model/FightBookLockTest.java",
+        "engine/TomeTest.java"
       ],
       "since": "0.1.0",
       "capture": "Magic card with the recommended autocast spell icon visible and the spellbook dropdown open. Single PNG screenshot.",
-      "notes": "2026-10-15 (Andrew): a mob's fight book (monster_spellbooks.json, the Sire's Ancients) is the autocast lock unless the player locked a book or pinned a spell - the Sire's magic set had cast Dark Demonbane from Arceuus (FightBookLockTest). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: the spellbook LOCK control returns to the spell picker (a Spellbook row: any / standard / ancient / lunar / arceuus -> set-param spellbookLock; the merge-back had dropped the control while the engine kept honouring the param). A lock with no autocast spell (Lunar for Cure Me) leaves the card to built-in staves; a pinned built-in staff casts its own spell even under a pinned spell (Apathy, Discord 2026-09-06)."
+      "notes": "2026-10-15 (Andrew): a mob's fight book (monster_spellbooks.json, the Sire's Ancients) is the autocast lock unless the player locked a book or pinned a spell - the Sire's magic set had cast Dark Demonbane from Arceuus (FightBookLockTest). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-08: the spellbook LOCK control returns to the spell picker (a Spellbook row: any / standard / ancient / lunar / arceuus -> set-param spellbookLock; the merge-back had dropped the control while the engine kept honouring the param). A lock with no autocast spell (Lunar for Cure Me) leaves the card to built-in staves; a pinned built-in staff casts its own spell even under a pinned spell (Apathy, Discord 2026-09-06). 2026-10-18 (rakaykhan1512, YouTube/Discord: the tome of water lost to Elidinis' ward on Water Surge at drakes): the charged tomes of water, fire and earth add +10% accuracy and a x1.10 damage step (after the magic damage pool) to a standard-spellbook spell of their element vs NPCs (wiki Tome of Water; empty tomes, off-element spells and Ancients get nothing); charged tomes bypass the magic shield pool's score prune and stat dedupe so the spell-matched one is always available (TomeTest; official vector watersurge-tome-drake)."
     },
     {
       "id": "dream-items",

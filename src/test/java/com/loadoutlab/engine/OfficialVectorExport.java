@@ -219,6 +219,9 @@ public class OfficialVectorExport
 		{"purging-demonbane-td", "Tormented Demon", "1", "MAGIC", "Purging staff", null, "Dark Demonbane"},
 		{"kodai-demonbane-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Dark Demonbane"},
 		{"kodai-watersurge-td", "Tormented Demon", "1", "MAGIC", "Kodai wand", null, "Water Surge"},
+		// The charged tome of water: +10% accuracy and damage on a standard
+		// water spell vs NPCs (rakaykhan1512, Discord 2026-10-18; wiki).
+		{"watersurge-tome-drake", "Drake", "", "MAGIC", "Kodai wand", null, "Water Surge", "Tome of Water#Charged"},
 		{"shadow-td", "Tormented Demon", "1", "MAGIC", "Tumeken's shadow", null},
 	};
 

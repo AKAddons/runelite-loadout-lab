@@ -1095,7 +1095,13 @@ public final class LoadoutOptimizer
 			{
 				continue;
 			}
-			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item);
+			// A charged tome scores like an empty shield (0% damage) and the
+			// three share one stat key, so without this rescue the pool keeps
+			// at most one and the spell-matched one is luck (rakaykhan1512,
+			// Discord 2026-10-18: the tome of water lost to the ward).
+			boolean protective = needProtectiveShield && DragonfireRules.isProtectiveShield(item)
+				|| slot == GearSlot.SHIELD && request.getStyle() == CombatStyle.MAGIC
+					&& item.getNameLower().startsWith("tome of ") && "charged".equals(item.getVersionLower());
 			boolean requiredItem = requiredKeep != null && requiredKeep.contains(item.getId());
 			if (slot != GearSlot.WEAPON && !protective && !requiredItem
 				&& candidateScore(request, item) <= 0)

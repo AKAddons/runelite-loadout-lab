@@ -1169,6 +1169,11 @@ public final class DpsCalculator
 			counted("elemental weakness", "+" + severity + "% of base accuracy");
 			roll += multiply(baseRoll, severity, 100);
 		}
+		if (tomeMatches(request, loadout))
+		{
+			counted(loadout.get(GearSlot.SHIELD).getNameLower(), "+10% accuracy");
+			roll = multiply(roll, 11, 10);
+		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
 			// Demonbane assumes Mark of Darkness (standard practice - it is
@@ -1248,6 +1253,13 @@ public final class DpsCalculator
 			int severity = request.getMonster().getWeaknessSeverity();
 			counted("elemental weakness", "+" + severity + "% base damage");
 			maxHit += multiply(baseMaxHit, severity, 100);
+		}
+		// The tome multiplies the whole max hit and roll, weakness included
+		// (official calc, vector watersurge-tome-drake 2026-10-18).
+		if (tomeMatches(request, loadout))
+		{
+			counted(loadout.get(GearSlot.SHIELD).getNameLower(), "+10% damage");
+			maxHit = multiply(maxHit, 11, 10);
 		}
 		if (isDemon(request) && request.getSpell() != null && request.getSpell().getName().contains("Demonbane"))
 		{
@@ -1332,6 +1344,20 @@ public final class DpsCalculator
 	private static boolean isWearingEliteVoid(Loadout loadout)
 	{
 		return wearing(loadout, "elite void top") && wearing(loadout, "elite void robe") && wearing(loadout, "void knight gloves");
+	}
+
+	/** A charged elemental tome worn with a standard-spellbook spell of its
+	 * element: +10% accuracy and damage against NPCs (wiki Tome of Water,
+	 * 2026-10-18; rakaykhan1512's drakes). Empty tomes, off-element spells
+	 * and Ancients get nothing. */
+	static boolean tomeMatches(OptimizationRequest request, Loadout loadout)
+	{
+		GearItem shield = loadout.get(GearSlot.SHIELD);
+		SpellStats spell = request.getSpell();
+		return shield != null && spell != null && spell.getElement() != null
+			&& "standard".equalsIgnoreCase(spell.getSpellbook())
+			&& shield.getNameLower().equals("tome of " + spell.getElement())
+			&& "charged".equals(shield.getVersionLower());
 	}
 
 	/** The twisted bow's magic-level scaling, counted on the card. */

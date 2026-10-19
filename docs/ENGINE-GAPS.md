@@ -15,6 +15,7 @@ vector, so none can drift further unnoticed:
 | `barronite-greygolem` | +15% | a deliberate wiki-vs-official disagreement (see below) |
 | `eyeofayak-td` / `bofa-td` / `kodai-watersurge-td` / `shadow-td` | +2.6 to +3.4% | the Tormented Demon elemental family |
 | `purging-demonbane-td` / `purging-darkdemonbane-duke` | +0.7 to +0.9% | demonbane spells: we scale the max and roll uniform, they transform every roll |
+| `watersurge-tome-drake` | -0.9% | a deliberate wiki-vs-official disagreement on the tome's accuracy (see below); the max hit is exact |
 
 Everything else - flat armour (both signs), the twisted bow, twinflame,
 Inquisitor's, the quiver, salve/avarice, autocast stance, demonbane
@@ -101,6 +102,18 @@ listed below.
 - TD emberlight melee -3.7% (max 52 vs 54): demonbane add-factor rounding
   order. Scythe rows: our maxHit reports the first hit, theirs the 3-hit
   total - display-only, dps exact.
+
+## Elemental tomes (2026-10-18, vector watersurge-tome-drake)
+
+The wiki (Tome of Water, 29 May 2024 update) gives a charged tome +10%
+accuracy and +10% damage on a standard-spellbook spell of its element
+against NPCs, for all three tomes. The official calc multiplies the max
+hit by 11/10 for all three (we match it exactly, 44/44) but still
+applies a 6/5 accuracy factor to the Tome of Water alone, before the
+elemental weakness, under its own "todo does this go here?" comment
+(PlayerVsNPCCalc.ts). We apply the wiki's 10% to all three tomes after
+the weakness step, so this vector sits 0.9% under the calc on hit
+chance. If the calc moves to 11/10 the gap closes by itself.
 
 ## Correctness bugs in the vendored engine
 
