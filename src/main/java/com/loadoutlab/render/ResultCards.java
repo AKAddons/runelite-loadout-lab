@@ -1839,7 +1839,7 @@ public class ResultCards
 	private JLabel firePlate(boolean bis)
 	{
 		int mode = Model.id(pageParams, "antifireMode");
-		String[] names = {"Dragonfire shield required", "Antifire potion", "Super antifire"};
+		String[] names = {"Dragonfire shield required (no antifire potion banked)", "Antifire potion", "Super antifire"};
 		int[] items = {11283, 2452, 21978};
 		JLabel plate = new JLabel();
 		plate.setPreferredSize(new Dimension(24, 24));
@@ -1852,6 +1852,8 @@ public class ResultCards
 		if (!bis)
 		{
 			JPopupMenu menu = new JPopupMenu();
+			Ui.item(menu, "Detect best", "The best antifire you own, as at selection",
+				() -> commands.send("detect-antifire", Map.of()));
 			for (int i = 0; i < names.length; i++)
 			{
 				int value = i;

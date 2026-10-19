@@ -4,6 +4,7 @@ import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -778,6 +779,21 @@ public class CommandEngine
 					bis ? result.gameBoostLabel : result.boostLabel,
 					membersFlag("onTask"),
 					flag("inWilderness"));
+				return true;
+			}
+			case "detect-antifire":
+			{
+				// The dragonfire plate's Detect best (Andrew 2026-10-18): the
+				// selection-time detection, run again on demand.
+				Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+				List<MonsterStats> selected = state.rosterMobs() != null ? state.rosterMobs()
+					: state.mob() == null ? null : List.of(state.mob());
+				if (resolve == null || selected == null)
+				{
+					return false;
+				}
+				state.setParam("antifireMode", resolve.apply(selected));
+				recompute();
 				return true;
 			}
 			case "set-task-bracelet":
@@ -2214,6 +2230,21 @@ public class CommandEngine
 		IntPredicate owns = ownedCheck;
 		MonsterStats lensed = lensedMob();
 		List<Map<String, Object>> nodes = new ArrayList<>();
+		// The dragonfire assumption is a supply too (Andrew 2026-10-18: "when
+		// the super antifire is selected it should be put into the inventory").
+		Object fireMode = state.paramsNode().get("antifireMode");
+		int antifire = fireMode instanceof Number ? ((Number) fireMode).intValue() : 0;
+		if (antifire > 0 && mobs.stream().anyMatch(DragonfireRules::breathesFire))
+		{
+			int[] doses = antifire == 2 ? DragonfireRules.SUPER_ANTIFIRE_IDS : DragonfireRules.REGULAR_ANTIFIRE_IDS;
+			Map<String, Object> node = new LinkedHashMap<>();
+			node.put("category", "antifire");
+			node.put("name", antifire == 2 ? "Super antifire potion" : "Antifire potion");
+			node.put("itemId", doses[0]);
+			node.put("ids", Arrays.stream(doses).boxed().collect(Collectors.toList()));
+			node.put("options", List.of());
+			nodes.add(node);
+		}
 		if (defaultsSupplier == null || ops == null || owns == null || lensed == null)
 		{
 			return nodes;

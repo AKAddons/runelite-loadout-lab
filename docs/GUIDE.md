@@ -272,7 +272,10 @@ book with a holy symbol (cures for prayer points), as choices rather than
 detected tiers. On a venomous mob the poison plan also sits in the card's Assumes row,
 right after the boost: the Cure Me spell, the chosen potion or the prayer
 book; click it to change. A fire-breather gets a dragonfire plate beside
-it: the shield the set must carry, an antifire potion or a super antifire. Choosing Cure Me camps the trip on Lunar: the
+it: the shield the set must carry, an antifire potion or a super antifire,
+seeded from the best potion you own at each selection, with Detect best
+on its menu to run that again after a manual pick; the chosen potion
+rides the Supplies row and the bank filter like any other supply. Choosing Cure Me camps the trip on Lunar: the
 magic card locks to built-in staves and thralls and Death Charge stand
 down. It is
 not offered while a pinned spell or a spellbook lock relies on another
