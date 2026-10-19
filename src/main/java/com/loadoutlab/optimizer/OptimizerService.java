@@ -264,7 +264,18 @@ public class OptimizerService
 				abandonedForTest++;
 				return; // superseded while queued
 			}
-			Map<CombatStyle, StyleResult> results = computeAllStyles(monster, ctx, ticket);
+			Map<CombatStyle, StyleResult> results;
+			try
+			{
+				results = computeAllStyles(monster, ctx, ticket);
+			}
+			catch (RuntimeException ex)
+			{
+				// A throw must still answer, or the card sits on Computing
+				// for good (TonyDAnnunzio 2026-10-18).
+				log.warn("compute failed for {}", monster.getName(), ex);
+				results = new EnumMap<>(CombatStyle.class);
+			}
 			if (results == null || requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
@@ -2591,7 +2602,20 @@ public class OptimizerService
 				return;
 			}
 			KitCurve[] curveOut = new KitCurve[1];
-			List<Map<CombatStyle, StyleResult>> perMob = computeStyleAcross(roster, ctx, ticket, curveOut);
+			List<Map<CombatStyle, StyleResult>> perMob;
+			try
+			{
+				perMob = computeStyleAcross(roster, ctx, ticket, curveOut);
+			}
+			catch (RuntimeException ex)
+			{
+				log.warn("roster compute failed for {}", roster.get(0).getName(), ex);
+				perMob = new ArrayList<>();
+				for (int i = 0; i < roster.size(); i++)
+				{
+					perMob.add(Map.of());
+				}
+			}
 			if (perMob == null || requestSeq.get() != ticket)
 			{
 				abandonedForTest++;
