@@ -96,6 +96,8 @@ final class ReportBuilder
 					{
 						appendSide(sb, "Best in game", result, true, keptSlots);
 					}
+					appendStandDown(sb, mobNodes != null && i < mobNodes.size() ? mobNodes.get(i) : null,
+						String.valueOf(style).toLowerCase());
 				}
 				if (!result.ownedKitBacked && result.owned != null && !result.owned.isEmpty())
 				{
@@ -111,6 +113,30 @@ final class ReportBuilder
 			}
 		}
 		return sb.toString();
+	}
+
+	/** A card whose autocast is on another book folds no thrall and says
+	 * why (Andrew 2026-10-19); one line per distinct reason. */
+	@SuppressWarnings("unchecked")
+	private static void appendStandDown(StringBuilder sb, Map<String, Object> mob, String style)
+	{
+		Object styles = mob == null ? null : mob.get("styles");
+		Object node = styles instanceof Map ? ((Map<?, ?>) styles).get(style) : null;
+		if (!(node instanceof Map))
+		{
+			return;
+		}
+		String last = null;
+		for (String side : new String[]{"yours", "bis"})
+		{
+			Object card = ((Map<?, ?>) node).get(side);
+			Object reason = card instanceof Map ? ((Map<?, ?>) card).get("arceuusStandDown") : null;
+			if (reason instanceof String && !reason.equals(last))
+			{
+				sb.append("  Thralls and Death Charge stand down: ").append(reason).append('\n');
+				last = (String) reason;
+			}
+		}
 	}
 
 	/** What the player customised for this mob - the empty-card diagnosis

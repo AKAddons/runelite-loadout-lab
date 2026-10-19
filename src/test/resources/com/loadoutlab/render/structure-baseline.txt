@@ -575,6 +575,110 @@ JPanel
       JPanel
         JLabel "+ note" tip=Add a note for this mob
     Filler
+== Vorkath - lvl 732 | thralls on, magic tab [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Vorkath" tip=<html>Vorkath - lvl 732<br>4.76 dps with ranged (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: ranged
+          JLabel "4.76"
+        JLabel "x" tip=Remove Vorkath - lvl 732 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Vorkath - lvl 732"
+        JPanel
+          JLabel "750hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Magic" tip=Assumes: Mystic Might + Magic potion
+          JLabel tip=Assumes: Mystic Might + Magic potion - click to change the prayer
+          JLabel tip=Assumes: Mystic Might + Magic potion - click to change the boost
+          JLabel tip=Dragonfire: Dragonfire shield required (no antifire potion banked) - click to change
+          JLabel tip=Fire spell runes: fire runes - click to change
+          JLabel tip=This set wants the STANDARD book (autocasts Fire Wave) - you are on it
+      JPanel
+        JLabel "Thralls and Death Charge stand down: Fire Wave autocasts from the standard book" tip=Both are cast from Arceuus - this card's number leaves the thrall out
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JLabel tip=The autocast spell - click to pin one
+              JLabel "Fire Wave" tip=The autocast spell - click to pin one
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel tip=<html>Mystic hat (head) - 11k gp</html>
+                  JLabel
+                  JLabel tip=<html>Fire cape (Normal) (cape)</html>
+                  JLabel tip=<html>Occult necklace (neck) - 333k gp</html>
+                  JLabel
+                  JLabel tip=<html>Ancient staff (weapon) - 61k gp</html>
+                  JLabel tip=<html>Mystic robe top (body) - 72k gp</html>
+                  JLabel tip=<html>Anti-dragon shield (shield) - 199 gp</html>
+                  JLabel tip=<html><b>Dragon dagger (Unpoisoned) (spec)</b> - 17k gp<br><br><table cellpadding='1' cellspacing='0'><tr><td>set</td><td align='right'>&nbsp;&nbsp;1.178</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc shows</font></td></tr><tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;0.09</td><td></td></tr><tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>1.27</b></td><td></td></tr></table></html>
+                  JLabel tip=<html>Mystic robe bottom (legs) - 47k gp</html>
+                  JLabel
+                  JLabel tip=<html>Barrows gloves (hands)</html>
+                  JLabel tip=<html>Mystic boots (feet) - 5.9k gp</html>
+                  JLabel tip=<html>Seers ring (ring) - 719k gp</html>
+              JPanel
+                JLabel "29" tip=Max hit 29
+                JLabel "24%" tip=Hit chance
+                JLabel "~4.3" tip=Pray Protect from Missiles - takes ~4.3 dps (5.54 unprayed)
+                JLabel "+3" tip=Prayer bonus
+                JLabel "Magic: Fire Wave" tip=Attack style the numbers use
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>+23</td><td>+12</td><td>+53</td><td>+82</td><td>+13</td></tr><tr><td><b>Defence</b></td><td>+32</td><td>+35</td><td>+32</td><td>+82</td><td>+31</td></tr></table>Strength +66 &nbsp; Ranged str +0 &nbsp; Magic dmg +52% &nbsp; Prayer +3</html>
+                JLabel "+1 bonus" tip=<html>Counted for this set:<br> elemental weakness: +40% of base accuracy, +40% base damage</html>
+      Filler
+      JPanel
+        JPanel tip=Melee - 3.76 DPS
+          JLabel
+          JLabel "3.76"
+        JPanel tip=Ranged - 4.76 DPS
+          JLabel
+          JLabel "4.76"
+        JPanel tip=Magic - 1.27 DPS
+          JLabel
+          JLabel "1.27"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "17% of BiS" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel tip=Dragon dagger (Unpoisoned) (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Air rune - the autocast spell
+          JLabel tip=Blood rune - the autocast spell
+          JLabel tip=Fire rune - the autocast spell
+          JLabel tip=Magic potion - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
 == General Graardor - lvl 624 [bis]
 JPanel
   JPanel
@@ -1131,6 +1235,101 @@ JPanel
         JPanel
           JLabel "Supplies:"
           JLabel tip=Saturated heart - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
+== Vorkath - lvl 732 | thralls on, magic tab [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "Vorkath" tip=<html>Vorkath - lvl 732<br>10.65 dps with ranged (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: ranged
+          JLabel "10.65"
+        JLabel "x" tip=Remove Vorkath - lvl 732 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "Vorkath - lvl 732"
+        JPanel
+          JLabel "750hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Ranged" tip=Assumes: Rigour + Ranging potion
+          JLabel tip=Assumes: Rigour + Divine ranging potion
+          JLabel tip=Assumes: Rigour + Divine ranging potion
+          JLabel tip=Dragonfire: Super antifire
+          JLabel tip=No specific spellbook required - a powered staff casts on any book
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel tip=<html>Masori mask (f) (head) - 18m gp</html>
+                  JLabel
+                  JLabel tip=<html>Blessed dizana's quiver (Normal) (cape)</html>
+                  JLabel tip=<html>Salve amulet(ei) (neck)</html>
+                  JLabel tip=<html>Rada's blessing 4 (ammo)</html>
+                  JLabel tip=<html>Dragon knife (Poison++) (weapon) - 4.8k gp</html>
+                  JLabel tip=<html>Masori body (f) (body) - 71m gp</html>
+                  JLabel tip=<html>Dragonfire ward (Charged) (shield)</html>
+                  JLabel tip=<html><b>Dark bow (Regular) (spec)</b> - 641k gp<br><br><table cellpadding='1' cellspacing='0'><tr><td>set</td><td align='right'>&nbsp;&nbsp;9.626</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc shows</font></td></tr><tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;0.39</td><td></td></tr><tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;0.63</td><td></td></tr><tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>10.65</b></td><td></td></tr></table></html>
+                  JLabel tip=<html>Masori chaps (f) (legs) - 51m gp</html>
+                  JLabel
+                  JLabel tip=<html>Zaryte vambraces (hands) - 73m gp</html>
+                  JLabel tip=<html>Avernic treads (max) (feet)</html>
+                  JLabel tip=<html>Lightbearer (ring) - 4.4m gp</html>
+              JPanel
+                JLabel "31" tip=Max hit 31
+                JLabel "74%" tip=Hit chance
+                JLabel "~4.2" tip=Pray Protect from Missiles - takes ~4.2 dps (5.17 unprayed)
+                JLabel "+9" tip=Prayer bonus
+                JLabel "Ranged rapid" tip=Attack style the numbers use
+                JLabel "218m" tip=Upgrade cost of unowned pieces in this set
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>-13</td><td>-13</td><td>-13</td><td>-6</td><td>+176</td></tr><tr><td><b>Defence</b></td><td>+159</td><td>+158</td><td>+179</td><td>+175</td><td>+192</td></tr></table>Strength +4 &nbsp; Ranged str +54 &nbsp; Magic dmg +20% &nbsp; Prayer +9</html>
+                JLabel "+1 bonus" tip=<html>Counted for this set:<br> salve amulet(ei): +20% accuracy, +20% damage</html>
+      Filler
+      JPanel
+        JPanel tip=Melee - 10.13 DPS
+          JLabel
+          JLabel "10.13"
+        JPanel tip=Ranged - 10.65 DPS
+          JLabel
+          JLabel "10.65"
+        JPanel tip=Magic - 7.39 DPS
+          JLabel
+          JLabel "7.39"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "41% of BiS" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel tip=Dark bow (Regular) (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Divine ranging potion - the boost this card assumes; change it on the boost picker
       Filler
       JPanel
         JPanel

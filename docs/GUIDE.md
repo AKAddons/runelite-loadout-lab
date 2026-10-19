@@ -247,6 +247,10 @@ powered staff needed) and your best rune pouch join the trip cells, and
 the resurrect / Death Charge / Mark of Darkness runes (the last when
 your magic card casts Demonbane) join the bank filter and setup layout.
 (Vengeance modeling is roadmapped.)
+Both are cast from Arceuus, so a magic card whose autocast is on another
+book (Water Surge, Ice Barrage) cannot have them: that card stands down,
+shows its number without the thrall, and says why under its gear; the
+melee and ranged cards, powered staves and Arceuus spells keep the fold.
 
 ![Thralls and Death Charge](img/thralls-veng.png)
 

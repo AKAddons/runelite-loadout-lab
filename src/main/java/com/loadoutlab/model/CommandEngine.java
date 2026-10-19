@@ -1672,6 +1672,38 @@ public class CommandEngine
 		state.setParam("sunfireRunes", owns != null && owns.test(SpellRunes.SUNFIRE_RUNE));
 	}
 
+	/** Thralls and Death Charge are cast from Arceuus, so a card whose
+	 * autocast is on another book cannot have them (Andrew, client test
+	 * 2026-10-19: Drakes suggested Water Surge with thralls on). The rule
+	 * he picked: that card stands down - it carries the reason here and
+	 * the render shows its number without the thrall fold. Melee and
+	 * ranged cards, powered staves and Arceuus spells are untouched. */
+	@SuppressWarnings("unchecked")
+	static void arceuusStandDown(List<?> mobNodes, Map<String, Object> books, boolean wanted)
+	{
+		if (!wanted)
+		{
+			return;
+		}
+		for (Object m : mobNodes)
+		{
+			Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) m).get("styles");
+			for (Object s : styles.values())
+			{
+				for (String side : new String[]{"yours", "bis"})
+				{
+					Map<String, Object> card = (Map<String, Object>) ((Map<?, ?>) s).get(side);
+					Object spell = card == null ? null : card.get("spell");
+					Object book = spell instanceof String ? books.get(spell) : null;
+					if (book instanceof String && !"arceuus".equals(book))
+					{
+						card.put("arceuusStandDown", spell + " autocasts from the " + book + " book");
+					}
+				}
+			}
+		}
+	}
+
 	/** With sunfire runes assumed, a fire spell's trip runes carry them in
 	 * place of fire runes; the Best-in-game card always assumes them (the
 	 * ceiling rule). The five standard fire spells are the "Fire " names. */
@@ -1868,6 +1900,9 @@ public class CommandEngine
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds, itemLocation);
 		sunfireRunes((List<?>) entry.get("mobs"));
+		Object dc = state.paramsNode().get("deathCharge");
+		arceuusStandDown((List<?>) entry.get("mobs"), spellbooks(),
+			membersFlag("thralls") || !flag("f2pOnly") && dc instanceof Number && ((Number) dc).intValue() > 0);
 		entry.put("params", params);
 		List<Map<String, Object>> supplies = suppliesNode(mobs);
 		entry.put("supplies", supplies);

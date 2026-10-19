@@ -60,4 +60,11 @@ final class Model
 		Object v = node == null ? null : node.get(key);
 		return Boolean.TRUE.equals(v);
 	}
+
+	/** The thrall fold a card carries: the page's thrall dps, or nothing
+	 * for a card that stood down (its autocast is on another book). */
+	static double thrallsFor(Map<String, Object> card, double pageThralls)
+	{
+		return str(card, "arceuusStandDown") != null ? 0 : pageThralls;
+	}
 }

@@ -782,7 +782,7 @@ public class RenderSurface
 		double set = Model.num(card, "dps");
 		Map<String, Object> spec = Model.map(card, "spec");
 		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
-		double thrallsDps = Model.num(Model.map(entry, "thralls"), "dps");
+		double thrallsDps = Model.thrallsFor(card, Model.num(Model.map(entry, "thralls"), "dps"));
 		// The breakdown reads as a little ledger, not a sentence (field
 		// ask 2026-08-21: "less dense and more informative") - the same
 		// table the spec cell wears, built once in Ui. ALWAYS shown

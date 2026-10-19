@@ -315,7 +315,11 @@ public class ResultCards
 				&& "cannon".equals(Model.str(ship, "station"));
 			double shipDps = naval && ship != null && !manned
 				? Model.num(ship, "dps") : 0;
-			column.add(mobCard(shown, tab, bis, thrallsDps + shipDps,
+			pageThrallsDps = thrallsDps;
+			renderShipDps = shipDps;
+			Map<String, Object> shownCard = Model.map(Model.map(Model.map(shown, "styles"), tab),
+				bis ? "bis" : "yours");
+			column.add(mobCard(shown, tab, bis, Model.thrallsFor(shownCard, thrallsDps) + shipDps,
 				naval ? ship : null, naval));
 			column.add(Box.createVerticalStrut(8));
 		}
@@ -333,6 +337,7 @@ public class ResultCards
 		// 2026-08-14: rows showed the viewed tab's dps beside the
 		// best-style icon) - the number belongs to the icon's style.
 		String bestStyle = null;
+		Map<String, Object> bestSide = null;
 		double bestDps = 0;
 		if (styles != null)
 		{
@@ -350,6 +355,7 @@ public class ResultCards
 				{
 					bestDps = value;
 					bestStyle = style;
+					bestSide = side;
 				}
 			}
 		}
@@ -359,7 +365,8 @@ public class ResultCards
 		// Rows and tab buttons COUNT THE SAME THINGS (field report
 		// 2026-08-15): set + spec (in the tab facts) + thralls, and a
 		// sea row's cannons (Andrew 2026-09-03).
-		double ride = thrallsDps + Model.num(mob, "shipDps");
+		double ride = Model.thrallsFor(bestStyle != null ? bestSide : shown, thrallsDps)
+			+ Model.num(mob, "shipDps");
 		String dps = bestStyle != null
 			? String.format("%.2f", bestDps + (bestDps > 0 ? ride : 0))
 			: shown == null ? "-"
@@ -577,6 +584,12 @@ public class ResultCards
 	private int cellSpecWeaponId;
 	private boolean cellSpecPinned;
 
+	/** The page's thrall dps and the lensed ship's dps, kept for the tab
+	 * strip: each tab folds its OWN card's thralls (a stood-down card
+	 * folds none) plus the cannons. */
+	private double pageThrallsDps;
+	private double renderShipDps;
+
 	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps,
 		Map<String, Object> ship, boolean naval)
 	{
@@ -751,6 +764,17 @@ public class ResultCards
 				caveat.setFont(FontManager.getRunescapeSmallFont());
 				card.add(left(caveat));
 			}
+			String standDown = Model.str(shown, "arceuusStandDown");
+			if (standDown != null)
+			{
+				// Andrew 2026-10-19: Water Surge with thralls on is not a
+				// castable setup; the card says so and folds no thrall.
+				JLabel caveat = Ui.label("Thralls and Death Charge stand down: " + standDown,
+					new Color(0xDCAA5A));
+				caveat.setFont(FontManager.getRunescapeSmallFont());
+				caveat.setToolTipText("Both are cast from Arceuus - this card's number leaves the thrall out");
+				card.add(left(caveat));
+			}
 			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab, ship)));
 		}
 		if (naval && ship != null && !Model.list(ship, "cannons").isEmpty())
@@ -769,8 +793,10 @@ public class ResultCards
 			if (tabDps > 0)
 			{
 				// Thralls fold into the shown number, like spec already
-				// does - the tab IS the total (field ask 2026-08-14).
-				tabDps += thrallsDps;
+				// does - the tab IS the total (field ask 2026-08-14); a
+				// card that stood down folds nothing.
+				tabDps += Model.thrallsFor(Model.map(styleNode, bis ? "bis" : "yours"), pageThrallsDps)
+					+ renderShipDps;
 			}
 			boolean hasSet = tabDps > 0;
 			boolean isSelected = style.equals(tab);
