@@ -24,7 +24,10 @@ CAP = 200_000          # the bot's hard limit, in the BOT's tokens
 # its 200k). FAIL_AT sits in OUR tokens with that margin: 202k here is ~196k
 # there. Relaxed from 195k for the 0.5.0 design arc (Andrew, 2026-08-31);
 # revisit before submitting anything above the old 195k line.
-FAIL_AT = 202_000      # block submit here (~196k in bot tokens)
+FAIL_AT = 205_500      # the bot's measured edge (~199.3k in bot tokens at 0.97x).
+                       # Raised from 202k for 0.6.0 (Andrew, 2026-10-19: the Multi card
+                       # ships in 0.6.0); back to 202k once the data externalisation
+                       # or the endpoint extraction moves weight out (ENGINE-GAPS).
 WARN_AT = 195_000      # post-merge-back watermark (2026-08-18: the hub's
                        # single-plugin ruling brought the renderer home at
                        # 177,481). Data belongs in resources; big new
@@ -69,6 +72,10 @@ def main() -> int:
         for t, rel in sorted(per, reverse=True)[:8]:
             print(f"    {t:>7,}  {rel.split('com/goalplanner/')[-1]}")
 
+    if "estimate" in method and total >= WARN_AT:
+        print("\n✗ Within reach of the cap on the ESTIMATE only - the verdict needs the exact count.")
+        print("  pip install tiktoken (and run without python -I), then run again.")
+        return 1
     if total >= FAIL_AT:
         print(f"\n✗ OVER the submit threshold ({FAIL_AT:,}). The hub bot will refuse to review.")
         print("  Reduce before submitting — move big static data tables out of .java into")
