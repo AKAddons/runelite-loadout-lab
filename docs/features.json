@@ -370,7 +370,6 @@
       "code": [
         "command/Command.java",
         "command/CommandHistory.java",
-        "command/CompositeCommand.java",
         "command/Commands.java",
         "LoadoutLabPlugin.java",
         "model/RenderModel.java"
@@ -381,7 +380,7 @@
         "model/CommandEngineTest.java"
       ],
       "since": "0.2.4",
-      "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Back/forward semantics over ONE stream: monster selections, panel parameters (toggles, dropdowns, budget, antifire flip) and store mutations all record into the shared CommandHistory (SelectionHistoryTest); replays drive the real controls via doClick/setSelectedIndex behind a reentrancy guard so effects fire once. First pick unrecorded so back never blanks the panel. Icons: mirrored arc = back, plain = forward. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-10-18 (slim): CompositeCommand and the history's begin/endCompound batching left main - nothing batched commands since the monolith swap (a whole-group sim is one Command of its own); the undo stack, its cap and the back/forward labels are unchanged."
     },
     {
       "id": "trip-supplies",
