@@ -493,10 +493,7 @@ public class LoadoutLabPlugin extends Plugin
 					// the scoped store on every new selection.
 					if (supplyDefaults != null)
 					{
-						for (String key : new String[]{"cannonCount",
-							"cannon1Material", "cannon2Material",
-							"cannon1Operator", "cannon2Operator", "cannonAmmo",
-							"shipKeel"})
+						for (String key : CommandEngine.SHIP_PERSISTED)
 						{
 							String saved = supplyDefaults.choice("ship." + key);
 							if (saved != null
@@ -912,29 +909,12 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onProfileChanged(ProfileChanged event)
 	{
-		if (exclusions != null)
+		for (ScopedStore store : new ScopedStore[]{exclusions, protectOnly, dreams, mobProfiles, alwaysFilter, supplyDefaults})
 		{
-			exclusions.reload();
-		}
-		if (protectOnly != null)
-		{
-			protectOnly.reload();
-		}
-		if (dreams != null)
-		{
-			dreams.reload();
-		}
-		if (mobProfiles != null)
-		{
-			mobProfiles.reload();
-		}
-		if (alwaysFilter != null)
-		{
-			alwaysFilter.reload();
-		}
-		if (supplyDefaults != null)
-		{
-			supplyDefaults.reload();
+			if (store != null)
+			{
+				store.reload();
+			}
 		}
 		resetForIdentityChange();
 	}
@@ -1331,11 +1311,12 @@ public class LoadoutLabPlugin extends Plugin
 		origins.put("POH costume room", ledger.snapshot(CollectionLedger.Source.POH_COSTUMES));
 		origins.put("STASH", ledger.snapshot(CollectionLedger.Source.STASH));
 		Map<Integer, Integer> cargo = new HashMap<>();
-		for (CollectionLedger.Source hold : List.of(
-			CollectionLedger.Source.CARGO_HOLD_1, CollectionLedger.Source.CARGO_HOLD_2,
-			CollectionLedger.Source.CARGO_HOLD_3, CollectionLedger.Source.CARGO_HOLD_4,
-			CollectionLedger.Source.CARGO_HOLD_5))
+		for (CollectionLedger.Source hold : CollectionLedger.Source.values())
 		{
+			if (!hold.name().startsWith("CARGO_HOLD"))
+			{
+				continue;
+			}
 			for (Map.Entry<Integer, Integer> e : ledger.snapshot(hold).entrySet())
 			{
 				cargo.merge(e.getKey(), e.getValue(), Integer::sum);
@@ -1780,19 +1761,16 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		if (!bankTagLayoutsActive())
 		{
-			log.debug("bank tab: Bank Tag Layouts not active, skipping");
 			return;
 		}
 		if (tabManager.find(BANK_TAG) != null)
 		{
-			log.debug("bank tab: already present");
 			return;
 		}
 		TagTab tab = new TagTab();
 		tab.setTag(BANK_TAG);
 		tab.setIconItemId(BANK_TAB_ICON);
 		tabManager.add(tab);
-		log.debug("bank tab: added (find now = {})", tabManager.find(BANK_TAG) != null);
 	}
 
 	private void removeBankTagTab()
@@ -1823,11 +1801,9 @@ public class LoadoutLabPlugin extends Plugin
 		{
 			// A remembered-tab ghost: our tag is open with no filter
 			// registered - it shows an empty bank (field bug 2026-07-21).
-			log.debug("bank tab: ghost tag open with no filter - closing");
 			bankTagsService.closeBankTag();
 			return;
 		}
-		log.debug("bank tab: FINISHBUILDING prefired, ensuring tab");
 		ensureBankTagTab();
 	}
 
@@ -1838,7 +1814,6 @@ public class LoadoutLabPlugin extends Plugin
 			&& bankFilter != null
 			&& BANK_TAG.equals(bankTagsService.getActiveTag()))
 		{
-			log.debug("bank tab: BANKMAIN_BUILD postfired, ensuring tab");
 			ensureBankTagTab();
 		}
 	}
@@ -2141,14 +2116,14 @@ public class LoadoutLabPlugin extends Plugin
 			// stores keep the last known character until the hash arrives.
 			return;
 		}
-		if (ledger != null) { ledger.loadScope(scope); }
-		if (manualOwned != null) { manualOwned.loadScope(scope); }
-		if (exclusions != null) { exclusions.loadScope(scope); }
-		if (dreams != null) { dreams.loadScope(scope); }
-		if (protectOnly != null) { protectOnly.loadScope(scope); }
-		if (alwaysFilter != null) { alwaysFilter.loadScope(scope); }
-		if (mobProfiles != null) { mobProfiles.loadScope(scope); }
-		if (supplyDefaults != null) { supplyDefaults.loadScope(scope); }
+		for (ScopedStore store : new ScopedStore[]{ledger, manualOwned, exclusions, dreams,
+			protectOnly, alwaysFilter, mobProfiles, supplyDefaults})
+		{
+			if (store != null)
+			{
+				store.loadScope(scope);
+			}
+		}
 	}
 
 	private String worldScope()

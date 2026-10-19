@@ -2,7 +2,6 @@ package com.loadoutlab.collection;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import net.runelite.client.config.ConfigManager;
 
@@ -13,99 +12,32 @@ import net.runelite.client.config.ConfigManager;
  * the player changed are persisted; clearing back to Detect best removes
  * the entry.
  */
-public class SupplyDefaultsStore
+public class SupplyDefaultsStore extends ScopedMapStore<String, String>
 {
-	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "supplyDefaults";
-
-	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
-	 * before 0.4.1, which is why a main and a test account shared this list. */
-	private String worldScope;
-
-	private String key()
-	{
-		return ScopedKeys.key(worldScope, KEY);
-	}
-
-	public synchronized void loadScope(String scope)
-	{
-		this.worldScope = scope;
-		load();
-	}
 	public static final String DETECT_BEST = "DETECT_BEST";
-
-	private final ConfigManager configManager;
-	private final Gson gson;
-	private final Map<String, String> choices = new LinkedHashMap<>();
 
 	public SupplyDefaultsStore(ConfigManager configManager, Gson gson)
 	{
-		this.configManager = configManager;
-		this.gson = gson;
-		load();
-	}
-
-	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void clear()
-	{
-		choices.clear();
-		save();
-	}
-
-	public synchronized void reload()
-	{
-		load();
-	}
-
-	private void load()
-	{
-		choices.clear();
-		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY);
-		if (json == null || json.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			Map<String, String> stored = gson.fromJson(json,
-				new TypeToken<Map<String, String>>(){}.getType());
-			if (stored != null)
-			{
-				choices.putAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
-		}
+		super(configManager, gson, KEY, new TypeToken<Map<String, String>>(){}.getType());
 	}
 
 	/** The category's default: DETECT_BEST (always on) unless changed. */
 	public synchronized String choice(String category)
 	{
-		return choices.getOrDefault(category, DETECT_BEST);
+		return items.getOrDefault(category, DETECT_BEST);
 	}
 
 	public synchronized void setChoice(String category, String choice)
 	{
 		if (choice == null || choice.isEmpty() || DETECT_BEST.equals(choice))
 		{
-			choices.remove(category);
+			items.remove(category);
 		}
 		else
 		{
-			choices.put(category, choice);
+			items.put(category, choice);
 		}
 		save();
-	}
-
-	private void save()
-	{
-		if (choices.isEmpty())
-		{
-			configManager.unsetConfiguration(CONFIG_GROUP, key());
-			return;
-		}
-		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(choices));
 	}
 }

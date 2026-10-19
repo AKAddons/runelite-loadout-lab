@@ -861,22 +861,10 @@ public final class DpsCalculator
 		// Avarice, salve, and the slayer helm are exclusive with EACH OTHER
 		// only - weapon bonuses below (arclight, dhl...) stack on top.
 		// Chain order mirrors the wiki calc (avarice first at revenants).
-		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		long stepped = undeadTwenty(request, loadout, roll, "accuracy", true);
+		if (stepped >= 0)
 		{
-			counted("amulet of avarice", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
-		{
-			// Named WITHOUT a space, unlike "salve amulet (e)" - a contains
-			// match on the (e) string misses it and demotes it a tier.
-			counted("salve amulet(ei)", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
-		{
-			counted("salve amulet (e)", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
+			roll = stepped;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
@@ -946,21 +934,10 @@ public final class DpsCalculator
 			counted("leaf-bladed battleaxe", "+17.5% damage vs leafy");
 			maxHit = multiply(maxHit, 47, 40);
 		}
-		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		long stepped = undeadTwenty(request, loadout, maxHit, "damage", true);
+		if (stepped >= 0)
 		{
-			counted("amulet of avarice", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
-		{
-			// Spaceless name - see the accuracy chain note.
-			counted("salve amulet(ei)", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet (e)"))
-		{
-			counted("salve amulet (e)", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
+			maxHit = (int) stepped;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet"))
 		{
@@ -1044,15 +1021,10 @@ public final class DpsCalculator
 			}
 			roll = multiply(roll, 20 + pieces, 20);
 		}
-		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		long stepped = undeadTwenty(request, loadout, roll, "accuracy", false);
+		if (stepped >= 0)
 		{
-			counted("amulet of avarice", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
-		{
-			counted("salve amulet(ei)", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
+			roll = stepped;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
@@ -1080,10 +1052,7 @@ public final class DpsCalculator
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
-			int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
-			int magic = Math.min(cap, Math.max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic()));
-			int bonus = tbowBonus(magic, true);
-			counted("twisted bow scaling", (bonus >= 100 ? "+" : "") + (bonus - 100) + "% accuracy");
+			int bonus = tbowScaling(request, true, "accuracy");
 			return Math.floorDiv(roll * bonus, 100);
 		}
 		return roll;
@@ -1105,15 +1074,10 @@ public final class DpsCalculator
 			}
 			maxHit = multiply(maxHit, 40 + pieces, 40);
 		}
-		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		long stepped = undeadTwenty(request, loadout, maxHit, "damage", false);
+		if (stepped >= 0)
 		{
-			counted("amulet of avarice", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
-		{
-			counted("salve amulet(ei)", "+20% damage");
-			maxHit = multiply(maxHit, 6, 5);
+			maxHit = (int) stepped;
 		}
 		else if (isUndead(request) && isEclipseAtlatl(loadout) && wearing(loadout, "salve amulet (e)"))
 		{
@@ -1159,10 +1123,7 @@ public final class DpsCalculator
 		}
 		if (wearing(loadout, "twisted bow"))
 		{
-			int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
-			int magic = Math.min(cap, Math.max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic()));
-			int bonus = tbowBonus(magic, false);
-			counted("twisted bow scaling", (bonus >= 100 ? "+" : "") + (bonus - 100) + "% damage");
+			int bonus = tbowScaling(request, false, "damage");
 			return (int) Math.floorDiv((long) maxHit * bonus, 100);
 		}
 		return maxHit;
@@ -1176,15 +1137,10 @@ public final class DpsCalculator
 		// Earth Surge by ~1.4% dps - field cross-check via the Wiki calc
 		// button, its first catch).
 		long baseRoll = roll;
-		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		long stepped = undeadTwenty(request, loadout, roll, "accuracy", false);
+		if (stepped >= 0)
 		{
-			counted("amulet of avarice", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
-		}
-		else if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
-		{
-			counted("salve amulet(ei)", "+20% accuracy");
-			roll = multiply(roll, 6, 5);
+			roll = stepped;
 		}
 		else if (isUndead(request) && wearing(loadout, "salve amulet(i)"))
 		{
@@ -1376,6 +1332,43 @@ public final class DpsCalculator
 	private static boolean isWearingEliteVoid(Loadout loadout)
 	{
 		return wearing(loadout, "elite void top") && wearing(loadout, "elite void robe") && wearing(loadout, "void knight gloves");
+	}
+
+	/** The twisted bow's magic-level scaling, counted on the card. */
+	private int tbowScaling(OptimizationRequest request, boolean accuracy, String what)
+	{
+		int cap = request.getMonster().hasAttribute("xerician") ? 350 : 250;
+		int magic = Math.min(cap, Math.max(request.getMonster().getMagic(), request.getMonster().getOffensiveMagic()));
+		int bonus = tbowBonus(magic, accuracy);
+		counted("twisted bow scaling", (bonus >= 100 ? "+" : "") + (bonus - 100) + "% " + what);
+		return bonus;
+	}
+
+	/** The 20% step every chain starts with - avarice at revenants, else the
+	 * salve amulet(ei) on the undead; -1 when neither is worn (the chain
+	 * falls through to the lesser salves and the slayer head). */
+	private long undeadTwenty(OptimizationRequest request, Loadout loadout, long value, String what,
+		boolean meleeSalve)
+	{
+		if (isRevenant(request) && wearing(loadout, "amulet of avarice"))
+		{
+			counted("amulet of avarice", "+20% " + what);
+			return multiply(value, 6, 5);
+		}
+		if (isUndead(request) && wearing(loadout, "salve amulet(ei)"))
+		{
+			// Named WITHOUT a space, unlike "salve amulet (e)" - a contains
+			// match on the (e) string misses it and demotes it a tier.
+			counted("salve amulet(ei)", "+20% " + what);
+			return multiply(value, 6, 5);
+		}
+		if (meleeSalve && isUndead(request) && wearing(loadout, "salve amulet (e)"))
+		{
+			// The unimbued (e) is a melee-only 20%; ranged and magic fall to salve(i).
+			counted("salve amulet (e)", "+20% " + what);
+			return multiply(value, 6, 5);
+		}
+		return -1;
 	}
 
 	/** The worn slayer-head item (helm, mask, imbued variants), or null -

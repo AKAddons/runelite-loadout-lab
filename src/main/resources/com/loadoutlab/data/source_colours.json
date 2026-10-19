@@ -1,0 +1,9 @@
+{
+	"_comment": "Item source dot colours (hex RGB) for the card cells and the bank layout, matched by source-name prefix in order. Moved out of ResultCards 2026-10-18 for the hub token cap.",
+	"looting bag": "B48250",
+	"POH costume room": "BE82E6",
+	"STASH": "E67878",
+	"cargo hold": "64C8BE",
+	"stored elsewhere": "B4D26E",
+	"DWMS": "A0A0D2"
+}

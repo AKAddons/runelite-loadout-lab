@@ -23,7 +23,7 @@ import net.runelite.client.config.ConfigManager;
  * <p>Scope-free config in v1 like dreams/exclusions: trip preferences
  * follow the player. Empty profiles are pruned on save.
  */
-public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.MobProfiles
+public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.MobProfiles, ScopedStore
 {
 	/** The every-set pin/filter scope key (relocated from the panel;
 	 * the panel's ALL_SETS remains an alias until it exits). */

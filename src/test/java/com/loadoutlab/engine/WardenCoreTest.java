@@ -4,7 +4,6 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterNotes;
 import com.loadoutlab.data.MonsterStats;
 import java.util.EnumMap;
 import org.junit.jupiter.api.BeforeAll;
@@ -105,17 +104,4 @@ class WardenCoreTest
 			"away from the core the rolls are real again");
 	}
 
-	@Test
-	@DisplayName("the core row carries its spec-dump mechanics note")
-	void notePresent()
-	{
-		String note = MonsterNotes.noteFor(core);
-		assertNotNull(note);
-		assertTrue(note.contains("max hit"), "the note names the always-max rule");
-		MonsterStats damaged = data.searchMonsters("tumeken's warden", 8).stream()
-			.filter(m -> m.getVersion().startsWith("Damaged"))
-			.findFirst().orElseThrow();
-		assertNull(MonsterNotes.noteFor(damaged),
-			"the note belongs to the core phase alone");
-	}
 }

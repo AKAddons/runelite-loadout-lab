@@ -22,6 +22,7 @@ public final class MonsterGroups
 	private static final String RESOURCE = "monster_groups.json";
 
 	/** One curated group, resolved to loaded rows. */
+	@lombok.Getter
 	public static final class MonsterGroup
 	{
 		private final String name;
@@ -44,33 +45,11 @@ public final class MonsterGroups
 			this.raid = raid;
 		}
 
-		/** The curated Inventory default for this group (0 = none - the
-		 * roster-size default applies). Raids preset 8. */
-		public int getInventory()
-		{
-			return inventory;
-		}
-
 		/** A raid selection: shared supplied boosts, big inventories, and
 		 * never a slayer-task context (Andrew, 2026-08-31). */
 		public boolean isRaid()
 		{
 			return raid;
-		}
-
-		public String getName()
-		{
-			return name;
-		}
-
-		public String getNote()
-		{
-			return note;
-		}
-
-		public List<MonsterStats> getMobs()
-		{
-			return mobs;
 		}
 
 		/** "Fight Caves - 7 mobs" for list rows (the coming-soon note
@@ -233,31 +212,6 @@ public final class MonsterGroups
 			match = monster;
 		}
 		return match;
-	}
-
-	/** The group a cross-plugin LINK-IN name resolves to, or null. Stricter
-	 * than search(): name-contains-query or EXACT alias only - search's
-	 * query-contains-alias direction would let short aliases swallow
-	 * single-boss names ("Dagannoth Rex" contains "dagannoth", "TzTok-Jad"
-	 * contains "jad", "Abyssal demon" contains "abyssal"), and a sender
-	 * naming one boss means that boss. "Abyssal Sire" still lands the
-	 * group by name; "toa" by alias. */
-	public static MonsterGroup linkMatch(List<MonsterGroup> groups, String query)
-	{
-		String text = query == null ? "" : Names.lower(query.trim());
-		if (text.length() < 2)
-		{
-			return null;
-		}
-		for (MonsterGroup group : groups)
-		{
-			if (Names.lower(group.getName()).contains(text)
-				|| group.aliases.contains(text))
-			{
-				return group;
-			}
-		}
-		return null;
 	}
 
 	/** Name-contains search over the groups, hits in curated order. */

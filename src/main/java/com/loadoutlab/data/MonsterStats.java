@@ -256,7 +256,7 @@ public final class MonsterStats
 	}
 
 	/** True when this variant's version label starts with the prefix - the
-	 * phase gate MonsterNotes and RecommendedBring share ("Phase 1..."). */
+	 * phase gate the mechanics rules share ("Phase 1..."). */
 	public boolean versionStartsWith(String prefix)
 	{
 		return version != null && version.startsWith(prefix);

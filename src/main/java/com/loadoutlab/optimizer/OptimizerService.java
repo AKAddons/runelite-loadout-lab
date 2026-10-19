@@ -2415,21 +2415,6 @@ public class OptimizerService
 				raw.add(0, new double[]{0, raw.get(0)[1], raw.get(0)[2]});
 			}
 			curve = new KitCurve(raw, n, specCarried != null);
-			if (log.isDebugEnabled() && !raw.isEmpty())
-			{
-				StringBuilder line = new StringBuilder();
-				double finalTotal = raw.get(raw.size() - 1)[1];
-				for (int i = 0; i < raw.size(); i++)
-				{
-					double gain = i == 0 ? 0 : raw.get(i)[1] - raw.get(i - 1)[1];
-					line.append((int) raw.get(i)[0]).append(':')
-						.append(String.format("%.0f", raw.get(i)[1]))
-						.append(i == 0 ? "" : String.format("(+%.1f%%)",
-							finalTotal > 0 ? gain * 100.0 / finalTotal : 0))
-						.append('v').append((int) raw.get(i)[2]).append(' ');
-				}
-				log.debug("curve[{}]: {}", side, line);
-			}
 		}
 		// Every (mob, style) answer, and the trip PLAN: the union of each
 		// mob's best worn set. The primary wears the base, a bundled style
@@ -2501,18 +2486,6 @@ public class OptimizerService
 		if (specOffhand != null)
 		{
 			plan.putIfAbsent(specOffhand.getId(), specOffhand);
-		}
-		if (log.isDebugEnabled())
-		{
-			StringBuilder carriedNames = new StringBuilder();
-			for (GearItem item : carried)
-			{
-				carriedNames.append(item.getNameLower()).append(", ");
-			}
-			log.debug("kit[{}]: primary={} specKept={} spec={} carried=[{}] score={}",
-				side, bestPrimary, specs != null,
-				specCarried == null ? "-" : specCarried.getNameLower(),
-				carriedNames, String.format("%.0f", bestScore));
 		}
 		return new KitView(EnumSet.copyOf(sides.keySet()),
 			base, specCarried, specs, shownByMob, plan, curve);
@@ -3402,16 +3375,10 @@ public class OptimizerService
 	private OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels styleLevels)
 	{
-		OptimizationRequest r = request(
+		OptimizationRequest r = inContext(request(
 			mob, style, styleLevels, ctx.unlocks, ctx.requirements,
 			ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
-			ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp))
-			.withExcludedItems(excludedFor(ctx, style, mob))
-			.withSpellbookLock(ctx.lock)
-			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
-			.withAntifirePotion(ctx.antifirePotion)
-			.withDeathCharge(ctx.deathCharge)
-			.withInWilderness(ctx.inWilderness)
+			ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp)), ctx, style, mob)
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
 			.withPinnedItems(pinsFor(ctx, style, mob));
@@ -3436,18 +3403,25 @@ public class OptimizerService
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels)
 	{
-		OptimizationRequest r = request(
+		OptimizationRequest r = inContext(request(
 			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
-			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0)
-			.withExcludedItems(excludedFor(ctx, style, mob))
+			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0), ctx, style, mob)
+			.withProtectOnlyItems(ctx.protectOnly);
+		return withPrayerPick(r, ctx, style, gameLevels,
+			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
+	}
+
+	/** The query-wide request settings both the owned and the game-best
+	 * requests share. */
+	private OptimizationRequest inContext(OptimizationRequest r, ComputeContext ctx,
+		CombatStyle style, MonsterStats mob)
+	{
+		return r.withExcludedItems(excludedFor(ctx, style, mob))
 			.withSpellbookLock(ctx.lock)
 			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 			.withAntifirePotion(ctx.antifirePotion)
 			.withDeathCharge(ctx.deathCharge)
-			.withInWilderness(ctx.inWilderness)
-			.withProtectOnlyItems(ctx.protectOnly);
-		return withPrayerPick(r, ctx, style, gameLevels,
-			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
+			.withInWilderness(ctx.inWilderness);
 	}
 
 	private OptimizationRequest request(

@@ -38,15 +38,6 @@ public class CommandHistory
 	private final Deque<Command> undoStack = new ArrayDeque<>();
 	private final Deque<Command> redoStack = new ArrayDeque<>();
 
-	/** When non-null, execute() appends to this buffer instead of
-	 *  pushing to undoStack. endCompound() collapses the buffer into a single
-	 *  CompositeCommand and pushes it. */
-	private List<Command> compoundBuffer = null;
-	private String compoundDescription = null;
-	/** Nesting depth counter for begin/endCompound. Without ref-counting,
-	 *  an inner endCompound prematurely closes the outer compound. */
-	private int compoundDepth = 0;
-
 	/**
 	 * Run a command and push it onto the undo stack on success.
 	 * Forking behavior: any pending redo entries are cleared.
@@ -66,58 +57,10 @@ public class CommandHistory
 			return false;
 		}
 		if (!ok) return false;
-		if (compoundBuffer != null)
-		{
-			compoundBuffer.add(cmd);
-		}
-		else
-		{
-			undoStack.push(cmd);
-			redoStack.clear();
-			trim();
-		}
-		return true;
-	}
-
-	/**
-	 * Begin a compound command. Subsequent {@link #execute} calls collect
-	 * into a buffer instead of pushing individually. {@link #endCompound}
-	 * collapses the buffer into a single undo entry with the given
-	 * description. Nested compounds are ref-counted: only the outermost
-	 * end actually closes the buffer.
-	 */
-	public void beginCompound(String description)
-	{
-		compoundDepth++;
-		if (compoundBuffer != null) return; // already in a compound - just bump the depth
-		compoundBuffer = new ArrayList<>();
-		compoundDescription = description;
-	}
-
-	/** True when a compound is active (between begin/endCompound). */
-	public boolean isInCompound()
-	{
-		return compoundBuffer != null;
-	}
-
-	/**
-	 * Close the current compound, wrap its commands in a CompositeCommand,
-	 * and push it onto the undo stack as a single entry. No-op if no
-	 * compound is active or if the buffer is empty.
-	 */
-	public void endCompound()
-	{
-		if (compoundDepth > 0) compoundDepth--;
-		if (compoundDepth > 0) return; // still inside a nested compound
-		if (compoundBuffer == null) return;
-		List<Command> buf = compoundBuffer;
-		String desc = compoundDescription;
-		compoundBuffer = null;
-		compoundDescription = null;
-		if (buf.isEmpty()) return;
-		undoStack.push(new CompositeCommand(buf, desc));
+		undoStack.push(cmd);
 		redoStack.clear();
 		trim();
+		return true;
 	}
 
 	/**
@@ -186,21 +129,6 @@ public class CommandHistory
 		return undoStack.isEmpty() ? null : undoStack.peek().getDescription();
 	}
 
-	/** Where BACK lands: the step BELOW the top (the top produced the
-	 * CURRENT state - naming it read as "back goes to where you already
-	 * are", field bug 2026-07-23). Null once back would reach the
-	 * unrecorded start. */
-	public String peekUndoTarget()
-	{
-		Iterator<Command> it = undoStack.iterator();
-		if (!it.hasNext())
-		{
-			return null;
-		}
-		it.next();
-		return it.hasNext() ? it.next().getDescription() : null;
-	}
-
 	/** Description of the next redo target, or null if the stack is empty. */
 	public String peekRedoDescription()
 	{
@@ -222,6 +150,4 @@ public class CommandHistory
 		}
 	}
 
-	int undoSize() { return undoStack.size(); }
-	int redoSize() { return redoStack.size(); }
 }

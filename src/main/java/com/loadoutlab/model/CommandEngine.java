@@ -365,14 +365,15 @@ public class CommandEngine
 	@SuppressWarnings("unchecked")
 	public boolean execute(String name, Map<String, Object> args)
 	{
+		StoreOps ops = stores;
 		switch (name == null ? "" : name)
 		{
 			case "select":
 			{
-				Object exactId = arg(args, "id");
-				if (exactId instanceof Number)
+				Integer exactId = intArg(args, "id");
+				if (exactId != null)
 				{
-					int wanted = ((Number) exactId).intValue();
+					int wanted = exactId;
 					// Versions can SHARE an npc id (Duke's Awakened and
 					// Post-quest are both 12191, Awakened first in corpus
 					// order - field report 2026-08-21: the dropdown listed
@@ -505,14 +506,14 @@ public class CommandEngine
 				// Reorder a roster row (Andrew 2026-09-02): presentation
 				// only - the shared set is the same kit - but the lens must
 				// follow the row it was on, and undo puts both back.
-				Object index = arg(args, "index");
+				Integer index = intArg(args, "index");
 				Object delta = arg(args, "delta");
 				List<MonsterStats> current = state.rosterMobs();
-				if (!(index instanceof Number) || !(delta instanceof Number) || current == null)
+				if (index == null || !(delta instanceof Number) || current == null)
 				{
 					return false;
 				}
-				int at = ((Number) index).intValue();
+				int at = index;
 				int to = at + ((Number) delta).intValue();
 				if (at < 0 || at >= current.size() || to < 0 || to >= current.size() || to == at)
 				{
@@ -524,7 +525,7 @@ public class CommandEngine
 				Object lensObj = state.paramsNode().get("lensIndex");
 				int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
 				int movedLens = lens == at ? to : lens == to ? at : lens;
-				boolean raid = Boolean.TRUE.equals(state.paramsNode().get("raidSelection"));
+				boolean raid = flag("raidSelection");
 				return record(new Command()
 				{
 					public boolean apply()
@@ -551,18 +552,18 @@ public class CommandEngine
 			}
 			case "remove-mob":
 			{
-				Object index = arg(args, "index");
+				Integer index = intArg(args, "index");
 				// A single-mob view shows its own row with an X (field ask
 				// 2026-08-22) - there is no roster behind it, so the lone
 				// selection stands in as a one-mob list.
 				List<MonsterStats> current = state.rosterMobs() != null
 					? state.rosterMobs()
 					: state.mob() == null ? null : List.of(state.mob());
-				if (!(index instanceof Number) || current == null)
+				if (index == null || current == null)
 				{
 					return false;
 				}
-				int at = ((Number) index).intValue();
+				int at = index;
 				if (at < 0 || at >= current.size())
 				{
 					return false;
@@ -628,7 +629,7 @@ public class CommandEngine
 					// 75k cap" from "already uncapped" - typing 75k was
 					// swallowed while the field kept showing it (found by
 					// the pre-release adversarial pass 2026-08-22).
-					boolean capped = Boolean.TRUE.equals(state.paramsNode().get("riskCapped"));
+					boolean capped = flag("riskCapped");
 					unchanged = capped == (next != null);
 				}
 				if (unchanged)
@@ -665,7 +666,6 @@ public class CommandEngine
 			}
 			case "toggle-degradable":
 			{
-				StoreOps ops = stores;
 				MonsterStats mob = shownMob();
 				if (ops == null || mob == null)
 				{
@@ -677,7 +677,6 @@ public class CommandEngine
 			}
 			case "set-supply-default":
 			{
-				StoreOps ops = stores;
 				Object category = arg(args, "category");
 				Object choice = arg(args, "choice");
 				if (ops == null || !(category instanceof String) || !(choice instanceof String))
@@ -712,7 +711,7 @@ public class CommandEngine
 					return false;
 				}
 				boolean bis = args != null && Boolean.TRUE.equals(args.get("bis"))
-					|| Boolean.TRUE.equals(state.paramsNode().get("viewingBis"));
+					|| flag("viewingBis");
 				Object styleArg = arg(args, "style");
 				String styleName = styleArg instanceof String ? (String) styleArg : null;
 				if (styleName == null)
@@ -778,12 +777,11 @@ public class CommandEngine
 				opener.open(atInvocation(mob), shown, dartId,
 					bis ? result.gameBoostLabel : result.boostLabel,
 					membersFlag("onTask"),
-					Boolean.TRUE.equals(state.paramsNode().get("inWilderness")));
+					flag("inWilderness"));
 				return true;
 			}
 			case "set-task-bracelet":
 			{
-				StoreOps ops = stores;
 				if (ops == null)
 				{
 					return false;
@@ -793,26 +791,24 @@ public class CommandEngine
 			}
 			case "toggle-always-filter":
 			{
-				StoreOps ops = stores;
-				Object itemId = arg(args, "itemId");
-				if (ops == null || !(itemId instanceof Number))
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || itemId == null)
 				{
 					return false;
 				}
-				ops.toggleAlwaysFilter(((Number) itemId).intValue());
+				ops.toggleAlwaysFilter(itemId);
 				republish();
 				return true;
 			}
 			case "toggle-exclusion":
 			case "toggle-sim":
 			{
-				StoreOps ops = stores;
-				Object itemId = arg(args, "itemId");
-				if (ops == null || !(itemId instanceof Number))
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || itemId == null)
 				{
 					return false;
 				}
-				int id = ((Number) itemId).intValue();
+				int id = itemId;
 				boolean exclusion = "toggle-exclusion".equals(name);
 				Object labelArg = args.get("label");
 				String what = labelArg instanceof String ? (String) labelArg : "item";
@@ -846,7 +842,6 @@ public class CommandEngine
 			case "pin":
 			case "unpin":
 			{
-				StoreOps ops = stores;
 				MonsterStats mob = state.mob();
 				Object slot = arg(args, "slot");
 				if (ops == null || mob == null || !(slot instanceof String))
@@ -924,17 +919,16 @@ public class CommandEngine
 			case "exclude-for-mob":
 			case "sim-for-mob":
 			{
-				StoreOps ops = stores;
 				// Rosters have no state.mob() - the lensed row is the mob
 				// (the set-note lesson, third member; field report
 				// 2026-08-20: the card trio's adds no-oped on rosters).
 				MonsterStats mob = shownMob();
-				Object itemId = arg(args, "itemId");
-				if (ops == null || mob == null || !(itemId instanceof Number))
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || mob == null || itemId == null)
 				{
 					return false;
 				}
-				int id = ((Number) itemId).intValue();
+				int id = itemId;
 				boolean exclude = "exclude-for-mob".equals(name);
 				Object scopeArg = args.get("scope");
 				String scope = scopeArg instanceof String ? (String) scopeArg : "ALL";
@@ -982,7 +976,6 @@ public class CommandEngine
 			{
 				// Andrew, 2026-09-18: "for each of the exclude/sim/item filters can
 				// you have a reset all in list option". One recompute, one undo step.
-				StoreOps ops = stores;
 				MonsterStats mob = shownMob();
 				Object kindArg = arg(args, "kind");
 				if (ops == null || mob == null || !(kindArg instanceof String))
@@ -1004,34 +997,30 @@ public class CommandEngine
 				{
 					public boolean apply()
 					{
-						for (Map<String, Object> e : entries)
+						eachEntry(entries, (id, scope) ->
 						{
-							int id = ((Number) e.get("id")).intValue();
-							String scope = e.get("scope") instanceof String ? (String) e.get("scope") : "ALL";
 							switch (kind)
 							{
 								case "mobSims": ops.mobs().removeMobSim(mobId, id); break;
 								case "mobFilters": ops.mobs().removeMobFilter(mobId, scope, id); break;
 								default: ops.mobs().removeMobExclusion(mobId, scope, id); break;
 							}
-						}
+						});
 						finish();
 						return true;
 					}
 
 					public boolean revert()
 					{
-						for (Map<String, Object> e : entries)
+						eachEntry(entries, (id, scope) ->
 						{
-							int id = ((Number) e.get("id")).intValue();
-							String scope = e.get("scope") instanceof String ? (String) e.get("scope") : "ALL";
 							switch (kind)
 							{
 								case "mobSims": ops.simForMob(mobId, id); break;
 								case "mobFilters": ops.addMobFilter(mobId, id); break;
 								default: ops.excludeForMob(mobId, scope, id); break;
 							}
-						}
+						});
 						finish();
 						return true;
 					}
@@ -1059,14 +1048,13 @@ public class CommandEngine
 			case "add-mob-filter":
 			case "remove-mob-filter":
 			{
-				StoreOps ops = stores;
 				MonsterStats mob = shownMob();
-				Object itemId = arg(args, "itemId");
-				if (ops == null || mob == null || !(itemId instanceof Number))
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || mob == null || itemId == null)
 				{
 					return false;
 				}
-				int id = ((Number) itemId).intValue();
+				int id = itemId;
 				Object scope = arg(args, "scope");
 				String scopeKey = scope instanceof String ? (String) scope : "ALL";
 				Object labelArg = arg(args, "label");
@@ -1139,7 +1127,6 @@ public class CommandEngine
 			}
 			case "set-supply-override":
 			{
-				StoreOps ops = stores;
 				Object category = arg(args, "category");
 				Object choice = arg(args, "choice");
 				MonsterStats lensed = lensedMob();
@@ -1164,7 +1151,6 @@ public class CommandEngine
 			case "set-pinned-spec":
 			case "set-note":
 			{
-				StoreOps ops = stores;
 				// The LENS mob on rosters (field report 2026-08-15: notes
 				// never saved on a trip - state.mob() is null there).
 				MonsterStats mob = shownMob();
@@ -1195,7 +1181,6 @@ public class CommandEngine
 			}
 			case "bank-show":
 			{
-				StoreOps ops = stores;
 				if (ops == null)
 				{
 					return false;
@@ -1221,7 +1206,6 @@ public class CommandEngine
 			}
 			case "bank-filter":
 			{
-				StoreOps ops = stores;
 				if (ops == null)
 				{
 					return false;
@@ -1607,7 +1591,7 @@ public class CommandEngine
 		}
 		String fightBook = mob == null ? null : MonsterSpellbooks.bookFor(mob);
 		Supplier<Map<String, String>> defaults = supplyDefaults;
-		boolean swap = Boolean.TRUE.equals(state.paramsNode().get("spellbookSwap"))
+		boolean swap = flag("spellbookSwap")
 			|| defaults != null && "SPELLBOOK_SWAP".equals(defaults.get().get("arceuusAccess"));
 		return fightBook != null && !fightBook.isEmpty() && !"arceuus".equals(fightBook) && !swap;
 	}
@@ -1624,18 +1608,50 @@ public class CommandEngine
 		return mobs != null && mobs.stream().anyMatch(this::arceuusBlocked);
 	}
 
+	/** The catalogs every published page carries. */
+	private void decorate(Map<String, Object> page)
+	{
+		page.put("assumeOptions", assumeOptions());
+		page.put("liveSpellbook", liveSpellbook);
+		page.put("spellbooks", spellbooks());
+		page.put("supplyCatalog", supplyCatalog());
+		page.put("dartTiers", BlowpipeDarts.tiers());
+	}
+
+	/** Each cleared entry's id and scope (ALL when it carries none). */
+	private static void eachEntry(List<Map<String, Object>> entries, java.util.function.BiConsumer<Integer, String> fn)
+	{
+		for (Map<String, Object> e : entries)
+		{
+			fn.accept(((Number) e.get("id")).intValue(),
+				e.get("scope") instanceof String ? (String) e.get("scope") : "ALL");
+		}
+	}
+
+	/** A numeric command argument, or null when absent or not a number. */
+	private static Integer intArg(Map<String, Object> args, String key)
+	{
+		Object v = arg(args, key);
+		return v instanceof Number ? ((Number) v).intValue() : null;
+	}
+
+	private boolean flag(String key)
+	{
+		return Boolean.TRUE.equals(state.paramsNode().get(key));
+	}
+
 	private boolean membersFlag(String key)
 	{
 		Map<String, Object> params = state.paramsNode();
 		return Boolean.TRUE.equals(params.get(key))
-			&& !Boolean.TRUE.equals(params.get("f2pOnly"));
+			&& !flag("f2pOnly");
 	}
 
 	/** Ship-config params persist PER CHARACTER (Andrew 2026-08-31: "like
 	 * sim/exclude... once you set your cannon/crew/cannonball type it always
 	 * shows as that") - stored under ship.* in the scoped supply-defaults
 	 * store and re-seeded on every new selection. */
-	private static final Set<String> SHIP_PERSISTED = Set.of(
+	public static final Set<String> SHIP_PERSISTED = Set.of(
 		"cannonCount", "cannon1Material", "cannon2Material",
 		"cannon1Operator", "cannon2Operator", "cannonAmmo", "shipKeel");
 
@@ -1722,11 +1738,7 @@ public class CommandEngine
 		entry.put("pending", true);
 		decorateProfiles(entry);
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
-		page.put("assumeOptions", assumeOptions());
-		page.put("liveSpellbook", liveSpellbook);
-		page.put("spellbooks", spellbooks());
-		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", BlowpipeDarts.tiers());
+		decorate(page);
 		link.publishPage(page);
 	}
 
@@ -1741,11 +1753,7 @@ public class CommandEngine
 		}
 		Map<String, Object> page = withHistory(
 			RenderModel.page(List.of()));
-		page.put("assumeOptions", assumeOptions());
-		page.put("liveSpellbook", liveSpellbook);
-		page.put("spellbooks", spellbooks());
-		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", BlowpipeDarts.tiers());
+		decorate(page);
 		link.publishPage(page);
 	}
 
@@ -1775,9 +1783,9 @@ public class CommandEngine
 		{
 			exclusive |= WildernessMonsters.isExclusive(m);
 		}
-		boolean wildy = exclusive || Boolean.TRUE.equals(params.get("inWilderness"));
+		boolean wildy = exclusive || flag("inWilderness");
 		int keptSlots = wildy
-			? (Boolean.TRUE.equals(params.get("protectItem")) ? 4 : 3) : -1;
+			? (flag("protectItem") ? 4 : 3) : -1;
 		Set<Integer> simmedIds = new HashSet<>();
 		Supplier<Map<String, Object>> countSupplierForFlags = counts;
 		if (countSupplierForFlags != null)
@@ -1805,7 +1813,7 @@ public class CommandEngine
 		entry.put("supplies", supplies);
 		decorateProfiles(entry);
 		entry.put("raidSelection",
-			Boolean.TRUE.equals(state.paramsNode().get("raidSelection")));
+			flag("raidSelection"));
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
 		if (shipNode != null)
 		{
@@ -1856,11 +1864,7 @@ public class CommandEngine
 			spellNames.add(spell.getName());
 		}
 		page.put("spells", spellNames);
-		page.put("assumeOptions", assumeOptions());
-		page.put("liveSpellbook", liveSpellbook);
-		page.put("spellbooks", spellbooks());
-		page.put("supplyCatalog", supplyCatalog());
-		page.put("dartTiers", BlowpipeDarts.tiers());
+		decorate(page);
 		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies, cureMe(mobs),
@@ -2236,7 +2240,7 @@ public class CommandEngine
 			if ("NONE".equals(mode)
 				|| (seaOnly && !TripSupplies.SHIP_REPAIR_KIT.equals(category))
 				|| (TripSupplies.CANNON.equals(category)
-					&& Boolean.TRUE.equals(state.paramsNode().get("raidSelection"))))
+					&& flag("raidSelection")))
 			{
 				continue;
 			}
@@ -2260,7 +2264,7 @@ public class CommandEngine
 			TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
 					? TripSupplies.detectBest(category, owns,
-						Boolean.TRUE.equals(state.paramsNode().get("inWilderness")))
+						flag("inWilderness"))
 					: TripSupplies.option(category, mode);
 			if (pick == null)
 			{
@@ -2349,12 +2353,12 @@ public class CommandEngine
 			}
 		}
 		Object dCharge = params.get("deathCharge");
-		boolean f2pLocked = Boolean.TRUE.equals(params.get("f2pOnly"));
+		boolean f2pLocked = flag("f2pOnly");
 		if (!f2pLocked && !lunarCamp && dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
-		if (Boolean.TRUE.equals(params.get("spellbookSwap")))
+		if (flag("spellbookSwap"))
 		{
 			// Supplies only (field ask 2026-08-22): the trip carries the
 			// runes to keep Vengeance up. Vengeance does return damage,

@@ -1,0 +1,69 @@
+{
+	"_comment": "Boost item ids by BoostProfile name, every dose (gameval; moved out of BoostSelector 2026-10-18 for the hub token cap). Hearts are single ids.",
+	"DIVINE_SUPER_COMBAT": [
+		23685,
+		23688,
+		23691,
+		23694
+	],
+	"DIVINE_RANGING": [
+		23733,
+		23736,
+		23739,
+		23742
+	],
+	"DIVINE_MAGIC": [
+		23745,
+		23748,
+		23751,
+		23754
+	],
+	"SUPER_COMBAT": [
+		12695,
+		12697,
+		12699,
+		12701
+	],
+	"RANGING": [
+		2444,
+		169,
+		171,
+		173
+	],
+	"MAGIC": [
+		3040,
+		3042,
+		3044,
+		3046
+	],
+	"BASTION": [
+		22461,
+		22464,
+		22467,
+		22470
+	],
+	"DIVINE_BASTION": [
+		24635,
+		24638,
+		24641,
+		24644
+	],
+	"BATTLEMAGE": [
+		22449,
+		22452,
+		22455,
+		22458
+	],
+	"DIVINE_BATTLEMAGE": [
+		24623,
+		24626,
+		24629,
+		24632
+	],
+	"SATURATED_HEART": [
+		27641
+	],
+	"IMBUED_HEART": [
+		20724
+	]
+}

@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.Set;
 import net.runelite.client.config.ConfigManager;
 
-public abstract class IdSetStore
+public abstract class IdSetStore implements ScopedStore
 {
 	static final String CONFIG_GROUP = "loadoutlab";
 

@@ -4,7 +4,6 @@ import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.GearItem;
 import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterNotes;
 import com.loadoutlab.data.MonsterStats;
 import java.util.EnumMap;
 import java.util.List;
@@ -184,16 +183,4 @@ class RespiratorySystemTest
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
-	@Test
-	@DisplayName("the vents and Sire phase 1 carry their mechanics notes")
-	void notesPresent()
-	{
-		assertNotNull(MonsterNotes.noteFor(vents));
-		MonsterStats phase1 = data.searchMonsters("abyssal sire", 4).stream()
-			.filter(m -> m.getVersion() != null && m.getVersion().startsWith("Phase 1"))
-			.findFirst().orElseThrow();
-		String note = MonsterNotes.noteFor(phase1);
-		assertNotNull(note);
-		assertTrue(note.contains("Shadow"), "phase 1 note names the shadow-spell disorient");
-	}
 }

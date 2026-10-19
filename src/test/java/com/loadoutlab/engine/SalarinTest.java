@@ -2,7 +2,6 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.DataService;
 import com.loadoutlab.data.LoadoutData;
-import com.loadoutlab.data.MonsterNotes;
 import com.loadoutlab.data.MonsterStats;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,6 +63,5 @@ class SalarinTest
 			best.getLoadout().get(com.loadoutlab.data.GearSlot.NECK).getNameLower());
 		assertEquals(14, best.getMaxHit(), "flat 12 at maxed magic, +2 from the amulet");
 		assertEquals(14.0, best.getExpectedHit(), 1e-9, "guaranteed, no roll");
-		assertNotNull(MonsterNotes.noteFor(salarin));
 	}
 }

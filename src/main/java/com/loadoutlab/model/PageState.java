@@ -35,8 +35,7 @@ public class PageState
 	 * They persist across lens changes; the ENGINE only reads them for a
 	 * naval mob (REQ-SC-7's veto, same shape as the F2P lock). */
 	private int cannonCount;
-	private String cannon1Material = "bronze";
-	private String cannon2Material = "bronze";
+	private final String[] cannonMaterial = {"bronze", "bronze"};
 	/** "detect" resolves to the best BANKED ball every carried cannon can
 	 * fire (the boost idiom, Andrew 2026-08-31); a tier name pins it. */
 	private String cannonAmmo = "detect";
@@ -50,8 +49,7 @@ public class PageState
 	/** True while the selection is a RAID group (ToB included - the boost
 	 * heuristic missed it): raids are never a slayer-task context. */
 	private boolean raidSelection;
-	private String cannon1Operator = "crew1";
-	private String cannon2Operator = "crew1";
+	private final String[] cannonOperator = {"crew1", "crew1"};
 	private String spellbookLock = "";
 	private int maxTradeables = -1;
 	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
@@ -82,9 +80,7 @@ public class PageState
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return "viewingBis".equals(param) || "selectedTab".equals(param)
-			|| "thralls".equals(param) || "lensIndex".equals(param)
-			|| "spellbookSwap".equals(param);
+		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap").contains(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -174,13 +170,13 @@ public class PageState
 				cannonCount = Math.max(0, Math.min(2, asInt(value, 0)));
 				return true;
 			case "cannon1Material":
-				cannon1Material = String.valueOf(value);
-				cannon1Operator = raiseCrewToGate(cannon1Operator, cannon1Material);
-				return true;
 			case "cannon2Material":
-				cannon2Material = String.valueOf(value);
-				cannon2Operator = raiseCrewToGate(cannon2Operator, cannon2Material);
+			{
+				int i = param.charAt(6) - '1';
+				cannonMaterial[i] = String.valueOf(value);
+				cannonOperator[i] = raiseCrewToGate(cannonOperator[i], cannonMaterial[i]);
 				return true;
+			}
 			case "shipKeel":
 				shipKeel = NavalCombat.normalizeKeel(String.valueOf(value));
 				return true;
@@ -188,19 +184,17 @@ public class PageState
 				cannonAmmo = String.valueOf(value);
 				return true;
 			case "cannon1Operator":
-				cannon1Operator = operator(value, cannon1Material);
-				if ("you".equals(cannon1Operator) && "you".equals(cannon2Operator))
-				{
-					cannon2Operator = raiseCrewToGate("crew1", cannon2Material);
-				}
-				return true;
 			case "cannon2Operator":
-				cannon2Operator = operator(value, cannon2Material);
-				if ("you".equals(cannon2Operator) && "you".equals(cannon1Operator))
+			{
+				// At most one cannon is yours: picking "you" on one demotes the other.
+				int i = param.charAt(6) - '1';
+				cannonOperator[i] = operator(value, cannonMaterial[i]);
+				if ("you".equals(cannonOperator[i]) && "you".equals(cannonOperator[1 - i]))
 				{
-					cannon1Operator = raiseCrewToGate("crew1", cannon1Material);
+					cannonOperator[1 - i] = raiseCrewToGate("crew1", cannonMaterial[1 - i]);
 				}
 				return true;
+			}
 			case "f2pWorld":
 				f2pWorld = Boolean.TRUE.equals(value);
 				return true;
@@ -339,13 +333,13 @@ public class PageState
 		node.put("f2pOnly", f2pOnly);
 		node.put("f2pWorld", f2pWorld);
 		node.put("cannonCount", cannonCount);
-		node.put("cannon1Material", cannon1Material);
-		node.put("cannon2Material", cannon2Material);
+		node.put("cannon1Material", cannonMaterial[0]);
+		node.put("cannon2Material", cannonMaterial[1]);
 		node.put("cannonAmmo", cannonAmmo);
 		node.put("shipKeel", shipKeel);
 		node.put("raidSelection", raidSelection);
-		node.put("cannon1Operator", cannon1Operator);
-		node.put("cannon2Operator", cannon2Operator);
+		node.put("cannon1Operator", cannonOperator[0]);
+		node.put("cannon2Operator", cannonOperator[1]);
 		node.put("spellbookLock", spellbookLock);
 		node.put("riskBudgetGp", riskBudgetGp);
 		node.put("riskCapped", riskCapped);

@@ -526,12 +526,8 @@ public final class DataService
 		{
 			return StatBlock.ZERO;
 		}
-		return new StatBlock(
-			integer(object, "stab", 0),
-			integer(object, "slash", 0),
-			integer(object, "crush", 0),
-			integer(object, "magic", 0),
-			integer(object, "ranged", 0),
+		int[] c = combat(object);
+		return new StatBlock(c[0], c[1], c[2], c[3], c[4],
 			0,
 			0,
 			0,
@@ -544,12 +540,8 @@ public final class DataService
 		{
 			return StatBlock.ZERO;
 		}
-		return new StatBlock(
-			integer(object, "stab", 0),
-			integer(object, "slash", 0),
-			integer(object, "crush", 0),
-			integer(object, "magic", 0),
-			integer(object, "ranged", 0),
+		int[] c = combat(object);
+		return new StatBlock(c[0], c[1], c[2], c[3], c[4],
 			0,
 			integer(object, "light", 0),
 			integer(object, "standard", 0),
@@ -562,12 +554,8 @@ public final class DataService
 		{
 			return MonsterDefences.ZERO;
 		}
-		return new MonsterDefences(
-			integer(object, "stab", 0),
-			integer(object, "slash", 0),
-			integer(object, "crush", 0),
-			integer(object, "magic", 0),
-			integer(object, "ranged", 0),
+		int[] c = combat(object);
+		return new MonsterDefences(c[0], c[1], c[2], c[3], c[4],
 			integer(object, "flat_armour", 0),
 			integer(object, "light", 0),
 			integer(object, "standard", 0),
@@ -614,6 +602,13 @@ public final class DataService
 	{
 		JsonElement element = object.get(key);
 		return element == null || element.isJsonNull() ? null : element.getAsInt();
+	}
+
+	/** stab, slash, crush, magic, ranged - the five every stat block shares. */
+	private static int[] combat(JsonObject object)
+	{
+		return new int[]{integer(object, "stab", 0), integer(object, "slash", 0),
+			integer(object, "crush", 0), integer(object, "magic", 0), integer(object, "ranged", 0)};
 	}
 
 	private static int integer(JsonObject object, String key, int fallback)

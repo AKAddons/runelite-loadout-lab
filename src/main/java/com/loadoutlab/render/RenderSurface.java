@@ -309,6 +309,12 @@ public class RenderSurface
 				? Map.of("id", Model.id(match, "id"))
 				: Map.of("id", Model.id(match, "id"), "version", pickedVersion));
 		}
+		clearMatches();
+	}
+
+	/** The search box emptied and its dropdown folded away. */
+	private void clearMatches()
+	{
 		search.setText("");
 		matchesBox.removeAll();
 		matchesBox.setVisible(false);
@@ -645,11 +651,7 @@ public class RenderSurface
 			{
 				public void mouseClicked(MouseEvent e)
 				{
-					search.setText("");
-					matchesBox.removeAll();
-					matchesBox.setVisible(false);
-					root.revalidate();
-					root.repaint();
+					clearMatches();
 				}
 
 				public void mouseEntered(MouseEvent e)

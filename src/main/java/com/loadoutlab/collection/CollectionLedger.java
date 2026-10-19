@@ -28,7 +28,7 @@ import net.runelite.client.config.ConfigManager;
  * forms mapping to the engine's canonical gear ids via equipment aliases)
  * happens at query time once the data pipeline vendors the alias table.
  */
-public class CollectionLedger
+public class CollectionLedger implements ScopedStore
 {
 	static final String CONFIG_GROUP = "loadoutlab";
 	private static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};

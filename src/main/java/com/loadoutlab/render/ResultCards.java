@@ -9,6 +9,8 @@ import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
+import com.google.gson.JsonObject;
+import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.ui.MonsterIcons;
 import java.awt.event.MouseAdapter;
@@ -389,9 +391,7 @@ public class ResultCards
 		// full label for disambiguation.
 		String cleanName = name == null ? ""
 			: name.replaceFirst(" - lvl \\d+$", "");
-		JLabel label = new JLabel(cleanName);
-		label.setFont(FontManager.getRunescapeSmallFont());
-		label.setForeground(selected ? edge : new Color(0xC8C8C8));
+		JLabel label = Ui.small(cleanName, selected ? edge : new Color(0xC8C8C8));
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
 		{
 			// The mob's wiki render rides the row; text-only until it
@@ -482,9 +482,7 @@ public class ResultCards
 		iconDps.setOpaque(false);
 		iconDps.add(icon);
 
-		JLabel dpsLabel = new JLabel(dps);
-		dpsLabel.setFont(FontManager.getRunescapeSmallFont());
-		dpsLabel.setForeground(selected ? Color.WHITE : new Color(0xAAAAAA));
+		JLabel dpsLabel = Ui.small(dps, selected ? Color.WHITE : new Color(0xAAAAAA));
 		iconDps.add(dpsLabel);
 		columns.add(iconDps, BorderLayout.CENTER);
 
@@ -885,8 +883,7 @@ public class ResultCards
 			// (field report: only 4 of 8 visible at full item size).
 			JPanel invRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
 			invRow.setBackground(CARD);
-			JLabel invLabel = new JLabel("Inventory:");
-			invLabel.setFont(FontManager.getRunescapeSmallFont());
+			JLabel invLabel = Ui.small("Inventory:", null);
 			invRow.add(invLabel);
 			for (Map<String, Object> carried : bench)
 			{
@@ -916,8 +913,7 @@ public class ResultCards
 		{
 			JPanel supplyRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
 			supplyRow.setBackground(CARD);
-			JLabel supplyLabel = new JLabel("Supplies:");
-			supplyLabel.setFont(FontManager.getRunescapeSmallFont());
+			JLabel supplyLabel = Ui.small("Supplies:", null);
 			supplyRow.add(supplyLabel);
 			// One icon per rune TYPE (field call: no triple blood runes)
 			// - the tooltip collects every reason it rides.
@@ -925,19 +921,11 @@ public class ResultCards
 			Map<Integer, String> runeNames = new HashMap<>();
 			for (Map<String, Object> rune : castRunes)
 			{
-				int id = Model.id(rune, "id");
-				runeNames.put(id, Model.str(rune, "name"));
-				runeWhy.computeIfAbsent(id, k -> new StringBuilder())
-					.append(runeWhy.get(id).length() == 0 ? "" : "; ")
-					.append("the autocast spell");
+				noteRune(runeNames, runeWhy, rune, "the autocast spell");
 			}
 			for (Map<String, Object> rune : tripRunes)
 			{
-				int id = Model.id(rune, "id");
-				runeNames.put(id, Model.str(rune, "name"));
-				runeWhy.computeIfAbsent(id, k -> new StringBuilder())
-					.append(runeWhy.get(id).length() == 0 ? "" : "; ")
-					.append(Model.str(rune, "why"));
+				noteRune(runeNames, runeWhy, rune, Model.str(rune, "why"));
 			}
 			for (Map.Entry<Integer, StringBuilder> rune : runeWhy.entrySet())
 			{
@@ -1642,14 +1630,7 @@ public class ResultCards
 	private JLabel pickCell(JPopupMenu menu, Icon icon,
 		String tooltip, boolean picked, int size, Runnable onPick)
 	{
-		JLabel cell = new JLabel();
-		cell.setPreferredSize(new Dimension(size, size));
-		cell.setHorizontalAlignment(SwingConstants.CENTER);
-		cell.setOpaque(true);
-		cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
-			: ColorScheme.DARKER_GRAY_COLOR);
-		cell.setBorder(BorderFactory.createLineBorder(picked
-			? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
+		JLabel cell = pickedCell(size, picked);
 		if (icon != null)
 		{
 			cell.setIcon(icon);
@@ -1980,11 +1961,9 @@ public class ResultCards
 			String lock = Model.str(pageParams, "spellbookLock");
 			String lockText = Model.flag(mob, "cureMe") ? " - lunar book (Cure Me)"
 				: lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
-			JLabel spellName = new JLabel((shownSpell == null ? "Auto spell"
+			JLabel spellName = Ui.small((shownSpell == null ? "Auto spell"
 				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
-					? " (pinned)" : "")) + lockText);
-			spellName.setFont(FontManager.getRunescapeSmallFont());
-			spellName.setForeground(new Color(0xC8C8C8));
+					? " (pinned)" : "")) + lockText, new Color(0xC8C8C8));
 			spellRow.add(spellIcon);
 			spellRow.add(spellName);
 			String tip = "The autocast spell - click to pin one";
@@ -2027,14 +2006,7 @@ public class ResultCards
 					for (String option : spellOptions)
 					{
 						boolean picked = option.equals(pinnedSpell);
-						JLabel cell = new JLabel();
-						cell.setPreferredSize(new Dimension(26, 26));
-						cell.setHorizontalAlignment(SwingConstants.CENTER);
-						cell.setOpaque(true);
-						cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e)
-							: ColorScheme.DARKER_GRAY_COLOR);
-						cell.setBorder(BorderFactory.createLineBorder(picked
-							? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
+						JLabel cell = pickedCell(26, picked);
 						int sprite = spellSprites == null ? -1
 							: (int) Model.num(spellSprites, option);
 						if (sprite > 0)
@@ -2365,13 +2337,19 @@ public class ResultCards
 
 	/** The classic storage palette - only FETCH-TRIP sources have an
 	 * entry, so at-hand gear can never draw a dot. */
-	private static final Map<String, Color> SOURCE_COLORS = Map.of(
-		"looting bag", new Color(0xB48250),
-		"POH costume room", new Color(0xBE82E6),
-		"STASH", new Color(0xE67878),
-		"cargo hold", new Color(0x64C8BE),
-		"stored elsewhere", new Color(0xB4D26E),
-		"DWMS", new Color(0xA0A0D2));
+	private static final Map<String, Color> SOURCE_COLORS = new LinkedHashMap<>();
+
+	static
+	{
+		JsonObject colours = JsonResources.objectOrThrow("source_colours.json");
+		for (String source : colours.keySet())
+		{
+			if (!source.startsWith("_"))
+			{
+				SOURCE_COLORS.put(source, new Color(Integer.parseInt(colours.get(source).getAsString(), 16)));
+			}
+		}
+	}
 
 	private static Color sourceColor(String source)
 	{
@@ -2536,6 +2514,28 @@ public class ResultCards
 			}
 		}
 		cell.setComponentPopupMenu(menu);
+		return cell;
+	}
+
+	/** One rune stack's name and the reason it rides, merged per rune type. */
+	private static void noteRune(Map<Integer, String> names, Map<Integer, StringBuilder> why,
+		Map<String, Object> rune, String reason)
+	{
+		int id = Model.id(rune, "id");
+		names.put(id, Model.str(rune, "name"));
+		why.computeIfAbsent(id, k -> new StringBuilder())
+			.append(why.get(id).length() == 0 ? "" : "; ").append(reason);
+	}
+
+	/** A square picker cell, lit when picked. */
+	private static JLabel pickedCell(int size, boolean picked)
+	{
+		JLabel cell = new JLabel();
+		cell.setPreferredSize(new Dimension(size, size));
+		cell.setHorizontalAlignment(SwingConstants.CENTER);
+		cell.setOpaque(true);
+		cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e) : ColorScheme.DARKER_GRAY_COLOR);
+		cell.setBorder(BorderFactory.createLineBorder(picked ? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
 		return cell;
 	}
 

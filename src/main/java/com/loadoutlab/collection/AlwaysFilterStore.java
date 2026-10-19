@@ -11,72 +11,16 @@ import net.runelite.client.config.ConfigManager;
  * trio, field spec 2026-07-20): items that join EVERY filtered bank view -
  * teleport capes, boss teles, whatever the player always wants at hand.
  * Names are captured at add time (id resolution later needs the client
- * thread), matching the mob-profile filter items.
+ * thread), matching the mob-profile filter items. Per character since
+ * 0.4.1 (a main and a test account had shared this list).
  */
-public class AlwaysFilterStore
+public class AlwaysFilterStore extends ScopedMapStore<Integer, String>
 {
-	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "alwaysFilterItems";
-
-	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). Global
-	 * before 0.4.1, which is why a main and a test account shared this list. */
-	private String worldScope;
-
-	private String key()
-	{
-		return ScopedKeys.key(worldScope, KEY);
-	}
-
-	public synchronized void loadScope(String scope)
-	{
-		this.worldScope = scope;
-		load();
-	}
-
-	private final ConfigManager configManager;
-	private final Gson gson;
-	private final Map<Integer, String> items = new LinkedHashMap<>();
 
 	public AlwaysFilterStore(ConfigManager configManager, Gson gson)
 	{
-		this.configManager = configManager;
-		this.gson = gson;
-		load();
-	}
-
-	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void clear()
-	{
-		items.clear();
-		save();
-	}
-
-	public synchronized void reload()
-	{
-		load();
-	}
-
-	private void load()
-	{
-		items.clear();
-		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY);
-		if (json == null || json.isEmpty())
-		{
-			return;
-		}
-		try
-		{
-			Map<Integer, String> stored = gson.fromJson(json,
-				new TypeToken<Map<Integer, String>>(){}.getType());
-			if (stored != null)
-			{
-				items.putAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
-		}
+		super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
 	}
 
 	public synchronized Map<Integer, String> all()
@@ -94,15 +38,5 @@ public class AlwaysFilterStore
 	{
 		items.remove(itemId);
 		save();
-	}
-
-	private void save()
-	{
-		if (items.isEmpty())
-		{
-			configManager.unsetConfiguration(CONFIG_GROUP, key());
-			return;
-		}
-		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(items));
 	}
 }

@@ -3,6 +3,7 @@ package com.loadoutlab.render;
 import java.awt.*;
 import javax.swing.*;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import java.awt.image.BufferedImage;
 
 /**
@@ -31,6 +32,18 @@ final class Ui
 		JPanel panel = new JPanel(layout);
 		panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		return panel;
+	}
+
+	/** A small-font label; null keeps the default foreground. */
+	static JLabel small(String text, Color fg)
+	{
+		JLabel label = new JLabel(text);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		if (fg != null)
+		{
+			label.setForeground(fg);
+		}
+		return label;
 	}
 
 	/** A label with a fixed foreground. */
