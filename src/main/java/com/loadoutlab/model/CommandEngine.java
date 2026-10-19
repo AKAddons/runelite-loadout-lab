@@ -2029,17 +2029,18 @@ public class CommandEngine
 				// on now; BiS is the aspirational view you opt into
 				// (field ask 2026-08-22).
 				state.setParam("viewingBis", false);
-				// Task-only bosses are ALWAYS on task (the classic rule:
-				// the Sire cannot be fought off-task, so the search must
-				// never show it that way).
+				// A slayer monster opens ON task (Andrew 2026-10-19: most
+				// people meet these through slayer); anything else opens
+				// off. Task-only bosses are always on task (the classic
+				// rule: the Sire cannot be fought off-task, so the search
+				// must never show it that way). Seeded at every selection
+				// like the antifire tier; the chip overrides afterwards.
+				boolean slayer = false;
 				for (MonsterStats m : selected)
 				{
-					if (SlayerLockedMonsters.isTaskOnly(m))
-					{
-						state.setParam("onTask", true);
-						break;
-					}
+					slayer |= m.isSlayerMonster() || SlayerLockedMonsters.isTaskOnly(m);
 				}
+				state.setParam("onTask", slayer);
 				// Wilderness-exclusives set the PARAM, not just the chip
 				// (field report 2026-08-15: a 75k risk cap produced a 21M
 				// recommendation - the display honored the exclusive but

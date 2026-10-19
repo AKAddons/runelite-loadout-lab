@@ -340,7 +340,10 @@ class CommandEngineTest
 		Map<String, Object> pageA = link.published;
 		assertNotNull(pageA);
 
-		assertTrue(engine.execute("set-param", Map.of("param", "onTask", "value", true)));
+		// A slayer monster opens ON task (2026-10-19), so the command
+		// under test flips it off.
+		assertEquals(Boolean.TRUE, state.paramsNode().get("onTask"), "fixture: the demon seeds on task");
+		assertTrue(engine.execute("set-param", Map.of("param", "onTask", "value", false)));
 		int computesAfterParam = computes.get();
 		engine.onResults(demon, Map.of());
 		flushEdt();
@@ -353,7 +356,7 @@ class CommandEngineTest
 		assertNotNull(link.published, "the snapshot page republished");
 		assertEquals(pageA.get("entries"), link.published.get("entries"),
 			"the restored page is the one captured before the command");
-		assertEquals(Boolean.FALSE, state.paramsNode().get("onTask"),
+		assertEquals(Boolean.TRUE, state.paramsNode().get("onTask"),
 			"the state reverted with it");
 
 		link.published = null;
@@ -362,7 +365,7 @@ class CommandEngineTest
 		assertEquals(computesAfterParam, computes.get(),
 			"redo restores the forward snapshot without computing");
 		assertNotNull(link.published);
-		assertEquals(Boolean.TRUE, state.paramsNode().get("onTask"));
+		assertEquals(Boolean.FALSE, state.paramsNode().get("onTask"));
 	}
 
 	@Test

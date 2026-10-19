@@ -70,7 +70,10 @@ requests and plain text rows.
 ### Slayer task toggle
 
 Flip the slayer-task toggle to fold in slayer-helm bonuses; bosses locked
-behind an active task are greyed out. The Slayer task bracelet setting
+behind an active task are greyed out. Selecting a slayer monster opens
+the toggle on, since most people meet one through a task; anything else
+opens it off, and a raid never counts. The seed runs at every selection,
+so flip it after selecting when you are off task. The Slayer task bracelet setting
 (Defaults section, or right-click any card's bracelet cell: "On slayer
 tasks: ...") pins the Expeditious bracelet or the Bracelet of slaughter
 into every on-task set's hands slot. A mob's own hands pin wins, raids

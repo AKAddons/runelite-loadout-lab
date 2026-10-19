@@ -276,10 +276,11 @@
       "tests": [
         "engine/SlayerInvariantTest.java",
         "engine/TaskBraceletTest.java"
-      ],
+      ,
+        "model/OnTaskSeedTest.java"],
       "since": "0.1.0",
       "capture": "On-task card showing the slayer helmet in the set; ideally a task-locked boss greyed in the list behind. Single PNG screenshot.",
-      "notes": "2026-10-18 (miko, Discord: 'include ... Expeditious bracelet for all setups'; Andrew: a slayer-task option reachable from the settings panel and the bracelet slot): the Slayer task bracelet setting (None / Expeditious bracelet / Bracelet of slaughter, Defaults section) overlays a HANDS pin on every concrete style when the result is on task (TaskBracelet.overlay, in the plugin's pinnedByStyle); a mob's own hands pin wins; raids force the task flag off so never see it; the hands cell's right-click menu writes the same setting ('On slayer tasks: ...', set-task-bracelet -> StoreOps.setTaskBracelet -> config), and the config change recomputes (TaskBraceletTest)."
+      "notes": "2026-10-18 (miko, Discord: 'include ... Expeditious bracelet for all setups'; Andrew: a slayer-task option reachable from the settings panel and the bracelet slot): the Slayer task bracelet setting (None / Expeditious bracelet / Bracelet of slaughter, Defaults section) overlays a HANDS pin on every concrete style when the result is on task (TaskBracelet.overlay, in the plugin's pinnedByStyle); a mob's own hands pin wins; raids force the task flag off so never see it; the hands cell's right-click menu writes the same setting ('On slayer tasks: ...', set-task-bracelet -> StoreOps.setTaskBracelet -> config), and the config change recomputes (TaskBraceletTest). 2026-10-19 (Andrew: most people meet these through slayer): selection seeds On task on for a slayer monster (task-only bosses included), off otherwise, always off for a raid - CommandEngine.selectResolved, every selection like the antifire tier; the chip overrides afterwards (OnTaskSeedTest)."
     },
     {
       "id": "exclusions",
