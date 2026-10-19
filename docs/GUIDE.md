@@ -275,7 +275,10 @@ book; click it to change. A fire-breather gets a dragonfire plate beside
 it: the shield the set must carry, an antifire potion or a super antifire,
 seeded from the best potion you own at each selection, with Detect best
 on its menu to run that again after a manual pick; the chosen potion
-rides the Supplies row and the bank filter like any other supply. Choosing Cure Me camps the trip on Lunar: the
+rides the Supplies row and the bank filter like any other supply. Potions
+in the bank's potion storage count as owned for all of this. The Best in
+game card is the ceiling and always assumes a super antifire, so its
+shield slot goes to dps. Choosing Cure Me camps the trip on Lunar: the
 magic card locks to built-in staves and thralls and Death Charge stand
 down. It is
 not offered while a pinned spell or a spellbook lock relies on another
@@ -485,6 +488,10 @@ sections.)
 
 
 ### STASH, POH costume room, and cargo hold tracking
+
+The bank's potion storage is read too: every stored potion the plugin
+detects (antifire, prayer restore, anti-venom, antipoison, the boosts,
+surge) counts as owned, one potion per four doses.
 
 These storages track natively, the same way the bank does - open each
 once and the contents count as owned from then on:

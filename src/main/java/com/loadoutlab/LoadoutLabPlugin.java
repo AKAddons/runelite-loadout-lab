@@ -1269,9 +1269,14 @@ public class LoadoutLabPlugin extends Plugin
 	 * snapshot wins outright (guaranteed-correct parse, every storage);
 	 * until then the best-effort config read fills in.
 	 */
+	/** The bank's potion storage, read from its varbits at each compute
+	 * and on change (Andrew 2026-10-19: the super antifires lived there). */
+	private volatile Map<Integer, Integer> potionStorage = Map.of();
+
 	private Map<Integer, Integer> ownedItems()
 	{
 		Map<Integer, Integer> owned = manualOwned.mergeInto(ledger.owned());
+		potionStorage.forEach((id, n) -> owned.merge(id, n, Integer::sum));
 		if (!config.useDwmsData())
 		{
 			// The Connections toggle is off: DWMS-tracked storages do not
@@ -1288,7 +1293,7 @@ public class LoadoutLabPlugin extends Plugin
 	 */
 	private int ownedFingerprint()
 	{
-		int fingerprint = 31 * ledger.fingerprint() + manualOwned.snapshot().hashCode();
+		int fingerprint = 31 * (31 * ledger.fingerprint() + manualOwned.snapshot().hashCode()) + potionStorage.hashCode();
 		int dwms = config.useDwmsData() ? dwmsLink.snapshot().hashCode() : 0;
 		return 31 * fingerprint + dwms;
 	}
@@ -1323,6 +1328,7 @@ public class LoadoutLabPlugin extends Plugin
 			}
 		}
 		origins.put("cargo hold", cargo);
+		origins.put("potion storage", potionStorage);
 		Map<Integer, Integer> manual = new HashMap<>();
 		for (int id : manualOwned.snapshot())
 		{
@@ -1852,6 +1858,7 @@ public class LoadoutLabPlugin extends Plugin
 			live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
 			real = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			pushPanelCastState(live);
+			potionStorage = PotionStorage.owned(client::getVarbitValue);
 			mergedOwned = ownedItems();
 			owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			fingerprint = owned.presenceFingerprint();
@@ -1997,6 +2004,12 @@ public class LoadoutLabPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
+		if (PotionStorage.tracks(event.getVarbitId()))
+		{
+			potionStorage = PotionStorage.owned(client::getVarbitValue);
+			ledgerRecomputeTicks = 5;
+			return;
+		}
 		if (event.getVarbitId() != VarbitID.SPELLBOOK)
 		{
 			return;
