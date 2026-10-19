@@ -54,7 +54,7 @@ class BisBorderTest
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
-				Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, 0, true,
+				Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false, 0, true,
 				Collections.emptyMap(), Collections.emptyMap(), WildernessMonsters.isExclusive(mob),
 				Collections.emptySet(), 0, 1, Collections.emptyMap(), null, 0,
 				Collections.<Integer>emptySet(), result ->

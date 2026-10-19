@@ -92,7 +92,7 @@ public final class ServiceCalls
 		}
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			byStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, true,
+			byStyle, maxTradeables, riskBudgetGp, antifirePotion, false, 0, true,
 			Collections.emptyMap(), Collections.emptyMap(),
 			com.loadoutlab.data.WildernessMonsters.isExclusive(monster),
 			dreamItems, upgradeBudgetGp, 1, pinnedByStyle, pinnedSpell, 0,
@@ -126,7 +126,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
 			upgradeBudgetGp, 1, pinnedByStyle, pinnedSpell, 0, protectOnlyItems, callback);
 	}
 
@@ -158,7 +158,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
 			upgradeBudgetGp, 1, pinnedByStyle, pinnedSpell, pinnedSpec, protectOnlyItems, callback);
 	}
 
@@ -190,7 +190,7 @@ public final class ServiceCalls
 	{
 		service.bestPerStyle(monster, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, excludedByStyle,
-			maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
+			maxTradeables, riskBudgetGp, antifirePotion, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness, dreamItems,
 			upgradeBudgetGp, maxSwaps, pinnedByStyle, pinnedSpell, 0,
 			protectOnlyItems, callback);
 	}
@@ -282,7 +282,7 @@ public final class ServiceCalls
 		service.bestPerStyleAcross(mobs, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 			Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, 0, true, Collections.emptyMap(), Collections.emptyMap(), false,
+			false, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), false,
 			Collections.emptySet(), 0, maxSwaps, Collections.emptyMap(), Collections.emptyMap(),
 			pinsByMob, spellByMob, specByMob, Collections.emptySet(),
 			roster ->
@@ -322,7 +322,7 @@ public final class ServiceCalls
 		}
 		service.bestPerStyleAcross(mobs, realLevels, boostedLevels, prayerUnlocks, requirements,
 			owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, excludedByMob,
 			Collections.emptyMap(),
 			pinsByMob, spellByMob, Collections.emptyMap(), protectOnlyItems, callback);

@@ -62,6 +62,9 @@ public class PageState
 	/** 0 = shield required, 1 = regular antifire, 2 = super antifire -
 	 * the classic tri-state; Detect resolves it at selection time. */
 	private int antifireMode;
+	/** Sunfire runes assumed for a fire spell (seeded from ownership at
+	 * each selection; the card plate overrides). */
+	private boolean sunfireRunes;
 	private int deathCharge;
 	private boolean specWeapon;
 	private int upgradeBudgetGp;
@@ -124,7 +127,7 @@ public class PageState
 	{
 		return new Object[]{mob, rosterMobs, rosterName,
 			new Object[]{antifireMode, selectedTab, viewingBis, onTask, inWilderness,
-				maxSwaps, riskBudgetGp, riskCapped, protectItem, upgradeBudgetGp}};
+				maxSwaps, riskBudgetGp, riskCapped, protectItem, upgradeBudgetGp, sunfireRunes}};
 	}
 
 	@SuppressWarnings("unchecked")
@@ -146,6 +149,10 @@ public class PageState
 			this.riskCapped = (Boolean) params[7];
 			this.protectItem = (Boolean) params[8];
 			this.upgradeBudgetGp = (Integer) params[9];
+			if (params.length > 10)
+			{
+				this.sunfireRunes = (Boolean) params[10];
+			}
 		}
 	}
 
@@ -224,6 +231,9 @@ public class PageState
 				return true;
 			case "antifireMode":
 				antifireMode = Math.max(0, Math.min(2, asInt(value, 0)));
+				return true;
+			case "sunfireRunes":
+				sunfireRunes = Boolean.TRUE.equals(value);
 				return true;
 			case "deathCharge":
 				deathCharge = asInt(value, 0);
@@ -345,6 +355,7 @@ public class PageState
 		node.put("riskCapped", riskCapped);
 		node.put("spellbookSwap", spellbookSwap);
 		node.put("antifireMode", antifireMode);
+		node.put("sunfireRunes", sunfireRunes);
 		node.put("deathCharge", deathCharge);
 		node.put("specWeapon", specWeapon);
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
@@ -406,7 +417,7 @@ public class PageState
 			f2pOnly, !f2pOnly && onTask, inWilderness, spellbookLock, tradeables,
 			riskBudgetGp, antifireMode == 2, f2pOnly ? 0 : deathCharge, specWeapon,
 			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
-			upgradeBudgetGp, maxSwaps,
+			upgradeBudgetGp, maxSwaps, sunfireRunes,
 		};
 	}
 }

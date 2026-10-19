@@ -229,6 +229,11 @@ public class OfficialVectorExport
 		// The charged tome of water: +10% accuracy and damage on a standard
 		// water spell vs NPCs (rakaykhan1512, Discord 2026-10-18; wiki).
 		{"watersurge-tome-drake", "Drake", "", "MAGIC", "Kodai wand", null, "Water Surge", "Tome of Water#Charged"},
+		// Sunfire runes: a fire spell's minimum hit is a tenth of its max
+		// (Kendyy, Discord 2026-10-19; wiki Sunfire rune), taken before the
+		// tome step - the charged fire tome lifts the max, not the floor.
+		{"firesurge-sunfire-araxxor", "Araxxor", "", "MAGIC", "Kodai wand", null, "Fire Surge", "SUNFIRE"},
+		{"firesurge-sunfire-tome-araxxor", "Araxxor", "", "MAGIC", "Kodai wand", null, "Fire Surge", "SUNFIRE", "Tome of Fire#Charged"},
 		{"shadow-td", "Tormented Demon", "1", "MAGIC", "Tumeken's shadow", null},
 	};
 
@@ -395,6 +400,7 @@ public class OfficialVectorExport
 				gearNames.add(gearRef(ammo));
 			}
 			boolean onTask = false;
+			boolean sunfire = false;
 			int toaInvocation = 0;
 			for (int i = 7; i < s.length; i++)
 			{
@@ -405,6 +411,11 @@ public class OfficialVectorExport
 				if (s[i].startsWith("INVO:"))
 				{
 					toaInvocation = Integer.parseInt(s[i].substring(5));
+					continue;
+				}
+				if (s[i].equals("SUNFIRE"))
+				{
+					sunfire = true;
 					continue;
 				}
 				GearItem extra = byName(data, s[i]);
@@ -418,7 +429,7 @@ public class OfficialVectorExport
 				monster, style, PlayerLevels.MAXED,
 				prayersFor(style), forcedSpell, 0,
 				CandidateMode.ALL_STANDARD, true, onTask,
-				OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
+				OwnedItems.EMPTY, RequirementProfile.MAXED, 1).withSunfireRunes(sunfire);
 			DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 			if (result == null)
 			{
@@ -442,6 +453,10 @@ public class OfficialVectorExport
 			if (onTask)
 			{
 				vector.put("onSlayerTask", true);
+			}
+			if (sunfire)
+			{
+				vector.put("sunfireRunes", true);
 			}
 			String spellName = result.getSpellName();
 			if (spellName != null && !spellName.isEmpty())

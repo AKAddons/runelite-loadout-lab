@@ -215,6 +215,7 @@ public class OptimizerService
 		int maxTradeables,
 		int riskBudgetGp,
 		boolean antifirePotion,
+		boolean sunfireRunes,
 		int deathCharge,
 		boolean specWeapon,
 		Map<CombatStyle, String> boostPicks,
@@ -231,7 +232,7 @@ public class OptimizerService
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps,
 			Collections.singletonMap(monster.profileId(), pinnedByStyle),
 			Collections.singletonMap(monster.profileId(), pinnedSpell),
@@ -298,6 +299,7 @@ public class OptimizerService
 		boolean f2pOnly;
 		boolean onSlayerTask;
 		boolean antifirePotion;
+		boolean sunfireRunes;
 		int deathCharge;
 		boolean specWeapon = true;
 		Map<CombatStyle, String> boostPicks = Map.of();
@@ -408,7 +410,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.deathCharge
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.deathCharge
 			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
@@ -622,7 +624,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob,
 		Map<Integer, SpellStats> spellByMob, Map<Integer, Integer> specByMob,
@@ -653,6 +655,7 @@ public class OptimizerService
 		ctx.f2pOnly = f2pOnly;
 		ctx.onSlayerTask = onSlayerTask;
 		ctx.antifirePotion = antifirePotion;
+		ctx.sunfireRunes = sunfireRunes;
 		ctx.deathCharge = deathCharge;
 		ctx.specWeapon = specWeapon;
 		ctx.boostPicks = boostPicks == null ? Map.of() : boostPicks;
@@ -2533,7 +2536,7 @@ public class OptimizerService
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
 		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
 		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
+		boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
 		int maxSwaps,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob,
@@ -2581,14 +2584,14 @@ public class OptimizerService
 			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
 				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
+				maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
 				maxSwaps, pinsByMob.get(p), spellByMob.get(p), specByMob.getOrDefault(p, 0), protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
+			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
 			dreamItems, upgradeBudgetGp, maxSwaps, pinsByMob, spellByMob, specByMob, protectOnlyItems);
 		ctx.excludedByMob = excludedByMob == null ? Map.of() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Map.of() : dreamsByMob;
@@ -3431,9 +3434,10 @@ public class OptimizerService
 		OptimizationRequest r = inContext(request(
 			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0), ctx, style, mob)
-			// The ceiling drinks a super antifire: its shield slot is for dps
-			// (Andrew 2026-10-19: best aligns with the highest-dps option).
-			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true);
+			// The ceiling drinks a super antifire and casts with sunfire runes:
+			// its shield slot is for dps (Andrew 2026-10-19: best aligns with
+			// the highest-dps option).
+			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true);
 		return withPrayerPick(r, ctx, style, gameLevels,
 			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
 	}
@@ -3447,6 +3451,7 @@ public class OptimizerService
 			.withSpellbookLock(ctx.lock)
 			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
 			.withAntifirePotion(ctx.antifirePotion)
+			.withSunfireRunes(ctx.sunfireRunes)
 			.withDeathCharge(ctx.deathCharge)
 			.withInWilderness(ctx.inWilderness);
 	}

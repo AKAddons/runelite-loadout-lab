@@ -25,13 +25,13 @@ class SelectionResetTest
 	private static CommandEngine engine(PageState state, CaptureLink link)
 	{
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			link);
 		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk,
-			antifire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
+			antifire, sunfire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 			{
 			});
 		return engine;

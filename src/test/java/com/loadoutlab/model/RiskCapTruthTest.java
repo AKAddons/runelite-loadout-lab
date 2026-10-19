@@ -65,7 +65,7 @@ class RiskCapTruthTest
 		PageState state = wilderness();
 		CommandEngine engine = new CommandEngine(
 			new com.loadoutlab.data.DataService().load(), state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},

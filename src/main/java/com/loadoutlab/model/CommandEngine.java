@@ -29,7 +29,7 @@ public class CommandEngine
 	{
 		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge, boolean specWeapon,
+			boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
 			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
 	}
@@ -167,7 +167,7 @@ public class CommandEngine
 	{
 		void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
 			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, int deathCharge, boolean specWeapon,
+			boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon,
 			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
 			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
 	}
@@ -793,6 +793,13 @@ public class CommandEngine
 					return false;
 				}
 				state.setParam("antifireMode", resolve.apply(selected));
+				recompute();
+				return true;
+			}
+			case "detect-sunfire":
+			{
+				// The sunfire plate's Detect best: the selection-time seed again.
+				seedSunfire();
 				recompute();
 				return true;
 			}
@@ -1432,7 +1439,7 @@ public class CommandEngine
 		{
 			mob = atInvocation(mob);
 			compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
-				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
+				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6], (Boolean) a[13],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
 				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
 				{
@@ -1447,7 +1454,7 @@ public class CommandEngine
 			}
 			roster = scaled;
 			rosterPath.computeRoster(roster, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
-				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6],
+				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6], (Boolean) a[13],
 				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
 				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
 				{
@@ -1656,6 +1663,42 @@ public class CommandEngine
 		return Boolean.TRUE.equals(state.paramsNode().get(key));
 	}
 
+	/** Sunfire runes are assumed when the owned scan sees any (Kendyy,
+	 * Discord 2026-10-19); the plate's pick holds until the next selection
+	 * or Detect best. */
+	private void seedSunfire()
+	{
+		IntPredicate owns = ownedCheck;
+		state.setParam("sunfireRunes", owns != null && owns.test(SpellRunes.SUNFIRE_RUNE));
+	}
+
+	/** With sunfire runes assumed, a fire spell's trip runes carry them in
+	 * place of fire runes; the Best-in-game card always assumes them (the
+	 * ceiling rule). The five standard fire spells are the "Fire " names. */
+	@SuppressWarnings("unchecked")
+	private void sunfireRunes(List<?> mobNodes)
+	{
+		boolean assumed = flag("sunfireRunes");
+		for (Object m : mobNodes)
+		{
+			Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) m).get("styles");
+			for (Object s : styles.values())
+			{
+				for (String side : new String[]{"yours", "bis"})
+				{
+					Map<String, Object> card = (Map<String, Object>) ((Map<?, ?>) s).get(side);
+					Object spell = card == null ? null : card.get("spell");
+					if ((assumed || "bis".equals(side)) && spell instanceof String
+						&& ((String) spell).startsWith("Fire "))
+					{
+						card.put("runes", SpellRunes.withSunfire(
+							(List<Map<String, Object>>) card.get("runes")));
+					}
+				}
+			}
+		}
+	}
+
 	private boolean membersFlag(String key)
 	{
 		Map<String, Object> params = state.paramsNode();
@@ -1824,6 +1867,7 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds, itemLocation);
+		sunfireRunes((List<?>) entry.get("mobs"));
 		entry.put("params", params);
 		List<Map<String, Object>> supplies = suppliesNode(mobs);
 		entry.put("supplies", supplies);
@@ -1941,6 +1985,7 @@ public class CommandEngine
 				{
 					state.setParam("antifireMode", resolve.apply(selected));
 				}
+				seedSunfire();
 				// A fresh selection resets the tab so the default (the
 				// best style for THIS mob) applies - the classic made a
 				// new entry per selection, which cleared it implicitly.

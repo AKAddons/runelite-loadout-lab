@@ -32,7 +32,7 @@ class F2pFilterTest
 	private static CommandEngine engine(PageState state)
 	{
 		return new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},

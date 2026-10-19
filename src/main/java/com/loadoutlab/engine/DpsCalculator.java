@@ -19,6 +19,10 @@ public final class DpsCalculator
 	 * (final rescore, fill, spec) need the bonus list, and the map churn +
 	 * per-result copy is pure waste across beam trials. */
 	private boolean collectCounted = true;
+	/** The sunfire floor of the CURRENT magic calculation: a tenth of the
+	 * pre-tome max hit of a standard fire spell cast with sunfire runes
+	 * (official calc MIN_HIT_SUNFIRE, before the tome step), else 0. */
+	private int sunfireMinHit;
 
 	/** Toggle counted-bonus collection (optimizer beam: off). */
 	void setCollectCounted(boolean collect)
@@ -557,7 +561,7 @@ public final class DpsCalculator
 			counted("confliction gauntlets", "a second accuracy roll (one-handed)");
 			accuracy = RollMath.conflictionAccuracy(attackRoll, defenceRoll);
 		}
-		double expected = RollMath.normalExpectedHit(accuracy, maxHit);
+		double expected = RollMath.expectedHit(accuracy, sunfireMinHit, maxHit);
 		if (twinflame && twinflameDoubles(twinflameSpell))
 		{
 			// Their exact model (verified 2026-08-21, vector
@@ -567,11 +571,11 @@ public final class DpsCalculator
 			// +6.3% hot on a Fire giant Water Wave.
 			counted("twinflame staff", "second hit at 40% of the roll (Bolt/Blast/Wave)");
 			long truncSum = 0;
-			for (int k = 0; k <= maxHit; k++)
+			for (int k = sunfireMinHit; k <= maxHit; k++)
 			{
 				truncSum += k * 2L / 5;
 			}
-			expected += accuracy * ((double) truncSum / (maxHit + 1));
+			expected += accuracy * ((double) truncSum / (maxHit - sunfireMinHit + 1));
 		}
 		if (wearing(loadout, "sanguinesti"))
 		{
@@ -1199,6 +1203,7 @@ public final class DpsCalculator
 	private int applyMagicDamageBonuses(OptimizationRequest request, Loadout loadout, int maxHit)
 	{
 		int baseMaxHit = maxHit;
+		sunfireMinHit = 0;
 		int magicDamage = loadout.getBonuses().getMagicDamage();
 		if (wearing(loadout, "tumeken"))
 		{
@@ -1260,6 +1265,15 @@ public final class DpsCalculator
 			int severity = request.getMonster().getWeaknessSeverity();
 			counted("elemental weakness", "+" + severity + "% base damage");
 			maxHit += multiply(baseMaxHit, severity, 100);
+		}
+		// Sunfire runes (wiki; Kendyy 2026-10-19): a landed fire spell deals
+		// at least a tenth of the max hit - the official calc takes the
+		// tenth here, after the weakness and BEFORE the tome step.
+		if (request.isSunfireRunes() && request.getSpell() != null
+			&& "fire".equals(request.getSpell().getElement()))
+		{
+			counted("sunfire runes", "minimum hit a tenth of the max");
+			sunfireMinHit = multiply(maxHit, 1, 10);
 		}
 		// The tome multiplies the whole max hit and roll, weakness included
 		// (official calc, vector watersurge-tome-drake 2026-10-18).

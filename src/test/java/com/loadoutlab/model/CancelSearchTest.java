@@ -62,7 +62,7 @@ class CancelSearchTest
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},

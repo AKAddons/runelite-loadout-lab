@@ -15,6 +15,7 @@ Usage: python3 scripts/verify_official.py [--calc-dir ~/Development/osrs-dps-cal
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -57,6 +58,12 @@ def main():
         cwd=REPO, env=export_env)
 
     print("2/3 running the official calculator on the same vectors...")
+    # The clone runs ITS copy of the harness: sync ours first, or a buff
+    # added here (sunfire runes, 2026-10-19) never reaches the official
+    # side and the vector reads as a false disagreement.
+    harness = os.path.join(args.calc_dir, "src", "tests", "harness", "LoadoutLabVectors.test.ts")
+    os.makedirs(os.path.dirname(harness), exist_ok=True)
+    shutil.copyfile(os.path.join(REPO, "scripts", "official-harness", "LoadoutLabVectors.test.ts"), harness)
     run([COREPACK, "yarn", "jest", "src/tests/harness/LoadoutLabVectors.test.ts"],
         cwd=args.calc_dir,
         env={

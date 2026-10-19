@@ -89,9 +89,10 @@ describe('loadout lab vectors', () => {
             style,
             skills: v.skills || undefined,
             spell: v.spell ? findSpell(v.spell) : undefined,
-            buffs: (v.markOfDarkness || v.onSlayerTask || v.monster.startsWith('Revenant')) ? {
+            buffs: (v.markOfDarkness || v.onSlayerTask || v.sunfireRunes || v.monster.startsWith('Revenant')) ? {
               ...(v.markOfDarkness ? { markOfDarknessSpell: true } : {}),
               ...(v.onSlayerTask ? { onSlayerTask: true } : {}),
+              ...(v.sunfireRunes ? { usingSunfireRunes: true } : {}),
               // Fighting a revenant implies the Wilderness (rev weapon buff).
               ...(v.monster.startsWith('Revenant') ? { inWilderness: true } : {}),
             } : undefined,

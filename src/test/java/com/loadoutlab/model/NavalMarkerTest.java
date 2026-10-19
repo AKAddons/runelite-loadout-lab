@@ -48,7 +48,7 @@ class NavalMarkerTest
 	void searchOptionsFlagNavalRows()
 	{
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},

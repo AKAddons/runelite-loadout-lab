@@ -715,6 +715,11 @@ public class ResultCards
 			{
 				headerRow.add(firePlate(bis));
 			}
+			String cardSpell = Model.str(Model.map(node, bis ? "bis" : "yours"), "spell");
+			if (cardSpell != null && cardSpell.startsWith("Fire "))
+			{
+				headerRow.add(sunfirePlate(bis));
+			}
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
@@ -1859,6 +1864,34 @@ public class ResultCards
 				int value = i;
 				Ui.item(menu, names[i], () -> commands.set("antifireMode", value));
 			}
+			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
+		}
+		return plate;
+	}
+
+	/** The fire-spell rune assumption (Kendyy, Discord 2026-10-19): sunfire
+	 * runes give the spell a minimum hit of a tenth of its max. Seeded
+	 * from ownership at each selection; the ceiling always assumes them. */
+	private JLabel sunfirePlate(boolean bis)
+	{
+		boolean on = bis || Model.flag(pageParams, "sunfireRunes");
+		JLabel plate = new JLabel();
+		plate.setPreferredSize(new Dimension(24, 24));
+		plate.setHorizontalAlignment(SwingConstants.CENTER);
+		plate.setToolTipText("Fire spell runes: "
+			+ (on ? "sunfire runes (minimum hit a tenth of the max)" : "fire runes")
+			+ (bis ? "" : " - click to change"));
+		if (itemManager != null)
+		{
+			seatItem(plate, on ? 28929 : 554);
+		}
+		if (!bis)
+		{
+			JPopupMenu menu = new JPopupMenu();
+			Ui.item(menu, "Detect best", "Sunfire runes when you own any",
+				() -> commands.send("detect-sunfire", Map.of()));
+			Ui.item(menu, "Sunfire runes", () -> commands.set("sunfireRunes", true));
+			Ui.item(menu, "Fire runes", () -> commands.set("sunfireRunes", false));
 			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
 		}
 		return plate;

@@ -1871,7 +1871,7 @@ public class LoadoutLabPlugin extends Plugin
 		}
 	}
 
-	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1887,7 +1887,7 @@ public class LoadoutLabPlugin extends Plugin
 				specByMob.put(id, mobProfiles.pinnedSpec(id));
 			}
 			optimizerService.bestPerStyleAcross(mobs, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
+				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
 				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
 				protectOnly.snapshot(),
@@ -1908,7 +1908,7 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1920,7 +1920,7 @@ public class LoadoutLabPlugin extends Plugin
 				s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
+				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps,
 				pinnedByStyle(monster, monster.getId(), onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),

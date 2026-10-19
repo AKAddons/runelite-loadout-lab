@@ -18,6 +18,8 @@ import java.util.Set;
 public final class SpellRunes
 {
 	private static final Map<String, Integer> RUNE_ITEMS = new LinkedHashMap<>();
+	/** Sunfire rune (gameval ItemID.SUNFIRERUNE). */
+	public static final int SUNFIRE_RUNE = 28929;
 	private static final Map<String, Map<String, Integer>> BY_SPELL = new LinkedHashMap<>();
 
 	static
@@ -139,6 +141,35 @@ public final class SpellRunes
 			node.put("name", capitalize(rune.getKey()) + " rune");
 			node.put("qty", rune.getValue());
 			out.add(node);
+		}
+		return out;
+	}
+
+	/** Sunfire runes stand in for fire runes (wiki): the cost's fire stack
+	 * becomes the same count of sunfire runes, everything else as it was.
+	 * A cost with no fire runes (a fire staff or tome covers them) comes
+	 * back unchanged; null stays null. */
+	public static List<Map<String, Object>> withSunfire(List<Map<String, Object>> runes)
+	{
+		if (runes == null)
+		{
+			return null;
+		}
+		Integer fire = RUNE_ITEMS.get("fire");
+		List<Map<String, Object>> out = new ArrayList<>(runes.size());
+		for (Map<String, Object> rune : runes)
+		{
+			if (fire != null && fire.equals(rune.get("id")))
+			{
+				Map<String, Object> swap = new LinkedHashMap<>(rune);
+				swap.put("id", SUNFIRE_RUNE);
+				swap.put("name", "Sunfire rune");
+				out.add(swap);
+			}
+			else
+			{
+				out.add(rune);
+			}
 		}
 		return out;
 	}

@@ -49,7 +49,7 @@ class RosterReorderTest
 	{
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
@@ -89,7 +89,7 @@ class RosterReorderTest
 		PageState state = new PageState();
 		CapturePages link = new CapturePages();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) -> searches.incrementAndGet(),
 			link);
 		engine.setStoreOps(new TestStoreOps());

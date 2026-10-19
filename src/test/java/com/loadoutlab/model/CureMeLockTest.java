@@ -56,7 +56,7 @@ class CureMeLockTest
 		AtomicInteger charge = new AtomicInteger(-1);
 		AtomicInteger computes = new AtomicInteger();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 				lock.set(book);
@@ -64,7 +64,7 @@ class CureMeLockTest
 				computes.incrementAndGet();
 			}, new CompanionLink());
 		// "zulrah" resolves to the roster group, so capture that path too.
-		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 			boosts, prayers, budget, swaps, onDone) ->
 		{
 			lock.set(book);
@@ -104,9 +104,9 @@ class CureMeLockTest
 	{
 		AtomicInteger charge = new AtomicInteger(-1);
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) -> charge.set(dc), new CompanionLink());
-		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 			boosts, prayers, budget, swaps, onDone) -> charge.set(dc));
 		engine.setStoreOps(new TestStoreOps());
 		engine.setSupplyDefaults(() -> Map.of("antivenom", "DETECT_BEST"));
@@ -124,9 +124,9 @@ class CureMeLockTest
 	{
 		AtomicReference<String> lock = new AtomicReference<>();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) -> lock.set(book), new CompanionLink());
-		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, dc, spec,
+		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
 			boosts, prayers, budget, swaps, onDone) -> lock.set(book));
 		engine.setStoreOps(new TestStoreOps()
 		{

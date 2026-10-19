@@ -3,9 +3,9 @@
 From the 2026-07-05 vendoring analysis of guccifurs/best-dps, updated as
 fixes land.
 
-## Current state (2026-10-18, 97 harness vectors)
+## Current state (2026-10-19, 99 harness vectors)
 
-88 of 97 vectors agree with the official calculator within 0.5%; most
+90 of 99 vectors agree with the official calculator within 0.5%; most
 are exact. What is still open, largest first - every one is pinned by a
 vector, so none can drift further unnoticed:
 
@@ -111,6 +111,17 @@ blades matched exactly (TRIPLEKILLTRENT, YouTube: "salad blade is
 better than my fang at toa"). Inside the Tombs the fang rolls accuracy
 twice (1 - (1-p)^2, official PLAYER_ACCURACY_FANG_TOA); we applied the
 outside reroll formula everywhere. Both vectors are exact now.
+
+## Sunfire runes (2026-10-19, vectors firesurge-sunfire-araxxor, firesurge-sunfire-tome-araxxor)
+
+Exact. The official calc takes minHit = trunc(maxHit / 10) for a fire
+spell after the magic damage pool and the elemental weakness and before
+the tome step (MIN_HIT_SUNFIRE, "applied pre-tome"), then rolls uniform
+over [min, max]; we do the same (DpsCalculator.sunfireMinHit,
+RollMath.expectedHit). The official harness carries it as the
+usingSunfireRunes buff; verify_official.py now syncs the harness into
+the clone before running, since a stale clone copy read the two vectors
+as +9.9% / +9.0% (the plain cast) on the first run.
 
 ## Elemental tomes (2026-10-18, vector watersurge-tome-drake)
 

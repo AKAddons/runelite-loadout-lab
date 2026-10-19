@@ -56,13 +56,13 @@ class RaidMoodRoutingTest
 		PageState state = new PageState();
 		RecordingLink link = new RecordingLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, dc, spec,
+			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
 				boosts, prayers, budget, swaps, onDone) ->
 			{
 			},
 			link);
 		engine.setRosterCompute((mobs, f2p, onTask, wild, lock, tradeables, risk, antifire,
-			dc, spec, boosts, prayers, budget, swaps, onDone) ->
+			sunfire, dc, spec, boosts, prayers, budget, swaps, onDone) ->
 		{
 		});
 		// Commands arrive on the EDT in the client; the pending publish is

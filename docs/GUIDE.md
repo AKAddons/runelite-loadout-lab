@@ -147,6 +147,15 @@ damage to a standard-spellbook spell of its element, and the water tome
 10% accuracy as well (an empty tome, an off-element spell or an
 Ancients spell gets nothing), so Water Surge with the tome beats the
 fortified ward at a drake.
+Sunfire runes give a standard fire spell a minimum hit of a tenth of its
+max hit (taken before the tome's damage step, as the official calculator
+does). A card whose spell is a fire spell gets a sunfire plate in its
+header, seeded from your collection at each selection (sunfire runes
+anywhere the scan sees them) with Detect best on its menu; pick sunfire
+or fire runes to change it, and the trip runes follow. The Best in game
+card always assumes sunfire runes. A tome of fire charged with searing
+pages has the same effect; the scan cannot tell its pages apart, so pick
+sunfire runes on the plate yourself.
 
 ![Spell and spellbook recommendation](img/spellbook.png)
 

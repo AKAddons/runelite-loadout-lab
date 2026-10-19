@@ -72,6 +72,10 @@ public final class OptimizationRequest implements Cloneable
 	 * forced); false = protection must come from a shield. */
 	@Getter
 	private boolean antifirePotion;
+	/** Sunfire runes in place of fire runes: a standard fire spell lands
+	 * no lower than a tenth of its max hit (wiki Sunfire rune). */
+	@Getter
+	private boolean sunfireRunes;
 	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
@@ -122,6 +126,7 @@ public final class OptimizationRequest implements Cloneable
 		this.maxTradeables = -1;
 		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 		this.antifirePotion = false;
+		this.sunfireRunes = false;
 		this.dreamItems = Set.of();
 		this.pinnedItems = Map.of();
 		this.protectOnlyItems = Set.of();
@@ -188,6 +193,13 @@ public final class OptimizationRequest implements Cloneable
 	{
 		OptimizationRequest c = copy();
 		c.antifirePotion = antifirePotion;
+		return c;
+	}
+
+	public OptimizationRequest withSunfireRunes(boolean sunfireRunes)
+	{
+		OptimizationRequest c = copy();
+		c.sunfireRunes = sunfireRunes;
 		return c;
 	}
 
