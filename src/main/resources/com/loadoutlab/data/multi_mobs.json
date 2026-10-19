@@ -1,0 +1,2500 @@
+{
+ "version": 1,
+ "source": "wiki location tables, chisel varbit 4605 tiles, area pages, read 2026-10-19",
+ "mobs": [
+  {
+   "name": "Abyssal demon",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    }
+   ]
+  },
+  {
+   "name": "Acidic Araxyte",
+   "version": "",
+   "locations": [
+    {
+     "location": "Morytania Spider Cave",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ammonite Crab",
+   "version": "",
+   "locations": [
+    {
+     "location": "Mushroom Forest",
+     "source": "tiles"
+    },
+    {
+     "location": "Fossil Island Volcano",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ankou",
+   "version": "Level 95",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ankou",
+   "version": "Level 98",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Araxxor",
+   "version": "",
+   "locations": [
+    {
+     "location": "Morytania Spider Cave",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Araxyte",
+   "version": "Level 146",
+   "locations": [
+    {
+     "location": "Morytania Spider Cave",
+     "source": "page: multicombat"
+    },
+    {
+     "location": "Morytania Spider Cave (task-only area)",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Araxyte",
+   "version": "Level 96",
+   "locations": [
+    {
+     "location": "Morytania Spider Cave",
+     "source": "page: multicombat"
+    },
+    {
+     "location": "Morytania Spider Cave (task-only area)",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 131",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 148",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 79 (2)",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 84",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 97 (1)",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Aviansie",
+   "version": "Level 97 (2)",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Baby black dragon",
+   "version": "Myths' Guild",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Baby black dragon",
+   "version": "Normal",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Balfrug Kreeyath",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Zamorak Boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Bandit",
+   "version": "Level 130",
+   "locations": [
+    {
+     "location": "Bandit Camp (Wilderness)",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    }
+   ]
+  },
+  {
+   "name": "Big Wolf",
+   "version": "",
+   "locations": [
+    {
+     "location": "White Wolf Mountain",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Black demon",
+   "version": "Level 178",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Black demon",
+   "version": "Level 184",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Black demon",
+   "version": "Level 188",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Black dragon",
+   "version": "Level 227",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Black dragon",
+   "version": "Level 247",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Bloodveld",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Meiyerditch Laboratories",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Bronze dragon",
+   "version": "Catacombs of Kourend",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Chaos Elemental",
+   "version": "",
+   "locations": [
+    {
+     "location": "West of the Rogues' Castle",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Chaos Fanatic",
+   "version": "",
+   "locations": [
+    {
+     "location": "West of the Lava Maze",
+     "source": "Multicombat area list (surface)"
+    }
+   ]
+  },
+  {
+   "name": "Commander Zilyana",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Saradomin boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Cyclops (Catacombs of Kourend)",
+   "version": "Level 56",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Cyclops (Catacombs of Kourend)",
+   "version": "Level 76",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Cyclops (God Wars Dungeon)",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth",
+   "version": "Level 74 (1)",
+   "locations": [
+    {
+     "location": "Jormungand's Prison",
+     "source": "tiles"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Lighthouse",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth",
+   "version": "Level 92 (1)",
+   "locations": [
+    {
+     "location": "Jormungand's Prison",
+     "source": "tiles"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Lighthouse",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth (Waterbirth Island)",
+   "version": "Level 88",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon (Area before Dagannoth Kings)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Waterbirth Island Dungeon (Sub Levels)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth (Waterbirth Island)",
+   "version": "Level 90",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon (Area before Dagannoth Kings)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Waterbirth Island Dungeon (Sub Levels)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth Prime",
+   "version": "",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Waterbirth Island Dungeon (Slayer lair)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth Rex",
+   "version": "",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Waterbirth Island Dungeon (Slayer lair)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth Supreme",
+   "version": "",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Waterbirth Island Dungeon (Slayer lair)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dagannoth fledgeling",
+   "version": "",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Dark warrior",
+   "version": "Level 145",
+   "locations": [
+    {
+     "location": "Dark Warriors' Fortress",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Dark Warriors' Fortress (floor 1)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Dark warrior",
+   "version": "Level 51",
+   "locations": [
+    {
+     "location": "Dark Warriors' Fortress",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Dark Warriors' Fortress (floor 1)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Dark warrior",
+   "version": "Level 62",
+   "locations": [
+    {
+     "location": "Dark Warriors' Fortress",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Dark Warriors' Fortress (floor 1)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Death wing",
+   "version": "",
+   "locations": [
+    {
+     "location": "Shaman Caves",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Demonic gorilla",
+   "version": "",
+   "locations": [
+    {
+     "location": "Crash Site Cavern",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Deviant spectre",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Dust devil",
+   "version": "",
+   "locations": [
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Earthen Nagua",
+   "version": "Normal",
+   "locations": [
+    {
+     "location": "Tonali Cavern - Southern Cavern (middle floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Southern Cavern (bottom floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Sun Chamber",
+     "source": "page: multicombat chambers"
+    }
+   ]
+  },
+  {
+   "name": "Earthen Nagua",
+   "version": "Reinforced",
+   "locations": [
+    {
+     "location": "Tonali Cavern - Southern Cavern (middle floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Southern Cavern (bottom floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Sun Chamber",
+     "source": "page: multicombat chambers"
+    }
+   ]
+  },
+  {
+   "name": "Earthen Nagua",
+   "version": "Weakened",
+   "locations": [
+    {
+     "location": "Tonali Cavern - Southern Cavern (middle floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Southern Cavern (bottom floor)",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Sun Chamber",
+     "source": "page: multicombat chambers"
+    }
+   ]
+  },
+  {
+   "name": "Elder Chaos druid",
+   "version": "",
+   "locations": [
+    {
+     "location": "Chaos Temple (Wilderness)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ent",
+   "version": "Wilderness",
+   "locations": [
+    {
+     "location": "North of Chaos Temple (Wilderness)",
+     "source": "tiles"
+    },
+    {
+     "location": "Woodcutting Guild Ent Dungeon",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Ent",
+   "version": "Woodcutting Guild",
+   "locations": [
+    {
+     "location": "North of Chaos Temple (Wilderness)",
+     "source": "tiles"
+    },
+    {
+     "location": "Woodcutting Guild Ent Dungeon",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Feral Vampyre",
+   "version": "Level 77 (God Wars Dungeon)",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Fire giant",
+   "version": "Level 104",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Smoke Dungeon",
+     "source": "page: the western dust devil area is multi-combat (task-only)"
+    }
+   ]
+  },
+  {
+   "name": "Fire giant",
+   "version": "Level 109",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Smoke Dungeon",
+     "source": "page: the western dust devil area is multi-combat (task-only)"
+    }
+   ]
+  },
+  {
+   "name": "Flight Kilisa",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Armadyl boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Flockleader Geerin",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Armadyl boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Frenzied ice troll female",
+   "version": "",
+   "locations": [
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Frenzied ice troll grunt",
+   "version": "",
+   "locations": [
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Frenzied ice troll male",
+   "version": "",
+   "locations": [
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Frenzied ice troll runt",
+   "version": "",
+   "locations": [
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "General Graardor",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Bandos boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Giant Mole",
+   "version": "",
+   "locations": [
+    {
+     "location": "Mole Hole (Under Falador Park)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Giant Rock Crab",
+   "version": "2",
+   "locations": [
+    {
+     "location": "Waterbirth Island Dungeon sublevel 2",
+     "source": "tiles"
+    },
+    {
+     "location": "Waterbirth Island Dungeon sublevel 3",
+     "source": "tiles"
+    },
+    {
+     "location": "Tonali Cavern",
+     "source": "page: multicombat chambers"
+    }
+   ]
+  },
+  {
+   "name": "Greater Nechryael",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    }
+   ]
+  },
+  {
+   "name": "Greater demon",
+   "version": "Level 100",
+   "locations": [
+    {
+     "location": "Wilderness near Demonic Ruins",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Greater demon",
+   "version": "Level 104 (Wilderness Slayer Cave)",
+   "locations": [
+    {
+     "location": "Wilderness near Demonic Ruins",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Greater demon",
+   "version": "Level 113",
+   "locations": [
+    {
+     "location": "Wilderness near Demonic Ruins",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Green dragon",
+   "version": "Level 79",
+   "locations": [
+    {
+     "location": "West of the Dark Warriors' Fortress",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "North of the Graveyard of Shadows",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "South of the Lava Maze",
+     "source": "Multicombat area list (surface)"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Green dragon",
+   "version": "Level 88",
+   "locations": [
+    {
+     "location": "West of the Dark Warriors' Fortress",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "North of the Graveyard of Shadows",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "South of the Lava Maze",
+     "source": "Multicombat area list (surface)"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Grimy Lizard",
+   "version": "",
+   "locations": [
+    {
+     "location": "Tonali Cavern - Moon Chamber",
+     "source": "page: multicombat chambers"
+    },
+    {
+     "location": "Tonali Cavern - Southern Chamber (floor 1)",
+     "source": "page: multicombat chambers"
+    }
+   ]
+  },
+  {
+   "name": "Grizzly bear (Escape Caves)",
+   "version": "",
+   "locations": [
+    {
+     "location": "Escape Caves",
+     "source": "page: an underground multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Hellhound",
+   "version": "Level 127",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Buccaneers' Laboratory",
+     "source": "page: the entire laboratory is a multicombat area"
+    },
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Hellhound",
+   "version": "Level 136",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Buccaneers' Laboratory",
+     "source": "page: the entire laboratory is a multicombat area"
+    },
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ice giant",
+   "version": "",
+   "locations": [
+    {
+     "location": "Settlement Ruins",
+     "source": "tiles"
+    },
+    {
+     "location": "White Wolf Mountain On top",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll",
+   "version": "Level 120",
+   "locations": [
+    {
+     "location": "Trollweiss Dungeon",
+     "source": "page: multicombat (Ash)"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll",
+   "version": "Level 121",
+   "locations": [
+    {
+     "location": "Trollweiss Dungeon",
+     "source": "page: multicombat (Ash)"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll",
+   "version": "Level 123",
+   "locations": [
+    {
+     "location": "Trollweiss Dungeon",
+     "source": "page: multicombat (Ash)"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll",
+   "version": "Level 124",
+   "locations": [
+    {
+     "location": "Trollweiss Dungeon",
+     "source": "page: multicombat (Ash)"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll female",
+   "version": "Variant 1",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll female",
+   "version": "Variant 2",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll grunt",
+   "version": "",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll male",
+   "version": "Variant 1",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll male",
+   "version": "Variant 2",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll runt",
+   "version": "Variant 1",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice troll runt",
+   "version": "Variant 2",
+   "locations": [
+    {
+     "location": "Fremennik Isles",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Troll Caves",
+     "source": "page: multicombat"
+    }
+   ]
+  },
+  {
+   "name": "Ice warrior",
+   "version": "",
+   "locations": [
+    {
+     "location": "White Wolf Mountain",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Queen's Lair",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Ice wolf",
+   "version": "",
+   "locations": [
+    {
+     "location": "Settlement Ruins",
+     "source": "tiles"
+    },
+    {
+     "location": "Ice Path",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Iron dragon",
+   "version": "Catacombs of Kourend",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Jelly",
+   "version": "",
+   "locations": [
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    }
+   ]
+  },
+  {
+   "name": "Jungle Wolf",
+   "version": "",
+   "locations": [
+    {
+     "location": "Kharazi Jungle",
+     "source": "Multicombat area list (western)"
+    }
+   ]
+  },
+  {
+   "name": "K'ril Tsutsaroth",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Zamorak boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Kalphite Guardian",
+   "version": "",
+   "locations": [
+    {
+     "location": "Kalphite Lair",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Kalphite Cave (on Slayer task)",
+     "source": "page: it is a multi-combat area"
+    }
+   ]
+  },
+  {
+   "name": "Kalphite Queen",
+   "version": "Airborne",
+   "locations": [
+    {
+     "location": "Kalphite Lair",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Kalphite Queen",
+   "version": "Crawling",
+   "locations": [
+    {
+     "location": "Kalphite Lair",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Kalphite Soldier",
+   "version": "",
+   "locations": [
+    {
+     "location": "Kalphite Lair",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Kalphite Cave (on Slayer task)",
+     "source": "page: it is a multi-combat area"
+    }
+   ]
+  },
+  {
+   "name": "King Sand Crab",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Kree'arra",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Armadyl boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Lava dragon",
+   "version": "",
+   "locations": [
+    {
+     "location": "Lava Dragon Isle",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Lesser demon",
+   "version": "Level 94",
+   "locations": [
+    {
+     "location": "Wizards' Tower - Cage on the top floor",
+     "source": "tiles"
+    },
+    {
+     "location": "Kingstown - Councillor Hughes' house",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness - King Black Dragon Lair entrance",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Lesser demon",
+   "version": "Level 94 (Wilderness Slayer Cave)",
+   "locations": [
+    {
+     "location": "Wizards' Tower - Cage on the top floor",
+     "source": "tiles"
+    },
+    {
+     "location": "Kingstown - Councillor Hughes' house",
+     "source": "tiles"
+    },
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Wilderness - King Black Dragon Lair entrance",
+     "source": "tiles"
+    },
+    {
+     "location": "Wilderness Slayer Cave",
+     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Lizardman",
+   "version": "Level 53",
+   "locations": [
+    {
+     "location": "Shayziens' Wall",
+     "source": "tiles"
+    },
+    {
+     "location": "Lizardman Canyon, east side",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Lizardman",
+   "version": "Level 62",
+   "locations": [
+    {
+     "location": "Shayziens' Wall",
+     "source": "tiles"
+    },
+    {
+     "location": "Lizardman Canyon, east side",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Lizardman brute",
+   "version": "",
+   "locations": [
+    {
+     "location": "Shayzien's Wall",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Locust rider",
+   "version": "Lancer",
+   "locations": [
+    {
+     "location": "Sophanem Dungeon (cavern level)",
+     "source": "page: multicombat section"
+    },
+    {
+     "location": "Sophanem Dungeon (maze level)",
+     "source": "page: multicombat section"
+    }
+   ]
+  },
+  {
+   "name": "Locust rider",
+   "version": "Ranger",
+   "locations": [
+    {
+     "location": "Sophanem Dungeon (cavern level)",
+     "source": "page: multicombat section"
+    },
+    {
+     "location": "Sophanem Dungeon (maze level)",
+     "source": "page: multicombat section"
+    }
+   ]
+  },
+  {
+   "name": "Mammoth",
+   "version": "",
+   "locations": [
+    {
+     "location": "South-east of Ferox Enclave",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Maniacal monkey",
+   "version": "",
+   "locations": [
+    {
+     "location": "Kruk's Dungeon (Upper Level)",
+     "source": "tiles"
+    },
+    {
+     "location": "Kruk's Dungeon (Lower Level)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Monkey Archer",
+   "version": "",
+   "locations": [
+    {
+     "location": "Marim",
+     "source": "tiles"
+    },
+    {
+     "location": "Marim gates",
+     "source": "tiles"
+    },
+    {
+     "location": "Marim (floor 1)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Monkey Guard",
+   "version": "",
+   "locations": [
+    {
+     "location": "Temple of Marimbo",
+     "source": "tiles"
+    },
+    {
+     "location": "Temple of Marimbo (floor 1)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Monkey Zombie",
+   "version": "Level 129",
+   "locations": [
+    {
+     "location": "Ape Atoll Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "Temple of Marimbo Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Monkey Zombie",
+   "version": "Level 98",
+   "locations": [
+    {
+     "location": "Ape Atoll Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "Temple of Marimbo Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Mountain troll",
+   "version": "Level 69",
+   "locations": [
+    {
+     "location": "South of Mount Quidamortem",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Mourner",
+   "version": "level 108",
+   "locations": [
+    {
+     "location": "Arandar",
+     "source": "tiles"
+    },
+    {
+     "location": "Mourner Tunnels",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Mutated Bloodveld",
+   "version": "",
+   "locations": [
+    {
+     "location": "Buccaneers' Laboratory",
+     "source": "page: the entire laboratory is a multicombat area"
+    },
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    },
+    {
+     "location": "Meiyerditch Laboratories",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Nechryael",
+   "version": "",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Ogre",
+   "version": "GWD",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Ogre",
+   "version": "Level 63",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Pirate",
+   "version": "Cabin Fever",
+   "locations": [
+    {
+     "location": "Pirates' Cove",
+     "source": "tiles"
+    },
+    {
+     "location": "Port Piscarilius",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Poison spider",
+   "version": "Level 64",
+   "locations": [
+    {
+     "location": "South of the Demonic Ruins",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Red dragon",
+   "version": "",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Rock Crab",
+   "version": "",
+   "locations": [
+    {
+     "location": "North of Rellekka",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Rogue",
+   "version": "Level 135",
+   "locations": [
+    {
+     "location": "Rogues' Castle (floor 0)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Rogues' Castle (floor 1)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Rogues' Castle (floor 2)",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Rogues' Castle (floor 3)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Sand Crab",
+   "version": "",
+   "locations": [
+    {
+     "location": "Crabclaw Caves",
+     "source": "tiles"
+    },
+    {
+     "location": "Crabclaw Isle",
+     "source": "tiles"
+    },
+    {
+     "location": "East of the Hosidius vinery",
+     "source": "tiles"
+    },
+    {
+     "location": "Hosidius - southern coast",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Scarab Mage",
+   "version": "Level 93",
+   "locations": [
+    {
+     "location": "Sophanem Dungeon (cavern level)",
+     "source": "page: multicombat section"
+    },
+    {
+     "location": "Sophanem Dungeon (maze level)",
+     "source": "page: multicombat section"
+    }
+   ]
+  },
+  {
+   "name": "Scorpia",
+   "version": "",
+   "locations": [
+    {
+     "location": "Cave in the Scorpion Pit (north-east Wilderness)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Sergeant Grimspike",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Bandos boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Sergeant Steelwill",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Bandos boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Sergeant Strongstack",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Bandos boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Shade",
+   "version": "Catacombs of Kourend",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Shadow Hound",
+   "version": "",
+   "locations": [
+    {
+     "location": "Shadow Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Shadow spider",
+   "version": "",
+   "locations": [
+    {
+     "location": "Buccaneers' Laboratory",
+     "source": "page: the entire laboratory is a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton (Ape Atoll)",
+   "version": "",
+   "locations": [
+    {
+     "location": "Ape Atoll Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton (Lucien's camp)",
+   "version": "",
+   "locations": [
+    {
+     "location": "Lucien's camp",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton (Shayzien Crypts)",
+   "version": "Magic",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton (Shayzien Crypts)",
+   "version": "Melee",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton (Shayzien Crypts)",
+   "version": "Range",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Skeleton Mage",
+   "version": "Level 83",
+   "locations": [
+    {
+     "location": "Charred Dungeon",
+     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
+    },
+    {
+     "location": "Piscatoris Fishing Colony",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Smoke devil",
+   "version": "",
+   "locations": [
+    {
+     "location": "Smoke Devil Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual mage",
+   "version": "Armadyl",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual mage",
+   "version": "Bandos",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual mage",
+   "version": "Saradomin",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual mage",
+   "version": "Zamorak",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual mage",
+   "version": "Zaros",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual ranger",
+   "version": "Armadyl",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual ranger",
+   "version": "Bandos",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual ranger",
+   "version": "Saradomin",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual ranger",
+   "version": "Zamorak",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual ranger",
+   "version": "Zaros",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual warrior",
+   "version": "Armadyl",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual warrior",
+   "version": "Bandos",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual warrior",
+   "version": "Saradomin",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual warrior",
+   "version": "Zamorak",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Spiritual warrior",
+   "version": "Zaros",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "tiles"
+    },
+    {
+     "location": "God Wars Dungeon - Ancient Prison",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Steel dragon",
+   "version": "Level 274",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Suqah",
+   "version": "",
+   "locations": [
+    {
+     "location": "North Lunar Isle",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Swamp Crab",
+   "version": "",
+   "locations": [
+    {
+     "location": "Haunted Woods",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Temple Spider",
+   "version": "",
+   "locations": [
+    {
+     "location": "Forthos Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Thermonuclear smoke devil",
+   "version": "",
+   "locations": [
+    {
+     "location": "Smoke Devil Dungeon",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Thrower Troll",
+   "version": "",
+   "locations": [
+    {
+     "location": "Death Plateau",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Thrower troll (Trollheim)",
+   "version": "",
+   "locations": [
+    {
+     "location": "Trollheim",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Tstanon Karlak",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Zamorak boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Twisted Banshee",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "TzHaar-Hur",
+   "version": "",
+   "locations": [
+    {
+     "location": "Mor Ul Rek",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "TzHaar-Ket",
+   "version": "Level 149",
+   "locations": [
+    {
+     "location": "Mor Ul Rek",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "TzHaar-Ket",
+   "version": "Level 221",
+   "locations": [
+    {
+     "location": "Mor Ul Rek",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "TzHaar-Mej",
+   "version": "",
+   "locations": [
+    {
+     "location": "Mor Ul Rek",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "TzHaar-Xil",
+   "version": "",
+   "locations": [
+    {
+     "location": "Mor Ul Rek (Ranged)",
+     "source": "tiles"
+    },
+    {
+     "location": "Mor Ul Rek (Melee)",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Venenatis",
+   "version": "",
+   "locations": [
+    {
+     "location": "Silk Chasm",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Warped Jelly",
+   "version": "",
+   "locations": [
+    {
+     "location": "Catacombs of Kourend",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Werewolf",
+   "version": "Alexis",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Werewolf",
+   "version": "God Wars Dungeon (1)",
+   "locations": [
+    {
+     "location": "God Wars Dungeon",
+     "source": "Multicombat area list"
+    },
+    {
+     "location": "Wilderness God Wars Dungeon",
+     "source": "page: the large cavern in which the followers fight is multi-way"
+    }
+   ]
+  },
+  {
+   "name": "Wolf",
+   "version": "Level 64",
+   "locations": [
+    {
+     "location": "Wilderness, south-east of the Deserted Keep",
+     "source": "tiles"
+    },
+    {
+     "location": "White Wolf Mountain",
+     "source": "tiles"
+    },
+    {
+     "location": "South of Forthos Dungeon, near the saltpetre mines",
+     "source": "tiles"
+    },
+    {
+     "location": "Stronghold of Security first level",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Zakl'n Gritch",
+   "version": "",
+   "locations": [
+    {
+     "location": "God Wars Dungeon (Zamorak boss room)",
+     "source": "Multicombat area list"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Kourend)",
+   "version": "Level 56",
+   "locations": [
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Kourend)",
+   "version": "Level 70",
+   "locations": [
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Kourend)",
+   "version": "Level 76",
+   "locations": [
+    {
+     "location": "Woods between Lovakengj and Arceuus",
+     "source": "tiles"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Shayzien Crypts)",
+   "version": "Magic",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Shayzien Crypts)",
+   "version": "Melee",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  },
+  {
+   "name": "Zombie (Shayzien Crypts)",
+   "version": "Range",
+   "locations": [
+    {
+     "location": "Shayzien Crypts - lower level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - upper level",
+     "source": "page: a multicombat area"
+    },
+    {
+     "location": "Shayzien Crypts - middle level",
+     "source": "page: a multicombat area"
+    }
+   ]
+  }
+ ]
+}
