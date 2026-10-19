@@ -439,7 +439,7 @@ public class LoadoutLabPlugin extends Plugin
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setSupplyDefaults(this::buildSupplyDefaults);
-				commandEngine.setOwnedCheck(this::ownsCanonical);
+				commandEngine.setOwnedCheck(this::ownsOrSimmed);
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
@@ -547,14 +547,14 @@ public class LoadoutLabPlugin extends Plugin
 					}
 					for (int id : DragonfireRules.SUPER_ANTIFIRE_IDS)
 					{
-						if (ownsCanonical(id))
+						if (ownsOrSimmed(id))
 						{
 							return 2;
 						}
 					}
 					for (int id : DragonfireRules.REGULAR_ANTIFIRE_IDS)
 					{
-						if (ownsCanonical(id))
+						if (ownsOrSimmed(id))
 						{
 							return 1;
 						}
@@ -1245,6 +1245,13 @@ public class LoadoutLabPlugin extends Plugin
 	 */
 	private volatile Set<Integer> canonicalOwnedCache;
 	private volatile int canonicalOwnedFingerprint;
+
+	/** The detections' owned check: the canonical owned scan plus the sims
+	 * (Andrew, client test 2026-10-19: a simmed sunfire rune must count). */
+	private boolean ownsOrSimmed(int itemId)
+	{
+		return ownsCanonical(itemId) || dreams != null && dreams.isDreamed(itemId);
+	}
 
 	private boolean ownsCanonical(int itemId)
 	{

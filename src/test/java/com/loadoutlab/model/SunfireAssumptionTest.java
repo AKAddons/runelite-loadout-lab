@@ -58,6 +58,22 @@ class SunfireAssumptionTest
 	}
 
 	@Test
+	@DisplayName("a simmed sunfire rune counts as owned for the seed (Andrew, client test 2026-10-19)")
+	void simmedRuneSeeds()
+	{
+		AtomicReference<Boolean> seen = new AtomicReference<>();
+		CommandEngine engine = engine(seen, false);
+		engine.setCounts(() -> Map.of("simmedItems",
+			List.of(Map.of("id", SUNFIRE_RUNE, "name", "Sunfire rune"))));
+		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		engine.execute("select", Map.of("id", araxxor.getId()));
+		assertEquals(Boolean.TRUE, seen.get(), "a sim is 'count this as owned'");
+		engine.execute("set-param", Map.of("param", "sunfireRunes", "value", false));
+		assertTrue(engine.execute("detect-sunfire", Map.of()));
+		assertEquals(Boolean.TRUE, seen.get(), "Detect best sees the sim too");
+	}
+
+	@Test
 	@DisplayName("the plate's toggle sticks and Detect re-seeds it")
 	void toggleAndDetect()
 	{

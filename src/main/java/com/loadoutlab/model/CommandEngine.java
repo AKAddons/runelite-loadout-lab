@@ -1669,7 +1669,29 @@ public class CommandEngine
 	private void seedSunfire()
 	{
 		IntPredicate owns = ownedCheck;
-		state.setParam("sunfireRunes", owns != null && owns.test(SpellRunes.SUNFIRE_RUNE));
+		state.setParam("sunfireRunes", owns != null && owns.test(SpellRunes.SUNFIRE_RUNE)
+			|| isSimmed(SpellRunes.SUNFIRE_RUNE));
+	}
+
+	/** A sim is "count this as owned" (Andrew, client test 2026-10-19: a
+	 * simmed sunfire rune must seed the plate): the page's simmed ids. */
+	private boolean isSimmed(int itemId)
+	{
+		Supplier<Map<String, Object>> supplier = counts;
+		Object simmed = supplier == null ? null : supplier.get().get("simmedItems");
+		if (!(simmed instanceof List))
+		{
+			return false;
+		}
+		for (Object item : (List<?>) simmed)
+		{
+			Object id = item instanceof Map ? ((Map<?, ?>) item).get("id") : null;
+			if (id instanceof Number && ((Number) id).intValue() == itemId)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Thralls and Death Charge are cast from Arceuus, so a card whose
