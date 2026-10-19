@@ -1,6 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearSlot;
+import com.loadoutlab.data.MonsterStats;
 import java.util.*;
 import java.util.Map;
 
@@ -26,11 +27,14 @@ public enum TaskBracelet
 	}
 
 	/** The mob's pins with this bracelet in HANDS for every concrete style
-	 * that has no hands pin of its own; the input is never mutated. */
+	 * that has no hands pin of its own; the input is never mutated. Only a
+	 * slayer monster on task counts - the task param can outlive the chip
+	 * (Andrew 2026-10-18: Orca wore the bracelet). */
 	public static Map<CombatStyle, Map<GearSlot, Integer>> overlay(
-		Map<CombatStyle, Map<GearSlot, Integer>> pins, boolean onTask, TaskBracelet choice)
+		Map<CombatStyle, Map<GearSlot, Integer>> pins, MonsterStats monster, boolean onTask,
+		TaskBracelet choice)
 	{
-		if (!onTask || choice == null || choice == NONE)
+		if (!onTask || monster == null || !monster.isSlayerMonster() || choice == null || choice == NONE)
 		{
 			return pins;
 		}

@@ -1358,7 +1358,7 @@ public class LoadoutLabPlugin extends Plugin
 	 * has left the corpus (a data refresh) is no pin: the optimizer
 	 * ignores it, and a roster member's shown set is refused over a pin
 	 * it cannot wear (calcRespecting), so it must not travel. */
-	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(int monsterId, boolean onTask)
+	private Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle(MonsterStats mob, int monsterId, boolean onTask)
 	{
 		EnumMap<CombatStyle, Map<GearSlot, Integer>> byStyle =
 			new EnumMap<>(CombatStyle.class);
@@ -1377,7 +1377,7 @@ public class LoadoutLabPlugin extends Plugin
 				byStyle.put(style, pins);
 			}
 		}
-		return TaskBracelet.overlay(byStyle, onTask, config.slayerTaskBracelet());
+		return TaskBracelet.overlay(byStyle, mob, onTask, config.slayerTaskBracelet());
 	}
 
 	/** Run a user mutation through the undo stack and sync the buttons. */
@@ -1875,7 +1875,7 @@ public class LoadoutLabPlugin extends Plugin
 			for (MonsterStats mob : mobs)
 			{
 				int id = mob.profileId();
-				pinsByMob.put(id, pinnedByStyle(id, onSlayerTask));
+				pinsByMob.put(id, pinnedByStyle(mob, id, onSlayerTask));
 				spellByMob.put(id, resolvedPinnedSpell(id));
 				specByMob.put(id, mobProfiles.pinnedSpec(id));
 			}
@@ -1915,7 +1915,7 @@ public class LoadoutLabPlugin extends Plugin
 			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
 				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, deathCharge, specWeapon, boostPicks, prayerPicks,
 				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps,
-				pinnedByStyle(monster.getId(), onSlayerTask), resolvedPinnedSpell(monster.getId()),
+				pinnedByStyle(monster, monster.getId(), onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
