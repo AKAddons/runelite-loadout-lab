@@ -84,6 +84,9 @@ public class OptimizerService
 		 * worn one with the rest of the set fixed - no gold border there
 		 * (Andrew, field 2026-09-27: an occult on a Fire Bolt card). */
 		public Set<GearSlot> beaten = Set.of();
+		/** The Multi card rows (tool key -> per-target result) when the
+		 * switch is on and the mob is fought in multi; null otherwise. */
+		public Map<String, StyleResult> multiTools;
 
 		StyleResult(List<DpsResult> owned, DpsResult overallBest,
 			SpecPick spec, SpecPick gameSpec, String boostLabel, String gameBoostLabel,
@@ -285,6 +288,7 @@ public class OptimizerService
 		boolean onSlayerTask;
 		boolean antifirePotion;
 		boolean sunfireRunes;
+		boolean multiView;
 		int deathCharge;
 		boolean specWeapon = true;
 		Map<CombatStyle, String> boostPicks = Map.of();
@@ -395,7 +399,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.deathCharge
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.multiView + "|" + ctx.deathCharge
 			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
@@ -471,6 +475,105 @@ public class OptimizerService
 		return merged;
 	}
 
+	/** One multi tool through the per-style pipeline: BARRAGE pins Ice
+	 * Barrage (Ice Burst under 94), CHINS the best owned chinchompa (the
+	 * ceiling black), VENATOR the charged bow. Yours only when the player
+	 * owns the tool and, for the spell, its runes. Null when the account
+	 * cannot cast any burst. */
+	private StyleResult multiToolResult(MonsterStats monster, ComputeContext ctx, MultiTool tool)
+	{
+		ToolPick pick = new ToolPick();
+		boolean ownedSide;
+		if (tool == MultiTool.BARRAGE)
+		{
+			int magic = ctx.boostedLevels.getMagic();
+			String name = magic >= 94 ? "Ice Barrage" : "Ice Burst";
+			pick.spell = ctx.dataset.getSpells().stream()
+				.filter(sp -> sp.getName().equals(name)).findFirst().orElse(null);
+			if (pick.spell == null || magic < pick.spell.getMagicLevel())
+			{
+				return null;
+			}
+			ownedSide = SpellRunes.premiumRunesOwned(name, ctx.effectiveOwned);
+		}
+		else
+		{
+			// The owned scan canonicalises a charged bow onto its uncharged id,
+			// so either id proves the bow; the pin always wears the charged one.
+			int[] ids = tool == MultiTool.VENATOR ? new int[]{MultiTool.VENATOR_BOW, MultiTool.VENATOR_BOW_UNCHARGED} : MultiTool.CHIN_IDS;
+			int weapon = ids[0];
+			ownedSide = false;
+			for (int id : ids)
+			{
+				if (ctx.effectiveOwned.owns(id) || ctx.dreams.contains(id))
+				{
+					weapon = tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW : id;
+					ownedSide = true;
+					break;
+				}
+			}
+			pick.pins = Map.of(GearSlot.WEAPON, weapon);
+			pick.gamePins = Map.of(GearSlot.WEAPON, ids[0]);
+		}
+		return styleResultFor(monster, ctx, tool.style, pick, ownedSide);
+	}
+
+	/** One style's answer: both sides, spec, incoming, bench. The multi
+	 * tools run through it with their pins; ownedSide false skips Yours
+	 * (a tool the player does not own). */
+	private StyleResult styleResultFor(MonsterStats monster, ComputeContext ctx, CombatStyle style,
+		ToolPick tool, boolean ownedSide)
+	{
+			BoostProfile supplied = RaidBoosts.suppliedBoost(monster);
+			StylePlan plan = stylePlan(ctx, style, supplied);
+			PlayerLevels styleLevels = plan.levels;
+			String boostLabel = plan.label;
+			PlayerLevels gameLevels = plan.gameLevels;
+			String gameBoostLabel = plan.gameLabel;
+			// Dreams are pretend-owned; a positive upgrade budget also
+			// admits anything buyable within it (total spend, tracked
+			// by the beam).
+			OptimizationRequest ownedRequest = ownedRequestFor(ctx, monster, style, styleLevels, tool);
+			List<DpsResult> ownedBest = ownedSide ? optimizer.optimize(ctx.dataset, ownedRequest) : new ArrayList<>();
+			// The displayed set: top up DPS-neutral empty slots with
+			// prayer/defensive gear (verified not to change the DPS).
+			polish(optimizer, ctx.dataset, ownedRequest, ownedBest);
+			// The ceiling: every obtainable item, no quest/level gating -
+			// but computed at the player's own levels, so the comparison
+			// percentage isolates the GEAR gap.
+			// ALL_STANDARD ignores ownership for eligibility, but the
+			// candidate dedupe prefers OWNED analogs on stat ties - so
+			// the game-best card shows YOUR god d'hide coif, not an
+			// arbitrary god's, and the BiS border matches by id.
+			OptimizationRequest gameRequest = gameRequestFor(ctx, monster, style, gameLevels, tool);
+			List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
+			polish(optimizer, ctx.dataset, gameRequest, gameBest);
+			// Bench 0 = strictly one worn set: no spec swap is carried.
+			Set<Integer> specPin = restrictSpec(ctx, style, monster);
+			SpecPick spec = ownedSide && ctx.maxSwaps >= 1 && ctx.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), ctx.maxSwaps)
+				: null;
+			SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), ctx.maxSwaps)
+				: null;
+			// The defensive story of the shown set: what the boss does
+			// back to you, at your REAL levels (protection prayer up).
+			IncomingDpsCalculator.Result incoming = incomingFor(monster,
+				ownedBest.isEmpty() ? null : ownedBest.get(0).getLoadout(), ctx);
+			IncomingDpsCalculator.Result gameIncoming = incomingFor(monster,
+				gameBest.isEmpty() ? null : gameBest.get(0).getLoadout(), ctx);
+			List<GearItem> bench = specBenchOf(spec, ownedBest);
+			// The BiS side's inventory mirrors it (field fix 2026-07-18:
+			// a single mob's BiS view showed no carried spec).
+			List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
+			return verified(new StyleResult(
+				ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
+				boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
+				ctx.dataset, ownedRequest, gameRequest);
+			// Store per style as computed - even a superseded job donates
+			// the styles it finished.
+	}
+
 	/** The query-wide cache key for one monster (per-style state layered on
 	 * top by styleKey). Centralised so the fast path and computeAllStyles
 	 * can never drift into split/colliding cache buckets. */
@@ -516,60 +619,42 @@ public class OptimizerService
 				// you bring), never below what is already live - unless the
 				// RAID supplies its own (CoX overload+, ToA salts). A picked
 				// tier beats both (Andrew 2026-09-02: the picker owns it).
-				BoostProfile supplied = RaidBoosts.suppliedBoost(monster);
-				StylePlan plan = stylePlan(ctx, style, supplied);
-				PlayerLevels styleLevels = plan.levels;
-				String boostLabel = plan.label;
-				PlayerLevels gameLevels = plan.gameLevels;
-				String gameBoostLabel = plan.gameLabel;
-				// Dreams are pretend-owned; a positive upgrade budget also
-				// admits anything buyable within it (total spend, tracked
-				// by the beam).
-				OptimizationRequest ownedRequest = ownedRequestFor(ctx, monster, style, styleLevels);
-				List<DpsResult> ownedBest = optimizer.optimize(ctx.dataset, ownedRequest);
-				// The displayed set: top up DPS-neutral empty slots with
-				// prayer/defensive gear (verified not to change the DPS).
-				polish(optimizer, ctx.dataset, ownedRequest, ownedBest);
-				// The ceiling: every obtainable item, no quest/level gating -
-				// but computed at the player's own levels, so the comparison
-				// percentage isolates the GEAR gap.
-				// ALL_STANDARD ignores ownership for eligibility, but the
-				// candidate dedupe prefers OWNED analogs on stat ties - so
-				// the game-best card shows YOUR god d'hide coif, not an
-				// arbitrary god's, and the BiS border matches by id.
-				OptimizationRequest gameRequest = gameRequestFor(ctx, monster, style, gameLevels);
-				List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
-				polish(optimizer, ctx.dataset, gameRequest, gameBest);
-				// Bench 0 = strictly one worn set: no spec swap is carried.
-				Set<Integer> specPin = restrictSpec(ctx, style, monster);
-				SpecPick spec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), ctx.maxSwaps)
-					: null;
-				SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
-					? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), ctx.maxSwaps)
-					: null;
-				// The defensive story of the shown set: what the boss does
-				// back to you, at your REAL levels (protection prayer up).
-				IncomingDpsCalculator.Result incoming = incomingFor(monster,
-					ownedBest.isEmpty() ? null : ownedBest.get(0).getLoadout(), ctx);
-				IncomingDpsCalculator.Result gameIncoming = incomingFor(monster,
-					gameBest.isEmpty() ? null : gameBest.get(0).getLoadout(), ctx);
-				List<GearItem> bench = specBenchOf(spec, ownedBest);
-				// The BiS side's inventory mirrors it (field fix 2026-07-18:
-				// a single mob's BiS view showed no carried spec).
-				List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
-				StyleResult styleResult = verified(new StyleResult(
-					ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
-					ctx.dataset, ownedRequest, gameRequest);
-				// Store per style as computed - even a superseded job donates
-				// the styles it finished.
+				StyleResult styleResult = styleResultFor(monster, ctx, style, null, true);
 				synchronized (cache)
 				{
 					cache.put(styleKey, styleResult);
 				}
 				results.put(style, styleResult);
 			}
+		if (ctx.multiView && MultiMobs.isMultiAble(monster) && !results.isEmpty())
+		{
+			// The Multi card (Andrew 2026-10-19): the three multi tools, each a
+			// per-target result with the tool pinned, cached beside the styles.
+			Map<String, StyleResult> tools = new LinkedHashMap<>();
+			for (MultiTool tool : MultiTool.values())
+			{
+				String key = styleKey(baseKey, tool.style, ctx, monster) + "|" + tool.key;
+				StyleResult row;
+				synchronized (cache)
+				{
+					row = cache.get(key);
+				}
+				if (row == null)
+				{
+					row = multiToolResult(monster, ctx, tool);
+					if (row == null)
+					{
+						continue;
+					}
+					synchronized (cache)
+					{
+						cache.put(key, row);
+					}
+				}
+				tools.put(tool.key, row);
+			}
+			results.values().iterator().next().multiTools = tools;
+		}
 		return results;
 	}
 
@@ -638,6 +723,7 @@ public class OptimizerService
 		ctx.onSlayerTask = p.onSlayerTask;
 		ctx.antifirePotion = p.antifirePotion;
 		ctx.sunfireRunes = p.sunfireRunes;
+		ctx.multiView = p.multiView;
 		ctx.deathCharge = p.deathCharge;
 		ctx.specWeapon = p.specWeapon;
 		ctx.boostPicks = p.boostPicks == null ? Map.of() : p.boostPicks;
@@ -3375,15 +3461,29 @@ public class OptimizerService
 	private OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels styleLevels)
 	{
+		return ownedRequestFor(ctx, mob, style, styleLevels, null);
+	}
+
+	/** A multi tool's pins and spell, in place of the mob's own. */
+	private static final class ToolPick
+	{
+		Map<GearSlot, Integer> pins = Map.of();
+		Map<GearSlot, Integer> gamePins = Map.of();
+		SpellStats spell;
+	}
+
+	private OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
+		CombatStyle style, PlayerLevels styleLevels, ToolPick tool)
+	{
 		OptimizationRequest r = inContext(request(
 			mob, style, styleLevels, ctx.unlocks, ctx.requirements,
 			ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
 			ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp)), ctx, style, mob)
 			.withDreamItems(dreamsFor(ctx, mob))
 			.withProtectOnlyItems(ctx.protectOnly)
-			.withPinnedItems(pinsFor(ctx, style, mob));
+			.withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob));
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
-		SpellStats spell = spellFor(ctx, mob);
+		SpellStats spell = tool != null && tool.spell != null ? tool.spell : spellFor(ctx, mob);
 		if (style == CombatStyle.MAGIC && spell != null)
 		{
 			r = r.withSpell(spell);
@@ -3403,6 +3503,12 @@ public class OptimizerService
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels)
 	{
+		return gameRequestFor(ctx, mob, style, gameLevels, null);
+	}
+
+	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
+		CombatStyle style, PlayerLevels gameLevels, ToolPick tool)
+	{
 		OptimizationRequest r = inContext(request(
 			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
 			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0), ctx, style, mob)
@@ -3410,6 +3516,14 @@ public class OptimizerService
 			// its shield slot is for dps (Andrew 2026-10-19: best aligns with
 			// the highest-dps option).
 			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true);
+		if (tool != null)
+		{
+			r = r.withPinnedItems(tool.gamePins);
+			if (tool.spell != null)
+			{
+				r = r.withSpell(tool.spell);
+			}
+		}
 		return withPrayerPick(r, ctx, style, gameLevels,
 			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
 	}

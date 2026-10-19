@@ -31,8 +31,6 @@ import net.runelite.client.util.AsyncBufferedImage;
 public class ResultCards
 {
 	private static final Color CARD = ColorScheme.DARKER_GRAY_COLOR;
-	private static final String[] STYLES = {"melee", "ranged", "magic"};
-
 	private final ItemManager itemManager;
 	private final SpriteManager spriteManager;
 	private final CommandSink commands;
@@ -161,7 +159,7 @@ public class ResultCards
 				String best = null;
 				double bestDps = -1;
 				boolean bestKitBacked = false;
-				for (String style : STYLES)
+				for (String style : styles.keySet())
 				{
 					Map<String, Object> node = Model.map(styles, style);
 					if (node == null)
@@ -341,7 +339,7 @@ public class ResultCards
 		double bestDps = 0;
 		if (styles != null)
 		{
-			for (String style : STYLES)
+			for (String style : styles.keySet())
 			{
 				Map<String, Object> styleNode = Model.map(styles, style);
 				Map<String, Object> side = styleNode == null ? null
@@ -733,6 +731,10 @@ public class ResultCards
 			{
 				headerRow.add(sunfirePlate(bis));
 			}
+			if (Model.flag(mob, "multiAble"))
+			{
+				headerRow.add(multiChip(mob));
+			}
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
@@ -785,7 +787,7 @@ public class ResultCards
 		// style carrying its icon and that style's shown dps.
 		JPanel tabStrip = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
 		tabStrip.setBackground(CARD);
-		for (String style : STYLES)
+		for (String style : styles.keySet())
 		{
 			Map<String, Object> styleNode = Model.map(styles, style);
 			double tabDps = styleNode == null ? 0
@@ -1923,6 +1925,42 @@ public class ResultCards
 		return plate;
 	}
 
+	/** The Multi switch (Andrew 2026-10-19): on a mob fought in multi, the
+	 * card flips to the AoE tools priced at a stack of targets; on, the
+	 * chip picks the stack or switches off. */
+	private JLabel multiChip(Map<String, Object> mob)
+	{
+		boolean on = pageParams != null && Model.flag(pageParams, "multiView");
+		int stack = Math.max(1, Model.id(pageParams, "multiStack"));
+		JLabel chip = Ui.label(on ? "Multi x" + stack : "Multi", on ? ACCENT : new Color(0xA0A0A0));
+		chip.setFont(FontManager.getRunescapeSmallFont());
+		StringBuilder where = new StringBuilder();
+		for (Object l : Model.list2(mob, "multiLocations"))
+		{
+			where.append(where.length() == 0 ? "" : ", ").append(l);
+		}
+		chip.setToolTipText("<html>Fought in multi: " + where + "<br>" + (on
+			? "Barrage, chinchompas and the venator bow priced at " + stack + " targets stacked - click for the stack"
+			: "Click to rank the multi tools instead of the styles") + "</html>");
+		Ui.onClick(chip, () ->
+		{
+			if (!on)
+			{
+				commands.set("multiView", true);
+				return;
+			}
+			JPopupMenu menu = new JPopupMenu();
+			for (int n : new int[]{3, 5, 9})
+			{
+				int value = n;
+				Ui.item(menu, n + " targets stacked", () -> commands.set("multiStack", value));
+			}
+			Ui.item(menu, "Back to the styles", () -> commands.set("multiView", false));
+			menu.show(chip, 0, chip.getHeight());
+		});
+		return chip;
+	}
+
 	/** An item image scaled into a 24px frame (the raw 36x32 overflowed it,
 	 * field 2026-08-21); the onLoaded re-seat is the async-image contract. */
 	private void seatItem(JLabel target, int itemId)
@@ -1977,6 +2015,11 @@ public class ResultCards
 	private static JLabel styleHeader(String style, Map<String, Object> node)
 	{
 		String name = Character.toUpperCase(style.charAt(0)) + style.substring(1);
+		double factor = Model.num(node, "multiFactor");
+		if (factor > 0)
+		{
+			name += factor == Math.rint(factor) ? String.format(" x%d", (int) factor) : String.format(" x%.2f", factor);
+		}
 		JLabel label = new JLabel(name);
 		label.setFont(label.getFont().deriveFont(Font.BOLD, label.getFont().getSize() - 1f));
 		String boost = Model.str(node, "boostLabel");

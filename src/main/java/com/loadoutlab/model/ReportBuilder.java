@@ -106,6 +106,26 @@ final class ReportBuilder
 							result.owned.get(0).getDps()));
 				}
 			}
+			Map<String, OptimizerService.StyleResult> tools = null;
+			for (OptimizerService.StyleResult r : results.values())
+			{
+				if (r != null && r.multiTools != null)
+				{
+					tools = r.multiTools;
+				}
+			}
+			if (tools != null)
+			{
+				Object stackObj = state.paramsNode().get("multiStack");
+				sb.append("-- Multi (").append(stackObj instanceof Number ? stackObj : 3)
+					.append(" targets stacked; sets priced per target) --\n");
+				for (Map.Entry<String, OptimizerService.StyleResult> e : tools.entrySet())
+				{
+					sb.append(e.getKey()).append(":\n");
+					appendSide(sb, "Yours", e.getValue(), false, keptSlots);
+					appendSide(sb, "Best in game", e.getValue(), true, keptSlots);
+				}
+			}
 			if (others.length() > 0)
 			{
 				sb.append("Other styles (your best dps, not part of the trip kit): ")

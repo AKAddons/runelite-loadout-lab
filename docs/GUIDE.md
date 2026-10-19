@@ -259,6 +259,28 @@ melee and ranged cards, powered staves and Arceuus spells keep the fold.
 
 ![Thralls and Death Charge](img/thralls-veng.png)
 
+### Multi-combat card
+
+A mob that is fought in a multi-combat area (multi_mobs.json, curated
+from the wiki - the Catacombs, the Wilderness Slayer Cave, the God Wars
+Dungeon and friends; the chip's tooltip names the places) gets a Multi
+chip in its card header. Click it and the three style tabs give way to
+the three multi tools, ranked: the best burst or barrage set (Ice
+Barrage, or Ice Burst under 94 Magic), the best chinchompa set (your
+best owned chins; black for Best in game) and the venator bow set.
+Each is the normal per-target set with the tool pinned, multiplied by
+the stack of targets you pick on the chip (3, 5 or 9): barrage and
+chins hit every target in the 3x3 up to nine, the venator bow bounces
+to two more at two-thirds of its max hit on their own accuracy rolls,
+so its factor comes from the max hit (about 2.3 at a 30 max). The tab
+header shows the factor, the tooltips and the Copy report the per-target
+numbers. A tool you do not own (the bow and its arrows, chins, the
+barrage's runes) has no Yours row; Best in game always ranks all three.
+Melee has no multi tool and is not on the card. The stack is an
+assumption, not a simulation of how many actually stand in the 3x3,
+and the official calculator has no multi, so only the per-target rows
+are verified against it. The trip kit is unchanged by the Multi view.
+
 ### Inventory budget: swaps vs bag space
 
 The Inventory slider on a roster sets how many carried swaps the shared

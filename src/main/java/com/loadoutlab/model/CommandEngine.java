@@ -1712,6 +1712,52 @@ public class CommandEngine
 		}
 	}
 
+	/** The Multi view (Andrew 2026-10-19): a mob's tool rows become its
+	 * style tabs, every per-target number multiplied by the stack - area
+	 * tools by the stack up to nine, the venator chain by its bounce factor
+	 * from that side's max hit. A mob without rows keeps its styles. */
+	@SuppressWarnings("unchecked")
+	static void multiView(List<?> mobNodes, int stack)
+	{
+		for (Object m : mobNodes)
+		{
+			Map<String, Object> mob = (Map<String, Object>) m;
+			Map<String, Object> multi = (Map<String, Object>) mob.get("multi");
+			if (multi == null)
+			{
+				continue;
+			}
+			for (Object t : multi.values())
+			{
+				Map<String, Object> node = (Map<String, Object>) t;
+				String kind = String.valueOf(node.get("multiKind"));
+				double yours = scaleCard((Map<String, Object>) node.get("yours"), kind, stack);
+				double bis = scaleCard((Map<String, Object>) node.get("bis"), kind, stack);
+				node.put("tabDps", num(node.get("tabDps")) * yours);
+				node.put("bisTabDps", num(node.get("bisTabDps")) * bis);
+				node.put("multiFactor", yours > 0 ? yours : bis);
+			}
+			mob.put("styles", multi);
+		}
+	}
+
+	/** Scales a card's dps by its tool factor; returns the factor (0 for no card). */
+	private static double scaleCard(Map<String, Object> card, String kind, int stack)
+	{
+		if (card == null)
+		{
+			return 0;
+		}
+		double factor = MultiTool.factor(kind, stack, (int) num(card.get("maxHit")));
+		card.put("dps", num(card.get("dps")) * factor);
+		return factor;
+	}
+
+	private static double num(Object v)
+	{
+		return v instanceof Number ? ((Number) v).doubleValue() : 0;
+	}
+
 	/** With sunfire runes assumed, a fire spell's trip runes carry them in
 	 * place of fire runes; the Best-in-game card always assumes them (the
 	 * ceiling rule). The five standard fire spells are the "Fire " names. */
@@ -1907,6 +1953,11 @@ public class CommandEngine
 		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds, itemLocation);
+		if (flag("multiView"))
+		{
+			Object stack = state.paramsNode().get("multiStack");
+			multiView((List<?>) entry.get("mobs"), stack instanceof Number ? ((Number) stack).intValue() : 3);
+		}
 		sunfireRunes((List<?>) entry.get("mobs"));
 		Object dc = state.paramsNode().get("deathCharge");
 		arceuusStandDown((List<?>) entry.get("mobs"), spellbooks(),

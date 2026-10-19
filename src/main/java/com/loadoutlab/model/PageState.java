@@ -66,6 +66,10 @@ public class PageState
 	/** Sunfire runes assumed for a fire spell (seeded from ownership at
 	 * each selection; the card plate overrides). */
 	private boolean sunfireRunes;
+	/** The Multi card (Andrew 2026-10-19): the switch computes the multi
+	 * tools; the stack is a view scale on their per-target numbers. */
+	private boolean multiView;
+	private int multiStack = 3;
 	private int deathCharge;
 	private boolean specWeapon;
 	private int upgradeBudgetGp;
@@ -84,7 +88,7 @@ public class PageState
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap").contains(param);
+		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap", "multiStack").contains(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -236,6 +240,12 @@ public class PageState
 			case "sunfireRunes":
 				sunfireRunes = Boolean.TRUE.equals(value);
 				return true;
+			case "multiView":
+				multiView = Boolean.TRUE.equals(value);
+				return true;
+			case "multiStack":
+				multiStack = Math.max(1, asInt(value, 3));
+				return true;
 			case "deathCharge":
 				deathCharge = asInt(value, 0);
 				return true;
@@ -357,6 +367,8 @@ public class PageState
 		node.put("spellbookSwap", spellbookSwap);
 		node.put("antifireMode", antifireMode);
 		node.put("sunfireRunes", sunfireRunes);
+		node.put("multiView", multiView);
+		node.put("multiStack", multiStack);
 		node.put("deathCharge", deathCharge);
 		node.put("specWeapon", specWeapon);
 		node.put("upgradeBudgetGp", upgradeBudgetGp);
@@ -423,6 +435,7 @@ public class PageState
 		p.riskBudgetGp = riskBudgetGp;
 		p.antifirePotion = antifireMode == 2;
 		p.sunfireRunes = sunfireRunes;
+		p.multiView = multiView;
 		p.deathCharge = f2pOnly ? 0 : deathCharge;
 		p.specWeapon = specWeapon;
 		p.boostPicks = new LinkedHashMap<>(boostPicks);

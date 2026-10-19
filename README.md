@@ -39,6 +39,9 @@ New here? Rune Nexus Group's one-minute short shows the plugin in use:
   control, the Amascut partisan's raid-only stats and the Shadow's
   stronger multiplier inside the Tombs - each modeled in the numbers
   and explained on the card.
+- **Multi-combat card**: on a mob fought in multi, flip the card to the
+  AoE tools - barrage, chinchompas, the venator bow - priced at a stack
+  of 3, 5 or 9 targets, per-target sets underneath.
 - **Compute animations**: every boss, group and raid plays its own
   mood while the numbers cook, drawn in colour from the wiki renders.
 - **Ship combat**: sea monsters from the Sailing update are fought from

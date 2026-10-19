@@ -112,6 +112,15 @@ better than my fang at toa"). Inside the Tombs the fang rolls accuracy
 twice (1 - (1-p)^2, official PLAYER_ACCURACY_FANG_TOA); we applied the
 outside reroll formula everywhere. Both vectors are exact now.
 
+## Multi-combat card (2026-10-19)
+
+Not a vector family: the official calculator has no multi, so only the
+per-target rows (the normal sets with a tool pinned) are verifiable
+against it. The stack multiplier is explicit on the card; the venator
+chain factor follows the wiki's bounce rule (two bounces at two-thirds
+of the max hit, each on its own accuracy roll), not a measured model of
+how often a bounce finds a second target.
+
 ## Sunfire runes (2026-10-19, vectors firesurge-sunfire-araxxor, firesurge-sunfire-tome-araxxor)
 
 Exact. The official calc takes minHit = trunc(maxHit / 10) for a fire

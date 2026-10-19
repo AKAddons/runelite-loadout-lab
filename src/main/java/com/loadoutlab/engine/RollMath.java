@@ -71,6 +71,19 @@ public final class RollMath
 		return accuracy * (maxHit / 2.0 + 1.0 / (maxHit + 1.0));
 	}
 
+	/** The venator bow's chain in multi (wiki): two bounces, each rolled on
+	 * its own accuracy at a max of two-thirds of the first, floored - so
+	 * the whole arrow is worth 1 + 2 x E(floor(2m/3)) / E(m) single hits
+	 * (accuracy cancels). One target: 1. */
+	public static double venatorFactor(int maxHit)
+	{
+		if (maxHit <= 0)
+		{
+			return 1.0;
+		}
+		return 1.0 + 2.0 * normalExpectedHit(1.0, maxHit * 2 / 3) / normalExpectedHit(1.0, maxHit);
+	}
+
 	/** Expected hit under the monster's FLAT ARMOUR, official-calc
 	 * semantics (flatAddTransformer, verified 2026-08-21): POSITIVE
 	 * armour clamps EVERY roll to max(0, k - armour) - the low rolls

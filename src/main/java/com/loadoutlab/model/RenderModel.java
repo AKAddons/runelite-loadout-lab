@@ -82,6 +82,11 @@ public final class RenderModel
 		{
 			Map<String, Object> node = mob(mobs.get(i));
 			node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
+			Map<String, Object> multi = multi(perMob.get(i), riskKeptSlots, owned, simmed);
+			if (multi != null)
+			{
+				node.put("multi", multi);
+			}
 			mobNodes.add(node);
 		}
 		entry.put("mobs", mobNodes);
@@ -108,6 +113,8 @@ public final class RenderModel
 		node.put("fightBook", MonsterSpellbooks.bookFor(mob));
 		node.put("fightBookReason", MonsterSpellbooks.reasonFor(mob));
 		node.put("slayerMonster", mob.isSlayerMonster());
+		node.put("multiAble", MultiMobs.isMultiAble(mob));
+		node.put("multiLocations", MultiMobs.locations(mob));
 		node.put("wildernessExclusive", WildernessMonsters.isExclusive(mob));
 		return node;
 	}
@@ -123,6 +130,46 @@ public final class RenderModel
 			{
 				continue;
 			}
+			styles.put(style.name().toLowerCase(), styleNode(style, result, riskKeptSlots, owned, simmed));
+		}
+		return styles;
+	}
+
+	/** The Multi card rows as style nodes keyed by tool, unscaled (the
+	 * engine's decoration applies the stack); null without the switch. */
+	private static Map<String, Object> multi(Map<CombatStyle, OptimizerService.StyleResult> results,
+		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed)
+	{
+		Map<String, OptimizerService.StyleResult> tools = null;
+		for (OptimizerService.StyleResult r : results == null ? List.<OptimizerService.StyleResult>of() : results.values())
+		{
+			if (r != null && r.multiTools != null)
+			{
+				tools = r.multiTools;
+			}
+		}
+		if (tools == null)
+		{
+			return null;
+		}
+		Map<String, Object> out = new LinkedHashMap<>();
+		for (MultiTool tool : MultiTool.values())
+		{
+			OptimizerService.StyleResult r = tools.get(tool.key);
+			if (r != null)
+			{
+				Map<String, Object> node = styleNode(tool.style, r, riskKeptSlots, owned, simmed);
+				node.put("multiKind", tool.kind);
+				out.put(tool.key, node);
+			}
+		}
+		return out;
+	}
+
+	private static Map<String, Object> styleNode(CombatStyle style, OptimizerService.StyleResult result,
+		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed)
+	{
+		{
 			Map<String, Object> node = new LinkedHashMap<>();
 			node.put("yours", card(result, false, riskKeptSlots, owned, simmed));
 			node.put("bis", card(result, true, riskKeptSlots, owned, simmed));
@@ -139,9 +186,8 @@ public final class RenderModel
 				: ownedShown.getDps() + result.specDpsAdded);
 			node.put("bisTabDps", result.overallBest == null ? 0
 				: result.overallBest.getDps() + result.gameSpecDpsAdded);
-			styles.put(style.name().toLowerCase(), node);
+			return node;
 		}
-		return styles;
 	}
 
 	/** One side's card: the shown set and everything rendered around it. */

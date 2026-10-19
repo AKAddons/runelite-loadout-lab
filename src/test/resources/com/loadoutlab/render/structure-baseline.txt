@@ -679,6 +679,94 @@ JPanel
       JPanel
         JLabel "+ note" tip=Add a note for this mob
     Filler
+== General Graardor - lvl 624 | multi view, stack 3 [yours]
+JPanel
+  JPanel
+    JPanel
+      JLabel "General Graardor" tip=<html>General Graardor - lvl 624<br>7.70 dps with chins (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: chins
+          JLabel "7.70"
+        JLabel "x" tip=Remove General Graardor - lvl 624 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "General Graardor - lvl 624"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Chins x3" tip=Assumes: Rigour + Ranging potion
+          JLabel tip=Assumes: Rigour + Ranging potion - click to change the prayer
+          JLabel tip=Assumes: Rigour + Ranging potion - click to change the boost
+          JLabel "Multi x3" tip=<html>Fought in multi: God Wars Dungeon (Bandos boss room)<br>Barrage, chinchompas and the venator bow priced at 3 targets stacked - click for the stack</html>
+          JLabel tip=No specific spellbook required - a powered staff casts on any book
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel tip=<html>Helm of neitiznot (head) - 48k gp</html>
+                  JLabel
+                  JLabel tip=<html>Ava's accumulator (cape)</html>
+                  JLabel tip=<html>Amulet of fury (neck) - 2.6m gp</html>
+                  JLabel tip=<html>Rune arrow (Unpoisoned) (ammo) - 50 gp</html>
+                  JLabel tip=<html>Magic shortbow (weapon) - 784 gp</html>
+                  JLabel tip=<html>Black d'hide body (body) - 7.3k gp</html>
+                  JLabel
+                  JLabel tip=<html><b>Magic shortbow (spec)</b> - 784 gp<br><br><table cellpadding='1' cellspacing='0'><tr><td>set</td><td align='right'>&nbsp;&nbsp;7.588</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc shows</font></td></tr><tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;0.04</td><td></td></tr><tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>7.63</b></td><td></td></tr></table></html>
+                  JLabel tip=<html>Black d'hide chaps (legs) - 3.2k gp</html>
+                  JLabel
+                  JLabel tip=<html>Barrows gloves (hands)</html>
+                  JLabel tip=<html>Snakeskin boots (feet) - 235 gp</html>
+                  JLabel tip=<html>Archers ring (ring) - 2.3m gp</html>
+              JPanel
+                JLabel "25" tip=Max hit 25
+                JLabel "36%" tip=Hit chance
+                JLabel "~1.4" tip=Pray Protect from Melee - takes ~1.4 dps (5.94 unprayed)
+                JLabel "+8" tip=Prayer bonus
+                JLabel "Ranged rapid" tip=Attack style the numbers use
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>+22</td><td>+22</td><td>+22</td><td>-19</td><td>+149</td></tr><tr><td><b>Defence</b></td><td>+107</td><td>+116</td><td>+134</td><td>+97</td><td>+137</td></tr></table>Strength +23 &nbsp; Ranged str +49 &nbsp; Magic dmg +0% &nbsp; Prayer +8</html>
+      Filler
+      JPanel
+        JPanel tip=Barrage - 6.85 DPS
+          JLabel
+          JLabel "6.85"
+        JPanel tip=Chins - 7.70 DPS
+          JLabel
+          JLabel "7.70"
+        JPanel tip=Venator - 6.01 DPS
+          JLabel
+          JLabel "6.01"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "39% of BiS" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Ranging potion - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
 == General Graardor - lvl 624 [bis]
 JPanel
   JPanel
@@ -1325,6 +1413,101 @@ JPanel
         JPanel
           JLabel "Inventory:"
           JLabel tip=Dark bow (Regular) (carried swap)
+      Filler
+      JPanel
+        JPanel
+          JLabel "Supplies:"
+          JLabel tip=Divine ranging potion - the boost this card assumes; change it on the boost picker
+      Filler
+      JPanel
+        JPanel
+          JButton "+0" tip=Simmed for this mob - click to manage
+          JButton "-0" tip=Excluded for this mob - click to manage
+          JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
+          JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
+      Filler
+      JPanel
+        JLabel "+ note" tip=Add a note for this mob
+    Filler
+== General Graardor - lvl 624 | multi view, stack 3 [bis]
+JPanel
+  JPanel
+    JPanel
+      JLabel "General Graardor" tip=<html>General Graardor - lvl 624<br>24.97 dps with barrage (best in the trip kit)<br>Click to show this mob</html>
+      JPanel
+        JPanel
+          JLabel tip=Best style: barrage
+          JLabel "24.97"
+        JLabel "x" tip=Remove General Graardor - lvl 624 from this result
+  JPanel
+    JPanel
+      JPanel
+        JLabel "General Graardor - lvl 624"
+        JPanel
+          JLabel "255hp"
+      Filler
+      JPanel
+        JPanel
+          JLabel "Chins x3" tip=Assumes: Rigour + Ranging potion
+          JLabel tip=Assumes: Rigour + Divine ranging potion
+          JLabel tip=Assumes: Rigour + Divine ranging potion
+          JLabel "Multi" tip=<html>Fought in multi: God Wars Dungeon (Bandos boss room)<br>Click to rank the multi tools instead of the styles</html>
+          JLabel tip=No specific spellbook required - a powered staff casts on any book
+      JPanel
+        JPanel
+          JPanel
+            JPanel
+              JPanel
+                JPanel
+                  JLabel
+                  JLabel tip=<html>Crystal helm (Active) (head)</html>
+                  JLabel
+                  JLabel tip=<html>Blessed dizana's quiver (Normal) (cape)</html>
+                  JLabel tip=<html>Necklace of rupture (neck) - 156m gp</html>
+                  JLabel tip=<html>Rada's blessing 4 (ammo)</html>
+                  JLabel tip=<html>Bow of faerdhinen (Charged) (weapon)</html>
+                  JLabel tip=<html>Crystal body (Active) (body)</html>
+                  JLabel
+                  JLabel tip=<html><b>Voidwaker (spec)</b> - 39m gp<br><br><table cellpadding='1' cellspacing='0'><tr><td>set</td><td align='right'>&nbsp;&nbsp;19.381</td><td><font color='#969696'>&nbsp;&nbsp;what the wiki calc shows</font></td></tr><tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;0.09</td><td></td></tr><tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>19.47</b></td><td></td></tr></table></html>
+                  JLabel tip=<html>Crystal legs (Active) (legs)</html>
+                  JLabel
+                  JLabel tip=<html>Zaryte vambraces (hands) - 73m gp</html>
+                  JLabel tip=<html>Avernic treads (max) (feet)</html>
+                  JLabel tip=<html>Venator ring (ring) - 47m gp</html>
+              JPanel
+                JLabel "47" tip=Max hit 47
+                JLabel "66%" tip=Hit chance
+                JLabel "~1.4" tip=Pray Protect from Melee - takes ~1.4 dps (5.98 unprayed)
+                JLabel "+13" tip=Prayer bonus
+                JLabel "Ranged rapid" tip=Attack style the numbers use
+                JLabel "276m" tip=Upgrade cost of unowned pieces in this set
+                JLabel "Stats" tip=<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>-3</td><td>-3</td><td>-3</td><td>-29</td><td>+267</td></tr><tr><td><b>Defence</b></td><td>+113</td><td>+100</td><td>+125</td><td>+103</td><td>+142</td></tr></table>Strength +6 &nbsp; Ranged str +124 &nbsp; Magic dmg +20% &nbsp; Prayer +13</html>
+                JLabel "+1 bonus" tip=<html>Counted for this set:<br> crystal armour set: +30% accuracy, +15% damage</html>
+      Filler
+      JPanel
+        JPanel tip=Barrage - 24.97 DPS
+          JLabel
+          JLabel "24.97"
+        JPanel tip=Chins - 19.65 DPS
+          JLabel
+          JLabel "19.65"
+        JPanel tip=Venator - 15.33 DPS
+          JLabel
+          JLabel "15.33"
+      JPanel
+        JPanel
+          JLabel "Yours" tip=Your best owned set
+          JLabel "BiS" tip=The game-wide best set at your levels
+        JLabel "39% of BiS" tip=Your best owned set vs the game-wide best, at your levels
+      Filler
+      JPanel
+        JPanel
+          JLabel "Inventory:"
+          JLabel tip=Voidwaker (carried swap)
       Filler
       JPanel
         JPanel
