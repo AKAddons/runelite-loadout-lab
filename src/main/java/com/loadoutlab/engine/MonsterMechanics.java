@@ -35,6 +35,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> SALARIN = new HashSet<>();
 	private static final Set<Integer> NIBBLERS = new HashSet<>();
 	private static final Set<Integer> WARDEN_CORES = new HashSet<>();
+	private static final Set<Integer> FRESH_BAR = new HashSet<>();
 	private static final Set<Integer> TOA_INVOCATION_SCALED = new HashSet<>();
 
 	static
@@ -57,6 +58,7 @@ public final class MonsterMechanics
 			JsonResources.ints(root, "salarin", SALARIN);
 			JsonResources.ints(root, "nibblers", NIBBLERS);
 			JsonResources.ints(root, "wardenCores", WARDEN_CORES);
+			JsonResources.ints(root, "freshBar", FRESH_BAR);
 			JsonResources.ints(root, "toaInvocationScaled", TOA_INVOCATION_SCALED);
 		}
 		catch (Exception ex)
@@ -278,6 +280,14 @@ public final class MonsterMechanics
 	/** The Wardens' ejected core (ToA P2): melee "will always deal their
 	 * max hit" against it (wiki) - DpsCalculator and SpecialAttack apply
 	 * the same certainty rule. */
+	/** One fight per seed, totem, casket or entry (Hespori, Skotizo, the
+	 * Mimic, Jad, Zuk, the Hunllefs, Obor, Bryophyta): the spec bar opens
+	 * full, so burst specs count there (DES-01M5914JFX6HHTNSAP0HANN5GA). */
+	public static boolean startsWithFullBar(MonsterStats monster)
+	{
+		return monster != null && FRESH_BAR.contains(monster.getId());
+	}
+
 	public static boolean isWardenCore(MonsterStats monster)
 	{
 		return monster != null && WARDEN_CORES.contains(monster.getId())

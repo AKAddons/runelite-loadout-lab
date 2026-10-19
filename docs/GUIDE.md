@@ -229,7 +229,10 @@ actually cast it (members, Magic 90 reachable with a boost you own,
 A Kingdom Divided done, blood/death/soul runes banked) -
 15% special attack energy per killing blow, once per 60-second cast -
 feeding the spec model's energy budget, so long energy-bound fights fit
-more special attacks. Both recommendations carry their dependencies:
+more special attacks. The budget is regen over the kill, the sustained
+rate of a grind; a fight you enter once with a full bar - Hespori,
+Skotizo, the Mimic, Jad, Zuk, the Hunllefs, Obor, Bryophyta - counts the
+opening 100% too, so two claw specs price as two, not as a fraction. Both recommendations carry their dependencies:
 the book of the dead (a thrall is cast from it with any weapon - no
 powered staff needed) and your best rune pouch join the trip cells, and
 the resurrect / Death Charge / Mark of Darkness runes (the last when

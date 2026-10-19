@@ -3177,11 +3177,12 @@ public class OptimizerService
 	 * roadmapped as a POH-pool mode. Package-private: the deterministic
 	 * unit under DeathChargeTest. */
 	static double specEnergyOverKill(double ttkSeconds, boolean lightbearer,
-		int deathChargeLevel)
+		int deathChargeLevel, boolean freshBar)
 	{
 		double regenPerSec = lightbearer ? 10.0 / 15.0 : 10.0 / 30.0;
 		double window = deathChargeLevel >= 2 ? 30.0 : 60.0;
-		return regenPerSec * ttkSeconds
+		// A one-off fight opens on a full bar (fight-length design, 2026-10-18).
+		return (freshBar ? 100.0 : 0.0) + regenPerSec * ttkSeconds
 			+ (deathChargeLevel > 0
 				? 15.0 * ttkSeconds / Math.max(window, ttkSeconds) : 0.0);
 	}
@@ -3212,7 +3213,7 @@ public class OptimizerService
 		// burst frame's floor() was an artifact of pricing one kill from a
 		// full bar; sustained throughput is a rate, not a count.
 		double energyOverKill = specEnergyOverKill(ttkSeconds, lightbearer,
-			request.getDeathCharge());
+			request.getDeathCharge(), MonsterMechanics.startsWithFullBar(monster));
 		double usesByEnergy = energyOverKill / Math.max(1, spec.getEnergyCost());
 		double usesByTime = Math.floor(ttkSeconds / specCycle);
 		double uses = Math.max(0, Math.min(usesByEnergy, usesByTime));
