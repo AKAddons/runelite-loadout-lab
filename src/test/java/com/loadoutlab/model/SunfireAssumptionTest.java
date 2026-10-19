@@ -34,8 +34,7 @@ class SunfireAssumptionTest
 	private static CommandEngine engine(AtomicReference<Boolean> seen, boolean ownsSunfire)
 	{
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) -> seen.set(sunfire),
+			(mob, p, onDone) -> seen.set(p.sunfireRunes),
 			new CompanionLink());
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> ownsSunfire && id == SUNFIRE_RUNE);

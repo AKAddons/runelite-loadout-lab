@@ -141,7 +141,6 @@ public class LoadoutLabPlugin extends Plugin
 	private static final String DWMS_PLUGIN_NAME = "Dude, Where's My Stuff?";
 	private BankHighlightOverlay bankOverlay;
 	private DreamStore dreams;
-	private ManualOwnedStore manualOwned;
 	private MonsterProfileStore mobProfiles;
 	private AlwaysFilterStore alwaysFilter;
 	private SupplyDefaultsStore supplyDefaults;
@@ -346,7 +345,6 @@ public class LoadoutLabPlugin extends Plugin
 		exclusions = new ExclusionStore(configManager, gson);
 		protectOnly = new ProtectOnlyStore(configManager, gson);
 		dreams = new DreamStore(configManager, gson);
-		manualOwned = new ManualOwnedStore(configManager, gson);
 		mobProfiles = new MonsterProfileStore(configManager, gson);
 		alwaysFilter = new AlwaysFilterStore(configManager, gson);
 		supplyDefaults = new SupplyDefaultsStore(configManager, gson);
@@ -381,7 +379,6 @@ public class LoadoutLabPlugin extends Plugin
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			loadAllScopes();
-			migrateStoredToSims();
 			requestDwmsStorages();
 			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
 		}
@@ -783,7 +780,6 @@ public class LoadoutLabPlugin extends Plugin
 		ledger = null;
 		exclusions = null;
 		protectOnly = null;
-		manualOwned = null;
 		mobProfiles = null;
 		dwmsLink = null;
 		stashUnits = null;
@@ -849,7 +845,7 @@ public class LoadoutLabPlugin extends Plugin
 			// (2026-09-18): a just-installed state - settings back to their
 			// defaults and the page back to empty as well. Bank memory is
 			// not a customisation and stays.
-			for (IdSetStore store : new IdSetStore[]{exclusions, protectOnly, dreams, manualOwned})
+			for (IdSetStore store : new IdSetStore[]{exclusions, protectOnly, dreams})
 			{
 				store.clear();
 			}
@@ -1123,7 +1119,6 @@ public class LoadoutLabPlugin extends Plugin
 			// consumables every room, so presence changed per transition
 			// and the full search re-ran each time) - one recompute, five
 			// quiet ticks after the churn stops.
-			log.debug("Loadout Lab: owned items changed (debouncing refresh)");
 			ledgerRecomputeTicks = 5;
 		}
 		else
@@ -1136,7 +1131,6 @@ public class LoadoutLabPlugin extends Plugin
 	{
 		if (ledgerRecomputeTicks > 0 && --ledgerRecomputeTicks == 0)
 		{
-			log.debug("Loadout Lab: owned items settled - background refresh");
 			SwingUtilities.invokeLater(() ->
 			{
 				CommandEngine engine = commandEngine;
@@ -1220,7 +1214,6 @@ public class LoadoutLabPlugin extends Plugin
 				int[] ids = units.itemsFor(name);
 				if (ids == null)
 				{
-					log.debug("unknown STASH chart unit: {}", name);
 					continue;
 				}
 				for (int id : ids)
@@ -1271,8 +1264,7 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/**
-	 * The ledger view plus manual "stored elsewhere" and DWMS storages.
-	 * Once DWMS has answered a PluginMessage request this session the live
+	 * The ledger view plus the potion storage and DWMS storages. Once DWMS has answered a PluginMessage request this session the live
 	 * snapshot wins outright (guaranteed-correct parse, every storage);
 	 * until then the best-effort config read fills in.
 	 */
@@ -1282,7 +1274,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private Map<Integer, Integer> ownedItems()
 	{
-		Map<Integer, Integer> owned = manualOwned.mergeInto(ledger.owned());
+		Map<Integer, Integer> owned = ledger.owned();
 		potionStorage.forEach((id, n) -> owned.merge(id, n, Integer::sum));
 		if (!config.useDwmsData())
 		{
@@ -1294,13 +1286,13 @@ public class LoadoutLabPlugin extends Plugin
 	}
 
 	/**
-	 * Ownership fingerprint covering the ledger, the manual list, AND the
+	 * Ownership fingerprint covering the ledger, the potion storage AND the
 	 * effective DWMS source - the optimizer/panel cache key, so any of them
 	 * changing is a real ownership change everywhere a bank deposit would be.
 	 */
 	private int ownedFingerprint()
 	{
-		int fingerprint = 31 * (31 * ledger.fingerprint() + manualOwned.snapshot().hashCode()) + potionStorage.hashCode();
+		int fingerprint = 31 * ledger.fingerprint() + potionStorage.hashCode();
 		int dwms = config.useDwmsData() ? dwmsLink.snapshot().hashCode() : 0;
 		return 31 * fingerprint + dwms;
 	}
@@ -1336,12 +1328,6 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		origins.put("cargo hold", cargo);
 		origins.put("potion storage", potionStorage);
-		Map<Integer, Integer> manual = new HashMap<>();
-		for (int id : manualOwned.snapshot())
-		{
-			manual.put(id, 1);
-		}
-		origins.put("stored elsewhere", manual);
 		if (config.useDwmsData())
 		{
 			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsLink.families().entrySet())
@@ -1592,8 +1578,7 @@ public class LoadoutLabPlugin extends Plugin
 	private void respondWithStorages(String target)
 	{
 		CollectionLedger currentLedger = ledger;
-		ManualOwnedStore manual = manualOwned;
-		if (currentLedger == null || manual == null)
+		if (currentLedger == null)
 		{
 			return;
 		}
@@ -1612,17 +1597,6 @@ public class LoadoutLabPlugin extends Plugin
 			{
 				storages.add(entry);
 			}
-		}
-		Map<Integer, Integer> manualItems = new HashMap<>();
-		for (int itemId : manual.snapshot())
-		{
-			manualItems.put(itemId, 1);
-		}
-		Map<String, Object> manualEntry = StoragesApi.storage(
-			"manual", "manualOwned", -1L, manualItems, canonicalize);
-		if (manualEntry != null)
-		{
-			storages.add(manualEntry);
 		}
 		eventBus.post(new PluginMessage(StoragesApi.NAMESPACE, StoragesApi.RESPONSE_NAME,
 			StoragesApi.response(target, storages)));
@@ -1852,7 +1826,6 @@ public class LoadoutLabPlugin extends Plugin
 
 		Staging()
 		{
-			long start = System.nanoTime();
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
 				snapshotProfileIfNeeded();
@@ -1870,15 +1843,10 @@ public class LoadoutLabPlugin extends Plugin
 			owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			fingerprint = owned.presenceFingerprint();
 			unlocks = prayerUnlocks != null ? prayerUnlocks : PrayerUnlocks.ALL;
-			long stagingMs = (System.nanoTime() - start) / 1_000_000;
-			if (stagingMs > 10)
-			{
-				log.debug("perf: compute staging took {}ms on the client thread", stagingMs);
-			}
 		}
 	}
 
-	public void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	public void computeRoster(List<MonsterStats> mobs, ComputeParams p, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1889,13 +1857,12 @@ public class LoadoutLabPlugin extends Plugin
 			for (MonsterStats mob : mobs)
 			{
 				int id = mob.profileId();
-				pinsByMob.put(id, pinnedByStyle(mob, id, onSlayerTask));
+				pinsByMob.put(id, pinnedByStyle(mob, id, p.onSlayerTask));
 				spellByMob.put(id, resolvedPinnedSpell(id));
 				specByMob.put(id, mobProfiles.pinnedSpec(id));
 			}
-			optimizerService.bestPerStyleAcross(mobs, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, globalExcludedByStyle(), maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks,
-				inWilderness, dreams.snapshot(), upgradeBudgetGp, maxSwaps, perMobExclusions(mobs),
+			optimizerService.bestPerStyleAcross(mobs, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, p,
+				globalExcludedByStyle(), dreams.snapshot(), perMobExclusions(mobs),
 				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() ->
@@ -1915,7 +1882,7 @@ public class LoadoutLabPlugin extends Plugin
 		});
 	}
 
-	public void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask, boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp, boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, int upgradeBudgetGp, int maxSwaps, Runnable onDone)
+	public void compute(MonsterStats monster, ComputeParams p, Runnable onDone)
 	{
 		clientThread.invokeLater(() ->
 		{
@@ -1926,10 +1893,9 @@ public class LoadoutLabPlugin extends Plugin
 			exportProfile(new PlayerProfile(
 				s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
-			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, f2pOnly,
-				onSlayerTask, spellbookLock, excludedByStyle(monster.getId()), maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks,
-				inWilderness, dreamsWithMobSims(monster), upgradeBudgetGp, maxSwaps,
-				pinnedByStyle(monster, monster.getId(), onSlayerTask), resolvedPinnedSpell(monster.getId()),
+			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, p,
+				excludedByStyle(monster.getId()), dreamsWithMobSims(monster),
+				pinnedByStyle(monster, monster.getId(), p.onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
 				results -> SwingUtilities.invokeLater(() ->
@@ -1965,33 +1931,6 @@ public class LoadoutLabPlugin extends Plugin
 				log.warn("renderer failed; keeping the previous content", ex);
 			}
 		});
-	}
-
-	/** One-time retirement of "stored elsewhere" (2026-08-12): the
-	 * concept collapsed into sims - both meant "count this as owned" -
-	 * so any manual entries convert to sims once and the old store is
-	 * emptied. Native STASH/POH/cargo/looting-bag scanning and the DWMS
-	 * import are untouched; only the MANUAL list retires. */
-	private void migrateStoredToSims()
-	{
-		if (manualOwned == null || dreams == null)
-		{
-			return;
-		}
-		Set<Integer> stored = new HashSet<>(manualOwned.snapshot());
-		if (stored.isEmpty())
-		{
-			return;
-		}
-		for (int id : stored)
-		{
-			if (!dreams.isDreamed(id))
-			{
-				dreams.toggle(id);
-			}
-		}
-		manualOwned.clear();
-		log.info("Loadout Lab: migrated {} 'stored elsewhere' items into sims", stored.size());
 	}
 
 	/** VarbitID.SPELLBOOK values -> the contract's book names. */
@@ -2036,7 +1975,7 @@ public class LoadoutLabPlugin extends Plugin
 
 	private String primaryLocationOf(int itemId)
 	{
-		if (ledger == null || manualOwned == null || dwmsLink == null)
+		if (ledger == null || dwmsLink == null)
 		{
 			return "";
 		}
@@ -2072,7 +2011,6 @@ public class LoadoutLabPlugin extends Plugin
 		// number this session (field report: all magic at 0.06 dps).
 		if (real.getOrDefault(Skill.HITPOINTS, 0) < 10)
 		{
-			log.debug("skill snapshot looked uninitialized, retrying on next compute");
 			return;
 		}
 		// Stronger canary: stats stream in Skill-ordinal order at login, so a
@@ -2088,8 +2026,6 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		if (summed < client.getTotalLevel())
 		{
-			log.debug("skill snapshot partial ({} < total {}), retrying on next compute",
-				summed, client.getTotalLevel());
 			return;
 		}
 		Set<String> quests = new HashSet<>();
@@ -2136,7 +2072,7 @@ public class LoadoutLabPlugin extends Plugin
 			// stores keep the last known character until the hash arrives.
 			return;
 		}
-		for (ScopedStore store : new ScopedStore[]{ledger, manualOwned, exclusions, dreams,
+		for (ScopedStore store : new ScopedStore[]{ledger, exclusions, dreams,
 			protectOnly, alwaysFilter, mobProfiles, supplyDefaults})
 		{
 			if (store != null)

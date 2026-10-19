@@ -1,5 +1,6 @@
 package com.loadoutlab.model;
 
+import com.loadoutlab.engine.ComputeParams;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.engine.CombatStyle;
@@ -401,8 +402,8 @@ public class PageState
 		}
 	}
 
-	/** The compute arguments in ComputeHook order (see CommandEngine). */
-	public synchronized Object[] computeArgs()
+	/** The compute settings, one object per compute (see CommandEngine). */
+	public synchronized ComputeParams computeParams()
 	{
 		// Kept-slots mirror the classic riskCap() gate: a risk cap only
 		// binds in the wilderness, and Protect Item keeps a 4th slot.
@@ -413,11 +414,21 @@ public class PageState
 		// unticking F2P brings the old setup straight back) - they just
 		// stop steering the math while the lock is on (field ask
 		// 2026-08-27: D charge / thralls / task have no meaning on F2P).
-		return new Object[]{
-			f2pOnly, !f2pOnly && onTask, inWilderness, spellbookLock, tradeables,
-			riskBudgetGp, antifireMode == 2, f2pOnly ? 0 : deathCharge, specWeapon,
-			new LinkedHashMap<>(boostPicks), new LinkedHashMap<>(prayerPicks),
-			upgradeBudgetGp, maxSwaps, sunfireRunes,
-		};
+		ComputeParams p = new ComputeParams();
+		p.f2pOnly = f2pOnly;
+		p.onSlayerTask = !f2pOnly && onTask;
+		p.inWilderness = inWilderness;
+		p.spellbookLock = spellbookLock;
+		p.maxTradeables = tradeables;
+		p.riskBudgetGp = riskBudgetGp;
+		p.antifirePotion = antifireMode == 2;
+		p.sunfireRunes = sunfireRunes;
+		p.deathCharge = f2pOnly ? 0 : deathCharge;
+		p.specWeapon = specWeapon;
+		p.boostPicks = new LinkedHashMap<>(boostPicks);
+		p.prayerPicks = new LinkedHashMap<>(prayerPicks);
+		p.upgradeBudgetGp = upgradeBudgetGp;
+		p.maxSwaps = maxSwaps;
+		return p;
 	}
 }

@@ -49,8 +49,7 @@ class AmmoDetectTest
 		}
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);
@@ -123,8 +122,7 @@ class AmmoDetectTest
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);
@@ -192,8 +190,7 @@ class AmmoDetectTest
 		state.setParam("thralls", true);
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);
@@ -244,8 +241,7 @@ class AmmoDetectTest
 		state.setParam("shipKeel", "none");
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);
@@ -287,8 +283,7 @@ class AmmoDetectTest
 			state.setParam("shipKeel", keel);
 			CaptureLink link = new CaptureLink();
 			CommandEngine engine = new CommandEngine(data, state,
-				(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-					boosts, prayers, budget, swaps, onDone) ->
+				(mob, p, onDone) ->
 				{
 				},
 				link);

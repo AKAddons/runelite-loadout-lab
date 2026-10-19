@@ -230,8 +230,7 @@ final class ReportBuilder
 		if (counts != null)
 		{
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
-				.append(counts.getOrDefault("simmed", 0)).append(" simmed, ")
-				.append(counts.getOrDefault("stored", 0)).append(" stored elsewhere\n");
+				.append(counts.getOrDefault("simmed", 0)).append(" simmed\n");
 			names(sb, "  Excluded: ", counts.get("excludedItems"), false);
 			Object names = counts.get("simmedNames");
 			if (names instanceof List && !((List<?>) names).isEmpty())

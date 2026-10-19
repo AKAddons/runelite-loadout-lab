@@ -49,8 +49,7 @@ class RosterReorderTest
 	{
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			new CaptureLink());
@@ -89,8 +88,7 @@ class RosterReorderTest
 		PageState state = new PageState();
 		CapturePages link = new CapturePages();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) -> searches.incrementAndGet(),
+			(mob, p, onDone) -> searches.incrementAndGet(),
 			link);
 		engine.setStoreOps(new TestStoreOps());
 		assertTrue(engine.execute("select", Map.of("query", "Tombs of Amascut")));

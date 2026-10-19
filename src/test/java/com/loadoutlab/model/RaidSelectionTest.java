@@ -43,8 +43,7 @@ class RaidSelectionTest
 		PageState state, CaptureLink link)
 	{
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);
@@ -94,8 +93,7 @@ class RaidSelectionTest
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			link);

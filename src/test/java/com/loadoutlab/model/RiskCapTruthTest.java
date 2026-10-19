@@ -16,8 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RiskCapTruthTest
 {
-	/** computeArgs order: [f2p, onTask, inWilderness, lock, tradeables, ...] */
-	private static final int TRADEABLES = 4;
 
 	private static PageState wilderness()
 	{
@@ -34,7 +32,7 @@ class RiskCapTruthTest
 		state.setParam("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 		assertEquals(Boolean.TRUE, state.paramsNode().get("riskCapped"),
 			"75k is a cap the player chose, not the absence of one");
-		assertEquals(3, state.computeArgs()[TRADEABLES],
+		assertEquals(3, state.computeParams().maxTradeables,
 			"a bound cap limits carried tradeables to 3");
 	}
 
@@ -44,7 +42,7 @@ class RiskCapTruthTest
 	{
 		PageState fresh = wilderness();
 		assertEquals(Boolean.FALSE, fresh.paramsNode().get("riskCapped"));
-		assertEquals(-1, fresh.computeArgs()[TRADEABLES], "unconstrained by default");
+		assertEquals(-1, fresh.computeParams().maxTradeables, "unconstrained by default");
 
 		PageState state = wilderness();
 		state.setParam("riskBudgetGp", 5_000_000);
@@ -52,7 +50,7 @@ class RiskCapTruthTest
 		state.setParam("riskBudgetGp", null);
 		assertEquals(Boolean.FALSE, state.paramsNode().get("riskCapped"),
 			"an emptied field means uncapped");
-		assertEquals(-1, state.computeArgs()[TRADEABLES]);
+		assertEquals(-1, state.computeParams().maxTradeables);
 	}
 
 	@Test
@@ -65,8 +63,7 @@ class RiskCapTruthTest
 		PageState state = wilderness();
 		CommandEngine engine = new CommandEngine(
 			new com.loadoutlab.data.DataService().load(), state,
-			(mob, f2p, onTask, wild, lock, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) ->
+			(mob, p, onDone) ->
 			{
 			},
 			new CompanionLink());
@@ -76,7 +73,7 @@ class RiskCapTruthTest
 			"param", "riskBudgetGp", "value", OptimizationRequest.DEFAULT_RISK_BUDGET_GP)));
 		assertEquals(Boolean.TRUE, state.paramsNode().get("riskCapped"),
 			"typing 75k must bind a real cap");
-		assertEquals(3, state.computeArgs()[TRADEABLES]);
+		assertEquals(3, state.computeParams().maxTradeables);
 	}
 
 	@Test
@@ -86,7 +83,7 @@ class RiskCapTruthTest
 		PageState state = wilderness();
 		state.setParam("riskBudgetGp", 1_000_000);
 		state.setParam("protectItem", true);
-		assertEquals(4, state.computeArgs()[TRADEABLES]);
+		assertEquals(4, state.computeParams().maxTradeables);
 	}
 
 	@Test
@@ -95,6 +92,6 @@ class RiskCapTruthTest
 	{
 		PageState state = new PageState();
 		state.setParam("riskBudgetGp", 1_000_000);
-		assertEquals(-1, state.computeArgs()[TRADEABLES]);
+		assertEquals(-1, state.computeParams().maxTradeables);
 	}
 }

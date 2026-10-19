@@ -208,22 +208,9 @@ public class OptimizerService
 		RequirementProfile requirements,
 		OwnedItems owned,
 		int collectionFingerprint,
-		boolean f2pOnly,
-		boolean onSlayerTask,
-		String spellbookLock,
+		ComputeParams p,
 		Map<CombatStyle, Set<Integer>> excludedByStyle,
-		int maxTradeables,
-		int riskBudgetGp,
-		boolean antifirePotion,
-		boolean sunfireRunes,
-		int deathCharge,
-		boolean specWeapon,
-		Map<CombatStyle, String> boostPicks,
-		Map<CombatStyle, String> prayerPicks,
-		boolean inWilderness,
 		Set<Integer> dreamItems,
-		int upgradeBudgetGp,
-		int maxSwaps,
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle,
 		SpellStats pinnedSpell,
 		int pinnedSpec,
@@ -231,9 +218,7 @@ public class OptimizerService
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
-			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps,
+			requirements, owned, collectionFingerprint, p, excludedByStyle, dreamItems,
 			Collections.singletonMap(monster.profileId(), pinnedByStyle),
 			Collections.singletonMap(monster.profileId(), pinnedSpell),
 			Collections.singletonMap(monster.profileId(), pinnedSpec), protectOnlyItems);
@@ -622,47 +607,44 @@ public class OptimizerService
 	private ComputeContext buildContext(
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
-		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		int maxSwaps,
+		ComputeParams p, Map<CombatStyle, Set<Integer>> excludedByStyle, Set<Integer> dreamItems,
 		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob,
 		Map<Integer, SpellStats> spellByMob, Map<Integer, Integer> specByMob,
 		Set<Integer> protectOnlyItems)
 	{
 		ComputeContext ctx = new ComputeContext();
-		ctx.maxSwaps = Math.max(0, maxSwaps);
+		ctx.maxSwaps = Math.max(0, p.maxSwaps);
 		ctx.pinsByMob = pinsByMob == null ? Map.of() : pinsByMob;
 		ctx.spellByMob = spellByMob == null ? Map.of() : spellByMob;
 		ctx.specByMob = specByMob == null ? Map.of() : specByMob;
 		ctx.excluded = excludedByStyle == null ? Map.of() : excludedByStyle;
 		ctx.dreams = dreamItems == null ? Set.of() : dreamItems;
 		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
-		ctx.lock = spellbookLock == null ? "" : spellbookLock;
+		ctx.lock = p.spellbookLock == null ? "" : p.spellbookLock;
 		ctx.real = realLevels == null ? boostedLevels : realLevels;
 		ctx.boostedLevels = boostedLevels;
 		// A free world has no members prayers - F2P caps the book (audit A3.5).
-		ctx.unlocks = f2pOnly ? PrayerUnlocks.F2P
+		ctx.unlocks = p.f2pOnly ? PrayerUnlocks.F2P
 			: prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
 		// The budget only matters when risk-constrained; pin it otherwise so
 		// flipping the dropdown with the cap off cannot split the cache.
-		ctx.riskBudget = maxTradeables >= 0 ? riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-		ctx.dataset = f2pOnly ? f2pView() : data;
+		ctx.riskBudget = p.maxTradeables >= 0 ? p.riskBudgetGp : OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
+		ctx.dataset = p.f2pOnly ? f2pView() : data;
 		// Owned ornament/locked variants count as their base item.
 		ctx.effectiveOwned = new OwnedItems(
 			ctx.dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
 		ctx.requirements = requirements;
-		ctx.f2pOnly = f2pOnly;
-		ctx.onSlayerTask = onSlayerTask;
-		ctx.antifirePotion = antifirePotion;
-		ctx.sunfireRunes = sunfireRunes;
-		ctx.deathCharge = deathCharge;
-		ctx.specWeapon = specWeapon;
-		ctx.boostPicks = boostPicks == null ? Map.of() : boostPicks;
-		ctx.prayerPicks = prayerPicks == null ? Map.of() : prayerPicks;
-		ctx.inWilderness = inWilderness;
-		ctx.maxTradeables = maxTradeables;
-		ctx.upgradeBudgetGp = upgradeBudgetGp;
+		ctx.f2pOnly = p.f2pOnly;
+		ctx.onSlayerTask = p.onSlayerTask;
+		ctx.antifirePotion = p.antifirePotion;
+		ctx.sunfireRunes = p.sunfireRunes;
+		ctx.deathCharge = p.deathCharge;
+		ctx.specWeapon = p.specWeapon;
+		ctx.boostPicks = p.boostPicks == null ? Map.of() : p.boostPicks;
+		ctx.prayerPicks = p.prayerPicks == null ? Map.of() : p.prayerPicks;
+		ctx.inWilderness = p.inWilderness;
+		ctx.maxTradeables = p.maxTradeables;
+		ctx.upgradeBudgetGp = p.upgradeBudgetGp;
 		ctx.collectionFingerprint = collectionFingerprint;
 		return ctx;
 	}
@@ -2009,11 +1991,6 @@ public class OptimizerService
 				}
 			}
 		}
-		log.debug("roster compute: {} mobs @ inventory {} - fanout {}ms"
-			+ " ({} cache hits, {} misses), owned kit {}ms, BiS kit {}ms, total {}ms",
-			n, ctx.maxSwaps, tFanMs,
-			optimizeHits.get() - hitsBefore, optimizeMisses.get() - missesBefore,
-			tOwnedKitMs, tGameKitMs, (System.nanoTime() - tStart) / 1_000_000);
 		return perMob;
 	}
 
@@ -2534,10 +2511,7 @@ public class OptimizerService
 		List<MonsterStats> mobs,
 		PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks,
 		RequirementProfile requirements, OwnedItems owned, int collectionFingerprint,
-		boolean f2pOnly, boolean onSlayerTask, String spellbookLock,
-		Map<CombatStyle, Set<Integer>> excludedByStyle, int maxTradeables, int riskBudgetGp,
-		boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon, Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks, boolean inWilderness, Set<Integer> dreamItems, int upgradeBudgetGp,
-		int maxSwaps,
+		ComputeParams p, Map<CombatStyle, Set<Integer>> excludedByStyle, Set<Integer> dreamItems,
 		Map<Integer, Map<CombatStyle, Set<Integer>>> excludedByMob,
 		Map<Integer, Set<Integer>> dreamsByMob,
 		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob,
@@ -2551,7 +2525,7 @@ public class OptimizerService
 		}
 		if (mobs.size() == 1)
 		{
-			int p = mobs.get(0).profileId();
+			int id = mobs.get(0).profileId();
 			// The single-mob fast path merges the mob's own exclusions into
 			// the style map - one request, same semantics. (EnumMap's copy
 			// constructor rejects an empty plain map - build then putAll.)
@@ -2561,7 +2535,7 @@ public class OptimizerService
 				merged.putAll(excludedByStyle);
 			}
 			Map<CombatStyle, Set<Integer>> perMobExcl = excludedByMob == null ? null
-				: excludedByMob.get(p);
+				: excludedByMob.get(id);
 			if (perMobExcl != null)
 			{
 				for (Map.Entry<CombatStyle, Set<Integer>> e : perMobExcl.entrySet())
@@ -2576,23 +2550,21 @@ public class OptimizerService
 				? new HashSet<>() : new HashSet<>(dreamItems);
 			if (dreamsByMob != null)
 			{
-				Set<Integer> localSims = dreamsByMob.get(p);
+				Set<Integer> localSims = dreamsByMob.get(id);
 				if (localSims != null)
 				{
 					mergedDreams.addAll(localSims);
 				}
 			}
 			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
-				owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock, merged,
-				maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness, mergedDreams, upgradeBudgetGp,
-				maxSwaps, pinsByMob.get(p), spellByMob.get(p), specByMob.getOrDefault(p, 0), protectOnlyItems,
+				owned, collectionFingerprint, p, merged, mergedDreams,
+				pinsByMob.get(id), spellByMob.get(id), specByMob.getOrDefault(id, 0), protectOnlyItems,
 				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
 			return;
 		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
-			requirements, owned, collectionFingerprint, f2pOnly, onSlayerTask, spellbookLock,
-			excludedByStyle, maxTradeables, riskBudgetGp, antifirePotion, sunfireRunes, deathCharge, specWeapon, boostPicks, prayerPicks, inWilderness,
-			dreamItems, upgradeBudgetGp, maxSwaps, pinsByMob, spellByMob, specByMob, protectOnlyItems);
+			requirements, owned, collectionFingerprint, p, excludedByStyle, dreamItems,
+			pinsByMob, spellByMob, specByMob, protectOnlyItems);
 		ctx.excludedByMob = excludedByMob == null ? Map.of() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Map.of() : dreamsByMob;
 		final List<MonsterStats> roster = new ArrayList<>(mobs);

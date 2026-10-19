@@ -47,11 +47,9 @@ class FightBookLockTest
 	{
 		AtomicReference<String> lock = new AtomicReference<>();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) -> lock.set(book), new CompanionLink());
+			(mob, p, onDone) -> lock.set(p.spellbookLock), new CompanionLink());
 		// "abyssal sire" resolves to the fight's roster group, so capture that path too.
-		engine.setRosterCompute((mobs, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
-			boosts, prayers, budget, swaps, onDone) -> lock.set(book));
+		engine.setRosterCompute((mobs, p, onDone) -> lock.set(p.spellbookLock));
 		PinOps ops = new PinOps();
 		engine.setStoreOps(ops);
 

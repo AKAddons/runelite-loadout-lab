@@ -27,11 +27,7 @@ public class CommandEngine
 	/** The plugin's compute path, in ComputeHook argument order. */
 	public interface Compute
 	{
-		void compute(MonsterStats monster, boolean f2pOnly, boolean onSlayerTask,
-			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon,
-			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
+		void compute(MonsterStats monster, ComputeParams p, Runnable onDone);
 	}
 
 	private final LoadoutData data;
@@ -165,11 +161,7 @@ public class CommandEngine
 	/** The plugin's roster compute path (ComputeHook.computeRoster). */
 	public interface RosterCompute
 	{
-		void computeRoster(List<MonsterStats> mobs, boolean f2pOnly, boolean onSlayerTask,
-			boolean inWilderness, String spellbookLock, int maxTradeables, int riskBudgetGp,
-			boolean antifirePotion, boolean sunfireRunes, int deathCharge, boolean specWeapon,
-			Map<CombatStyle, String> boostPicks, Map<CombatStyle, String> prayerPicks,
-			int upgradeBudgetGp, int maxSwaps, Runnable onDone);
+		void computeRoster(List<MonsterStats> mobs, ComputeParams p, Runnable onDone);
 	}
 
 	/** Wrench-panel supply defaults (category -> config enum name),
@@ -1402,21 +1394,21 @@ public class CommandEngine
 			publishPending();
 			link.publishStatus(true);
 		}
-		Object[] a = state.computeArgs();
+		ComputeParams p = state.computeParams();
 		boolean anyFire = false;
 		for (MonsterStats m : roster != null ? roster : List.of(mob))
 		{
 			anyFire |= DragonfireRules.breathesFire(m);
 		}
-		a[6] = ((Boolean) a[6]) && anyFire;
+		p.antifirePotion &= anyFire;
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
 		MonsterStats lensed = shownMob();
 		String pinnedSpell = stores == null || lensed == null ? "" : stores.mobs().pinnedSpell(lensed.getId());
 		if (cureMe(computed))
 		{
-			a[3] = "lunar";
+			p.spellbookLock = "lunar";
 		}
-		else if (String.valueOf(a[3]).isEmpty() && (pinnedSpell == null || pinnedSpell.isEmpty()))
+		else if (p.spellbookLock.isEmpty() && (pinnedSpell == null || pinnedSpell.isEmpty()))
 		{
 			// The fight book is the autocast lock too (Andrew 2026-10-15: the
 			// Sire's magic set cast Dark Demonbane while the plate said Ancients).
@@ -1426,24 +1418,21 @@ public class CommandEngine
 				String book = MonsterSpellbooks.bookFor(m);
 				if (book != null && !book.isEmpty())
 				{
-					a[3] = book;
+					p.spellbookLock = book;
 					break;
 				}
 			}
 		}
 		if (arceuusBlocked(computed))
 		{
-			a[7] = 0;
+			p.deathCharge = 0;
 		}
 		if (mob != null)
 		{
 			mob = atInvocation(mob);
-			compute.compute(mob, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
-				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6], (Boolean) a[13],
-				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
-				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
-				{
-				});
+			compute.compute(mob, p, () ->
+			{
+			});
 		}
 		else
 		{
@@ -1453,12 +1442,9 @@ public class CommandEngine
 				scaled.add(atInvocation(m));
 			}
 			roster = scaled;
-			rosterPath.computeRoster(roster, (Boolean) a[0], (Boolean) a[1], (Boolean) a[2],
-				(String) a[3], (Integer) a[4], (Integer) a[5], (Boolean) a[6], (Boolean) a[13],
-				(Integer) a[7], (Boolean) a[8], (Map<CombatStyle, String>) a[9],
-				(Map<CombatStyle, String>) a[10], (Integer) a[11], (Integer) a[12], () ->
-				{
-				});
+			rosterPath.computeRoster(roster, p, () ->
+			{
+			});
 		}
 	}
 

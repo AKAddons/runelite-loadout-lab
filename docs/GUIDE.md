@@ -493,17 +493,11 @@ and the carried swaps working around it. The pinned spec weapon is
 the trip's one shared spec, taken from the first member.
 
 
-### Stored elsewhere (manual owned items)
-
 Gear kept where no plugin can see it - an Ultimate Ironman's cold or
-nest storage, a friend's holding, anything untracked - can still count
-as owned: right-click an unowned suggestion and pick "Stored elsewhere",
-or add any item by name from the header Options menu. The list is kept
-per account, marked items join suggestions, bank borders, and the
-exported profile exactly like banked gear, and the green "Stored
-elsewhere" line in the panel manages them. (The looting bag, POH costume
-room, STASH units, and cargo holds need no marking - see the next
-sections.)
+nest storage, a friend's holding, anything untracked - counts as owned
+when you sim it (the separate Stored elsewhere list folded into sims in
+2026-08). The looting bag, POH costume room, STASH units and cargo holds
+need no marking - see the next section.
 
 
 ### STASH, POH costume room, and cargo hold tracking

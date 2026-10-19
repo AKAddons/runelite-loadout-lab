@@ -1,5 +1,6 @@
 package com.loadoutlab.model;
 
+import com.loadoutlab.engine.ComputeParams;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,14 +33,14 @@ class F2pVetoTest
 	{
 		PageState state = configured();
 
-		Object[] unlocked = state.computeArgs();
-		assertEquals(Boolean.TRUE, unlocked[1], "onTask should pass through unlocked");
-		assertEquals(2, unlocked[7], "deathCharge should pass through unlocked");
+		ComputeParams unlocked = state.computeParams();
+		assertTrue(unlocked.onSlayerTask, "onTask should pass through unlocked");
+		assertEquals(2, unlocked.deathCharge, "deathCharge should pass through unlocked");
 
 		state.setParam("f2pOnly", true);
-		Object[] locked = state.computeArgs();
-		assertEquals(Boolean.FALSE, locked[1], "the lock did not veto onTask");
-		assertEquals(0, locked[7], "the lock did not veto deathCharge");
+		ComputeParams locked = state.computeParams();
+		assertFalse(locked.onSlayerTask, "the lock did not veto onTask");
+		assertEquals(0, locked.deathCharge, "the lock did not veto deathCharge");
 	}
 
 	@Test
@@ -58,8 +59,8 @@ class F2pVetoTest
 			"the lock CLEARED thralls instead of vetoing it");
 
 		state.setParam("f2pOnly", false);
-		Object[] restored = state.computeArgs();
-		assertEquals(Boolean.TRUE, restored[1], "onTask did not come back");
-		assertEquals(2, restored[7], "deathCharge did not come back");
+		ComputeParams restored = state.computeParams();
+		assertTrue(restored.onSlayerTask, "onTask did not come back");
+		assertEquals(2, restored.deathCharge, "deathCharge did not come back");
 	}
 }

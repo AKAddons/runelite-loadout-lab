@@ -135,10 +135,10 @@ needed:
 - Config group: `loadoutlab`
 - Keys: `<world>.<accountHash>.collection.<source>`, where `<world>` is
   `std` or `seasonal`, `<accountHash>` is `Client.getAccountHash()`, and
-  `<source>` is `equipment`, `inventory`, `bank`, or `lootingBag`. The
-  user's manually marked items live at `<world>.<accountHash>.manualOwned`.
+  `<source>` is `equipment`, `inventory`, `bank`, or `lootingBag`.
 - Values: JSON. Collection keys hold `{"<itemId>": <quantity>, ...}` maps
-  (raw item ids, not canonicalized); `manualOwned` is a JSON array of ids.
+  (raw item ids, not canonicalized). The `manualOwned` list retired in
+  0.5.0 (its items became sims); readers should treat it as absent.
 
 Stability promise: these semantics never change silently. If the message
 or config schema ever has to change, the new shape gets a new version /

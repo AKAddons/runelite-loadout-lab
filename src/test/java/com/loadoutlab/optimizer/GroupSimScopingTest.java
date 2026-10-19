@@ -47,12 +47,13 @@ public class GroupSimScopingTest
 			{
 				CountDownLatch done = new CountDownLatch(1);
 				AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
+				com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
+				p.maxSwaps = maxSwaps;
 				service.bestPerStyleAcross(
 					Arrays.asList(vorkath, goblin), PlayerLevels.MAXED, PlayerLevels.MAXED,
 					PrayerUnlocks.ALL, RequirementProfile.MAXED,
-					new OwnedItems(owned, true), 1, false, false, "",
-					Collections.emptyMap(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-					false, false, 0, true, Collections.emptyMap(), Collections.emptyMap(), false, Collections.emptySet(), 0, 					maxSwaps, Collections.emptyMap(), dreamsByMob,
+					new OwnedItems(owned, true), 1, p,
+					Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), dreamsByMob,
 					Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet(),
 					roster -> { out.set(roster); done.countDown(); });
 				Assert.assertTrue("timed out", done.await(90, TimeUnit.SECONDS));

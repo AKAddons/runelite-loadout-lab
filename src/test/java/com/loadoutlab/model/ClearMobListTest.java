@@ -54,8 +54,7 @@ class ClearMobListTest
 	{
 		java.util.concurrent.atomic.AtomicInteger computes = new java.util.concurrent.atomic.AtomicInteger();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, f2p, onTask, wild, book, tradeables, risk, antifire, sunfire, dc, spec,
-				boosts, prayers, budget, swaps, onDone) -> computes.incrementAndGet(), new CompanionLink());
+			(mob, p, onDone) -> computes.incrementAndGet(), new CompanionLink());
 		ListOps ops = new ListOps();
 		ops.exclusions.add(Map.of("id", 4151, "name", "Abyssal whip", "scope", "ALL"));
 		ops.exclusions.add(Map.of("id", 11802, "name", "Armadyl godsword", "scope", "MELEE"));
