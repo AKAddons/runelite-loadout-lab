@@ -2293,7 +2293,7 @@ public class CommandEngine
 				node.put("name", kit ? pick.names[i] : pick.name);
 				node.put("itemId", pick.ids.length > 0 ? pick.ids[i] : 0);
 				List<Integer> doses = new ArrayList<>();
-				for (int id : kit ? new int[]{pick.ids[i]} : pick.ids)
+				for (int id : kit ? pick.cells != null ? pick.cells[i] : new int[]{pick.ids[i]} : pick.ids)
 				{
 					doses.add(id);
 				}

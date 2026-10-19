@@ -17,6 +17,7 @@
 			"name": "Dwarf multicannon",
 			"ids": [6, 8, 10, 12, 2],
 			"names": ["Cannon base", "Cannon stand", "Cannon barrels", "Cannon furnace", "Cannonballs"],
+			"cells": [[6, 26520], [8, 26522], [10, 26524], [12, 26526], [2, 21728]],
 			"detect": false
 		}
 	],

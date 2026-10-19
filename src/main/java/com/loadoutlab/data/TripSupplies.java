@@ -48,11 +48,15 @@ public final class TripSupplies
 		public final boolean wildyOnly;
 		/** Per-item names for a kit (one card cell each); empty for doses. */
 		public final String[] names;
+		/** A kit cell's ids - the display id first, then its variants (the
+		 * ornamented cannon parts, granite cannonballs); null = ids[i] alone. */
+		public final int[][] cells;
 
 		Option(String key, String name, int[] ids, boolean detect, boolean utility,
-			boolean wildyOnly, String[] names)
+			boolean wildyOnly, String[] names, int[][] cells)
 		{
 			this.names = names;
+			this.cells = cells;
 			this.key = key;
 			this.name = name;
 			this.ids = ids;
@@ -94,7 +98,7 @@ public final class TripSupplies
 							!o.has("detect") || o.get("detect").getAsBoolean(),
 							o.has("placement") && "utility".equals(o.get("placement").getAsString()),
 							o.has("wildyOnly") && o.get("wildyOnly").getAsBoolean(),
-							kitNames(o)));
+							kitNames(o), cells(o)));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
@@ -107,6 +111,26 @@ public final class TripSupplies
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
 			JsonResources.strings(root, "poisonMonsters", POISONOUS);
 		}
+	}
+
+	private static int[][] cells(JsonObject o)
+	{
+		JsonArray rows = o.getAsJsonArray("cells");
+		if (rows == null)
+		{
+			return null;
+		}
+		int[][] out = new int[rows.size()][];
+		for (int i = 0; i < out.length; i++)
+		{
+			JsonArray ids = rows.get(i).getAsJsonArray();
+			out[i] = new int[ids.size()];
+			for (int j = 0; j < out[i].length; j++)
+			{
+				out[i][j] = ids.get(j).getAsInt();
+			}
+		}
+		return out;
 	}
 
 	private static String[] kitNames(JsonObject o)

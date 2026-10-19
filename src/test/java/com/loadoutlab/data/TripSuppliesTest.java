@@ -134,6 +134,11 @@ public class TripSuppliesTest
 		Assert.assertEquals(5, cannon.get(0).names.length);
 		Assert.assertFalse(cannon.get(0).detect);
 		Assert.assertNull(TripSupplies.detectBest(TripSupplies.CANNON, id -> true));
+		// Each cell carries its variants too (Andrew 2026-10-18: the ornamented
+		// parts and granite cannonballs must light up in the filter).
+		Assert.assertEquals(5, cannon.get(0).cells.length);
+		Assert.assertArrayEquals(new int[]{6, 26520}, cannon.get(0).cells[0]);
+		Assert.assertArrayEquals(new int[]{2, 21728}, cannon.get(0).cells[4]);
 		Assert.assertEquals("Cannon", TripSupplies.label(TripSupplies.CANNON));
 		Assert.assertEquals("Food", TripSupplies.label(TripSupplies.FOOD));
 		Assert.assertNull("repair kits never show in the chip menu",

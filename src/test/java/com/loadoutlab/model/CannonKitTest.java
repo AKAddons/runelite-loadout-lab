@@ -40,8 +40,11 @@ class CannonKitTest
 		}
 	}
 
+	private List<List<Integer>> cannonCells = new ArrayList<>();
+
 	private List<Integer> cannonIds(boolean raid)
 	{
+		cannonCells.clear();
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
@@ -91,6 +94,12 @@ class CannonKitTest
 			if (TripSupplies.CANNON.equals(supply.get("category")))
 			{
 				ids.add(((Number) supply.get("itemId")).intValue());
+				List<Integer> cell = new ArrayList<>();
+				for (Object o : (List<?>) supply.get("ids"))
+				{
+					cell.add(((Number) o).intValue());
+				}
+				cannonCells.add(cell);
 			}
 		}
 		return ids;
@@ -101,6 +110,15 @@ class CannonKitTest
 	void cannonIsFiveCells()
 	{
 		assertEquals(List.of(6, 8, 10, 12, 2), cannonIds(false));
+	}
+
+	@Test
+	@DisplayName("each cell lights up its variants in the filter: the ornamented part, granite balls")
+	void cellsCarryVariants()
+	{
+		cannonIds(false);
+		assertEquals(List.of(6, 26520), cannonCells.get(0), "base and the (or) base");
+		assertEquals(List.of(2, 21728), cannonCells.get(4), "cannonballs and granite cannonballs");
 	}
 
 	@Test
