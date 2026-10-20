@@ -48,6 +48,8 @@ public final class SpecialAttack
 		MULTI_ROLL_TIERED,
 		/** Claws-style cascade with tier means 1.25/1.00/0.75 of max (burning claws). */
 		CASCADE_CLAWS,
+		/** A landed cast buffs the next three, fired every two ticks (Zorya's tome). */
+		BUFFED_FOLLOWUPS,
 	}
 
 	private static final int DARK_BOW_CAP = 48;
@@ -230,6 +232,8 @@ public final class SpecialAttack
 				return multiRollTieredExpected(hitChance, max);
 			case CASCADE_CLAWS:
 				return cascadeClawsExpected(hitChance, max);
+			case BUFFED_FOLLOWUPS:
+				return hitChance * mean((int) (max * damageMultiplier)) * (1 + 3 * hitChance);
 			case VOLATILE:
 			default:
 				return hitChance * mean(volatileMax(base, levels));
@@ -365,6 +369,12 @@ public final class SpecialAttack
 	private static double mean(int maxHit)
 	{
 		return maxHit / 2.0;
+	}
+
+	/** Ticks a spec spends beyond its own cast: the tome's follow-ups. */
+	public double extraTicks(DpsResult base)
+	{
+		return kind == Kind.BUFFED_FOLLOWUPS ? 6 * landChance(base) : 0;
 	}
 
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */

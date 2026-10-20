@@ -83,7 +83,11 @@ public class GolembaneTest
 			madAngel, CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
-			OwnedItems.EMPTY, RequirementProfile.MAXED, 3);
+			OwnedItems.EMPTY, RequirementProfile.MAXED, 3)
+			// The Obligator (2026-10-20) out-lunges the hammer at the 3x3,
+			// crush-weak Mad Angel (9.91 vs 8.58); this test pins the pool
+			// lesson, so it is set aside.
+			.withExcludedItems(java.util.Set.of(34715, 34717));
 		java.util.List<DpsResult> results = new LoadoutOptimizer().optimize(data(), request);
 		Assert.assertFalse(results.isEmpty());
 		Assert.assertEquals("granite hammer",

@@ -1,0 +1,54 @@
+{
+ "_comment": "Weapon/armour shortlist boosts (LoadoutOptimizer.candidateScore): pieces whose value lives in the DPS model, not raw stats, so the top-N cut must not drop them. Keyed by style (or 'all'); each block lifts a piece once (first matching name substring). Void: the set carries ~zero raw stats, so without a boost the zero-score prune drops the helm/gloves and a stocked bank's cut drops the top/robe (2026-07-17). The Obligator: its Lunge re-rolls (DpsCalculator) are invisible to raw stats (2026-10-20).",
+ "all": [
+  {
+   "void knight top": 2500,
+   "elite void top": 2500,
+   "void knight robe": 2500,
+   "elite void robe": 2500,
+   "void knight gloves": 2500
+  }
+ ],
+ "RANGED": [
+  {
+   "crystal helm": 2500,
+   "crystal body": 2500,
+   "crystal legs": 2500,
+   "bow of faerdhinen": 2500,
+   "crystal bow": 2500
+  },
+  {
+   "void ranger helm": 2500
+  }
+ ],
+ "MAGIC": [
+  {
+   "void mage helm": 2500
+  }
+ ],
+ "MELEE": [
+  {
+   "void melee helm": 2500
+  },
+  {
+   "obsidian helmet": 2000,
+   "obsidian platebody": 2000,
+   "obsidian platelegs": 2000,
+   "berserker necklace": 2000,
+   "tzhaar-ket-em": 2000,
+   "tzhaar-ket-om": 2000,
+   "toktz-xil-ak": 2000,
+   "toktz-xil-ek": 2000,
+   "toktz-mej-tal": 2000
+  },
+  {
+   "inquisitor's great helm": 1750,
+   "inquisitor's hauberk": 1750,
+   "inquisitor's plateskirt": 1750,
+   "inquisitor's mace": 1750
+  },
+  {
+   "obligator": 4000
+  }
+ ]
+}

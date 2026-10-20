@@ -1,0 +1,23 @@
+{
+ "_comment": "Powered-staff base max hits by weapon-name substring (DpsCalculator.magicMaxHit): 'offset' adds to trunc(magic/3), floored at 1; 'fixed' is a flat base. The warped sceptre and bone staff keep their own formulas in code. Sanguinesti is trunc(magic/3) exactly (official-verified 2026-08-22).",
+ "offset": {
+  "trident of the seas": -5,
+  "thammaron": -8,
+  "accursed sceptre": -6,
+  "trident of the swamp": -2,
+  "sanguinesti": 0,
+  "dawnbringer": -2,
+  "tumeken": 1,
+  "eye of ayak": -6
+ },
+ "fixed": {
+  "starter staff": 8,
+  "crystal staff (basic)": 23,
+  "corrupted staff (basic)": 23,
+  "crystal staff (attuned)": 31,
+  "corrupted staff (attuned)": 31,
+  "crystal staff (perfected)": 39,
+  "corrupted staff (perfected)": 39,
+  "zorya": 18
+ }
+}

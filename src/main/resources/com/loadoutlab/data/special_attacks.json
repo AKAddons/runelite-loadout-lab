@@ -579,5 +579,19 @@
   "drainFraction": 0,
   "drainsByDamage": false,
   "drainMagicFraction": 0.25
+ },
+ {
+  "prefixes": [
+   "zorya's tome"
+  ],
+  "name": "Zorya's tome",
+  "style": "MAGIC",
+  "kind": "BUFFED_FOLLOWUPS",
+  "cost": 50,
+  "accuracy": 2.5,
+  "damage": 1.6,
+  "note": "wiki 2026-10-20: +150% accuracy, +60% damage; a landed cast buffs the next three, fired every two ticks. Energy cost unpublished - 50% assumed (the Gatekeeper's Cane proposal)",
+  "drainFraction": 0,
+  "drainsByDamage": false
  }
 ]

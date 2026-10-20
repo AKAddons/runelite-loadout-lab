@@ -120,6 +120,26 @@ public final class RollMath
 		return accuracy * ((double) sum / (maxHit - lo + 1));
 	}
 
+	/** The best of several damage rolls on one landed hit (the Obligator's
+	 * Lunge): P(best = v) weights each roll's damage under the same flat
+	 * armour rule as expectedHitWithFlatArmour; best of one is that hit. */
+	public static double bestOfExpected(double accuracy, int maxHit, int rolls, int armour)
+	{
+		if (maxHit <= 0 || accuracy <= 0.0)
+		{
+			return 0.0;
+		}
+		double total = 0;
+		double below = 0;
+		for (int v = 0; v <= maxHit; v++)
+		{
+			double atMost = Math.pow((v + 1.0) / (maxHit + 1.0), rolls);
+			total += (atMost - below) * (armour > 0 ? Math.max(0, v - armour) : Math.max(1, v) - armour);
+			below = atMost;
+		}
+		return accuracy * total;
+	}
+
 	/** 0 + 1 + ... + n; n below zero is an empty run. */
 	private static long triangle(long n)
 	{

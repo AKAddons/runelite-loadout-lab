@@ -69,12 +69,16 @@ phases. The Guardian takes no Ancient Magicks. The rest of the raid's
 crush defences are low, so melee answers most rows; the shared kit adds
 its switches where melee cannot reach. The Dagon'hai Elder and Monk join
 once their stats are published. The
-raid's rewards are in the gear data: Zeal is the melee prayer tier above
-Piety once its unlock is read from your account, Zorya's tome is priced
-as a 3-tick powered staff, the Ascension crossbows fire ascension bolts
-only, and the Obligator is priced as a plain crush two-hander (its Lunge
-and Smash, the tome's special and the Rondache's flat armour are not
-modelled yet).
+raid's rewards are in the gear data and the game-best pool: Zeal is the
+melee prayer tier above Piety once its unlock is read from your account;
+the Obligator lunges for the best of two to four damage rolls (more the
+weaker the target is to crush) with a bonus on big targets, or smashes
+every three ticks, whichever is better - so it takes the game-best melee
+slot on large crush-weak bosses; Zorya's tome is a 3-tick powered staff
+whose special buffs three quick follow-up casts; the Ascension crossbows
+fire ascension bolts only. Some day-one numbers are assumptions (the
+tome's special cost, the Obligator's accuracy roll); docs/ENGINE-GAPS.md
+lists them, and the Rondache's flat armour is not modelled yet.
 
 ### Monster thumbnails
 

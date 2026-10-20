@@ -116,45 +116,44 @@ outside reroll formula everywhere. Both vectors are exact now.
 
 In the corpus from release day through scripts/wiki_intake.py (the
 wiki's infoboxes, ids from runelite-api 1.13.3 gameval; weirdgloop's
-cdn still carried the 2026-09-02 data): the Archive Guardian, Ezekiel,
-Bork, The Smorks, Dreadnoth the Jellied, Moia, Xarth and Ocellus (three
-phases, shared hitpoints) as the raid group, and the Obligator, Zorya's
-tome, the Ascension crossbows, the Rondache and the five ascension bolts
-as gear. Modelled: Zeal (25% accuracy / 28% strength at 84 Prayer, 75
-Attack and 75 Strength, gated on VarbitID.PRAYER_ZEAL_UNLOCKED), the
-tome as a 3-tick powered staff with a flat base max hit of 18, and the
-crossbows as a 3-tick crossbow (2 on rapid) that fires ascension bolts
-only. Not modelled, each priced as plain: the Obligator's Lunge
-multi-roll and its 3-tick Smash (it prices as a 5-tick crush
-two-hander), the tome's special (150% accuracy / 60% damage and three
-buffed 2-tick follow-ups; no energy cost published), the Rondache's +2
-flat armour on the player and its special, the ascension bolts' gem
-procs, the Elemental fragments (+2 max hit per element, account-wide),
-team-size hitpoint scaling, and the Dagon'hai Elder and Monk (no
-published stats; out of the group until the wiki carries them). No
-official-calculator vectors yet: the calculator had none of the raid on
-release day.
+cdn still carried the 2026-09-02 data). Tradeable rewards are priced
+from the wiki's real-time feed, or the official GE guide price before
+their first trade (priceSource geGuide): the game-best pool admits a
+tradeable only with a price.
 
-Phases (2026-10-20, Andrew: every BiS row came back melee): no boss page
-lists a melee immunity, and most crush defences sit between 5 and 35,
-so melee wins most rows on the published numbers. The group models the
-two phases melee cannot reach: the Guardian's shield phase (the wiki
-tags it flying; a halberd still reaches) and Xarth's first phase (the
-strategy guide fights it from behind the pillars - a stipulation, not a
-game immunity). The Guardian's Ancient Magicks immunity is modelled by
-id. The phases weigh equally: the shield-to-hitpoints ratio at a given
-team size is not published. Ocellus's second phase has no published
-hitpoints and borrows the first's. Priced as plain, the Obligator never
-wins a row (the Inquisitor's mace beats it); its Lunge is the gap.
+Modelled, with the day-one assumptions marked (Andrew: "people know that
+there will be rough edges for the first week or so"):
 
-Prices (2026-10-20): the game-best pool admits a tradeable only with a
-price, so the intake prices the rewards from the wiki's real-time feed
-and, for items with no trades yet, the official GE guide price
-(priceSource geGuide). Swept across 28 bosses and the raid, no reward
-takes a game-best slot yet: the crossbows rank below the twisted bow
-(Jagex: a raid-tier blowpipe), the tome sits below the Eye of Ayak by
-design (its draw is the unmodelled special), and the Rondache's value
-is its flat armour and special.
+- **Obligator** (release post): Lunge, 5 ticks, best of two damage
+  rolls, three when crush is the target's second-weakest melee defence,
+  four when weakest; +20% max on 2x2, +40% on 3x3 or bigger. Smash,
+  3 ticks, one plain roll. The calculator prices both and keeps the
+  better. Assumed: one accuracy roll (the post says "rolls damage"), a
+  defence tie is not weaker, the size bonus is Lunge-only. Not modelled:
+  the Lunge hitting up to three targets in a line.
+- **Zorya's tome**: a 3-tick powered staff, flat base max 18. Its special
+  (+150% accuracy, +60% damage; a landed cast buffs the next three,
+  fired every two ticks) is priced with the follow-ups' time charged
+  against the main set. Assumed: 50% energy (unpublished; the proposal's
+  cost).
+- **Ascension crossbows**: 3-tick crossbow, 2 on rapid, ascension bolts
+  only. They rank below the twisted bow (Jagex: a raid-tier blowpipe).
+- **Zeal**: 25% / 28% at 84 Prayer, 75 Attack and 75 Strength, gated on
+  VarbitID.PRAYER_ZEAL_UNLOCKED; game-best assumes it.
+- **The raid**: the Guardian flying behind its shield (a halberd still
+  reaches) and grounded, Xarth's first phase fought from the pillars (a
+  stipulation from the strategy guide, not a game immunity), the
+  Guardian's Ancient Magicks immunity, Ocellus in three phases (the
+  second borrows the first's hitpoints, unpublished). The phases weigh
+  equally.
+
+Not modelled: the Rondache's +2 flat armour on the player and its
+special; the ascension gem bolts' procs (bolt procs are unmodelled for
+every crossbow, item 7 below); the Elemental fragments (+2 base max per
+element: runelite-api names no varbit for the player's side, and a
+game-best assumption would break every official vector on an elemental
+spell); team-size hitpoint scaling; the Dagon'hai Elder and Monk (no
+published stats). No official-calculator vectors yet.
 
 ## Multi-combat card (2026-10-19)
 

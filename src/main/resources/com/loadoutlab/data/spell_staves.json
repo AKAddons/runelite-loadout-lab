@@ -1,0 +1,39 @@
+{
+ "_comment": "Which weapons can cast these spells (LoadoutOptimizer.spellAllowed), by weapon-name substring. 'ancient' is every Ancient Magicks spell (autocast staves only); the harmonised nightmare staff casts the standard book only and is excluded in code.",
+ "Iban Blast": [
+  "iban's staff"
+ ],
+ "Saradomin Strike": [
+  "saradomin staff",
+  "staff of light"
+ ],
+ "Claws of Guthix": [
+  "guthix staff",
+  "void knight mace",
+  "staff of balance"
+ ],
+ "Flames of Zamorak": [
+  "zamorak staff",
+  "staff of the dead",
+  "toxic staff of the dead",
+  "thammaron",
+  "accursed sceptre"
+ ],
+ "Magic Dart": [
+  "slayer's staff",
+  "staff of the dead",
+  "toxic staff of the dead",
+  "staff of light",
+  "staff of balance"
+ ],
+ "ancient": [
+  "ancient staff",
+  "ancient sceptre",
+  "kodai wand",
+  "master wand",
+  "blue moon spear",
+  "accursed sceptre",
+  "purging staff",
+  "nightmare staff"
+ ]
+}

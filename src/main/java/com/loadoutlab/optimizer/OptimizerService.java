@@ -3266,7 +3266,7 @@ public class OptimizerService
 			return 0;
 		}
 		double ttkSeconds = Math.min(600, Math.max(0.6, monster.getHitpoints() / mainDps));
-		double replacedAuto = mainResult.getExpectedHit();
+		double replacedAuto = mainResult.getExpectedHit() + mainDps * spec.extraTicks(specBase) * 0.6;
 		double specCycle = Math.max(0.6, specBase.getAttackSpeed() * 0.6);
 
 		// How many specs fire per kill at SUSTAINED pace: the regen-bound

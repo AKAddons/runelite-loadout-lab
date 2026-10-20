@@ -50,6 +50,17 @@ public final class DpsCalculator
 		return lines;
 	}
 
+	/** Powered staves (powered_staves.json): an offset on magic/3 or a flat base. */
+	private static final Map<String, Integer> STAFF_OFFSET = new LinkedHashMap<>();
+	private static final Map<String, Integer> STAFF_FIXED = new LinkedHashMap<>();
+
+	static
+	{
+		com.google.gson.JsonObject root = JsonResources.object("powered_staves.json");
+		JsonResources.stringIntMap(root, "offset", STAFF_OFFSET);
+		JsonResources.stringIntMap(root, "fixed", STAFF_FIXED);
+	}
+
 	public DpsResult calculate(OptimizationRequest request, Loadout loadout)
 	{
 		counted.clear();
@@ -349,6 +360,26 @@ public final class DpsCalculator
 				+ 0.25 * RollMath.normalExpectedHit(1.0, maxHit + 1);
 		}
 		int speed = attackSpeed(loadout, CombatStyle.MELEE);
+		String option = "";
+		if (melee.contains("obligator"))
+		{
+			// Lunge (5t): best of 2-4 damage rolls by crush's rank among the
+			// melee defences, +20/40% by size. Smash (3t): one plain roll.
+			MonsterDefences d = request.getMonster().getDefensive();
+			int crush = d.get("crush");
+			int size = request.getMonster().getSize();
+			int lungeMax = rawMax * (size >= 3 ? 7 : size == 2 ? 6 : 5) / 5;
+			double lunge = RollMath.bestOfExpected(accuracy, lungeMax,
+				2 + (d.get("stab") > crush ? 1 : 0) + (d.get("slash") > crush ? 1 : 0), flatArmour);
+			boolean smash = expected / 3 >= lunge / 5;
+			speed = smash ? 3 : 5;
+			option = smash ? ", smash" : ", lunge";
+			if (!smash)
+			{
+				expected = lunge;
+				maxHit = applyFlatArmour(request, lungeMax);
+			}
+		}
 		double effectiveSpeed = speed;
 		if (isWearingBloodMoonSet(loadout))
 		{
@@ -361,7 +392,7 @@ public final class DpsCalculator
 			effectiveSpeed = speed - proc;
 		}
 		String stance = attackStance == 3 ? "accurate" : strengthStance == 3 ? "aggressive" : "controlled";
-		return new DpsResult(loadout, expected / (effectiveSpeed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + ")", attackRoll, defenceRoll);
+		return new DpsResult(loadout, expected / (effectiveSpeed * RollMath.SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType + " (" + stance + option + ")", attackRoll, defenceRoll);
 	}
 
 	private DpsResult calculateRanged(OptimizationRequest request, Loadout loadout)
@@ -618,72 +649,27 @@ public final class DpsCalculator
 		{
 			return 0;
 		}
-		if (weaponName.contains("trident of the seas"))
-		{
-			return Math.max(1, magicLevel / 3 - 5);
-		}
-		if (weaponName.contains("thammaron"))
-		{
-			return Math.max(1, magicLevel / 3 - 8);
-		}
-		if (weaponName.contains("accursed sceptre"))
-		{
-			return Math.max(1, magicLevel / 3 - 6);
-		}
-		if (weaponName.contains("trident of the swamp"))
-		{
-			return Math.max(1, magicLevel / 3 - 2);
-		}
-		if (weaponName.contains("sanguinesti"))
-		{
-			// trunc(magic/3) - the -1 here ran the staff a full point
-			// low at every level (official-verified 2026-08-22; the
-			// sang-goblin vector was -11%, half of it this).
-			return Math.max(1, magicLevel / 3);
-		}
-		if (weaponName.contains("dawnbringer"))
-		{
-			return Math.max(1, magicLevel / 3 - 2);
-		}
-		if (weaponName.contains("starter staff"))
-		{
-			return 8;
-		}
-		if (weaponName.contains("crystal staff (basic)")
-			|| weaponName.contains("corrupted staff (basic)"))
-		{
-			return 23;
-		}
-		if (weaponName.contains("crystal staff (attuned)")
-			|| weaponName.contains("corrupted staff (attuned)"))
-		{
-			return 31;
-		}
-		if (weaponName.contains("crystal staff (perfected)")
-			|| weaponName.contains("corrupted staff (perfected)"))
-		{
-			return 39;
-		}
-		if (weaponName.contains("tumeken"))
-		{
-			return Math.max(1, magicLevel / 3 + 1);
-		}
 		if (weaponName.contains("warped sceptre"))
 		{
 			return Math.max(1, (8 * magicLevel + 96) / 37);
-		}
-		if (weaponName.contains("eye of ayak"))
-		{
-			return Math.max(1, magicLevel / 3 - 6);
 		}
 		if (weaponName.contains("bone staff"))
 		{
 			return Math.max(1, magicLevel / 3 - 5) + 10;
 		}
-		if (weaponName.contains("zorya"))
+		for (Map.Entry<String, Integer> e : STAFF_FIXED.entrySet())
 		{
-			// Zorya's tome: a flat base of 18 (wiki).
-			return 18;
+			if (weaponName.contains(e.getKey()))
+			{
+				return e.getValue();
+			}
+		}
+		for (Map.Entry<String, Integer> e : STAFF_OFFSET.entrySet())
+		{
+			if (weaponName.contains(e.getKey()))
+			{
+				return Math.max(1, magicLevel / 3 + e.getValue());
+			}
 		}
 		return Math.max(1, magicLevel / 3 + 1);
 	}

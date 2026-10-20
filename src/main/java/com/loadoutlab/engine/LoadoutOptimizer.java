@@ -1328,32 +1328,21 @@ public final class LoadoutOptimizer
 				score += 4_000.0;
 			}
 		}
-		if (request.getStyle() == CombatStyle.RANGED && (name.contains("crystal helm") || name.contains("crystal body") || name.contains("crystal legs") || name.contains("bow of faerdhinen") || name.contains("crystal bow")))
+		// Set pieces whose value lives in the DPS model, not raw stats
+		// (shortlist_boosts.json): each block lifts a piece once.
+		for (String key : new String[]{"all", request.getStyle().name()})
 		{
-			score += 2_500.0;
-		}
-		// Void: the whole set's value lives in the DPS model, the pieces
-		// carry ~zero raw stats - without a boost the zero-score prune
-		// drops the helm/gloves outright and a stocked bank's top-N cut
-		// drops the top/robe, so the set could NEVER assemble for a
-		// well-geared account (field question 2026-07-17 - it only worked
-		// when you owned little else). The style's own helm gates entry.
-		if (name.contains("void knight top") || name.contains("elite void top")
-			|| name.contains("void knight robe") || name.contains("elite void robe")
-			|| name.contains("void knight gloves")
-			|| (request.getStyle() == CombatStyle.RANGED && name.contains("void ranger helm"))
-			|| (request.getStyle() == CombatStyle.MAGIC && name.contains("void mage helm"))
-			|| (request.getStyle() == CombatStyle.MELEE && name.contains("void melee helm")))
-		{
-			score += 2_500.0;
-		}
-		if (request.getStyle() == CombatStyle.MELEE && (name.contains("obsidian helmet") || name.contains("obsidian platebody") || name.contains("obsidian platelegs") || name.contains("berserker necklace") || isTzhaarWeapon(name)))
-		{
-			score += 2_000.0;
-		}
-		if (request.getStyle() == CombatStyle.MELEE && (name.contains("inquisitor's great helm") || name.contains("inquisitor's hauberk") || name.contains("inquisitor's plateskirt") || name.contains("inquisitor's mace")))
-		{
-			score += 1_750.0;
+			for (Map<String, Integer> block : SHORTLIST_BOOSTS.getOrDefault(key, List.of()))
+			{
+				for (Map.Entry<String, Integer> e : block.entrySet())
+				{
+					if (name.contains(e.getKey()))
+					{
+						score += e.getValue();
+						break;
+					}
+				}
+			}
 		}
 		return score;
 	}
@@ -1412,6 +1401,45 @@ public final class LoadoutOptimizer
 		return request.getStyle() == CombatStyle.MELEE || item.isImbuedSlayerHead();
 	}
 
+	/** Style -> blocks of name -> shortlist boost (shortlist_boosts.json). */
+	private static final Map<String, List<Map<String, Integer>>> SHORTLIST_BOOSTS = new HashMap<>();
+
+	static
+	{
+		com.google.gson.JsonObject root = JsonResources.object("shortlist_boosts.json");
+		for (String key : root.keySet())
+		{
+			if (!key.startsWith("_"))
+			{
+				List<Map<String, Integer>> blocks = new ArrayList<>();
+				for (com.google.gson.JsonElement b : root.getAsJsonArray(key))
+				{
+					Map<String, Integer> block = new LinkedHashMap<>();
+					b.getAsJsonObject().entrySet().forEach(e -> block.put(e.getKey(), e.getValue().getAsInt()));
+					blocks.add(block);
+				}
+				SHORTLIST_BOOSTS.put(key, blocks);
+			}
+		}
+	}
+
+	/** Spell -> the weapons that cast it (spell_staves.json). */
+	private static final Map<String, List<String>> SPELL_STAVES = new HashMap<>();
+
+	static
+	{
+		com.google.gson.JsonObject root = JsonResources.object("spell_staves.json");
+		for (String key : root.keySet())
+		{
+			if (!key.startsWith("_"))
+			{
+				List<String> names = new ArrayList<>();
+				JsonResources.strings(root, key, names);
+				SPELL_STAVES.put(key, names);
+			}
+		}
+	}
+
 	private static boolean spellAllowed(OptimizationRequest request, Loadout loadout, SpellStats spell)
 	{
 		String spellName = spell.getName();
@@ -1428,50 +1456,8 @@ public final class LoadoutOptimizer
 		{
 			return false;
 		}
-		if ("Iban Blast".equals(spellName))
-		{
-			return weapon.contains("iban's staff");
-		}
-		if ("Saradomin Strike".equals(spellName))
-		{
-			return weapon.contains("saradomin staff") || weapon.contains("staff of light");
-		}
-		if ("Claws of Guthix".equals(spellName))
-		{
-			return weapon.contains("guthix staff") || weapon.contains("void knight mace") || weapon.contains("staff of balance");
-		}
-		if ("Flames of Zamorak".equals(spellName))
-		{
-			return weapon.contains("zamorak staff")
-				|| weapon.contains("staff of the dead")
-				|| weapon.contains("toxic staff of the dead")
-				|| weapon.contains("thammaron")
-				|| weapon.contains("accursed sceptre");
-		}
-		if ("Magic Dart".equals(spellName))
-		{
-			return weapon.contains("slayer's staff")
-				|| weapon.contains("staff of the dead")
-				|| weapon.contains("toxic staff of the dead")
-				|| weapon.contains("staff of light")
-				|| weapon.contains("staff of balance");
-		}
-		// Ancient Magicks can only be AUTOCAST from specific staves - the
-		// upstream engine let any staff barrage, recommending illegal
-		// weapon+spell pairs. (Harmonised nightmare staff notably autocasts
-		// the standard book only.)
-		if ("ancient".equalsIgnoreCase(spell.getSpellbook()))
-		{
-			return weapon.contains("ancient staff")
-				|| weapon.contains("ancient sceptre")
-				|| weapon.contains("kodai wand")
-				|| weapon.contains("master wand")
-				|| weapon.contains("blue moon spear")
-				|| weapon.contains("accursed sceptre")
-				|| weapon.contains("purging staff")
-				|| (weapon.contains("nightmare staff") && !weapon.contains("harmonised"));
-		}
-		return true;
+		List<String> staves = SPELL_STAVES.get("ancient".equalsIgnoreCase(spell.getSpellbook()) ? "ancient" : spellName);
+		return staves == null || !weapon.contains("harmonised") && staves.stream().anyMatch(weapon::contains);
 	}
 
 	private static String label(GearItem item)
@@ -1482,15 +1468,6 @@ public final class LoadoutOptimizer
 	private static boolean isPoweredStaff(GearItem weapon)
 	{
 		return DpsCalculator.isPoweredStaff(weapon);
-	}
-
-	private static boolean isTzhaarWeapon(String name)
-	{
-		return name.contains("tzhaar-ket-em")
-			|| name.contains("tzhaar-ket-om")
-			|| name.contains("toktz-xil-ak")
-			|| name.contains("toktz-xil-ek")
-			|| name.contains("toktz-mej-tal");
 	}
 
 	private static boolean allowedByMode(OptimizationRequest request, GearItem item)
