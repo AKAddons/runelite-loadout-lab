@@ -1,0 +1,121 @@
+package com.loadoutlab.data;
+
+import com.loadoutlab.engine.CandidateMode;
+import com.loadoutlab.engine.CombatStyle;
+import com.loadoutlab.engine.DpsResult;
+import com.loadoutlab.engine.Loadout;
+import com.loadoutlab.engine.LoadoutOptimizer;
+import com.loadoutlab.engine.MonsterMechanics;
+import com.loadoutlab.engine.OptimizationRequest;
+import com.loadoutlab.engine.OwnedItems;
+import com.loadoutlab.engine.PlayerLevels;
+import com.loadoutlab.engine.PrayerBonuses;
+import com.loadoutlab.engine.TestRequests;
+import java.util.EnumMap;
+import java.util.List;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Andrew, client test 2026-10-20: "all of my bis recommendations for TFA
+ * are melee". The published defences favour crush nearly everywhere, but
+ * two phases cannot be meleed (wiki, read 2026-10-20): the Archive
+ * Guardian flies until its shield breaks (ranged, magic or a halberd),
+ * and Xarth's first phase is fought from behind the pillars. The Guardian
+ * is also immune to Ancient Magicks.
+ */
+class TfaStipulationsTest
+{
+	private static LoadoutData data;
+	private static List<MonsterStats> tfa;
+
+	@BeforeAll
+	static void load()
+	{
+		data = new DataService().load();
+		tfa = MonsterGroups.load(data).stream()
+			.filter(g -> g.getName().equals("The Fractured Archive"))
+			.findFirst().orElseThrow().getMobs();
+	}
+
+	private static MonsterStats member(String label)
+	{
+		return tfa.stream().filter(m -> label.equals(m.getVersion()))
+			.findFirst().orElseThrow(() -> new AssertionError("no member " + label));
+	}
+
+	private static List<DpsResult> best(MonsterStats mob, CombatStyle style)
+	{
+		OptimizationRequest request = TestRequests.of(mob, style, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
+			true, false, OwnedItems.EMPTY, 3);
+		return new LoadoutOptimizer().optimize(data, request);
+	}
+
+	@Test
+	@DisplayName("the roster carries the Guardian's two phases and Xarth's two phases: twelve rows")
+	void twelveRows()
+	{
+		assertEquals(12, tfa.size());
+	}
+
+	@Test
+	@DisplayName("the shielded Guardian flies: a melee set must be a halberd")
+	void shieldFlies()
+	{
+		MonsterStats shield = member("Shield (flying)");
+		assertTrue(shield.hasAttribute("flying"));
+		for (DpsResult r : best(shield, CombatStyle.MELEE))
+		{
+			assertEquals("Polearm", r.getLoadout().getWeapon().getCategory(), r.getLoadout().getWeapon().getName());
+		}
+	}
+
+	@Test
+	@DisplayName("the grounded Guardian takes any melee weapon")
+	void groundedTakesMelee()
+	{
+		MonsterStats grounded = member("Grounded");
+		assertFalse(grounded.hasAttribute("flying"));
+		List<DpsResult> melee = best(grounded, CombatStyle.MELEE);
+		assertFalse(melee.isEmpty());
+		assertNotEquals("Polearm", melee.get(0).getLoadout().getWeapon().getCategory());
+	}
+
+	@Test
+	@DisplayName("Xarth's first phase has no melee card; his second does")
+	void xarthPhases()
+	{
+		assertTrue(MonsterMechanics.styleImmune(member("P1 (from the pillars)"), CombatStyle.MELEE));
+		assertFalse(MonsterMechanics.styleImmune(member("P2"), CombatStyle.MELEE));
+		assertFalse(best(member("P2"), CombatStyle.MELEE).isEmpty());
+	}
+
+	@Test
+	@DisplayName("the Guardian takes no Ancient Magicks in either phase")
+	void guardianShrugsOffAncients()
+	{
+		SpellStats barrage = data.getSpells().stream().filter(s -> s.getName().equals("Ice Barrage")).findFirst().orElseThrow();
+		SpellStats surge = data.getSpells().stream().filter(s -> s.getName().equals("Fire Surge")).findFirst().orElseThrow();
+		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
+		worn.put(GearSlot.WEAPON, data.getGear(21006));
+		Loadout kodai = new Loadout(worn);
+		for (String phase : new String[]{"Shield (flying)", "Grounded"})
+		{
+			MonsterStats guardian = member(phase);
+			assertTrue(MonsterMechanics.isImmune(guardian, CombatStyle.MAGIC, kodai, barrage), phase);
+			assertFalse(MonsterMechanics.isImmune(guardian, CombatStyle.MAGIC, kodai, surge), phase);
+		}
+	}
+
+	@Test
+	@DisplayName("Ocellus's third phase reads its own 5,250 hitpoints")
+	void ocellusThree()
+	{
+		assertEquals(5250, tfa.stream().filter(m -> "Phase 3".equals(m.getVersion()) && m.getName().equals("Ocellus"))
+			.findFirst().orElseThrow().getHitpoints());
+	}
+}

@@ -135,6 +135,18 @@ published stats; out of the group until the wiki carries them). No
 official-calculator vectors yet: the calculator had none of the raid on
 release day.
 
+Phases (2026-10-20, Andrew: every BiS row came back melee): no boss page
+lists a melee immunity, and most crush defences sit between 5 and 35,
+so melee wins most rows on the published numbers. The group models the
+two phases melee cannot reach: the Guardian's shield phase (the wiki
+tags it flying; a halberd still reaches) and Xarth's first phase (the
+strategy guide fights it from behind the pillars - a stipulation, not a
+game immunity). The Guardian's Ancient Magicks immunity is modelled by
+id. The phases weigh equally: the shield-to-hitpoints ratio at a given
+team size is not published. Ocellus's second phase has no published
+hitpoints and borrows the first's. Priced as plain, the Obligator never
+wins a row (the Inquisitor's mace beats it); its Lunge is the gap.
+
 ## Multi-combat card (2026-10-19)
 
 Not a vector family: the official calculator has no multi, so only the

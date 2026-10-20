@@ -41,11 +41,11 @@ class TfaIntakeTest
 	}
 
 	@Test
-	@DisplayName("the raid group lists the ten encounters that have stats, Ocellus as three phases")
+	@DisplayName("the raid group lists the encounters that have stats: the Guardian and Xarth in two phases, Ocellus in three")
 	void groupRoster()
 	{
 		assertTrue(tfa.isRaid());
-		assertEquals(10, tfa.getMobs().size());
+		assertEquals(12, tfa.getMobs().size());
 		Set<String> names = tfa.getMobs().stream().map(MonsterStats::getName).collect(Collectors.toSet());
 		for (String name : new String[]{"Archive Guardian", "Ezekiel", "Bork", "The Smorks",
 			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus"})

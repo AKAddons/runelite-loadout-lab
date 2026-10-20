@@ -227,6 +227,14 @@ public final class MonsterStats
 		return copy(syntheticId, versionLabel, extended, defence);
 	}
 
+	/** A phase variant with attributes taken away. */
+	public MonsterStats withoutAttributes(int syntheticId, String versionLabel, List<String> removed)
+	{
+		List<String> kept = new ArrayList<>(attributes);
+		kept.removeIf(a -> removed.contains(Names.lower(a)));
+		return copy(syntheticId, versionLabel, kept, defence);
+	}
+
 	/** Lowercased monster name, cached (per-trial engine gates). */
 
 	/** Fought in the Wilderness (see WildernessMonsters) - cached, the

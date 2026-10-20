@@ -19,6 +19,7 @@ import java.awt.image.BufferedImage;
 import java.util.function.*;
 import net.runelite.api.SpriteID;
 import net.runelite.client.util.AsyncBufferedImage;
+import net.runelite.client.util.ImageUtil;
 
 /**
  * The first rich renderer over the render-model: per mob, per style,
@@ -675,10 +676,15 @@ public class ResultCards
 			// No prayer assumed -> the prayer book with a red X, so the
 			// sentinel reads as "none" not "prayer on" (field ask
 			// 2026-09-01). A real prayer shows its own sprite plainly.
-			boolean noPrayer = prayerSprite <= 0;
+			String prayerImage = Model.str(assume, "prayerImage");
+			boolean noPrayer = prayerSprite <= 0 && prayerImage == null;
 			int shownPrayerSprite = noPrayer
 				? SpriteID.TAB_PRAYER : prayerSprite;
-			if (spriteManager != null)
+			if (prayerImage != null && prayerSprite <= 0)
+			{
+				prayerIcon.setIcon(Ui.icon(ImageUtil.loadImageResource(ResultCards.class, prayerImage), 18));
+			}
+			else if (spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
 					SwingUtilities.invokeLater(() ->
@@ -1567,6 +1573,7 @@ public class ResultCards
 			() -> sendPick("set-prayer-pick", tab, "NONE")));
 		Map<String, Object> prayerLists = Model.map(assumeOptions, "prayers");
 		Map<String, Object> sprites = Model.map(assumeOptions, "prayerSprites");
+		Map<String, Object> images = Model.map(assumeOptions, "prayerImages");
 		if (prayerLists != null)
 		{
 			// The PRAYER BOOK view (field ask 2026-08-14): the options
@@ -1582,7 +1589,9 @@ public class ResultCards
 				{
 					String name = String.valueOf(option);
 					int sprite = sprites == null ? -1 : (int) Model.num(sprites, name);
-					book.add(pickCell(menu, sprite > 0 ? cachedSprite(sprite) : null,
+					String image = images == null ? null : Model.str(images, name);
+					book.add(pickCell(menu, sprite > 0 ? cachedSprite(sprite)
+						: image != null ? Ui.icon(ImageUtil.loadImageResource(ResultCards.class, image), 15) : null,
 						name, name.equals(current), 26,
 						() -> sendPick("set-prayer-pick", tab, name)));
 				}

@@ -124,7 +124,6 @@ public final class PlayerProfile
 			prayers.get("augury").getAsBoolean(),
 			prayers.get("deadeye").getAsBoolean(),
 			prayers.get("mysticVigour").getAsBoolean(),
-			// Absent in profiles saved before 2026-10-20.
 			prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
 		JsonObject reqs = root.getAsJsonObject("requirements");
 		Map<Skill, Integer> reqSkills = new HashMap<>();

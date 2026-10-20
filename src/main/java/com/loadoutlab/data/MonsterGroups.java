@@ -134,6 +134,22 @@ public final class MonsterGroups
 							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + mask,
 							label, attributes);
 					}
+					else if (member.has("without"))
+					{
+						// A phase that loses an attribute; id bit 8.
+						List<String> removed = new ArrayList<>();
+						for (JsonElement e : member.getAsJsonArray("without"))
+						{
+							removed.add(Names.lower(e.getAsString()));
+						}
+						resolved = resolved.withoutAttributes(
+							MonsterStats.SYNTHETIC_ID_BASE + resolved.getId() * 10 + 8,
+							member.get("label").getAsString(), removed);
+					}
+					else if (member.has("label"))
+					{
+						resolved = resolved.withVersion(member.get("label").getAsString());
+					}
 					if (member.has("nick"))
 					{
 						resolved = resolved.withDisplayName(member.get("nick").getAsString());

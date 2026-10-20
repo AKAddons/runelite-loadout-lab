@@ -27,7 +27,8 @@ The fifteen groups (Jad, Zuk, Dagannoth Kings, Barrows, Moons, Tormented
 Demons, gorillas, Sire, Sol Heredit, Hunllef, Hueycoatl, Nex, Titans,
 Maggot King, Yama); Scurrius, Obor, Bryophyta, Gemstone Crab, Duke, the
 Whisperer, Callisto / Artio, Venenatis / Spindel, Scorpia, Chaos
-Elemental, the dragon family; Vorkath, Chaos Fanatic, the God Wars
+Elemental, the dragon family; the Fractured Archive (the Guardian's
+shield and crash, Ocellus's bolts and void, 2026-10-20); Vorkath, Chaos Fanatic, the God Wars
 four, Crazy archaeologist, Doom, the Nightmare, Mimic, shaman, Hespori,
 Sarachnis, gryphon, Skotizo.
 

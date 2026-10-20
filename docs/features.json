@@ -473,13 +473,14 @@
         "model/RenderModel.java"
       ],
       "tests": [
+        "model/ZealIconTest.java",
         "engine/ZealTest.java",
         "engine/PrayerPickTest.java",
         "optimizer/BoostSelectorTest.java"
       ],
       "since": "0.3.3",
       "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot.",
-      "notes": "2026-10-20: Zeal (the Fractured Archive) is the melee tier above Piety - 25/28 at 84 Prayer, 75 Attack and 75 Strength, detected from the unlock varbit and first in the picker (ZealTest). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "2026-10-20: Zeal wears a bundled image (render/prayer-zeal.png, the wiki's icon) on the card and in the prayer book until runelite-api names its sprite; AssumeIcons.prayerImage maps it (ZealIconTest). 2026-10-20: Zeal (the Fractured Archive) is the melee tier above Piety - 25/28 at 84 Prayer, 75 Attack and 75 Strength, detected from the unlock varbit and first in the picker (ZealTest). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
     },
     {
       "id": "panel-options",
@@ -508,6 +509,7 @@
         "model/RenderModel.java"
       ],
       "tests": [
+        "data/TfaStipulationsTest.java",
         "data/TfaIntakeTest.java",
         "optimizer/RosterOptimizerTest.java",
         "optimizer/GroupSimScopingTest.java",
@@ -516,7 +518,7 @@
       ],
       "since": "0.3.0",
       "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
-      "notes": "2026-10-20: the Fractured Archive lands on release day as a raid group (the Guardian, the five keepers, Xarth, Ocellus as three phases; the Dagon'hai pair wait on published stats) through scripts/wiki_intake.py, which builds corpus rows from the wiki's infoboxes with gameval ids while weirdgloop lags (TfaIntakeTest). 2026-10-15 (Andrew, first 0.5.4 field pass): a Fossil Island Wyverns group (Spitting, Taloned, Long-tailed, Ancient) with the task's own name as aliases - the four carried only their own names, so \"fossil island wyvern\" found nothing. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
+      "notes": "2026-10-20 (Andrew: every TFA BiS row was melee): the Archive Guardian appears flying behind its shield (a halberd still reaches) and grounded - a group member can now take an attribute away ('without') - Xarth's first phase is fought from behind the pillars (no melee card), and the Guardian takes no Ancient Magicks (npc_mechanics immuneAncients) (TfaStipulationsTest). 2026-10-20: the Fractured Archive lands on release day as a raid group (the Guardian, the five keepers, Xarth, Ocellus as three phases; the Dagon'hai pair wait on published stats) through scripts/wiki_intake.py, which builds corpus rows from the wiki's infoboxes with gameval ids while weirdgloop lags (TfaIntakeTest). 2026-10-15 (Andrew, first 0.5.4 field pass): a Fossil Island Wyverns group (Spitting, Taloned, Long-tailed, Ancient) with the task's own name as aliases - the four carried only their own names, so \"fossil island wyvern\" found nothing. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
     },
     {
       "id": "inventory-budget",
@@ -651,7 +653,7 @@
         "render/LoaderRepickTest.java",
         "render/AsciiLoaderFontTest.java"
       ],
-      "notes": "2026-10-15 (Andrew, first Windows run: 'the animation is fucked up'): the frames draw in a bundled DejaVu Sans Mono (Menlo's parent, so the shades ink as tuned: Cascadia's medium shade inks 21% of its cell against DejaVu's 48%, 'the color tone is off in the potion') with Braille runs in Cascadia Mono, same advance and line height; the pre element names the face itself because Swing's stylesheet rule for pre overrides the component font - Java's logical Monospaced on Windows borrows Braille, blocks and shades from Segoe UI Symbol at other widths and the rows slid sideways; AsciiLoaderFontTest proves every frame glyph draws at one width. Frames are HTML with per-cell colour runs in loader_frames.txt (resource, outside the hub cap); mood_routes.tsv routes by monster-name prefix, raids by group data, the sea by lens. Generators: scripts/art (sprite2text.py hybrid renderer, bosses.py recipes, tob.py, cox.py, obelisk.py, cannon.py, colourise.py for legacy pools, splice.py all). QUALITY.md is the ledger: every mood is a work in progress.",
+      "notes": "2026-10-20: the Fractured Archive mood (scripts/art/tfa.py, key tfa via raid_boosts.json 'archive'): the Archive Guardian's shield draining and its crash, Ocellus's bolts and tendrils, his last form over void pools. 2026-10-15 (Andrew, first Windows run: 'the animation is fucked up'): the frames draw in a bundled DejaVu Sans Mono (Menlo's parent, so the shades ink as tuned: Cascadia's medium shade inks 21% of its cell against DejaVu's 48%, 'the color tone is off in the potion') with Braille runs in Cascadia Mono, same advance and line height; the pre element names the face itself because Swing's stylesheet rule for pre overrides the component font - Java's logical Monospaced on Windows borrows Braille, blocks and shades from Segoe UI Symbol at other widths and the rows slid sideways; AsciiLoaderFontTest proves every frame glyph draws at one width. Frames are HTML with per-cell colour runs in loader_frames.txt (resource, outside the hub cap); mood_routes.tsv routes by monster-name prefix, raids by group data, the sea by lens. Generators: scripts/art (sprite2text.py hybrid renderer, bosses.py recipes, tob.py, cox.py, obelisk.py, cannon.py, colourise.py for legacy pools, splice.py all). QUALITY.md is the ledger: every mood is a work in progress.",
       "capture": "A raid search mid-compute: the Theatre sequence playing under the controls with the Cancel chip in the footer. ~8s."
     }
   ]

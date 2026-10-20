@@ -104,5 +104,8 @@
   "Lesser Corruption": 1307,
   "Greater Corruption": 1308,
   "Dark Lure": 1316
+ },
+ "prayerImages": {
+  "Zeal": "prayer-zeal.png"
  }
 }

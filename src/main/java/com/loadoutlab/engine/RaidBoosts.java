@@ -19,6 +19,7 @@ public final class RaidBoosts
 	private static final Set<String> XERIC = new HashSet<>();
 	private static final Set<String> AMASCUT = new HashSet<>();
 	private static final Set<String> BLOOD = new HashSet<>();
+	private static final Set<String> ARCHIVE = new HashSet<>();
 
 	static
 	{
@@ -26,6 +27,7 @@ public final class RaidBoosts
 		JsonResources.strings(root, "xeric", XERIC);
 		JsonResources.strings(root, "amascut", AMASCUT);
 		JsonResources.strings(root, "blood", BLOOD);
+		JsonResources.strings(root, "archive", ARCHIVE);
 	}
 
 	private RaidBoosts()
@@ -39,7 +41,7 @@ public final class RaidBoosts
 	{
 		String name = Names.lower(monster.getName());
 		return XERIC.contains(name) ? "cox" : AMASCUT.contains(name) ? "toa"
-			: BLOOD.contains(name) ? "tob" : null;
+			: BLOOD.contains(name) ? "tob" : ARCHIVE.contains(name) ? "tfa" : null;
 	}
 
 	/** The raid-supplied boost for a fight inside, or null outside. */

@@ -50,6 +50,9 @@ MANUAL_BOOSTS = {
     "Divine bastion potion": 24635,     # 2026-08-26, objtypes-verified
     "Divine battlemage potion": 24623,  # 2026-08-26, objtypes-verified
 }
+# Prayers the api names no sprite for yet: a bundled image beside the
+# renderer (Zeal, 2026-10-20: runelite-api 1.13.3 has no Prayeron.ZEAL).
+MANUAL_PRAYER_IMAGES = {"Zeal": "prayer-zeal.png"}
 MAP_KEY = {"PRAYERS": "prayers", "BOOST_ITEMS": "boostItems", "SPELLS": "spells"}
 
 PUT = re.compile(
@@ -113,6 +116,7 @@ def main():
         got = len(tables[key])
         assert got == want, "%s: %d entries, expected %d" % (key, got, want)
     tables["boostItems"].update(MANUAL_BOOSTS)
+    tables["prayerImages"] = dict(MANUAL_PRAYER_IMAGES)
 
     with open(OUT, "w") as fh:
         json.dump(tables, fh, indent=1)

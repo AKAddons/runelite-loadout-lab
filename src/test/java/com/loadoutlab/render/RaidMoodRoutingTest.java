@@ -86,5 +86,10 @@ class RaidMoodRoutingTest
 		assertEquals("toa", keyFor("Zebak"));
 		assertEquals("cox", keyFor("Tekton"));
 		assertEquals("tob", keyFor("Xarpus"));
+		// The Fractured Archive (Andrew 2026-10-20: "we need to also make
+		// an animation for TFA"): the group and any of its bosses.
+		assertEquals("tfa", keyFor("The Fractured Archive"));
+		assertEquals("tfa", keyFor("Ocellus"));
+		assertEquals("tfa", keyFor("Bork"));
 	}
 }

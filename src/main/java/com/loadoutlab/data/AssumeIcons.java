@@ -24,6 +24,7 @@ public final class AssumeIcons
 	private static final Map<String, Integer> PRAYERS = new HashMap<>();
 	private static final Map<String, Integer> BOOST_ITEMS = new HashMap<>();
 	private static final Map<String, Integer> SPELLS = new HashMap<>();
+	private static final Map<String, String> PRAYER_IMAGES = new HashMap<>();
 
 	static
 	{
@@ -33,6 +34,7 @@ public final class AssumeIcons
 		JsonResources.stringIntMap(root, "prayers", PRAYERS);
 		JsonResources.stringIntMap(root, "boostItems", BOOST_ITEMS);
 		JsonResources.stringIntMap(root, "spells", SPELLS);
+		JsonResources.stringMap(root, "prayerImages", PRAYER_IMAGES);
 	}
 
 	private AssumeIcons()
@@ -76,6 +78,13 @@ public final class AssumeIcons
 	public static int boostItem(String label)
 	{
 		return BOOST_ITEMS.getOrDefault(label, -1);
+	}
+
+	/** A bundled image for a prayer with no api sprite yet (Zeal), or null. */
+	public static String prayerImage(String name)
+	{
+		int plus = name == null ? -1 : name.indexOf(" + ");
+		return PRAYER_IMAGES.get(plus > 0 ? name.substring(0, plus) : name);
 	}
 
 	/** Spellbook sprite id for this spell name, or -1. */

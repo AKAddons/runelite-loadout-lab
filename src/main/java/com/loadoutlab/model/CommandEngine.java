@@ -2757,6 +2757,16 @@ public class CommandEngine
 			}
 		}
 		options.put("prayerSprites", prayerSprites);
+		Map<String, Object> prayerImages = new LinkedHashMap<>();
+		for (String name : prayerSprites.keySet())
+		{
+			String image = AssumeIcons.prayerImage(name);
+			if (image != null)
+			{
+				prayerImages.put(name, image);
+			}
+		}
+		options.put("prayerImages", prayerImages);
 		// Spellbook Swap is 96 Magic (Vengeance 94) - offer it when the
 		// player can actually reach the level, boosts included.
 		options.put("spellbookSwapAvailable", magicLevel + 5 >= 96);

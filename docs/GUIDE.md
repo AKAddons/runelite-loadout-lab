@@ -61,9 +61,14 @@ Wardens' spec is always the dragon dagger, the community's proven choice
 for breaking into the next phase.
 
 The Fractured Archive roster carries the encounters with published stats
-on release day (2026-10-20): the Archive Guardian, Ezekiel, Bork, The
-Smorks, Dreadnoth the Jellied, Moia, Xarth and Ocellus as three phases.
-The Dagon'hai Elder and Monk join once their stats are published. The
+on release day (2026-10-20): the Archive Guardian twice (flying behind its
+shield, where melee needs a halberd, then grounded), Ezekiel, Bork, The
+Smorks, Dreadnoth the Jellied, Moia, Xarth twice (his first phase fought
+from behind the pillars, so it has no melee card) and Ocellus as three
+phases. The Guardian takes no Ancient Magicks. The rest of the raid's
+crush defences are low, so melee answers most rows; the shared kit adds
+its switches where melee cannot reach. The Dagon'hai Elder and Monk join
+once their stats are published. The
 raid's rewards are in the gear data: Zeal is the melee prayer tier above
 Piety once its unlock is read from your account, Zorya's tome is priced
 as a 3-tick powered staff, the Ascension crossbows fire ascension bolts
@@ -631,7 +636,7 @@ Every compute plays a mood in the panel while the numbers cook, drawn
 from the monsters' own wiki renders in colour: sixty-odd bosses, groups
 and raids have their own - the King Black Dragon breathing three fires,
 Zulrah changing colour as its forms cycle, the Theatre and the Chambers
-in cuts, Vorkath's acid trail, the Hydra losing a head a phase - every
+in cuts, the Archive Guardian crashing and Ocellus in his forms, Vorkath's acid trail, the Hydra losing a head a phase - every
 non-boss dragon shares a tinted family mood, sea trips sail, and
 anything else keeps the flask with the Loadout Lab legs. The frames
 live in a resource, so they cost the plugin nothing at review; the

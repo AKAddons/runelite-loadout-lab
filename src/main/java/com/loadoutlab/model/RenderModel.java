@@ -386,6 +386,7 @@ public final class RenderModel
 		String prayerPart = plus > 0 ? boostLabel.substring(0, plus) : boostLabel;
 		String boostPart = plus > 0 ? boostLabel.substring(plus + 3) : null;
 		node.put("prayerSprite", AssumeIcons.prayerSprite(prayerPart));
+		node.put("prayerImage", AssumeIcons.prayerImage(prayerPart));
 		node.put("boostItem", boostPart == null ? -1
 			: AssumeIcons.boostItem(boostPart));
 		// The raid hands these out (CoX overloads, ToA salts): assumed, never

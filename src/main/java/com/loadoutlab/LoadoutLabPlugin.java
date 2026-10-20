@@ -2041,8 +2041,7 @@ public class LoadoutLabPlugin extends Plugin
 		boostedLevels = PlayerLevels.from(boosted);
 		// Unlock-gated prayers: King's Ransom for Piety/Chivalry; scroll
 		// unlock varbits for Rigour/Augury (CoX), Deadeye/Mystic Vigour
-		// and Zeal (16578 = VarbitID.PRAYER_ZEAL_UNLOCKED, runelite-api
-		// 1.13.3; the raw id keeps the build on the cached api).
+		// and Zeal (16578 = PRAYER_ZEAL_UNLOCKED).
 		prayerUnlocks = new PrayerUnlocks(
 			quests.contains(Quest.KINGS_RANSOM.name()),
 			client.getVarbitValue(5451) == 1,

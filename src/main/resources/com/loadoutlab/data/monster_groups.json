@@ -858,7 +858,15 @@
 		"inventory": 12,
 		"members": [
 			{
-				"name": "Archive Guardian"
+				"name": "Archive Guardian",
+				"label": "Shield (flying)"
+			},
+			{
+				"name": "Archive Guardian",
+				"without": [
+					"flying"
+				],
+				"label": "Grounded"
 			},
 			{
 				"name": "Ezekiel"
@@ -876,22 +884,27 @@
 				"name": "Moia"
 			},
 			{
-				"name": "Xarth"
+				"name": "Xarth",
+				"immuneTo": [
+					"melee"
+				],
+				"label": "P1 (from the pillars)"
 			},
 			{
-				"name": "Ocellus",
-				"version": "Phase 1",
-				"label": "P1"
-			},
-			{
-				"name": "Ocellus",
-				"version": "Phase 2",
+				"name": "Xarth",
 				"label": "P2"
 			},
 			{
 				"name": "Ocellus",
-				"version": "Phase 3",
-				"label": "P3"
+				"version": "Phase 1"
+			},
+			{
+				"name": "Ocellus",
+				"version": "Phase 2"
+			},
+			{
+				"name": "Ocellus",
+				"version": "Phase 3"
 			}
 		],
 		"aliases": [
@@ -901,7 +914,7 @@
 			"fred",
 			"raids 4"
 		],
-		"note": "The encounters with published stats on release day (2026-10-20): the Guardian, the five keepers, Xarth, and Ocellus as three phases (shared hitpoints). The Dagon'hai Elder and Monk have no published stats yet and are out. Team-size hitpoint scaling and the Elemental fragments are not modelled.",
+		"note": "The encounters with published stats (wiki, 2026-10-20): the Archive Guardian flying until its shield breaks (ranged, magic or a halberd) and grounded, the second-room pair (Ezekiel, or Bork and the Smorks), Moia or Dreadnoth, Xarth with his first phase fought from behind the pillars (the strategy guide's approach, so no melee card), and Ocellus's three phases. The Guardian is immune to Ancient Magicks. The Dagon'hai Elder and Monk have no published stats yet and are out. Team-size hitpoint scaling and the Elemental fragments are not modelled.",
 		"raid": true
 	}
 ]

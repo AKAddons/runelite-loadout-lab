@@ -24,6 +24,7 @@ public final class MonsterMechanics
 	private static final Set<Integer> IMMUNE_MAGIC = new HashSet<>();
 	private static final Set<Integer> IMMUNE_RANGED = new HashSet<>();
 	private static final Set<Integer> IMMUNE_MELEE = new HashSet<>();
+	private static final Set<Integer> IMMUNE_ANCIENTS = new HashSet<>();
 	private static final Set<Integer> SALAMANDER_ONLY_MELEE = new HashSet<>();
 	private static final Set<Integer> MAGIC_DEFENCE_BY_DEF_LEVEL = new HashSet<>();
 	private static final Set<Integer> ZULRAH = new HashSet<>();
@@ -47,6 +48,7 @@ public final class MonsterMechanics
 			JsonResources.ints(root, "immuneMagic", IMMUNE_MAGIC);
 			JsonResources.ints(root, "immuneRanged", IMMUNE_RANGED);
 			JsonResources.ints(root, "immuneMelee", IMMUNE_MELEE);
+			JsonResources.ints(root, "immuneAncients", IMMUNE_ANCIENTS);
 			JsonResources.ints(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
 			JsonResources.ints(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
 			JsonResources.ints(root, "zulrah", ZULRAH);
@@ -131,6 +133,12 @@ public final class MonsterMechanics
 		GearItem weapon = loadout.getWeapon();
 		String category = weapon == null ? "" : weapon.getCategory();
 		if (style == CombatStyle.MAGIC && IMMUNE_MAGIC.contains(id))
+		{
+			return true;
+		}
+		// By the real id, so phase variants inherit it (Archive Guardian).
+		if (style == CombatStyle.MAGIC && spell != null && "ancient".equals(spell.getSpellbook())
+			&& IMMUNE_ANCIENTS.contains(monster.profileId()))
 		{
 			return true;
 		}

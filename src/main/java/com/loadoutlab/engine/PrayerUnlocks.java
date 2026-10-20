@@ -28,14 +28,13 @@ public final class PrayerUnlocks
 	private final boolean mysticVigour;
 	private final boolean zeal;
 
-	/** The pre-Zeal form (profiles saved before 2026-10-20, the harness). */
+	/** The pre-Zeal form (older profiles, the harness). */
 	public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour)
 	{
 		this(kingsRansom, rigour, augury, deadeye, mysticVigour, false);
 	}
 
-	/** Zeal: the Fractured Archive's Piety upgrade (84 Prayer, 75 Attack,
-	 * 75 Strength; VarbitID.PRAYER_ZEAL_UNLOCKED). */
+	/** Zeal: the Fractured Archive's Piety upgrade. */
 	public boolean zeal()
 	{
 		return zeal;
