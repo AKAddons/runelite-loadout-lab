@@ -852,5 +852,56 @@
 			"judge"
 		],
 		"note": "The phases, the mid-fight Judge duel, and the void flare adds."
+	},
+	{
+		"name": "The Fractured Archive",
+		"inventory": 12,
+		"members": [
+			{
+				"name": "Archive Guardian"
+			},
+			{
+				"name": "Ezekiel"
+			},
+			{
+				"name": "Bork"
+			},
+			{
+				"name": "The Smorks"
+			},
+			{
+				"name": "Dreadnoth the Jellied"
+			},
+			{
+				"name": "Moia"
+			},
+			{
+				"name": "Xarth"
+			},
+			{
+				"name": "Ocellus",
+				"version": "Phase 1",
+				"label": "P1"
+			},
+			{
+				"name": "Ocellus",
+				"version": "Phase 2",
+				"label": "P2"
+			},
+			{
+				"name": "Ocellus",
+				"version": "Phase 3",
+				"label": "P3"
+			}
+		],
+		"aliases": [
+			"fractured archive",
+			"archive",
+			"tfa",
+			"fred",
+			"raids 4"
+		],
+		"note": "The encounters with published stats on release day (2026-10-20): the Guardian, the five keepers, Xarth, and Ocellus as three phases (shared hitpoints). The Dagon'hai Elder and Monk have no published stats yet and are out. Team-size hitpoint scaling and the Elemental fragments are not modelled.",
+		"raid": true
 	}
 ]

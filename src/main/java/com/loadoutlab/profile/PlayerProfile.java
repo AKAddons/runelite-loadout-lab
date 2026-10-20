@@ -74,6 +74,7 @@ public final class PlayerProfile
 		prayers.addProperty("augury", prayerUnlocks.augury());
 		prayers.addProperty("deadeye", prayerUnlocks.deadeye());
 		prayers.addProperty("mysticVigour", prayerUnlocks.mysticVigour());
+		prayers.addProperty("zeal", prayerUnlocks.zeal());
 		root.add("prayerUnlocks", prayers);
 		JsonObject reqSkills = new JsonObject();
 		for (Map.Entry<Skill, Integer> entry : requirements.getLevels().entrySet())
@@ -122,7 +123,9 @@ public final class PlayerProfile
 			prayers.get("rigour").getAsBoolean(),
 			prayers.get("augury").getAsBoolean(),
 			prayers.get("deadeye").getAsBoolean(),
-			prayers.get("mysticVigour").getAsBoolean());
+			prayers.get("mysticVigour").getAsBoolean(),
+			// Absent in profiles saved before 2026-10-20.
+			prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
 		JsonObject reqs = root.getAsJsonObject("requirements");
 		Map<Skill, Integer> reqSkills = new HashMap<>();
 		for (Map.Entry<String, JsonElement> entry : reqs.getAsJsonObject("skills").entrySet())

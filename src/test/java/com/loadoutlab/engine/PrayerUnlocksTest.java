@@ -38,7 +38,8 @@ public class PrayerUnlocksTest
 		// only one can be active (the wiki calc engine happily stacks
 		// illegal combos; the game does not).
 		PrayerBonuses all = PrayerBonuses.bestAvailable(maxed, PrayerUnlocks.ALL);
-		Assert.assertEquals(1.20, all.getMeleeAccuracy(), 1e-9);
+		// Zeal since 2026-10-20 (the Fractured Archive): ALL unlocks it.
+		Assert.assertEquals(1.25, all.getMeleeAccuracy(), 1e-9);
 		Assert.assertEquals(1.25, all.getMagicAccuracy(), 1e-9);
 		Assert.assertEquals(4.0, all.getMagicDamagePercent(), 1e-9);
 		Assert.assertEquals("Augury", all.nameFor(CombatStyle.MAGIC));

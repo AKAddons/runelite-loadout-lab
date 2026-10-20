@@ -37,7 +37,8 @@ Rune Nexus Group's short shows the plugin in use:
   Wardens' core spec dump, ToA invocation scaling with an on-card
   control, the Amascut partisan's raid-only stats and the Shadow's
   stronger multiplier inside the Tombs - each modeled in the numbers
-  and explained on the card.
+  and explained on the card. The Fractured Archive is in from release
+  day: its roster, Zeal, Zorya's tome and the Ascension crossbows.
 - **Multi-combat card**: on a mob fought in multi, flip the card to the
   AoE tools - barrage, chinchompas, the venator bow - priced at a stack
   of 3 or 9 targets (a search chip cycles Single, Multi x3, Multi x9),

@@ -112,18 +112,28 @@ better than my fang at toa"). Inside the Tombs the fang rolls accuracy
 twice (1 - (1-p)^2, official PLAYER_ACCURACY_FANG_TOA); we applied the
 outside reroll formula everywhere. Both vectors are exact now.
 
-## The Fractured Archive (releases 2026-10-20)
+## The Fractured Archive (released 2026-10-20)
 
-Not in the corpus yet: weirdgloop's monsters.json has no Archive boss,
-the wiki boss pages are stubs and runelite-api 1.13.2 names none of its
-ids. The intake runs on release-day data (Mural DES fractured-archive-
-intake). The rewards each need engine work once their stats are
-published: Zeal (a melee prayer above Piety: 25% Attack, 28% Strength),
-the Obligator (a crush scythe with a 5-tick multi-roll Lunge and a
-3-tick Smash), Zorya's Tome (3-tick magic with a special), the Ascension
-crossbows (dual-wield at 2 ticks, ascension bolts only), the Rondache
-(+2 flat armour on the player) and Elemental fragments (+2 max hit per
-element, account-wide). Until then the plugin prices none of them.
+In the corpus from release day through scripts/wiki_intake.py (the
+wiki's infoboxes, ids from runelite-api 1.13.3 gameval; weirdgloop's
+cdn still carried the 2026-09-02 data): the Archive Guardian, Ezekiel,
+Bork, The Smorks, Dreadnoth the Jellied, Moia, Xarth and Ocellus (three
+phases, shared hitpoints) as the raid group, and the Obligator, Zorya's
+tome, the Ascension crossbows, the Rondache and the five ascension bolts
+as gear. Modelled: Zeal (25% accuracy / 28% strength at 84 Prayer, 75
+Attack and 75 Strength, gated on VarbitID.PRAYER_ZEAL_UNLOCKED), the
+tome as a 3-tick powered staff with a flat base max hit of 18, and the
+crossbows as a 3-tick crossbow (2 on rapid) that fires ascension bolts
+only. Not modelled, each priced as plain: the Obligator's Lunge
+multi-roll and its 3-tick Smash (it prices as a 5-tick crush
+two-hander), the tome's special (150% accuracy / 60% damage and three
+buffed 2-tick follow-ups; no energy cost published), the Rondache's +2
+flat armour on the player and its special, the ascension bolts' gem
+procs, the Elemental fragments (+2 max hit per element, account-wide),
+team-size hitpoint scaling, and the Dagon'hai Elder and Monk (no
+published stats; out of the group until the wiki carries them). No
+official-calculator vectors yet: the calculator had none of the raid on
+release day.
 
 ## Multi-combat card (2026-10-19)
 

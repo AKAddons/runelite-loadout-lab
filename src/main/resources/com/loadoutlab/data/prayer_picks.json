@@ -2,6 +2,11 @@
 	"_comment": "Prayer picks per style, best first: [name, accuracy factor, damage (factor for melee/ranged, percent for magic)].",
 	"melee": [
 		[
+			"Zeal",
+			1.25,
+			1.28
+		],
+		[
 			"Piety",
 			1.2,
 			1.23

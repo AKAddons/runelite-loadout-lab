@@ -32,8 +32,8 @@ One trip rarely means one monster. Any result grows into a roster: the
 '+ Add mob' row appends another target, and searching a curated group
 lands the whole lineup at once - Fight Caves, the Inferno, Zulrah's
 forms, Dagannoth Kings, Barrows, Tormented Demons, the Theatre of Blood,
-Tombs of Amascut, Chambers of Xeric, the Fortis Colosseum, Nex, Yama and
-more. The optimizer then finds ONE shared set per style across the whole
+Tombs of Amascut, Chambers of Xeric, the Fortis Colosseum, Nex, Yama,
+the Fractured Archive and more. The optimizer then finds ONE shared set per style across the whole
 list - the kit you actually bring - with each mob shown as its own row:
 its dps in that shared set, the style that answers it, and a lens that
 flips every card and number to that mob on click. Any mob can leave via
@@ -59,6 +59,17 @@ Tombs of Amascut the P2 Wardens weigh three times their hitpoints when
 the kit is chosen, so the shadow set survives a small inventory, and the
 Wardens' spec is always the dragon dagger, the community's proven choice
 for breaking into the next phase.
+
+The Fractured Archive roster carries the encounters with published stats
+on release day (2026-10-20): the Archive Guardian, Ezekiel, Bork, The
+Smorks, Dreadnoth the Jellied, Moia, Xarth and Ocellus as three phases.
+The Dagon'hai Elder and Monk join once their stats are published. The
+raid's rewards are in the gear data: Zeal is the melee prayer tier above
+Piety once its unlock is read from your account, Zorya's tome is priced
+as a 3-tick powered staff, the Ascension crossbows fire ascension bolts
+only, and the Obligator is priced as a plain crush two-hander (its Lunge
+and Smash, the tome's special and the Rondache's flat armour are not
+modelled yet).
 
 ### Monster thumbnails
 
@@ -200,7 +211,7 @@ empty card can be diagnosed from the report alone.
 The prayer and potion icons on each style card are pickers. Detect best
 stays the default - the boost detect reads what you actually own, the
 prayer detect your unlocks - and clicking an icon overrides that style's
-assumption: any named tier (Piety, Chivalry, Rigour, Deadeye, Augury,
+assumption: any named tier (Zeal, Piety, Chivalry, Rigour, Deadeye, Augury,
 Mystic Might...), any boost including overloads and smelling salts
 outside raids, or None. Divine potions are preferred: the BiS ceiling
 assumes the divine super combat / divine ranging potion, and your side

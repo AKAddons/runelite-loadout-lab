@@ -46,7 +46,10 @@ class FangToaTest
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, fang);
 		OptimizationRequest request = new OptimizationRequest(mob, CombatStyle.MELEE, PlayerLevels.MAXED,
-			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD, true, false,
+			// The official vectors were taken under Piety (2026-10-18); ALL
+			// assumes Zeal since the Fractured Archive (2026-10-20).
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, new PrayerUnlocks(true, true, true, true, true)),
+			null, 0, CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
 		assertNotNull(result);

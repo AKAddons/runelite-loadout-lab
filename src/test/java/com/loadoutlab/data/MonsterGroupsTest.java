@@ -67,7 +67,7 @@ class MonsterGroupsTest
 	@DisplayName("the flagship groups load with their full rosters")
 	void flagshipRosters()
 	{
-		assertEquals(25, groups.size(), "24 plus the Fossil Island Wyverns (2026-10-15)");
+		assertEquals(26, groups.size(), "25 plus the Fractured Archive (2026-10-20)");
 		assertEquals(4, byName("Yama").getMobs().size());
 		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
 		assertEquals(3, byName("The Hueycoatl").getMobs().size());

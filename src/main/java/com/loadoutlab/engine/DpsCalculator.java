@@ -680,6 +680,12 @@ public final class DpsCalculator
 		{
 			return Math.max(1, magicLevel / 3 - 5) + 10;
 		}
+		if (weaponName.contains("zorya"))
+		{
+			// Zorya's tome (the Fractured Archive): 3-tick, a flat base
+			// of 18 (wiki, 2026-10-20) - below the Eye of Ayak.
+			return 18;
+		}
 		return Math.max(1, magicLevel / 3 + 1);
 	}
 

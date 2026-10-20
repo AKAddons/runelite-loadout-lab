@@ -14,6 +14,8 @@
         "engine/Loadout.java"
       ],
       "tests": [
+        "engine/ZoryaTomeTest.java",
+        "engine/AscensionCrossbowsTest.java",
         "optimizer/OptimizerServiceTest.java",
         "engine/LoadoutOptimizerTest.java",
         "engine/TwoHitWeaponsTest.java",
@@ -24,7 +26,7 @@
       ,
         "engine/RadasBlessingTest.java"],
       "since": "0.1.0",
-      "notes": "2026-10-06 game-update audit: seeking arrows land for at least 3 (the 0, 1 and 2 rolls lift; SeekingArrowsTest, official vectors); corpus refreshed to the 2026-09-02 weirdgloop data. 2026-10-01 (Kendyy / Micah, Discord): ToA-only stats - the keris partisan of Amascut loses 50 stab and 22 strength outside the Tombs (it won aquanite cards on its inside stats); Tumeken's shadow multiplies by four inside the Tombs, three elsewhere (ToaGearRulesTest, official vectors). 2026-09-27 (N, Discord): two-hit weapons - sulphur blades, glacial temotli, earthbound tecpatl and Torag's hammers roll two independent hits on the halved max (flat armour per hitsplat); the dark bow fires two full arrows; Tonalztics roll 75% and the charged pair throws twice (wiki Multi-hit weapons, official calc agrees). No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs). 2026-07-31 (0.3.4): the footnote's 'Wiki calc' chip and its shortlink POST (WikiCalcLink) are held out of the Plugin Hub build - new network I/O forces manual maintainer review; it returns in its own hub PR. 2026-10-18 (TRIPLEKILLTRENT, YouTube: 'salad blade is better than my fang at toa'): inside the Tombs the fang rolls accuracy twice (1 - (1-p)^2) instead of the outside reroll formula; vectors fang-baba-i300 / fang-warden3-i300 went from -17.4% / -23.7% to exact (FangToaTest). 2026-10-18 (TonyDAnnunzio, YouTube: 'it just says computing now'): a throw inside the optimizer worker used to drop the callback and leave the card on Computing for good; both worker paths now catch, log the mob and answer empty (ThrowingComputeTest), so the empty state and Reload take over. 2026-10-19 (Muuffin, Discord: Rada's blessing 3 lost to the god blessings it stat-ties with): in betterEquivalent a Rada's blessing wins a stat tie against any other blessing, after the ownership check and before the tradeable preference (RadasBlessingTest)."
+      "notes": "2026-10-20: the Fractured Archive rewards - Zorya's tome a 3-tick powered staff with a flat base of 18 (ZoryaTomeTest), the Ascension crossbows a 3-tick crossbow (2 on rapid) that fires ascension bolts only (AscensionCrossbowsTest), the Obligator a plain 5-tick crush two-hander for now. 2026-10-06 game-update audit: seeking arrows land for at least 3 (the 0, 1 and 2 rolls lift; SeekingArrowsTest, official vectors); corpus refreshed to the 2026-09-02 weirdgloop data. 2026-10-01 (Kendyy / Micah, Discord): ToA-only stats - the keris partisan of Amascut loses 50 stab and 22 strength outside the Tombs (it won aquanite cards on its inside stats); Tumeken's shadow multiplies by four inside the Tombs, three elsewhere (ToaGearRulesTest, official vectors). 2026-09-27 (N, Discord): two-hit weapons - sulphur blades, glacial temotli, earthbound tecpatl and Torag's hammers roll two independent hits on the halved max (flat armour per hitsplat); the dark bow fires two full arrows; Tonalztics roll 75% and the charged pair throws twice (wiki Multi-hit weapons, official calc agrees). No dedicated screenshot: the style card is visible in the game-best, optimize-modes, and incoming-damage shots. 2026-07-16: style card headers show the skill SPRITE icon (Staticons attack/ranged/magic, AssumeIcons.styleSprite) instead of the style word - sprites not glyphs (Tahoe tofu rule), tooltip carries the word. 2026-07-16 (M-2c): the classic worn-equipment layout is THE layout (compact grid + config option removed); the grid blanks host info tiles - max hit (top-left), accuracy (top-right), incoming dps with the protect-prayer sprite and full threat tooltip (right of legs). 2026-07-31 (0.3.4): the footnote's 'Wiki calc' chip and its shortlink POST (WikiCalcLink) are held out of the Plugin Hub build - new network I/O forces manual maintainer review; it returns in its own hub PR. 2026-10-18 (TRIPLEKILLTRENT, YouTube: 'salad blade is better than my fang at toa'): inside the Tombs the fang rolls accuracy twice (1 - (1-p)^2) instead of the outside reroll formula; vectors fang-baba-i300 / fang-warden3-i300 went from -17.4% / -23.7% to exact (FangToaTest). 2026-10-18 (TonyDAnnunzio, YouTube: 'it just says computing now'): a throw inside the optimizer worker used to drop the callback and leave the card on Computing for good; both worker paths now catch, log the mob and answer empty (ThrowingComputeTest), so the empty state and Reload take over. 2026-10-19 (Muuffin, Discord: Rada's blessing 3 lost to the god blessings it stat-ties with): in betterEquivalent a Rada's blessing wins a stat tie against any other blessing, after the ownership check and before the tradeable preference (RadasBlessingTest)."
     },
     {
       "id": "game-best",
@@ -471,12 +473,13 @@
         "model/RenderModel.java"
       ],
       "tests": [
+        "engine/ZealTest.java",
         "engine/PrayerPickTest.java",
         "optimizer/BoostSelectorTest.java"
       ],
       "since": "0.3.3",
       "capture": "A melee card with the prayer icon's picker menu open (Detect best checked, Chivalry and the tiers below), the boost icon beside it wearing the accent override border. Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "2026-10-20: Zeal (the Fractured Archive) is the melee tier above Piety - 25/28 at 84 Prayer, 75 Attack and 75 Strength, detected from the unlock varbit and first in the picker (ZealTest). Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
     },
     {
       "id": "panel-options",
@@ -505,6 +508,7 @@
         "model/RenderModel.java"
       ],
       "tests": [
+        "data/TfaIntakeTest.java",
         "optimizer/RosterOptimizerTest.java",
         "optimizer/GroupSimScopingTest.java",
         "profile/RosterGolden.java",
@@ -512,7 +516,7 @@
       ],
       "since": "0.3.0",
       "capture": "A raid group result (e.g. Moons of Peril) with the mob rows, one row lensed, the '+ Add mob' row and a row's X visible. Single PNG screenshot.",
-      "notes": "2026-10-15 (Andrew, first 0.5.4 field pass): a Fossil Island Wyverns group (Spitting, Taloned, Long-tailed, Ancient) with the task's own name as aliases - the four carried only their own names, so \"fossil island wyvern\" found nothing. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
+      "notes": "2026-10-20: the Fractured Archive lands on release day as a raid group (the Guardian, the five keepers, Xarth, Ocellus as three phases; the Dagon'hai pair wait on published stats) through scripts/wiki_intake.py, which builds corpus rows from the wiki's infoboxes with gameval ids while weirdgloop lags (TfaIntakeTest). 2026-10-15 (Andrew, first 0.5.4 field pass): a Fossil Island Wyverns group (Spitting, Taloned, Long-tailed, Ancient) with the task's own name as aliases - the four carried only their own names, so \"fossil island wyvern\" found nothing. Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-09-10: raid stipulations on the group data (monster_groups.json member 'weight' and 'spec', ridden as attributes; MonsterMechanics.kitWeight / specStipulation). ToA: P2 Wardens weigh 3, the Wardens' spec is the dragon dagger (Andrew: community data, nothing breaks into the next phase faster). ToaStipulationsTest."
     },
     {
       "id": "inventory-budget",

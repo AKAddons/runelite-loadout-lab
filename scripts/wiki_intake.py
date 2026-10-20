@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""Intake monsters and gear from the wiki's infoboxes when weirdgloop lags.
+
+weirdgloop's cdn (refresh_data.py's source) updates weeks after a release;
+the wiki's Infobox Monster / Infobox Bonuses carry the same stats on day
+one. This script fetches the listed pages, maps the infobox fields onto
+the corpus row schema refresh_data.py writes, and MERGES the rows into
+src/main/resources/com/loadoutlab/data/{monsters,gear_prices}.json.gz by
+id (replacing a row with the same id, keeping every other row). Ids are
+cross-checked against the table below, which carries the gameval
+constants (runelite-api ItemID/NpcID) - never a wiki number alone.
+
+Usage: python3 scripts/wiki_intake.py [--dry-run]
+"""
+import argparse
+import gzip
+import io
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RES_DIR = os.path.join(REPO, "src/main/resources/com/loadoutlab/data")
+UA = {"User-Agent": "loadout-lab wiki intake (github.com/AKAddons; RuneLite plugin)"}
+
+# The Fractured Archive (released 2026-10-20). (page, {version: gameval npc id}).
+# A version of "" means the page's single infobox.
+MONSTERS = [
+    ("Archive Guardian", {"": 16659}),          # NpcID.TFA_GUARDIAN
+    ("Ezekiel", {"": 16652}),                   # NpcID.TFA_EZEKIEL
+    ("Bork", {"": 16640}),                      # NpcID.TFA_BORK
+    ("Smorks", {"": 16641}),                    # NpcID.TFA_SMORK (page name "The Smorks")
+    ("Dreadnoth the Jellied", {"": 16665}),     # NpcID.TFA_JELLY_BOSS
+    ("Moia", {"": 16667}),                      # NpcID.TFA_MOIA
+    ("Xarth", {"": 16684}),                     # NpcID.TFA_XARTH
+    ("Ocellus", {"Phase 1": 16674, "Phase 2": 16675, "Phase 3": 16677}),  # NpcID.TFA_OCELLUS_P1/P2/P3
+]
+
+# (page, slot, category, isTwoHanded, {version: (gameval item id, standard)}, requirements)
+GEAR = [
+    ("Obligator", "weapon", "Blunt", True, {"Charged": (34715, True), "Uncharged": (34717, True)}, {"attack": 85}),
+    ("Zorya's tome", "weapon", "Powered Staff", True, {"Charged": (34725, True), "Uncharged": (34727, True)}, {"magic": 85}),
+    ("Ascension crossbows", "weapon", "Crossbow", True, {"": (34681, True)}, {"ranged": 80}),
+    ("Rondache", "shield", "", False, {"": (34719, True)}, {}),
+    ("Ascension bolts", "ammo", "", False, {"": (34684, True)}, {}),
+    ("Diamond ascension bolts", "ammo", "", False, {"": (34690, True)}, {}),
+    ("Diamond ascension bolts (e)", "ammo", "", False, {"": (34696, True)}, {}),
+    ("Onyx ascension bolts", "ammo", "", False, {"": (34702, True)}, {}),
+    ("Onyx ascension bolts (e)", "ammo", "", False, {"": (34708, True)}, {}),
+]
+
+
+def wikitext(title):
+    url = "https://oldschool.runescape.wiki/api.php?" + urllib.parse.urlencode({
+        "action": "parse", "page": title, "prop": "wikitext", "format": "json",
+        "formatversion": 2, "redirects": 1})
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+        return json.load(r)["parse"]["wikitext"]
+
+
+def infobox(text, name):
+    m = re.search(r"\{\{Infobox " + name + r"\b(.*?)\n\}\}", text, re.S)
+    if not m:
+        return {}
+    fields = {}
+    for k, v in re.findall(r"\|\s*([\w ]+?)\s*=\s*([^|\n]*)", m.group(1)):
+        v = re.sub(r"<!--.*?-->", "", v).strip()
+        if v:
+            fields[k.strip().lower()] = v
+    return fields
+
+
+def versioned(fields, key, n):
+    """fieldN for version n, else the unversioned field, else version 1's
+    (a phased boss lists its shared hitpoints on the first phase only)."""
+    if n and key + str(n) in fields:
+        return fields[key + str(n)]
+    if key in fields:
+        return fields[key]
+    return fields.get(key + "1") if n else None
+
+
+def num(v, default=0):
+    if v is None:
+        return default
+    m = re.search(r"-?\d+", v.replace(",", ""))
+    return int(m.group(0)) if m else default
+
+
+def monster_rows(page, ids):
+    fields = infobox(wikitext(page), "Monster")
+    name = fields.get("name", page)
+    rows = []
+    versions = [(n, fields.get("version%d" % n)) for n in range(1, 10) if fields.get("version%d" % n)]
+    if not versions:
+        versions = [(0, "")]
+    for n, version in versions:
+        if version not in ids:
+            print("  skip %s [%s]: no gameval id in the table" % (name, version))
+            continue
+        wiki_id = num(versioned(fields, "id", n), 0)
+        if wiki_id and wiki_id != ids[version]:
+            print("  WARNING %s [%s]: wiki id %d != gameval %d - gameval wins" % (name, version, wiki_id, ids[version]))
+        f = lambda key, d=0: num(versioned(fields, key, n), d)
+        styles = [s.strip().capitalize() for s in re.sub(r"\[\[([^\]|]*\|)?([^\]]*)\]\]", r"\2",
+                  versioned(fields, "attack style", n) or "").replace(" and ", ",").split(",") if s.strip()]
+        weakness_type = (versioned(fields, "elementalweaknesstype", n) or "").lower()
+        attrs = [a.strip().lower() for a in (versioned(fields, "attributes", n) or "").split(",") if a.strip()]
+        rows.append({
+            "id": ids[version], "name": name, "version": version,
+            "image": name + ".png", "level": f("combat"), "speed": f("attack speed"),
+            "style": styles, "size": f("size", 1),
+            "max_hit": versioned(fields, "max hit", n) or "",
+            "skills": {"atk": f("att"), "def": f("def"), "hp": f("hitpoints"), "magic": f("mage"),
+                       "ranged": f("range"), "str": f("str")},
+            "offensive": {"atk": f("attbns"), "magic": f("amagic"), "magic_str": f("mbns"),
+                          "ranged": f("arange"), "ranged_str": f("rngbns"), "str": f("strbns")},
+            "defensive": {"flat_armour": f("flatarmour"), "crush": f("dcrush"), "magic": f("dmagic"),
+                          "heavy": f("dheavy"), "standard": f("dstandard"), "light": f("dlight"),
+                          "slash": f("dslash"), "stab": f("dstab")},
+            "attributes": attrs, "immunities": {"burn": None},
+            "is_slayer_monster": False,
+            "weakness": {"element": weakness_type, "severity": f("elementalweaknesspercent")} if weakness_type else None,
+        })
+    return rows
+
+
+def gear_rows(page, slot, category, two_handed, ids, requirements):
+    text = wikitext(page)
+    item = infobox(text, "Item")
+    bonuses = infobox(text, "Bonuses")
+    name = item.get("name", page)
+    rows, reqs = [], []
+    versions = [(n, bonuses.get("version%d" % n)) for n in range(1, 10) if bonuses.get("version%d" % n)]
+    if not versions:
+        versions = [(0, "")]
+    for n, version in versions:
+        if version not in ids:
+            print("  skip %s [%s]: no gameval id in the table" % (name, version))
+            continue
+        item_id, standard = ids[version]
+        wiki_id = num(versioned(item, "id", n), 0)
+        if wiki_id and wiki_id != item_id:
+            print("  WARNING %s [%s]: wiki id %d != gameval %d - gameval wins" % (name, version, wiki_id, item_id))
+        b = lambda key: num(versioned(bonuses, key, n), 0)
+        rows.append({
+            "id": item_id, "name": name, "version": version, "slot": slot,
+            "image": name + ".png", "speed": b("speed") if slot == "weapon" else 0,
+            "category": category, "weight": float(item.get("weight", "0") or 0),
+            "isTwoHanded": two_handed,
+            # the wiki's mdmg is a percent; the corpus keeps tenths (Kodai 15% = 150)
+            "bonuses": {"str": b("str"), "ranged_str": b("rstr"), "magic_str": b("mdmg") * 10, "prayer": b("prayer")},
+            "offensive": {"stab": b("astab"), "slash": b("aslash"), "crush": b("acrush"), "magic": b("amagic"), "ranged": b("arange")},
+            "defensive": {"stab": b("dstab"), "slash": b("dslash"), "crush": b("dcrush"), "magic": b("dmagic"), "ranged": b("drange")},
+            "tradeable": (item.get("tradeable", "No").lower() == "yes"), "members": True,
+            "examine": item.get("examine"), "buyLimit": None, "wikiValue": None, "wikiIcon": None,
+            "highAlch": None, "lowAlch": None, "high": None, "low": None, "highTime": None, "lowTime": None,
+            "estimatedPrice": None, "priceSource": "none", "isStandardGear": standard,
+        })
+        if requirements:
+            reqs.append({"id": item_id, "skills": dict(requirements)})
+    return rows, reqs
+
+
+def read_gz(name):
+    with gzip.open(os.path.join(RES_DIR, name), "rb") as f:
+        return json.load(f)
+
+
+def write_gz(name, payload):
+    buf = io.BytesIO()
+    with gzip.GzipFile(fileobj=buf, mode="wb", mtime=0) as gz:
+        gz.write(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    with open(os.path.join(RES_DIR, name), "wb") as f:
+        f.write(buf.getvalue())
+    print("wrote %s (%d records)" % (name, len(payload)))
+
+
+def merge(existing, rows):
+    by_id = {r["id"]: r for r in rows}
+    out = [r for r in existing if r.get("id") not in by_id]
+    replaced = len(existing) - len(out)
+    out.extend(rows)
+    return out, replaced
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    monsters, gear, reqs = [], [], []
+    for page, ids in MONSTERS:
+        rows = monster_rows(page, ids)
+        print("monster %s: %d row(s)" % (page, len(rows)))
+        for r in rows:
+            print("   %s [%s] id=%d hp=%d def=%d weak=%s" % (r["name"], r["version"], r["id"], r["skills"]["hp"], r["skills"]["def"], r["weakness"]))
+        monsters.extend(rows)
+        time.sleep(0.3)
+    for page, slot, category, two_handed, ids, requirements in GEAR:
+        rows, rq = gear_rows(page, slot, category, two_handed, ids, requirements)
+        print("gear %s: %d row(s)" % (page, len(rows)))
+        for r in rows:
+            print("   %s [%s] id=%d speed=%s off=%s bon=%s" % (r["name"], r["version"], r["id"], r["speed"], r["offensive"], r["bonuses"]))
+        gear.extend(rows)
+        reqs.extend(rq)
+        time.sleep(0.3)
+    if args.dry_run:
+        return 0
+    m, rm = merge(read_gz("monsters.json.gz"), monsters)
+    g, rg = merge(read_gz("gear_prices.json.gz"), gear)
+    q, rq = merge(read_gz("equipment_requirements.json.gz"), reqs)
+    write_gz("monsters.json.gz", m)
+    write_gz("gear_prices.json.gz", g)
+    write_gz("equipment_requirements.json.gz", q)
+    print("replaced: %d monsters, %d gear, %d requirements" % (rm, rg, rq))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

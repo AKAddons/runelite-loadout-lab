@@ -64,7 +64,7 @@ public class PrayerPickTest
 	@Test
 	public void everyStyleOffersItsNamedTiers()
 	{
-		Assert.assertEquals("Piety", PrayerBonuses.optionsFor(CombatStyle.MELEE)[0]);
+		Assert.assertEquals("Zeal", PrayerBonuses.optionsFor(CombatStyle.MELEE)[0]);
 		Assert.assertEquals("Rigour", PrayerBonuses.optionsFor(CombatStyle.RANGED)[0]);
 		Assert.assertEquals("Augury", PrayerBonuses.optionsFor(CombatStyle.MAGIC)[0]);
 	}

@@ -52,7 +52,15 @@ public final class PrayerBonuses
 		String meleeName;
 		double meleeAcc = 1.0;
 		double meleeStr = 1.0;
-		if (levels.getPrayer() >= 70 && unlocks.piety())
+		if (levels.getPrayer() >= 84 && levels.getAttack() >= 75 && levels.getStrength() >= 75 && unlocks.zeal())
+		{
+			// Zeal (the Fractured Archive, 2026-10-20): Piety's upgrade,
+			// 25/28, gated on Attack and Strength as well as Prayer.
+			meleeAcc = 1.25;
+			meleeStr = 1.28;
+			meleeName = "Zeal";
+		}
+		else if (levels.getPrayer() >= 70 && unlocks.piety())
 		{
 			meleeAcc = 1.20;
 			meleeStr = 1.23;
