@@ -27,4 +27,6 @@ public final class ComputeParams
 	public int maxSwaps = 1;
 	/** The Multi card is showing: the multi tools are computed too. */
 	public boolean multiView;
+	/** Targets stacked on the Multi card: 3 or 9. */
+	public int multiStack = 3;
 }

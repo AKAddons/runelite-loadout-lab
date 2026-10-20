@@ -76,6 +76,10 @@ public final class OptimizationRequest implements Cloneable
 	 * no lower than a tenth of its max hit (wiki Sunfire rune). */
 	@Getter
 	private boolean sunfireRunes;
+	/** Targets stacked for the Multi card rows: a spec hits min(stack, its
+	 * targets); 1 = single target. */
+	@Getter
+	private int multiStack = 1;
 	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
 	private Set<Integer> dreamItems;
@@ -200,6 +204,13 @@ public final class OptimizationRequest implements Cloneable
 	{
 		OptimizationRequest c = copy();
 		c.sunfireRunes = sunfireRunes;
+		return c;
+	}
+
+	public OptimizationRequest withMultiStack(int multiStack)
+	{
+		OptimizationRequest c = copy();
+		c.multiStack = Math.max(1, multiStack);
 		return c;
 	}
 

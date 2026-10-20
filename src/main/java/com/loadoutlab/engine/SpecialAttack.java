@@ -74,11 +74,14 @@ public final class SpecialAttack
 	 * landed spec (Tonalztics of ralos' Division - wiki 2026-08-09:
 	 * 12.5% per glaive hit, two glaives charged = 25% per spec). */
 	private final double magicDrainFraction;
+	/** Targets the spec hits in a multi area (wiki); 0 = single-target. */
+	private final int multiTargets;
 
 	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
 		int energyCost, double accuracyMultiplier, double damageMultiplier, String note,
-		double defenceDrainFraction, boolean drainsByDamage, double magicDrainFraction)
+		double defenceDrainFraction, boolean drainsByDamage, double magicDrainFraction, int multiTargets)
 	{
+		this.multiTargets = multiTargets;
 		this.defenceDrainFraction = defenceDrainFraction;
 		this.drainsByDamage = drainsByDamage;
 		this.magicDrainFraction = magicDrainFraction;
@@ -119,7 +122,8 @@ public final class SpecialAttack
 					row.get("drainFraction").getAsDouble(),
 					row.get("drainsByDamage").getAsBoolean(),
 					row.has("drainMagicFraction")
-						? row.get("drainMagicFraction").getAsDouble() : 0));
+						? row.get("drainMagicFraction").getAsDouble() : 0,
+					row.has("multi") ? row.get("multi").getAsInt() : 0));
 			}
 		}
 		catch (Exception e)
@@ -166,6 +170,13 @@ public final class SpecialAttack
 	 * Expected damage of ONE special attack, given the normal-attack result
 	 * for the same loadout (source of max hit and attack/defence rolls).
 	 */
+	/** The spec's multiplier at a stack of targets (the Multi card, Andrew
+	 * 2026-10-19): the stack capped at the targets it hits; 1 single-target. */
+	public double multiFactor(int stack)
+	{
+		return multiTargets <= 0 ? 1 : Math.max(1, Math.min(stack, multiTargets));
+	}
+
 	public double expectedDamage(DpsResult base, MonsterStats monster, PlayerLevels levels)
 	{
 		// The Wardens' ejected core (wiki): melee "will always deal their

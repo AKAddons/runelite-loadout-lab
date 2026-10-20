@@ -36,6 +36,8 @@ class MultiToolsTest
 	private static final int BLACK_CHIN = 11959;
 	private static final int VENATOR = 27610;
 	private static final int ADAMANT_ARROW = 890;
+	private static final int DRAGON_2H = 7158;
+	private static final int DRAGON_CLAWS = 13652;
 	private static final int BLOOD_RUNE = 565;
 	private static final int DEATH_RUNE = 560;
 	private static final int WATER_RUNE = 555;
@@ -49,12 +51,18 @@ class MultiToolsTest
 
 	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception
 	{
+		return compute(query, owned, multiView, 3);
+	}
+
+	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception
+	{
 		MonsterStats mob = data.searchMonsters(query, 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ComputeParams p = new ComputeParams();
 		p.multiView = multiView;
+		p.multiStack = stack;
 		service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, new OwnedItems(owned, true), 1, p,
 			Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
@@ -131,6 +139,22 @@ class MultiToolsTest
 		assertTrue(tools.get(MultiTool.VENATOR.key).owned.isEmpty(), "no venator bow, no Yours row");
 		assertNotNull(tools.get(MultiTool.VENATOR.key).overallBest);
 		assertFalse(tools.get(MultiTool.CHINS.key).owned.isEmpty());
+	}
+
+	@Test
+	@DisplayName("at a stack of nine the chins row's spec is the d2h over the claws; at one it is not (Andrew 2026-10-19)")
+	void multiSpecAtTheStack() throws Exception
+	{
+		Map<Integer, Integer> owned = kit(true, false, false);
+		owned.put(DRAGON_2H, 1);
+		owned.put(DRAGON_CLAWS, 1);
+		// At three the claws' four hits per 50% still edge three Powerstabs
+		// per 60%; at nine the stack is decisive.
+		OptimizerService.StyleResult atNine = tools(compute("general graardor", owned, true, 9)).get(MultiTool.CHINS.key);
+		assertNotNull(atNine.specWeapon, "a spec rides the chins row");
+		assertEquals(DRAGON_2H, atNine.specWeapon.getId(), "Powerstab hits the whole stack");
+		OptimizerService.StyleResult atOne = tools(compute("general graardor", owned, true, 1)).get(MultiTool.CHINS.key);
+		assertNotEquals(DRAGON_2H, atOne.specWeapon == null ? 0 : atOne.specWeapon.getId(), "one target: the claws win as ever");
 	}
 
 	@Test

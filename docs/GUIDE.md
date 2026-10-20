@@ -274,7 +274,12 @@ chins hit every target in the 3x3 up to nine, the venator bow bounces
 to two more at two-thirds of its max hit on their own accuracy rolls,
 so its factor comes from the max hit (about 2.3 at a 30 max). The tab
 header shows the factor, the tooltips and the Copy report the per-target
-numbers. A tool you do not own (the bow and its arrows, chins, the
+numbers. The spec on a Multi row is picked at the stack too: a special
+attack that hits a crowd (the dragon 2h sword's Powerstab, every target
+within a square; the dragon crossbow's Annihilate, a 3x3; Dinh's Shield
+Bash, up to ten; the halberd sweep's 3x1 line) counts the stack up to
+its reach, so the d2h beats the claws on a big stack and loses at one.
+A tool you do not own (the bow and its arrows, chins, the
 barrage's runes) has no Yours row; Best in game always ranks all three.
 Melee has no multi tool and is not on the card. The stack is an
 assumption, not a simulation of how many actually stand in the 3x3,

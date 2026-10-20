@@ -289,6 +289,7 @@ public class OptimizerService
 		boolean antifirePotion;
 		boolean sunfireRunes;
 		boolean multiView;
+		int multiStack;
 		int deathCharge;
 		boolean specWeapon = true;
 		Map<CombatStyle, String> boostPicks = Map.of();
@@ -399,7 +400,7 @@ public class OptimizerService
 	{
 		return ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.multiView + "|" + ctx.deathCharge
+			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.multiView + "|" + ctx.multiStack + "|" + ctx.deathCharge
 			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
 			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
@@ -724,6 +725,7 @@ public class OptimizerService
 		ctx.antifirePotion = p.antifirePotion;
 		ctx.sunfireRunes = p.sunfireRunes;
 		ctx.multiView = p.multiView;
+		ctx.multiStack = p.multiStack;
 		ctx.deathCharge = p.deathCharge;
 		ctx.specWeapon = p.specWeapon;
 		ctx.boostPicks = p.boostPicks == null ? Map.of() : p.boostPicks;
@@ -3141,7 +3143,7 @@ public class OptimizerService
 			{
 				continue;
 			}
-			double expected = spec.expectedDamage(base, monster, levels);
+			double expected = spec.expectedDamage(base, monster, levels) * spec.multiFactor(request.getMultiStack());
 			// Rank by the DPS the spec ADDS over just attacking - marginal
 			// (every spec fired gives up a main-hand hit), regen-aware over the
 			// fight, and drain-inclusive for every style (field direction
@@ -3175,7 +3177,7 @@ public class OptimizerService
 						}
 						DpsResult with = calculator.calculate(baseRequest,
 							withSlot(loadout, GearSlot.SHIELD, shield));
-						double damage = with == null ? 0 : spec.expectedDamage(with, monster, levels);
+						double damage = with == null ? 0 : spec.expectedDamage(with, monster, levels) * spec.multiFactor(request.getMultiStack());
 						if (damage > (up == null ? expected : up.expectedDamage) + 1e-9)
 						{
 							up = new SpecPick(spec, item, damage, specDpsAdded(calculator, spec, with,
@@ -3483,6 +3485,10 @@ public class OptimizerService
 			.withProtectOnlyItems(ctx.protectOnly)
 			.withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob));
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
+		if (tool != null)
+		{
+			r = r.withMultiStack(ctx.multiStack);
+		}
 		SpellStats spell = tool != null && tool.spell != null ? tool.spell : spellFor(ctx, mob);
 		if (style == CombatStyle.MAGIC && spell != null)
 		{
@@ -3518,7 +3524,7 @@ public class OptimizerService
 			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true);
 		if (tool != null)
 		{
-			r = r.withPinnedItems(tool.gamePins);
+			r = r.withPinnedItems(tool.gamePins).withMultiStack(ctx.multiStack);
 			if (tool.spell != null)
 			{
 				r = r.withSpell(tool.spell);

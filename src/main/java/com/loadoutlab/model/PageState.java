@@ -88,7 +88,7 @@ public class PageState
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap", "multiStack").contains(param);
+		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap").contains(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -436,6 +436,7 @@ public class PageState
 		p.antifirePotion = antifireMode == 2;
 		p.sunfireRunes = sunfireRunes;
 		p.multiView = multiView;
+		p.multiStack = multiStack;
 		p.deathCharge = f2pOnly ? 0 : deathCharge;
 		p.specWeapon = specWeapon;
 		p.boostPicks = new LinkedHashMap<>(boostPicks);

@@ -31,8 +31,9 @@ class MultiViewTest
 	{
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("multiKind", kind);
-		node.put("tabDps", dps);
-		node.put("bisTabDps", dps + 1);
+		// tab = set + a 0.5 spec line, which the stack must leave alone
+		node.put("tabDps", dps + 0.5);
+		node.put("bisTabDps", dps + 1 + 0.5);
 		node.put("yours", card(dps, maxHit));
 		node.put("bis", card(dps + 1, maxHit + 4));
 		return node;
@@ -66,14 +67,14 @@ class MultiViewTest
 		Map<String, Object> styles = styles(mobs);
 		assertEquals(List.of("barrage", "venator"), new ArrayList<>(styles.keySet()));
 		Map<?, ?> barrage = (Map<?, ?>) styles.get("barrage");
-		assertEquals(15.0, ((Number) barrage.get("tabDps")).doubleValue(), 1e-9);
-		assertEquals(18.0, ((Number) barrage.get("bisTabDps")).doubleValue(), 1e-9);
+		assertEquals(15.5, ((Number) barrage.get("tabDps")).doubleValue(), 1e-9, "the set x3, the spec line as computed");
+		assertEquals(18.5, ((Number) barrage.get("bisTabDps")).doubleValue(), 1e-9);
 		assertEquals(15.0, ((Number) ((Map<?, ?>) barrage.get("yours")).get("dps")).doubleValue(), 1e-9);
 		assertEquals(3.0, ((Number) barrage.get("multiFactor")).doubleValue(), 1e-9);
 		Map<?, ?> venator = (Map<?, ?>) styles.get("venator");
 		double chain = RollMath.venatorFactor(30);
-		assertEquals(4.0 * chain, ((Number) venator.get("tabDps")).doubleValue(), 1e-9);
-		assertEquals(5.0 * RollMath.venatorFactor(34), ((Number) venator.get("bisTabDps")).doubleValue(), 1e-9,
+		assertEquals(4.0 * chain + 0.5, ((Number) venator.get("tabDps")).doubleValue(), 1e-9);
+		assertEquals(5.0 * RollMath.venatorFactor(34) + 0.5, ((Number) venator.get("bisTabDps")).doubleValue(), 1e-9,
 			"the ceiling's chain uses the ceiling's max hit");
 	}
 
@@ -84,7 +85,7 @@ class MultiViewTest
 		List<Object> mobs = page();
 		CommandEngine.multiView(mobs, 1);
 		Map<?, ?> venator = (Map<?, ?>) styles(mobs).get("venator");
-		assertEquals(4.0, ((Number) venator.get("tabDps")).doubleValue(), 1e-9, "no second target, no bounce");
+		assertEquals(4.5, ((Number) venator.get("tabDps")).doubleValue(), 1e-9, "no second target, no bounce");
 		List<Object> plain = new ArrayList<>();
 		Map<String, Object> mob = new LinkedHashMap<>();
 		mob.put("styles", new LinkedHashMap<>(Map.of("melee", tool("", 9.0, 40))));

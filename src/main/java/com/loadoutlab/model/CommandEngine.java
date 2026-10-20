@@ -1731,10 +1731,16 @@ public class CommandEngine
 			{
 				Map<String, Object> node = (Map<String, Object>) t;
 				String kind = String.valueOf(node.get("multiKind"));
-				double yours = scaleCard((Map<String, Object>) node.get("yours"), kind, stack);
-				double bis = scaleCard((Map<String, Object>) node.get("bis"), kind, stack);
-				node.put("tabDps", num(node.get("tabDps")) * yours);
-				node.put("bisTabDps", num(node.get("bisTabDps")) * bis);
+				Map<String, Object> yoursCard = (Map<String, Object>) node.get("yours");
+				Map<String, Object> bisCard = (Map<String, Object>) node.get("bis");
+				double yoursSet = yoursCard == null ? 0 : num(yoursCard.get("dps"));
+				double bisSet = bisCard == null ? 0 : num(bisCard.get("dps"));
+				double yours = scaleCard(yoursCard, kind, stack);
+				double bis = scaleCard(bisCard, kind, stack);
+				// The tab is set + spec: the set scales, the spec line is
+				// already priced at the stack by the compute.
+				node.put("tabDps", num(node.get("tabDps")) + yoursSet * (yours - 1));
+				node.put("bisTabDps", num(node.get("bisTabDps")) + bisSet * (bis - 1));
 				node.put("multiFactor", yours > 0 ? yours : bis);
 			}
 			mob.put("styles", multi);

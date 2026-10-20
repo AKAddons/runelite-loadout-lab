@@ -119,7 +119,10 @@ per-target rows (the normal sets with a tool pinned) are verifiable
 against it. The stack multiplier is explicit on the card; the venator
 chain factor follows the wiki's bounce rule (two bounces at two-thirds
 of the max hit, each on its own accuracy roll), not a measured model of
-how often a bounce finds a second target.
+how often a bounce finds a second target. Multi specs are priced as the
+stack capped at the spec's reach: the bulwark's second hit on its target
+and the rune thrownaxe's Chainhit (energy per hit, its own damage rule,
+ends on a miss) are not modelled.
 
 ## Sunfire runes (2026-10-19, vectors firesurge-sunfire-araxxor, firesurge-sunfire-tome-araxxor)
 

@@ -43,6 +43,36 @@
  },
  {
   "prefixes": [
+   "dragon 2h sword"
+  ],
+  "name": "Powerstab",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 60,
+  "accuracy": 1.0,
+  "damage": 1.0,
+  "note": "every target within one square in multi (wiki, 2026-10-19)",
+  "drainFraction": 0,
+  "drainsByDamage": false,
+  "multi": 9
+ },
+ {
+  "prefixes": [
+   "dinh's bulwark"
+  ],
+  "name": "Shield Bash",
+  "style": "MELEE",
+  "kind": "SINGLE",
+  "cost": 50,
+  "accuracy": 1.2,
+  "damage": 1.0,
+  "note": "up to 10 in an 11x11 in multi, the target hit twice (unmodelled)",
+  "drainFraction": 0,
+  "drainsByDamage": false,
+  "multi": 10
+ },
+ {
+  "prefixes": [
    "voidwaker"
   ],
   "name": "Voidwaker",
@@ -192,9 +222,10 @@
   "cost": 30,
   "accuracy": 1.0,
   "damage": 1.1,
-  "note": "second hit only vs large (2x2+) monsters",
+  "note": "second hit only vs large (2x2+) monsters; a 3x1 line in multi",
   "drainFraction": 0,
-  "drainsByDamage": false
+  "drainsByDamage": false,
+  "multi": 3
  },
  {
   "prefixes": [
@@ -458,9 +489,10 @@
   "cost": 60,
   "accuracy": 1.0,
   "damage": 1.2,
-  "note": "",
+  "note": "Annihilate: up to 9 in a 3x3 in multi",
   "drainFraction": 0,
-  "drainsByDamage": false
+  "drainsByDamage": false,
+  "multi": 9
  },
  {
   "prefixes": [
