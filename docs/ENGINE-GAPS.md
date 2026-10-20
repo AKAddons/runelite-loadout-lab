@@ -147,6 +147,15 @@ team size is not published. Ocellus's second phase has no published
 hitpoints and borrows the first's. Priced as plain, the Obligator never
 wins a row (the Inquisitor's mace beats it); its Lunge is the gap.
 
+Prices (2026-10-20): the game-best pool admits a tradeable only with a
+price, so the intake prices the rewards from the wiki's real-time feed
+and, for items with no trades yet, the official GE guide price
+(priceSource geGuide). Swept across 28 bosses and the raid, no reward
+takes a game-best slot yet: the crossbows rank below the twisted bow
+(Jagex: a raid-tier blowpipe), the tome sits below the Eye of Ayak by
+design (its draw is the unmodelled special), and the Rondache's value
+is its flat armour and special.
+
 ## Multi-combat card (2026-10-19)
 
 Not a vector family: the official calculator has no multi, so only the

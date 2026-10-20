@@ -10,6 +10,11 @@ id (replacing a row with the same id, keeping every other row). Ids are
 cross-checked against the table below, which carries the gameval
 constants (runelite-api ItemID/NpcID) - never a wiki number alone.
 
+Tradeable rows are priced like refresh_data.py: the wiki's real-time
+latest high (then low); an item with no trades yet falls back to the
+official GE catalogue's guide price (priceSource "geGuide") so a day-one
+reward still enters the game-best pool (ALL_STANDARD needs a price).
+
 Usage: python3 scripts/wiki_intake.py [--dry-run]
 """
 import argparse
@@ -52,6 +57,45 @@ GEAR = [
     ("Onyx ascension bolts", "ammo", "", False, {"": (34702, True)}, {}),
     ("Onyx ascension bolts (e)", "ammo", "", False, {"": (34708, True)}, {}),
 ]
+
+
+LATEST = {}
+
+
+def latest_prices():
+    if not LATEST:
+        req = urllib.request.Request("https://prices.runescape.wiki/api/v1/osrs/latest", headers=UA)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            LATEST.update(json.load(r)["data"])
+    return LATEST
+
+
+def guide_price(item_id):
+    """The official GE catalogue's guide price ("163.0m"), or None."""
+    url = "https://secure.runescape.com/m=itemdb_oldschool/api/catalogue/detail.json?item=%d" % item_id
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+            text = str(json.load(r)["item"]["current"]["price"]).replace(",", "").strip().lower()
+    except Exception as e:
+        print("  no guide price for %d: %s" % (item_id, e))
+        return None
+    scale = {"k": 1e3, "m": 1e6, "b": 1e9}.get(text[-1:], 1)
+    return int(round(float(text.rstrip("kmb")) * scale))
+
+
+def price_fields(item_id, tradeable):
+    """(estimatedPrice, priceSource, high, low, highTime, lowTime)."""
+    if not tradeable:
+        return None, "none", None, None, None, None
+    p = latest_prices().get(str(item_id)) or {}
+    high, low = p.get("high"), p.get("low")
+    if high:
+        return high, "latestHigh", high, low, p.get("highTime"), p.get("lowTime")
+    if low:
+        return low, "latestLow", high, low, p.get("highTime"), p.get("lowTime")
+    guide = guide_price(item_id)
+    time.sleep(0.5)
+    return (guide, "geGuide" if guide else "none", None, None, None, None)
 
 
 def wikitext(title):
@@ -147,6 +191,10 @@ def gear_rows(page, slot, category, two_handed, ids, requirements):
         if wiki_id and wiki_id != item_id:
             print("  WARNING %s [%s]: wiki id %d != gameval %d - gameval wins" % (name, version, wiki_id, item_id))
         b = lambda key: num(versioned(bonuses, key, n), 0)
+        # tradeable1/tradeable2 split by version (an uncharged twin trades,
+        # the charged weapon does not)
+        tradeable = (versioned(item, "tradeable", n) or "No").lower() == "yes"
+        estimated, source, high, low, high_t, low_t = price_fields(item_id, tradeable)
         rows.append({
             "id": item_id, "name": name, "version": version, "slot": slot,
             "image": name + ".png", "speed": b("speed") if slot == "weapon" else 0,
@@ -156,10 +204,10 @@ def gear_rows(page, slot, category, two_handed, ids, requirements):
             "bonuses": {"str": b("str"), "ranged_str": b("rstr"), "magic_str": b("mdmg") * 10, "prayer": b("prayer")},
             "offensive": {"stab": b("astab"), "slash": b("aslash"), "crush": b("acrush"), "magic": b("amagic"), "ranged": b("arange")},
             "defensive": {"stab": b("dstab"), "slash": b("dslash"), "crush": b("dcrush"), "magic": b("dmagic"), "ranged": b("drange")},
-            "tradeable": (item.get("tradeable", "No").lower() == "yes"), "members": True,
+            "tradeable": tradeable, "members": True,
             "examine": item.get("examine"), "buyLimit": None, "wikiValue": None, "wikiIcon": None,
-            "highAlch": None, "lowAlch": None, "high": None, "low": None, "highTime": None, "lowTime": None,
-            "estimatedPrice": None, "priceSource": "none", "isStandardGear": standard,
+            "highAlch": None, "lowAlch": None, "high": high, "low": low, "highTime": high_t, "lowTime": low_t,
+            "estimatedPrice": estimated, "priceSource": source, "isStandardGear": standard,
         })
         if requirements:
             reqs.append({"id": item_id, "skills": dict(requirements)})
@@ -204,7 +252,7 @@ def main():
         rows, rq = gear_rows(page, slot, category, two_handed, ids, requirements)
         print("gear %s: %d row(s)" % (page, len(rows)))
         for r in rows:
-            print("   %s [%s] id=%d speed=%s off=%s bon=%s" % (r["name"], r["version"], r["id"], r["speed"], r["offensive"], r["bonuses"]))
+            print("   %s [%s] id=%d tradeable=%s price=%s (%s)" % (r["name"], r["version"], r["id"], r["tradeable"], r["estimatedPrice"], r["priceSource"]))
         gear.extend(rows)
         reqs.extend(rq)
         time.sleep(0.3)

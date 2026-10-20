@@ -79,6 +79,28 @@ class TfaIntakeTest
 	}
 
 	@Test
+	@DisplayName("the tradeable rewards are priced so the game-best pool admits them; the charged weapons are untradeable")
+	void rewardsArePricedAndTradeableByVersion()
+	{
+		for (int id : new int[]{34681, 34719, 34717, 34727, 34684, 34702})
+		{
+			GearItem item = data.getGear(id);
+			assertTrue(item.isTradeable(), item.getName());
+			assertNotNull(item.getEstimatedPrice(), item.getName() + " needs a price for ALL_STANDARD");
+		}
+		assertFalse(data.getGear(34715).isTradeable(), "Obligator (charged)");
+		assertFalse(data.getGear(34725).isTradeable(), "Zorya's tome (charged)");
+		GearItem xbow = data.getGear(34681);
+		OptimizationRequest request = TestRequests.of(guardian(), CombatStyle.RANGED, PlayerLevels.MAXED,
+			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
+			true, false, OwnedItems.EMPTY, 1);
+		java.util.Map<GearSlot, Integer> pin = new java.util.EnumMap<>(GearSlot.class);
+		pin.put(GearSlot.WEAPON, xbow.getId());
+		assertFalse(new LoadoutOptimizer().optimize(data, request.withPinnedItems(pin)).isEmpty(),
+			"the crossbows find their bolts without a pinned ammo slot");
+	}
+
+	@Test
 	@DisplayName("the rewards are gear rows: the Obligator a crush two-hander, the tome a powered staff, the crossbows and bolts, the Rondache")
 	void rewardsInTheCorpus()
 	{
