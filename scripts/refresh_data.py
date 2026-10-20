@@ -17,6 +17,10 @@ Carry-over rules:
     carry over from the previous snapshot when known.
   - equipment_requirements.json.gz is NOT regenerated (curated); new items
     have no requirements until added there.
+  - Rows written by scripts/wiki_intake.py (marked "source": "wiki_intake")
+    are CARRIED FORWARD while weirdgloop lacks their id - a release-day
+    intake survives a refresh until the cdn catches up, then the cdn row
+    wins (the Fractured Archive, 2026-10-20).
 
 Leagues filtering intentionally does NOT happen here - DataService drops
 leagues rewards and unselectable effect spells at load, so a data refresh
@@ -177,6 +181,20 @@ def load_old_gear():
         return {row["id"]: row for row in json.load(f)}
 
 
+def carry_intake(name, fresh):
+    """fresh + the previous snapshot's wiki_intake rows whose id fresh lacks."""
+    path = os.path.join(RES_DIR, name)
+    if not os.path.exists(path):
+        return fresh
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        old = json.load(f)
+    have = {row["id"] for row in fresh}
+    kept = [row for row in old if row.get("source") == "wiki_intake" and row["id"] not in have]
+    for row in kept:
+        print("  carried (wiki_intake, not in the cdn yet): %s [%s] id=%d" % (row["name"], row.get("version", ""), row["id"]))
+    return fresh + kept
+
+
 def default_standard(name, version):
     if (version or "").strip().lower() in NONSTANDARD_VERSIONS:
         return False
@@ -323,8 +341,8 @@ def main():
     if len(new_ids) > 40:
         print("  ... and %d more" % (len(new_ids) - 40))
 
-    write_gz("gear_prices.json.gz", gear)
-    write_gz("monsters.json.gz", apply_monster_overrides(wg_monsters))
+    write_gz("gear_prices.json.gz", carry_intake("gear_prices.json.gz", gear))
+    write_gz("monsters.json.gz", carry_intake("monsters.json.gz", apply_monster_overrides(wg_monsters)))
     write_gz("spells.json.gz", wg_spells)
     write_gz("equipment_aliases.json.gz",
              supplement_aliases(wg_aliases, wg_equipment))

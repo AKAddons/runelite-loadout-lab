@@ -169,6 +169,7 @@ def monster_rows(page, ids):
             "attributes": attrs, "immunities": {"burn": None},
             "is_slayer_monster": False,
             "weakness": {"element": weakness_type, "severity": f("elementalweaknesspercent")} if weakness_type else None,
+            "source": "wiki_intake",
         })
     return rows
 
@@ -208,6 +209,7 @@ def gear_rows(page, slot, category, two_handed, ids, requirements):
             "examine": item.get("examine"), "buyLimit": None, "wikiValue": None, "wikiIcon": None,
             "highAlch": None, "lowAlch": None, "high": high, "low": low, "highTime": high_t, "lowTime": low_t,
             "estimatedPrice": estimated, "priceSource": source, "isStandardGear": standard,
+            "source": "wiki_intake",
         })
         if requirements:
             reqs.append({"id": item_id, "skills": dict(requirements)})

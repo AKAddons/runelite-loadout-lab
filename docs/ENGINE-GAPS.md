@@ -119,7 +119,9 @@ wiki's infoboxes, ids from runelite-api 1.13.3 gameval; weirdgloop's
 cdn still carried the 2026-09-02 data). Tradeable rewards are priced
 from the wiki's real-time feed, or the official GE guide price before
 their first trade (priceSource geGuide): the game-best pool admits a
-tradeable only with a price.
+tradeable only with a price. The intake rows carry "source": "wiki_intake",
+and scripts/refresh_data.py keeps them until weirdgloop's data has
+their ids, so a refresh cannot drop the raid.
 
 Modelled, with the day-one assumptions marked (Andrew: "people know that
 there will be rough edges for the first week or so"):
@@ -196,7 +198,7 @@ chance. If the calc moves to 11/10 the gap closes by itself.
 1. ~~Dragon hunter wand~~ FIXED 2026-07-06: official-verified values are 7/4 accuracy and 7/5 damage (the gap note's wiki numbers were also wrong); upstream applied 7/4 to both. Surfaced when the early-return stacking fix let the wand's bonus compound.
 2. ~~Silverlight/darklight~~ FIXED (found stale by the 2026-07-15 player audit A5.1): the code already applies 8/5 to damage only (DpsCalculator melee damage chain).
 3. ~~Twisted bow caps~~ NOT A BUG (see harness-verified deltas: identical to official; Zulrah's reroll was the difference).
-4. **Keris partisan of amascut** 1.15x looks invented; missing the 1/51 triple-hit proc (EV x1.0392).
+4. **Keris partisan of amascut**: ~~1.15x looks invented~~ RESOLVED 2026-10-01 - the partisan carries its stats inside the Tombs only (ToaGearRulesTest). Still missing: the 1/51 triple-hit proc (EV x1.0392).
 
 ## Missing features (priority order for v0.2)
 
@@ -225,11 +227,11 @@ chance. If the calc moves to 11/10 the gap closes by itself.
    flooring order, blade-of-saeldor no-scale guard). Ahrim's 25% proc
    (+30% dmg) still missing.
 7. **Bolt procs** (ruby/diamond/dstone(e), Zaryte cbow multiplier, diary bonus) — materially changes high-defence ranged answers.
-8. **Elite void magic +2.5% damage** (only the accuracy part is modeled).
+8. ~~**Elite void magic +2.5% damage**~~ MODELED (DpsCalculator, the elite set's magic damage; VoidSetTest).
 9. **Tomes** (fire/water/earth), smoke battlestaff, sunfire runes. (~~chaos gauntlets~~ MODELED 2026-09-08 with the elemental amulet family: +3 on bolt spells / +2 on the element, flat adds before the magic damage % - Mike's Discord report. Salarin honours the elemental amulet alone: flat 9-12 becomes 11-14 with it, nothing else counts.) (~~Mark of Darkness + demonbane~~ MODELED 2026-07-06: demonbane assumes MoD active - 40%/80% accuracy and +25%/+50% damage with the Purging staff; harness vectors carry a markOfDarkness flag so the official engine verifies under the same assumption. Purging staff is now the magic pick vs demons - TD magic converges at +0.7%.)
-10. **Fang in ToA** (two-roll on defence too); ToA invocation / CoX-ToB party scaling generally.
-11. **Wilderness weapons** (craw's/webweaver +50%).
-12. Oddballs: colossal blade scaling, soulreaper stacks, dual macuahuitl / blood moon proc, atlatl melee-str scaling, burning claws burn, venator ricochet.
+10. ~~**Fang in ToA**~~ MODELED 2026-10-18 (two accuracy rolls inside the Tombs; FangToaTest), ~~ToA invocation~~ MODELED (the Invocation chip). Still open: CoX/ToB party scaling, and team-size hitpoint scaling in every raid.
+11. ~~**Wilderness weapons**~~ MODELED (f1f5b7b: the charged +50% passives, official-verified; RevenantConditionalsTest).
+12. Oddballs: colossal blade scaling, burning claws burn. (~~soulreaper stacks~~ 45cf991, SoulreaperAxeTest; ~~dual macuahuitl / blood moon proc~~ BloodMoonSetTest; ~~atlatl melee-str scaling~~ MoonWeaponsTest; ~~venator ricochet~~ the Multi card, VenatorFactorTest.)
 13. **Monster nuances**: ~~defence-drain~~ MODELED 2026-07-06 (DWH -30%, elder maul -35%, BGS by damage: valued as land-chance x main-set dps gain at drained defence x remaining fight from monster HP - drains now win the spec slot on tanky bosses and lose it on trash). NPCs using Defence level vs magic, phase resistances. (`immunities` is back in the data since the 2026-07-05 regen but not consumed yet. Vampyre tiers ARE modeled - `VampyreRules`, 2026-07-05: tier 3 hard-gated to the vyre weapon set, tier 2 halves non-silver damage; silver bolts vs tier 2 not modeled. Flying IS modeled - `FlyingRules`, 2026-07-05: melee blocked vs `flying` monsters except Polearm/Salamander category, per the Kree'arra June-2025 rule.)
 15. **Style immunities not in the data**: Dusk is immune to Magic (wiki) but weirdgloop encodes neither that nor gargoyle-type finishing requirements (rock/granite hammer). A curated per-monster note table would cover: Dusk magic immunity + hammer-to-finish, gargoyles, rockslugs/salt, etc.
 14. ~~Slayer-monster detection is a name heuristic~~ FIXED 2026-07-05: the data regen restored `is_slayer_monster` (the loader reads it; the name fallback remains as a safety net).
