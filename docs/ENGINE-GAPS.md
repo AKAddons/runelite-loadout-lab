@@ -112,6 +112,19 @@ better than my fang at toa"). Inside the Tombs the fang rolls accuracy
 twice (1 - (1-p)^2, official PLAYER_ACCURACY_FANG_TOA); we applied the
 outside reroll formula everywhere. Both vectors are exact now.
 
+## The Fractured Archive (releases 2026-10-20)
+
+Not in the corpus yet: weirdgloop's monsters.json has no Archive boss,
+the wiki boss pages are stubs and runelite-api 1.13.2 names none of its
+ids. The intake runs on release-day data (Mural DES fractured-archive-
+intake). The rewards each need engine work once their stats are
+published: Zeal (a melee prayer above Piety: 25% Attack, 28% Strength),
+the Obligator (a crush scythe with a 5-tick multi-roll Lunge and a
+3-tick Smash), Zorya's Tome (3-tick magic with a special), the Ascension
+crossbows (dual-wield at 2 ticks, ascension bolts only), the Rondache
+(+2 flat armour on the player) and Elemental fragments (+2 max hit per
+element, account-wide). Until then the plugin prices none of them.
+
 ## Multi-combat card (2026-10-19)
 
 Not a vector family: the official calculator has no multi, so only the
