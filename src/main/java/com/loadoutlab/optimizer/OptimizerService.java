@@ -2226,38 +2226,43 @@ public class OptimizerService
 		// ammo slot does nothing for melee, so every ammo-NEUTRAL answer
 		// wears the ammo the mob's caring answer rolls with (the ranged
 		// bolts ride in the melee set), and the shared bases follow suit.
+		// Only the style that ANSWERS a mob (its best dps) sets the ammo
+		// (Kendyy 2026-10-20: the magic card wore bolts over a blessing
+		// at Barrows, where ranged answered nobody).
 		GearItem rosterAmmo = null;
+		GearItem[] neededBy = new GearItem[n];
 		for (int j = 0; j < n; j++)
 		{
-			GearItem needed = null;
+			DpsResult top = null;
+			CombatStyle answer = null;
 			for (CombatStyle s : sides.keySet())
 			{
 				List<DpsResult> best = sides.get(s).bests.get(j);
-				if (emptyBest(best))
+				if (!emptyBest(best) && (top == null || best.get(0).getDps() > top.getDps()))
 				{
-					continue;
-				}
-				DpsResult r = best.get(0);
-				GearItem ammo = r.getLoadout().get(GearSlot.AMMO);
-				if (ammo == null)
-				{
-					continue;
-				}
-				DpsResult without = calcRespecting(calc, sides.get(s).reqs.get(j),
-					withSlot(r.getLoadout(), GearSlot.AMMO, null));
-				if (without == null || without.getDps() < r.getDps() - 1e-9)
-				{
-					needed = ammo;
-					break;
+					top = best.get(0);
+					answer = s;
 				}
 			}
-			if (needed == null)
+			GearItem ammo = top == null ? null : top.getLoadout().get(GearSlot.AMMO);
+			if (ammo == null)
 			{
 				continue;
 			}
-			if (rosterAmmo == null)
+			DpsResult without = calcRespecting(calc, sides.get(answer).reqs.get(j),
+				withSlot(top.getLoadout(), GearSlot.AMMO, null));
+			if (without == null || without.getDps() < top.getDps() - 1e-9)
 			{
-				rosterAmmo = needed;
+				neededBy[j] = ammo;
+				rosterAmmo = rosterAmmo == null ? ammo : rosterAmmo;
+			}
+		}
+		for (int j = 0; j < n; j++)
+		{
+			GearItem needed = neededBy[j] != null ? neededBy[j] : rosterAmmo;
+			if (needed == null)
+			{
+				continue;
 			}
 			for (CombatStyle s : sides.keySet())
 			{

@@ -468,6 +468,12 @@ the acceptable items and the best unrestricted set still shows, with
 the info line explaining what is missing. Pinning the slot overrides
 the requirement - your explicit choice always wins.
 
+Barrows carries one convention the same way: with Ghommal's hilt 2 or
+higher (or the hilt-fitted avernic defender) in your bank, every
+brother's set wears it in the shield slot. It is not a dps pick - the
+hilt stops the crypts' prayer drain, and nearly everyone who has one
+wears it there. Pin another shield to choose otherwise.
+
 ## 4. Make it yours
 
 Set your own defaults, teach the plugin what you own wherever it is

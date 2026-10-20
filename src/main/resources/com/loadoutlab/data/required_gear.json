@@ -211,6 +211,27 @@
 				"ancient wyvern shield"
 			],
 			"note": "An elemental, mind, dragonfire shield or ward, or the ancient wyvern shield is REQUIRED - it cuts the icy breath's max hit from 44 to 10 (Protect from Magic alone only halves it); the ancient wyvern shield also stops the freeze (wiki, 2026-10-15)."
+		},
+		{
+			"monsters": [
+				"ahrim the blighted",
+				"dharok the wretched",
+				"guthan the infested",
+				"karil the tainted",
+				"torag the corrupted",
+				"verac the defiled"
+			],
+			"slot": "SHIELD",
+			"items": [
+				"ghommal's hilt 2",
+				"ghommal's hilt 3",
+				"ghommal's hilt 4",
+				"ghommal's hilt 5",
+				"ghommal's hilt 6",
+				"ghommal's avernic defender 5",
+				"ghommal's avernic defender 6"
+			],
+			"note": "Not a dps pick: a Ghommal's hilt (tier 2+) worn stops the crypts' prayer drain (wiki), and nearly everyone who has one wears it here; the hilt-fitted avernic defender keeps the benefit. Pin another shield to override."
 		}
 	]
 }
