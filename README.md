@@ -9,9 +9,8 @@ it. Keep it simple and let the plugin do the work, or reach beyond
 your own gear with the powerful simulation and customization options.
 At the end of your search, filter the kit in your bank and get going.
 
-New here? Rune Nexus Group's one-minute short shows the plugin in use:
-[Get your best gear every time with no hassle](https://youtube.com/shorts/3WulAJfStyg)
-(shared with the creator's permission).
+Rune Nexus Group's one-minute short shows the plugin in use:
+[Get your best gear every time with no hassle](https://youtube.com/shorts/3WulAJfStyg).
 
 [![Rune Nexus Group's Loadout Lab short](https://img.youtube.com/vi/3WulAJfStyg/hqdefault.jpg)](https://youtube.com/shorts/3WulAJfStyg)
 
