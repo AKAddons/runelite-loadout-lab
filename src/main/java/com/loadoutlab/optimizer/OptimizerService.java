@@ -457,7 +457,7 @@ public class OptimizerService
 			return ctx.dreams;
 		}
 		Set<Integer> merged = new HashSet<>(ctx.dreams);
-		merged.addAll(local);
+		merged.addAll(RangedAmmo.withPairedAmmo(local));
 		return merged;
 	}
 
@@ -704,7 +704,7 @@ public class OptimizerService
 		ctx.spellByMob = spellByMob == null ? Map.of() : spellByMob;
 		ctx.specByMob = specByMob == null ? Map.of() : specByMob;
 		ctx.excluded = excludedByStyle == null ? Map.of() : excludedByStyle;
-		ctx.dreams = dreamItems == null ? Set.of() : dreamItems;
+		ctx.dreams = dreamItems == null ? Set.of() : RangedAmmo.withPairedAmmo(dreamItems);
 		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
 		ctx.lock = p.spellbookLock == null ? "" : p.spellbookLock;
 		ctx.real = realLevels == null ? boostedLevels : realLevels;

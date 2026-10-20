@@ -361,8 +361,12 @@ ride the result card's consumable cells, the bank filter (every dose
 matches) and the filtered bank's inventory block. The Cannon submenu
 brings a dwarf multicannon - base, stand, barrels, furnace and
 cannonballs, five cells in the Supplies row and the bank filter - on
-land, non-raid trips. It is never detected, adds nothing to the dps
-numbers, and does not know where cannons are allowed.
+land, non-raid trips. It is never detected and adds nothing to the dps
+numbers. It stays off where it cannot work: a boss arena the game
+prohibits it in (Vorkath, Zulrah, Cerberus, the Hydra and more), a boss
+that destroys it (the God Wars Dungeon, the Kalphite Queen, the King
+Black Dragon, the Thermonuclear smoke devil), Barrows, and any monster
+the wiki marks immune to cannon damage.
 
 ![Trip supplies](img/trip-supplies.png)
 
@@ -373,7 +377,8 @@ sim it - considered as owned - and see the set it would build. Any item
 can be simmed proactively from the green + chip above the search bar or
 the header "..." menu ("Sim an item"), both of which also list your
 current simmed items so one that never wins a slot can still be
-removed.
+removed. A simmed weapon that fires only its own ammo brings that ammo
+with it: sim the Ascension crossbows and their bolts come too.
 
 ![Simulated items](img/dream-items.png)
 

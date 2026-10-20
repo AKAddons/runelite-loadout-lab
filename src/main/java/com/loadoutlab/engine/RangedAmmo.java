@@ -51,6 +51,18 @@ public final class RangedAmmo
 	{
 	}
 
+	/** Sims plus the exclusive ammo of every simmed weapon (a crossbow
+	 * that fires only its own bolts is no sim without them). */
+	public static Set<Integer> withPairedAmmo(Set<Integer> sims)
+	{
+		Set<Integer> out = new HashSet<>(sims);
+		for (int id : sims)
+		{
+			out.addAll(PAIRS.getOrDefault(id, Set.of()));
+		}
+		return out;
+	}
+
 	public static boolean compatible(GearItem ammo, GearItem weapon)
 	{
 		if (ammo == null)

@@ -1310,27 +1310,15 @@ public final class LoadoutOptimizer
 			{
 				score += 8_000.0;
 			}
-			// Wilderness/revenant conditionals: their raw stats undersell
-			// them (the +50% passive and the incoming-nullify live in the
-			// DPS models), so without a boost the pool cut or the zero-score
-			// prune removes them before they are ever evaluated.
-			if (request.isInWilderness() && !badVersion(item) && isWildernessWeapon(name))
-			{
-				score += 6_000.0;
-			}
-			if (isRevenantMonster(request) && name.contains("amulet of avarice"))
-			{
-				score += 5_000.0;
-			}
-			if (isRevenantMonster(request) && name.contains("bracelet of ethereum")
-				&& !badVersion(item))
-			{
-				score += 4_000.0;
-			}
 		}
 		// Set pieces whose value lives in the DPS model, not raw stats
 		// (shortlist_boosts.json): each block lifts a piece once.
-		for (String key : new String[]{"all", request.getStyle().name()})
+		// Wilderness/revenant conditionals ride the same table: their +50%
+		// passive and the incoming-nullify live in the DPS models.
+		boolean usable = !badVersion(item);
+		for (String key : new String[]{"all", request.getStyle().name(),
+			usable && request.isInWilderness() ? "wilderness" : "",
+			usable && isRevenantMonster(request) ? "revenant" : ""})
 		{
 			for (Map<String, Integer> block : SHORTLIST_BOOSTS.getOrDefault(key, List.of()))
 			{
@@ -1381,15 +1369,6 @@ public final class LoadoutOptimizer
 	private static boolean isRevenantMonster(OptimizationRequest request)
 	{
 		return request.getMonster() != null && request.getMonster().isRevenantMonster();
-	}
-
-	/** The six wilderness weapons whose charged +50% passive the DPS
-	 * model grants (DpsCalculator.revWeaponBuff). */
-	private static boolean isWildernessWeapon(String name)
-	{
-		return name.contains("craw's bow") || name.contains("webweaver bow")
-			|| name.contains("ursine chainmace") || name.contains("viggora's chainmace")
-			|| name.contains("thammaron's sceptre") || name.contains("accursed sceptre");
 	}
 
 	private static boolean slayerTaskHeadCandidate(OptimizationRequest request, GearItem item)

@@ -1,5 +1,5 @@
 {
- "_comment": "Weapon/armour shortlist boosts (LoadoutOptimizer.candidateScore): pieces whose value lives in the DPS model, not raw stats, so the top-N cut must not drop them. Keyed by style (or 'all'); each block lifts a piece once (first matching name substring). Void: the set carries ~zero raw stats, so without a boost the zero-score prune drops the helm/gloves and a stocked bank's cut drops the top/robe (2026-07-17). The Obligator: its Lunge re-rolls (DpsCalculator) are invisible to raw stats (2026-10-20).",
+ "_comment": "Weapon/armour shortlist boosts (LoadoutOptimizer.candidateScore): pieces whose value lives in the DPS model, not raw stats, so the top-N cut must not drop them. Keyed by style (or 'all'); each block lifts a piece once (first matching name substring). Void: the set carries ~zero raw stats, so without a boost the zero-score prune drops the helm/gloves and a stocked bank's cut drops the top/robe (2026-07-17). The Obligator: its Lunge re-rolls (DpsCalculator) are invisible to raw stats (2026-10-20). 'wilderness' applies in the Wilderness and 'revenant' at revenants, charged versions only (the +50% passives and the incoming-nullify, DpsCalculator).",
  "all": [
   {
    "void knight top": 2500,
@@ -49,6 +49,24 @@
   },
   {
    "obligator": 4000
+  }
+ ],
+ "wilderness": [
+  {
+   "craw's bow": 6000,
+   "webweaver bow": 6000,
+   "ursine chainmace": 6000,
+   "viggora's chainmace": 6000,
+   "thammaron's sceptre": 6000,
+   "accursed sceptre": 6000
+  }
+ ],
+ "revenant": [
+  {
+   "amulet of avarice": 5000
+  },
+  {
+   "bracelet of ethereum": 4000
   }
  ]
 }

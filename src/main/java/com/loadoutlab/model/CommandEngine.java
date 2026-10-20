@@ -2434,7 +2434,8 @@ public class CommandEngine
 				}
 			}
 			if (TripSupplies.ANTIVENOM.equals(category) && mobs.stream().noneMatch(TripSupplies::inflictsVenom)
-				|| TripSupplies.ANTIPOISON.equals(category) && mobs.stream().noneMatch(TripSupplies::inflictsPoison))
+				|| TripSupplies.ANTIPOISON.equals(category) && mobs.stream().noneMatch(TripSupplies::inflictsPoison)
+				|| TripSupplies.CANNON.equals(category) && mobs.stream().anyMatch(TripSupplies::noCannon))
 			{
 				continue;
 			}

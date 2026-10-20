@@ -44,6 +44,12 @@ class CannonKitTest
 
 	private List<Integer> cannonIds(boolean raid)
 	{
+		return cannonIds(raid ? "Tombs of Amascut" : null, "abyssal demon");
+	}
+
+	/** group: a curated group to select (null = the single mob). */
+	private List<Integer> cannonIds(String group, String mobQuery)
+	{
 		cannonCells.clear();
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
@@ -55,11 +61,11 @@ class CannonKitTest
 		engine.setStoreOps(new TestStoreOps());
 		engine.setOwnedCheck(id -> true);
 		engine.setSupplyDefaults(() -> Map.of(TripSupplies.CANNON, "DWARF_MULTICANNON"));
-		if (raid)
+		if (group != null)
 		{
-			// A real raid select: the group data flags it, the engine sets
-			// the param - the same path RaidSelectionTest proves.
-			engine.execute("select", Map.of("query", "Tombs of Amascut"));
+			// A real group select: the group data flags a raid, the engine
+			// sets the param - the same path RaidSelectionTest proves.
+			engine.execute("select", Map.of("query", group));
 			List<MonsterStats> mobs = state.rosterMobs();
 			List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
 				new ArrayList<>();
@@ -71,7 +77,7 @@ class CannonKitTest
 		}
 		else
 		{
-			MonsterStats mob = data.searchMonsters("abyssal demon", 1).get(0);
+			MonsterStats mob = data.searchMonsters(mobQuery, 1).get(0);
 			engine.execute("select", Map.of("id", mob.getId()));
 			engine.onResults(mob, Map.of());
 		}
@@ -118,6 +124,21 @@ class CannonKitTest
 		cannonIds(false);
 		assertEquals(List.of(6, 26520), cannonCells.get(0), "base and the (or) base");
 		assertEquals(List.of(2, 21728), cannonCells.get(4), "cannonballs and granite cannonballs");
+	}
+
+	@Test
+	@DisplayName("no cannon where it cannot be set up or does nothing: Barrows, Vorkath, a cannon-immune gorilla")
+	void prohibitedOrImmuneSkipsTheCannon()
+	{
+		// Andrew, client test 2026-10-20: "it's suggesting dwarf multicannon
+		// for barrows even though it's not allowed on that boss".
+		assertTrue(cannonIds(null, "dharok the wretched").isEmpty(), "a Barrows brother");
+		assertTrue(cannonIds("Barrows", null).isEmpty(), "the Barrows roster");
+		assertTrue(cannonIds(null, "vorkath").isEmpty(), "Ungael is a prohibited area");
+		assertTrue(cannonIds(null, "demonic gorilla").isEmpty(), "cannon-immune (wiki)");
+		// Exact names only: the wiki's immune "Black demon (The Scar)" page
+		// must not take the cannon from every black demon.
+		assertEquals(List.of(6, 8, 10, 12, 2), cannonIds(null, "black demon"));
 	}
 
 	@Test

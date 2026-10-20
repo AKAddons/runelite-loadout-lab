@@ -70,6 +70,7 @@ public final class TripSupplies
 	private static final Map<String, String> LABELS = new LinkedHashMap<>();
 	private static final Set<String> VENOMOUS = new HashSet<>();
 	private static final Set<String> POISONOUS = new HashSet<>();
+	private static final Set<String> NO_CANNON = new HashSet<>();
 
 	static
 	{
@@ -110,6 +111,7 @@ public final class TripSupplies
 			}
 			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
 			JsonResources.strings(root, "poisonMonsters", POISONOUS);
+			JsonResources.strings(root, "noCannonMonsters", NO_CANNON);
 		}
 	}
 
@@ -221,6 +223,12 @@ public final class TripSupplies
 	public static boolean inflictsPoison(MonsterStats monster)
 	{
 		return named(monster, POISONOUS) && !named(monster, VENOMOUS);
+	}
+
+	/** No cannon here: a prohibited arena or cannon-immune (exact names). */
+	public static boolean noCannon(MonsterStats monster)
+	{
+		return monster != null && NO_CANNON.contains(Names.lower(monster.getName()));
 	}
 
 	private static boolean named(MonsterStats monster, Set<String> tokens)
