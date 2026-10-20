@@ -263,13 +263,13 @@ melee and ranged cards, powered staves and Arceuus spells keep the fold.
 
 A mob that is fought in a multi-combat area (multi_mobs.json, curated
 from the wiki - the Catacombs, the Wilderness Slayer Cave, the God Wars
-Dungeon and friends; the chip's tooltip names the places) gets a Multi
-chip in its card header. Click it and the three style tabs give way to
-the three multi tools, ranked: the best burst or barrage set (Ice
-Barrage, or Ice Burst under 94 Magic), the best chinchompa set (your
-best owned chins; black for Best in game) and the venator bow set.
+Dungeon and friends) puts a Single chip among the search chips. Click
+it to cycle Single, Multi x3, Multi x9. On Multi the three style tabs
+give way to the three multi tools, ranked: the best burst or barrage
+set (Ice Barrage, or Ice Burst under 94 Magic), the best chinchompa set
+(your best owned chins; black for Best in game) and the venator bow set.
 Each is the normal per-target set with the tool pinned, multiplied by
-the stack of targets you pick on the chip (3, 5 or 9): barrage and
+the stack the chip names (3 or 9 targets): barrage and
 chins hit every target in the 3x3 up to nine, the venator bow bounces
 to two more at two-thirds of its max hit on their own accuracy rolls,
 so its factor comes from the max hit (about 2.3 at a 30 max). The tab

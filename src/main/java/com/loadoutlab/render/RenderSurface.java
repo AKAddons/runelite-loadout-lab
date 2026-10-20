@@ -453,11 +453,17 @@ public class RenderSurface
 
 	private static boolean anyInvocationScaled(Map<String, Object> page)
 	{
+		return anyMob(page, "invocationScaled");
+	}
+
+	/** True when any mob on the page carries the flag. */
+	private static boolean anyMob(Map<String, Object> page, String flag)
+	{
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
 			for (Map<String, Object> mob : Model.list(entry, "mobs"))
 			{
-				if (Model.flag(mob, "invocationScaled"))
+				if (Model.flag(mob, flag))
 				{
 					return true;
 				}
@@ -978,6 +984,33 @@ public class RenderSurface
 				chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
 					dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",
 					() -> commands.set("deathCharge", (dCharge + 1) % 3)));
+			}
+			if (anyMob(page, "multiAble"))
+			{
+				// The Multi chip (Andrew 2026-10-19: "single -> multi x3 -> multi
+				// x9", beside the other search chips): the AoE tools priced at a
+				// stack of targets, cycling single / x3 / x9.
+				boolean multi = Model.flag(params, "multiView");
+				int stack = Model.id(params, "multiStack");
+				boolean last = multi && stack >= 9;
+				chipRow.add(pill(multi ? "Multi x" + stack : "Single", multi, !last,
+					"Multi-combat: barrage, chinchompas and the venator bow priced at a stack of targets - cycles single / x3 / x9",
+					() ->
+					{
+						if (!multi)
+						{
+							commands.set("multiStack", 3);
+							commands.set("multiView", true);
+						}
+						else if (!last)
+						{
+							commands.set("multiStack", 9);
+						}
+						else
+						{
+							commands.set("multiView", false);
+						}
+					}));
 			}
 			if (anyInvocationScaled(page))
 			{

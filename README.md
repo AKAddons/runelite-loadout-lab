@@ -41,7 +41,8 @@ New here? Rune Nexus Group's one-minute short shows the plugin in use:
   and explained on the card.
 - **Multi-combat card**: on a mob fought in multi, flip the card to the
   AoE tools - barrage, chinchompas, the venator bow - priced at a stack
-  of 3, 5 or 9 targets, per-target sets underneath.
+  of 3 or 9 targets (a search chip cycles Single, Multi x3, Multi x9),
+  per-target sets underneath.
 - **Compute animations**: every boss, group and raid plays its own
   mood while the numbers cook, drawn in colour from the wiki renders.
 - **Ship combat**: sea monsters from the Sailing update are fought from

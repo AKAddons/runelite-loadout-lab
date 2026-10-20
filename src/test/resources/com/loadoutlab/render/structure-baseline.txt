@@ -701,7 +701,6 @@ JPanel
           JLabel "Chins x3" tip=Assumes: Rigour + Ranging potion
           JLabel tip=Assumes: Rigour + Ranging potion - click to change the prayer
           JLabel tip=Assumes: Rigour + Ranging potion - click to change the boost
-          JLabel "Multi x3" tip=<html>Fought in multi: God Wars Dungeon (Bandos boss room)<br>Barrage, chinchompas and the venator bow priced at 3 targets stacked - click for the stack</html>
           JLabel tip=No specific spellbook required - a powered staff casts on any book
       JPanel
         JPanel
@@ -1455,7 +1454,6 @@ JPanel
           JLabel "Chins x3" tip=Assumes: Rigour + Ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
           JLabel tip=Assumes: Rigour + Divine ranging potion
-          JLabel "Multi" tip=<html>Fought in multi: God Wars Dungeon (Bandos boss room)<br>Click to rank the multi tools instead of the styles</html>
           JLabel tip=No specific spellbook required - a powered staff casts on any book
       JPanel
         JPanel

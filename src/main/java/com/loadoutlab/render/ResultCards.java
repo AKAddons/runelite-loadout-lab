@@ -731,10 +731,6 @@ public class ResultCards
 			{
 				headerRow.add(sunfirePlate(bis));
 			}
-			if (Model.flag(mob, "multiAble"))
-			{
-				headerRow.add(multiChip(mob));
-			}
 		}
 		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
 		card.add(left(headerRow));
@@ -1923,42 +1919,6 @@ public class ResultCards
 			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
 		}
 		return plate;
-	}
-
-	/** The Multi switch (Andrew 2026-10-19): on a mob fought in multi, the
-	 * card flips to the AoE tools priced at a stack of targets; on, the
-	 * chip picks the stack or switches off. */
-	private JLabel multiChip(Map<String, Object> mob)
-	{
-		boolean on = pageParams != null && Model.flag(pageParams, "multiView");
-		int stack = Math.max(1, Model.id(pageParams, "multiStack"));
-		JLabel chip = Ui.label(on ? "Multi x" + stack : "Multi", on ? ACCENT : new Color(0xA0A0A0));
-		chip.setFont(FontManager.getRunescapeSmallFont());
-		StringBuilder where = new StringBuilder();
-		for (Object l : Model.list2(mob, "multiLocations"))
-		{
-			where.append(where.length() == 0 ? "" : ", ").append(l);
-		}
-		chip.setToolTipText("<html>Fought in multi: " + where + "<br>" + (on
-			? "Barrage, chinchompas and the venator bow priced at " + stack + " targets stacked - click for the stack"
-			: "Click to rank the multi tools instead of the styles") + "</html>");
-		Ui.onClick(chip, () ->
-		{
-			if (!on)
-			{
-				commands.set("multiView", true);
-				return;
-			}
-			JPopupMenu menu = new JPopupMenu();
-			for (int n : new int[]{3, 5, 9})
-			{
-				int value = n;
-				Ui.item(menu, n + " targets stacked", () -> commands.set("multiStack", value));
-			}
-			Ui.item(menu, "Back to the styles", () -> commands.set("multiView", false));
-			menu.show(chip, 0, chip.getHeight());
-		});
-		return chip;
 	}
 
 	/** An item image scaled into a 24px frame (the raw 36x32 overflowed it,
