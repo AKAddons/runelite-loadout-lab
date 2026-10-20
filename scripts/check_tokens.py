@@ -26,8 +26,10 @@ CAP = 200_000          # the bot's hard limit, in the BOT's tokens
 # revisit before submitting anything above the old 195k line.
 FAIL_AT = 205_500      # the bot's measured edge (~199.3k in bot tokens at 0.97x).
                        # Raised from 202k for 0.6.0 (Andrew, 2026-10-19: the Multi card
-                       # ships in 0.6.0); back to 202k once the data externalisation
-                       # or the endpoint extraction moves weight out (ENGINE-GAPS).
+                       # ships in 0.6.0). Second measurement: the hub accepted 0.6.0
+                       # (plugin-hub PR #19000) at 204,559 of OUR tokens, so the edge
+                       # holds at least that high. Back to 202k once the data
+                       # externalisation or the endpoint extraction moves weight out.
 WARN_AT = 195_000      # post-merge-back watermark (2026-08-18: the hub's
                        # single-plugin ruling brought the renderer home at
                        # 177,481). Data belongs in resources; big new
