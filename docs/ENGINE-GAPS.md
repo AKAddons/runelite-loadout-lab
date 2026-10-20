@@ -119,7 +119,9 @@ wiki's infoboxes, ids from runelite-api 1.13.3 gameval; weirdgloop's
 cdn still carried the 2026-09-02 data). Tradeable rewards are priced
 from the wiki's real-time feed, or the official GE guide price before
 their first trade (priceSource geGuide): the game-best pool admits a
-tradeable only with a price. The intake rows carry "source": "wiki_intake",
+tradeable only with a price. The intake takes the guide price first: a
+release's first trades are noise (the Obligator's first latest-high was
+5,999,999,999). The intake rows carry "source": "wiki_intake",
 and scripts/refresh_data.py keeps them until weirdgloop's data has
 their ids, so a refresh cannot drop the raid.
 
@@ -143,7 +145,9 @@ there will be rough edges for the first week or so"):
 - **Zeal**: 25% / 28% at 84 Prayer, 75 Attack and 75 Strength, gated on
   VarbitID.PRAYER_ZEAL_UNLOCKED; game-best assumes it.
 - **The raid**: the Guardian flying behind its shield (a halberd still
-  reaches) and grounded, Xarth's first phase fought from the pillars (a
+  reaches) and grounded, Ocellus a demon in phases 1 and 3 only (the wiki
+  leaves phase 2 blank), Dreadnoth a demon and the Smorks at 2 flat
+  armour (both wiki edits after release), Xarth's first phase fought from the pillars (a
   stipulation from the strategy guide, not a game immunity), the
   Guardian's Ancient Magicks immunity, Ocellus in three phases (the
   second borrows the first's hitpoints, unpublished). The phases weigh

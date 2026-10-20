@@ -82,10 +82,13 @@ public final class LoadoutOptimizer
 		// like any other dps-neutral slot. Shared with the roster shown-set
 		// post-pass; the neutral guard inside verifies the move.
 		DpsResult current = relocateQuiverAmmo(data, request, result);
+		// Near-ties (Andrew 2026-10-20: the Mythical cape's 0.1% over the
+		// fire cape): prayer and defence may cost up to 0.5% of the SET.
+		double floor = result.getDps() * 0.995;
 		for (GearSlot slot : GearSlot.values())
 		{
 			current = fillSlot(data, request, current, slot, spellContext,
-				dragonShield, required, riskCapGp, pinnedIds, protectOnly);
+				dragonShield, required, riskCapGp, pinnedIds, protectOnly, floor);
 		}
 		return current;
 	}
@@ -99,7 +102,7 @@ public final class LoadoutOptimizer
 	private DpsResult fillSlot(LoadoutData data, OptimizationRequest request,
 		DpsResult current, GearSlot slot, SpellContext spellContext,
 		boolean dragonShield, Map<GearSlot, Set<Integer>> required,
-		long riskCapGp, Set<Integer> pinnedIds, Set<Integer> protectOnly)
+		long riskCapGp, Set<Integer> pinnedIds, Set<Integer> protectOnly, double floor)
 	{
 		// A pinned slot is the player's explicit choice - never swapped.
 		if (slot == GearSlot.WEAPON || request.pinnedFor(slot) != null)
@@ -201,7 +204,7 @@ public final class LoadoutOptimizer
 				break;
 			}
 			DpsResult candidate = bestSpellResult(request, trial, spellContext);
-			if (candidate == null || candidate.getDps() < current.getDps() - 1e-9)
+			if (candidate == null || candidate.getDps() < Math.min(floor, current.getDps()) - 1e-9)
 			{
 				continue;
 			}
@@ -258,7 +261,7 @@ public final class LoadoutOptimizer
 		moved = moved.withPurchaseCost(result.getPurchaseCost());
 		return fillSlot(data, request, moved, GearSlot.AMMO, spellContext,
 			DragonfireRules.shieldRequired(request), RequiredGear.requiredIds(request.getMonster(), data),
-			riskCapGp, pinnedIds, protectOnly);
+			riskCapGp, pinnedIds, protectOnly, moved.getDps());
 	}
 
 	/**

@@ -10,10 +10,11 @@ id (replacing a row with the same id, keeping every other row). Ids are
 cross-checked against the table below, which carries the gameval
 constants (runelite-api ItemID/NpcID) - never a wiki number alone.
 
-Tradeable rows are priced like refresh_data.py: the wiki's real-time
-latest high (then low); an item with no trades yet falls back to the
-official GE catalogue's guide price (priceSource "geGuide") so a day-one
-reward still enters the game-best pool (ALL_STANDARD needs a price).
+Tradeable rows take the official GE catalogue's guide price first
+(priceSource "geGuide"): a release's first trades are noise (the
+Obligator's first latest-high was 5,999,999,999). With no guide price
+they fall back to the wiki's real-time latest high, then low. A price is
+what lets a reward into the game-best pool (ALL_STANDARD needs one).
 
 Usage: python3 scripts/wiki_intake.py [--dry-run]
 """
@@ -38,7 +39,7 @@ MONSTERS = [
     ("Archive Guardian", {"": 16659}),          # NpcID.TFA_GUARDIAN
     ("Ezekiel", {"": 16652}),                   # NpcID.TFA_EZEKIEL
     ("Bork", {"": 16640}),                      # NpcID.TFA_BORK
-    ("Smorks", {"": 16641}),                    # NpcID.TFA_SMORK (page name "The Smorks")
+    ("The Smorks", {"": 16641}),                # NpcID.TFA_SMORK ("Smorks" lost its infobox, 2026-10-20)
     ("Dreadnoth the Jellied", {"": 16665}),     # NpcID.TFA_JELLY_BOSS
     ("Moia", {"": 16667}),                      # NpcID.TFA_MOIA
     ("Xarth", {"": 16684}),                     # NpcID.TFA_XARTH
@@ -89,13 +90,15 @@ def price_fields(item_id, tradeable):
         return None, "none", None, None, None, None
     p = latest_prices().get(str(item_id)) or {}
     high, low = p.get("high"), p.get("low")
+    guide = guide_price(item_id)
+    time.sleep(0.5)
+    if guide:
+        return guide, "geGuide", high, low, p.get("highTime"), p.get("lowTime")
     if high:
         return high, "latestHigh", high, low, p.get("highTime"), p.get("lowTime")
     if low:
         return low, "latestLow", high, low, p.get("highTime"), p.get("lowTime")
-    guide = guide_price(item_id)
-    time.sleep(0.5)
-    return (guide, "geGuide" if guide else "none", None, None, None, None)
+    return None, "none", None, None, None, None
 
 
 def wikitext(title):
@@ -107,11 +110,28 @@ def wikitext(title):
 
 
 def infobox(text, name):
-    m = re.search(r"\{\{Infobox " + name + r"\b(.*?)\n\}\}", text, re.S)
+    # Brace-count to the template's own close: editors end it on its own
+    # line or on the last field's ("|flatarmour=2}}", The Smorks 2026-10-20).
+    m = re.search(r"\{\{Infobox " + name + r"\b", text)
     if not m:
         return {}
+    depth, i = 0, m.start()
+    while i < len(text) - 1:
+        pair = text[i:i + 2]
+        if pair == "{{":
+            depth += 1
+            i += 2
+            continue
+        if pair == "}}":
+            depth -= 1
+            i += 2
+            if depth == 0:
+                break
+            continue
+        i += 1
+    body = text[m.end():i - 2]
     fields = {}
-    for k, v in re.findall(r"\|\s*([\w ]+?)\s*=\s*([^|\n]*)", m.group(1)):
+    for k, v in re.findall(r"\|\s*([\w ]+?)\s*=\s*([^|\n}]*)", body):
         v = re.sub(r"<!--.*?-->", "", v).strip()
         if v:
             fields[k.strip().lower()] = v
@@ -153,7 +173,10 @@ def monster_rows(page, ids):
         styles = [s.strip().capitalize() for s in re.sub(r"\[\[([^\]|]*\|)?([^\]]*)\]\]", r"\2",
                   versioned(fields, "attack style", n) or "").replace(" and ", ",").split(",") if s.strip()]
         weakness_type = (versioned(fields, "elementalweaknesstype", n) or "").lower()
-        attrs = [a.strip().lower() for a in (versioned(fields, "attributes", n) or "").split(",") if a.strip()]
+        # No cross-version fallback for attributes: Ocellus sets Demon on
+        # phases 1 and 3 and leaves phase 2 blank (2026-10-20).
+        own = fields.get("attributes%d" % n) if n else None
+        attrs = [a.strip().lower() for a in (own if own is not None else fields.get("attributes", "")).split(",") if a.strip()]
         rows.append({
             "id": ids[version], "name": name, "version": version,
             "image": name + ".png", "level": f("combat"), "speed": f("attack speed"),

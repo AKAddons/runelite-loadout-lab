@@ -133,7 +133,11 @@ verified against the official wiki calculator. When poison tiers of the
 same weapon tie on stats, the strongest venom wins the suggestion
 (dragon dagger p++ over plain, main hand and spec alike). When a Rada's
 blessing stat-ties with a god blessing you also own, Rada's rides: the
-teleports are the free edge.
+teleports are the free edge. Near-ties go to prayer and defence: a piece
+that gives up at most half a percent of the set's dps but carries more
+prayer bonus, then more defence, takes the slot (a fire cape over a
+Mythical cape that wins by 0.1%), never at the cost of the style's own
+damage bonus.
 
 ### Game-best ceiling comparison
 

@@ -112,6 +112,19 @@ class TfaStipulationsTest
 	}
 
 	@Test
+	@DisplayName("Ocellus is a demon in phases 1 and 3 only - the wiki leaves phase 2's attributes blank")
+	void ocellusDemonPhases()
+	{
+		for (MonsterStats m : tfa)
+		{
+			if (m.getName().equals("Ocellus"))
+			{
+				assertEquals(!"Phase 2".equals(m.getVersion()), m.hasAttribute("demon"), m.getVersion());
+			}
+		}
+	}
+
+	@Test
 	@DisplayName("Ocellus's third phase reads its own 5,250 hitpoints")
 	void ocellusThree()
 	{
