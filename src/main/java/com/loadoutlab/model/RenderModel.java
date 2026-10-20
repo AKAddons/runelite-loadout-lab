@@ -160,6 +160,10 @@ public final class RenderModel
 			{
 				Map<String, Object> node = styleNode(tool.style, r, riskKeptSlots, owned, simmed);
 				node.put("multiKind", tool.kind);
+				// The two ranged tools wear their own item icon on the strip
+				// (Andrew 2026-10-19); the barrage keeps the magic sprite.
+				node.put("styleItem", tool == MultiTool.CHINS ? MultiTool.CHIN_IDS[0]
+					: tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW : 0);
 				out.put(tool.key, node);
 			}
 		}

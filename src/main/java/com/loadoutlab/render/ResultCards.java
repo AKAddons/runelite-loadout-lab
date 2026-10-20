@@ -807,7 +807,15 @@ public class ResultCards
 				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 1, 2));
 			JLabel icon = new JLabel();
 			int sprite = styleNode == null ? -1 : (int) Model.num(styleNode, "styleSprite");
-			if (sprite > 0 && spriteManager != null)
+			int styleItem = Model.id(styleNode, "styleItem");
+			if (styleItem > 0 && itemManager != null)
+			{
+				AsyncBufferedImage img = itemManager.getImage(styleItem);
+				Runnable seat = () -> SwingUtilities.invokeLater(() -> icon.setIcon(Ui.icon(img, 16)));
+				seat.run();
+				img.onLoaded(seat);
+			}
+			else if (sprite > 0 && spriteManager != null)
 			{
 				spriteManager.getSpriteAsync(sprite, 0, img ->
 					SwingUtilities.invokeLater(() ->
