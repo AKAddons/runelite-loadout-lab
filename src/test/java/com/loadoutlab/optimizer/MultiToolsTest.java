@@ -117,10 +117,10 @@ class MultiToolsTest
 	}
 
 	@Test
-	@DisplayName("Graardor with the switch on ranks barrage, chins and the venator bow, each a per-target set")
-	void graardorHasThreeTools() throws Exception
+	@DisplayName("Greater Nechryaels with the switch on rank barrage, chins and the venator bow, each a per-target set")
+	void nechryaelsHaveThreeTools() throws Exception
 	{
-		Map<String, OptimizerService.StyleResult> tools = tools(compute("general graardor", kit(true, true, true), true));
+		Map<String, OptimizerService.StyleResult> tools = tools(compute("greater nechryael", kit(true, true, true), true));
 		assertNotNull(tools, "the multi tools ride the results");
 		assertEquals(3, tools.size());
 		OptimizerService.StyleResult barrage = tools.get(MultiTool.BARRAGE.key);
@@ -134,7 +134,7 @@ class MultiToolsTest
 	@DisplayName("a tool you do not own has no Yours side; the ceiling still shows it")
 	void unownedToolHasNoYours() throws Exception
 	{
-		Map<String, OptimizerService.StyleResult> tools = tools(compute("general graardor", kit(true, false, true), true));
+		Map<String, OptimizerService.StyleResult> tools = tools(compute("greater nechryael", kit(true, false, true), true));
 		assertNotNull(tools);
 		assertTrue(tools.get(MultiTool.VENATOR.key).owned.isEmpty(), "no venator bow, no Yours row");
 		assertNotNull(tools.get(MultiTool.VENATOR.key).overallBest);
@@ -150,10 +150,10 @@ class MultiToolsTest
 		owned.put(DRAGON_CLAWS, 1);
 		// At three the claws' four hits per 50% still edge three Powerstabs
 		// per 60%; at nine the stack is decisive.
-		OptimizerService.StyleResult atNine = tools(compute("general graardor", owned, true, 9)).get(MultiTool.CHINS.key);
+		OptimizerService.StyleResult atNine = tools(compute("greater nechryael", owned, true, 9)).get(MultiTool.CHINS.key);
 		assertNotNull(atNine.specWeapon, "a spec rides the chins row");
 		assertEquals(DRAGON_2H, atNine.specWeapon.getId(), "Powerstab hits the whole stack");
-		OptimizerService.StyleResult atOne = tools(compute("general graardor", owned, true, 1)).get(MultiTool.CHINS.key);
+		OptimizerService.StyleResult atOne = tools(compute("greater nechryael", owned, true, 1)).get(MultiTool.CHINS.key);
 		assertNotEquals(DRAGON_2H, atOne.specWeapon == null ? 0 : atOne.specWeapon.getId(), "one target: the claws win as ever");
 	}
 
@@ -161,7 +161,7 @@ class MultiToolsTest
 	@DisplayName("the switch off, or a mob outside the multi list, computes no tools")
 	void offOrNotMultiAble() throws Exception
 	{
-		assertNull(tools(compute("general graardor", kit(true, true, true), false)), "switch off");
+		assertNull(tools(compute("greater nechryael", kit(true, true, true), false)), "switch off");
 		assertNull(tools(compute("vorkath", kit(true, true, true), true)), "Vorkath is single-way");
 	}
 }

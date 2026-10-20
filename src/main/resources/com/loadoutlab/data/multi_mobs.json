@@ -1,6 +1,6 @@
 {
  "version": 1,
- "source": "wiki location tables, chisel varbit 4605 tiles, area pages, read 2026-10-19",
+ "source": "wiki location tables, chisel varbit 4605 tiles, area pages, read 2026-10-19; crowds only (3+ spawns at a multi location), 2026-10-19",
  "mobs": [
   {
    "name": "Abyssal demon",
@@ -13,16 +13,6 @@
     {
      "location": "Wilderness Slayer Cave",
      "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
-    }
-   ]
-  },
-  {
-   "name": "Acidic Araxyte",
-   "version": "",
-   "locations": [
-    {
-     "location": "Morytania Spider Cave",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -65,16 +55,6 @@
     {
      "location": "Wilderness Slayer Cave",
      "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Araxxor",
-   "version": "",
-   "locations": [
-    {
-     "location": "Morytania Spider Cave",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -211,35 +191,11 @@
    ]
   },
   {
-   "name": "Balfrug Kreeyath",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Zamorak Boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
    "name": "Bandit",
    "version": "Level 130",
    "locations": [
     {
      "location": "Bandit Camp (Wilderness)",
-     "source": "tiles"
-    },
-    {
-     "location": "Wilderness Slayer Cave",
-     "source": "page: the only multi-combat spot where the cannon can be used for some monsters"
-    }
-   ]
-  },
-  {
-   "name": "Big Wolf",
-   "version": "",
-   "locations": [
-    {
-     "location": "White Wolf Mountain",
      "source": "tiles"
     }
    ]
@@ -355,36 +311,6 @@
    ]
   },
   {
-   "name": "Chaos Elemental",
-   "version": "",
-   "locations": [
-    {
-     "location": "West of the Rogues' Castle",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Chaos Fanatic",
-   "version": "",
-   "locations": [
-    {
-     "location": "West of the Lava Maze",
-     "source": "Multicombat area list (surface)"
-    }
-   ]
-  },
-  {
-   "name": "Commander Zilyana",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Saradomin boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
    "name": "Cyclops (Catacombs of Kourend)",
    "version": "Level 56",
    "locations": [
@@ -474,48 +400,6 @@
     },
     {
      "location": "Waterbirth Island Dungeon (Sub Levels)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Dagannoth Prime",
-   "version": "",
-   "locations": [
-    {
-     "location": "Waterbirth Island Dungeon",
-     "source": "Multicombat area list"
-    },
-    {
-     "location": "Waterbirth Island Dungeon (Slayer lair)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Dagannoth Rex",
-   "version": "",
-   "locations": [
-    {
-     "location": "Waterbirth Island Dungeon",
-     "source": "Multicombat area list"
-    },
-    {
-     "location": "Waterbirth Island Dungeon (Slayer lair)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Dagannoth Supreme",
-   "version": "",
-   "locations": [
-    {
-     "location": "Waterbirth Island Dungeon",
-     "source": "Multicombat area list"
-    },
-    {
-     "location": "Waterbirth Island Dungeon (Slayer lair)",
      "source": "Multicombat area list"
     }
    ]
@@ -727,10 +611,6 @@
     {
      "location": "God Wars Dungeon",
      "source": "Multicombat area list"
-    },
-    {
-     "location": "Wilderness God Wars Dungeon",
-     "source": "page: the large cavern in which the followers fight is multi-way"
     }
    ]
   },
@@ -771,26 +651,6 @@
    ]
   },
   {
-   "name": "Flight Kilisa",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Armadyl boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Flockleader Geerin",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Armadyl boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
    "name": "Frenzied ice troll female",
    "version": "",
    "locations": [
@@ -827,26 +687,6 @@
     {
      "location": "Ice Troll Caves",
      "source": "page: multicombat"
-    }
-   ]
-  },
-  {
-   "name": "General Graardor",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Bandos boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Giant Mole",
-   "version": "",
-   "locations": [
-    {
-     "location": "Mole Hole (Under Falador Park)",
-     "source": "tiles"
     }
    ]
   },
@@ -1121,10 +961,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1135,10 +971,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1163,10 +995,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1177,10 +1005,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1191,10 +1015,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1205,10 +1025,6 @@
     {
      "location": "Fremennik Isles",
      "source": "tiles"
-    },
-    {
-     "location": "Ice Troll Caves",
-     "source": "page: multicombat"
     }
    ]
   },
@@ -1216,10 +1032,6 @@
    "name": "Ice warrior",
    "version": "",
    "locations": [
-    {
-     "location": "White Wolf Mountain",
-     "source": "tiles"
-    },
     {
      "location": "Ice Queen's Lair",
      "source": "tiles"
@@ -1236,16 +1048,6 @@
     },
     {
      "location": "Ice Path",
-     "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Iron dragon",
-   "version": "Catacombs of Kourend",
-   "locations": [
-    {
-     "location": "Catacombs of Kourend",
      "source": "tiles"
     }
    ]
@@ -1271,16 +1073,6 @@
    ]
   },
   {
-   "name": "K'ril Tsutsaroth",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Zamorak boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
    "name": "Kalphite Guardian",
    "version": "",
    "locations": [
@@ -1291,26 +1083,6 @@
     {
      "location": "Kalphite Cave (on Slayer task)",
      "source": "page: it is a multi-combat area"
-    }
-   ]
-  },
-  {
-   "name": "Kalphite Queen",
-   "version": "Airborne",
-   "locations": [
-    {
-     "location": "Kalphite Lair",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Kalphite Queen",
-   "version": "Crawling",
-   "locations": [
-    {
-     "location": "Kalphite Lair",
-     "source": "Multicombat area list"
     }
    ]
   },
@@ -1339,16 +1111,6 @@
    ]
   },
   {
-   "name": "Kree'arra",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Armadyl boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
    "name": "Lava dragon",
    "version": "",
    "locations": [
@@ -1362,14 +1124,6 @@
    "name": "Lesser demon",
    "version": "Level 94",
    "locations": [
-    {
-     "location": "Wizards' Tower - Cage on the top floor",
-     "source": "tiles"
-    },
-    {
-     "location": "Kingstown - Councillor Hughes' house",
-     "source": "tiles"
-    },
     {
      "location": "Charred Dungeon",
      "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
@@ -1392,14 +1146,6 @@
    "name": "Lesser demon",
    "version": "Level 94 (Wilderness Slayer Cave)",
    "locations": [
-    {
-     "location": "Wizards' Tower - Cage on the top floor",
-     "source": "tiles"
-    },
-    {
-     "location": "Kingstown - Councillor Hughes' house",
-     "source": "tiles"
-    },
     {
      "location": "Charred Dungeon",
      "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
@@ -1463,10 +1209,6 @@
     {
      "location": "Sophanem Dungeon (cavern level)",
      "source": "page: multicombat section"
-    },
-    {
-     "location": "Sophanem Dungeon (maze level)",
-     "source": "page: multicombat section"
     }
    ]
   },
@@ -1476,10 +1218,6 @@
    "locations": [
     {
      "location": "Sophanem Dungeon (cavern level)",
-     "source": "page: multicombat section"
-    },
-    {
-     "location": "Sophanem Dungeon (maze level)",
      "source": "page: multicombat section"
     }
    ]
@@ -1518,10 +1256,6 @@
     },
     {
      "location": "Marim gates",
-     "source": "tiles"
-    },
-    {
-     "location": "Marim (floor 1)",
      "source": "tiles"
     }
    ]
@@ -1583,10 +1317,6 @@
    "version": "level 108",
    "locations": [
     {
-     "location": "Arandar",
-     "source": "tiles"
-    },
-    {
      "location": "Mourner Tunnels",
      "source": "tiles"
     }
@@ -1627,10 +1357,6 @@
     {
      "location": "God Wars Dungeon",
      "source": "Multicombat area list"
-    },
-    {
-     "location": "Wilderness God Wars Dungeon",
-     "source": "page: the large cavern in which the followers fight is multi-way"
     }
    ]
   },
@@ -1641,10 +1367,6 @@
     {
      "location": "God Wars Dungeon",
      "source": "Multicombat area list"
-    },
-    {
-     "location": "Wilderness God Wars Dungeon",
-     "source": "page: the large cavern in which the followers fight is multi-way"
     }
    ]
   },
@@ -1653,22 +1375,8 @@
    "version": "Cabin Fever",
    "locations": [
     {
-     "location": "Pirates' Cove",
-     "source": "tiles"
-    },
-    {
      "location": "Port Piscarilius",
      "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Poison spider",
-   "version": "Level 64",
-   "locations": [
-    {
-     "location": "South of the Demonic Ruins",
-     "source": "Multicombat area list"
     }
    ]
   },
@@ -1701,15 +1409,7 @@
      "source": "Multicombat area list"
     },
     {
-     "location": "Rogues' Castle (floor 1)",
-     "source": "Multicombat area list"
-    },
-    {
      "location": "Rogues' Castle (floor 2)",
-     "source": "Multicombat area list"
-    },
-    {
-     "location": "Rogues' Castle (floor 3)",
      "source": "Multicombat area list"
     }
    ]
@@ -1741,52 +1441,8 @@
    "version": "Level 93",
    "locations": [
     {
-     "location": "Sophanem Dungeon (cavern level)",
-     "source": "page: multicombat section"
-    },
-    {
      "location": "Sophanem Dungeon (maze level)",
      "source": "page: multicombat section"
-    }
-   ]
-  },
-  {
-   "name": "Scorpia",
-   "version": "",
-   "locations": [
-    {
-     "location": "Cave in the Scorpion Pit (north-east Wilderness)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Sergeant Grimspike",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Bandos boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Sergeant Steelwill",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Bandos boss room)",
-     "source": "Multicombat area list"
-    }
-   ]
-  },
-  {
-   "name": "Sergeant Strongstack",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Bandos boss room)",
-     "source": "Multicombat area list"
     }
    ]
   },
@@ -1807,16 +1463,6 @@
     {
      "location": "Shadow Dungeon",
      "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Shadow spider",
-   "version": "",
-   "locations": [
-    {
-     "location": "Buccaneers' Laboratory",
-     "source": "page: the entire laboratory is a multicombat area"
     }
    ]
   },
@@ -1898,10 +1544,6 @@
    "name": "Skeleton Mage",
    "version": "Level 83",
    "locations": [
-    {
-     "location": "Charred Dungeon",
-     "source": "page: the entire dungeon barring the lava strykewyrms is a multicombat area"
-    },
     {
      "location": "Piscatoris Fishing Colony",
      "source": "tiles"
@@ -2189,16 +1831,6 @@
    ]
   },
   {
-   "name": "Steel dragon",
-   "version": "Level 274",
-   "locations": [
-    {
-     "location": "Catacombs of Kourend",
-     "source": "tiles"
-    }
-   ]
-  },
-  {
    "name": "Suqah",
    "version": "",
    "locations": [
@@ -2229,16 +1861,6 @@
    ]
   },
   {
-   "name": "Thermonuclear smoke devil",
-   "version": "",
-   "locations": [
-    {
-     "location": "Smoke Devil Dungeon",
-     "source": "tiles"
-    }
-   ]
-  },
-  {
    "name": "Thrower Troll",
    "version": "",
    "locations": [
@@ -2255,16 +1877,6 @@
     {
      "location": "Trollheim",
      "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Tstanon Karlak",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Zamorak boss room)",
-     "source": "Multicombat area list"
     }
    ]
   },
@@ -2333,16 +1945,6 @@
    ]
   },
   {
-   "name": "Venenatis",
-   "version": "",
-   "locations": [
-    {
-     "location": "Silk Chasm",
-     "source": "tiles"
-    }
-   ]
-  },
-  {
    "name": "Warped Jelly",
    "version": "",
    "locations": [
@@ -2359,10 +1961,6 @@
     {
      "location": "God Wars Dungeon",
      "source": "Multicombat area list"
-    },
-    {
-     "location": "Wilderness God Wars Dungeon",
-     "source": "page: the large cavern in which the followers fight is multi-way"
     }
    ]
   },
@@ -2373,10 +1971,6 @@
     {
      "location": "God Wars Dungeon",
      "source": "Multicombat area list"
-    },
-    {
-     "location": "Wilderness God Wars Dungeon",
-     "source": "page: the large cavern in which the followers fight is multi-way"
     }
    ]
   },
@@ -2399,16 +1993,6 @@
     {
      "location": "Stronghold of Security first level",
      "source": "tiles"
-    }
-   ]
-  },
-  {
-   "name": "Zakl'n Gritch",
-   "version": "",
-   "locations": [
-    {
-     "location": "God Wars Dungeon (Zamorak boss room)",
-     "source": "Multicombat area list"
     }
    ]
   },

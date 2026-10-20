@@ -22,7 +22,7 @@ it is the Deadman map and marks the Catacombs single.
 
 ## Inclusion rule
 
-- At least one location decides multi.
+- At least one location decides multi, and that location must hold a crowd: three or more spawns in the wiki table (Andrew 2026-10-19: a boss standing alone in a multi area has no multi capability; the GWD generals and their bodyguards, the Dagannoth Kings, the Kalphite Queen, the Giant Mole and the wilderness bosses drop out on this rule).
 - Combat level 50 and up (93 lower-level entries dropped: cows, chickens, bats, rats, goblins and the like).
 - No quest-only variants (Temple Trekking, Vault of War, Melzar's Maze, Zemouregal's Base and Fort, The Grand Tree, The Scar).
 - No instanced boss fights even when the lobby is multi (Abyssal Sire, Kraken, Zalcano, Bryophyta, Obor, Scurrius, Skotizo, Sarachnis, Hespori, Mimic, Jad, Zuk, Damien Leucurte).
@@ -37,16 +37,14 @@ it is the Deadman map and marks the Catacombs single.
 - Jormungand's Prison: the dagannoth are multi, the basilisks single (page).
 - Smoke Dungeon: only the western dust devil area is multi (page).
 
-## Included (181 entries, 125 names)
+## Included (151 entries, 96 names)
 
 | Monster | Version | Locations |
 |---|---|---|
 | Abyssal demon | - | Catacombs of Kourend; Wilderness Slayer Cave (page) |
-| Acidic Araxyte | - | Morytania Spider Cave (page) |
 | Ammonite Crab | - | Mushroom Forest; Fossil Island Volcano |
 | Ankou | Level 95 | Catacombs of Kourend; Wilderness Slayer Cave |
 | Ankou | Level 98 | Catacombs of Kourend; Wilderness Slayer Cave |
-| Araxxor | - | Morytania Spider Cave (page) |
 | Araxyte | Level 146 | Morytania Spider Cave (page); Morytania Spider Cave (task-only area) (page) |
 | Araxyte | Level 96 | Morytania Spider Cave (page); Morytania Spider Cave (task-only area) (page) |
 | Aviansie | Level 131 | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
@@ -57,9 +55,7 @@ it is the Deadman map and marks the Catacombs single.
 | Aviansie | Level 97 (2) | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
 | Baby black dragon | Myths' Guild | Charred Dungeon (page) |
 | Baby black dragon | Normal | Charred Dungeon (page) |
-| Balfrug Kreeyath | - | God Wars Dungeon (Zamorak Boss room) (page) |
-| Bandit | Level 130 | Bandit Camp (Wilderness); Wilderness Slayer Cave (page) |
-| Big Wolf | - | White Wolf Mountain |
+| Bandit | Level 130 | Bandit Camp (Wilderness) |
 | Black demon | Level 178 | Catacombs of Kourend; Charred Dungeon (page); Wilderness Slayer Cave |
 | Black demon | Level 184 | Catacombs of Kourend; Charred Dungeon (page); Wilderness Slayer Cave |
 | Black demon | Level 188 | Catacombs of Kourend; Charred Dungeon (page); Wilderness Slayer Cave |
@@ -67,9 +63,6 @@ it is the Deadman map and marks the Catacombs single.
 | Black dragon | Level 247 | Charred Dungeon (page); Wilderness Slayer Cave |
 | Bloodveld | - | God Wars Dungeon (page); Meiyerditch Laboratories; Wilderness God Wars Dungeon (page) |
 | Bronze dragon | Catacombs of Kourend | Catacombs of Kourend |
-| Chaos Elemental | - | West of the Rogues' Castle (page) |
-| Chaos Fanatic | - | West of the Lava Maze (page) |
-| Commander Zilyana | - | God Wars Dungeon (Saradomin boss room) (page) |
 | Cyclops (Catacombs of Kourend) | Level 56 | Catacombs of Kourend |
 | Cyclops (Catacombs of Kourend) | Level 76 | Catacombs of Kourend |
 | Cyclops (God Wars Dungeon) | - | God Wars Dungeon (page) |
@@ -77,9 +70,6 @@ it is the Deadman map and marks the Catacombs single.
 | Dagannoth | Level 92 (1) | Jormungand's Prison; Catacombs of Kourend; Lighthouse |
 | Dagannoth (Waterbirth Island) | Level 88 | Waterbirth Island Dungeon (Area before Dagannoth Kings) (page); Waterbirth Island Dungeon (Sub Levels) (page) |
 | Dagannoth (Waterbirth Island) | Level 90 | Waterbirth Island Dungeon (Area before Dagannoth Kings) (page); Waterbirth Island Dungeon (Sub Levels) (page) |
-| Dagannoth Prime | - | Waterbirth Island Dungeon (page); Waterbirth Island Dungeon (Slayer lair) (page) |
-| Dagannoth Rex | - | Waterbirth Island Dungeon (page); Waterbirth Island Dungeon (Slayer lair) (page) |
-| Dagannoth Supreme | - | Waterbirth Island Dungeon (page); Waterbirth Island Dungeon (Slayer lair) (page) |
 | Dagannoth fledgeling | - | Waterbirth Island Dungeon (page) |
 | Dark warrior | Level 145 | Dark Warriors' Fortress (page); Dark Warriors' Fortress (floor 1) (page); Woods between Lovakengj and Arceuus |
 | Dark warrior | Level 51 | Dark Warriors' Fortress (page); Dark Warriors' Fortress (floor 1) (page); Woods between Lovakengj and Arceuus |
@@ -94,17 +84,13 @@ it is the Deadman map and marks the Catacombs single.
 | Elder Chaos druid | - | Chaos Temple (Wilderness) |
 | Ent | Wilderness | North of Chaos Temple (Wilderness); Woodcutting Guild Ent Dungeon (page) |
 | Ent | Woodcutting Guild | North of Chaos Temple (Wilderness); Woodcutting Guild Ent Dungeon (page) |
-| Feral Vampyre | Level 77 (God Wars Dungeon) | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
+| Feral Vampyre | Level 77 (God Wars Dungeon) | God Wars Dungeon (page) |
 | Fire giant | Level 104 | Catacombs of Kourend; Charred Dungeon (page); Smoke Dungeon (page) |
 | Fire giant | Level 109 | Catacombs of Kourend; Charred Dungeon (page); Smoke Dungeon (page) |
-| Flight Kilisa | - | God Wars Dungeon (Armadyl boss room) (page) |
-| Flockleader Geerin | - | God Wars Dungeon (Armadyl boss room) (page) |
 | Frenzied ice troll female | - | Ice Troll Caves (page) |
 | Frenzied ice troll grunt | - | Ice Troll Caves (page) |
 | Frenzied ice troll male | - | Ice Troll Caves (page) |
 | Frenzied ice troll runt | - | Ice Troll Caves (page) |
-| General Graardor | - | God Wars Dungeon (Bandos boss room) (page) |
-| Giant Mole | - | Mole Hole (Under Falador Park) |
 | Giant Rock Crab | 2 | Waterbirth Island Dungeon sublevel 2; Waterbirth Island Dungeon sublevel 3; Tonali Cavern (page) |
 | Greater Nechryael | - | Catacombs of Kourend; Wilderness Slayer Cave (page) |
 | Greater demon | Level 100 | Wilderness near Demonic Ruins; Wilderness Slayer Cave; Catacombs of Kourend |
@@ -121,65 +107,54 @@ it is the Deadman map and marks the Catacombs single.
 | Ice troll | Level 121 | Trollweiss Dungeon (page) |
 | Ice troll | Level 123 | Trollweiss Dungeon (page) |
 | Ice troll | Level 124 | Trollweiss Dungeon (page) |
-| Ice troll female | Variant 1 | Fremennik Isles; Ice Troll Caves (page) |
-| Ice troll female | Variant 2 | Fremennik Isles; Ice Troll Caves (page) |
+| Ice troll female | Variant 1 | Fremennik Isles |
+| Ice troll female | Variant 2 | Fremennik Isles |
 | Ice troll grunt | - | Fremennik Isles; Ice Troll Caves (page) |
-| Ice troll male | Variant 1 | Fremennik Isles; Ice Troll Caves (page) |
-| Ice troll male | Variant 2 | Fremennik Isles; Ice Troll Caves (page) |
-| Ice troll runt | Variant 1 | Fremennik Isles; Ice Troll Caves (page) |
-| Ice troll runt | Variant 2 | Fremennik Isles; Ice Troll Caves (page) |
-| Ice warrior | - | White Wolf Mountain; Ice Queen's Lair |
+| Ice troll male | Variant 1 | Fremennik Isles |
+| Ice troll male | Variant 2 | Fremennik Isles |
+| Ice troll runt | Variant 1 | Fremennik Isles |
+| Ice troll runt | Variant 2 | Fremennik Isles |
+| Ice warrior | - | Ice Queen's Lair |
 | Ice wolf | - | Settlement Ruins; Ice Path |
-| Iron dragon | Catacombs of Kourend | Catacombs of Kourend |
 | Jelly | - | Wilderness Slayer Cave (page) |
 | Jungle Wolf | - | Kharazi Jungle (page) |
-| K'ril Tsutsaroth | - | God Wars Dungeon (Zamorak boss room) (page) |
 | Kalphite Guardian | - | Kalphite Lair (page); Kalphite Cave (on Slayer task) (page) |
-| Kalphite Queen | Airborne | Kalphite Lair (page) |
-| Kalphite Queen | Crawling | Kalphite Lair (page) |
 | Kalphite Soldier | - | Kalphite Lair (page); Kalphite Cave (on Slayer task) (page) |
 | King Sand Crab | - | Catacombs of Kourend |
-| Kree'arra | - | God Wars Dungeon (Armadyl boss room) (page) |
 | Lava dragon | - | Lava Dragon Isle (page) |
-| Lesser demon | Level 94 | Wizards' Tower - Cage on the top floor; Kingstown - Councillor Hughes' house; Charred Dungeon (page); Wilderness - King Black Dragon Lair entrance; Wilderness Slayer Cave (page); Catacombs of Kourend |
-| Lesser demon | Level 94 (Wilderness Slayer Cave) | Wizards' Tower - Cage on the top floor; Kingstown - Councillor Hughes' house; Charred Dungeon (page); Wilderness - King Black Dragon Lair entrance; Wilderness Slayer Cave (page); Catacombs of Kourend |
+| Lesser demon | Level 94 | Charred Dungeon (page); Wilderness - King Black Dragon Lair entrance; Wilderness Slayer Cave (page); Catacombs of Kourend |
+| Lesser demon | Level 94 (Wilderness Slayer Cave) | Charred Dungeon (page); Wilderness - King Black Dragon Lair entrance; Wilderness Slayer Cave (page); Catacombs of Kourend |
 | Lizardman | Level 53 | Shayziens' Wall; Lizardman Canyon, east side |
 | Lizardman | Level 62 | Shayziens' Wall; Lizardman Canyon, east side |
 | Lizardman brute | - | Shayzien's Wall |
-| Locust rider | Lancer | Sophanem Dungeon (cavern level) (page); Sophanem Dungeon (maze level) (page) |
-| Locust rider | Ranger | Sophanem Dungeon (cavern level) (page); Sophanem Dungeon (maze level) (page) |
+| Locust rider | Lancer | Sophanem Dungeon (cavern level) (page) |
+| Locust rider | Ranger | Sophanem Dungeon (cavern level) (page) |
 | Mammoth | - | South-east of Ferox Enclave |
 | Maniacal monkey | - | Kruk's Dungeon (Upper Level); Kruk's Dungeon (Lower Level) |
-| Monkey Archer | - | Marim; Marim gates; Marim (floor 1) |
+| Monkey Archer | - | Marim; Marim gates |
 | Monkey Guard | - | Temple of Marimbo; Temple of Marimbo (floor 1) |
 | Monkey Zombie | Level 129 | Ape Atoll Dungeon; Temple of Marimbo Dungeon |
 | Monkey Zombie | Level 98 | Ape Atoll Dungeon; Temple of Marimbo Dungeon |
 | Mountain troll | Level 69 | South of Mount Quidamortem |
-| Mourner | level 108 | Arandar; Mourner Tunnels |
+| Mourner | level 108 | Mourner Tunnels |
 | Mutated Bloodveld | - | Buccaneers' Laboratory (page); Catacombs of Kourend; Meiyerditch Laboratories |
 | Nechryael | - | Charred Dungeon (page) |
-| Ogre | GWD | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
-| Ogre | Level 63 | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
-| Pirate | Cabin Fever | Pirates' Cove; Port Piscarilius |
-| Poison spider | Level 64 | South of the Demonic Ruins (page) |
+| Ogre | GWD | God Wars Dungeon (page) |
+| Ogre | Level 63 | God Wars Dungeon (page) |
+| Pirate | Cabin Fever | Port Piscarilius |
 | Red dragon | - | Charred Dungeon (page) |
 | Rock Crab | - | North of Rellekka |
-| Rogue | Level 135 | Rogues' Castle (floor 0) (page); Rogues' Castle (floor 1) (page); Rogues' Castle (floor 2) (page); Rogues' Castle (floor 3) (page) |
+| Rogue | Level 135 | Rogues' Castle (floor 0) (page); Rogues' Castle (floor 2) (page) |
 | Sand Crab | - | Crabclaw Caves; Crabclaw Isle; East of the Hosidius vinery; Hosidius - southern coast |
-| Scarab Mage | Level 93 | Sophanem Dungeon (cavern level) (page); Sophanem Dungeon (maze level) (page) |
-| Scorpia | - | Cave in the Scorpion Pit (north-east Wilderness) (page) |
-| Sergeant Grimspike | - | God Wars Dungeon (Bandos boss room) (page) |
-| Sergeant Steelwill | - | God Wars Dungeon (Bandos boss room) (page) |
-| Sergeant Strongstack | - | God Wars Dungeon (Bandos boss room) (page) |
+| Scarab Mage | Level 93 | Sophanem Dungeon (maze level) (page) |
 | Shade | Catacombs of Kourend | Catacombs of Kourend |
 | Shadow Hound | - | Shadow Dungeon |
-| Shadow spider | - | Buccaneers' Laboratory (page) |
 | Skeleton (Ape Atoll) | - | Ape Atoll Dungeon |
 | Skeleton (Lucien's camp) | - | Lucien's camp |
 | Skeleton (Shayzien Crypts) | Magic | Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page); Shayzien Crypts - lower level (page) |
 | Skeleton (Shayzien Crypts) | Melee | Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page); Shayzien Crypts - lower level (page) |
 | Skeleton (Shayzien Crypts) | Range | Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page); Shayzien Crypts - lower level (page) |
-| Skeleton Mage | Level 83 | Charred Dungeon (page); Piscatoris Fishing Colony |
+| Skeleton Mage | Level 83 | Piscatoris Fishing Colony |
 | Smoke devil | - | Smoke Devil Dungeon |
 | Spiritual mage | Armadyl | God Wars Dungeon; God Wars Dungeon - Ancient Prison (page); Wilderness God Wars Dungeon |
 | Spiritual mage | Bandos | God Wars Dungeon; God Wars Dungeon - Ancient Prison (page); Wilderness God Wars Dungeon |
@@ -196,32 +171,62 @@ it is the Deadman map and marks the Catacombs single.
 | Spiritual warrior | Saradomin | God Wars Dungeon; God Wars Dungeon - Ancient Prison (page); Wilderness God Wars Dungeon |
 | Spiritual warrior | Zamorak | God Wars Dungeon; God Wars Dungeon - Ancient Prison (page); Wilderness God Wars Dungeon |
 | Spiritual warrior | Zaros | God Wars Dungeon; God Wars Dungeon - Ancient Prison (page); Wilderness God Wars Dungeon |
-| Steel dragon | Level 274 | Catacombs of Kourend |
 | Suqah | - | North Lunar Isle |
 | Swamp Crab | - | Haunted Woods |
 | Temple Spider | - | Forthos Dungeon |
-| Thermonuclear smoke devil | - | Smoke Devil Dungeon |
 | Thrower Troll | - | Death Plateau |
 | Thrower troll (Trollheim) | - | Trollheim |
-| Tstanon Karlak | - | God Wars Dungeon (Zamorak boss room) (page) |
 | Twisted Banshee | - | Catacombs of Kourend |
 | TzHaar-Hur | - | Mor Ul Rek |
 | TzHaar-Ket | Level 149 | Mor Ul Rek |
 | TzHaar-Ket | Level 221 | Mor Ul Rek |
 | TzHaar-Mej | - | Mor Ul Rek |
 | TzHaar-Xil | - | Mor Ul Rek (Ranged); Mor Ul Rek (Melee) |
-| Venenatis | - | Silk Chasm |
 | Warped Jelly | - | Catacombs of Kourend |
-| Werewolf | Alexis | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
-| Werewolf | God Wars Dungeon (1) | God Wars Dungeon (page); Wilderness God Wars Dungeon (page) |
+| Werewolf | Alexis | God Wars Dungeon (page) |
+| Werewolf | God Wars Dungeon (1) | God Wars Dungeon (page) |
 | Wolf | Level 64 | Wilderness, south-east of the Deserted Keep; White Wolf Mountain; South of Forthos Dungeon, near the saltpetre mines; Stronghold of Security first level |
-| Zakl'n Gritch | - | God Wars Dungeon (Zamorak boss room) (page) |
 | Zombie (Kourend) | Level 56 | Woods between Lovakengj and Arceuus |
 | Zombie (Kourend) | Level 70 | Woods between Lovakengj and Arceuus |
 | Zombie (Kourend) | Level 76 | Woods between Lovakengj and Arceuus |
 | Zombie (Shayzien Crypts) | Magic | Shayzien Crypts - lower level (page); Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page) |
 | Zombie (Shayzien Crypts) | Melee | Shayzien Crypts - lower level (page); Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page) |
 | Zombie (Shayzien Crypts) | Range | Shayzien Crypts - lower level (page); Shayzien Crypts - upper level (page); Shayzien Crypts - middle level (page) |
+
+## Lone spawns in multi areas (out on the crowd rule)
+
+Multi-area mobs whose every multi location has fewer than three spawns; the number is the spawns the wiki table lists.
+
+- Acidic Araxyte: Morytania Spider Cave (0)
+- Araxxor: Morytania Spider Cave (1)
+- Balfrug Kreeyath: God Wars Dungeon (Zamorak Boss room) (1)
+- Big Wolf: White Wolf Mountain (1)
+- Chaos Elemental: West of the Rogues' Castle (1)
+- Chaos Fanatic: West of the Lava Maze (1)
+- Commander Zilyana: God Wars Dungeon (Saradomin boss room) (0)
+- Dagannoth Prime: Waterbirth Island Dungeon (1); Waterbirth Island Dungeon (Slayer lair) (1)
+- Dagannoth Rex: Waterbirth Island Dungeon (1); Waterbirth Island Dungeon (Slayer lair) (1)
+- Dagannoth Supreme: Waterbirth Island Dungeon (1); Waterbirth Island Dungeon (Slayer lair) (1)
+- Flight Kilisa: God Wars Dungeon (Armadyl boss room) (1)
+- Flockleader Geerin: God Wars Dungeon (Armadyl boss room) (1)
+- General Graardor: God Wars Dungeon (Bandos boss room) (1)
+- Giant Mole: Mole Hole (Under Falador Park) (1)
+- Iron dragon [Catacombs of Kourend]: Catacombs of Kourend (2)
+- K'ril Tsutsaroth: God Wars Dungeon (Zamorak boss room) (1)
+- Kalphite Queen [Airborne]: Kalphite Lair (1)
+- Kalphite Queen [Crawling]: Kalphite Lair (1)
+- Kree'arra: God Wars Dungeon (Armadyl boss room) (1)
+- Poison spider [Level 64]: South of the Demonic Ruins (0)
+- Scorpia: Cave in the Scorpion Pit (north-east Wilderness) (1)
+- Sergeant Grimspike: God Wars Dungeon (Bandos boss room) (1)
+- Sergeant Steelwill: God Wars Dungeon (Bandos boss room) (1)
+- Sergeant Strongstack: God Wars Dungeon (Bandos boss room) (1)
+- Shadow spider: Buccaneers' Laboratory (2)
+- Steel dragon [Level 274]: Catacombs of Kourend (2)
+- Thermonuclear smoke devil: Smoke Devil Dungeon (1)
+- Tstanon Karlak: God Wars Dungeon (Zamorak boss room) (1)
+- Venenatis: Silk Chasm (1)
+- Zakl'n Gritch: God Wars Dungeon (Zamorak boss room) (1)
 
 ## Judgment calls and unknowns for review
 

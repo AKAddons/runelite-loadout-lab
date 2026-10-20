@@ -261,9 +261,10 @@ melee and ranged cards, powered staves and Arceuus spells keep the fold.
 
 ### Multi-combat card
 
-A mob that is fought in a multi-combat area (multi_mobs.json, curated
-from the wiki - the Catacombs, the Wilderness Slayer Cave, the God Wars
-Dungeon and friends) puts a Single chip among the search chips. Click
+A mob fought as a crowd in a multi-combat area (multi_mobs.json, curated
+from the wiki - the Catacombs, the Wilderness Slayer Cave, the Smoke Devil
+Dungeon and friends; a boss standing alone in a multi area does not
+count) puts a Single chip among the search chips. Click
 it to cycle Single, Multi x3, Multi x9. On Multi the three style tabs
 give way to the three multi tools, ranked: the best burst or barrage
 set (Ice Barrage, or Ice Burst under 94 Magic), the best chinchompa set

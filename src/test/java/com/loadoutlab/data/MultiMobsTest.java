@@ -47,6 +47,22 @@ class MultiMobsTest
 	}
 
 	@Test
+	@DisplayName("crowds only: the Catacombs nechryaels are listed, a boss standing alone in a multi area is not (Andrew 2026-10-19)")
+	void crowdsNotBosses()
+	{
+		java.util.Set<String> names = new HashSet<>();
+		for (JsonElement e : mobs)
+		{
+			names.add(e.getAsJsonObject().get("name").getAsString());
+		}
+		assertTrue(names.contains("Greater Nechryael"));
+		assertTrue(names.contains("Dust devil"));
+		assertFalse(names.contains("General Graardor"), "one spawn in the Bandos room");
+		assertFalse(names.contains("Kalphite Queen"));
+		assertFalse(names.contains("Dagannoth Rex"));
+	}
+
+	@Test
 	@DisplayName("every entry resolves to exactly one corpus monster by name and version, and carries a location")
 	void entriesResolve()
 	{
