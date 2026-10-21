@@ -143,12 +143,15 @@ public class RenderSurface
 	 * DisplayOptions bridge and nothing replaced it. */
 	private BooleanSupplier animationGate = () -> true;
 	private BooleanSupplier wildyRiskGate = () -> true;
+	/** The "PvP world chip" setting: show it on every card. */
+	private BooleanSupplier pvpChipGate = () -> false;
 
 	public void setDisplayGates(BooleanSupplier animation,
-		BooleanSupplier wildyRisk)
+		BooleanSupplier wildyRisk, BooleanSupplier pvpChip)
 	{
 		this.animationGate = animation;
 		this.wildyRiskGate = wildyRisk;
+		this.pvpChipGate = pvpChip;
 	}
 	private JPanel root;
 	private JPanel matchesBox;
@@ -969,6 +972,18 @@ public class RenderSurface
 				chipRow.add(paramChip("Wildy", "inWilderness",
 					Model.flag(params, "inWilderness")));
 			}
+			// PvP world (Ragnarrok, 2026-10-20): any mob, cycles off / PvP /
+			// High Risk. Shown on a PvP world, while on, or when the
+			// settings ask for it (planning from a normal world).
+			int pvp = Model.id(params, "pvpWorld");
+			if (pvp > 0 || Model.flag(params, "pvpWorldHere") || pvpChipGate.getAsBoolean())
+			{
+				chipRow.add(pill(pvp >= 2 ? "PvP: High Risk" : "PvP", pvp > 0, true,
+					"PvP world: keeps 3 items (4 with Protect Item), High Risk"
+						+ " keeps none - cycles off / PvP / High Risk", () ->
+						commands.send("set-param",
+							Map.of("param", "pvpWorld", "value", (pvp + 1) % 3))));
+			}
 			// Cannons ride the chips section (Andrew, v2) for the LENSED
 			// ship-eligible mob; the per-cannon pickers live on the card.
 			if (lensNaval)
@@ -1058,8 +1073,9 @@ public class RenderSurface
 				args.put("value", Gp.parse(text));
 				commands.send("set-param", args);
 			}));
-			if (anyWilderness && wildyRiskGate.getAsBoolean()
-				&& (allExclusive || Model.flag(params, "inWilderness")))
+			int pvpMode = Model.id(params, "pvpWorld");
+			if (wildyRiskGate.getAsBoolean() && (pvpMode > 0
+				|| anyWilderness && (allExclusive || Model.flag(params, "inWilderness"))))
 			{
 				int riskGp = Model.id(params, "riskBudgetGp");
 				// The CAP FLAG decides, never the number: the engine's
@@ -1071,7 +1087,9 @@ public class RenderSurface
 					capped ? "Risk " + Gp.format(riskGp) : "Risk cap",
 					capped,
 					"Wilderness risk cap in gp (k/m/b); empty = uncapped."
-						+ " Caps tradeables carried to 3 (4 with Protect Item)",
+						+ " Caps tradeables carried to 3 (4 with Protect Item)"
+						+ (pvpMode > 0 ? ". PvP world: untradeable fees are"
+							+ " priced at the deep-Wilderness rate (an upper bound)" : ""),
 					capped ? Gp.format(riskGp) : "", text ->
 				{
 					// Empty = clear: null falls back to uncapped.
@@ -1080,8 +1098,12 @@ public class RenderSurface
 					args.put("value", text.isEmpty() ? null : Gp.parse(text));
 					commands.send("set-param", args);
 				}));
-				chipRow.add(paramChip("Protect item", "protectItem",
-					Model.flag(params, "protectItem")));
+				// High Risk worlds disable Protect Item (wiki).
+				if (pvpMode < 2)
+				{
+					chipRow.add(paramChip("Protect item", "protectItem",
+						Model.flag(params, "protectItem")));
+				}
 			}
 			addMobButton = chip(new JButton("+ Mob"),
 				"Add another monster to this result (shared trip plan)", () ->

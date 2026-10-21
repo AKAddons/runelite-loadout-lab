@@ -1791,6 +1791,15 @@ public class CommandEngine
 		}
 	}
 
+	/** A death here goes to a player: the Wilderness, or any mob on a
+	 * PvP world (Ragnarrok, 2026-10-20) - locked pouch, blighted food,
+	 * the carried kit's fates. Not the wilderness weapon buff. */
+	private boolean pvpDeathTrip()
+	{
+		return flag("inWilderness")
+			|| ((Number) state.paramsNode().get("pvpWorld")).intValue() > 0;
+	}
+
 	private boolean membersFlag(String key)
 	{
 		Map<String, Object> params = state.paramsNode();
@@ -1935,8 +1944,8 @@ public class CommandEngine
 			exclusive |= WildernessMonsters.isExclusive(m);
 		}
 		boolean wildy = exclusive || flag("inWilderness");
-		int keptSlots = wildy
-			? (flag("protectItem") ? 4 : 3) : -1;
+		int pvp = ((Number) state.paramsNode().get("pvpWorld")).intValue();
+		int keptSlots = PvpRisk.keptSlots(wildy ? Math.max(1, pvp) : pvp, flag("protectItem"));
 		Set<Integer> simmedIds = new HashSet<>();
 		Supplier<Map<String, Object>> countSupplierForFlags = counts;
 		if (countSupplierForFlags != null)
@@ -2441,8 +2450,7 @@ public class CommandEngine
 			}
 			TripSupplies.Option pick =
 				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
-					? TripSupplies.detectBest(category, owns,
-						flag("inWilderness"))
+					? TripSupplies.detectBest(category, owns, pvpDeathTrip())
 					: TripSupplies.option(category, mode);
 			if (pick == null)
 			{
@@ -2615,8 +2623,7 @@ public class CommandEngine
 					IntPredicate owns = ownedCheck;
 					if (!utility.isEmpty() && owns != null)
 					{
-						boolean wildyTrip = Boolean.TRUE.equals(
-							state.paramsNode().get("inWilderness"));
+						boolean wildyTrip = pvpDeathTrip();
 						int pouch;
 						if (wildyTrip)
 						{

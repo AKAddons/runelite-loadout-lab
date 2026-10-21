@@ -74,6 +74,22 @@ public final class PvpRisk
 	{
 	}
 
+	/** The PvP mode a world type implies: 0 off, 1 PvP world, 2 High
+	 * Risk (wiki: all items lost there, Protect Item unusable). */
+	public static int worldMode(boolean pvpWorld, boolean highRisk)
+	{
+		return highRisk ? 2 : pvpWorld ? 1 : 0;
+	}
+
+	/** Kept slots on a death under a PvP mode: 3, 4 with Protect Item,
+	 * none on High Risk; -1 (unconstrained) when the mode is off. A
+	 * PvP-world death outside the Wilderness keeps the same 3 (wiki:
+	 * Items Kept on Death, the under-20 rules). */
+	public static int keptSlots(int pvpMode, boolean protectItem)
+	{
+		return pvpMode <= 0 ? -1 : pvpMode >= 2 ? 0 : protectItem ? 4 : 3;
+	}
+
 	/**
 	 * The amulet of avarice keeps its wearer PERMANENTLY SKULLED: the
 	 * default 3-item protection is gone (1 item with Protect Item). Maps

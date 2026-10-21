@@ -110,6 +110,19 @@ public interface LoadoutLabConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showPvpWorldChip",
+		name = "PvP world chip",
+		description = "Show the PvP world chip on every card, to plan a PvP-world trip"
+			+ " from a normal world. Always shown on a PvP world.",
+		section = controls,
+		position = 6
+	)
+	default boolean showPvpWorldChip()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "showDegradableChip",
 		name = "Degradable chip",
 		description = "Show the Degrades chip on cards.",

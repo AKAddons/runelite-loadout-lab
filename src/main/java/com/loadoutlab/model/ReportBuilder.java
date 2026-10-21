@@ -225,6 +225,12 @@ final class ReportBuilder
 		sb.append("Parameters:\n");
 		sb.append("  On task: ").append(yesNo(params.get("onTask")));
 		sb.append("; Wilderness: ").append(yesNo(params.get("inWilderness")));
+		Object pvpParam = params.get("pvpWorld");
+		int pvp = pvpParam instanceof Number ? ((Number) pvpParam).intValue() : 0;
+		if (pvp > 0)
+		{
+			sb.append("; PvP world: ").append(pvp >= 2 ? "High Risk" : "yes");
+		}
 		sb.append("; Spec weapon: ").append(yesNo(params.get("specWeapon")));
 		Object af = params.get("antifireMode");
 		int afMode = af instanceof Number ? ((Number) af).intValue() : 0;
@@ -238,7 +244,7 @@ final class ReportBuilder
 		sb.append("; Spellbook lock: ").append(lunarCamp ? "lunar (Cure Me)"
 			: lock == null || String.valueOf(lock).isEmpty() ? "auto" : lock);
 		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp"));
-		if (Boolean.TRUE.equals(params.get("inWilderness")))
+		if (Boolean.TRUE.equals(params.get("inWilderness")) || pvp > 0)
 		{
 			Object cap = params.get("riskBudgetGp");
 			int capGp = cap instanceof Number ? ((Number) cap).intValue() : -1;

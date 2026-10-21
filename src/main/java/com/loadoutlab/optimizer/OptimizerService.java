@@ -3445,8 +3445,10 @@ public class OptimizerService
 		BoostProfile userBoost = boostPickFor(ctx, style);
 		BoostProfile boost = userBoost != null ? userBoost
 			: supplied != null ? supplied
+			// A risk-capped trip (kept slots >= 0) dies to a player: the
+			// Wilderness or a PvP world - the page only constrains there.
 			: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
-				ctx.inWilderness && ctx.maxTradeables >= 0);
+				ctx.maxTradeables >= 0);
 		PlayerLevels levels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 		String label = joinAssumes(prayerLabelFor(ctx, style, levels, ctx.unlocks),
 			boost == BoostProfile.NONE ? null : boost.toString());

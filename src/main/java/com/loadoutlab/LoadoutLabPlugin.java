@@ -169,6 +169,7 @@ public class LoadoutLabPlugin extends Plugin
 	/** Last published world type, so the F2P filter is forced only on a flip
 	 * and a manual untick survives a loading zone. */
 	private Boolean lastF2pWorld;
+	private Integer lastPvpWorld;
 	private PrayerUnlocks prayerUnlocks;
 	/** Account the snapshot above was taken for (-1 = none/hashless). */
 	private long snapshotAccount = -1;
@@ -594,7 +595,8 @@ public class LoadoutLabPlugin extends Plugin
 				// Two display settings that described behaviour they did
 				// not control until 2026-08-22.
 				internalSurface.setDisplayGates(
-					() -> config.loadingAnimation(), () -> config.showWildyRisk());
+					() -> config.loadingAnimation(), () -> config.showWildyRisk(),
+					() -> config.showPvpWorldChip());
 				companionLink.setPageListener(() ->
 				{
 					RenderSurface surface = internalSurface;
@@ -861,7 +863,8 @@ public class LoadoutLabPlugin extends Plugin
 	 * old PANEL_CONFIG_KEYS listed 42 keys for a panel that no longer
 	 * exists and nothing ever read it (audit 2026-08-22). */
 	private static final Set<String> RENDER_KEYS =
-		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip");
+		Set.of("loadingAnimation", "showWildyRisk", "fetchMonsterIcons", "showTripBreakdown", "showDegradableChip",
+			"showPvpWorldChip");
 
 	/** Client-thread staging push: the castability state the panel's
 	 * chips read - BOOSTED magic (field call 2026-07-21: castability
@@ -979,6 +982,13 @@ public class LoadoutLabPlugin extends Plugin
 			boolean f2p = onF2pWorld();
 			boolean flipped = lastF2pWorld == null || lastF2pWorld != f2p;
 			lastF2pWorld = f2p;
+			// PvP / High Risk worlds seed the PvP mode the same way: forced
+			// only on a flip, so a manual pick survives region loads.
+			EnumSet<WorldType> types = client.getWorldType();
+			int pvp = PvpRisk.worldMode(types.contains(WorldType.PVP),
+				types.contains(WorldType.HIGH_RISK));
+			boolean pvpFlipped = lastPvpWorld == null || lastPvpWorld != pvp;
+			lastPvpWorld = pvp;
 			SwingUtilities.invokeLater(() ->
 			{
 				CommandEngine engine = commandEngine;
@@ -988,6 +998,11 @@ public class LoadoutLabPlugin extends Plugin
 					if (flipped)
 					{
 						engine.execute("set-param", Map.of("param", "f2pOnly", "value", f2p));
+					}
+					engine.execute("set-param", Map.of("param", "pvpWorldHere", "value", pvp > 0));
+					if (pvpFlipped)
+					{
+						engine.execute("set-param", Map.of("param", "pvpWorld", "value", pvp));
 					}
 				}
 			});

@@ -245,10 +245,12 @@
       "tests": [
         "engine/PvpRiskTest.java",
         "engine/RiskConstraintTest.java",
-        "engine/UntradeableDeathCostsTest.java"
+        "engine/UntradeableDeathCostsTest.java",
+        "engine/PvpWorldModeTest.java",
+        "model/PvpWorldTest.java"
       ],
       "since": "0.1.0",
-      "notes": "0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp and convert pool values, and low-risk sets NEVER put a friction item at risk (PvpRisk.risksUnprotected rejects unprotected ones outright, any cap; protected kept-slot rides stay legal). Tooltips say 'breaks on death (rebuild errand ~X)'.",
+      "notes": "2026-10-21 (Ragnarrok2023, YouTube: '3 iteming' on PvP worlds): a pvpWorld param (0 off, 1 PvP, 2 High Risk) turns the risk model on for ANY mob - kept slots 3/4, High Risk 0 and no Protect Item chip (wiki) - plus the locked-pouch rule, blighted Detect-best supplies and the no-heart boost pick; it never sets inWilderness, so no wilderness weapon buff. Seeded from the client's world type on a flip (the f2p rule); the PvP chip shows on a PvP world, while on, or with the 'PvP world chip' setting. Untradeable fees stay at the deep-Wilderness rate (wiki: under-20 rules apply there - an upper bound, said in the risk chip's tooltip). 0.2.0: untradeable_death.json gains curated frictionGp (rebuild-errand proxies for the salve line, imbued rings/masks) counted into riskGp and convert pool values, and low-risk sets NEVER put a friction item at risk (PvpRisk.risksUnprotected rejects unprotected ones outright, any cap; protected kept-slot rides stay legal). Tooltips say 'breaks on death (rebuild errand ~X)'.",
       "capture": "Calvar'ion low-risk card: halo/skull/coins fates on the grid plus the risk gp line. Single PNG screenshot."
     },
     {

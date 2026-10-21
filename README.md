@@ -54,7 +54,9 @@ Rune Nexus Group's short shows the plugin in use:
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates
   (halo = protected, skull = lost, coins = repair fee) and honest gp
-  totals including untradeable repair/mangle fees.
+  totals including untradeable repair/mangle fees. PvP worlds too: the
+  PvP chip turns the same rules on for any monster (on by itself when
+  you log in to one), and High Risk worlds keep nothing.
 - **Simulated items and upgrade budgets**: consider unowned gear ("what if I
   had a tbow?") or let a gp budget suggest buyable upgrades - quest
   rewards join free with their source quest named.

@@ -5,6 +5,7 @@ import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.engine.CombatStyle;
 import com.loadoutlab.engine.OptimizationRequest;
+import com.loadoutlab.engine.PvpRisk;
 import java.util.*;
 import java.util.Map;
 import java.util.List;
@@ -31,6 +32,11 @@ public class PageState
 	 * this, not from f2pOnly - otherwise unticking the filter hides the control
 	 * that unticked it and there is no way back. */
 	private boolean f2pWorld;
+	/** PvP mode: 0 off, 1 PvP world, 2 High Risk (Ragnarrok, 2026-10-20:
+	 * "3 iteming" on PvP worlds). World state like f2pWorld, so never in
+	 * the selection snapshot; pvpWorldHere = the client is on one. */
+	private int pvpWorld;
+	private boolean pvpWorldHere;
 	/** Ship combat (REQ-SC-2/3/3b). Post-compute additive like thralls -
 	 * none of these enter the optimizer request, so none ride computeArgs.
 	 * They persist across lens changes; the ENGINE only reads them for a
@@ -213,6 +219,12 @@ public class PageState
 			case "f2pOnly":
 				f2pOnly = Boolean.TRUE.equals(value);
 				return true;
+			case "pvpWorld":
+				pvpWorld = Math.max(0, Math.min(2, asInt(value, 0)));
+				return true;
+			case "pvpWorldHere":
+				pvpWorldHere = Boolean.TRUE.equals(value);
+				return true;
 			case "spellbookLock":
 				spellbookLock = value instanceof String ? (String) value : "";
 				return true;
@@ -353,6 +365,8 @@ public class PageState
 		node.put("inWilderness", inWilderness);
 		node.put("f2pOnly", f2pOnly);
 		node.put("f2pWorld", f2pWorld);
+		node.put("pvpWorld", pvpWorld);
+		node.put("pvpWorldHere", pvpWorldHere);
 		node.put("cannonCount", cannonCount);
 		node.put("cannon1Material", cannonMaterial[0]);
 		node.put("cannon2Material", cannonMaterial[1]);
@@ -418,9 +432,11 @@ public class PageState
 	public synchronized ComputeParams computeParams()
 	{
 		// Kept-slots mirror the classic riskCap() gate: a risk cap only
-		// binds in the wilderness, and Protect Item keeps a 4th slot.
-		int tradeables = inWilderness && riskCapped
-			? (protectItem ? 4 : 3) : maxTradeables;
+		// binds in the wilderness or on a PvP world, and Protect Item
+		// keeps a 4th slot - none on High Risk. The wilderness flag itself
+		// stays out of it: a PvP world earns no wilderness weapon buff.
+		int kept = PvpRisk.keptSlots(inWilderness ? Math.max(1, pvpWorld) : pvpWorld, protectItem);
+		int tradeables = riskCapped && kept >= 0 ? kept : maxTradeables;
 		// The F2P lock vetoes members mechanics WITHOUT clearing them: the
 		// params keep their values (undo history stays coherent, and
 		// unticking F2P brings the old setup straight back) - they just
