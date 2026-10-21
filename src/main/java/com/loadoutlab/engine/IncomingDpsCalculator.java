@@ -68,18 +68,30 @@ public final class IncomingDpsCalculator
 		public final boolean fullyModeled;
 		/** The curated override's source note, or null in the v1 model. */
 		public final String overrideNote;
+		/** How much of the monster the number covers: curated, full,
+		 * partial (some attacks not counted) or none (unknown). */
+		public final String coverage;
+		/** The attacks the number leaves out, for the card's tooltip. */
+		public final List<String> unmodeled;
 
 		Result(double totalDps, double unprayedDps, String protectPrayer,
-			List<StyleThreat> threats, boolean fullyModeled, String overrideNote)
+			List<StyleThreat> threats, String overrideNote, String coverage, List<String> unmodeled)
 		{
 			this.totalDps = totalDps;
 			this.unprayedDps = unprayedDps;
 			this.protectPrayer = protectPrayer;
 			this.threats = Collections.unmodifiableList(threats);
-			this.fullyModeled = fullyModeled;
+			this.fullyModeled = unmodeled.isEmpty() && !NONE.equals(coverage);
 			this.overrideNote = overrideNote;
+			this.coverage = coverage;
+			this.unmodeled = Collections.unmodifiableList(unmodeled);
 		}
 	}
+
+	public static final String CURATED = "curated";
+	public static final String FULL = "full";
+	public static final String PARTIAL = "partial";
+	public static final String NONE = "none";
 
 	private IncomingDpsCalculator()
 	{
@@ -94,6 +106,8 @@ public final class IncomingDpsCalculator
 	private static final int KIND_MAGIC = 5;
 	private static final int KIND_TYPELESS = 6;
 	private static final int KIND_UNMODELED = -1;
+	/** "None" / "N/A": the monster does not attack this way at all. */
+	private static final int KIND_NONE = -2;
 
 	/**
 	 * Everything about the incoming model that does NOT depend on the worn
@@ -113,7 +127,11 @@ public final class IncomingDpsCalculator
 		private final int[] kinds;
 		private final int[] attackRolls;
 		private final int[] maxHits;
-		// v1 sheet model (override == null): uniform rotation.
+		/** Sheet: modeled and a protection prayer can block it. Override:
+		 * counted at all (not avoidable, known speed). */
+		private final boolean[] live;
+		private final boolean[] prayable;
+		// v1 sheet model (override == null): modeled styles share the cadence.
 		private final double share;
 		private final int speedTicks;
 		// Curated override model: per-attack constants.
@@ -143,14 +161,20 @@ public final class IncomingDpsCalculator
 				this.kinds = new int[styles.size()];
 				this.attackRolls = new int[styles.size()];
 				this.maxHits = new int[styles.size()];
-				this.share = styles.isEmpty() ? 0 : 1.0 / styles.size();
+				this.live = new boolean[styles.size()];
+				this.prayable = new boolean[styles.size()];
+				int modeled = modeledCount(styles, off);
+				this.share = modeled == 0 ? 0 : 1.0 / modeled;
 				this.speedTicks = off.getSpeedTicks();
+				boolean single = singleFamily(styles);
 				for (int i = 0; i < styles.size(); i++)
 				{
 					int kind = kindOf(styles.get(i));
 					kinds[i] = kind;
+					live[i] = kind >= 0 && speedTicks > 0;
+					prayable[i] = prayable(styles.get(i));
 					attackRolls[i] = attackRollFor(kind, off);
-					maxHits[i] = maxHitFor(kind, off);
+					maxHits[i] = maxHitFor(kind, off, single);
 				}
 				this.shares = null;
 				this.prayerFactors = null;
@@ -168,6 +192,8 @@ public final class IncomingDpsCalculator
 				this.prayerFactors = new double[attacks.size()];
 				this.speeds = new int[attacks.size()];
 				this.prayerIndex = new int[attacks.size()];
+				this.live = new boolean[attacks.size()];
+				this.prayable = null;
 				this.share = 0;
 				this.speedTicks = off.getSpeedTicks();
 				// Distinct prayers in first-occurrence order - mirrors the
@@ -184,6 +210,9 @@ public final class IncomingDpsCalculator
 					shares[i] = attack.getShare();
 					prayerFactors[i] = attack.getPrayerFactor();
 					speeds[i] = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
+					// Avoidable attacks are dodged by the standard play, and an
+					// unknown speed is no rate at all - calculate() counts neither.
+					live[i] = !attack.isAvoidable() && speeds[i] > 0;
 					String prayer = protectPrayerFor(style);
 					int index = prayers.indexOf(prayer);
 					if (index < 0)
@@ -216,13 +245,13 @@ public final class IncomingDpsCalculator
 				double[] dps = new double[kinds.length];
 				for (int i = 0; i < kinds.length; i++)
 				{
-					if (kinds[i] == KIND_UNMODELED)
+					if (!live[i])
 					{
 						continue;
 					}
 					dps[i] = accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective)
 						* (maxHits[i] / 2.0) / (speedTicks * 0.6);
-					if (dps[i] > bestBlockableDps)
+					if (prayable[i] && dps[i] > bestBlockableDps)
 					{
 						bestBlockableDps = dps[i];
 						bestBlockable = i;
@@ -231,7 +260,7 @@ public final class IncomingDpsCalculator
 				double total = 0;
 				for (int i = 0; i < kinds.length; i++)
 				{
-					if (kinds[i] != KIND_UNMODELED && i != bestBlockable)
+					if (live[i] && i != bestBlockable)
 					{
 						total += dps[i] * share;
 					}
@@ -243,6 +272,10 @@ public final class IncomingDpsCalculator
 			double[] saved = new double[prayerCount];
 			for (int i = 0; i < kinds.length; i++)
 			{
+				if (!live[i])
+				{
+					continue;
+				}
 				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
 					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
 				dpsPer[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
@@ -265,6 +298,10 @@ public final class IncomingDpsCalculator
 			double total = 0;
 			for (int i = 0; i < kinds.length; i++)
 			{
+				if (!live[i])
+				{
+					continue;
+				}
 				boolean prayedClass = bestPrayer >= 0
 					&& prayerIndex[i] == bestPrayer && prayerFactors[i] < 1;
 				total += dpsPer[i] * shares[i] * (prayedClass ? prayerFactors[i] : 1);
@@ -273,10 +310,50 @@ public final class IncomingDpsCalculator
 		}
 	}
 
-	/** The KIND_* for a sheet/override style string (never "typeless"). */
+	/** Corpus style text, cleaned: lower case, no DEL noise, single spaces. */
+	private static String clean(String raw)
+	{
+		return Names.lower(raw.replace('\u007f', ' ')).trim().replaceAll("\\s+", " ");
+	}
+
+	/** The style as the card shows it - the corpus spelling, minus noise. */
+	private static String shown(String raw)
+	{
+		return raw.replace('\u007f', ' ').trim();
+	}
+
+	/** "Typeless X" and "X (100% prayer penetration)" roll X's accuracy,
+	 * but no protection prayer stops them (wiki: Typeless damage). */
+	private static boolean prayable(String raw)
+	{
+		String style = clean(raw);
+		return !style.startsWith("typeless") && !style.contains("prayer penetration");
+	}
+
+	/**
+	 * The KIND_* for a sheet/override style string (never "typeless").
+	 * Corpus spellings are normalised first (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9):
+	 * "Typeless slash" rolls slash, "Melee (Slash)" names its type,
+	 * "Magic (special)" is magic, "None"/"N/A" do not attack.
+	 */
 	private static int kindOf(String rawStyle)
 	{
-		String style = Names.lower(rawStyle);
+		String style = clean(rawStyle).replace("(100% prayer penetration)", "").trim();
+		if (style.isEmpty() || style.equals("none") || style.equals("n/a"))
+		{
+			return KIND_NONE;
+		}
+		if (style.startsWith("typeless "))
+		{
+			style = style.substring("typeless ".length());
+		}
+		style = style.startsWith("melee (")
+			? style.substring("melee (".length()).replace(")", "").replace("?", "").trim()
+			: style.replaceAll("\\s*\\(.*\\)$", "");
+		if (style.equals("single and multi-target ranged"))
+		{
+			style = "ranged";
+		}
 		switch (style)
 		{
 			case "stab": return KIND_STAB;
@@ -318,8 +395,83 @@ public final class IncomingDpsCalculator
 		}
 	}
 
-	private static int maxHitFor(int kind, MonsterOffence off)
+	/** The listed-max family of a modeled KIND_*, or null. */
+	private static MaxHits.Family familyOf(int kind)
 	{
+		switch (kind)
+		{
+			case KIND_STAB:
+			case KIND_SLASH:
+			case KIND_CRUSH:
+			case KIND_MELEE_GENERIC:
+				return MaxHits.Family.MELEE;
+			case KIND_RANGED:
+				return MaxHits.Family.RANGED;
+			case KIND_MAGIC:
+				return MaxHits.Family.MAGIC;
+			default:
+				return null;
+		}
+	}
+
+	/** True when every attacking style is one family - only then can an
+	 * unlabelled listed max ("50") be trusted for it; a dragon's plain 50
+	 * might be its dragonfire. */
+	private static boolean singleFamily(List<String> styles)
+	{
+		MaxHits.Family only = null;
+		boolean seen = false;
+		for (String style : styles)
+		{
+			int kind = kindOf(style);
+			if (kind == KIND_NONE)
+			{
+				continue;
+			}
+			MaxHits.Family family = familyOf(kind);
+			if (family == null || seen && family != only)
+			{
+				return false;
+			}
+			only = family;
+			seen = true;
+		}
+		return seen;
+	}
+
+	/** Sheet styles the model can price: a known kind at a known speed. */
+	private static int modeledCount(List<String> styles, MonsterOffence off)
+	{
+		int modeled = 0;
+		for (String style : styles)
+		{
+			if (kindOf(style) >= 0 && off.getSpeedTicks() > 0)
+			{
+				modeled++;
+			}
+		}
+		return modeled;
+	}
+
+	/** The wiki's listed max for this kind's family (or the unlabelled one
+	 * when the monster attacks in one family only), else the formula -
+	 * the formula misses magic and str-0 sheets badly (Vardorvis 1 vs 37). */
+	private static int maxHitFor(int kind, MonsterOffence off, boolean singleFamily)
+	{
+		MaxHits.Family family = familyOf(kind);
+		if (family != null)
+		{
+			MaxHits listed = off.getListedMaxHits();
+			int max = listed.of(family);
+			if (max < 0 && singleFamily)
+			{
+				max = listed.of(MaxHits.Family.GENERAL);
+			}
+			if (max > 0)
+			{
+				return max;
+			}
+		}
 		switch (kind)
 		{
 			case KIND_STAB:
@@ -380,8 +532,8 @@ public final class IncomingDpsCalculator
 		// is worn - an absolute rule that outranks every other model.
 		if (monster.isRevenantMonster() && wearsChargedEthereum(loadout))
 		{
-			return new Result(0, 0, null, List.of(), true,
-				"Bracelet of ethereum blocks all revenant damage");
+			return new Result(0, 0, null, List.of(),
+				"Bracelet of ethereum blocks all revenant damage", FULL, List.of());
 		}
 		BossIncomingOverrides.BossOverride override = BossIncomingOverrides.overridesFor(monster);
 		if (override != null)
@@ -407,23 +559,35 @@ public final class IncomingDpsCalculator
 		List<String> styles = off.getStyles();
 		if (styles.isEmpty())
 		{
-			return new Result(0, 0, null, List.of(), false, null);
+			return new Result(0, 0, null, List.of(), null, NONE, List.of());
 		}
 
 		StatBlock def = loadout.getDefensive();
 		List<StyleThreat> threats = new ArrayList<>();
-		boolean fullyModeled = true;
+		List<String> unmodeled = new ArrayList<>();
 		int bestBlockable = -1;
 		double bestBlockableDps = -1;
-		double share = 1.0 / styles.size();
+		// Only modeled attacks share the cadence: an unmodeled style is
+		// named on the card, never a 0-damage slice that dilutes the rest.
+		int modeled = modeledCount(styles, off);
+		double share = modeled == 0 ? 0 : 1.0 / modeled;
+		boolean single = singleFamily(styles);
 		for (String style : styles)
 		{
-			StyleThreat threat = threatFor(style, off, def, defenceLevel, magicLevel, share);
-			if (!threat.modeled)
+			int kind = kindOf(style);
+			if (kind == KIND_NONE)
 			{
-				fullyModeled = false;
+				continue;
 			}
-			else if (threat.dps > bestBlockableDps)
+			// No listed speed (0 / -1) is no rate at all - never one tick.
+			if (kind == KIND_UNMODELED || off.getSpeedTicks() <= 0)
+			{
+				unmodeled.add(shown(style));
+				threats.add(new StyleThreat(shown(style), 0, 0, false, false, 0));
+				continue;
+			}
+			StyleThreat threat = threatFor(style, kind, off, def, defenceLevel, magicLevel, share, single);
+			if (prayable(style) && threat.dps > bestBlockableDps)
 			{
 				bestBlockableDps = threat.dps;
 				bestBlockable = threats.size();
@@ -440,7 +604,7 @@ public final class IncomingDpsCalculator
 			prayer = protectPrayerFor(blocked.style);
 		}
 
-		// Uniform rotation: each listed style owns 1/n of the cadence.
+		// Uniform rotation: each modeled style owns 1/m of the cadence.
 		double total = 0;
 		double unprayed = 0;
 		for (StyleThreat threat : threats)
@@ -455,7 +619,9 @@ public final class IncomingDpsCalculator
 				total += threat.dps * threat.share;
 			}
 		}
-		return new Result(total, unprayed, prayer, threats, fullyModeled, null);
+		// A monster whose styles are all "None" does not attack: modeled, 0.
+		String coverage = !unmodeled.isEmpty() ? (modeled == 0 ? NONE : PARTIAL) : FULL;
+		return new Result(total, unprayed, prayer, threats, null, coverage, unmodeled);
 	}
 
 	/**
@@ -488,8 +654,8 @@ public final class IncomingDpsCalculator
 				: accuracyOfKind(kind, attackRollFor(kind, off), def,
 					defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
 			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
-			dpsPer[i] = accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6);
-			if (attack.isAvoidable())
+			dpsPer[i] = speed > 0 ? accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6) : 0;
+			if (attack.isAvoidable() || speed <= 0)
 			{
 				continue; // dodged by the standard play - no prayer saving
 			}
@@ -511,11 +677,19 @@ public final class IncomingDpsCalculator
 		}
 
 		List<StyleThreat> threats = new ArrayList<>();
+		List<String> unmodeled = new ArrayList<>();
 		double total = 0;
 		double unprayed = 0;
 		for (int i = 0; i < attacks.size(); i++)
 		{
 			BossIncomingOverrides.Attack attack = attacks.get(i);
+			if (attack.getSpeedTicks() <= 0 && off.getSpeedTicks() <= 0)
+			{
+				unmodeled.add(displayStyle(attack.getStyle()));
+				threats.add(new StyleThreat(displayStyle(attack.getStyle()), 0, attack.getMaxHit(),
+					false, false, 0));
+				continue;
+			}
 			if (attack.isAvoidable())
 			{
 				// In the threat list for the tooltip (what it WOULD hit),
@@ -535,7 +709,8 @@ public final class IncomingDpsCalculator
 				attack.getMaxHit(), true, prayedClass, attack.getShare(),
 				prayedClass ? attack.getPrayerFactor() : 1));
 		}
-		return new Result(total, unprayed, prayer, threats, true, override.getNote());
+		return new Result(total, unprayed, prayer, threats, override.getNote(),
+			unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
 	}
 
 	private static String displayStyle(String style)
@@ -544,22 +719,14 @@ public final class IncomingDpsCalculator
 			: Character.toUpperCase(style.charAt(0)) + style.substring(1);
 	}
 
-	private static StyleThreat threatFor(String rawStyle, MonsterOffence off,
-		StatBlock def, int defenceLevel, int magicLevel, double share)
+	private static StyleThreat threatFor(String rawStyle, int kind, MonsterOffence off,
+		StatBlock def, int defenceLevel, int magicLevel, double share, boolean singleFamily)
 	{
-		// kindOf() is case-INSENSITIVE where the old string chain lowercased
-		// by hand; the override path feeds it styles that BossIncomingOverrides
-		// already lowercases at load, so both callers see the same mapping.
-		int kind = kindOf(rawStyle);
-		if (kind == KIND_UNMODELED)
-		{
-			return new StyleThreat(rawStyle, 0, 0, false, false, share);
-		}
-		int maxHit = maxHitFor(kind, off);
+		int maxHit = maxHitFor(kind, off, singleFamily);
 		double accuracy = accuracyOfKind(kind, attackRollFor(kind, off), def,
 			defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
 		double dps = accuracy * (maxHit / 2.0) / (off.getSpeedTicks() * 0.6);
-		return new StyleThreat(rawStyle, dps, maxHit, true, false, share);
+		return new StyleThreat(shown(rawStyle), dps, maxHit, true, false, share);
 	}
 
 	/** The prayer follows the attack's DELIVERY, never its accuracy roll
@@ -573,7 +740,7 @@ public final class IncomingDpsCalculator
 	 *   ranged melee        -> Melee (rolls vs ranged def, swings melee) */
 	private static String protectPrayerFor(String rawStyle)
 	{
-		String style = Names.lower(rawStyle);
+		String style = clean(rawStyle);
 		if (style.contains("melee"))
 		{
 			return "Protect from Melee";

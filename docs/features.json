@@ -64,15 +64,19 @@
         "engine/IncomingDpsCalculator.java",
         "engine/BossIncomingOverrides.java",
         "data/MonsterOffence.java",
+        "data/MaxHits.java",
         "model/RenderModel.java"
       ],
       "tests": [
         "engine/IncomingDpsCalculatorTest.java",
-        "engine/BossIncomingOverridesTest.java"
+        "engine/BossIncomingOverridesTest.java",
+        "engine/IncomingHygieneTest.java",
+        "data/MaxHitsTest.java",
+        "render/DtpsLabelTest.java"
       ],
       "since": "0.1.0",
       "capture": "Zulrah or K'ril card with the incoming-DPS line and protect-prayer icon visible (Calvar'ion's '(unavoidable)' works too). Single PNG screenshot.",
-      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129)."
+      "notes": "Rendered by the in-core surface (render/RenderSurface.java + ResultCards.java) - single plugin since the 2026-08 merge-back (hub ruling on PR #15129). 2026-10-21 data hygiene (layer 1 of the defensive rebuild, ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9): the wiki's listed max hits are read per family (MaxHits) and beat the stat formula (Vardorvis 37 not 1, Aberrant spectre 8 not 11); corpus style spellings are normalised (Typeless X / 100% prayer penetration = X's accuracy, never prayed off; Melee (Slash); DEL noise; None/N/A = does not attack); speed 0/-1 is unknown, never one tick; unmodeled styles take no share; the card shows coverage - '~X.X' full or curated, '~X.X*' partial with the uncounted attacks in the tooltip, 'DTPS: ?' unknown. Prepared (the beam scorer) is parity-swept against calculate() over the whole corpus, which also fixed it counting avoidable curated attacks (Zulrah Magma)."
     },
     {
       "id": "spellbook",

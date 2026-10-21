@@ -132,6 +132,26 @@ public class IncomingDpsCalculatorTest
 	}
 
 	@Test
+	public void aPreparedCalculatorMatchesAcrossTheWholeCorpus()
+	{
+		// Layer 1 (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9) changed the sheet model's
+		// max hits, styles, speeds and shares - the beam's scorer must still
+		// agree with the display path on every monster we ship.
+		com.loadoutlab.data.LoadoutData data = new com.loadoutlab.data.DataService().load();
+		Loadout[] armours = {armour(0, 0, 0, 0, 0), armour(220, 240, 230, 80, 200)};
+		for (MonsterStats mob : data.getMonsters())
+		{
+			IncomingDpsCalculator.Prepared prepared = new IncomingDpsCalculator.Prepared(mob, BossIncomingOverrides.overridesFor(mob), 85, 89);
+			for (Loadout loadout : armours)
+			{
+				IncomingDpsCalculator.Result full = IncomingDpsCalculator.calculate(mob, loadout, 85, 89);
+				Assert.assertEquals(mob.getName() + " " + mob.getVersion(),
+					full.totalDps, prepared.totalDps(loadout), 0.0);
+			}
+		}
+	}
+
+	@Test
 	public void betterArmourMeansLessIncomingDps()
 	{
 		double tank = IncomingDpsCalculator.calculate(

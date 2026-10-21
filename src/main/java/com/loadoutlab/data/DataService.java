@@ -401,7 +401,8 @@ public final class DataService
 					integer(offensive, "magic", 0),
 					integer(offensive, "magic_str", 0),
 					integer(row, "speed", 4),
-					styleList(row)),
+					styleList(row),
+					MaxHits.parse(string(row, "max_hit"))),
 				attributes,
 				bool(row, "is_slayer_monster", false) || knownSlayerMonster(string(row, "name")),
 				string(weakness, "element"),
@@ -416,9 +417,18 @@ public final class DataService
 		List<String> styles = new ArrayList<>();
 		for (JsonElement e : array(row, "style"))
 		{
-			if (!e.isJsonNull() && !e.getAsString().isEmpty())
+			if (e.isJsonNull())
 			{
-				styles.add(e.getAsString());
+				continue;
+			}
+			// "Ranged <br/> Typeless" is two styles; stray DEL characters
+			// (Araxxor, Dusk) are wiki noise.
+			for (String style : e.getAsString().replace('\u007f', ' ').split("(?i)<br\\s*/?>"))
+			{
+				if (!style.trim().isEmpty())
+				{
+					styles.add(style.trim());
+				}
 			}
 		}
 		return styles;

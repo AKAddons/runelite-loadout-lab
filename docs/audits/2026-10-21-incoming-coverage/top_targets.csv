@@ -1,0 +1,72 @@
+name,entries,styles,kinds,corpus_max_hit,plugin_max,speed,override,modelable
+Vorkath,2,Dragonfire/Magic/Ranged/Slash,UNMODELED/magic/melee/ranged,30 (Magic),28/32,5,2/2,yes(override)
+Zulrah,3,Magic/Ranged/Typeless,UNMODELED/magic/ranged,30 | 41,/41,3,3/3,yes(override)
+General Graardor,1,Crush/Ranged,melee/ranged,60 (melee),60,6,1/1,yes(override)
+Kree'arra,1,Magical melee/Ranged/Ranged magic,magic/ranged,69 (Ranged),69,3,1/1,yes(override)
+Commander Zilyana,1,Crush/Magic,magic/melee,27 (melee),31,2,1/1,yes(override)
+K'ril Tsutsaroth,1,Magic/Slash,magic/melee,30 (magic),46,6,1/1,yes(override)
+Nex,1,Crush/Magic/Ranged,magic/melee/ranged,33 (Magic),39,4,0/1,yes(sheet)
+Dagannoth Rex,1,Slash,melee,26,26,4,0/1,yes(sheet)
+Dagannoth Prime,1,Magic,magic,50,26,4,0/1,yes(sheet)
+Dagannoth Supreme,1,Ranged,ranged,30,26,4,0/1,yes(sheet)
+Cerberus,1,Magic/Ranged/Stab,magic/melee/ranged,23,23,6,1/1,yes(override)
+Alchemical Hydra,1,Magic/Ranged,magic/ranged,35 (default),35,6,1/1,yes(override)
+Dusk,2,Ranged/Slash/Slash ,UNMODELED/melee/ranged,15 (melee) 33 (special attack) | 26 (melee)<br/> 15x2 (ranged)<br/> 65 (s,/26,6,0/2,partial
+Dawn,1,Magic (special)/Ranged/Slash,UNMODELED/melee/ranged,15,15,6,0/1,partial
+Abyssal Sire,2,Melee,melee,66 (Melee),15,7,0/2,yes(sheet)
+Kraken,2,Magic (100% prayer penetration),UNMODELED,28,,4,2/2,yes(override)
+Thermonuclear smoke devil,1,Magical ranged (100% prayer penetration),UNMODELED,8,,2,0/1,NO
+Sarachnis,1,Melee/Ranged,melee/ranged,31,38,4,0/1,yes(sheet)
+Kalphite Queen,2,Magic/Ranged/Stab,magic/melee/ranged,31,31,4,0/2,yes(sheet)
+Corporeal Beast,1,Crush/Magic,magic/melee,33 (Melee),36,4,1/1,yes(override)
+Crystalline Hunllef,1,Magic/Ranged,magic/ranged,50+,50,5,0/1,yes(sheet)
+Corrupted Hunllef,1,Magic/Ranged,magic/ranged,68,68,5,0/1,yes(sheet)
+The Nightmare,1,Magic/Ranged/Slash,magic/melee/ranged,50/60 (Melee),48,6,0/1,yes(sheet)
+Phosani's Nightmare,1,Magic/Ranged/Slash,magic/melee/ranged,73 (melee),84,6,0/1,yes(sheet)
+The Maiden of Sugadinti,2,Magic,magic,18 | 36,18/36,10,0/2,yes(sheet)
+Pestilent Bloat,2,Ranged,ranged,20 (Flies) | 8 (Flies),20/8,1,0/2,yes(sheet)
+Nylocas Vasilias,2,Magic/Ranged/Stab,magic/melee/ranged,105 | 24,24/70,4,0/2,yes(sheet)
+Sotetseg,2,Crush/Magic,magic/melee,20 (Melee) | 45 (Melee),22/50,5,0/2,yes(sheet)
+Xarpus,3,Poison/Typeless Ranged,UNMODELED,11 (50+ recoil) | 6 (38+ recoil),,4,0/3,NO
+Verzik Vitur,6,Crush/Magic/Ranged/Typeless Crush,UNMODELED/magic/melee/ranged,137 | 16 | 36 (melee) | 44 | 60 | 63 (melee),137/20/33/34/60/92,14/4/7,0/6,partial
+Tekton,2,Crush/Slash/Stab,melee,52 | 59,52/59,3,0/2,yes(sheet)
+Vasa Nistirio,1,Magic/Ranged,magic/ranged,Varies,24,3,0/1,yes(sheet)
+Vespula,1,Ranged <br/> Typeless,UNMODELED,14 (Ranged),,3,0/1,NO
+Vanguard,3,Magic/Melee/Ranged,magic/melee/ranged,18 | 22,18/22,4,0/3,yes(sheet)
+Muttadile,2,Magic/Melee/Ranged,magic/melee/ranged,28 (Melee) | 72 (Stomp),30/48,4,0/2,yes(sheet)
+Great Olm,3,Magic/None/Ranged,UNMODELED/magic/ranged,0 | 27 <br/> 28 <br/> 29 (phase 4),/26,-1/4,0/3,partial
+Ba-Ba,1,Crush/Ranged,melee/ranged,24,24,6,0/1,yes(sheet)
+Kephri,2,Magic,magic,24,24,6,0/2,yes(sheet)
+Akkha,1,Magic/Ranged/Slash,magic/melee/ranged,55,22,6,0/1,yes(sheet)
+Zebak,1,Magic/Melee/Ranged,magic/melee/ranged,38 (Melee),38,4,0/1,yes(sheet)
+Tumeken's Warden,4,Magic/Melee/Ranged,magic/melee/ranged,22 | 26,24/26,8,0/4,yes(sheet)
+Elidinis' Warden,4,Magic/Melee/Ranged,magic/melee/ranged,20 | 26,20/26,7,0/4,yes(sheet)
+Blood Moon,1,Typeless slash,UNMODELED,32 total 4+8+20,,6,0/1,NO
+Blue Moon,1,Typeless slash,UNMODELED,32 total 4+8+20,,6,0/1,NO
+Eclipse Moon,2,Typeless slash,UNMODELED,32 total 4+8+20,,6,0/2,NO
+Tormented Demon,1,All,UNMODELED,"<div class=""plainlist "" > *31 (auto) *45",,6,0/1,NO
+Araxxor,1,Crush/Ranged/ Magic,UNMODELED/melee/ranged,38 (melee) <br/> 21 (magic) <br/> 34 (ra,38,6,0/1,partial
+Duke Sucellus,3,Crush/Magic,magic/melee,36 (Melee) | 56 (Melee) | 81 (Melee),36/56/81,5/6,0/3,yes(sheet)
+The Leviathan,3,Magic/Melee/Ranged,magic/melee/ranged,34 (Melee orb & Bite) | 50 (Melee orb & Bite) | 86 (Melee orb & Bite),34/50/86,0,0/3,yes(sheet)
+The Whisperer,3,All,UNMODELED,30 (x2) (Melee) | 42 (x2) (Melee) | 70+ (x2) (Melee),,10,0/3,NO
+Vardorvis,3,Slash,melee,30-37 (Melee) | 32-43 (Melee) | 46-61 (Melee),1,5,0/3,yes(sheet)
+Phantom Muspah,4,Magic/Ranged/Stab,magic/melee/ranged,34 | 61 (Ranged) | 72 (Ranged),34/61/72,5/6,0/4,yes(sheet)
+TzTok-Jad,1,Magic/Ranged/Stab,magic/melee/ranged,97 (Melee),97,8,0/1,yes(sheet)
+TzKal-Zuk,1,Typeless Magic/Typeless Ranged,UNMODELED,148&thinsp;,,7,0/1,NO
+Sol Heredit,1,Various,UNMODELED,44 (Typeless AOE),,0,0/1,NO
+Scurrius,2,Magic/Melee/Ranged,magic/melee/ranged,13 (Melee),13/14,4,0/2,yes(sheet)
+The Hueycoatl,3,Magic/Melee/None/Ranged/Typeless,UNMODELED/magic/melee/ranged,13 | 14 | 25,/11,-1/0,0/3,partial
+Amoxliatl,2,Magic,magic,16 (standard)<br/>? (Icicle Crash) | 22 (standard)<br/>34 (Icicle Crash),16/22,8,0/2,yes(sheet)
+Branda the Fire Queen,1,Crush,melee,26 (Melee),26,7,0/1,yes(sheet)
+Eldric the Ice King,1,Crush,melee,26 (Melee),26,7,0/1,yes(sheet)
+Yama,4,Magic/Melee (Slash)/Ranged,UNMODELED/magic/ranged,46 (auto-attacks),52/57,7/8,0/4,partial
+Doom of Mokhaiotl,1,Magic/Melee/Ranged,magic/melee/ranged,65 <br/>99 (charge),42,4,0/1,yes(sheet)
+Callisto,1,Crush/Magic/Ranged,magic/melee/ranged,55 (Crush),31,4,1/1,yes(override)
+Vet'ion,1,Magic/Slash,magic/melee,44,44,5,1/1,yes(override)
+Venenatis,1,Magic/Ranged/Stab,magic/melee/ranged,21 (Melee),36,4,1/1,yes(override)
+King Black Dragon,1,Dragonfire/Stab,UNMODELED/melee,25 (Melee),25,4,1/1,yes(override)
+Giant Mole,1,Crush,melee,21,21,4,0/1,yes(sheet)
+Skotizo,1,Magic/Stab,magic/melee,38,38,0,0/1,yes(sheet)
+Demonic gorilla,1,Crush/Magic/Ranged,magic/melee/ranged,31 (normal),30,5,0/1,yes(sheet)
+Gargoyle,1,Slash,melee,11,11,4,0/1,yes(sheet)
+Rune dragon,1,Dragonfire/Magic/Ranged/Slash,UNMODELED/magic/melee/ranged,29 (Melee),31,4,0/1,partial

@@ -436,6 +436,8 @@ public final class RenderModel
 			: AssumeIcons.prayerSprite(String.valueOf(incoming.protectPrayer)));
 		node.put("protectPrayer", incoming.protectPrayer);
 		node.put("fullyModeled", incoming.fullyModeled);
+		node.put("coverage", incoming.coverage);
+		node.put("unmodeled", new ArrayList<>(incoming.unmodeled));
 		node.put("overrideNote", incoming.overrideNote);
 		List<Object> threats = new ArrayList<>();
 		for (IncomingDpsCalculator.StyleThreat threat : incoming.threats)

@@ -40,6 +40,9 @@ public final class MonsterOffence
 	private final int speedTicks;
 	@Getter
 	private final List<String> styles;
+	/** The wiki's listed max hits; NONE when the sheet gives none. */
+	@Getter
+	private final MaxHits listedMaxHits;
 
 	public MonsterOffence(
 		int attackLevel,
@@ -55,6 +58,26 @@ public final class MonsterOffence
 		int speedTicks,
 		List<String> styles)
 	{
+		this(attackLevel, strengthLevel, rangedLevel, magicLevel, attackBonus, strengthBonus,
+			rangedBonus, rangedStrengthBonus, magicBonus, magicStrengthBonus, speedTicks, styles,
+			MaxHits.NONE);
+	}
+
+	public MonsterOffence(
+		int attackLevel,
+		int strengthLevel,
+		int rangedLevel,
+		int magicLevel,
+		int attackBonus,
+		int strengthBonus,
+		int rangedBonus,
+		int rangedStrengthBonus,
+		int magicBonus,
+		int magicStrengthBonus,
+		int speedTicks,
+		List<String> styles,
+		MaxHits listedMaxHits)
+	{
 		this.attackLevel = attackLevel;
 		this.strengthLevel = strengthLevel;
 		this.rangedLevel = rangedLevel;
@@ -65,20 +88,11 @@ public final class MonsterOffence
 		this.rangedStrengthBonus = rangedStrengthBonus;
 		this.magicBonus = magicBonus;
 		this.magicStrengthBonus = magicStrengthBonus;
-		this.speedTicks = Math.max(1, speedTicks);
+		// Raw: 0 / -1 means the wiki lists no speed, and the incoming model
+		// must say "unknown" rather than run the monster at one tick.
+		this.speedTicks = speedTicks;
 		this.styles = styles == null ? List.of()
 			: Collections.unmodifiableList(styles);
+		this.listedMaxHits = listedMaxHits == null ? MaxHits.NONE : listedMaxHits;
 	}
-
-
-
-
-
-
-
-
-
-
-
-
 }

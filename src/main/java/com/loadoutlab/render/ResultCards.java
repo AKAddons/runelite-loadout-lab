@@ -1758,6 +1758,33 @@ public class ResultCards
 			: String.format(Locale.ROOT, "~%.1f max %d", dtps, keelMax);
 	}
 
+	/** The damage-taken line and its tooltip. Coverage decides the text
+	 * (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9): unknown reads "?", never safe; a
+	 * number that leaves attacks out is starred and names them. */
+	static String[] dtpsLine(Map<String, Object> incoming)
+	{
+		String coverage = Model.str(incoming, "coverage");
+		if ("none".equals(coverage))
+		{
+			return new String[]{"DTPS: ?", "No estimate for this monster's attacks"};
+		}
+		double dps = Model.num(incoming, "dps");
+		String tip = (Model.str(incoming, "protectPrayer") == null ? "No protection prayer helps"
+			: "Pray " + Model.str(incoming, "protectPrayer"))
+			+ String.format(" - takes ~%.1f dps (%.2f unprayed)", dps, Model.num(incoming, "unprayedDps"));
+		if (!"partial".equals(coverage))
+		{
+			return new String[]{String.format("~%.1f", dps), tip};
+		}
+		List<String> missing = new ArrayList<>();
+		for (Object style : Model.list2(incoming, "unmodeled"))
+		{
+			missing.add(String.valueOf(style));
+		}
+		return new String[]{String.format("~%.1f*", dps),
+			tip + ". Not counted: " + String.join(", ", missing)};
+	}
+
 	private JLabel statIconLine(String text, String tooltip, Color color, int spriteId)
 	{
 		JLabel line = statLine(text, tooltip, color);
@@ -2205,17 +2232,11 @@ public class ResultCards
 		{
 			// Classic honesty rule: an unmodeled monster's DTPS reads "?" -
 			// silence must read as unknown, never safe.
-			boolean unmodeled = !Model.flag(incoming, "fullyModeled")
-				&& Model.num(incoming, "dps") <= 0 && Model.num(incoming, "unprayedDps") <= 0;
+			String[] line = dtpsLine(incoming);
 			// The protect prayer's own sprite IS the pray call (classic).
-			int protectSprite = unmodeled ? -1 : (int) Model.num(incoming, "protectSprite");
-			statColumn.add(statIconLine(
-				unmodeled ? "DTPS: ?" : String.format("~%.1f", Model.num(incoming, "dps")),
-				unmodeled ? "No estimate for this monster's attacks"
-					: "Pray " + Model.str(incoming, "protectPrayer")
-						+ String.format(" - takes ~%.1f dps (%.2f unprayed)",
-							Model.num(incoming, "dps"), Model.num(incoming, "unprayedDps")),
-				statText, protectSprite));
+			int protectSprite = "none".equals(Model.str(incoming, "coverage"))
+				? -1 : (int) Model.num(incoming, "protectSprite");
+			statColumn.add(statIconLine(line[0], line[1], statText, protectSprite));
 		}
 		Map<String, Object> statsNode = Model.map(card, "stats");
 		if (statsNode != null)
