@@ -1,0 +1,51 @@
+{
+  "key": "maggot king|nearby",
+  "hitpoints": 1500,
+  "hitpointsNote": "Infobox '|hitpoints = 1500' (shared by all versions). This version is only reachable below ~980 HP (~65%): 'it cannot be attacked with melee until it falls below ~980 hitpoints (65%)'.",
+  "sheetSpeedTicks": 0,
+  "sheetSpeedNote": "Infobox '|attack speed = varies'; the slam cadence is not given in ticks. Hints only: '5-tick weapons can simply move east or west accordingly without tick loss', '4-tick weapons require the player to utilise a stepback method', and the Dharok's section's 7-tick 'cycle of drag-drag-stepback repeating every 3 slams'. Needs an in-game measurement.",
+  "versionMeaning": "NEARBY = the melee-slam phase: the boss walks up to the bone wall. Infobox deltas for version 2: '|def2 = 200', '|dmagic2 = 400' ('the boss's magic defence will be temporarily increased from +150 to +400'), '|elementalweaknesspercent2 = 5' (Fire weakness drops from 80% to 5%).",
+  "conventions": "share = fraction of slam cycles in which the row OCCURS (avoidable rows included, as in the other files of this folder; they are never counted). The slam happens EVERY cycle (shareIfCounted 1.0); its share is written 0.85 only so the list sums to 1 beside the bile row, which rides on the same slams. Counted share = the bile row (0.15).",
+  "attacks": [
+    {
+      "name": "Melee head slam (3x4 AoE in front of it)",
+      "style": "melee",
+      "maxHit": 55,
+      "hits": 1,
+      "share": 0.85,
+      "shareIfCounted": 1.0,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.636,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "note": "Infobox '~55 (Melee lunge)'. Strategies: 'The melee attack is slightly stronger, dealing up to 55 damage, and prayer does not fully protect against these attacks, instead reducing them by ~40%.' and 'slam the 3x4 area in front of it, dealing up to 55 damage (reduced to 35 with Protect from Melee) as well as launching three poisonous or sticky biles within two tiles in front of it.' prayerFactor = 35/55 = 0.636 (the prose's '~40%' reduction would be 0.6). Melee sub-style not stated ('slams its head'). AVOIDABLE by standard play: 'players must avoid the slams by moving towards its easternmost or westernmost tiles when it is about to attack' - it aligns 'its centre tile with your current tile' first. Every Nearby cycle is a slam (shareIfCounted 1.0); if the player eats one it is 55 unprayed / 35 prayed."
+    },
+    {
+      "name": "Bile chip (three biles launched per slam; stepback tile may be splattered)",
+      "style": "typeless",
+      "maxHit": 4,
+      "hits": 1,
+      "share": 0.15,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Sticky bile: '2-4 damage, inflicted as a disease hitsplat' + stat drain + 1-tick attack delay; poisonous bile: 'minor damage' + 45 s poison-immunity drain (no number; 4 used). Strategies: 'The 4-tick method may require the player to walk one tile accordingly as the stepback tile may be splattered in bile (subsequent stepbacks in that melee sequence are safe as normal), while the 5-tick method requires players to be mindful lest they step into bile while dragging the boss.' Share 0.15 (one bile tick per ~7 slams) is my guess for the chip good play eats."
+    }
+  ],
+  "phases": "Enters at ~980 HP (~65%): 'After using a screech, it will walk up to the bone wall separating the arena and position itself to align its centre tile with your current tile, then slam'. Leaves on the next screech: 'Upon screeching, it will retreat and resume attacking with either ranged or magic, depending on which style was used prior to it using melee.' From ~305 HP (~20%): 'it will stop retreating and only attack with melee, allowing players to ignore the screech entirely since there isn't anything to pray against at this point in the fight.' From ~299 HP (~19%) multiple larvae per launch.",
+  "sanityOrOther": "Melee punish (player's bonus, not damage taken): 'If the player attacks the boss the same time as it slams down, they will automatically attack the boss without incurring an attack delay alongside increased accuracy (85% reduced defence roll if using crush) and a 50% damage boost for that attack. Multi-hit weapons will only have the bonus applied onto the first hit.' Weakest to crush and heavy ranged. Dharok's line: players 'maintain hp from 20-30 outside melee phases, and 1-15 during melee phases, having enough health to survive carrion falls during screeches. Camping high enough hp to survive a slam results in Dharok's being worse' - i.e. the slam is treated as never landing. Expected DTPS under standard play: bile chip only.",
+  "uncertain": true,
+  "uncertainReason": "Slam cadence not on the wiki; bile chip share is a guess; melee sub-style unstated.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Maggot_King",
+    "https://oldschool.runescape.wiki/w/Maggot_King/Strategies",
+    "https://oldschool.runescape.wiki/w/Sticky_bile",
+    "https://oldschool.runescape.wiki/w/Poisonous_bile"
+  ]
+}

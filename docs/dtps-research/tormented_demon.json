@@ -1,0 +1,75 @@
+{
+  "key": "tormented demon",
+  "hitpoints": 600,
+  "sheetSpeedTicks": 6,
+  "uncertain": true,
+  "uncertainReason": "The infobox gives one 'auto' max hit (31) for all three styles and one 'special' max hit (45) without naming the attack; per-style max hits, the fire bomb's exact damage/style and the melee:ranged:magic split are not on the wiki, so the shares are estimates from the wiki's rotation rules. The four infobox versions (IDs 13599-13602) share identical stats, so one entry covers all four.",
+  "attacks": [
+    {
+      "name": "melee (when it can reach the player)",
+      "style": "melee",
+      "maxHit": 31,
+      "hits": 1,
+      "share": 0.2,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": true,
+      "leak": 0.05,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Infobox: 'Max hit 31 (auto)', 'Attack speed 6 ticks (3.6 seconds)', 'Attack styles: All' - per-style max hits are not given, so 31 is used for every style. Rotation: 'Tormented demons can pray against and attack using every combat style'; melee is used when it can reach the player ('The demon uses melee when players stand underneath it'); 'If they cannot reach the player when attempting to melee, they will instead randomly fire magic and ranged attacks.' Prayer: the wiki says only that the attacks 'can be prayed against'; no partial piercing is documented -> prayerFactor 0. The demon sticks to one style between fire bombs ('Demons also always change their combat style after a fire bomb attack'), so after seeing the first hit the player camps that prayer; the only unprayed hit is the first after a style change when the new style is not telegraphed - 'If it approaches, expect melee', otherwise 'you will have to guess and/or correct your protection prayer as it can be magic or ranged.' Melee IS telegraphed by the approach, so leak is low (0.05 estimate). Share 0.2 is an estimate: a competent player fights from range, so melee only appears when the demon walks in after a bomb."
+    },
+    {
+      "name": "ranged",
+      "style": "ranged",
+      "maxHit": 31,
+      "hits": 1,
+      "share": 0.4,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": true,
+      "leak": 0.05,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Infobox 'Max hit 31 (auto)' (no per-style figure). Used, with magic, when the demon cannot reach the player: 'randomly fire magic and ranged attacks'; the style is then held until the next fire bomb ('after a bomb ... expect whichever of magic or ranged it didn't use last'). Protect from Missiles blocks it ('can be prayed against'; no piercing documented). Leak 0.05 estimate = ~1 guessed attack in the ~10 between bombs ('roughly every 60 ticks (36s; 10 attacks)'), wrong half the time. Share 0.4 = half of the estimated 0.8 non-melee share (wiki: random between magic and ranged, no ratio)."
+    },
+    {
+      "name": "magic",
+      "style": "magic",
+      "maxHit": 31,
+      "hits": 1,
+      "share": 0.4,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": true,
+      "leak": 0.05,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Infobox 'Max hit 31 (auto)'. Same rules as the ranged row (random pick between magic and ranged when out of melee reach, held until the next bomb, Protect from Magic blocks it). Strategies oddity, quoted: 'Their first attack upon initiating combat deals ~75% less damage if the demon is attacking with magic or ranged, the player is praying Protect from Magic or Protect from Missiles, and its shield is down' - the only partial-damage sentence on either page, and it concerns the opening attack only. Share 0.4 estimate."
+    },
+    {
+      "name": "fire bombs (bind + two ground-targeted bombs)",
+      "style": "typeless",
+      "maxHit": 45,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 60,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Infobox 'Max hit 45 (special)' - the wiki does not say which attack the 45 is; the only special it describes is the fire bomb, so 45 is assigned here (uncertain). Strategies: 'Players have 2 ticks (1.2s) to move to a safe tile before they land and explode, or they will take 40+ damage.' Main page: 'They will briefly bind the player in place roughly every 60 ticks (36s; 10 attacks)' and 'release two fire bombs: one on the player's position as of the start of the attack' and one 'on a random adjacent walkable tile' ('one targeting the tile the player stood on, and one in a 3x3 area'); 'The bind will then be released and players have 2 ticks to move off of the target tiles before they explode.' Typeless/prayer: NOT stated by the wiki ('It does not say whether prayer affects them') - typeless assumed because it is ground-targeted and the guide never suggests a prayer for it. 'Fire bombs will still cause damage even if the demon is killed while they are airborne.' Hits 1: standing still eats the bomb on your own tile; the second lands adjacent. Avoidable in the open ('Stand in the open, away from walls or obstacles'); 'Some areas allow only three safe tiles, so one bomb may hit anyway' - a cramped-spot leak the model does not count. Parallel event every 60 ticks (speedTicks 60), not an attack cycle (share 0). With 3+ demons 'the third and any more demons will release single bombs at the player'."
+    }
+  ],
+  "phases": "No HP-threshold phases of its own. Fixed timers instead: fire bombs + bind 'roughly every 60 ticks (36s; 10 attacks)'; style change after every bomb; 'Every 150 health lost since its last prayer swap (roughly 25% of its max health), the demon will change its protection prayer to the last combat style it was damaged with' and 'stops attacking for 6 ticks (3.6s)' (a free tick-window for the player); about 30 ticks (18 s) into the fight 'the flames disappear' and the demon is defenceless ('Attacking them while defenseless will provide 100% accuracy meaning guaranteed hits') until the player's first hit after the next bomb.",
+  "sanityOrOther": "How 'All' really rotates: melee if it can reach you; if not, it picks magic OR ranged at random and keeps that style until its next fire bomb (every ~10 attacks), then switches (approach = melee coming; otherwise the other of magic/ranged, or a guess if it last used melee). With two demons 'one will use melee if possible, and the other magic or ranged, and their attacks start out staggered so they can be prayed against'; a third 'will only use fire bombs'. What pierces prayer per the wiki: nothing is documented as piercing - all three styles 'can be prayed against'; the bombs are not prayer-related at all (dodge them, 2 ticks), and the bind itself deals no damage. Damage DEALT to the demon: fire shield 'reduces damage done by non-demonbane weapons/spells and non-abyssal weapons by 20%', dropped after the first attack and after each bomb; slow weapons get X^2-16 bonus damage on the unshielded hit ('a 7 tick weapon (+33) will always hit 11 on prayer'); 30% elemental weakness to water (25 June 2025).",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Tormented_Demon",
+    "https://oldschool.runescape.wiki/w/Tormented_Demon/Strategies"
+  ]
+}

@@ -86,9 +86,11 @@ class IncomingHygieneTest {
 	@Test
 	@DisplayName("an unknown attack speed is unmodeled, never one tick")
 	void unknownSpeedIsUnmodeled() {
-		IncomingDpsCalculator.Result leviathan = hit(mob("The Leviathan", ""));
-		assertEquals("none", leviathan.coverage);
-		assertEquals(0.0, leviathan.unprayedDps, 0.0);
+		// Skotizo: Stab + Magic on the sheet, speed "Random" (0). The Leviathan
+		// used to sit here until its curated entry priced it (ISS-01M5PBSZBBBAS9Y46X04MVMHZB).
+		IncomingDpsCalculator.Result skotizo = hit(mob("Skotizo", ""));
+		assertEquals("none", skotizo.coverage);
+		assertEquals(0.0, skotizo.unprayedDps, 0.0);
 	}
 
 	@Test

@@ -1,0 +1,81 @@
+{
+  "key": "maggot king|roaring",
+  "hitpoints": 1500,
+  "hitpointsNote": "Infobox '|hitpoints = 1500' (shared). Roaring is a short window (the screech + carrion fall), not a sustained phase; the rows below are per screech event.",
+  "sheetSpeedTicks": 0,
+  "sheetSpeedNote": "Infobox '|attack speed = varies'. Frequency of this event: 'It will use ranged/magic 4-8 times before using a screech attack' -> one Roaring event per 5-9 Far cycles; also one after each melee (Nearby) segment ('Upon screeching, it will retreat'). 'the Maggot King's attack speed will increase by 1 tick after the first screech.' Screech damage is per TICK (speedTicks 1 on that row).",
+  "versionMeaning": "ROARING = the venator screech: 'indicated by a white aura surrounding the boss' ... 'during its screech attack, its Defence level is temporarily halved to 100' = infobox '|def3 = 100' (dmagic3 = 150, Fire weakness 80% as in Far). The Changes section calls it the 'venator screech attack'.",
+  "conventions": "share = expected fraction of screech events in which the row LANDS under standard play. Unlike the sequential rotations in the other files, these rows are SIMULTANEOUS parts of one event (each occurs once per screech: shareIfCounted 1.0), so giving each its occurrence share would sum to 3.5; only the counted row carries a share, avoidable rows are 0 and never counted. Sum <= 1.",
+  "attacks": [
+    {
+      "name": "Screech prayer punish (protection prayer left on)",
+      "style": "typeless",
+      "maxHit": 25,
+      "hits": 3,
+      "share": 0.0,
+      "shareIfCounted": 1.0,
+      "speedTicks": 1,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "note": "Strategies: 'Players must turn off their protection prayer prior to this, otherwise they will take 15-25 damage per tick; players may take damage up to three times if it is not turned off at all, but deactivating it late will still reduce overall damage.' It punishes HAVING a prayer on (a reverse flick: prayer off at the white aura), so prayable=false and avoidable=true. Occurs every screech (shareIfCounted 1.0). Realistic leak for a late prayer-off: one tick of 15-25 in perhaps 1 in 10 screeches (~2 HP per screech expected) - my estimate, not the wiki's."
+    },
+    {
+      "name": "Carrion pile (initial, shadow-telegraphed)",
+      "style": "typeless",
+      "maxHit": 25,
+      "hits": 1,
+      "share": 0.0,
+      "shareIfCounted": 1.0,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "note": "Strategies: 'Alongside every screech, the Maggot King will throw piles of carrion into the arena. These target random tiles, after which they will splatter into smaller bits ... Getting hit by the initial carrions will deal up to 25 damage'. 'Carrions can be avoided by spotting looming shadows on the target tiles'. Avoidable."
+    },
+    {
+      "name": "Carrion small bits (splatter onto adjacent tiles)",
+      "style": "typeless",
+      "maxHit": 10,
+      "hits": 1,
+      "share": 0.5,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Strategies: 'getting hit by the smaller carrion will deal up to 10 damage' ... 'the smaller bits will only target tiles adjacent to the initial target tiles. As piles of carrion tend to land next to each other, the secondary bits can overlap and target what would otherwise be safe tiles. ... Given that the smaller bits deal less damage, it may be be more beneficial to simply tank them.' This is the chip good play eats: modelled as one bit landing in half of the screeches (share 0.5, my estimate). Carrion also 'wiping off any pools of bile'."
+    },
+    {
+      "name": "Ur-maggot larva leech (if it lands and reaches you)",
+      "style": "stab",
+      "maxHit": 3,
+      "hits": 1,
+      "share": 0.0,
+      "shareIfCounted": 1.0,
+      "speedTicks": 1,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "note": "Larva infobox: combat 65, hitpoints 30, '|max hit = 3', '|attack style = Stab', '|attack speed = 4'. Larvae page: 'If the player is underneath one, they will start leeching off the player, dealing 3 damage and increasing by 1 for every tick afterwards, healing the king for the same amount.' Strategies: 'When the boss reaches ~1,250 (~83%) health, it will launch an ur-maggot larvae towards the arena whenever it uses its screech. If the larvae is hit with standard ranged (bow and arrows) before it lands on the arena, they will be instantly killed'. Standard play shoots it mid-air -> avoidable; the leech is escalating (3, 4, 5 ... per tick) if ignored. From '~299 (~19%)' up to four at once."
+    }
+  ],
+  "phases": "Every 4-8 spits in the Far phase and at the end of each Nearby (melee) segment. From ~83% HP each screech also launches a larva; from ~19% several. From ~20% HP the boss no longer retreats, so the screech can be ignored ('there isn't anything to pray against at this point').",
+  "sanityOrOther": "Defence halved to 100 during the screech ('allowing special attacks such as the Zaryte crossbow to be far more likely to hit'); 'any drained Defence levels will be restored after a screech'. Carrion piles clear bile. A visual bug where 'the boss' venator screech attack visuals may disappear if it took damage whilst performing the attack' was fixed 22 July 2026. Expected DTPS under standard play: one small carrion bit (<=10) in about half the screeches plus a rare late prayer-off tick (15-25).",
+  "uncertain": true,
+  "uncertainReason": "No tick cadence on the wiki; the small-carrion landing rate (0.5) and the late prayer-off leak are my estimates.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Maggot_King",
+    "https://oldschool.runescape.wiki/w/Maggot_King/Strategies",
+    "https://oldschool.runescape.wiki/w/Carrion",
+    "https://oldschool.runescape.wiki/w/Ur-maggot_larvae"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "key": "moia",
+  "hitpoints": 785,
+  "sheetSpeedTicks": 5,
+  "uncertain": true,
+  "uncertainReason": "Released 20 October 2026 (The Fractured Archive, 3rd encounter, alternative to Dreadnoth). The Moia infobox shows 'Max hit: ?' and the strategy guide gives NO damage number for any of her attacks ('massive damage' is the only descriptor), so every counted maxHit below is a PLACEHOLDER (25) and every uncounted unknown is 0. The ranged:magic ratio is also not on the wiki (0.75/0.25 assumed from 'mainly fires a fast ranged projectile' / 'periodically teleports'). Infobox hitpoints 785 are shown without a team-size table, but the raid page says 'All bosses' hitpoints scale to the amount of players present in the raid, with the minimum scaling being set to two players if the player enters alone.'",
+  "attacks": [
+    {
+      "name": "ranged projectile (fast, her main attack)",
+      "style": "ranged",
+      "maxHit": 25,
+      "hits": 1,
+      "share": 0.75,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "PLACEHOLDER max hit: infobox 'Max hit ?' (Ranged level 200, Magic 350, Attack/Strength 1, Defence 195). Infobox: 'Attack speed 5 ticks (3.0 seconds)', 'Attack styles: Ranged, Magic', 'Aggressive: Yes', 'Poisonous: Yes'. Strategies: Moia starts outside her arena and mainly fires a fast ranged projectile; 'A ranged or magic weapon is required as she is too far to reach with melee or halberds.' Prayer: the guide never names Protect from Missiles, but its swap rule ('Do not switch to protect against magic until she attacks with ranged again') implies the camped prayer is against ranged, so this row is covered by the single camped prayer (not flicked). Full vs partial block is not stated; no piercing documented -> prayerFactor 0. Share 0.75 is an estimate."
+    },
+    {
+      "name": "magic projectile (slow blue, after a teleport)",
+      "style": "magic",
+      "maxHit": 25,
+      "hits": 1,
+      "share": 0.25,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": true,
+      "leak": 0.15,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "PLACEHOLDER max hit (infobox '?'). Strategies: she periodically teleports to another side of the arena and will 'launch a slow blue projectile that deals magic damage.' Swap timing is the whole trick: 'The ranged projectile is much faster than the magic projectile, and will hit first despite being launched second.' -> 'Do not switch to protect against magic until she attacks with ranged again' then 'quickly switch to protect from magic once the second attack lands.' Telegraphed (teleport + slow visible projectile) -> flicked; leak 0.15 (estimate, higher than usual because the swap has to wait for the faster ranged hit to land first). Full block not stated; no piercing documented -> prayerFactor 0. Share 0.25 estimate."
+    },
+    {
+      "name": "cough (smoke-cloud infection, intermittent poison-type damage)",
+      "style": "typeless",
+      "maxHit": 0,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "No number on the wiki (maxHit 0 = unknown). Strategies: occasionally she targets a player with a smoke cloud projectile that infects them with 'a cough that deals intermittent poison damage, similar to Nex.' 'The damage from this coughing is significantly mitigated by wearing a Serpentine helm' (the page adds 'possibly antipoison; needs confirmation'). The infected player must avoid teammates and binders 'as this will spread the virus and can deal immense damage over time.' This is the infobox 'Poisonous: Yes'. Not prayer-related. Listed for the tooltip; contributes nothing to the model until the wiki has a number (share 0)."
+    },
+    {
+      "name": "undead binder melee (minion, within two tiles)",
+      "style": "melee",
+      "maxHit": 0,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.5,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Undead binder infobox: combat level 135, 'Attack speed 5 ticks (3.0 seconds)', max hit '?' (0 = unknown here). Moia page: 'During the fight, she summons undead binders' that 'move around the arena periodically and attack nearby players.' Strategies: 'Binders shuffle around the arena periodically, and will melee attack anyone within two tiles of them.' and 'Every binder is able to hit players two tiles away in any direction, protect from melee reduces the damage they deal.' - the verb is REDUCES, no fraction given -> prayerFactor 0.5 placeholder (partial). Standard play camps the anti-Moia prayer and stays more than two tiles from binders / kills them ('Killing binders creates room to reposition'; Crumble Undead does not work; Venator bow recommended for hitting several mid-shuffle), so positional -> avoidable, never counted. She keeps respawning them."
+    },
+    {
+      "name": "enrage charge blast (33% HP, if any binder is alive when the bar fills)",
+      "style": "typeless",
+      "maxHit": 0,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "No number: 'she will deal massive damage to all of the players in the arena.' Strategies: at 33% health she enters an enrage phase, 'repositioning the binders into a diamond formation around her'; a charge bar appears above her health; if binders survive when it fills she deals the massive damage; 'If all binders are dead, she spawns another set and keeps charging.' Avoided by killing every binder before the bar fills -> avoidable, never counted. Style/prayer not stated -> typeless assumed."
+    }
+  ],
+  "phases": "Normal phase from 100% to 33%: ranged projectiles from outside the arena, periodic teleport + slow magic projectile, occasional cough cloud, binders summoned at the start ('evenly spaced') and respawned. 'At 33% health she enters an enrage phase' - binders in a diamond around her, charge bar, arena-wide massive damage if the binders are not all dead each time it fills. No other thresholds documented.",
+  "sanityOrOther": "Prayer flicking order is the fight: camp against ranged, swap to Protect from Magic only after the faster ranged hit that follows each teleport lands. Binder melee is only 'reduced' by Protect from Melee (not blocked) and you cannot pray it while praying Moia's projectile - keep two tiles away or kill them. Cough spreads between players and to binders; Serpentine helm mitigates. Hotfix 21 October 2026: Moia got a 60% Defence-reduction cap (195 -> minimum 117). Infobox immunities to poison/venom are '?'. Music: Daughter of Darkness.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Moia",
+    "https://oldschool.runescape.wiki/w/The_Fractured_Archive/Strategies",
+    "https://oldschool.runescape.wiki/w/Undead_binder",
+    "https://oldschool.runescape.wiki/w/The_Fractured_Archive"
+  ]
+}

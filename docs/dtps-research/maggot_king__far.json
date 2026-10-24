@@ -1,0 +1,78 @@
+{
+  "key": "maggot king|far",
+  "hitpoints": 1500,
+  "hitpointsNote": "Infobox '|hitpoints = 1500' (one value for all three versions). Solo-only instance: 'Players may only fight the boss by themselves'.",
+  "sheetSpeedTicks": 0,
+  "sheetSpeedNote": "Infobox '|attack speed = varies'. Strategies: 'the Maggot King's attack speed will increase by 1 tick after the first screech.' NO base tick count anywhere on the wiki (main page, strategies, bile/carrion/larvae pages) -> speedTicks 0 and uncertain; needs an in-game measurement. Rotation count is known instead: 'It will use ranged/magic 4-8 times before using a screech attack'.",
+  "versionMeaning": "The infobox has versions Far / Nearby / Roaring with identical stats except: '|def1 = 200 |def2 = 200 |def3 = 100', '|dmagic1 = 150 |dmagic2 = 400 |dmagic3 = 150', '|elementalweaknesspercent1 = 80 |elementalweaknesspercent2 = 5 |elementalweaknesspercent3 = 80' (Fire). Matched to the strategies: FAR = this file, the ranged/magic spit phase fought from the player's side of the arena ('initially fought at a distance'); NEARBY = the melee-slam phase at the bone wall ('the boss's magic defence will be temporarily increased from +150 to +400'); ROARING = the screech ('its Defence level is temporarily halved to 100'). The wiki never spells this mapping out; it follows from the stat deltas and the prose.",
+  "conventions": "share = fraction of spit cycles in which the row OCCURS (avoidable rows included, as in the other files of this folder; they are never counted). The screech row is a hand-off to the Roaring entry, not a Far attack, so it carries share 0. Shares sum to 1.",
+  "attacks": [
+    {
+      "name": "Ranged spit (green)",
+      "style": "ranged",
+      "maxHit": 46,
+      "hits": 1,
+      "share": 0.45,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "note": "Infobox '|max hit = 46 (Magic / Ranged),~55 (Melee lunge)'. Strategies: 'Both the magic and ranged attacks can deal up to 46 damage, and are fully blocked by prayer.' 'Ranged - Green spit is launched at the player, leaving poisonous bile behind on the tile the player stood on when the attack lands, as well as on two adjacent tiles. The attack will also poison the player starting at 8 damage.' Not flicked: the style is fixed per segment ('the Maggot King will always start with ranged attacks' ... after a screech 'switch to magic attacks until it screeches again, after which it will switch back to ranged'), so the matching prayer is camped. Share 0.45 = half of the spit cycles (ranged and magic segments alternate) minus the bile row. Poison: whether a prayer-blocked spit still poisons is not stated (uncertain)."
+    },
+    {
+      "name": "Magic spit (yellow)",
+      "style": "magic",
+      "maxHit": 46,
+      "hits": 1,
+      "share": 0.45,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "note": "Same infobox value, 46, 'fully blocked by prayer'. Strategies: 'Magic - Yellow spit is launched at the player, leaving sticky bile behind on the tile the player stood on when the attack lands, as well as on two adjacent tiles.' Camped Protect from Magic during the magic segments (after the first screech until the next)."
+    },
+    {
+      "name": "Bile chip (standing in poisonous / sticky bile)",
+      "style": "typeless",
+      "maxHit": 4,
+      "hits": 1,
+      "share": 0.10,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Sticky bile page: 'Standing on the bile deals 2-4 damage, inflicted as a disease hitsplat and drains Attack, Strength or Defence by the same amount as the hitsplat. Additionally, it delays the player's next attack by a tick.' Poisonous bile page: 'Standing on the bile deals minor damage, and drains the player's poison immunity by 45 seconds' (no number; 4 used for both). Bile lands on the tile you stood on plus two adjacent tiles, so a player who does not step off eats a tick of it. Strategies: 'the boss deals very little chip damage when walking onto acid/bile pools and being hit by small carrion bits' -> this is the chip standard play eats; share 0.10 (one bile tick per ~10 spits) is my guess. Immunity: 'Using both the serpentine helm and anti-venom+ will provide immunity to poisonous bile'; 'An inoculation bracelet will provide immunity to sticky bile.'"
+    },
+    {
+      "name": "Screech transition (hands off to the Roaring entry)",
+      "style": "typeless",
+      "maxHit": 25,
+      "hits": 3,
+      "share": 0.0,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "note": "Not a Far attack - listed so the cadence is traceable: 'It will use ranged/magic 4-8 times before using a screech attack' -> one Roaring event per 5-9 Far cycles. Screech damage is modelled in maggot_king__roaring.json."
+    }
+  ],
+  "phases": "Start: ranged spits. Screech every 4-8 spits (carrion, +1 tick attack speed change after the first). After each screech the spit style flips (ranged -> magic -> ranged ...). ~1,250 HP (~83%): a larva is launched with every screech. ~980 HP (~65%): melee slams enter the rotation (Nearby) - 'After using a screech, it will walk up to the bone wall'; 'Upon screeching, it will retreat and resume attacking with either ranged or magic, depending on which style was used prior to it using melee.' ~305 HP (~20%): 'it will stop retreating and only attack with melee' (Far ends). ~299 HP (~19%): multiple larvae at once.",
+  "sanityOrOther": "Fire spells: '+5 burn' per hit, '-20 magic defence per burn stack', 80% Fire weakness in Far/Roaring (only 5% in Nearby). 'any drained Defence levels will be restored after a screech, though defence bonuses will remain.' Standard play expectation: both spits fully prayed -> near-zero DTPS from autos; damage comes from bile chip, small carrion (Roaring) and a late prayer-off at the screech. Poison from the ranged spit starts at 8 if it applies.",
+  "uncertain": true,
+  "uncertainReason": "No attack speed in ticks on the wiki ('varies'); the bile share is a guess; poison-through-prayer unstated.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Maggot_King",
+    "https://oldschool.runescape.wiki/w/Maggot_King/Strategies",
+    "https://oldschool.runescape.wiki/w/Poisonous_bile",
+    "https://oldschool.runescape.wiki/w/Sticky_bile"
+  ]
+}

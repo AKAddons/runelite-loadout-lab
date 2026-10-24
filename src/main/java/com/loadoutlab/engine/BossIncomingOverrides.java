@@ -18,10 +18,13 @@ import java.util.Set;
  * max hits wrong (Graardor's ranged slam is 15-35, the NPC formula derives
  * 58), rotations are not uniform, some attacks pierce protection prayers,
  * and Typeless/Dragonfire attacks are otherwise unmodeled. Each entry in
- * boss_incoming.json (keyed by lowercase display name) lists the boss's
- * real attacks: style, scripted max hit, rotation share, whether the
- * matching protection prayer fully blocks it, and an optional per-attack
- * speed. Numeric facts are wiki-sourced; see each entry's note.
+ * boss_incoming.json (keyed by lowercase display name, or name|version)
+ * lists the boss's real attacks: style, scripted max hit, hits per attack,
+ * rotation share, whether the matching protection prayer blocks it, whether
+ * the standard play prays it on cue (flicked) and how much still leaks, an
+ * optional per-attack speed. Numeric facts are wiki-sourced; see each
+ * entry's note. The "_unpriced" block names the monsters the wiki cannot
+ * price yet, with the reason the card shows instead of a number.
  */
 public final class BossIncomingOverrides {
 	private static final String RESOURCE = "boss_incoming.json";
@@ -52,6 +55,22 @@ public final class BossIncomingOverrides {
 		 * assuming the protection prayer is up. */
 		@Getter
 		private final boolean avoidable;
+		/** The card's row label when the style alone would not tell two
+		 * rows apart ("ranged volley", "melee (x2)"); "" = the style. */
+		@Getter
+		private final String name;
+		/** Hits per attack (three projectiles a volley, a 42 x2 melee):
+		 * the rate scales with it, the card's max hit does not. */
+		@Getter
+		private final int hits;
+		/** Telegraphed: the standard play prays it on cue whatever single
+		 * prayer it camps (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
+		@Getter
+		private final boolean flicked;
+		/** The fraction of a flicked attack that still lands under standard
+		 * play - a mixed volley's odd projectile, a late swap. */
+		@Getter
+		private final double leak;
 	}
 
 	/** The full curated picture for one boss. */
@@ -68,12 +87,20 @@ public final class BossIncomingOverrides {
 	}
 
 	private static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
+	/** Monsters the wiki cannot price yet, with the reason the card shows. */
+	private static final Map<String, String> UNPRICED = new HashMap<>();
 
 	static {
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
 		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
-			OVERRIDES.put(Names.lower(entry.getKey()),
-				parse(entry.getValue().getAsJsonObject()));
+			if ("_unpriced".equals(entry.getKey())) {
+				for (Map.Entry<String, JsonElement> why : entry.getValue().getAsJsonObject().entrySet()) {
+					UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
+				}
+			} else if (!entry.getKey().startsWith("_")) {
+				OVERRIDES.put(Names.lower(entry.getKey()),
+					parse(entry.getValue().getAsJsonObject()));
+			}
 		}
 	}
 
@@ -103,7 +130,11 @@ public final class BossIncomingOverrides {
 				prayable,
 				prayerFactor,
 				a.has("speedTicks") ? a.get("speedTicks").getAsInt() : 0,
-				a.has("avoidable") && a.get("avoidable").getAsBoolean()));
+				a.has("avoidable") && a.get("avoidable").getAsBoolean(),
+				a.has("name") ? a.get("name").getAsString() : "",
+				a.has("hits") ? Math.max(1, a.get("hits").getAsInt()) : 1,
+				a.has("flicked") && a.get("flicked").getAsBoolean(),
+				a.has("leak") ? a.get("leak").getAsDouble() : 0.0));
 		}
 		return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
 	}
@@ -114,23 +145,32 @@ public final class BossIncomingOverrides {
 	/** The curated override for this monster, or null to use the v1 model.
 	 * Keyed by display name so every version/phase row shares one entry. */
 	public static BossOverride overridesFor(MonsterStats monster) {
+		return lookup(OVERRIDES, monster);
+	}
+
+	/** Why the card shows no estimate for this monster, or null when the
+	 * curated data or the sheet prices it. */
+	public static String unpricedReason(MonsterStats monster) {
+		return lookup(UNPRICED, monster);
+	}
+
+	/** Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
+	 * differently per form, and the roster lens shows one form at a time -
+	 * each must carry ITS OWN attacks and protect prayer (field report
+	 * 2026-07-17: every Zulrah form said pray mage). The bare name stays as
+	 * the whole-fight fallback. */
+	private static <T> T lookup(Map<String, T> map, MonsterStats monster) {
 		if (monster == null) {
 			return null;
 		}
-		// Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
-		// differently per form, and the roster lens shows one form at a
-		// time - each must carry ITS OWN attacks and protect prayer (field
-		// report 2026-07-17: every Zulrah form said pray mage). The bare
-		// name stays as the whole-fight fallback.
 		String version = monster.getVersion();
 		if (version != null && !version.isEmpty()) {
-			BossOverride byForm = OVERRIDES.get(
-				(monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
+			T byForm = map.get((monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
 			if (byForm != null) {
 				return byForm;
 			}
 		}
-		return OVERRIDES.get(monster.getNameLower());
+		return map.get(monster.getNameLower());
 	}
 
 	/** All curated boss names (lowercase) - test and tooling surface. */

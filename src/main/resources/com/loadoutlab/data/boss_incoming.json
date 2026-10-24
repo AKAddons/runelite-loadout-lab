@@ -370,5 +370,873 @@
    }
   ],
   "note": "Wiki: 'blue, it attacks with Ranged and Magic' (41s, even mix modeled; magic listed first so the tied prayer pick lands on Protect from Magic)."
+ },
+ "the whisperer": {
+  "attacks": [
+   {
+    "name": "ranged volley",
+    "style": "ranged",
+    "maxHit": 40,
+    "share": 0.276,
+    "hits": 3,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "wiki (main): 'The Whisperer's regular attack involves shooting three projectiles per attack in either Ranged or Magic.' 'Protection prayers will fully block the attacks, and they will deal damage upon impact.' Strategies [estimate: share and leak rest on the assumed 29-cycle kill and on assumed flick success; the wiki gives neither kill length nor hit rates]"
+   },
+   {
+    "name": "magic volley",
+    "style": "magic",
+    "maxHit": 36,
+    "share": 0.276,
+    "hits": 3,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "wiki Strategies: 'if not blocked, they can deal up to 40 and 36 damage respectively' (36 = magic, 'blue orbs'); infobox 'max hit1 = ... 36 (Magic)'. Share 8/29 = 0.276 (the other half of the 16 pre-enrage volleys). Mixin [estimate: same assumptions as the ranged volley (29-cycle kill, assumed flick success)]"
+   },
+   {
+    "name": "melee (x2)",
+    "style": "melee",
+    "maxHit": 42,
+    "share": 0.034,
+    "hits": 2,
+    "prayerFactor": 0.72,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "infobox 'max hit1 = 42 (x2) ([[Melee]])'. Main: 'If the player is standing next to or under her, she will utilise a melee attack that hits twice, with the second hit dealing the same as the first and is only partially re [estimate: prayerFactor 0.72 is derived from the Awakened figures (37-52 prayed vs 50-72 unprayed); Normal mode only says 'partially reduced by prayer']"
+   },
+   {
+    "name": "enrage ranged volley",
+    "style": "ranged",
+    "maxHit": 40,
+    "share": 0.103,
+    "hits": 3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Strategies: 'Upon reaching 0 health, the Whisperer will heal 140 hitpoints, restore any drained stats, and pull the player into the Shadow Realm.' 'She will alternate between ranged and magic every two attacks and increa [estimate: projectile count is not restated for the enrage (3 assumed); 6 enrage attacks per kill assumed; prayer blocking not restated for the enrage]"
+   },
+   {
+    "name": "enrage magic volley",
+    "style": "magic",
+    "maxHit": 36,
+    "share": 0.103,
+    "hits": 3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Second half of the enrage attacks ('flip combat styles every two attacks'). 3/29 = 0.103. Max hit 36 as the regular magic volley (no separate enrage max hit on the wiki). [estimate: as the enrage ranged volley]"
+   },
+   {
+    "name": "shadow tentacles",
+    "style": "typeless",
+    "maxHit": 20,
+    "share": 0.0,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Main: 'After each regular attack, four shadow tentacles will surface four tiles from the player in an X formation'; 'Getting hit by this will deal 20 damage and drain sanity by 20%, regardless of how many shadow tentacle [estimate: style and prayer interaction are not on the wiki (style 'typeless' assumed; no prayer advice given); share left 0 because it is a rider on e]"
+   },
+   {
+    "name": "screech (special)",
+    "style": "typeless",
+    "maxHit": 45,
+    "share": 0.034,
+    "prayable": false,
+    "avoidable": true,
+    "note": "infobox 'max hit1 = ... 45 (Screech)'. Strategies: Screech deals '45 damage and 45% sanity drain'; counter: hide behind a pillar, not in the open. One of the 3 specials per kill ('Trigger at 720 (80%), 495 (55%) and 270  [estimate: style not given on the wiki; no prayer advice exists for Screech, so 'not prayable' is an inference]"
+   },
+   {
+    "name": "soul siphon (special)",
+    "style": "typeless",
+    "maxHit": 50,
+    "share": 0.034,
+    "prayable": false,
+    "avoidable": true,
+    "note": "infobox 'max hit1 = ... 50 (Soul Siphon)'. Strategies: 'Failing the chant deals 50 damage and heals her 100'; the souls drain prayer, avoided by 'clearing only the yellow souls and leaving' the Shadow Realm. 1/29 = 0.034 [estimate: style not given on the wiki; no prayer advice for the attack itself]"
+   },
+   {
+    "name": "corrupted seeds (special)",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.034,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies: 'Timeout deals 75 damage and drains 75% sanity. Dark green seeds deal 15-25 damage.' Main perfect-kill list counts 'stepping on or hatching corrupted seeds' as avoidable damage. 1/29 = 0.034; countered in the [estimate: style not given; the 75 is the timeout hit, the stepped-on/hatched dark green seeds hit 15-25 instead]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_whisperer__post-quest.json. Specials: 'She will queue up a special attack upon reaching 80%, 55% and 30% of her health on the next attack she makes' (720/495/270 HP); each is followed by a ~8 s bind and a melee attempt. Volley mix by HP: 900-720 all three projectiles one style; 'after th"
+ },
+ "the whisperer|awakened": {
+  "attacks": [
+   {
+    "name": "ranged volley",
+    "style": "ranged",
+    "maxHit": 53,
+    "share": 0.307,
+    "hits": 5,
+    "flicked": true,
+    "leak": 0.17,
+    "note": "Strategies (Awakened): 'The Whisperer's regular attacks now consists of five projectiles rather than three.' 'Her regular magical attack can deal upwards of 45 damage, while her regular ranged attack can deal upwards of  [estimate: share and leak rest on the assumed 73-cycle kill and assumed flick success per pattern; the wiki gives neither kill length nor hit rates]"
+   },
+   {
+    "name": "magic volley",
+    "style": "magic",
+    "maxHit": 45,
+    "share": 0.307,
+    "hits": 5,
+    "flicked": true,
+    "leak": 0.17,
+    "note": "Infobox 'max hit2 = ... 45 ([[Magic]])'; Strategies 'Her regular magical attack can deal upwards of 45 damage'. Other half of the 45 pre-enrage volleys: 22.5/73 = 0.307. Leak 0.17 as for ranged. [estimate: same assumptions as the ranged volley]"
+   },
+   {
+    "name": "melee (x2)",
+    "style": "melee",
+    "maxHit": 72,
+    "share": 0.027,
+    "hits": 2,
+    "prayerFactor": 0.72,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox 'max hit2 = 70+ (x2) ([[Melee]])'. Strategies (Awakened): 'Her regular melee attacks deals between 50-72 damage if not prayed against.' 'If prayed against, it deals between 37-52 damage.' -> prayerFactor 37/50 =  [estimate: infobox says '70+ (x2)', Strategies '50-72 ... if not prayed against' -> 72 used; share assumes 2 of 8 binds end in a landed double hit (no-]"
+   },
+   {
+    "name": "enrage magic volley",
+    "style": "magic",
+    "maxHit": 45,
+    "share": 0.068,
+    "hits": 5,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.2,
+    "note": "Strategies (Awakened enrage): 'she now heals from 140 to 250', 'starts with magic instead of ranged and also swaps styles after every attack', 'sends two or three tentacles every two attacks instead of one'. Share: 250 H [estimate: Awakened enrage attack speed is NOT stated (the 2 ticks is the Normal-mode enrage figure); projectile count in the enrage not restated; 10 e]"
+   },
+   {
+    "name": "enrage ranged volley",
+    "style": "ranged",
+    "maxHit": 53,
+    "share": 0.068,
+    "hits": 5,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.2,
+    "note": "Other half of the enrage attacks ('swaps styles after every attack'). 5/73 = 0.068. [estimate: as the enrage magic volley]"
+   },
+   {
+    "name": "shadow tentacles",
+    "style": "typeless",
+    "maxHit": 30,
+    "share": 0.0,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies (Awakened): 'The damage and sanity drain is also increased from 20 to 30.' 'Utilising L-movements will dodge every tentacle attack other than the changed + formation'. Enrage: 'sends two or three tentacles eve [estimate: style/prayer not on the wiki; the Awakened '+' formation is explicitly NOT dodged by the L-movement, so 'avoidable' assumes the player knows]"
+   },
+   {
+    "name": "screech (special)",
+    "style": "typeless",
+    "maxHit": 70,
+    "share": 0.037,
+    "hits": 5,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit2 = ... 70 (Screech)'. Strategies (Awakened): Screech is 'five hits at 70 damage and sanity drain each', 'Being hit is listed as failure', 'doing it even once will likely result in failure'. 8 specials pe [estimate: style not given; the five-hit figure comes from the Strategies summary of the Awakened Screech; which of the 8 specials are Screeches is not]"
+   },
+   {
+    "name": "soul siphon (special)",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.037,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit2 = ... 75 (Soul Siphon)'. Strategies (Awakened): 'Soul Siphon: 16 souls, 21-second timer.' Normal rule for the fail: 'Failing the chant deals 50 damage and heals her 100' (Awakened fail damage not separa [estimate: style not given; 8/3 specials assumed]"
+   },
+   {
+    "name": "corrupted seeds (special)",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.037,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies (Awakened): dark green seeds 'deal 60-75', timer 26 ticks. Normal timeout: '75 damage and drains 75% sanity'. 2.67/73 = 0.037; countered in the Shadow Realm -> listed, never counted. [estimate: the Awakened seed summary read 'Seeds: 20 sanity drain if not stopped, timer 26 ticks, dark green seeds deal 60-75' - the timeout damage for]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_whisperer__awakened.json. Eight specials: '~2400 health, ~2120 health, ~1820 health, ~1600 health, ~1310 health, ~1050 health, ~800 health and ~500 health for a special attack'; each is followed by a bind and a melee attempt (stay '8 or more tiles away', freeze her). Volleys are five p"
+ },
+ "the whisperer|quest": {
+  "attacks": [
+   {
+    "name": "ranged volley",
+    "style": "ranged",
+    "maxHit": 28,
+    "share": 0.24,
+    "hits": 3,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox 'max hit3 = 30 (x2) ([[Melee]]), 28 ([[Ranged]]), 26 ([[Magic]]), 45 (Screech), 50 (Soul Siphon)'. Volley rule from the Post-quest text: three projectiles, 'Protection prayers will fully block the attacks'. Share [estimate: mechanics assumed from the Post-quest text; kill length assumed]"
+   },
+   {
+    "name": "magic volley",
+    "style": "magic",
+    "maxHit": 26,
+    "share": 0.24,
+    "hits": 3,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox 'max hit3 = ... 26 ([[Magic]])'. 6/25 = 0.24. [estimate: as the ranged volley]"
+   },
+   {
+    "name": "melee (x2)",
+    "style": "melee",
+    "maxHit": 30,
+    "share": 0.04,
+    "hits": 2,
+    "prayerFactor": 0.72,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox 'max hit3 = 30 (x2) ([[Melee]])'. Post-quest rule assumed: 'hits twice, with the second hit dealing the same as the first and is only partially reduced by prayer', 'always hits'. 1/25 = 0.04. [estimate: prayerFactor from the Awakened ratio; share assumes 1 of 3 binds lands (no-freeze play 3/25 = 0.12)]"
+   },
+   {
+    "name": "enrage ranged volley",
+    "style": "ranged",
+    "maxHit": 28,
+    "share": 0.12,
+    "hits": 3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Post-quest enrage assumed: heal 140, '2 ticks (1.2 seconds)', styles flip every two attacks starting ranged, one tentacle per attack. 6 enrage attacks assumed -> 3/25 = 0.12 each style. [estimate: the 140 heal and 2-tick enrage are the Post-quest figures; not stated for the quest fight]"
+   },
+   {
+    "name": "enrage magic volley",
+    "style": "magic",
+    "maxHit": 26,
+    "share": 0.12,
+    "hits": 3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "3/25 = 0.12. [estimate: as the enrage ranged volley]"
+   },
+   {
+    "name": "shadow tentacles",
+    "style": "typeless",
+    "maxHit": 20,
+    "share": 0.0,
+    "prayable": false,
+    "avoidable": true,
+    "note": "'Getting hit by this will deal 20 damage and drain sanity by 20%, regardless of how many shadow tentacles actually hit them.' Dodged by an L movement; rider on every attack -> share 0; listed, never counted. [estimate: the 20 damage / 20% sanity is the Post-quest figure; not restated for the quest version]"
+   },
+   {
+    "name": "screech (special)",
+    "style": "typeless",
+    "maxHit": 45,
+    "share": 0.04,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit3 = ... 45 (Screech)' (same 45 as Post-quest). Hidden behind a pillar; 1/25 = 0.04; listed, never counted. [estimate: style not given; no prayer advice]"
+   },
+   {
+    "name": "soul siphon (special)",
+    "style": "typeless",
+    "maxHit": 50,
+    "share": 0.04,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit3 = ... 50 (Soul Siphon)' (same 50 as Post-quest: 'Failing the chant deals 50 damage and heals her 100'). 1/25 = 0.04; listed, never counted. [estimate: style not given]"
+   },
+   {
+    "name": "corrupted seeds (special)",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.04,
+    "prayable": false,
+    "avoidable": true,
+    "note": "'Timeout deals 75 damage and drains 75% sanity. Dark green seeds deal 15-25 damage.' 1/25 = 0.04; listed, never counted. [estimate: Post-quest figure ('Timeout deals 75 damage'); not restated for the quest version]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_whisperer__quest.json. Assumed identical to Post-quest: specials queued at 80%/55%/30% HP (528/363/198 if the percentages hold - not stated), each followed by a bind and a melee attempt; single-style volleys, then 2+1, then alternating; '+' tentacles after the second special; enrage"
+ },
+ "the leviathan": {
+  "attacks": [
+   {
+    "name": "magic orb",
+    "style": "magic",
+    "maxHit": 32,
+    "share": 0.285,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "Main: 'The Leviathan will attack with random volleys of coloured orbs - magic (blue), ranged (green), and melee (orange) - at varying attack speeds throughout the fight.' 'protection prayers will fully block these attack [estimate: orbs per volley (10) and volleys per kill (5) are assumptions; leak is an assumption per stage (0.05/0.10/0.12/0.20/0.25), the wiki only say]"
+   },
+   {
+    "name": "ranged orb",
+    "style": "ranged",
+    "maxHit": 24,
+    "share": 0.285,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "Strategies table: 'Green (ranged) - Protect from Missiles - 24'; infobox 'max hit1 = ... 24 (Ranged orb)'. Share (15 + 6.67)/76 = 0.285, leak 0.15 as for magic. [estimate: as the magic orb]"
+   },
+   {
+    "name": "melee orb",
+    "style": "melee",
+    "maxHit": 50,
+    "share": 0.088,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.18,
+    "note": "Strategies table: 'Orange (melee) - Protect from Melee - 50'; infobox 'max hit1 = 50 (Melee orb & Bite)'. Not used in the enrage: 'losing the ability to launch orange melee orbs'. Share 6.67/76 = 0.088. [estimate: present only in the 'all three styles' stages (3 and 5 before the enrage in the assumed kill); leak is the mean of those stages' assumed lea]"
+   },
+   {
+    "name": "bite",
+    "style": "melee",
+    "maxHit": 50,
+    "share": 0.0,
+    "speedTicks": 2,
+    "flicked": true,
+    "avoidable": true,
+    "note": "Main: 'The boss can also bite players in the tiles right next to the pool, which deals melee damage.' Strategies: 'Alongside the orb attacks, the Leviathan can also utilise a biting attack when in melee range which Prote"
+   },
+   {
+    "name": "roar chip",
+    "style": "typeless",
+    "maxHit": 7,
+    "share": 0.079,
+    "speedTicks": 2,
+    "prayable": false,
+    "note": "Strategies: 'At the end of each volley, the boss will roar and cause debris to fall around the arena with one falling down on the player's location as a permanent spawn for the remainder of the fight.' 'Players will take [estimate: style not given; the sentence can be read either way on whether the 7 itself is avoidable - taken here as unavoidable chip, with only the de]"
+   },
+   {
+    "name": "rocks (lightning barrage boulders)",
+    "style": "typeless",
+    "maxHit": 25,
+    "share": 0.0,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies table row: 'Rocks - None; run away from shadows - 25'. 'The orbs will land across the arena, but never on the tiles surrounding the pool and have a 1x1 AoE.' Listed, never counted. [estimate: style not given (table says prayer 'None'); rider on the barrage so share 0]"
+   },
+   {
+    "name": "smoke blast",
+    "style": "typeless",
+    "maxHit": 60,
+    "share": 0.033,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit1 = ... 60 (Smoke Blast)'. Strategies: debris 'falls onto the player's location every tick', 'The debris take two ticks to land', 'After throwing ten debris, it will discharge a blast of smoke' avoided by [estimate: infobox says 60, Strategies 'up to 59 damage'; style not given; special cadence assumed]"
+   },
+   {
+    "name": "enrage magic orb",
+    "style": "magic",
+    "maxHit": 32,
+    "share": 0.098,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "Main: 'Upon reaching 180 hitpoints, the Leviathan will begin the enrage phase.' 'Its attack speed will now stay at two ticks, losing the ability to launch orange melee orbs (but still being able to bite players) while an [estimate: 15 enrage orbs per kill assumed; prayerFactor 0 assumes the player stays inside the pathfinder's 5x5 (outside, the orbs pierce prayer entire]"
+   },
+   {
+    "name": "enrage ranged orb",
+    "style": "ranged",
+    "maxHit": 24,
+    "share": 0.098,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "Other half of the enrage orbs ('Only magic and ranged orbs are used'). 7.5/76 = 0.098. [estimate: as the enrage magic orb]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_leviathan__post-quest.json. Volleys progress through seven stages ('Leviathan will progress down this list, of attack styles, throughout the fight whether you stun or not!'): 3-tick M/R, 2-tick M/R, 2-tick all three, 1-tick M/R, 1-tick all three, all three '2 ticks to react', all three ' Listed by the wiki without a number, left out: falling debris, lightning barrage (electric stroke)."
+ },
+ "the leviathan|awakened": {
+  "attacks": [
+   {
+    "name": "magic orb",
+    "style": "magic",
+    "maxHit": 55,
+    "share": 0.237,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.22,
+    "note": "Infobox 'max hit2 = 86 (Melee orb & Bite), 41 (Ranged orb), 55 (Magic orb), 75 (Smoke Blast)'. Same volley rules as Post-quest ('protection prayers will fully block these attacks'; the seven stages). Share (15 + 40)/232  [estimate: orbs per volley, volleys per kill and the per-stage leak (most volleys at '1 tick to react' -> 0.25, early ones lower) are assumptions]"
+   },
+   {
+    "name": "ranged orb",
+    "style": "ranged",
+    "maxHit": 41,
+    "share": 0.237,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.22,
+    "note": "Infobox 'max hit2 = ... 41 (Ranged orb)'. Share (15 + 40)/232 = 0.237. [estimate: as the magic orb]"
+   },
+   {
+    "name": "melee orb",
+    "style": "melee",
+    "maxHit": 86,
+    "share": 0.172,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.25,
+    "note": "Infobox 'max hit2 = 86 (Melee orb & Bite)'. Not used in the enrage ('losing the ability to launch orange melee orbs'). Share 40/232 = 0.172. [estimate: only in the 'all three styles' stages; 12 of the 15 assumed volleys are such stages]"
+   },
+   {
+    "name": "bite",
+    "style": "melee",
+    "maxHit": 86,
+    "share": 0.0,
+    "speedTicks": 2,
+    "flicked": true,
+    "avoidable": true,
+    "note": "'a biting attack when in melee range which Protect from Melee will fully block'; 'rarely used since it interrupts the volley sequence, but it has no warning animation'. Standard play stays off the pool edge -> listed, ne"
+   },
+   {
+    "name": "roar chip",
+    "style": "typeless",
+    "maxHit": 7,
+    "share": 0.069,
+    "speedTicks": 2,
+    "prayable": false,
+    "note": "One roar per volley + the enrage roar = 16/232 = 0.069. Awakened debris: 'The permanent blocker debris goes from one to five, in a + formation on the player.' [estimate: the 7 is the Normal-mode figure ('Players will take up to 7 chip damage from the roar'); the Awakened section lists no change to it]"
+   },
+   {
+    "name": "rocks (lightning barrage boulders)",
+    "style": "typeless",
+    "maxHit": 25,
+    "share": 0.0,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Table row 'Rocks - None; run away from shadows - 25'. Awakened: '+-shaped formation on the player'. Rider on the barrage -> share 0; listed, never counted. [estimate: the 25 is the Normal-mode table value; no Awakened boulder damage is given]"
+   },
+   {
+    "name": "smoke blast",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.032,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit2 = ... 75 (Smoke Blast)'; Strategies: 'The smoke blast rises from 59 to 70+ damage.' Avoided by standing behind the placed debris. 7.5/232 = 0.032; listed, never counted. [estimate: infobox 75 vs Strategies 'from 59 to 70+'; style not given]"
+   },
+   {
+    "name": "tornado",
+    "style": "typeless",
+    "maxHit": 40,
+    "share": 0.004,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies (Awakened): 'At 50% health (1,350 HP), a tornado spawns and moves toward the player. Contact deals 40+ damage.' Main perfect-kill list: 'getting hit by the tornado' is avoidable. Listed, never counted. [estimate: wiki says '40+ damage' (no exact max); it is a persistent hazard, not a cycle - 1/232 is a placeholder]"
+   },
+   {
+    "name": "enrage magic orb",
+    "style": "magic",
+    "maxHit": 55,
+    "share": 0.108,
+    "speedTicks": 1,
+    "flicked": true,
+    "leak": 0.3,
+    "note": "Strategies (Awakened): 'Enraged attack speed is doubled to one tick (0.6 seconds). The enrage starts at 540 HP.' 'The abyssal pathfinder area becomes 7x7.' Normal enrage rules otherwise: magic + ranged orbs only, bite st [estimate: 50 enrage orbs per kill assumed; prayerFactor 0 assumes the player stays inside the 7x7 pathfinder area (outside, orbs pierce prayer); leak ]"
+   },
+   {
+    "name": "enrage ranged orb",
+    "style": "ranged",
+    "maxHit": 41,
+    "share": 0.108,
+    "speedTicks": 1,
+    "flicked": true,
+    "leak": 0.3,
+    "note": "Other half of the 1-tick enrage orbs. 25/232 = 0.108. [estimate: as the enrage magic orb]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_leviathan__awakened.json. Same seven volley stages as Post-quest, but 'Health rises from 900 to 2,700', 'Stuns are 50% shorter', permanent blocker debris 'from one to five, in a + formation on the player', boulders '+-shaped', 'Magic level rises from 160 to 280', immune to stat drains. Listed by the wiki without a number, left out: falling debris, lightning barrage (electric stroke)."
+ },
+ "the leviathan|quest": {
+  "attacks": [
+   {
+    "name": "magic orb",
+    "style": "magic",
+    "maxHit": 22,
+    "share": 0.3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.12,
+    "note": "Infobox 'max hit3 = ... 22 (Magic orb)'. Post-quest rules: random volleys, 'protection prayers will fully block these attacks'. Share (15 + 3.33)/61 = 0.30. [estimate: mechanics assumed from Post-quest; orbs per volley and volleys per kill assumed; a shorter fight stays in the slower stages so leak is set l]"
+   },
+   {
+    "name": "ranged orb",
+    "style": "ranged",
+    "maxHit": 16,
+    "share": 0.3,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.12,
+    "note": "Infobox 'max hit3 = ... 16 (Ranged orb)'. Share (15 + 3.33)/61 = 0.30. [estimate: as the magic orb]"
+   },
+   {
+    "name": "melee orb",
+    "style": "melee",
+    "maxHit": 34,
+    "share": 0.055,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.12,
+    "note": "Infobox 'max hit3 = 34 (Melee orb & Bite)'. Share 3.33/61 = 0.055. [estimate: only stage 3 is an 'all three styles' stage in the assumed 4-volley kill]"
+   },
+   {
+    "name": "bite",
+    "style": "melee",
+    "maxHit": 34,
+    "share": 0.0,
+    "speedTicks": 2,
+    "flicked": true,
+    "avoidable": true,
+    "note": "'a biting attack when in melee range which Protect from Melee will fully block'; only next to the pool, 'rarely used'. Listed, never counted."
+   },
+   {
+    "name": "roar chip",
+    "style": "typeless",
+    "maxHit": 7,
+    "share": 0.082,
+    "speedTicks": 2,
+    "prayable": false,
+    "note": "'Players will take up to 7 chip damage from the roar but can avoid the debris by moving at least 1 tile away.' 5/61 = 0.082. [estimate: the 7 is the Post-quest figure; not restated for the quest fight; style not given]"
+   },
+   {
+    "name": "rocks (lightning barrage boulders)",
+    "style": "typeless",
+    "maxHit": 25,
+    "share": 0.0,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Table row 'Rocks - None; run away from shadows - 25'. Rider -> share 0; listed, never counted. [estimate: the 25 is the Post-quest table value]"
+   },
+   {
+    "name": "smoke blast",
+    "style": "typeless",
+    "maxHit": 41,
+    "share": 0.033,
+    "speedTicks": 2,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'max hit3 = ... 41+ (Smoke Blast)'. Avoided by standing behind the placed debris. 2/61 = 0.033; listed, never counted. [estimate: infobox reads '41+ (Smoke Blast)' with no footnote explaining the '+']"
+   },
+   {
+    "name": "enrage magic orb",
+    "style": "magic",
+    "maxHit": 22,
+    "share": 0.098,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "Post-quest enrage rules assumed: 2-tick cadence, magic + ranged orbs only, pathfinder 5x5, outside it 'its attacks will pierce through prayer'. 6/61 = 0.098. [estimate: enrage threshold for the quest boss not on the wiki; 12 enrage orbs assumed; prayerFactor 0 assumes the player stays inside the pathfinder a]"
+   },
+   {
+    "name": "enrage ranged orb",
+    "style": "ranged",
+    "maxHit": 16,
+    "share": 0.098,
+    "speedTicks": 2,
+    "flicked": true,
+    "leak": 0.15,
+    "note": "6/61 = 0.098. [estimate: as the enrage magic orb]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_leviathan__quest.json. Assumed identical to Post-quest: seven volley stages of rising speed, roar + debris after each volley, alternating Lightning Barrage / Smoke Blast, shadow-spell stuns (15 ticks, damage capped at 10), enrage with a 2-tick cadence, magic + ranged orbs and the ab Listed by the wiki without a number, left out: falling debris, lightning barrage (electric stroke)."
+ },
+ "phantom muspah|teleporting": {
+  "attacks": [
+   {
+    "name": "lightning cloud",
+    "style": "typeless",
+    "maxHit": 20,
+    "share": 1.0,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Raw infobox: '|version3 = Teleporting', '|hitpoints3 = 850', '|attack style3 = [[Typeless]]', '|attack speed3 = 5', '|max hit3 = 20 (Lightning cloud)'. Main: 'It has two special attacks that it uses at 637 (75%) and 425  [estimate: the wiki never says whether a prayer reduces the clouds ('Typeless' in the infobox is the only hint), how many clouds there are, how long th]"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/phantom_muspah__teleporting.json. Separate special-attack phase, once per kill: 'Ranged spawns will trigger Lightning clouds at 75%, melee spawns will trigger homing spikes at 75%.' 'The unused special will always occur at 50% health.' Ends with the Muspah appearing to the north-east and resum"
+ },
+ "sol heredit": {
+  "attacks": [
+   {
+    "name": "spear stab aoe (Spear 1 / Spear 2 patterns)",
+    "style": "typeless",
+    "maxHit": 44,
+    "share": 0.4,
+    "speedTicks": 7,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox: 'Max hit 44 (Typeless AOE)'. Main page: 'Sol primarily uses AoE attacks that are unaffected by prayer, forcing the player to dodge his attacks to avoid taking up to 44 typeless melee damage.' Strategies guide sa"
+   },
+   {
+    "name": "shield slam aoe (Shield 1 / Shield 2 patterns)",
+    "style": "typeless",
+    "maxHit": 44,
+    "share": 0.4,
+    "speedTicks": 6,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Same damage class as the spear: infobox '44 (Typeless AOE)', 'unaffected by prayer'. Strategies: 'the shield slam a 6-tick attack', 1 tick faster below 75% HP (6 -> 5). Dodge: Shield 1 (7x7 hazard, 1-tile safe gap) 'Dodg"
+   },
+   {
+    "name": "triple attack / triple parry, phases 1-3 (above 50% HP)",
+    "style": "melee",
+    "maxHit": 35,
+    "share": 0.05,
+    "hits": 3,
+    "speedTicks": 9,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Main page: Triple Parry 'can be performed under 90% HP'; infobox '15-25-35 (Triple Parry 1)'. 'The damage from these hits are 15, 25 and 35 respectively' -> the three hits are NOT equal: 15 + 25 + 35 = 75 total per tripl"
+   },
+   {
+    "name": "triple attack / triple parry, phase 4 onward (50% HP and bel",
+    "style": "melee",
+    "maxHit": 45,
+    "share": 0.05,
+    "hits": 3,
+    "speedTicks": 10,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox '15-30-45 (Triple Parry 2)'. Main page: 'from phase 4 onwards the second and third hits in sequence are increased to 30 and 45 respectively' -> 15 + 30 + 45 = 90 per triple (maxHit x hits = 135 overstates). Phase"
+   },
+   {
+    "name": "grapple / grab (below 75% HP)",
+    "style": "typeless",
+    "maxHit": 44,
+    "share": 0.1,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox '44 (Grapple)'; main page prose: equipment torn off for '~45 damage'; strategies: 'heavy damage (up to 45)' - 44 (infobox) kept, 45 noted. 'can only be performed below 75% HP'. Mechanic: he drops his shield and c"
+   },
+   {
+    "name": "light beam / laser sphere (phase transitions and enrage)",
+    "style": "typeless",
+    "maxHit": 75,
+    "share": 0.0,
+    "speedTicks": 12,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Main page: at each phase transition 'six beams of light spawn in a 9x9 area around the player and create molten sand after 2 ticks' and a crystal rotates the arena edges: 'after 4 ticks a sphere of light will be launched"
+   },
+   {
+    "name": "molten sand (standing on a hazard tile)",
+    "style": "typeless",
+    "maxHit": 8,
+    "share": 0.0,
+    "speedTicks": 1,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies, Molten Sand: 'Stepping on them will damage the player for ~6-8 damage (and increment Doom, if applicable) per tick.' Phase 2 (90%) adds the first 6 ('6 random tiles will be marked with a pillar of light'), ph"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/sol_heredit.json. Transitions at 90%, 75%, 50%, 25% and 10% HP ('Sol Heredit transitions phases at 90%, 75%, 50%, 25% and 10% HP respectively'). Phase 1 (100%, 1500 HP): spear (7t) and shield (6t) AoEs only. Phase 2 (90%, 1350 HP): 'continue to use his primary AOE attacks like "
+ },
+ "the hueycoatl": {
+  "attacks": [
+   {
+    "name": "rain fire, red projectile (melee)",
+    "style": "melee",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Infobox: 'Max hit 14', 'Attack styles: Melee, Magic, Ranged', 'Attack speed: Variable'. Strategies: 'she will primarily use two attacks throughout the entire fight' (rain fire and glowing symbols); rain fire = 'will laun"
+   },
+   {
+    "name": "rain fire, green projectile (ranged)",
+    "style": "ranged",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "'The green ranged projectile moves toward the player without any noticeable animations.' Same 14 unprayed / '0-2' prayed rule as the red projectile -> prayerFactor 0.143. Share and cadence are estimates (see file-level r"
+   },
+   {
+    "name": "rain fire, blue projectile (magic)",
+    "style": "magic",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "'The blue magic projectile spins as it moves toward the player.' Same 14 unprayed / '0-2' prayed rule -> prayerFactor 0.143. Share and cadence are estimates."
+   },
+   {
+    "name": "lightning (glowing symbols on the ground)",
+    "style": "typeless",
+    "maxHit": 16,
+    "share": 0.4995,
+    "speedTicks": 5,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Strategies: glowing symbols 'spawn around the ground near players. After 4 ticks, lightning will strike any player still standing on them for up to 16 damage.' Dodge: step off the symbol within 4 ticks. Style and prayer "
+   },
+   {
+    "name": "tail slam shockwave (final phase only, in this version)",
+    "style": "typeless",
+    "maxHit": 25,
+    "share": 0.0,
+    "speedTicks": 25,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Hueycoatl tail infobox: 'Max hit 25', 'Attack style: Typeless', 'Attack speed: Variable', 300 HP ('The tail's hitpoints has been reduced from 400 to 300', 25 June 2025). Main page: 'the tail will perform a slam attack ea"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_hueycoatl__normal.json. Phase 1 (body): five 250-HP body segments 'at the base of the mountain' ('Attack speed: Does not attack' for the body) while 'avoiding the glowing symbols and using the correct prayers to counter her projectiles'. Phase 2 (head): attack the head; teams of 3+ b"
+ },
+ "the hueycoatl|shielded": {
+  "attacks": [
+   {
+    "name": "rain fire, red projectile (melee)",
+    "style": "melee",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "Same attack as in the Normal version: 'If correctly prayed against, the damage is reduced to 0-2; otherwise, the attacks deal up to 14 damage' -> prayerFactor 2/14 = 0.143; colour-telegraphed ('The red melee projectile's"
+   },
+   {
+    "name": "rain fire, green projectile (ranged)",
+    "style": "ranged",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "'The green ranged projectile moves toward the player without any noticeable animations.' 14 unprayed, '0-2' prayed."
+   },
+   {
+    "name": "rain fire, blue projectile (magic)",
+    "style": "magic",
+    "maxHit": 14,
+    "share": 0.1668,
+    "speedTicks": 5,
+    "prayerFactor": 0.143,
+    "flicked": true,
+    "leak": 0.1,
+    "note": "'The blue magic projectile spins as it moves toward the player.' 14 unprayed, '0-2' prayed."
+   },
+   {
+    "name": "lightning (glowing symbols on the ground)",
+    "style": "typeless",
+    "maxHit": 16,
+    "share": 0.4995,
+    "speedTicks": 5,
+    "prayable": false,
+    "avoidable": true,
+    "note": "'After 4 ticks, lightning will strike any player still standing on them for up to 16 damage.' Dodged by stepping off; listed, never counted. Presence during the tail phase is inferred (the entrance quote says lightning d"
+   },
+   {
+    "name": "tail slam shockwave (every tail reposition)",
+    "style": "typeless",
+    "maxHit": 25,
+    "share": 0.0,
+    "speedTicks": 33,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Hueycoatl tail infobox: 'Max hit 25', 'Attack style: Typeless'. Strategies, Phase three (tail phase): 'The tail will change sides approximately every 20 seconds' and 'Every time it reappears, it will slam the ground and "
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/the_hueycoatl__shielded.json. This version IS phase 3: 'Once players get her to half health, she will shield herself, requiring players to break her tail.' Tail: 300 HP (was 400 before 25 June 2025), 'subject to a damage cap of 4 or 9, depending on whether the player's crush attack bonus i"
+ },
+ "tormented demon": {
+  "attacks": [
+   {
+    "name": "melee (when it can reach the player)",
+    "style": "melee",
+    "maxHit": 31,
+    "share": 0.2,
+    "flicked": true,
+    "leak": 0.05,
+    "note": "Infobox: 'Max hit 31 (auto)', 'Attack speed 6 ticks (3.6 seconds)', 'Attack styles: All' - per-style max hits are not given, so 31 is used for every style. Rotation: 'Tormented demons can pray against and attack using ev"
+   },
+   {
+    "name": "ranged",
+    "style": "ranged",
+    "maxHit": 31,
+    "share": 0.4,
+    "flicked": true,
+    "leak": 0.05,
+    "note": "Infobox 'Max hit 31 (auto)' (no per-style figure). Used, with magic, when the demon cannot reach the player: 'randomly fire magic and ranged attacks'; the style is then held until the next fire bomb ('after a bomb ... ex"
+   },
+   {
+    "name": "magic",
+    "style": "magic",
+    "maxHit": 31,
+    "share": 0.4,
+    "flicked": true,
+    "leak": 0.05,
+    "note": "Infobox 'Max hit 31 (auto)'. Same rules as the ranged row (random pick between magic and ranged when out of melee reach, held until the next bomb, Protect from Magic blocks it). Strategies oddity, quoted: 'Their first at"
+   },
+   {
+    "name": "fire bombs (bind + two ground-targeted bombs)",
+    "style": "typeless",
+    "maxHit": 45,
+    "share": 0.0,
+    "speedTicks": 60,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Infobox 'Max hit 45 (special)' - the wiki does not say which attack the 45 is; the only special it describes is the fire bomb, so 45 is assigned here (uncertain). Strategies: 'Players have 2 ticks (1.2s) to move to a saf"
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/tormented_demon.json. No HP-threshold phases of its own. Fixed timers instead: fire bombs + bind 'roughly every 60 ticks (36s; 10 attacks)'; style change after every bomb; 'Every 150 health lost since its last prayer swap (roughly 25% of its max health), the demon will change its p"
+ },
+ "mysterious figure": {
+  "attacks": [
+   {
+    "name": "melee",
+    "style": "melee",
+    "maxHit": 18,
+    "share": 0.333,
+    "note": "Infobox: 'Hitpoints 450', 'Attack speed 4 ticks (2.4 seconds)', 'Max hit 18', 'Attack styles: All'. Abilities: she 'attacks with all 3 combat styles'. Quest guide (Testing Your Medal): she 'uses all three attack styles, "
+   },
+   {
+    "name": "ranged",
+    "style": "ranged",
+    "maxHit": 18,
+    "share": 0.333,
+    "note": "Same source lines as the melee row (all three styles 'up to 18' / 'up to 20'). Even 1/3 share by assumption; the wiki does not say whether she rotates, randomises or reacts to the player's prayer."
+   },
+   {
+    "name": "magic (Ice Barrage freezes, stat drain, Tele Block)",
+    "style": "magic",
+    "maxHit": 18,
+    "share": 0.333,
+    "note": "Recidivism: 'It is recommended to pray Protect from Magic at all times, as her magic attack is by far the most accurate, damaging, and effective, draining your stats when it hits.' So the camped prayer under standard pla"
+   },
+   {
+    "name": "stun (shove or Ice Barrage) then purple orb",
+    "style": "typeless",
+    "maxHit": 35,
+    "share": 0.0,
+    "speedTicks": 40,
+    "prayable": false,
+    "avoidable": true,
+    "note": "Recidivism: 'Every ten or so attacks, she will stun you with either melee (shove) or mage (Ice Barrage - this can splash).' Then 'she will launch a large purple orb, which can deal up to 35 typeless damage if not evaded."
+   }
+  ],
+  "note": "Standard play + leak model (ISS-01M5PBSZBBBAS9Y46X04MVMHZB), wiki-sourced 2026-10-24; provenance in docs/dtps-research/mysterious_figure.json. No HP phases documented. Her own prayer: 'She will also periodically switch to pray against the attack style you are using; for this reason, you need at least two attack styles to defeat her.' Final fight (Recidivism) is mandatory ('You must now defeat her for"
+ },
+ "_unpriced": {
+  "ocellus": "No estimate yet: the wiki lists no max hit for Ocellus' attacks (released 20 Oct 2026)",
+  "maggot king": "No estimate yet: the wiki gives the Maggot King no attack speed ('varies'), so its 46 spit and 55 slam cannot be timed",
+  "moia": "No estimate yet: the Fractured Archive pages (20 Oct 2026) still show '?' for the max hits",
+  "xarth": "No estimate yet: the Fractured Archive pages (20 Oct 2026) still show '?' for the max hits",
+  "dreadnoth the jellied": "No estimate yet: the Fractured Archive pages (20 Oct 2026) still show '?' for the max hits",
+  "skotizo": "No estimate: Skotizo's attack speed is 'Random' on the wiki (38 max; Stab up close, Magic at range - pray Magic from range)",
+  "dagon'hai monk": "No estimate yet: the wiki infobox lists no attack style or max hit for the monks"
  }
 }

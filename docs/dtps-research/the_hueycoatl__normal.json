@@ -1,0 +1,92 @@
+{
+  "key": "the hueycoatl|normal",
+  "hitpoints": 2500,
+  "sheetSpeedTicks": 0,
+  "uncertain": true,
+  "uncertainReason": "Infobox attack speed is 'Variable' and neither page gives a tick cadence for the head's two standard attacks, nor the ratio of rain fire to lightning, nor how a projectile colour is chosen ('The page does not say how she chooses which projectile colour or style to fire'). speedTicks 5 and the 0.5/0.5 and 1/3 splits below are estimates. The final phase is faster by an unstated factor.",
+  "attacks": [
+    {
+      "name": "rain fire, red projectile (melee)",
+      "style": "melee",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1667,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Infobox: 'Max hit 14', 'Attack styles: Melee, Magic, Ranged', 'Attack speed: Variable'. Strategies: 'she will primarily use two attacks throughout the entire fight' (rain fire and glowing symbols); rain fire = 'will launch the feathers on her back on the team' and players 'must activate the corresponding protection prayer based on the colour of the incoming projectile'; 'The red melee projectile's tail end is smoking.' Prayer: 'If correctly prayed against, the damage is reduced to 0-2; otherwise, the attacks deal up to 14 damage.' -> prayerFactor 2/14 = 0.143 (max prayed hit / max unprayed hit); partial, never zero. Telegraphed by colour -> flicked; leak 0.1 = a missed colour swap in ten (estimate). Perfect Hueycoatl CA counts 'off-prayer projectile attacks' as avoidable damage. Share: 0.5 of cycles assumed rain fire, split 1/3 per colour (wiki gives neither number). speedTicks 5 is an estimate against 'Variable'."
+    },
+    {
+      "name": "rain fire, green projectile (ranged)",
+      "style": "ranged",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1667,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "'The green ranged projectile moves toward the player without any noticeable animations.' Same 14 unprayed / '0-2' prayed rule as the red projectile -> prayerFactor 0.143. Share and cadence are estimates (see file-level reason)."
+    },
+    {
+      "name": "rain fire, blue projectile (magic)",
+      "style": "magic",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1666,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "'The blue magic projectile spins as it moves toward the player.' Same 14 unprayed / '0-2' prayed rule -> prayerFactor 0.143. Share and cadence are estimates."
+    },
+    {
+      "name": "lightning (glowing symbols on the ground)",
+      "style": "typeless",
+      "maxHit": 16,
+      "hits": 1,
+      "share": 0.5,
+      "speedTicks": 5,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Strategies: glowing symbols 'spawn around the ground near players. After 4 ticks, lightning will strike any player still standing on them for up to 16 damage.' Dodge: step off the symbol within 4 ticks. Style and prayer interaction are not stated -> typeless assumed, not prayable. Perfect Hueycoatl CA: 'you must not take any avoidable damage from the Hueycoatl's lightning attack' -> avoidable under standard play, listed never counted. Share 0.5 assumes the two standard attacks alternate evenly (wiki gives no ratio)."
+    },
+    {
+      "name": "tail slam shockwave (final phase only, in this version)",
+      "style": "typeless",
+      "maxHit": 25,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 25,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": false,
+      "note": "Hueycoatl tail infobox: 'Max hit 25', 'Attack style: Typeless', 'Attack speed: Variable', 300 HP ('The tail's hitpoints has been reduced from 400 to 300', 25 June 2025). Main page: 'the tail will perform a slam attack each time it shifts position, releasing a shockwave that inflicts approximately 25 damage if not evaded'; strategies: 'it will slam the ground and send out a shockwave that deals 20-25 damage'. In the final phase 'the Hueycoatl's tail will continually send out shockwaves at a rate of one every ~15 or so seconds' -> speedTicks 25 (15 s / 0.6). Dodge: 'Avoid it by running through the shockwave at the correct time' (or diagonally through it); 'keep their Hitpoints above 40 to avoid dying from being hit by the tail shockwave'. Perfect Hueycoatl CA counts the 'tail slam attack' as avoidable. Parallel hazard (share 0), absent in phases 1-2 of this Normal version, present in phase 4."
+    }
+  ],
+  "phases": "Phase 1 (body): five 250-HP body segments 'at the base of the mountain' ('Attack speed: Does not attack' for the body) while 'avoiding the glowing symbols and using the correct prayers to counter her projectiles'. Phase 2 (head): attack the head; teams of 3+ balance Protect from Magic/Melee/Missiles to charge three pillars for a 30% damage buff; 'Teams of one or two can't balance the prayers, so the page says they should ignore the pillars and use their prayers to reduce rain fire damage.' 'Upon reaching 50% or less health, the Hueycoatl will shield herself and become invulnerable to damage' -> the Shielded version (separate file) until the 300-HP tail is broken. Phase 4 (final, Normal again): 'she will continue her standard attacks (glowing symbols and prayer projectiles) with increased frequency, while also employing her tail slam shockwave attack'; 'The Hueycoatl's attack speed will significantly increase for the duration of this phase' (no multiplier given); shockwaves every ~15 s; 'the two farthest tiles on both sides in the row in front of Hueycoatl provide safespots'.",
+  "sanityOrOther": "Under standard play the only counted damage is the 0-2 that leaks through a correct prayer on each rain fire plus whatever a missed colour swap costs (up to 14); lightning and the shockwave are dodged. The body segments do not attack. Prayer pillars/braziers are a damage BUFF mechanic for the team, not a damage source. Immune to cannons, 100% poison/venom and freeze resistance; 60% earth elemental weakness. Solo kill 'should take around 8 minutes and 20 seconds on average'. Standing near the entrance in the last three phases means being 'damaged by the rain fire attack, not the lightning and not the tail shockwave'.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/The_Hueycoatl",
+    "https://oldschool.runescape.wiki/w/The_Hueycoatl/Strategies",
+    "https://oldschool.runescape.wiki/w/Hueycoatl_tail",
+    "https://oldschool.runescape.wiki/w/Perfect_Hueycoatl"
+  ]
+}

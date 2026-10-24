@@ -57,7 +57,23 @@ MONSTERS = [
 
 # Rows the wiki fixed that weirdgloop's data (refresh_data.py) still lags:
 # Nex's crush defence went 60 -> 35 on 2026-10-20 (Jagex; wiki Nex, Changes).
-PATCHES = {11278: {"defensive": {"crush": 35}}}
+PATCHES = {
+    11278: {"defensive": {"crush": 35}},
+    # Dagon'hai Elder (both rows): the infobox says Magic, Ranged at 6 ticks; the
+    # intake had read the speed into the style list (2026-10-24, DTPS survey).
+    16643: {"style": ["Magic", "Ranged"], "speed": 6},
+    16644: {"style": ["Magic", "Ranged"], "speed": 6},
+}
+
+
+def apply_patches(rows):
+    """A dict patch updates the row's nested object; anything else replaces the field."""
+    for row in rows:
+        for key, fix in PATCHES.get(row.get("id"), {}).items():
+            if isinstance(fix, dict):
+                row[key].update(fix)
+            else:
+                row[key] = fix
 
 # (page, slot, category, isTwoHanded, {version: (gameval item id, standard)}, requirements)
 GEAR = [
@@ -280,7 +296,15 @@ def merge(existing, rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--patch-only", action="store_true",
+                        help="apply PATCHES to the current corpus without fetching anything")
     args = parser.parse_args()
+    if args.patch_only:
+        m = read_gz("monsters.json.gz")
+        apply_patches(m)
+        write_gz("monsters.json.gz", m)
+        print("patched: %d monster row(s) listed in PATCHES" % sum(1 for r in m if r.get("id") in PATCHES))
+        return 0
     monsters, gear, reqs = [], [], []
     for page, ids in MONSTERS:
         rows = monster_rows(page, ids)
@@ -300,9 +324,7 @@ def main():
     if args.dry_run:
         return 0
     m, rm = merge(read_gz("monsters.json.gz"), monsters)
-    for row in m:
-        for key, fix in PATCHES.get(row.get("id"), {}).items():
-            row[key].update(fix)
+    apply_patches(m)
     g, rg = merge(read_gz("gear_prices.json.gz"), gear)
     q, rq = merge(read_gz("equipment_requirements.json.gz"), reqs)
     write_gz("monsters.json.gz", m)

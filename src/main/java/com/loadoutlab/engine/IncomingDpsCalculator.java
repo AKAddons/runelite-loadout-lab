@@ -135,6 +135,11 @@ public final class IncomingDpsCalculator {
 		private final double[] shares;
 		private final double[] prayerFactors;
 		private final boolean[] avoidable;
+		/** Hits per attack; prayed on cue by the standard play; and how
+		 * much of such an attack still lands (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
+		private final int[] hits;
+		private final boolean[] flicked;
+		private final double[] leaks;
 		/** Per attack: index into the distinct prayer list (first-occurrence
 		 * order), and that list. */
 		private final int[] prayerIndex;
@@ -186,6 +191,9 @@ public final class IncomingDpsCalculator {
 				this.shares = null;
 				this.prayerFactors = null;
 				this.avoidable = null;
+				this.hits = null;
+				this.flicked = null;
+				this.leaks = null;
 				this.prayerIndex = null;
 				this.prayerNames = null;
 			} else {
@@ -194,6 +202,9 @@ public final class IncomingDpsCalculator {
 				this.prayerIndex = new int[n];
 				this.priced = new boolean[n];
 				this.avoidable = new boolean[n];
+				this.hits = new int[n];
+				this.flicked = new boolean[n];
+				this.leaks = new double[n];
 				this.prayable = null;
 				this.share = 0;
 				this.note = override.getNote();
@@ -214,7 +225,10 @@ public final class IncomingDpsCalculator {
 					avoidable[i] = attack.isAvoidable();
 					priced[i] = speeds[i] > 0;
 					live[i] = !avoidable[i] && priced[i];
-					labels[i] = displayStyle(style);
+					hits[i] = attack.getHits();
+					flicked[i] = attack.isFlicked();
+					leaks[i] = attack.getLeak();
+					labels[i] = attack.getName().isEmpty() ? displayStyle(style) : attack.getName();
 					String prayer = protectPrayerFor(style);
 					prayerOf[i] = prayer;
 					int index = prayers.indexOf(prayer);
@@ -239,7 +253,7 @@ public final class IncomingDpsCalculator {
 				}
 				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
 					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
-				dps[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
+				dps[i] = accuracy * (maxHits[i] / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
 			}
 		}
 
@@ -271,8 +285,9 @@ public final class IncomingDpsCalculator {
 			int[] order = new int[saved.length];
 			int count = 0;
 			for (int i = 0; i < kinds.length; i++) {
-				// An avoidable attack is dodged by the standard play - no saving.
-				double saving = live[i] ? dps[i] * shares[i] * (1 - prayerFactors[i]) : 0;
+				// An avoidable attack is dodged by the standard play - no saving;
+				// a flicked one is prayed on cue whatever is camped - no vote.
+				double saving = live[i] && !flicked[i] ? dps[i] * shares[i] * (1 - prayerFactors[i]) : 0;
 				if (saving > 0) {
 					int p = prayerIndex[i];
 					if (saved[p] == 0) {
@@ -292,9 +307,26 @@ public final class IncomingDpsCalculator {
 			return best;
 		}
 
-		/** The fraction of attack i that gets through the picked prayer. */
+		/** The fraction of attack i that gets through the picked prayer. A
+		 * flicked attack is prayed on cue whatever is camped: its leak lands
+		 * in full, the rest at the pierce factor. */
 		private double through(int i, int prayer) {
+			if (flicked[i]) {
+				return leaks[i] + (1 - leaks[i]) * prayerFactors[i];
+			}
 			return prayer >= 0 && prayerIndex[i] == prayer && prayerFactors[i] < 1 ? prayerFactors[i] : 1;
+		}
+
+		/** "Protect from Missiles / Protect from Magic on cue": the prayers
+		 * the flicked attacks call for, or null when nothing is flicked. */
+		private String onCue() {
+			List<String> prayers = new ArrayList<>();
+			for (int i = 0; i < kinds.length; i++) {
+				if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) {
+					prayers.add(prayerOf[i]);
+				}
+			}
+			return prayers.isEmpty() ? null : String.join(" / ", prayers) + " on cue";
 		}
 
 		/**
@@ -371,24 +403,27 @@ public final class IncomingDpsCalculator {
 			// D-2 path: the curated attack list replaces the uniform model;
 			// the protection prayer blocks the class that saves the most.
 			int best = bestPrayer(dps);
-			prayer = best < 0 ? null : prayerNames[best];
+			prayer = best < 0 ? onCue() : prayerNames[best];
 			for (int i = 0; i < kinds.length; i++) {
+				if (avoidable[i]) {
+					// In the threat list for the tooltip (what it WOULD hit),
+					// out of both totals - the standard play dodges it, so an
+					// unknown cadence costs it nothing either.
+					threats.add(new StyleThreat(labels[i] + " (avoidable - assumed dodged)",
+						dps[i], maxHits[i], priced[i], false, shares[i], 1));
+					continue;
+				}
 				if (!priced[i]) {
 					unmodeled.add(labels[i]);
 					threats.add(new StyleThreat(labels[i], 0, maxHits[i], false, false, 0, 1));
 					continue;
 				}
-				if (avoidable[i]) {
-					// In the threat list for the tooltip (what it WOULD hit),
-					// out of both totals - the standard play dodges it.
-					threats.add(new StyleThreat(labels[i] + " (avoidable - assumed dodged)",
-						dps[i], maxHits[i], true, false, shares[i], 1));
-					continue;
-				}
 				double through = through(i, best);
 				unprayed += dps[i] * shares[i];
 				total += dps[i] * shares[i] * through;
-				threats.add(new StyleThreat(labels[i], dps[i], maxHits[i], true, through < 1, shares[i], through));
+				String label = !flicked[i] ? labels[i] : labels[i] + " (prayed on cue"
+					+ (leaks[i] > 0 ? String.format(", ~%.0f%% lands", leaks[i] * 100) : "") + ")";
+				threats.add(new StyleThreat(label, dps[i], maxHits[i], true, through < 1, shares[i], through));
 			}
 			return new Result(total, unprayed, prayer, threats, note,
 				unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
@@ -566,6 +601,11 @@ public final class IncomingDpsCalculator {
 		if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) {
 			return new Result(0, 0, null, List.of(),
 				"Bracelet of ethereum blocks all revenant damage", FULL, List.of());
+		}
+		// The wiki cannot price it yet: say why instead of a bare "?".
+		String unpriced = BossIncomingOverrides.unpricedReason(monster);
+		if (unpriced != null) {
+			return new Result(0, 0, null, List.of(), unpriced, NONE, List.of());
 		}
 		return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel)
 			.result(loadout);

@@ -1,0 +1,31 @@
+{
+  "key": "phantom muspah|teleporting",
+  "hitpoints": 850,
+  "sheetSpeedTicks": 5,
+  "cycleArithmetic": "This 'form' is the wiki's stat column for ONE special attack (Lightning Clouds), used once per kill: at 637 HP (75%) when the Muspah spawned in ranged form, else at 425 HP (50%). It is not a member of the ranged/melee rotation. Within the form the only attack is the lightning cloud, so its share is 1.0; it is dodged by standard play, so the form prices at 0 under the model. Duration, number of teleports/clouds and whether the normal ranged/magic autos continue are NOT on the wiki.",
+  "attacks": [
+    {
+      "name": "lightning cloud",
+      "style": "typeless",
+      "maxHit": 20,
+      "hits": 1,
+      "share": 1.0,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "uncertainReason": "the wiki never says whether a prayer reduces the clouds ('Typeless' in the infobox is the only hint), how many clouds there are, how long the phase lasts, or whether the Muspah keeps auto-attacking while teleporting",
+      "note": "Raw infobox: '|version3 = Teleporting', '|hitpoints3 = 850', '|attack style3 = [[Typeless]]', '|attack speed3 = 5', '|max hit3 = 20 (Lightning cloud)'. Main: 'It has two special attacks that it uses at 637 (75%) and 425 (50%) health. If it spawns in ranged form it uses Lightning Clouds first, otherwise it uses Homing Spikes first.' 'The Phantom Muspah will rapidly teleport around the arena, leaving behind lightning clouds that travel across the area, which also must be avoided.' Strategies: 'Getting hit by a cloud will deal up to 20 damage.' 'they can be avoided by standing on a specific tile, provided with the button above.' 'Players should avoid standing on this tile until the attack occurs, so that spikes aren't protruding on it.' 'Muspah will always appear to the north-east when the move is finished.' 'Muspah has combat stats equal to Range form, and can be attacked during this phase.' 'Damage dealt during this phase does not count towards the damage threshold for a form swap.' 'a weapon with an attack range of 10 ensures the player is never dragged out of the tile whilst attacking'. Standard play stands on the safe tile -> listed, never counted."
+    }
+  ],
+  "phases": "Separate special-attack phase, once per kill: 'Ranged spawns will trigger Lightning clouds at 75%, melee spawns will trigger homing spikes at 75%.' 'The unused special will always occur at 50% health.' Ends with the Muspah appearing to the north-east and resuming its form rotation ('alternates between a ranged form and a melee form roughly every 100 damage in ranged form and 80 damage in melee form'). Companion special for the other spawn: Homing Spikes - 'causing 1-4 spikes to slowly home in on the player for ~20 seconds' (Strategies: '2-4 spikes', '1 tile per 2 ticks', harden after '34 ticks (20.4s)'; changelog 22 July 2026: duration cut 'from 50 ticks (30s) to 34 ticks (20.4s)'); a spike contact knocks you back and heals the boss ('~75% of the damage dealt' per Strategies; main page 'based on damage dealt').",
+  "sanityOrOther": "No sanity. For the other forms (already priced by the caller) the raw infobox reads: Ranged '|attack speed1 = 6', '|max hit1 = 61 (Ranged), 72 (Magic)'; Melee '|attack speed2 = 5', '|max hit2 = 34'; Shielded '|hitpoints4 = 75', '|attack speed4 = 5', '|max hit4 = 72 (Ranged), 79 (Magic), 80 (Shockwave)'; Post-shield '|attack speed5 = 5', '|max hit5 = 72 (Ranged), 79 (Magic)'. Corruption (from the magic attack and the shockwave) drains prayer over time; 'Ward of Arceuus can prevent it'. 'The Phantom Muspah is stronger than its quest variant, but otherwise shares the same attacks and mechanics' (no quest infobox column exists).",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Phantom_Muspah",
+    "https://oldschool.runescape.wiki/w/Phantom_Muspah?action=raw",
+    "https://oldschool.runescape.wiki/w/Phantom_Muspah/Strategies"
+  ]
+}

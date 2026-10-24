@@ -1,0 +1,75 @@
+{
+  "key": "mysterious figure",
+  "hitpoints": 450,
+  "sheetSpeedTicks": 4,
+  "uncertain": true,
+  "uncertainReason": "The NPC page has no Fight/Strategies section; all mechanics come from the Desert Treasure II quest guide ('Testing Your Medal' and 'Recidivism'). The wiki never says how she chooses her style per attack, so the three style shares are an even split by assumption. The infobox max hit (18) and the quest guide's final-fight figure ('up to 20 damage each time') disagree; 18 is used, 20 noted.",
+  "attacks": [
+    {
+      "name": "melee",
+      "style": "melee",
+      "maxHit": 18,
+      "hits": 1,
+      "share": 0.3333,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Infobox: 'Hitpoints 450', 'Attack speed 4 ticks (2.4 seconds)', 'Max hit 18', 'Attack styles: All'. Abilities: she 'attacks with all 3 combat styles'. Quest guide (Testing Your Medal): she 'uses all three attack styles, hitting up to 18 damage with each'; Recidivism (final fight): 'She can attack with all three attack styles, dealing up to 20 damage each time, and with fairly decent accuracy.' Style selection rule: not on the wiki -> 1/3 each assumed. Not telegraphed; a single camped prayer covers one style. Prayer blocking fully is not stated either way; no piercing is mentioned -> prayerFactor 0. Her melee stun is a 'shove' (see orb row)."
+    },
+    {
+      "name": "ranged",
+      "style": "ranged",
+      "maxHit": 18,
+      "hits": 1,
+      "share": 0.3333,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Same source lines as the melee row (all three styles 'up to 18' / 'up to 20'). Even 1/3 share by assumption; the wiki does not say whether she rotates, randomises or reacts to the player's prayer."
+    },
+    {
+      "name": "magic (Ice Barrage freezes, stat drain, Tele Block)",
+      "style": "magic",
+      "maxHit": 18,
+      "hits": 1,
+      "share": 0.3333,
+      "speedTicks": 0,
+      "prayable": true,
+      "prayerFactor": 0.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Recidivism: 'It is recommended to pray Protect from Magic at all times, as her magic attack is by far the most accurate, damaging, and effective, draining your stats when it hits.' So the camped prayer under standard play is Protect from Magic, and the melee and ranged rows are what gets through. Abilities: she can 'Tele Block' and 'freeze' the player; quest guide: 'She can use ice spells to freeze the player in place' and 'She can use blood spells to heal herself.' Even 1/3 share by assumption."
+    },
+    {
+      "name": "stun (shove or Ice Barrage) then purple orb",
+      "style": "typeless",
+      "maxHit": 35,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 40,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Recidivism: 'Every ten or so attacks, she will stun you with either melee (shove) or mage (Ice Barrage - this can splash).' Then 'she will launch a large purple orb, which can deal up to 35 typeless damage if not evaded.' Dodge: 'the freeze or stun will wear off two ticks before the orb lands' - 'simply spam-click the ground away from where you were frozen.' Cadence: ~10 attacks x 4 ticks = ~40 ticks (derived). The stun itself: the shove/Ice Barrage is one of her normal attacks (the Barrage 'can splash', i.e. it is an ordinary magic hit roll), so its damage is already inside the style rows; only the orb is extra. Avoidable under standard play -> listed, never counted (share 0, parallel event)."
+    }
+  ],
+  "phases": "No HP phases documented. Her own prayer: 'She will also periodically switch to pray against the attack style you are using; for this reason, you need at least two attack styles to defeat her.' Final fight (Recidivism) is mandatory ('You must now defeat her for the last medallion'); the earlier ambushes are optional and she 'will simply teleport away' if beaten ('Defeating her will not prevent her from reappearing at a later time').",
+  "sanityOrOther": "Fought in the Desert Treasure II quest (released 26 July 2023; infobox location 'In front of the Ancient Vault', the search landed on the Demonic Pacts League copy of the page). 'She is immune to venom, poison, and the effects of a ring of recoil.' She can run, Tele Block, freeze (Ice Barrage), heal with blood spells and use protection prayers. In the final arena 'The barrier is the only way out. Teleportation is not possible, even with the Escape crystal.' Ambush avoidance outside the final fight: teleport before the Tele Block, change floor/room, or enter Build Mode in a POH. Dying to her outside the last battle puts you in a locked cell (items recovered by lockpicking the door). Change 6 December 2023: she stopped attacking players on a different floor level.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Mysterious_Figure",
+    "https://oldschool.runescape.wiki/w/Desert_Treasure_II_-_The_Fallen_Empire"
+  ]
+}

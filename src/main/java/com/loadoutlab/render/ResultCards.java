@@ -1395,7 +1395,8 @@ public class ResultCards {
 	static String[] dtpsLine(Map<String, Object> incoming) {
 		String coverage = Model.str(incoming, "coverage");
 		if ("none".equals(coverage)) {
-			return new String[]{"DTPS: ?", "No estimate for this monster's attacks"};
+			String why = Model.str(incoming, "overrideNote");
+			return new String[]{"DTPS: ?", why == null || why.isEmpty() ? "No estimate for this monster's attacks" : why};
 		}
 		double dps = Model.num(incoming, "dps");
 		String tip = String.format(Ui.text("dtps.tip"), Model.str(incoming, "protectPrayer") == null

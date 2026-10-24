@@ -1,0 +1,92 @@
+{
+  "key": "the hueycoatl|shielded",
+  "hitpoints": 2500,
+  "sheetSpeedTicks": 0,
+  "uncertain": true,
+  "uncertainReason": "The infobox lists the Shielded state ('It's shielding itself') with the same stats as Normal and no separate numbers. The wiki never says outright that the head keeps attacking while shielded; it is inferred from 'Accounts near the entrance in the last three phases will only be damaged by the rain fire attack, not the lightning and not the tail shockwave' (the tail phase is one of those three). Cadence is 'Variable' with no ticks given; 5 ticks and the 0.5/0.5 and 1/3 splits are estimates. During this phase the player's own damage goes into the 300-HP tail under a cap of 4 or 9 per hit, so the phase is long: 'making this phase the longest of the fight for smaller teams'.",
+  "attacks": [
+    {
+      "name": "rain fire, red projectile (melee)",
+      "style": "melee",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1667,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "Same attack as in the Normal version: 'If correctly prayed against, the damage is reduced to 0-2; otherwise, the attacks deal up to 14 damage' -> prayerFactor 2/14 = 0.143; colour-telegraphed ('The red melee projectile's tail end is smoking') -> flicked, leak 0.1 estimate. Continues through the shield phase by inference (see file-level reason). Share/cadence estimates."
+    },
+    {
+      "name": "rain fire, green projectile (ranged)",
+      "style": "ranged",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1667,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "'The green ranged projectile moves toward the player without any noticeable animations.' 14 unprayed, '0-2' prayed."
+    },
+    {
+      "name": "rain fire, blue projectile (magic)",
+      "style": "magic",
+      "maxHit": 14,
+      "hits": 1,
+      "share": 0.1666,
+      "speedTicks": 5,
+      "prayable": true,
+      "prayerFactor": 0.143,
+      "flicked": true,
+      "leak": 0.1,
+      "avoidable": false,
+      "uncertain": true,
+      "note": "'The blue magic projectile spins as it moves toward the player.' 14 unprayed, '0-2' prayed."
+    },
+    {
+      "name": "lightning (glowing symbols on the ground)",
+      "style": "typeless",
+      "maxHit": 16,
+      "hits": 1,
+      "share": 0.5,
+      "speedTicks": 5,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "'After 4 ticks, lightning will strike any player still standing on them for up to 16 damage.' Dodged by stepping off; listed, never counted. Presence during the tail phase is inferred (the entrance quote says lightning does not reach the entrance in the last three phases, i.e. it is still being cast). Style/prayer not stated -> typeless."
+    },
+    {
+      "name": "tail slam shockwave (every tail reposition)",
+      "style": "typeless",
+      "maxHit": 25,
+      "hits": 1,
+      "share": 0.0,
+      "speedTicks": 33,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": false,
+      "note": "Hueycoatl tail infobox: 'Max hit 25', 'Attack style: Typeless'. Strategies, Phase three (tail phase): 'The tail will change sides approximately every 20 seconds' and 'Every time it reappears, it will slam the ground and send out a shockwave that deals 20-25 damage' -> speedTicks 33 (20 s / 0.6). Main page: 'inflicts approximately 25 damage if not evaded'. Dodge: run 'through' the shockwave at the correct time, or diagonally through it; 'keep their Hitpoints above 40 to avoid dying from being hit by the tail shockwave'. Perfect Hueycoatl CA lists the 'tail slam attack' as avoidable damage. Parallel hazard, share 0, never counted."
+    }
+  ],
+  "phases": "This version IS phase 3: 'Once players get her to half health, she will shield herself, requiring players to break her tail.' Tail: 300 HP (was 400 before 25 June 2025), 'subject to a damage cap of 4 or 9, depending on whether the player's crush attack bonus is their highest'. 'Once the tail's health is depleted, the Hueycoatl's shield dissipates' -> back to the Normal version (final phase, faster attacks, shockwaves every ~15 s). The Prayer Pillar mechanic 'remains active during the tail phase' (Changes).",
+  "sanityOrOther": "Incoming damage model is the same as Normal plus a dodgeable 20-25 typeless shockwave every ~20 s; the phase matters for DTPS-per-kill because it is the longest stretch (damage to the tail capped at 4/9 per hit). Standing near the entrance exposes you only to rain fire. Keep HP above 40 for the shockwave. Prayer pillars (teams of 3+) give +30% damage while lit.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/The_Hueycoatl",
+    "https://oldschool.runescape.wiki/w/The_Hueycoatl/Strategies",
+    "https://oldschool.runescape.wiki/w/Hueycoatl_tail",
+    "https://oldschool.runescape.wiki/w/Perfect_Hueycoatl"
+  ]
+}

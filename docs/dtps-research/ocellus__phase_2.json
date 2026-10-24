@@ -1,0 +1,64 @@
+{
+  "key": "ocellus|phase 2",
+  "hitpoints": 2500,
+  "hitpointsNote": "SHEET VALUE KEPT, NOT FROM THE WIKI. Infobox '|hitpoints2' is BLANK (only hitpoints1 = 2500 and hitpoints3 = 5250 exist) and the HP table has only the columns 'Phase 1 | Remainder'. In phase 2 the players attack the charging sword: 'The Blade stores all damage dealt during this phase and releases it at the end of each quadrant, effectively transferring half of all damage dealt to the boss's phase 3 health bar.' Phase-2 infobox stats: att 1, str 1, def 250, mage 220, range 1; Ocellus page: Defence can be reduced 'to 0 in phase 2'.",
+  "sheetSpeedTicks": 0,
+  "sheetSpeedNote": "Infobox '|attack speed2 = 0' (renders 0 ticks / 0.0 seconds): Ocellus has no auto-attack cadence in this phase; the portal attacks come in 'sets' with no tick count on the wiki.",
+  "conventions": "share = nominal split of the phase-2 attack events (there is NO cadence on the wiki: attack speed2 = 0, so the split is a rough reading of 'sets of attacks' -> pools -> one quadrant attack). Every row is avoidable and never counted: the counted sum is 0. Shares sum to 1.",
+  "attacks": [
+    {
+      "name": "Purple portal attacks (quadrant barrage)",
+      "style": "typeless",
+      "maxHit": null,
+      "hits": 1,
+      "share": 0.7,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Strategies: 'Ocellus will teleport to the center of the arena and create 4 quadrants surrounded by orange and purple portals. Purple portals will spawn damaging attacks, while 2 orange portals will spawn on either side that intersect in a safe zone.' Ocellus page: 'Standing at the intersection of the orange portals will avoid damage.' No damage number, no style, no cadence anywhere on the wiki. Dodged by standing on the orange intersection -> avoidable."
+    },
+    {
+      "name": "Purple void pools (floor)",
+      "style": "typeless",
+      "maxHit": null,
+      "hits": 1,
+      "share": 0.2,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Ocellus page: 'Eventually all of the portals will turn purple and purple voids will spawn on the floor, damaging you. Avoid these voids until an orange portal appears on the ground.' Strategies: 'After a few sets of attacks, purple damaging pools will spawn on the floor of the arena followed by an orange portal.' No number. Avoidable by not standing in them."
+    },
+    {
+      "name": "Full-quadrant attack (quadrant becomes unsafe)",
+      "style": "typeless",
+      "maxHit": null,
+      "hits": 1,
+      "share": 0.1,
+      "speedTicks": 0,
+      "prayable": false,
+      "prayerFactor": 1.0,
+      "flicked": false,
+      "leak": 0.0,
+      "avoidable": true,
+      "uncertain": true,
+      "note": "Ocellus page: 'Step on the orange portal to avoid the full quadrant attack and jump to the next quadrant. This will repeat 3 times until the next phase.' Strategies: 'This will allow players to teleport to a new quadrant and avoid the incoming barrage of attacks as the quadrant becomes unsafe.' No number. Avoidable by taking the orange portal."
+    }
+  ],
+  "phases": "Starts 'Once his shield is reduced to 0'. Sets of portal attacks -> purple pools -> orange portal -> next quadrant, 'This will repeat 3 times until the next phase.' Then: 'Ocellus will equip the sword and shatter the floor, splitting the room into four quadrants. Travelling between quadrants is possible but requires hopping on all three stepping stones.' Skip: 'There is a method to step diagonally between two tiles to skip all of the waves, though it is nearly tick-perfect.'",
+  "sanityOrOther": "Expected damage taken under standard play: 0 - every phase-2 attack is positional and dodged by the orange intersection / orange portal; the wiki quantifies none of them. Half of the damage dealt to the Blade here is carried into the 5,250 phase-3 bar.",
+  "uncertain": true,
+  "uncertainReason": "No hitpoints2 on the wiki (sheet value kept), no damage numbers, no style, no cadence for any phase-2 attack.",
+  "sources": [
+    "https://oldschool.runescape.wiki/w/Ocellus",
+    "https://oldschool.runescape.wiki/w/The_Fractured_Archive/Strategies#Ocellus",
+    "https://oldschool.runescape.wiki/w/Ocellus/Strategies (does not exist: HTTP 404)"
+  ]
+}

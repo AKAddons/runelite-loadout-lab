@@ -214,7 +214,12 @@ public class BossIncomingOverridesTest {
 			"artio", "vet'ion", "calvar'ion", "venenatis", "spindel",
 			"chaos elemental", "king black dragon", "alchemical hydra",
 			"corporeal beast", "kraken",
-			"zulrah|serpentine", "zulrah|tanzanite", "zulrah|magma");
+			"zulrah|serpentine", "zulrah|tanzanite", "zulrah|magma",
+			// The 2026-10-24 standard-play-plus-leak wave (ISS-01M5PBSZBBBAS9Y46X04MVMHZB).
+			"the whisperer", "the whisperer|awakened", "the whisperer|quest",
+			"the leviathan", "the leviathan|awakened", "the leviathan|quest",
+			"phantom muspah|teleporting", "sol heredit", "the hueycoatl", "the hueycoatl|shielded",
+			"tormented demon", "mysterious figure");
 		for (String name : expected) {
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
 				.overridesFor(named(name, List.of("Melee")));
@@ -227,11 +232,18 @@ public class BossIncomingOverridesTest {
 				Assert.assertTrue(name + ": unknown style " + attack.getStyle(),
 					STYLES.contains(attack.getStyle()));
 				Assert.assertTrue(name, attack.getMaxHit() > 0);
-				Assert.assertTrue(name, attack.getShare() > 0);
+				// An avoidable rider (tentacles after every volley) may carry no
+				// share of its own; every counted attack must.
+				Assert.assertTrue(name, attack.getShare() > 0 || attack.isAvoidable());
 				Assert.assertTrue(name, attack.getShare() <= 1.0);
 				Assert.assertTrue(name, attack.getSpeedTicks() >= 0);
+				Assert.assertTrue(name, attack.getHits() >= 1);
 				Assert.assertTrue(name + ": prayerFactor out of range",
 					attack.getPrayerFactor() >= 0 && attack.getPrayerFactor() <= 1);
+				Assert.assertTrue(name + ": leak out of range", attack.getLeak() >= 0 && attack.getLeak() <= 1);
+				if (attack.isFlicked()) {
+					Assert.assertTrue(name + ": a flicked attack is prayed, so it must be prayable", attack.isPrayable());
+				}
 				if ("typeless".equals(attack.getStyle())) {
 					Assert.assertFalse(name, attack.isPrayable());
 				}
