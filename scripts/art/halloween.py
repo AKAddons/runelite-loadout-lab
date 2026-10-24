@@ -14,7 +14,7 @@ GLASS, LIQUID, BUBBLE = "#7fd48a", "#ffd23a", "#fff6c0"
 BREW, BREW_BUBBLE = "#b070e8", "#e8d0ff"
 HOT, HOT_BUBBLE = "#ff8c1a", "#ffe08a"
 HAT, BAND = "#4a2a6a", "#ff8c1a"
-PUMPKIN, RIM, STEM, GLOW, AMBER = "#ff8c1a", "#c85f0a", "#3f8a4a", "#ffd23a", "#c89020"
+PUMPKIN, RIM, STEM, HOLE_LIT, HOLE_DARK = "#ff8c1a", "#c85f0a", "#3f8a4a", "#fff0a0", "#2e1600"
 GHOST, GHOST_SHADE, EYE = "#eeeef6", "#b8b8cc", "#202030"
 FIRE, FIRE_HOT, EMBER = "#ff8c1a", "#ffd23a", "#8a3a10"
 BAT, STAR, GROUND = "#8a6ab0", "#d8d8e8", "#505050"
@@ -91,16 +91,18 @@ def hat_mood():
         # the hat over the neck: a cone, then the brim with its orange band
         f.put(0, dx + 5, " ▄██▄ ", HAT)
         f.put(1, dx + 2, "▀▀▀", HAT); f.put(1, dx + 5, "██████", BAND); f.put(1, dx + 11, "▀▀▀", HAT)
-        # the jack-o'-lantern on the ground to the right
+        # the jack-o'-lantern on the ground to the right: carved holes, dark
+        # until the candle flares (Andrew 2026-10-24: "the pumpkin is a little
+        # off" - the first face was yellow half-blocks on orange, under the rim)
         px = 20
-        lit = t % 2 == 0
-        glow = GLOW if lit else AMBER
+        hole = HOLE_LIT if t % 3 != 1 else HOLE_DARK
         f.put(6, px + 4, "█", STEM)
-        f.put(7, px + 1, "▄███████▄", RIM)
-        f.put(8, px, "▐", RIM); f.put(8, px + 1, "██", PUMPKIN); f.put(8, px + 3, "▀", glow); f.put(8, px + 4, "█", PUMPKIN)
-        f.put(8, px + 5, "▀", glow); f.put(8, px + 6, "██", PUMPKIN); f.put(8, px + 8, "▌", RIM)
-        f.put(9, px, "▐", RIM); f.put(9, px + 1, "███████", PUMPKIN); f.put(9, px + 8, "▌", RIM)
-        f.put(10, px, "▐", RIM); f.put(10, px + 1, "█", PUMPKIN); f.put(10, px + 2, "▀████▀", glow); f.put(10, px + 7, "█", PUMPKIN); f.put(10, px + 8, "▌", RIM)
+        f.put(7, px, "▄███████▄", RIM)
+        f.put(8, px, "▐", RIM); f.put(8, px + 1, "███████", PUMPKIN); f.put(8, px + 8, "▌", RIM)
+        f.put(9, px, "▐", RIM); f.put(9, px + 1, "█", PUMPKIN); f.put(9, px + 2, "█", hole); f.put(9, px + 3, "███", PUMPKIN)
+        f.put(9, px + 6, "█", hole); f.put(9, px + 7, "█", PUMPKIN); f.put(9, px + 8, "▌", RIM)
+        f.put(10, px, "▐", RIM); f.put(10, px + 1, "█", PUMPKIN); f.put(10, px + 2, "▀", hole); f.put(10, px + 3, "▄▄▄", hole)
+        f.put(10, px + 6, "▀", hole); f.put(10, px + 7, "█", PUMPKIN); f.put(10, px + 8, "▌", RIM)
         f.put(11, px + 1, "▀▀▀▀▀▀▀", RIM)
         bats(f, t, cols=(19, 25), row=0)
         f.put(3 - (t % 2), 29, "*", STAR)

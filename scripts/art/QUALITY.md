@@ -36,7 +36,9 @@ Sarachnis, gryphon, Skotizo.
 
 Halloween, Oct 15-31 (2026-10-24, `halloween.py`, Andrew: "it should have
 both"): the flask on its legs in a witch hat beside a jack-o'-lantern, meeting
-a ghost, and boiling over a fire. First pass, due a refine.
+a ghost, and boiling over a fire. First pass, due a refine; the jack-o'-lantern
+face carved with dark holes that light on the flicker (2026-10-24, "the pumpkin
+is a little off").
 
 ## Legacy, colour by glyph rules only
 
