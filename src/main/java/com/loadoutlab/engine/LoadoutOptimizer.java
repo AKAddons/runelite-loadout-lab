@@ -648,6 +648,16 @@ public final class LoadoutOptimizer {
 		private final List<GearItem> weapons;
 		private final Map<GearSlot, List<GearItem>> slotCandidates;
 		private final Map<GearItem, List<GearItem>> ammoByWeapon = new IdentityHashMap<>();
+
+		/** The weapons the search will consider - test surface. */
+		List<GearItem> weaponPool() {
+			return weapons;
+		}
+
+		/** One slot's candidates (a leading null = the slot left empty) - test surface. */
+		List<GearItem> slotPool(GearSlot slot) {
+			return slotCandidates.getOrDefault(slot, List.of());
+		}
 	}
 
 	/**
@@ -1110,6 +1120,7 @@ public final class LoadoutOptimizer {
 		// needs them present in the pool.
 		Set<Integer> requiredKeep = request.pinnedFor(slot) == null
 			? RequiredGear.requiredIds(request.getMonster(), data, request.getWaivers()).get(slot) : null;
+		boolean atlatl = slot != GearSlot.WEAPON && atlatlInPlay(data, request);
 		List<GearItem> protectives = new ArrayList<>();
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems(slot)) {
@@ -1153,8 +1164,12 @@ public final class LoadoutOptimizer {
 			// would never enter the pool otherwise.
 			boolean defensiveCandidate = request.getDefenseWeight() > 0
 				&& slot != GearSlot.WEAPON && utilityScore(item) > 0;
-			if (slot != GearSlot.WEAPON && !protective && !requiredItem && !defensiveCandidate
-				&& candidateScore(request, item) <= 0) {
+			// A weapon's own paired ammo never dies at the score cut: atlatl
+			// darts carry no stats, and without them the atlatl's line had no
+			// ammo and never scored a set (ISS-01M5PTESXPE03VZP9JB8X93KRF).
+			boolean pairedAmmo = slot == GearSlot.AMMO && forWeapon != null && RangedAmmo.strengthApplies(item, forWeapon);
+			if (slot != GearSlot.WEAPON && !protective && !requiredItem && !defensiveCandidate && !pairedAmmo
+				&& candidateScore(request, item, atlatl) <= 0) {
 				continue;
 			}
 			if (!allowedByMode(request, item)) {
@@ -1167,10 +1182,22 @@ public final class LoadoutOptimizer {
 			rows.add(item);
 		}
 
-		rows.sort(Comparator.comparingDouble((GearItem item) -> candidateScore(request, item)).reversed().thenComparingInt(GearItem::getPriceOrZero));
+		rows.sort(Comparator.comparingDouble((GearItem item) -> candidateScore(request, item, atlatl)).reversed().thenComparingInt(GearItem::getPriceOrZero));
 		rows = dedupe(rows, request);
 		if (rows.size() > limit) {
 			List<GearItem> cut = new ArrayList<>(rows.subList(0, limit));
+			// Your own weapons and your sims never fall off the weapon cut:
+			// the rough stat score misses rule-based worth (a smoke staff's
+			// +10% on standard spells), and the swaps strip prices every
+			// eligible item - an owned weapon it rates above the worn one
+			// must be a weapon the search saw (ISS-01M5PHE6WD81W8542RW71EXSHC).
+			if (slot == GearSlot.WEAPON) {
+				for (GearItem item : rows.subList(limit, rows.size())) {
+					if (request.getOwnedItems().owns(item.getId()) || request.isDream(item.getId())) {
+						cut.add(item);
+					}
+				}
+			}
 			// Defense-weighted runs keep a second tier: the best defensive
 			// items by utility beyond the offensive cut, so the beam can
 			// genuinely trade damage for safety.
@@ -1241,8 +1268,32 @@ public final class LoadoutOptimizer {
 		return result;
 	}
 
+	private static final int ECLIPSE_ATLATL = 29000;
+
+	/** The eclipse atlatl can be this ranged request's weapon: eligible and
+	 * allowed by the candidate mode (owned, simmed, or the whole game). */
+	private static boolean atlatlInPlay(LoadoutData data, OptimizationRequest request) {
+		GearItem atlatl = request.getStyle() == CombatStyle.RANGED ? data.getGear(ECLIPSE_ATLATL) : null;
+		return atlatl != null && eligible(data, request, atlatl) && allowedByMode(request, atlatl);
+	}
+
+	/** atlatl: the eclipse atlatl is in play, so a slot's gear also scores
+	 * by what the atlatl hits with - ranged accuracy and MELEE strength -
+	 * and the better of the two scores keeps either kind in the pool
+	 * (ISS-01M5PTESXPE03VZP9JB8X93KRF, Kendyy 2026-10-23: "atlatl gets its
+	 * damage from melee strength but does range damage ... the calc might
+	 * be trying to match it with range boosting gear": ferocious gloves,
+	 * ultor, torture and primordials never entered the ranged pools). */
 	static double candidateScore(OptimizationRequest request, GearItem item) {
+		return candidateScore(request, item, false);
+	}
+
+	static double candidateScore(OptimizationRequest request, GearItem item, boolean atlatl) {
 		double score = item.roughScore(request.getStyle());
+		if (atlatl) {
+			score = Math.max(score, item.getOffensive().getRanged() + item.getBonuses().getStrength() * 2.5
+				+ Math.max(0, item.getBonuses().getPrayer()) * 0.25);
+		}
 		if (slayerTaskHeadCandidate(request, item)) {
 			score += 10_000.0;
 		}
