@@ -41,8 +41,7 @@ class SpecPoisonTest
 		OptimizerService service = new OptimizerService(data);
 		try
 		{
-			OptimizerService.SpecPick pick = service.bestSpec(
-				data, request, base, CombatStyle.MELEE, goblin, PlayerLevels.MAXED, owned, null, false);
+			OptimizerService.SpecPick pick = service.bestSpec(data, request, base.get(0), owned, null, false);
 			assertNotNull(pick, "a dagger spec should be available");
 			assertEquals("dragon dagger", pick.weapon.getNameLower());
 			assertEquals(3, pick.weapon.poisonTier(),

@@ -5,12 +5,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Loaders for the bundled JSON data tables (the hub token cap keeps data
  * in resources, not source). All fail SOFT - a malformed table must never
  * take the client down; the table's tests fail loudly on emptiness instead.
+ * The one exception is {@link #gz}: the gzipped corpus is not optional.
  */
 public final class JsonResources
 {
@@ -18,18 +22,24 @@ public final class JsonResources
 	{
 	}
 
-	/** The parsed root object, or null when missing/malformed. */
-	public static JsonObject object(String resource)
+	/** The parsed resource, or null when missing/malformed. */
+	private static JsonElement parse(String resource)
 	{
 		try (InputStream in = JsonResources.class.getResourceAsStream(resource))
 		{
-			return new JsonParser().parse(
-				new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+			return new JsonParser().parse(new InputStreamReader(in, StandardCharsets.UTF_8));
 		}
 		catch (Exception e)
 		{
 			return null;
 		}
+	}
+
+	/** The parsed root object, or null when missing/malformed. */
+	public static JsonObject object(String resource)
+	{
+		JsonElement root = parse(resource);
+		return root != null && root.isJsonObject() ? root.getAsJsonObject() : null;
 	}
 
 	/**
@@ -49,77 +59,166 @@ public final class JsonResources
 	}
 
 	/** The parsed root array, or an empty one when missing/malformed. */
-	public static com.google.gson.JsonArray array(String resource)
+	public static JsonArray array(String resource)
+	{
+		JsonElement root = parse(resource);
+		return root != null && root.isJsonArray() ? root.getAsJsonArray() : new JsonArray();
+	}
+
+	/** The gzipped JSON resource beside this class, parsed; a missing or
+	 * unreadable bundle throws - the corpus is not optional. */
+	public static JsonElement gz(String resource)
 	{
 		try (InputStream in = JsonResources.class.getResourceAsStream(resource))
 		{
-			return new JsonParser().parse(
-				new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonArray();
+			if (in == null)
+			{
+				throw new IllegalStateException("Missing resource " + resource);
+			}
+			return new JsonParser().parse(new InputStreamReader(
+				new java.util.zip.GZIPInputStream(in), StandardCharsets.UTF_8));
 		}
-		catch (Exception e)
+		catch (java.io.IOException ex)
 		{
-			return new com.google.gson.JsonArray();
+			throw new IllegalStateException("Could not load " + resource, ex);
 		}
 	}
 
 	/** Copy the string array at root[key] into the collection. */
 	public static void strings(JsonObject root, String key, Collection<String> into)
 	{
-		if (root == null || !root.has(key))
-		{
-			return;
-		}
-		for (JsonElement e : root.getAsJsonArray(key))
-		{
-			into.add(e.getAsString());
-		}
+		each(root, key, JsonElement::getAsString, into);
 	}
 
 	/** Copy the int array at root[key] into the collection. */
 	public static void ints(JsonObject root, String key, Collection<Integer> into)
 	{
-		if (root == null || !root.has(key))
+		each(root, key, JsonElement::getAsInt, into);
+	}
+
+	private static <T> void each(JsonObject root, String key, Function<JsonElement, T> read, Collection<T> into)
+	{
+		if (root != null && root.has(key))
 		{
-			return;
+			root.getAsJsonArray(key).forEach(e -> into.add(read.apply(e)));
 		}
-		for (JsonElement e : root.getAsJsonArray(key))
+	}
+
+	/** A JSON int array as an int[]. */
+	public static int[] ints(JsonArray array)
+	{
+		int[] out = new int[array.size()];
+		for (int i = 0; i < out.length; i++)
 		{
-			into.add(e.getAsInt());
+			out[i] = array.get(i).getAsInt();
 		}
+		return out;
+	}
+
+	/** A JSON array of string arrays as String[][]. */
+	public static String[][] rows(JsonArray array)
+	{
+		String[][] out = new String[array.size()][];
+		for (int i = 0; i < out.length; i++)
+		{
+			JsonArray row = array.get(i).getAsJsonArray();
+			out[i] = new String[row.size()];
+			for (int j = 0; j < out[i].length; j++)
+			{
+				out[i][j] = row.get(j).getAsString();
+			}
+		}
+		return out;
+	}
+
+	/** Copy the {"name": "text"} object at root[key] into the map. */
+	public static void stringMap(JsonObject root, String key, Map<String, String> into)
+	{
+		entries(root, key, (k, v) -> into.put(k, v.getAsString()));
 	}
 
 	/** Copy the {"name": int} object at root[key] into the map. */
-	public static void stringMap(JsonObject root, String key, Map<String, String> into)
-	{
-		JsonObject obj = root == null ? null : root.getAsJsonObject(key);
-		if (obj != null)
-		{
-			obj.entrySet().forEach(e -> into.put(e.getKey(), e.getValue().getAsString()));
-		}
-	}
-
 	public static void stringIntMap(JsonObject root, String key, Map<String, Integer> into)
 	{
-		if (root == null || !root.has(key))
-		{
-			return;
-		}
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject(key).entrySet())
-		{
-			into.put(e.getKey(), e.getValue().getAsInt());
-		}
+		entries(root, key, (k, v) -> into.put(k, v.getAsInt()));
 	}
 
 	/** Copy the {"id": int} object at root[key] into the map. */
 	public static void intMap(JsonObject root, String key, Map<Integer, Integer> into)
 	{
-		if (root == null || !root.has(key))
+		entries(root, key, (k, v) -> into.put(Integer.parseInt(k), v.getAsInt()));
+	}
+
+	/** Each member of the object at root[key]; nothing when absent. */
+	private static void entries(JsonObject root, String key, BiConsumer<String, JsonElement> fn)
+	{
+		JsonObject obj = root == null ? null : root.getAsJsonObject(key);
+		if (obj != null)
 		{
-			return;
+			obj.entrySet().forEach(e -> fn.accept(e.getKey(), e.getValue()));
 		}
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject(key).entrySet())
+	}
+
+	/** A JSON-safe node from key/value pairs, in argument order (the rows
+	 * the trip kit and the pages carry; a LinkedHashMap, so gson's reflective
+	 * adapter and the canonical page JSON both see a plain ordered map). */
+	public static Map<String, Object> map(Object... kv)
+	{
+		Map<String, Object> node = new LinkedHashMap<>();
+		for (int i = 0; i < kv.length; i += 2)
 		{
-			into.put(Integer.parseInt(e.getKey()), e.getValue().getAsInt());
+			node.put((String) kv[i], kv[i + 1]);
 		}
+		return node;
+	}
+
+	// The row accessors every table loader shares: a missing or null field
+	// reads as the fallback, never a NullPointerException.
+
+	public static JsonObject object(JsonObject parent, String key)
+	{
+		JsonElement element = parent.get(key);
+		return element == null || element.isJsonNull() ? new JsonObject() : element.getAsJsonObject();
+	}
+
+	public static JsonArray array(JsonObject parent, String key)
+	{
+		JsonElement element = parent.get(key);
+		return element == null || element.isJsonNull() ? new JsonArray() : element.getAsJsonArray();
+	}
+
+	public static String string(JsonObject object, String key)
+	{
+		JsonElement element = object.get(key);
+		return element == null || element.isJsonNull() ? "" : element.getAsString();
+	}
+
+	public static Integer nullableInteger(JsonObject object, String key)
+	{
+		JsonElement element = object.get(key);
+		return element == null || element.isJsonNull() ? null : element.getAsInt();
+	}
+
+	public static int integer(JsonObject object, String key, int fallback)
+	{
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull())
+		{
+			return fallback;
+		}
+		try
+		{
+			return element.getAsInt();
+		}
+		catch (NumberFormatException ex)
+		{
+			return fallback;
+		}
+	}
+
+	public static boolean bool(JsonObject object, String key, boolean fallback)
+	{
+		JsonElement element = object.get(key);
+		return element == null || element.isJsonNull() ? fallback : element.getAsBoolean();
 	}
 }

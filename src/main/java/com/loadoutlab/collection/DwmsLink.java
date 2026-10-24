@@ -147,10 +147,7 @@ public class DwmsLink
 	/** Fold the live items into an owned map (quantities sum). */
 	public Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned)
 	{
-		for (Map.Entry<Integer, Integer> e : items.entrySet())
-		{
-			owned.merge(e.getKey(), e.getValue(), Integer::sum);
-		}
+		items.forEach((id, n) -> owned.merge(id, n, Integer::sum));
 		return owned;
 	}
 }

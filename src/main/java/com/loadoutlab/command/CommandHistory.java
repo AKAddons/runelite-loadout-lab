@@ -45,20 +45,16 @@ public class CommandHistory
 	 */
 	public boolean execute(Command cmd)
 	{
-		boolean ok;
-		try
+		if (!attempt(cmd, true, "apply"))
 		{
-			ok = cmd.apply();
-		}
-		catch (Exception ex)
-		{
-			log.warn("Command apply threw, dropping: {}", cmd.getDescription(), ex);
 			return false;
 		}
-		if (!ok) return false;
 		undoStack.push(cmd);
 		redoStack.clear();
-		trim();
+		while (undoStack.size() > CAP)
+		{
+			undoStack.pollLast();
+		}
 		return true;
 	}
 
@@ -71,25 +67,7 @@ public class CommandHistory
 	 */
 	public boolean undo()
 	{
-		if (undoStack.isEmpty()) return false;
-		Command cmd = undoStack.pop();
-		boolean ok;
-		try
-		{
-			ok = cmd.revert();
-		}
-		catch (Exception ex)
-		{
-			log.warn("Command revert threw, dropping: {}", cmd.getDescription(), ex);
-			return false;
-		}
-		if (!ok)
-		{
-			log.warn("Command revert returned false, dropping: {}", cmd.getDescription());
-			return false;
-		}
-		redoStack.push(cmd);
-		return true;
+		return move(undoStack, redoStack, false, "revert");
 	}
 
 	/**
@@ -98,25 +76,42 @@ public class CommandHistory
 	 */
 	public boolean redo()
 	{
-		if (redoStack.isEmpty()) return false;
-		Command cmd = redoStack.pop();
-		boolean ok;
+		return move(redoStack, undoStack, true, "re-apply");
+	}
+
+	/** Pop from one stack, run the command, push onto the other; a refusal
+	 * or a throw drops the entry (fail-open). */
+	private static boolean move(Deque<Command> from, Deque<Command> to, boolean apply, String verb)
+	{
+		if (from.isEmpty())
+		{
+			return false;
+		}
+		Command cmd = from.pop();
+		if (!attempt(cmd, apply, verb))
+		{
+			return false;
+		}
+		to.push(cmd);
+		return true;
+	}
+
+	/** Runs apply or revert; false - and a warning - when it refused or threw. */
+	private static boolean attempt(Command cmd, boolean apply, String verb)
+	{
 		try
 		{
-			ok = cmd.apply();
+			if (apply ? cmd.apply() : cmd.revert())
+			{
+				return true;
+			}
+			log.warn("Command {} returned false, dropping: {}", verb, cmd.getDescription());
 		}
 		catch (Exception ex)
 		{
-			log.warn("Command re-apply threw, dropping: {}", cmd.getDescription(), ex);
-			return false;
+			log.warn("Command {} threw, dropping: {}", verb, cmd.getDescription(), ex);
 		}
-		if (!ok)
-		{
-			log.warn("Command re-apply returned false, dropping: {}", cmd.getDescription());
-			return false;
-		}
-		undoStack.push(cmd);
-		return true;
+		return false;
 	}
 
 	public boolean canUndo() { return !undoStack.isEmpty(); }
@@ -140,13 +135,4 @@ public class CommandHistory
 		undoStack.clear();
 		redoStack.clear();
 	}
-
-	private void trim()
-	{
-		while (undoStack.size() > CAP)
-		{
-			undoStack.pollLast();
-		}
-	}
-
 }

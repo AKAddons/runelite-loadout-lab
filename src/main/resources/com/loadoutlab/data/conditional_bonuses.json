@@ -1,0 +1,53 @@
+{
+ "_comment": "The gated multiplier rules of DpsCalculator.applyRules, one list per style.what.phase ('pre' runs before the avarice/salve/slayer chain, 'post' after it). ORDER MATTERS: every multiply floors, so the rows run in file order - the statement order they had as code. Gates (all named must hold): attr = a monster attribute; rev = a CHARGED wilderness weapon by exact name, in the Wilderness (revWeaponBuff); any = a worn item-name fragment (any of the list); anySet / allSet = a gear_sets.json 'any' / 'all' key. group = once one row of the group applies the rest of the group is skipped (the keris pair: the Amascut partisan is also 'keris'). Effect: num/den multiplies the value (label counted under source); base = true adds num/den of the phase's BASE value instead (the obsidian set); demonbane = a percent scaled by the monster's demonbane vulnerability (DemonbaneVulnerability), which labels itself.",
+ "melee.accuracy.pre": [
+  {"attr": "golem", "any": ["granite hammer"], "num": 13, "den": 10, "source": "golembane weapon", "label": "+30% accuracy",
+   "_note": "Golembane (Aug 2025: granite hammer 30%, barronite mace 15%) - before the salve/slayer chain because it stacks multiplicatively with it (helm first, per the wiki)."},
+  {"attr": "golem", "any": ["barronite mace"], "num": 23, "den": 20, "source": "golembane weapon", "label": "+15% accuracy"}
+ ],
+ "melee.accuracy.post": [
+  {"anySet": "tzhaar", "allSet": "obsidian", "base": true, "num": 1, "den": 10, "source": "obsidian set", "label": "+10% base accuracy"},
+  {"rev": ["ursine chainmace", "viggora's chainmace"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% accuracy"},
+  {"attr": "demon", "any": ["arclight", "emberlight"], "demonbane": 70, "source": "demonbane weapon"},
+  {"attr": "demon", "any": ["bone claws", "burning claws"], "demonbane": 5, "source": "demonbane weapon"},
+  {"attr": "kalphite", "any": ["keris partisan of breaching"], "num": 133, "den": 100, "source": "keris vs kalphites", "label": "+33% accuracy"},
+  {"attr": "dragon", "any": ["dragon hunter lance"], "num": 6, "den": 5, "source": "dragon hunter lance", "label": "+20% accuracy"}
+ ],
+ "melee.damage.pre": [
+  {"attr": "golem", "any": ["granite hammer"], "num": 13, "den": 10, "source": "golembane weapon", "label": "+30% damage"},
+  {"attr": "golem", "any": ["barronite mace"], "num": 23, "den": 20, "source": "golembane weapon", "label": "+15% damage"},
+  {"attr": "leafy", "any": ["leaf-bladed battleaxe"], "num": 47, "den": 40, "source": "leaf-bladed battleaxe", "label": "+17.5% damage vs leafy",
+   "_note": "Damage only (accuracy untouched); stacks with the slayer helm."}
+ ],
+ "melee.damage.post": [
+  {"attr": "demon", "any": ["arclight", "emberlight"], "demonbane": 70, "source": "demonbane weapon"},
+  {"attr": "demon", "any": ["silverlight", "darklight"], "demonbane": 60, "source": "demonbane weapon",
+   "_note": "Damage only - the wiki and official calc give these no accuracy bonus."},
+  {"attr": "demon", "any": ["bone claws", "burning claws"], "demonbane": 5, "source": "demonbane weapon"},
+  {"anySet": "tzhaar", "allSet": "obsidian", "base": true, "num": 1, "den": 10, "source": "obsidian set", "label": "+10% base damage"},
+  {"rev": ["ursine chainmace", "viggora's chainmace"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% damage"},
+  {"anySet": "tzhaar", "any": ["berserker necklace"], "num": 6, "den": 5, "source": "berserker necklace", "label": "+20% damage"},
+  {"attr": "kalphite", "group": "keris", "any": ["keris partisan of amascut"], "num": 115, "den": 100, "source": "keris vs kalphites", "label": "+15% damage"},
+  {"attr": "kalphite", "group": "keris", "any": ["keris"], "num": 133, "den": 100, "source": "keris vs kalphites", "label": "+33% damage"},
+  {"attr": "dragon", "any": ["dragon hunter lance"], "num": 6, "den": 5, "source": "dragon hunter lance", "label": "+20% damage"}
+ ],
+ "ranged.accuracy.post": [
+  {"rev": ["craw's bow", "webweaver bow"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% accuracy"},
+  {"attr": "dragon", "any": ["dragon hunter crossbow"], "num": 13, "den": 10, "source": "dragon hunter crossbow", "label": "+30% accuracy"},
+  {"attr": "demon", "any": ["scorching bow"], "demonbane": 30, "source": "scorching bow"}
+ ],
+ "ranged.damage.post": [
+  {"rev": ["craw's bow", "webweaver bow"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% damage"},
+  {"attr": "dragon", "any": ["dragon hunter crossbow"], "num": 5, "den": 4, "source": "dragon hunter crossbow", "label": "+25% damage"},
+  {"attr": "demon", "any": ["scorching bow"], "demonbane": 30, "source": "scorching bow"}
+ ],
+ "magic.accuracy.post": [
+  {"rev": ["thammaron's sceptre", "thammaron's sceptre (a)", "accursed sceptre", "accursed sceptre (a)"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% accuracy"},
+  {"attr": "dragon", "any": ["dragon hunter wand"], "num": 7, "den": 4, "source": "dragon hunter wand", "label": "+75% accuracy"}
+ ],
+ "magic.damage.post": [
+  {"rev": ["thammaron's sceptre", "thammaron's sceptre (a)", "accursed sceptre", "accursed sceptre (a)"], "num": 3, "den": 2, "source": "wilderness weapon", "label": "+50% damage"},
+  {"attr": "dragon", "any": ["dragon hunter wand"], "num": 7, "den": 5, "source": "dragon hunter wand", "label": "+40% damage",
+   "_note": "Accuracy is 7/4 but damage is 7/5 (official-verified) - upstream applied 7/4 to both (ENGINE-GAPS bug #1)."}
+ ]
+}

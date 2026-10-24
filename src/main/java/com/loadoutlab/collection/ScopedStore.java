@@ -9,4 +9,10 @@ public interface ScopedStore
 	default void reload()
 	{
 	}
+
+	/** The reset-customisations control: a store that holds customisations
+	 * wipes this scope's; bank memory (the ledger) is no customisation and stays. */
+	default void clear()
+	{
+	}
 }

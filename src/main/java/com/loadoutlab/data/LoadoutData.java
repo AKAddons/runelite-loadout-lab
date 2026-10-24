@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.Getter;
 
@@ -37,15 +38,8 @@ public final class LoadoutData
 		EnumMap<GearSlot, List<GearItem>> bySlot = new EnumMap<>(GearSlot.class);
 		for (GearSlot slot : GearSlot.values())
 		{
-			bySlot.put(slot, new ArrayList<>());
-		}
-		for (GearItem item : this.gearItems)
-		{
-			bySlot.get(item.getSlot()).add(item);
-		}
-		for (GearSlot slot : GearSlot.values())
-		{
-			bySlot.put(slot, Collections.unmodifiableList(bySlot.get(slot)));
+			bySlot.put(slot, Collections.unmodifiableList(this.gearItems.stream()
+				.filter(item -> item.getSlot() == slot).collect(Collectors.toList())));
 		}
 		this.gearBySlot = Collections.unmodifiableMap(bySlot);
 	}
@@ -60,25 +54,12 @@ public final class LoadoutData
 	 */
 	public LoadoutData freeToPlayView()
 	{
-		List<GearItem> free = new ArrayList<>();
+		List<GearItem> free = gearItems.stream().filter(g -> !g.isMembers()).collect(Collectors.toList());
 		Map<Integer, GearItem> byId = new HashMap<>();
-		for (GearItem g : gearItems)
-		{
-			if (!g.isMembers())
-			{
-				free.add(g);
-				byId.put(g.getId(), g);
-			}
-		}
-		List<SpellStats> freeSpells = new ArrayList<>();
-		for (SpellStats spell : spells)
-		{
-			if ("standard".equalsIgnoreCase(spell.getSpellbook()))
-			{
-				freeSpells.add(spell);
-			}
-		}
-		return new LoadoutData(free, monsters, freeSpells, byId, variantToBase);
+		free.forEach(g -> byId.put(g.getId(), g));
+		return new LoadoutData(free, monsters, spells.stream()
+			.filter(spell -> "standard".equalsIgnoreCase(spell.getSpellbook())).collect(Collectors.toList()),
+			byId, variantToBase);
 	}
 
 	/**
@@ -257,16 +238,14 @@ public final class LoadoutData
 	public Set<Integer> equivalentIds(int itemId)
 	{
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
-		Set<Integer> ids = new HashSet<>();
-		ids.add(itemId);
-		ids.add(base);
-		for (Map.Entry<Integer, Integer> entry : variantToBase.entrySet())
+		Set<Integer> ids = new HashSet<>(List.of(itemId, base));
+		variantToBase.forEach((variant, b) ->
 		{
-			if (entry.getValue().equals(base))
+			if (b.equals(base))
 			{
-				ids.add(entry.getKey());
+				ids.add(variant);
 			}
-		}
+		});
 		return ids;
 	}
 

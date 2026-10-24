@@ -8,9 +8,11 @@ import com.loadoutlab.data.JsonResources;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.ArrayList;
 
+@RequiredArgsConstructor
 public final class PrayerBonuses
 {
 	public static final PrayerBonuses NONE = new PrayerBonuses(1.0, 1.0, 1.0, 1.0, 1.0, 0.0);
@@ -30,16 +32,6 @@ public final class PrayerBonuses
 	private String magicName = "";
 	@Getter
 	private final double magicDamagePercent;
-
-	public PrayerBonuses(double meleeAccuracy, double meleeStrength, double rangedAccuracy, double rangedStrength, double magicAccuracy, double magicDamagePercent)
-	{
-		this.meleeAccuracy = meleeAccuracy;
-		this.meleeStrength = meleeStrength;
-		this.rangedAccuracy = rangedAccuracy;
-		this.rangedStrength = rangedStrength;
-		this.magicAccuracy = magicAccuracy;
-		this.magicDamagePercent = magicDamagePercent;
-	}
 
 	public static PrayerBonuses bestAvailable(PlayerLevels levels)
 	{
@@ -188,24 +180,13 @@ public final class PrayerBonuses
 			{
 				continue;
 			}
-			double a = (Double) row[1];
-			double b = (Double) row[2];
-			PrayerBonuses result;
-			if (style == CombatStyle.RANGED)
-			{
-				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
-					a, b, fallback.magicAccuracy, fallback.magicDamagePercent);
-			}
-			else if (style == CombatStyle.MAGIC)
-			{
-				result = new PrayerBonuses(fallback.meleeAccuracy, fallback.meleeStrength,
-					fallback.rangedAccuracy, fallback.rangedStrength, a, b);
-			}
-			else
-			{
-				result = new PrayerBonuses(a, b, fallback.rangedAccuracy,
-					fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent);
-			}
+			// The fallback's six factors with this style's pair replaced.
+			double[] f = {fallback.meleeAccuracy, fallback.meleeStrength, fallback.rangedAccuracy,
+				fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent};
+			int at = style == CombatStyle.RANGED ? 2 : style == CombatStyle.MAGIC ? 4 : 0;
+			f[at] = (Double) row[1];
+			f[at + 1] = (Double) row[2];
+			PrayerBonuses result = new PrayerBonuses(f[0], f[1], f[2], f[3], f[4], f[5]);
 			result.meleeName = style == CombatStyle.MELEE ? pick : fallback.meleeName;
 			result.rangedName = style == CombatStyle.RANGED ? pick : fallback.rangedName;
 			result.magicName = style == CombatStyle.MAGIC ? pick : fallback.magicName;

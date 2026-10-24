@@ -2,9 +2,12 @@
 package com.loadoutlab.engine;
 
 import lombok.Getter;
+import lombok.ToString;
 import net.runelite.api.Skill;
 import java.util.Map;
 
+/** The seven combat levels; toString() is the optimizer's cache-key form. */
+@ToString
 public final class PlayerLevels
 {
 	public static final PlayerLevels MAXED = new PlayerLevels(99, 99, 99, 99, 99, 99, 99);

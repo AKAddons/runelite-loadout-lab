@@ -33,14 +33,15 @@ public final class RequirementProfile
 		return new RequirementProfile(levels, allQuests());
 	}
 
+	/** Both already unmodifiable (the constructor wraps its copies). */
 	public Map<Skill, Integer> getLevels()
 	{
-		return Collections.unmodifiableMap(levels);
+		return levels;
 	}
 
 	public Set<String> getCompletedQuests()
 	{
-		return Collections.unmodifiableSet(completedQuests);
+		return completedQuests;
 	}
 
 	public boolean canEquip(GearRequirements requirements)

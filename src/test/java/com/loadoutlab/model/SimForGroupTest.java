@@ -1,6 +1,7 @@
 package com.loadoutlab.model;
 
 import com.loadoutlab.data.DataService;
+import com.loadoutlab.data.GearSlot;
 import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ class SimForGroupTest
 			}
 
 			@Override
-			public void pin(int monsterId, String slot, int itemId)
+			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
 			{
 				calls.add("pin");
 			}
@@ -59,7 +60,7 @@ class SimForGroupTest
 		engine.setOwnedCheck(id -> false);
 		MonsterStats a = data.searchMonsters("abyssal demon", 1).get(0);
 		MonsterStats b = data.searchMonsters("black demon", 1).get(0);
-		state.selectRoster(List.of(a, b), "Custom roster");
+		state.selectRoster(List.of(a, b), "Custom roster", false);
 
 		assertTrue(engine.execute("sim-for-group", Map.of("itemId", 26384, "label", "Torva platebody")));
 		assertEquals(List.of("sim " + a.getId() + " 26384", "sim " + b.getId() + " 26384"), calls);

@@ -8,9 +8,9 @@ import javax.swing.*;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.JsonResources;
+import com.loadoutlab.data.Names;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.ui.MonsterIcons;
 import java.awt.event.MouseAdapter;
@@ -29,6 +29,7 @@ import net.runelite.client.util.ImageUtil;
  * This view grows toward the ported panel card-by-card; the model
  * gains fields as this code asks for them.
  */
+@lombok.RequiredArgsConstructor
 public class ResultCards
 {
 	private static final Color CARD = ColorScheme.DARKER_GRAY_COLOR;
@@ -36,16 +37,12 @@ public class ResultCards
 	private final SpriteManager spriteManager;
 	private final CommandSink commands;
 	private final ItemPicker picker;
-	private List<String> spellOptions = List.of();
 	private Map<String, Object> assumeOptions;
-	private String liveSpellbook;
-	private Map<String, Object> spellbooks;
-	private List<Map<String, Object>> supplyCatalog = List.of();
-	private List<Map<String, Object>> dartTiers = List.of();
 	private Map<String, Object> pageWide;
 	private Map<String, Object> pageParams;
 	/** Small sailing skill icon for ship-eligible rows/markers ("naval" is
 	 * not player vernacular - the icon speaks instead). */
+	@lombok.Setter
 	private Supplier<BufferedImage> sailingIcon;
 
 	/** The trip breakdown's show/hide: a per-profile setting the plugin
@@ -61,12 +58,8 @@ public class ResultCards
 		this.breakdownToggle = toggle;
 	}
 
+	@lombok.Setter
 	private BooleanSupplier degradableChip = () -> true;
-
-	public void setDegradableChip(BooleanSupplier shown)
-	{
-		this.degradableChip = shown;
-	}
 
 	/** The trio's fourth sigil (Mike, Discord 2026-09-07; Andrew 2026-09-08:
 	 * the text pill clipped): *N = N degrading items in the shown set,
@@ -87,60 +80,55 @@ public class ResultCards
 		{
 			return null;
 		}
-		JButton button = new JButton("*" + n);
-		button.setForeground(skip ? new Color(0xE6B45A) : new Color(0x968C78));
-		button.setContentAreaFilled(false);
-		button.setBorder(skip ? new RoundedBorder(new Color(0xBE9646), 2, 14)
-			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
-		button.setToolTipText(skip ? "Degradable gear skipped here - click to allow"
-			: n + " degrade or burn charges - click to skip them here");
-		button.setFocusable(false);
-		button.addActionListener(e -> commands.send("toggle-degradable", new HashMap<>()));
+		JButton button = sigilButton("*" + n, skip, skip ? new Color(0xE6B45A) : new Color(0x968C78),
+			new Color(0xBE9646), skip ? Ui.text("degrade.skip")
+				: n + " degrade or burn charges - click to skip them here");
+		button.addActionListener(e -> commands.send("toggle-degradable"));
 		return button;
 	}
 
-	public void setSailingIcon(Supplier<BufferedImage> icon)
+	/** A trio sigil button: lit with its ring when it holds anything, muted
+	 * and ringless otherwise (the degrade sigil wears the same cut). */
+	private static JButton sigilButton(String text, boolean lit, Color fg, Color ring, String tip)
 	{
-		this.sailingIcon = icon;
+		JButton button = new JButton(text);
+		button.setForeground(fg);
+		button.setContentAreaFilled(false);
+		button.setBorder(lit ? new RoundedBorder(ring, 2, 14) : BorderFactory.createEmptyBorder(3, 15, 3, 15));
+		button.setToolTipText(tip);
+		button.setFocusable(false);
+		return button;
 	}
 
-	private Icon sailingIconSmall()
+	/** A cannon-strip icon button: the item's image, a red ring when the
+	 * operate gate blocks it, the dark hover ring otherwise. */
+	private JButton iconButton(int itemId, boolean blocked)
+	{
+		JButton button = new JButton(new ImageIcon(itemManager.getImage(itemId)));
+		button.setContentAreaFilled(false);
+		button.setFocusable(false);
+		button.setBorder(new RoundedBorder(blocked
+			? new Color(0xC86464) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+		return button;
+	}
+
+	Icon sailingIconSmall()
 	{
 		Supplier<BufferedImage> supplier = sailingIcon;
 		BufferedImage img = supplier == null ? null : supplier.get();
 		return img == null ? null : Ui.icon(img, 14);
 	}
 
+	@lombok.Setter(lombok.AccessLevel.PACKAGE)
 	private JButton addMob;
-
-	void setAddMob(JButton addMob)
-	{
-		this.addMob = addMob;
-	}
-
+	@lombok.Setter(lombok.AccessLevel.PACKAGE)
 	private JButton reload;
-
-	void setReload(JButton reload)
-	{
-		this.reload = reload;
-	}
-
-	public ResultCards(ItemManager itemManager,
-		SpriteManager spriteManager,
-		CommandSink commands, ItemPicker picker)
-	{
-		this.itemManager = itemManager;
-		this.spriteManager = spriteManager;
-		this.commands = commands;
-		this.picker = picker;
-	}
 
 	/** The tab the page is effectively showing: the explicit selection,
 	 * or the first style the first mob answers. */
 	static String effectiveTab(Map<String, Object> page)
 	{
-		Map<String, Object> params = firstParams(page);
-		String selected = params == null ? null : Model.str(params, "selectedTab");
+		String selected = Model.str(firstParams(page), "selectedTab");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
 			for (Map<String, Object> mob : Model.list(entry, "mobs"))
@@ -167,8 +155,7 @@ public class ResultCards
 					{
 						continue;
 					}
-					Map<String, Object> yours = Model.map(node, "yours");
-					boolean kitBacked = yours != null && Model.flag(yours, "kitBacked");
+					boolean kitBacked = Model.flag(Model.map(node, "yours"), "kitBacked");
 					double dps = Model.num(node, "tabDps");
 					if (best == null || (kitBacked && !bestKitBacked)
 						|| (kitBacked == bestKitBacked && dps > bestDps))
@@ -215,13 +202,7 @@ public class ResultCards
 				supplies = found;
 			}
 		}
-		Object spells = page == null ? null : page.get("spells");
-		spellOptions = spells instanceof List ? (List<String>) spells : List.of();
 		assumeOptions = Model.map(page, "assumeOptions");
-		liveSpellbook = Model.str(page, "liveSpellbook");
-		spellbooks = Model.map(page, "spellbooks");
-		supplyCatalog = Model.list(page, "supplyCatalog");
-		dartTiers = Model.list(page, "dartTiers");
 		pageWide = page;
 		pageParams = firstParams(page);
 	}
@@ -233,9 +214,8 @@ public class ResultCards
 	{
 		capture(page);
 		String tab = effectiveTab(page);
-		Map<String, Object> params = firstParams(page);
-		boolean bis = params != null && Model.flag(params, "viewingBis");
-		int lens = params == null ? 0 : Model.id(params, "lensIndex");
+		boolean bis = Model.flag(pageParams, "viewingBis");
+		int lens = Model.id(pageParams, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
 			List<Map<String, Object>> mobs = Model.list(entry, "mobs");
@@ -244,9 +224,7 @@ public class ResultCards
 				continue;
 			}
 			double rosterThralls = Model.num(Model.map(entry, "thralls"), "dps");
-			JPanel box = new JPanel();
-			box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-			box.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			JPanel box = Ui.column(ColorScheme.DARKER_GRAY_COLOR);
 			int shownLens = Math.min(Math.max(lens, 0), mobs.size() - 1);
 			for (int i = 0; i < mobs.size(); i++)
 			{
@@ -258,8 +236,7 @@ public class ResultCards
 			}
 			if (addMob != null)
 			{
-				JPanel addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-				addRow.setOpaque(false);
+				JPanel addRow = Ui.clear(new FlowLayout(FlowLayout.LEFT, 0, 2));
 				addRow.add(addMob);
 				if (reload != null)
 				{
@@ -280,12 +257,9 @@ public class ResultCards
 	{
 		capture(page);
 		String tab = effectiveTab(page);
-		Map<String, Object> params = firstParams(page);
-		boolean bis = params != null && Model.flag(params, "viewingBis");
-		JPanel column = new JPanel();
-		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
-		column.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		int lens = params == null ? 0 : Model.id(params, "lensIndex");
+		boolean bis = Model.flag(pageParams, "viewingBis");
+		JPanel column = Ui.column(ColorScheme.DARK_GRAY_COLOR);
+		int lens = Model.id(pageParams, "lensIndex");
 		for (Map<String, Object> entry : Model.list(page, "entries"))
 		{
 			if (Model.flag(entry, "pending"))
@@ -305,21 +279,14 @@ public class ResultCards
 			// a mixed roster renders none of this; lensing back to the sea
 			// mob brings it back with the params intact.
 			Map<String, Object> ship = Model.map(entry, "ship");
-			boolean naval = Model.flag(shown, "naval") && params != null;
+			boolean naval = Model.flag(shown, "naval") && pageParams != null;
 			// The card never hides (Andrew, v2): cannons live INSIDE it -
 			// the 1x3 strip above the gear grid, the breakdown below.
 			// Cannon dps folds into the shown numbers only while nobody
 			// mans one; a manned trip's gear is not attacking.
-			boolean manned = ship != null
-				&& "cannon".equals(Model.str(ship, "station"));
-			double shipDps = naval && ship != null && !manned
-				? Model.num(ship, "dps") : 0;
-			pageThrallsDps = thrallsDps;
-			renderShipDps = shipDps;
-			Map<String, Object> shownCard = Model.map(Model.map(Model.map(shown, "styles"), tab),
-				bis ? "bis" : "yours");
-			column.add(mobCard(shown, tab, bis, Model.thrallsFor(shownCard, thrallsDps) + shipDps,
-				naval ? ship : null, naval));
+			boolean manned = "cannon".equals(Model.str(ship, "station"));
+			double shipDps = naval && !manned ? Model.num(ship, "dps") : 0;
+			column.add(mobCard(shown, tab, bis, thrallsDps, shipDps, naval ? ship : null, naval));
 			column.add(Box.createVerticalStrut(8));
 		}
 		return column;
@@ -343,8 +310,7 @@ public class ResultCards
 			for (String style : styles.keySet())
 			{
 				Map<String, Object> styleNode = Model.map(styles, style);
-				Map<String, Object> side = styleNode == null ? null
-					: Model.map(styleNode, bis ? "bis" : "yours");
+				Map<String, Object> side = Model.map(styleNode, bis ? "bis" : "yours");
 				if (side == null || !Model.flag(side, "kitBacked"))
 				{
 					continue;
@@ -358,8 +324,7 @@ public class ResultCards
 				}
 			}
 		}
-		Map<String, Object> node = styles == null ? null : Model.map(styles, tab);
-		Map<String, Object> shown = node == null ? null : Model.map(node, bis ? "bis" : "yours");
+		Map<String, Object> shown = Model.map(Model.map(styles, tab), bis ? "bis" : "yours");
 		boolean tabOnly = shown != null && !Model.flag(shown, "kitBacked");
 		// Rows and tab buttons COUNT THE SAME THINGS (field report
 		// 2026-08-15): set + spec (in the tab facts) + thralls, and a
@@ -377,7 +342,7 @@ public class ResultCards
 		// Selection is an EDGE, not a box: the active mob wears a 3px
 		// accent bar and a faint tint; the rest stay transparent.
 		boolean sea = Model.flag(mob, "naval");
-		Color edge = sea ? new Color(0x78AFD7) : ACCENT;
+		Color edge = sea ? SEA : ACCENT;
 		row.setOpaque(selected);
 		if (selected)
 		{
@@ -397,7 +362,7 @@ public class ResultCards
 		// full label for disambiguation.
 		String cleanName = name == null ? ""
 			: name.replaceFirst(" - lvl \\d+$", "");
-		JLabel label = Ui.small(cleanName, selected ? edge : new Color(0xC8C8C8));
+		JLabel label = Ui.small(cleanName, selected ? edge : TEXT);
 		if (monsterIcons != null && iconsEnabled.getAsBoolean())
 		{
 			// The mob's wiki render rides the row; text-only until it
@@ -423,11 +388,11 @@ public class ResultCards
 		// The name yields first when the panel narrows - the columns to
 		// its right keep their width, so they stay aligned.
 		label.setMinimumSize(new Dimension(20, 18));
-		label.setToolTipText("<html>" + Model.str(mob, "label")
+		label.setToolTipText("<html>" + name
 			+ (bestStyle != null
 				? "<br>" + dps + " dps with " + bestStyle + " (best in the trip kit)"
-				: tabOnly ? "<br>* tab-only - this style is not in the shared trip kit" : "")
-			+ "<br>Click to show this mob</html>");
+				: tabOnly ? Ui.text("roster.tabonly") : "")
+			+ Ui.text("roster.click"));
 		Runnable pick = () ->
 		{
 			label.setForeground(ACCENT);
@@ -453,8 +418,7 @@ public class ResultCards
 		}
 		if (sailTag != null)
 		{
-			JPanel nameSeat = new JPanel(new BorderLayout(4, 0));
-			nameSeat.setOpaque(false);
+			JPanel nameSeat = Ui.clear(new BorderLayout(4, 0));
 			nameSeat.add(label, BorderLayout.CENTER);
 			nameSeat.add(sailTag, BorderLayout.EAST);
 			row.add(nameSeat, BorderLayout.CENTER);
@@ -466,37 +430,25 @@ public class ResultCards
 
 		// The aligned right block: [icon dps] x - the icon rides right,
 		// snug against its number.
-		JPanel columns = new JPanel(new BorderLayout(2, 0));
-		columns.setOpaque(false);
+		JPanel columns = Ui.clear(new BorderLayout(2, 0));
 
-		JLabel icon = new JLabel();
-		icon.setPreferredSize(new Dimension(18, 18));
-		icon.setHorizontalAlignment(SwingConstants.CENTER);
+		JLabel icon = square(18);
 		if (bestStyle != null && spriteManager != null)
 		{
-			int sprite = (int) Model.num(Model.map(styles, bestStyle), "styleSprite");
-			String best = bestStyle;
-			if (sprite > 0)
-			{
-				spriteManager.getSpriteAsync(sprite, 0, img ->
-					SwingUtilities.invokeLater(() ->
-						icon.setIcon(new ImageIcon(img))));
-			}
-			icon.setToolTipText("Best style: " + best);
+			seatSprite(icon, Model.id(Model.map(styles, bestStyle), "styleSprite"), 0);
+			icon.setToolTipText("Best style: " + bestStyle);
 		}
-		JPanel iconDps = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
-		iconDps.setOpaque(false);
+		JPanel iconDps = Ui.clear(new FlowLayout(FlowLayout.RIGHT, 3, 0));
 		iconDps.add(icon);
 
 		JLabel dpsLabel = Ui.small(dps, selected ? Color.WHITE : new Color(0xAAAAAA));
 		iconDps.add(dpsLabel);
 		columns.add(iconDps, BorderLayout.CENTER);
 
-		JLabel remove = new JLabel("x", SwingConstants.CENTER);
+		JLabel remove = Ui.xLabel("Remove " + name + " from this result",
+			() -> commands.send("remove-mob", Map.of("index", index)));
+		remove.setHorizontalAlignment(SwingConstants.CENTER);
 		remove.setPreferredSize(new Dimension(14, 18));
-		remove.setForeground(new Color(0x969696));
-		remove.setToolTipText("Remove " + name + " from this result");
-		remove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		// Right-click on the row or its x: Move up / Move down (Andrew
 		// 2026-09-02 - a menu, not drag handles: no Swing drag layer).
 		MouseAdapter reorder = new MouseAdapter()
@@ -536,26 +488,6 @@ public class ResultCards
 		};
 		row.addMouseListener(reorder);
 		remove.addMouseListener(reorder);
-		remove.addMouseListener(new MouseAdapter()
-		{
-			public void mouseClicked(MouseEvent e)
-			{
-				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e))
-				{
-					commands.send("remove-mob", Map.of("index", index));
-				}
-			}
-
-			public void mouseEntered(MouseEvent e)
-			{
-				remove.setForeground(new Color(0xDC7878));
-			}
-
-			public void mouseExited(MouseEvent e)
-			{
-				remove.setForeground(new Color(0x969696));
-			}
-		});
 		columns.add(remove, BorderLayout.EAST);
 		row.add(columns, BorderLayout.EAST);
 		return row;
@@ -563,6 +495,17 @@ public class ResultCards
 
 	/** The brand accent (the mascot-era green lives on as a plain constant). */
 	static final Color ACCENT = new Color(0x8CC88C);
+	/** The card's greys, lightest to dimmest, and the sea-blue of ship rows. */
+	static final Color TEXT = new Color(0xC8C8C8);
+	static final Color LIGHT = new Color(0xBEBEBE);
+	static final Color MID = new Color(0xA0A0A0);
+	static final Color DIM = new Color(0x8C8C8C);
+	static final Color SEA = new Color(0x78AFD7);
+	/** The trio's sigil colours - {active, muted, active border} - shared
+	 * with the page-wide count pills: sims green, exclusions red, filters grey. */
+	static final Color[] SIM_PALETTE = {new Color(0x82C882), new Color(0x6E8C6E), new Color(0x5FA05F)};
+	static final Color[] EXCLUDE_PALETTE = {new Color(0xDC7878), new Color(0x8C6E6E), new Color(0xAA5A5A)};
+	static final Color[] FILTER_PALETTE = {new Color(0xBEBEBE), new Color(0x828282), new Color(0x969696)};
 
 	/** Async wiki thumbnails for the roster rows (null = text-only). */
 	private MonsterIcons monsterIcons;
@@ -576,21 +519,12 @@ public class ResultCards
 	}
 
 	private boolean rosterView;
-	/** Set per side() render for the #spec cell's tooltip + pin menu. */
-	private double cellSpecDps;
-	private double cellSetDps;
-	private double cellThrallsDps;
-	private int cellSpecWeaponId;
-	private boolean cellSpecPinned;
-	/** The mob's pins (slot + id) for the cells' pin badge. */
-	private List<Map<String, Object>> cellPins = List.of();
-	/** Item ids this mob requires worn (slayer gear) - the "needed" note. */
-	private Set<Integer> cellRequired = new HashSet<>();
 	private static final Color PIN_BADGE = new Color(0xD2B464);
 
-	private boolean pinnedOn(String slot, int id)
+	/** Whether the mob's pins (slot + id) hold this item in this slot. */
+	private static boolean pinnedOn(List<Map<String, Object>> pins, String slot, int id)
 	{
-		for (Map<String, Object> pin : cellPins)
+		for (Map<String, Object> pin : pins)
 		{
 			if (slot.equals(Model.str(pin, "slot")) && Model.id(pin, "id") == id)
 			{
@@ -600,18 +534,26 @@ public class ResultCards
 		return false;
 	}
 
-	/** The page's thrall dps and the lensed ship's dps, kept for the tab
-	 * strip: each tab folds its OWN card's thralls (a stood-down card
-	 * folds none) plus the cannons. */
-	private double pageThrallsDps;
-	private double renderShipDps;
-
-	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps,
-		Map<String, Object> ship, boolean naval)
+	/** Whether a list of numbers (the mob's required gear) names the id. */
+	private static boolean hasId(List<Object> ids, int id)
 	{
-		JPanel card = new JPanel();
-		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-		card.setBackground(CARD);
+		for (Object o : ids)
+		{
+			if (o instanceof Number && ((Number) o).intValue() == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** thrallsDps = the page's thrall dps, shipDps = the lensed ship's: each
+	 * tab folds its OWN card's thralls (a stood-down card folds none) plus
+	 * the cannons. */
+	private JPanel mobCard(Map<String, Object> mob, String tab, boolean bis, double thrallsDps,
+		double shipDps, Map<String, Object> ship, boolean naval)
+	{
+		JPanel card = Ui.column(CARD);
 		card.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(
 				bis ? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR, 1, true),
@@ -626,38 +568,29 @@ public class ResultCards
 		{
 			Icon sail = sailingIconSmall();
 			navalTag = sail != null ? new JLabel(sail)
-				: Ui.label("sea", new Color(0x78AFD7));
+				: Ui.label("sea", SEA);
 			navalTag.setToolTipText("Ship combat: fought from your boat");
 		}
 		int mobHp = Model.id(mob, "hp");
-		if (mobHp > 0)
+		if (mobHp > 0 || navalTag != null)
 		{
-			// hp rides the header, muted (field ask 2026-08-21).
-			JLabel hpLabel = Ui.label(mobHp + "hp", new Color(0x8C8C8C));
-			hpLabel.setFont(FontManager.getRunescapeSmallFont());
 			// Title CENTER (yields when narrow), hp EAST (survives) -
 			// WEST/CENTER clipped the title and pushed hp out entirely
 			// (field screenshot 2026-08-21: 'Duke Sucellus (Awa... lvl 1').
-			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
-			titleRow.setBackground(CARD);
+			JPanel titleRow = Ui.darker(new BorderLayout(8, 0));
 			title.setMinimumSize(new Dimension(20, 18));
 			titleRow.add(title, BorderLayout.CENTER);
-			JPanel hpSeat = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
-			hpSeat.setOpaque(false);
+			JPanel hpSeat = Ui.clear(new FlowLayout(FlowLayout.LEFT, 4, 2));
 			if (navalTag != null)
 			{
 				hpSeat.add(navalTag);
 			}
-			hpSeat.add(hpLabel);
+			if (mobHp > 0)
+			{
+				// hp rides the header, muted (field ask 2026-08-21).
+				hpSeat.add(Ui.small(mobHp + "hp", DIM));
+			}
 			titleRow.add(hpSeat, BorderLayout.EAST);
-			card.add(titleRow);
-		}
-		else if (navalTag != null)
-		{
-			JPanel titleRow = new JPanel(new BorderLayout(8, 0));
-			titleRow.setBackground(CARD);
-			titleRow.add(title, BorderLayout.CENTER);
-			titleRow.add(navalTag, BorderLayout.EAST);
 			card.add(titleRow);
 		}
 		else
@@ -665,16 +598,16 @@ public class ResultCards
 			card.add(left(title));
 		}
 		Map<String, Object> styles = Model.map(mob, "styles");
-		Map<String, Object> node = styles == null ? null : Model.map(styles, tab);
+		Map<String, Object> node = Model.map(styles, tab);
 		if (node == null)
 		{
-			JLabel none = new JLabel("No " + tab + " set for this mob");
-			card.add(left(none));
+			card.add(left(new JLabel("No " + tab + " set for this mob")));
 			return card;
 		}
+		// The side this card shows - every row below reads it.
+		Map<String, Object> shown = Model.map(node, bis ? "bis" : "yours");
 		card.add(Box.createVerticalStrut(6));
-		JPanel headerRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-		headerRow.setBackground(CARD);
+		JPanel headerRow = Ui.darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		headerRow.add(styleHeader(tab, node));
 		// Assume icons ride the header (the vertical-space rule): the
 		// prayer sprite + boost potion icon, tooltip carries the words.
@@ -685,11 +618,10 @@ public class ResultCards
 			// The icons ARE the pickers on the Yours side (field ask
 			// 2026-08-14): click the wings to pick the prayer, the
 			// potion to pick the boost. BiS icons stay informational.
-			int prayerSprite = (int) Model.num(assume, "prayerSprite");
+			int prayerSprite = Model.id(assume, "prayerSprite");
 			JLabel prayerIcon = new JLabel();
 			prayerIcon.setPreferredSize(new Dimension(20, 20));
-			prayerIcon.setToolTipText(bis ? "Assumes: " + text
-				: "Assumes: " + text + " - click to change the prayer");
+			prayerIcon.setToolTipText("Assumes: " + text + (bis ? "" : " - click to change the prayer"));
 			// No prayer assumed -> the prayer book with a red X, so the
 			// sentinel reads as "none" not "prayer on" (field ask
 			// 2026-09-01). A real prayer shows its own sprite plainly.
@@ -701,24 +633,20 @@ public class ResultCards
 			{
 				prayerIcon.setIcon(Ui.icon(ImageUtil.loadImageResource(ResultCards.class, prayerImage), 18));
 			}
-			else if (spriteManager != null)
+			else
 			{
-				spriteManager.getSpriteAsync(shownPrayerSprite, 0, img ->
-					SwingUtilities.invokeLater(() ->
-						prayerIcon.setIcon(noPrayer
-							? Ui.crossedOut(img, 18) : Ui.icon(img, 18))));
+				onSprite(shownPrayerSprite, img -> prayerIcon.setIcon(noPrayer
+					? Ui.crossedOut(img, 18) : Ui.icon(img, 18)));
 			}
 			if (!bis)
 			{
-				String tabKey = tab;
-				Ui.onClick(prayerIcon, () -> showPrayerMenu(prayerIcon, tabKey));
+				Ui.onClick(prayerIcon, () -> Ui.show(prayerMenu(tab), prayerIcon));
 			}
 			headerRow.add(prayerIcon);
-			int boostItem = (int) Model.num(assume, "boostItem");
+			int boostItem = Model.id(assume, "boostItem");
 			JLabel boostIconCell = new JLabel();
 			boostIconCell.setPreferredSize(new Dimension(24, 24));
-			boostIconCell.setToolTipText(bis ? "Assumes: " + text
-				: "Assumes: " + text + " - click to change the boost");
+			boostIconCell.setToolTipText("Assumes: " + text + (bis ? "" : " - click to change the boost"));
 			if (boostItem > 0)
 			{
 				// Scaled to the 24px frame - the raw 36x32 item image
@@ -731,13 +659,12 @@ public class ResultCards
 				// No potion assumed (None/prayer-only): a muted vial
 				// keeps the toggle reachable.
 				boostIconCell.setText("-");
-				boostIconCell.setForeground(new Color(0x8C8C8C));
+				boostIconCell.setForeground(DIM);
 				boostIconCell.setHorizontalAlignment(SwingConstants.CENTER);
 			}
 			if (!bis)
 			{
-				String tabKey = tab;
-				Ui.onClick(boostIconCell, () -> showBoostMenu(boostIconCell, tabKey));
+				Ui.onClick(boostIconCell, () -> Ui.show(boostMenu(tab), boostIconCell));
 			}
 			headerRow.add(boostIconCell);
 			String antivenom = Model.str(mob, "antivenom");
@@ -749,29 +676,27 @@ public class ResultCards
 			{
 				headerRow.add(firePlate(bis));
 			}
-			String cardSpell = Model.str(Model.map(node, bis ? "bis" : "yours"), "spell");
+			String cardSpell = Model.str(shown, "spell");
 			if (cardSpell != null && cardSpell.startsWith("Fire "))
 			{
 				headerRow.add(sunfirePlate(bis));
 			}
 		}
-		headerRow.add(bookPlate(Model.map(node, bis ? "bis" : "yours"), mob));
+		headerRow.add(bookPlate(shown, mob));
 		card.add(left(headerRow));
 		// The cannon strip rides between the assume row and the gear grid
 		// (Andrew's v2 vision): left cannon / shared ammo / right cannon,
 		// each the boost-rack picker, operators inside the rack.
-		if (naval && !bis && (int) Model.num(pageParams, "cannonCount") > 0)
+		if (naval && !bis && Model.id(pageParams, "cannonCount") > 0)
 		{
 			card.add(left(cannonStrip(ship)));
 		}
-		Map<String, Object> shown = Model.map(node, bis ? "bis" : "yours");
 		if (shown == null)
 		{
 			// NEVER show the other side in this slot (field bug 2026-08-12:
 			// a missing owned answer silently rendered the BiS set - "gear
 			// that you don't have").
-			JLabel none = new JLabel("No usable " + tab + " set");
-			card.add(left(none));
+			card.add(left(new JLabel("No usable " + tab + " set")));
 		}
 		else
 		{
@@ -779,24 +704,19 @@ public class ResultCards
 			{
 				// The vents rule (2026-08-06): a tab-only fallback must
 				// never read as the trip's answer.
-				JLabel caveat = Ui.label(
-					"Tab-only view - this style is not in the shared trip kit",
-					new Color(0xDCAA5A));
-				caveat.setFont(FontManager.getRunescapeSmallFont());
-				card.add(left(caveat));
+				card.add(left(Ui.small(Ui.text("card.tabonly"), new Color(0xDCAA5A))));
 			}
 			String standDown = Model.str(shown, "arceuusStandDown");
 			if (standDown != null)
 			{
 				// Andrew 2026-10-19: Water Surge with thralls on is not a
 				// castable setup; the card says so and folds no thrall.
-				JLabel caveat = Ui.label("Thralls and Death Charge stand down: " + standDown,
+				JLabel caveat = Ui.small("Thralls and Death Charge stand down: " + standDown,
 					new Color(0xDCAA5A));
-				caveat.setFont(FontManager.getRunescapeSmallFont());
-				caveat.setToolTipText("Both are cast from Arceuus - this card's number leaves the thrall out");
+				caveat.setToolTipText(Ui.text("standdown.tip"));
 				card.add(left(caveat));
 			}
-			card.add(left(side(bis ? "Best in game" : "Yours", shown, bis, thrallsDps, mob, tab, ship)));
+			card.add(left(side(shown, bis, Model.thrallsFor(shown, thrallsDps) + shipDps, mob, tab, ship)));
 		}
 		if (naval && ship != null && !Model.list(ship, "cannons").isEmpty())
 		{
@@ -804,68 +724,56 @@ public class ResultCards
 		}
 		// The classic style strip sits BELOW the gear view: one tab per
 		// style carrying its icon and that style's shown dps.
-		JPanel tabStrip = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
-		tabStrip.setBackground(CARD);
+		JPanel tabStrip = Ui.darker(new FlowLayout(FlowLayout.CENTER, 2, 0));
 		for (String style : styles.keySet())
 		{
 			Map<String, Object> styleNode = Model.map(styles, style);
-			double tabDps = styleNode == null ? 0
-				: Model.num(styleNode, bis ? "bisTabDps" : "tabDps");
+			double tabDps = Model.num(styleNode, bis ? "bisTabDps" : "tabDps");
 			if (tabDps > 0)
 			{
 				// Thralls fold into the shown number, like spec already
 				// does - the tab IS the total (field ask 2026-08-14); a
 				// card that stood down folds nothing.
-				tabDps += Model.thrallsFor(Model.map(styleNode, bis ? "bis" : "yours"), pageThrallsDps)
-					+ renderShipDps;
+				tabDps += Model.thrallsFor(Model.map(styleNode, bis ? "bis" : "yours"), thrallsDps) + shipDps;
 			}
 			boolean hasSet = tabDps > 0;
 			boolean isSelected = style.equals(tab);
-			JPanel tabCell = new JPanel(new BorderLayout(2, 0));
-			tabCell.setBorder(BorderFactory.createEmptyBorder(3, 4, 3, 4));
+			JPanel tabCell = Ui.darker(new BorderLayout(2, 0));
 			tabCell.setPreferredSize(new Dimension(64, 26));
-			tabCell.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 			tabCell.setOpaque(isSelected);
 			tabCell.setBorder(new RoundedBorder(isSelected
 				? ACCENT : ColorScheme.MEDIUM_GRAY_COLOR, 1, 2));
 			JLabel icon = new JLabel();
-			int sprite = styleNode == null ? -1 : (int) Model.num(styleNode, "styleSprite");
 			int styleItem = Model.id(styleNode, "styleItem");
-			if (styleItem > 0 && itemManager != null)
+			if (styleItem > 0)
 			{
 				AsyncBufferedImage img = itemManager.getImage(styleItem);
-				Runnable seat = () -> SwingUtilities.invokeLater(() -> icon.setIcon(Ui.icon(img, 16)));
-				seat.run();
-				img.onLoaded(seat);
+				onImage(img, () -> icon.setIcon(Ui.icon(img, 16)));
 			}
-			else if (sprite > 0 && spriteManager != null)
+			else
 			{
-				spriteManager.getSpriteAsync(sprite, 0, img ->
-					SwingUtilities.invokeLater(() ->
-						icon.setIcon(Ui.icon(img, 16))));
+				seatSprite(icon, Model.id(styleNode, "styleSprite"), 16);
 			}
 			JLabel dpsLabel = Ui.label(hasSet ? String.format("%.2f", tabDps) : "-",
-				isSelected ? Color.WHITE : new Color(0xA0A0A0));
+				isSelected ? Color.WHITE : MID);
 			dpsLabel.setFont(dpsLabel.getFont().deriveFont(Font.BOLD, 12f));
 			dpsLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			tabCell.add(icon, BorderLayout.WEST);
 			tabCell.add(dpsLabel, BorderLayout.CENTER);
-			tabCell.setToolTipText(Character.toUpperCase(style.charAt(0)) + style.substring(1)
+			tabCell.setToolTipText(Names.cap(style)
 				+ (hasSet ? String.format(" - %.2f DPS", tabDps) : " - no set"));
-			String styleKey = style;
 			Ui.onClick(tabCell, () ->
 			{
 				// Instant feedback, reconciled by the arriving page.
 				tabCell.setBorder(new RoundedBorder(ACCENT, 1, 2));
 				tabCell.setOpaque(true);
 				tabCell.repaint();
-				commands.set("selectedTab", styleKey);
+				commands.set("selectedTab", style);
 			});
 			tabStrip.add(tabCell);
 		}
 		LinkedHashMap<String, Color> present = new LinkedHashMap<>();
-		Map<String, Object> shownGear = Model.map(
-			Model.map(node, bis ? "bis" : "yours"), "gear");
+		Map<String, Object> shownGear = Model.map(shown, "gear");
 		if (shownGear != null)
 		{
 			for (Object slotItem : shownGear.values())
@@ -886,15 +794,11 @@ public class ResultCards
 		{
 			// "When we show a legend for colors only show for the colors
 			// shown" (the classic rule).
-			JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-			legend.setBackground(CARD);
-			legend.add(statLine("Stored:", "Gear that needs a fetch trip",
-				new Color(0xA0A0A0)));
+			JPanel legend = Ui.darker(new FlowLayout(FlowLayout.LEFT, 6, 0));
+			legend.add(statLine("Stored:", "Gear that needs a fetch trip", MID));
 			for (Map.Entry<String, Color> source : present.entrySet())
 			{
-				JLabel tag = statLine(source.getKey(), "Fetch from " + source.getKey(),
-					source.getValue());
-				legend.add(tag);
+				legend.add(statLine(source.getKey(), "Fetch from " + source.getKey(), source.getValue()));
 			}
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(legend));
@@ -904,12 +808,10 @@ public class ResultCards
 		// The classic view swap sits directly UNDER the tabs: two
 		// bordered sides, the active one bright, with the gap readout
 		// pushed to the right.
-		JPanel viewRow = new JPanel(new BorderLayout());
-		viewRow.setBackground(CARD);
+		JPanel viewRow = Ui.darker(new BorderLayout());
 		viewRow.setBorder(BorderFactory.createEmptyBorder(4, 2, 2, 2));
 		viewRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
-		JPanel sides = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
-		sides.setBackground(CARD);
+		JPanel sides = Ui.darker(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		sides.add(viewSide("Yours", !bis, "Your best owned set",
 			() -> commands.set("viewingBis", false)));
 		sides.add(viewSide("BiS", bis, "The game-wide best set at your levels",
@@ -923,17 +825,15 @@ public class ResultCards
 			double ceiling = Model.num(node, "bisTabDps");
 			if (ceiling > 0)
 			{
-				JLabel gap = Ui.label(String.format("%.0f%% of BiS",
-					Math.min(100.0, 100.0 * mine / ceiling)), new Color(0xA0A0A0));
-				gap.setFont(FontManager.getRunescapeSmallFont());
-				gap.setToolTipText("Your best owned set vs the game-wide best, at your levels");
+				JLabel gap = Ui.small(String.format("%.0f%% of BiS",
+					Math.min(100.0, 100.0 * mine / ceiling)), MID);
+				gap.setToolTipText(Ui.text("gap.tip"));
 				viewRow.add(gap, BorderLayout.EAST);
 			}
 		}
 		card.add(viewRow);
-		Map<String, Object> shownForInv = Model.map(node, bis ? "bis" : "yours");
-		List<Map<String, Object>> bench = Model.list(shownForInv, "bench");
-		List<Map<String, Object>> runes = Model.list(shownForInv, "runes");
+		List<Map<String, Object>> bench = Model.list(shown, "bench");
+		List<Map<String, Object>> runes = Model.list(shown, "runes");
 		List<Map<String, Object>> utilityRunes = Model.list(mob, "utilityRunes");
 		boolean pouchRides = Model.id(mob, "castingPouch") > 0
 			&& (!runes.isEmpty() || !utilityRunes.isEmpty());
@@ -941,17 +841,15 @@ public class ResultCards
 		{
 			// 24px icons on a WRAPPING row - eight carried items fit
 			// (field report: only 4 of 8 visible at full item size).
-			JPanel invRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
-			invRow.setBackground(CARD);
-			JLabel invLabel = Ui.small("Inventory:", null);
-			invRow.add(invLabel);
-			Map<String, Object> protection = Model.map(shownForInv, "protection");
+			JPanel invRow = Ui.darker(new WrapLayout(FlowLayout.CENTER, 2, 1));
+			invRow.add(Ui.small("Inventory:", null));
+			Map<String, Object> protection = Model.map(shown, "protection");
 			for (Map<String, Object> carried : bench)
 			{
 				// GWD protection is worn on the way in, not swapped mid-fight.
 				Object gods = protection == null ? null
 					: protection.get(String.valueOf(Model.id(carried, "id")));
-				invRow.add(smallItemCell(Model.id(carried, "id"), 0,
+				invRow.add(smallItemCell(Model.id(carried, "id"),
 					Model.str(carried, "name") + (gods != null
 						? " (GWD protection: " + gods + " - wear it through the dungeon)"
 						: " (carried swap)")));
@@ -959,7 +857,7 @@ public class ResultCards
 			int pouchId = Model.id(mob, "castingPouch");
 			if (pouchId > 0 && (!runes.isEmpty() || !utilityRunes.isEmpty()))
 			{
-				invRow.add(smallItemCell(pouchId, 0,
+				invRow.add(smallItemCell(pouchId,
 					(pouchId == 27281 || pouchId == 27509
 						? "Divine rune pouch" : "Rune pouch")
 						+ " - carries the trip's runes"));
@@ -967,60 +865,49 @@ public class ResultCards
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(invRow));
 		}
-		List<Map<String, Object>> castRunes = Model.list(
-			Model.map(node, bis ? "bis" : "yours"), "runes");
-		List<Map<String, Object>> tripRunes = Model.list(mob, "utilityRunes");
 		// The potion this card assumes is a supply to bring (Andrew
 		// 2026-09-02) - unless the raid hands it out.
-		Map<String, Object> cardAssume = Model.map(node, bis ? "bisAssume" : "assume");
-		int boostId = cardAssume == null || Model.flag(cardAssume, "boostSupplied") ? -1
-			: Model.id(cardAssume, "boostItem");
-		if (!supplies.isEmpty() || !castRunes.isEmpty() || !tripRunes.isEmpty() || boostId > 0)
+		int boostId = assume == null || Model.flag(assume, "boostSupplied") ? -1
+			: Model.id(assume, "boostItem");
+		if (!supplies.isEmpty() || !runes.isEmpty() || !utilityRunes.isEmpty() || boostId > 0)
 		{
-			JPanel supplyRow = new JPanel(new WrapLayout(FlowLayout.CENTER, 2, 1));
-			supplyRow.setBackground(CARD);
-			JLabel supplyLabel = Ui.small("Supplies:", null);
-			supplyRow.add(supplyLabel);
+			JPanel supplyRow = Ui.darker(new WrapLayout(FlowLayout.CENTER, 2, 1));
+			supplyRow.add(Ui.small("Supplies:", null));
 			// One icon per rune TYPE (field call: no triple blood runes)
 			// - the tooltip collects every reason it rides.
 			Map<Integer, StringBuilder> runeWhy = new LinkedHashMap<>();
 			Map<Integer, String> runeNames = new HashMap<>();
-			for (Map<String, Object> rune : castRunes)
+			for (Map<String, Object> rune : runes)
 			{
 				noteRune(runeNames, runeWhy, rune, "the autocast spell");
 			}
-			for (Map<String, Object> rune : tripRunes)
+			for (Map<String, Object> rune : utilityRunes)
 			{
 				noteRune(runeNames, runeWhy, rune, Model.str(rune, "why"));
 			}
 			for (Map.Entry<Integer, StringBuilder> rune : runeWhy.entrySet())
 			{
-				supplyRow.add(smallItemCell(rune.getKey(), 0,
+				supplyRow.add(smallItemCell(rune.getKey(),
 					runeNames.get(rune.getKey()) + " - " + rune.getValue()));
 			}
 			int capeId = Model.id(mob, "castingCape");
-			boolean capeSupplied = false;
-			for (Map<String, Object> supply : supplies)
-			{
-				capeSupplied |= "spellbookCape".equals(Model.str(supply, "category"));
-			}
 			// Once, not twice (Andrew 2026-09-02): the spellbook-cape supply
 			// already draws the cape.
-			if (capeId > 0 && !capeSupplied && (!castRunes.isEmpty() || !tripRunes.isEmpty()))
+			if (capeId > 0 && byCategory(supplies, "spellbookCape") == null
+				&& (!runes.isEmpty() || !utilityRunes.isEmpty()))
 			{
-				supplyRow.add(smallItemCell(capeId, 0,
-					"Magic cape - swap spellbooks up to 5x daily (owned)"));
+				supplyRow.add(smallItemCell(capeId, Ui.text("supply.cape")));
 			}
 			if (boostId > 0)
 			{
-				String text = Model.str(cardAssume, "text");
+				String text = Model.str(assume, "text");
 				int plus = text.indexOf(" + ");
-				supplyRow.add(smallItemCell(boostId, 0, (plus > 0 ? text.substring(plus + 3) : text)
-					+ " - the boost this card assumes; change it on the boost picker"));
+				supplyRow.add(smallItemCell(boostId, (plus > 0 ? text.substring(plus + 3) : text)
+					+ " " + Ui.text("supply.boost")));
 			}
 			for (Map<String, Object> supply : supplies)
 			{
-				JLabel cell = smallItemCell(Model.id(supply, "itemId"), 0,
+				JLabel cell = smallItemCell(Model.id(supply, "itemId"),
 					Model.str(supply, "name")
 						+ " - right-click to change");
 				cell.setComponentPopupMenu(supplyMenu(Model.str(supply, "category"), Model.list(supply, "options")));
@@ -1029,29 +916,24 @@ public class ResultCards
 			card.add(Box.createVerticalStrut(4));
 			card.add(left(supplyRow));
 		}
-		JPanel trioRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-		trioRow.setBackground(CARD);
-		trioRow.add(trioButton(mob, "+", "mobSims",
-			new Color(0x82C882), new Color(0x6E8C6E), new Color(0x5FA05F),
+		JPanel trioRow = Ui.darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
+		trioRow.add(trioButton(mob, "+", "mobSims", SIM_PALETTE,
 			"Simmed for this mob", "remove-mob-sim", "sim-for-mob",
 			"Sim an item as owned for this mob"));
-		trioRow.add(trioButton(mob, "-", "mobExclusions",
-			new Color(0xDC7878), new Color(0x8C6E6E), new Color(0xAA5A5A),
+		trioRow.add(trioButton(mob, "-", "mobExclusions", EXCLUDE_PALETTE,
 			"Excluded for this mob", "remove-mob-exclusion", "exclude-for-mob",
 			"Exclude an item for this mob"));
-		trioRow.add(trioButton(mob, "~", "mobFilters",
-			new Color(0xBEBEBE), new Color(0x828282), new Color(0x969696),
+		trioRow.add(trioButton(mob, "~", "mobFilters", FILTER_PALETTE,
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
-			"Add a supply to this mob's bank filter"));
+			Ui.text("trio.filter.add")));
 		// The pins, visible at last (ISS-01M5HJ84ADBHWB2302G66WW2G4): a
 		// tried swap pins its item, and a hidden pin outlived its sim.
-		JPanel trioRow2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-		trioRow2.setBackground(CARD);
+		JPanel trioRow2 = Ui.darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		trioRow2.add(trioButton(mob, "^", "mobPins",
-			PIN_BADGE, new Color(0x8C8264), new Color(0xA89458),
+			new Color[]{PIN_BADGE, new Color(0x8C8264), new Color(0xA89458)},
 			"Pinned for this mob", "remove-mob-pin", "pin-for-mob",
 			"Pin an item for this mob"));
-		JButton degrades = degradesButton(mob, Model.map(node, bis ? "bis" : "yours"));
+		JButton degrades = degradesButton(mob, shown);
 		if (degrades != null)
 		{
 			trioRow2.add(degrades);
@@ -1064,72 +946,47 @@ public class ResultCards
 		card.add(Box.createVerticalStrut(2));
 		card.add(centre(trioRow2));
 		card.add(Box.createVerticalStrut(4));
-		JToggleButton showBank = new JToggleButton("Show in bank");
-		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
-		showBank.setFocusable(false);
-		showBank.setMargin(new Insets(1, 6, 1, 6));
-		showBank.addActionListener(e ->
+		JToggleButton showBank = bankToggle("Show in bank", Ui.text("bank.show.tip"), "bank-show", () ->
 		{
-			if (showBank.isSelected())
+			List<Integer> ids = new ArrayList<>();
+			Map<String, Object> gearMap = Model.map(shown, "gear");
+			if (gearMap != null)
 			{
-				List<Integer> ids = new ArrayList<>();
-				Map<String, Object> gearMap = Model.map(shownForInv, "gear");
-				if (gearMap != null)
+				for (Object slotItem : gearMap.values())
 				{
-					for (Object slotItem : gearMap.values())
+					if (slotItem instanceof Map)
 					{
-						if (slotItem instanceof Map)
-						{
-							ids.add((int) Model.num((Map<String, Object>) slotItem, "id"));
-						}
+						ids.add(Model.id((Map<String, Object>) slotItem, "id"));
 					}
 				}
-				Map<String, Object> quiverItem = Model.map(shownForInv, "quiverAmmo");
-				if (quiverItem != null)
-				{
-					ids.add(Model.id(quiverItem, "id"));
-				}
-				for (Map<String, Object> carried : Model.list(shownForInv, "bench"))
-				{
-					ids.add(Model.id(carried, "id"));
-				}
-				commands.send("bank-show", Map.of("ids", ids));
 			}
-			else
+			Map<String, Object> quiverItem = Model.map(shown, "quiverAmmo");
+			if (quiverItem != null)
 			{
-				commands.send("bank-show", Map.of());
+				ids.add(Model.id(quiverItem, "id"));
 			}
+			for (Map<String, Object> carried : bench)
+			{
+				ids.add(Model.id(carried, "id"));
+			}
+			return Map.of("ids", ids);
 		});
-		JPanel bankRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-		bankRow.setBackground(CARD);
-		styleBankButton(showBank);
+		showBank.setMargin(new Insets(1, 6, 1, 6));
+		JPanel bankRow = Ui.darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
 		bankRow.add(showBank);
-		Map<String, Object> bankPlan = BankLayout.build(shownForInv,
-			BankLayout.tripStacks(mob, cardAssume, supplies, castRunes, utilityRunes));
+		Map<String, Object> bankPlan = BankLayout.build(shown,
+			BankLayout.tripStacks(mob, assume, supplies, runes, utilityRunes));
 		if (bankPlan != null)
 		{
-			JToggleButton filterBank = new JToggleButton("Filter bank");
-			filterBank.setToolTipText("Filter your open bank to this set"
-				+ " - equipment cross, inventory beside it");
-			styleBankButton(filterBank);
-			filterBank.addActionListener(e ->
+			bankRow.add(bankToggle("Filter bank", Ui.text("bank.filter.tip"), "bank-filter", () ->
 			{
-				if (filterBank.isSelected())
+				List<Integer> layoutList = new ArrayList<>();
+				for (int pos : (int[]) bankPlan.get("layout"))
 				{
-					List<Integer> layoutList = new ArrayList<>();
-					for (int pos : (int[]) bankPlan.get("layout"))
-					{
-						layoutList.add(pos);
-					}
-					commands.send("bank-filter",
-						Map.of("ids", bankPlan.get("ids"), "layout", layoutList));
+					layoutList.add(pos);
 				}
-				else
-				{
-					commands.send("bank-filter", Map.of());
-				}
-			});
-			bankRow.add(filterBank);
+				return Map.of("ids", bankPlan.get("ids"), "layout", layoutList);
+			}));
 		}
 		card.add(centre(bankRow));
 		String noteText = Model.str(mob, "note");
@@ -1139,7 +996,7 @@ public class ResultCards
 		note.setForeground(new Color(0xD7CDA0));
 		note.setCaretColor(new Color(0xD7CDA0));
 		note.setBorder(BorderFactory.createLineBorder(new Color(0x625A3E)));
-		note.setToolTipText("Your note for this mob - saved on Enter");
+		note.setToolTipText(Ui.text("note.tip"));
 		note.addActionListener(e -> commands.send("set-note", Map.of("text", note.getText())));
 		card.add(Box.createVerticalStrut(4));
 		if (hasNote)
@@ -1150,8 +1007,7 @@ public class ResultCards
 		{
 			// A ghost until there is something to say - the open post-it
 			// field shouted for attention it rarely deserved.
-			JLabel addNote = Ui.label("+ note", new Color(0x78735F));
-			addNote.setFont(FontManager.getRunescapeSmallFont());
+			JLabel addNote = Ui.small("+ note", new Color(0x78735F));
 			addNote.setToolTipText("Add a note for this mob");
 			JPanel noteHost = centre(addNote);
 			Ui.onClick(addNote, () ->
@@ -1174,11 +1030,9 @@ public class ResultCards
 	 * picker. Operators live inside each cannon's rack. */
 	private JPanel cannonStrip(Map<String, Object> ship)
 	{
-		int count = (int) Model.num(pageParams, "cannonCount");
-		List<Map<String, Object>> cannonNodes = ship == null
-			? List.of() : Model.list(ship, "cannons");
-		JPanel strip = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
-		strip.setBackground(CARD);
+		int count = Model.id(pageParams, "cannonCount");
+		List<Map<String, Object>> cannonNodes = Model.list(ship, "cannons");
+		JPanel strip = Ui.darker(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
 		strip.add(ammoButton(ship));
 		if (count > 1)
@@ -1196,10 +1050,9 @@ public class ResultCards
 	static String tripLedger(Map<String, Object> ship, Map<String, Object> side, boolean full)
 	{
 		boolean manned = "cannon".equals(Model.str(ship, "station"));
-		double set = side == null ? 0 : Model.num(side, "dps");
-		Map<String, Object> spec = side == null ? null : Model.map(side, "spec");
-		double specDps = spec == null ? 0 : Model.num(spec, "dpsAdded");
-		StringBuilder t = new StringBuilder("<html><table cellpadding='1' cellspacing='0'>");
+		double set = Model.num(side, "dps");
+		double specDps = Model.num(Model.map(side, "spec"), "dpsAdded");
+		StringBuilder t = new StringBuilder(Ui.text("ledger.head"));
 		int body = t.length();
 		double total = 0;
 		if (manned)
@@ -1208,13 +1061,13 @@ public class ResultCards
 		}
 		else
 		{
-			t.append(ledgerRow("set", String.format(Locale.ROOT, "%.2f", set), "", "#bebebe"));
+			t.append(ledgerRow("set", two(set), "", "#bebebe"));
 			if (specDps > 0)
 			{
-				t.append(ledgerRow("+ spec", String.format(Locale.ROOT, "%.2f", specDps), "", "#bebebe"));
+				t.append(ledgerRow("+ spec", two(specDps), "", "#bebebe"));
 			}
 			total = set + specDps;
-			t.append(ledgerRow("= gear", String.format(Locale.ROOT, "%.2f", total), "", "#bebebe"));
+			t.append(ledgerRow("= gear", two(total), "", "#bebebe"));
 		}
 		int i = 1;
 		for (Map<String, Object> cannon : Model.list(ship, "cannons"))
@@ -1223,38 +1076,38 @@ public class ResultCards
 			double dps = Model.num(cannon, "dps");
 			total += dps;
 			String who = "player".equals(Model.str(cannon, "firedBy")) ? "you" : "crew";
-			t.append(ledgerRow("+ cannon " + i++,
-				blocked != null ? blocked : String.format(Locale.ROOT, "%.2f", dps),
+			t.append(ledgerRow("+ cannon " + i++, blocked != null ? blocked : two(dps),
 				Model.str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
 		if (!full)
 		{
 			t.setLength(body);
 		}
-		t.append(ledgerRow("<b>= total</b>", "<b>" + String.format(Locale.ROOT, "%.2f", total) + "</b>",
-			"", "#82c882"));
+		t.append(ledgerRow("<b>= total</b>", "<b>" + two(total) + "</b>", "", "#82c882"));
 		return t.append("</table></html>").toString();
 	}
 
 	private static String ledgerRow(String key, String value, String note, String color)
 	{
-		return "<tr><td><font color='" + color + "'>" + key + "</font></td><td align='right'><font color='"
-			+ color + "'>&nbsp;&nbsp;" + value + "</font></td><td><font color='#969696'>&nbsp;&nbsp;"
-			+ note + "</font></td></tr>";
+		return String.format(Ui.text("ledger.row"), color, key, value, note);
+	}
+
+	/** A dps figure to two places, locale-proof (the ledger is read by tests). */
+	private static String two(double value)
+	{
+		return String.format(Locale.ROOT, "%.2f", value);
 	}
 
 	private JPanel shipBreakdown(Map<String, Object> ship, Map<String, Object> shownSide)
 	{
 		boolean full = breakdownShown.getAsBoolean();
-		JLabel ledger = new JLabel(tripLedger(ship, shownSide, full));
+		JLabel ledger = Ui.small(tripLedger(ship, shownSide, full), null);
 		// Notes stay short (Andrew 2026-09-03: "player manning cannon causes
 		// text cutoff") - the why lives here, with the show/hide.
 		ledger.setToolTipText(("cannon".equals(Model.str(ship, "station"))
-			? "Manning cannon 1: armour bonuses count, attacks do not"
-			: "Set + spec = the row; + cannons = the tab")
+			? Ui.text("ledger.manning") : Ui.text("ledger.parts"))
 			+ " - click to " + (full ? "hide" : "show") + " the breakdown");
 		Ui.onClick(ledger, () -> breakdownToggle.accept(!full));
-		ledger.setFont(FontManager.getRunescapeSmallFont());
 		ledger.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 		return left(ledger);
 	}
@@ -1264,32 +1117,26 @@ public class ResultCards
 	 * rack of all seven materials on click. */
 	private JButton cannonButton(int index, Map<String, Object> node)
 	{
-		String param = index == 0 ? "cannon1Material" : "cannon2Material";
+		String param = "cannon" + (index + 1) + "Material";
 		String tier = Model.str(pageParams, param);
 		NavalCombat.Cannon cannon =
 			NavalCombat.cannon(tier == null ? "bronze" : tier);
-		String blocked = node == null ? null : Model.str(node, "blocked");
-		JButton button = new JButton(
-			new ImageIcon(itemManager.getImage(cannon.itemId)));
-		button.setContentAreaFilled(false);
-		button.setFocusable(false);
-		button.setBorder(new RoundedBorder(blocked != null
-			? new Color(0xC86464) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
-		String fired = node == null ? null : Model.str(node, "firedBy");
+		String blocked = Model.str(node, "blocked");
+		JButton button = iconButton(cannon.itemId, blocked != null);
+		String fired = Model.str(node, "firedBy");
 		button.setToolTipText("Cannon " + (index + 1) + ": "
-			+ cap(cannon.tier) + ("player".equals(fired) ? " - you" : " - crew")
+			+ Names.cap(cannon.tier) + ("player".equals(fired) ? " - you" : " - crew")
 			+ (blocked != null ? ". " + blocked : ""));
 		button.addActionListener(e ->
 		{
 			JPopupMenu menu = new JPopupMenu();
-			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
-			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+			JPanel rack = rack(4);
 			for (NavalCombat.Cannon option
 				: NavalCombat.cannons())
 			{
 				rack.add(pickCell(menu,
 					new ImageIcon(itemManager.getImage(option.itemId)),
-					cap(option.tier) + " cannon (Sailing " + option.sailing + ")",
+					Names.cap(option.tier) + " cannon (Sailing " + option.sailing + ")",
 					option.tier.equals(cannon.tier), 38,
 					() -> commands.set(param, option.tier)));
 			}
@@ -1297,19 +1144,19 @@ public class ResultCards
 			// The double rack (Andrew, v2): who fires it, right under the
 			// materials. A crew pick below the cannon's gate auto-raises.
 			menu.addSeparator();
-			String opParam = index == 0 ? "cannon1Operator" : "cannon2Operator";
+			String opParam = "cannon" + (index + 1) + "Operator";
 			String current = Model.str(pageParams, opParam);
-			menu.add(pickChoice("You man this cannon", "you".equals(current),
+			menu.add(Ui.check("You man this cannon", "you".equals(current),
 				() -> commands.set(opParam, "you")));
 			for (int p = 1; p <= 4; p++)
 			{
 				final String pick = "crew" + p;
 				String label = "Crewmate - Privateering " + p
 					+ (p < cannon.privateering ? " (raises to " + cannon.privateering + ")" : "");
-				menu.add(pickChoice(label, pick.equals(current),
+				menu.add(Ui.check(label, pick.equals(current),
 					() -> commands.set(opParam, pick)));
 			}
-			menu.show(button, 0, button.getHeight());
+			Ui.show(menu, button);
 		});
 		return button;
 	}
@@ -1322,36 +1169,30 @@ public class ResultCards
 		boolean detect = pick == null || "detect".equals(pick);
 		// Detect shows what it RESOLVED to (the boost idiom); a dry bank
 		// shows the reason on a red ring.
-		String resolved = ship == null ? null : Model.str(ship, "ammo");
-		String ammoBlocked = ship == null ? null : Model.str(ship, "ammoBlocked");
+		String resolved = Model.str(ship, "ammo");
+		String ammoBlocked = Model.str(ship, "ammoBlocked");
 		String shownTier = resolved != null ? resolved : detect ? "bronze" : pick;
 		NavalCombat.Ball ball =
 			NavalCombat.ball(shownTier == null ? "bronze" : shownTier);
-		JButton button = new JButton(
-			new ImageIcon(itemManager.getImage(ball.itemId)));
-		button.setContentAreaFilled(false);
-		button.setFocusable(false);
-		button.setBorder(new RoundedBorder(ammoBlocked != null
-			? new Color(0xC86464) : ColorScheme.DARKER_GRAY_HOVER_COLOR, 2, 8));
+		JButton button = iconButton(ball.itemId, ammoBlocked != null);
 		button.setToolTipText("Cannonballs: "
 			+ (ammoBlocked != null ? ammoBlocked
-				: detect ? "Detect best - " + cap(ball.tier) + " (best banked)"
-					: cap(ball.tier))
+				: detect ? "Detect best - " + Names.cap(ball.tier) + " (best banked)"
+					: Names.cap(ball.tier))
 			+ " - one tier for every cannon");
 		button.addActionListener(e ->
 		{
-			int count = (int) Model.num(pageParams, "cannonCount");
+			int count = Model.id(pageParams, "cannonCount");
 			List<String> tiers = new ArrayList<>();
 			for (int i = 0; i < count; i++)
 			{
-				tiers.add(Model.str(pageParams, i == 0 ? "cannon1Material" : "cannon2Material"));
+				tiers.add(Model.str(pageParams, "cannon" + (i + 1) + "Material"));
 			}
 			JPopupMenu menu = new JPopupMenu();
-			menu.add(pickChoice("Detect best in bank", detect,
+			menu.add(Ui.check("Detect best in bank", detect,
 				() -> commands.set("cannonAmmo", "detect")));
 			menu.addSeparator();
-			JPanel rack = Ui.darker(new GridLayout(0, 4, 2, 2));
-			rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+			JPanel rack = rack(4);
 			for (NavalCombat.Ball option
 				: NavalCombat.balls())
 			{
@@ -1366,35 +1207,25 @@ public class ResultCards
 				}
 				rack.add(pickCell(menu,
 					new ImageIcon(itemManager.getImage(option.itemId)),
-					cap(option.tier) + " cannonball",
+					Names.cap(option.tier) + " cannonball",
 					!detect && option.tier.equals(ball.tier), 38,
 					() -> commands.set("cannonAmmo", option.tier)));
 			}
 			menu.add(rack);
-			menu.show(button, 0, button.getHeight());
+			Ui.show(menu, button);
 		});
 		return button;
 	}
 
-	private static String cap(String tier)
-	{
-		return tier == null || tier.isEmpty() ? ""
-			: Character.toUpperCase(tier.charAt(0)) + tier.substring(1);
-	}
-
+	/** palette = {active, muted, active border} (the trio's shared sigil colours). */
 	private JButton trioButton(Map<String, Object> mob, String sigil,
-		String listKey, Color active, Color muted, Color activeBorder,
+		String listKey, Color[] palette,
 		String noun, String removeCommand, String addCommand, String addPrompt)
 	{
 		List<Map<String, Object>> items = Model.list(mob, listKey);
-		JButton button = new JButton(sigil + items.size());
 		boolean any = !items.isEmpty();
-		button.setForeground(any ? active : muted);
-		button.setContentAreaFilled(false);
-		button.setBorder(any ? new RoundedBorder(activeBorder, 2, 14)
-			: BorderFactory.createEmptyBorder(3, 15, 3, 15));
-		button.setToolTipText(noun + " - click to manage");
-		button.setFocusable(false);
+		JButton button = sigilButton(sigil + items.size(), any, any ? palette[0] : palette[1], palette[2],
+			noun + " - click to manage");
 		button.addActionListener(e ->
 		{
 			JPopupMenu menu = new JPopupMenu();
@@ -1427,11 +1258,18 @@ public class ResultCards
 					() -> commands.send("clear-mob-list", Map.of("kind", listKey)));
 				menu.addSeparator();
 			}
-			Ui.item(menu, addPrompt + " (search)...", () -> picker.search(addPrompt,
-				(id, name) -> commands.send(addCommand, Map.of("itemId", id, "label", name))));
-			menu.show(button, 0, button.getHeight());
+			Ui.item(menu, addPrompt + " (search)...", searchItem(addPrompt, addCommand));
+			Ui.show(menu, button);
 		});
 		return button;
+	}
+
+	/** The add-by-search menu action: the picker's choice goes out as
+	 * {itemId, label} on the given command. */
+	Runnable searchItem(String prompt, String command)
+	{
+		return () -> picker.search(prompt,
+			(id, name) -> commands.send(command, Map.of("itemId", id, "label", name)));
 	}
 
 	/** One side of the classic view swap: the active side wears a bright
@@ -1465,7 +1303,8 @@ public class ResultCards
 	{
 		String required = null;
 		String reason = null;
-		String spell = shownCard == null ? null : Model.str(shownCard, "spell");
+		String spell = Model.str(shownCard, "spell");
+		Map<String, Object> spellbooks = Model.map(pageWide, "spellbooks");
 		if (spell != null && spellbooks != null)
 		{
 			required = Model.str(spellbooks, spell);
@@ -1474,7 +1313,7 @@ public class ResultCards
 		// The FIGHT's own book beats every gear consideration (wiki-
 		// verified curation - the Sire wants Ancients for the Shadow
 		// Barrage stun regardless of what the set casts).
-		String fightBook = mob == null ? null : Model.str(mob, "fightBook");
+		String fightBook = Model.str(mob, "fightBook");
 		if (fightBook != null && !fightBook.isEmpty())
 		{
 			required = fightBook;
@@ -1489,24 +1328,16 @@ public class ResultCards
 		if (required == null && pageParams != null
 			&& (Model.flag(pageParams, "thralls") || Model.id(pageParams, "deathCharge") > 0))
 		{
-			boolean viaSwap = false;
-			for (Map<String, Object> category : supplyCatalog)
-			{
-				if ("arceuusAccess".equals(Model.str(category, "category")))
-				{
-					viaSwap = "SPELLBOOK_SWAP".equals(Model.str(category, "current"));
-				}
-			}
+			boolean viaSwap = "SPELLBOOK_SWAP".equals(Model.str(
+				byCategory(Model.list(pageWide, "supplyCatalog"), "arceuusAccess"), "current"));
 			required = viaSwap ? "lunar" : "arceuus";
-			reason = viaSwap
-				? "Lunar home, Spellbook Swap into Arceuus for the summons"
-				: "thralls / Death Charge live on Arceuus";
+			reason = viaSwap ? Ui.text("book.swap") : Ui.text("book.arceuus");
 		}
 		// The book the fight/set asks for, before any swap rewrite - the
 		// picker offers it as the "camp it directly" choice.
 		String directBook = required;
 		String directReason = reason;
-		boolean swapOn = pageParams != null && Model.flag(pageParams, "spellbookSwap");
+		boolean swapOn = Model.flag(pageParams, "spellbookSwap");
 		// With the swap on, LUNAR is home: you cast Vengeance there and
 		// swap into whatever the fight wants (field report 2026-08-22:
 		// the Sire still demanded Ancients and said nothing about the
@@ -1516,11 +1347,10 @@ public class ResultCards
 			required = "lunar";
 			reason = directBook == null || "lunar".equalsIgnoreCase(directBook)
 				? "Lunar home for Vengeance"
-				: "Lunar home - Spellbook Swap into " + directBook.toUpperCase()
-					+ " for the fight";
+				: String.format(Ui.text("book.swaphome"), directBook.toUpperCase());
 		}
-		boolean offBook = required != null && liveSpellbook != null
-			&& !liveSpellbook.isEmpty() && !liveSpellbook.equalsIgnoreCase(required);
+		String live = Model.str(pageWide, "liveSpellbook");
+		boolean offBook = required != null && live != null && !live.isEmpty() && !live.equalsIgnoreCase(required);
 		JLabel plate = new JLabel();
 		plate.setPreferredSize(new Dimension(24, 22));
 		plate.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1534,9 +1364,8 @@ public class ResultCards
 		// neutral read as a recommendation - a powered staff like the
 		// Shadow needs no book at all).
 		String bookTip = required == null
-			? "No specific spellbook required - a powered staff casts on any book"
-			: "This set wants the " + required.toUpperCase() + " book (" + reason + ")"
-				+ (offBook ? " - you are NOT on it" : " - you are on it");
+			? Ui.text("book.none")
+			: String.format(Ui.text("book.wants"), required.toUpperCase(), reason, offBook ? "NOT " : "");
 		// The swap+Vengeance option rides the plate, the way prayers and
 		// boosts ride their icons (field ask 2026-08-22). Supplies only:
 		// it changes which runes the trip carries, never the dps.
@@ -1544,7 +1373,7 @@ public class ResultCards
 			&& Model.flag(assumeOptions, "spellbookSwapAvailable");
 		if (swapAvailable)
 		{
-			bookTip = bookTip + "<br>Click to choose how you get there";
+			bookTip = bookTip + Ui.text("book.choose");
 			plate.setToolTipText("<html>" + bookTip + "</html>");
 			if (swapOn)
 			{
@@ -1560,18 +1389,17 @@ public class ResultCards
 		int sprite = required == null
 			? SpriteID.TAB_MAGIC : bookSprite(required);
 		boolean dim = required == null;
-		if (sprite > 0 && spriteManager != null)
+		if (sprite > 0)
 		{
-			spriteManager.getSpriteAsync(sprite, 0, img ->
-				SwingUtilities.invokeLater(() ->
-				{
-					Image scaled =
-						img.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
-					plate.setIcon(dim
-						? new ImageIcon(GrayFilter
-							.createDisabledImage(toBuffered(scaled)))
-						: new ImageIcon(scaled));
-				}));
+			onSprite(sprite, img ->
+			{
+				Image scaled =
+					img.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+				plate.setIcon(dim
+					? new ImageIcon(GrayFilter
+						.createDisabledImage(toBuffered(scaled)))
+					: new ImageIcon(scaled));
+			});
 		}
 		return plate;
 	}
@@ -1586,58 +1414,82 @@ public class ResultCards
 		return out;
 	}
 
-	/** The book tab sprites (SpriteID). */
+	/** The book tab sprites (SpriteID); -1 for a book that has none. */
+	private static final Map<String, Integer> BOOK_SPRITES = Map.of(
+		"ancient", SpriteID.TAB_MAGIC_SPELLBOOK_ANCIENT_MAGICKS, "lunar", SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR,
+		"arceuus", SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS, "standard", SpriteID.TAB_MAGIC);
+
 	private static int bookSprite(String book)
 	{
-		switch (book == null ? "" : book.toLowerCase())
-		{
-			case "ancient": return SpriteID.TAB_MAGIC_SPELLBOOK_ANCIENT_MAGICKS;
-			case "lunar": return SpriteID.TAB_MAGIC_SPELLBOOK_LUNAR;
-			case "arceuus": return SpriteID.TAB_MAGIC_SPELLBOOK_ARCEUUS;
-			case "standard": return SpriteID.TAB_MAGIC;
-			default: return -1;
-		}
+		return BOOK_SPRITES.getOrDefault(book == null ? "" : book.toLowerCase(), -1);
 	}
 
 	/** The prayer picker popup (anchored to the wings icon): Detect /
-	 * None / each prayer with its sprite, checkmarked at the pick. */
-	private void showPrayerMenu(Component anchor, String tab)
+	 * None / each prayer with its sprite, checkmarked at the pick. The
+	 * PRAYER BOOK view (field ask 2026-08-14): the options render as the
+	 * game's prayer-tab grid - sprite cells, the current pick on the
+	 * accent plate - not a text list. */
+	JPopupMenu prayerMenu(String tab)
 	{
-		Map<String, Object> prayerPicks = Model.map(pageParams, "prayerPicks");
-		String current = prayerPicks == null ? null : Model.str(prayerPicks, tab);
-		JPopupMenu menu = new JPopupMenu();
-		menu.add(pickChoice("Detect best", current == null,
-			() -> sendPick("set-prayer-pick", tab, null)));
-		menu.add(pickChoice("None (prayerless)", "NONE".equals(current),
-			() -> sendPick("set-prayer-pick", tab, "NONE")));
-		Map<String, Object> prayerLists = Model.map(assumeOptions, "prayers");
 		Map<String, Object> sprites = Model.map(assumeOptions, "prayerSprites");
 		Map<String, Object> images = Model.map(assumeOptions, "prayerImages");
-		if (prayerLists != null)
+		List<String[]> cells = new ArrayList<>();
+		for (Object option : Model.list2(Model.map(assumeOptions, "prayers"), tab))
 		{
-			// The PRAYER BOOK view (field ask 2026-08-14): the options
-			// render as the game's prayer-tab grid - sprite cells, the
-			// current pick on the accent plate - not a text list.
-			List<Object> names = Model.list2(prayerLists, tab);
-			if (!names.isEmpty())
-			{
-				menu.addSeparator();
-				JPanel book = Ui.darker(new GridLayout(0, 5, 2, 2));
-				book.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-				for (Object option : names)
-				{
-					String name = String.valueOf(option);
-					int sprite = sprites == null ? -1 : (int) Model.num(sprites, name);
-					String image = images == null ? null : Model.str(images, name);
-					book.add(pickCell(menu, sprite > 0 ? cachedSprite(sprite)
-						: image != null ? Ui.icon(ImageUtil.loadImageResource(ResultCards.class, image), 15) : null,
-						name, name.equals(current), 26,
-						() -> sendPick("set-prayer-pick", tab, name)));
-				}
-				menu.add(book);
-			}
+			cells.add(new String[]{String.valueOf(option), String.valueOf(option)});
 		}
-		menu.show(anchor, 0, anchor.getHeight());
+		return pickerMenu(tab, "set-prayer-pick", "prayerPicks", "Detect best", "None (prayerless)", cells, 26,
+			name ->
+			{
+				int sprite = Model.id(sprites, name);
+				String image = Model.str(images, name);
+				return sprite > 0 ? cachedSprite(sprite)
+					: image != null ? Ui.icon(ImageUtil.loadImageResource(ResultCards.class, image), 15) : null;
+			});
+	}
+
+	/** The boost picker popup - the SAME game-tab grid as the prayer
+	 * book (field ask 2026-08-20: one interface, the prayer one wins),
+	 * with potion icons for cells. Item images load ASYNC - the icon gets
+	 * the live image, never a getScaledInstance of it (blank until reopen). */
+	JPopupMenu boostMenu(String tab)
+	{
+		Map<String, Object> potionIds = Model.map(assumeOptions, "boostItems");
+		List<String[]> cells = new ArrayList<>();
+		for (Map<String, Object> option : Model.list(Model.map(assumeOptions, "boosts"), tab))
+		{
+			cells.add(new String[]{Model.str(option, "label"), Model.str(option, "key")});
+		}
+		return pickerMenu(tab, "set-boost-pick", "boostPicks", "Detect best in bank", "None (unboosted)", cells, 38,
+			label ->
+			{
+				int itemId = Model.id(potionIds, label);
+				return itemId > 0 ? new ImageIcon(itemManager.getImage(itemId)) : null;
+			});
+	}
+
+	/** The two pickers' shared shape: the Detect and None check items, then
+	 * the game-tab grid of {label, key} cells (iconOf draws each by label),
+	 * the current pick (pageParams.picksKey[tab]) lit. */
+	private JPopupMenu pickerMenu(String tab, String command, String picksKey, String detectLabel,
+		String noneLabel, List<String[]> cells, int size, Function<String, Icon> iconOf)
+	{
+		String current = Model.str(Model.map(pageParams, picksKey), tab);
+		JPopupMenu menu = new JPopupMenu();
+		menu.add(Ui.check(detectLabel, current == null, () -> sendPick(command, tab, null)));
+		menu.add(Ui.check(noneLabel, "NONE".equals(current), () -> sendPick(command, tab, "NONE")));
+		if (!cells.isEmpty())
+		{
+			menu.addSeparator();
+			JPanel grid = rack(5);
+			for (String[] cell : cells)
+			{
+				grid.add(pickCell(menu, iconOf.apply(cell[0]), cell[0], cell[1] != null && cell[1].equals(current),
+					size, () -> sendPick(command, tab, cell[1])));
+			}
+			menu.add(grid);
+		}
+		return menu;
 	}
 
 	/** How you reach the book this fight wants: camp it, or keep Lunar
@@ -1647,66 +1499,22 @@ public class ResultCards
 	private void showBookMenu(Component anchor, String directBook, boolean swapOn)
 	{
 		JPopupMenu menu = new JPopupMenu();
-		JPanel books = Ui.darker(new GridLayout(0, 2, 2, 2));
-		books.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-		String direct = directBook == null || directBook.isEmpty() ? "standard" : directBook;
+		JPanel books = rack(2);
+		boolean any = directBook == null || directBook.isEmpty();
+		String direct = any ? "standard" : directBook;
 		books.add(pickCell(menu, cachedSprite(bookSprite(direct)),
-			directBook == null || directBook.isEmpty()
-				? "Any book - nothing here needs one"
-				: "Camp " + direct.toUpperCase(),
+			any ? "Any book - nothing here needs one" : "Camp " + direct.toUpperCase(),
 			!swapOn, 30,
 			() -> commands.set("spellbookSwap", false)));
-		boolean needsSwap = directBook != null && !directBook.isEmpty()
-			&& !"lunar".equalsIgnoreCase(directBook);
+		boolean needsSwap = !any && !"lunar".equalsIgnoreCase(directBook);
 		books.add(pickCell(menu, cachedSprite(bookSprite("lunar")),
 			needsSwap
-				? "Lunar home, Spellbook Swap into " + direct.toUpperCase()
-					+ " - brings the swap and Vengeance runes"
-				: "Lunar home for Vengeance - brings Vengeance runes",
+				? String.format(Ui.text("book.swapinto"), direct.toUpperCase())
+				: Ui.text("book.lunar"),
 			swapOn, 30,
 			() -> commands.set("spellbookSwap", true)));
 		menu.add(books);
-		menu.show(anchor, 0, anchor.getHeight());
-	}
-
-	/** The boost picker popup - the SAME game-tab grid as the prayer
-	 * book (field ask 2026-08-20: one interface, the prayer one wins),
-	 * with potion icons for cells. */
-	private void showBoostMenu(Component anchor, String tab)
-	{
-		Map<String, Object> boostPicks = Model.map(pageParams, "boostPicks");
-		String current = boostPicks == null ? null : Model.str(boostPicks, tab);
-		JPopupMenu menu = new JPopupMenu();
-		menu.add(pickChoice("Detect best in bank", current == null,
-			() -> sendPick("set-boost-pick", tab, null)));
-		menu.add(pickChoice("None (unboosted)", "NONE".equals(current),
-			() -> sendPick("set-boost-pick", tab, "NONE")));
-		Map<String, Object> boostLists = Model.map(assumeOptions, "boosts");
-		Map<String, Object> potionIds = Model.map(assumeOptions, "boostItems");
-		if (boostLists != null)
-		{
-			List<Map<String, Object>> options = Model.list(boostLists, tab);
-			if (!options.isEmpty())
-			{
-				menu.addSeparator();
-				JPanel rack = Ui.darker(new GridLayout(0, 5, 2, 2));
-				rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-				for (Map<String, Object> option : options)
-				{
-					String label = Model.str(option, "label");
-					String key = Model.str(option, "key");
-					int itemId = potionIds == null ? -1 : (int) Model.num(potionIds, label);
-					// Item images load ASYNC - hand the icon the live image,
-					// never a getScaledInstance of it (blank until reopen).
-					rack.add(pickCell(menu,
-						itemId > 0 ? new ImageIcon(itemManager.getImage(itemId)) : null,
-						label, key != null && key.equals(current), 38,
-						() -> sendPick("set-boost-pick", tab, key)));
-				}
-				menu.add(rack);
-			}
-		}
-		menu.show(anchor, 0, anchor.getHeight());
+		Ui.show(menu, anchor);
 	}
 
 	/** One cell of the game-tab picker grid (the prayer-book pattern,
@@ -1723,7 +1531,7 @@ public class ResultCards
 		else
 		{
 			cell.setText(tooltip.substring(0, 1));
-			cell.setForeground(new Color(0xBEBEBE));
+			cell.setForeground(LIGHT);
 		}
 		cell.setToolTipText(tooltip + (picked ? " (assumed)" : ""));
 		cell.setCursor(Cursor.getPredefinedCursor(
@@ -1753,13 +1561,6 @@ public class ResultCards
 		return cell;
 	}
 
-	private JMenuItem pickChoice(String label, boolean selected, Runnable onPick)
-	{
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
-		item.addActionListener(e -> onPick.run());
-		return item;
-	}
-
 	private void sendPick(String command, String tab, String value)
 	{
 		Map<String, Object> args = new HashMap<>();
@@ -1780,12 +1581,7 @@ public class ResultCards
 		ImageIcon fresh = new ImageIcon(
 			new BufferedImage(15, 15, BufferedImage.TYPE_INT_ARGB));
 		spriteIconCache.put(spriteId, fresh);
-		if (spriteManager != null)
-		{
-			spriteManager.getSpriteAsync(spriteId, 0, img ->
-				SwingUtilities.invokeLater(() -> fresh.setImage(
-					img.getScaledInstance(15, 15, Image.SCALE_SMOOTH))));
-		}
+		onSprite(spriteId, img -> fresh.setImage(img.getScaledInstance(15, 15, Image.SCALE_SMOOTH)));
 		return fresh;
 	}
 
@@ -1808,9 +1604,9 @@ public class ResultCards
 			return new String[]{"DTPS: ?", "No estimate for this monster's attacks"};
 		}
 		double dps = Model.num(incoming, "dps");
-		String tip = (Model.str(incoming, "protectPrayer") == null ? "No protection prayer helps"
-			: "Pray " + Model.str(incoming, "protectPrayer"))
-			+ String.format(" - takes ~%.1f dps (%.2f unprayed)", dps, Model.num(incoming, "unprayedDps"));
+		String tip = String.format(Ui.text("dtps.tip"), Model.str(incoming, "protectPrayer") == null
+			? "No protection prayer helps" : "Pray " + Model.str(incoming, "protectPrayer"),
+			dps, Model.num(incoming, "unprayedDps"));
 		if (!"partial".equals(coverage))
 		{
 			return new String[]{String.format("~%.1f", dps), tip};
@@ -1848,8 +1644,7 @@ public class ResultCards
 		}
 		boolean group = Model.flag(ladder, "group");
 		// No gaps between columns, so the bars' baselines join into one line.
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-		row.setOpaque(false);
+		JPanel row = Ui.clear(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		for (int i = down.size() - 1; i >= 0; i--)
 		{
 			row.add(ladderColumn(down.get(i), slot, maxGain, LADDER_DOWN, nerAvailable, group));
@@ -1863,15 +1658,13 @@ public class ResultCards
 		JPanel strip = new RoundPanel(LADDER_INSET, 8);
 		strip.setLayout(new BoxLayout(strip, BoxLayout.Y_AXIS));
 		strip.setBorder(BorderFactory.createEmptyBorder(4, 2, 4, 2));
-		JLabel title = Ui.label(cap(slot) + " swaps" + (group ? " (group)" : ""), new Color(0xC8C8C8));
+		JLabel title = Ui.small(Names.cap(slot) + " swaps" + (group ? " (group)" : ""), TEXT);
 		title.setToolTipText(group
-			? "Each step swapped into the group's shared set, scored by the group's HP-weighted DPS"
-			: "Each step swapped in alone. Click a step you do not own to sim it for this monster");
-		title.setFont(FontManager.getRunescapeSmallFont());
-		JPanel legend = new JPanel(new BorderLayout());
-		legend.setOpaque(false);
-		legend.add(legendLabel("your gear", LADDER_DOWN), BorderLayout.WEST);
-		legend.add(legendLabel("upgrades", LADDER_UP), BorderLayout.EAST);
+			? Ui.text("ladder.group.tip")
+			: Ui.text("ladder.solo.tip"));
+		JPanel legend = Ui.clear(new BorderLayout());
+		legend.add(Ui.small("your gear", LADDER_DOWN), BorderLayout.WEST);
+		legend.add(Ui.small("upgrades", LADDER_UP), BorderLayout.EAST);
 		legend.setMaximumSize(new Dimension(row.getPreferredSize().width, legend.getPreferredSize().height));
 		for (JComponent part : new JComponent[]{title, row, legend})
 		{
@@ -1881,13 +1674,6 @@ public class ResultCards
 		return strip;
 	}
 
-	private static JLabel legendLabel(String text, Color color)
-	{
-		JLabel label = Ui.label(text, color);
-		label.setFont(FontManager.getRunescapeSmallFont());
-		return label;
-	}
-
 	/** The card-wide row that centres the ladder strip, under a divider. */
 	static JPanel centered(JComponent inner)
 	{
@@ -1895,16 +1681,10 @@ public class ResultCards
 		// both sides if it ever overflows - and never ask the card for the
 		// strip's width (Andrew 2026-10-22: a FlowLayout clipped it on one
 		// side; GridBag pushed it right and cut it when the card was narrow).
-		JPanel row = new JPanel(new LayoutManager()
+		// A plain LayoutManager (FlowLayout's base: its add/remove hooks are
+		// no-ops), so the row's maximum size stays Swing's default.
+		JPanel row = Ui.darker(new FlowLayout()
 		{
-			public void addLayoutComponent(String name, Component comp)
-			{
-			}
-
-			public void removeLayoutComponent(Component comp)
-			{
-			}
-
 			public Dimension preferredLayoutSize(Container parent)
 			{
 				Insets in = parent.getInsets();
@@ -1942,7 +1722,6 @@ public class ResultCards
 				child.setBounds(left + (right - left - size.width) / 2, in.top, size.width, size.height);
 			}
 		});
-		row.setBackground(CARD);
 		row.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createMatteBorder(1, 0, 0, 0, ColorScheme.MEDIUM_GRAY_COLOR),
 			BorderFactory.createEmptyBorder(5, 0, 2, 0)));
@@ -1978,8 +1757,7 @@ public class ResultCards
 		@Override
 		protected void paintComponent(Graphics g)
 		{
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			Graphics2D g2 = Ui.smooth(g);
 			g2.setColor(fill);
 			g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
 			g2.dispose();
@@ -2001,8 +1779,7 @@ public class ResultCards
 		@Override
 		protected void paintComponent(Graphics g)
 		{
-			Graphics2D g2 = (Graphics2D) g.create();
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			Graphics2D g2 = Ui.smooth(g);
 			g2.setColor(color);
 			// Overdraw past the bottom so only the top corners round.
 			g2.fillRoundRect(0, 0, getWidth(), getHeight() + 6, 6, 6);
@@ -2023,19 +1800,15 @@ public class ResultCards
 				Math.round(LADDER_BAR_MID + (LADDER_BAR_MID - 6) * Model.num(rung, "gain") / maxGain)));
 		LadderBar bar = new LadderBar(color, height);
 		bar.setName("bar:" + id);
-		JPanel bars = new JPanel(new BorderLayout());
-		bars.setOpaque(false);
-		JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-		bottom.setOpaque(false);
+		JPanel bars = Ui.clear(new BorderLayout());
+		JPanel bottom = Ui.clear(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		bottom.add(bar);
 		bars.add(bottom, BorderLayout.SOUTH);
 		bars.setPreferredSize(new Dimension(LADDER_COLUMN, 2 * LADDER_BAR_MID + 1));
 		bars.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LADDER_BASELINE));
 
-		JLabel cell = new JLabel();
+		JLabel cell = square(32);
 		cell.setName("rung:" + id);
-		cell.setPreferredSize(new Dimension(32, 32));
-		cell.setHorizontalAlignment(SwingConstants.CENTER);
 		cell.setOpaque(true);
 		cell.setBackground(CELL_BG);
 		itemManager.getImage(id).addTo(cell);
@@ -2050,9 +1823,6 @@ public class ResultCards
 			+ (worn ? " - worn" : " " + change + (second == null ? "" : ", " + second))
 			+ (same ? " - same result here, better stats" : "")
 			+ (price.isEmpty() ? "" : " - " + price + " gp");
-		// A sim lets the optimizer re-fit the whole set around the item, so
-		// the card can land above the step's own number, never below.
-		String tryNote = " (the rest of the set re-fits around it)";
 		cell.setBorder(owned ? BorderFactory.createLineBorder(color)
 			: BorderFactory.createDashedBorder(color, 1f, 3f, 2f, false));
 		if (worn)
@@ -2076,7 +1846,7 @@ public class ResultCards
 				// explicit pin stays in the menu for forcing it here.
 				boolean spec = "spec".equals(slot);
 				Ui.item(menu, spec ? "Pin as spec for this mob" : "Pin for this mob",
-					"Force " + name + " into the " + slot + " slot for this monster (unpin from the ^ list)",
+					String.format(Ui.text("ladder.pin.tip"), name, slot),
 					() -> commands.send("ladder-try", tryArgs));
 				cell.setToolTipText(tip + " - yours. Right-click to pin it here");
 			}
@@ -2086,34 +1856,25 @@ public class ResultCards
 				// 2026-10-22: "we are using "pin" for this mob instead of sim
 				// for this mob"): a step up is better swapped in alone, so the
 				// optimizer wears it - and removing the sim takes it off again.
-				cell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-				cell.addMouseListener(new MouseAdapter()
-				{
-					@Override
-					public void mouseClicked(MouseEvent e)
-					{
-						if (SwingUtilities.isLeftMouseButton(e))
-						{
-							commands.send(group ? "sim-for-group" : "sim-for-mob", simArgs);
-						}
-					}
-				});
+				Runnable sim = () -> commands.send(group ? "sim-for-group" : "sim-for-mob", simArgs);
+				Ui.onLeftClick(cell, sim);
 				Ui.item(menu, group ? "Sim for this group" : "Sim for this mob",
 					"Pretend you own " + name + (group ? " for every monster in this group" : " for this monster"),
-					() -> commands.send(group ? "sim-for-group" : "sim-for-mob", simArgs));
+					sim);
 				Ui.item(menu, "Sim everywhere", "Pretend you own " + name + " for every monster",
-					() -> commands.send("toggle-sim", Map.of("itemId", id, "label", name)));
+					() -> commands.send("toggle-sim", simArgs));
+				// Both tooltips say a sim lets the optimizer re-fit the whole set
+				// around the item, so the card can land above the step's own
+				// number, never below.
 				if (nerAvailable)
 				{
-					Ui.item(menu, "How to get it (Not Enough Runes)", "Open " + name + " in Not Enough Runes",
+					Ui.item(menu, Ui.text("ladder.ner"), "Open " + name + " in Not Enough Runes",
 						() -> commands.send("ner-open", Map.of("itemId", id)));
-					cell.setToolTipText(tip + " - not owned, click to sim it for this " + (group ? "group" : "mob")
-						+ tryNote + ". Right-click for how to get it");
+					cell.setToolTipText(String.format(Ui.text("ladder.sim.ner"), tip, group ? "group" : "mob"));
 				}
 				else
 				{
-					cell.setToolTipText(tip + " - not owned, click to sim it for this " + (group ? "group" : "mob")
-						+ tryNote + ". Install Not Enough Runes to see how to get it");
+					cell.setToolTipText(String.format(Ui.text("ladder.sim.noner"), tip, group ? "group" : "mob"));
 				}
 			}
 			// Hide a step you never want suggested (Andrew 2026-10-22:
@@ -2128,25 +1889,23 @@ public class ResultCards
 			if (!group)
 			{
 				Ui.item(menu, "Hide for this mob",
-					"Exclude " + name + " for this monster - it stops being suggested (undo from the - list)",
+					String.format(Ui.text("ladder.hide.mob"), name),
 					() -> commands.send("exclude-for-mob", Map.of("itemId", id, "scope", "ALL", "label", name)));
 			}
 			Ui.item(menu, "Hide for all mobs",
-				"Exclude " + name + " everywhere - it stops being suggested (undo from the exclusions)",
-				() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
+				String.format(Ui.text("ladder.hide.all"), name),
+				() -> commands.send("toggle-exclusion", simArgs));
 			cell.setComponentPopupMenu(menu);
 		}
 
-		JLabel label = Ui.label(worn ? shortDelta(Model.str(rung, "base")) : same ? "=" : shortDelta(change), color);
+		JLabel label = Ui.small(worn ? shortDelta(Model.str(rung, "base")) : same ? "=" : shortDelta(change), color);
 		label.setName("value:" + id);
-		label.setFont(FontManager.getRunescapeSmallFont());
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 		// Balanced's second number: the damage-taken change (worn: its own).
-		JLabel label2 = second == null ? null : Ui.label(shortDelta(second), LADDER_TAKEN);
+		JLabel label2 = second == null ? null : Ui.small(shortDelta(second), LADDER_TAKEN);
 		if (label2 != null)
 		{
 			label2.setName("value2:" + id);
-			label2.setFont(FontManager.getRunescapeSmallFont());
 			label2.setHorizontalAlignment(SwingConstants.CENTER);
 		}
 
@@ -2189,22 +1948,14 @@ public class ResultCards
 	/** The slot whose ladder strip is open ("" = none) - page view state. */
 	private String ladderSlotOpen()
 	{
-		for (Map<String, Object> entry : Model.list(pageWide, "entries"))
-		{
-			String open = Model.str(Model.map(entry, "params"), "ladderSlot");
-			return open == null ? "" : open;
-		}
-		return "";
+		String open = Model.str(pageParams, "ladderSlot");
+		return open == null ? "" : open;
 	}
 
 	/** Whether Not Enough Runes is enabled (the page params carry it). */
 	private boolean nerAvailable()
 	{
-		for (Map<String, Object> entry : Model.list(pageWide, "entries"))
-		{
-			return Model.flag(Model.map(entry, "params"), "nerAvailable");
-		}
-		return false;
+		return Model.flag(pageParams, "nerAvailable");
 	}
 
 	/** The defensive mode's trade in words (the line's tooltip): the DPS
@@ -2228,15 +1979,14 @@ public class ResultCards
 	private JLabel statIconLine(String text, String tooltip, Color color, int spriteId)
 	{
 		JLabel line = statLine(text, tooltip, color);
-		if (spriteId > 0 && spriteManager != null)
+		if (spriteId > 0)
 		{
-			spriteManager.getSpriteAsync(spriteId, 0, img ->
-				SwingUtilities.invokeLater(() ->
-				{
-					line.setIcon(Ui.icon(img, 14));
-					line.setIconTextGap(4);
-					line.revalidate();
-				}));
+			onSprite(spriteId, img ->
+			{
+				line.setIcon(Ui.icon(img, 14));
+				line.setIconTextGap(4);
+				line.revalidate();
+			});
 		}
 		return line;
 	}
@@ -2251,20 +2001,47 @@ public class ResultCards
 		return line;
 	}
 
-	/** A column stat line led by a 16px ITEM icon. */
-	private JLabel statItemLine(int itemId, String text, String tooltip, Color color)
+	/** A column stat line led by an async item image, scaled to 16px and
+	 * seated in the fixed-width column (the coin stack rides this too). */
+	private static JLabel statImageLine(AsyncBufferedImage img, String text, String tooltip, Color color)
 	{
 		JLabel line = statLine(text, tooltip, color);
-		AsyncBufferedImage img = itemManager.getImage(itemId);
-		Runnable seat = () -> SwingUtilities.invokeLater(() ->
+		onImage(img, () ->
 		{
 			line.setIcon(new StatIcons.FixedWidthIcon(new ImageIcon(
 				img.getScaledInstance(-1, 16, Image.SCALE_SMOOTH))));
 			line.setIconTextGap(2);
+			line.revalidate();
 		});
+		return line;
+	}
+
+	/** The async-image contract: paint now with whatever the image holds,
+	 * and again on the EDT once it has loaded. */
+	private static void onImage(AsyncBufferedImage img, Runnable paint)
+	{
+		Runnable seat = () -> SwingUtilities.invokeLater(paint);
 		seat.run();
 		img.onLoaded(seat);
-		return line;
+	}
+
+	/** Seats a game sprite on the label once it loads (size 0 = as drawn). */
+	private void seatSprite(JLabel target, int sprite, int size)
+	{
+		if (sprite > 0)
+		{
+			onSprite(sprite, img -> target.setIcon(size > 0 ? Ui.icon(img, size) : new ImageIcon(img)));
+		}
+	}
+
+	/** The async-sprite contract: the paint runs on the EDT once the
+	 * sprite has loaded (nothing without a sprite manager). */
+	private void onSprite(int spriteId, Consumer<BufferedImage> paint)
+	{
+		if (spriteManager != null)
+		{
+			spriteManager.getSpriteAsync(spriteId, 0, img -> SwingUtilities.invokeLater(() -> paint.accept(img)));
+		}
 	}
 
 	/** A 24px inventory cell: the item image (quantity overlay when
@@ -2293,55 +2070,30 @@ public class ResultCards
 	{
 		String mode = Model.str(mob, "antivenom");
 		String category = Model.str(mob, "cureCategory");
-		Map<String, Object> chosen = null;
-		for (Map<String, Object> supply : supplies)
-		{
-			if (category.equals(Model.str(supply, "category")))
-			{
-				chosen = supply;
-				break;
-			}
-		}
+		Map<String, Object> chosen = byCategory(supplies, category);
 		boolean none = "NONE".equals(mode);
 		String name = chosen != null ? Model.str(chosen, "name")
 			: none ? "none" : "Detect best - none banked";
-		JLabel plate = new JLabel();
-		plate.setPreferredSize(new Dimension(24, 24));
-		plate.setHorizontalAlignment(SwingConstants.CENTER);
-		plate.setToolTipText("Poison: " + name + (bis ? "" : " - click to change"));
+		JLabel plate = plate("Poison", name, bis,
+			() -> supplyMenu(category, Model.list(byCategory(Model.list(pageWide, "supplyCatalog"), category), "options")));
 		if ("CURE_ME".equals(mode))
 		{
 			plate.setIcon(cachedSprite(SpriteID.SPELL_CURE_ME));
 		}
-		else if (itemManager != null && !none)
+		else if (!none)
 		{
 			// Detect best with nothing banked (field 2026-09-09: the grey
 			// dash read as an empty box): the potion, crossed out.
 			AsyncBufferedImage img = itemManager.getImage(chosen != null ? Model.id(chosen, "itemId")
 				: "antipoison".equals(category) ? 5952 : 12913);
 			boolean missing = chosen == null;
-			Runnable seat = () -> SwingUtilities.invokeLater(() -> plate.setIcon(missing
+			onImage(img, () -> plate.setIcon(missing
 				? Ui.crossedOut(img, 22) : new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
-			seat.run();
-			img.onLoaded(seat);
 		}
 		else
 		{
 			plate.setText("-");
-			plate.setForeground(new Color(0x8C8C8C));
-		}
-		if (!bis)
-		{
-			List<Map<String, Object>> options = List.of();
-			for (Map<String, Object> entry : supplyCatalog)
-			{
-				if (category.equals(Model.str(entry, "category")))
-				{
-					options = Model.list(entry, "options");
-				}
-			}
-			JPopupMenu menu = supplyMenu(category, options);
-			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
+			plate.setForeground(DIM);
 		}
 		return plate;
 	}
@@ -2351,30 +2103,10 @@ public class ResultCards
 	 * or the super antifire; click picks. Replaces the chip-row pill. */
 	private JLabel firePlate(boolean bis)
 	{
-		int mode = bis ? 2 : Model.id(pageParams, "antifireMode");
-		String[] names = {"Dragonfire shield required (no antifire potion banked)", "Antifire potion", "Super antifire"};
-		int[] items = {11283, 2452, 21978};
-		JLabel plate = new JLabel();
-		plate.setPreferredSize(new Dimension(24, 24));
-		plate.setHorizontalAlignment(SwingConstants.CENTER);
-		plate.setToolTipText("Dragonfire: " + names[mode] + (bis ? "" : " - click to change"));
-		if (itemManager != null)
-		{
-			seatItem(plate, items[mode]);
-		}
-		if (!bis)
-		{
-			JPopupMenu menu = new JPopupMenu();
-			Ui.item(menu, "Detect best", "The best antifire you own, as at selection",
-				() -> commands.send("detect-antifire", Map.of()));
-			for (int i = 0; i < names.length; i++)
-			{
-				int value = i;
-				Ui.item(menu, names[i], () -> commands.set("antifireMode", value));
-			}
-			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
-		}
-		return plate;
+		String[] names = {Ui.text("fire.shield"), "Antifire potion", "Super antifire"};
+		return optionPlate("Dragonfire", names, names, new int[]{11283, 2452, 21978},
+			bis ? 2 : Model.id(pageParams, "antifireMode"), bis,
+			Ui.text("fire.detect.tip"), "detect-antifire", i -> commands.set("antifireMode", i));
 	}
 
 	/** The fire-spell rune assumption (Kendyy, Discord 2026-10-19): sunfire
@@ -2382,27 +2114,58 @@ public class ResultCards
 	 * from ownership at each selection; the ceiling always assumes them. */
 	private JLabel sunfirePlate(boolean bis)
 	{
-		boolean on = bis || Model.flag(pageParams, "sunfireRunes");
-		JLabel plate = new JLabel();
-		plate.setPreferredSize(new Dimension(24, 24));
-		plate.setHorizontalAlignment(SwingConstants.CENTER);
-		plate.setToolTipText("Fire spell runes: "
-			+ (on ? "sunfire runes (minimum hit a tenth of the max)" : "fire runes")
-			+ (bis ? "" : " - click to change"));
-		if (itemManager != null)
-		{
-			seatItem(plate, on ? 28929 : 554);
-		}
-		if (!bis)
+		return optionPlate("Fire spell runes", new String[]{Ui.text("sunfire.on"), "fire runes"},
+			new String[]{"Sunfire runes", "Fire runes"}, new int[]{28929, 554},
+			bis || Model.flag(pageParams, "sunfireRunes") ? 0 : 1, bis,
+			"Sunfire runes when you own any", "detect-sunfire", i -> commands.set("sunfireRunes", i == 0));
+	}
+
+	/** A plate that picks one of a few items: the picked item's image and
+	 * name in the tooltip, the menu "Detect best" (the detect command) then
+	 * every option by its label, the pick handed over as its index. */
+	private JLabel optionPlate(String what, String[] names, String[] labels, int[] items, int picked,
+		boolean bis, String detectTip, String detectCommand, IntConsumer pick)
+	{
+		JLabel plate = plate(what, names[picked], bis, () ->
 		{
 			JPopupMenu menu = new JPopupMenu();
-			Ui.item(menu, "Detect best", "Sunfire runes when you own any",
-				() -> commands.send("detect-sunfire", Map.of()));
-			Ui.item(menu, "Sunfire runes", () -> commands.set("sunfireRunes", true));
-			Ui.item(menu, "Fire runes", () -> commands.set("sunfireRunes", false));
-			Ui.onClick(plate, () -> menu.show(plate, 0, plate.getHeight()));
+			Ui.item(menu, "Detect best", detectTip, () -> commands.send(detectCommand));
+			for (int i = 0; i < labels.length; i++)
+			{
+				int value = i;
+				Ui.item(menu, labels[i], () -> pick.accept(value));
+			}
+			return menu;
+		});
+		seatItem(plate, items[picked]);
+		return plate;
+	}
+
+	/** A header plate: a 24px square, "<what>: <name>" with the click hint
+	 * on the Yours side, where its menu (built once) drops from it. */
+	private static JLabel plate(String what, String name, boolean bis, Supplier<JPopupMenu> menu)
+	{
+		JLabel plate = square(24);
+		plate.setToolTipText(what + ": " + name + (bis ? "" : " - click to change"));
+		if (!bis)
+		{
+			JPopupMenu built = menu.get();
+			Ui.onClick(plate, () -> Ui.show(built, plate));
 		}
 		return plate;
+	}
+
+	/** The first row of the given category, or null. */
+	private static Map<String, Object> byCategory(List<Map<String, Object>> rows, String category)
+	{
+		for (Map<String, Object> row : rows)
+		{
+			if (category.equals(Model.str(row, "category")))
+			{
+				return row;
+			}
+		}
+		return null;
 	}
 
 	/** An item image scaled into a 24px frame (the raw 36x32 overflowed it,
@@ -2410,55 +2173,51 @@ public class ResultCards
 	private void seatItem(JLabel target, int itemId)
 	{
 		AsyncBufferedImage img = itemManager.getImage(itemId);
-		Runnable seat = () -> SwingUtilities.invokeLater(() ->
-			target.setIcon(new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
-		seat.run();
-		img.onLoaded(seat);
+		onImage(img, () -> target.setIcon(new ImageIcon(img.getScaledInstance(-1, 22, Image.SCALE_SMOOTH))));
 	}
 
-	private JLabel smallItemCell(int itemId, int qty, String tooltip)
+	private JLabel smallItemCell(int itemId, String tooltip)
 	{
-		JLabel cell = new JLabel();
-		cell.setPreferredSize(new Dimension(26, 26));
-		cell.setHorizontalAlignment(SwingConstants.CENTER);
+		JLabel cell = square(26);
 		cell.setToolTipText(tooltip);
-		AsyncBufferedImage img = qty > 0
-			? itemManager.getImage(itemId, qty, true) : itemManager.getImage(itemId);
-		Runnable seat = () -> SwingUtilities.invokeLater(() ->
-			cell.setIcon(Ui.icon(img, 24)));
-		seat.run();
-		img.onLoaded(seat);
+		AsyncBufferedImage img = itemManager.getImage(itemId);
+		onImage(img, () -> cell.setIcon(Ui.icon(img, 24)));
 		return cell;
 	}
 
 	private static JLabel statLine(String text, String tooltip, Color color)
 	{
-		JLabel line = Ui.label(text, color);
+		JLabel line = Ui.small(text, color);
 		line.setToolTipText(tooltip);
-		line.setFont(FontManager.getRunescapeSmallFont());
 		line.setAlignmentX(Component.LEFT_ALIGNMENT);
 		return line;
 	}
 
-	/** The classic bank-action look: flat, rounded, accent on select. */
-	private static void styleBankButton(AbstractButton button)
+	/** A bank-action toggle in the classic look (flat, rounded, accent on
+	 * select): selecting it sends the command with the args built then;
+	 * deselecting sends it empty, which clears. */
+	private JToggleButton bankToggle(String text, String tip, String command, Supplier<Map<String, Object>> args)
 	{
+		JToggleButton button = new JToggleButton(text);
+		button.setToolTipText(tip);
 		button.setFocusable(false);
 		button.setContentAreaFilled(false);
-		button.setForeground(new Color(0xBEBEBE));
+		button.setForeground(LIGHT);
 		button.setBorder(new RoundedBorder(ColorScheme.MEDIUM_GRAY_COLOR, 3, 10));
 		button.addItemListener(e ->
 		{
 			boolean on = button.isSelected();
-			button.setForeground(on ? Color.WHITE : new Color(0xBEBEBE));
+			button.setForeground(on ? Color.WHITE : LIGHT);
 			button.setBorder(new RoundedBorder(on ? ACCENT
 				: ColorScheme.MEDIUM_GRAY_COLOR, 3, 10));
 		});
+		button.addActionListener(e -> commands.send(command, button.isSelected() ? args.get() : Map.of()));
+		return button;
 	}
 
 	private static JLabel styleHeader(String style, Map<String, Object> node)
 	{
-		String name = Character.toUpperCase(style.charAt(0)) + style.substring(1);
+		String name = Names.cap(style);
 		double factor = Model.num(node, "multiFactor");
 		if (factor > 0)
 		{
@@ -2474,49 +2233,32 @@ public class ResultCards
 		return label;
 	}
 
-	private JPanel side(String caption, Map<String, Object> card, boolean bis, double thrallsDps,
+	private JPanel side(Map<String, Object> card, boolean bis, double thrallsDps,
 		Map<String, Object> mob, String tab, Map<String, Object> ship)
 	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		panel.setBackground(CARD);
-		Map<String, Object> specNode = Model.map(card, "spec");
-		double setDps = Model.num(card, "dps");
-		double specAdded = specNode == null ? 0 : Model.num(specNode, "dpsAdded");
+		JPanel panel = Ui.column(CARD);
 		if ("magic".equals(tab) && !bis)
 		{
 			String pinnedSpell = Model.str(mob, "pinnedSpell");
-			String shownSpell = pinnedSpell != null && !pinnedSpell.isEmpty()
-				? pinnedSpell : Model.str(card, "spell");
+			boolean pinned = pinnedSpell != null && !pinnedSpell.isEmpty();
+			String shownSpell = pinned ? pinnedSpell : Model.str(card, "spell");
 			Map<String, Object> spellSprites = Model.map(assumeOptions, "spellSprites");
-			int shownSprite = shownSpell == null || spellSprites == null ? -1
-				: (int) Model.num(spellSprites, shownSpell);
-			JPanel spellRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-			spellRow.setBackground(CARD);
-			JLabel spellIcon = new JLabel();
-			spellIcon.setPreferredSize(new Dimension(22, 22));
-			spellIcon.setHorizontalAlignment(SwingConstants.CENTER);
+			int shownSprite = shownSpell == null ? -1 : Model.id(spellSprites, shownSpell);
+			JPanel spellRow = Ui.darker(new FlowLayout(FlowLayout.CENTER, 4, 0));
+			JLabel spellIcon = square(22);
 			if (shownSprite > 0)
 			{
 				spellIcon.setIcon(cachedSprite(shownSprite));
 			}
-			else if (spriteManager != null)
+			else
 			{
-				spriteManager.getSpriteAsync(SpriteID.TAB_MAGIC, 0, img ->
-					SwingUtilities.invokeLater(() ->
-						spellIcon.setIcon(Ui.icon(img, 18))));
+				seatSprite(spellIcon, SpriteID.TAB_MAGIC, 18);
 			}
 			String lock = Model.str(pageParams, "spellbookLock");
 			String lockText = Model.flag(mob, "cureMe") ? " - lunar book (Cure Me)"
 				: lock == null || lock.isEmpty() ? "" : " - " + lock + " book";
 			JLabel spellName = Ui.small((shownSpell == null ? "Auto spell"
-				: shownSpell + (pinnedSpell != null && !pinnedSpell.isEmpty()
-					? " (pinned)" : "")) + lockText, new Color(0xC8C8C8));
-			spellRow.add(spellIcon);
-			spellRow.add(spellName);
-			String tip = "The autocast spell - click to pin one";
-			spellIcon.setToolTipText(tip);
-			spellName.setToolTipText(tip);
+				: shownSpell + (pinned ? " (pinned)" : "")) + lockText, TEXT);
 			MouseAdapter openSpells = new MouseAdapter()
 			{
 				public void mouseClicked(MouseEvent e)
@@ -2525,19 +2267,14 @@ public class ResultCards
 					// form scrolled off the screen): sprite cells six wide,
 					// names in tooltips, the pick on the accent plate.
 					JPopupMenu menu = new JPopupMenu();
-					JCheckBoxMenuItem auto = new JCheckBoxMenuItem(
-						"Auto spell (best castable)",
-						pinnedSpell == null || pinnedSpell.isEmpty());
-					auto.addActionListener(ev ->
-						commands.send("set-pinned-spell", Map.of("name", "")));
-					menu.add(auto);
+					menu.add(Ui.check("Auto spell (best castable)", !pinned,
+						() -> commands.send("set-pinned-spell", Map.of("name", ""))));
 					menu.addSeparator();
 					// The spellbook lock (Apathy, Discord 2026-09-06: "use to be
 					// a way to set a specific spellbook"): any book, or one
 					// of the four. A book with no autocast spell (Lunar) leaves
 					// the card to the powered staves.
-					JPanel books = Ui.darker(new GridLayout(0, 5, 2, 2));
-					books.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+					JPanel books = rack(5);
 					String current = lock == null ? "" : lock;
 					for (String option : new String[]{"", "standard", "ancient", "lunar", "arceuus"})
 					{
@@ -2549,98 +2286,42 @@ public class ResultCards
 					}
 					menu.add(books);
 					menu.addSeparator();
-					JPanel book = Ui.darker(new GridLayout(0, 6, 2, 2));
-					book.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-					for (String option : spellOptions)
+					JPanel book = rack(6);
+					for (Object spell : Model.list2(pageWide, "spells"))
 					{
+						String option = String.valueOf(spell);
 						boolean picked = option.equals(pinnedSpell);
-						JLabel cell = pickedCell(26, picked);
-						int sprite = spellSprites == null ? -1
-							: (int) Model.num(spellSprites, option);
-						if (sprite > 0)
-						{
-							cell.setIcon(cachedSprite(sprite));
-						}
-						else
-						{
-							cell.setText(option.substring(0, 1));
-							cell.setForeground(new Color(0xBEBEBE));
-						}
+						int sprite = Model.id(spellSprites, option);
+						// The picker cell, with "pinned" where the pickers say "assumed".
+						JLabel cell = pickCell(menu, sprite > 0 ? cachedSprite(sprite) : null, option, picked, 26,
+							() -> commands.send("set-pinned-spell", Map.of("name", option)));
 						cell.setToolTipText(option + (picked ? " (pinned)" : ""));
-						cell.setCursor(Cursor.getPredefinedCursor(
-							Cursor.HAND_CURSOR));
-						cell.addMouseListener(new MouseAdapter()
-						{
-							public void mouseClicked(MouseEvent ev)
-							{
-								menu.setVisible(false);
-								commands.send("set-pinned-spell", Map.of("name", option));
-							}
-
-							public void mouseEntered(MouseEvent ev)
-							{
-								cell.setBorder(BorderFactory.createLineBorder(ACCENT));
-							}
-
-							public void mouseExited(MouseEvent ev)
-							{
-								if (!picked)
-								{
-									cell.setBorder(BorderFactory.createLineBorder(
-										ColorScheme.DARKER_GRAY_HOVER_COLOR));
-								}
-							}
-						});
 						book.add(cell);
 					}
 					menu.add(book);
-					menu.show((Component) e.getSource(), 0,
-						((Component) e.getSource()).getHeight());
+					Ui.show(menu, (Component) e.getSource());
 				}
 			};
-			spellIcon.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			spellName.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			spellIcon.addMouseListener(openSpells);
-			spellName.addMouseListener(openSpells);
+			for (JLabel part : new JLabel[]{spellIcon, spellName})
+			{
+				spellRow.add(part);
+				part.setToolTipText("The autocast spell - click to pin one");
+				part.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				part.addMouseListener(openSpells);
+			}
 			panel.add(left(spellRow));
 		}
 		// The classic card centre: the cross LEFT, the stat column RIGHT.
-		JPanel center = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 2));
-		center.setBackground(CARD);
-		Map<String, Object> specForCell = Model.map(card, "spec");
-		Map<String, Object> specWeaponForCell = specForCell == null
-			? null : Model.map(specForCell, "weapon");
-		cellSpecDps = specForCell == null ? 0 : Model.num(specForCell, "dpsAdded");
-		cellSetDps = Model.num(card, "dps");
-		cellThrallsDps = thrallsDps;
-		cellSpecWeaponId = specWeaponForCell == null ? 0 : Model.id(specWeaponForCell, "id");
-		cellPins = Model.list(mob, "mobPins");
-		cellRequired = new HashSet<>();
-		Object requiredGear = mob == null ? null : mob.get("requiredGear");
-		if (requiredGear instanceof List)
-		{
-			for (Object id : (List<?>) requiredGear)
-			{
-				if (id instanceof Number)
-				{
-					cellRequired.add(((Number) id).intValue());
-				}
-			}
-		}
-		cellSpecPinned = cellSpecWeaponId != 0
-			&& Model.id(mob, "pinnedSpec") == cellSpecWeaponId;
-		center.add(gearGrid(card, bis));
-		JPanel statColumn = new JPanel();
-		statColumn.setLayout(new BoxLayout(statColumn, BoxLayout.Y_AXIS));
-		statColumn.setBackground(CARD);
-		Color statText = new Color(0xC8C8C8);
+		JPanel center = Ui.darker(new FlowLayout(FlowLayout.LEFT, 8, 2));
+		center.add(gearGrid(card, bis, mob, thrallsDps));
+		JPanel statColumn = Ui.column(CARD);
 		Map<String, Object> incoming = Model.map(card, "incoming");
-		Map<String, Object> shipIncoming = ship == null ? null : Model.map(ship, "incoming");
-		statColumn.add(paintedStatLine("" + (int) Model.num(card, "maxHit"),
-			"Max hit " + (int) Model.num(card, "maxHit"), statText,
-			new StatIcons.HitsplatIcon(12)));
+		Map<String, Object> shipIncoming = Model.map(ship, "incoming");
+		int maxHit = Model.id(card, "maxHit");
+		statColumn.add(paintedStatLine("" + maxHit, "Max hit " + maxHit, TEXT,
+			new StatIcons.SizedIcon("hitsplat", 12)));
 		statColumn.add(paintedStatLine(Math.round(Model.num(card, "accuracy") * 100) + "%",
-			"Hit chance", statText, new StatIcons.CrosshairIcon(13)));
+			"Hit chance", TEXT, new StatIcons.SizedIcon("crosshair", 13)));
 		if (shipIncoming != null)
 		{
 			// Sea mobs hit the BOAT (REQ-SC-15): the number is ship damage
@@ -2648,20 +2329,18 @@ public class ResultCards
 			// and clicking the line picks the keel (Andrew: "a drop down
 			// next to the dtps value").
 			String keel = Model.str(shipIncoming, "keel");
-			int keelMax = (int) Model.num(shipIncoming, "maxHit");
-			String keelName = "none".equals(keel) ? "no keel" : cap(keel) + " keel";
+			int keelMax = Model.id(shipIncoming, "maxHit");
+			String keelName = "none".equals(keel) ? "no keel" : Names.cap(keel) + " keel";
 			// As terse as the land incoming line: the column fits ~12
 			// characters (designer pass 2026-09-02: "~1.0 (max 5, Rune)"
 			// clipped); the keel lives in the tooltip and the click menu.
 			JLabel shipLine = statIconLine(
 				shipDamageText(Model.num(shipIncoming, "dtps"), keelMax),
 				keelMax == 0
-					? "Ship damage taken: with " + keelName
-						+ " this monster cannot hit the boat - click to change the keel"
-					: "Ship damage taken with " + keelName + " - max "
-						+ keelMax + " per hit, prayers do not reduce it. Click to change the keel",
-				statText, -1);
-			shipLine.setForeground(new Color(0x78AFD7));
+					? String.format(Ui.text("ship.nohit"), keelName)
+					: String.format(Ui.text("ship.hit"), keelName, keelMax),
+				TEXT, -1);
+			shipLine.setForeground(SEA);
 			Icon sail = sailingIconSmall();
 			if (sail != null)
 			{
@@ -2673,11 +2352,11 @@ public class ResultCards
 				JPopupMenu menu = new JPopupMenu();
 				for (String option : NavalCombat.keels())
 				{
-					menu.add(pickChoice("none".equals(option) ? "No keel" : cap(option) + " keel",
+					menu.add(Ui.check("none".equals(option) ? "No keel" : Names.cap(option) + " keel",
 						option.equals(keel),
 						() -> commands.set("shipKeel", option)));
 				}
-				menu.show(shipLine, 0, shipLine.getHeight());
+				Ui.show(menu, shipLine);
 			});
 			statColumn.add(shipLine);
 		}
@@ -2688,8 +2367,8 @@ public class ResultCards
 			String[] line = dtpsLine(incoming);
 			// The protect prayer's own sprite IS the pray call (classic).
 			int protectSprite = "none".equals(Model.str(incoming, "coverage"))
-				? -1 : (int) Model.num(incoming, "protectSprite");
-			statColumn.add(statIconLine(line[0], line[1], statText, protectSprite));
+				? -1 : Model.id(incoming, "protectSprite");
+			statColumn.add(statIconLine(line[0], line[1], TEXT, protectSprite));
 			// The defensive mode's DPS cost, terse for the ~12-character
 			// column; the full trade rides the tooltip.
 			Map<String, Object> trade = Model.map(card, "modeTrade");
@@ -2701,11 +2380,11 @@ public class ResultCards
 					modeLine(trade), new Color(0x9FD39F), -1));
 			}
 		}
-		Map<String, Object> statsNode = Model.map(card, "stats");
-		if (statsNode != null)
+		Map<String, Object> stats = Model.map(card, "stats");
+		if (stats != null)
 		{
-			statColumn.add(statIconLine("+" + Model.id(statsNode, "prayer"),
-				"Prayer bonus", statText, SpriteID.SKILL_PRAYER));
+			statColumn.add(statIconLine("+" + Model.id(stats, "prayer"),
+				"Prayer bonus", TEXT, SpriteID.SKILL_PRAYER));
 		}
 		String atkType = Model.str(card, "attackType");
 		if (atkType != null)
@@ -2715,19 +2394,16 @@ public class ResultCards
 			String styleWord = paren > 0 ? atkType.substring(0, paren) : atkType;
 			String stance = paren > 0
 				? atkType.substring(paren + 2).replace(")", "") : null;
-			styleWord = Character.toUpperCase(styleWord.charAt(0)) + styleWord.substring(1);
-			statColumn.add(statLine(styleWord,
+			statColumn.add(statLine(Names.cap(styleWord),
 				stance == null ? "Attack style the numbers use"
 					: "Attack style the numbers use - " + stance + " stance",
-				statText));
+				TEXT));
 		}
 		Map<String, Object> internalAmmo = Model.map(card, "internalAmmo");
 		if (internalAmmo != null)
 		{
-			JLabel dartLine = statItemLine(Model.id(internalAmmo, "id"),
-				Model.str(internalAmmo, "name"),
-				"Loaded in the blowpipe - right-click to pin or exclude dart tiers",
-				statText);
+			JLabel dartLine = statImageLine(itemManager.getImage(Model.id(internalAmmo, "id")),
+				Model.str(internalAmmo, "name"), Ui.text("dart.tip"), TEXT);
 			Set<Integer> excludedIds = new HashSet<>();
 			Map<String, Object> pageCounts = Model.map(pageWide, "counts");
 			for (Map<String, Object> ex : Model.list(pageCounts, "excludedItems"))
@@ -2736,7 +2412,7 @@ public class ResultCards
 			}
 			int loadedId = Model.id(internalAmmo, "id");
 			JPopupMenu dartMenu = new JPopupMenu();
-			for (Map<String, Object> tier : dartTiers)
+			for (Map<String, Object> tier : Model.list(pageWide, "dartTiers"))
 			{
 				int tierId = Model.id(tier, "id");
 				String tierName = Model.str(tier, "name");
@@ -2752,9 +2428,8 @@ public class ResultCards
 		Map<String, Object> quiverAmmoNode = Model.map(card, "quiverAmmo");
 		if (quiverAmmoNode != null)
 		{
-			statColumn.add(statItemLine(Model.id(quiverAmmoNode, "id"),
-				Model.str(quiverAmmoNode, "name"),
-				"Carried in the quiver", statText));
+			statColumn.add(statImageLine(itemManager.getImage(Model.id(quiverAmmoNode, "id")),
+				Model.str(quiverAmmoNode, "name"), "Carried in the quiver", TEXT));
 		}
 		Map<String, Object> riskNode = Model.map(card, "risk");
 		if (riskNode != null)
@@ -2767,36 +2442,17 @@ public class ResultCards
 				Ui.list("<br>Lost:", Model.list2(riskNode, "lost"))));
 			statColumn.add(riskLine);
 		}
-		int upgradeCost = (int) Model.num(card, "purchaseCost");
+		int upgradeCost = Model.id(card, "purchaseCost");
 		if (upgradeCost > 0)
 		{
-			JLabel costLine = new JLabel(Gp.formatShort(upgradeCost));
 			// The coin stack at COLUMN scale: the stack-tier sprite, but
 			// scaled to the stat icons' 16px and seated in the same
 			// fixed-width column so every value shares one left edge
 			// (design note 2026-08-15: the raw 32px item image dwarfed
 			// the painted icons).
-			AsyncBufferedImage coinImg =
-				itemManager.getImage(995, 10_000, false);
-			Runnable seatCoin = () -> SwingUtilities.invokeLater(() ->
-			{
-				ImageIcon scaled = new ImageIcon(
-					coinImg.getScaledInstance(-1, 16, Image.SCALE_SMOOTH));
-				costLine.setIcon(new StatIcons.FixedWidthIcon(scaled));
-				costLine.revalidate();
-			});
-			seatCoin.run();
-			coinImg.onLoaded(seatCoin);
-			costLine.setIconTextGap(2);
-			costLine.setHorizontalAlignment(SwingConstants.LEADING);
-			costLine.setAlignmentX(Component.LEFT_ALIGNMENT);
-			costLine.setFont(FontManager.getRunescapeSmallFont());
-			costLine.setForeground(statText);
-			costLine.setToolTipText("Upgrade cost of unowned pieces in this set");
-			costLine.setAlignmentX(Component.LEFT_ALIGNMENT);
-			statColumn.add(costLine);
+			statColumn.add(statImageLine(itemManager.getImage(995, 10_000, false), Gp.formatShort(upgradeCost),
+				Ui.text("cost.tip"), TEXT));
 		}
-		Map<String, Object> stats = Model.map(card, "stats");
 		if (stats != null)
 		{
 			Map<String, Object> off = Model.map(stats, "offensive");
@@ -2805,24 +2461,14 @@ public class ResultCards
 			// 2026-08-15: the compact lines were cut off and unreadable)
 			// - a proper equipment-stats table, offensive and defensive
 			// for every stat.
-			String fullBonuses = String.format(
-				"<html><table cellpadding='2'>"
-					+ "<tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th>"
-					+ "<th>Magic</th><th>Ranged</th></tr>"
-					+ "<tr><td><b>Attack</b></td><td>%+d</td><td>%+d</td><td>%+d</td>"
-					+ "<td>%+d</td><td>%+d</td></tr>"
-					+ "<tr><td><b>Defence</b></td><td>%+d</td><td>%+d</td><td>%+d</td>"
-					+ "<td>%+d</td><td>%+d</td></tr>"
-					+ "</table>"
-					+ "Strength %+d &nbsp; Ranged str %+d &nbsp; Magic dmg %+d%%"
-					+ " &nbsp; Prayer %+d</html>",
+			String fullBonuses = String.format(Ui.text("stats.table"),
 				Model.id(off, "stab"), Model.id(off, "slash"), Model.id(off, "crush"),
 				Model.id(off, "magic"), Model.id(off, "ranged"),
 				Model.id(def, "stab"), Model.id(def, "slash"), Model.id(def, "crush"),
 				Model.id(def, "magic"), Model.id(def, "ranged"),
 				Model.id(stats, "strength"), Model.id(stats, "rangedStrength"),
 				Model.id(stats, "magicDamage"), Model.id(stats, "prayer"));
-			JLabel statsLine = statIconLine("Stats", fullBonuses, statText,
+			JLabel statsLine = statIconLine("Stats", fullBonuses, TEXT,
 				SpriteID.TAB_COMBAT);
 			// The line LOOKS like its clickable neighbours, so it answers a
 			// click with the same table the hover shows (field report
@@ -2834,17 +2480,16 @@ public class ResultCards
 				JLabel body = new JLabel(statsHtml);
 				body.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
 				pop.add(body);
-				pop.show(statsLine, 0, statsLine.getHeight());
+				Ui.show(pop, statsLine);
 			});
 			statColumn.add(statsLine);
 		}
-		Object counted = card.get("counted");
-		if (counted instanceof List && !((List<?>) counted).isEmpty())
+		List<Object> bonuses = Model.list2(card, "counted");
+		if (!bonuses.isEmpty())
 		{
 			// Situational bonuses live IN the column (field report
 			// 2026-08-14: 'slayer helm shown outside the 2x5') - the
 			// count on the line, every bonus named in the tooltip.
-			List<?> bonuses = (List<?>) counted;
 			statColumn.add(statLine("+" + bonuses.size() + " bonus"
 				+ (bonuses.size() == 1 ? "" : "es"),
 				Ui.tip(Ui.list("Counted for this set:", bonuses)), ACCENT));
@@ -2857,8 +2502,8 @@ public class ResultCards
 		// The spec cell's strip hangs off the card's spec node, not the gear.
 		Map<String, Object> openNode = openSlot.isEmpty() ? null
 			: "spec".equals(openSlot) ? Model.map(Model.map(card, "spec"), "weapon")
-			: openGear == null ? null : Model.map(openGear, openSlot);
-		Map<String, Object> openLadder = openNode == null ? null : Model.map(openNode, "ladder");
+			: Model.map(openGear, openSlot);
+		Map<String, Object> openLadder = Model.map(openNode, "ladder");
 		if (openLadder != null)
 		{
 			Map<String, Object> wornColumn = new LinkedHashMap<>(openNode);
@@ -2871,8 +2516,9 @@ public class ResultCards
 
 	/** The worn-equipment silhouette (5 rows x 3): blank corners, the
 	 * spec weapon in the empty cell left of the legs, quiver ammo in
-	 * the corner right of the legs - the classic panel's iconic grid. */
-	private static final String[] CROSS = {
+	 * the corner right of the legs - the classic panel's iconic grid
+	 * (BankLayout lays the bank out from the same rows). */
+	static final String[] CROSS = {
 		null, "head", null,
 		"cape", "neck", "ammo",
 		"weapon", "body", "shield",
@@ -2880,19 +2526,17 @@ public class ResultCards
 		"hands", "feet", "ring",
 	};
 
-	private JPanel gearGrid(Map<String, Object> card, boolean bis)
+	private JPanel gearGrid(Map<String, Object> card, boolean bis, Map<String, Object> mob, double thrallsDps)
 	{
-		JPanel grid = new JPanel(new GridLayout(5, 3, 2, 2));
-		grid.setBackground(CARD);
+		JPanel grid = Ui.darker(new GridLayout(5, 3, 2, 2));
 		Map<String, Object> gear = Model.map(card, "gear");
-		Map<String, Object> specNode = Model.map(card, "spec");
 		Map<String, Object> quiver = Model.map(card, "quiverAmmo");
 		for (String slot : CROSS)
 		{
 			Map<String, Object> item =
-				"#spec".equals(slot) ? (specNode == null ? null : Model.map(specNode, "weapon"))
+				"#spec".equals(slot) ? Model.map(Model.map(card, "spec"), "weapon")
 				: "#quiver".equals(slot) ? quiver
-				: slot == null || gear == null ? null : Model.map(gear, slot);
+				: slot == null ? null : Model.map(gear, slot);
 			if (item == null)
 			{
 				// Empty slots are truly EMPTY (field ask 2026-08-21,
@@ -2906,11 +2550,10 @@ public class ResultCards
 			{
 				String slotName = "#spec".equals(slot) ? "spec"
 					: "#quiver".equals(slot) ? "quiver" : slot;
-				grid.add(itemCell(item, slotName, bis));
+				grid.add(itemCell(item, slotName, bis, card, mob, thrallsDps));
 			}
 		}
-		JPanel holder = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-		holder.setBackground(CARD);
+		JPanel holder = Ui.darker(new FlowLayout(FlowLayout.LEFT, 0, 2));
 		holder.add(grid);
 		return holder;
 	}
@@ -2954,20 +2597,23 @@ public class ResultCards
 	private static final Color BORDER_PLAIN = new Color(0x464646);
 	private static final Color BORDER_UNOWNED = new Color(0x649164);
 
-	private JLabel itemCell(Map<String, Object> item, String slot, boolean bis)
+	/** card and mob feed the spec cell's reconciliation ledger and pin menu,
+	 * and every cell's pin badge and "needed" note. */
+	private JLabel itemCell(Map<String, Object> item, String slot, boolean bis, Map<String, Object> card,
+		Map<String, Object> mob, double thrallsDps)
 	{
-		JLabel cell = new JLabel();
+		JLabel cell = square(36);
 		String name = Model.str(item, "name");
 		int id = Model.id(item, "id");
+		boolean spec = "spec".equals(slot);
+		boolean assumed = Model.flag(item, "assumed");
+		boolean bisMatch = Model.flag(item, "bisMatch");
 		// Border language (classic, field note 2026-08-05: every colour
 		// has to EARN its cell): gold = owned and best-available, green =
 		// assumed (simmed / unowned on Yours), blue = the spec cell,
 		// grey otherwise.
-		Color border = "spec".equals(slot) ? BORDER_SPEC
-			: Model.flag(item, "assumed") ? BORDER_UNOWNED
-			: Model.flag(item, "bisMatch") ? BORDER_BIS
-			: BORDER_PLAIN;
-		int itemPrice = (int) Model.num(item, "price");
+		Color border = spec ? BORDER_SPEC : assumed ? BORDER_UNOWNED : bisMatch ? BORDER_BIS : BORDER_PLAIN;
+		int itemPrice = Model.id(item, "price");
 		String priceNote = Model.flag(item, "owned") || itemPrice <= 0
 			? "" : " - " + Gp.formatShort(itemPrice) + " gp";
 		// The reconciliation breakdown on the spec cell (field ask
@@ -2975,53 +2621,52 @@ public class ResultCards
 		// calc shows the bare set - spell out the sum so the two always
 		// reconcile. tipBody is shared with the storage/fate overlay.
 		String tipBody;
-		if ("spec".equals(slot))
+		Map<String, Object> specNode = Model.map(card, "spec");
+		int specWeaponId = Model.id(Model.map(specNode, "weapon"), "id");
+		boolean specPinned = specWeaponId != 0 && Model.id(mob, "pinnedSpec") == specWeaponId;
+		if (spec)
 		{
 			// The same ledger the Wiki calc chip's tooltip wears (field
 			// ask 2026-08-21) - one fact per row. The spec row shows even
 			// at zero here: this cell IS the spec weapon.
 			tipBody = "<b>" + name + " (spec)</b>"
-				+ (cellSpecPinned ? " <font color='#969696'>pinned</font>" : "") + priceNote
+				+ (specPinned ? " <font color='#969696'>pinned</font>" : "") + priceNote
 				+ "<br><br>"
-				+ Ui.ledger(cellSetDps, "what the wiki calc shows", cellSpecDps, true,
-					cellThrallsDps);
+				+ Ui.ledger(Model.num(card, "dps"), "what the wiki calc shows", Model.num(specNode, "dpsAdded"),
+					true, thrallsDps);
 		}
 		else
 		{
 			tipBody = name + " (" + slot + ")"
-				+ (!bis && Model.flag(item, "assumed") && cellRequired.contains(id)
-					? " - <font color='#DC7878'>needed for this monster - not owned</font>"
-				: Model.flag(item, "assumed") ? " - assumed (not owned)"
-				: Model.flag(item, "bisMatch") ? " - best available" : "") + priceNote;
+				+ (!bis && assumed && hasId(Model.list2(mob, "requiredGear"), id)
+					? " - " + Ui.text("cell.needed")
+				: assumed ? " - assumed (not owned)"
+				: bisMatch ? " - best available" : "") + priceNote;
 		}
 		cell.setToolTipText("<html>" + tipBody + "</html>");
-		if ("spec".equals(slot) && !bis && cellSpecWeaponId != 0)
+		Runnable exclude = () -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name));
+		if (spec && !bis && specWeaponId != 0)
 		{
 			// The pin lives ON the cell now (the spec text line retired).
 			JPopupMenu specMenu = new JPopupMenu();
-			boolean pinnedNow = cellSpecPinned;
-			int weaponId = cellSpecWeaponId;
-			Ui.item(specMenu, cellSpecPinned ? "Unpin spec" : "Pin as spec for this mob",
+			Ui.item(specMenu, specPinned ? "Unpin spec" : "Pin as spec for this mob",
 				() -> commands.send("set-pinned-spec",
-					Map.of("itemId", pinnedNow ? 0 : weaponId)));
-			Ui.item(specMenu, "Exclude " + name,
-				() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
+					Map.of("itemId", specPinned ? 0 : specWeaponId)));
+			Ui.item(specMenu, "Exclude " + name, exclude);
 			cell.setComponentPopupMenu(specMenu);
 		}
-		cell.setPreferredSize(new Dimension(36, 36));
-		cell.setHorizontalAlignment(SwingConstants.CENTER);
 		cell.setOpaque(true);
 		cell.setBackground(CELL_BG);
 		cell.setBorder(BorderFactory.createLineBorder(border));
 		itemManager.getImage(id).addTo(cell);
 		Color dot = sourceColor(Model.str(item, "source"));
 		String fate = Model.str(item, "fate");
-		boolean pinnedHere = !bis && !"spec".equals(slot) && pinnedOn(slot, id);
+		boolean pinnedHere = !bis && !spec && pinnedOn(Model.list(mob, "mobPins"), slot, id);
 		if (dot != null || fate != null || pinnedHere)
 		{
 			String where = Model.str(item, "source");
 			cell.setToolTipText("<html>" + tipBody
-				+ (pinnedHere ? "<br><font color='#D2B464'>pinned for this mob - right-click to unpin</font>" : "")
+				+ (pinnedHere ? Ui.text("cell.pinnedhere") : "")
 				+ (where == null ? "" : "<br>stored in " + where)
 				+ ("kept".equals(fate) ? "<br>protected on death"
 					: "lost".equals(fate)
@@ -3033,9 +2678,7 @@ public class ResultCards
 				public void paint(Graphics g, JComponent c)
 				{
 					super.paint(g, c);
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-						RenderingHints.VALUE_ANTIALIAS_ON);
+					Graphics2D g2 = Ui.smooth(g);
 					if (dot != null)
 					{
 						// The classic source dot: bottom-right corner.
@@ -3066,22 +2709,11 @@ public class ResultCards
 			// A left click opens (or closes) this slot's ladder strip under
 			// the grid; right click keeps its menu.
 			boolean open = slot.equals(ladderSlotOpen());
-			cell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 			cell.setToolTipText(cell.getToolTipText().replace("</html>",
-				"<br><font color='#969696'>click: " + (open ? "hide" : "show") + " the swaps</font></html>"));
-			cell.addMouseListener(new MouseAdapter()
-			{
-				@Override
-				public void mouseClicked(MouseEvent e)
-				{
-					if (SwingUtilities.isLeftMouseButton(e))
-					{
-						commands.send("set-param", Map.of("param", "ladderSlot", "value", open ? "" : slot));
-					}
-				}
-			});
+				String.format(Ui.text("cell.swaps"), (open ? "hide" : "show"))));
+			Ui.onLeftClick(cell, () -> commands.set("ladderSlot", open ? "" : slot));
 		}
-		if ("spec".equals(slot) && cell.getComponentPopupMenu() != null)
+		if (spec && cell.getComponentPopupMenu() != null)
 		{
 			// The spec cell keeps its own menu: the slot menu below pins
 			// and unpins GEAR slots, and "spec" is none (it replaced the
@@ -3089,8 +2721,7 @@ public class ResultCards
 			return cell;
 		}
 		JPopupMenu menu = new JPopupMenu();
-		Ui.item(menu, "Exclude " + name,
-			() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
+		Ui.item(menu, "Exclude " + name, exclude);
 		if (bis)
 		{
 			Ui.item(menu, "Sim as owned", "Pretend you own " + name + " and recompute your side",
@@ -3102,16 +2733,12 @@ public class ResultCards
 			Ui.item(menu, "Exclude for this mob", "Exclude " + name + " for this mob only (all sets)",
 				() -> commands.send("exclude-for-mob",
 				Map.of("itemId", id, "scope", "ALL", "label", name)));
-			Ui.item(menu, "Sim for this mob (search)...", "Search an item and sim it as owned for this mob only",
-				() -> picker.search("Sim for this mob",
-				(pickedId, pickedName) -> commands.send("sim-for-mob",
-					Map.of("itemId", pickedId, "label", pickedName))));
+			Ui.item(menu, "Sim for this mob (search)...", Ui.text("menu.simmob.tip"),
+				searchItem("Sim for this mob", "sim-for-mob"));
 			// The classic GLOBAL sibling (field report 2026-08-21: it fell
 			// off in the merge-back - only the per-mob scope survived).
-			Ui.item(menu, "Sim for all mobs (search)...", "Search an item and sim it as owned everywhere",
-				() -> picker.search("Sim as owned",
-				(pickedId, pickedName) -> commands.send("toggle-sim",
-					Map.of("itemId", pickedId, "label", pickedName))));
+			Ui.item(menu, "Sim for all mobs (search)...", Ui.text("menu.simall.tip"),
+				searchItem("Sim as owned", "toggle-sim"));
 			Ui.item(menu, "Pin " + name, "Force this item into the " + slot + " slot for this mob (all sets)",
 				() -> commands.send("pin", Map.of("slot", slot, "itemId", id)));
 			Ui.item(menu, "Pin another item (search)...", () -> picker.search("Pin in " + slot,
@@ -3126,10 +2753,8 @@ public class ResultCards
 					{"EXPEDITIOUS_BRACELET", "Expeditious bracelet"},
 					{"BRACELET_OF_SLAUGHTER", "Bracelet of slaughter"}})
 				{
-					JCheckBoxMenuItem task = new JCheckBoxMenuItem("On slayer tasks: " + choice[1],
-						choice[0].equals(current));
-					task.addActionListener(e -> commands.send("set-task-bracelet", Map.of("choice", choice[0])));
-					menu.add(task);
+					menu.add(Ui.check("On slayer tasks: " + choice[1], choice[0].equals(current),
+						() -> commands.send("set-task-bracelet", Map.of("choice", choice[0]))));
 				}
 			}
 		}
@@ -3147,12 +2772,28 @@ public class ResultCards
 			.append(why.get(id).length() == 0 ? "" : "; ").append(reason);
 	}
 
-	/** A square picker cell, lit when picked. */
-	private static JLabel pickedCell(int size, boolean picked)
+	/** A fixed-size label with its content centred - the cell every icon
+	 * seat starts from. */
+	private static JLabel square(int size)
 	{
 		JLabel cell = new JLabel();
 		cell.setPreferredSize(new Dimension(size, size));
 		cell.setHorizontalAlignment(SwingConstants.CENTER);
+		return cell;
+	}
+
+	/** The picker grid's rack: n cells wide on the dark ground. */
+	private static JPanel rack(int columns)
+	{
+		JPanel rack = Ui.darker(new GridLayout(0, columns, 2, 2));
+		rack.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+		return rack;
+	}
+
+	/** A square picker cell, lit when picked. */
+	private static JLabel pickedCell(int size, boolean picked)
+	{
+		JLabel cell = square(size);
 		cell.setOpaque(true);
 		cell.setBackground(picked ? new Color(0x2e, 0x40, 0x2e) : ColorScheme.DARKER_GRAY_COLOR);
 		cell.setBorder(BorderFactory.createLineBorder(picked ? ACCENT : ColorScheme.DARKER_GRAY_HOVER_COLOR));
@@ -3161,8 +2802,7 @@ public class ResultCards
 
 	private static JPanel left(JComponent inner)
 	{
-		JPanel row = new JPanel(new BorderLayout());
-		row.setBackground(CARD);
+		JPanel row = Ui.darker(new BorderLayout());
 		row.add(inner, BorderLayout.WEST);
 		return row;
 	}
@@ -3171,8 +2811,7 @@ public class ResultCards
 	 * the inner keeps its preferred size instead of stretching. */
 	private static JPanel centre(JComponent inner)
 	{
-		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-		row.setBackground(CARD);
+		JPanel row = Ui.darker(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		row.add(inner);
 		return row;
 	}

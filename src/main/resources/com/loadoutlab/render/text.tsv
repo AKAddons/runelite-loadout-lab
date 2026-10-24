@@ -1,0 +1,68 @@
+# The surface's prose - tooltips, captions, html bodies - keyed for Ui.text(key).
+# key<TAB>text; one line each, no tabs in the text, %s/%d are String.format slots.
+degrade.skip	Degradable gear skipped here - click to allow
+roster.tabonly	<br>* tab-only - this style is not in the shared trip kit
+roster.click	<br>Click to show this mob</html>
+card.tabonly	Tab-only view - this style is not in the shared trip kit
+standdown.tip	Both are cast from Arceuus - this card's number leaves the thrall out
+gap.tip	Your best owned set vs the game-wide best, at your levels
+supply.cape	Magic cape - swap spellbooks up to 5x daily (owned)
+trio.filter.add	Add a supply to this mob's bank filter
+bank.show.tip	Highlight this set (and its inventory) in your open bank
+bank.filter.tip	Filter your open bank to this set - equipment cross, inventory beside it
+supply.boost	- the boost this card assumes; change it on the boost picker
+note.tip	Your note for this mob - saved on Enter
+ledger.head	<html><table cellpadding='1' cellspacing='0'>
+ledger.row	<tr><td><font color='%1$s'>%2$s</font></td><td align='right'><font color='%1$s'>&nbsp;&nbsp;%3$s</font></td><td><font color='#969696'>&nbsp;&nbsp;%4$s</font></td></tr>
+ledger.manning	Manning cannon 1: armour bonuses count, attacks do not
+ledger.parts	Set + spec = the row; + cannons = the tab
+book.swap	Lunar home, Spellbook Swap into Arceuus for the summons
+book.arceuus	thralls / Death Charge live on Arceuus
+book.none	No specific spellbook required - a powered staff casts on any book
+book.wants	This set wants the %s book (%s) - you are %son it
+book.swaphome	Lunar home - Spellbook Swap into %s for the fight
+book.choose	<br>Click to choose how you get there
+book.swapinto	Lunar home, Spellbook Swap into %s - brings the swap and Vengeance runes
+book.lunar	Lunar home for Vengeance - brings Vengeance runes
+dtps.tip	%s - takes ~%.1f dps (%.2f unprayed)
+ladder.group.tip	Each step swapped into the group's shared set, scored by the group's HP-weighted DPS
+ladder.solo.tip	Each step swapped in alone. Click a step you do not own to sim it for this monster
+ladder.sim.ner	%s - not owned, click to sim it for this %s (the rest of the set re-fits around it). Right-click for how to get it
+ladder.sim.noner	%s - not owned, click to sim it for this %s (the rest of the set re-fits around it). Install Not Enough Runes to see how to get it
+ladder.pin.tip	Force %s into the %s slot for this monster (unpin from the ^ list)
+ladder.ner	How to get it (Not Enough Runes)
+ladder.hide.mob	Exclude %s for this monster - it stops being suggested (undo from the - list)
+ladder.hide.all	Exclude %s everywhere - it stops being suggested (undo from the exclusions)
+fire.shield	Dragonfire shield required (no antifire potion banked)
+fire.detect.tip	The best antifire you own, as at selection
+sunfire.on	sunfire runes (minimum hit a tenth of the max)
+ship.nohit	Ship damage taken: with %s this monster cannot hit the boat - click to change the keel
+ship.hit	Ship damage taken with %s - max %s per hit, prayers do not reduce it. Click to change the keel
+dart.tip	Loaded in the blowpipe - right-click to pin or exclude dart tiers
+cost.tip	Upgrade cost of unowned pieces in this set
+stats.table	<html><table cellpadding='2'><tr><th></th><th>Stab</th><th>Slash</th><th>Crush</th><th>Magic</th><th>Ranged</th></tr><tr><td><b>Attack</b></td><td>%+d</td><td>%+d</td><td>%+d</td><td>%+d</td><td>%+d</td></tr><tr><td><b>Defence</b></td><td>%+d</td><td>%+d</td><td>%+d</td><td>%+d</td><td>%+d</td></tr></table>Strength %+d &nbsp; Ranged str %+d &nbsp; Magic dmg %+d%% &nbsp; Prayer %+d</html>
+cell.needed	<font color='#DC7878'>needed for this monster - not owned</font>
+cell.pinnedhere	<br><font color='#D2B464'>pinned for this mob - right-click to unpin</font>
+cell.swaps	<br><font color='#969696'>click: %s the swaps</font></html>
+menu.simmob.tip	Search an item and sim it as owned for this mob only
+menu.simall.tip	Search an item and sim it as owned everywhere
+mode.max	<html><b>Max DPS</b> - the set that deals the most damage.<br>The card shows that set and its DPS; the swaps rank each item<br>by the DPS it adds.</html>
+mode.balanced	<html><b>Balanced (beta)</b> - the best damage dealt per damage taken:<br>it gives up a little DPS where that cuts more of the damage you take.<br>The card shows the trade (DPS cost, damage cut); the swaps show<br>both the DPS change and the damage taken change.</html>
+mode.tanky	<html><b>Tanky (beta)</b> - the least damage taken, then the most DPS<br>among those sets. The card shows the damage cut and its DPS cost;<br>the swaps rank items by the damage taken per second.</html>
+wiki.head	<b>Open in the official wiki calculator</b><br><font color='#969696'>shares this exact setup via the wiki's shortlink</font>
+wiki.toa	<br><font color='#969696'>ToA: opens at Invocation %s (their Raid level field, top of the monster panel)</font>
+chip.task.tip	On a slayer task: slayer helmet bonuses apply
+chip.ancient.tip	Carry Zaros protection too - bank at Nex's respite area (Ashuelot Reis)
+chip.pvp.tip	PvP world: keeps 3 items (4 with Protect Item), High Risk keeps none - cycles off / PvP / High Risk
+chip.cannons.tip	Ship cannons carried - cycles 0 / 1 / 2
+chip.dcharge.tip	Death Charge: off / on / upgraded - cycles
+chip.multi.tip	Multi-combat: barrage, chinchompas and the venator bow priced at a stack of targets - cycles single / x3 / x9
+chip.invo.tip	ToA invocation level - cycles 0/150/300/540
+chip.budget.tip	Upgrade budget (k/m/b, 'max'); empty = owned gear only
+chip.risk.tip	Wilderness risk cap in gp (k/m/b); empty = uncapped. Caps tradeables carried to 3 (4 with Protect Item)
+chip.risk.pvp	. PvP world: untradeable fees are priced at the deep-Wilderness rate (an upper bound)
+chip.addmob.tip	Add another monster to this result (shared trip plan)
+footer.discord.tip	Loadout Lab community - report issues, request features
+footer.cancel.tip	Stop this search and go back to the start
+hint.empty	Search a mob, group, or raid to begin.
+ledger.line	<tr><td>%s</td><td align='right'>&nbsp;&nbsp;%s</td><td>%s</td></tr>

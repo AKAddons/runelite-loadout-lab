@@ -1,5 +1,6 @@
 package com.loadoutlab.model;
 
+import com.google.gson.JsonObject;
 import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
@@ -13,6 +14,7 @@ import com.loadoutlab.command.Commands;
 import com.loadoutlab.command.CommandHistory;
 import java.util.function.*;
 import javax.swing.SwingUtilities;
+import lombok.Setter;
 
 /**
  * Executes contract commands (docs/COMPANION_CONTRACT.md) against the
@@ -37,16 +39,14 @@ public class CommandEngine
 	private final CompanionLink link;
 	/** Live global-store counts (excluded/simmed/stored) - supplied by
 	 * the plugin, read at page-build time so chips are never stale. */
+	@Setter
 	private volatile Supplier<Map<String, Object>> counts;
 
-	public void setCounts(Supplier<Map<String, Object>> counts)
-	{
-		this.counts = counts;
-	}
-
-	/** Global-store toggles, implemented by the plugin over the same
-	 * Commands factories the classic panel uses - so store history
-	 * stays in ONE place (the plugin's stack) during the transition. */
+	/** Global-store toggles and the per-mob writes, implemented by the
+	 * plugin as direct store calls: the ENGINE's history is the one live
+	 * stack since the merge-back (field report 2026-08-20: the plugin's
+	 * own stack was an orphan nothing could undo, so Back skipped every
+	 * exclude/sim). */
 	public interface StoreOps
 	{
 		boolean toggleExclusion(int itemId);
@@ -61,25 +61,15 @@ public class CommandEngine
 		/** The slayer-task bracelet setting, by TaskBracelet name. */
 		void setTaskBracelet(String choice);
 
-		/** ALL-sets-scope pin/unpin on the given mob's profile. */
-		void pin(int monsterId, String slot, int itemId);
-
-		void unpin(int monsterId, String slot);
-
 		/** Highlight these ids in the open bank; null clears. */
 		void showInBank(Set<Integer> itemIds);
 
 		/** Filter the open bank to these ids in this layout; nulls clear. */
 		void filterBank(Set<Integer> itemIds, int[] layout);
 
-
-
-
 		void setPinnedSpec(int monsterId, int itemId);
 
-
-
-		/** Mob-scoped exclusion/sim (undoable Commands-factory backed). */
+		/** Mob-scoped exclusion/sim; the engine records the step. */
 		void excludeForMob(int monsterId, String scope, int itemId);
 
 		void simForMob(int monsterId, int itemId);
@@ -92,16 +82,9 @@ public class CommandEngine
 
 		List<Map<String, Object>> mobFilters(int monsterId);
 
-
-
 		void addMobFilter(int monsterId, int itemId);
 
-
-
 		boolean skipDegradable(int monsterId);
-
-
-	
 
 		/** The per-mob profile store, spoken to directly (the plugin wired
 		 * eleven one-line delegations here before 2026-09-09). */
@@ -137,16 +120,13 @@ public class CommandEngine
 
 		/** Scoped pin writes - the pin list and the sim-drops-pin undo put
 		 * a pin back in the scope it came from. */
-		default void pin(int monsterId, String scope, GearSlot slot, int itemId)
-		{
-		}
+		void pin(int monsterId, String scope, GearSlot slot, int itemId);
 
-		default void unpin(int monsterId, String scope, GearSlot slot)
-		{
-		}
+		void unpin(int monsterId, String scope, GearSlot slot);
 	}
 
-	private volatile StoreOps stores;
+	@Setter
+	private volatile StoreOps storeOps;
 
 	/** Opens the shown setup in the official wiki calculator - the
 	 * plugin wires the network side (shortlink POST + browser). Unset,
@@ -157,17 +137,8 @@ public class CommandEngine
 			String assumes, boolean onSlayerTask, boolean inWilderness);
 	}
 
+	@Setter
 	private volatile WikiCalcOpener wikiCalcOpener;
-
-	public void setWikiCalcOpener(WikiCalcOpener opener)
-	{
-		this.wikiCalcOpener = opener;
-	}
-
-	public void setStoreOps(StoreOps stores)
-	{
-		this.stores = stores;
-	}
 
 	/** The plugin's roster compute path (ComputeHook.computeRoster). */
 	public interface RosterCompute
@@ -177,12 +148,8 @@ public class CommandEngine
 
 	/** Wrench-panel supply defaults (category -> config enum name),
 	 * re-read per publish so config changes land immediately. */
+	@Setter
 	private volatile Supplier<Map<String, String>> supplyDefaults;
-
-	public void setSupplyDefaults(Supplier<Map<String, String>> supplyDefaults)
-	{
-		this.supplyDefaults = supplyDefaults;
-	}
 
 	/** The player's LIVE spellbook name ("standard"/"ancient"/"lunar"/
 	 * "arceuus"), pushed by the plugin's varbit subscriber - the book
@@ -200,71 +167,36 @@ public class CommandEngine
 		}
 	}
 
-	/** spellName -> its book, built once from the corpus. */
-	private volatile Map<String, Object> spellbooksCache;
-
-	private Map<String, Object> spellbooks()
-	{
-		Map<String, Object> cached = spellbooksCache;
-		if (cached != null)
-		{
-			return cached;
-		}
-		Map<String, Object> books = new LinkedHashMap<>();
-		for (SpellStats spell : data.getSpells())
-		{
-			books.put(spell.getName(), spell.getSpellbook());
-		}
-		spellbooksCache = books;
-		return books;
-	}
+	/** spellName -> its book, built once from the corpus - every corpus
+	 * name is distinct, so its keys are the page's spell list too. */
+	private final Map<String, Object> spellbooks = new LinkedHashMap<>();
 
 	/** Combo-rune preference (config-fed) + casting-kit ownership. */
 
 
 	/** Storage name for an item needing a fetch trip (source dots). */
+	@Setter
 	private volatile IntFunction<String> itemLocation;
 
-	public void setItemLocation(IntFunction<String> itemLocation)
-	{
-		this.itemLocation = itemLocation;
-	}
-
 	/** Canonical ownership (dose variants collapse) for Detect scans. */
+	@Setter
 	private volatile IntPredicate ownedCheck;
-
-	public void setOwnedCheck(IntPredicate ownedCheck)
-	{
-		this.ownedCheck = ownedCheck;
-	}
 
 	/** Classic seedAssumptionDefaults: config-driven params for a NEW
 	 * selection (spec chip, thralls when reachable+book owned, Death
 	 * Charge at Magic 80) - supplied by the plugin, which owns the
 	 * config and the live levels. */
+	@Setter
 	private volatile Supplier<Map<String, Object>> assumptionSeeder;
-
-	public void setAssumptionSeeder(Supplier<Map<String, Object>> assumptionSeeder)
-	{
-		this.assumptionSeeder = assumptionSeeder;
-	}
 
 	/** Classic Detect: the best owned antifire tier (0/1/2) for a
 	 * fire-breathing selection - supplied by the plugin (owned scan). */
+	@Setter
 	private volatile Function<List<MonsterStats>, Integer> antifireResolver;
 
-	public void setAntifireResolver(Function<List<MonsterStats>, Integer> antifireResolver)
-	{
-		this.antifireResolver = antifireResolver;
-	}
-
+	@Setter
 	private volatile RosterCompute rosterCompute;
 	private volatile List<MonsterGroups.MonsterGroup> groups;
-
-	public void setRosterCompute(RosterCompute rosterCompute)
-	{
-		this.rosterCompute = rosterCompute;
-	}
 	/** Engine-owned history for seam-driven actions. Separate from the
 	 * old panel's stack during the transition (its commands re-sync
 	 * Swing controls the engine does not know about); they merge when
@@ -283,19 +215,12 @@ public class CommandEngine
 	 * the WRONG mob's card - found by the pre-release adversarial pass
 	 * 2026-08-22. A null page means "not restorable"; the entry still
 	 * holds its place so the deques stay in phase with the history. */
+	@lombok.AllArgsConstructor
 	private static final class Snapshot
 	{
 		final Map<String, Object> page;
 		final List<MonsterStats> mobs;
 		final List<Map<CombatStyle, OptimizerService.StyleResult>> perMob;
-
-		Snapshot(Map<String, Object> page, List<MonsterStats> mobs,
-			List<Map<CombatStyle, OptimizerService.StyleResult>> perMob)
-		{
-			this.page = page;
-			this.mobs = mobs;
-			this.perMob = perMob;
-		}
 	}
 
 	private final ArrayDeque<Snapshot> undoPages =
@@ -315,17 +240,8 @@ public class CommandEngine
 			return false;
 		}
 		Object entries = page.get("entries");
-		if (entries instanceof List)
-		{
-			for (Object entry : (List<?>) entries)
-			{
-				if (entry instanceof Map && Boolean.TRUE.equals(((Map<?, ?>) entry).get("pending")))
-				{
-					return false;
-				}
-			}
-		}
-		return true;
+		return !(entries instanceof List) || ((List<?>) entries).stream()
+			.noneMatch(entry -> entry instanceof Map && Boolean.TRUE.equals(((Map<?, ?>) entry).get("pending")));
 	}
 
 	/** history.execute plus the page snapshot - every recorded command
@@ -363,13 +279,24 @@ public class CommandEngine
 		this.state = state;
 		this.compute = compute;
 		this.link = link;
+		data.getSpells().forEach(spell -> spellbooks.put(spell.getName(), spell.getSpellbook()));
 	}
 
 	private static final Map<String, String> PARAM_LABELS = new LinkedHashMap<>();
+	/** The per-mob list commands (the card trio's adds, the mob line's
+	 * removes): each one's undo is the command that puts it back, so the
+	 * six share one handler that replays whichever side history asks for.
+	 * The pairs, and the verb each one's undo label opens with, ride
+	 * param_labels.json beside the param labels. */
+	private static final Map<String, String> INVERSE = new HashMap<>();
+	private static final Map<String, String> VERB = new HashMap<>();
 
 	static
 	{
-		JsonResources.stringMap(JsonResources.objectOrThrow("param_labels.json"), "labels", PARAM_LABELS);
+		JsonObject labels = JsonResources.objectOrThrow("param_labels.json");
+		JsonResources.stringMap(labels, "labels", PARAM_LABELS);
+		JsonResources.stringMap(labels, "inverse", INVERSE);
+		JsonResources.stringMap(labels, "verbs", VERB);
 	}
 
 	/** Handle one contract command; returns false for an unknown or
@@ -377,7 +304,7 @@ public class CommandEngine
 	@SuppressWarnings("unchecked")
 	public boolean execute(String name, Map<String, Object> args)
 	{
-		StoreOps ops = stores;
+		StoreOps ops = storeOps;
 		switch (name == null ? "" : name)
 		{
 			case "select":
@@ -392,55 +319,35 @@ public class CommandEngine
 					// Post-quest, the click selected Awakened). The
 					// dropdown sends its row's version; a bare id (link-
 					// ins) takes the best-ranked id match via search.
-					Object versionArg = args.get("version");
-					MonsterStats first = null;
-					for (MonsterStats m : data.getMonsters())
-					{
-						if (m.getId() != wanted)
-						{
-							continue;
-						}
-						if (versionArg instanceof String
-							&& ((String) versionArg).equalsIgnoreCase(m.getVersion()))
-						{
-							return selectResolved(m, null);
-						}
-						if (first == null)
-						{
-							first = m;
-						}
-					}
+					String version = strArg(args, "version", null);
+					MonsterStats first = monster(m -> m.getId() == wanted);
 					if (first == null)
 					{
 						return false;
 					}
+					MonsterStats exact = version == null ? null
+						: monster(m -> m.getId() == wanted && version.equalsIgnoreCase(m.getVersion()));
 					// No version, or a version this corpus no longer
 					// spells the same way: take the row the SEARCH ranks
 					// first. Falling back to corpus order handed over the
 					// Awakened boss - strictly worse than sending no
 					// version at all (adversarial pass 2026-08-22).
-					for (MonsterStats ranked : data.searchMonsters(first.getName(), 10))
-					{
-						if (ranked.getId() == wanted)
-						{
-							return selectResolved(ranked, null);
-						}
-					}
-					return selectResolved(first, null);
+					return selectResolved(exact != null ? exact : data.searchMonsters(first.getName(), 10).stream()
+						.filter(ranked -> ranked.getId() == wanted).findFirst().orElse(first), null);
 				}
-				Object query = arg(args, "query");
-				if (!(query instanceof String) || ((String) query).isBlank())
+				String query = strArg(args, "query", null);
+				if (query == null || query.isBlank())
 				{
 					return false;
 				}
 				// Groups first on an exact-ish name hit, else single mobs -
 				// mirrors the classic search's dropdown priorities loosely;
 				// a group named like the query opens the roster.
-				MonsterGroups.MonsterGroup group = groupFor((String) query);
+				MonsterGroups.MonsterGroup group = groupFor(query);
 				MonsterStats next = null;
 				if (group == null)
 				{
-					List<MonsterStats> matches = data.searchMonsters((String) query, 1);
+					List<MonsterStats> matches = data.searchMonsters(query, 1);
 					if (matches.isEmpty())
 					{
 						return false;
@@ -456,31 +363,27 @@ public class CommandEngine
 			}
 			case "add-mob":
 			{
-				Object query = arg(args, "query");
-				if (!(query instanceof String) || ((String) query).isBlank() || !state.hasSelection())
+				String query = strArg(args, "query", null);
+				if (query == null || query.isBlank() || !state.hasSelection())
 				{
 					return false;
 				}
-				List<MonsterStats> matches = data.searchMonsters((String) query, 1);
+				List<MonsterStats> matches = data.searchMonsters(query, 1);
 				if (matches.isEmpty())
 				{
 					return false;
 				}
 				MonsterStats added = matches.get(0);
-				List<MonsterStats> current = state.rosterMobs() != null
-					? state.rosterMobs() : List.of(state.mob());
-				for (MonsterStats m : current)
+				List<MonsterStats> current = selectedMobs();
+				if (current.stream().anyMatch(m -> m.getId() == added.getId()))
 				{
-					if (m.getId() == added.getId())
-					{
-						return false;
-					}
+					return false;
 				}
 				List<MonsterStats> combined = new ArrayList<>(current);
 				combined.add(added);
 				Object[] prevSel = state.selectionSnapshot();
 				return recorded("Add " + added.getName() + " to result",
-					() -> state.selectRoster(combined, "Custom roster"),
+					() -> state.selectRoster(combined, "Custom roster", false),
 					() -> state.restoreSelection(prevSel));
 			}
 			case "cancel":
@@ -516,8 +419,7 @@ public class CommandEngine
 				List<MonsterStats> reordered = new ArrayList<>(current);
 				reordered.add(to, reordered.remove(at));
 				Object[] prevSel = state.selectionSnapshot();
-				Object lensObj = state.paramsNode().get("lensIndex");
-				int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
+				int lens = intParam("lensIndex");
 				int movedLens = lens == at ? to : lens == to ? at : lens;
 				boolean raid = flag("raidSelection");
 				return record(Commands.of("Move " + current.get(at).getName() + (to < at ? " up" : " down"), () ->
@@ -540,9 +442,7 @@ public class CommandEngine
 				// A single-mob view shows its own row with an X (field ask
 				// 2026-08-22) - there is no roster behind it, so the lone
 				// selection stands in as a one-mob list.
-				List<MonsterStats> current = state.rosterMobs() != null
-					? state.rosterMobs()
-					: state.mob() == null ? null : List.of(state.mob());
+				List<MonsterStats> current = selectedMobs();
 				if (index == null || current == null)
 				{
 					return false;
@@ -573,7 +473,7 @@ public class CommandEngine
 					}
 					else
 					{
-						state.selectRoster(remaining, "Custom roster");
+						state.selectRoster(remaining, "Custom roster", false);
 					}
 					recompute();
 					return true;
@@ -586,12 +486,11 @@ public class CommandEngine
 			}
 			case "set-param":
 			{
-				Object param = arg(args, "param");
-				if (!(param instanceof String))
+				String key = strArg(args, "param", null);
+				if (key == null)
 				{
 					return false;
 				}
-				String key = (String) param;
 				Object next = args.get("value");
 				Object prev = state.paramsNode().get(key);
 				boolean unchanged = Objects.equals(prev, next);
@@ -625,12 +524,12 @@ public class CommandEngine
 			case "ner-open":
 			{
 				// A link out, not an action - never recorded in history.
-				Object itemId = args.get("itemId");
-				if (!(itemId instanceof Number) || !nerAvailable.getAsBoolean())
+				Integer itemId = intArg(args, "itemId");
+				if (itemId == null || !nerAvailable.getAsBoolean())
 				{
 					return false;
 				}
-				nerOpen.accept(((Number) itemId).intValue());
+				nerOpen.accept(itemId);
 				return true;
 			}
 			case "toggle-degradable":
@@ -646,13 +545,13 @@ public class CommandEngine
 			}
 			case "set-supply-default":
 			{
-				Object category = arg(args, "category");
-				Object choice = arg(args, "choice");
-				if (ops == null || !(category instanceof String) || !(choice instanceof String))
+				String category = strArg(args, "category", null);
+				String choice = strArg(args, "choice", null);
+				if (ops == null || category == null || choice == null)
 				{
 					return false;
 				}
-				ops.setSupplyDefault((String) category, (String) choice);
+				ops.setSupplyDefault(category, choice);
 				recompute();
 				return true;
 			}
@@ -681,8 +580,7 @@ public class CommandEngine
 				}
 				boolean bis = args != null && Boolean.TRUE.equals(args.get("bis"))
 					|| flag("viewingBis");
-				Object styleArg = arg(args, "style");
-				String styleName = styleArg instanceof String ? (String) styleArg : null;
+				String styleName = strArg(args, "style", null);
 				if (styleName == null)
 				{
 					// No style given (the footer button): the VIEWED tab, or
@@ -711,10 +609,7 @@ public class CommandEngine
 					for (OptimizerService.StyleResult candidate
 						: perMob.get(at).values())
 					{
-						DpsResult side = candidate == null ? null
-							: bis ? candidate.overallBest
-							: candidate.owned == null || candidate.owned.isEmpty()
-								? null : candidate.owned.get(0);
+						DpsResult side = RenderModel.shown(candidate, bis);
 						if (side != null && side.getDps() > best)
 						{
 							best = side.getDps();
@@ -722,9 +617,7 @@ public class CommandEngine
 						}
 					}
 				}
-				DpsResult shown = result == null ? null
-					: bis ? result.overallBest
-					: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
+				DpsResult shown = RenderModel.shown(result, bis);
 				if (shown == null)
 				{
 					return false;
@@ -753,14 +646,12 @@ public class CommandEngine
 			{
 				// The dragonfire plate's Detect best (Andrew 2026-10-18): the
 				// selection-time detection, run again on demand.
-				Function<List<MonsterStats>, Integer> resolve = antifireResolver;
-				List<MonsterStats> selected = state.rosterMobs() != null ? state.rosterMobs()
-					: state.mob() == null ? null : List.of(state.mob());
-				if (resolve == null || selected == null)
+				List<MonsterStats> selected = selectedMobs();
+				if (antifireResolver == null || selected == null)
 				{
 					return false;
 				}
-				state.setParam("antifireMode", resolve.apply(selected));
+				seedAntifire(selected);
 				recompute();
 				return true;
 			}
@@ -801,8 +692,7 @@ public class CommandEngine
 				}
 				int id = itemId;
 				boolean exclusion = "toggle-exclusion".equals(name);
-				Object labelArg = args.get("label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
+				String what = strArg(args, "label", "item");
 				// Self-inverse: a toggle undoes itself. Recorded HERE (the
 				// one live stack) - the classic recorded into the plugin's
 				// stack, orphaned since the merge-back, so Back skipped
@@ -831,35 +721,6 @@ public class CommandEngine
 				};
 				return record(Commands.of((exclusion ? "Exclude " : "Sim ") + what, toggle, toggle));
 			}
-			case "pin":
-			case "unpin":
-			{
-				// The monster the card shows, like exclude/sim: a roster view
-				// has no state.mob(), and the click used to do nothing there
-				// (ISS-01M5HANBV7VC08XCH850AW7Q39, Andrew 2026-10-22: Unpin
-				// weapon on Araxxor - "Nothing changed at all").
-				MonsterStats mob = shownMob();
-				Object slot = arg(args, "slot");
-				if (ops == null || mob == null || !(slot instanceof String))
-				{
-					return false;
-				}
-				if ("pin".equals(name))
-				{
-					Object itemId = args.get("itemId");
-					if (!(itemId instanceof Number))
-					{
-						return false;
-					}
-					ops.pin(mob.getId(), (String) slot, ((Number) itemId).intValue());
-				}
-				else
-				{
-					ops.unpin(mob.getId(), (String) slot);
-				}
-				recompute();
-				return true;
-			}
 			case "set-prayer-pick":
 			case "set-boost-pick":
 			{
@@ -877,13 +738,10 @@ public class CommandEngine
 				{
 					return false;
 				}
-				Object value = args.get("value");
 				boolean prayer = "set-prayer-pick".equals(name);
-				String next = value instanceof String ? (String) value : null;
-				Map<String, Object> picks = (Map<String, Object>) state.paramsNode()
-					.get(prayer ? "prayerPicks" : "boostPicks");
-				Object prevRaw = picks == null ? null : picks.get(combatStyle.name().toLowerCase());
-				String prev = prevRaw instanceof String ? (String) prevRaw : null;
+				String next = strArg(args, "value", null);
+				String prev = (String) ((Map<String, Object>) state.paramsNode()
+					.get(prayer ? "prayerPicks" : "boostPicks")).get(combatStyle.name().toLowerCase());
 				if (Objects.equals(prev, next))
 				{
 					return true;
@@ -894,48 +752,6 @@ public class CommandEngine
 					() -> state.setPick(prayer, combatStyle, next),
 					() -> state.setPick(prayer, combatStyle, prev));
 			}
-			case "exclude-for-mob":
-			case "sim-for-mob":
-			{
-				// Rosters have no state.mob() - the lensed row is the mob
-				// (the set-note lesson, third member; field report
-				// 2026-08-20: the card trio's adds no-oped on rosters).
-				MonsterStats mob = shownMob();
-				Integer itemId = intArg(args, "itemId");
-				if (ops == null || mob == null || itemId == null)
-				{
-					return false;
-				}
-				int id = itemId;
-				boolean exclude = "exclude-for-mob".equals(name);
-				Object scopeArg = args.get("scope");
-				String scope = scopeArg instanceof String ? (String) scopeArg : "ALL";
-				Object labelArg = args.get("label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
-				int mobId = mob.getId();
-				String mobName = mob.getName();
-				return recorded((exclude ? "Exclude " : "Sim ") + what + " - " + mobName, () ->
-				{
-					if (exclude)
-					{
-						ops.excludeForMob(mobId, scope, id);
-					}
-					else
-					{
-						ops.simForMob(mobId, id);
-					}
-				}, () ->
-				{
-					if (exclude)
-					{
-						ops.mobs().removeMobExclusion(mobId, scope, id);
-					}
-					else
-					{
-						ops.mobs().removeMobSim(mobId, id);
-					}
-				});
-			}
 			case "ladder-try":
 			{
 				// A ladder step picked (ISS-01M5GNMHHCD8M56JD4GAZBFV7Y, Andrew
@@ -943,16 +759,21 @@ public class CommandEngine
 				// not yours yet AND pin it into its slot - one undo step that
 				// takes the sim back and restores the slot's earlier pin.
 				MonsterStats mob = shownMob();
-				Object slotArg = arg(args, "slot");
-				Object itemId = args.get("itemId");
-				if (ops == null || mob == null || !(slotArg instanceof String) || !(itemId instanceof Number))
+				String slot = strArg(args, "slot", null);
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || mob == null || slot == null || itemId == null)
 				{
 					return false;
 				}
-				String slot = (String) slotArg;
+				int id = itemId;
+				int mobId = mob.getId();
 				if ("spec".equals(slot))
 				{
-					return trySpec(ops, mob, ((Number) itemId).intValue(), args.get("label"));
+					// A spec swap tried (ISS-01M5HCS725N7XVVBC7CMK6Y43A): it
+					// becomes this mob's pinned spec, the earlier one back on undo.
+					int previousSpec = ops.mobs().pinnedSpec(mobId);
+					return tryStep(ops, mob, id, "spec " + strArg(args, "label", "spec weapon"),
+						() -> ops.setPinnedSpec(mobId, id), () -> ops.setPinnedSpec(mobId, previousSpec));
 				}
 				GearSlot gearSlot;
 				try
@@ -963,34 +784,18 @@ public class CommandEngine
 				{
 					return false;
 				}
-				int id = ((Number) itemId).intValue();
-				Object labelArg = args.get("label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
-				int mobId = mob.getId();
-				String mobName = mob.getName();
 				Integer previousPin = ops.mobs().allPins(mobId)
 					.getOrDefault("ALL", Map.of()).get(gearSlot);
-				boolean sim = ownedCheck == null || !ownedCheck.test(id);
-				return recorded("Try " + what + " - " + mobName, () ->
+				return tryStep(ops, mob, id, strArg(args, "label", "item"),
+					() -> ops.mobs().pin(mobId, "ALL", gearSlot, id), () ->
 				{
-					if (sim)
-					{
-						ops.simForMob(mobId, id);
-					}
-					ops.pin(mobId, slot, id);
-				}, () ->
-				{
-					if (sim)
-					{
-						ops.mobs().removeMobSim(mobId, id);
-					}
 					if (previousPin != null)
 					{
-						ops.pin(mobId, slot, previousPin);
+						ops.mobs().pin(mobId, "ALL", gearSlot, previousPin);
 					}
 					else
 					{
-						ops.unpin(mobId, slot);
+						ops.mobs().unpin(mobId, "ALL", gearSlot);
 					}
 				});
 			}
@@ -999,72 +804,36 @@ public class CommandEngine
 				// Andrew, 2026-09-18: "for each of the exclude/sim/item filters can
 				// you have a reset all in list option". One recompute, one undo step.
 				MonsterStats mob = shownMob();
-				Object kindArg = arg(args, "kind");
-				if (ops == null || mob == null || !(kindArg instanceof String))
+				String kind = strArg(args, "kind", null);
+				if (ops == null || mob == null || kind == null)
 				{
 					return false;
 				}
-				String kind = (String) kindArg;
 				int mobId = mob.getId();
 				if ("mobPins".equals(kind))
 				{
 					return clearPins(ops, mob);
 				}
+				boolean sims = "mobSims".equals(kind);
+				boolean filters = "mobFilters".equals(kind);
 				List<Map<String, Object>> entries = new ArrayList<>(
-					"mobSims".equals(kind) ? ops.mobSims(mobId)
-						: "mobFilters".equals(kind) ? ops.mobFilters(mobId) : ops.mobExclusions(mobId));
+					sims ? ops.mobSims(mobId) : filters ? ops.mobFilters(mobId) : ops.mobExclusions(mobId));
 				if (entries.isEmpty())
 				{
 					return false;
 				}
-				String noun = "mobSims".equals(kind) ? "sims" : "mobFilters".equals(kind) ? "filters" : "exclusions";
-				String mobName = mob.getName();
-				// Sims take their pins along when the item is not yours.
+				// Each entry replays the mob line's own remove (sims take their
+				// pins along when the item is not yours), the undo its inverse.
+				String remove = sims ? "remove-mob-sim" : filters ? "remove-mob-filter" : "remove-mob-exclusion";
 				Map<Integer, List<Object[]>> droppedPins = new HashMap<>();
-				Runnable finish = () ->
+				Consumer<String> run = cmd ->
 				{
-					if ("mobFilters".equals(kind))
-					{
-						republish();
-					}
-					else
-					{
-						recompute();
-					}
+					eachEntry(entries, (id, scope) -> mobListStep(ops, mobId, cmd, id, scope, droppedPins));
+					refreshAfter(cmd);
 				};
-				return record(Commands.of("Clear " + noun + " (" + entries.size() + ") - " + mobName, () ->
-				{
-					eachEntry(entries, (id, scope) ->
-					{
-						switch (kind)
-						{
-							case "mobSims": ops.mobs().removeMobSim(mobId, id); break;
-							case "mobFilters": ops.mobs().removeMobFilter(mobId, scope, id); break;
-							default: ops.mobs().removeMobExclusion(mobId, scope, id); break;
-						}
-					});
-					if ("mobSims".equals(kind))
-					{
-						eachEntry(entries, (id, scope) -> droppedPins.put(id, dropPinsIfNotYours(ops, mobId, id)));
-					}
-					finish.run();
-					return true;
-				}, () ->
-				{
-					eachEntry(entries, (id, scope) ->
-					{
-						switch (kind)
-						{
-							case "mobSims": ops.simForMob(mobId, id); break;
-							case "mobFilters": ops.addMobFilter(mobId, id); break;
-							default: ops.excludeForMob(mobId, scope, id); break;
-						}
-					});
-					droppedPins.forEach((id, pins) -> restorePins(ops, mobId, id, pins));
-					droppedPins.clear();
-					finish.run();
-					return true;
-				}));
+				return record(Commands.of("Clear " + (sims ? "sims" : filters ? "filters" : "exclusions")
+					+ " (" + entries.size() + ") - " + mob.getName(),
+					() -> { run.accept(remove); return true; }, () -> { run.accept(INVERSE.get(remove)); return true; }));
 			}
 			case "sim-for-group":
 			{
@@ -1080,19 +849,9 @@ public class CommandEngine
 					return false;
 				}
 				int id = itemId;
-				Object labelArg = arg(args, "label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
-				List<Integer> added = new ArrayList<>();
-				for (MonsterStats member : group)
-				{
-					int mobId = member.getId();
-					boolean has = ops.mobSims(mobId).stream().anyMatch(row -> row.get("id") instanceof Number
-						&& ((Number) row.get("id")).intValue() == id);
-					if (!has && !added.contains(mobId))
-					{
-						added.add(mobId);
-					}
-				}
+				String what = strArg(args, "label", "item");
+				List<Integer> added = group.stream().map(MonsterStats::getId).distinct()
+					.filter(mobId -> !hasId(ops.mobSims(mobId), id)).collect(Collectors.toList());
 				if (added.isEmpty())
 				{
 					return false;
@@ -1111,23 +870,32 @@ public class CommandEngine
 					}
 				});
 			}
-			case "remove-mob-pin":
+			case "pin":
+			case "unpin":
 			case "pin-for-mob":
+			case "remove-mob-pin":
 			{
-				// The mob line's pin list (ISS-01M5HJ84ADBHWB2302G66WW2G4):
-				// remove one pin in its scope, or pin a searched item into
-				// its own slot - each one undo step.
+				// ONE recorded pin path (the slim, 2026-10-23): the card
+				// menu's Pin/Unpin <slot> (ALL scope; Unpin clears the slot
+				// in EVERY scope, so a style pin older versions wrote cannot
+				// outlive it) and the mob line's pin list - pin a searched
+				// item into its own slot, remove one pin in its scope
+				// (ISS-01M5HJ84ADBHWB2302G66WW2G4) - each one undo step that
+				// puts back whatever the slot held. The monster is the one
+				// the card shows: a roster view has no state.mob(), and the
+				// click used to do nothing there (ISS-01M5HANBV7VC08XCH850AW7Q39,
+				// Andrew 2026-10-22: Unpin weapon on Araxxor - "Nothing
+				// changed at all").
 				MonsterStats mob = shownMob();
 				Integer itemId = intArg(args, "itemId");
-				if (ops == null || mob == null || itemId == null)
+				boolean adding = "pin".equals(name) || "pin-for-mob".equals(name);
+				if (ops == null || mob == null || adding && itemId == null)
 				{
 					return false;
 				}
-				int id = itemId;
-				boolean adding = "pin-for-mob".equals(name);
+				int id = itemId == null ? 0 : itemId;
 				GearSlot gearSlot;
-				String scope;
-				if (adding)
+				if ("pin-for-mob".equals(name))
 				{
 					GearItem item = data.getGear(id);
 					if (item == null || item.getSlot() == null)
@@ -1135,31 +903,37 @@ public class CommandEngine
 						return false;
 					}
 					gearSlot = item.getSlot();
-					scope = "ALL";
 				}
 				else
 				{
-					Object slotArg = arg(args, "slot");
-					Object scopeArg = arg(args, "scope");
-					if (!(slotArg instanceof String))
-					{
-						return false;
-					}
 					try
 					{
-						gearSlot = GearSlot.valueOf(((String) slotArg).toUpperCase());
+						gearSlot = GearSlot.valueOf(String.valueOf(arg(args, "slot")).toUpperCase());
 					}
 					catch (IllegalArgumentException ex)
 					{
 						return false;
 					}
-					scope = scopeArg instanceof String ? (String) scopeArg : "ALL";
 				}
-				Object labelArg = arg(args, "label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
+				boolean everyScope = "unpin".equals(name);
+				String scope = "remove-mob-pin".equals(name) ? strArg(args, "scope", "ALL") : "ALL";
+				String what = strArg(args, "label", Names.lower(gearSlot.name()));
 				int mobId = mob.getId();
 				String mobName = mob.getName();
-				Integer previous = ops.mobs().allPins(mobId).getOrDefault(scope, Map.of()).get(gearSlot);
+				// What the slot held, per scope - every scope for Unpin, the
+				// one scope otherwise - so the undo puts each pin back.
+				Map<String, Integer> previous = new LinkedHashMap<>();
+				ops.mobs().allPins(mobId).forEach((s, slots) ->
+				{
+					if (slots.containsKey(gearSlot) && (everyScope || s.equals(scope)))
+					{
+						previous.put(s, slots.get(gearSlot));
+					}
+				});
+				if (!adding && previous.isEmpty())
+				{
+					return false;
+				}
 				return recorded((adding ? "Pin " : "Unpin ") + what + " - " + mobName, () ->
 				{
 					if (adding)
@@ -1168,25 +942,33 @@ public class CommandEngine
 					}
 					else
 					{
-						ops.mobs().unpin(mobId, scope, gearSlot);
+						previous.keySet().forEach(s -> ops.mobs().unpin(mobId, s, gearSlot));
 					}
 				}, () ->
 				{
-					if (previous != null)
-					{
-						ops.mobs().pin(mobId, scope, gearSlot, previous);
-					}
-					else
+					if (previous.isEmpty())
 					{
 						ops.mobs().unpin(mobId, scope, gearSlot);
 					}
+					previous.forEach((s, prior) -> ops.mobs().pin(mobId, s, gearSlot, prior));
 				});
 			}
+			case "exclude-for-mob":
+			case "sim-for-mob":
 			case "remove-mob-exclusion":
 			case "remove-mob-sim":
 			case "add-mob-filter":
 			case "remove-mob-filter":
 			{
+				// The card trio's adds and the mob line's removes. Rosters
+				// have no state.mob() - the lensed row is the mob (the
+				// set-note lesson, third member; field report 2026-08-20:
+				// the card trio's adds no-oped on rosters). Each command's
+				// undo IS its INVERSE command, replayed through the one
+				// switch below - so undoing "Sim here" runs remove-mob-sim,
+				// which also drops the item's pins when it is not yours
+				// (Andrew's 2026-10-22 rule), and redo puts them back with
+				// the sim.
 				MonsterStats mob = shownMob();
 				Integer itemId = intArg(args, "itemId");
 				if (ops == null || mob == null || itemId == null)
@@ -1194,68 +976,26 @@ public class CommandEngine
 					return false;
 				}
 				int id = itemId;
-				Object scope = arg(args, "scope");
-				String scopeKey = scope instanceof String ? (String) scope : "ALL";
-				Object labelArg = arg(args, "label");
-				String what = labelArg instanceof String ? (String) labelArg : "item";
+				String scopeKey = strArg(args, "scope", "ALL");
 				int mobId = mob.getId();
-				String mobName = mob.getName();
-				String command = name;
-				// A removed sim's pins (by item), back with the sim on undo.
-				Map<Integer, List<Object[]>> dropped = new HashMap<>();
+				Map<Integer, List<Object[]>> droppedPins = new HashMap<>();
 				Consumer<String> run = cmd ->
 				{
-					switch (cmd)
-					{
-						case "remove-mob-exclusion":
-							ops.mobs().removeMobExclusion(mobId, scopeKey, id);
-							recompute();
-							break;
-						case "remove-mob-sim":
-							ops.mobs().removeMobSim(mobId, id);
-							dropped.put(id, dropPinsIfNotYours(ops, mobId, id));
-							recompute();
-							break;
-						case "add-mob-filter":
-							ops.addMobFilter(mobId, id);
-							republish();
-							break;
-						case "remove-mob-filter":
-							ops.mobs().removeMobFilter(mobId, scopeKey, id);
-							republish();
-							break;
-						case "exclude-for-mob":
-							ops.excludeForMob(mobId, scopeKey, id);
-							recompute();
-							break;
-						default:
-							ops.simForMob(mobId, id);
-							restorePins(ops, mobId, id, dropped.getOrDefault(id, List.of()));
-							dropped.remove(id);
-							recompute();
-							break;
-					}
+					mobListStep(ops, mobId, cmd, id, scopeKey, droppedPins);
+					refreshAfter(cmd);
 				};
-				boolean exclusionGone = "remove-mob-exclusion".equals(command);
-				boolean simGone = "remove-mob-sim".equals(command);
-				boolean filtered = "add-mob-filter".equals(command);
-				String undo = exclusionGone ? "exclude-for-mob" : simGone ? "sim-for-mob"
-					: filtered ? "remove-mob-filter" : "add-mob-filter";
-				return record(Commands.of((exclusionGone ? "Allow " : simGone ? "Stop simming "
-					: filtered ? "Filter " : "Unfilter ") + what + " - " + mobName,
-					() -> { run.accept(command); return true; }, () -> { run.accept(undo); return true; }));
+				return record(Commands.of(VERB.get(name) + strArg(args, "label", "item") + " - " + mob.getName(),
+					() -> { run.accept(name); return true; }, () -> { run.accept(INVERSE.get(name)); return true; }));
 			}
 			case "set-supply-override":
 			{
-				Object category = arg(args, "category");
-				Object choice = arg(args, "choice");
+				String category = strArg(args, "category", null);
 				MonsterStats lensed = lensedMob();
-				if (ops == null || lensed == null || !(category instanceof String))
+				if (ops == null || lensed == null || category == null)
 				{
 					return false;
 				}
-				ops.mobs().setSupplyOverride(lensed.profileId(), (String) category,
-					choice instanceof String ? (String) choice : "DETECT");
+				ops.mobs().setSupplyOverride(lensed.profileId(), category, strArg(args, "choice", "DETECT"));
 				// A cure choice can camp Lunar (Cure Me): the lock rides the compute.
 				if (TripSupplies.ANTIVENOM.equals(category) || TripSupplies.ANTIPOISON.equals(category))
 				{
@@ -1280,8 +1020,7 @@ public class CommandEngine
 				}
 				if ("set-pinned-spell".equals(name))
 				{
-					Object spell = arg(args, "name");
-					ops.mobs().setPinnedSpell(mob.getId(), spell instanceof String ? (String) spell : "");
+					ops.mobs().setPinnedSpell(mob.getId(), strArg(args, "name", ""));
 					recompute();
 				}
 				else if ("set-pinned-spec".equals(name))
@@ -1293,8 +1032,7 @@ public class CommandEngine
 				}
 				else
 				{
-					Object text = arg(args, "text");
-					ops.mobs().setNote(mob.getId(), text instanceof String ? (String) text : "");
+					ops.mobs().setNote(mob.getId(), strArg(args, "text", ""));
 					republish();
 				}
 				return true;
@@ -1500,15 +1238,10 @@ public class CommandEngine
 			link.publishStatus(true);
 		}
 		ComputeParams p = state.computeParams();
-		boolean anyFire = false;
-		for (MonsterStats m : roster != null ? roster : List.of(mob))
-		{
-			anyFire |= DragonfireRules.breathesFire(m);
-		}
-		p.antifirePotion &= anyFire;
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
+		p.antifirePotion &= computed.stream().anyMatch(DragonfireRules::breathesFire);
 		MonsterStats lensed = shownMob();
-		String pinnedSpell = stores == null || lensed == null ? "" : stores.mobs().pinnedSpell(lensed.getId());
+		String pinnedSpell = storeOps == null || lensed == null ? "" : storeOps.mobs().pinnedSpell(lensed.getId());
 		if (cureMe(computed))
 		{
 			p.spellbookLock = "lunar";
@@ -1534,20 +1267,13 @@ public class CommandEngine
 		}
 		if (mob != null)
 		{
-			mob = atInvocation(mob);
-			compute.compute(mob, p, () ->
+			compute.compute(atInvocation(mob), p, () ->
 			{
 			});
 		}
 		else
 		{
-			List<MonsterStats> scaled = new ArrayList<>();
-			for (MonsterStats m : roster)
-			{
-				scaled.add(atInvocation(m));
-			}
-			roster = scaled;
-			rosterPath.computeRoster(roster, p, () ->
+			rosterPath.computeRoster(roster.stream().map(this::atInvocation).collect(Collectors.toList()), p, () ->
 			{
 			});
 		}
@@ -1562,9 +1288,8 @@ public class CommandEngine
 			: mob;
 	}
 
-	/** A curated group whose name matches the query (contains, both
-	 * directions) - loaded once, resolved like the classic dropdown. */
-	private MonsterGroups.MonsterGroup groupFor(String query)
+	/** The curated groups, loaded once from the corpus. */
+	private List<MonsterGroups.MonsterGroup> groups()
 	{
 		List<MonsterGroups.MonsterGroup> loaded = groups;
 		if (loaded == null)
@@ -1572,12 +1297,19 @@ public class CommandEngine
 			loaded = MonsterGroups.load(data);
 			groups = loaded;
 		}
+		return loaded;
+	}
+
+	/** A curated group whose name matches the query (contains, both
+	 * directions) - resolved like the classic dropdown. */
+	private MonsterGroups.MonsterGroup groupFor(String query)
+	{
 		String q = query.toLowerCase();
 		if (q.length() < 3)
 		{
 			return null;
 		}
-		for (MonsterGroups.MonsterGroup candidate : loaded)
+		for (MonsterGroups.MonsterGroup candidate : groups())
 		{
 			String name = candidate.getName().toLowerCase();
 			if (name.contains(q) || q.contains(name))
@@ -1654,7 +1386,7 @@ public class CommandEngine
 	 * steps aside there (and is not offered). */
 	private boolean reliesOnAnotherBook(MonsterStats mob)
 	{
-		String pinned = stores == null || mob == null ? "" : stores.mobs().pinnedSpell(mob.getId());
+		String pinned = storeOps == null || mob == null ? "" : storeOps.mobs().pinnedSpell(mob.getId());
 		String lock = String.valueOf(state.paramsNode().get("spellbookLock"));
 		String fightBook = mob == null ? "" : String.valueOf(MonsterSpellbooks.bookFor(mob));
 		List<String> others = List.of("standard", "ancient", "arceuus");
@@ -1673,7 +1405,7 @@ public class CommandEngine
 	private String antivenomMode(MonsterStats mob)
 	{
 		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
-		StoreOps ops = stores;
+		StoreOps ops = storeOps;
 		String category = cureCategory(mob);
 		if (mob == null || ops == null || defaultsSupplier == null || category.isEmpty())
 		{
@@ -1727,13 +1459,13 @@ public class CommandEngine
 	{
 		page.put("assumeOptions", assumeOptions());
 		page.put("liveSpellbook", liveSpellbook);
-		page.put("spellbooks", spellbooks());
+		page.put("spellbooks", spellbooks);
 		page.put("supplyCatalog", supplyCatalog());
 		page.put("dartTiers", BlowpipeDarts.tiers());
 	}
 
 	/** Each cleared entry's id and scope (ALL when it carries none). */
-	private static void eachEntry(List<Map<String, Object>> entries, java.util.function.BiConsumer<Integer, String> fn)
+	private static void eachEntry(List<Map<String, Object>> entries, BiConsumer<Integer, String> fn)
 	{
 		for (Map<String, Object> e : entries)
 		{
@@ -1749,9 +1481,41 @@ public class CommandEngine
 		return v instanceof Number ? ((Number) v).intValue() : null;
 	}
 
+	/** A string command argument, or the fallback when absent or not a string. */
+	private static String strArg(Map<String, Object> args, String key, String fallback)
+	{
+		Object v = arg(args, key);
+		return v instanceof String ? (String) v : fallback;
+	}
+
 	private boolean flag(String key)
 	{
 		return Boolean.TRUE.equals(state.paramsNode().get(key));
+	}
+
+	/** An integer page param (every int param is always present). */
+	private int intParam(String key)
+	{
+		return ((Number) state.paramsNode().get(key)).intValue();
+	}
+
+	/** The selection as a list: the roster, the single mob, or null. */
+	private List<MonsterStats> selectedMobs()
+	{
+		return state.rosterMobs() != null ? state.rosterMobs()
+			: state.mob() == null ? null : List.of(state.mob());
+	}
+
+	/** Classic Detect: the best owned antifire tier for the selection,
+	 * seeded at every selection and again on demand (nothing when the
+	 * plugin has not wired a resolver). */
+	private void seedAntifire(List<MonsterStats> selected)
+	{
+		Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+		if (resolve != null)
+		{
+			state.setParam("antifireMode", resolve.apply(selected));
+		}
 	}
 
 	/** Sunfire runes are assumed when the owned scan sees any (Kendyy,
@@ -1761,28 +1525,29 @@ public class CommandEngine
 	{
 		IntPredicate owns = ownedCheck;
 		state.setParam("sunfireRunes", owns != null && owns.test(SpellRunes.SUNFIRE_RUNE)
-			|| isSimmed(SpellRunes.SUNFIRE_RUNE));
+			|| simmedIds().contains(SpellRunes.SUNFIRE_RUNE));
 	}
 
-	/** A sim is "count this as owned" (Andrew, client test 2026-10-19: a
-	 * simmed sunfire rune must seed the plate): the page's simmed ids. */
-	private boolean isSimmed(int itemId)
+	/** The global sims' ids off the live counts. A sim is "count this as
+	 * owned" (Andrew, client test 2026-10-19: a simmed sunfire rune must
+	 * seed the plate), so the seeds and the page's simmed set share it. */
+	private Set<Integer> simmedIds()
 	{
+		Set<Integer> ids = new HashSet<>();
 		Supplier<Map<String, Object>> supplier = counts;
 		Object simmed = supplier == null ? null : supplier.get().get("simmedItems");
-		if (!(simmed instanceof List))
+		if (simmed instanceof List)
 		{
-			return false;
-		}
-		for (Object item : (List<?>) simmed)
-		{
-			Object id = item instanceof Map ? ((Map<?, ?>) item).get("id") : null;
-			if (id instanceof Number && ((Number) id).intValue() == itemId)
+			for (Object item : (List<?>) simmed)
 			{
-				return true;
+				Object id = item instanceof Map ? ((Map<?, ?>) item).get("id") : null;
+				if (id instanceof Number)
+				{
+					ids.add(((Number) id).intValue());
+				}
 			}
 		}
-		return false;
+		return ids;
 	}
 
 	/** Thralls and Death Charge are cast from Arceuus, so a card whose
@@ -1791,26 +1556,43 @@ public class CommandEngine
 	 * he picked: that card stands down - it carries the reason here and
 	 * the render shows its number without the thrall fold. Melee and
 	 * ranged cards, powered staves and Arceuus spells are untouched. */
-	@SuppressWarnings("unchecked")
 	static void arceuusStandDown(List<?> mobNodes, Map<String, Object> books, boolean wanted)
 	{
 		if (!wanted)
 		{
 			return;
 		}
+		eachCard(mobNodes, (side, card) ->
+		{
+			Object spell = card.get("spell");
+			Object book = spell instanceof String ? books.get(spell) : null;
+			if (book instanceof String && !"arceuus".equals(book))
+			{
+				card.put("arceuusStandDown", spell + " autocasts from the " + book + " book");
+			}
+		});
+	}
+
+	/** Every yours/bis card under every style of every mob node - the
+	 * walk the post-compute decorations share. */
+	@SuppressWarnings("unchecked")
+	private static void eachCard(List<?> mobNodes, BiConsumer<String, Map<String, Object>> fn)
+	{
 		for (Object m : mobNodes)
 		{
-			Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) m).get("styles");
-			for (Object s : styles.values())
+			Object styles = ((Map<?, ?>) m).get("styles");
+			if (!(styles instanceof Map))
+			{
+				continue;
+			}
+			for (Object s : ((Map<?, ?>) styles).values())
 			{
 				for (String side : new String[]{"yours", "bis"})
 				{
-					Map<String, Object> card = (Map<String, Object>) ((Map<?, ?>) s).get(side);
-					Object spell = card == null ? null : card.get("spell");
-					Object book = spell instanceof String ? books.get(spell) : null;
-					if (book instanceof String && !"arceuus".equals(book))
+					Object card = s instanceof Map ? ((Map<?, ?>) s).get(side) : null;
+					if (card instanceof Map)
 					{
-						card.put("arceuusStandDown", spell + " autocasts from the " + book + " book");
+						fn.accept(side, (Map<String, Object>) card);
 					}
 				}
 			}
@@ -1876,24 +1658,15 @@ public class CommandEngine
 	private void sunfireRunes(List<?> mobNodes)
 	{
 		boolean assumed = flag("sunfireRunes");
-		for (Object m : mobNodes)
+		eachCard(mobNodes, (side, card) ->
 		{
-			Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) m).get("styles");
-			for (Object s : styles.values())
+			Object spell = card.get("spell");
+			if ((assumed || "bis".equals(side)) && spell instanceof String
+				&& ((String) spell).startsWith("Fire "))
 			{
-				for (String side : new String[]{"yours", "bis"})
-				{
-					Map<String, Object> card = (Map<String, Object>) ((Map<?, ?>) s).get(side);
-					Object spell = card == null ? null : card.get("spell");
-					if ((assumed || "bis".equals(side)) && spell instanceof String
-						&& ((String) spell).startsWith("Fire "))
-					{
-						card.put("runes", SpellRunes.withSunfire(
-							(List<Map<String, Object>>) card.get("runes")));
-					}
-				}
+				card.put("runes", SpellRunes.withSunfire((List<Map<String, Object>>) card.get("runes")));
 			}
-		}
+		});
 	}
 
 	/** A death here goes to a player: the Wilderness, or any mob on a
@@ -1901,8 +1674,7 @@ public class CommandEngine
 	 * the carried kit's fates. Not the wilderness weapon buff. */
 	private boolean pvpDeathTrip()
 	{
-		return flag("inWilderness")
-			|| ((Number) state.paramsNode().get("pvpWorld")).intValue() > 0;
+		return flag("inWilderness") || intParam("pvpWorld") > 0;
 	}
 
 	private boolean membersFlag(String key)
@@ -1928,7 +1700,7 @@ public class CommandEngine
 		}
 		if (SHIP_PERSISTED.contains(key))
 		{
-			StoreOps ops = stores;
+			StoreOps ops = storeOps;
 			if (ops != null)
 			{
 				// Persist what the state SETTLED on (clamps applied), not the
@@ -1987,21 +1759,15 @@ public class CommandEngine
 			SwingUtilities.invokeLater(this::publishPending);
 			return;
 		}
-		List<MonsterStats> mobs = state.rosterMobs() != null
-			? state.rosterMobs() : state.mob() == null ? null : List.of(state.mob());
+		List<MonsterStats> mobs = selectedMobs();
 		if (mobs == null)
 		{
 			return;
 		}
-		List<Map<CombatStyle, OptimizerService.StyleResult>> empty = new ArrayList<>();
-		for (int i = 0; i < mobs.size(); i++)
-		{
-			empty.add(Map.of());
-		}
-		Map<String, Object> entry = RenderModel.entry(mobs, empty);
+		Map<String, Object> entry = RenderModel.entry(mobs, Collections.nCopies(mobs.size(), Map.of()));
 		entry.put("params", state.paramsNode());
 		entry.put("pending", true);
-		decorateProfiles(entry);
+		decorateProfiles(entry, List.of());
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
 		decorate(page);
 		link.publishPage(page);
@@ -2043,49 +1809,22 @@ public class CommandEngine
 		// The classic wilderness gate: exclusives are ALWAYS in (field
 		// report 2026-08-15: Calvar'ion showed no risk - the pinned
 		// always-in chip never set the param).
-		boolean exclusive = false;
-		for (MonsterStats m : mobs)
-		{
-			exclusive |= WildernessMonsters.isExclusive(m);
-		}
-		boolean wildy = exclusive || flag("inWilderness");
-		int pvp = ((Number) state.paramsNode().get("pvpWorld")).intValue();
+		boolean wildy = mobs.stream().anyMatch(WildernessMonsters::isExclusive) || flag("inWilderness");
+		int pvp = intParam("pvpWorld");
 		int keptSlots = PvpRisk.keptSlots(wildy ? Math.max(1, pvp) : pvp, flag("protectItem"));
-		Set<Integer> simmedIds = new HashSet<>();
-		Supplier<Map<String, Object>> countSupplierForFlags = counts;
-		if (countSupplierForFlags != null)
-		{
-			Object simmedItems = countSupplierForFlags.get().get("simmedItems");
-			if (simmedItems instanceof List)
-			{
-				for (Object item : (List<?>) simmedItems)
-				{
-					if (item instanceof Map)
-					{
-						Object id = ((Map<?, ?>) item).get("id");
-						if (id instanceof Number)
-						{
-							simmedIds.add(((Number) id).intValue());
-						}
-					}
-				}
-			}
-		}
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
-			ownedCheck, simmedIds, itemLocation);
+			ownedCheck, simmedIds(), itemLocation);
 		if (flag("multiView"))
 		{
-			Object stack = state.paramsNode().get("multiStack");
-			multiView((List<?>) entry.get("mobs"), stack instanceof Number ? ((Number) stack).intValue() : 3);
+			multiView((List<?>) entry.get("mobs"), intParam("multiStack"));
 		}
 		sunfireRunes((List<?>) entry.get("mobs"));
-		Object dc = state.paramsNode().get("deathCharge");
-		arceuusStandDown((List<?>) entry.get("mobs"), spellbooks(),
-			membersFlag("thralls") || !flag("f2pOnly") && dc instanceof Number && ((Number) dc).intValue() > 0);
+		arceuusStandDown((List<?>) entry.get("mobs"), spellbooks,
+			membersFlag("thralls") || !flag("f2pOnly") && intParam("deathCharge") > 0);
 		entry.put("params", params);
 		List<Map<String, Object>> supplies = suppliesNode(mobs);
 		entry.put("supplies", supplies);
-		decorateProfiles(entry);
+		decorateProfiles(entry, supplies);
 		entry.put("raidSelection",
 			flag("raidSelection"));
 		Map<String, Object> shipNode = shipNode(mobs, perMob);
@@ -2109,35 +1848,19 @@ public class CommandEngine
 		// community-documented, not on the wiki's Boat combat page) - the
 		// fold and the trip runes are permanently vetoed for a sea lens.
 		// The param persists for the land half of a mixed roster.
-		boolean seaLens = false;
-		{
-			Object lensObj = state.paramsNode().get("lensIndex");
-			int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
-			if (mobs != null && !mobs.isEmpty())
-			{
-				MonsterStats lensedMob = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
-				seaLens = NavalCombat.isNaval(lensedMob.getName());
-			}
-		}
+		boolean seaLens = !mobs.isEmpty() && NavalCombat.isNaval(lensOf(mobs).getName());
 		if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs))
 		{
 			double dps = ExtraDps.thrallDps(magicLevel);
 			String tier = ExtraDps.thrallTier(magicLevel);
 			if (dps > 0 && tier != null)
 			{
-				thrallsNode = new LinkedHashMap<>();
-				thrallsNode.put("dps", dps);
-				thrallsNode.put("tier", tier);
+				thrallsNode = RenderModel.map("dps", dps, "tier", tier);
 				entry.put("thralls", thrallsNode);
 			}
 		}
 		Map<String, Object> page = withHistory(RenderModel.page(List.of(entry)));
-		List<String> spellNames = new ArrayList<>();
-		for (SpellStats spell : data.getSpells())
-		{
-			spellNames.add(spell.getName());
-		}
-		page.put("spells", spellNames);
+		page.put("spells", new ArrayList<>(spellbooks.keySet()));
 		decorate(page);
 		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
@@ -2146,10 +1869,14 @@ public class CommandEngine
 		link.publishPage(page);
 	}
 
+	@Setter
 	private volatile String coreVersion = "dev";
 	/** The account's live Magic level - thrall dps scales off it. */
+	@Setter
 	private volatile int magicLevel = 99;
+	@Setter
 	private volatile int rangedLevel = 99;
+	@Setter
 	private volatile int sailingLevel = 1;
 
 	/** The mode the optimizer should run - the player's tab, for every
@@ -2178,24 +1905,10 @@ public class CommandEngine
 		return Boolean.TRUE.equals(state.paramsNode().get("gwdAncient"));
 	}
 
-	public void setMagicLevel(int magicLevel)
+	/** The page-param write the plugin's own events send (world type, diary). */
+	public boolean set(String param, Object value)
 	{
-		this.magicLevel = magicLevel;
-	}
-
-	public void setRangedLevel(int rangedLevel)
-	{
-		this.rangedLevel = rangedLevel;
-	}
-
-	public void setSailingLevel(int sailingLevel)
-	{
-		this.sailingLevel = sailingLevel;
-	}
-
-	public void setCoreVersion(String coreVersion)
-	{
-		this.coreVersion = coreVersion;
+		return execute("set-param", Map.of("param", param, "value", value));
 	}
 
 	/** Shared by query- and id-resolved selects: the undoable command
@@ -2216,13 +1929,9 @@ public class CommandEngine
 			{
 				state.select(mobPick);
 			}
-			Function<List<MonsterStats>, Integer> resolve = antifireResolver;
 			List<MonsterStats> selected = groupPick != null
 				? groupPick.getMobs() : List.of(mobPick);
-			if (resolve != null)
-			{
-				state.setParam("antifireMode", resolve.apply(selected));
-			}
+			seedAntifire(selected);
 			seedSunfire();
 			// A fresh selection resets the tab so the default (the
 			// best style for THIS mob) applies - the classic made a
@@ -2239,11 +1948,6 @@ public class CommandEngine
 			// must never show it that way). Seeded at every selection
 			// like the antifire tier; the chip overrides afterwards.
 			boolean slayer = false;
-			for (MonsterStats m : selected)
-			{
-				slayer |= m.isSlayerMonster() || SlayerLockedMonsters.isTaskOnly(m);
-			}
-			state.setParam("onTask", slayer);
 			// Wilderness-exclusives set the PARAM, not just the chip
 			// (field report 2026-08-15: a 75k risk cap produced a 21M
 			// recommendation - the display honored the exclusive but
@@ -2252,12 +1956,14 @@ public class CommandEngine
 			boolean anyWilderness = false;
 			for (MonsterStats m : selected)
 			{
+				slayer |= m.isSlayerMonster() || SlayerLockedMonsters.isTaskOnly(m);
 				anyWilderness |= WildernessMonsters.isWilderness(m);
 				if (WildernessMonsters.isExclusive(m))
 				{
 					state.setParam("inWilderness", true);
 				}
 			}
+			state.setParam("onTask", slayer);
 			// A selection with NO wilderness-capable member cannot be a
 			// wilderness trip: the param resets, or a stale wildy
 			// session warps the next one (field report 2026-08-31: a
@@ -2326,25 +2032,14 @@ public class CommandEngine
 		{
 			return options;
 		}
-		List<MonsterGroups.MonsterGroup> loaded = groups;
-		if (loaded == null)
-		{
-			loaded = MonsterGroups.load(data);
-			groups = loaded;
-		}
 		for (MonsterGroups.MonsterGroup group
-			: MonsterGroups.search(loaded, q, 3))
+			: MonsterGroups.search(groups(), q, 3))
 		{
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("label", group.label());
-			node.put("group", group.getName());
-			options.add(node);
+			options.add(RenderModel.map("label", group.label(), "group", group.getName()));
 		}
 		for (MonsterStats m : data.searchMonsters(q, 25))
 		{
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("label", m.label());
-			node.put("id", m.getId());
+			Map<String, Object> node = RenderModel.map("label", m.label(), "id", m.getId());
 			if (NavalCombat.isNaval(m.getName()))
 			{
 				node.put("naval", true);
@@ -2371,48 +2066,48 @@ public class CommandEngine
 		for (String category : TripSupplies.CATEGORY_KEYS)
 		{
 			String label = TripSupplies.label(category);
-			if (label == null)
+			if (label != null)
 			{
-				continue;
+				out.add(catalogNode(category, label, defaults, optionNodes(category, false)));
 			}
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("category", category);
-			node.put("label", label);
-			node.put("current", defaults.getOrDefault(category, "DETECT_BEST"));
-			List<Map<String, Object>> options = new ArrayList<>();
-			for (TripSupplies.Option option
-				: TripSupplies.options(category))
-			{
-				Map<String, Object> opt = new LinkedHashMap<>();
-				opt.put("key", option.key);
-				opt.put("name", option.name);
-				options.add(opt);
-			}
-			node.put("options", options);
-			out.add(node);
 		}
 		// The Arceuus-access choice rides the same menu in the classic.
-		Map<String, Object> access = new LinkedHashMap<>();
-		access.put("category", "arceuusAccess");
-		access.put("label", "Arceuus access");
-		access.put("current", defaults.getOrDefault("arceuusAccess", "DETECT_BEST"));
-		access.put("options", List.of(
+		out.add(catalogNode("arceuusAccess", "Arceuus access", defaults, List.of(
 			Map.of("key", "DETECT_BEST", "name", "Direct (camp Arceuus)"),
 			Map.of("key", "SPELLBOOK_SWAP",
-				"name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)")));
-		out.add(access);
+				"name", "Via Spellbook Swap (Lunar home, adds swap + Vengeance runes)"))));
 		// Combination runes are a PANEL preference now (field ask
 		// 2026-08-22), defaulting to detection - a config toggle and a
 		// panel control for one behaviour is the source-of-truth trap
 		// this release already paid for once.
-		Map<String, Object> combo = new LinkedHashMap<>();
-		combo.put("category", "comboRunes");
-		combo.put("label", "Combination runes");
-		combo.put("current", defaults.getOrDefault("comboRunes", "DETECT_BEST"));
-		combo.put("options", List.of(
-			Map.of("key", "ALWAYS", "name", "Always combine")));
-		out.add(combo);
+		out.add(catalogNode("comboRunes", "Combination runes", defaults,
+			List.of(Map.of("key", "ALWAYS", "name", "Always combine"))));
 		return out;
+	}
+
+	/** One catalog entry: the category, its label, its current default
+	 * (DETECT_BEST until the menu changes it) and its option rows. */
+	private static Map<String, Object> catalogNode(String category, String label,
+		Map<String, String> defaults, List<?> options)
+	{
+		return RenderModel.map("category", category, "label", label,
+			"current", defaults.getOrDefault(category, "DETECT_BEST"), "options", options);
+	}
+
+	/** {key, name} rows for a category's options - the catalog's and the
+	 * per-mob override menu's; Cure Me is hidden where the setup relies
+	 * on another book. */
+	private static List<Map<String, Object>> optionNodes(String category, boolean hideCureMe)
+	{
+		List<Map<String, Object>> options = new ArrayList<>();
+		for (TripSupplies.Option option : TripSupplies.options(category))
+		{
+			if (!(hideCureMe && "CURE_ME".equals(option.key)))
+			{
+				options.add(RenderModel.map("key", option.key, "name", option.name));
+			}
+		}
+		return options;
 	}
 
 	/** The combination-rune preference: the panel's choice, with
@@ -2430,49 +2125,73 @@ public class CommandEngine
 			return false;
 		}
 		IntPredicate owns = ownedCheck;
-		if (owns == null)
-		{
-			return false;
-		}
-		for (int id : SpellRunes.comboRuneIds())
-		{
-			if (owns.test(id))
-			{
-				return true;
-			}
-		}
-		return false;
+		return owns != null && Arrays.stream(SpellRunes.comboRuneIds()).anyMatch(owns);
 	}
 
 	/** The mob a card gesture acts on: the single selection when there is
 	 * one, else the lensed roster row. Rosters have no state.mob() - the
 	 * set-note lesson (field report 2026-08-15: notes never saved on a
 	 * trip), which every per-mob command has since had to repeat. */
-	/** A spec swap tried (ISS-01M5HCS725N7XVVBC7CMK6Y43A): sim it here when
-	 * it is not yours yet AND make it this mob's pinned spec - one undo step
-	 * that takes the sim back and restores the earlier pinned spec. */
-	private boolean trySpec(StoreOps ops, MonsterStats mob, int id, Object labelArg)
+	/** A ladder step tried: sim the item here when it is not yours yet AND
+	 * put it in place (its slot's pin, or the mob's spec) - one undo step
+	 * that takes the sim back and restores what was there. */
+	private boolean tryStep(StoreOps ops, MonsterStats mob, int id, String what, Runnable put, Runnable restore)
 	{
-		String what = labelArg instanceof String ? (String) labelArg : "spec weapon";
 		int mobId = mob.getId();
-		String mobName = mob.getName();
-		int previousSpec = ops.mobs().pinnedSpec(mobId);
 		boolean sim = ownedCheck == null || !ownedCheck.test(id);
-		return recorded("Try spec " + what + " - " + mobName, () ->
+		return recorded("Try " + what + " - " + mob.getName(), () ->
 		{
 			if (sim)
 			{
 				ops.simForMob(mobId, id);
 			}
-			ops.setPinnedSpec(mobId, id);
+			put.run();
 		}, () ->
 		{
 			if (sim)
 			{
 				ops.mobs().removeMobSim(mobId, id);
 			}
-			ops.setPinnedSpec(mobId, previousSpec);
+			restore.run();
 		});
+	}
+
+	/** One per-mob list write, by command name - the card trio's adds and
+	 * the mob line's removes, which clear-mob-list replays per entry. A
+	 * removed sim's pins go with it when the item is not yours (Andrew's
+	 * 2026-10-22 rule) and come back with the sim. */
+	private void mobListStep(StoreOps ops, int mobId, String cmd, int id, String scope,
+		Map<Integer, List<Object[]>> droppedPins)
+	{
+		switch (cmd)
+		{
+			case "remove-mob-exclusion": ops.mobs().removeMobExclusion(mobId, scope, id); break;
+			case "remove-mob-sim":
+				ops.mobs().removeMobSim(mobId, id);
+				droppedPins.put(id, dropPinsIfNotYours(ops, mobId, id));
+				break;
+			case "add-mob-filter": ops.addMobFilter(mobId, id); break;
+			case "remove-mob-filter": ops.mobs().removeMobFilter(mobId, scope, id); break;
+			case "exclude-for-mob": ops.excludeForMob(mobId, scope, id); break;
+			default:
+				ops.simForMob(mobId, id);
+				restorePins(ops, mobId, id, droppedPins.getOrDefault(id, List.of()));
+				droppedPins.remove(id);
+				break;
+		}
+	}
+
+	/** Filters change the bank view only; the rest change the answer. */
+	private void refreshAfter(String cmd)
+	{
+		if (cmd.endsWith("-filter"))
+		{
+			republish();
+		}
+		else
+		{
+			recompute();
+		}
 	}
 
 	/** Unpins this item on the mob in every scope and slot it holds;
@@ -2507,9 +2226,7 @@ public class CommandEngine
 	 * (Andrew 2026-10-22: "it is showing me a fang, i dont have fang"). */
 	private List<Object[]> dropPinsIfNotYours(StoreOps ops, int mobId, int itemId)
 	{
-		boolean yours = ownedCheck != null && ownedCheck.test(itemId)
-			|| ops.mobSims(mobId).stream().anyMatch(row -> row.get("id") instanceof Number
-				&& ((Number) row.get("id")).intValue() == itemId);
+		boolean yours = ownedCheck != null && ownedCheck.test(itemId) || hasId(ops.mobSims(mobId), itemId);
 		return yours ? List.of() : dropPinsOf(ops, mobId, itemId);
 	}
 
@@ -2539,13 +2256,38 @@ public class CommandEngine
 	private MonsterStats lensedMob()
 	{
 		List<MonsterStats> roster = state.rosterMobs();
-		if (roster == null)
-		{
-			return state.mob();
-		}
-		Object lens = state.paramsNode().get("lensIndex");
-		int at = lens instanceof Number ? ((Number) lens).intValue() : 0;
-		return roster.get(Math.min(Math.max(at, 0), roster.size() - 1));
+		return roster == null ? state.mob() : lensOf(roster);
+	}
+
+	/** The row the lens is on, clamped to the list. */
+	private MonsterStats lensOf(List<MonsterStats> mobs)
+	{
+		return mobs.get(Math.min(Math.max(intParam("lensIndex"), 0), mobs.size() - 1));
+	}
+
+	/** The corpus label for an item id, or the bare id when the corpus lacks it. */
+	private String itemLabel(int itemId)
+	{
+		GearItem item = data.getGear(itemId);
+		return item == null ? String.valueOf(itemId) : item.label();
+	}
+
+	/** The first of the ids the player owns, else the fallback. */
+	private static int firstOwned(IntPredicate owns, int fallback, int... ids)
+	{
+		return Arrays.stream(ids).filter(owns).findFirst().orElse(fallback);
+	}
+
+	/** Whether a trio-list row list carries the item. */
+	private static boolean hasId(List<Map<String, Object>> rows, int id)
+	{
+		return rows.stream().anyMatch(row -> row.get("id") instanceof Number && ((Number) row.get("id")).intValue() == id);
+	}
+
+	/** The first corpus monster matching, or null. */
+	private MonsterStats monster(Predicate<MonsterStats> test)
+	{
+		return data.getMonsters().stream().filter(test).findFirst().orElse(null);
 	}
 
 	/** The classic activeSupplies, core-side: config defaults overlaid
@@ -2589,24 +2331,19 @@ public class CommandEngine
 	private List<Map<String, Object>> suppliesNode(List<MonsterStats> mobs)
 	{
 		Supplier<Map<String, String>> defaultsSupplier = supplyDefaults;
-		StoreOps ops = stores;
+		StoreOps ops = storeOps;
 		IntPredicate owns = ownedCheck;
 		MonsterStats lensed = lensedMob();
 		List<Map<String, Object>> nodes = new ArrayList<>();
 		// The dragonfire assumption is a supply too (Andrew 2026-10-18: "when
 		// the super antifire is selected it should be put into the inventory").
-		Object fireMode = state.paramsNode().get("antifireMode");
-		int antifire = fireMode instanceof Number ? ((Number) fireMode).intValue() : 0;
+		int antifire = intParam("antifireMode");
 		if (antifire > 0 && mobs.stream().anyMatch(DragonfireRules::breathesFire))
 		{
 			int[] doses = antifire == 2 ? DragonfireRules.SUPER_ANTIFIRE_IDS : DragonfireRules.REGULAR_ANTIFIRE_IDS;
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("category", "antifire");
-			node.put("name", antifire == 2 ? "Super antifire potion" : "Antifire potion");
-			node.put("itemId", doses[0]);
-			node.put("ids", Arrays.stream(doses).boxed().collect(Collectors.toList()));
-			node.put("options", List.of());
-			nodes.add(node);
+			nodes.add(RenderModel.map("category", "antifire",
+				"name", antifire == 2 ? "Super antifire potion" : "Antifire potion", "itemId", doses[0],
+				"ids", Arrays.stream(doses).boxed().collect(Collectors.toList()), "options", List.of()));
 		}
 		if (defaultsSupplier == null || ops == null || owns == null || lensed == null)
 		{
@@ -2617,16 +2354,12 @@ public class CommandEngine
 		// At sea the BOAT takes the hits (Andrew 2026-09-02): a sea-only
 		// trip packs repair kits and nothing edible; a mixed roster keeps
 		// the land categories for its land half.
-		boolean seaOnly = !mobs.isEmpty();
-		for (MonsterStats m : mobs)
-		{
-			seaOnly &= NavalCombat.isNaval(m.getName());
-		}
+		boolean seaOnly = !mobs.isEmpty() && mobs.stream().allMatch(m -> NavalCombat.isNaval(m.getName()));
+		boolean otherBook = reliesOnAnotherBook(lensed);
 		for (Map.Entry<String, String> e : defaults.entrySet())
 		{
 			String category = e.getKey();
 			String mode = overrides.getOrDefault(category, e.getValue());
-			boolean otherBook = reliesOnAnotherBook(lensed);
 			if (otherBook && "CURE_ME".equals(mode))
 			{
 				mode = "DETECT_BEST";
@@ -2664,62 +2397,32 @@ public class CommandEngine
 			{
 				continue;
 			}
-			List<Map<String, Object>> options = new ArrayList<>();
-			for (TripSupplies.Option option
-				: TripSupplies.options(category))
-			{
-				if (otherBook && "CURE_ME".equals(option.key))
-				{
-					continue;
-				}
-				Map<String, Object> opt = new LinkedHashMap<>();
-				opt.put("key", option.key);
-				opt.put("name", option.name);
-				options.add(opt);
-			}
+			List<Map<String, Object>> options = optionNodes(category, otherBook);
 			// A kit names every item and gets a cell each (field 2026-09-08:
 			// the holy symbol was filter-only); doses share one cell.
 			boolean kit = pick.names.length == pick.ids.length && pick.names.length > 1;
 			for (int i = 0; i < (kit ? pick.ids.length : 1); i++)
 			{
-				Map<String, Object> node = new LinkedHashMap<>();
-				node.put("category", category);
-				node.put("name", kit ? pick.names[i] : pick.name);
-				node.put("itemId", pick.ids.length > 0 ? pick.ids[i] : 0);
-				List<Integer> doses = new ArrayList<>();
-				for (int id : kit ? pick.cells != null ? pick.cells[i] : new int[]{pick.ids[i]} : pick.ids)
-				{
-					doses.add(id);
-				}
-				node.put("ids", doses);
-				node.put("options", options);
-				nodes.add(node);
+				int[] doses = kit ? pick.cells != null ? pick.cells[i] : new int[]{pick.ids[i]} : pick.ids;
+				nodes.add(RenderModel.map("category", category, "name", kit ? pick.names[i] : pick.name,
+					"itemId", pick.ids.length > 0 ? pick.ids[i] : 0,
+					"ids", Arrays.stream(doses).boxed().collect(Collectors.toList()), "options", options));
 			}
 		}
 		return nodes;
 	}
 
-	/** Attach per-mob profile state (pinned spell/spec, note) to each
-	 * mob node so renderers can show and edit it. */
-	@SuppressWarnings("unchecked")
 	/** The trip's UTILITY casts for one mob: the fight's own spell (the
 	 * Sire's Shadow Barrage stun), the thrall resurrection at the live
 	 * tier, and Death Charge - each cast's runes tagged with why
 	 * (field report 2026-08-15: 'not seeing any runes' on a trip whose
-	 * gear never autocasts but whose FIGHT casts plenty). */
+	 * gear never autocasts but whose FIGHT casts plenty). Looked up by
+	 * NAME so a phase variant's synthetic id still finds its monster. */
 	private List<Map<String, Object>> utilityRunesFor(Map<String, Object> mob)
 	{
 		List<Map<String, Object>> out = new ArrayList<>();
 		Object name = mob.get("name");
-		MonsterStats stats = null;
-		for (MonsterStats m : data.getMonsters())
-		{
-			if (m.getName().equals(name))
-			{
-				stats = m;
-				break;
-			}
-		}
+		MonsterStats stats = monster(m -> m.getName().equals(name));
 		String fightSpell = MonsterSpellbooks.spellFor(stats);
 		if (fightSpell != null)
 		{
@@ -2733,7 +2436,6 @@ public class CommandEngine
 		// The loot containers you own that this monster's drops warrant
 		// (Andrew 2026-10-22: "killerwatts have a predominant herb drop table").
 		out.addAll(LootContainers.picks(stats, owns, flag("inWilderness")));
-		Map<String, Object> params = state.paramsNode();
 		boolean seaMob = stats != null
 			&& NavalCombat.isNaval(stats.getName());
 		boolean lunarCamp = arceuusBlocked(stats);
@@ -2746,17 +2448,13 @@ public class CommandEngine
 					tier + " thrall (per resurrection)");
 				// The book the thrall is cast from (mrapw 2026-10-18: the
 				// kit had the runes but not the book; any weapon casts it).
-				Map<String, Object> book = new LinkedHashMap<>();
-				book.put("id", ExtraDps.BOOK_OF_THE_DEAD);
-				book.put("name", "Book of the Dead");
-				book.put("qty", 1);
-				book.put("why", tier + " thrall - cast from the book, any weapon");
-				out.add(book);
+				out.add(RenderModel.map("id", ExtraDps.BOOK_OF_THE_DEAD, "name", "Book of the Dead", "qty", 1,
+					"why", tier + " thrall - cast from the book, any weapon"));
 			}
 		}
-		Object dCharge = params.get("deathCharge");
+		int dCharge = intParam("deathCharge");
 		boolean f2pLocked = flag("f2pOnly");
-		if (!f2pLocked && !lunarCamp && dCharge instanceof Number && ((Number) dCharge).intValue() > 0)
+		if (!f2pLocked && !lunarCamp && dCharge > 0)
 		{
 			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
 		}
@@ -2775,9 +2473,7 @@ public class CommandEngine
 			boolean elsewhere = fightBook != null && !fightBook.isEmpty()
 				&& !"lunar".equalsIgnoreCase(fightBook);
 			elsewhere |= !seaMob && !lunarCamp && membersFlag("thralls");
-			Object charge = params.get("deathCharge");
-			elsewhere |= !f2pLocked && !lunarCamp && charge instanceof Number
-				&& ((Number) charge).intValue() > 0;
+			elsewhere |= !f2pLocked && !lunarCamp && dCharge > 0;
 			if (elsewhere)
 			{
 				addUtilityRunes(out, "Spellbook Swap", "Spellbook Swap (per swap)");
@@ -2802,14 +2498,19 @@ public class CommandEngine
 		}
 	}
 
-	private void decorateProfiles(Map<String, Object> entry)
+	/** Attach per-mob profile state (pinned spell/spec, note, the pins,
+	 * the trio lists, the utility casts) to each mob node so renderers
+	 * can show and edit it. */
+	@SuppressWarnings("unchecked")
+	private void decorateProfiles(Map<String, Object> entry, List<Map<String, Object>> supplies)
 	{
-		StoreOps ops = stores;
+		StoreOps ops = storeOps;
 		Object mobsNode = entry.get("mobs");
 		if (ops == null || !(mobsNode instanceof List))
 		{
 			return;
 		}
+		MonsterStats lensed = lensedMob();
 		for (Object node : (List<?>) mobsNode)
 		{
 			if (node instanceof Map)
@@ -2823,10 +2524,10 @@ public class CommandEngine
 					mob.put("pinnedSpec", ops.mobs().pinnedSpec(monsterId));
 					mob.put("note", ops.mobs().note(monsterId));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
-					mob.put("cureMe", cureMe(lensedMob()));
-					mob.put("arceuusBlocked", arceuusBlocked(lensedMob()));
-					mob.put("antivenom", antivenomMode(lensedMob()));
-					mob.put("cureCategory", cureCategory(lensedMob()));
+					mob.put("cureMe", cureMe(lensed));
+					mob.put("arceuusBlocked", arceuusBlocked(lensed));
+					mob.put("antivenom", antivenomMode(lensed));
+					mob.put("cureCategory", cureCategory(lensed));
 					List<Map<String, Object>> utility = utilityRunesFor(mob);
 					mob.put("utilityRunes", utility);
 					// The casting kit: divine rune pouch > rune pouch when
@@ -2840,19 +2541,8 @@ public class CommandEngine
 					if (!utility.isEmpty() && owns != null)
 					{
 						boolean wildyTrip = pvpDeathTrip();
-						int pouch;
-						if (wildyTrip)
-						{
-							pouch = owns.test(27509) ? 27509
-								: owns.test(24416) ? 24416 : -1;
-						}
-						else
-						{
-							pouch = owns.test(27281) ? 27281
-								: owns.test(27509) ? 27509
-								: owns.test(12791) ? 12791
-								: owns.test(24416) ? 24416 : 12791;
-						}
+						int pouch = wildyTrip ? firstOwned(owns, -1, 27509, 24416)
+							: firstOwned(owns, 12791, 27281, 27509, 12791, 24416);
 						if (pouch > 0)
 						{
 							mob.put("castingPouch", pouch);
@@ -2861,91 +2551,47 @@ public class CommandEngine
 						// joins the lost/kept lists - see wildyCarriedFates.
 						if (wildyTrip)
 						{
-							List<String> supplyNames = new ArrayList<>();
-							Object supplies = entry.get("supplies");
-							if (supplies instanceof List)
+							Map<String, List<String>> fates = wildyCarriedFates(pouch, owns.test(9763) || owns.test(9762),
+								supplies.stream().map(s -> String.valueOf(s.get("name"))).collect(Collectors.toList()),
+								!utility.isEmpty());
+							eachCard(List.of(mob), (side, card) ->
 							{
-								for (Object supply : (List<?>) supplies)
+								Object riskNode = card.get("risk");
+								for (String fate : new String[]{"kept", "lost"})
 								{
-									if (supply instanceof Map)
+									Object list = riskNode instanceof Map ? ((Map<?, ?>) riskNode).get(fate) : null;
+									if (list instanceof List)
 									{
-										supplyNames.add(String.valueOf(((Map<?, ?>) supply).get("name")));
+										((List<Object>) list).addAll(fates.get(fate));
 									}
 								}
-							}
-							Map<String, List<String>> fates = wildyCarriedFates(pouch,
-								owns.test(9763) || owns.test(9762), supplyNames, !utility.isEmpty());
-							Map<String, Object> mobStyles =
-								(Map<String, Object>) mob.get("styles");
-							if (mobStyles != null)
-							{
-								for (Object styleNode : mobStyles.values())
-								{
-									if (!(styleNode instanceof Map))
-									{
-										continue;
-									}
-									for (String side : new String[]{"yours", "bis"})
-									{
-										Object card = ((Map<?, ?>) styleNode).get(side);
-										Object riskNode = card instanceof Map
-											? ((Map<?, ?>) card).get("risk") : null;
-										if (!(riskNode instanceof Map))
-										{
-											continue;
-										}
-										for (String fate : new String[]{"kept", "lost"})
-										{
-											@SuppressWarnings("unchecked")
-											List<Object> list = (List<Object>)
-												((Map<?, ?>) riskNode).get(fate);
-											if (list != null)
-											{
-												list.addAll(fates.get(fate));
-											}
-										}
-									}
-								}
-							}
+							});
 						}
-						mob.put("castingCape", owns.test(9763) ? 9763
-							: owns.test(9762) ? 9762 : -1);
+						mob.put("castingCape", firstOwned(owns, -1, 9763, 9762));
 					}
 					mob.put("mobExclusions", ops.mobExclusions(monsterId));
+					// The pins by scope (slot -> label) for the card, and the
+					// pin list's rows - one walk fills both.
 					Map<String, Map<String, String>> pins = new LinkedHashMap<>();
+					List<Map<String, Object>> pinRows = new ArrayList<>();
 					ops.mobs().allPins(monsterId).forEach((scope, slots) ->
 					{
 						Map<String, String> named = new LinkedHashMap<>();
-						slots.forEach((slot, itemId) -> named.put(Names.lower(slot.name()),
-							data.getGear(itemId) == null ? String.valueOf(itemId) : data.getGear(itemId).label()));
+						slots.forEach((slot, itemId) ->
+						{
+							named.put(Names.lower(slot.name()), itemLabel(itemId));
+							pinRows.add(RenderModel.map("id", itemId, "name", itemLabel(itemId), "scope", scope,
+								"slot", Names.lower(slot.name())));
+						});
 						pins.put(scope, named);
 					});
 					mob.put("pins", pins);
-					List<Map<String, Object>> pinRows = new ArrayList<>();
-					ops.mobs().allPins(monsterId).forEach((scope, slots) -> slots.forEach((slot, itemId) ->
-					{
-						Map<String, Object> row = new LinkedHashMap<>();
-						row.put("id", itemId);
-						row.put("name", data.getGear(itemId) == null ? String.valueOf(itemId) : data.getGear(itemId).label());
-						row.put("scope", scope);
-						row.put("slot", Names.lower(slot.name()));
-						pinRows.add(row);
-					}));
 					mob.put("mobPins", pinRows);
-					// The worn slayer requirements, for the cells' "needed" note.
-					MonsterStats requiredFor = null;
-					for (MonsterStats m : data.getMonsters())
-					{
-						if (m.getId() == monsterId)
-						{
-							requiredFor = m;
-							break;
-						}
-					}
-					List<Integer> requiredIds = new ArrayList<>();
-					RequiredGear.requiredIds(requiredFor, data, Boolean.TRUE.equals(state.paramsNode().get("kourendElite"))
-						? Set.of(RequiredGear.KOUREND_ELITE) : Set.of()).values().forEach(requiredIds::addAll);
-					mob.put("requiredGear", requiredIds);
+					// The worn slayer requirements, for the cells' "needed"
+					// note - by id, so a phase variant keeps its own.
+					mob.put("requiredGear", RequiredGear.requiredIds(monster(m -> m.getId() == monsterId), data,
+						flag("kourendElite") ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of())
+						.values().stream().flatMap(Set::stream).collect(Collectors.toList()));
 					mob.put("mobSims", ops.mobSims(monsterId));
 					mob.put("mobFilters", ops.mobFilters(monsterId));
 				}
@@ -2978,47 +2624,30 @@ public class CommandEngine
 				{
 					continue;
 				}
-				boolean universal = b.boosts('a') && b.boosts('r') && b.boosts('m');
-				boolean forStyle = style == CombatStyle.MELEE ? b.boosts('a')
-					: style == CombatStyle.RANGED ? b.boosts('r') : b.boosts('m');
-				if (universal || forStyle)
+				if (b.boosts(style == CombatStyle.MELEE ? 'a' : style == CombatStyle.RANGED ? 'r' : 'm'))
 				{
-					Map<String, Object> option = new LinkedHashMap<>();
-					option.put("key", b.name());
-					option.put("label", b.toString());
-					styleBoosts.add(option);
+					styleBoosts.add(RenderModel.map("key", b.name(), "label", b.toString()));
 				}
 			}
 			boosts.put(style.name().toLowerCase(), styleBoosts);
 		}
-		Map<String, Object> options = new LinkedHashMap<>();
-		options.put("prayers", prayers);
-		options.put("boosts", boosts);
 		// Icon facts for the pickers (additive): prayer name -> sprite id,
 		// boost label -> potion item id. Renderers draw, never map.
 		Map<String, Object> prayerSprites = new LinkedHashMap<>();
+		Map<String, Object> prayerImages = new LinkedHashMap<>();
 		for (Object list : prayers.values())
 		{
-			for (Object name : (List<?>) list)
+			for (Object o : (List<?>) list)
 			{
-				prayerSprites.put(String.valueOf(name),
-					AssumeIcons.prayerSprite(String.valueOf(name)));
+				String name = String.valueOf(o);
+				prayerSprites.put(name, AssumeIcons.prayerSprite(name));
+				String image = AssumeIcons.prayerImage(name);
+				if (image != null)
+				{
+					prayerImages.put(name, image);
+				}
 			}
 		}
-		options.put("prayerSprites", prayerSprites);
-		Map<String, Object> prayerImages = new LinkedHashMap<>();
-		for (String name : prayerSprites.keySet())
-		{
-			String image = AssumeIcons.prayerImage(name);
-			if (image != null)
-			{
-				prayerImages.put(name, image);
-			}
-		}
-		options.put("prayerImages", prayerImages);
-		// Spellbook Swap is 96 Magic (Vengeance 94) - offer it when the
-		// player can actually reach the level, boosts included.
-		options.put("spellbookSwapAvailable", magicLevel + 5 >= 96);
 		Map<String, Object> boostItems = new LinkedHashMap<>();
 		for (Object list : boosts.values())
 		{
@@ -3028,14 +2657,17 @@ public class CommandEngine
 				boostItems.put(label, AssumeIcons.boostItem(label));
 			}
 		}
-		options.put("boostItems", boostItems);
 		Map<String, Object> spellSprites = new LinkedHashMap<>();
 		for (SpellStats spell : data.getSpells())
 		{
 			spellSprites.put(spell.getName(),
 				AssumeIcons.spellSprite(spell.getName()));
 		}
-		options.put("spellSprites", spellSprites);
+		// Spellbook Swap is 96 Magic (Vengeance 94) - offered when the
+		// player can actually reach the level, boosts included.
+		Map<String, Object> options = RenderModel.map("prayers", prayers, "boosts", boosts,
+			"prayerSprites", prayerSprites, "prayerImages", prayerImages,
+			"spellbookSwapAvailable", magicLevel + 5 >= 96, "boostItems", boostItems, "spellSprites", spellSprites);
 		assumeOptionsCache = options;
 		return options;
 	}
@@ -3066,16 +2698,13 @@ public class CommandEngine
 		Map<String, Object> params = state.paramsNode();
 		// The LENSED mob decides (REQ-SC-7): a mixed roster prices cannons
 		// only while a sea mob is under the lens.
-		Object lensObj = params.get("lensIndex");
-		int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
-		MonsterStats lensed = mobs.get(Math.min(Math.max(lens, 0), mobs.size() - 1));
+		int lens = intParam("lensIndex");
+		MonsterStats lensed = lensOf(mobs);
 		if (!NavalCombat.isNaval(lensed.getName()))
 		{
 			return null;
 		}
-		int count = params.get("cannonCount") instanceof Number
-			? ((Number) params.get("cannonCount")).intValue() : 0;
-		MonsterStats mob = lensed;
+		int count = intParam("cannonCount");
 		String ammoPick = String.valueOf(params.get("cannonAmmo"));
 		List<String> carriedTiers = new ArrayList<>();
 		for (int i = 0; i < count; i++)
@@ -3086,7 +2715,8 @@ public class CommandEngine
 		boolean detect = "detect".equals(ammoPick);
 		String ammo = ammoPick;
 		String ammoBlocked = null;
-		if (!detect && count > 0)
+		Predicate<String> everyone = ball -> carriedTiers.stream().allMatch(t -> NavalCombat.canFire(t, ball));
+		if (!detect && count > 0 && !everyone.test(ammoPick))
 		{
 			// The RESOLUTION downranks, never the pick (field report
 			// 2026-08-31: dragon -> rune swap still showed a dragon ball):
@@ -3094,15 +2724,7 @@ public class CommandEngine
 			// fire it, else the best they can all share - one tier for the
 			// whole ship (REQ-SC-2). The pick itself stays put, so
 			// upgrading the cannon back restores it.
-			boolean everyone = true;
-			for (String t : carriedTiers)
-			{
-				everyone &= NavalCombat.canFire(t, ammoPick);
-			}
-			if (!everyone)
-			{
-				ammo = NavalCombat.bestSharedBall(carriedTiers);
-			}
+			ammo = NavalCombat.bestSharedBall(carriedTiers);
 		}
 		if (detect)
 		{
@@ -3110,15 +2732,9 @@ public class CommandEngine
 			// the bank does not hold (the 0.4.1 rule, applied to ammo).
 			IntPredicate owns = ownedCheck;
 			String best = null;
-			for (NavalCombat.Ball ball
-				: NavalCombat.balls())
+			for (NavalCombat.Ball ball : NavalCombat.balls())
 			{
-				boolean everyone = true;
-				for (String t : carriedTiers)
-				{
-					everyone &= NavalCombat.canFire(t, ball.tier);
-				}
-				if (everyone && owns != null && owns.test(ball.itemId))
+				if (everyone.test(ball.tier) && owns != null && owns.test(ball.itemId))
 				{
 					best = ball.tier;
 				}
@@ -3145,9 +2761,7 @@ public class CommandEngine
 		// Crew gear is unknowable and stays at zero.
 		int wornAcc = 0;
 		int wornStr = 0;
-		Object lensForGear = params.get("lensIndex");
-		int gearLens = lensForGear instanceof Number ? ((Number) lensForGear).intValue() : 0;
-		gearLens = Math.min(Math.max(gearLens, 0), (perMob == null ? 1 : perMob.size()) - 1);
+		int gearLens = Math.min(Math.max(lens, 0), (perMob == null ? 1 : perMob.size()) - 1);
 		OptimizerService.StyleResult rangedResult = perMob == null || perMob.size() <= gearLens
 			|| perMob.get(gearLens) == null ? null
 			: perMob.get(gearLens).get(CombatStyle.RANGED);
@@ -3170,10 +2784,7 @@ public class CommandEngine
 				}
 			}
 		}
-		Map<String, Object> node = new LinkedHashMap<>();
-		node.put("station", station);
-		node.put("ammo", ammo);
-		node.put("ammoDetected", detect);
+		Map<String, Object> node = RenderModel.map("station", station, "ammo", ammo, "ammoDetected", detect);
 		if (ammoBlocked != null)
 		{
 			node.put("ammoBlocked", ammoBlocked);
@@ -3186,55 +2797,29 @@ public class CommandEngine
 		double[] byMob = new double[mobs.size()];
 		for (int i = 0; i < count; i++)
 		{
-			String tier = String.valueOf(params.get(i == 0 ? "cannon1Material" : "cannon2Material"));
-			NavalCombat.Cannon cannon =
-				NavalCombat.cannon(tier);
+			String tier = carriedTiers.get(i);
+			NavalCombat.Cannon cannon = NavalCombat.cannon(tier);
 			if (cannon == null)
 			{
 				continue;
 			}
-			// Shared ammo, clamped to what THIS cannon can fire (a mithril
-			// cannon handed dragon balls fires mithril ones).
-			if (ammo == null)
-			{
-				Map<String, Object> dry = new LinkedHashMap<>();
-				dry.put("tier", tier);
-				dry.put("itemId", cannon.itemId);
-				dry.put("firedBy", (i == 0 ? "you".equals(op1) : "you".equals(op2))
-					? "player" : "crew");
-				dry.put("blocked", ammoBlocked);
-				dry.put("maxHit", 0);
-				dry.put("dps", 0.0);
-				cannonNodes.add(dry);
-				continue;
-			}
-			String ballTier = ammo;
-			NavalCombat.Ball ball =
-				NavalCombat.ball(ballTier);
 			String operator = i == 0 ? op1 : op2;
 			boolean playerFired = "you".equals(operator);
-			int priv = 1;
-			if (operator.startsWith("crew"))
+			int priv = PageState.crewLevel(operator);
+			Map<String, Object> c = RenderModel.map("tier", tier, "itemId", cannon.itemId);
+			if (ammo != null)
 			{
-				try
-				{
-					priv = Integer.parseInt(operator.substring(4));
-				}
-				catch (NumberFormatException ignored)
-				{
-				}
+				// Shared ammo, clamped to what THIS cannon can fire (a mithril
+				// cannon handed dragon balls fires mithril ones).
+				c.put("ball", ammo);
 			}
-			Map<String, Object> c = new LinkedHashMap<>();
-			c.put("tier", tier);
-			c.put("itemId", cannon.itemId);
-			c.put("ball", ballTier);
 			c.put("firedBy", playerFired ? "player" : "crew");
-			String blocked = null;
-			if (playerFired && rangedLevel < cannon.ranged)
-			{
-				blocked = "Needs " + cannon.ranged + " Ranged to operate";
-			}
-			if (!playerFired)
+			// A dry bank blocks every cannon with the detection's reason (no
+			// ball, no crew estimate); a loaded one is gated per operator -
+			// the player's Ranged, the crew's Privateering.
+			String blocked = ammo == null ? ammoBlocked
+				: playerFired && rangedLevel < cannon.ranged ? "Needs " + cannon.ranged + " Ranged to operate" : null;
+			if (!playerFired && ammo != null)
 			{
 				anyCrew = true;
 				if (priv < cannon.privateering)
@@ -3250,6 +2835,7 @@ public class CommandEngine
 				cannonNodes.add(c);
 				continue;
 			}
+			NavalCombat.Ball ball = NavalCombat.ball(ammo);
 			int maxHit;
 			if (playerFired)
 			{
@@ -3278,7 +2864,7 @@ public class CommandEngine
 				}
 			}
 			double chance = ShipCannon.hitChance(level, acc,
-				mob.getDefence(), mob.getDefensive().get("heavy"));
+				lensed.getDefence(), lensed.getDefensive().get("heavy"));
 			double dps = ShipCannon.dps(maxHit, chance);
 			c.put("maxHit", maxHit);
 			c.put("dps", dps);
@@ -3287,39 +2873,26 @@ public class CommandEngine
 		}
 		node.put("cannons", cannonNodes);
 		node.put("dps", total);
-		List<Double> byMobDps = new ArrayList<>();
-		for (double d : byMob)
-		{
-			byMobDps.add(d);
-		}
-		node.put("byMob", byMobDps);
+		node.put("byMob", Arrays.stream(byMob).boxed().collect(Collectors.toList()));
 		node.put("estimated", anyCrew && NavalCombat.crewFormulaStale());
 		// Ship damage taken (REQ-SC-15): the mob attacks the BOAT, so the
 		// number is per keel from the wiki table (armour pre-applied) and
 		// protection prayers do not apply. Always-hit is assumed - ship
 		// defence rolls are undocumented - so this reads as a ceiling.
 		String keel = String.valueOf(params.get("shipKeel"));
-		int keelMax = NavalCombat.keelMaxHit(mob.getName(), keel);
+		int keelMax = NavalCombat.keelMaxHit(lensed.getName(), keel);
 		if (keelMax >= 0)
 		{
-			Map<String, Object> in = new LinkedHashMap<>();
-			in.put("keel", keel);
-			in.put("maxHit", keelMax);
-			int speed = Math.max(1, mob.getOffence().getSpeedTicks());
-			in.put("dtps", keelMax / 2.0 / (speed * 0.6));
-			node.put("incoming", in);
+			int speed = Math.max(1, lensed.getOffence().getSpeedTicks());
+			node.put("incoming", RenderModel.map("keel", keel, "maxHit", keelMax, "dtps", keelMax / 2.0 / (speed * 0.6)));
 		}
 		return node;
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page)
 	{
-		Map<String, Object> node = new LinkedHashMap<>();
-		node.put("canUndo", history.canUndo());
-		node.put("canRedo", history.canRedo());
-		node.put("undoLabel", history.peekUndoDescription());
-		node.put("redoLabel", history.peekRedoDescription());
-		page.put("history", node);
+		page.put("history", RenderModel.map("canUndo", history.canUndo(), "canRedo", history.canRedo(),
+			"undoLabel", history.peekUndoDescription(), "redoLabel", history.peekRedoDescription()));
 		Supplier<Map<String, Object>> supplier = counts;
 		if (supplier != null)
 		{

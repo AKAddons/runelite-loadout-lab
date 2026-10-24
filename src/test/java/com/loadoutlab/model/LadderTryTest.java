@@ -55,15 +55,15 @@ class LadderTryTest
 		}
 
 		@Override
-		public void pin(int monsterId, String slot, int itemId)
+		public void pin(int monsterId, String scope, GearSlot slot, int itemId)
 		{
-			calls.add("pin " + slot + " " + itemId);
+			calls.add("pin " + slot.name().toLowerCase() + " " + itemId);
 		}
 
 		@Override
-		public void unpin(int monsterId, String slot)
+		public void unpin(int monsterId, String scope, GearSlot slot)
 		{
-			calls.add("unpin " + slot);
+			calls.add("unpin " + slot.name().toLowerCase());
 		}
 
 		@Override

@@ -2,13 +2,12 @@
 package com.loadoutlab.data;
 
 import com.google.gson.*;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
+
+import static com.loadoutlab.data.JsonResources.*;
 
 public final class DataService
 {
@@ -35,15 +34,15 @@ public final class DataService
 		// would silently pin every spell to level 1 and drop every quest
 		// requirement - that changes DPS and gear recommendations with no
 		// visible error - so use objectOrThrow and assert non-emptiness.
-		JsonObject rules = JsonResources.objectOrThrow(NAME_RULES_RESOURCE);
-		JsonResources.stringIntMap(rules, "spellLevels", SPELL_LEVELS);
-		JsonResources.strings(rules, "slayerContains", SLAYER_CONTAINS);
-		JsonResources.strings(rules, "slayerStartsWith", SLAYER_STARTS_WITH);
+		JsonObject rules = objectOrThrow(NAME_RULES_RESOURCE);
+		stringIntMap(rules, "spellLevels", SPELL_LEVELS);
+		strings(rules, "slayerContains", SLAYER_CONTAINS);
+		strings(rules, "slayerStartsWith", SLAYER_STARTS_WITH);
 		for (JsonElement rule : rules.getAsJsonArray("questRules"))
 		{
 			JsonObject row = rule.getAsJsonObject();
 			List<String> terms = new ArrayList<>();
-			JsonResources.strings(row, "terms", terms);
+			strings(row, "terms", terms);
 			QUEST_TERMS.add(terms);
 			QUEST_NAMES.add(row.get("quest").getAsString());
 		}
@@ -60,10 +59,7 @@ public final class DataService
 		List<MonsterStats> monsters = normalizeQuestVersions(loadMonsters());
 		List<SpellStats> spells = loadSpells();
 		Map<Integer, GearItem> gearById = new HashMap<>();
-		for (GearItem item : gear)
-		{
-			gearById.put(item.getId(), item);
-		}
+		gear.forEach(item -> gearById.put(item.getId(), item));
 		return new LoadoutData(gear, monsters, spells, gearById, loadAliases());
 	}
 
@@ -71,7 +67,7 @@ public final class DataService
 	private Map<Integer, Integer> loadAliases()
 	{
 		Map<Integer, Integer> aliases = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : readObject(ALIAS_RESOURCE).entrySet())
+		for (Map.Entry<String, JsonElement> entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet())
 		{
 			int variant = Integer.parseInt(entry.getKey());
 			int base = entry.getValue().getAsInt();
@@ -85,7 +81,7 @@ public final class DataService
 
 	private List<GearItem> loadGear()
 	{
-		JsonArray rows = readArray(GEAR_RESOURCE);
+		JsonArray rows = gz(GEAR_RESOURCE).getAsJsonArray();
 		Map<Integer, Map<String, Integer>> skillRequirements = loadSkillRequirements();
 		List<GearItem> result = new ArrayList<>(rows.size());
 		for (JsonElement element : rows)
@@ -151,12 +147,14 @@ public final class DataService
 	 */
 	private static final List<String> LEAGUES_PREFIXES = new ArrayList<>();
 	private static final List<String> LEAGUES_CONTAINS = new ArrayList<>();
+	private static final List<String> MINIGAME_ONLY = new ArrayList<>();
 
 	static
 	{
-		JsonObject leagues = JsonResources.objectOrThrow("leagues_items.json");
-		JsonResources.strings(leagues, "prefixes", LEAGUES_PREFIXES);
-		JsonResources.strings(leagues, "contains", LEAGUES_CONTAINS);
+		JsonObject leagues = objectOrThrow("leagues_items.json");
+		strings(leagues, "prefixes", LEAGUES_PREFIXES);
+		strings(leagues, "contains", LEAGUES_CONTAINS);
+		strings(leagues, "minigameOnly", MINIGAME_ONLY);
 	}
 
 	private static boolean isLeaguesReward(String name, String examine)
@@ -175,22 +173,12 @@ public final class DataService
 	 */
 	private static boolean isMinigameOnly(String name)
 	{
-		switch (name == null ? "" : name.toLowerCase())
-		{
-			case "bullet arrow":
-			case "field arrow":
-			case "blunt arrow":
-			case "barbed arrow":
-			case "castle wars bolts":
-				return true;
-			default:
-				return false;
-		}
+		return MINIGAME_ONLY.contains(name == null ? "" : name.toLowerCase());
 	}
 
 	private Map<Integer, Map<String, Integer>> loadSkillRequirements()
 	{
-		JsonArray rows = readArray(REQUIREMENTS_RESOURCE);
+		JsonArray rows = gz(REQUIREMENTS_RESOURCE).getAsJsonArray();
 		Map<Integer, Map<String, Integer>> result = new HashMap<>();
 		for (JsonElement element : rows)
 		{
@@ -291,7 +279,7 @@ public final class DataService
 
 	private List<MonsterStats> loadMonsters()
 	{
-		JsonArray rows = readArray(MONSTER_RESOURCE);
+		JsonArray rows = gz(MONSTER_RESOURCE).getAsJsonArray();
 		// The wiki data lists one row per SPAWN - Tormented Demon (1)..(4)
 		// are four combat-identical rows. Collapse same-name rows whose
 		// combat-relevant stats match, and drop the version label entirely
@@ -308,11 +296,9 @@ public final class DataService
 				continue;
 			}
 			String nameKey = Names.lower(string(row, "name"));
-			statKeysByName
-				.computeIfAbsent(nameKey, k -> new LinkedHashSet<>())
-				.add(monsterStatKey(row));
-			maxLevelByGroup.merge(nameKey + "|" + monsterStatKey(row),
-				integer(row, "level", 0), Math::max);
+			String statKey = monsterStatKey(row);
+			statKeysByName.computeIfAbsent(nameKey, k -> new LinkedHashSet<>()).add(statKey);
+			maxLevelByGroup.merge(nameKey + "|" + statKey, integer(row, "level", 0), Math::max);
 		}
 
 		Set<String> emitted = new HashSet<>();
@@ -382,7 +368,7 @@ public final class DataService
 				integer(row, "id", -1),
 				string(row, "name"),
 				distinctVersions ? string(row, "version") : "",
-				maxLevelByGroup.get(nameKey + "|" + monsterStatKey(row)),
+				maxLevelByGroup.get(groupKey),
 				integer(skills, "hp", 1),
 				size,
 				integer(skills, "def", 1),
@@ -457,7 +443,7 @@ public final class DataService
 
 	private List<SpellStats> loadSpells()
 	{
-		JsonArray rows = readArray(SPELL_RESOURCE);
+		JsonArray rows = gz(SPELL_RESOURCE).getAsJsonArray();
 		List<SpellStats> result = new ArrayList<>(rows.size());
 		for (JsonElement element : rows)
 		{
@@ -490,44 +476,6 @@ public final class DataService
 	private static int spellLevel(String name)
 	{
 		return SPELL_LEVELS.getOrDefault(name == null ? "" : name, 1);
-	}
-
-	private static JsonArray readArray(String resource)
-	{
-		try (InputStream stream = DataService.class.getResourceAsStream(resource))
-		{
-			if (stream == null)
-			{
-				throw new IllegalStateException("Missing resource " + resource);
-			}
-			try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
-			{
-				return new JsonParser().parse(reader).getAsJsonArray();
-			}
-		}
-		catch (IOException ex)
-		{
-			throw new IllegalStateException("Could not load " + resource, ex);
-		}
-	}
-
-	private static JsonObject readObject(String resource)
-	{
-		try (InputStream stream = DataService.class.getResourceAsStream(resource))
-		{
-			if (stream == null)
-			{
-				throw new IllegalStateException("Missing resource " + resource);
-			}
-			try (InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
-			{
-				return new JsonParser().parse(reader).getAsJsonObject();
-			}
-		}
-		catch (IOException ex)
-		{
-			throw new IllegalStateException("Could not load " + resource, ex);
-		}
 	}
 
 	private static StatBlock parseOffensive(JsonObject object)
@@ -590,30 +538,6 @@ public final class DataService
 			integer(object, "prayer", 0));
 	}
 
-	private static JsonObject object(JsonObject parent, String key)
-	{
-		JsonElement element = parent.get(key);
-		return element == null || element.isJsonNull() ? new JsonObject() : element.getAsJsonObject();
-	}
-
-	private static JsonArray array(JsonObject parent, String key)
-	{
-		JsonElement element = parent.get(key);
-		return element == null || element.isJsonNull() ? new JsonArray() : element.getAsJsonArray();
-	}
-
-	private static String string(JsonObject object, String key)
-	{
-		JsonElement element = object.get(key);
-		return element == null || element.isJsonNull() ? "" : element.getAsString();
-	}
-
-	private static Integer nullableInteger(JsonObject object, String key)
-	{
-		JsonElement element = object.get(key);
-		return element == null || element.isJsonNull() ? null : element.getAsInt();
-	}
-
 	/** stab, slash, crush, magic, ranged - the five every stat block shares. */
 	private static int[] combat(JsonObject object)
 	{
@@ -621,47 +545,11 @@ public final class DataService
 			integer(object, "crush", 0), integer(object, "magic", 0), integer(object, "ranged", 0)};
 	}
 
-	private static int integer(JsonObject object, String key, int fallback)
-	{
-		JsonElement element = object.get(key);
-		if (element == null || element.isJsonNull())
-		{
-			return fallback;
-		}
-		try
-		{
-			return element.getAsInt();
-		}
-		catch (NumberFormatException ex)
-		{
-			return fallback;
-		}
-	}
-
-	private static boolean bool(JsonObject object, String key, boolean fallback)
-	{
-		JsonElement element = object.get(key);
-		return element == null || element.isJsonNull() ? fallback : element.getAsBoolean();
-	}
-
 	private static boolean knownSlayerMonster(String name)
 	{
 		String normalized = name == null ? "" : Names.lower(name);
-		for (String term : SLAYER_CONTAINS)
-		{
-			if (normalized.contains(term))
-			{
-				return true;
-			}
-		}
-		for (String prefix : SLAYER_STARTS_WITH)
-		{
-			if (normalized.startsWith(prefix))
-			{
-				return true;
-			}
-		}
-		return false;
+		return SLAYER_CONTAINS.stream().anyMatch(normalized::contains)
+			|| SLAYER_STARTS_WITH.stream().anyMatch(normalized::startsWith);
 	}
 
 	/**

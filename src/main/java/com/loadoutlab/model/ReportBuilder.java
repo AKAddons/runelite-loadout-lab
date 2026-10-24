@@ -5,6 +5,7 @@ import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * The copy-report for the hosted view, built CORE-SIDE at page
@@ -42,31 +43,24 @@ final class ReportBuilder
 				if (thralls != null)
 				{
 					sb.append("  Thralls: ").append(thralls.get("tier"))
-						.append(String.format(" (dps shown includes it: %.2f)%n",
-							((Number) thralls.get("dps")).doubleValue()));
+						.append(String.format(" (dps shown includes it: %.2f)%n", num(thralls.get("dps"))));
 				}
 				if (ship != null)
 				{
 					appendShip(sb, ship);
 				}
-				if (supplies != null && !supplies.isEmpty())
+				if (supplies != null)
 				{
-					sb.append("  Supplies:");
-					for (Map<String, Object> supply : supplies)
-					{
-						sb.append(' ').append(supply.get("name")).append(',');
-					}
-					sb.append('\n');
+					items(sb, "  Supplies:", supplies.stream().map(s -> s.get("name")).collect(Collectors.toList()), "\n");
 				}
 			}
 			// Each sea mob's own cannon dps (the row's fold, 2026-09-03).
 			Object byMob = ship == null ? null : ship.get("byMob");
-			if (byMob instanceof List && i < ((List<?>) byMob).size()
-				&& ((List<?>) byMob).get(i) instanceof Number
-				&& ((Number) ((List<?>) byMob).get(i)).doubleValue() > 0)
+			double cannonDps = byMob instanceof List && i < ((List<?>) byMob).size()
+				? num(((List<?>) byMob).get(i)) : 0;
+			if (cannonDps > 0)
 			{
-				sb.append(String.format("  Cannons vs this mob: +%.2f dps%n",
-					((Number) ((List<?>) byMob).get(i)).doubleValue()));
+				sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps));
 			}
 			Map<CombatStyle, OptimizerService.StyleResult> results = perMob.get(i);
 			// The kit contract (field report 2026-08-14, the Sire: "a
@@ -116,8 +110,7 @@ final class ReportBuilder
 			}
 			if (tools != null)
 			{
-				Object stackObj = state.paramsNode().get("multiStack");
-				sb.append("-- Multi (").append(stackObj instanceof Number ? stackObj : 3)
+				sb.append("-- Multi (").append((int) num(state.paramsNode().get("multiStack")))
 					.append(" targets stacked; sets priced per target) --\n");
 				for (Map.Entry<String, OptimizerService.StyleResult> e : tools.entrySet())
 				{
@@ -219,54 +212,34 @@ final class ReportBuilder
 	{
 		Map<String, Object> params = state.paramsNode();
 		String tab = String.valueOf(params.getOrDefault("selectedTab", ""));
-		sb.append("Viewing: ").append(tab.isEmpty() ? "auto" : tab)
-			.append(" / ").append(Boolean.TRUE.equals(params.get("viewingBis")) ? "BiS" : "Yours")
-			.append('\n');
-		sb.append("Parameters:\n");
-		sb.append("  On task: ").append(yesNo(params.get("onTask")));
-		sb.append("; Wilderness: ").append(yesNo(params.get("inWilderness")));
-		Object pvpParam = params.get("pvpWorld");
-		int pvp = pvpParam instanceof Number ? ((Number) pvpParam).intValue() : 0;
-		if (pvp > 0)
-		{
-			sb.append("; PvP world: ").append(pvp >= 2 ? "High Risk" : "yes");
-		}
-		sb.append("; Spec weapon: ").append(yesNo(params.get("specWeapon")));
-		Object af = params.get("antifireMode");
-		int afMode = af instanceof Number ? ((Number) af).intValue() : 0;
-		sb.append("; Antifire: ").append(afMode == 2 ? "super" : afMode == 1 ? "regular" : "no");
-		sb.append("; Sunfire runes: ").append(yesNo(params.get("sunfireRunes")));
-		sb.append('\n');
-		sb.append("  Inventory: ").append(params.get("maxSwaps")).append('\n');
-		sb.append("  Death charge: ").append(params.get("deathCharge"));
-		sb.append("; Invocation: ").append(params.get("toaInvocation"));
+		int pvp = (int) num(params.get("pvpWorld"));
+		int afMode = (int) num(params.get("antifireMode"));
 		Object lock = params.get("spellbookLock");
-		sb.append("; Spellbook lock: ").append(lunarCamp ? "lunar (Cure Me)"
-			: lock == null || String.valueOf(lock).isEmpty() ? "auto" : lock);
-		sb.append("; Upgrade budget: ").append(params.get("upgradeBudgetGp"));
-		if (Boolean.TRUE.equals(params.get("inWilderness")) || pvp > 0)
-		{
-			Object cap = params.get("riskBudgetGp");
-			int capGp = cap instanceof Number ? ((Number) cap).intValue() : -1;
-			boolean capped = Boolean.TRUE.equals(params.get("riskCapped"));
-			sb.append("; Risk cap: ").append(capped ? gp(capGp) : "none")
-				.append("; Protect item: ").append(yesNo(params.get("protectItem")));
-		}
-		sb.append('\n');
+		// The PvP world and the risk cap segments only when out there.
+		sb.append(String.format("Viewing: %s / %s\nParameters:\n  On task: %s; Wilderness: %s%s; Spec weapon: %s;"
+				+ " Antifire: %s; Sunfire runes: %s\n  Inventory: %s\n  Death charge: %s; Invocation: %s;"
+				+ " Spellbook lock: %s; Upgrade budget: %s%s\n",
+			tab.isEmpty() ? "auto" : tab, Boolean.TRUE.equals(params.get("viewingBis")) ? "BiS" : "Yours",
+			yesNo(params.get("onTask")), yesNo(params.get("inWilderness")),
+			pvp > 0 ? "; PvP world: " + (pvp >= 2 ? "High Risk" : "yes") : "",
+			yesNo(params.get("specWeapon")), afMode == 2 ? "super" : afMode == 1 ? "regular" : "no",
+			yesNo(params.get("sunfireRunes")), params.get("maxSwaps"), params.get("deathCharge"),
+			params.get("toaInvocation"),
+			lunarCamp ? "lunar (Cure Me)" : lock == null || String.valueOf(lock).isEmpty() ? "auto" : lock,
+			params.get("upgradeBudgetGp"),
+			Boolean.TRUE.equals(params.get("inWilderness")) || pvp > 0
+				? "; Risk cap: " + (Boolean.TRUE.equals(params.get("riskCapped"))
+					? gp((long) num(params.get("riskBudgetGp"))) : "none")
+					+ "; Protect item: " + yesNo(params.get("protectItem")) : ""));
 		if (counts != null)
 		{
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed\n");
 			names(sb, "  Excluded: ", counts.get("excludedItems"), false);
 			Object names = counts.get("simmedNames");
-			if (names instanceof List && !((List<?>) names).isEmpty())
+			if (names instanceof List)
 			{
-				sb.append("  Simmed as owned:");
-				for (Object name : (List<?>) names)
-				{
-					sb.append(' ').append(name).append(',');
-				}
-				sb.append('\n');
+				items(sb, "  Simmed as owned:", (List<?>) names, "\n");
 			}
 		}
 	}
@@ -274,8 +247,7 @@ final class ReportBuilder
 	private static void appendSide(StringBuilder sb, String caption,
 		OptimizerService.StyleResult result, boolean bis, int keptSlots)
 	{
-		DpsResult shown = bis ? result.overallBest
-			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
+		DpsResult shown = RenderModel.shown(result, bis);
 		if (shown == null)
 		{
 			sb.append(caption).append(": no usable set\n");
@@ -326,24 +298,31 @@ final class ReportBuilder
 			PvpRisk.Assessment risk =
 				PvpRisk.assess(shown.getLoadout(), specWeapon, keptSlots);
 			sb.append("  Risk: ").append(gp(risk.riskGp)).append(" per death");
-			if (!risk.lost.isEmpty())
-			{
-				sb.append(" - lost:");
-				for (GearItem item : risk.lost)
-				{
-					sb.append(' ').append(item.label()).append(',');
-				}
-			}
-			if (!risk.kept.isEmpty())
-			{
-				sb.append(" - kept:");
-				for (GearItem item : risk.kept)
-				{
-					sb.append(' ').append(item.label()).append(',');
-				}
-			}
+			items(sb, " - lost:", risk.lost, "");
+			items(sb, " - kept:", risk.kept, "");
 			sb.append('\n');
 		}
+	}
+
+	/** "label a, b," then the tail for a non-empty list (gear by its label);
+	 * nothing for an empty one. */
+	private static void items(StringBuilder sb, String label, List<?> list, String tail)
+	{
+		if (!list.isEmpty())
+		{
+			sb.append(label);
+			for (Object item : list)
+			{
+				sb.append(' ').append(item instanceof GearItem ? ((GearItem) item).label() : item).append(',');
+			}
+			sb.append(tail);
+		}
+	}
+
+	/** A page number as a double, 0 when the node holds none. */
+	private static double num(Object value)
+	{
+		return value instanceof Number ? ((Number) value).doubleValue() : 0;
 	}
 
 	/** Short gp for the report line (the card's own vocabulary). */
@@ -356,11 +335,11 @@ final class ReportBuilder
 		if (inObj instanceof Map)
 		{
 			Map<?, ?> in = (Map<?, ?>) inObj;
-			int max = in.get("maxHit") instanceof Number ? ((Number) in.get("maxHit")).intValue() : 0;
+			int max = (int) num(in.get("maxHit"));
 			sb.append("  Ship: ").append(in.get("keel")).append(" keel - ");
 			sb.append(max <= 0 ? "this monster cannot hit the boat"
 				: String.format("damage taken ~%.2f/tick, max %d per hit (always-hit ceiling)",
-					in.get("dtps") instanceof Number ? ((Number) in.get("dtps")).doubleValue() : 0.0, max));
+					num(in.get("dtps")), max));
 			sb.append('\n');
 		}
 		boolean manned = "cannon".equals(ship.get("station"));
@@ -397,12 +376,10 @@ final class ReportBuilder
 				}
 				else
 				{
-					sb.append(String.format("%.2f dps", cannon.get("dps") instanceof Number
-						? ((Number) cannon.get("dps")).doubleValue() : 0.0));
+					sb.append(String.format("%.2f dps", num(cannon.get("dps"))));
 				}
 			}
-			sb.append(String.format(" (total %.2f%s)%n", ship.get("dps") instanceof Number
-				? ((Number) ship.get("dps")).doubleValue() : 0.0,
+			sb.append(String.format(" (total %.2f%s)%n", num(ship.get("dps")),
 				Boolean.TRUE.equals(ship.get("estimated")) ? ", crew formula wiki-flagged stale" : ""));
 		}
 	}

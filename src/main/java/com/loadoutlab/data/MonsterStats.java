@@ -7,40 +7,26 @@ import java.util.Set;
 
 import lombok.Getter;
 
+@Getter
 public final class MonsterStats
 {
-	@Getter
 	private final int id;
-	@Getter
 	private final String name;
-	@Getter
 	private final String version;
-	@Getter
 	private final int combatLevel;
-	@Getter
 	private final int hitpoints;
-	@Getter
 	private final int size;
-	@Getter
 	private final int defence;
-	@Getter
 	private final int magic;
-	@Getter
 	private final int offensiveMagic;
-	@Getter
 	private final MonsterDefences defensive;
-	@Getter
 	private final MonsterOffence offence;
-	@Getter
 	private final List<String> attributes;
 	private final Set<String> attributesLower;
-	@Getter
 	private final boolean slayerMonster;
-	@Getter
 	private final String weaknessElement;
-	@Getter
 	private final int weaknessSeverity;
-	@Getter
+	/** Lowercased monster name, cached (per-trial engine gates). */
 	private final String nameLower;
 	private final boolean wilderness;
 	private final boolean revenant;
@@ -159,14 +145,8 @@ public final class MonsterStats
 	/** The value after a "prefix:" attribute (group stipulations), or null. */
 	public String attributeValue(String prefix)
 	{
-		for (String a : attributes)
-		{
-			if (a.startsWith(prefix))
-			{
-				return a.substring(prefix.length());
-			}
-		}
-		return null;
+		return attributes.stream().filter(a -> a.startsWith(prefix))
+			.map(a -> a.substring(prefix.length())).findFirst().orElse(null);
 	}
 
 	/** A copy carrying extra attributes (the group's stipulations). */

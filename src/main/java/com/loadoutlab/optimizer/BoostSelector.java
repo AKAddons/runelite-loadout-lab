@@ -78,6 +78,14 @@ public final class BoostSelector
 		}
 	}
 
+	/** Each style's ladder, best first (the divine and bastion/battlemage
+	 * families outrank the plain potions; the hearts lead magic). */
+	private static final Map<CombatStyle, String[]> LADDERS = Map.of(
+		CombatStyle.MELEE, new String[]{"DIVINE_SUPER_COMBAT", "SUPER_COMBAT"},
+		CombatStyle.RANGED, new String[]{"DIVINE_BASTION", "BASTION", "DIVINE_RANGING", "RANGING"},
+		CombatStyle.MAGIC, new String[]{"SATURATED_HEART", "IMBUED_HEART", "DIVINE_BATTLEMAGE",
+			"BATTLEMAGE", "DIVINE_MAGIC", "MAGIC"});
+
 	/** The best boost you can actually assume per style, given what you own.
 	 * Risk-capped wilderness searches never assume a heart (field spec
 	 * 2026-07-18): both hearts are tradeable and worth far more than any
@@ -92,56 +100,14 @@ public final class BoostSelector
 		// Each ladder walks best -> worst and ends at NONE: an unowned boost is
 		// never assumed, so a low-level account sees the numbers it can
 		// actually reach today.
-		switch (style)
+		for (String name : LADDERS.getOrDefault(style, new String[0]))
 		{
-			case MELEE:
-				if (ownsAny(owned, ids("DIVINE_SUPER_COMBAT")))
-				{
-					return BoostProfile.DIVINE_SUPER_COMBAT;
-				}
-				return ownsAny(owned, ids("SUPER_COMBAT"))
-					? BoostProfile.SUPER_COMBAT : BoostProfile.NONE;
-			case RANGED:
-				if (ownsAny(owned, ids("DIVINE_BASTION")))
-				{
-					return BoostProfile.DIVINE_BASTION;
-				}
-				if (ownsAny(owned, ids("BASTION")))
-				{
-					return BoostProfile.BASTION;
-				}
-				if (ownsAny(owned, ids("DIVINE_RANGING")))
-				{
-					return BoostProfile.DIVINE_RANGING;
-				}
-				return ownsAny(owned, ids("RANGING"))
-					? BoostProfile.RANGING : BoostProfile.NONE;
-			case MAGIC:
-				if (!noHearts && owned.owns(ids("SATURATED_HEART")[0]))
-				{
-					return BoostProfile.SATURATED_HEART;
-				}
-				if (!noHearts && owned.owns(ids("IMBUED_HEART")[0]))
-				{
-					return BoostProfile.IMBUED_HEART;
-				}
-				if (ownsAny(owned, ids("DIVINE_BATTLEMAGE")))
-				{
-					return BoostProfile.DIVINE_BATTLEMAGE;
-				}
-				if (ownsAny(owned, ids("BATTLEMAGE")))
-				{
-					return BoostProfile.BATTLEMAGE;
-				}
-				if (ownsAny(owned, ids("DIVINE_MAGIC")))
-				{
-					return BoostProfile.DIVINE_MAGIC;
-				}
-				return ownsAny(owned, ids("MAGIC"))
-					? BoostProfile.MAGIC : BoostProfile.NONE;
-			default:
-				return BoostProfile.NONE;
+			if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name)))
+			{
+				return BoostProfile.valueOf(name);
+			}
 		}
+		return BoostProfile.NONE;
 	}
 
 	/** The highest magic level this player can REACH: their live boosted

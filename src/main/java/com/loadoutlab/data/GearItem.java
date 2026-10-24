@@ -1,59 +1,62 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
+import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
 
+@Getter
 public final class GearItem
 {
-	@Getter
+	/** The name vocabulary behind poweredStaff, the demonbane class and
+	 * isWeaponFor lives in gear_words.json (hub token cap); the lists are
+	 * walked once per item at load, or once per pool build. */
+	private static final List<String> POWERED = new ArrayList<>();
+	private static final List<String> MELEE_DEMONBANE = new ArrayList<>();
+	private static final List<String> RANGED_WEAPON = new ArrayList<>();
+	private static final List<String> MAGIC_WEAPON = new ArrayList<>();
+	private static final List<String> NOT_MELEE = new ArrayList<>();
+
+	static
+	{
+		JsonObject words = JsonResources.objectOrThrow("gear_words.json");
+		JsonResources.strings(words, "poweredStaff", POWERED);
+		JsonResources.strings(words, "meleeDemonbane", MELEE_DEMONBANE);
+		JsonResources.strings(words, "rangedWeapon", RANGED_WEAPON);
+		JsonResources.strings(words, "magicWeapon", MAGIC_WEAPON);
+		JsonResources.strings(words, "notMelee", NOT_MELEE);
+	}
+
 	private final int id;
-	@Getter
 	private final String name;
-	@Getter
 	private final String version;
-	@Getter
 	private final GearSlot slot;
-	@Getter
 	private final String category;
-	@Getter
 	private final int speed;
-	@Getter
 	private final boolean twoHanded;
-	@Getter
 	private final boolean standardGear;
-	@Getter
 	private final boolean tradeable;
-	@Getter
 	private final boolean members;
-	@Getter
 	private final Integer estimatedPrice;
-	@Getter
 	private final StatBlock offensive;
-	@Getter
 	private final StatBlock defensive;
-	@Getter
 	private final StatBlock bonuses;
-	@Getter
 	private final GearRequirements requirements;
 	// Lowercase views, precomputed once: the engine matches items by name
 	// fragment on every candidate evaluation, and per-call toLowerCase was
 	// the single hottest path in the whole optimize (64% of CPU samples).
-	@Getter
 	private final String nameLower;
-	@Getter
 	private final String versionLower;
-	@Getter
 	private final String categoryLower;
 	private final String labelLower;
 	private final String nameVersionLower;
-	@Getter
+	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
 	private final boolean poweredStaff;
-	@Getter
 	private final boolean meleeDemonbane;
-	@Getter
 	private final boolean demonbane;
 
 	public GearItem(
@@ -97,30 +100,16 @@ public final class GearItem
 		// name-fragment chain was the single hottest call in the profile.
 		// DpsCalculator.isPoweredStaff stays the API - it delegates here.
 		this.poweredStaff = categoryLower.contains("powered staff")
-			|| nameLower.contains("trident")
-			|| nameLower.contains("thammaron")
-			|| nameLower.contains("accursed sceptre")
-			|| nameLower.contains("sanguinesti")
-			|| nameLower.contains("tumeken")
-			|| nameLower.contains("warped sceptre")
-			|| nameLower.contains("eye of ayak")
-			|| nameLower.contains("bone staff");
+			|| POWERED.stream().anyMatch(nameLower::contains);
 		// The demonbane weapon class (wiki), one vocabulary for everyone:
 		// MonsterMechanics (the Sire's vents), TormentedDemonRules, and the
 		// optimizer's demon pool bump all ask this in hot loops - same
 		// precompute rationale as poweredStaff. Holy water is not gear.
-		this.meleeDemonbane = nameLower.contains("silverlight")
-			|| nameLower.contains("darklight")
-			|| nameLower.contains("arclight")
-			|| nameLower.contains("emberlight")
-			|| nameLower.contains("bone claws")
-			|| nameLower.contains("burning claws");
+		this.meleeDemonbane = MELEE_DEMONBANE.stream().anyMatch(nameLower::contains);
 		this.demonbane = meleeDemonbane
 			|| nameLower.startsWith("scorching bow")
 			|| nameLower.startsWith("purging staff");
 	}
-
-	/** Powered staff (built-in spell, no autocast) - see DpsCalculator.isPoweredStaff. */
 
 	public boolean isWeaponFor(CombatStyle style)
 	{
@@ -128,29 +117,17 @@ public final class GearItem
 		{
 			return false;
 		}
-
-		String normalized = categoryLower;
 		switch (style)
 		{
 			case RANGED:
-				return normalized.contains("bow")
-					|| normalized.contains("crossbow")
-					|| normalized.contains("thrown")
-					|| normalized.contains("chinchompa")
-					|| normalized.contains("salamander")
+				return RANGED_WEAPON.stream().anyMatch(categoryLower::contains)
 					|| offensive.getRanged() > 0;
 			case MAGIC:
-				return normalized.contains("staff")
-					|| normalized.contains("wand")
+				return MAGIC_WEAPON.stream().anyMatch(categoryLower::contains)
 					|| offensive.getMagic() > 0;
 			case MELEE:
 			default:
-				return !normalized.contains("bow")
-					&& !normalized.contains("crossbow")
-					&& !normalized.contains("thrown")
-					&& !normalized.contains("chinchompa")
-					&& !normalized.contains("staff")
-					&& !normalized.contains("wand");
+				return NOT_MELEE.stream().noneMatch(categoryLower::contains);
 		}
 	}
 
@@ -180,15 +157,13 @@ public final class GearItem
 		{
 			return false;
 		}
-		String normalized = normalizedLabel();
-		return normalized.contains("black mask") || normalized.contains("slayer helmet");
+		return nameVersionLower.contains("black mask") || nameVersionLower.contains("slayer helmet");
 	}
 
 	public boolean isImbuedSlayerHead()
 	{
-		return isSlayerHead() && normalizedLabel().contains("(i)");
+		return isSlayerHead() && nameVersionLower.contains("(i)");
 	}
-
 
 	public String label()
 	{
@@ -200,10 +175,6 @@ public final class GearItem
 	{
 		return labelLower;
 	}
-
-	/** getName() lowercased (Locale.ROOT), precomputed. */
-
-	/** getVersion() lowercased (Locale.ROOT), precomputed. */
 
 	/**
 	 * Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
@@ -228,29 +199,8 @@ public final class GearItem
 		return versionLower.contains("poison") ? 1 : 0;
 	}
 
-	/** getCategory() lowercased (Locale.ROOT), precomputed. */
-
-	private String normalizedLabel()
-	{
-		return nameVersionLower;
-	}
-
 	public int getPriceOrZero()
 	{
 		return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

@@ -1,18 +1,17 @@
 package com.loadoutlab.ui;
 
 import com.google.gson.*;
+import com.loadoutlab.data.JsonResources;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.zip.GZIPInputStream;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
@@ -31,14 +30,12 @@ import okhttp3.*;
  * icon costs none. Every failure fails QUIET - a row with no picture just
  * keeps its text-only look.
  */
+@lombok.RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public final class MonsterIcons
 {
-	private static final org.slf4j.Logger log =
-		org.slf4j.LoggerFactory.getLogger(MonsterIcons.class);
-
 	private static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
 	private static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
-	private static final String CORPUS = "/com/loadoutlab/data/monsters.json.gz";
 	private static final int MAX_WIDTH = 28;
 
 	private final OkHttpClient http;
@@ -57,11 +54,6 @@ public final class MonsterIcons
 		t.setPriority(Thread.MIN_PRIORITY + 1);
 		return t;
 	});
-
-	public MonsterIcons(OkHttpClient http)
-	{
-		this.http = http;
-	}
 
 	/**
 	 * The monster's icon at the given height, or null while it loads (or
@@ -83,21 +75,17 @@ public final class MonsterIcons
 		}
 		synchronized (waiting)
 		{
-			List<Runnable> waiters = waiting.get(cacheKey);
-			if (waiters != null)
-			{
-				if (onReady != null)
-				{
-					waiters.add(onReady);
-				}
-				return null;
-			}
-			List<Runnable> fresh = new ArrayList<>();
+			// A load already in flight takes the callback and that is all.
+			boolean loading = waiting.containsKey(cacheKey);
+			List<Runnable> waiters = waiting.computeIfAbsent(cacheKey, k -> new ArrayList<>());
 			if (onReady != null)
 			{
-				fresh.add(onReady);
+				waiters.add(onReady);
 			}
-			waiting.put(cacheKey, fresh);
+			if (loading)
+			{
+				return null;
+			}
 		}
 		worker.execute(() ->
 		{
@@ -188,21 +176,18 @@ public final class MonsterIcons
 			return local;
 		}
 		local = new HashMap<>();
-		try (InputStream in = MonsterIcons.class.getResourceAsStream(CORPUS);
-			InputStreamReader reader = new InputStreamReader(
-				new GZIPInputStream(in), StandardCharsets.UTF_8))
+		try
 		{
-			JsonArray rows = new JsonParser().parse(reader).getAsJsonArray();
-			for (JsonElement element : rows)
+			for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray())
 			{
 				JsonObject row = element.getAsJsonObject();
-				String name = string(row, "name");
-				String image = string(row, "image");
+				String name = JsonResources.string(row, "name");
+				String image = JsonResources.string(row, "image");
 				if (name.isEmpty() || image.isEmpty())
 				{
 					continue;
 				}
-				local.putIfAbsent(key(name, string(row, "version")), image);
+				local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
 				// The panel asks with an empty version whenever the corpus
 				// holds one form, and with a normalized label when it holds
 				// several - the bare name backs both. Prefer the plain
@@ -228,12 +213,6 @@ public final class MonsterIcons
 		}
 		files = local;
 		return local;
-	}
-
-	private static String string(JsonObject row, String key)
-	{
-		JsonElement value = row.get(key);
-		return value == null || value.isJsonNull() ? "" : value.getAsString();
 	}
 
 	private static String key(String name, String version)

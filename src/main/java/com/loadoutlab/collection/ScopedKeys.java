@@ -1,5 +1,7 @@
 package com.loadoutlab.collection;
 
+import com.google.gson.Gson;
+import java.lang.reflect.Type;
 import net.runelite.client.config.ConfigManager;
 
 /**
@@ -31,6 +33,20 @@ final class ScopedKeys
 	static String read(ConfigManager configManager, String group, String scope, String legacyKey)
 	{
 		return adopt(configManager, group, key(scope, legacyKey), legacyKey);
+	}
+
+	/** A stored JSON value, or null when the entry is empty or corrupt (a
+	 * corrupt entry starts the store fresh rather than failing the plugin). */
+	static <T> T parse(Gson gson, String json, Type type)
+	{
+		try
+		{
+			return json == null || json.isEmpty() ? null : gson.fromJson(json, type);
+		}
+		catch (RuntimeException ex)
+		{
+			return null;
+		}
 	}
 
 	/** As {@link #read}, for a store whose legacy key is not simply the

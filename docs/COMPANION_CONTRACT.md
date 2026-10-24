@@ -50,8 +50,9 @@ Root mirrors today's page of ResultEntry objects. Principles:
    mechanicsNote, protectItem, riskLine, riskSpecWeapon, riskKeep,
    riskConsumables, upgradeLine) each become a named field on the
    per-card node.
-3. **Dead payload stays home**: KitCurve is computed but never read
-   by the panel - not in the model.
+3. **Dead payload stays home**: KitCurve was computed but never read
+   by the panel - never in the model, and removed outright in the
+   2026-10-23 slim.
 4. **Model carries what the panel renders today**; unused DpsResult
    accessors (expectedHit, attackSpeed, rolls) join later
    additively if a renderer wants them.

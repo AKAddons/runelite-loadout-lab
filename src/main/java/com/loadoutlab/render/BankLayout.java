@@ -1,5 +1,6 @@
 package com.loadoutlab.render;
 
+import com.loadoutlab.data.JsonResources;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +15,6 @@ import java.util.Map;
  */
 final class BankLayout
 {
-	/** The worn-equipment silhouette, rows of 3; null = blank corner,
-	 * index 9 = the spec cell. Mirrors the classic CLASSIC_ORDER. */
-	private static final String[] CROSS = {
-		null, "head", null,
-		"cape", "neck", "ammo",
-		"weapon", "body", "shield",
-		null, "legs", null,
-		"hands", "feet", "ring",
-	};
-	private static final int SPEC_INDEX = 9;
-
 	private BankLayout()
 	{
 	}
@@ -40,13 +30,12 @@ final class BankLayout
 		List<Map<String, Object>> utilityRunes)
 	{
 		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
-		for (Map<String, Object> rune : castRunes)
+		for (List<Map<String, Object>> runes : List.of(castRunes, utilityRunes))
 		{
-			ids.add(Model.id(rune, "id"));
-		}
-		for (Map<String, Object> rune : utilityRunes)
-		{
-			ids.add(Model.id(rune, "id"));
+			for (Map<String, Object> rune : runes)
+			{
+				ids.add(Model.id(rune, "id"));
+			}
 		}
 		boolean casts = !ids.isEmpty();
 		for (String key : new String[]{"castingPouch", "castingCape"})
@@ -90,11 +79,6 @@ final class BankLayout
 		return out;
 	}
 
-	static Map<String, Object> build(Map<String, Object> card)
-	{
-		return build(card, List.of());
-	}
-
 	/** extraStacks: rune stacks (autocast + the trip's utility casts)
 	 * that join the carried block, so Filter bank shows them too. */
 	static Map<String, Object> build(Map<String, Object> card,
@@ -107,13 +91,16 @@ final class BankLayout
 		}
 		Map<Integer, Integer> place = new LinkedHashMap<>();
 		LinkedHashSet<Integer> ids = new LinkedHashSet<>();
-		Map<String, Object> spec = Model.map(card, "spec");
-		for (int i = 0; i < CROSS.length; i++)
+		// The card's silhouette (ResultCards.CROSS), rows of 3: the spec
+		// weapon fills the cell left of the legs, the quiver corner and the
+		// blank corners stay empty here.
+		for (int i = 0; i < ResultCards.CROSS.length; i++)
 		{
+			String slot = ResultCards.CROSS[i];
 			int pos = (i / 3) * 8 + (i % 3);
-			Map<String, Object> item = i == SPEC_INDEX
-				? (spec == null ? null : Model.map(spec, "weapon"))
-				: CROSS[i] == null ? null : Model.map(gear, CROSS[i]);
+			Map<String, Object> item = "#spec".equals(slot)
+				? Model.map(Model.map(card, "spec"), "weapon")
+				: slot == null || slot.startsWith("#") ? null : Model.map(gear, slot);
 			if (item != null)
 			{
 				int id = Model.id(item, "id");
@@ -127,17 +114,12 @@ final class BankLayout
 		{
 			carried.add(Model.id(quiver, "id"));
 		}
-		for (Map<String, Object> item : Model.list(card, "bench"))
+		for (List<Map<String, Object>> stacks : List.of(Model.list(card, "bench"), Model.list(card, "runes"), extraStacks))
 		{
-			carried.add(Model.id(item, "id"));
-		}
-		for (Map<String, Object> item : Model.list(card, "runes"))
-		{
-			carried.add(Model.id(item, "id"));
-		}
-		for (Map<String, Object> item : extraStacks)
-		{
-			carried.add(Model.id(item, "id"));
+			for (Map<String, Object> item : stacks)
+			{
+				carried.add(Model.id(item, "id"));
+			}
 		}
 		carried.removeAll(ids);
 		int k = 0;
@@ -158,9 +140,6 @@ final class BankLayout
 		{
 			layout[entry.getKey()] = entry.getValue();
 		}
-		Map<String, Object> out = new LinkedHashMap<>();
-		out.put("ids", new ArrayList<>(ids));
-		out.put("layout", layout);
-		return out;
+		return JsonResources.map("ids", new ArrayList<>(ids), "layout", layout);
 	}
 }

@@ -1,6 +1,8 @@
 package com.loadoutlab.render;
 
 import java.awt.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.swing.*;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -18,6 +20,42 @@ final class Ui
 	{
 	}
 
+	/** The surface's longer prose - tooltips, captions, html bodies - lives
+	 * in text.tsv beside this class and is read by key: the Plugin Hub's
+	 * review bot counts source tokens, and words are data, not code. A
+	 * missing key renders "null", which the key-resolution test catches. */
+	private static final Map<String, String> TEXT = tsv("text.tsv");
+
+	static String text(String key)
+	{
+		return TEXT.get(key);
+	}
+
+	/** key<TAB>value rows of a resource beside this class ('#' lines are
+	 * comments, values trimmed) - text.tsv and the mood routes share it. */
+	static Map<String, String> tsv(String name)
+	{
+		Map<String, String> out = new LinkedHashMap<>();
+		try (java.io.InputStream in = Ui.class.getResourceAsStream(name))
+		{
+			if (in != null)
+			{
+				for (String line : new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).split("\n"))
+				{
+					int tab = line.indexOf('\t');
+					if (tab > 0 && !line.startsWith("#"))
+					{
+						out.put(line.substring(0, tab), line.substring(tab + 1).trim());
+					}
+				}
+			}
+		}
+		catch (java.io.IOException ignored)
+		{
+		}
+		return out;
+	}
+
 	/** A panel on the standard dark ground. */
 	static JPanel panel(LayoutManager layout)
 	{
@@ -31,6 +69,23 @@ final class Ui
 	{
 		JPanel panel = new JPanel(layout);
 		panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		return panel;
+	}
+
+	/** A vertical box column on the given ground. */
+	static JPanel column(Color bg)
+	{
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setBackground(bg);
+		return panel;
+	}
+
+	/** A see-through panel: a seat inside a row that already has a ground. */
+	static JPanel clear(LayoutManager layout)
+	{
+		JPanel panel = new JPanel(layout);
+		panel.setOpaque(false);
 		return panel;
 	}
 
@@ -67,10 +122,74 @@ final class Ui
 		});
 	}
 
+	/** onClick's left-button-only sibling, for a component that also owns
+	 * a popup menu: the right button must open the menu and nothing else. */
+	static void onLeftClick(Component component, Runnable action)
+	{
+		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		component.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				if (SwingUtilities.isLeftMouseButton(e))
+				{
+					action.run();
+				}
+			}
+		});
+	}
+
+	/** The little "x" that removes or clears something: grey, red under the
+	 * mouse, acting on a plain left click (a right click belongs to whatever
+	 * menu its row carries). */
+	static JLabel xLabel(String tip, Runnable action)
+	{
+		JLabel x = label("x", new Color(0x969696));
+		x.setToolTipText(tip);
+		x.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		x.addMouseListener(new java.awt.event.MouseAdapter()
+		{
+			public void mouseClicked(java.awt.event.MouseEvent e)
+			{
+				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e))
+				{
+					action.run();
+				}
+			}
+
+			public void mouseEntered(java.awt.event.MouseEvent e)
+			{
+				x.setForeground(new Color(0xDC7878));
+			}
+
+			public void mouseExited(java.awt.event.MouseEvent e)
+			{
+				x.setForeground(new Color(0x969696));
+			}
+		});
+		return x;
+	}
+
 	/** A square smooth-scaled icon. */
 	static ImageIcon icon(Image image, int size)
 	{
 		return new ImageIcon(image.getScaledInstance(size, size, Image.SCALE_SMOOTH));
+	}
+
+	/** An antialiased copy of the graphics for a rounded paint; the caller disposes it. */
+	static Graphics2D smooth(Graphics g)
+	{
+		Graphics2D g2 = (Graphics2D) g.create();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		return g2;
+	}
+
+	/** A one-shot Swing timer (the debounce shape). */
+	static Timer once(int delay, java.awt.event.ActionListener action)
+	{
+		Timer timer = new Timer(delay, action);
+		timer.setRepeats(false);
+		return timer;
 	}
 
 	/** The image scaled to size, dimmed, with a red X painted over it - the
@@ -116,6 +235,20 @@ final class Ui
 		menu.add(item);
 	}
 
+	/** A radio-style check item (checked = the current pick), wired to an action. */
+	static JCheckBoxMenuItem check(String label, boolean selected, Runnable action)
+	{
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		item.addActionListener(e -> action.run());
+		return item;
+	}
+
+	/** A popup dropped from the bottom edge of its anchor. */
+	static void show(JPopupMenu menu, Component anchor)
+	{
+		menu.show(anchor, 0, anchor.getHeight());
+	}
+
 	/** A tooltip body wrapped for Swing's html renderer. Six builders
 	 * each wrote their own wrapper; this is the one. */
 	static String tip(String... parts)
@@ -151,24 +284,20 @@ final class Ui
 	static String ledger(double set, String setNote, double specDps, boolean showSpec,
 		double thrallsDps)
 	{
-		StringBuilder sum = new StringBuilder();
-		sum.append("<table cellpadding='1' cellspacing='0'>")
-			.append("<tr><td>set</td><td align='right'>&nbsp;&nbsp;")
-			.append(String.format("%.3f", set))
-			.append("</td><td><font color='#969696'>&nbsp;&nbsp;").append(setNote)
-			.append("</font></td></tr>");
+		// One row template (ledger.line: label, right-aligned value, note cell).
+		String row = Ui.text("ledger.line");
+		StringBuilder sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
+		sum.append(String.format(row, "set", String.format("%.3f", set),
+			"<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
 		if (showSpec)
 		{
-			sum.append("<tr><td>+ spec</td><td align='right'>&nbsp;&nbsp;")
-				.append(String.format("%.2f", specDps)).append("</td><td></td></tr>");
+			sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), ""));
 		}
 		if (thrallsDps > 0)
 		{
-			sum.append("<tr><td>+ thralls</td><td align='right'>&nbsp;&nbsp;")
-				.append(String.format("%.2f", thrallsDps)).append("</td><td></td></tr>");
+			sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), ""));
 		}
-		return sum.append("<tr><td><b>= shown here</b></td><td align='right'>&nbsp;&nbsp;<b>")
-			.append(String.format("%.2f", set + specDps + thrallsDps))
-			.append("</b></td><td></td></tr></table>").toString();
+		return sum.append(String.format(row, "<b>= shown here</b>",
+			"<b>" + String.format("%.2f", set + specDps + thrallsDps) + "</b>", "")).append("</table>").toString();
 	}
 }

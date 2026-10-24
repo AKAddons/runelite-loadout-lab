@@ -1,7 +1,10 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.With;
 import com.loadoutlab.data.*;
 import java.util.*;
 import java.util.Map;
@@ -9,12 +12,14 @@ import java.util.Set;
 
 /**
  * An optimizer request. Effectively immutable: the with- helpers never
- * mutate a live instance, they clone and overwrite one field on the fresh
- * copy before it escapes.
+ * mutate a live instance, they build a fresh copy with one field changed
+ * before it escapes - Lombok's {@code @With} (over the private all-args
+ * constructor) for the plain fields, {@link #copy()} for the ones that
+ * normalise their argument.
  *
  * <p>THREAD SAFETY: the fields are deliberately non-final so that
- * {@link #copy()} (a single {@code Object.clone()}) can serve all 14
- * with- helpers in O(1) instead of an O(fields) hand-written mirror.
+ * {@link #copy()} (a single {@code Object.clone()}) can serve the
+ * normalising with- helpers in O(1) instead of an O(fields) hand-written mirror.
  * Dropping {@code final} forfeits the JMM's final-field safe-publication
  * guarantee, so publication must be established some other way. It is:
  * requests are always built on the coordinating thread and reach worker
@@ -25,17 +30,21 @@ import java.util.Set;
  * ever adopts those, this constraint becomes load-bearing and the fields
  * must go back to final (see DECISIONS.md).
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OptimizationRequest implements Cloneable
 {
-	@Getter
+	@Getter @With
 	private MonsterStats monster;
-	@Getter
+	@Getter @With
 	private CombatStyle style;
 	@Getter
 	private PlayerLevels levels;
-	@Getter
+	/** The assumed prayer bonuses; withPrayers overrides them (the
+	 * assume-chip picker), the default is bestAvailable at the request's
+	 * levels/unlocks. */
+	@Getter @With
 	private PrayerBonuses prayers;
-	@Getter
+	@Getter @With
 	private SpellStats spell;
 	@Getter
 	private int budget;
@@ -54,58 +63,63 @@ public final class OptimizationRequest implements Cloneable
 	/** Item ids the player has excluded ("protect my dragon darts") -
 	 * never suggested in any slot, ammo pick, dart tier, or spec. */
 	@Getter
-	private Set<Integer> excludedItems;
+	private Set<Integer> excludedItems = Set.of();
 	/** Lock auto-spell selection to one spellbook ("standard"/"ancient"/
 	 * "arceuus"); empty = any. Powered staves are unaffected. */
 	@Getter
-	private String spellbookLock;
+	private String spellbookLock = "";
 	/** Wilderness risk cap: at most this many tradeable items in the set
 	 * (they become the items kept on death); -1 = unconstrained. */
-	@Getter
-	private int maxTradeables;
+	@Getter @With
+	private int maxTradeables = -1;
 	/** Wilderness risk budget in gp for THIS request (see
 	 * DEFAULT_RISK_BUDGET_GP for the semantics); only consulted when
 	 * risk-constrained. */
-	@Getter
-	private int riskBudgetGp;
+	@Getter @With
+	private int riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
 	/** The defensive modes' frontier weight (ISS-01M5G5CZC9SK46499FACRSJ8ZT):
 	 * the beam scores dps - defenseWeight * incoming dps; 0 = pure offence. */
-	@Getter
+	@Getter @With
 	private double defenseWeight;
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
-	@Getter
+	@Getter @With
 	private boolean antifirePotion;
 	/** Sunfire runes in place of fire runes: a standard fire spell lands
 	 * no lower than a tenth of its max hit (wiki Sunfire rune). */
-	@Getter
+	@Getter @With
 	private boolean sunfireRunes;
 	/** Targets stacked for the Multi card rows: a spec hits min(stack, its
 	 * targets); 1 = single target. */
 	@Getter
 	private int multiStack = 1;
+	/** Death Charge (Arceuus, Magic 80): 15% spec energy back on a killing
+	 * blow per cast window - an extra energy stream for the spec model.
+	 * 0 = off, 1 = base (60s window), 2 = upgraded by Yama's rite of vile
+	 * transference (two refunds per cast = an effective 30s window). */
+	@Getter @With
 	private int deathCharge;
 	/** Dream items: unowned gear considered as owned. */
-	private Set<Integer> dreamItems;
+	private Set<Integer> dreamItems = Set.of();
 	/** Pinned items: slot -> item id the player ALWAYS brings (bracelet
 	 * of slaughter class - value the model cannot price). A pinned slot
 	 * has exactly one candidate; exclusions, mode, budget, and the risk
 	 * vetoes all yield to the pin, while risk totals stay honest. */
 	@Getter
-	private Map<GearSlot, Integer> pinnedItems;
+	private Map<GearSlot, Integer> pinnedItems = Map.of();
 	/** Items the player will bring ONLY if protected on death - a low-risk
 	 * set that leaves one in the lost pile is vetoed (same as the salve-line
 	 * friction veto, but user-chosen). Empty = no such constraint. */
-	/** Items to bring only when protected on death (see the field doc). */
 	@Getter
-	private Set<Integer> protectOnlyItems;
+	private Set<Integer> protectOnlyItems = Set.of();
 	/** Waiver keys that lift slayer requirements (RequiredGear.KOUREND_ELITE). */
+	@Getter
 	private Set<String> waivers = Set.of();
 	/** True when the fight happens IN the Wilderness - gates the wilderness
 	 * weapon +50% passive. Defaults to whether the monster exists nowhere
 	 * else (revs, the boss ring); shared-name monsters (Catacombs
 	 * hellhounds...) take the user's panel toggle via the wither. */
-	@Getter
+	@Getter @With
 	private boolean inWilderness;
 
 	public OptimizationRequest(
@@ -131,15 +145,6 @@ public final class OptimizationRequest implements Cloneable
 		this.candidateMode = candidateMode == null ? CandidateMode.BUDGET : candidateMode;
 		this.includeUntradeables = includeUntradeables;
 		this.onSlayerTask = onSlayerTask;
-		this.excludedItems = Set.of();
-		this.spellbookLock = "";
-		this.maxTradeables = -1;
-		this.riskBudgetGp = DEFAULT_RISK_BUDGET_GP;
-		this.antifirePotion = false;
-		this.sunfireRunes = false;
-		this.dreamItems = Set.of();
-		this.pinnedItems = Map.of();
-		this.protectOnlyItems = Set.of();
 		this.inWilderness = WildernessMonsters.isExclusive(monster);
 		this.ownedItems = ownedItems == null ? OwnedItems.EMPTY : ownedItems;
 		this.requirementProfile = requirementProfile == null ? RequirementProfile.MAXED : requirementProfile;
@@ -199,49 +204,10 @@ public final class OptimizationRequest implements Cloneable
 		return c;
 	}
 
-	public OptimizationRequest withAntifirePotion(boolean antifirePotion)
-	{
-		OptimizationRequest c = copy();
-		c.antifirePotion = antifirePotion;
-		return c;
-	}
-
-	public OptimizationRequest withSunfireRunes(boolean sunfireRunes)
-	{
-		OptimizationRequest c = copy();
-		c.sunfireRunes = sunfireRunes;
-		return c;
-	}
-
 	public OptimizationRequest withMultiStack(int multiStack)
 	{
 		OptimizationRequest c = copy();
 		c.multiStack = Math.max(1, multiStack);
-		return c;
-	}
-
-	/** Death Charge (Arceuus, Magic 80): 15% spec energy back on a killing
-	 * blow per cast window - an extra energy stream for the spec model.
-	 * 0 = off, 1 = base (60s window), 2 = upgraded by Yama's rite of vile
-	 * transference (two refunds per cast = an effective 30s window). */
-	public OptimizationRequest withDeathCharge(int deathCharge)
-	{
-		OptimizationRequest c = copy();
-		c.deathCharge = deathCharge;
-		return c;
-	}
-
-	public int getDeathCharge()
-	{
-		return deathCharge;
-	}
-
-	/** Override the assumed prayer bonuses (the assume-chip picker); the
-	 * default is bestAvailable at the request's levels/unlocks. */
-	public OptimizationRequest withPrayers(PrayerBonuses prayers)
-	{
-		OptimizationRequest c = copy();
-		c.prayers = prayers;
 		return c;
 	}
 
@@ -261,36 +227,10 @@ public final class OptimizationRequest implements Cloneable
 	 */
 	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
 
-	public Set<String> getWaivers()
-	{
-		return waivers;
-	}
-
 	public OptimizationRequest withWaivers(Set<String> waivers)
 	{
 		OptimizationRequest c = copy();
 		c.waivers = waivers == null ? Set.of() : waivers;
-		return c;
-	}
-
-	public OptimizationRequest withDefenseWeight(double defenseWeight)
-	{
-		OptimizationRequest c = copy();
-		c.defenseWeight = defenseWeight;
-		return c;
-	}
-
-	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
-	{
-		OptimizationRequest c = copy();
-		c.riskBudgetGp = riskBudgetGp;
-		return c;
-	}
-
-	public OptimizationRequest withMaxTradeables(int maxTradeables)
-	{
-		OptimizationRequest c = copy();
-		c.maxTradeables = maxTradeables;
 		return c;
 	}
 
@@ -329,41 +269,10 @@ public final class OptimizationRequest implements Cloneable
 		return spell == null;
 	}
 
-	public OptimizationRequest withStyle(CombatStyle style)
-	{
-		OptimizationRequest c = copy();
-		c.style = style;
-		return c;
-	}
-
-	public OptimizationRequest withMonster(MonsterStats monster)
-	{
-		OptimizationRequest c = copy();
-		c.monster = monster;
-		return c;
-	}
-
 	public OptimizationRequest withSlayerTask(boolean onSlayerTask)
 	{
 		OptimizationRequest c = copy();
 		c.onSlayerTask = onSlayerTask;
-		return c;
-	}
-
-	public OptimizationRequest withSpell(SpellStats spell)
-	{
-		OptimizationRequest c = copy();
-		c.spell = spell;
-		return c;
-	}
-
-
-	/** Override the wilderness default (the panel toggle for shared-name
-	 * monsters like Catacombs hellhounds). */
-	public OptimizationRequest withInWilderness(boolean inWilderness)
-	{
-		OptimizationRequest c = copy();
-		c.inWilderness = inWilderness;
 		return c;
 	}
 }

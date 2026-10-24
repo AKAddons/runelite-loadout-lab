@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.Set;
 import net.runelite.client.config.ConfigManager;
 
+@lombok.RequiredArgsConstructor
 public abstract class IdSetStore implements ScopedStore
 {
 	static final String CONFIG_GROUP = "loadoutlab";
@@ -18,12 +19,6 @@ public abstract class IdSetStore implements ScopedStore
 	 * the SAME exclude and sim lists, because these keys were global while the
 	 * bank ledger next door was already per-character. */
 	String worldScope;
-
-	IdSetStore(ConfigManager configManager, Gson gson)
-	{
-		this.configManager = configManager;
-		this.gson = gson;
-	}
 
 	/** The unscoped key this store used before 0.4.1 - read once so an
 	 * existing install keeps its list when the key gains the account hash. */
@@ -48,22 +43,11 @@ public abstract class IdSetStore implements ScopedStore
 	final void load()
 	{
 		ids.clear();
-		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey());
-		if (json == null || json.isEmpty())
+		Set<Integer> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey()),
+			new TypeToken<Set<Integer>>(){}.getType());
+		if (stored != null)
 		{
-			return;
-		}
-		try
-		{
-			Set<Integer> stored = gson.fromJson(json, new TypeToken<Set<Integer>>(){}.getType());
-			if (stored != null)
-			{
-				ids.addAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
+			ids.addAll(stored);
 		}
 	}
 

@@ -179,8 +179,8 @@ task golden(type: JavaExec) {
 }
 
 // Golden-output capture for the ROSTER path (see RosterGolden) - the
-// multi-mob answers, shared kit and breakpoint curve that `golden` (single
-// mob only) never exercises:
+// multi-mob answers and shared kit that `golden` (single mob only) never
+// exercises (the breakpoint curve went in the 2026-10-23 slim):
 //   ./gradlew -q rosterGolden > roster-golden.txt
 task rosterGolden(type: JavaExec) {
 	group = 'loadout lab'

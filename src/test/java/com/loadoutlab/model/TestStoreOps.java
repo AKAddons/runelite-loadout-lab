@@ -58,11 +58,11 @@ class TestStoreOps implements CommandEngine.StoreOps, CommandEngine.MobProfiles
 	{
 	}
 
-	public void pin(int monsterId, String slot, int itemId)
+	public void pin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot, int itemId)
 	{
 	}
 
-	public void unpin(int monsterId, String slot)
+	public void unpin(int monsterId, String scope, com.loadoutlab.data.GearSlot slot)
 	{
 	}
 

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Curated monster groups (M-3): a group is the ROSTER of distinct mob
@@ -21,8 +22,10 @@ public final class MonsterGroups
 {
 	private static final String RESOURCE = "monster_groups.json";
 
-	/** One curated group, resolved to loaded rows. */
+	/** One curated group, resolved to loaded rows (the loader hands in
+	 * unmodifiable mob and alias lists). */
 	@lombok.Getter
+	@lombok.AllArgsConstructor
 	public static final class MonsterGroup
 	{
 		private final String name;
@@ -31,26 +34,9 @@ public final class MonsterGroups
 		private final List<String> aliases;
 		private final int inventory;
 		final boolean comingSoon;
-		private final boolean raid;
-
-		MonsterGroup(String name, String note, List<MonsterStats> mobs, List<String> aliases,
-			int inventory, boolean comingSoon, boolean raid)
-		{
-			this.comingSoon = comingSoon;
-			this.name = name;
-			this.note = note;
-			this.mobs = Collections.unmodifiableList(mobs);
-			this.aliases = Collections.unmodifiableList(aliases);
-			this.inventory = inventory;
-			this.raid = raid;
-		}
-
 		/** A raid selection: shared supplied boosts, big inventories, and
 		 * never a slayer-task context (Andrew, 2026-08-31). */
-		public boolean isRaid()
-		{
-			return raid;
-		}
+		private final boolean raid;
 
 		/** "Fight Caves - 7 mobs" for list rows (the coming-soon note
 		 * renders in the RESULT card, not here - field spec 2026-07-18). */
@@ -74,7 +60,7 @@ public final class MonsterGroups
 			{
 				JsonObject row = element.getAsJsonObject();
 				String name = row.get("name").getAsString();
-				String note = row.has("note") ? row.get("note").getAsString() : "";
+				String note = JsonResources.string(row, "note");
 				List<MonsterStats> mobs = new ArrayList<>();
 				for (JsonElement m : row.getAsJsonArray("members"))
 				{
@@ -124,8 +110,7 @@ public final class MonsterGroups
 							{
 								joined.append(" + ");
 							}
-							joined.append(Character.toUpperCase(style.charAt(0)))
-								.append(style.substring(1));
+							joined.append(Names.cap(style));
 						}
 						String label = member.has("label")
 							? member.get("label").getAsString()
@@ -181,10 +166,9 @@ public final class MonsterGroups
 				}
 				if (!mobs.isEmpty())
 				{
-					int inventory = row.has("inventory") ? row.get("inventory").getAsInt() : 0;
-					boolean raid = row.has("raid") && row.get("raid").getAsBoolean();
-					boolean comingSoon = row.has("comingSoon") && row.get("comingSoon").getAsBoolean();
-					groups.add(new MonsterGroup(name, note, mobs, aliases, inventory, comingSoon, raid));
+					groups.add(new MonsterGroup(name, note, Collections.unmodifiableList(mobs),
+						Collections.unmodifiableList(aliases), JsonResources.integer(row, "inventory", 0),
+						JsonResources.bool(row, "comingSoon", false), JsonResources.bool(row, "raid", false)));
 				}
 			}
 		}
@@ -210,59 +194,23 @@ public final class MonsterGroups
 	 * name must be unique (ambiguity = curation bug, caught by tests). */
 	static MonsterStats resolve(LoadoutData data, String name, String version)
 	{
-		MonsterStats match = null;
-		for (MonsterStats monster : data.getMonsters())
-		{
-			if (!monster.getName().equalsIgnoreCase(name))
-			{
-				continue;
-			}
-			if (version != null && !version.equalsIgnoreCase(monster.getVersion()))
-			{
-				continue;
-			}
-			if (match != null)
-			{
-				return null; // ambiguous - the curation must name a version
-			}
-			match = monster;
-		}
-		return match;
+		// Two hits = ambiguous: the curation must name a version.
+		List<MonsterStats> matches = data.getMonsters().stream().filter(m -> m.getName().equalsIgnoreCase(name)
+			&& (version == null || version.equalsIgnoreCase(m.getVersion()))).limit(2).collect(Collectors.toList());
+		return matches.size() == 1 ? matches.get(0) : null;
 	}
 
 	/** Name-contains search over the groups, hits in curated order. */
 	public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit)
 	{
 		String text = query == null ? "" : Names.lower(query.trim());
-		List<MonsterGroup> hits = new ArrayList<>();
 		if (text.length() < 2)
 		{
-			return hits;
+			return new ArrayList<>();
 		}
-		for (MonsterGroup group : groups)
-		{
-			boolean hit = Names.lower(group.getName()).contains(text);
-			if (!hit)
-			{
-				// Player vocabulary ("jad", "zuk", "dks") reaches the group.
-				for (String alias : group.aliases)
-				{
-					if (alias.contains(text) || text.contains(alias))
-					{
-						hit = true;
-						break;
-					}
-				}
-			}
-			if (hit)
-			{
-				hits.add(group);
-				if (hits.size() >= limit)
-				{
-					break;
-				}
-			}
-		}
-		return hits;
+		// Player vocabulary ("jad", "zuk", "dks") reaches the group through its aliases.
+		return groups.stream().filter(group -> Names.lower(group.getName()).contains(text)
+			|| group.aliases.stream().anyMatch(alias -> alias.contains(text) || text.contains(alias)))
+			.limit(limit).collect(Collectors.toList());
 	}
 }

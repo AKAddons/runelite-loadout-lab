@@ -49,11 +49,12 @@ final class StatIcons
 	}
 
 	/**
-	 * Shared shape for the square baked icons: a single pixel size used as
-	 * both width and height, drawn from a PNG baked at exactly that size
-	 * from the original paint code.
+	 * A square baked icon: a single pixel size used as both width and
+	 * height, drawn from a PNG baked at exactly that size from the original
+	 * paint code - "hitsplat" (the red hitsplat for the max-hit line) and
+	 * "crosshair" (the accuracy line), both glyph-safe.
 	 */
-	abstract static class SizedIcon implements Icon
+	static class SizedIcon implements Icon
 	{
 		/** Icon edge length in pixels. */
 		private final int size;
@@ -82,39 +83,15 @@ final class StatIcons
 	}
 
 
-	/** The baked crosshair for the accuracy line (glyph-safe). */
-	static final class CrosshairIcon extends SizedIcon
-	{
-		CrosshairIcon(int size)
-		{
-			super("crosshair", size);
-		}
-	}
-
-
-	/** The baked red hitsplat for the max-hit line (glyph-safe). */
-	static final class HitsplatIcon extends SizedIcon
-	{
-		HitsplatIcon(int size)
-		{
-			super("hitsplat", size);
-		}
-	}
-
-
 	/** A fixed-width box that centres its delegate - every stat-panel
 	 * line's icon occupies the SAME column width, so the values start on
 	 * one hard left edge (field spec: a strong visual column). */
+	@lombok.AllArgsConstructor
 	static final class FixedWidthIcon implements Icon
 	{
 		static final int WIDTH = 20;
 		static final int HEIGHT = 16;
 		final Icon delegate;
-
-		FixedWidthIcon(Icon delegate)
-		{
-			this.delegate = delegate;
-		}
 
 		public int getIconWidth()
 		{

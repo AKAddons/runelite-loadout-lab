@@ -7,6 +7,8 @@ import com.loadoutlab.data.JsonResources;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Melee combat styles available per weapon category - game facts from the
@@ -30,18 +32,12 @@ import java.util.Map;
 public final class WeaponStyles
 {
 	/** One selectable style: the attack type plus its stance bonuses. */
+	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class MeleeStyle
 	{
 		public final String attackType;
 		public final int attackStance;
 		public final int strengthStance;
-
-		MeleeStyle(String attackType, int attackStance, int strengthStance)
-		{
-			this.attackType = attackType;
-			this.attackStance = attackStance;
-			this.strengthStance = strengthStance;
-		}
 	}
 
 	private static final String RESOURCE = "weapon_styles.json";

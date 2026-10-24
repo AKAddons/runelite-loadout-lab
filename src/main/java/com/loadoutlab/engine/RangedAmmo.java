@@ -100,16 +100,8 @@ public final class RangedAmmo
 
 	private static boolean weaponUsesProjectileAmmo(GearItem weapon)
 	{
-		if (weapon == null)
-		{
-			return false;
-		}
-		int weaponId = weapon.getId();
-		return ARROW_TIER_BY_WEAPON.containsKey(weaponId)
-			|| BOLT_TIER_BY_WEAPON.containsKey(weaponId)
-			|| weaponId == DORGESHUUN_CROSSBOW
-			|| JAVELIN_WEAPONS.contains(weaponId)
-			|| PAIRS.containsKey(weaponId);
+		return usesArrowsOrBolts(weapon)
+			|| weapon != null && (JAVELIN_WEAPONS.contains(weapon.getId()) || PAIRS.containsKey(weapon.getId()));
 	}
 
 	private static boolean projectileMatches(GearItem ammo, GearItem weapon)

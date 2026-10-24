@@ -52,13 +52,8 @@ public final class StashUnits
 					continue;
 				}
 				int tab = line.indexOf('\t');
-				String[] tokens = line.substring(tab + 1).split(",");
-				int[] ids = new int[tokens.length];
-				for (int i = 0; i < tokens.length; i++)
-				{
-					ids[i] = Integer.parseInt(tokens[i]);
-				}
-				units.put(line.substring(0, tab), ids);
+				units.put(line.substring(0, tab),
+					Arrays.stream(line.substring(tab + 1).split(",")).mapToInt(Integer::parseInt).toArray());
 			}
 		}
 		catch (IOException | RuntimeException ex)
@@ -80,16 +75,11 @@ public final class StashUnits
 	}
 
 	/** One chart cell (widget child) as extracted from a tier panel. */
+	@lombok.AllArgsConstructor
 	public static final class Cell
 	{
 		final int type;
 		final String text;
-
-		public Cell(int type, String text)
-		{
-			this.type = type;
-			this.text = text;
-		}
 	}
 
 	/**

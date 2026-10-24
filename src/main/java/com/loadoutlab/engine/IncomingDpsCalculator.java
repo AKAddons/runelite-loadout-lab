@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import com.loadoutlab.data.*;
 import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The other direction: how hard the monster hits YOU in a given set.
@@ -48,11 +47,6 @@ public final class IncomingDpsCalculator
 		/** When blocked: the fraction that still gets THROUGH the prayer
 		 * (0 = fully blocked, 0.5 = half pierces). 1 when not blocked. */
 		public final double prayerFactor;
-
-		StyleThreat(String style, double dps, int maxHit, boolean modeled, boolean blocked, double share)
-		{
-			this(style, dps, maxHit, modeled, blocked, share, blocked ? 0.0 : 1.0);
-		}
 	}
 
 	public static final class Result
@@ -116,32 +110,41 @@ public final class IncomingDpsCalculator
 	 * defense-weighted beam then scores each candidate loadout with
 	 * totalDps() - the same number calculate() reports (asserted in
 	 * IncomingDpsCalculatorTest), without the per-call threat/Result
-	 * allocations. calculate() stays the authoritative display path.
+	 * allocations; calculate() itself is result() on the same machinery.
 	 */
 	public static final class Prepared
 	{
 		private final int defenceLevel;
 		/** Player magic defence level term: floor(70% Magic) + floor(30% Defence) + 8. */
 		private final int magicEffective;
-		/** Per style/attack: KIND_*, npc attack roll, and (v1) max hit. */
+		/** Per style/attack: KIND_*, npc attack roll, (v1) max hit, and
+		 * the speed its rate uses (the sheet's for every sheet style). */
 		private final int[] kinds;
 		private final int[] attackRolls;
 		private final int[] maxHits;
-		/** Sheet: modeled and a protection prayer can block it. Override:
-		 * counted at all (not avoidable, known speed). */
+		private final int[] speeds;
+		/** Priced: it has a rate the card can show. Live: counted in the
+		 * totals. A sheet style is both when modeled at a known speed; an
+		 * override attack is priced at a known speed and live when the
+		 * standard play does not dodge it. */
+		private final boolean[] priced;
 		private final boolean[] live;
 		private final boolean[] prayable;
+		/** The card's name per style/attack, and the prayer answering it. */
+		private final String[] labels;
+		private final String[] prayerOf;
 		// v1 sheet model (override == null): modeled styles share the cadence.
 		private final double share;
-		private final int speedTicks;
 		// Curated override model: per-attack constants.
 		private final boolean overridden;
+		private final String note;
 		private final double[] shares;
 		private final double[] prayerFactors;
-		private final int[] speeds;
-		/** Per attack: index into the distinct prayer list, or -1. */
+		private final boolean[] avoidable;
+		/** Per attack: index into the distinct prayer list (first-occurrence
+		 * order), and that list. */
 		private final int[] prayerIndex;
-		private final int prayerCount;
+		private final String[] prayerNames;
 		/** Revenants deal NO damage through a charged ethereum bracelet -
 		 * the beam's defense scoring must see that, or Tanky/Balanced can
 		 * never choose the bracelet (field report: not recommended). */
@@ -155,51 +158,59 @@ public final class IncomingDpsCalculator
 			this.magicEffective = magicEffectiveLevel(defenceLevel, magicLevel);
 			MonsterOffence off = monster.getOffence();
 			this.overridden = override != null;
-			if (override == null)
+			int speedTicks = off.getSpeedTicks();
+			List<String> styles = off.getStyles();
+			List<BossIncomingOverrides.Attack> attacks = overridden ? override.getAttacks() : null;
+			int n = overridden ? attacks.size() : styles.size();
+			this.kinds = new int[n];
+			this.attackRolls = new int[n];
+			this.maxHits = new int[n];
+			this.speeds = new int[n];
+			this.live = new boolean[n];
+			this.labels = new String[n];
+			this.prayerOf = new String[n];
+			if (!overridden)
 			{
-				List<String> styles = off.getStyles();
-				this.kinds = new int[styles.size()];
-				this.attackRolls = new int[styles.size()];
-				this.maxHits = new int[styles.size()];
-				this.live = new boolean[styles.size()];
-				this.prayable = new boolean[styles.size()];
+				this.priced = live;
+				this.prayable = new boolean[n];
+				// Only modeled attacks share the cadence: an unmodeled style is
+				// named on the card, never a 0-damage slice that dilutes the rest.
 				int modeled = modeledCount(styles, off);
 				this.share = modeled == 0 ? 0 : 1.0 / modeled;
-				this.speedTicks = off.getSpeedTicks();
 				boolean single = singleFamily(styles);
-				for (int i = 0; i < styles.size(); i++)
+				for (int i = 0; i < n; i++)
 				{
 					int kind = kindOf(styles.get(i));
 					kinds[i] = kind;
+					// No listed speed (0 / -1) is no rate at all - never one tick.
 					live[i] = kind >= 0 && speedTicks > 0;
 					prayable[i] = prayable(styles.get(i));
 					attackRolls[i] = attackRollFor(kind, off);
 					maxHits[i] = maxHitFor(kind, off, single);
+					speeds[i] = speedTicks;
+					labels[i] = shown(styles.get(i));
+					prayerOf[i] = protectPrayerFor(styles.get(i));
 				}
+				this.note = null;
 				this.shares = null;
 				this.prayerFactors = null;
-				this.speeds = null;
+				this.avoidable = null;
 				this.prayerIndex = null;
-				this.prayerCount = 0;
+				this.prayerNames = null;
 			}
 			else
 			{
-				List<BossIncomingOverrides.Attack> attacks = override.getAttacks();
-				this.kinds = new int[attacks.size()];
-				this.attackRolls = new int[attacks.size()];
-				this.maxHits = new int[attacks.size()];
-				this.shares = new double[attacks.size()];
-				this.prayerFactors = new double[attacks.size()];
-				this.speeds = new int[attacks.size()];
-				this.prayerIndex = new int[attacks.size()];
-				this.live = new boolean[attacks.size()];
+				this.shares = new double[n];
+				this.prayerFactors = new double[n];
+				this.prayerIndex = new int[n];
+				this.priced = new boolean[n];
+				this.avoidable = new boolean[n];
 				this.prayable = null;
 				this.share = 0;
-				this.speedTicks = off.getSpeedTicks();
-				// Distinct prayers in first-occurrence order - mirrors the
-				// insertion-ordered savedByPrayer map in the full path.
+				this.note = override.getNote();
+				// Distinct prayers in first-occurrence order.
 				List<String> prayers = new ArrayList<>();
-				for (int i = 0; i < attacks.size(); i++)
+				for (int i = 0; i < n; i++)
 				{
 					BossIncomingOverrides.Attack attack = attacks.get(i);
 					String style = attack.getStyle();
@@ -209,11 +220,15 @@ public final class IncomingDpsCalculator
 					maxHits[i] = attack.getMaxHit();
 					shares[i] = attack.getShare();
 					prayerFactors[i] = attack.getPrayerFactor();
-					speeds[i] = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
+					speeds[i] = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : speedTicks;
 					// Avoidable attacks are dodged by the standard play, and an
-					// unknown speed is no rate at all - calculate() counts neither.
-					live[i] = !attack.isAvoidable() && speeds[i] > 0;
+					// unknown speed is no rate at all - the totals count neither.
+					avoidable[i] = attack.isAvoidable();
+					priced[i] = speeds[i] > 0;
+					live[i] = !avoidable[i] && priced[i];
+					labels[i] = displayStyle(style);
 					String prayer = protectPrayerFor(style);
+					prayerOf[i] = prayer;
 					int index = prayers.indexOf(prayer);
 					if (index < 0)
 					{
@@ -222,8 +237,90 @@ public final class IncomingDpsCalculator
 					}
 					prayerIndex[i] = index;
 				}
-				this.prayerCount = prayers.size();
+				this.prayerNames = prayers.toArray(new String[0]);
 			}
+		}
+
+		/** Each `which` attack's dps if it attacked every cycle - the ONE
+		 * rate path, for the beam's totals and the card's rows alike.
+		 * Typeless attacks have no defence roll: they always hit. */
+		private void fillDps(Loadout loadout, double[] dps, boolean[] which)
+		{
+			StatBlock def = loadout.getDefensive();
+			for (int i = 0; i < kinds.length; i++)
+			{
+				if (!which[i])
+				{
+					continue;
+				}
+				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
+					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
+				dps[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
+			}
+		}
+
+		/** v1 uniform model: the nastiest prayable modeled style, or -1 -
+		 * the one the protection prayer blocks. */
+		private int bestBlockable(double[] dps)
+		{
+			int best = -1;
+			double bestDps = -1;
+			for (int i = 0; i < kinds.length; i++)
+			{
+				if (live[i] && prayable[i] && dps[i] > bestDps)
+				{
+					bestDps = dps[i];
+					best = i;
+				}
+			}
+			return best;
+		}
+
+		/**
+		 * Override model: the prayer that SAVES the most (its index in the
+		 * distinct list, -1 when none saves). An attack's saving is dps x
+		 * share x (1 - prayerFactor) - partial pierces (Corp magic, Callisto
+		 * melee) save less than their raw size suggests; prayable=false
+		 * attacks always land, and typeless chip damage is encoded in the
+		 * curated maxHit. Ties go to the prayer whose first positive saving
+		 * came first in the curated attack order (deterministic).
+		 */
+		private int bestPrayer(double[] dps)
+		{
+			double[] saved = new double[prayerNames.length];
+			int[] order = new int[saved.length];
+			int count = 0;
+			for (int i = 0; i < kinds.length; i++)
+			{
+				// An avoidable attack is dodged by the standard play - no saving.
+				double saving = live[i] ? dps[i] * shares[i] * (1 - prayerFactors[i]) : 0;
+				if (saving > 0)
+				{
+					int p = prayerIndex[i];
+					if (saved[p] == 0)
+					{
+						order[count++] = p;
+					}
+					saved[p] += saving;
+				}
+			}
+			int best = -1;
+			double bestSaved = 0;
+			for (int k = 0; k < count; k++)
+			{
+				if (saved[order[k]] > bestSaved)
+				{
+					bestSaved = saved[order[k]];
+					best = order[k];
+				}
+			}
+			return best;
+		}
+
+		/** The fraction of attack i that gets through the picked prayer. */
+		private double through(int i, int prayer)
+		{
+			return prayer >= 0 && prayerIndex[i] == prayer && prayerFactors[i] < 1 ? prayerFactors[i] : 1;
 		}
 
 		/**
@@ -236,77 +333,108 @@ public final class IncomingDpsCalculator
 			{
 				return 0;
 			}
-			StatBlock def = loadout.getDefensive();
+			double[] dps = new double[kinds.length];
+			fillDps(loadout, dps, live);
+			double total = 0;
 			if (!overridden)
 			{
-				// v1 uniform model: pray the nastiest modeled style away.
-				int bestBlockable = -1;
-				double bestBlockableDps = -1;
-				double[] dps = new double[kinds.length];
+				int blocked = bestBlockable(dps);
 				for (int i = 0; i < kinds.length; i++)
 				{
-					if (!live[i])
-					{
-						continue;
-					}
-					dps[i] = accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective)
-						* (maxHits[i] / 2.0) / (speedTicks * 0.6);
-					if (prayable[i] && dps[i] > bestBlockableDps)
-					{
-						bestBlockableDps = dps[i];
-						bestBlockable = i;
-					}
-				}
-				double total = 0;
-				for (int i = 0; i < kinds.length; i++)
-				{
-					if (live[i] && i != bestBlockable)
+					if (live[i] && i != blocked)
 					{
 						total += dps[i] * share;
 					}
 				}
 				return total;
 			}
-			// Override model: block the prayer with the largest saving.
-			double[] dpsPer = new double[kinds.length];
-			double[] saved = new double[prayerCount];
+			int prayer = bestPrayer(dps);
 			for (int i = 0; i < kinds.length; i++)
 			{
-				if (!live[i])
+				if (live[i])
 				{
-					continue;
+					total += dps[i] * shares[i] * through(i, prayer);
 				}
-				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
-					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
-				dpsPer[i] = accuracy * (maxHits[i] / 2.0) / (speeds[i] * 0.6);
-				double saving = dpsPer[i] * shares[i] * (1 - prayerFactors[i]);
-				if (saving > 0)
-				{
-					saved[prayerIndex[i]] += saving;
-				}
-			}
-			int bestPrayer = -1;
-			double bestSaved = 0;
-			for (int p = 0; p < prayerCount; p++)
-			{
-				if (saved[p] > bestSaved)
-				{
-					bestSaved = saved[p];
-					bestPrayer = p;
-				}
-			}
-			double total = 0;
-			for (int i = 0; i < kinds.length; i++)
-			{
-				if (!live[i])
-				{
-					continue;
-				}
-				boolean prayedClass = bestPrayer >= 0
-					&& prayerIndex[i] == bestPrayer && prayerFactors[i] < 1;
-				total += dpsPer[i] * shares[i] * (prayedClass ? prayerFactors[i] : 1);
 			}
 			return total;
+		}
+
+		/** The display answer for this loadout: every threat as the card
+		 * lists it, the prayer, both totals, the coverage and the names the
+		 * number leaves out. The same rates totalDps() scores. */
+		private Result result(Loadout loadout)
+		{
+			if (!overridden && kinds.length == 0)
+			{
+				return new Result(0, 0, null, List.of(), null, NONE, List.of());
+			}
+			double[] dps = new double[kinds.length];
+			fillDps(loadout, dps, priced);
+			List<StyleThreat> threats = new ArrayList<>();
+			List<String> unmodeled = new ArrayList<>();
+			String prayer = null;
+			double total = 0;
+			double unprayed = 0;
+			if (!overridden)
+			{
+				// Uniform rotation: each modeled style owns 1/m of the cadence;
+				// the nastiest prayable one is prayed away.
+				int blocked = bestBlockable(dps);
+				prayer = blocked < 0 ? null : prayerOf[blocked];
+				int modeled = 0;
+				for (int i = 0; i < kinds.length; i++)
+				{
+					if (kinds[i] == KIND_NONE)
+					{
+						continue;
+					}
+					if (!live[i])
+					{
+						unmodeled.add(labels[i]);
+						threats.add(new StyleThreat(labels[i], 0, 0, false, false, 0, 1));
+						continue;
+					}
+					modeled++;
+					boolean isBlocked = i == blocked;
+					threats.add(new StyleThreat(labels[i], dps[i], maxHits[i], true, isBlocked, share,
+						isBlocked ? 0 : 1));
+					unprayed += dps[i] * share;
+					if (!isBlocked)
+					{
+						total += dps[i] * share;
+					}
+				}
+				// A monster whose styles are all "None" does not attack: modeled, 0.
+				String coverage = !unmodeled.isEmpty() ? (modeled == 0 ? NONE : PARTIAL) : FULL;
+				return new Result(total, unprayed, prayer, threats, null, coverage, unmodeled);
+			}
+			// D-2 path: the curated attack list replaces the uniform model;
+			// the protection prayer blocks the class that saves the most.
+			int best = bestPrayer(dps);
+			prayer = best < 0 ? null : prayerNames[best];
+			for (int i = 0; i < kinds.length; i++)
+			{
+				if (!priced[i])
+				{
+					unmodeled.add(labels[i]);
+					threats.add(new StyleThreat(labels[i], 0, maxHits[i], false, false, 0, 1));
+					continue;
+				}
+				if (avoidable[i])
+				{
+					// In the threat list for the tooltip (what it WOULD hit),
+					// out of both totals - the standard play dodges it.
+					threats.add(new StyleThreat(labels[i] + " (avoidable - assumed dodged)",
+						dps[i], maxHits[i], true, false, shares[i], 1));
+					continue;
+				}
+				double through = through(i, best);
+				unprayed += dps[i] * shares[i];
+				total += dps[i] * shares[i] * through;
+				threats.add(new StyleThreat(labels[i], dps[i], maxHits[i], true, through < 1, shares[i], through));
+			}
+			return new Result(total, unprayed, prayer, threats, note,
+				unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
 		}
 	}
 
@@ -379,39 +507,20 @@ public final class IncomingDpsCalculator
 
 	private static int attackRollFor(int kind, MonsterOffence off)
 	{
-		switch (kind)
-		{
-			case KIND_STAB:
-			case KIND_SLASH:
-			case KIND_CRUSH:
-			case KIND_MELEE_GENERIC:
-				return npcRoll(off.getAttackLevel(), off.getAttackBonus());
-			case KIND_RANGED:
-				return npcRoll(off.getRangedLevel(), off.getRangedBonus());
-			case KIND_MAGIC:
-				return npcRoll(off.getMagicLevel(), off.getMagicBonus());
-			default:
-				return 0;
-		}
+		MaxHits.Family family = familyOf(kind);
+		return family == MaxHits.Family.MELEE ? npcRoll(off.getAttackLevel(), off.getAttackBonus())
+			: family == MaxHits.Family.RANGED ? npcRoll(off.getRangedLevel(), off.getRangedBonus())
+			: family == MaxHits.Family.MAGIC ? npcRoll(off.getMagicLevel(), off.getMagicBonus()) : 0;
 	}
+
+	/** The listed-max family of each modeled KIND_* (indexed by kind). */
+	private static final MaxHits.Family[] FAMILY = {MaxHits.Family.MELEE, MaxHits.Family.MELEE,
+		MaxHits.Family.MELEE, MaxHits.Family.MELEE, MaxHits.Family.RANGED, MaxHits.Family.MAGIC};
 
 	/** The listed-max family of a modeled KIND_*, or null. */
 	private static MaxHits.Family familyOf(int kind)
 	{
-		switch (kind)
-		{
-			case KIND_STAB:
-			case KIND_SLASH:
-			case KIND_CRUSH:
-			case KIND_MELEE_GENERIC:
-				return MaxHits.Family.MELEE;
-			case KIND_RANGED:
-				return MaxHits.Family.RANGED;
-			case KIND_MAGIC:
-				return MaxHits.Family.MAGIC;
-			default:
-				return null;
-		}
+		return kind >= 0 && kind < FAMILY.length ? FAMILY[kind] : null;
 	}
 
 	/** True when every attacking style is one family - only then can an
@@ -472,20 +581,9 @@ public final class IncomingDpsCalculator
 				return max;
 			}
 		}
-		switch (kind)
-		{
-			case KIND_STAB:
-			case KIND_SLASH:
-			case KIND_CRUSH:
-			case KIND_MELEE_GENERIC:
-				return npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus());
-			case KIND_RANGED:
-				return npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus());
-			case KIND_MAGIC:
-				return npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus());
-			default:
-				return 0;
-		}
+		return family == MaxHits.Family.MELEE ? npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus())
+			: family == MaxHits.Family.RANGED ? npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus())
+			: family == MaxHits.Family.MAGIC ? npcMaxHit(off.getMagicLevel(), off.getMagicStrengthBonus()) : 0;
 	}
 
 	/** Player magic defence level: floor(70% Magic) + floor(30% Defence) + 8
@@ -539,12 +637,8 @@ public final class IncomingDpsCalculator
 			return new Result(0, 0, null, List.of(),
 				"Bracelet of ethereum blocks all revenant damage", FULL, List.of());
 		}
-		BossIncomingOverrides.BossOverride override = BossIncomingOverrides.overridesFor(monster);
-		if (override != null)
-		{
-			return calculateWithOverride(monster, override, loadout, defenceLevel, magicLevel);
-		}
-		return calculateFromStatSheet(monster, loadout, defenceLevel, magicLevel);
+		return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel)
+			.result(loadout);
 	}
 
 	private static boolean wearsChargedEthereum(Loadout loadout)
@@ -555,182 +649,10 @@ public final class IncomingDpsCalculator
 			&& "charged".equals(hands.getVersionLower());
 	}
 
-	private static Result calculateFromStatSheet(MonsterStats monster, Loadout loadout,
-		int defenceLevel, int magicLevel)
-	{
-
-		MonsterOffence off = monster.getOffence();
-		List<String> styles = off.getStyles();
-		if (styles.isEmpty())
-		{
-			return new Result(0, 0, null, List.of(), null, NONE, List.of());
-		}
-
-		StatBlock def = loadout.getDefensive();
-		List<StyleThreat> threats = new ArrayList<>();
-		List<String> unmodeled = new ArrayList<>();
-		int bestBlockable = -1;
-		double bestBlockableDps = -1;
-		// Only modeled attacks share the cadence: an unmodeled style is
-		// named on the card, never a 0-damage slice that dilutes the rest.
-		int modeled = modeledCount(styles, off);
-		double share = modeled == 0 ? 0 : 1.0 / modeled;
-		boolean single = singleFamily(styles);
-		for (String style : styles)
-		{
-			int kind = kindOf(style);
-			if (kind == KIND_NONE)
-			{
-				continue;
-			}
-			// No listed speed (0 / -1) is no rate at all - never one tick.
-			if (kind == KIND_UNMODELED || off.getSpeedTicks() <= 0)
-			{
-				unmodeled.add(shown(style));
-				threats.add(new StyleThreat(shown(style), 0, 0, false, false, 0));
-				continue;
-			}
-			StyleThreat threat = threatFor(style, kind, off, def, defenceLevel, magicLevel, share, single);
-			if (prayable(style) && threat.dps > bestBlockableDps)
-			{
-				bestBlockableDps = threat.dps;
-				bestBlockable = threats.size();
-			}
-			threats.add(threat);
-		}
-
-		String prayer = null;
-		if (bestBlockable >= 0)
-		{
-			StyleThreat blocked = threats.get(bestBlockable);
-			threats.set(bestBlockable, new StyleThreat(
-				blocked.style, blocked.dps, blocked.maxHit, true, true, blocked.share));
-			prayer = protectPrayerFor(blocked.style);
-		}
-
-		// Uniform rotation: each modeled style owns 1/m of the cadence.
-		double total = 0;
-		double unprayed = 0;
-		for (StyleThreat threat : threats)
-		{
-			if (!threat.modeled)
-			{
-				continue;
-			}
-			unprayed += threat.dps * threat.share;
-			if (!threat.blocked)
-			{
-				total += threat.dps * threat.share;
-			}
-		}
-		// A monster whose styles are all "None" does not attack: modeled, 0.
-		String coverage = !unmodeled.isEmpty() ? (modeled == 0 ? NONE : PARTIAL) : FULL;
-		return new Result(total, unprayed, prayer, threats, null, coverage, unmodeled);
-	}
-
-	/**
-	 * D-2 path: the curated attack list replaces the uniform model. Prayer
-	 * blocks the prayable attack with the largest CONTRIBUTION (dps x share);
-	 * prayable=false attacks always land - partial-block and typeless chip
-	 * damage is encoded in the curated maxHit.
-	 */
-	private static Result calculateWithOverride(MonsterStats monster,
-		BossIncomingOverrides.BossOverride override, Loadout loadout,
-		int defenceLevel, int magicLevel)
-	{
-		MonsterOffence off = monster.getOffence();
-		StatBlock def = loadout.getDefensive();
-		List<BossIncomingOverrides.Attack> attacks = override.getAttacks();
-		double[] dpsPer = new double[attacks.size()];
-		// Which protection prayer SAVES the most? An attack's saving is
-		// dps x share x (1 - prayerFactor) - partial pierces (Corp magic,
-		// Callisto melee) save less than their raw size suggests.
-		// Insertion-ordered so tied savings resolve deterministically
-		// (attack order in the curated data wins).
-		Map<String, Double> savedByPrayer = new LinkedHashMap<>();
-		for (int i = 0; i < attacks.size(); i++)
-		{
-			BossIncomingOverrides.Attack attack = attacks.get(i);
-			String style = attack.getStyle();
-			int kind = kindOf(style);
-			// Typeless attacks have no defence roll: they always hit.
-			double accuracy = "typeless".equals(style) ? 1.0
-				: accuracyOfKind(kind, attackRollFor(kind, off), def,
-					defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
-			int speed = attack.getSpeedTicks() > 0 ? attack.getSpeedTicks() : off.getSpeedTicks();
-			dpsPer[i] = speed > 0 ? accuracy * (attack.getMaxHit() / 2.0) / (speed * 0.6) : 0;
-			if (attack.isAvoidable() || speed <= 0)
-			{
-				continue; // dodged by the standard play - no prayer saving
-			}
-			double saving = dpsPer[i] * attack.getShare() * (1 - attack.getPrayerFactor());
-			if (saving > 0)
-			{
-				savedByPrayer.merge(protectPrayerFor(style), saving, Double::sum);
-			}
-		}
-		String prayer = null;
-		double bestSaved = 0;
-		for (Map.Entry<String, Double> entry : savedByPrayer.entrySet())
-		{
-			if (entry.getValue() > bestSaved)
-			{
-				bestSaved = entry.getValue();
-				prayer = entry.getKey();
-			}
-		}
-
-		List<StyleThreat> threats = new ArrayList<>();
-		List<String> unmodeled = new ArrayList<>();
-		double total = 0;
-		double unprayed = 0;
-		for (int i = 0; i < attacks.size(); i++)
-		{
-			BossIncomingOverrides.Attack attack = attacks.get(i);
-			if (attack.getSpeedTicks() <= 0 && off.getSpeedTicks() <= 0)
-			{
-				unmodeled.add(displayStyle(attack.getStyle()));
-				threats.add(new StyleThreat(displayStyle(attack.getStyle()), 0, attack.getMaxHit(),
-					false, false, 0));
-				continue;
-			}
-			if (attack.isAvoidable())
-			{
-				// In the threat list for the tooltip (what it WOULD hit),
-				// out of both totals - the standard play dodges it.
-				threats.add(new StyleThreat(
-					displayStyle(attack.getStyle()) + " (avoidable - assumed dodged)",
-					dpsPer[i], attack.getMaxHit(), true, false, attack.getShare(), 1));
-				continue;
-			}
-			boolean prayedClass = prayer != null
-				&& prayer.equals(protectPrayerFor(attack.getStyle()))
-				&& attack.getPrayerFactor() < 1;
-			double through = prayedClass ? attack.getPrayerFactor() : 1;
-			unprayed += dpsPer[i] * attack.getShare();
-			total += dpsPer[i] * attack.getShare() * through;
-			threats.add(new StyleThreat(displayStyle(attack.getStyle()), dpsPer[i],
-				attack.getMaxHit(), true, prayedClass, attack.getShare(),
-				prayedClass ? attack.getPrayerFactor() : 1));
-		}
-		return new Result(total, unprayed, prayer, threats, override.getNote(),
-			unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
-	}
-
 	private static String displayStyle(String style)
 	{
 		return style.isEmpty() ? style
 			: Character.toUpperCase(style.charAt(0)) + style.substring(1);
-	}
-
-	private static StyleThreat threatFor(String rawStyle, int kind, MonsterOffence off,
-		StatBlock def, int defenceLevel, int magicLevel, double share, boolean singleFamily)
-	{
-		int maxHit = maxHitFor(kind, off, singleFamily);
-		double accuracy = accuracyOfKind(kind, attackRollFor(kind, off), def,
-			defenceLevel, magicEffectiveLevel(defenceLevel, magicLevel));
-		double dps = accuracy * (maxHit / 2.0) / (off.getSpeedTicks() * 0.6);
-		return new StyleThreat(shown(rawStyle), dps, maxHit, true, false, share);
 	}
 
 	/** The prayer follows the attack's DELIVERY, never its accuracy roll

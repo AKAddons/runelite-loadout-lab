@@ -1,0 +1,38 @@
+{
+	"_comment": "GearItem's name vocabulary, moved out of the class 2026-10-23 (hub token cap). poweredStaff and meleeDemonbane match the lower-cased item NAME: a powered staff (built-in spell, no autocast - DpsCalculator.isPoweredStaff delegates to GearItem) is also any 'powered staff' category; the demonbane weapon class (wiki) is the melee list plus the scorching bow and purging staff by prefix, in code; holy water is not gear. rangedWeapon / magicWeapon / notMelee match the lower-cased weapon CATEGORY for isWeaponFor: ranged when the category carries one of those words or the item has a ranged attack bonus, magic likewise with a magic bonus, melee when the category carries none of notMelee ('crossbow' needs no entry: any category holding it holds 'bow'; salamanders count for both ranged and melee).",
+	"poweredStaff": [
+		"trident",
+		"thammaron",
+		"accursed sceptre",
+		"sanguinesti",
+		"tumeken",
+		"warped sceptre",
+		"eye of ayak",
+		"bone staff"
+	],
+	"meleeDemonbane": [
+		"silverlight",
+		"darklight",
+		"arclight",
+		"emberlight",
+		"bone claws",
+		"burning claws"
+	],
+	"rangedWeapon": [
+		"bow",
+		"thrown",
+		"chinchompa",
+		"salamander"
+	],
+	"magicWeapon": [
+		"staff",
+		"wand"
+	],
+	"notMelee": [
+		"bow",
+		"thrown",
+		"chinchompa",
+		"staff",
+		"wand"
+	]
+}

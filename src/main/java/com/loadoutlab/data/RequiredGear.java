@@ -6,6 +6,9 @@ import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.loadoutlab.data.JsonResources.*;
 
 /**
  * Mandatory protective slayer gear per monster (grZ field request
@@ -22,27 +25,19 @@ public final class RequiredGear
 {
 	/** One monster family's requirement: the slot, the acceptable item
 	 * specs (corpus names, optionally name#Version), and the why. */
+	@lombok.RequiredArgsConstructor
 	public static final class Rule
 	{
 		public final GearSlot slot;
 		public final String note;
+		private final List<String> itemSpecs;
 		/** A waiver key that lifts the rule (KOUREND_ELITE), or null. */
 		public final String waivedBy;
 		/** A convention, not a must (the Barrows hilt, the Shayzien set):
 		 * enforced from what you own, never forced unowned. */
 		public final boolean soft;
-		private final List<String> itemSpecs;
 		/** Resolved once per corpus - the corpus never changes post-load. */
 		private volatile Set<Integer> resolved;
-
-		Rule(GearSlot slot, String note, List<String> itemSpecs, String waivedBy, boolean soft)
-		{
-			this.slot = slot;
-			this.note = note;
-			this.itemSpecs = itemSpecs;
-			this.waivedBy = waivedBy;
-			this.soft = soft;
-		}
 
 		/** The acceptable item ids, resolved against the loaded corpus
 		 * (standard-gear rows only; variants fold via the candidate
@@ -89,18 +84,12 @@ public final class RequiredGear
 	/** A carried slayer item the kill needs - the finishing blow (rock
 	 * hammer, fungicide, salt, ice cooler): acceptable items best first,
 	 * each with its ids (not gear, so ids rather than corpus names). */
+	@lombok.RequiredArgsConstructor
 	public static final class Carried
 	{
 		public final String note;
 		final List<String> names;
 		final List<int[]> ids;
-
-		Carried(String note, List<String> names, List<int[]> ids)
-		{
-			this.note = note;
-			this.names = names;
-			this.ids = ids;
-		}
 	}
 
 	private static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
@@ -109,19 +98,18 @@ public final class RequiredGear
 	{
 		// Fail LOUD (the name_rules pattern): a silently empty table would
 		// drop every requirement with no visible error.
-		JsonObject root = JsonResources.objectOrThrow(
-			"required_gear.json");
+		JsonObject root = objectOrThrow("required_gear.json");
 		for (JsonElement e : root.getAsJsonArray("rules"))
 		{
 			JsonObject row = e.getAsJsonObject();
 			List<String> items = new ArrayList<>();
-			JsonResources.strings(row, "items", items);
+			strings(row, "items", items);
 			Rule rule = new Rule(
-				GearSlot.valueOf(row.get("slot").getAsString()),
-				row.get("note").getAsString(),
+				GearSlot.valueOf(string(row, "slot")),
+				string(row, "note"),
 				Collections.unmodifiableList(items),
 				row.has("waivedBy") ? row.get("waivedBy").getAsString() : null,
-				row.has("soft") && row.get("soft").getAsBoolean());
+				bool(row, "soft", false));
 			for (JsonElement m : row.getAsJsonArray("monsters"))
 			{
 				BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
@@ -141,16 +129,10 @@ public final class RequiredGear
 				for (JsonElement i : row.getAsJsonArray("items"))
 				{
 					JsonObject item = i.getAsJsonObject();
-					names.add(item.get("name").getAsString());
-					com.google.gson.JsonArray idArray = item.getAsJsonArray("ids");
-					int[] these = new int[idArray.size()];
-					for (int k = 0; k < these.length; k++)
-					{
-						these[k] = idArray.get(k).getAsInt();
-					}
-					ids.add(these);
+					names.add(string(item, "name"));
+					ids.add(ints(item.getAsJsonArray("ids")));
 				}
-				Carried carried = new Carried(row.get("note").getAsString(), names, ids);
+				Carried carried = new Carried(string(row, "note"), names, ids);
 				for (JsonElement m : row.getAsJsonArray("monsters"))
 				{
 					CARRIED_BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
@@ -175,15 +157,8 @@ public final class RequiredGear
 	/** The rules still standing once the player's waivers lift theirs. */
 	public static List<Rule> rulesFor(MonsterStats monster, Set<String> waivers)
 	{
-		List<Rule> out = new ArrayList<>();
-		for (Rule rule : rulesFor(monster))
-		{
-			if (rule.waivedBy == null || waivers == null || !waivers.contains(rule.waivedBy))
-			{
-				out.add(rule);
-			}
-		}
-		return out;
+		return rulesFor(monster).stream().filter(rule -> rule.waivedBy == null || waivers == null
+			|| !waivers.contains(rule.waivedBy)).collect(Collectors.toList());
 	}
 
 	/** slot -> acceptable ids, empty when nothing is required. */
@@ -232,13 +207,8 @@ public final class RequiredGear
 			}
 			boolean owned = pick >= 0;
 			int at = owned ? pick : 0;
-			java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
-			row.put("id", rule.ids.get(at)[0]);
-			row.put("name", rule.names.get(at));
-			row.put("qty", 1);
-			row.put("why", rule.note + (owned ? "" : " - not owned: get one before the trip"));
-			row.put("owned", owned);
-			out.add(row);
+			out.add(map("id", rule.ids.get(at)[0], "name", rule.names.get(at), "qty", 1,
+				"why", rule.note + (owned ? "" : " - not owned: get one before the trip"), "owned", owned));
 		}
 		return out;
 	}

@@ -188,14 +188,6 @@ class CommandEngineTest
 			{
 			}
 
-			public void pin(int monsterId, String slot, int itemId)
-			{
-			}
-
-			public void unpin(int monsterId, String slot)
-			{
-			}
-
 			public void showInBank(java.util.Set<Integer> itemIds)
 			{
 			}

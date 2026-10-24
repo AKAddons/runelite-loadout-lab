@@ -197,6 +197,7 @@ public interface LoadoutLabConfig extends Config
 	/** The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
 	 * Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
 	 * default search option"). Names match OptimizerService.OptimizeMode. */
+	@lombok.RequiredArgsConstructor
 	enum OptimizeModeDefault
 	{
 		MAX_DPS("Max DPS"),
@@ -204,11 +205,6 @@ public interface LoadoutLabConfig extends Config
 		TANKY("Tanky (beta)");
 
 		private final String label;
-
-		OptimizeModeDefault(String label)
-		{
-			this.label = label;
-		}
 
 		@Override
 		public String toString()

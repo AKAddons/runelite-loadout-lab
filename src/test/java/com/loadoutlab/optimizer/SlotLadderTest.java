@@ -278,7 +278,7 @@ class SlotLadderTest
 	{
 		GearItem torva = data.getGear(id("torva platebody"));
 		OptimizerService.Ladder ladder = new OptimizerService.Ladder(OptimizerService.OptimizeMode.BALANCED,
-			8.0, 2.0, List.of(new OptimizerService.Rung(torva, 8.5, 1.8, false)), List.of());
+			8.0, 2.0, List.of(new OptimizerService.Rung(torva, 8.5, 1.8, false, null)), List.of());
 		Map<String, Object> node = com.loadoutlab.model.RenderModel.ladderNode(ladder);
 		assertEquals("8.00 DPS", node.get("base"));
 		assertEquals("2.00 taken/s", node.get("base2"));

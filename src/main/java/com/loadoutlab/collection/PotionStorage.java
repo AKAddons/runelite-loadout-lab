@@ -43,14 +43,14 @@ public final class PotionStorage
 	public static Map<Integer, Integer> owned(IntUnaryOperator dosesOf)
 	{
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (Map.Entry<Integer, Integer> e : BY_VARBIT.entrySet())
+		BY_VARBIT.forEach((varbit, item) ->
 		{
-			int doses = dosesOf.applyAsInt(e.getKey());
+			int doses = dosesOf.applyAsInt(varbit);
 			if (doses > 0)
 			{
-				owned.merge(e.getValue(), (doses + 3) / 4, Integer::sum);
+				owned.merge(item, (doses + 3) / 4, Integer::sum);
 			}
-		}
+		});
 		return owned;
 	}
 }

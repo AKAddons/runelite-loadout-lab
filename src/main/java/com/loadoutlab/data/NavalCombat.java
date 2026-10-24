@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.loadoutlab.data.JsonResources.*;
+
 /**
  * Ship-combat data (see naval_combat.json): the seven cannon tiers, the
  * eight cannonball tiers, and the curated list of ship-eligible monsters.
@@ -20,6 +22,7 @@ public final class NavalCombat
 {
 	/** One cannon tier. Cannons are FACILITIES, not items; itemId is the
 	 * skill-guide item that carries the illustration (32199..32205). */
+	@lombok.AllArgsConstructor
 	public static final class Cannon
 	{
 		public final String tier;
@@ -29,35 +32,16 @@ public final class NavalCombat
 		public final int heavyAccuracy;
 		public final int strength;
 		public final int privateering;
-
-		Cannon(String tier, int itemId, int sailing, int ranged,
-			int heavyAccuracy, int strength, int privateering)
-		{
-			this.tier = tier;
-			this.itemId = itemId;
-			this.sailing = sailing;
-			this.ranged = ranged;
-			this.heavyAccuracy = heavyAccuracy;
-			this.strength = strength;
-			this.privateering = privateering;
-		}
 	}
 
 	/** One cannonball tier. Steel is the classic Cannonball (item 2). */
+	@lombok.AllArgsConstructor
 	public static final class Ball
 	{
 		public final String tier;
 		public final int itemId;
 		public final int accuracy;
 		public final int strength;
-
-		Ball(String tier, int itemId, int accuracy, int strength)
-		{
-			this.tier = tier;
-			this.itemId = itemId;
-			this.accuracy = accuracy;
-			this.strength = strength;
-		}
 	}
 
 	private static final Map<String, Cannon> CANNONS = new LinkedHashMap<>();
@@ -65,54 +49,43 @@ public final class NavalCombat
 	private static final List<String> BALL_ORDER = new ArrayList<>();
 	private static final Set<String> NAVAL = new HashSet<>();
 	private static final List<String> KEELS = new ArrayList<>();
+	/** Pre-0.5.0 builds named the keel columns after the hull woods; a
+	 * character's persisted ship.shipKeel may still say so. Same column,
+	 * right name - nobody's saved keel resets. */
+	private static final List<String> LEGACY_WOOD_KEELS = new ArrayList<>();
 	private static final Map<String, int[]> KEEL_MAX_HITS = new LinkedHashMap<>();
 	private static final boolean CREW_FORMULA_STALE;
 	public static final int ATTACK_TICKS;
 
 	static
 	{
-		JsonObject root = JsonResources.object("naval_combat.json");
+		JsonObject root = object("naval_combat.json");
 		ATTACK_TICKS = root.get("attackTicks").getAsInt();
 		CREW_FORMULA_STALE = root.get("crewFormulaStale").getAsBoolean();
 		for (JsonElement e : root.getAsJsonArray("cannons"))
 		{
 			JsonObject c = e.getAsJsonObject();
-			CANNONS.put(c.get("tier").getAsString(), new Cannon(
-				c.get("tier").getAsString(), c.get("itemId").getAsInt(),
-				c.get("sailing").getAsInt(), c.get("ranged").getAsInt(),
-				c.get("heavyAccuracy").getAsInt(), c.get("strength").getAsInt(),
-				c.get("privateering").getAsInt()));
+			CANNONS.put(string(c, "tier"), new Cannon(string(c, "tier"), integer(c, "itemId", 0),
+				integer(c, "sailing", 0), integer(c, "ranged", 0), integer(c, "heavyAccuracy", 0),
+				integer(c, "strength", 0), integer(c, "privateering", 0)));
 		}
 		for (JsonElement e : root.getAsJsonArray("cannonballs"))
 		{
 			JsonObject b = e.getAsJsonObject();
-			BALLS.put(b.get("tier").getAsString(), new Ball(
-				b.get("tier").getAsString(), b.get("itemId").getAsInt(),
-				b.get("accuracy").getAsInt(), b.get("strength").getAsInt()));
+			BALLS.put(string(b, "tier"), new Ball(string(b, "tier"), integer(b, "itemId", 0),
+				integer(b, "accuracy", 0), integer(b, "strength", 0)));
 		}
-		JsonArray order = root.getAsJsonArray("ballTierOrder");
-		for (JsonElement e : order)
-		{
-			BALL_ORDER.add(e.getAsString());
-		}
+		strings(root, "ballTierOrder", BALL_ORDER);
 		for (JsonElement e : root.getAsJsonArray("navalMonsters"))
 		{
 			NAVAL.add(Names.lower(e.getAsString()));
 		}
-		for (JsonElement e : root.getAsJsonArray("keels"))
-		{
-			KEELS.add(e.getAsString());
-		}
+		strings(root, "keels", KEELS);
+		strings(root, "legacyWoodKeels", LEGACY_WOOD_KEELS);
 		for (Map.Entry<String, JsonElement> row
 			: root.getAsJsonObject("keelMaxHits").entrySet())
 		{
-			JsonArray hits = row.getValue().getAsJsonArray();
-			int[] out = new int[hits.size()];
-			for (int i = 0; i < out.length; i++)
-			{
-				out[i] = hits.get(i).getAsInt();
-			}
-			KEEL_MAX_HITS.put(Names.lower(row.getKey()), out);
+			KEEL_MAX_HITS.put(Names.lower(row.getKey()), ints(row.getValue().getAsJsonArray()));
 		}
 	}
 
@@ -188,12 +161,6 @@ public final class NavalCombat
 		return Collections.unmodifiableList(KEELS);
 	}
 
-	/** Pre-0.5.0 builds named the keel columns after the hull woods; a
-	 * character's persisted ship.shipKeel may still say so. Same column,
-	 * right name - nobody's saved keel resets. */
-	private static final List<String> LEGACY_WOOD_KEELS = List.of(
-		"regular", "oak", "teak", "mahogany", "camphor", "ironwood", "rosewood", "dragon");
-
 	public static String normalizeKeel(String keel)
 	{
 		int i = keel == null ? -1 : LEGACY_WOOD_KEELS.indexOf(Names.lower(keel));
@@ -211,7 +178,7 @@ public final class NavalCombat
 		return row == null || i < 0 || i >= row.length ? -1 : row[i];
 	}
 
-		/** Crew-fired numbers are estimates while the wiki flags the crewmate
+	/** Crew-fired numbers are estimates while the wiki flags the crewmate
 	 * formula out-of-date; the UI cites this on crew tooltips. */
 	public static boolean crewFormulaStale()
 	{

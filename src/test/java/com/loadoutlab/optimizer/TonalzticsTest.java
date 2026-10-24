@@ -121,7 +121,7 @@ class TonalzticsTest
 		try
 		{
 			double added = service.specDpsAdded(new DpsCalculator(), division,
-				specBase, expected, request, main, zulrahLike, false);
+				specBase, expected, request, main, false);
 			assertTrue(added > 0,
 				"draining 75 defence off a 300/300 tank must add dps: " + added);
 		}

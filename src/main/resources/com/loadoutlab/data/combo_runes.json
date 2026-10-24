@@ -1,5 +1,14 @@
 {
-	"_comment": "Combination runes: [name, element a, element b, item id].",
+	"_comment": "Combination runes: [name, element a, element b, item id]. staves: the combo staves and the Kodai wand as [item-name fragment, element covered...] - SpellRunes.covers takes the FIRST fragment a worn weapon or shield name carries (the order below is the old else-if chain's), then falls back to the single-element staff/tome rule in code.",
+	"staves": [
+		["smoke", "air", "fire"],
+		["mist", "air", "water"],
+		["dust", "air", "earth"],
+		["mud", "water", "earth"],
+		["lava", "earth", "fire"],
+		["steam", "water", "fire"],
+		["kodai", "water"]
+	],
 	"combos": [
 		[
 			"smoke",

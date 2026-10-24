@@ -93,21 +93,6 @@ class MonsterProfileStoreTest
 	}
 
 	@Test
-	@DisplayName("Unpin clears the slot in every scope - a style pin cannot outlive it")
-	void unpinEverywhere()
-	{
-		store.pin(415, ALL, GearSlot.WEAPON, 4151);
-		store.pin(415, "MELEE", GearSlot.WEAPON, 12006);
-		store.pin(415, "RANGED", GearSlot.WEAPON, 12006);
-		store.pin(415, ALL, GearSlot.HEAD, 10828);
-		store.unpinEverywhere(415, GearSlot.WEAPON);
-		assertNull(store.pinsFor(415, "MELEE").get(GearSlot.WEAPON));
-		assertNull(store.pinsFor(415, "RANGED").get(GearSlot.WEAPON));
-		assertEquals(Integer.valueOf(10828), store.pinsFor(415, "MELEE").get(GearSlot.HEAD), "other slots stay");
-		assertNull(freshStore().pinsFor(415, "MELEE").get(GearSlot.WEAPON), "and it persisted");
-	}
-
-	@Test
 	@DisplayName("filter items merge all-sets with the style scope")
 	void filterItemsMerge()
 	{
@@ -318,7 +303,7 @@ class MonsterProfileStoreTest
 		assertTrue(store.skipDegradable(7, true), "unset follows the panel default");
 		store.setSkipDegradable(7, true);
 		assertTrue(store.exclusionsFor(7, "MELEE").containsAll(Set.of(4716, 12006)));
-		assertTrue(store.exclusionsFor(7, MonsterProfileStore.ALL_SETS).contains(4716));
+		assertTrue(store.exclusionsFor(7, MonsterProfileStore.ALL).contains(4716));
 		assertTrue(store.allExclusions(7).isEmpty(), "the manage menu lists only hand-picked exclusions");
 		assertTrue(store.exclusionsFor(8, "MELEE").isEmpty(), "other mobs are untouched");
 		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
@@ -335,7 +320,7 @@ class MonsterProfileStoreTest
 	{
 		Set<Integer> ids = new java.util.LinkedHashSet<>();
 		Map<String, Map<Integer, String>> all = store.allFilterItems(monsterId);
-		for (String scope : new String[]{MonsterProfileStore.ALL_SETS, style})
+		for (String scope : new String[]{MonsterProfileStore.ALL, style})
 		{
 			if (all.get(scope) != null)
 			{

@@ -14,5 +14,23 @@
 		"upgradeBudgetGp": "Upgrade budget",
 		"maxSwaps": "Inventory",
 		"toaInvocation": "Invocation"
+	},
+	"_inverse": "The per-mob list commands: each one's undo is the command that puts it back.",
+	"inverse": {
+		"exclude-for-mob": "remove-mob-exclusion",
+		"remove-mob-exclusion": "exclude-for-mob",
+		"sim-for-mob": "remove-mob-sim",
+		"remove-mob-sim": "sim-for-mob",
+		"add-mob-filter": "remove-mob-filter",
+		"remove-mob-filter": "add-mob-filter"
+	},
+	"_verbs": "The verb each per-mob list command's undo label opens with.",
+	"verbs": {
+		"exclude-for-mob": "Exclude ",
+		"remove-mob-exclusion": "Allow ",
+		"sim-for-mob": "Sim ",
+		"remove-mob-sim": "Stop simming ",
+		"add-mob-filter": "Filter ",
+		"remove-mob-filter": "Unfilter "
 	}
 }

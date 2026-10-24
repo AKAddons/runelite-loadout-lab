@@ -4,6 +4,7 @@ import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,8 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.LongFunction;
+import java.util.function.Supplier;
 
 /**
  * Runs BiS searches off the game threads and caches results.
@@ -37,13 +40,6 @@ public class OptimizerService
 	/** Per-STYLE entries (a monster query stores three). */
 	private static final int CACHE_MAX = 192;
 
-	/** Roster optimize-cache traffic, cumulative - the per-compute debug
-	 * line logs the deltas so a field log shows warm vs cold plainly. */
-	private final AtomicLong optimizeHits =
-		new AtomicLong();
-	private final AtomicLong optimizeMisses =
-		new AtomicLong();
-
 	/** Which point of the offence/defence frontier to show - the dev-mode
 	 * prototype of ISS-01M5G5CZC9SK46499FACRSJ8ZT. Andrew 2026-10-21:
 	 * "balance = maximizing the DTPS/DPS ratio in an optimized way, tanky =
@@ -62,24 +58,18 @@ public class OptimizerService
 	/** What a defensive mode did to the shown set: the DPS it gave up and
 	 * the damage taken it cut, whole percents vs the max-DPS set - or, when
 	 * it kept that set, why (reason non-null). */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class ModeTrade
 	{
 		public final OptimizeMode mode;
 		public final int dpsLossPct;
 		public final int dmgCutPct;
 		public final String reason;
-
-		ModeTrade(OptimizeMode mode, int dpsLossPct, int dmgCutPct, String reason)
-		{
-			this.mode = mode;
-			this.dpsLossPct = dpsLossPct;
-			this.dmgCutPct = dmgCutPct;
-			this.reason = reason;
-		}
 	}
 
 	/** One step on a slot ladder: the item, the set's DPS and damage taken
 	 * with it swapped in, and whether you own it. */
+	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Rung
 	{
 		public final GearItem item;
@@ -92,26 +82,13 @@ public class OptimizerService
 		/** The shield a one-handed weapon step brings when it changes the
 		 * worn one (weapon + offhand vs a two-hander, ISS-01M5JFG00G1BS82X9X2QNZZC7S). */
 		public GearItem offhand;
-
-		Rung(GearItem item, double dps, double dtps, boolean owned)
-		{
-			this(item, dps, dtps, owned, null);
-		}
-
-		Rung(GearItem item, double dps, double dtps, boolean owned, GearItem with)
-		{
-			this.item = item;
-			this.dps = dps;
-			this.dtps = dtps;
-			this.owned = owned;
-			this.with = with;
-		}
 	}
 
 	/** A slot's ladder (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): the steps just above
 	 * the worn item (any item, closest first) and just below (owned only,
 	 * closest first), ranked by the mode the set was picked for. Shown in
 	 * game as the slot's "swaps". */
+	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Ladder
 	{
 		/** Steps each way by default... */
@@ -139,15 +116,6 @@ public class OptimizerService
 		public final double baseDtps;
 		public final List<Rung> up;
 		public final List<Rung> down;
-
-		Ladder(OptimizeMode mode, double baseDps, double baseDtps, List<Rung> up, List<Rung> down)
-		{
-			this.mode = mode;
-			this.baseDps = baseDps;
-			this.baseDtps = baseDtps;
-			this.up = up;
-			this.down = down;
-		}
 	}
 
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
@@ -336,13 +304,21 @@ public class OptimizerService
 		Set<Integer> protectOnlyItems,
 		Consumer<Map<CombatStyle, StyleResult>> callback)
 	{
-		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
+		int id = monster.profileId();
+		bestPerStyle(monster, buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, p, excludedByStyle, dreamItems,
-			Collections.singletonMap(monster.profileId(), pinnedByStyle),
-			Collections.singletonMap(monster.profileId(), pinnedSpell),
-			Collections.singletonMap(monster.profileId(), pinnedSpec), protectOnlyItems);
-		ctx.mode = OptimizeMode.valueOf(p.optimizeMode);
-		ctx.gwdAncient = p.gwdAncient;
+			Collections.singletonMap(id, pinnedByStyle), Collections.singletonMap(id, pinnedSpell),
+			Collections.singletonMap(id, pinnedSpec), protectOnlyItems), callback);
+	}
+
+	/** The single-mob compute on a built context: a synchronous answer when
+	 * every style is cached, else one worker job. A one-mob roster takes
+	 * this road too, its member's own exclusions and sims on the context. */
+	private void bestPerStyle(MonsterStats monster, ComputeContext ctx,
+		Consumer<Map<CombatStyle, StyleResult>> callback)
+	{
+		ctx.mode = OptimizeMode.valueOf(ctx.p.optimizeMode);
+		ctx.gwdAncient = ctx.p.gwdAncient;
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
@@ -363,6 +339,17 @@ public class OptimizerService
 			callback.accept(allCached);
 			return;
 		}
+		submit(ticket -> computeAllStyles(monster, ctx, ticket), () -> new EnumMap<>(CombatStyle.class),
+			"compute failed for {}", monster.getName(), callback);
+	}
+
+	/** One compute on the worker under a fresh ticket: abandoned when
+	 * superseded while queued, mid-flight (a null answer) or after it. A
+	 * throw must still answer (the fallback), or the card sits on Computing
+	 * for good (TonyDAnnunzio 2026-10-18). */
+	private <T> void submit(LongFunction<T> compute, Supplier<T> fallback, String failure, String name,
+		Consumer<T> callback)
+	{
 		final long ticket = requestSeq.incrementAndGet();
 		worker.execute(() ->
 		{
@@ -371,17 +358,15 @@ public class OptimizerService
 				abandonedForTest++;
 				return; // superseded while queued
 			}
-			Map<CombatStyle, StyleResult> results;
+			T results;
 			try
 			{
-				results = computeAllStyles(monster, ctx, ticket);
+				results = compute.apply(ticket);
 			}
 			catch (RuntimeException ex)
 			{
-				// A throw must still answer, or the card sits on Computing
-				// for good (TonyDAnnunzio 2026-10-18).
-				log.warn("compute failed for {}", monster.getName(), ex);
-				results = new EnumMap<>(CombatStyle.class);
+				log.warn(failure, name, ex);
+				results = fallback.get();
 			}
 			if (results == null || requestSeq.get() != ticket)
 			{
@@ -396,27 +381,19 @@ public class OptimizerService
 	 * the roster path can run computeAllStyles for each mob. */
 	private static final class ComputeContext
 	{
+		/** The page's compute settings as handed in; the fields below are
+		 * the ones the context derives or normalises from them. */
+		ComputeParams p;
 		LoadoutData dataset;
 		OwnedItems effectiveOwned;
 		PlayerLevels real;
 		PlayerLevels boostedLevels;
 		PrayerUnlocks unlocks;
 		RequirementProfile requirements;
-		boolean f2pOnly;
-		boolean onSlayerTask;
-		boolean antifirePotion;
-		boolean sunfireRunes;
-		boolean multiView;
-		int multiStack;
-		int deathCharge;
-		boolean specWeapon = true;
 		Map<CombatStyle, String> boostPicks = Map.of();
 		Map<CombatStyle, String> prayerPicks = Map.of();
-		boolean inWilderness;
 		String lock;
-		int maxTradeables;
 		int riskBudget;
-		int upgradeBudgetGp;
 		int collectionFingerprint;
 		Set<Integer> dreams;
 		Set<Integer> protectOnly;
@@ -447,8 +424,6 @@ public class OptimizerService
 		OptimizeMode mode = OptimizeMode.MAX_DPS;
 		/** The GWD Ancient chip: Zaros joins the route (the Nex bank). */
 		boolean gwdAncient;
-		/** The elite Kourend & Kebos diary (Karuulm needs no boots). */
-		boolean kourendElite;
 		/** This compute's request ticket - the mode sweep bails when superseded. */
 		long ticket;
 	}
@@ -524,12 +499,13 @@ public class OptimizerService
 	 * equality, so the two key builders reuse one middle). */
 	private static String ctxKey(ComputeContext ctx)
 	{
-		return ctx.collectionFingerprint + "|" + ctx.f2pOnly + "|" + ctx.onSlayerTask
-			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.multiView + "|" + ctx.multiStack + "|" + ctx.deathCharge
-			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
-			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
-			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels) + "|" + ctx.kourendElite;
+		return ctx.collectionFingerprint + "|" + ctx.p.f2pOnly + "|" + ctx.p.onSlayerTask
+			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.p.maxTradeables
+			+ "|" + ctx.riskBudget + "|" + ctx.p.antifirePotion + "|" + ctx.p.sunfireRunes + "|" + ctx.p.multiView + "|" + ctx.p.multiStack + "|" + ctx.p.deathCharge
+			+ "|" + ctx.p.specWeapon + "|" + ctx.p.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
+			+ "|" + ctx.p.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
+			// Levels participate in the key so a boost/level-up invalidates.
+			+ "|" + ctx.real + "|" + ctx.boostedLevels + "|" + ctx.p.kourendElite;
 	}
 
 	/** One roster optimize (a pool task): LRU-cached; a hit hands out a
@@ -543,11 +519,9 @@ public class OptimizerService
 			List<DpsResult> cached = optimizeCache.get(key);
 			if (cached != null)
 			{
-				optimizeHits.incrementAndGet();
 				return new ArrayList<>(cached);
 			}
 		}
-		optimizeMisses.incrementAndGet();
 		if (requestSeq.get() != ticket)
 		{
 			return null; // superseded - stop burning cores
@@ -572,6 +546,16 @@ public class OptimizerService
 			best.set(0, opt.fillDpsNeutralSlots(dataset, req, best.get(0)));
 			best.set(0, opt.ensureRequiredUtility(dataset, req, best.get(0)));
 		}
+	}
+
+	/** The single-mob post-passes on a roster shown set (field reports
+	 * 2026-08-09): the Dizana's quiver relocation and the mandatory-recoil
+	 * swap (a Zulrah roster recommended sets with no recoil gear). Runs on
+	 * the phase-1 sets and again on whatever the kit merge shows. */
+	private DpsResult postPass(ComputeContext ctx, OptimizationRequest req, DpsResult shown)
+	{
+		return optimizer.ensureRequiredUtility(ctx.dataset, req,
+			optimizer.relocateQuiverAmmo(ctx.dataset, req, shown));
 	}
 
 	/** The dream items for ONE mob: global sims plus that mob's own. */
@@ -632,7 +616,7 @@ public class OptimizerService
 			ownedSide = false;
 			for (int id : ids)
 			{
-				if (ctx.effectiveOwned.owns(id) || ctx.dreams.contains(id))
+				if (ctx.effectiveOwned.owns(id) || dreamsFor(ctx, monster).contains(id))
 				{
 					weapon = tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW : id;
 					ownedSide = true;
@@ -692,11 +676,11 @@ public class OptimizerService
 			int gameSpecSlots = ctx.maxSwaps - gameProtection.size();
 			// Bench 0 = strictly one worn set: no spec swap is carried.
 			Set<Integer> specPin = restrictSpec(ctx, style, monster);
-			SpecPick spec = ownedSide && specSlots >= 1 && ctx.specWeapon
-				? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), specSlots)
+			SpecPick spec = ownedSide && specSlots >= 1 && ctx.p.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, ctx.effectiveOwned, specPin), specSlots)
 				: null;
-			SpecPick gameSpec = gameSpecSlots >= 1 && ctx.specWeapon
-				? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), gameSpecSlots)
+			SpecPick gameSpec = gameSpecSlots >= 1 && ctx.p.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, null, specPin), gameSpecSlots)
 				: null;
 			// The defensive story of the shown set: what the boss does
 			// back to you, at your REAL levels (protection prayer up).
@@ -727,8 +711,7 @@ public class OptimizerService
 					result.ladder = ladderFor(ctx, ownedRequest, ownedBest.get(0), monster);
 					if (spec != null)
 					{
-						result.specLadder = specLadderFor(ctx, ownedRequest, ownedBest, style, monster,
-							styleLevels, spec.weapon);
+						result.specLadder = specLadderFor(ctx, ownedRequest, ownedBest.get(0), spec.weapon);
 					}
 				}
 				catch (RuntimeException ex)
@@ -753,7 +736,7 @@ public class OptimizerService
 		// versions share one id, so Far/Nearby/Roaring collided.
 		return monster.getId() + "|" + monster.getVersion() + "|" + monster.getToaInvocationLevel()
 			+ "|" + ctxKey(ctx)
-			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps
+			+ "|" + dreamsFor(ctx, monster).hashCode() + "|" + ctx.maxSwaps
 			+ "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0)
 			+ "|" + ctx.mode.name() + "|" + ctx.gwdAncient;
 	}
@@ -795,7 +778,7 @@ public class OptimizerService
 				}
 				results.put(style, styleResult);
 			}
-		if (ctx.multiView && MultiMobs.isMultiAble(monster) && !results.isEmpty())
+		if (ctx.p.multiView && MultiMobs.isMultiAble(monster) && !results.isEmpty())
 		{
 			// The Multi card (Andrew 2026-10-19): the three multi tools, each a
 			// per-target result with the tool pinned, cached beside the styles.
@@ -876,15 +859,18 @@ public class OptimizerService
 				frontier.add(out.get(0));
 			}
 		}
+		// Scored as rungs: the mode's own ranking (compareRungs - Tanky the
+		// least DTPS, Balanced the least DTPS/DPS, ties to the higher DPS).
 		DpsResult picked = maxDps;
-		double pickedIn = i0;
+		Rung pickedRung = new Rung(null, d0, i0, false, null);
 		for (DpsResult candidate : frontier)
 		{
-			double in = incomingFor(monster, candidate.getLoadout(), ctx).totalDps;
-			if (better(mode, candidate.getDps(), in, picked.getDps(), pickedIn))
+			Rung rung = new Rung(null, candidate.getDps(),
+				incomingFor(monster, candidate.getLoadout(), ctx).totalDps, false, null);
+			if (compareRungs(mode, rung, pickedRung) > 0)
 			{
 				picked = candidate;
-				pickedIn = in;
+				pickedRung = rung;
 			}
 		}
 		if (picked == maxDps)
@@ -894,7 +880,7 @@ public class OptimizerService
 		ownedBest.set(0, picked);
 		return new ModeTrade(mode,
 			(int) Math.round((1 - picked.getDps() / d0) * 100),
-			(int) Math.round((1 - pickedIn / i0) * 100), null);
+			(int) Math.round((1 - pickedRung.dtps / i0) * 100), null);
 	}
 
 	/** Every worn slot's ladder for the shown Yours set: each swap scored by
@@ -913,26 +899,17 @@ public class OptimizerService
 			{
 				continue;
 			}
-			Rung base = new Rung(shown.getLoadout().get(slot), shown.getDps(), baseDtps, true);
+			Rung base = new Rung(shown.getLoadout().get(slot), shown.getDps(), baseDtps, true, null);
 			List<Rung> candidates = new ArrayList<>();
+			boolean weapon = slot == GearSlot.WEAPON;
 			for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, request, shown, slot))
 			{
 				GearItem item = swap.getLoadout().get(slot);
 				double dtps = scoresDamage ? incomingFor(monster, swap.getLoadout(), ctx).totalDps : baseDtps;
-				GearItem ammo = swap.getLoadout().get(GearSlot.AMMO);
-				GearItem wornAmmo = shown.getLoadout().get(GearSlot.AMMO);
-				boolean newAmmo = slot == GearSlot.WEAPON && ammo != null
-					&& (wornAmmo == null || ammo.getId() != wornAmmo.getId());
 				Rung rung = new Rung(item, swap.getDps(), dtps,
 					ctx.effectiveOwned.owns(item.getId()) || dreams.contains(item.getId()),
-					newAmmo ? ammo : null);
-				GearItem shield = swap.getLoadout().get(GearSlot.SHIELD);
-				GearItem wornShield = shown.getLoadout().get(GearSlot.SHIELD);
-				if (slot == GearSlot.WEAPON && shield != null
-					&& (wornShield == null || shield.getId() != wornShield.getId()))
-				{
-					rung.offhand = shield;
-				}
+					weapon ? brought(swap.getLoadout(), shown.getLoadout(), GearSlot.AMMO) : null);
+				rung.offhand = weapon ? brought(swap.getLoadout(), shown.getLoadout(), GearSlot.SHIELD) : null;
 				candidates.add(rung);
 			}
 			Ladder ladder = rankSteps(ctx.mode, request.getStyle(), base, candidates, shown.getDps(), baseDtps);
@@ -944,6 +921,15 @@ public class OptimizerService
 		return ladders;
 	}
 
+	/** The item a swapped set brings in a slot the worn set does not already
+	 * fill with it (a weapon step's ammo or offhand); null otherwise. */
+	private static GearItem brought(Loadout swapped, Loadout worn, GearSlot slot)
+	{
+		GearItem item = swapped.get(slot);
+		GearItem had = worn.get(slot);
+		return item != null && (had == null || item.getId() != had.getId()) ? item : null;
+	}
+
 	/** The steps around the worn item: up from any item, down from your own,
 	 * closest first, five columns by the fill rule. Equal under the mode,
 	 * the item's own stats decide (ISS-01M5H9KGF4FSAM5DR1XSD9F9RX, Andrew
@@ -953,7 +939,8 @@ public class OptimizerService
 		double baseDps, double baseDtps)
 	{
 		Comparator<Rung> order = (a, b) -> compareRungs(mode, a, b);
-		Comparator<Rung> stats = (a, b) -> compareStats(style, a, b);
+		// No style (the spec ladder): the mode alone ranks the steps.
+		Comparator<Rung> stats = style == null ? (a, b) -> 0 : (a, b) -> compareStats(style, a, b);
 		Comparator<Rung> full = order.thenComparing(stats);
 		List<Rung> above = new ArrayList<>();
 		List<Rung> below = new ArrayList<>();
@@ -989,7 +976,7 @@ public class OptimizerService
 	 * included" - scored by "The whole group"): each slot of the group's
 	 * shared kit swapped for every member, the DPS averaged by the same
 	 * HP weight that picked the kit (kitWeight). One strip for the group. */
-	private Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, Side side, List<MonsterStats> mobs)
+	private Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, SharedSide side, List<MonsterStats> mobs)
 	{
 		Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
 		if (side == null || side.shared == null)
@@ -1047,9 +1034,9 @@ public class OptimizerService
 			{
 				int id = entry.getKey();
 				candidates.add(new Rung(items.get(id), entry.getValue()[0] / total, 0,
-					ctx.effectiveOwned.owns(id) || dreams.contains(id)));
+					ctx.effectiveOwned.owns(id) || dreams.contains(id), null));
 			}
-			Ladder ladder = rankSteps(OptimizeMode.MAX_DPS, style, new Rung(worn, baseDps, 0, true),
+			Ladder ladder = rankSteps(OptimizeMode.MAX_DPS, style, new Rung(worn, baseDps, 0, true, null),
 				candidates, baseDps, 0);
 			if (ladder != null)
 			{
@@ -1065,56 +1052,32 @@ public class OptimizerService
 	 * every spec weapon scored alone by the card's own pick - the DPS it
 	 * adds over just attacking - any item above the carried one, your own
 	 * below, five columns by the slots' fill rule. */
-	private Ladder specLadderFor(ComputeContext ctx, OptimizationRequest request, List<DpsResult> best,
-		CombatStyle style, MonsterStats monster, PlayerLevels levels, GearItem carried)
+	private Ladder specLadderFor(ComputeContext ctx, OptimizationRequest request, DpsResult main,
+		GearItem carried)
 	{
-		SpecPick worn = bestSpec(ctx.dataset, request, best, style, monster, levels, null,
-			Set.of(carried.getId()), true);
+		SpecPick worn = bestSpec(ctx.dataset, request, main, null, Set.of(carried.getId()), true);
 		if (worn == null)
 		{
 			return null;
 		}
-		Set<Integer> dreams = dreamsFor(ctx, monster);
-		Rung base = new Rung(carried, worn.dpsAdded, 0, true);
-		Comparator<Rung> order = (a, b) -> compareRungs(OptimizeMode.MAX_DPS, a, b);
-		List<Rung> above = new ArrayList<>();
-		List<Rung> below = new ArrayList<>();
+		Set<Integer> dreams = dreamsFor(ctx, request.getMonster());
+		List<Rung> candidates = new ArrayList<>();
 		for (GearItem item : ctx.dataset.getGearItems(GearSlot.WEAPON))
 		{
 			if (item.getId() == carried.getId() || SpecialAttack.match(item) == null
-				|| !item.isStandardGear() || ctx.dataset.isVariant(item.getId()))
+				|| !LoadoutOptimizer.eligible(ctx.dataset, request, item))
 			{
 				continue;
 			}
-			SpecPick pick = bestSpec(ctx.dataset, request, best, style, monster, levels, null,
-				Set.of(item.getId()), true);
-			if (pick == null)
+			SpecPick pick = bestSpec(ctx.dataset, request, main, null, Set.of(item.getId()), true);
+			if (pick != null)
 			{
-				continue;
-			}
-			Rung rung = new Rung(item, pick.dpsAdded, 0,
-				ctx.effectiveOwned.owns(item.getId()) || dreams.contains(item.getId()));
-			int vsWorn = order.compare(rung, base);
-			if (vsWorn > 0)
-			{
-				above.add(rung);
-			}
-			else if (vsWorn < 0 && rung.owned)
-			{
-				below.add(rung);
+				candidates.add(new Rung(item, pick.dpsAdded, 0,
+					ctx.effectiveOwned.owns(item.getId()) || dreams.contains(item.getId()), null));
 			}
 		}
-		Comparator<Rung> tieBreak = Comparator.comparing((Rung r) -> !r.owned)
-			.thenComparingInt(r -> r.item.getPriceOrZero());
-		above.sort(order.thenComparing(tieBreak));
-		below.sort(order.reversed().thenComparing(tieBreak));
-		List<Rung> up = closest(above, order);
-		List<Rung> down = closest(below, order);
-		int[] spots = Ladder.spots(up.size(), down.size());
-		up = up.subList(0, spots[0]);
-		down = down.subList(0, spots[1]);
-		return up.isEmpty() && down.isEmpty() ? null
-			: new Ladder(OptimizeMode.MAX_DPS, worn.dpsAdded, 0, up, down);
+		return rankSteps(OptimizeMode.MAX_DPS, null, new Rung(carried, worn.dpsAdded, 0, true, null),
+			candidates, worn.dpsAdded, 0);
 	}
 
 	/** The first SPOTS distinct steps of an already-sorted list (distinct
@@ -1195,23 +1158,6 @@ public class OptimizerService
 		return new ArrayList<>(optimizer.carriedGodItems(ctx.dataset, request, best.get(0).getLoadout(), gods));
 	}
 
-	/** Tanky: the least DTPS. Balanced: the least DTPS/DPS (damage taken per
-	 * damage dealt). Ties go to the higher DPS in both. */
-	static boolean better(OptimizeMode mode, double dps, double in, double bestDps, double bestIn)
-	{
-		if (mode == OptimizeMode.TANKY)
-		{
-			return in < bestIn - 1e-9 || (in < bestIn + 1e-9 && dps > bestDps + 1e-9);
-		}
-		if (dps <= 0)
-		{
-			return false;
-		}
-		double ratio = in / dps;
-		double best = bestDps <= 0 ? Double.POSITIVE_INFINITY : bestIn / bestDps;
-		return ratio < best - 1e-12 || (ratio < best + 1e-12 && dps > bestDps + 1e-9);
-	}
-
 	/** What the boss does back to you in this worn set, at REAL levels
 	 * (protection prayer up) - null loadout answers null. Twin owned/game
 	 * call sites in both compute paths share it. */
@@ -1252,6 +1198,7 @@ public class OptimizerService
 		Set<Integer> protectOnlyItems)
 	{
 		ComputeContext ctx = new ComputeContext();
+		ctx.p = p;
 		ctx.maxSwaps = Math.max(0, p.maxSwaps);
 		ctx.pinsByMob = pinsByMob == null ? Map.of() : pinsByMob;
 		ctx.spellByMob = spellByMob == null ? Map.of() : spellByMob;
@@ -1260,7 +1207,6 @@ public class OptimizerService
 		ctx.dreams = dreamItems == null ? Set.of() : RangedAmmo.withPairedAmmo(dreamItems);
 		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
 		ctx.lock = p.spellbookLock == null ? "" : p.spellbookLock;
-		ctx.kourendElite = p.kourendElite;
 		ctx.real = realLevels == null ? boostedLevels : realLevels;
 		ctx.boostedLevels = boostedLevels;
 		// A free world has no members prayers - F2P caps the book (audit A3.5).
@@ -1274,68 +1220,20 @@ public class OptimizerService
 		ctx.effectiveOwned = new OwnedItems(
 			ctx.dataset.canonicalizeOwned(owned.getQuantities()), owned.isBankScanned());
 		ctx.requirements = requirements;
-		ctx.f2pOnly = p.f2pOnly;
-		ctx.onSlayerTask = p.onSlayerTask;
-		ctx.antifirePotion = p.antifirePotion;
-		ctx.sunfireRunes = p.sunfireRunes;
-		ctx.multiView = p.multiView;
-		ctx.multiStack = p.multiStack;
-		ctx.deathCharge = p.deathCharge;
-		ctx.specWeapon = p.specWeapon;
 		ctx.boostPicks = p.boostPicks == null ? Map.of() : p.boostPicks;
 		ctx.prayerPicks = p.prayerPicks == null ? Map.of() : p.prayerPicks;
-		ctx.inWilderness = p.inWilderness;
-		ctx.maxTradeables = p.maxTradeables;
-		ctx.upgradeBudgetGp = p.upgradeBudgetGp;
 		ctx.collectionFingerprint = collectionFingerprint;
 		return ctx;
-	}
-
-	/** The inventory BREAKPOINT CURVE (field spec 2026-07-18): one greedy
-	 * run to exhaustion for the winning kit configuration, recording after
-	 * every pick how many slots are spent, the HP-weighted total, and how
-	 * many mobs have a nonzero answer. The UI reads the minimum-viability
-	 * point, the major/minor breakpoints, and the final breakpoint (where
-	 * more slots stop paying) straight off the points. */
-	public static final class KitCurve
-	{
-		/** Each point: {slots spent, hpWeighted total, viable mob count}.
-		 * The first point is the empty kit; points are pick-ordered. */
-		public final List<double[]> points;
-		public final int mobCount;
-		/** True when the first slot carries the spec weapon. */
-		public final boolean specFirst;
-
-		KitCurve(List<double[]> points, int mobCount, boolean specFirst)
-		{
-			this.points = Collections.unmodifiableList(points);
-			this.mobCount = mobCount;
-			this.specFirst = specFirst;
-		}
 	}
 
 	/** The roster answer: one shared set per style, chosen for the best
 	 * AVERAGE dps across the mobs (field decision 2026-07-17), with a per-mob
 	 * display bundle for that set (index-aligned with the mob list). */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class RosterResult
 	{
 		public final List<MonsterStats> mobs;
 		public final List<Map<CombatStyle, StyleResult>> perMob;
-		/** Nullable: the owned side's inventory breakpoint curve. */
-		public final KitCurve curve;
-
-		RosterResult(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob)
-		{
-			this(mobs, perMob, null);
-		}
-
-		RosterResult(List<MonsterStats> mobs, List<Map<CombatStyle, StyleResult>> perMob,
-			KitCurve curve)
-		{
-			this.mobs = mobs;
-			this.perMob = perMob;
-			this.curve = curve;
-		}
 	}
 
 	/**
@@ -1363,12 +1261,8 @@ public class OptimizerService
 			{
 				continue;
 			}
-			for (GearItem item : best.get(0).getLoadout().getGear().values())
+			for (GearItem item : best.get(0).getLoadout().items())
 			{
-				if (item == null)
-				{
-					continue;
-				}
 				GearItem baseItem = base.get(item.getSlot());
 				if (baseItem == null || baseItem.getId() != item.getId())
 				{
@@ -1446,9 +1340,9 @@ public class OptimizerService
 			return 0;
 		}
 		long total = 0;
-		for (GearItem item : loadout.getGear().values())
+		for (GearItem item : loadout.items())
 		{
-			if (item != null && (owned == null || !owned.owns(item.getId())))
+			if (owned == null || !owned.owns(item.getId()))
 			{
 				total += item.getPriceOrZero();
 			}
@@ -1467,12 +1361,8 @@ public class OptimizerService
 			// every mob's shared answer) - on the owned side, a loadout may
 			// only wear what this request's bank or dreams grant.
 			boolean ownedOnly = req.getCandidateMode() == CandidateMode.OWNED_ONLY;
-			for (GearItem item : loadout.getGear().values())
+			for (GearItem item : loadout.items())
 			{
-				if (item == null)
-				{
-					continue;
-				}
 				if (excluded != null && excluded.contains(item.getId()))
 				{
 					return null;
@@ -1525,17 +1415,7 @@ public class OptimizerService
 	private static List<GearItem> inventoryFor(Collection<GearItem> plan,
 		GearItem specCarried, Loadout worn)
 	{
-		Set<Integer> wornIds = new HashSet<>();
-		if (worn != null)
-		{
-			for (GearItem item : worn.getGear().values())
-			{
-				if (item != null)
-				{
-					wornIds.add(item.getId());
-				}
-			}
-		}
+		Set<Integer> wornIds = worn == null ? Set.of() : worn.ids();
 		List<GearItem> inventory = new ArrayList<>();
 		Set<Integer> packed = new HashSet<>();
 		if (specCarried != null && !wornIds.contains(specCarried.getId())
@@ -1585,21 +1465,14 @@ public class OptimizerService
 		{
 			return null;
 		}
-		Set<Integer> have = new HashSet<>();
-		for (GearItem item : base.getGear().values())
-		{
-			if (item != null)
-			{
-				have.add(item.getId());
-			}
-		}
+		Set<Integer> have = base.ids();
 		for (GearItem item : carried)
 		{
 			have.add(item.getId());
 		}
-		for (GearItem item : freeBest.get(0).getLoadout().getGear().values())
+		for (GearItem item : freeBest.get(0).getLoadout().items())
 		{
-			if (item != null && !have.contains(item.getId()))
+			if (!have.contains(item.getId()))
 			{
 				return null;
 			}
@@ -1627,10 +1500,7 @@ public class OptimizerService
 		{
 			// The base set's quiver does not fit the swapped weapon -
 			// strip it rather than let its bonuses feed a false roll.
-			EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-			gear.putAll(out.getGear());
-			gear.remove(GearSlot.AMMO);
-			out = new Loadout(gear);
+			out = out.with(GearSlot.AMMO, null);
 		}
 		if (!RangedAmmo.compatible(out.get(GearSlot.AMMO), out.getWeapon()))
 		{
@@ -1643,11 +1513,11 @@ public class OptimizerService
 	 * shared and per-mob free-best weapons, each offered bare and (when the
 	 * source set wears ammo) with its ammo. */
 	private static List<SwapBundle> bundleCandidates(CombatStyle primary, Loadout base,
-		GearItem specCarried, Map<CombatStyle, Side> sides)
+		GearItem specCarried, Map<CombatStyle, SharedSide> sides)
 	{
 		List<SwapBundle> out = new ArrayList<>();
 		Set<Long> seen = new HashSet<>();
-		for (Map.Entry<CombatStyle, Side> entry : sides.entrySet())
+		for (Map.Entry<CombatStyle, SharedSide> entry : sides.entrySet())
 		{
 			CombatStyle style = entry.getKey();
 			if (style == primary)
@@ -1671,17 +1541,14 @@ public class OptimizerService
 				{
 					continue;
 				}
-				GearItem ammo = source.get(GearSlot.AMMO);
-				GearItem baseAmmo = base.get(GearSlot.AMMO);
-				boolean ownAmmo = ammo != null
-					&& (baseAmmo == null || baseAmmo.getId() != ammo.getId());
+				GearItem ammo = brought(source, base, GearSlot.AMMO);
 				int specFree = specCarried != null && specCarried.getId() == weapon.getId() ? 1 : 0;
 				if (seen.add(weapon.getId() * 2L))
 				{
 					out.add(new SwapBundle(style,
 						Collections.singletonList(weapon), Math.max(0, 1 - specFree)));
 				}
-				if (ownAmmo && seen.add(weapon.getId() * 2L + 1))
+				if (ammo != null && seen.add(weapon.getId() * 2L + 1))
 				{
 					List<GearItem> items = new ArrayList<>();
 					items.add(weapon);
@@ -1695,37 +1562,44 @@ public class OptimizerService
 
 	/** One mob's best answer given the kit: the primary base + singles,
 	 * challenged by every carried bundle rolled under its own style, and
-	 * by any style's FREE BEST the kit can fully assemble. */
+	 * by any style's FREE BEST the kit can fully assemble - the best of
+	 * every style's shownFor (only its dps is read). */
 	private DpsResult kitBest(DpsCalculator calc, Loadout base, CombatStyle primary,
 		List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried,
-		Map<CombatStyle, Side> sides, int mobIndex)
+		Map<CombatStyle, SharedSide> sides, int mobIndex)
 	{
-		OptimizationRequest primaryReq = sides.get(primary).reqs.get(mobIndex);
-		DpsResult best = calcRespecting(calc, primaryReq, bestWorn(calc, primaryReq, base, singles));
-		for (SwapBundle bundle : bundles)
+		DpsResult best = null;
+		for (CombatStyle s : sides.keySet())
 		{
-			Side bundled = sides.get(bundle.style);
-			Loadout seeded = bundled == null ? null : applyBundle(base, bundle);
-			if (seeded == null)
-			{
-				continue;
-			}
-			OptimizationRequest req = bundled.reqs.get(mobIndex);
-			DpsResult challenger = calcRespecting(calc, req, bestWorn(calc, req, seeded, singles));
-			if (challenger != null && (best == null || challenger.getDps() > best.getDps()))
-			{
-				best = challenger;
-			}
-		}
-		for (Side styleSide : sides.values())
-		{
-			DpsResult covered = coverableBest(styleSide.bests.get(mobIndex), base, carried);
-			if (covered != null && (best == null || covered.getDps() > best.getDps()))
-			{
-				best = covered;
-			}
+			best = DpsResult.better(best,
+				shownFor(calc, base, primary, singles, bundles, carried, sides, mobIndex, s));
 		}
 		return best;
+	}
+
+	/** One (mob, style) answer on a kit: the primary style wears the base
+	 * + singles, a bundled style wears its weapon into the base armour, and
+	 * any style whose free best the kit can fully assemble shows it exactly
+	 * (the best of the three, the earlier on ties); null when the style has
+	 * no answer on this kit. */
+	private DpsResult shownFor(DpsCalculator calc, Loadout base, CombatStyle primary,
+		List<GearItem> singles, List<SwapBundle> bundles, List<GearItem> carried,
+		Map<CombatStyle, SharedSide> sides, int mobIndex, CombatStyle s)
+	{
+		SharedSide side = sides.get(s);
+		OptimizationRequest req = side.reqs.get(mobIndex);
+		DpsResult result = s == primary
+			? calcRespecting(calc, req, bestWorn(calc, req, base, singles)) : null;
+		for (SwapBundle bundle : bundles)
+		{
+			Loadout seeded = bundle.style == s ? applyBundle(base, bundle) : null;
+			if (seeded != null)
+			{
+				result = DpsResult.better(result,
+					calcRespecting(calc, req, bestWorn(calc, req, seeded, singles)));
+			}
+		}
+		return DpsResult.better(result, coverableBest(side.bests.get(mobIndex), base, carried));
 	}
 
 	/** One mob's kit dps, MEMOIZED (field insight 2026-07-17: hone the
@@ -1736,7 +1610,7 @@ public class OptimizerService
 	 * it could matter to, and repeat evaluations are table lookups. */
 	private double evalMobDps(DpsCalculator calc, Loadout base, CombatStyle primary,
 		List<GearItem> singles, List<SwapBundle> bundles, String bundlesKey,
-		Map<CombatStyle, Side> sides,
+		Map<CombatStyle, SharedSide> sides,
 		Set<Integer> relevant, int mobIndex, Map<String, Double> memo)
 	{
 		List<GearItem> relevantSingles = new ArrayList<>();
@@ -1756,19 +1630,8 @@ public class OptimizerService
 		{
 			return hit;
 		}
-		List<GearItem> carried = new ArrayList<>(relevantSingles);
-		for (SwapBundle bundle : bundles)
-		{
-			for (GearItem item : bundle.items)
-			{
-				if (carried.stream().noneMatch(i -> i.getId() == item.getId()))
-				{
-					carried.add(item);
-				}
-			}
-		}
 		DpsResult shown = kitBest(calc, base, primary, relevantSingles, bundles,
-			carried, sides, mobIndex);
+			carriedOf(relevantSingles, bundles), sides, mobIndex);
 		double dps = shown == null ? 0 : shown.getDps();
 		memo.put(key, dps);
 		return dps;
@@ -1795,10 +1658,9 @@ public class OptimizerService
 	 * pieces, deduped by id - the diff between the per-mob BiS sets IS the
 	 * candidate list, so a generous budget can assemble the other style's
 	 * FULL set, not just its weapon. The other styles' weapons are excluded
-	 * because a weapon swap is a bundle, not a single. Shared by the kit
-	 * pass and the breakpoint-curve pass, which need the identical pool. */
+	 * because a weapon swap is a bundle, not a single. */
 	private static List<GearItem> crossStylePool(Loadout base, CombatStyle primary,
-		Map<CombatStyle, Side> sides)
+		Map<CombatStyle, SharedSide> sides)
 	{
 		List<GearItem> pool = new ArrayList<>(swapCandidates(base, sides.get(primary).bests));
 		for (CombatStyle s : sides.keySet())
@@ -1830,47 +1692,31 @@ public class OptimizerService
 	 * weapon) fitting even a full bench. */
 	private KitAnswer chooseKit(DpsCalculator calc, Loadout base, CombatStyle primary,
 		Collection<GearItem> singleCandidates, List<SwapBundle> bundleCandidates,
-		Map<CombatStyle, Side> sides,
-		List<MonsterStats> mobs, int slots, Map<String, Double> memo,
-		List<double[]> curveOut)
+		Map<CombatStyle, SharedSide> sides,
+		List<MonsterStats> mobs, int slots, Map<String, Double> memo)
 	{
 		List<GearItem> allNeeded = new ArrayList<>();
 		double idealTotal = 0;
 		for (int j = 0; j < mobs.size(); j++)
 		{
-			List<DpsResult> winner = null;
-			for (Side styleSide : sides.values())
-			{
-				List<DpsResult> best = styleSide.bests.get(j);
-				if (emptyBest(best))
-				{
-					continue;
-				}
-				if (winner == null || best.get(0).getDps() > winner.get(0).getDps())
-				{
-					winner = best;
-				}
-			}
-			if (winner == null)
+			CombatStyle answer = answerFor(sides, j);
+			if (answer == null)
 			{
 				continue;
 			}
-			idealTotal += winner.get(0).getDps() * MonsterMechanics.kitWeight(mobs.get(j));
-			for (GearItem item : winner.get(0).getLoadout().getGear().values())
+			DpsResult winner = sides.get(answer).bests.get(j).get(0);
+			idealTotal += winner.getDps() * MonsterMechanics.kitWeight(mobs.get(j));
+			for (GearItem item : winner.getLoadout().items())
 			{
-				GearItem baseItem = item == null ? null : base.get(item.getSlot());
-				if (item != null
-					&& (baseItem == null || baseItem.getId() != item.getId())
+				GearItem baseItem = base.get(item.getSlot());
+				if ((baseItem == null || baseItem.getId() != item.getId())
 					&& allNeeded.stream().noneMatch(i -> i.getId() == item.getId()))
 				{
 					allNeeded.add(item);
 				}
 			}
 		}
-		// A curve run wants the full pick-by-pick sequence - the greedy
-		// converges to the same totals (coverage challenge), so the ideal
-		// shortcut only serves the non-curve path.
-		if (curveOut == null && !allNeeded.isEmpty() && allNeeded.size() <= slots)
+		if (!allNeeded.isEmpty() && allNeeded.size() <= slots)
 		{
 			// The ideal fits: every mob wears its own best, exactly (the
 			// coverage challenge in kitBest reproduces each winner).
@@ -1890,21 +1736,17 @@ public class OptimizerService
 		for (int j = 0; j < n; j++)
 		{
 			Set<Integer> relevant = new HashSet<>();
-			for (Side styleSide : sides.values())
+			for (SharedSide styleSide : sides.values())
 			{
 				List<DpsResult> best = styleSide.bests.get(j);
 				if (emptyBest(best))
 				{
 					continue;
 				}
-				for (GearItem item : best.get(0).getLoadout().getGear().values())
+				for (GearItem item : best.get(0).getLoadout().items())
 				{
-					if (item != null)
-					{
-						relevant.add(item.getId());
-						mobsByItem.computeIfAbsent(item.getId(),
-							k -> new HashSet<>()).add(j);
-					}
+					relevant.add(item.getId());
+					mobsByItem.computeIfAbsent(item.getId(), k -> new HashSet<>()).add(j);
 				}
 			}
 			relevantByMob.add(relevant);
@@ -1924,10 +1766,6 @@ public class OptimizerService
 			mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles,
 				baseBundlesKey, sides, relevantByMob.get(j), j, memo);
 			current += mobDps[j] * hp[j];
-		}
-		if (curveOut != null)
-		{
-			curveOut.add(new double[]{used, current, viableCount(mobDps)});
 		}
 		while (true)
 		{
@@ -2008,26 +1846,9 @@ public class OptimizerService
 				mobDps[j] = evalMobDps(calc, base, primary, kit.singles, kit.bundles,
 					appliedKey, sides, relevantByMob.get(j), j, memo);
 			}
-			if (curveOut != null)
-			{
-				curveOut.add(new double[]{used, current, viableCount(mobDps)});
-			}
 		}
 		kit.total = current;
 		return kit;
-	}
-
-	private static int viableCount(double[] mobDps)
-	{
-		int viable = 0;
-		for (double dps : mobDps)
-		{
-			if (dps > 1e-9)
-			{
-				viable++;
-			}
-		}
-		return viable;
 	}
 
 	/**
@@ -2082,19 +1903,11 @@ public class OptimizerService
 		return worn;
 	}
 
+	/** A copy with one slot changed (null empties it) and NO quiver ammo -
+	 * the kit passes price every re-show from the slot contents alone. */
 	private static Loadout withSlot(Loadout base, GearSlot slot, GearItem item)
 	{
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		gear.putAll(base.getGear());
-		if (item == null)
-		{
-			gear.remove(slot);
-		}
-		else
-		{
-			gear.put(slot, item);
-		}
-		return new Loadout(gear);
+		return new Loadout(base.with(slot, item).getGear());
 	}
 
 	private static Loadout withSwap(Loadout base, GearItem swap)
@@ -2106,15 +1919,8 @@ public class OptimizerService
 		{
 			return null; // no shield under a 2h
 		}
-		EnumMap<GearSlot, GearItem> gear =
-			new EnumMap<>(GearSlot.class);
-		gear.putAll(base.getGear());
-		gear.put(slot, swap);
-		if (slot == GearSlot.WEAPON && swap.isTwoHanded())
-		{
-			gear.remove(GearSlot.SHIELD);
-		}
-		return new Loadout(gear);
+		Loadout out = withSlot(base, slot, swap);
+		return slot == GearSlot.WEAPON && swap.isTwoHanded() ? withSlot(out, GearSlot.SHIELD, null) : out;
 	}
 
 	/** Pick the set that maximises the HP-WEIGHTED average dps across the
@@ -2161,12 +1967,9 @@ public class OptimizerService
 	 * StyleResult around the shared sets (that mob's own dps/incoming/spec).
 	 * Returns null if the request was superseded mid-compute. */
 	private List<Map<CombatStyle, StyleResult>> computeStyleAcross(
-		List<MonsterStats> mobs, ComputeContext ctx, long ticket, KitCurve[] curveOut)
+		List<MonsterStats> mobs, ComputeContext ctx, long ticket)
 	{
 		int n = mobs.size();
-		long tStart = System.nanoTime();
-		long hitsBefore = optimizeHits.get();
-		long missesBefore = optimizeMisses.get();
 		List<Map<CombatStyle, StyleResult>> perMob = new ArrayList<>();
 		for (int j = 0; j < n; j++)
 		{
@@ -2175,26 +1978,15 @@ public class OptimizerService
 		DpsCalculator calc = new DpsCalculator();
 		// Per-style state the cross-style kit passes reuse after the loop -
 		// one pass for the Yours side, one for the BiS side.
-		Map<CombatStyle, Side> ownedSides = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, Side> gameSides = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, SpecPick[]> specsByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, SpecPick[]> gameSpecsByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, String> boostLabelByStyle = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, String> gameBoostLabelByStyle = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, SharedSide> ownedSides = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, SharedSide> gameSides = new EnumMap<>(CombatStyle.class);
+		Map<CombatStyle, StyleWork> works = new EnumMap<>(CombatStyle.class);
 		// PASS A (field fix 2026-07-17: the load-time wall was the 2x3xN
 		// independent optimize() calls, not the kit search): build every
 		// style's plan and requests up front, then ONE flat fan-out over
 		// the pool - no per-style straggler waves, owned and game as
 		// separate tasks. Each task owns its optimizer (its DpsCalculator
 		// is stateful); distinct array slots + invokeAll's join publish.
-		Map<CombatStyle, PlayerLevels> styleLevelsBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, PlayerLevels> gameLevelsBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, String> planBoostLabelBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, String> planGameBoostLabelBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, List<OptimizationRequest>> ownedReqsBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, List<OptimizationRequest>> gameReqsBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, List<DpsResult>[]> ownedArrBy = new EnumMap<>(CombatStyle.class);
-		Map<CombatStyle, List<DpsResult>[]> gameArrBy = new EnumMap<>(CombatStyle.class);
 		List<Callable<Void>> optimizeTasks = new ArrayList<>();
 		for (CombatStyle style : CombatStyle.concreteValues())
 		{
@@ -2211,48 +2003,32 @@ public class OptimizerService
 					break;
 				}
 			}
-			StylePlan plan = stylePlan(ctx, style, supplied);
-			PlayerLevels styleLevels = plan.levels;
-			PlayerLevels gameLevels = plan.gameLevels;
-			styleLevelsBy.put(style, styleLevels);
-			gameLevelsBy.put(style, gameLevels);
-			planBoostLabelBy.put(style, plan.label);
-			planGameBoostLabelBy.put(style, plan.gameLabel);
-
-			List<OptimizationRequest> ownedReqs = new ArrayList<>();
-			List<OptimizationRequest> gameReqs = new ArrayList<>();
+			StyleWork w = new StyleWork(n);
+			works.put(style, w);
+			w.plan = stylePlan(ctx, style, supplied);
 			for (MonsterStats mob : mobs)
 			{
-				ownedReqs.add(ownedRequestFor(ctx, mob, style, styleLevels));
-				gameReqs.add(gameRequestFor(ctx, mob, style, gameLevels));
+				w.ownedReqs.add(ownedRequestFor(ctx, mob, style, w.plan.levels, null));
+				w.gameReqs.add(gameRequestFor(ctx, mob, style, w.plan.gameLevels, null));
 			}
-			ownedReqsBy.put(style, ownedReqs);
-			gameReqsBy.put(style, gameReqs);
-			@SuppressWarnings("unchecked")
-			List<DpsResult>[] ownedArr = new List[n];
-			@SuppressWarnings("unchecked")
-			List<DpsResult>[] gameArr = new List[n];
-			ownedArrBy.put(style, ownedArr);
-			gameArrBy.put(style, gameArr);
 			for (int j = 0; j < n; j++)
 			{
 				final int index = j;
 				final MonsterStats mob = mobs.get(index);
 				optimizeTasks.add(() ->
 				{
-					ownedArr[index] = optimizeCached(mob, style, false, ctx,
-						ownedReqs.get(index), ticket);
+					w.ownedArr[index] = optimizeCached(mob, style, false, ctx,
+						w.ownedReqs.get(index), ticket);
 					return null;
 				});
 				optimizeTasks.add(() ->
 				{
-					gameArr[index] = optimizeCached(mob, style, true, ctx,
-						gameReqs.get(index), ticket);
+					w.gameArr[index] = optimizeCached(mob, style, true, ctx,
+						w.gameReqs.get(index), ticket);
 					return null;
 				});
 			}
 		}
-		long tFanStart = System.nanoTime();
 		try
 		{
 			// Check every future: a task that THROWS otherwise vanishes
@@ -2285,135 +2061,24 @@ public class OptimizerService
 			abandonedForTest++;
 			return null;
 		}
-		long tFanMs = (System.nanoTime() - tFanStart) / 1_000_000;
 		for (CombatStyle style : CombatStyle.concreteValues())
 		{
-			PlayerLevels styleLevels = styleLevelsBy.get(style);
-			PlayerLevels gameLevels = gameLevelsBy.get(style);
-			String boostLabel = planBoostLabelBy.get(style);
-			String gameBoostLabel = planGameBoostLabelBy.get(style);
-			List<OptimizationRequest> ownedReqs = ownedReqsBy.get(style);
-			List<OptimizationRequest> gameReqs = gameReqsBy.get(style);
-			List<DpsResult>[] ownedArr = ownedArrBy.get(style);
-			List<DpsResult>[] gameArr = gameArrBy.get(style);
+			StyleWork w = works.get(style);
+			List<OptimizationRequest> ownedReqs = w.ownedReqs;
+			List<OptimizationRequest> gameReqs = w.gameReqs;
 			List<List<DpsResult>> ownedBests = new ArrayList<>();
 			List<List<DpsResult>> gameBests = new ArrayList<>();
 			for (int j = 0; j < n; j++)
 			{
-				ownedBests.add(ownedArr[j] == null ? new ArrayList<>() : ownedArr[j]);
-				gameBests.add(gameArr[j] == null ? new ArrayList<>() : gameArr[j]);
+				ownedBests.add(w.ownedArr[j] == null ? new ArrayList<>() : w.ownedArr[j]);
+				gameBests.add(w.gameArr[j] == null ? new ArrayList<>() : w.gameArr[j]);
 			}
-			Loadout sharedOwned = chooseSharedLoadout(calc, ownedBests, ownedReqs);
-			Loadout sharedGame = chooseSharedLoadout(calc, gameBests, gameReqs);
-			// The spec weapon is PART of the carried set (field decision
-			// 2026-07-17): with zero swaps a roster brings ONE spec weapon,
-			// so the pick is shared - HP-weighted like the worn set - and
-			// only its per-mob numbers flip. Swapping per mob is M-4
-			// swap-budget territory.
-			List<List<DpsResult>> shownOwned = new ArrayList<>();
-			List<DpsResult> shownGame = new ArrayList<>();
-			for (int j = 0; j < n; j++)
-			{
-				List<DpsResult> ownedList = new ArrayList<>();
-				if (sharedOwned != null)
-				{
-					// calculate() returns null vs an immune mob (the TD
-					// shield phases) - an honest empty list, never a null
-					// element the card would trip over.
-					DpsResult shown = calcRespecting(calc, ownedReqs.get(j), sharedOwned);
-					if (shown != null)
-					{
-						ownedList.add(shown);
-					}
-				}
-				shownOwned.add(ownedList);
-				shownGame.add(sharedGame == null ? null
-					: calcRespecting(calc, gameReqs.get(j), sharedGame));
-			}
-			List<SpecPick[]> specOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
-				? chooseSharedSpec(ctx, style, mobs, ownedReqs,
-					shownOwned, styleLevels, ctx.effectiveOwned, false, shownGame)
-				: List.of();
-			List<SpecPick[]> gameSpecOptions = ctx.maxSwaps >= 1 && ctx.specWeapon
-				? chooseSharedSpec(ctx, style, mobs, gameReqs,
-					shownOwned, gameLevels, null, true, shownGame)
-				: List.of();
-			// ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
-			// group recommended Ring of shadows over the Lightbearer): the
-			// shared ring falls out of raw-stat set construction, which the
-			// stat-less Lightbearer can never win - but doubled regen scales
-			// the whole trip's spec value. Price the trip both ways (HP-
-			// weighted shared-set dps + top shared-spec value) and adopt the
-			// variant on a strict win - the single-mob arbitration's argmax,
-			// at the shared-set altitude.
-			if (ctx.maxSwaps >= 1 && ctx.specWeapon)
-			{
-				Loadout lbOwned = lightbearerVariant(ctx.dataset, sharedOwned,
-					ownedReqs, ctx.effectiveOwned);
-				if (lbOwned != null)
-				{
-					List<List<DpsResult>> lbShown = new ArrayList<>();
-					double baseTotal = topSpecScore(specOptions, mobs);
-					double lbTotal = 0;
-					for (int j = 0; j < n; j++)
-					{
-						List<DpsResult> list = new ArrayList<>();
-						DpsResult shown = calcRespecting(calc, ownedReqs.get(j), lbOwned);
-						if (shown != null)
-						{
-							list.add(shown);
-							lbTotal += shown.getDps() * MonsterMechanics.kitWeight(mobs.get(j));
-						}
-						lbShown.add(list);
-						if (!shownOwned.get(j).isEmpty())
-						{
-							baseTotal += shownOwned.get(j).get(0).getDps()
-								* MonsterMechanics.kitWeight(mobs.get(j));
-						}
-					}
-					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
-						ownedReqs, lbShown, styleLevels, ctx.effectiveOwned, false, shownGame);
-					lbTotal += topSpecScore(lbOptions, mobs);
-					if (lbTotal > baseTotal + 1e-9)
-					{
-						sharedOwned = lbOwned;
-						shownOwned = lbShown;
-						specOptions = lbOptions;
-					}
-				}
-				Loadout lbGame = lightbearerVariant(ctx.dataset, sharedGame, gameReqs, null);
-				if (lbGame != null)
-				{
-					List<DpsResult> lbGameShown = new ArrayList<>();
-					double baseTotal = topSpecScore(gameSpecOptions, mobs);
-					double lbTotal = 0;
-					for (int j = 0; j < n; j++)
-					{
-						DpsResult shown = calcRespecting(calc, gameReqs.get(j), lbGame);
-						lbGameShown.add(shown);
-						if (shown != null)
-						{
-							lbTotal += shown.getDps() * MonsterMechanics.kitWeight(mobs.get(j));
-						}
-						if (shownGame.get(j) != null)
-						{
-							baseTotal += shownGame.get(j).getDps()
-								* MonsterMechanics.kitWeight(mobs.get(j));
-						}
-					}
-					List<SpecPick[]> lbOptions = chooseSharedSpec(ctx, style, mobs,
-						gameReqs, shownOwned, gameLevels, null, true, lbGameShown);
-					lbTotal += topSpecScore(lbOptions, mobs);
-					if (lbTotal > baseTotal + 1e-9)
-					{
-						sharedGame = lbGame;
-						shownGame = lbGameShown;
-						gameSpecOptions = lbOptions;
-					}
-				}
-			}
-			SpecPick[] specs = specOptions.isEmpty() ? new SpecPick[n] : specOptions.get(0);
-			SpecPick[] gameSpecs = gameSpecOptions.isEmpty() ? new SpecPick[n] : gameSpecOptions.get(0);
+			SharedSide ownedSide = sharedSideFor(calc, ctx, mobs, ownedReqs, ownedBests, ctx.effectiveOwned);
+			SharedSide gameSide = sharedSideFor(calc, ctx, mobs, gameReqs, gameBests, null);
+			Loadout sharedOwned = ownedSide.shared;
+			Loadout sharedGame = gameSide.shared;
+			SpecPick[] specs = ownedSide.specOptions.isEmpty() ? new SpecPick[n] : ownedSide.specOptions.get(0);
+			SpecPick[] gameSpecs = gameSide.specOptions.isEmpty() ? new SpecPick[n] : gameSide.specOptions.get(0);
 			// The INVENTORY budget counts every carried item INCLUDING the
 			// spec weapon (field decision 2026-07-17, reversing same-day:
 			// Inventory 0 = strictly one worn set, NO spec recommended).
@@ -2422,27 +2087,19 @@ public class OptimizerService
 			// The bench reserves slots for the PRESUMPTIVE (top-ranked)
 			// spec; the kit pass re-prices each option it actually seats.
 			GearItem[] carriedSlots = carriedSpecOf(specs, sharedOwned);
-			GearItem specCarried = carriedSlots[0];
-			GearItem specAmmoCarried = carriedSlots[1];
-			GearItem specOffhand = carriedSlots[2];
 			GearItem[] gameSlots = carriedSpecOf(gameSpecs, sharedGame);
-			GearItem gameSpecCarried = gameSlots[0];
-			int benchForSwaps = Math.max(0, ctx.maxSwaps
-				- (specCarried != null ? 1 : 0) - (specAmmoCarried != null ? 1 : 0)
-				- (specOffhand != null ? 1 : 0));
+			int benchForSwaps = Math.max(0, ctx.maxSwaps - slotsOf(carriedSlots));
 			List<GearItem> swaps = sharedOwned == null ? List.of()
 				: chooseSwaps(calc, sharedOwned, ownedReqs, mobs, ownedBests, benchForSwaps);
-			specsByStyle.put(style, specs);
-			gameSpecsByStyle.put(style, gameSpecs);
-			boostLabelByStyle.put(style, boostLabel);
-			gameBoostLabelByStyle.put(style, gameBoostLabel);
+			w.specs = specs;
+			w.gameSpecs = gameSpecs;
 			if (sharedOwned != null)
 			{
-				ownedSides.put(style, new Side(ownedReqs, sharedOwned, ownedBests, specOptions));
+				ownedSides.put(style, ownedSide);
 			}
 			if (sharedGame != null)
 			{
-				gameSides.put(style, new Side(gameReqs, sharedGame, gameBests, gameSpecOptions));
+				gameSides.put(style, gameSide);
 			}
 			if (sharedOwned != null && !swaps.isEmpty())
 			{
@@ -2452,77 +2109,52 @@ public class OptimizerService
 				for (int j = 0; j < n; j++)
 				{
 					Loadout worn = bestWorn(calc, ownedReqs.get(j), sharedOwned, swaps);
-					DpsResult shown = calcRespecting(calc, ownedReqs.get(j), worn);
-					DpsResult covered = coverableBest(ownedBests.get(j), sharedOwned, swaps);
-					if (covered != null && (shown == null || covered.getDps() > shown.getDps()))
-					{
-						shown = covered;
-					}
-					List<DpsResult> ownedList = new ArrayList<>();
-					if (shown != null)
-					{
-						ownedList.add(shown);
-					}
-					shownOwned.set(j, ownedList);
+					ownedSide.shown[j] = DpsResult.better(calcRespecting(calc, ownedReqs.get(j), worn),
+						coverableBest(ownedBests.get(j), sharedOwned, swaps));
 				}
 			}
 			// The trip PLAN for this style: the union of what the mobs
 			// actually wear across the roster - the inventory view shows
 			// plan-minus-worn, so displaced pieces no mob uses drop out.
 			LinkedHashMap<Integer, GearItem> plan = new LinkedHashMap<>();
-			for (List<DpsResult> ownedList : shownOwned)
+			for (DpsResult shown : ownedSide.shown)
 			{
-				if (ownedList.isEmpty())
+				if (shown != null)
 				{
-					continue;
-				}
-				for (GearItem item : ownedList.get(0).getLoadout().getGear().values())
-				{
-					if (item != null)
-					{
-						plan.putIfAbsent(item.getId(), item);
-					}
+					pack(plan, shown.getLoadout().items());
 				}
 			}
+			pack(plan, Arrays.asList(carriedSlots[1], carriedSlots[2]));
 			for (int j = 0; j < n; j++)
 			{
 				MonsterStats mob = mobs.get(j);
-				List<DpsResult> ownedList = shownOwned.get(j);
-				DpsResult gameShown = shownGame.get(j);
 				// The single-mob post-passes the roster shown sets never got
 				// (field reports 2026-08-09): the Dizana's quiver relocation,
 				// and the mandatory-recoil swap (a Zulrah roster recommended
 				// sets with no recoil gear).
-				if (!ownedList.isEmpty())
+				DpsResult ownedShown = postPass(ctx, ownedReqs.get(j), ownedSide.shown[j]);
+				DpsResult gameShown = postPass(ctx, gameReqs.get(j), gameSide.shown[j]);
+				// calculate() returns null vs an immune mob (the TD shield
+				// phases) - an honest empty list, never a null element the
+				// card would trip over.
+				List<DpsResult> ownedList = new ArrayList<>();
+				if (ownedShown != null)
 				{
-					ownedList = new ArrayList<>(ownedList);
-					ownedList.set(0, optimizer.ensureRequiredUtility(ctx.dataset, ownedReqs.get(j),
-						optimizer.relocateQuiverAmmo(ctx.dataset, ownedReqs.get(j), ownedList.get(0))));
+					ownedList.add(ownedShown);
 				}
-				gameShown = optimizer.ensureRequiredUtility(ctx.dataset, gameReqs.get(j),
-					optimizer.relocateQuiverAmmo(ctx.dataset, gameReqs.get(j), gameShown));
 				SpecPick spec = specs[j];
 				SpecPick gameSpec = gameSpecs[j];
 				IncomingDpsCalculator.Result incoming = incomingFor(mob, sharedOwned, ctx);
 				IncomingDpsCalculator.Result gameIncoming = incomingFor(mob, sharedGame, ctx);
-				Loadout worn = ownedList.isEmpty() ? sharedOwned
-					: ownedList.get(0).getLoadout();
-				if (specAmmoCarried != null)
-				{
-					plan.putIfAbsent(specAmmoCarried.getId(), specAmmoCarried);
-				}
-				if (specOffhand != null)
-				{
-					plan.putIfAbsent(specOffhand.getId(), specOffhand);
-				}
+				Loadout worn = ownedShown == null ? sharedOwned : ownedShown.getLoadout();
 				List<GearItem> bench = sharedOwned == null ? List.of()
-					: inventoryFor(plan.values(), specCarried, worn);
-				List<GearItem> gameBench = gameSpecCarried == null
+					: inventoryFor(plan.values(), carriedSlots[0], worn);
+				List<GearItem> gameBench = gameSlots[0] == null
 					? List.of()
-					: gameSlots[2] == null ? Collections.singletonList(gameSpecCarried)
-					: Arrays.asList(gameSpecCarried, gameSlots[2]);
+					: gameSlots[2] == null ? Collections.singletonList(gameSlots[0])
+					: Arrays.asList(gameSlots[0], gameSlots[2]);
 				StyleResult sr = verified(new StyleResult(ownedList, gameShown, spec, gameSpec,
-					boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
+					w.plan.label, w.plan.gameLabel, incoming, gameIncoming, bench, gameBench, true, true),
 					ctx.dataset, ownedReqs.get(j), gameReqs.get(j));
 				perMob.get(j).put(style, sr);
 			}
@@ -2532,24 +2164,16 @@ public class OptimizerService
 		// style-immune phase (TD shields) with a genuine style switch. The
 		// pass runs for BOTH sides - the Yours kit over your bank and the
 		// BiS kit over the whole game, under the same inventory budget.
-		long tKitStart = System.nanoTime();
 		KitView ownedView = ctx.maxSwaps >= 1 && ownedSides.size() >= 2
-			? kitPass(calc, mobs, ctx, ticket, ownedSides, "owned", true)
+			? kitPass(calc, mobs, ctx, ticket, ownedSides)
 			: null;
-		long tOwnedKitMs = (System.nanoTime() - tKitStart) / 1_000_000;
-		long tGameKitStart = System.nanoTime();
 		KitView gameView = ctx.maxSwaps >= 1 && gameSides.size() >= 2
-			? kitPass(calc, mobs, ctx, ticket, gameSides, "BiS", false)
+			? kitPass(calc, mobs, ctx, ticket, gameSides)
 			: null;
-		long tGameKitMs = (System.nanoTime() - tGameKitStart) / 1_000_000;
 		if (requestSeq.get() != ticket)
 		{
 			abandonedForTest++;
 			return null;
-		}
-		if (curveOut != null)
-		{
-			curveOut[0] = ownedView == null ? null : ownedView.curve;
 		}
 		if (ownedView != null || gameView != null)
 		{
@@ -2567,7 +2191,8 @@ public class OptimizerService
 						continue;
 					}
 					List<DpsResult> ownedList = old.owned;
-					SpecPick spec = specsByStyle.get(s) == null ? null : specsByStyle.get(s)[j];
+					StyleWork w = works.get(s);
+					SpecPick spec = w.specs[j];
 					String label = old.boostLabel;
 					IncomingDpsCalculator.Result incoming = old.incoming;
 					List<GearItem> bench = old.bench;
@@ -2581,7 +2206,7 @@ public class OptimizerService
 						ownedList = new ArrayList<>();
 						ownedList.add(result);
 						spec = ownedView.specs != null ? ownedView.specs[j] : null;
-						label = boostLabelByStyle.get(s);
+						label = w.plan.label;
 						Loadout worn = result.getLoadout();
 						incoming = incomingFor(mobs.get(j), worn, ctx);
 						bench = inventoryFor(ownedView.plan.values(), ownedView.specCarried, worn);
@@ -2597,7 +2222,7 @@ public class OptimizerService
 						spec = null;
 					}
 					DpsResult gameBest = old.overallBest;
-					SpecPick gameSpec = gameSpecsByStyle.get(s) == null ? null : gameSpecsByStyle.get(s)[j];
+					SpecPick gameSpec = w.gameSpecs[j];
 					String gameLabel = old.gameBoostLabel;
 					IncomingDpsCalculator.Result gameIncoming = old.gameIncoming;
 					List<GearItem> gameBench = old.gameBench;
@@ -2609,7 +2234,7 @@ public class OptimizerService
 						gameBest = gameBest.withPurchaseCost(
 							unownedValue(gameBest.getLoadout(), ctx.effectiveOwned));
 						gameSpec = gameView.specs != null ? gameView.specs[j] : null;
-						gameLabel = gameBoostLabelByStyle.get(s);
+						gameLabel = w.plan.gameLabel;
 						Loadout worn = gameBest.getLoadout();
 						gameIncoming = incomingFor(mobs.get(j), worn, ctx);
 						gameBench = inventoryFor(gameView.plan.values(), gameView.specCarried, worn);
@@ -2632,13 +2257,11 @@ public class OptimizerService
 					if (ownedList != null && !ownedList.isEmpty() && own != null)
 					{
 						ownedList = new ArrayList<>(ownedList);
-						ownedList.set(0, optimizer.ensureRequiredUtility(ctx.dataset, own,
-							optimizer.relocateQuiverAmmo(ctx.dataset, own, ownedList.get(0))));
+						ownedList.set(0, postPass(ctx, own, ownedList.get(0)));
 					}
 					if (gameBest != null && game != null)
 					{
-						gameBest = optimizer.ensureRequiredUtility(ctx.dataset, game,
-							optimizer.relocateQuiverAmmo(ctx.dataset, game, gameBest));
+						gameBest = postPass(ctx, game, gameBest);
 					}
 					// A side is kit-backed when it has no kit at all (nothing
 					// to contradict) or the kit just answered this style.
@@ -2651,7 +2274,7 @@ public class OptimizerService
 			}
 		}
 		// The group's swaps: one strip per style, on every member's card.
-		for (Map.Entry<CombatStyle, Side> entry : ownedSides.entrySet())
+		for (Map.Entry<CombatStyle, SharedSide> entry : ownedSides.entrySet())
 		{
 			Map<GearSlot, Ladder> group = groupLadderFor(ctx, entry.getValue(), mobs);
 			for (int j = 0; j < n; j++)
@@ -2666,51 +2289,167 @@ public class OptimizerService
 		return perMob;
 	}
 
-	/** One side's per-style kit inputs (Yours or BiS): the member requests,
-	 * the shared set and each member's free bests, plus the shared-spec
-	 * options - present only for a style with a shared set. */
-	private static final class Side
+	/** One style's roster state: pass A's plan and member requests and the
+	 * fanned-out optimize answers (one array slot per task), then the
+	 * shared-spec picks the kit merge reads back. */
+	private static final class StyleWork
 	{
-		final List<OptimizationRequest> reqs;
-		Loadout shared;
-		final List<List<DpsResult>> bests;
-		final List<SpecPick[]> specOptions;
+		StylePlan plan;
+		final List<OptimizationRequest> ownedReqs = new ArrayList<>();
+		final List<OptimizationRequest> gameReqs = new ArrayList<>();
+		final List<DpsResult>[] ownedArr;
+		final List<DpsResult>[] gameArr;
+		SpecPick[] specs;
+		SpecPick[] gameSpecs;
 
-		Side(List<OptimizationRequest> reqs, Loadout shared, List<List<DpsResult>> bests,
-			List<SpecPick[]> specOptions)
+		@SuppressWarnings("unchecked")
+		StyleWork(int n)
 		{
-			this.reqs = reqs;
-			this.shared = shared;
-			this.bests = bests;
-			this.specOptions = specOptions;
+			ownedArr = new List[n];
+			gameArr = new List[n];
 		}
 	}
 
+	/** One side's shared answer for a style (Yours or BiS): the member
+	 * requests and free bests, the shared set, each mob's result on it (null
+	 * where calculate() has nothing - the TD shield phases) and the ranked
+	 * shared-spec options - the kit pass's per-style input. */
+	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+	private static final class SharedSide
+	{
+		final List<OptimizationRequest> reqs;
+		final List<List<DpsResult>> bests;
+		Loadout shared;
+		DpsResult[] shown;
+		List<SpecPick[]> specOptions = List.of();
+	}
+
+	/** The side's shared set re-shown per mob, with its shared spec and the
+	 * Lightbearer arbitration on top. owned == null is the BiS side. */
+	private SharedSide sharedSideFor(DpsCalculator calc, ComputeContext ctx, List<MonsterStats> mobs,
+		List<OptimizationRequest> reqs, List<List<DpsResult>> bests, OwnedItems owned)
+	{
+		SharedSide side = new SharedSide(reqs, bests);
+		side.shared = chooseSharedLoadout(calc, bests, reqs);
+		side.shown = shownAcross(calc, reqs, side.shared);
+		if (ctx.maxSwaps >= 1 && ctx.p.specWeapon)
+		{
+			// The spec weapon is PART of the carried set (field decision
+			// 2026-07-17): with zero swaps a roster brings ONE spec weapon,
+			// so the pick is shared - HP-weighted like the worn set - and
+			// only its per-mob numbers flip. Swapping per mob is M-4
+			// swap-budget territory.
+			side.specOptions = chooseSharedSpec(ctx, mobs, reqs, side.shown, owned);
+			adoptLightbearer(calc, ctx, mobs, reqs, owned, side);
+		}
+		return side;
+	}
+
+	/** Each mob's result on the shared set (all null without one). */
+	private DpsResult[] shownAcross(DpsCalculator calc, List<OptimizationRequest> reqs, Loadout shared)
+	{
+		DpsResult[] shown = new DpsResult[reqs.size()];
+		for (int j = 0; shared != null && j < shown.length; j++)
+		{
+			shown[j] = calcRespecting(calc, reqs.get(j), shared);
+		}
+		return shown;
+	}
+
+	/** ROSTER LIGHTBEARER ARBITRATION (field report 2026-08-08: a Nex
+	 * group recommended Ring of shadows over the Lightbearer): the
+	 * shared ring falls out of raw-stat set construction, which the
+	 * stat-less Lightbearer can never win - but doubled regen scales
+	 * the whole trip's spec value. Price the trip both ways (HP-
+	 * weighted shared-set dps + top shared-spec value) and adopt the
+	 * variant on a strict win - the single-mob arbitration's argmax,
+	 * at the shared-set altitude. */
+	private void adoptLightbearer(DpsCalculator calc, ComputeContext ctx, List<MonsterStats> mobs,
+		List<OptimizationRequest> reqs, OwnedItems owned, SharedSide side)
+	{
+		Loadout variant = lightbearerVariant(ctx.dataset, side.shared, reqs, owned);
+		if (variant == null)
+		{
+			return;
+		}
+		DpsResult[] shown = shownAcross(calc, reqs, variant);
+		double baseTotal = topSpecScore(side.specOptions, mobs);
+		double lbTotal = 0;
+		for (int j = 0; j < shown.length; j++)
+		{
+			double weight = MonsterMechanics.kitWeight(mobs.get(j));
+			if (shown[j] != null)
+			{
+				lbTotal += shown[j].getDps() * weight;
+			}
+			if (side.shown[j] != null)
+			{
+				baseTotal += side.shown[j].getDps() * weight;
+			}
+		}
+		List<SpecPick[]> options = chooseSharedSpec(ctx, mobs, reqs, shown, owned);
+		lbTotal += topSpecScore(options, mobs);
+		if (lbTotal > baseTotal + 1e-9)
+		{
+			side.shared = variant;
+			side.shown = shown;
+			side.specOptions = options;
+		}
+	}
+
+	/** Every non-null item into the plan, once each. */
+	private static void pack(Map<Integer, GearItem> plan, Collection<GearItem> items)
+	{
+		for (GearItem item : items)
+		{
+			if (item != null)
+			{
+				plan.putIfAbsent(item.getId(), item);
+			}
+		}
+	}
+
+	/** The style whose free best answers mob j with the most dps (the
+	 * earlier on ties), or null when no style has an answer. */
+	private static CombatStyle answerFor(Map<CombatStyle, SharedSide> sides, int j)
+	{
+		CombatStyle answer = null;
+		DpsResult top = null;
+		for (Map.Entry<CombatStyle, SharedSide> entry : sides.entrySet())
+		{
+			List<DpsResult> best = entry.getValue().bests.get(j);
+			if (!emptyBest(best) && (top == null || best.get(0).getDps() > top.getDps()))
+			{
+				top = best.get(0);
+				answer = entry.getKey();
+			}
+		}
+		return answer;
+	}
+
+	/** One primary base's kit contest: the kit, the kept spec option with
+	 * its carried [weapon, ammo, offhand], and the score the primaries are
+	 * ranked on. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
+	private static final class Primary
+	{
+		final CombatStyle style;
+		final KitAnswer kit;
+		final SpecPick[] specs;
+		final GearItem[] carried;
+		final double score;
+	}
+
 	/** One side's kit view, ready to merge over the phase-1 tabs. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	private static final class KitView
 	{
 		final Set<CombatStyle> styles;
-		final Loadout base;
 		final GearItem specCarried;
 		/** The kept spec picks, or null when the swaps outbid the spec. */
 		final SpecPick[] specs;
 		final List<Map<CombatStyle, DpsResult>> shownByMob;
 		final LinkedHashMap<Integer, GearItem> plan;
-		/** Nullable: the breakpoint curve (owned side only). */
-		final KitCurve curve;
-
-		KitView(Set<CombatStyle> styles, Loadout base, GearItem specCarried,
-			SpecPick[] specs, List<Map<CombatStyle, DpsResult>> shownByMob,
-			LinkedHashMap<Integer, GearItem> plan, KitCurve curve)
-		{
-			this.styles = styles;
-			this.base = base;
-			this.specCarried = specCarried;
-			this.specs = specs;
-			this.shownByMob = shownByMob;
-			this.plan = plan;
-			this.curve = curve;
-		}
 	}
 
 	/**
@@ -2723,8 +2462,7 @@ public class OptimizerService
 	 * Returns null only when superseded mid-compute.
 	 */
 	private KitView kitPass(DpsCalculator calc, List<MonsterStats> mobs,
-		ComputeContext ctx, long ticket, Map<CombatStyle, Side> sides,
-		String side, boolean wantCurve)
+		ComputeContext ctx, long ticket, Map<CombatStyle, SharedSide> sides)
 	{
 		int n = mobs.size();
 		// SLOT UNIFICATION (field insight 2026-07-18: a tribrid answer
@@ -2734,7 +2472,7 @@ public class OptimizerService
 		// converge onto shared pieces, the diffs shrink, and the
 		// significant breakpoints arrive with far fewer items - the
 		// mage/tribrid answers assemble early instead of fragmenting.
-		for (Side unifySide : sides.values())
+		for (SharedSide unifySide : sides.values())
 		{
 			List<OptimizationRequest> unifyReqs = unifySide.reqs;
 			for (GearSlot slot : GearSlot.values())
@@ -2758,16 +2496,7 @@ public class OptimizerService
 				{
 					continue;
 				}
-				int canonicalId = -1;
-				int canonicalCount = -1;
-				for (Map.Entry<Integer, Integer> count : counts.entrySet())
-				{
-					if (count.getValue() > canonicalCount)
-					{
-						canonicalCount = count.getValue();
-						canonicalId = count.getKey();
-					}
-				}
+				int canonicalId = Collections.max(counts.entrySet(), Map.Entry.comparingByValue()).getKey();
 				GearItem canonical = itemsById.get(canonicalId);
 				for (int j = 0; j < n; j++)
 				{
@@ -2817,17 +2546,8 @@ public class OptimizerService
 		GearItem[] neededBy = new GearItem[n];
 		for (int j = 0; j < n; j++)
 		{
-			DpsResult top = null;
-			CombatStyle answer = null;
-			for (CombatStyle s : sides.keySet())
-			{
-				List<DpsResult> best = sides.get(s).bests.get(j);
-				if (!emptyBest(best) && (top == null || best.get(0).getDps() > top.getDps()))
-				{
-					top = best.get(0);
-					answer = s;
-				}
-			}
+			CombatStyle answer = answerFor(sides, j);
+			DpsResult top = answer == null ? null : sides.get(answer).bests.get(j).get(0);
 			GearItem ammo = top == null ? null : top.getLoadout().get(GearSlot.AMMO);
 			if (ammo == null)
 			{
@@ -2871,7 +2591,7 @@ public class OptimizerService
 		}
 		if (rosterAmmo != null)
 		{
-			for (Side ammoSide : sides.values())
+			for (SharedSide ammoSide : sides.values())
 			{
 				Loadout b = ammoSide.shared;
 				GearItem ammo = b.get(GearSlot.AMMO);
@@ -2899,7 +2619,7 @@ public class OptimizerService
 		// shared state - fan them out (each task owns its calculator; the
 		// kit search is the second half of the raid load-time wall).
 		List<CombatStyle> primaries = new ArrayList<>(sides.keySet());
-		List<Callable<Object[]>> primaryTasks = new ArrayList<>();
+		List<Callable<Primary>> primaryTasks = new ArrayList<>();
 		for (CombatStyle primary : primaries)
 		{
 			primaryTasks.add(() ->
@@ -2928,12 +2648,10 @@ public class OptimizerService
 				// entirely (regression 2026-08-08).
 				KitAnswer kitFree = chooseKit(localCalc, base, primary, singlePool,
 					bundleCandidates(primary, base, null, sides),
-					sides, mobs, ctx.maxSwaps, memo, null);
+					sides, mobs, ctx.maxSwaps, memo);
 				KitAnswer kit = kitFree;
 				SpecPick[] keptSpecs = null;
-				GearItem keptCarried = null;
-				GearItem keptAmmo = null;
-				GearItem keptOffhand = null;
+				GearItem[] kept = new GearItem[3];
 				double score = kitFree.total;
 				// A pinned spec is seated unconditionally - the player's
 				// explicit choice overrides the seat economics, so it always
@@ -2942,13 +2660,12 @@ public class OptimizerService
 				for (SpecPick[] option : specOptions)
 				{
 					GearItem[] slots = carriedSpecOf(option, base);
-					int specSlots = (slots[0] != null ? 1 : 0) + (slots[1] != null ? 1 : 0)
-						+ (slots[2] != null ? 1 : 0);
+					int specSlots = slotsOf(slots);
 					KitAnswer kitSpec = specSlots == 0 ? kitFree
 						: chooseKit(localCalc, base, primary, singlePool,
 							bundleCandidates(primary, base, slots[0], sides),
 							sides, mobs,
-							Math.max(0, ctx.maxSwaps - specSlots), memo, null);
+							Math.max(0, ctx.maxSwaps - specSlots), memo);
 					double specValue = 0;
 					List<GearItem> carriedSpec = carriedOf(kitSpec);
 					for (int j = 0; j < n; j++)
@@ -2968,9 +2685,7 @@ public class OptimizerService
 					{
 						kit = kitSpec;
 						keptSpecs = option;
-						keptCarried = slots[0];
-						keptAmmo = slots[1];
-						keptOffhand = slots[2];
+						kept = slots;
 						// The PRIMARY contest scores what the card SHOWS -
 						// kit total plus the kept spec's honest dpsAdded
 						// value - not the damage-blind seat currency (field
@@ -2979,34 +2694,19 @@ public class OptimizerService
 						// of kit total while ignoring an elder maul worth
 						// 20x that in drain value, and the BiS card lost
 						// its spec entirely).
-						double shownSpec = 0;
-						for (int j = 0; j < n; j++)
-						{
-							if (option[j] != null)
-							{
-								shownSpec += option[j].dpsAdded
-									* MonsterMechanics.kitWeight(mobs.get(j));
-							}
-						}
-						score = kitSpec.total + shownSpec;
+						score = kitSpec.total + tripValue(option, mobs);
 						break;
 					}
 				}
-				return new Object[]{primary, kit, keptSpecs, score, keptCarried, keptAmmo, keptOffhand};
+				return new Primary(primary, kit, keptSpecs, kept, score);
 			});
 		}
-		CombatStyle bestPrimary = null;
-		KitAnswer bestKit = null;
-		SpecPick[] bestSpecs = null;
-		GearItem bestSpecCarried = null;
-		GearItem bestSpecAmmo = null;
-		GearItem bestSpecOffhand = null;
-		double bestScore = -1;
+		Primary winner = null;
 		try
 		{
-			for (Future<Object[]> future : rosterPool.invokeAll(primaryTasks))
+			for (Future<Primary> future : rosterPool.invokeAll(primaryTasks))
 			{
-				Object[] outcome;
+				Primary outcome;
 				try
 				{
 					outcome = future.get();
@@ -3015,20 +2715,9 @@ public class OptimizerService
 				{
 					continue; // one primary failed - the others still answer
 				}
-				if (outcome == null)
+				if (outcome != null && (winner == null || outcome.score > winner.score + 1e-9))
 				{
-					continue; // superseded mid-task
-				}
-				double score = (Double) outcome[3];
-				if (bestKit == null || score > bestScore + 1e-9)
-				{
-					bestPrimary = (CombatStyle) outcome[0];
-					bestKit = (KitAnswer) outcome[1];
-					bestSpecs = (SpecPick[]) outcome[2];
-					bestSpecCarried = (GearItem) outcome[4];
-					bestSpecAmmo = (GearItem) outcome[5];
-					bestSpecOffhand = (GearItem) outcome[6];
-					bestScore = score;
+					winner = outcome; // null = superseded mid-task
 				}
 			}
 		}
@@ -3045,45 +2734,12 @@ public class OptimizerService
 			abandonedForTest++;
 			return null;
 		}
-		if (bestKit == null)
+		if (winner == null)
 		{
 			return null; // unreachable with >= 2 shared styles; be safe
 		}
-		Loadout base = sides.get(bestPrimary).shared;
-		GearItem specCarried = bestSpecCarried;
-		GearItem specAmmo = bestSpecAmmo;
-		GearItem specOffhand = bestSpecOffhand;
-		SpecPick[] specs = bestSpecs;
-		List<GearItem> carried = carriedOf(bestKit);
-		// THE BREAKPOINT CURVE (field spec 2026-07-18): one more greedy to
-		// exhaustion for the winning configuration - with warm machinery
-		// this is cheap - recording (slots, total, viable mobs) at every
-		// pick. The UI reads viability/major/final breakpoints off it.
-		KitCurve curve = null;
-		if (wantCurve)
-		{
-			List<GearItem> curvePool =
-				crossStylePool(base, bestPrimary, sides);
-			List<double[]> raw = new ArrayList<>();
-			int curveSpecSlots = (specCarried != null ? 1 : 0) + (specAmmo != null ? 1 : 0)
-				+ (specOffhand != null ? 1 : 0);
-			chooseKit(calc, base, bestPrimary, curvePool,
-				bundleCandidates(bestPrimary, base, specCarried, sides),
-				sides, mobs,
-				Math.max(0, 20 - curveSpecSlots),
-				new HashMap<>(), raw);
-			if (curveSpecSlots > 0 && !raw.isEmpty())
-			{
-				// The spec (and its ammo) spend the first slots: shift every
-				// point past them and keep a cost-0 baseline copy in front.
-				for (double[] point : raw)
-				{
-					point[0] += curveSpecSlots;
-				}
-				raw.add(0, new double[]{0, raw.get(0)[1], raw.get(0)[2]});
-			}
-			curve = new KitCurve(raw, n, specCarried != null);
-		}
+		Loadout base = sides.get(winner.style).shared;
+		List<GearItem> carried = carriedOf(winner.kit);
 		// Every (mob, style) answer, and the trip PLAN: the union of each
 		// mob's best worn set. The primary wears the base, a bundled style
 		// wears its weapon into the base armor, and ANY style whose free
@@ -3096,73 +2752,35 @@ public class OptimizerService
 			DpsResult mobBest = null;
 			for (CombatStyle s : sides.keySet())
 			{
-				DpsResult result = null;
-				OptimizationRequest req = sides.get(s).reqs.get(j);
-				if (s == bestPrimary)
-				{
-					result = calcRespecting(calc, req,
-						bestWorn(calc, req, base, bestKit.singles));
-				}
-				for (SwapBundle bundle : bestKit.bundles)
-				{
-					if (bundle.style != s)
-					{
-						continue;
-					}
-					Loadout seeded = applyBundle(base, bundle);
-					if (seeded == null)
-					{
-						continue;
-					}
-					DpsResult r = calcRespecting(calc, req,
-						bestWorn(calc, req, seeded, bestKit.singles));
-					if (r != null && (result == null || r.getDps() > result.getDps()))
-					{
-						result = r;
-					}
-				}
-				DpsResult covered = coverableBest(sides.get(s).bests.get(j), base, carried);
-				if (covered != null && (result == null || covered.getDps() > result.getDps()))
-				{
-					result = covered;
-				}
+				DpsResult result = shownFor(calc, base, winner.style, winner.kit.singles, winner.kit.bundles,
+					carried, sides, j, s);
 				if (result != null)
 				{
 					shown.put(s, result);
-					if (mobBest == null || result.getDps() > mobBest.getDps())
-					{
-						mobBest = result;
-					}
+					mobBest = DpsResult.better(mobBest, result);
 				}
 			}
 			shownByMob.add(shown);
 			if (mobBest != null)
 			{
-				for (GearItem item : mobBest.getLoadout().getGear().values())
-				{
-					if (item != null)
-					{
-						plan.putIfAbsent(item.getId(), item);
-					}
-				}
+				pack(plan, mobBest.getLoadout().items());
 			}
 		}
-		if (specAmmo != null)
-		{
-			plan.putIfAbsent(specAmmo.getId(), specAmmo);
-		}
-		if (specOffhand != null)
-		{
-			plan.putIfAbsent(specOffhand.getId(), specOffhand);
-		}
+		pack(plan, Arrays.asList(winner.carried[1], winner.carried[2]));
 		return new KitView(EnumSet.copyOf(sides.keySet()),
-			base, specCarried, specs, shownByMob, plan, curve);
+			winner.carried[0], winner.specs, shownByMob, plan);
 	}
 
 	private static List<GearItem> carriedOf(KitAnswer kit)
 	{
-		List<GearItem> carried = new ArrayList<>(kit.singles);
-		for (SwapBundle bundle : kit.bundles)
+		return carriedOf(kit.singles, kit.bundles);
+	}
+
+	/** Everything a kit carries, once each: the singles, then the bundles' pieces. */
+	private static List<GearItem> carriedOf(List<GearItem> singles, List<SwapBundle> bundles)
+	{
+		List<GearItem> carried = new ArrayList<>(singles);
+		for (SwapBundle bundle : bundles)
 		{
 			for (GearItem item : bundle.items)
 			{
@@ -3200,81 +2818,24 @@ public class OptimizerService
 		{
 			return;
 		}
-		if (mobs.size() == 1)
-		{
-			int id = mobs.get(0).profileId();
-			// The single-mob fast path merges the mob's own exclusions into
-			// the style map - one request, same semantics. (EnumMap's copy
-			// constructor rejects an empty plain map - build then putAll.)
-			Map<CombatStyle, Set<Integer>> merged = new EnumMap<>(CombatStyle.class);
-			if (excludedByStyle != null)
-			{
-				merged.putAll(excludedByStyle);
-			}
-			Map<CombatStyle, Set<Integer>> perMobExcl = excludedByMob == null ? null
-				: excludedByMob.get(id);
-			if (perMobExcl != null)
-			{
-				for (Map.Entry<CombatStyle, Set<Integer>> e : perMobExcl.entrySet())
-				{
-					Set<Integer> union = new HashSet<>(
-						merged.getOrDefault(e.getKey(), Set.of()));
-					union.addAll(e.getValue());
-					merged.put(e.getKey(), union);
-				}
-			}
-			Set<Integer> mergedDreams = dreamItems == null
-				? new HashSet<>() : new HashSet<>(dreamItems);
-			if (dreamsByMob != null)
-			{
-				Set<Integer> localSims = dreamsByMob.get(id);
-				if (localSims != null)
-				{
-					mergedDreams.addAll(localSims);
-				}
-			}
-			bestPerStyle(mobs.get(0), realLevels, boostedLevels, prayerUnlocks, requirements,
-				owned, collectionFingerprint, p, merged, mergedDreams,
-				pinsByMob.get(id), spellByMob.get(id), specByMob.getOrDefault(id, 0), protectOnlyItems,
-				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
-			return;
-		}
 		final ComputeContext ctx = buildContext(realLevels, boostedLevels, prayerUnlocks,
 			requirements, owned, collectionFingerprint, p, excludedByStyle, dreamItems,
 			pinsByMob, spellByMob, specByMob, protectOnlyItems);
 		ctx.excludedByMob = excludedByMob == null ? Map.of() : excludedByMob;
 		ctx.dreamsByMob = dreamsByMob == null ? Map.of() : dreamsByMob;
-		final List<MonsterStats> roster = new ArrayList<>(mobs);
-		final long ticket = requestSeq.incrementAndGet();
-		worker.execute(() ->
+		if (mobs.size() == 1)
 		{
-			if (requestSeq.get() != ticket)
-			{
-				abandonedForTest++;
-				return;
-			}
-			KitCurve[] curveOut = new KitCurve[1];
-			List<Map<CombatStyle, StyleResult>> perMob;
-			try
-			{
-				perMob = computeStyleAcross(roster, ctx, ticket, curveOut);
-			}
-			catch (RuntimeException ex)
-			{
-				log.warn("roster compute failed for {}", roster.get(0).getName(), ex);
-				perMob = new ArrayList<>();
-				for (int i = 0; i < roster.size(); i++)
-				{
-					perMob.add(Map.of());
-				}
-			}
-			if (perMob == null || requestSeq.get() != ticket)
-			{
-				abandonedForTest++;
-				return;
-			}
-			callback.accept(new RosterResult(roster, perMob, curveOut[0]));
-		});
+			// The single-mob fast path, the member's own exclusions and sims
+			// layered per mob by the context - one request, same semantics.
+			bestPerStyle(mobs.get(0), ctx,
+				map -> callback.accept(new RosterResult(mobs, Collections.singletonList(map))));
+			return;
+		}
+		final List<MonsterStats> roster = new ArrayList<>(mobs);
+		submit(ticket -> computeStyleAcross(roster, ctx, ticket),
+			() -> new ArrayList<>(Collections.nCopies(roster.size(), Map.<CombatStyle, StyleResult>of())),
+			"roster compute failed for {}", roster.get(0).getName(),
+			perMob -> callback.accept(new RosterResult(roster, perMob)));
 	}
 
 	/** The per-style cache key: the query key minus per-style state, plus
@@ -3283,21 +2844,17 @@ public class OptimizerService
 		ComputeContext ctx, MonsterStats mob)
 	{
 		return baseKey + "|" + style.name()
-			+ "|" + ctx.excluded.getOrDefault(style, Set.of()).hashCode()
+			+ "|" + excludedFor(ctx, style, mob).hashCode()
 			+ "|" + pinKey(ctx, style, mob);
 	}
 
 	private static String joinAssumes(String prayer, String boost)
 	{
-		if (prayer != null && !prayer.isEmpty() && boost != null)
+		if (prayer == null || prayer.isEmpty())
 		{
-			return prayer + " + " + boost;
+			return boost;
 		}
-		if (prayer != null && !prayer.isEmpty())
-		{
-			return prayer;
-		}
-		return boost;
+		return boost == null ? prayer : prayer + " + " + boost;
 	}
 
 	/** Package-private: SpecPoisonTest pins the spec tie-break. */
@@ -3348,17 +2905,15 @@ public class OptimizerService
 	 * carried no spec at all). Each entry is one candidate's per-mob
 	 * SpecPicks (null where it cannot spec); empty list = no candidate has
 	 * positive trip value. */
-	private List<SpecPick[]> chooseSharedSpec(ComputeContext ctx, CombatStyle style,
-		List<MonsterStats> mobs, List<OptimizationRequest> reqs,
-		List<List<DpsResult>> shownOwned, PlayerLevels levels, OwnedItems owned,
-		boolean game, List<DpsResult> shownGame)
+	private List<SpecPick[]> chooseSharedSpec(ComputeContext ctx, List<MonsterStats> mobs,
+		List<OptimizationRequest> reqs, DpsResult[] shown, OwnedItems owned)
 	{
 		int n = mobs.size();
 		LinkedHashSet<Integer> candidates = new LinkedHashSet<>();
 		// A pinned spec weapon (serving this style) is the ONLY candidate:
 		// the player's explicit choice, priced across the trip like any
 		// other but never contested by the free picks.
-		Set<Integer> specPin = restrictSpec(ctx, style, mobs.get(0));
+		Set<Integer> specPin = restrictSpec(ctx, reqs.get(0).getStyle(), mobs.get(0));
 		if (specPin != null)
 		{
 			candidates.addAll(specPin);
@@ -3367,13 +2922,7 @@ public class OptimizerService
 		{
 			for (int j = 0; j < n; j++)
 			{
-				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
-				if (base == null)
-				{
-					continue;
-				}
-				SpecPick free = bestSpec(ctx.dataset, reqs.get(j), base, style,
-					mobs.get(j), levels, owned, null, false);
+				SpecPick free = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned, null, false);
 				if (free != null && free.weapon != null)
 				{
 					candidates.add(free.weapon.getId());
@@ -3391,12 +2940,8 @@ public class OptimizerService
 			SpecPick[] bare = new SpecPick[n];
 			for (int j = 0; j < n; j++)
 			{
-				List<DpsResult> base = baseFor(game, shownOwned.get(j), shownGame.get(j));
-				if (base != null)
-				{
-					bare[j] = bestSpec(ctx.dataset, reqs.get(j), base, style,
-						mobs.get(j), levels, owned, Collections.singleton(id), specPin != null);
-				}
+				bare[j] = bestSpec(ctx.dataset, reqs.get(j), shown[j], owned,
+					Collections.singleton(id), specPin != null);
 			}
 			// The switch WITH its offhand is its own option, ranked beside
 			// the bare weapon: the seat check keeps whichever pays for its
@@ -3406,17 +2951,13 @@ public class OptimizerService
 			for (int pass = 0; pass < 2; pass++)
 			{
 				SpecPick[] perMob = new SpecPick[n];
-				double score = 0;
 				boolean differs = false;
 				for (int j = 0; j < n; j++)
 				{
 					perMob[j] = pass == 0 ? bare[j] : seat(bare[j], ctx.maxSwaps);
 					differs |= perMob[j] != bare[j];
-					if (perMob[j] != null)
-					{
-						score += perMob[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
-					}
 				}
+				double score = tripValue(perMob, mobs);
 				if ((pass == 0 || differs) && (score > 1e-9 || specPin != null))
 				{
 					scores.add(new double[]{score, perCandidate.size()});
@@ -3431,16 +2972,6 @@ public class OptimizerService
 			ranked.add(perCandidate.get((int) row[1]));
 		}
 		return ranked;
-	}
-
-	private static List<DpsResult> baseFor(boolean game, List<DpsResult> owned, DpsResult gameShown)
-	{
-		if (game)
-		{
-			return gameShown == null ? null
-				: new ArrayList<>(Collections.singletonList(gameShown));
-		}
-		return emptyBest(owned) ? null : new ArrayList<>(owned);
 	}
 
 	/** The shared set with a Lightbearer in the ring slot, or null when the
@@ -3506,30 +3037,40 @@ public class OptimizerService
 		{
 			return null;
 		}
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(shared.getGear());
-		gear.put(GearSlot.RING, lightbearer);
-		Loadout variant = Loadout.adopting(gear);
-		return shared.getQuiverAmmo() != null
-			? variant.withQuiverAmmo(shared.getQuiverAmmo()) : variant;
+		return shared.with(GearSlot.RING, lightbearer);
 	}
 
 	/** HP-weighted trip value of the top-ranked shared-spec option. */
 	private static double topSpecScore(List<SpecPick[]> options, List<MonsterStats> mobs)
 	{
-		if (options.isEmpty())
-		{
-			return 0;
-		}
+		return options.isEmpty() ? 0 : tripValue(options.get(0), mobs);
+	}
+
+	/** HP-weighted trip value of one shared-spec option (null = no spec there). */
+	private static double tripValue(SpecPick[] picks, List<MonsterStats> mobs)
+	{
 		double score = 0;
-		SpecPick[] top = options.get(0);
 		for (int j = 0; j < mobs.size(); j++)
 		{
-			if (top[j] != null)
+			if (picks[j] != null)
 			{
-				score += top[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
+				score += picks[j].dpsAdded * MonsterMechanics.kitWeight(mobs.get(j));
 			}
 		}
 		return score;
+	}
+
+	/** owned == null is the game-best side: everything standard counts. */
+	private static boolean available(OwnedItems owned, OptimizationRequest request, int id)
+	{
+		return owned == null || owned.owns(id) || request.isDream(id);
+	}
+
+	/** The spec's expected damage per use at the Multi card's stack. */
+	private static double specDamage(SpecialAttack spec, DpsResult base, OptimizationRequest request)
+	{
+		return spec.expectedDamage(base, request.getMonster(), request.getLevels())
+			* spec.multiFactor(request.getMultiStack());
 	}
 
 	/** The carried slots a shared-spec option costs: [weapon, ammo,
@@ -3551,6 +3092,20 @@ public class OptimizerService
 		return new GearItem[3];
 	}
 
+	/** The bench slots those carried pieces spend. */
+	private static int slotsOf(GearItem... slots)
+	{
+		int spent = 0;
+		for (GearItem slot : slots)
+		{
+			if (slot != null)
+			{
+				spent++;
+			}
+		}
+		return spent;
+	}
+
 	/** restrictTo non-null: only these weapon ids are scanned - the roster
 	 * path uses it to evaluate ONE shared spec weapon per mob. */
 	/** The Lightbearer never survives the ring slot's raw-stat cut (its
@@ -3567,16 +3122,14 @@ public class OptimizerService
 		LoadoutData dataset,
 		OptimizationRequest request,
 		List<DpsResult> results,
-		CombatStyle style,
-		MonsterStats monster,
-		PlayerLevels levels,
 		OwnedItems owned,
 		Set<Integer> restrictTo)
 	{
-		SpecPick spec = bestSpec(dataset, request, results, style, monster, levels, owned, restrictTo, restrictTo != null);
-		if (spec == null || results.isEmpty())
+		SpecPick spec = bestSpec(dataset, request, results.isEmpty() ? null : results.get(0),
+			owned, restrictTo, restrictTo != null);
+		if (spec == null)
 		{
-			return spec; // no spec value in play - dps ring stands
+			return null; // no spec value in play - dps ring stands
 		}
 		DpsResult base = results.get(0);
 		if (request.pinnedFor(GearSlot.RING) != null)
@@ -3589,13 +3142,8 @@ public class OptimizerService
 		{
 			return spec;
 		}
-		if (request.isRiskConstrained()
-			&& (PvpRisk.riskGp(variantLoadout, null, request.getMaxTradeables())
-					> request.getRiskBudgetGp() + LoadoutOptimizer.pinnedRiskFloor(dataset, request)
-				|| PvpRisk.risksUnprotected(variantLoadout, null, request.getMaxTradeables(),
-					request.getPinnedItems().isEmpty() ? Set.of()
-						: new HashSet<>(request.getPinnedItems().values()),
-					request.getProtectOnlyItems())))
+		LoadoutOptimizer.RiskGuard risk = LoadoutOptimizer.RiskGuard.of(dataset, request);
+		if (risk != null && risk.vetoes(variantLoadout, null))
 		{
 			return spec;
 		}
@@ -3604,9 +3152,7 @@ public class OptimizerService
 		{
 			return spec;
 		}
-		List<DpsResult> variantResults = new ArrayList<>(results);
-		variantResults.set(0, variant);
-		SpecPick variantSpec = bestSpec(dataset, request, variantResults, style, monster, levels, owned, restrictTo, restrictTo != null);
+		SpecPick variantSpec = bestSpec(dataset, request, variant, owned, restrictTo, restrictTo != null);
 		if (variantSpec == null)
 		{
 			return spec;
@@ -3621,42 +3167,32 @@ public class OptimizerService
 		return spec;
 	}
 
-	/** keepZero: keep a restricted (user-PINNED) weapon even when it adds
-	 * ~0 dps, so the pin always displays with an honest number instead of
-	 * silently vanishing (field report 2026-08-09: a pinned Tonalztics
-	 * showed nothing on a set it did not help). */
+	/** main: the worn set's result the spec swaps into (null = nothing to
+	 * spec from). keepZero: keep a restricted (user-PINNED) weapon even
+	 * when it adds ~0 dps, so the pin always displays with an honest
+	 * number instead of silently vanishing (field report 2026-08-09: a
+	 * pinned Tonalztics showed nothing on a set it did not help). */
 	SpecPick bestSpec(
 		LoadoutData dataset,
 		OptimizationRequest request,
-		List<DpsResult> baseResults,
-		CombatStyle style,
-		MonsterStats monster,
-		PlayerLevels levels,
+		DpsResult main,
 		OwnedItems owned,
 		Set<Integer> restrictTo,
 		boolean keepZero)
 	{
-		if (baseResults == null || baseResults.isEmpty())
+		if (main == null)
 		{
 			return null;
 		}
+		MonsterStats monster = request.getMonster();
 		DpsCalculator calculator = new DpsCalculator();
 		SpecPick best = null;
 		// Request-level risk constants, hoisted out of the weapon scan (they
 		// were rebuilt - floor Loadout + a HashSet - per candidate weapon).
-		long riskCapGp = 0;
-		Set<Integer> pinnedIds = Set.of();
-		if (request.isRiskConstrained())
-		{
-			riskCapGp = request.getRiskBudgetGp()
-				+ LoadoutOptimizer.pinnedRiskFloor(dataset, request);
-			pinnedIds = request.getPinnedItems().isEmpty()
-				? Set.of()
-				: new HashSet<>(request.getPinnedItems().values());
-		}
+		LoadoutOptimizer.RiskGuard risk = LoadoutOptimizer.RiskGuard.of(dataset, request);
 		// A Lightbearer in the set doubles special-energy regen (10%/15s vs
 		// 10%/30s), so more specs fit the kill - detected by ring name, no id.
-		GearItem ring = baseResults.get(0).getLoadout().get(GearSlot.RING);
+		GearItem ring = main.getLoadout().get(GearSlot.RING);
 		boolean lightbearer = ring != null && ring.getNameLower().contains("lightbearer");
 		// Spec weapons are weapons by definition (SpecialAttack.match rejects
 		// every other slot), so only the weapon partition needs scanning.
@@ -3665,8 +3201,7 @@ public class OptimizerService
 		// pool to that family whenever one is at hand; otherwise the free pick.
 		String family = MonsterMechanics.specStipulation(monster);
 		boolean stipulated = family != null && dataset.getGearItems(GearSlot.WEAPON).stream()
-			.anyMatch(i -> i.getNameLower().contains(family)
-				&& (owned == null || owned.owns(i.getId()) || request.isDream(i.getId())));
+			.anyMatch(i -> i.getNameLower().contains(family) && available(owned, request, i.getId()));
 		for (GearItem item : dataset.getGearItems(GearSlot.WEAPON))
 		{
 			if (restrictTo != null && !restrictTo.contains(item.getId())
@@ -3674,23 +3209,21 @@ public class OptimizerService
 			{
 				continue;
 			}
-			if (!item.isStandardGear() || dataset.isVariant(item.getId())
-				|| request.isExcluded(item.getId())
+			if (!LoadoutOptimizer.eligible(dataset, request, item)
 				// Sims are pretend-owned EVERYWHERE, including here: the
 				// worn-set machinery honoured dreams but the spec pool
 				// checked raw ownership only, so a simmed spec weapon
 				// could never compete (field report 2026-08-06: simmed
 				// Burning claws vs Barrows still recommended the owned
 				// abyssal dagger).
-				|| (owned != null && !owned.owns(item.getId())
-					&& !request.isDream(item.getId())))
+				|| !available(owned, request, item.getId()))
 			{
 				continue;
 			}
 			// ANY style's spec competes (field request: the spec swap is its
 			// own weapon switch - magic set + chally is a real play).
 			SpecialAttack spec = SpecialAttack.match(item);
-			if (spec == null || !request.getRequirementProfile().canEquip(item.getRequirements()))
+			if (spec == null)
 			{
 				continue;
 			}
@@ -3698,16 +3231,12 @@ public class OptimizerService
 			// In a wilderness low-risk set the carried spec weapon competes
 			// for kept slots like everything else - the whole package (worn
 			// set + this weapon) must stay within the total risk budget.
-			if (request.isRiskConstrained()
-				&& (PvpRisk.riskGp(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables()) > riskCapGp
-					|| PvpRisk.risksUnprotected(baseResults.get(0).getLoadout(), item,
-						request.getMaxTradeables(), pinnedIds, request.getProtectOnlyItems())))
+			if (risk != null && risk.vetoes(main.getLoadout(), item))
 			{
 				continue;
 			}
 			GearItem[] ammoOut = new GearItem[1];
-			Loadout loadout = specLoadout(dataset, baseResults.get(0).getLoadout(), item, owned, request, ammoOut);
+			Loadout loadout = specLoadout(dataset, main.getLoadout(), item, owned, request, ammoOut);
 			if (loadout == null)
 			{
 				continue;
@@ -3725,20 +3254,20 @@ public class OptimizerService
 			// A cross-style spec rolls under ITS OWN style's math - the
 			// assume-best-prayer model carries all three books' factors,
 			// matching the real play of flicking (e.g.) Piety for the spec.
-			OptimizationRequest baseRequest = spec.getStyle() == style
+			OptimizationRequest baseRequest = spec.getStyle() == request.getStyle()
 				? request : request.withStyle(spec.getStyle());
 			DpsResult base = calculator.calculate(baseRequest, loadout);
 			if (base == null || base.getMaxHit() <= 0)
 			{
 				continue;
 			}
-			double expected = spec.expectedDamage(base, monster, levels) * spec.multiFactor(request.getMultiStack());
+			double expected = specDamage(spec, base, request);
 			// Rank by the DPS the spec ADDS over just attacking - marginal
 			// (every spec fired gives up a main-hand hit), regen-aware over the
 			// fight, and drain-inclusive for every style (field direction
 			// 2026-07-19). A spec that adds nothing loses to carrying no slot.
 			double added = specDpsAdded(calculator, spec, base, expected,
-				request, baseResults.get(0), monster, lightbearer);
+				request, main, lightbearer);
 			if (added <= 1e-4 && !keepZero)
 			{
 				continue;
@@ -3757,20 +3286,18 @@ public class OptimizerService
 					{
 						StatBlock b = shield.getBonuses();
 						if (Math.max(Math.max(b.getStrength(), b.getRangedStrength()), b.getMagicDamage()) <= 0
-							|| !shield.isStandardGear() || dataset.isVariant(shield.getId())
-							|| request.isExcluded(shield.getId())
-							|| owned != null && !owned.owns(shield.getId()) && !request.isDream(shield.getId())
-							|| !request.getRequirementProfile().canEquip(shield.getRequirements()))
+							|| !LoadoutOptimizer.eligible(dataset, request, shield)
+							|| !available(owned, request, shield.getId()))
 						{
 							continue;
 						}
 						DpsResult with = calculator.calculate(baseRequest,
 							withSlot(loadout, GearSlot.SHIELD, shield));
-						double damage = with == null ? 0 : spec.expectedDamage(with, monster, levels) * spec.multiFactor(request.getMultiStack());
+						double damage = with == null ? 0 : specDamage(spec, with, request);
 						if (damage > (up == null ? expected : up.expectedDamage) + 1e-9)
 						{
 							up = new SpecPick(spec, item, damage, specDpsAdded(calculator, spec, with,
-								damage, request, baseResults.get(0), monster, lightbearer),
+								damage, request, main, lightbearer),
 								ammoOut[0], shield, null);
 						}
 					}
@@ -3846,9 +3373,9 @@ public class OptimizerService
 		double expected,
 		OptimizationRequest request,
 		DpsResult mainResult,
-		MonsterStats monster,
 		boolean lightbearer)
 	{
+		MonsterStats monster = request.getMonster();
 		double mainDps = mainResult.getDps();
 		if (mainDps <= 0.01)
 		{
@@ -3923,14 +3450,8 @@ public class OptimizerService
 	private Loadout specLoadout(LoadoutData dataset, Loadout baseSet, GearItem weapon, OwnedItems owned, OptimizationRequest request,
 		GearItem[] ammoOut)
 	{
-		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		gear.putAll(baseSet.getGear());
-		gear.put(GearSlot.WEAPON, weapon);
-		if (weapon.isTwoHanded())
-		{
-			gear.remove(GearSlot.SHIELD);
-		}
-		if (!RangedAmmo.compatible(gear.get(GearSlot.AMMO), weapon))
+		Loadout out = withSwap(baseSet, weapon);
+		if (!RangedAmmo.compatible(out.get(GearSlot.AMMO), weapon))
 		{
 			GearItem replacement = null;
 			for (GearItem ammo : dataset.getGearItems(GearSlot.AMMO))
@@ -3951,18 +3472,11 @@ public class OptimizerService
 			}
 			if (replacement != null)
 			{
-				gear.put(GearSlot.AMMO, replacement);
-				if (ammoOut != null)
-				{
-					ammoOut[0] = replacement;
-				}
+				ammoOut[0] = replacement;
 			}
-			else
-			{
-				gear.remove(GearSlot.AMMO);
-			}
+			out = withSlot(out, GearSlot.AMMO, replacement);
 		}
-		return new Loadout(gear);
+		return out;
 	}
 
 	/** The per-style assumption bundle: your levels/boost/prayer label and
@@ -4031,8 +3545,8 @@ public class OptimizerService
 			: supplied != null ? supplied
 			// A risk-capped trip (kept slots >= 0) dies to a player: the
 			// Wilderness or a PvP world - the page only constrains there.
-			: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.f2pOnly,
-				ctx.maxTradeables >= 0);
+			: BoostSelector.bestFor(style, ctx.effectiveOwned, ctx.p.f2pOnly,
+				ctx.p.maxTradeables >= 0);
 		PlayerLevels levels = ctx.real.boosted(boost, ctx.boostedLevels).max(ctx.boostedLevels);
 		String label = joinAssumes(prayerLabelFor(ctx, style, levels, ctx.unlocks),
 			boost == BoostProfile.NONE ? null : boost.toString());
@@ -4040,21 +3554,12 @@ public class OptimizerService
 		// what this player has unlocked or owns.
 		BoostProfile gameBoost = userBoost != null ? userBoost
 			: supplied != null ? supplied
-			: BoostSelector.ceilingFor(style, ctx.f2pOnly);
+			: BoostSelector.ceilingFor(style, ctx.p.f2pOnly);
 		PlayerLevels gameLevels = ctx.real.boosted(gameBoost, ctx.boostedLevels).max(ctx.boostedLevels);
 		String gameLabel = joinAssumes(prayerLabelFor(ctx, style, gameLevels,
-			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL),
+			ctx.p.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL),
 			gameBoost == BoostProfile.NONE ? null : gameBoost.toString());
 		return new StylePlan(levels, label, gameLevels, gameLabel);
-	}
-
-	/** The best-OWNED request for one mob at one style - shared verbatim by
-	 * the single-mob and roster paths (they MUST agree). Pins shape YOUR
-	 * set only; a pinned autocast spell forces the magic search around it. */
-	private OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
-		CombatStyle style, PlayerLevels styleLevels)
-	{
-		return ownedRequestFor(ctx, mob, style, styleLevels, null);
 	}
 
 	/** A multi tool's pins and spell, in place of the mob's own. */
@@ -4065,21 +3570,23 @@ public class OptimizerService
 		SpellStats spell;
 	}
 
+	/** The best-OWNED request for one mob at one style - shared verbatim by
+	 * the single-mob and roster paths (they MUST agree). Pins shape YOUR
+	 * set only; a pinned autocast spell forces the magic search around it;
+	 * a multi tool (nullable) brings its own pins and spell. */
 	private OptimizationRequest ownedRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels styleLevels, ToolPick tool)
 	{
-		OptimizationRequest r = inContext(request(
-			mob, style, styleLevels, ctx.unlocks, ctx.requirements,
-			ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
-			ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp)), ctx, style, mob)
+		OptimizationRequest r = request(ctx, mob, style, styleLevels, ctx.unlocks, ctx.requirements,
+			ctx.p.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
+			3, Math.max(0, ctx.p.upgradeBudgetGp))
 			.withDreamItems(withForcedRequired(ctx, mob, style, dreamsFor(ctx, mob)))
-			.withProtectOnlyItems(ctx.protectOnly)
 			.withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob))
-			.withWaivers(ctx.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of());
+			.withWaivers(ctx.p.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of());
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
 		if (tool != null)
 		{
-			r = r.withMultiStack(ctx.multiStack);
+			r = r.withMultiStack(ctx.p.multiStack);
 		}
 		SpellStats spell = tool != null && tool.spell != null ? tool.spell : spellFor(ctx, mob);
 		if (style == CombatStyle.MAGIC && spell != null)
@@ -4101,7 +3608,7 @@ public class OptimizerService
 		Map<GearSlot, Integer> pins = pinsFor(ctx, style, mob);
 		Set<Integer> out = null;
 		for (RequiredGear.Rule rule : RequiredGear.rulesFor(mob,
-			ctx.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of()))
+			ctx.p.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of()))
 		{
 			if (rule.soft || pins.containsKey(rule.slot))
 			{
@@ -4139,21 +3646,14 @@ public class OptimizerService
 	 * wear: Obor's BiS came back a rune scimitar at 10 Attack, a DPS that can
 	 * never occur, since reaching 40 Attack changes the number. */
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
-		CombatStyle style, PlayerLevels gameLevels)
-	{
-		return gameRequestFor(ctx, mob, style, gameLevels, null);
-	}
-
-	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels, ToolPick tool)
 	{
-		OptimizationRequest r = inContext(request(
-			mob, style, gameLevels, PrayerUnlocks.ALL, ctx.requirements.withAllQuests(),
-			CandidateMode.ALL_STANDARD, ctx.effectiveOwned, 1, ctx.onSlayerTask, 0), ctx, style, mob)
+		OptimizationRequest r = request(ctx, mob, style, gameLevels, PrayerUnlocks.ALL,
+			ctx.requirements.withAllQuests(), CandidateMode.ALL_STANDARD, 1, 0)
 			// The ceiling drinks a super antifire and casts with sunfire runes:
 			// its shield slot is for dps (Andrew 2026-10-19: best aligns with
 			// the highest-dps option).
-			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true)
+			.withAntifirePotion(true).withSunfireRunes(true)
 			// The true ceiling ignores your exclusions - they shape Yours and
 			// the swaps strip (Andrew 2026-10-22: "BiS ignores exclusions").
 			.withExcludedItems(Set.of())
@@ -4161,55 +3661,34 @@ public class OptimizerService
 			.withWaivers(Set.of(RequiredGear.KOUREND_ELITE));
 		if (tool != null)
 		{
-			r = r.withPinnedItems(tool.gamePins).withMultiStack(ctx.multiStack);
+			r = r.withPinnedItems(tool.gamePins).withMultiStack(ctx.p.multiStack);
 			if (tool.spell != null)
 			{
 				r = r.withSpell(tool.spell);
 			}
 		}
 		return withPrayerPick(r, ctx, style, gameLevels,
-			ctx.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
+			ctx.p.f2pOnly ? PrayerUnlocks.F2P : PrayerUnlocks.ALL);
 	}
 
-	/** The query-wide request settings both the owned and the game-best
-	 * requests share. */
-	private OptimizationRequest inContext(OptimizationRequest r, ComputeContext ctx,
-		CombatStyle style, MonsterStats mob)
+	/** The request both the owned and the game-best sides start from: the
+	 * mob, style and levels, the best prayers at those levels and unlocks
+	 * (the spell auto-picked, untradeables counted, budgetGp = the total
+	 * upgrade spend OWNED_OR_BUDGET allows) and the query-wide settings. */
+	private OptimizationRequest request(ComputeContext ctx, MonsterStats mob, CombatStyle style,
+		PlayerLevels levels, PrayerUnlocks unlocks, RequirementProfile requirements,
+		CandidateMode mode, int limit, int budgetGp)
 	{
-		return r.withExcludedItems(excludedFor(ctx, style, mob))
+		return new OptimizationRequest(mob, style, levels, PrayerBonuses.bestAvailable(levels, unlocks),
+			null, budgetGp, mode, true, ctx.p.onSlayerTask, ctx.effectiveOwned, requirements, limit)
+			.withExcludedItems(excludedFor(ctx, style, mob))
 			.withSpellbookLock(ctx.lock)
-			.withMaxTradeables(ctx.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
-			.withAntifirePotion(ctx.antifirePotion)
-			.withSunfireRunes(ctx.sunfireRunes)
-			.withDeathCharge(ctx.deathCharge)
-			.withInWilderness(ctx.inWilderness);
-	}
-
-	private OptimizationRequest request(
-		MonsterStats monster,
-		CombatStyle style,
-		PlayerLevels levels,
-		PrayerUnlocks unlocks,
-		RequirementProfile requirements,
-		CandidateMode mode,
-		OwnedItems owned,
-		int limit,
-		boolean onSlayerTask,
-		int budgetGp)
-	{
-		return new OptimizationRequest(
-			monster,
-			style,
-			levels,
-			PrayerBonuses.bestAvailable(levels, unlocks),
-			null,          // auto-pick the spell for magic
-			budgetGp,      // OWNED_OR_BUDGET: total upgrade spend allowed
-			mode,
-			true,          // untradeables count
-			onSlayerTask,
-			owned,
-			requirements,
-			limit);
+			.withMaxTradeables(ctx.p.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
+			.withAntifirePotion(ctx.p.antifirePotion)
+			.withSunfireRunes(ctx.p.sunfireRunes)
+			.withDeathCharge(ctx.p.deathCharge)
+			.withInWilderness(ctx.p.inWilderness)
+			.withProtectOnlyItems(ctx.protectOnly);
 	}
 
 	private LoadoutData f2pView()
@@ -4221,13 +3700,6 @@ public class OptimizerService
 			f2pData = view;
 		}
 		return view;
-	}
-
-	private static String levelKey(PlayerLevels l)
-	{
-		// Levels participate in the key so a boost/level-up invalidates.
-		return l.getAttack() + "." + l.getStrength() + "." + l.getDefence() + "."
-			+ l.getRanged() + "." + l.getMagic() + "." + l.getPrayer() + "." + l.getHitpoints();
 	}
 
 	/** Drop all cached results - account or profile switched. */
@@ -4243,10 +3715,7 @@ public class OptimizerService
 	{
 		worker.shutdownNow();
 		rosterPool.shutdownNow();
-		synchronized (cache)
-		{
-			cache.clear();
-		}
+		clearCache();
 		synchronized (optimizeCache)
 		{
 			optimizeCache.clear();

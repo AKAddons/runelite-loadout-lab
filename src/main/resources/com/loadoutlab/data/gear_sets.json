@@ -1,0 +1,20 @@
+{
+ "_comment": "Set and family membership by worn-item-name fragment (DpsCalculator.wearsAll/wearsAny/setWeight; a fragment matches any version of the item, so New/Used/Broken moon pieces all count). 'all' lists every piece a set effect needs, in the order the check short-circuits; 'any' lists the alternatives one role accepts; 'weights' is each piece's weight in a scaling set - crystal (accuracy x(20+n)/20, damage x(40+n)/40 with a crystal bow or bow of faerdhinen; Inactive pieces never count) and inquisitor (crush accuracy and damage x(200+n)/200, mace-agnostic).",
+ "all": {
+  "bloodMoon": ["dual macuahuitl", "blood moon helm", "blood moon chestplate", "blood moon tassets"],
+  "eclipseMoon": ["eclipse atlatl", "eclipse moon helm", "eclipse moon chestplate", "eclipse moon tassets"],
+  "blueMoon": ["blue moon spear", "blue moon helm", "blue moon chestplate", "blue moon tassets"],
+  "obsidian": ["obsidian helmet", "obsidian platebody", "obsidian platelegs"],
+  "eliteVoid": ["elite void top", "elite void robe", "void knight gloves"]
+ },
+ "any": {
+  "tzhaar": ["tzhaar-ket-em", "tzhaar-ket-om", "toktz-xil-ak", "toktz-xil-ek", "toktz-mej-tal"],
+  "crystalBow": ["crystal bow", "bow of faerdhinen"],
+  "voidTop": ["void knight top", "elite void top"],
+  "voidRobe": ["void knight robe", "elite void robe"]
+ },
+ "weights": {
+  "crystal": {"crystal helm": 1, "crystal legs": 2, "crystal body": 3},
+  "inquisitor": {"inquisitor's great helm": 1, "inquisitor's hauberk": 2, "inquisitor's plateskirt": 2}
+ }
+}

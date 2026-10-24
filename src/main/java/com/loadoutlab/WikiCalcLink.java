@@ -20,6 +20,7 @@ import okhttp3.*;
  * against weirdgloop/osrs-dps-calc source 2026-07-23 (IMPORT_VERSION 10).
  */
 @Slf4j
+@lombok.AllArgsConstructor
 public class WikiCalcLink
 {
 	static final String SHORTLINK_API = "https://tools.runescape.wiki/osrs-dps/shortlink";
@@ -39,30 +40,15 @@ public class WikiCalcLink
 	{
 		JsonObject root = JsonResources.object("wiki_calc_ids.json");
 		JsonResources.stringIntMap(root, "prayerIds", PRAYER_IDS);
-		if (root != null && root.has("potionIds"))
+		JsonObject potions = root == null ? null : root.getAsJsonObject("potionIds");
+		for (String label : potions == null ? Set.<String>of() : potions.keySet())
 		{
-			for (Map.Entry<String, JsonElement> e
-				: root.getAsJsonObject("potionIds").entrySet())
-			{
-				JsonArray ordinals = e.getValue().getAsJsonArray();
-				int[] ids = new int[ordinals.size()];
-				for (int i = 0; i < ids.length; i++)
-				{
-					ids[i] = ordinals.get(i).getAsInt();
-				}
-				POTION_IDS.put(e.getKey(), ids);
-			}
+			POTION_IDS.put(label, JsonResources.ints(potions.getAsJsonArray(label)));
 		}
 	}
 
 	private final OkHttpClient http;
 	private final Gson gson;
-
-	public WikiCalcLink(OkHttpClient http, Gson gson)
-	{
-		this.http = http;
-		this.gson = gson;
-	}
 
 	/** POST the setup to the shortlink service, then open the calculator
 	 * on the returned id. Fire-and-forget; failures only log. */
@@ -119,13 +105,9 @@ public class WikiCalcLink
 				prayers.add(prayerId);
 				continue;
 			}
-			int[] potionIds = POTION_IDS.get(token);
-			if (potionIds != null)
+			for (int id : POTION_IDS.getOrDefault(token, new int[0]))
 			{
-				for (int id : potionIds)
-				{
-					potions.add(id);
-				}
+				potions.add(id);
 			}
 			for (BoostProfile profile : BoostProfile.values())
 			{
@@ -152,13 +134,13 @@ public class WikiCalcLink
 			int id = worn != null ? worn.getId() : -1;
 			if (id > 0)
 			{
-				// Plain maps/lists ONLY in this document: gson's map adapter
-				// reflects the runtime type, and the JDK's private
+				// Plain maps/lists ONLY in this document (JsonResources.map
+				// is a LinkedHashMap): gson's map adapter reflects the
+				// runtime type, and the JDK's private
 				// Collections$*/ImmutableCollections classes throw
 				// InaccessibleObjectException under the module system
 				// (field-found 2026-07-23 - the button silently died).
-				Map<String, Object> idMap = new LinkedHashMap<>();
-				idMap.put("id", id);
+				Map<String, Object> idMap = JsonResources.map("id", id);
 				if (slot == GearSlot.WEAPON && dartId > 0)
 				{
 					// The blowpipe's dart rides the WEAPON's itemVars -
@@ -167,24 +149,14 @@ public class WikiCalcLink
 					// blessing usually occupies ammo anyway, so the dart
 					// silently vanished - field report 2026-08-21: cow
 					// showed a dartless max 20 vs our dragon-dart 28).
-					Map<String, Object> vars = new LinkedHashMap<>();
-					vars.put("blowpipeDartId", dartId);
-					idMap.put("itemVars", vars);
+					idMap.put("itemVars", JsonResources.map("blowpipeDartId", dartId));
 				}
 				equipment.put(slot.getJsonName(), idMap);
 			}
 		}
 
-		Map<String, Object> loadout = new LinkedHashMap<>();
-		loadout.put("name", "Loadout Lab");
-		loadout.put("skills", skillsMap(real));
-		loadout.put("boosts", boostsMap(boost, real, live));
-		loadout.put("equipment", equipment);
-		loadout.put("prayers", prayers);
-		Map<String, Object> buffs = new LinkedHashMap<>();
-		buffs.put("potions", potions);
-		buffs.put("onSlayerTask", onSlayerTask);
-		buffs.put("inWilderness", inWilderness);
+		Map<String, Object> buffs = JsonResources.map("potions", potions, "onSlayerTask", onSlayerTask,
+			"inWilderness", inWilderness);
 		GearItem soulWeapon = shown.getLoadout().getWeapon();
 		if (soulWeapon != null && soulWeapon.getNameLower().contains("soulreaper"))
 		{
@@ -193,7 +165,8 @@ public class WikiCalcLink
 			// 2026-08-21: Jad BiS -23%).
 			buffs.put("soulreaperStacks", 5);
 		}
-		loadout.put("buffs", buffs);
+		Map<String, Object> loadout = JsonResources.map("name", "Loadout Lab", "skills", skillsMap(real),
+			"boosts", boostsMap(boost, real, live), "equipment", equipment, "prayers", prayers, "buffs", buffs);
 		Map<String, String> style = styleOf(shown.getAttackType());
 		String spell = shown.getSpellName();
 		if (style != null && "Autocast".equals(style.get("stance"))
@@ -213,76 +186,50 @@ public class WikiCalcLink
 		}
 		if (spell != null && !spell.isEmpty())
 		{
-			Map<String, Object> spellMap = new LinkedHashMap<>();
-			spellMap.put("name", spell);
-			loadout.put("spell", spellMap);
+			loadout.put("spell", JsonResources.map("name", spell));
 		}
 
-		Map<String, Object> monster = new LinkedHashMap<>();
-		// profileId: a group's synthetic phase variant maps back to the
-		// real row - the calculator only knows real npc ids.
-		monster.put("id", mob.profileId());
-		// The RAW wiki version - their import keys on exact strings
-		// from the shared weirdgloop data ("Post-quest, Awake") and
-		// silently falls back to the FIRST same-id row on a miss
-		// (field 2026-08-21: the post-quest Duke opened as Awakened,
-		// def 316 vs 275 - a -24% phantom). Our display labels are
-		// normalized and must never travel.
-		monster.put("version", mob.getWikiVersion());
-		Map<String, Object> inputs = new LinkedHashMap<>();
-		inputs.put("defenceReductions", new LinkedHashMap<>());
+		Map<String, Object> inputs = JsonResources.map("defenceReductions", new LinkedHashMap<>());
 		if (mob.getToaInvocationLevel() > 0)
 		{
 			// The card's Invocation chip - the calculator must open at the
 			// same raid level or the cross-check numbers cannot match.
 			inputs.put("toaInvocationLevel", mob.getToaInvocationLevel());
 		}
-		monster.put("inputs", inputs);
-
-		Map<String, Object> data = new LinkedHashMap<>();
-		data.put("serializationVersion", 10);
+		// profileId: a group's synthetic phase variant maps back to the
+		// real row - the calculator only knows real npc ids. The RAW wiki
+		// version - their import keys on exact strings from the shared
+		// weirdgloop data ("Post-quest, Awake") and silently falls back to
+		// the FIRST same-id row on a miss (field 2026-08-21: the post-quest
+		// Duke opened as Awakened, def 316 vs 275 - a -24% phantom). Our
+		// display labels are normalized and must never travel.
+		Map<String, Object> monster = JsonResources.map("id", mob.profileId(), "version", mob.getWikiVersion(),
+			"inputs", inputs);
 		List<Map<String, Object>> loadouts = new ArrayList<>();
 		loadouts.add(loadout);
-		data.put("loadouts", loadouts);
-		data.put("selectedLoadout", 0);
-		data.put("monster", monster);
-		return data;
+		return JsonResources.map("serializationVersion", 10, "loadouts", loadouts, "selectedLoadout", 0,
+			"monster", monster);
 	}
 
 	/** Their PlayerSkills shape. Mining/herblore are not tracked here -
 	 * 99 keeps the rare pickaxe-dependent checks permissive. */
-	private static Map<String, Integer> skillsMap(PlayerLevels levels)
+	private static Map<String, Object> skillsMap(PlayerLevels levels)
 	{
-		Map<String, Integer> skills = new LinkedHashMap<>();
-		skills.put("atk", levels.getAttack());
-		skills.put("str", levels.getStrength());
-		skills.put("def", levels.getDefence());
-		skills.put("hp", levels.getHitpoints());
-		skills.put("ranged", levels.getRanged());
-		skills.put("magic", levels.getMagic());
-		skills.put("prayer", levels.getPrayer());
-		skills.put("mining", 99);
-		skills.put("herblore", 99);
-		return skills;
+		return JsonResources.map("atk", levels.getAttack(), "str", levels.getStrength(), "def", levels.getDefence(),
+			"hp", levels.getHitpoints(), "ranged", levels.getRanged(), "magic", levels.getMagic(),
+			"prayer", levels.getPrayer(), "mining", 99, "herblore", 99);
 	}
 
 	/** The per-skill boost DELTAS the calculator adds to the base skills -
 	 * computed from our own boost model so the math matches exactly. */
-	private static Map<String, Integer> boostsMap(BoostProfile boost,
+	private static Map<String, Object> boostsMap(BoostProfile boost,
 		PlayerLevels real, PlayerLevels live)
 	{
 		PlayerLevels boosted = boost == null ? real : boost.apply(real, live);
-		Map<String, Integer> deltas = new LinkedHashMap<>();
-		deltas.put("atk", boosted.getAttack() - real.getAttack());
-		deltas.put("str", boosted.getStrength() - real.getStrength());
-		deltas.put("def", boosted.getDefence() - real.getDefence());
-		deltas.put("hp", 0);
-		deltas.put("ranged", boosted.getRanged() - real.getRanged());
-		deltas.put("magic", boosted.getMagic() - real.getMagic());
-		deltas.put("prayer", 0);
-		deltas.put("mining", 0);
-		deltas.put("herblore", 0);
-		return deltas;
+		return JsonResources.map("atk", boosted.getAttack() - real.getAttack(),
+			"str", boosted.getStrength() - real.getStrength(), "def", boosted.getDefence() - real.getDefence(),
+			"hp", 0, "ranged", boosted.getRanged() - real.getRanged(), "magic", boosted.getMagic() - real.getMagic(),
+			"prayer", 0, "mining", 0, "herblore", 0);
 	}
 
 	/** Their PlayerCombatStyle {type, stance} from our attack-type strings:
@@ -312,7 +259,7 @@ public class WikiCalcLink
 		style.put("type", cut < 0 ? attackType : attackType.substring(0, cut));
 		String stance = cut < 0 ? "aggressive"
 			: attackType.substring(cut + 2, attackType.indexOf(')', cut));
-		style.put("stance", Character.toUpperCase(stance.charAt(0)) + stance.substring(1));
+		style.put("stance", Names.cap(stance));
 		return style;
 	}
 }

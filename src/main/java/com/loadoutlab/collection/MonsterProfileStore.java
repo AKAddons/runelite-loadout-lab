@@ -7,6 +7,8 @@ import com.loadoutlab.data.MonsterStats;
 import java.util.*;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import net.runelite.client.config.ConfigManager;
 
 /**
@@ -25,10 +27,6 @@ import net.runelite.client.config.ConfigManager;
  */
 public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.MobProfiles, ScopedStore
 {
-	/** The every-set pin/filter scope key (relocated from the panel;
-	 * the panel's ALL_SETS remains an alias until it exits). */
-	public static final String ALL_SETS = "ALL";
-
 	static final String CONFIG_GROUP = "loadoutlab";
 	static final String KEY = "monsterProfiles";
 
@@ -94,8 +92,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized boolean skipDegradable(int monsterId, boolean fallback)
 	{
-		Stored profile = get(monsterId);
-		return profile == null || profile.skipDegradable == null ? fallback : profile.skipDegradable;
+		return read(monsterId, p -> p.skipDegradable, fallback);
 	}
 
 	public synchronized void setSkipDegradable(int monsterId, boolean skip)
@@ -131,47 +128,72 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	private void load()
 	{
 		profiles.clear();
-		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY);
-		if (json == null || json.isEmpty())
+		Map<Integer, Stored> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, KEY),
+			new TypeToken<Map<Integer, Stored>>(){}.getType());
+		if (stored != null)
 		{
-			return;
-		}
-		try
-		{
-			Map<Integer, Stored> stored = gson.fromJson(json,
-				new TypeToken<Map<Integer, Stored>>(){}.getType());
-			if (stored != null)
+			// Entries saved under a phase variant's synthetic id (before
+			// 2026-10-14 every write keyed the lensed card's raw id) fold
+			// into the real monster's profile; its own entry wins.
+			stored.forEach((id, profile) ->
 			{
-				// Entries saved under a phase variant's synthetic id (before
-				// 2026-10-14 every write keyed the lensed card's raw id) fold
-				// into the real monster's profile; its own entry wins.
-				stored.forEach((id, profile) ->
+				if (id < MonsterStats.SYNTHETIC_ID_BASE)
 				{
-					if (id < MonsterStats.SYNTHETIC_ID_BASE)
-					{
-						profiles.put(id, profile);
-					}
-				});
-				stored.forEach((id, profile) -> profiles.putIfAbsent(MonsterStats.profileIdOf(id), profile));
-			}
+					profiles.put(id, profile);
+				}
+			});
+			stored.forEach((id, profile) -> profiles.putIfAbsent(MonsterStats.profileIdOf(id), profile));
 		}
-		catch (RuntimeException ex)
+	}
+
+	/** A read-only copy, Map.of() for nothing. */
+	private static <K, V> Map<K, V> copyOf(Map<K, V> m)
+	{
+		return m == null || m.isEmpty() ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(m));
+	}
+
+	/** A profile field, or the fallback when the mob has no profile or the field is unset. */
+	private <T> T read(int monsterId, Function<Stored, T> field, T fallback)
+	{
+		Stored profile = get(monsterId);
+		T value = profile == null ? null : field.apply(profile);
+		return value == null ? fallback : value;
+	}
+
+	/** One scope's inner collection of a scoped field, or null. */
+	private <V> V inner(int monsterId, Function<Stored, Map<String, V>> field, String scope)
+	{
+		Map<String, V> scoped = read(monsterId, field, null);
+		return scoped == null ? null : scoped.get(scope);
+	}
+
+	/** A scoped field for the manage menus: scope -> the copied inner
+	 * collection, the empties dropped (the copy says null); Map.of() for none. */
+	private static <V, W> Map<String, W> byScope(Map<String, V> scoped, Function<V, W> copy)
+	{
+		if (scoped == null || scoped.isEmpty())
 		{
-			// Corrupt entry: start fresh rather than failing the plugin.
+			return Map.of();
 		}
+		Map<String, W> out = new LinkedHashMap<>();
+		scoped.forEach((scope, value) ->
+		{
+			W copied = value == null ? null : copy.apply(value);
+			if (copied != null)
+			{
+				out.put(scope, copied);
+			}
+		});
+		return Collections.unmodifiableMap(out);
 	}
 
 	/** Effective pins for one style card: ALL overlaid by the style scope. */
 	public synchronized Map<GearSlot, Integer> pinsFor(int monsterId, String style)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.pins == null)
-		{
-			return Map.of();
-		}
+		Map<String, Map<String, Integer>> scoped = read(monsterId, p -> p.pins, Map.of());
 		EnumMap<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
-		copyPins(profile.pins.get(ALL), pins);
-		copyPins(profile.pins.get(style), pins);
+		copyPins(scoped.get(ALL), pins);
+		copyPins(scoped.get(style), pins);
 		return pins.isEmpty() ? Map.of() : Collections.unmodifiableMap(pins);
 	}
 
@@ -197,22 +219,12 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw pins by scope, for the manage menu: scope -> slot -> id. */
 	public synchronized Map<String, Map<GearSlot, Integer>> allPins(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.pins == null || profile.pins.isEmpty())
-		{
-			return Map.of();
-		}
-		Map<String, Map<GearSlot, Integer>> out = new LinkedHashMap<>();
-		for (Map.Entry<String, Map<String, Integer>> scope : profile.pins.entrySet())
+		return byScope(read(monsterId, p -> p.pins, null), slots ->
 		{
 			EnumMap<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
-			copyPins(scope.getValue(), pins);
-			if (!pins.isEmpty())
-			{
-				out.put(scope.getKey(), Collections.unmodifiableMap(pins));
-			}
-		}
-		return Collections.unmodifiableMap(out);
+			copyPins(slots, pins);
+			return pins.isEmpty() ? null : Collections.unmodifiableMap(pins);
+		});
 	}
 
 	public synchronized void pin(int monsterId, String scope, GearSlot slot, int itemId)
@@ -229,28 +241,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void unpin(int monsterId, String scope, GearSlot slot)
 	{
-		Stored profile = get(monsterId);
-		if (profile != null && profile.pins != null && profile.pins.get(scope) != null)
+		Map<String, Integer> slots = inner(monsterId, p -> p.pins, scope);
+		if (slots != null)
 		{
-			profile.pins.get(scope).remove(slot.name());
-			save();
-		}
-	}
-
-	/** Unpin <slot>: the slot's pin goes from EVERY scope, so a style pin
-	 * (older versions wrote them; no menu removes one) cannot outlive it. */
-	public synchronized void unpinEverywhere(int monsterId, GearSlot slot)
-	{
-		Stored profile = get(monsterId);
-		if (profile != null && profile.pins != null)
-		{
-			for (Map<String, Integer> scoped : profile.pins.values())
-			{
-				if (scoped != null)
-				{
-					scoped.remove(slot.name());
-				}
-			}
+			slots.remove(slot.name());
 			save();
 		}
 	}
@@ -258,8 +252,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The user's note for this monster ("" when none). */
 	public synchronized String note(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		return profile == null || profile.note == null ? "" : profile.note;
+		return read(monsterId, p -> p.note, "");
 	}
 
 	public synchronized void setNote(int monsterId, String note)
@@ -272,8 +265,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The pinned autocast spell for this monster ("" = auto-pick). */
 	public synchronized String pinnedSpell(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		return profile == null || profile.spell == null ? "" : profile.spell;
+		return read(monsterId, p -> p.spell, "");
 	}
 
 	public synchronized void setPinnedSpell(int monsterId, String spellName)
@@ -287,8 +279,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** The pinned SPEC weapon id for this monster (0 = auto-pick). */
 	public synchronized int pinnedSpec(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		return profile == null || profile.spec == null ? 0 : profile.spec;
+		return read(monsterId, p -> p.spec, 0);
 	}
 
 	public synchronized void setPinnedSpec(int monsterId, int itemId)
@@ -302,21 +293,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw filter items by scope: scope -> id -> display name. */
 	public synchronized Map<String, Map<Integer, String>> allFilterItems(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.filterItems == null || profile.filterItems.isEmpty())
-		{
-			return Map.of();
-		}
-		Map<String, Map<Integer, String>> out = new LinkedHashMap<>();
-		for (Map.Entry<String, Map<Integer, String>> scope : profile.filterItems.entrySet())
-		{
-			if (scope.getValue() != null && !scope.getValue().isEmpty())
-			{
-				out.put(scope.getKey(),
-					Collections.unmodifiableMap(new LinkedHashMap<>(scope.getValue())));
-			}
-		}
-		return Collections.unmodifiableMap(out);
+		return byScope(read(monsterId, p -> p.filterItems, null), items -> items.isEmpty() ? null : copyOf(items));
 	}
 
 	/** Effective per-mob exclusions for one style card: ALL plus the style
@@ -347,43 +324,20 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** Raw per-mob exclusions by scope, for the manage menu. */
 	public synchronized Map<String, Set<Integer>> allExclusions(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.exclusions == null || profile.exclusions.isEmpty())
-		{
-			return Map.of();
-		}
-		Map<String, Set<Integer>> out = new LinkedHashMap<>();
-		for (Map.Entry<String, Set<Integer>> scope : profile.exclusions.entrySet())
-		{
-			if (scope.getValue() != null && !scope.getValue().isEmpty())
-			{
-				out.put(scope.getKey(),
-					Collections.unmodifiableSet(new LinkedHashSet<>(scope.getValue())));
-			}
-		}
-		return Collections.unmodifiableMap(out);
+		return byScope(read(monsterId, p -> p.exclusions, null),
+			ids -> ids.isEmpty() ? null : Collections.unmodifiableSet(new LinkedHashSet<>(ids)));
 	}
 
 	/** Per-mob sims: counted as owned for THIS mob only. */
 	public synchronized Set<Integer> simsFor(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.sims == null || profile.sims.isEmpty())
-		{
-			return Set.of();
-		}
-		return Collections.unmodifiableSet(new LinkedHashSet<>(profile.sims.keySet()));
+		return allSims(monsterId).keySet();
 	}
 
 	/** Raw per-mob sims (id -> add-time name), for the manage menu. */
 	public synchronized Map<Integer, String> allSims(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.sims == null || profile.sims.isEmpty())
-		{
-			return Map.of();
-		}
-		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.sims));
+		return copyOf(read(monsterId, p -> p.sims, null));
 	}
 
 	public synchronized void addSim(int monsterId, int itemId, String name)
@@ -399,10 +353,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobSim(int monsterId, int itemId)
 	{
-		Stored profile = get(monsterId);
-		if (profile != null && profile.sims != null)
+		Map<Integer, String> sims = read(monsterId, p -> p.sims, null);
+		if (sims != null)
 		{
-			profile.sims.remove(itemId);
+			sims.remove(itemId);
 			save();
 		}
 	}
@@ -411,12 +365,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	 * empty when the wrench-panel defaults apply untouched. */
 	public synchronized Map<String, String> supplyOverrides(int monsterId)
 	{
-		Stored profile = get(monsterId);
-		if (profile == null || profile.supplies == null || profile.supplies.isEmpty())
-		{
-			return Map.of();
-		}
-		return Collections.unmodifiableMap(new LinkedHashMap<>(profile.supplies));
+		return copyOf(read(monsterId, p -> p.supplies, null));
 	}
 
 	/** Set one category's override; null/empty choice returns the category
@@ -425,10 +374,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	{
 		if (choice == null || choice.isEmpty())
 		{
-			Stored existing = get(monsterId);
-			if (existing != null && existing.supplies != null)
+			Map<String, String> supplies = read(monsterId, p -> p.supplies, null);
+			if (supplies != null)
 			{
-				existing.supplies.remove(category);
+				supplies.remove(category);
 				save();
 			}
 			return;
@@ -455,11 +404,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobExclusion(int monsterId, String scope, int itemId)
 	{
-		Stored profile = get(monsterId);
-		if (profile != null && profile.exclusions != null
-			&& profile.exclusions.get(scope) != null)
+		Set<Integer> ids = inner(monsterId, p -> p.exclusions, scope);
+		if (ids != null)
 		{
-			profile.exclusions.get(scope).remove(itemId);
+			ids.remove(itemId);
 			save();
 		}
 	}
@@ -478,11 +426,10 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void removeMobFilter(int monsterId, String scope, int itemId)
 	{
-		Stored profile = get(monsterId);
-		if (profile != null && profile.filterItems != null
-			&& profile.filterItems.get(scope) != null)
+		Map<Integer, String> items = inner(monsterId, p -> p.filterItems, scope);
+		if (items != null)
 		{
-			profile.filterItems.get(scope).remove(itemId);
+			items.remove(itemId);
 			save();
 		}
 	}
@@ -503,15 +450,11 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 			// missing here, so a sims-only profile was judged empty and the
 			// retainAll below erased the sim in the same call that added it
 			// - "Sim here" appeared to do nothing).
-			boolean empty = (profile.pins == null || profile.pins.isEmpty())
+			boolean empty = Stream.of(profile.pins, profile.filterItems, profile.exclusions, profile.sims, profile.supplies)
+				.allMatch(m -> m == null || m.isEmpty())
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
-				&& profile.spec == null
-				&& (profile.filterItems == null || profile.filterItems.isEmpty())
-				&& (profile.exclusions == null || profile.exclusions.isEmpty())
-				&& (profile.sims == null || profile.sims.isEmpty())
-				&& (profile.supplies == null || profile.supplies.isEmpty())
-				&& profile.skipDegradable == null;
+				&& profile.spec == null && profile.skipDegradable == null;
 			if (!empty)
 			{
 				out.put(entry.getKey(), profile);

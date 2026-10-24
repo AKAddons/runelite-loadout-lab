@@ -58,22 +58,10 @@ abstract class ScopedMapStore<K, V> implements ScopedStore
 	private void load()
 	{
 		items.clear();
-		String json = ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey);
-		if (json == null || json.isEmpty())
+		Map<K, V> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey), type);
+		if (stored != null)
 		{
-			return;
-		}
-		try
-		{
-			Map<K, V> stored = gson.fromJson(json, type);
-			if (stored != null)
-			{
-				items.putAll(stored);
-			}
-		}
-		catch (RuntimeException ex)
-		{
-			// Corrupt entry: start fresh rather than failing the plugin.
+			items.putAll(stored);
 		}
 	}
 

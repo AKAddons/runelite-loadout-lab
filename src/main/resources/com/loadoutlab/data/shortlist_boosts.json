@@ -1,5 +1,5 @@
 {
- "_comment": "Weapon/armour shortlist boosts (LoadoutOptimizer.candidateScore): pieces whose value lives in the DPS model, not raw stats, so the top-N cut must not drop them. Keyed by style (or 'all'); each block lifts a piece once (first matching name substring). Void: the set carries ~zero raw stats, so without a boost the zero-score prune drops the helm/gloves and a stocked bank's cut drops the top/robe (2026-07-17). The Obligator: its Lunge re-rolls (DpsCalculator) are invisible to raw stats (2026-10-20). 'wilderness' applies in the Wilderness and 'revenant' at revenants, charged versions only (the +50% passives and the incoming-nullify, DpsCalculator). The Ascension crossbows: their strength is in the bolts, so raw stats rank them 126th of 193 ranged weapons (Andrew's Copy report, 2026-10-20).",
+ "_comment": "Weapon/armour shortlist boosts (LoadoutOptimizer.candidateScore): pieces whose value lives in the DPS model, not raw stats, so the top-N cut must not drop them. Keyed by style (or 'all'); each block lifts a piece once (first matching name substring). Void: the set carries ~zero raw stats, so without a boost the zero-score prune drops the helm/gloves and a stocked bank's cut drops the top/robe (2026-07-17). The Obligator: its Lunge re-rolls (DpsCalculator) are invisible to raw stats (2026-10-20). 'wilderness' applies in the Wilderness and 'revenant' at revenants, charged versions only (the +50% passives and the incoming-nullify, DpsCalculator). The Ascension crossbows: their strength is in the bolts, so raw stats rank them 126th of 193 ranged weapons (Andrew's Copy report, 2026-10-20). 'attr:<attribute>' blocks apply when the monster carries that attribute: dragon hunter vs dragons; keris vs kalphites; the leaf-bladed battleaxe's +17.5% vs leafy lives in the DPS model, so without a boost the pool cut pruned it (pool lesson); golembane likewise - the granite hammer's +30% accuracy AND damage vs golems live in the DPS model while its raw stats (crush +57, str +56) sit well below the weapon cut, so it was pruned before the bonus could ever count (field-found 2026-08-01: a hasta outranked it at the Mad Angel, and at Dawn/Dusk, crush defence 0, it never appeared at all); Verac's whole value at a prayer-immune phase lives in the set proc (the void precedent) - every melee line scores zero there until all four pieces assemble, so the pieces must outrank raw-stat armour to survive their slot cuts.",
  "all": [
   {
    "void knight top": 2500,
@@ -70,6 +70,32 @@
   },
   {
    "bracelet of ethereum": 4000
+  }
+ ],
+ "attr:dragon": [
+  {
+   "dragon hunter": 4500
+  }
+ ],
+ "attr:kalphite": [
+  {
+   "keris": 3000
+  }
+ ],
+ "attr:leafy": [
+  {
+   "leaf-bladed battleaxe": 4000
+  }
+ ],
+ "attr:golem": [
+  {
+   "granite hammer": 4000,
+   "barronite mace": 4000
+  }
+ ],
+ "attr:prayer_immunity": [
+  {
+   "verac": 8000
   }
  ]
 }

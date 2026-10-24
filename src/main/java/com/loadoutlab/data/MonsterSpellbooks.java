@@ -66,13 +66,7 @@ public final class MonsterSpellbooks
 			return null;
 		}
 		String name = Names.lower(monster.getName());
-		for (Map.Entry<String, String[]> e : BY_NAME.entrySet())
-		{
-			if (name.contains(e.getKey()))
-			{
-				return e.getValue();
-			}
-		}
-		return null;
+		return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey()))
+			.map(Map.Entry::getValue).findFirst().orElse(null);
 	}
 }

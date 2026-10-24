@@ -41,7 +41,7 @@ class CommandsTest
 	void exclusionRoundTrip()
 	{
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
-		Command cmd = Commands.toggleExclusion(store, WHIP, "Abyssal whip");
+		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
 		assertEquals("Exclude Abyssal whip", cmd.getDescription());
 
 		assertTrue(history.execute(cmd));
@@ -58,7 +58,7 @@ class CommandsTest
 	{
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
 		store.toggle(WHIP);
-		Command cmd = Commands.toggleExclusion(store, WHIP, "Abyssal whip");
+		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
 		assertEquals("Include Abyssal whip", cmd.getDescription());
 		history.execute(cmd);
 		assertFalse(store.isExcluded(WHIP));
@@ -103,7 +103,7 @@ class CommandsTest
 	void pinFreshSlot()
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
-		history.execute(Commands.pin(mobs, MOB, "MELEE", GearSlot.WEAPON, FANG, "Osmumten's fang"));
+		history.execute(TestCommands.pin(mobs, MOB, "MELEE", GearSlot.WEAPON, FANG, "Osmumten's fang"));
 		assertEquals(FANG, mobs.allPins(MOB).get("MELEE").get(GearSlot.WEAPON));
 
 		history.undo();
@@ -120,7 +120,7 @@ class CommandsTest
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.pin(MOB, "MELEE", GearSlot.WEAPON, WHIP);
 
-		history.execute(Commands.pin(mobs, MOB, "MELEE", GearSlot.WEAPON, FANG, "Osmumten's fang"));
+		history.execute(TestCommands.pin(mobs, MOB, "MELEE", GearSlot.WEAPON, FANG, "Osmumten's fang"));
 		assertEquals(FANG, mobs.allPins(MOB).get("MELEE").get(GearSlot.WEAPON));
 
 		history.undo();
@@ -134,12 +134,12 @@ class CommandsTest
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.pin(MOB, "ALL", GearSlot.HEAD, 11665);
 
-		history.execute(Commands.unpin(mobs, MOB, "ALL", GearSlot.HEAD, "Void melee helm"));
+		history.execute(TestCommands.unpin(mobs, MOB, "ALL", GearSlot.HEAD, "Void melee helm"));
 		assertNull(mobs.allPins(MOB).getOrDefault("ALL", java.util.Map.of()).get(GearSlot.HEAD));
 		history.undo();
 		assertEquals(11665, mobs.allPins(MOB).get("ALL").get(GearSlot.HEAD));
 
-		assertFalse(history.execute(Commands.unpin(mobs, MOB, "ALL", GearSlot.LEGS, "nothing")),
+		assertFalse(history.execute(TestCommands.unpin(mobs, MOB, "ALL", GearSlot.LEGS, "nothing")),
 			"unpinning an empty slot must be a no-op that never lands on the stack");
 	}
 
@@ -150,12 +150,12 @@ class CommandsTest
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.setNote(MOB, "bring antivenom");
 
-		history.execute(Commands.setNote(mobs, MOB, "bring antivenom + house tabs"));
+		history.execute(TestCommands.setNote(mobs, MOB, "bring antivenom + house tabs"));
 		assertEquals("bring antivenom + house tabs", mobs.note(MOB));
 		history.undo();
 		assertEquals("bring antivenom", mobs.note(MOB));
 
-		assertFalse(history.execute(Commands.setNote(mobs, MOB, "bring antivenom")),
+		assertFalse(history.execute(TestCommands.setNote(mobs, MOB, "bring antivenom")),
 			"no-op note save must not land on the stack");
 	}
 
@@ -164,7 +164,7 @@ class CommandsTest
 	void spellRestores()
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
-		history.execute(Commands.setPinnedSpell(mobs, MOB, "Ice Barrage"));
+		history.execute(TestCommands.setPinnedSpell(mobs, MOB, "Ice Barrage"));
 		assertEquals("Ice Barrage", mobs.pinnedSpell(MOB));
 		history.undo();
 		assertTrue(mobs.pinnedSpell(MOB) == null || mobs.pinnedSpell(MOB).isEmpty());
@@ -175,14 +175,14 @@ class CommandsTest
 	void mobExclusionRoundTrip()
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
-		history.execute(Commands.excludeForMob(mobs, MOB, "RANGED", WHIP, "Abyssal whip"));
+		history.execute(TestCommands.excludeForMob(mobs, MOB, "RANGED", WHIP, "Abyssal whip"));
 		assertTrue(mobs.allExclusions(MOB).get("RANGED").contains(WHIP));
 		history.undo();
 		assertTrue(mobs.allExclusions(MOB).isEmpty()
 			|| !mobs.allExclusions(MOB).getOrDefault("RANGED", java.util.Set.of()).contains(WHIP));
 
 		mobs.exclude(MOB, "RANGED", WHIP);
-		history.execute(Commands.removeMobExclusion(mobs, MOB, "RANGED", WHIP, "Abyssal whip"));
+		history.execute(TestCommands.removeMobExclusion(mobs, MOB, "RANGED", WHIP, "Abyssal whip"));
 		assertFalse(mobs.allExclusions(MOB).getOrDefault("RANGED", java.util.Set.of()).contains(WHIP));
 		history.undo();
 		assertTrue(mobs.allExclusions(MOB).get("RANGED").contains(WHIP));
@@ -193,7 +193,7 @@ class CommandsTest
 	void filterItemKeepsName()
 	{
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
-		history.execute(Commands.addFilterItem(mobs, MOB, "ALL", 12695, "Super combat potion(4)"));
+		history.execute(TestCommands.addFilterItem(mobs, MOB, "ALL", 12695, "Super combat potion(4)"));
 		assertEquals("Super combat potion(4)", mobs.allFilterItems(MOB).get("ALL").get(12695));
 		history.undo();
 		assertTrue(mobs.allFilterItems(MOB).isEmpty()

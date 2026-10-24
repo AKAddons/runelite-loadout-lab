@@ -8,6 +8,7 @@ import com.loadoutlab.data.LoadoutData;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.testsupport.InMemoryConfigManager;
 import java.util.Map;
+import net.runelite.client.config.ConfigManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,17 +42,53 @@ class UnpinRoundTripTest
 			}
 
 			@Override
-			public void pin(int monsterId, String slot, int itemId)
+			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
 			{
-				store.pin(monsterId, MonsterProfileStore.ALL_SETS, GearSlot.valueOf(slot.toUpperCase()), itemId);
+				store.pin(monsterId, scope, slot, itemId);
 			}
 
 			@Override
-			public void unpin(int monsterId, String slot)
+			public void unpin(int monsterId, String scope, GearSlot slot)
 			{
-				store.unpinEverywhere(monsterId, GearSlot.valueOf(slot.toUpperCase()));
+				store.unpin(monsterId, scope, slot);
 			}
 		};
+	}
+
+	@Test
+	@DisplayName("Unpin clears the slot in every scope - a style pin cannot outlive it - and one undo puts each back")
+	void unpinClearsEveryScope()
+	{
+		ConfigManager cfg = InMemoryConfigManager.create();
+		MonsterProfileStore store = new MonsterProfileStore(cfg, new Gson());
+		store.loadScope("std.1");
+		CommandEngine engine = new CommandEngine(data, new PageState(), (mob, p, onDone) ->
+		{
+		}, new CompanionLink());
+		engine.setStoreOps(wired(store));
+		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
+		int mobId = araxxor.getId();
+		assertTrue(engine.execute("select", Map.of("id", mobId)));
+		store.pin(mobId, MonsterProfileStore.ALL, GearSlot.WEAPON, 4151);
+		store.pin(mobId, "MELEE", GearSlot.WEAPON, 12006);
+		store.pin(mobId, "RANGED", GearSlot.WEAPON, 12006);
+		store.pin(mobId, MonsterProfileStore.ALL, GearSlot.HEAD, 10828);
+
+		assertTrue(engine.execute("unpin", Map.of("slot", "weapon")));
+		assertNull(store.pinsFor(mobId, "MELEE").get(GearSlot.WEAPON));
+		assertNull(store.pinsFor(mobId, "RANGED").get(GearSlot.WEAPON));
+		assertEquals(Integer.valueOf(10828), store.pinsFor(mobId, "MELEE").get(GearSlot.HEAD), "other slots stay");
+		MonsterProfileStore fresh = new MonsterProfileStore(cfg, new Gson());
+		fresh.loadScope("std.1");
+		assertNull(fresh.pinsFor(mobId, "MELEE").get(GearSlot.WEAPON), "and it persisted");
+
+		assertTrue(engine.execute("undo", Map.of()), "Unpin is one undo step");
+		assertEquals(Integer.valueOf(12006), store.pinsFor(mobId, "MELEE").get(GearSlot.WEAPON), "the style pin is back");
+		assertEquals(Integer.valueOf(12006), store.pinsFor(mobId, "RANGED").get(GearSlot.WEAPON));
+		assertEquals(Integer.valueOf(4151), store.pinsFor(mobId, MonsterProfileStore.ALL).get(GearSlot.WEAPON), "and the ALL pin");
+
+		assertFalse(engine.execute("unpin", Map.of("slot", "legs")), "nothing pinned there - nothing to undo");
+		assertFalse(engine.execute("unpin", Map.of("slot", "no-such-slot")), "a bad slot name refuses");
 	}
 
 	private static int obligator()
@@ -98,7 +135,7 @@ class UnpinRoundTripTest
 		engine.setOwnedCheck(id -> true);
 		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
 		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
-		state.selectRoster(java.util.List.of(araxxor, demon), "Custom roster");
+		state.selectRoster(java.util.List.of(araxxor, demon), "Custom roster", false);
 
 		for (String how : new String[]{"pin", "ladder-try"})
 		{

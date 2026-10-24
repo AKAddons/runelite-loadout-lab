@@ -1,6 +1,8 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.Names;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,6 +28,7 @@ public final class BossIncomingOverrides
 	private static final String RESOURCE = "boss_incoming.json";
 
 	/** One curated attack in the boss's rotation. */
+	@AllArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Attack
 	{
 		@Getter
@@ -36,12 +39,6 @@ public final class BossIncomingOverrides
 		private final double share;
 		@Getter
 		private final boolean prayable;
-		/** Dodgeable by design (Zulrah's magma slam): the standard play
-		 * takes zero, so the attack is excluded from both dps totals and
-		 * kept in the threat list for the tooltip - the same philosophy as
-		 * assuming the protection prayer is up. */
-		@Getter
-		private final boolean avoidable;
 		/** Fraction of damage that gets THROUGH the matching protection
 		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
 		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
@@ -51,22 +48,12 @@ public final class BossIncomingOverrides
 		/** 0 means "use the stat sheet's attack speed". */
 		@Getter
 		private final int speedTicks;
-
-		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks)
-		{
-			this(style, maxHit, share, prayable, prayerFactor, speedTicks, false);
-		}
-
-		Attack(String style, int maxHit, double share, boolean prayable, double prayerFactor, int speedTicks, boolean avoidable)
-		{
-			this.style = style;
-			this.maxHit = maxHit;
-			this.share = share;
-			this.prayable = prayable;
-			this.prayerFactor = prayerFactor;
-			this.speedTicks = speedTicks;
-			this.avoidable = avoidable;
-		}
+		/** Dodgeable by design (Zulrah's magma slam): the standard play
+		 * takes zero, so the attack is excluded from both dps totals and
+		 * kept in the threat list for the tooltip - the same philosophy as
+		 * assuming the protection prayer is up. */
+		@Getter
+		private final boolean avoidable;
 	}
 
 	/** The full curated picture for one boss. */

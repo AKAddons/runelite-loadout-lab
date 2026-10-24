@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.IntPredicate;
 
+import static com.loadoutlab.data.JsonResources.*;
+
 /**
  * Trip supplies (food, fast food, prayer restores, surge, anti-venom): the
  * curated tier tables behind the persistent supply defaults. Tiers live in
@@ -34,6 +36,7 @@ public final class TripSupplies
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
+	@lombok.AllArgsConstructor
 	public static final class Option
 	{
 		public final String key;
@@ -54,19 +57,6 @@ public final class TripSupplies
 		/** A kit cell's ids - the display id first, then its variants (the
 		 * ornamented cannon parts, granite cannonballs); null = ids[i] alone. */
 		public final int[][] cells;
-
-		Option(String key, String name, int[] ids, boolean detect, boolean utility,
-			boolean wildyOnly, String[] names, int[][] cells)
-		{
-			this.names = names;
-			this.cells = cells;
-			this.key = key;
-			this.name = name;
-			this.ids = ids;
-			this.detect = detect;
-			this.utility = utility;
-			this.wildyOnly = wildyOnly;
-		}
 	}
 
 	private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
@@ -77,7 +67,7 @@ public final class TripSupplies
 
 	static
 	{
-		JsonObject root = JsonResources.object("trip_supplies.json");
+		JsonObject root = object("trip_supplies.json");
 		if (root != null)
 		{
 			for (String category : CATEGORY_KEYS)
@@ -89,32 +79,24 @@ public final class TripSupplies
 					for (JsonElement e : arr)
 					{
 						JsonObject o = e.getAsJsonObject();
-						JsonArray idArr = o.getAsJsonArray("ids");
-						int[] ids = new int[idArr.size()];
-						for (int i = 0; i < ids.length; i++)
-						{
-							ids[i] = idArr.get(i).getAsInt();
-						}
+						List<String> names = new ArrayList<>();
+						strings(o, "names", names);
 						options.add(new Option(
-							o.get("key").getAsString(),
-							o.get("name").getAsString(),
-							ids,
-							!o.has("detect") || o.get("detect").getAsBoolean(),
-							o.has("placement") && "utility".equals(o.get("placement").getAsString()),
-							o.has("wildyOnly") && o.get("wildyOnly").getAsBoolean(),
-							kitNames(o), cells(o)));
+							string(o, "key"),
+							string(o, "name"),
+							ints(o.getAsJsonArray("ids")),
+							bool(o, "detect", true),
+							"utility".equals(string(o, "placement")),
+							bool(o, "wildyOnly", false),
+							names.toArray(new String[0]), cells(o)));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
 			}
-			JsonObject labels = root.getAsJsonObject("labels");
-			for (String key : labels == null ? Set.<String>of() : labels.keySet())
-			{
-				LABELS.put(key, labels.get(key).getAsString());
-			}
-			JsonResources.strings(root, "venomousMonsters", VENOMOUS);
-			JsonResources.strings(root, "poisonMonsters", POISONOUS);
-			JsonResources.strings(root, "noCannonMonsters", NO_CANNON);
+			stringMap(root, "labels", LABELS);
+			strings(root, "venomousMonsters", VENOMOUS);
+			strings(root, "poisonMonsters", POISONOUS);
+			strings(root, "noCannonMonsters", NO_CANNON);
 		}
 	}
 
@@ -128,21 +110,9 @@ public final class TripSupplies
 		int[][] out = new int[rows.size()][];
 		for (int i = 0; i < out.length; i++)
 		{
-			JsonArray ids = rows.get(i).getAsJsonArray();
-			out[i] = new int[ids.size()];
-			for (int j = 0; j < out[i].length; j++)
-			{
-				out[i][j] = ids.get(j).getAsInt();
-			}
+			out[i] = ints(rows.get(i).getAsJsonArray());
 		}
 		return out;
-	}
-
-	private static String[] kitNames(JsonObject o)
-	{
-		List<String> names = new ArrayList<>();
-		JsonResources.strings(o, "names", names);
-		return names.toArray(new String[0]);
 	}
 
 	private TripSupplies()
@@ -166,14 +136,7 @@ public final class TripSupplies
 	 * and unknown keys resolve to null). */
 	public static Option option(String category, String key)
 	{
-		for (Option o : options(category))
-		{
-			if (o.key.equals(key))
-			{
-				return o;
-			}
-		}
-		return null;
+		return options(category).stream().filter(o -> o.key.equals(key)).findFirst().orElse(null);
 	}
 
 	/** Detect best for a trip: in the wilderness a banked blighted variant

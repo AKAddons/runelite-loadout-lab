@@ -34,6 +34,7 @@ public class CollectionLedger implements ScopedStore
 	private static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
 
 	/** Ledger sources, each persisted under its own key. */
+	@lombok.RequiredArgsConstructor
 	public enum Source
 	{
 		EQUIPMENT("equipment", net.runelite.api.InventoryID.EQUIPMENT.getId()),
@@ -65,12 +66,6 @@ public class CollectionLedger implements ScopedStore
 		private final String key;
 		private final int containerId;
 
-		Source(String key, int containerId)
-		{
-			this.key = key;
-			this.containerId = containerId;
-		}
-
 		/** The item-container id this source is scanned from, or -1 when
 		 * the source is not container-backed (STASH). */
 		public int containerId()
@@ -87,18 +82,8 @@ public class CollectionLedger implements ScopedStore
 		{
 			// Guard the STASH sentinel: without it, -1 would resolve to
 			// STASH instead of "no such container".
-			if (containerId < 0)
-			{
-				return null;
-			}
-			for (Source s : values())
-			{
-				if (s.containerId == containerId)
-				{
-					return s;
-				}
-			}
-			return null;
+			return containerId < 0 ? null
+				: Arrays.stream(values()).filter(s -> s.containerId == containerId).findFirst().orElse(null);
 		}
 
 		/** The persisted config-key segment; also the storage name in the
@@ -139,26 +124,15 @@ public class CollectionLedger implements ScopedStore
 		this.worldScope = scope;
 		for (Source s : Source.values())
 		{
-			Map<Integer, Integer> loaded = null;
 			// One-time adoption of pre-account-scoping data ("std.*"): the
 			// FIRST character to load it takes it and the legacy entry is
 			// removed. Copying instead of moving is what let a second account
 			// open on the main's scanned bank (field report 2026-08-26).
+			// A corrupt entry starts that snapshot fresh rather than failing.
 			int dot = scope.indexOf('.');
 			String legacy = (dot > 0 ? scope.substring(0, dot) : scope) + ".collection." + s.key;
-			String json = ScopedKeys.adopt(configManager, CONFIG_GROUP, key(s), legacy);
-			if (json != null && !json.isEmpty())
-			{
-				try
-				{
-					loaded = gson.fromJson(json, MAP_TYPE.getType());
-				}
-				catch (RuntimeException e)
-				{
-					// Corrupt entry: start that snapshot fresh rather than failing.
-					loaded = null;
-				}
-			}
+			Map<Integer, Integer> loaded = ScopedKeys.parse(gson,
+				ScopedKeys.adopt(configManager, CONFIG_GROUP, key(s), legacy), MAP_TYPE.getType());
 			snapshots.put(s, loaded != null ? loaded : new HashMap<>());
 		}
 		fingerprint = null;
@@ -191,13 +165,7 @@ public class CollectionLedger implements ScopedStore
 	public Map<Integer, Integer> owned()
 	{
 		Map<Integer, Integer> merged = new HashMap<>();
-		for (Map<Integer, Integer> snap : snapshots.values())
-		{
-			for (Map.Entry<Integer, Integer> e : snap.entrySet())
-			{
-				merged.merge(e.getKey(), e.getValue(), Integer::sum);
-			}
-		}
+		snapshots.values().forEach(snap -> snap.forEach((id, n) -> merged.merge(id, n, Integer::sum)));
 		return merged;
 	}
 

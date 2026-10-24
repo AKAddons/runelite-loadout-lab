@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Where each owned item lives - the per-source view the flattened owned
@@ -13,10 +14,9 @@ import java.util.function.Function;
  * variant-aware, so a STASH'd ornamented variant answers for the base id
  * the optimizer suggests.
  */
+@lombok.AllArgsConstructor
 public final class ItemLocations
 {
-	/** Sources the player can grab from without a fetch trip. */
-
 	/** Suffix convention for origins the DWMS import contributed. */
 	public static final String VIA_DWMS = " (via DWMS)";
 
@@ -27,30 +27,12 @@ public final class ItemLocations
 	 * null means exact-id matching only (dataset still loading). */
 	private final Function<Integer, Set<Integer>> equivalents;
 
-	public ItemLocations(Map<String, Map<Integer, Integer>> origins,
-		Function<Integer, Set<Integer>> equivalents)
-	{
-		this.origins = origins;
-		this.equivalents = equivalents;
-	}
-
 	/** Origin labels holding this item or an interchangeable variant. */
 	public List<String> where(int itemId)
 	{
 		Set<Integer> ids = equivalents == null ? Set.of(itemId) : equivalents.apply(itemId);
-		List<String> found = new ArrayList<>();
-		for (Map.Entry<String, Map<Integer, Integer>> origin : origins.entrySet())
-		{
-			for (int id : ids)
-			{
-				if (origin.getValue().containsKey(id))
-				{
-					found.add(origin.getKey());
-					break;
-				}
-			}
-		}
-		return found;
+		return origins.entrySet().stream().filter(origin -> ids.stream().anyMatch(origin.getValue()::containsKey))
+			.map(Map.Entry::getKey).collect(Collectors.toList());
 	}
 
 	/**

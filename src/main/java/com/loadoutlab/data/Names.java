@@ -13,4 +13,10 @@ public final class Names
 	{
 		return s.toLowerCase(Locale.ROOT);
 	}
+
+	/** The first letter upper-cased, the rest as it was; null and "" read "". */
+	public static String cap(String s)
+	{
+		return s == null || s.isEmpty() ? "" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
+	}
 }

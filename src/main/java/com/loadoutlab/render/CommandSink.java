@@ -9,6 +9,12 @@ public interface CommandSink
 {
 	void send(String name, Map<String, Object> args);
 
+	/** A command with no arguments. */
+	default void send(String name)
+	{
+		send(name, Map.of());
+	}
+
 	/** The page-param write every chip and picker sends. */
 	default void set(String param, Object value)
 	{

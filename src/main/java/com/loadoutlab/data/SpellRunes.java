@@ -1,12 +1,12 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.loadoutlab.data.JsonResources.*;
 
 /**
  * Runes per cast for every corpus spell (wiki-fetched, see the
@@ -24,23 +24,16 @@ public final class SpellRunes
 
 	static
 	{
-		JsonObject root = JsonResources.object("spell_runes.json");
+		JsonObject root = object("spell_runes.json");
 		if (root != null)
 		{
-			JsonResources.stringIntMap(root, "runeItems", RUNE_ITEMS);
-			if (root.has("bySpell"))
+			stringIntMap(root, "runeItems", RUNE_ITEMS);
+			JsonObject bySpell = root.getAsJsonObject("bySpell");
+			for (String spell : bySpell == null ? Set.<String>of() : bySpell.keySet())
 			{
-				for (Map.Entry<String, JsonElement> spell
-					: root.getAsJsonObject("bySpell").entrySet())
-				{
-					Map<String, Integer> runes = new LinkedHashMap<>();
-					for (Map.Entry<String, JsonElement> rune
-						: spell.getValue().getAsJsonObject().entrySet())
-					{
-						runes.put(rune.getKey(), rune.getValue().getAsInt());
-					}
-					BY_SPELL.put(spell.getKey(), runes);
-				}
+				Map<String, Integer> runes = new LinkedHashMap<>();
+				stringIntMap(bySpell, spell, runes);
+				BY_SPELL.put(spell, runes);
 			}
 		}
 	}
@@ -68,18 +61,15 @@ public final class SpellRunes
 		{
 			return true;
 		}
-		for (String rune : cost.keySet())
-		{
-			Integer item = RUNE_ITEMS.get(rune);
-			if (PREMIUM.contains(rune) && item != null && !owned.owns(item))
-			{
-				return false;
-			}
-		}
-		return true;
+		return cost.keySet().stream().noneMatch(rune -> PREMIUM.contains(rune)
+			&& RUNE_ITEMS.get(rune) != null && !owned.owns(RUNE_ITEMS.get(rune)));
 	}
 
-	/** The elements a worn item covers, by name (empty = none). */
+	/** The elements a worn item covers, by name (empty = none): the first
+	 * combo staff / Kodai fragment of STAVES that the name carries, else -
+	 * "staff of air", "air battlestaff", "mystic fire staff", "tome of fire"
+	 * - the element word is the signal, but only on staves and tomes (an
+	 * "earth warrior" style name never reaches here: gear names only). */
 	private static List<String> covers(String nameLower)
 	{
 		List<String> out = new ArrayList<>(2);
@@ -87,26 +77,20 @@ public final class SpellRunes
 		{
 			return out;
 		}
-		if (nameLower.contains("smoke")) { out.add("air"); out.add("fire"); }
-		else if (nameLower.contains("mist")) { out.add("air"); out.add("water"); }
-		else if (nameLower.contains("dust")) { out.add("air"); out.add("earth"); }
-		else if (nameLower.contains("mud")) { out.add("water"); out.add("earth"); }
-		else if (nameLower.contains("lava")) { out.add("earth"); out.add("fire"); }
-		else if (nameLower.contains("steam")) { out.add("water"); out.add("fire"); }
-		else if (nameLower.contains("kodai")) { out.add("water"); }
-		else
+		for (String[] staff : STAVES)
 		{
-			for (String element : new String[]{"air", "water", "earth", "fire"})
+			if (nameLower.contains(staff[0]))
 			{
-				// "staff of air", "air battlestaff", "mystic fire staff",
-				// "tome of fire" - the element word is the signal, but only
-				// on staves and tomes (an "earth warrior" style name never
-				// reaches here: gear names only).
-				if (nameLower.contains(element)
-					&& (nameLower.contains("staff") || nameLower.contains("tome")))
-				{
-					out.add(element);
-				}
+				out.addAll(Arrays.asList(staff).subList(1, staff.length));
+				return out;
+			}
+		}
+		for (String element : new String[]{"air", "water", "earth", "fire"})
+		{
+			if (nameLower.contains(element)
+				&& (nameLower.contains("staff") || nameLower.contains("tome")))
+			{
+				out.add(element);
 			}
 		}
 		return out;
@@ -136,11 +120,7 @@ public final class SpellRunes
 			{
 				continue;
 			}
-			Map<String, Object> node = new LinkedHashMap<>();
-			node.put("id", itemId);
-			node.put("name", capitalize(rune.getKey()) + " rune");
-			node.put("qty", rune.getValue());
-			out.add(node);
+			out.add(map("id", itemId, "name", Names.cap(rune.getKey()) + " rune", "qty", rune.getValue()));
 		}
 		return out;
 	}
@@ -178,28 +158,21 @@ public final class SpellRunes
 	 * cost's elements, ONE stack of it (the larger quantity) replaces
 	 * both - a combo rune counts as one of each element per cast. */
 	private static final String[][] COMBOS;
+	/** The combo staves and the Kodai wand: [name fragment, elements covered...]. */
+	private static final String[][] STAVES;
 
 	static
 	{
-		JsonArray rows = JsonResources.objectOrThrow("combo_runes.json").getAsJsonArray("combos");
-		COMBOS = new String[rows.size()][];
-		for (int i = 0; i < COMBOS.length; i++)
-		{
-			JsonArray row = rows.get(i).getAsJsonArray();
-			COMBOS[i] = new String[]{row.get(0).getAsString(), row.get(1).getAsString(), row.get(2).getAsString(), row.get(3).getAsString()};
-		}
+		JsonObject root = objectOrThrow("combo_runes.json");
+		COMBOS = rows(root.getAsJsonArray("combos"));
+		STAVES = rows(root.getAsJsonArray("staves"));
 	}
 
 	/** The combination-rune item ids - the ownership detection behind
 	 * the panel's "Detect" preference reads these. */
 	public static int[] comboRuneIds()
 	{
-		int[] ids = new int[COMBOS.length];
-		for (int i = 0; i < COMBOS.length; i++)
-		{
-			ids[i] = Integer.parseInt(COMBOS[i][3]);
-		}
-		return ids;
+		return Arrays.stream(COMBOS).mapToInt(combo -> Integer.parseInt(combo[3])).toArray();
 	}
 
 	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes)
@@ -224,10 +197,8 @@ public final class SpellRunes
 			}
 			int qty = Math.max(((Number) a.get("qty")).intValue(),
 				((Number) b.get("qty")).intValue());
-			Map<String, Object> merged = new LinkedHashMap<>();
-			merged.put("id", Integer.parseInt(combo[3]));
-			merged.put("name", capitalize(combo[0]) + " rune");
-			merged.put("qty", qty);
+			Map<String, Object> merged = map("id", Integer.parseInt(combo[3]),
+				"name", Names.cap(combo[0]) + " rune", "qty", qty);
 			Object why = a.get("why") != null ? a.get("why") : b.get("why");
 			if (why != null)
 			{
@@ -238,10 +209,5 @@ public final class SpellRunes
 			byName.put(combo[0], merged);
 		}
 		return new ArrayList<>(byName.values());
-	}
-
-	private static String capitalize(String word)
-	{
-		return Character.toUpperCase(word.charAt(0)) + Names.lower(word.substring(1));
 	}
 }

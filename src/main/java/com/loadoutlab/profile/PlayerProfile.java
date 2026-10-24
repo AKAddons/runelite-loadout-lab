@@ -1,6 +1,7 @@
 package com.loadoutlab.profile;
 
 import com.google.gson.*;
+import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.engine.*;
 import java.util.*;
 import java.util.Map;
@@ -90,28 +91,33 @@ public final class PlayerProfile
 		}
 		reqs.add("quests", quests);
 		root.add("requirements", reqs);
-		JsonObject ownedObj = new JsonObject();
-		for (Map.Entry<Integer, Integer> entry : owned.entrySet())
-		{
-			ownedObj.addProperty(String.valueOf(entry.getKey()), entry.getValue());
-		}
-		root.add("owned", ownedObj);
+		root.add("owned", items(owned));
 		if (!ownedBySource.isEmpty())
 		{
 			JsonObject bySource = new JsonObject();
-			for (Map.Entry<String, Map<Integer, Integer>> origin : ownedBySource.entrySet())
-			{
-				JsonObject originItems = new JsonObject();
-				for (Map.Entry<Integer, Integer> entry : origin.getValue().entrySet())
-				{
-					originItems.addProperty(String.valueOf(entry.getKey()), entry.getValue());
-				}
-				bySource.add(origin.getKey(), originItems);
-			}
+			ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
 			root.add("ownedBySource", bySource);
 		}
 		root.addProperty("bankScanned", bankScanned);
 		return root.toString();
+	}
+
+	/** {"itemId": quantity} for an owned map. */
+	private static JsonObject items(Map<Integer, Integer> items)
+	{
+		JsonObject out = new JsonObject();
+		items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
+		return out;
+	}
+
+	private static Map<Integer, Integer> parseItems(JsonObject object)
+	{
+		Map<Integer, Integer> out = new HashMap<>();
+		for (Map.Entry<String, JsonElement> entry : object.entrySet())
+		{
+			out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
+		}
+		return out;
 	}
 
 	public static PlayerProfile fromJson(String json)
@@ -132,15 +138,7 @@ public final class PlayerProfile
 			reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
 		}
 		Set<String> quests = new HashSet<>();
-		for (JsonElement quest : reqs.getAsJsonArray("quests"))
-		{
-			quests.add(quest.getAsString());
-		}
-		Map<Integer, Integer> owned = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject("owned").entrySet())
-		{
-			owned.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
-		}
+		JsonResources.strings(reqs, "quests", quests);
 		// Optional (older exports lack it) - absence means no provenance.
 		Map<String, Map<Integer, Integer>> bySource = null;
 		if (root.has("ownedBySource"))
@@ -148,12 +146,7 @@ public final class PlayerProfile
 			bySource = new LinkedHashMap<>();
 			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet())
 			{
-				Map<Integer, Integer> items = new HashMap<>();
-				for (Map.Entry<String, JsonElement> entry : origin.getValue().getAsJsonObject().entrySet())
-				{
-					items.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
-				}
-				bySource.put(origin.getKey(), items);
+				bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
 			}
 		}
 		return new PlayerProfile(
@@ -161,7 +154,7 @@ public final class PlayerProfile
 			parseLevels(root.getAsJsonObject("boostedLevels")),
 			unlocks,
 			new RequirementProfile(reqSkills, quests),
-			owned,
+			parseItems(root.getAsJsonObject("owned")),
 			root.get("bankScanned").getAsBoolean(),
 			bySource);
 	}

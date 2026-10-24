@@ -72,7 +72,7 @@ def main() -> int:
     if total >= WARN_AT:
         print("\n  largest files (externalize hardcoded data → resources to shrink):")
         for t, rel in sorted(per, reverse=True)[:8]:
-            print(f"    {t:>7,}  {rel.split('com/goalplanner/')[-1]}")
+            print(f"    {t:>7,}  {rel.replace(os.sep, '/').split('com/loadoutlab/')[-1]}")
 
     if "estimate" in method and total >= WARN_AT:
         print("\n✗ Within reach of the cap on the ESTIMATE only - the verdict needs the exact count.")

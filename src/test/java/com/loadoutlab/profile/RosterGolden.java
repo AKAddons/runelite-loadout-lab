@@ -13,7 +13,6 @@ import com.loadoutlab.engine.PlayerLevels;
 import com.loadoutlab.engine.PrayerUnlocks;
 import com.loadoutlab.engine.RequirementProfile;
 import com.loadoutlab.optimizer.OptimizerService;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +23,12 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Golden-output capture for the ROSTER path - the multi-mob canvas that
  * {@link QueryGolden} (single-mob only) never touches: bestPerStyleAcross,
- * the cross-style kit search, slot/ammo unification, per-mob spec picks and
- * the inventory breakpoint curve. Together with QueryGolden this is the
- * behaviour net a refactor of OptimizerService or the engine must not move.
+ * the cross-style kit search, slot/ammo unification and per-mob spec
+ * picks. Together with QueryGolden this is the behaviour net a refactor of
+ * OptimizerService or the engine must not move.
  *
  * Prints, per curated group and bench size, every mob's per-style answer
- * (worn set, spec, dps) plus the shared kit and the curve points.
+ * (worn set, spec, dps) plus the shared kit.
  *
  *   ./gradlew -q rosterGolden > roster-golden.txt
  *
@@ -171,17 +170,6 @@ public final class RosterGolden
 				{
 					sb.append(String.format("      game best: %.4f%n", result.overallBest.getDps()));
 				}
-			}
-		}
-		if (roster.curve != null)
-		{
-			sb.append("--- curve (mobs=").append(roster.curve.mobCount)
-				.append(", specFirst=").append(roster.curve.specFirst).append(")\n");
-			List<double[]> points = new ArrayList<>(roster.curve.points);
-			for (double[] point : points)
-			{
-				sb.append(String.format("      slots=%.0f total=%.4f viable=%.0f%n",
-					point[0], point[1], point[2]));
 			}
 		}
 		return sb.toString();

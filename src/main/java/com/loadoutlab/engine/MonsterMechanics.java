@@ -1,14 +1,9 @@
 package com.loadoutlab.engine;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.loadoutlab.data.*;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Per-NPC combat mechanics the stat sheets cannot express: style
@@ -19,55 +14,36 @@ import java.util.zip.GZIPInputStream;
  */
 public final class MonsterMechanics
 {
-	private static final String RESOURCE = "/com/loadoutlab/data/npc_mechanics.json.gz";
+	private static final JsonObject ROOT =
+		JsonResources.gz("/com/loadoutlab/data/npc_mechanics.json.gz").getAsJsonObject();
 
-	private static final Set<Integer> IMMUNE_MAGIC = new HashSet<>();
-	private static final Set<Integer> IMMUNE_RANGED = new HashSet<>();
-	private static final Set<Integer> IMMUNE_MELEE = new HashSet<>();
-	private static final Set<Integer> IMMUNE_ANCIENTS = new HashSet<>();
-	private static final Set<Integer> SALAMANDER_ONLY_MELEE = new HashSet<>();
-	private static final Set<Integer> MAGIC_DEFENCE_BY_DEF_LEVEL = new HashSet<>();
-	private static final Set<Integer> ZULRAH = new HashSet<>();
-	private static final Set<Integer> VESPULA = new HashSet<>();
-	private static final Set<Integer> GUARDIANS = new HashSet<>();
-	private static final Set<Integer> TEKTON = new HashSet<>();
-	private static final Set<Integer> ICE_DEMON = new HashSet<>();
-	private static final Set<Integer> RESPIRATORY_SYSTEMS = new HashSet<>();
-	private static final Set<Integer> SALARIN = new HashSet<>();
-	private static final Set<Integer> NIBBLERS = new HashSet<>();
-	private static final Set<Integer> WARDEN_CORES = new HashSet<>();
-	private static final Set<Integer> FRESH_BAR = new HashSet<>();
-	private static final Set<Integer> TOA_INVOCATION_SCALED = new HashSet<>();
-
-	static
+	/** One of the file's id lists (resolved once, below: the immunity
+	 * checks sit on the beam's path, so the reads stay plain set lookups). */
+	private static Set<Integer> ids(String key)
 	{
-		try (InputStream stream = MonsterMechanics.class.getResourceAsStream(RESOURCE);
-			InputStreamReader reader = new InputStreamReader(new GZIPInputStream(stream), StandardCharsets.UTF_8))
-		{
-			JsonObject root = new JsonParser().parse(reader).getAsJsonObject();
-			JsonResources.ints(root, "immuneMagic", IMMUNE_MAGIC);
-			JsonResources.ints(root, "immuneRanged", IMMUNE_RANGED);
-			JsonResources.ints(root, "immuneMelee", IMMUNE_MELEE);
-			JsonResources.ints(root, "immuneAncients", IMMUNE_ANCIENTS);
-			JsonResources.ints(root, "immuneNonSalamanderMelee", SALAMANDER_ONLY_MELEE);
-			JsonResources.ints(root, "usesDefenceLevelForMagic", MAGIC_DEFENCE_BY_DEF_LEVEL);
-			JsonResources.ints(root, "zulrah", ZULRAH);
-			JsonResources.ints(root, "vespula", VESPULA);
-			JsonResources.ints(root, "guardians", GUARDIANS);
-			JsonResources.ints(root, "tekton", TEKTON);
-			JsonResources.ints(root, "iceDemon", ICE_DEMON);
-			JsonResources.ints(root, "respiratorySystems", RESPIRATORY_SYSTEMS);
-			JsonResources.ints(root, "salarin", SALARIN);
-			JsonResources.ints(root, "nibblers", NIBBLERS);
-			JsonResources.ints(root, "wardenCores", WARDEN_CORES);
-			JsonResources.ints(root, "freshBar", FRESH_BAR);
-			JsonResources.ints(root, "toaInvocationScaled", TOA_INVOCATION_SCALED);
-		}
-		catch (Exception ex)
-		{
-			throw new IllegalStateException("Could not load " + RESOURCE, ex);
-		}
+		Set<Integer> ids = new HashSet<>();
+		JsonResources.ints(ROOT, key, ids);
+		return ids;
 	}
+
+	private static final Set<Integer>
+		IMMUNE_MAGIC = ids("immuneMagic"),
+		IMMUNE_RANGED = ids("immuneRanged"),
+		IMMUNE_MELEE = ids("immuneMelee"),
+		IMMUNE_ANCIENTS = ids("immuneAncients"),
+		SALAMANDER_ONLY_MELEE = ids("immuneNonSalamanderMelee"),
+		MAGIC_DEFENCE_BY_DEF_LEVEL = ids("usesDefenceLevelForMagic"),
+		ZULRAH = ids("zulrah"),
+		VESPULA = ids("vespula"),
+		GUARDIANS = ids("guardians"),
+		TEKTON = ids("tekton"),
+		ICE_DEMON = ids("iceDemon"),
+		RESPIRATORY_SYSTEMS = ids("respiratorySystems"),
+		SALARIN = ids("salarin"),
+		NIBBLERS = ids("nibblers"),
+		WARDEN_CORES = ids("wardenCores"),
+		FRESH_BAR = ids("freshBar"),
+		TOA_INVOCATION_SCALED = ids("toaInvocationScaled");
 
 
 	private MonsterMechanics()
@@ -153,31 +129,22 @@ public final class MonsterMechanics
 		{
 			return true;
 		}
-		if (style == CombatStyle.MELEE)
-		{
-			if (IMMUNE_MELEE.contains(id))
-			{
-				// Zulrah can be reached with a polearm.
-				return !(ZULRAH.contains(id) && "Polearm".equals(category));
-			}
-			if (VESPULA.contains(id))
-			{
-				return true; // immune to melee despite the polearm rule for flying
-			}
-			if (SALAMANDER_ONLY_MELEE.contains(id) && !"Salamander".equals(category))
-			{
-				return true;
-			}
-			if (GUARDIANS.contains(id) && !"Pickaxe".equals(category))
-			{
-				return true;
-			}
-		}
-		if (monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell))
+		if (style == CombatStyle.MELEE && meleeBarred(id, category))
 		{
 			return true;
 		}
-		return false;
+		return monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell);
+	}
+
+	/** The id-list melee bars: the melee-immune rows (Zulrah can be reached
+	 * with a polearm), Vespula (immune despite the polearm rule for flying),
+	 * the salamander-only rows and the Guardians' pickaxe rule. */
+	private static boolean meleeBarred(int id, String category)
+	{
+		return IMMUNE_MELEE.contains(id) && !(ZULRAH.contains(id) && "Polearm".equals(category))
+			|| VESPULA.contains(id)
+			|| SALAMANDER_ONLY_MELEE.contains(id) && !"Salamander".equals(category)
+			|| GUARDIANS.contains(id) && !"Pickaxe".equals(category);
 	}
 
 	/** Leafy monsters (turoths/kurasks): leaf-bladed melee, broad ammo, or Magic Dart. */
@@ -198,6 +165,15 @@ public final class MonsterMechanics
 		return spell != null && "Magic Dart".equals(spell.getName());
 	}
 
+	/** The weapon-level bars a worn weapon faces at this monster (vampyre
+	 * tiers, flying, rat bone) - the calculator's gate and the pool share it. */
+	public static boolean weaponUsable(MonsterStats monster, CombatStyle style, GearItem weapon)
+	{
+		return VampyreRules.canDamage(monster, weapon)
+			&& FlyingRules.canReach(monster, style, weapon)
+			&& RatBoneRules.canUse(monster, weapon);
+	}
+
 	/** Weapon-level pre-filter for candidate selection (conservative: only
 	 * prunes when the weapon alone decides; ammo/spell-dependent cases pass). */
 	public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon)
@@ -207,37 +183,11 @@ public final class MonsterMechanics
 			return true;
 		}
 		int id = monster.getId();
-		String category = weapon == null ? "" : weapon.getCategory();
-		if (IMMUNE_MELEE.contains(id) && !(ZULRAH.contains(id) && "Polearm".equals(category)))
-		{
-			return false;
-		}
-		if (VESPULA.contains(id))
-		{
-			return false;
-		}
-		if (SALAMANDER_ONLY_MELEE.contains(id) && !"Salamander".equals(category))
-		{
-			return false;
-		}
-		if (RESPIRATORY_SYSTEMS.contains(id) && !ventMeleeLands(weapon))
-		{
-			return false;
-		}
-		if (SALARIN.contains(id))
-		{
-			return false; // strike spells only - no melee weapon ever works
-		}
-		if (GUARDIANS.contains(id) && !"Pickaxe".equals(category))
-		{
-			return false;
-		}
-		if (monster.hasAttribute("leafy")
-			&& !weapon.getNameLower().startsWith("leaf-bladed"))
-		{
-			return false;
-		}
-		return true;
+		// Salarin: strike spells only - no melee weapon ever works.
+		return !(meleeBarred(id, weapon == null ? "" : weapon.getCategory())
+			|| RESPIRATORY_SYSTEMS.contains(id) && !ventMeleeLands(weapon)
+			|| SALARIN.contains(id)
+			|| monster.hasAttribute("leafy") && !weapon.getNameLower().startsWith("leaf-bladed"));
 	}
 
 	/** The walk between the Sire's four vents, amortised per kill - the

@@ -1,6 +1,7 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 import lombok.Getter;
+import lombok.With;
 import java.util.List;
 
 public final class DpsResult
@@ -23,7 +24,7 @@ public final class DpsResult
 	private final long attackRoll;
 	@Getter
 	private final long defenceRoll;
-	@Getter
+	@Getter @With
 	private final int purchaseCost;
 	private final String spellName;
 	/** Conditional bonuses the calculator actually counted for this set
@@ -34,7 +35,7 @@ public final class DpsResult
 	/** True when the optimizer could not satisfy a dragonfire shield
 	 * constraint (no protective shield in the pool) and fell back to the
 	 * unconstrained set - the panel must say "assumes a super antifire". */
-	@Getter
+	@Getter @With
 	private final boolean antifireAssumed;
 
 	public DpsResult(
@@ -106,19 +107,12 @@ public final class DpsResult
 			List.copyOf(bonuses), antifireAssumed);
 	}
 
-	public DpsResult withAntifireAssumed(boolean assumed)
-	{
-		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
-			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
-			countedBonuses, assumed);
-	}
-
 	/**
 	 * The higher-dps of two nullable results; the first wins ties. The
 	 * one comparison rule for "keep the better candidate" - previously
 	 * duplicated by DpsCalculator and LoadoutOptimizer.
 	 */
-	static DpsResult better(DpsResult first, DpsResult second)
+	public static DpsResult better(DpsResult first, DpsResult second)
 	{
 		if (second == null)
 		{
@@ -129,13 +123,6 @@ public final class DpsResult
 			return second;
 		}
 		return first;
-	}
-
-	public DpsResult withPurchaseCost(int purchaseCost)
-	{
-		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
-			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses,
-			antifireAssumed);
 	}
 
 	/** Copy with a reshaped hit model - the per-monster overrides in

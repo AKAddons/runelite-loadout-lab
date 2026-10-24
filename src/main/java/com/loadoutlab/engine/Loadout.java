@@ -121,6 +121,49 @@ public final class Loadout
 		return copy;
 	}
 
+	/** A copy with one slot changed (null empties it); the quiver's
+	 * carried ammo rides along. */
+	public Loadout with(GearSlot slot, GearItem item)
+	{
+		EnumMap<GearSlot, GearItem> copy = copyOf(gear);
+		if (item == null)
+		{
+			copy.remove(slot);
+		}
+		else
+		{
+			copy.put(slot, item);
+		}
+		Loadout out = new Loadout(copy, true);
+		out.quiverAmmo = quiverAmmo;
+		return out;
+	}
+
+	/** The worn items, empty slots skipped. */
+	public List<GearItem> items()
+	{
+		List<GearItem> items = new ArrayList<>(gear.size());
+		for (GearItem item : gear.values())
+		{
+			if (item != null)
+			{
+				items.add(item);
+			}
+		}
+		return items;
+	}
+
+	/** The worn item ids. */
+	public Set<Integer> ids()
+	{
+		Set<Integer> ids = new HashSet<>();
+		for (GearItem item : items())
+		{
+			ids.add(item.getId());
+		}
+		return ids;
+	}
+
 	public GearItem get(GearSlot slot)
 	{
 		return gear.get(slot);

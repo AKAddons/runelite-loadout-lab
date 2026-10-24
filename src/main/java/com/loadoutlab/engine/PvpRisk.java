@@ -6,6 +6,8 @@ import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * What a PvP death actually costs in a given set. Mechanics
@@ -24,16 +26,11 @@ import java.util.Set;
 public final class PvpRisk
 {
 	/** One worn untradeable and its per-death cost (repair/mangle fee). */
+	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 	public static final class Charge
 	{
 		public final GearItem item;
 		public final long costGp;
-
-		Charge(GearItem item, long costGp)
-		{
-			this.item = item;
-			this.costGp = costGp;
-		}
 	}
 
 	public static final class Assessment
@@ -182,9 +179,14 @@ public final class PvpRisk
 		int topCount = 0;
 		long poolTotal = 0;
 		long fees = 0;
-		for (GearSlot slot : GearSlot.values())
+		GearSlot[] slots = GearSlot.values();
+		for (int i = 0; i <= slots.length; i++)
 		{
-			GearItem item = loadout.get(slot);
+			// The worn slots, then the carried spec weapon under the same
+			// single-count rule as assess() - the beam's filter must price a
+			// death identically to the line the card shows.
+			GearItem item = i < slots.length ? loadout.get(slots[i])
+				: alreadyWorn(loadout, carriedSpecWeapon) ? null : carriedSpecWeapon;
 			long value = poolValue(item);
 			if (value < 0)
 			{
@@ -196,22 +198,6 @@ public final class PvpRisk
 			}
 			poolTotal += value;
 			topCount = offerTop(top, topCount, value);
-		}
-		// Same single-count rule as assess() - the beam's filter must
-		// price a death identically to the line the card shows.
-		if (!alreadyWorn(loadout, carriedSpecWeapon))
-		{
-			long specValue = poolValue(carriedSpecWeapon);
-			if (specValue < 0)
-			{
-				fees += UntradeableDeathCosts.costFor(carriedSpecWeapon)
-					+ UntradeableDeathCosts.frictionFor(carriedSpecWeapon);
-			}
-			else
-			{
-				poolTotal += specValue;
-				topCount = offerTop(top, topCount, specValue);
-			}
 		}
 		long keptTotal = 0;
 		for (int i = 0; i < topCount; i++)
@@ -259,29 +245,22 @@ public final class PvpRisk
 		int count = 0;
 		// Bit i set = pool item i is an unpinned must-protect item.
 		int frictionAt = 0;
-		for (GearSlot slot : GearSlot.values())
+		GearSlot[] slots = GearSlot.values();
+		for (int i = 0; i <= slots.length; i++)
 		{
-			GearItem item = loadout.get(slot);
+			// The worn slots, then the spec weapon under the SAME single-count
+			// rule as assess() and riskGp() (found by the pre-release
+			// adversarial pass 2026-08-22): a spec weapon already wielded is
+			// one physical item. Counting it twice here pushed protect-only
+			// gear past the kept slots and made the beam veto sets the card
+			// shows as fully protected - the display-vs-beam divergence this
+			// rule exists to prevent.
+			GearItem item = i < slots.length ? loadout.get(slots[i])
+				: alreadyWorn(loadout, carriedSpecWeapon) ? null : carriedSpecWeapon;
 			int fate = offerRebuild(item, values, count, pinnedIds, protectOnlyIds);
 			if (fate < 0)
 			{
 				return true; // unpinned non-poolable must-protect: never kept
-			}
-			frictionAt |= (fate & 1) << count;
-			count += fate >> 1;
-		}
-		// The SAME single-count rule as assess() and riskGp() (found by
-		// the pre-release adversarial pass 2026-08-22): a spec weapon
-		// already wielded is one physical item. Counting it twice here
-		// pushed protect-only gear past the kept slots and made the beam
-		// veto sets the card shows as fully protected - the display-vs-
-		// beam divergence this rule exists to prevent.
-		if (!alreadyWorn(loadout, carriedSpecWeapon))
-		{
-			int fate = offerRebuild(carriedSpecWeapon, values, count, pinnedIds, protectOnlyIds);
-			if (fate < 0)
-			{
-				return true;
 			}
 			frictionAt |= (fate & 1) << count;
 			count += fate >> 1;

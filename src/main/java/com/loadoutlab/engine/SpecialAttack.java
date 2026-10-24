@@ -1,5 +1,7 @@
 package com.loadoutlab.engine;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import com.loadoutlab.data.*;
 import java.util.*;
@@ -18,6 +20,7 @@ import java.util.List;
  * drains, heals, bolt procs) are described in {@link #getNote()} but not
  * folded into the number.
  */
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SpecialAttack
 {
 	public enum Kind
@@ -78,24 +81,6 @@ public final class SpecialAttack
 	private final double magicDrainFraction;
 	/** Targets the spec hits in a multi area (wiki); 0 = single-target. */
 	private final int multiTargets;
-
-	private SpecialAttack(String[] namePrefixes, String displayName, CombatStyle style, Kind kind,
-		int energyCost, double accuracyMultiplier, double damageMultiplier, String note,
-		double defenceDrainFraction, boolean drainsByDamage, double magicDrainFraction, int multiTargets)
-	{
-		this.multiTargets = multiTargets;
-		this.defenceDrainFraction = defenceDrainFraction;
-		this.drainsByDamage = drainsByDamage;
-		this.magicDrainFraction = magicDrainFraction;
-		this.namePrefixes = namePrefixes;
-		this.displayName = displayName;
-		this.style = style;
-		this.kind = kind;
-		this.energyCost = energyCost;
-		this.accuracyMultiplier = accuracyMultiplier;
-		this.damageMultiplier = damageMultiplier;
-		this.note = note;
-	}
 
 	/** Wiki-verified entries live in special_attacks.json (hub token cap:
 	 * data rides resources, not source). Order matters: more specific
@@ -194,16 +179,19 @@ public final class SpecialAttack
 		double hitChance = RollMath.normalAccuracy(
 			(long) (attackRoll * accuracyMultiplier), defenceRoll);
 		int max = base.getMaxHit();
+		// One boosted hit's mean, and its expectation over the accuracy roll.
+		double boosted = mean((int) (max * damageMultiplier));
+		double hit = hitChance * boosted;
 
 		switch (kind)
 		{
 			case SINGLE:
-				return hitChance * mean((int) (max * damageMultiplier));
+				return hit;
 			case DOUBLE_INDEPENDENT:
-				return 2 * hitChance * mean((int) (max * damageMultiplier));
+				return 2 * hit;
 			case LINKED_DOUBLE:
 				// One accuracy outcome for both hits.
-				return hitChance * 2 * mean((int) (max * damageMultiplier));
+				return hit * 2;
 			case VOIDWAKER:
 				// Uniform 50-150% of max, no accuracy roll: averages exactly max.
 				return max;
@@ -214,15 +202,9 @@ public final class SpecialAttack
 			case MSB_SNAPSHOT:
 				return 2 * hitChance * mean(snapshotMax(base, levels));
 			case HALBERD_SWEEP:
-			{
-				double first = hitChance * mean((int) (max * damageMultiplier));
-				if (monster != null && monster.getSize() > 1)
-				{
-					double second = RollMath.normalAccuracy((long) (attackRoll * 0.75), defenceRoll);
-					first += second * mean((int) (max * damageMultiplier));
-				}
-				return first;
-			}
+				// A second hit at 75% accuracy vs large monsters.
+				return monster != null && monster.getSize() > 1
+					? hit + RollMath.normalAccuracy((long) (attackRoll * 0.75), defenceRoll) * boosted : hit;
 			case EXTRA_ATTACK:
 				return base.getExpectedHit();
 			case FIXED_FRACTION:
@@ -233,7 +215,7 @@ public final class SpecialAttack
 			case CASCADE_CLAWS:
 				return cascadeClawsExpected(hitChance, max);
 			case BUFFED_FOLLOWUPS:
-				return hitChance * mean((int) (max * damageMultiplier)) * (1 + 3 * hitChance);
+				return hit * (1 + 3 * hitChance);
 			case VOLATILE:
 			default:
 				return hitChance * mean(volatileMax(base, levels));

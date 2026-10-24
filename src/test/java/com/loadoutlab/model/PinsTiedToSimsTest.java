@@ -66,18 +66,6 @@ class PinsTiedToSimsTest
 			}
 
 			@Override
-			public void pin(int monsterId, String slot, int itemId)
-			{
-				store.pin(monsterId, MonsterProfileStore.ALL_SETS, GearSlot.valueOf(slot.toUpperCase()), itemId);
-			}
-
-			@Override
-			public void unpin(int monsterId, String slot)
-			{
-				store.unpinEverywhere(monsterId, GearSlot.valueOf(slot.toUpperCase()));
-			}
-
-			@Override
 			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
 			{
 				store.pin(monsterId, scope, slot, itemId);
@@ -163,7 +151,7 @@ class PinsTiedToSimsTest
 		int fang = id("osmumten's fang");
 		owned.add(fang);
 		store.addSim(babaId, fang, "fang");
-		store.pin(babaId, MonsterProfileStore.ALL_SETS, GearSlot.WEAPON, fang);
+		store.pin(babaId, MonsterProfileStore.ALL, GearSlot.WEAPON, fang);
 		assertTrue(engine.execute("remove-mob-sim", Map.of("itemId", fang, "label", "Osmumten's fang")));
 		assertEquals(Integer.valueOf(fang), pinned(GearSlot.WEAPON));
 	}

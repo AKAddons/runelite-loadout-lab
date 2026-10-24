@@ -1,5 +1,6 @@
 package com.loadoutlab.collection;
 
+import com.loadoutlab.data.JsonResources;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -73,27 +74,14 @@ public final class StoragesApi
 		List<Map<String, Object>> itemList = new ArrayList<>(canonical.size());
 		for (Map.Entry<Integer, Long> e : canonical.entrySet())
 		{
-			Map<String, Object> item = new HashMap<>();
-			item.put("id", e.getKey());
-			item.put("quantity", e.getValue());
-			itemList.add(item);
+			itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
 		}
-		Map<String, Object> entry = new HashMap<>();
-		entry.put("category", category);
-		entry.put("name", name);
-		entry.put("lastUpdated", lastUpdated);
-		entry.put("items", itemList);
-		return entry;
+		return JsonResources.map("category", category, "name", name, "lastUpdated", lastUpdated, "items", itemList);
 	}
 
 	/** The response envelope addressed back to the requester. */
 	public static Map<String, Object> response(String target, List<Map<String, Object>> storages)
 	{
-		Map<String, Object> data = new HashMap<>();
-		data.put("source", SOURCE);
-		data.put("target", target);
-		data.put("version", VERSION);
-		data.put("storages", storages);
-		return data;
+		return JsonResources.map("source", SOURCE, "target", target, "version", VERSION, "storages", storages);
 	}
 }

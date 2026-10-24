@@ -1,6 +1,10 @@
 package com.loadoutlab.model;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.loadoutlab.engine.ComputeParams;
+import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.data.MonsterStats;
 import com.loadoutlab.data.NavalCombat;
 import com.loadoutlab.engine.CombatStyle;
@@ -18,6 +22,12 @@ import java.util.List;
  * set. The old Swing panel still keeps its own ResultEntry during the
  * transition; the two reconcile when the panel leaves for the
  * Companion.
+ *
+ * <p>The params live in ONE map seeded from {@link #DEFAULTS} (the slim,
+ * 2026-10-23: 35 fields and a 40-arm switch said the same thing three
+ * times over). Booleans, ints and strings are set by the type of their
+ * default; the arms of {@link #setParam} cover the few with rules of
+ * their own.
  */
 public class PageState
 {
@@ -25,108 +35,115 @@ public class PageState
 	private List<MonsterStats> rosterMobs;
 	private String rosterName;
 
-	private boolean onTask;
-	private boolean inWilderness;
-	private boolean f2pOnly;
-	/** True while the client is on a NON-members world. The chip renders from
-	 * this, not from f2pOnly - otherwise unticking the filter hides the control
-	 * that unticked it and there is no way back. */
-	private boolean f2pWorld;
-	/** PvP mode: 0 off, 1 PvP world, 2 High Risk (Ragnarrok, 2026-10-20:
-	 * "3 iteming" on PvP worlds). World state like f2pWorld, so never in
-	 * the selection snapshot; pvpWorldHere = the client is on one. */
-	private int pvpWorld;
-	private boolean pvpWorldHere;
-	/** The elite Kourend & Kebos diary is done (varbit 7928) - Karuulm
-	 * needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139). */
-	private boolean kourendElite;
-	/** The mode (MAX_DPS / BALANCED / TANKY), every player's since
-	 * 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6). */
-	private String optimizeMode = "MAX_DPS";
-	/** GWD Ancient chip: Zaros joins the protection route - the Nex bank
-	 * (ISS-01M5G9KPDQWBR014Z10F79B29T). */
-	private boolean gwdAncient;
-	/** Not Enough Runes is enabled - the ladder's "how to get it" link. */
-	private boolean nerAvailable;
-	/** The slot whose ladder strip is open on the Yours card ("" = none). */
-	private String ladderSlot = "";
-	/** Ship combat (REQ-SC-2/3/3b). Post-compute additive like thralls -
-	 * none of these enter the optimizer request, so none ride computeArgs.
-	 * They persist across lens changes; the ENGINE only reads them for a
-	 * naval mob (REQ-SC-7's veto, same shape as the F2P lock). */
-	private int cannonCount;
-	private final String[] cannonMaterial = {"bronze", "bronze"};
-	/** "detect" resolves to the best BANKED ball every carried cannon can
-	 * fire (the boost idiom, Andrew 2026-08-31); a tier name pins it. */
-	private String cannonAmmo = "detect";
-	/** Per-cannon operator (REQ-SC-9): "you", or "crew1".."crew4" for a
-	 * crewmate of that Privateering. At most one cannon is yours - picking
-	 * "you" on one flips the other back to crew. Picking a material auto-
-	 * RAISES a crew operator to the minimum Privateering that can man it
-	 * (Andrew: "automatically assume you are going to pick a crew member at
-	 * minimum that can man the cannon") and never lowers an explicit pick. */
-	private String shipKeel = "none";
-	/** True while the selection is a RAID group (ToB included - the boost
-	 * heuristic missed it): raids are never a slayer-task context. */
-	private boolean raidSelection;
-	private final String[] cannonOperator = {"crew1", "crew1"};
-	private String spellbookLock = "";
-	private int maxTradeables = -1;
-	private int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-	/** Whether a cap is actually in force - never inferred from the gp
-	 * value, which collides with the engine's no-cap sentinel. */
-	private boolean riskCapped;
-	/** Bringing Spellbook Swap + Vengeance on the trip. Supplies only -
-	 * the DPS Vengeance returns is deliberately not modelled. */
-	private boolean spellbookSwap;
-	/** 0 = shield required, 1 = regular antifire, 2 = super antifire -
-	 * the classic tri-state; Detect resolves it at selection time. */
-	private int antifireMode;
-	/** Sunfire runes assumed for a fire spell (seeded from ownership at
-	 * each selection; the card plate overrides). */
-	private boolean sunfireRunes;
-	/** The Multi card (Andrew 2026-10-19): the switch computes the multi
-	 * tools; the stack is a view scale on their per-target numbers. */
-	private boolean multiView;
-	private int multiStack = 3;
-	private int deathCharge;
-	private boolean specWeapon;
-	private int upgradeBudgetGp;
-	private int maxSwaps = 1;
-	private int toaInvocation = 300;
-	private boolean protectItem;
-	// View state - core-owned like everything else (ADR-0008), but a
-	// change here republishes without recomputing (see CommandEngine).
-	private boolean viewingBis;
-	private String selectedTab = "";
-	private boolean thralls;
-	private int lensIndex;
+	/** Every page param with its default, in the params node's order, from
+	 * page_params.json (hub token cap) - the int clamps, the view params and
+	 * the keys a select seeds ride the same file. What each one means, where
+	 * it is not obvious:
+	 * <ul>
+	 * <li>f2pWorld - true while the client is on a NON-members world. The
+	 * chip renders from this, not from f2pOnly - otherwise unticking the
+	 * filter hides the control that unticked it and there is no way back.
+	 * <li>pvpWorld - PvP mode: 0 off, 1 PvP world, 2 High Risk (Ragnarrok,
+	 * 2026-10-20: "3 iteming" on PvP worlds). World state like f2pWorld,
+	 * so never in the selection snapshot; pvpWorldHere = the client is on
+	 * one.
+	 * <li>kourendElite - the elite Kourend & Kebos diary is done (varbit
+	 * 7928) - Karuulm needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139).
+	 * <li>optimizeMode - MAX_DPS / BALANCED / TANKY, every player's since
+	 * 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6; no developer-mode gate).
+	 * <li>gwdAncient - the GWD Ancient chip: Zaros joins the protection
+	 * route - the Nex bank (ISS-01M5G9KPDQWBR014Z10F79B29T).
+	 * <li>nerAvailable - Not Enough Runes is enabled - the ladder's "how
+	 * to get it" link.
+	 * <li>ladderSlot - the slot whose ladder strip is open on the Yours
+	 * card ("" = none).
+	 * <li>cannonCount, cannon1/2Material, cannonAmmo, shipKeel,
+	 * cannon1/2Operator - ship combat (REQ-SC-2/3/3b). Post-compute
+	 * additive like thralls - none of these enter the optimizer request,
+	 * so none ride computeArgs. They persist across lens changes; the
+	 * ENGINE only reads them for a naval mob (REQ-SC-7's veto, same shape
+	 * as the F2P lock). "detect" ammo resolves to the best BANKED ball
+	 * every carried cannon can fire (the boost idiom, Andrew 2026-08-31);
+	 * a tier name pins it. An operator is "you", or "crew1".."crew4" for
+	 * a crewmate of that Privateering (REQ-SC-9). At most one cannon is
+	 * yours - picking "you" on one flips the other back to crew. Picking
+	 * a material auto-RAISES a crew operator to the minimum Privateering
+	 * that can man it (Andrew: "automatically assume you are going to
+	 * pick a crew member at minimum that can man the cannon") and never
+	 * lowers an explicit pick.
+	 * <li>raidSelection - true while the selection is a RAID group (ToB
+	 * included - the boost heuristic missed it): raids are never a
+	 * slayer-task context. Set by the selects, never by a command.
+	 * <li>riskCapped - whether a cap is actually in force; never inferred
+	 * from the gp value, which collides with the engine's no-cap sentinel.
+	 * <li>spellbookSwap - bringing Spellbook Swap + Vengeance on the trip.
+	 * Supplies only - the DPS Vengeance returns is deliberately not
+	 * modelled.
+	 * <li>antifireMode - 0 = shield required, 1 = regular antifire, 2 =
+	 * super antifire - the classic tri-state; Detect resolves it at
+	 * selection time.
+	 * <li>sunfireRunes - assumed for a fire spell (seeded from ownership
+	 * at each selection; the card plate overrides).
+	 * <li>multiView, multiStack - the Multi card (Andrew 2026-10-19): the
+	 * switch computes the multi tools; the stack is a view scale on their
+	 * per-target numbers.
+	 * <li>viewingBis, selectedTab, thralls, lensIndex - view state,
+	 * core-owned like everything else (ADR-0008), but a change here
+	 * republishes without recomputing (see CommandEngine).
+	 * </ul> */
+	private static final Map<String, Object> DEFAULTS = new LinkedHashMap<>();
+	/** Set by the engine (the selects, the risk cap), never by a command. */
+	private static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped");
+	/** Int params with a range: {min, max}. */
+	private static final Map<String, int[]> CLAMPS = new HashMap<>();
+	/** The params a select seeds (antifire, tab, view side, on-task,
+	 * wilderness, bench, and the config seeds) - what undoing it restores:
+	 * undoing a Callisto used to leave its wilderness and risk chips
+	 * sitting on the restored mob (pre-release adversarial pass
+	 * 2026-08-22). */
+	private static final List<String> SNAPSHOT_KEYS = new ArrayList<>();
+	private static final Set<String> VIEW_PARAMS = new HashSet<>();
+
+	static
+	{
+		JsonObject root = JsonResources.objectOrThrow("page_params.json");
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("defaults").entrySet())
+		{
+			JsonPrimitive v = e.getValue().getAsJsonPrimitive();
+			DEFAULTS.put(e.getKey(), v.isBoolean() ? v.getAsBoolean() : v.isNumber() ? (Object) v.getAsInt() : v.getAsString());
+		}
+		// The one default the engine owns (its uncapped sentinel), never the file.
+		DEFAULTS.replace("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("clamps").entrySet())
+		{
+			CLAMPS.put(e.getKey(), JsonResources.ints(e.getValue().getAsJsonArray()));
+		}
+		JsonResources.strings(root, "snapshotKeys", SNAPSHOT_KEYS);
+		JsonResources.strings(root, "viewParams", VIEW_PARAMS);
+	}
+
+	private final Map<String, Object> params = new LinkedHashMap<>(DEFAULTS);
 	private final Map<CombatStyle, String> boostPicks = new LinkedHashMap<>();
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap", "nerAvailable", "ladderSlot").contains(param);
+		return VIEW_PARAMS.contains(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
 	{
-		this.raidSelection = false;
+		params.put("raidSelection", false);
 		this.mob = mob;
 		this.rosterMobs = null;
 		this.rosterName = null;
 	}
 
-	public synchronized void selectRoster(List<MonsterStats> mobs, String name)
-	{
-		selectRoster(mobs, name, false);
-	}
-
 	public synchronized void selectRoster(List<MonsterStats> mobs, String name,
 		boolean raid)
 	{
-		this.raidSelection = raid;
+		params.put("raidSelection", raid);
 		this.mob = null;
 		this.rosterMobs = mobs;
 		this.rosterName = name;
@@ -142,16 +159,16 @@ public class PageState
 		return rosterMobs;
 	}
 
-	/** Selection snapshot for undo: restore() reinstates it exactly.
-	 * Carries the PARAMS a select seeds too (antifire, tab, view side,
-	 * on-task, wilderness, bench, and the config seeds) - undoing a
-	 * Callisto used to leave its wilderness and risk chips sitting on
-	 * the restored mob (pre-release adversarial pass 2026-08-22). */
+	/** Selection snapshot for undo: restore() reinstates it exactly -
+	 * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
 	public synchronized Object[] selectionSnapshot()
 	{
-		return new Object[]{mob, rosterMobs, rosterName,
-			new Object[]{antifireMode, selectedTab, viewingBis, onTask, inWilderness,
-				maxSwaps, riskBudgetGp, riskCapped, protectItem, upgradeBudgetGp, sunfireRunes}};
+		Map<String, Object> seeded = new LinkedHashMap<>();
+		for (String key : SNAPSHOT_KEYS)
+		{
+			seeded.put(key, params.get(key));
+		}
+		return new Object[]{mob, rosterMobs, rosterName, seeded};
 	}
 
 	@SuppressWarnings("unchecked")
@@ -160,24 +177,7 @@ public class PageState
 		this.mob = (MonsterStats) snapshot[0];
 		this.rosterMobs = (List<MonsterStats>) snapshot[1];
 		this.rosterName = (String) snapshot[2];
-		if (snapshot.length > 3 && snapshot[3] instanceof Object[])
-		{
-			Object[] params = (Object[]) snapshot[3];
-			this.antifireMode = (Integer) params[0];
-			this.selectedTab = (String) params[1];
-			this.viewingBis = (Boolean) params[2];
-			this.onTask = (Boolean) params[3];
-			this.inWilderness = (Boolean) params[4];
-			this.maxSwaps = (Integer) params[5];
-			this.riskBudgetGp = (Integer) params[6];
-			this.riskCapped = (Boolean) params[7];
-			this.protectItem = (Boolean) params[8];
-			this.upgradeBudgetGp = (Integer) params[9];
-			if (params.length > 10)
-			{
-				this.sunfireRunes = (Boolean) params[10];
-			}
-		}
+		params.putAll((Map<String, Object>) snapshot[3]);
 	}
 
 	public synchronized boolean hasSelection()
@@ -189,147 +189,90 @@ public class PageState
 	 * the engine can refuse loudly instead of silently dropping it. */
 	public synchronized boolean setParam(String param, Object value)
 	{
-		switch (param == null ? "" : param)
+		Object current = param == null ? null : params.get(param);
+		if (current == null || DERIVED.contains(param))
 		{
-			case "onTask":
-				onTask = Boolean.TRUE.equals(value);
-				return true;
-			case "inWilderness":
-				inWilderness = Boolean.TRUE.equals(value);
-				return true;
-			case "cannonCount":
-				cannonCount = Math.max(0, Math.min(2, asInt(value, 0)));
-				return true;
+			return false;
+		}
+		switch (param)
+		{
 			case "cannon1Material":
 			case "cannon2Material":
 			{
-				int i = param.charAt(6) - '1';
-				cannonMaterial[i] = String.valueOf(value);
-				cannonOperator[i] = raiseCrewToGate(cannonOperator[i], cannonMaterial[i]);
+				// The material gates its crew: a pick raises the operator.
+				String operator = "cannon" + param.charAt(6) + "Operator";
+				params.put(param, String.valueOf(value));
+				params.put(operator, raiseCrewToGate(str(operator), String.valueOf(value)));
 				return true;
 			}
-			case "shipKeel":
-				shipKeel = NavalCombat.normalizeKeel(String.valueOf(value));
-				return true;
-			case "cannonAmmo":
-				cannonAmmo = String.valueOf(value);
-				return true;
 			case "cannon1Operator":
 			case "cannon2Operator":
 			{
 				// At most one cannon is yours: picking "you" on one demotes the other.
 				int i = param.charAt(6) - '1';
-				cannonOperator[i] = operator(value, cannonMaterial[i]);
-				if ("you".equals(cannonOperator[i]) && "you".equals(cannonOperator[1 - i]))
+				String mine = operator(value, str("cannon" + (i + 1) + "Material"));
+				params.put(param, mine);
+				String other = "cannon" + (2 - i) + "Operator";
+				if ("you".equals(mine) && "you".equals(params.get(other)))
 				{
-					cannonOperator[1 - i] = raiseCrewToGate("crew1", cannonMaterial[1 - i]);
+					params.put(other, raiseCrewToGate("crew1", str("cannon" + (2 - i) + "Material")));
 				}
 				return true;
 			}
-			case "f2pWorld":
-				f2pWorld = Boolean.TRUE.equals(value);
+			case "shipKeel":
+				params.put(param, NavalCombat.normalizeKeel(String.valueOf(value)));
 				return true;
-			case "f2pOnly":
-				f2pOnly = Boolean.TRUE.equals(value);
-				return true;
-			case "pvpWorld":
-				pvpWorld = Math.max(0, Math.min(2, asInt(value, 0)));
-				return true;
-			case "kourendElite":
-				kourendElite = Boolean.TRUE.equals(value);
-				return true;
-			case "pvpWorldHere":
-				pvpWorldHere = Boolean.TRUE.equals(value);
+			case "cannonAmmo":
+				params.put(param, String.valueOf(value));
 				return true;
 			case "optimizeMode":
-				optimizeMode = "BALANCED".equals(value) || "TANKY".equals(value)
-					? (String) value : "MAX_DPS";
-				return true;
-			case "ladderSlot":
-				ladderSlot = value instanceof String ? (String) value : "";
-				return true;
-			case "nerAvailable":
-				nerAvailable = Boolean.TRUE.equals(value);
-				return true;
-			case "gwdAncient":
-				gwdAncient = Boolean.TRUE.equals(value);
-				return true;
-			case "spellbookLock":
-				spellbookLock = value instanceof String ? (String) value : "";
+				params.put(param, "BALANCED".equals(value) || "TANKY".equals(value) ? value : "MAX_DPS");
 				return true;
 			case "riskBudgetGp":
+			{
 				// ONE source of truth for "is there a cap" (field report
 				// 2026-08-22): the chip lit up on riskBudgetGp > 0 while
 				// the compute asked riskBudgetGp != DEFAULT - and the
 				// DEFAULT *is* 75k, the same value the config seeds, so
-				// the UI promised a cap the optimizer ignored.
-				if (value == null)
-				{
-					riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
-					riskCapped = false;
-				}
-				else
-				{
-					int cap = asInt(value, OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
-					riskBudgetGp = cap;
-					riskCapped = cap > 0;
-				}
+				// the UI promised a cap the optimizer ignored. A null
+				// clears the cap (the gp falls back to the default).
+				int cap = asInt(value, OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
+				params.put(param, cap);
+				params.put("riskCapped", value != null && cap > 0);
 				return true;
-			case "antifireMode":
-				antifireMode = Math.max(0, Math.min(2, asInt(value, 0)));
-				return true;
-			case "sunfireRunes":
-				sunfireRunes = Boolean.TRUE.equals(value);
-				return true;
-			case "multiView":
-				multiView = Boolean.TRUE.equals(value);
-				return true;
-			case "multiStack":
-				multiStack = Math.max(1, asInt(value, 3));
-				return true;
-			case "deathCharge":
-				deathCharge = asInt(value, 0);
-				return true;
-			case "specWeapon":
-				specWeapon = Boolean.TRUE.equals(value);
-				return true;
-			case "upgradeBudgetGp":
-				upgradeBudgetGp = asInt(value, 0);
-				return true;
-			case "maxSwaps":
-				maxSwaps = asInt(value, 1);
-				return true;
-			case "toaInvocation":
-				toaInvocation = asInt(value, 300);
-				return true;
-			case "protectItem":
-				protectItem = Boolean.TRUE.equals(value);
-				return true;
-			case "viewingBis":
-				viewingBis = Boolean.TRUE.equals(value);
-				return true;
-			case "thralls":
-				thralls = Boolean.TRUE.equals(value);
-				return true;
-			case "spellbookSwap":
-				spellbookSwap = Boolean.TRUE.equals(value);
-				return true;
+			}
 			case "lensIndex":
-				lensIndex = asInt(value, 0);
+				params.put(param, asInt(value, 0));
 				// Switching mobs opens on THAT mob's recommended style (the
 				// 2026-08-15 rule) - the row click already did this, but
 				// arrow-nav kept the old tab, so a magic-only Warden left
 				// "magic" stuck on the Obelisk as a tab-only view (community
 				// report, issue #15). The row pick re-sets the tab AFTER the
 				// lens, so explicit picks still land.
-				selectedTab = "";
-				return true;
-			case "selectedTab":
-				selectedTab = value instanceof String ? (String) value : "";
+				params.put("selectedTab", "");
 				return true;
 			default:
-				return false;
+				if (current instanceof Boolean)
+				{
+					params.put(param, Boolean.TRUE.equals(value));
+				}
+				else if (current instanceof String)
+				{
+					params.put(param, value instanceof String ? value : "");
+				}
+				else
+				{
+					int[] clamp = CLAMPS.getOrDefault(param, new int[]{Integer.MIN_VALUE, Integer.MAX_VALUE});
+					params.put(param, Math.max(clamp[0], Math.min(clamp[1], asInt(value, defaultInt(param)))));
+				}
+				return true;
 		}
+	}
+
+	/** An int param's default - what a non-numeric value falls back to. */
+	private static int defaultInt(String param)
+	{
+		return (Integer) DEFAULTS.get(param);
 	}
 
 	/** Normalize an operator pick; a crew pick is clamped 1-4 and then
@@ -337,22 +280,7 @@ public class PageState
 	private static String operator(Object value, String material)
 	{
 		String v = String.valueOf(value);
-		if ("you".equals(v))
-		{
-			return "you";
-		}
-		int priv = 1;
-		if (v.startsWith("crew"))
-		{
-			try
-			{
-				priv = Math.max(1, Math.min(4, Integer.parseInt(v.substring(4))));
-			}
-			catch (NumberFormatException ignored)
-			{
-			}
-		}
-		return raiseCrewToGate("crew" + priv, material);
+		return "you".equals(v) ? "you" : raiseCrewToGate("crew" + Math.max(1, Math.min(4, crewLevel(v))), material);
 	}
 
 	/** Crew operators rise to the minimum Privateering the material demands;
@@ -366,18 +294,24 @@ public class PageState
 		NavalCombat.Cannon cannon =
 			NavalCombat.cannon(material);
 		int gate = cannon == null ? 1 : cannon.privateering;
-		int priv = 1;
+		return "crew" + Math.max(crewLevel(operator), gate);
+	}
+
+	/** The Privateering of a "crewN" operator; 1 for "you", a bare "crew"
+	 * or anything else. */
+	static int crewLevel(String operator)
+	{
 		if (operator != null && operator.startsWith("crew"))
 		{
 			try
 			{
-				priv = Integer.parseInt(operator.substring(4));
+				return Integer.parseInt(operator.substring(4));
 			}
 			catch (NumberFormatException ignored)
 			{
 			}
 		}
-		return "crew" + Math.max(priv, gate);
+		return 1;
 	}
 
 	private static int asInt(Object value, int fallback)
@@ -385,66 +319,45 @@ public class PageState
 		return value instanceof Number ? ((Number) value).intValue() : fallback;
 	}
 
+	private boolean flag(String key)
+	{
+		return Boolean.TRUE.equals(params.get(key));
+	}
+
+	private int num(String key)
+	{
+		return (Integer) params.get(key);
+	}
+
+	private String str(String key)
+	{
+		return (String) params.get(key);
+	}
+
 	/** The params node of the model page - what a renderer needs to
 	 * draw every chip in its current position. */
 	public synchronized Map<String, Object> paramsNode()
 	{
-		Map<String, Object> node = new LinkedHashMap<>();
-		node.put("onTask", onTask);
-		node.put("inWilderness", inWilderness);
-		node.put("f2pOnly", f2pOnly);
-		node.put("f2pWorld", f2pWorld);
-		node.put("pvpWorld", pvpWorld);
-		node.put("pvpWorldHere", pvpWorldHere);
-		node.put("kourendElite", kourendElite);
-		node.put("optimizeMode", optimizeMode);
-		node.put("gwdAncient", gwdAncient);
-		node.put("nerAvailable", nerAvailable);
-		node.put("ladderSlot", ladderSlot);
-		node.put("cannonCount", cannonCount);
-		node.put("cannon1Material", cannonMaterial[0]);
-		node.put("cannon2Material", cannonMaterial[1]);
-		node.put("cannonAmmo", cannonAmmo);
-		node.put("shipKeel", shipKeel);
-		node.put("raidSelection", raidSelection);
-		node.put("cannon1Operator", cannonOperator[0]);
-		node.put("cannon2Operator", cannonOperator[1]);
-		node.put("spellbookLock", spellbookLock);
-		node.put("riskBudgetGp", riskBudgetGp);
-		node.put("riskCapped", riskCapped);
-		node.put("spellbookSwap", spellbookSwap);
-		node.put("antifireMode", antifireMode);
-		node.put("sunfireRunes", sunfireRunes);
-		node.put("multiView", multiView);
-		node.put("multiStack", multiStack);
-		node.put("deathCharge", deathCharge);
-		node.put("specWeapon", specWeapon);
-		node.put("upgradeBudgetGp", upgradeBudgetGp);
-		node.put("maxSwaps", maxSwaps);
-		node.put("toaInvocation", toaInvocation);
-		node.put("protectItem", protectItem);
-		node.put("viewingBis", viewingBis);
-		node.put("thralls", thralls);
-		node.put("lensIndex", lensIndex);
-		node.put("selectedTab", selectedTab);
-		Map<String, Object> prayers = new LinkedHashMap<>();
-		for (Map.Entry<CombatStyle, String> pick : prayerPicks.entrySet())
-		{
-			prayers.put(pick.getKey().name().toLowerCase(), pick.getValue());
-		}
-		node.put("prayerPicks", prayers);
-		Map<String, Object> boosts = new LinkedHashMap<>();
-		for (Map.Entry<CombatStyle, String> pick : boostPicks.entrySet())
-		{
-			boosts.put(pick.getKey().name().toLowerCase(), pick.getValue());
-		}
-		node.put("boostPicks", boosts);
+		Map<String, Object> node = new LinkedHashMap<>(params);
+		node.put("prayerPicks", lowered(prayerPicks));
+		node.put("boostPicks", lowered(boostPicks));
 		return node;
+	}
+
+	/** A pick map keyed by the style's lower-case name, for the page. */
+	private static Map<String, Object> lowered(Map<CombatStyle, String> picks)
+	{
+		Map<String, Object> out = new LinkedHashMap<>();
+		for (Map.Entry<CombatStyle, String> pick : picks.entrySet())
+		{
+			out.put(pick.getKey().name().toLowerCase(), pick.getValue());
+		}
+		return out;
 	}
 
 	public synchronized int toaInvocation()
 	{
-		return toaInvocation;
+		return num("toaInvocation");
 	}
 
 	/** Prayer/boost pick per style: null value = Detect (remove),
@@ -469,36 +382,37 @@ public class PageState
 		// binds in the wilderness or on a PvP world, and Protect Item
 		// keeps a 4th slot - none on High Risk. The wilderness flag itself
 		// stays out of it: a PvP world earns no wilderness weapon buff.
-		int kept = PvpRisk.keptSlots(inWilderness ? Math.max(1, pvpWorld) : pvpWorld, protectItem);
-		int tradeables = riskCapped && kept >= 0 ? kept : maxTradeables;
+		int pvp = num("pvpWorld");
+		int kept = PvpRisk.keptSlots(flag("inWilderness") ? Math.max(1, pvp) : pvp, flag("protectItem"));
 		// The F2P lock vetoes members mechanics WITHOUT clearing them: the
 		// params keep their values (undo history stays coherent, and
 		// unticking F2P brings the old setup straight back) - they just
 		// stop steering the math while the lock is on (field ask
 		// 2026-08-27: D charge / thralls / task have no meaning on F2P).
+		boolean f2p = flag("f2pOnly");
 		ComputeParams p = new ComputeParams();
-		p.f2pOnly = f2pOnly;
-		p.onSlayerTask = !f2pOnly && onTask;
-		p.inWilderness = inWilderness;
-		p.spellbookLock = spellbookLock;
-		p.maxTradeables = tradeables;
-		p.riskBudgetGp = riskBudgetGp;
-		p.antifirePotion = antifireMode == 2;
-		p.sunfireRunes = sunfireRunes;
-		p.multiView = multiView;
-		p.multiStack = multiStack;
-		p.deathCharge = f2pOnly ? 0 : deathCharge;
-		p.specWeapon = specWeapon;
+		p.f2pOnly = f2p;
+		p.onSlayerTask = !f2p && flag("onTask");
+		p.inWilderness = flag("inWilderness");
+		p.spellbookLock = str("spellbookLock");
+		// -1 = no tradeables limit (the engine's uncapped sentinel).
+		p.maxTradeables = flag("riskCapped") && kept >= 0 ? kept : -1;
+		p.riskBudgetGp = num("riskBudgetGp");
+		p.antifirePotion = num("antifireMode") == 2;
+		p.sunfireRunes = flag("sunfireRunes");
+		p.multiView = flag("multiView");
+		p.multiStack = num("multiStack");
+		p.deathCharge = f2p ? 0 : num("deathCharge");
+		p.specWeapon = flag("specWeapon");
 		p.boostPicks = new LinkedHashMap<>(boostPicks);
 		p.prayerPicks = new LinkedHashMap<>(prayerPicks);
-		p.upgradeBudgetGp = upgradeBudgetGp;
-		p.maxSwaps = maxSwaps;
-		// The defensive modes are a developer-mode prototype.
+		p.upgradeBudgetGp = num("upgradeBudgetGp");
+		p.maxSwaps = num("maxSwaps");
 		// Every player's chosen mode since 2026-10-22 (Andrew: "Release to
 		// everyone"; ISS-01M5JBYYWHQNTM0CGNYWQBNYX6) - no developer-mode gate.
-		p.optimizeMode = optimizeMode;
-		p.kourendElite = kourendElite;
-		p.gwdAncient = gwdAncient;
+		p.optimizeMode = str("optimizeMode");
+		p.kourendElite = flag("kourendElite");
+		p.gwdAncient = flag("gwdAncient");
 		return p;
 	}
 }

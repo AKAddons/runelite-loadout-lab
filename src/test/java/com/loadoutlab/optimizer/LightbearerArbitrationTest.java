@@ -248,7 +248,7 @@ public class LightbearerArbitrationTest
 					com.loadoutlab.engine.SpecialAttack.match(byName("dragon warhammer"));
 				double expected = dwh.expectedDamage(specBase, dummies[i], PlayerLevels.MAXED);
 				added[i] = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
-					dwh, specBase, expected, request, main, dummies[i], false);
+					dwh, specBase, expected, request, main, false);
 			}
 			Assert.assertTrue("the floor must strip the drain value: unfloored "
 				+ added[0] + " vs floored " + added[1], added[0] > added[1] + 1e-9);
@@ -299,9 +299,9 @@ public class LightbearerArbitrationTest
 		try
 		{
 			double without = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
-				dwh, specBase, expected, request, main, dummy, false);
+				dwh, specBase, expected, request, main, false);
 			double with = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
-				dwh, specBase, expected, request, main, dummy, true);
+				dwh, specBase, expected, request, main, true);
 			Assert.assertTrue("more attempts must buy drain probability: "
 				+ without + " -> " + with, with > without + 1e-9);
 		}
