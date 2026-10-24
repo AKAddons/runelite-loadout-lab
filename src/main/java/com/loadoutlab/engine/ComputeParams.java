@@ -29,4 +29,13 @@ public final class ComputeParams
 	public boolean multiView;
 	/** Targets stacked on the Multi card: 3 or 9. */
 	public int multiStack = 3;
+	/** The defensive mode - MAX_DPS / BALANCED / TANKY; only ever not
+	 * MAX_DPS in developer mode (ISS-01M5G5CZC9SK46499FACRSJ8ZT). */
+	public String optimizeMode = "MAX_DPS";
+	/** The GWD Ancient chip: Zaros joins the protection route
+	 * (ISS-01M5G9KPDQWBR014Z10F79B29T). */
+	public boolean gwdAncient;
+	/** The elite Kourend & Kebos diary is done: Karuulm needs no boots
+	 * (ISS-01M5JJ0Z4M988DR0M0ZGJHD139). */
+	public boolean kourendElite;
 }

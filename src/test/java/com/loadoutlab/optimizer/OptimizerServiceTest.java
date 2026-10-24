@@ -23,12 +23,13 @@ public class OptimizerServiceTest
 	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception
 	{
 		LoadoutData data = new DataService().load();
-		// General Graardor (250 defence, 255 hp): a drain pays off over the
+		// Dagannoth Rex (255 defence, 255 hp; not a GWD boss, whose carried
+		// god protection would take the one Inventory slot): a drain pays off over the
 		// whole kill, so the warhammer wins. A fire giant (120 defence, 130
 		// hp) dies before a drain earns back its lost hits, so the dagger's
 		// burst wins. A goblin dies in one attack - no spec beats just
 		// attacking, so none is carried (value-over-replacement).
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats rex = data.searchMonsters("dagannoth rex", 1).get(0);
 		MonsterStats fireGiant = data.searchMonsters("fire giant", 1).get(0);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -43,7 +44,7 @@ public class OptimizerServiceTest
 		OptimizerService service = new OptimizerService(data);
 		try
 		{
-			Assert.assertEquals("Dragon warhammer", specPick(service, graardor, owned));
+			Assert.assertEquals("Dragon warhammer", specPick(service, rex, owned));
 			Assert.assertEquals("Dragon dagger", specPick(service, fireGiant, owned));
 			Assert.assertNull("a one-hit kill is not worth a spec slot",
 				specPick(service, goblin, owned));

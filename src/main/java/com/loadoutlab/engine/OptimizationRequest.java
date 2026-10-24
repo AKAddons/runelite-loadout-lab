@@ -68,6 +68,10 @@ public final class OptimizationRequest implements Cloneable
 	 * risk-constrained. */
 	@Getter
 	private int riskBudgetGp;
+	/** The defensive modes' frontier weight (ISS-01M5G5CZC9SK46499FACRSJ8ZT):
+	 * the beam scores dps - defenseWeight * incoming dps; 0 = pure offence. */
+	@Getter
+	private double defenseWeight;
 	/** Dragonfire monsters: true = assume a super antifire (no shield
 	 * forced); false = protection must come from a shield. */
 	@Getter
@@ -95,6 +99,8 @@ public final class OptimizationRequest implements Cloneable
 	/** Items to bring only when protected on death (see the field doc). */
 	@Getter
 	private Set<Integer> protectOnlyItems;
+	/** Waiver keys that lift slayer requirements (RequiredGear.KOUREND_ELITE). */
+	private Set<String> waivers = Set.of();
 	/** True when the fight happens IN the Wilderness - gates the wilderness
 	 * weapon +50% passive. Defaults to whether the monster exists nowhere
 	 * else (revs, the boss ring); shared-name monsters (Catacombs
@@ -254,6 +260,25 @@ public final class OptimizationRequest implements Cloneable
 	 * no fees at all: kept-slot items plus free untradeables only.
 	 */
 	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
+
+	public Set<String> getWaivers()
+	{
+		return waivers;
+	}
+
+	public OptimizationRequest withWaivers(Set<String> waivers)
+	{
+		OptimizationRequest c = copy();
+		c.waivers = waivers == null ? Set.of() : waivers;
+		return c;
+	}
+
+	public OptimizationRequest withDefenseWeight(double defenseWeight)
+	{
+		OptimizationRequest c = copy();
+		c.defenseWeight = defenseWeight;
+		return c;
+	}
 
 	public OptimizationRequest withRiskBudgetGp(int riskBudgetGp)
 	{

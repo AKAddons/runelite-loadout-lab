@@ -146,6 +146,7 @@
 			"monsters": [
 				"lizardman shaman"
 			],
+			"soft": true,
 			"slot": "HEAD",
 			"items": [
 				"shayzien helm (5)",
@@ -158,6 +159,7 @@
 			"monsters": [
 				"lizardman shaman"
 			],
+			"soft": true,
 			"slot": "BODY",
 			"items": [
 				"shayzien body (5)"
@@ -168,6 +170,7 @@
 			"monsters": [
 				"lizardman shaman"
 			],
+			"soft": true,
 			"slot": "LEGS",
 			"items": [
 				"shayzien greaves (5)"
@@ -178,6 +181,7 @@
 			"monsters": [
 				"lizardman shaman"
 			],
+			"soft": true,
 			"slot": "HANDS",
 			"items": [
 				"shayzien gloves (5)"
@@ -188,6 +192,7 @@
 			"monsters": [
 				"lizardman shaman"
 			],
+			"soft": true,
 			"slot": "FEET",
 			"items": [
 				"shayzien boots (5)"
@@ -221,6 +226,7 @@
 				"torag the corrupted",
 				"verac the defiled"
 			],
+			"soft": true,
 			"slot": "SHIELD",
 			"items": [
 				"ghommal's hilt 2",
@@ -232,6 +238,52 @@
 				"ghommal's avernic defender 6"
 			],
 			"note": "Not a dps pick: a Ghommal's hilt (tier 2+) worn stops the crypts' prayer drain (wiki), and nearly everyone who has one wears it here; the hilt-fitted avernic defender keeps the benefit. Pin another shield to override."
+		},
+		{
+			"monsters": ["cave horror", "cave abomination"],
+			"slot": "NECK",
+			"items": ["witchwood icon"],
+			"note": "A witchwood icon is REQUIRED - without it the horror's howl deals heavy damage (wiki, 2026-10-22)."
+		},
+		{
+			"monsters": ["drake", "wyrm", "hydra", "alchemical hydra", "colossal hydra", "sulphur lizard"],
+			"slot": "FEET",
+			"items": ["boots of stone", "boots of brimstone", "granite boots"],
+			"waivedBy": "kourendElite",
+			"note": "Boots of stone, brimstone or granite boots are REQUIRED in the Karuulm Slayer Dungeon - the floor burns - until the elite Kourend & Kebos diary's rewards are claimed (wiki, 2026-10-22)."
+		}
+	],
+	"_carried_comment": "Carried slayer items the KILL needs (Andrew 2026-10-22): the finishing blow, best first - one rides as a trip supply even when unowned. The slayer unlocks (Gargoyle smasher, Shroom sprayer, Slug salter, Reptile freezer) automate the blow but still need the item carried. Ids from runelite-api 1.13.3 gameval ItemID.",
+	"carried": [
+		{
+			"monsters": ["gargoyle", "marble gargoyle"],
+			"items": [
+				{"name": "Granite hammer", "ids": [21742]},
+				{"name": "Rock thrownhammer", "ids": [21754]},
+				{"name": "Rock hammer", "ids": [4162]}
+			],
+			"note": "Gargoyles: finish them with a rock hammer (the granite hammer and rock thrownhammer count)"
+		},
+		{
+			"monsters": ["zygomite", "ancient zygomite"],
+			"items": [
+				{"name": "Fungicide spray", "ids": [7421, 7422, 7423, 7424, 7425, 7426, 7427, 7428, 7429, 7430]}
+			],
+			"note": "Zygomites: finish them with fungicide spray (refill it with fungicide)"
+		},
+		{
+			"monsters": ["rockslug", "giant rockslug"],
+			"items": [
+				{"name": "Bag of salt", "ids": [4161]}
+			],
+			"note": "Rockslugs: finish them with a bag of salt"
+		},
+		{
+			"monsters": ["lizard", "desert lizard", "small lizard"],
+			"items": [
+				{"name": "Ice cooler", "ids": [6696]}
+			],
+			"note": "Lizards: finish them with an ice cooler"
 		}
 	]
 }

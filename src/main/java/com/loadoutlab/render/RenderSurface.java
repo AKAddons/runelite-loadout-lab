@@ -8,6 +8,7 @@ import java.util.function.*;
 import javax.swing.*;
 import javax.swing.Timer;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -375,6 +376,8 @@ public class RenderSurface
 	/** Built per repaint; ResultCards mounts it under the mob list. */
 	JButton addMobButton;
 	private JPanel chipRow;
+	/** The dev-mode Max DPS | Balanced | Tanky control's own row. */
+	private JPanel modeRow;
 	private JPanel invRow;
 	private JPanel rosterArea;
 	private JPanel countsRow;
@@ -446,6 +449,95 @@ public class RenderSurface
 	{
 		label.setForeground(on ? CHIP_ON : CHIP_OFF);
 		label.setBorder(new RoundedBorder(on ? CHIP_ON : ColorScheme.MEDIUM_GRAY_COLOR, 2, 8));
+	}
+
+	/** The defensive mode as one 3-way control in the chip area (Andrew
+	 * 2026-10-21: "a 3/way tab instead of a chip but in the same area"; a
+	 * filled square tab "looks bad" - picked look B): one rounded pill
+	 * outline like the chips, three words split by thin bars, the active
+	 * word in the accent. */
+	/** The mode control's row: centered, with a thin divider below that
+	 * sets it apart from the chip row. */
+	static JPanel modeRowPanel()
+	{
+		JPanel row = Ui.panel(new FlowLayout(FlowLayout.CENTER, 0, 4));
+		row.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createEmptyBorder(2, 8, 4, 8),
+			BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.MEDIUM_GRAY_COLOR)));
+		row.setVisible(false);
+		return row;
+	}
+
+	static JPanel modeTabs(String mode, CommandSink commands)
+	{
+		// What each mode optimises and what the card and the swaps show in it
+		// (Andrew 2026-10-22: "better descriptions to what the differences
+		// are and what you'll see in regular/ladder results").
+		String[][] options = {
+			{"MAX_DPS", "Max DPS", "<html><b>Max DPS</b> - the set that deals the most damage."
+				+ "<br>The card shows that set and its DPS; the swaps rank each item"
+				+ "<br>by the DPS it adds.</html>"},
+			{"BALANCED", "Balanced", "<html><b>Balanced (beta)</b> - the best damage dealt per damage taken:"
+				+ "<br>it gives up a little DPS where that cuts more of the damage you take."
+				+ "<br>The card shows the trade (DPS cost, damage cut); the swaps show"
+				+ "<br>both the DPS change and the damage taken change.</html>"},
+			{"TANKY", "Tanky", "<html><b>Tanky (beta)</b> - the least damage taken, then the most DPS"
+				+ "<br>among those sets. The card shows the damage cut and its DPS cost;"
+				+ "<br>the swaps rank items by the damage taken per second.</html>"}};
+		JPanel tabs = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		tabs.setOpaque(false);
+		tabs.setBorder(new RoundedBorder(ColorScheme.MEDIUM_GRAY_COLOR, 2, 4));
+		List<JLabel> words = new ArrayList<>();
+		for (String[] option : options)
+		{
+			if (!words.isEmpty())
+			{
+				JLabel bar = new JLabel("|");
+				bar.setForeground(new Color(0x505050));
+				tabs.add(bar);
+			}
+			JLabel word = new JLabel(option[1]);
+			word.setName(option[0]);
+			word.setFont(FontManager.getRunescapeBoldFont());
+			word.setBorder(BorderFactory.createEmptyBorder(1, 7, 1, 7));
+			word.setToolTipText(option[2]);
+			word.setForeground(option[0].equals(mode) ? CHIP_ON : CHIP_OFF);
+			Ui.onClick(word, () ->
+			{
+				// Instant feedback; the arriving page confirms.
+				for (JLabel other : words)
+				{
+					other.setForeground(other == word ? CHIP_ON : CHIP_OFF);
+					other.repaint();
+				}
+				commands.send("set-param", Map.of("param", "optimizeMode", "value", option[0]));
+			});
+			words.add(word);
+			tabs.add(word);
+		}
+		return tabs;
+	}
+
+	/** Why the card being viewed stands down its Arceuus casts (an
+	 * autocast from another book), or null (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG,
+	 * Andrew 2026-10-22: the Whisperer's Earth Surge kept the chips lit). */
+	static String viewedStandDown(Map<String, Object> page)
+	{
+		Map<String, Object> mob = lensedMob(page);
+		String tab = ResultCards.effectiveTab(page);
+		Map<String, Object> styles = mob == null ? null : Model.map(mob, "styles");
+		Map<String, Object> node = styles == null || tab == null ? null : Model.map(styles, tab);
+		return Model.str(Model.map(node, "yours"), "arceuusStandDown");
+	}
+
+	/** A chip shown but off: greyed, the reason in its tooltip, no click. */
+	static JLabel disabledPill(String text, String tooltip)
+	{
+		JLabel label = new JLabel(text);
+		paintPill(label, false);
+		label.setEnabled(false);
+		label.setToolTipText(tooltip);
+		return label;
 	}
 
 	private JLabel paramChip(String label, String key, boolean selected)
@@ -702,6 +794,8 @@ public class RenderSurface
 			rosterArea = Ui.darker(new BorderLayout());
 			rosterArea.setBorder(BorderFactory.createEmptyBorder(4, 0, 2, 0));
 			top.add(rosterArea);
+			modeRow = modeRowPanel();
+			top.add(modeRow);
 			chipRow = Ui.panel(new WrapLayout(FlowLayout.LEFT, 4, 2));
 			top.add(chipRow, BorderLayout.CENTER);
 			// The inventory slider rides its own row under the chips.
@@ -864,6 +958,8 @@ public class RenderSurface
 		countsRow.setVisible(true);
 		chipRow.removeAll();
 		chipRow.setVisible(params != null);
+		modeRow.removeAll();
+		modeRow.setVisible(false);
 		// The inventory slider rides with the chips. It is a per-result
 		// control - each mob, group and raid brings its own default swap
 		// count - so on the idle panel it showed a number belonging to
@@ -883,10 +979,17 @@ public class RenderSurface
 			// 2026-08-27). Their params survive for the untick.
 			boolean f2pLocked = Model.flag(params, "f2pOnly");
 			boolean lensNaval = lensedNaval(page);
+			// Defensive modes (ISS-01M5G5CZC9SK46499FACRSJ8ZT), for every
+			// player since 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6). Its own
+			// centered row above the chips (Andrew 2026-10-21: "more centered
+			// in screen and distinguished from the chips").
+			modeRow.add(modeTabs(Model.str(params, "optimizeMode"), commands));
+			modeRow.setVisible(true);
 			// Arceuus casts blocked (Cure Me camps Lunar; a fight book elsewhere
 			// with no swap - the Sire): the chips do nothing and hide, like on
 			// a boat (Andrew 2026-09-09: "it should disable it").
 			boolean lensLunar = lensedFlag(page, "arceuusBlocked");
+			String standDown = viewedStandDown(page);
 			Map<String, Object> history = Model.map(page, "history");
 			if (history != null && undoButton != null)
 			{
@@ -900,6 +1003,7 @@ public class RenderSurface
 			boolean anyTaskOnly = false;
 			boolean anySlayer = false;
 			boolean anyWilderness = false;
+			boolean anyGwd = false;
 			boolean allExclusive = true;
 			boolean sawMob = false;
 			for (Map<String, Object> pageEntry : Model.list(page, "entries"))
@@ -909,6 +1013,7 @@ public class RenderSurface
 					anyTaskOnly |= Model.flag(mob, "taskOnly");
 					anySlayer |= Model.flag(mob, "slayerMonster");
 					anyWilderness |= Model.flag(mob, "wilderness");
+					anyGwd |= Model.flag(mob, "gwd");
 					allExclusive &= Model.flag(mob, "wildernessExclusive");
 					sawMob = true;
 				}
@@ -945,6 +1050,11 @@ public class RenderSurface
 				{
 					continue;
 				}
+				if ("thralls".equals(entry[1]) && standDown != null)
+				{
+					chipRow.add(disabledPill(entry[0], "Stands down: " + standDown + " - thralls are cast from Arceuus"));
+					continue;
+				}
 				chipRow.add(paramChip(entry[0], entry[1], Model.flag(params, entry[1])));
 			}
 			// F2P: shown on a non-members world so it can be turned OFF to
@@ -972,6 +1082,15 @@ public class RenderSurface
 				chipRow.add(paramChip("Wildy", "inWilderness",
 					Model.flag(params, "inWilderness")));
 			}
+			// GWD (ISS-01M5G9KPDQWBR014Z10F79B29T): the Ancient chip adds a
+			// Zaros item to the protection kit - the Nex respite area's banker.
+			if (anyGwd)
+			{
+				chipRow.add(pill("Ancient", Model.flag(params, "gwdAncient"),
+					"Carry Zaros protection too - bank at Nex's respite area (Ashuelot Reis)",
+					() -> commands.send("set-param",
+						Map.of("param", "gwdAncient", "value", !Model.flag(params, "gwdAncient")))));
+			}
 			// PvP world (Ragnarrok, 2026-10-20): any mob, cycles off / PvP /
 			// High Risk. Shown on a PvP world, while on, or when the
 			// settings ask for it (planning from a normal world).
@@ -994,7 +1113,12 @@ public class RenderSurface
 					() -> commands.set("cannonCount", (cannons + 1) % 3)));
 			}
 			int dCharge = Model.id(params, "deathCharge");
-			if (!f2pLocked && !lensLunar)
+			if (!f2pLocked && !lensLunar && standDown != null)
+			{
+				chipRow.add(disabledPill("D-charge",
+					"Stands down: " + standDown + " - Death Charge is cast from Arceuus"));
+			}
+			else if (!f2pLocked && !lensLunar)
 			{
 				chipRow.add(pill(dCharge == 0 ? "D-charge" : dCharge == 1 ? "D-charge on" : "D-charge+",
 					dCharge > 0, (dCharge + 1) % 3 > 0, "Death Charge: off / on / upgraded - cycles",

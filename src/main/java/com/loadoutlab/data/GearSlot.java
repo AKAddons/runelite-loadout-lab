@@ -1,7 +1,6 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.data;
 
-import java.util.Locale;
 
 import lombok.Getter;
 

@@ -50,6 +50,10 @@ Rune Nexus Group's short shows the plugin in use:
   your boat - pick each cannon's material and who fires it, the shared
   cannonball tier, your keel for the damage the boat takes - and the
   card adds it up: set, spec, each cannon, total.
+- **God Wars Dungeon protection**: each general's walk needs its god
+  items (the wiki route table) - worn when they cost no DPS, otherwise
+  carried in the Inventory with room made for them; an Ancient chip adds
+  a Zaros item for banking at Nex.
 - **Wilderness risk**: low-risk sets built around the items-kept-on-death
   rules - your 3-4 most valuable items ride protected, everything else
   stays under an adjustable gp risk cap, with per-item death fates
@@ -57,6 +61,16 @@ Rune Nexus Group's short shows the plugin in use:
   totals including untradeable repair/mangle fees. PvP worlds too: the
   PvP chip turns the same rules on for any monster (on by itself when
   you log in to one), and High Risk worlds keep nothing.
+- **Slot swaps**: click a slot and a strip under the gear shows the items
+  just above and just below yours - five columns with yours in the middle,
+  or the four below it when you already wear the best. Click a step you do
+  not own to sim it for this monster (one undo takes it back); right-click
+  to sim it everywhere, open Not Enough Runes on how to get it, pin one
+  of your own items here, or hide an item you never want suggested (for
+  this monster or all of them). Group searches get the same strip, scored
+  across the group, and a click sims the item for the whole group. The spec weapon's cell has the same strip, ranked by the
+  DPS each spec adds. Pinned items carry a gold pin mark and are listed on
+  the mob line; removing an item's sim also unpins it.
 - **Simulated items and upgrade budgets**: consider unowned gear ("what if I
   had a tbow?") or let a gp budget suggest buyable upgrades - quest
   rewards join free with their source quest named.

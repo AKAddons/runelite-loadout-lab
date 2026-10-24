@@ -17,6 +17,13 @@
     {"floor": 50, "ids": [11730, 11732, 11733]},
     {"floor": 250, "ids": [11278, 11279, 11280, 11281, 11282]},
     {"floor": 90, "ids": [13668]},
-    {"floor": 145, "ids": [14176]}
+    {"floor": 145, "ids": [14176]},
+    {"_comment": "The Fractured Archive (Jagex hotfix 2026-10-20/21): drains stop at 60% of base Defence on six bosses. The Blade (Ocellus phase 2), Dreadnoth, the Smorks and the Dagon'hai drain to 0.", "floor": 156, "ids": [16659, 16660]},
+    {"floor": 78, "ids": [16652]},
+    {"floor": 180, "ids": [16640]},
+    {"floor": 117, "ids": [16667]},
+    {"floor": 102, "ids": [16684]},
+    {"floor": 129, "ids": [16674]},
+    {"floor": 150, "ids": [16677]}
   ]
 }

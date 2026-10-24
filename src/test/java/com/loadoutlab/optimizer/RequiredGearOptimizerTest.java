@@ -118,8 +118,9 @@ public class RequiredGearOptimizerTest
 	@Test
 	public void missingProtectionStillAnswersWithTheBestSet() throws Exception
 	{
-		// All-or-nothing honesty (the dragonfire rule): owning no
-		// acceptable item must not blank the card - the note explains.
+		// Owning no acceptable item still answers - and since 2026-10-22
+		// (Andrew: "show them as necessary even when the player doesn't own
+		// those items") the set wears the mirror shield, marked not owned.
 		MonsterStats basilisk = data.searchMonsters("basilisk", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);
@@ -128,8 +129,8 @@ public class RequiredGearOptimizerTest
 			best(basilisk, owned, new EnumMap<>(CombatStyle.class)).get(CombatStyle.MELEE);
 		Assert.assertNotNull(melee);
 		Assert.assertFalse(melee.owned.isEmpty());
-		Assert.assertEquals("unforced - the defender stands",
-			12954, shieldOf(melee).getId());
+		Assert.assertEquals("the gaze shield is worn, unowned - not the defender",
+			4156, shieldOf(melee).getId());
 	}
 
 	@Test

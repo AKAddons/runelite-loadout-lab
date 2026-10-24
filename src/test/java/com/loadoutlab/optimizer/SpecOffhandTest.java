@@ -60,7 +60,7 @@ class SpecOffhandTest
 
 	private static OptimizerService.StyleResult single(int maxSwaps) throws Exception
 	{
-		MonsterStats mob = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats mob = data.searchMonsters("dagannoth rex", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		try
 		{

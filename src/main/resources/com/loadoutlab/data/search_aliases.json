@@ -1,7 +1,15 @@
 {
-	"_comment": "Community nicknames and activity names -> the monster to show (normalizeQuery form). Raids and wave activities map to their final boss.",
+	"_comment": "Community nicknames and activity names -> the monster to show (normalizeQuery form). Raids and wave activities map to their final boss. version_terms: extra search words for one version, keyed 'name|version' in normalizeQuery form (the ToA Wardens' phases - Andrew 2026-10-22).",
 	"aliases": {
 		"thermy": "thermonuclear smoke devil",
+		"zam": "kril tsutsaroth",
+		"zammy": "kril tsutsaroth",
+		"zamorak": "kril tsutsaroth",
+		"arma": "kreearra",
+		"armadyl": "kreearra",
+		"sara": "commander zilyana",
+		"saradomin": "commander zilyana",
+		"bandos": "general graardor",
 		"grotesque guardians": "dusk",
 		"fight caves": "tztokjad",
 		"the fight caves": "tztokjad",
@@ -22,5 +30,17 @@
 		"duke": "duke sucellus",
 		"kbd": "king black dragon",
 		"kq": "kalphite queen"
+	},
+	"version_terms": {
+		"elidinis warden|active": "p2 phase 2",
+		"elidinis warden|coreejected": "p2 phase 2",
+		"elidinis warden|damaged": "p3 phase 3",
+		"elidinis warden|enraged": "p3 phase 3",
+		"elidinis warden|invulnerable": "p3 phase 3",
+		"tumekens warden|active": "p2 phase 2",
+		"tumekens warden|coreejected": "p2 phase 2",
+		"tumekens warden|damaged": "p3 phase 3",
+		"tumekens warden|enraged": "p3 phase 3",
+		"tumekens warden|invulnerable": "p3 phase 3"
 	}
 }

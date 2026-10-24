@@ -6,6 +6,7 @@
 		"prayerRestore": "Prayer restore",
 		"surge": "Surge potion",
 		"spellbookCape": "Spellbook cape",
+		"teleportCape": "Teleport cape",
 		"antivenom": "Anti-venom",
 		"antipoison": "Antipoison",
 		"cannon": "Cannon"
@@ -204,6 +205,15 @@
 			"placement": "utility"
 		}
 	],
+	"teleportCape": [
+		{"key": "MAX_CAPE", "name": "Max cape", "ids": [13280, 13342, 13329, 13331, 13333, 13335, 13337, 20760, 21285, 21776, 21780, 21784, 21898, 24133, 24134, 24135, 24232, 24233, 24234, 24855, 27363, 27365, 28902, 28906, 34625], "placement": "utility"},
+		{"key": "CONSTRUCTION_CAPE", "name": "Construction cape", "ids": [9789, 9790], "placement": "utility"},
+		{"key": "ACHIEVEMENT_DIARY_CAPE", "name": "Achievement diary cape", "ids": [19476, 13069], "placement": "utility"},
+		{"key": "QUEST_POINT_CAPE", "name": "Quest point cape", "ids": [9813, 13068], "placement": "utility"},
+		{"key": "ARDOUGNE_CLOAK", "name": "Ardougne cloak", "ids": [13124, 13123, 13122, 13121], "placement": "utility"},
+		{"key": "CRAFTING_CAPE", "name": "Crafting cape", "ids": [9780, 9781], "placement": "utility", "detect": false}
+	],
+	"_teleportCape_comment": "Teleport capes (2026-10-22, Andrew): best first - the max cape (every combined max cape keeps its teleports), Construction (POH portals), Achievement diary, Quest point (Legends' Guild), the Ardougne cloak (any tier; the elite first as the display id); the Crafting cape (Crafting Guild) is a choice only. Ids from runelite-api 1.13.3 gameval ItemID.",
 	"antivenom": [
 		{
 			"key": "EXTENDED_ANTIVENOM",

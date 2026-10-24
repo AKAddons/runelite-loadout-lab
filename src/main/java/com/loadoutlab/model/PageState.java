@@ -37,6 +37,19 @@ public class PageState
 	 * the selection snapshot; pvpWorldHere = the client is on one. */
 	private int pvpWorld;
 	private boolean pvpWorldHere;
+	/** The elite Kourend & Kebos diary is done (varbit 7928) - Karuulm
+	 * needs no boots (ISS-01M5JJ0Z4M988DR0M0ZGJHD139). */
+	private boolean kourendElite;
+	/** The mode (MAX_DPS / BALANCED / TANKY), every player's since
+	 * 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6). */
+	private String optimizeMode = "MAX_DPS";
+	/** GWD Ancient chip: Zaros joins the protection route - the Nex bank
+	 * (ISS-01M5G9KPDQWBR014Z10F79B29T). */
+	private boolean gwdAncient;
+	/** Not Enough Runes is enabled - the ladder's "how to get it" link. */
+	private boolean nerAvailable;
+	/** The slot whose ladder strip is open on the Yours card ("" = none). */
+	private String ladderSlot = "";
 	/** Ship combat (REQ-SC-2/3/3b). Post-compute additive like thralls -
 	 * none of these enter the optimizer request, so none ride computeArgs.
 	 * They persist across lens changes; the ENGINE only reads them for a
@@ -94,7 +107,7 @@ public class PageState
 	/** Parameters that change what is SHOWN, not what is computed. */
 	public static boolean isViewParam(String param)
 	{
-		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap").contains(param);
+		return Set.of("viewingBis", "selectedTab", "thralls", "lensIndex", "spellbookSwap", "nerAvailable", "ladderSlot").contains(param);
 	}
 
 	public synchronized void select(MonsterStats mob)
@@ -222,8 +235,24 @@ public class PageState
 			case "pvpWorld":
 				pvpWorld = Math.max(0, Math.min(2, asInt(value, 0)));
 				return true;
+			case "kourendElite":
+				kourendElite = Boolean.TRUE.equals(value);
+				return true;
 			case "pvpWorldHere":
 				pvpWorldHere = Boolean.TRUE.equals(value);
+				return true;
+			case "optimizeMode":
+				optimizeMode = "BALANCED".equals(value) || "TANKY".equals(value)
+					? (String) value : "MAX_DPS";
+				return true;
+			case "ladderSlot":
+				ladderSlot = value instanceof String ? (String) value : "";
+				return true;
+			case "nerAvailable":
+				nerAvailable = Boolean.TRUE.equals(value);
+				return true;
+			case "gwdAncient":
+				gwdAncient = Boolean.TRUE.equals(value);
 				return true;
 			case "spellbookLock":
 				spellbookLock = value instanceof String ? (String) value : "";
@@ -367,6 +396,11 @@ public class PageState
 		node.put("f2pWorld", f2pWorld);
 		node.put("pvpWorld", pvpWorld);
 		node.put("pvpWorldHere", pvpWorldHere);
+		node.put("kourendElite", kourendElite);
+		node.put("optimizeMode", optimizeMode);
+		node.put("gwdAncient", gwdAncient);
+		node.put("nerAvailable", nerAvailable);
+		node.put("ladderSlot", ladderSlot);
 		node.put("cannonCount", cannonCount);
 		node.put("cannon1Material", cannonMaterial[0]);
 		node.put("cannon2Material", cannonMaterial[1]);
@@ -459,6 +493,12 @@ public class PageState
 		p.prayerPicks = new LinkedHashMap<>(prayerPicks);
 		p.upgradeBudgetGp = upgradeBudgetGp;
 		p.maxSwaps = maxSwaps;
+		// The defensive modes are a developer-mode prototype.
+		// Every player's chosen mode since 2026-10-22 (Andrew: "Release to
+		// everyone"; ISS-01M5JBYYWHQNTM0CGNYWQBNYX6) - no developer-mode gate.
+		p.optimizeMode = optimizeMode;
+		p.kourendElite = kourendElite;
+		p.gwdAncient = gwdAncient;
 		return p;
 	}
 }

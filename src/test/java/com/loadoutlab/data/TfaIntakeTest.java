@@ -41,14 +41,15 @@ class TfaIntakeTest
 	}
 
 	@Test
-	@DisplayName("the raid group lists the encounters that have stats: the Guardian and Xarth in two phases, Ocellus in three")
+	@DisplayName("the raid group lists the encounters that have stats: the Guardian and Xarth in two phases, the Dagon'hai trio, Ocellus in three")
 	void groupRoster()
 	{
 		assertTrue(tfa.isRaid());
-		assertEquals(12, tfa.getMobs().size());
+		// The two Monks share one stat block, so the corpus folds them into one row.
+		assertEquals(14, tfa.getMobs().size());
 		Set<String> names = tfa.getMobs().stream().map(MonsterStats::getName).collect(Collectors.toSet());
 		for (String name : new String[]{"Archive Guardian", "Ezekiel", "Bork", "The Smorks",
-			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus"})
+			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus", "Dagon'hai Elder", "Dagon'hai Monk"})
 		{
 			assertTrue(names.contains(name), name);
 		}

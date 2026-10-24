@@ -35,6 +35,8 @@ jobs:
       replay_from: ${{ inputs.from }}
       replay_to: ${{ inputs.to }}
       project_description: "Loadout Lab is a RuneLite (Old School RuneScape) plugin that finds the best-in-slot gear a player already owns."
+      # The brand avatar, not the 48 x 72 plugin icon the hub would pick by default.
+      project_icon_url: "https://raw.githubusercontent.com/AKAddons/runelite-loadout-lab/main/docs/brand/loadout-lab-avatar.png"
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -56,10 +56,11 @@ class TfaStipulationsTest
 	}
 
 	@Test
-	@DisplayName("the roster carries the Guardian's two phases and Xarth's two phases: twelve rows")
-	void twelveRows()
+	@DisplayName("the roster carries the Guardian's two phases, Xarth's two phases and the Dagon'hai Elder and Monk: fourteen rows")
+	void fourteenRows()
 	{
-		assertEquals(12, tfa.size());
+		// The Dagon'hai joined 2026-10-22 (ISS-01M5JBYYKPE7192Z24NTR432M8).
+		assertEquals(14, tfa.size());
 	}
 
 	@Test

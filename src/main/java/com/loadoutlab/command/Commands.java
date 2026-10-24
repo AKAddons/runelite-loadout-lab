@@ -28,7 +28,7 @@ public final class Commands
 	}
 
 	/** A Command from two lambdas plus a label - the shape every factory returns. */
-	static Command of(String description, BooleanSupplier apply, BooleanSupplier revert)
+	public static Command of(String description, BooleanSupplier apply, BooleanSupplier revert)
 	{
 		return new Command()
 		{

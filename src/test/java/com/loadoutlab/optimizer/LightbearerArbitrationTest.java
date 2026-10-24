@@ -90,7 +90,7 @@ public class LightbearerArbitrationTest
 		// the melee card read as "the pin doesn't take") - specs compete
 		// cross-style, so the ranged pin must ride the MELEE card too. This
 		// is the user's exact scenario (a simmed Tonalztics of ralos).
-		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
+		MonsterStats rex = data.searchMonsters("dagannoth rex", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(byName("abyssal whip").getId(), 1);
 		int tonalId = byName("tonalztics of ralos").getId();
@@ -99,7 +99,7 @@ public class LightbearerArbitrationTest
 		{
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
-			ServiceCalls.bestPerStyle(service, graardor,
+			ServiceCalls.bestPerStyle(service, rex,
 				PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1,
 				false, false, "", new java.util.EnumMap<>(CombatStyle.class), -1,

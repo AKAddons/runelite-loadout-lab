@@ -6,7 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.JsonResources;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import lombok.Getter;
 import java.util.List;

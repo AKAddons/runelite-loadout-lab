@@ -181,6 +181,42 @@ public interface LoadoutLabConfig extends Config
 		return "75k";
 	}
 
+	@ConfigItem(
+		keyName = "defaultOptimizeMode",
+		name = "Mode",
+		description = "The tab new searches start on. Max DPS: the most damage. Balanced (beta): the best"
+			+ " damage dealt per damage taken. Tanky (beta): the least damage taken.",
+		section = defaults,
+		position = 1
+	)
+	default OptimizeModeDefault defaultOptimizeMode()
+	{
+		return OptimizeModeDefault.MAX_DPS;
+	}
+
+	/** The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
+	 * Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
+	 * default search option"). Names match OptimizerService.OptimizeMode. */
+	enum OptimizeModeDefault
+	{
+		MAX_DPS("Max DPS"),
+		BALANCED("Balanced (beta)"),
+		TANKY("Tanky (beta)");
+
+		private final String label;
+
+		OptimizeModeDefault(String label)
+		{
+			this.label = label;
+		}
+
+		@Override
+		public String toString()
+		{
+			return label;
+		}
+	}
+
 	enum AssumeDefault
 	{
 		DETECT,

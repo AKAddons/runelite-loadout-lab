@@ -121,7 +121,7 @@ public final class IncomingDpsCalculator
 	public static final class Prepared
 	{
 		private final int defenceLevel;
-		/** Player magic defence level term: 70% Magic + 30% (Defence+9). */
+		/** Player magic defence level term: floor(70% Magic) + floor(30% Defence) + 8. */
 		private final int magicEffective;
 		/** Per style/attack: KIND_*, npc attack roll, and (v1) max hit. */
 		private final int[] kinds;
@@ -488,10 +488,12 @@ public final class IncomingDpsCalculator
 		}
 	}
 
-	/** Player magic defence level term: 70% Magic + 30% (Defence+9). */
+	/** Player magic defence level: floor(70% Magic) + floor(30% Defence) + 8
+	 * (osrs-dps-calc NPCVsPlayerCalc; the +8 sits OUTSIDE the 30%, where the
+	 * old (Defence+9) term read magic damage taken 4-7% high). Stance 0. */
 	private static int magicEffectiveLevel(int defenceLevel, int magicLevel)
 	{
-		return (int) (magicLevel * 0.7) + (int) ((defenceLevel + 9) * 0.3);
+		return (int) (magicLevel * 0.7) + (int) (defenceLevel * 0.3) + 8;
 	}
 
 	/** The defensive bonus a KIND_* attack rolls against. */
@@ -515,13 +517,15 @@ public final class IncomingDpsCalculator
 	 * accuracy path, shared by the display calculate() and the beam's
 	 * Prepared. The level-term guard must stay an explicit STAB..RANGED range
 	 * check: KIND_UNMODELED is -1, so a "kind < KIND_RANGED" test would hand
-	 * it the melee (Defence+9) term instead of the magic term the old
+	 * it the melee (Defence+8) term instead of the magic term the old
 	 * string-keyed else-branch gave it.
 	 */
 	private static double accuracyOfKind(int kind, int attackRoll, StatBlock def,
 		int defenceLevel, int magicEffective)
 	{
-		long level = kind >= KIND_STAB && kind <= KIND_RANGED ? defenceLevel + 9 : magicEffective;
+		// Defence + 8 + stance (wiki DPS/Melee); the optimizer assumes an
+		// offensive stance, which adds no defence.
+		long level = kind >= KIND_STAB && kind <= KIND_RANGED ? defenceLevel + 8 : magicEffective;
 		return accuracy(attackRoll, level * (defenceBonusOf(kind, def) + 64));
 	}
 

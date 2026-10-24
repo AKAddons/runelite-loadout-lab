@@ -115,10 +115,15 @@ public final class LoadoutData
 	 * normalizeQuery form.
 	 */
 	private static final Map<String, String> SEARCH_ALIASES = new HashMap<>();
+	/** Extra search words for one version ("name|version" -> words): the
+	 * Wardens' "p2 phase 2" (ISS-01M5HKWBZNJF0V8ZD58FH9XS5B). */
+	private static final Map<String, String> VERSION_TERMS = new HashMap<>();
 
 	static
 	{
-		JsonResources.stringMap(JsonResources.objectOrThrow("search_aliases.json"), "aliases", SEARCH_ALIASES);
+		com.google.gson.JsonObject aliases = JsonResources.objectOrThrow("search_aliases.json");
+		JsonResources.stringMap(aliases, "aliases", SEARCH_ALIASES);
+		JsonResources.stringMap(aliases, "version_terms", VERSION_TERMS);
 	}
 
 	public List<MonsterStats> searchMonsters(String query, int limit)
@@ -144,7 +149,7 @@ public final class LoadoutData
 			{
 				prefix.add(monster);
 			}
-			else if (monster.searchText().contains(text))
+			else if (monster.searchText().contains(text) || wordsMatch(text, monster))
 			{
 				contains.add(monster);
 			}
@@ -169,6 +174,39 @@ public final class LoadoutData
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
 		return result;
+	}
+
+	/** Every typed word starts a word of the monster's name, version, id or
+	 * version terms, a trailing "s" forgiven - "tumeken warden" ("tumekens
+	 * warden"), "wardens", "elidinis active", "warden p2" (Andrew 2026-10-22:
+	 * the phase-2 Warden was unsearchable without "toa"). */
+	private static boolean wordsMatch(String text, MonsterStats monster)
+	{
+		String terms = VERSION_TERMS.get(MonsterStats.normalizeQuery(monster.getName())
+			+ "|" + MonsterStats.normalizeQuery(monster.getVersion()));
+		String[] words = (monster.searchText() + (terms == null ? "" : " " + terms)).split(" +");
+		for (String typed : text.split(" +"))
+		{
+			if (typed.isEmpty())
+			{
+				continue;
+			}
+			boolean found = false;
+			for (String word : words)
+			{
+				if (word.startsWith(typed)
+					|| typed.length() > 2 && typed.endsWith("s") && word.equals(typed.substring(0, typed.length() - 1)))
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Lower = a better default for a bare-name search. */

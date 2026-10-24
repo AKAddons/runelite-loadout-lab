@@ -44,10 +44,126 @@ public class OptimizerService
 	private final AtomicLong optimizeMisses =
 		new AtomicLong();
 
+	/** Which point of the offence/defence frontier to show - the dev-mode
+	 * prototype of ISS-01M5G5CZC9SK46499FACRSJ8ZT. Andrew 2026-10-21:
+	 * "balance = maximizing the DTPS/DPS ratio in an optimized way, tanky =
+	 * minimum DTPS" - Balanced takes the least damage per damage dealt. */
+	public enum OptimizeMode
+	{
+		MAX_DPS,
+		BALANCED,
+		TANKY
+	}
+
+	/** Frontier sweep weights, as multiples of maxDps/incoming; the 10.0
+	 * extreme reaches the genuine minimum-intake end (491b6c0). */
+	private static final double[] SWEEP_ALPHAS = {0.3, 0.7, 1.5, 3.0, 10.0};
+
+	/** What a defensive mode did to the shown set: the DPS it gave up and
+	 * the damage taken it cut, whole percents vs the max-DPS set - or, when
+	 * it kept that set, why (reason non-null). */
+	public static final class ModeTrade
+	{
+		public final OptimizeMode mode;
+		public final int dpsLossPct;
+		public final int dmgCutPct;
+		public final String reason;
+
+		ModeTrade(OptimizeMode mode, int dpsLossPct, int dmgCutPct, String reason)
+		{
+			this.mode = mode;
+			this.dpsLossPct = dpsLossPct;
+			this.dmgCutPct = dmgCutPct;
+			this.reason = reason;
+		}
+	}
+
+	/** One step on a slot ladder: the item, the set's DPS and damage taken
+	 * with it swapped in, and whether you own it. */
+	public static final class Rung
+	{
+		public final GearItem item;
+		public final double dps;
+		public final double dtps;
+		public final boolean owned;
+		/** The ammo a weapon step brings when it changes the worn ammo
+		 * (ISS-01M5H2AH8ERQG471AZY3S67FKW); null otherwise. */
+		public final GearItem with;
+		/** The shield a one-handed weapon step brings when it changes the
+		 * worn one (weapon + offhand vs a two-hander, ISS-01M5JFG00G1BS82X9X2QNZZC7S). */
+		public GearItem offhand;
+
+		Rung(GearItem item, double dps, double dtps, boolean owned)
+		{
+			this(item, dps, dtps, owned, null);
+		}
+
+		Rung(GearItem item, double dps, double dtps, boolean owned, GearItem with)
+		{
+			this.item = item;
+			this.dps = dps;
+			this.dtps = dtps;
+			this.owned = owned;
+			this.with = with;
+		}
+	}
+
+	/** A slot's ladder (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): the steps just above
+	 * the worn item (any item, closest first) and just below (owned only,
+	 * closest first), ranked by the mode the set was picked for. Shown in
+	 * game as the slot's "swaps". */
+	public static final class Ladder
+	{
+		/** Steps each way by default... */
+		public static final int RUNGS = 2;
+		/** ...and always this many beside the worn item when the steps exist. */
+		public static final int SPOTS = 2 * RUNGS;
+		/** Scored across a group search's members, HP-weighted, on the
+		 * group's shared kit (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ). */
+		public boolean group;
+
+		/** How many steps up and down to show (ISS-01M5H13V0TVF58RHPHT8WQ1GFP,
+		 * Andrew 2026-10-21: "when the user has bis show the 4 preceding"):
+		 * two each way, a short side's spare spots going to the other. */
+		static int[] spots(int above, int below)
+		{
+			int up = Math.min(RUNGS, above);
+			int down = Math.min(RUNGS, below);
+			up += Math.min(SPOTS - up - down, above - up);
+			down += Math.min(SPOTS - up - down, below - down);
+			return new int[]{up, down};
+		}
+
+		public final OptimizeMode mode;
+		public final double baseDps;
+		public final double baseDtps;
+		public final List<Rung> up;
+		public final List<Rung> down;
+
+		Ladder(OptimizeMode mode, double baseDps, double baseDtps, List<Rung> up, List<Rung> down)
+		{
+			this.mode = mode;
+			this.baseDps = baseDps;
+			this.baseDtps = baseDtps;
+			this.up = up;
+			this.down = down;
+		}
+	}
+
 	/** Per-style outcome: your best owned sets, the game-wide best set, and
 	 * the strongest special-attack weapon for each - owned and game-wide. */
 	public static final class StyleResult
 	{
+		/** The defensive mode's trade on the Yours side; null on Max DPS. */
+		public ModeTrade modeTrade;
+		/** GWD protection CARRIED on each side (worn on the way in, swapped
+		 * off for the fight) - also in the bench; empty away from GWD. */
+		public List<GearItem> protection = List.of();
+		public List<GearItem> gameProtection = List.of();
+		public Map<GearSlot, Ladder> ladder = Map.of();
+		/** The carried spec weapon's swaps, ranked by DPS added; null when
+		 * no spec is carried (ISS-01M5HCS725N7XVVBC7CMK6Y43A). */
+		public Ladder specLadder;
 		public final List<DpsResult> owned;
 		public final DpsResult overallBest;
 		public final SpecialAttack spec;
@@ -225,6 +341,8 @@ public class OptimizerService
 			Collections.singletonMap(monster.profileId(), pinnedByStyle),
 			Collections.singletonMap(monster.profileId(), pinnedSpell),
 			Collections.singletonMap(monster.profileId(), pinnedSpec), protectOnlyItems);
+		ctx.mode = OptimizeMode.valueOf(p.optimizeMode);
+		ctx.gwdAncient = p.gwdAncient;
 		final String baseKey = baseKeyFor(monster, ctx);
 		Map<CombatStyle, StyleResult> allCached = new EnumMap<>(CombatStyle.class);
 		synchronized (cache)
@@ -325,6 +443,14 @@ public class OptimizerService
 		/** PER-MOB sims (profileId -> ids): counted as owned for that mob
 		 * only - the local twin of the global dream items. */
 		Map<Integer, Set<Integer>> dreamsByMob = Map.of();
+		/** The defensive mode (single-mob path only; rosters stay Max DPS). */
+		OptimizeMode mode = OptimizeMode.MAX_DPS;
+		/** The GWD Ancient chip: Zaros joins the route (the Nex bank). */
+		boolean gwdAncient;
+		/** The elite Kourend & Kebos diary (Karuulm needs no boots). */
+		boolean kourendElite;
+		/** This compute's request ticket - the mode sweep bails when superseded. */
+		long ticket;
 	}
 
 	/** The spec-weapon restriction (0 = none): a user PIN forces the spec
@@ -403,7 +529,7 @@ public class OptimizerService
 			+ "|" + ctx.riskBudget + "|" + ctx.antifirePotion + "|" + ctx.sunfireRunes + "|" + ctx.multiView + "|" + ctx.multiStack + "|" + ctx.deathCharge
 			+ "|" + ctx.specWeapon + "|" + ctx.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
-			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels);
+			+ "|" + levelKey(ctx.real) + "|" + levelKey(ctx.boostedLevels) + "|" + ctx.kourendElite;
 	}
 
 	/** One roster optimize (a pool task): LRU-cached; a hit hands out a
@@ -539,6 +665,12 @@ public class OptimizerService
 			// The displayed set: top up DPS-neutral empty slots with
 			// prayer/defensive gear (verified not to change the DPS).
 			polish(optimizer, ctx.dataset, ownedRequest, ownedBest);
+			// A defensive mode swaps the shown set for its frontier pick
+			// BEFORE spec, incoming and bench, so every downstream number
+			// describes the set the card shows. Style cards only - a
+			// Multi tool's pinned weapon is its own question.
+			ModeTrade modeTrade = tool != null || ctx.mode == OptimizeMode.MAX_DPS || ownedBest.isEmpty()
+				? null : applyMode(ctx, ownedRequest, ownedBest, monster, ctx.ticket);
 			// The ceiling: every obtainable item, no quest/level gating -
 			// but computed at the player's own levels, so the comparison
 			// percentage isolates the GEAR gap.
@@ -549,13 +681,22 @@ public class OptimizerService
 			OptimizationRequest gameRequest = gameRequestFor(ctx, monster, style, gameLevels, tool);
 			List<DpsResult> gameBest = optimizer.optimize(ctx.dataset, gameRequest);
 			polish(optimizer, ctx.dataset, gameRequest, gameBest);
+			// GWD protection (ISS-01M5G9KPDQWBR014Z10F79B29T): the route's
+			// gods worn when free, the rest carried - and carried protection
+			// takes its Inventory slots before the spec weapon does.
+			List<String> gods = tool != null ? List.of() : GwdProtection.godsFor(monster, ctx.gwdAncient);
+			List<GearItem> protection = protect(ctx, ownedRequest, ownedBest, gods, monster,
+				ctx.mode != OptimizeMode.MAX_DPS);
+			List<GearItem> gameProtection = protect(ctx, gameRequest, gameBest, gods, monster, false);
+			int specSlots = ctx.maxSwaps - protection.size();
+			int gameSpecSlots = ctx.maxSwaps - gameProtection.size();
 			// Bench 0 = strictly one worn set: no spec swap is carried.
 			Set<Integer> specPin = restrictSpec(ctx, style, monster);
-			SpecPick spec = ownedSide && ctx.maxSwaps >= 1 && ctx.specWeapon
-				? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), ctx.maxSwaps)
+			SpecPick spec = ownedSide && specSlots >= 1 && ctx.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, ownedRequest, ownedBest, style, monster, styleLevels, ctx.effectiveOwned, specPin), specSlots)
 				: null;
-			SpecPick gameSpec = ctx.maxSwaps >= 1 && ctx.specWeapon
-				? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), ctx.maxSwaps)
+			SpecPick gameSpec = gameSpecSlots >= 1 && ctx.specWeapon
+				? seat(arbitrateLightbearer(ctx.dataset, gameRequest, gameBest, style, monster, gameLevels, null, specPin), gameSpecSlots)
 				: null;
 			// The defensive story of the shown set: what the boss does
 			// back to you, at your REAL levels (protection prayer up).
@@ -564,13 +705,38 @@ public class OptimizerService
 			IncomingDpsCalculator.Result gameIncoming = incomingFor(monster,
 				gameBest.isEmpty() ? null : gameBest.get(0).getLoadout(), ctx);
 			List<GearItem> bench = specBenchOf(spec, ownedBest);
+			bench.addAll(protection);
 			// The BiS side's inventory mirrors it (field fix 2026-07-18:
 			// a single mob's BiS view showed no carried spec).
 			List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
-			return verified(new StyleResult(
+			gameBench.addAll(gameProtection);
+			StyleResult result = verified(new StyleResult(
 				ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
 				boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
 				ctx.dataset, ownedRequest, gameRequest);
+			result.modeTrade = modeTrade;
+			result.protection = protection;
+			result.gameProtection = gameProtection;
+			if (tool == null && ownedSide && !ownedBest.isEmpty())
+			{
+				// The swaps strips are extras: one that fails is logged and
+				// dropped, never the card (2026-10-22: a strip's NPE blanked
+				// every style it touched).
+				try
+				{
+					result.ladder = ladderFor(ctx, ownedRequest, ownedBest.get(0), monster);
+					if (spec != null)
+					{
+						result.specLadder = specLadderFor(ctx, ownedRequest, ownedBest, style, monster,
+							styleLevels, spec.weapon);
+					}
+				}
+				catch (RuntimeException ex)
+				{
+					log.warn("swaps strip failed for {} {}", monster.getName(), style, ex);
+				}
+			}
+			return result;
 			// Store per style as computed - even a superseded job donates
 			// the styles it finished.
 	}
@@ -588,12 +754,14 @@ public class OptimizerService
 		return monster.getId() + "|" + monster.getVersion() + "|" + monster.getToaInvocationLevel()
 			+ "|" + ctxKey(ctx)
 			+ "|" + ctx.dreams.hashCode() + "|" + ctx.maxSwaps
-			+ "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0);
+			+ "|" + ctx.specByMob.getOrDefault(monster.profileId(), 0)
+			+ "|" + ctx.mode.name() + "|" + ctx.gwdAncient;
 	}
 
 	private Map<CombatStyle, StyleResult> computeAllStyles(
 		MonsterStats monster, ComputeContext ctx, long ticket)
 	{
+		ctx.ticket = ticket;
 		String baseKey = baseKeyFor(monster, ctx);
 			Map<CombatStyle, StyleResult> results = new EnumMap<>(CombatStyle.class);
 			for (CombatStyle style : CombatStyle.concreteValues())
@@ -659,6 +827,391 @@ public class OptimizerService
 		return results;
 	}
 
+	/**
+	 * Sweep defense weights over the max-DPS set to trace the offence/
+	 * defence frontier, pick the mode's point, swap it into ownedBest[0],
+	 * and say what it cost. Only where the damage-taken model covers the
+	 * monster (full or curated) - a partial number would steer the pick by
+	 * the attacks it leaves out.
+	 */
+	private ModeTrade applyMode(ComputeContext ctx, OptimizationRequest ownedRequest,
+		List<DpsResult> ownedBest, MonsterStats monster, long ticket)
+	{
+		OptimizeMode mode = ctx.mode;
+		DpsResult maxDps = ownedBest.get(0);
+		IncomingDpsCalculator.Result base = incomingFor(monster, maxDps.getLoadout(), ctx);
+		if (IncomingDpsCalculator.NONE.equals(base.coverage))
+		{
+			return new ModeTrade(mode, 0, 0, "no damage data");
+		}
+		if (IncomingDpsCalculator.PARTIAL.equals(base.coverage))
+		{
+			return new ModeTrade(mode, 0, 0, "partial damage data");
+		}
+		double d0 = maxDps.getDps();
+		double i0 = base.totalDps;
+		if (d0 <= 0 || i0 <= 0.05)
+		{
+			return new ModeTrade(mode, 0, 0, "takes ~0 damage");
+		}
+		List<DpsResult> frontier = new ArrayList<>();
+		frontier.add(maxDps);
+		// Candidate pools depend on weight > 0, not its size: build once.
+		LoadoutOptimizer.CandidatePools pools = null;
+		for (double alpha : SWEEP_ALPHAS)
+		{
+			if (requestSeq.get() != ticket)
+			{
+				return null; // superseded mid-sweep
+			}
+			OptimizationRequest weighted = ownedRequest.withDefenseWeight(alpha * d0 / i0);
+			if (pools == null)
+			{
+				pools = optimizer.preparePools(ctx.dataset, weighted);
+			}
+			List<DpsResult> out = optimizer.optimize(ctx.dataset, weighted, pools);
+			if (!out.isEmpty())
+			{
+				polish(optimizer, ctx.dataset, weighted, out);
+				frontier.add(out.get(0));
+			}
+		}
+		DpsResult picked = maxDps;
+		double pickedIn = i0;
+		for (DpsResult candidate : frontier)
+		{
+			double in = incomingFor(monster, candidate.getLoadout(), ctx).totalDps;
+			if (better(mode, candidate.getDps(), in, picked.getDps(), pickedIn))
+			{
+				picked = candidate;
+				pickedIn = in;
+			}
+		}
+		if (picked == maxDps)
+		{
+			return new ModeTrade(mode, 0, 0, "no safer set");
+		}
+		ownedBest.set(0, picked);
+		return new ModeTrade(mode,
+			(int) Math.round((1 - picked.getDps() / d0) * 100),
+			(int) Math.round((1 - pickedIn / i0) * 100), null);
+	}
+
+	/** Every worn slot's ladder for the shown Yours set: each swap scored by
+	 * the active mode (Andrew 2026-10-21: "same objective as the active
+	 * mode"), two steps up from any item, two down from owned ones. */
+	private Map<GearSlot, Ladder> ladderFor(ComputeContext ctx, OptimizationRequest request,
+		DpsResult shown, MonsterStats monster)
+	{
+		Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
+		boolean scoresDamage = ctx.mode != OptimizeMode.MAX_DPS;
+		double baseDtps = incomingFor(monster, shown.getLoadout(), ctx).totalDps;
+		Set<Integer> dreams = dreamsFor(ctx, monster);
+		for (GearSlot slot : GearSlot.values())
+		{
+			if (shown.getLoadout().get(slot) == null)
+			{
+				continue;
+			}
+			Rung base = new Rung(shown.getLoadout().get(slot), shown.getDps(), baseDtps, true);
+			List<Rung> candidates = new ArrayList<>();
+			for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, request, shown, slot))
+			{
+				GearItem item = swap.getLoadout().get(slot);
+				double dtps = scoresDamage ? incomingFor(monster, swap.getLoadout(), ctx).totalDps : baseDtps;
+				GearItem ammo = swap.getLoadout().get(GearSlot.AMMO);
+				GearItem wornAmmo = shown.getLoadout().get(GearSlot.AMMO);
+				boolean newAmmo = slot == GearSlot.WEAPON && ammo != null
+					&& (wornAmmo == null || ammo.getId() != wornAmmo.getId());
+				Rung rung = new Rung(item, swap.getDps(), dtps,
+					ctx.effectiveOwned.owns(item.getId()) || dreams.contains(item.getId()),
+					newAmmo ? ammo : null);
+				GearItem shield = swap.getLoadout().get(GearSlot.SHIELD);
+				GearItem wornShield = shown.getLoadout().get(GearSlot.SHIELD);
+				if (slot == GearSlot.WEAPON && shield != null
+					&& (wornShield == null || shield.getId() != wornShield.getId()))
+				{
+					rung.offhand = shield;
+				}
+				candidates.add(rung);
+			}
+			Ladder ladder = rankSteps(ctx.mode, request.getStyle(), base, candidates, shown.getDps(), baseDtps);
+			if (ladder != null)
+			{
+				ladders.put(slot, ladder);
+			}
+		}
+		return ladders;
+	}
+
+	/** The steps around the worn item: up from any item, down from your own,
+	 * closest first, five columns by the fill rule. Equal under the mode,
+	 * the item's own stats decide (ISS-01M5H9KGF4FSAM5DR1XSD9F9RX, Andrew
+	 * 2026-10-22: Torva tied Bandos on one max hit, and a whole band of
+	 * boots folded into Boots of the Eye). Null when there is no step. */
+	private static Ladder rankSteps(OptimizeMode mode, CombatStyle style, Rung base, List<Rung> candidates,
+		double baseDps, double baseDtps)
+	{
+		Comparator<Rung> order = (a, b) -> compareRungs(mode, a, b);
+		Comparator<Rung> stats = (a, b) -> compareStats(style, a, b);
+		Comparator<Rung> full = order.thenComparing(stats);
+		List<Rung> above = new ArrayList<>();
+		List<Rung> below = new ArrayList<>();
+		for (Rung rung : candidates)
+		{
+			int vsWorn = full.compare(rung, base);
+			if (vsWorn > 0)
+			{
+				above.add(rung);
+			}
+			else if (vsWorn < 0 && rung.owned)
+			{
+				below.add(rung);
+			}
+		}
+		// Closest first. Up keeps one step per result - its best-stats
+		// item; down is your own gear, so equal results stand side by
+		// side and only stat-identical twins fold (owned, then cheaper).
+		Comparator<Rung> tieBreak = Comparator.comparing((Rung r) -> !r.owned)
+			.thenComparingInt(r -> r.item.getPriceOrZero());
+		above.sort(order.thenComparing(stats.reversed()).thenComparing(tieBreak));
+		below.sort(full.reversed().thenComparing(tieBreak));
+		List<Rung> up = closest(above, order);
+		List<Rung> down = closest(below, full);
+		int[] spots = Ladder.spots(up.size(), down.size());
+		up = up.subList(0, spots[0]);
+		down = down.subList(0, spots[1]);
+		return up.isEmpty() && down.isEmpty() ? null : new Ladder(mode, baseDps, baseDtps, up, down);
+	}
+
+	/** A group search's swaps (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ, Andrew 2026-10-22: "ladder
+	 * view is disabled for group searches but i think it should be
+	 * included" - scored by "The whole group"): each slot of the group's
+	 * shared kit swapped for every member, the DPS averaged by the same
+	 * HP weight that picked the kit (kitWeight). One strip for the group. */
+	private Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, Side side, List<MonsterStats> mobs)
+	{
+		Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
+		if (side == null || side.shared == null)
+		{
+			return ladders;
+		}
+		DpsCalculator calc = new DpsCalculator();
+		int n = side.reqs.size();
+		double[] weight = new double[n];
+		DpsResult[] base = new DpsResult[n];
+		double total = 0;
+		double baseDps = 0;
+		Set<Integer> dreams = new HashSet<>();
+		for (int j = 0; j < n; j++)
+		{
+			base[j] = calcRespecting(calc, side.reqs.get(j), side.shared);
+			weight[j] = MonsterMechanics.kitWeight(mobs.get(j));
+			dreams.addAll(dreamsFor(ctx, mobs.get(j)));
+			if (base[j] != null)
+			{
+				total += weight[j];
+				baseDps += base[j].getDps() * weight[j];
+			}
+		}
+		if (total <= 0)
+		{
+			return ladders;
+		}
+		baseDps /= total;
+		CombatStyle style = side.reqs.get(0).getStyle();
+		for (GearSlot slot : GearSlot.values())
+		{
+			GearItem worn = side.shared.get(slot);
+			if (worn == null)
+			{
+				continue;
+			}
+			Map<Integer, double[]> sums = new LinkedHashMap<>();
+			Map<Integer, GearItem> items = new HashMap<>();
+			for (int j = 0; j < n; j++)
+			{
+				if (base[j] == null)
+				{
+					continue;
+				}
+				for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, side.reqs.get(j), base[j], slot))
+				{
+					GearItem item = swap.getLoadout().get(slot);
+					items.putIfAbsent(item.getId(), item);
+					sums.computeIfAbsent(item.getId(), k -> new double[1])[0] += swap.getDps() * weight[j];
+				}
+			}
+			List<Rung> candidates = new ArrayList<>();
+			for (Map.Entry<Integer, double[]> entry : sums.entrySet())
+			{
+				int id = entry.getKey();
+				candidates.add(new Rung(items.get(id), entry.getValue()[0] / total, 0,
+					ctx.effectiveOwned.owns(id) || dreams.contains(id)));
+			}
+			Ladder ladder = rankSteps(OptimizeMode.MAX_DPS, style, new Rung(worn, baseDps, 0, true),
+				candidates, baseDps, 0);
+			if (ladder != null)
+			{
+				ladder.group = true;
+				ladders.put(slot, ladder);
+			}
+		}
+		return ladders;
+	}
+
+	/** The carried spec's swaps (ISS-01M5HCS725N7XVVBC7CMK6Y43A, Andrew
+	 * 2026-10-22: "not seeing the ladder view for the spec weapon slot"):
+	 * every spec weapon scored alone by the card's own pick - the DPS it
+	 * adds over just attacking - any item above the carried one, your own
+	 * below, five columns by the slots' fill rule. */
+	private Ladder specLadderFor(ComputeContext ctx, OptimizationRequest request, List<DpsResult> best,
+		CombatStyle style, MonsterStats monster, PlayerLevels levels, GearItem carried)
+	{
+		SpecPick worn = bestSpec(ctx.dataset, request, best, style, monster, levels, null,
+			Set.of(carried.getId()), true);
+		if (worn == null)
+		{
+			return null;
+		}
+		Set<Integer> dreams = dreamsFor(ctx, monster);
+		Rung base = new Rung(carried, worn.dpsAdded, 0, true);
+		Comparator<Rung> order = (a, b) -> compareRungs(OptimizeMode.MAX_DPS, a, b);
+		List<Rung> above = new ArrayList<>();
+		List<Rung> below = new ArrayList<>();
+		for (GearItem item : ctx.dataset.getGearItems(GearSlot.WEAPON))
+		{
+			if (item.getId() == carried.getId() || SpecialAttack.match(item) == null
+				|| !item.isStandardGear() || ctx.dataset.isVariant(item.getId()))
+			{
+				continue;
+			}
+			SpecPick pick = bestSpec(ctx.dataset, request, best, style, monster, levels, null,
+				Set.of(item.getId()), true);
+			if (pick == null)
+			{
+				continue;
+			}
+			Rung rung = new Rung(item, pick.dpsAdded, 0,
+				ctx.effectiveOwned.owns(item.getId()) || dreams.contains(item.getId()));
+			int vsWorn = order.compare(rung, base);
+			if (vsWorn > 0)
+			{
+				above.add(rung);
+			}
+			else if (vsWorn < 0 && rung.owned)
+			{
+				below.add(rung);
+			}
+		}
+		Comparator<Rung> tieBreak = Comparator.comparing((Rung r) -> !r.owned)
+			.thenComparingInt(r -> r.item.getPriceOrZero());
+		above.sort(order.thenComparing(tieBreak));
+		below.sort(order.reversed().thenComparing(tieBreak));
+		List<Rung> up = closest(above, order);
+		List<Rung> down = closest(below, order);
+		int[] spots = Ladder.spots(up.size(), down.size());
+		up = up.subList(0, spots[0]);
+		down = down.subList(0, spots[1]);
+		return up.isEmpty() && down.isEmpty() ? null
+			: new Ladder(OptimizeMode.MAX_DPS, worn.dpsAdded, 0, up, down);
+	}
+
+	/** The first SPOTS distinct steps of an already-sorted list (distinct
+	 * under {@code order}: a step equal to the previous one folds into it). */
+	private static List<Rung> closest(List<Rung> sorted, Comparator<Rung> order)
+	{
+		List<Rung> kept = new ArrayList<>();
+		for (Rung rung : sorted)
+		{
+			if (kept.size() == Ladder.SPOTS)
+			{
+				break;
+			}
+			if (kept.isEmpty() || order.compare(rung, kept.get(kept.size() - 1)) != 0)
+			{
+				kept.add(rung);
+			}
+		}
+		return kept;
+	}
+
+	/** Positive when a's item has the better stats for the style: its rough
+	 * offensive score, then its total defence. */
+	static int compareStats(CombatStyle style, Rung a, Rung b)
+	{
+		double sa = a.item.roughScore(style);
+		double sb = b.item.roughScore(style);
+		if (Math.abs(sa - sb) > 1e-9)
+		{
+			return sa > sb ? 1 : -1;
+		}
+		return Integer.compare(defenceOf(a.item), defenceOf(b.item));
+	}
+
+	private static int defenceOf(GearItem item)
+	{
+		com.loadoutlab.data.StatBlock d = item.getDefensive();
+		return d.getStab() + d.getSlash() + d.getCrush() + d.getMagic() + d.getRanged();
+	}
+
+	/** Positive when a is better under the mode: Max DPS by DPS; Tanky by
+	 * least damage taken; Balanced by least DTPS/DPS - DPS breaks ties. */
+	static int compareRungs(OptimizeMode mode, Rung a, Rung b)
+	{
+		if (mode == OptimizeMode.TANKY && Math.abs(a.dtps - b.dtps) > 1e-9)
+		{
+			return a.dtps < b.dtps ? 1 : -1;
+		}
+		if (mode == OptimizeMode.BALANCED)
+		{
+			double ra = a.dps <= 0 ? Double.POSITIVE_INFINITY : a.dtps / a.dps;
+			double rb = b.dps <= 0 ? Double.POSITIVE_INFINITY : b.dtps / b.dps;
+			if (Math.abs(ra - rb) > 1e-12 && !(Double.isInfinite(ra) && Double.isInfinite(rb)))
+			{
+				return ra < rb ? 1 : -1;
+			}
+		}
+		return Math.abs(a.dps - b.dps) <= 1e-9 ? 0 : a.dps > b.dps ? 1 : -1;
+	}
+
+	/** One side's GWD protection: wear the free ones into best[0], return
+	 * what must be carried (empty when the monster is not on a GWD route).
+	 * Under a defensive mode "free" also means no more damage taken - a
+	 * DPS-neutral god item must not undo the set Tanky/Balanced picked. */
+	private List<GearItem> protect(ComputeContext ctx, OptimizationRequest request,
+		List<DpsResult> best, List<String> gods, MonsterStats monster, boolean defensive)
+	{
+		if (gods.isEmpty() || best.isEmpty())
+		{
+			return new ArrayList<>();
+		}
+		DpsResult worn = optimizer.wearGodItems(ctx.dataset, request, best.get(0), gods);
+		if (!defensive || incomingFor(monster, worn.getLoadout(), ctx).totalDps
+			<= incomingFor(monster, best.get(0).getLoadout(), ctx).totalDps + 1e-9)
+		{
+			best.set(0, worn);
+		}
+		return new ArrayList<>(optimizer.carriedGodItems(ctx.dataset, request, best.get(0).getLoadout(), gods));
+	}
+
+	/** Tanky: the least DTPS. Balanced: the least DTPS/DPS (damage taken per
+	 * damage dealt). Ties go to the higher DPS in both. */
+	static boolean better(OptimizeMode mode, double dps, double in, double bestDps, double bestIn)
+	{
+		if (mode == OptimizeMode.TANKY)
+		{
+			return in < bestIn - 1e-9 || (in < bestIn + 1e-9 && dps > bestDps + 1e-9);
+		}
+		if (dps <= 0)
+		{
+			return false;
+		}
+		double ratio = in / dps;
+		double best = bestDps <= 0 ? Double.POSITIVE_INFINITY : bestIn / bestDps;
+		return ratio < best - 1e-12 || (ratio < best + 1e-12 && dps > bestDps + 1e-9);
+	}
+
 	/** What the boss does back to you in this worn set, at REAL levels
 	 * (protection prayer up) - null loadout answers null. Twin owned/game
 	 * call sites in both compute paths share it. */
@@ -707,6 +1260,7 @@ public class OptimizerService
 		ctx.dreams = dreamItems == null ? Set.of() : RangedAmmo.withPairedAmmo(dreamItems);
 		ctx.protectOnly = protectOnlyItems == null ? Set.of() : protectOnlyItems;
 		ctx.lock = p.spellbookLock == null ? "" : p.spellbookLock;
+		ctx.kourendElite = p.kourendElite;
 		ctx.real = realLevels == null ? boostedLevels : realLevels;
 		ctx.boostedLevels = boostedLevels;
 		// A free world has no members prayers - F2P caps the book (audit A3.5).
@@ -902,7 +1456,7 @@ public class OptimizerService
 		return (int) Math.min(Integer.MAX_VALUE, total);
 	}
 
-	private static DpsResult calcRespecting(DpsCalculator calc,
+	private DpsResult calcRespecting(DpsCalculator calc,
 		OptimizationRequest req, Loadout loadout)
 	{
 		if (loadout != null)
@@ -940,6 +1494,23 @@ public class OptimizerService
 				{
 					return null;
 				}
+			}
+		}
+		// An auto-spell magic request scores its best autocast, the pick the
+		// single-mob optimizer makes (ISS-01M5K9KFJH7EZ0GMAKNGZ4K2JG).
+		// Autocasting weapons only (staves, wands): a melee weapon's hand-cast
+		// spell must not make magic look viable and reshape the kit.
+		if (loadout != null && req.getStyle() == CombatStyle.MAGIC && req.isAutoSpell()
+			&& loadout.getWeapon() != null && (loadout.getWeapon().getCategoryLower().contains("staff")
+				|| loadout.getWeapon().getCategoryLower().contains("wand")))
+		{
+			DpsResult cast = optimizer.bestSpellFor(data, req, loadout, calc);
+			// No legal autocast (a melee weapon on a magic card): keep the
+			// plain score the roster has always read - a null here reads as
+			// "cannot fight this way" and reshapes the whole kit.
+			if (cast != null)
+			{
+				return cast;
 			}
 		}
 		return calc.calculate(req, loadout);
@@ -2076,6 +2647,19 @@ public class OptimizerService
 					perMob.get(j).put(s, verified(new StyleResult(ownedList, gameBest, spec, gameSpec,
 						label, gameLabel, incoming, gameIncoming, bench, gameBench,
 						ownedKitBacked, gameKitBacked), ctx.dataset, own, game));
+				}
+			}
+		}
+		// The group's swaps: one strip per style, on every member's card.
+		for (Map.Entry<CombatStyle, Side> entry : ownedSides.entrySet())
+		{
+			Map<GearSlot, Ladder> group = groupLadderFor(ctx, entry.getValue(), mobs);
+			for (int j = 0; j < n; j++)
+			{
+				StyleResult sr = perMob.get(j).get(entry.getKey());
+				if (sr != null)
+				{
+					sr.ladder = group;
 				}
 			}
 		}
@@ -3488,9 +4072,10 @@ public class OptimizerService
 			mob, style, styleLevels, ctx.unlocks, ctx.requirements,
 			ctx.upgradeBudgetGp > 0 ? CandidateMode.OWNED_OR_BUDGET : CandidateMode.OWNED_ONLY,
 			ctx.effectiveOwned, 3, ctx.onSlayerTask, Math.max(0, ctx.upgradeBudgetGp)), ctx, style, mob)
-			.withDreamItems(dreamsFor(ctx, mob))
+			.withDreamItems(withForcedRequired(ctx, mob, style, dreamsFor(ctx, mob)))
 			.withProtectOnlyItems(ctx.protectOnly)
-			.withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob));
+			.withPinnedItems(tool != null ? tool.pins : pinsFor(ctx, style, mob))
+			.withWaivers(ctx.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of());
 		r = withPrayerPick(r, ctx, style, styleLevels, ctx.unlocks);
 		if (tool != null)
 		{
@@ -3502,6 +4087,46 @@ public class OptimizerService
 			r = r.withSpell(spell);
 		}
 		return r;
+	}
+
+	/** Required slayer gear you own none of (ISS-01M5JJ0Z4M988DR0M0ZGJHD139,
+	 * Andrew 2026-10-22: "we should pin/require those by default and show
+	 * them as necessary even when the player doesn't own those items"): the
+	 * first acceptable item you can equip rides as if owned for this
+	 * request, so the card wears it - marked not owned - instead of the
+	 * requirement quietly lapsing. Soft rules and a pinned slot never force. */
+	private Set<Integer> withForcedRequired(ComputeContext ctx, MonsterStats mob, CombatStyle style,
+		Set<Integer> dreams)
+	{
+		Map<GearSlot, Integer> pins = pinsFor(ctx, style, mob);
+		Set<Integer> out = null;
+		for (RequiredGear.Rule rule : RequiredGear.rulesFor(mob,
+			ctx.kourendElite ? Set.of(RequiredGear.KOUREND_ELITE) : Set.of()))
+		{
+			if (rule.soft || pins.containsKey(rule.slot))
+			{
+				continue;
+			}
+			Set<Integer> ids = rule.ids(ctx.dataset);
+			if (ids.stream().anyMatch(id -> ctx.effectiveOwned.owns(id) || dreams.contains(id)))
+			{
+				continue;
+			}
+			for (int id : ids)
+			{
+				GearItem item = ctx.dataset.getGear(id);
+				if (item != null && ctx.requirements.canEquip(item.getRequirements()))
+				{
+					if (out == null)
+					{
+						out = new HashSet<>(dreams);
+					}
+					out.add(id);
+					break;
+				}
+			}
+		}
+		return out == null ? dreams : out;
 	}
 
 	/** The game-ceiling request: every obtainable item you can actually
@@ -3528,7 +4153,12 @@ public class OptimizerService
 			// The ceiling drinks a super antifire and casts with sunfire runes:
 			// its shield slot is for dps (Andrew 2026-10-19: best aligns with
 			// the highest-dps option).
-			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true);
+			.withProtectOnlyItems(ctx.protectOnly).withAntifirePotion(true).withSunfireRunes(true)
+			// The true ceiling ignores your exclusions - they shape Yours and
+			// the swaps strip (Andrew 2026-10-22: "BiS ignores exclusions").
+			.withExcludedItems(Set.of())
+			// The ceiling is a finished account: no Karuulm boots needed.
+			.withWaivers(Set.of(RequiredGear.KOUREND_ELITE));
 		if (tool != null)
 		{
 			r = r.withPinnedItems(tool.gamePins).withMultiStack(ctx.multiStack);

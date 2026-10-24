@@ -582,6 +582,23 @@ public class ResultCards
 	private double cellThrallsDps;
 	private int cellSpecWeaponId;
 	private boolean cellSpecPinned;
+	/** The mob's pins (slot + id) for the cells' pin badge. */
+	private List<Map<String, Object>> cellPins = List.of();
+	/** Item ids this mob requires worn (slayer gear) - the "needed" note. */
+	private Set<Integer> cellRequired = new HashSet<>();
+	private static final Color PIN_BADGE = new Color(0xD2B464);
+
+	private boolean pinnedOn(String slot, int id)
+	{
+		for (Map<String, Object> pin : cellPins)
+		{
+			if (slot.equals(Model.str(pin, "slot")) && Model.id(pin, "id") == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/** The page's thrall dps and the lensed ship's dps, kept for the tab
 	 * strip: each tab folds its OWN card's thralls (a stood-down card
@@ -928,10 +945,16 @@ public class ResultCards
 			invRow.setBackground(CARD);
 			JLabel invLabel = Ui.small("Inventory:", null);
 			invRow.add(invLabel);
+			Map<String, Object> protection = Model.map(shownForInv, "protection");
 			for (Map<String, Object> carried : bench)
 			{
+				// GWD protection is worn on the way in, not swapped mid-fight.
+				Object gods = protection == null ? null
+					: protection.get(String.valueOf(Model.id(carried, "id")));
 				invRow.add(smallItemCell(Model.id(carried, "id"), 0,
-					Model.str(carried, "name") + " (carried swap)"));
+					Model.str(carried, "name") + (gods != null
+						? " (GWD protection: " + gods + " - wear it through the dungeon)"
+						: " (carried swap)")));
 			}
 			int pouchId = Model.id(mob, "castingPouch");
 			if (pouchId > 0 && (!runes.isEmpty() || !utilityRunes.isEmpty()))
@@ -1020,14 +1043,26 @@ public class ResultCards
 			new Color(0xBEBEBE), new Color(0x828282), new Color(0x969696),
 			"Bank-filter supplies for this mob", "remove-mob-filter", "add-mob-filter",
 			"Add a supply to this mob's bank filter"));
+		// The pins, visible at last (ISS-01M5HJ84ADBHWB2302G66WW2G4): a
+		// tried swap pins its item, and a hidden pin outlived its sim.
+		JPanel trioRow2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+		trioRow2.setBackground(CARD);
+		trioRow2.add(trioButton(mob, "^", "mobPins",
+			PIN_BADGE, new Color(0x8C8264), new Color(0xA89458),
+			"Pinned for this mob", "remove-mob-pin", "pin-for-mob",
+			"Pin an item for this mob"));
 		JButton degrades = degradesButton(mob, Model.map(node, bis ? "bis" : "yours"));
 		if (degrades != null)
 		{
-			trioRow.add(degrades);
+			trioRow2.add(degrades);
 		}
 		card.add(Box.createVerticalStrut(4));
-		// Centred, not left() - field ask 2026-08-20.
+		// Centred, not left() - field ask 2026-08-20. Two rows (Andrew
+		// 2026-10-22: "so those 5 options aren't all on the same line"):
+		// sims, exclusions, filters; then pins and degrade.
 		card.add(centre(trioRow));
+		card.add(Box.createVerticalStrut(2));
+		card.add(centre(trioRow2));
 		card.add(Box.createVerticalStrut(4));
 		JToggleButton showBank = new JToggleButton("Show in bank");
 		showBank.setToolTipText("Highlight this set (and its inventory) in your open bank");
@@ -1374,6 +1409,10 @@ public class ResultCards
 					Map<String, Object> args = new HashMap<>();
 					args.put("itemId", id);
 					args.put("label", itemName);
+					if (Model.str(item, "slot") != null)
+					{
+						args.put("slot", Model.str(item, "slot"));
+					}
 					if (scope != null)
 					{
 						args.put("scope", scope);
@@ -1785,6 +1824,407 @@ public class ResultCards
 			tip + ". Not counted: " + String.join(", ", missing)};
 	}
 
+	/**
+	 * The slot ladder as a strip under the gear grid (ISS-01M5GHXXEZKX8S68M5X9DHY6ME,
+	 * Andrew 2026-10-21: "Go with concept A"): left to right, the owned steps
+	 * down (farthest first), the worn item, the steps up (closest first). Each
+	 * column is a bar sized by its gain under the active mode, the item's icon
+	 * and its change. A click on a step sims it for this monster and wears it
+	 * (ISS-01M5GNMHHCD8M56JD4GAZBFV7Y: "Sim + pin for this mob"); its
+	 * right-click menu adds sim everywhere and Not Enough Runes.
+	 */
+	JPanel ladderStrip(Map<String, Object> ladder, Map<String, Object> worn, String slot, boolean nerAvailable)
+	{
+		List<Map<String, Object>> down = Model.list(ladder, "down");
+		List<Map<String, Object>> up = Model.list(ladder, "up");
+		double maxGain = 1e-9;
+		for (Map<String, Object> rung : down)
+		{
+			maxGain = Math.max(maxGain, Math.abs(Model.num(rung, "gain")));
+		}
+		for (Map<String, Object> rung : up)
+		{
+			maxGain = Math.max(maxGain, Math.abs(Model.num(rung, "gain")));
+		}
+		boolean group = Model.flag(ladder, "group");
+		// No gaps between columns, so the bars' baselines join into one line.
+		JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		row.setOpaque(false);
+		for (int i = down.size() - 1; i >= 0; i--)
+		{
+			row.add(ladderColumn(down.get(i), slot, maxGain, LADDER_DOWN, nerAvailable, group));
+		}
+		row.add(ladderColumn(worn, slot, maxGain, LADDER_WORN, nerAvailable, group));
+		for (Map<String, Object> rung : up)
+		{
+			row.add(ladderColumn(rung, slot, maxGain, LADDER_UP, nerAvailable, group));
+		}
+
+		JPanel strip = new RoundPanel(LADDER_INSET, 8);
+		strip.setLayout(new BoxLayout(strip, BoxLayout.Y_AXIS));
+		strip.setBorder(BorderFactory.createEmptyBorder(4, 2, 4, 2));
+		JLabel title = Ui.label(cap(slot) + " swaps" + (group ? " (group)" : ""), new Color(0xC8C8C8));
+		title.setToolTipText(group
+			? "Each step swapped into the group's shared set, scored by the group's HP-weighted DPS"
+			: "Each step swapped in alone. Click a step you do not own to sim it for this monster");
+		title.setFont(FontManager.getRunescapeSmallFont());
+		JPanel legend = new JPanel(new BorderLayout());
+		legend.setOpaque(false);
+		legend.add(legendLabel("your gear", LADDER_DOWN), BorderLayout.WEST);
+		legend.add(legendLabel("upgrades", LADDER_UP), BorderLayout.EAST);
+		legend.setMaximumSize(new Dimension(row.getPreferredSize().width, legend.getPreferredSize().height));
+		for (JComponent part : new JComponent[]{title, row, legend})
+		{
+			part.setAlignmentX(Component.CENTER_ALIGNMENT);
+			strip.add(part);
+		}
+		return strip;
+	}
+
+	private static JLabel legendLabel(String text, Color color)
+	{
+		JLabel label = Ui.label(text, color);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		return label;
+	}
+
+	/** The card-wide row that centres the ladder strip, under a divider. */
+	static JPanel centered(JComponent inner)
+	{
+		// Centre the strip in whatever width the card has - clipped evenly on
+		// both sides if it ever overflows - and never ask the card for the
+		// strip's width (Andrew 2026-10-22: a FlowLayout clipped it on one
+		// side; GridBag pushed it right and cut it when the card was narrow).
+		JPanel row = new JPanel(new LayoutManager()
+		{
+			public void addLayoutComponent(String name, Component comp)
+			{
+			}
+
+			public void removeLayoutComponent(Component comp)
+			{
+			}
+
+			public Dimension preferredLayoutSize(Container parent)
+			{
+				Insets in = parent.getInsets();
+				int height = parent.getComponentCount() == 0 ? 0 : parent.getComponent(0).getPreferredSize().height;
+				return new Dimension(1, height + in.top + in.bottom);
+			}
+
+			public Dimension minimumLayoutSize(Container parent)
+			{
+				return preferredLayoutSize(parent);
+			}
+
+			public void layoutContainer(Container parent)
+			{
+				if (parent.getComponentCount() == 0)
+				{
+					return;
+				}
+				Component child = parent.getComponent(0);
+				Dimension size = child.getPreferredSize();
+				Insets in = parent.getInsets();
+				int left = in.left;
+				int right = parent.getWidth() - in.right;
+				// A card wider than the side panel's viewport would centre the
+				// strip off screen to the right (Andrew 2026-10-22: "still seeing
+				// the ladder view off-center"): centre on the visible span.
+				JViewport viewport = (JViewport) SwingUtilities.getAncestorOfClass(JViewport.class, parent);
+				if (viewport != null && viewport.getView() != null && viewport.getExtentSize().width > 0)
+				{
+					Point at = SwingUtilities.convertPoint(parent, 0, 0, viewport.getView());
+					int viewLeft = viewport.getViewPosition().x;
+					left = Math.max(left, viewLeft - at.x);
+					right = Math.min(right, viewLeft + viewport.getExtentSize().width - at.x);
+				}
+				child.setBounds(left + (right - left - size.width) / 2, in.top, size.width, size.height);
+			}
+		});
+		row.setBackground(CARD);
+		row.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(1, 0, 0, 0, ColorScheme.MEDIUM_GRAY_COLOR),
+			BorderFactory.createEmptyBorder(5, 0, 2, 0)));
+		row.add(inner);
+		return row;
+	}
+
+	private static final Color LADDER_INSET = new Color(0x232323);
+	private static final Color LADDER_WORN_BG = new Color(0x343434);
+	private static final Color LADDER_BASELINE = new Color(0x505050);
+	private static final Color LADDER_DOWN = new Color(0x8A8A8A);
+	private static final Color LADDER_WORN = new Color(0xD2D2D2);
+	private static final Color LADDER_UP = new Color(0x78C878);
+	private static final Color LADDER_TAKEN = new Color(0xB4A078);
+	private static final int LADDER_BAR_MID = 24;
+	/** Five columns + padding stay under 180 px: the card body is about
+	 * 190 px inside RuneLite's 225 px side panel. */
+	private static final int LADDER_COLUMN = 32;
+
+	/** A panel filled with a rounded rectangle (the strip's inset, the worn column). */
+	private static final class RoundPanel extends JPanel
+	{
+		private final Color fill;
+		private final int arc;
+
+		RoundPanel(Color fill, int arc)
+		{
+			this.fill = fill;
+			this.arc = arc;
+			setOpaque(false);
+		}
+
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(fill);
+			g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+			g2.dispose();
+			super.paintComponent(g);
+		}
+	}
+
+	/** A ladder bar: a rounded top, standing on the strip's baseline. */
+	private static final class LadderBar extends JComponent
+	{
+		private final Color color;
+
+		LadderBar(Color color, int height)
+		{
+			this.color = color;
+			setPreferredSize(new Dimension(8, height));
+		}
+
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			Graphics2D g2 = (Graphics2D) g.create();
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g2.setColor(color);
+			// Overdraw past the bottom so only the top corners round.
+			g2.fillRoundRect(0, 0, getWidth(), getHeight() + 6, 6, 6);
+			g2.dispose();
+		}
+	}
+
+	/** One strip column: a bar on the baseline, the icon, the change. The
+	 * worn item's column sits on a lighter rounded ground and does nothing on
+	 * a click; any other sims-and-wears on a left click. */
+	private JPanel ladderColumn(Map<String, Object> rung, String slot, double maxGain, Color color,
+		boolean nerAvailable, boolean group)
+	{
+		boolean worn = color == LADDER_WORN;
+		int id = Model.id(rung, "id");
+		int height = worn ? LADDER_BAR_MID
+			: (int) Math.max(4, Math.min(2 * LADDER_BAR_MID - 4,
+				Math.round(LADDER_BAR_MID + (LADDER_BAR_MID - 6) * Model.num(rung, "gain") / maxGain)));
+		LadderBar bar = new LadderBar(color, height);
+		bar.setName("bar:" + id);
+		JPanel bars = new JPanel(new BorderLayout());
+		bars.setOpaque(false);
+		JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		bottom.setOpaque(false);
+		bottom.add(bar);
+		bars.add(bottom, BorderLayout.SOUTH);
+		bars.setPreferredSize(new Dimension(LADDER_COLUMN, 2 * LADDER_BAR_MID + 1));
+		bars.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LADDER_BASELINE));
+
+		JLabel cell = new JLabel();
+		cell.setName("rung:" + id);
+		cell.setPreferredSize(new Dimension(32, 32));
+		cell.setHorizontalAlignment(SwingConstants.CENTER);
+		cell.setOpaque(true);
+		cell.setBackground(CELL_BG);
+		itemManager.getImage(id).addTo(cell);
+		boolean owned = worn || Model.flag(rung, "owned");
+		String name = Model.str(rung, "name");
+		String change = worn ? "you" : Model.str(rung, "delta");
+		String price = owned ? "" : Gp.formatShort(Model.id(rung, "price"));
+		String with = Model.str(rung, "with");
+		String second = Model.str(rung, worn ? "base2" : "delta2");
+		boolean same = !worn && Model.flag(rung, "same");
+		String tip = name + (with == null ? "" : " with " + with)
+			+ (worn ? " - worn" : " " + change + (second == null ? "" : ", " + second))
+			+ (same ? " - same result here, better stats" : "")
+			+ (price.isEmpty() ? "" : " - " + price + " gp");
+		// A sim lets the optimizer re-fit the whole set around the item, so
+		// the card can land above the step's own number, never below.
+		String tryNote = " (the rest of the set re-fits around it)";
+		cell.setBorder(owned ? BorderFactory.createLineBorder(color)
+			: BorderFactory.createDashedBorder(color, 1f, 3f, 2f, false));
+		if (worn)
+		{
+			cell.setToolTipText(tip);
+		}
+		else
+		{
+			Map<String, Object> tryArgs = Map.of("slot", slot, "itemId", id, "label", name);
+			Map<String, Object> simArgs = Map.of("itemId", id, "label", name);
+			JPopupMenu menu = new JPopupMenu();
+			if (owned && group)
+			{
+				// A group strip pins nothing: one member's pin would force
+				// the item on a mob that carries another style's swap.
+				cell.setToolTipText(tip + " - yours");
+			}
+			else if (owned)
+			{
+				// Yours already: a sim changes nothing, so no click - an
+				// explicit pin stays in the menu for forcing it here.
+				boolean spec = "spec".equals(slot);
+				Ui.item(menu, spec ? "Pin as spec for this mob" : "Pin for this mob",
+					"Force " + name + " into the " + slot + " slot for this monster (unpin from the ^ list)",
+					() -> commands.send("ladder-try", tryArgs));
+				cell.setToolTipText(tip + " - yours. Right-click to pin it here");
+			}
+			else
+			{
+				// A click sims it for this mob, nothing more (Andrew
+				// 2026-10-22: "we are using "pin" for this mob instead of sim
+				// for this mob"): a step up is better swapped in alone, so the
+				// optimizer wears it - and removing the sim takes it off again.
+				cell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				cell.addMouseListener(new MouseAdapter()
+				{
+					@Override
+					public void mouseClicked(MouseEvent e)
+					{
+						if (SwingUtilities.isLeftMouseButton(e))
+						{
+							commands.send(group ? "sim-for-group" : "sim-for-mob", simArgs);
+						}
+					}
+				});
+				Ui.item(menu, group ? "Sim for this group" : "Sim for this mob",
+					"Pretend you own " + name + (group ? " for every monster in this group" : " for this monster"),
+					() -> commands.send(group ? "sim-for-group" : "sim-for-mob", simArgs));
+				Ui.item(menu, "Sim everywhere", "Pretend you own " + name + " for every monster",
+					() -> commands.send("toggle-sim", Map.of("itemId", id, "label", name)));
+				if (nerAvailable)
+				{
+					Ui.item(menu, "How to get it (Not Enough Runes)", "Open " + name + " in Not Enough Runes",
+						() -> commands.send("ner-open", Map.of("itemId", id)));
+					cell.setToolTipText(tip + " - not owned, click to sim it for this " + (group ? "group" : "mob")
+						+ tryNote + ". Right-click for how to get it");
+				}
+				else
+				{
+					cell.setToolTipText(tip + " - not owned, click to sim it for this " + (group ? "group" : "mob")
+						+ tryNote + ". Install Not Enough Runes to see how to get it");
+				}
+			}
+			// Hide a step you never want suggested (Andrew 2026-10-22:
+			// "stop showing this as a swap option (this mob/all mobs)") - an
+			// exclusion, listed and undone from the - list like any other, so
+			// the optimizer leaves the item out too. A group strip hides
+			// everywhere only: "this mob" would be one member of many.
+			if (menu.getComponentCount() > 0)
+			{
+				menu.addSeparator();
+			}
+			if (!group)
+			{
+				Ui.item(menu, "Hide for this mob",
+					"Exclude " + name + " for this monster - it stops being suggested (undo from the - list)",
+					() -> commands.send("exclude-for-mob", Map.of("itemId", id, "scope", "ALL", "label", name)));
+			}
+			Ui.item(menu, "Hide for all mobs",
+				"Exclude " + name + " everywhere - it stops being suggested (undo from the exclusions)",
+				() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
+			cell.setComponentPopupMenu(menu);
+		}
+
+		JLabel label = Ui.label(worn ? shortDelta(Model.str(rung, "base")) : same ? "=" : shortDelta(change), color);
+		label.setName("value:" + id);
+		label.setFont(FontManager.getRunescapeSmallFont());
+		label.setHorizontalAlignment(SwingConstants.CENTER);
+		// Balanced's second number: the damage-taken change (worn: its own).
+		JLabel label2 = second == null ? null : Ui.label(shortDelta(second), LADDER_TAKEN);
+		if (label2 != null)
+		{
+			label2.setName("value2:" + id);
+			label2.setFont(FontManager.getRunescapeSmallFont());
+			label2.setHorizontalAlignment(SwingConstants.CENTER);
+		}
+
+		JPanel column = worn ? new RoundPanel(LADDER_WORN_BG, 8) : new JPanel();
+		column.setOpaque(false);
+		if (worn)
+		{
+			column.setName("worn-mark");
+		}
+		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
+		column.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
+		for (JComponent part : label2 == null ? new JComponent[]{bars, cell, label}
+			: new JComponent[]{bars, cell, label, label2})
+		{
+			// BoxLayout stretches to the maximum size - pin the cell and the
+			// bar column so they keep their square / full height.
+			if (part == bars || part == cell)
+			{
+				part.setMinimumSize(part.getPreferredSize());
+				part.setMaximumSize(part.getPreferredSize());
+			}
+			part.setAlignmentX(Component.CENTER_ALIGNMENT);
+			column.add(part);
+		}
+		column.add(Box.createVerticalStrut(2));
+		return column;
+	}
+
+	/** The strip's narrow label: the number only ("+0.21", "4.20"). */
+	private static String shortDelta(String delta)
+	{
+		if (delta == null)
+		{
+			return "";
+		}
+		java.util.regex.Matcher m = java.util.regex.Pattern.compile("[+-]?[0-9.]+%?").matcher(delta);
+		return m.find() ? m.group() : delta;
+	}
+
+	/** The slot whose ladder strip is open ("" = none) - page view state. */
+	private String ladderSlotOpen()
+	{
+		for (Map<String, Object> entry : Model.list(pageWide, "entries"))
+		{
+			String open = Model.str(Model.map(entry, "params"), "ladderSlot");
+			return open == null ? "" : open;
+		}
+		return "";
+	}
+
+	/** Whether Not Enough Runes is enabled (the page params carry it). */
+	private boolean nerAvailable()
+	{
+		for (Map<String, Object> entry : Model.list(pageWide, "entries"))
+		{
+			return Model.flag(Model.map(entry, "params"), "nerAvailable");
+		}
+		return false;
+	}
+
+	/** The defensive mode's trade in words (the line's tooltip): the DPS
+	 * given up and the damage taken cut, or why it kept Max DPS. */
+	static String modeLine(Map<String, Object> trade)
+	{
+		if (trade == null)
+		{
+			return null;
+		}
+		String mode = "TANKY".equals(Model.str(trade, "mode")) ? "Tanky" : "Balanced";
+		String reason = Model.str(trade, "reason");
+		if (reason != null)
+		{
+			return mode + ": kept Max DPS (" + reason + ")";
+		}
+		return mode + ": -" + Model.id(trade, "dpsLossPct") + "% DPS, -"
+			+ Model.id(trade, "dmgCutPct") + "% damage taken";
+	}
+
 	private JLabel statIconLine(String text, String tooltip, Color color, int spriteId)
 	{
 		JLabel line = statLine(text, tooltip, color);
@@ -2174,6 +2614,19 @@ public class ResultCards
 		cellSetDps = Model.num(card, "dps");
 		cellThrallsDps = thrallsDps;
 		cellSpecWeaponId = specWeaponForCell == null ? 0 : Model.id(specWeaponForCell, "id");
+		cellPins = Model.list(mob, "mobPins");
+		cellRequired = new HashSet<>();
+		Object requiredGear = mob == null ? null : mob.get("requiredGear");
+		if (requiredGear instanceof List)
+		{
+			for (Object id : (List<?>) requiredGear)
+			{
+				if (id instanceof Number)
+				{
+					cellRequired.add(((Number) id).intValue());
+				}
+			}
+		}
 		cellSpecPinned = cellSpecWeaponId != 0
 			&& Model.id(mob, "pinnedSpec") == cellSpecWeaponId;
 		center.add(gearGrid(card, bis));
@@ -2237,6 +2690,16 @@ public class ResultCards
 			int protectSprite = "none".equals(Model.str(incoming, "coverage"))
 				? -1 : (int) Model.num(incoming, "protectSprite");
 			statColumn.add(statIconLine(line[0], line[1], statText, protectSprite));
+			// The defensive mode's DPS cost, terse for the ~12-character
+			// column; the full trade rides the tooltip.
+			Map<String, Object> trade = Model.map(card, "modeTrade");
+			if (trade != null)
+			{
+				String mode = "TANKY".equals(Model.str(trade, "mode")) ? "Tanky" : "Bal.";
+				statColumn.add(statIconLine(Model.str(trade, "reason") != null ? mode + " =max"
+						: mode + " -" + Model.id(trade, "dpsLossPct") + "%",
+					modeLine(trade), new Color(0x9FD39F), -1));
+			}
 		}
 		Map<String, Object> statsNode = Model.map(card, "stats");
 		if (statsNode != null)
@@ -2388,6 +2851,21 @@ public class ResultCards
 		}
 		center.add(statColumn);
 		panel.add(left(center));
+		// The open slot's ladder strip sits right under the grid (Yours only).
+		String openSlot = bis ? "" : ladderSlotOpen();
+		Map<String, Object> openGear = Model.map(card, "gear");
+		// The spec cell's strip hangs off the card's spec node, not the gear.
+		Map<String, Object> openNode = openSlot.isEmpty() ? null
+			: "spec".equals(openSlot) ? Model.map(Model.map(card, "spec"), "weapon")
+			: openGear == null ? null : Model.map(openGear, openSlot);
+		Map<String, Object> openLadder = openNode == null ? null : Model.map(openNode, "ladder");
+		if (openLadder != null)
+		{
+			Map<String, Object> wornColumn = new LinkedHashMap<>(openNode);
+			wornColumn.put("base", Model.str(openLadder, "base"));
+			wornColumn.put("base2", Model.str(openLadder, "base2"));
+			panel.add(centered(ladderStrip(openLadder, wornColumn, openSlot, nerAvailable())));
+		}
 		return panel;
 	}
 
@@ -2511,7 +2989,9 @@ public class ResultCards
 		else
 		{
 			tipBody = name + " (" + slot + ")"
-				+ (Model.flag(item, "assumed") ? " - assumed (not owned)"
+				+ (!bis && Model.flag(item, "assumed") && cellRequired.contains(id)
+					? " - <font color='#DC7878'>needed for this monster - not owned</font>"
+				: Model.flag(item, "assumed") ? " - assumed (not owned)"
 				: Model.flag(item, "bisMatch") ? " - best available" : "") + priceNote;
 		}
 		cell.setToolTipText("<html>" + tipBody + "</html>");
@@ -2524,6 +3004,8 @@ public class ResultCards
 			Ui.item(specMenu, cellSpecPinned ? "Unpin spec" : "Pin as spec for this mob",
 				() -> commands.send("set-pinned-spec",
 					Map.of("itemId", pinnedNow ? 0 : weaponId)));
+			Ui.item(specMenu, "Exclude " + name,
+				() -> commands.send("toggle-exclusion", Map.of("itemId", id, "label", name)));
 			cell.setComponentPopupMenu(specMenu);
 		}
 		cell.setPreferredSize(new Dimension(36, 36));
@@ -2534,10 +3016,12 @@ public class ResultCards
 		itemManager.getImage(id).addTo(cell);
 		Color dot = sourceColor(Model.str(item, "source"));
 		String fate = Model.str(item, "fate");
-		if (dot != null || fate != null)
+		boolean pinnedHere = !bis && !"spec".equals(slot) && pinnedOn(slot, id);
+		if (dot != null || fate != null || pinnedHere)
 		{
 			String where = Model.str(item, "source");
 			cell.setToolTipText("<html>" + tipBody
+				+ (pinnedHere ? "<br><font color='#D2B464'>pinned for this mob - right-click to unpin</font>" : "")
 				+ (where == null ? "" : "<br>stored in " + where)
 				+ ("kept".equals(fate) ? "<br>protected on death"
 					: "lost".equals(fate)
@@ -2566,9 +3050,43 @@ public class ResultCards
 							? new Color(0x78C878) : new Color(0xDC6E6E));
 						g2.fillRect(3, 3, 4, 4);
 					}
+					if (pinnedHere)
+					{
+						// The pin badge, top-right: a gold head and its point.
+						g2.setColor(PIN_BADGE);
+						g2.fillOval(c.getWidth() - 9, 3, 6, 6);
+						g2.drawLine(c.getWidth() - 7, 8, c.getWidth() - 9, 11);
+					}
 					g2.dispose();
 				}
 			});
+		}
+		if (!bis && Model.map(item, "ladder") != null)
+		{
+			// A left click opens (or closes) this slot's ladder strip under
+			// the grid; right click keeps its menu.
+			boolean open = slot.equals(ladderSlotOpen());
+			cell.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			cell.setToolTipText(cell.getToolTipText().replace("</html>",
+				"<br><font color='#969696'>click: " + (open ? "hide" : "show") + " the swaps</font></html>"));
+			cell.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					if (SwingUtilities.isLeftMouseButton(e))
+					{
+						commands.send("set-param", Map.of("param", "ladderSlot", "value", open ? "" : slot));
+					}
+				}
+			});
+		}
+		if ("spec".equals(slot) && cell.getComponentPopupMenu() != null)
+		{
+			// The spec cell keeps its own menu: the slot menu below pins
+			// and unpins GEAR slots, and "spec" is none (it replaced the
+			// pin-as-spec menu before 2026-10-22).
+			return cell;
 		}
 		JPopupMenu menu = new JPopupMenu();
 		Ui.item(menu, "Exclude " + name,

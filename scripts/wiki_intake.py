@@ -33,10 +33,12 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES_DIR = os.path.join(REPO, "src/main/resources/com/loadoutlab/data")
 UA = {"User-Agent": "loadout-lab wiki intake (github.com/AKAddons; RuneLite plugin)"}
 
-# The Fractured Archive (released 2026-10-20). (page, {version: gameval npc id}).
-# A version of "" means the page's single infobox.
+# The Fractured Archive (released 2026-10-20). (page, {version: gameval npc id
+# or a list of ids sharing the stats}). A version of "" means the page's
+# single infobox. Re-run 2026-10-22 (ISS-01M5JBYYKPE7192Z24NTR432M8): the wiki's fixes since
+# launch, the Guardian's grounded form, the Dagon'hai trio and the adds.
 MONSTERS = [
-    ("Archive Guardian", {"": 16659}),          # NpcID.TFA_GUARDIAN
+    ("Archive Guardian", {"Flying": 16659, "Grounded": 16660}),  # NpcID.TFA_GUARDIAN / _UNSHIELDED (the wiki gives both 16659)
     ("Ezekiel", {"": 16652}),                   # NpcID.TFA_EZEKIEL
     ("Bork", {"": 16640}),                      # NpcID.TFA_BORK
     ("The Smorks", {"": 16641}),                # NpcID.TFA_SMORK ("Smorks" lost its infobox, 2026-10-20)
@@ -44,7 +46,18 @@ MONSTERS = [
     ("Moia", {"": 16667}),                      # NpcID.TFA_MOIA
     ("Xarth", {"": 16684}),                     # NpcID.TFA_XARTH
     ("Ocellus", {"Phase 1": 16674, "Phase 2": 16675, "Phase 3": 16677}),  # NpcID.TFA_OCELLUS_P1/P2/P3
+    ("Dagon'hai Elder", {"": [16643, 16644]}),  # NpcID.TFA_DAGONHAI_LEADER / _UNSHIELDED
+    ("Dagon'hai Monk", {"Staff": [16645, 16646], "Book": [16647, 16648]}),  # NpcID.TFA_DAGONHAI_MINION_1/2 (+ _UNSHIELDED)
+    ("Jelly (Dreadnoth)", {"": 16666}),         # NpcID.TFA_JELLY_MINION
+    ("Undead binder", {"": 16670}),             # NpcID.TFA_MOIA_MINION
+    ("Void Rift", {"": 16678}),                 # NpcID.TFA_OCELLUS_P3_BOMBPORTAL_BASIC
+    ("Void Augmenter", {"": 16680}),            # NpcID.TFA_OCELLUS_P3_BOMBPORTAL_BUFF
+    ("Corpse (Xarth)", {"Normal": 16687, "Doused": 16688}),  # NpcID.TFA_XARTH_CORPSE / _DOUSED
 ]
+
+# Rows the wiki fixed that weirdgloop's data (refresh_data.py) still lags:
+# Nex's crush defence went 60 -> 35 on 2026-10-20 (Jagex; wiki Nex, Changes).
+PATCHES = {11278: {"defensive": {"crush": 35}}}
 
 # (page, slot, category, isTwoHanded, {version: (gameval item id, standard)}, requirements)
 GEAR = [
@@ -166,9 +179,10 @@ def monster_rows(page, ids):
         if version not in ids:
             print("  skip %s [%s]: no gameval id in the table" % (name, version))
             continue
+        gids = ids[version] if isinstance(ids[version], list) else [ids[version]]
         wiki_id = num(versioned(fields, "id", n), 0)
-        if wiki_id and wiki_id != ids[version]:
-            print("  WARNING %s [%s]: wiki id %d != gameval %d - gameval wins" % (name, version, wiki_id, ids[version]))
+        if wiki_id and wiki_id not in gids:
+            print("  WARNING %s [%s]: wiki id %d != gameval %d - gameval wins" % (name, version, wiki_id, gids[0]))
         f = lambda key, d=0: num(versioned(fields, key, n), d)
         styles = [s.strip().capitalize() for s in re.sub(r"\[\[([^\]|]*\|)?([^\]]*)\]\]", r"\2",
                   versioned(fields, "attack style", n) or "").replace(" and ", ",").split(",") if s.strip()]
@@ -177,8 +191,8 @@ def monster_rows(page, ids):
         # phases 1 and 3 and leaves phase 2 blank (2026-10-20).
         own = fields.get("attributes%d" % n) if n else None
         attrs = [a.strip().lower() for a in (own if own is not None else fields.get("attributes", "")).split(",") if a.strip()]
-        rows.append({
-            "id": ids[version], "name": name, "version": version,
+        row = {
+            "id": gids[0], "name": name, "version": version,
             "image": name + ".png", "level": f("combat"), "speed": f("attack speed"),
             "style": styles, "size": f("size", 1),
             "max_hit": versioned(fields, "max hit", n) or "",
@@ -193,7 +207,9 @@ def monster_rows(page, ids):
             "is_slayer_monster": False,
             "weakness": {"element": weakness_type, "severity": f("elementalweaknesspercent")} if weakness_type else None,
             "source": "wiki_intake",
-        })
+        }
+        for gid in gids:
+            rows.append(dict(row, id=gid))
     return rows
 
 
@@ -284,6 +300,9 @@ def main():
     if args.dry_run:
         return 0
     m, rm = merge(read_gz("monsters.json.gz"), monsters)
+    for row in m:
+        for key, fix in PATCHES.get(row.get("id"), {}).items():
+            row[key].update(fix)
     g, rg = merge(read_gz("gear_prices.json.gz"), gear)
     q, rq = merge(read_gz("equipment_requirements.json.gz"), reqs)
     write_gz("monsters.json.gz", m)

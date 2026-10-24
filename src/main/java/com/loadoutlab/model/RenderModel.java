@@ -116,6 +116,7 @@ public final class RenderModel
 		node.put("multiAble", MultiMobs.isMultiAble(mob));
 		node.put("multiLocations", MultiMobs.locations(mob));
 		node.put("wildernessExclusive", WildernessMonsters.isExclusive(mob));
+		node.put("gwd", GwdProtection.isGwd(mob));
 		return node;
 	}
 
@@ -194,6 +195,87 @@ public final class RenderModel
 		}
 	}
 
+	/** A slot ladder for the card (ISS-01M5GE9EJSX6YWCKMSYEWKZ132): each rung
+	 * with its change in the mode's own terms and a signed gain (positive =
+	 * better under the mode) that sizes the strip's bars; base = the worn
+	 * item's own value in the same terms. */
+	public static Map<String, Object> ladderNode(OptimizerService.Ladder ladder)
+	{
+		Map<String, Object> node = new LinkedHashMap<>();
+		node.put("base", ladder.mode == OptimizerService.OptimizeMode.TANKY
+			? String.format("%.2f taken/s", ladder.baseDtps)
+			: String.format("%.2f DPS", ladder.baseDps));
+		// Balanced weighs both, so it shows both (Andrew 2026-10-22: "show
+		// in the ladder view both the dps gain and the dtps change").
+		if (ladder.mode == OptimizerService.OptimizeMode.BALANCED)
+		{
+			node.put("base2", String.format("%.2f taken/s", ladder.baseDtps));
+		}
+		node.put("group", ladder.group);
+		node.put("up", rungs(ladder, ladder.up));
+		node.put("down", rungs(ladder, ladder.down));
+		return node;
+	}
+
+	/** The rung's improvement over the worn item under the ladder's mode. */
+	static double ladderGain(OptimizerService.Ladder ladder, OptimizerService.Rung rung)
+	{
+		switch (ladder.mode)
+		{
+			case TANKY:
+				return ladder.baseDtps - rung.dtps;
+			case BALANCED:
+				double base = ladder.baseDps <= 0 ? 0 : ladder.baseDtps / ladder.baseDps;
+				double ratio = rung.dps <= 0 ? base : rung.dtps / rung.dps;
+				return base - ratio;
+			default:
+				return rung.dps - ladder.baseDps;
+		}
+	}
+
+	private static List<Object> rungs(OptimizerService.Ladder ladder, List<OptimizerService.Rung> rungs)
+	{
+		List<Object> out = new ArrayList<>();
+		for (OptimizerService.Rung rung : rungs)
+		{
+			Map<String, Object> node = new LinkedHashMap<>();
+			node.put("id", rung.item.getId());
+			node.put("name", rung.item.getName());
+			node.put("owned", rung.owned);
+			node.put("price", rung.item.getPriceOrZero());
+			node.put("delta", ladderDelta(ladder, rung));
+			if (ladder.mode == OptimizerService.OptimizeMode.BALANCED)
+			{
+				node.put("delta2", String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
+			}
+			node.put("gain", ladderGain(ladder, rung));
+			// Same result as the worn item - ranked by its better stats.
+			node.put("same", Math.abs(rung.dps - ladder.baseDps) <= 1e-9
+				&& Math.abs(rung.dtps - ladder.baseDtps) <= 1e-9);
+			if (rung.with != null || rung.offhand != null)
+			{
+				node.put("with", rung.with == null ? rung.offhand.getName()
+					: rung.offhand == null ? rung.with.getName()
+					: rung.offhand.getName() + " and " + rung.with.getName());
+			}
+			out.add(node);
+		}
+		return out;
+	}
+
+	/** "+0.12 DPS" (Max DPS and Balanced, whose damage taken rides as
+	 * delta2), "-0.30 taken/s" (Tanky). */
+	static String ladderDelta(OptimizerService.Ladder ladder, OptimizerService.Rung rung)
+	{
+		switch (ladder.mode)
+		{
+			case TANKY:
+				return String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps);
+			default:
+				return String.format("%+.2f DPS", rung.dps - ladder.baseDps);
+		}
+	}
+
 	/** One side's card: the shown set and everything rendered around it. */
 	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed)
@@ -266,6 +348,11 @@ public final class RenderModel
 						node.put("source", where);
 					}
 				}
+				OptimizerService.Ladder ladder = bis ? null : result.ladder.get(slot);
+				if (ladder != null)
+				{
+					node.put("ladder", ladderNode(ladder));
+				}
 				gear.put(slot.name().toLowerCase(), node);
 			}
 		}
@@ -273,7 +360,27 @@ public final class RenderModel
 		card.put("quiverAmmo", item(shown.getLoadout().getQuiverAmmo()));
 		card.put("spec", spec(result, bis));
 		card.put("incoming", incoming(bis ? result.gameIncoming : result.incoming));
+		// The defensive mode's trade belongs to the Yours side only (BiS
+		// stays the pure-DPS ceiling).
+		OptimizerService.ModeTrade trade = bis ? null : result.modeTrade;
+		if (trade != null)
+		{
+			Map<String, Object> node = new LinkedHashMap<>();
+			node.put("mode", trade.mode.name());
+			node.put("dpsLossPct", trade.dpsLossPct);
+			node.put("dmgCutPct", trade.dmgCutPct);
+			node.put("reason", trade.reason);
+			card.put("modeTrade", node);
+		}
 		card.put("bench", items(bis ? result.gameBench : result.bench));
+		// Carried GWD protection: which gods each bench item soothes, for
+		// the Inventory row's "wear through the dungeon" tooltip.
+		Map<String, Object> protection = new LinkedHashMap<>();
+		for (GearItem item : bis ? result.gameProtection : result.protection)
+		{
+			protection.put(String.valueOf(item.getId()), String.join(", ", GwdProtection.godsOf(item)));
+		}
+		card.put("protection", protection);
 		GearItem runeWeapon = shown.getLoadout().getWeapon();
 		GearItem runeShield = shown.getLoadout().get(GearSlot.SHIELD);
 		card.put("runes", SpellRunes.costFor(shown.getSpellName(),
@@ -417,7 +524,13 @@ public final class RenderModel
 			return null;
 		}
 		Map<String, Object> node = new LinkedHashMap<>();
-		node.put("weapon", item(weapon));
+		Map<String, Object> weaponNode = item(weapon);
+		// The spec cell's swaps strip (ISS-01M5HCS725N7XVVBC7CMK6Y43A).
+		if (!bis && result.specLadder != null && weaponNode != null)
+		{
+			weaponNode.put("ladder", ladderNode(result.specLadder));
+		}
+		node.put("weapon", weaponNode);
 		node.put("dpsAdded", bis ? result.gameSpecDpsAdded : result.specDpsAdded);
 		node.put("expectedDamage", bis ? result.gameSpecExpectedDamage : result.specExpectedDamage);
 		return node;

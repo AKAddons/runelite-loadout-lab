@@ -237,6 +237,24 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 		}
 	}
 
+	/** Unpin <slot>: the slot's pin goes from EVERY scope, so a style pin
+	 * (older versions wrote them; no menu removes one) cannot outlive it. */
+	public synchronized void unpinEverywhere(int monsterId, GearSlot slot)
+	{
+		Stored profile = get(monsterId);
+		if (profile != null && profile.pins != null)
+		{
+			for (Map<String, Integer> scoped : profile.pins.values())
+			{
+				if (scoped != null)
+				{
+					scoped.remove(slot.name());
+				}
+			}
+			save();
+		}
+	}
+
 	/** The user's note for this monster ("" when none). */
 	public synchronized String note(int monsterId)
 	{

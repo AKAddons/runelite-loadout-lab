@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.loadoutlab.data.GearItem;
 import java.util.*;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Gear earned by QUESTING rather than bought: quest rewards, reward-chest

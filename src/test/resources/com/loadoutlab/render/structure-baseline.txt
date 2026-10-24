@@ -84,6 +84,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -172,6 +176,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -265,6 +273,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -362,6 +374,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -451,6 +467,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -569,6 +589,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -673,6 +697,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -757,6 +785,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -854,6 +886,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -939,6 +975,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -1037,6 +1077,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -1130,6 +1174,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -1217,6 +1265,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel
@@ -1331,6 +1383,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -1426,6 +1482,10 @@ JPanel
       Filler
       JPanel
         JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
           JToggleButton "Show in bank" tip=Highlight this set (and its inventory) in your open bank
           JToggleButton "Filter bank" tip=Filter your open bank to this set - equipment cross, inventory beside it
       Filler
@@ -1517,6 +1577,10 @@ JPanel
           JButton "+0" tip=Simmed for this mob - click to manage
           JButton "-0" tip=Excluded for this mob - click to manage
           JButton "~0" tip=Bank-filter supplies for this mob - click to manage
+      Filler
+      JPanel
+        JPanel
+          JButton "^0" tip=Pinned for this mob - click to manage
       Filler
       JPanel
         JPanel

@@ -79,18 +79,18 @@ public class IncomingDpsCalculatorTest
 	@Test
 	public void chipStyleContributesItsRotationShareWhilePrayingTheWorst()
 	{
-		// Hand-computed: crush roll 289*184=53176 vs def (99+9)*(200+64)=28512
-		// -> acc 0.73189, max hit (359*107+320)/640=60, 6t
-		// -> crush dps 0.73189*30/3.6 = 6.0991.
-		// Ranged roll 359*164=58876 vs 108*214=23112 -> acc 0.80373,
-		// max (359*104+320)/640=58 -> dps 0.80373*29/3.6 = 6.4745 (worst).
-		// Protect Missiles; chip = crush share 6.0991/2 = 3.0495.
+		// Hand-computed: crush roll 289*184=53176 vs def (99+8)*(200+64)=28248
+		// -> acc 0.73438, max hit (359*107+320)/640=60, 6t
+		// -> crush dps 0.73438*30/3.6 = 6.1198.
+		// Ranged roll 359*164=58876 vs 107*214=22898 -> acc 0.80553,
+		// max (359*104+320)/640=58 -> dps 0.80553*29/3.6 = 6.4890 (worst).
+		// Protect Missiles; chip = crush share 6.1198/2 = 3.0599.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			monster(Arrays.asList("Crush", "Ranged")), armour(200, 200, 200, 0, 150), 99, 99);
 		Assert.assertEquals("Protect from Missiles", result.protectPrayer);
-		Assert.assertEquals(3.0495, result.totalDps, 0.005);
-		// Unprayed adds the blocked ranged share: 3.0495 + 6.4745/2 = 6.2868.
-		Assert.assertEquals(6.2868, result.unprayedDps, 0.005);
+		Assert.assertEquals(3.0599, result.totalDps, 0.0005);
+		// Unprayed adds the blocked ranged share: 3.0599 + 6.4890/2 = 6.3044.
+		Assert.assertEquals(6.3044, result.unprayedDps, 0.0005);
 		Assert.assertEquals(60, result.threats.get(0).maxHit);
 	}
 

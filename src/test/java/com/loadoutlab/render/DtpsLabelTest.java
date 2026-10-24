@@ -39,6 +39,27 @@ class DtpsLabelTest
 		assertTrue(line[1].contains("Not counted: Dragonfire"), line[1]);
 	}
 
+	private static Map<String, Object> trade(String mode, int dpsLoss, int dmgCut, String reason)
+	{
+		Map<String, Object> node = new LinkedHashMap<>();
+		node.put("mode", mode);
+		node.put("dpsLossPct", dpsLoss);
+		node.put("dmgCutPct", dmgCut);
+		node.put("reason", reason);
+		return node;
+	}
+
+	@Test
+	@DisplayName("a defensive mode shows its DPS cost and damage cut, or why it kept Max DPS")
+	void modeLine()
+	{
+		assertEquals("Tanky: -12% DPS, -40% damage taken",
+			ResultCards.modeLine(trade("TANKY", 12, 40, null)));
+		assertEquals("Balanced: kept Max DPS (partial damage data)",
+			ResultCards.modeLine(trade("BALANCED", 0, 0, "partial damage data")));
+		assertNull(ResultCards.modeLine(null));
+	}
+
 	@Test
 	@DisplayName("no coverage reads as unknown, never as safe")
 	void noneIsUnknown()

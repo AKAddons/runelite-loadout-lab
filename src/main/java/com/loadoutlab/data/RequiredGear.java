@@ -26,15 +26,22 @@ public final class RequiredGear
 	{
 		public final GearSlot slot;
 		public final String note;
+		/** A waiver key that lifts the rule (KOUREND_ELITE), or null. */
+		public final String waivedBy;
+		/** A convention, not a must (the Barrows hilt, the Shayzien set):
+		 * enforced from what you own, never forced unowned. */
+		public final boolean soft;
 		private final List<String> itemSpecs;
 		/** Resolved once per corpus - the corpus never changes post-load. */
 		private volatile Set<Integer> resolved;
 
-		Rule(GearSlot slot, String note, List<String> itemSpecs)
+		Rule(GearSlot slot, String note, List<String> itemSpecs, String waivedBy, boolean soft)
 		{
 			this.slot = slot;
 			this.note = note;
 			this.itemSpecs = itemSpecs;
+			this.waivedBy = waivedBy;
+			this.soft = soft;
 		}
 
 		/** The acceptable item ids, resolved against the loaded corpus
@@ -74,6 +81,30 @@ public final class RequiredGear
 
 	private static final Map<String, List<Rule>> BY_NAME = new HashMap<>();
 
+	/** The elite Kourend & Kebos diary (varbit KOUREND_DIARY_ELITE_COMPLETE):
+	 * once its rewards are claimed Karuulm's floor no longer burns (wiki,
+	 * Karuulm Slayer Dungeon) - the boots rule's waiver. */
+	public static final String KOUREND_ELITE = "kourendElite";
+
+	/** A carried slayer item the kill needs - the finishing blow (rock
+	 * hammer, fungicide, salt, ice cooler): acceptable items best first,
+	 * each with its ids (not gear, so ids rather than corpus names). */
+	public static final class Carried
+	{
+		public final String note;
+		final List<String> names;
+		final List<int[]> ids;
+
+		Carried(String note, List<String> names, List<int[]> ids)
+		{
+			this.note = note;
+			this.names = names;
+			this.ids = ids;
+		}
+	}
+
+	private static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
+
 	static
 	{
 		// Fail LOUD (the name_rules pattern): a silently empty table would
@@ -88,7 +119,9 @@ public final class RequiredGear
 			Rule rule = new Rule(
 				GearSlot.valueOf(row.get("slot").getAsString()),
 				row.get("note").getAsString(),
-				Collections.unmodifiableList(items));
+				Collections.unmodifiableList(items),
+				row.has("waivedBy") ? row.get("waivedBy").getAsString() : null,
+				row.has("soft") && row.get("soft").getAsBoolean());
 			for (JsonElement m : row.getAsJsonArray("monsters"))
 			{
 				BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
@@ -97,6 +130,32 @@ public final class RequiredGear
 		if (BY_NAME.isEmpty())
 		{
 			throw new IllegalStateException("required_gear.json loaded empty");
+		}
+		if (root.has("carried"))
+		{
+			for (JsonElement e : root.getAsJsonArray("carried"))
+			{
+				JsonObject row = e.getAsJsonObject();
+				List<String> names = new ArrayList<>();
+				List<int[]> ids = new ArrayList<>();
+				for (JsonElement i : row.getAsJsonArray("items"))
+				{
+					JsonObject item = i.getAsJsonObject();
+					names.add(item.get("name").getAsString());
+					com.google.gson.JsonArray idArray = item.getAsJsonArray("ids");
+					int[] these = new int[idArray.size()];
+					for (int k = 0; k < these.length; k++)
+					{
+						these[k] = idArray.get(k).getAsInt();
+					}
+					ids.add(these);
+				}
+				Carried carried = new Carried(row.get("note").getAsString(), names, ids);
+				for (JsonElement m : row.getAsJsonArray("monsters"))
+				{
+					CARRIED_BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
+				}
+			}
 		}
 	}
 
@@ -113,13 +172,73 @@ public final class RequiredGear
 			: BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of());
 	}
 
+	/** The rules still standing once the player's waivers lift theirs. */
+	public static List<Rule> rulesFor(MonsterStats monster, Set<String> waivers)
+	{
+		List<Rule> out = new ArrayList<>();
+		for (Rule rule : rulesFor(monster))
+		{
+			if (rule.waivedBy == null || waivers == null || !waivers.contains(rule.waivedBy))
+			{
+				out.add(rule);
+			}
+		}
+		return out;
+	}
+
 	/** slot -> acceptable ids, empty when nothing is required. */
 	public static Map<GearSlot, Set<Integer>> requiredIds(MonsterStats monster, LoadoutData data)
 	{
+		return requiredIds(monster, data, Set.of());
+	}
+
+	/** slot -> acceptable ids, the waived rules lifted. */
+	public static Map<GearSlot, Set<Integer>> requiredIds(MonsterStats monster, LoadoutData data,
+		Set<String> waivers)
+	{
 		Map<GearSlot, Set<Integer>> out = new EnumMap<>(GearSlot.class);
-		for (Rule rule : rulesFor(monster))
+		for (Rule rule : rulesFor(monster, waivers))
 		{
 			out.put(rule.slot, rule.ids(data));
+		}
+		return out;
+	}
+
+	/** The carried slayer items this monster's kill needs, one per rule:
+	 * the best one you own, else the best one there is, flagged unowned
+	 * (Andrew 2026-10-22: "show them as necessary even when the player
+	 * doesn't own those items"). Each row: id, name, qty, why, owned. */
+	public static List<java.util.Map<String, Object>> carriedPicks(MonsterStats monster,
+		java.util.function.IntPredicate owns)
+	{
+		List<java.util.Map<String, Object>> out = new ArrayList<>();
+		if (monster == null)
+		{
+			return out;
+		}
+		for (Carried rule : CARRIED_BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of()))
+		{
+			int pick = -1;
+			for (int i = 0; i < rule.ids.size() && pick < 0; i++)
+			{
+				for (int id : rule.ids.get(i))
+				{
+					if (owns.test(id))
+					{
+						pick = i;
+						break;
+					}
+				}
+			}
+			boolean owned = pick >= 0;
+			int at = owned ? pick : 0;
+			java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+			row.put("id", rule.ids.get(at)[0]);
+			row.put("name", rule.names.get(at));
+			row.put("qty", 1);
+			row.put("why", rule.note + (owned ? "" : " - not owned: get one before the trip"));
+			row.put("owned", owned);
+			out.add(row);
 		}
 		return out;
 	}

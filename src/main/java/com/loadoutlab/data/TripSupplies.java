@@ -27,7 +27,10 @@ public final class TripSupplies
 	public static final String ANTIPOISON = "antipoison";
 	/** The dwarf multicannon as a five-cell kit (miko 2026-10-17): no dps, no placement rules, never auto-detected. */
 	public static final String CANNON = "cannon";
-	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT, CANNON};
+	/** Getting there (ISS-01M5JJ0Z4M988DR0M0ZGJHD139, Andrew 2026-10-22): the teleport capes,
+	 * best first, the Crafting cape an explicit choice. */
+	public static final String TELEPORT_CAPE = "teleportCape";
+	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, TELEPORT_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT, CANNON};
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */

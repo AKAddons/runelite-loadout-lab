@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.loadoutlab.command.Command;
+import com.loadoutlab.command.Commands;
 import com.loadoutlab.command.CommandHistory;
 import java.util.function.*;
 import javax.swing.SwingUtilities;
@@ -133,6 +134,16 @@ public class CommandEngine
 		void setSkipDegradable(int monsterId, boolean skip);
 
 		Map<String, Map<GearSlot, Integer>> allPins(int monsterId);
+
+		/** Scoped pin writes - the pin list and the sim-drops-pin undo put
+		 * a pin back in the scope it came from. */
+		default void pin(int monsterId, String scope, GearSlot slot, int itemId)
+		{
+		}
+
+		default void unpin(int monsterId, String scope, GearSlot slot)
+		{
+		}
 	}
 
 	private volatile StoreOps stores;
@@ -319,6 +330,14 @@ public class CommandEngine
 
 	/** history.execute plus the page snapshot - every recorded command
 	 * routes through here. */
+	/** The common shape of an undoable step: apply and revert each end in
+	 * a recompute (ISS-01M5M31ZG7ZC5K1C3NXCBYC3S2, the slim). */
+	private boolean recorded(String description, Runnable apply, Runnable revert)
+	{
+		return record(Commands.of(description, () -> { apply.run(); recompute(); return true; },
+			() -> { revert.run(); recompute(); return true; }));
+	}
+
 	private boolean record(Command cmd)
 	{
 		Map<String, Object> before = link.lastPage();
@@ -460,27 +479,9 @@ public class CommandEngine
 				List<MonsterStats> combined = new ArrayList<>(current);
 				combined.add(added);
 				Object[] prevSel = state.selectionSnapshot();
-				return record(new Command()
-				{
-					public boolean apply()
-					{
-						state.selectRoster(combined, "Custom roster");
-						recompute();
-						return true;
-					}
-
-					public boolean revert()
-					{
-						state.restoreSelection(prevSel);
-						recompute();
-						return true;
-					}
-
-					public String getDescription()
-					{
-						return "Add " + added.getName() + " to result";
-					}
-				});
+				return recorded("Add " + added.getName() + " to result",
+					() -> state.selectRoster(combined, "Custom roster"),
+					() -> state.restoreSelection(prevSel));
 			}
 			case "cancel":
 			{
@@ -519,29 +520,19 @@ public class CommandEngine
 				int lens = lensObj instanceof Number ? ((Number) lensObj).intValue() : 0;
 				int movedLens = lens == at ? to : lens == to ? at : lens;
 				boolean raid = flag("raidSelection");
-				return record(new Command()
+				return record(Commands.of("Move " + current.get(at).getName() + (to < at ? " up" : " down"), () ->
 				{
-					public boolean apply()
-					{
-						state.selectRoster(reordered, (String) prevSel[2], raid);
-						state.setParam("lensIndex", movedLens);
-						republishReordered();
-						return true;
-					}
-
-					public boolean revert()
-					{
-						state.restoreSelection(prevSel);
-						state.setParam("lensIndex", lens);
-						republishReordered();
-						return true;
-					}
-
-					public String getDescription()
-					{
-						return "Move " + current.get(at).getName() + (to < at ? " up" : " down");
-					}
-				});
+					state.selectRoster(reordered, (String) prevSel[2], raid);
+					state.setParam("lensIndex", movedLens);
+					republishReordered();
+					return true;
+				}, () ->
+				{
+					state.restoreSelection(prevSel);
+					state.setParam("lensIndex", lens);
+					republishReordered();
+					return true;
+				}));
 			}
 			case "remove-mob":
 			{
@@ -565,44 +556,33 @@ public class CommandEngine
 				List<MonsterStats> remaining = new ArrayList<>(current);
 				remaining.remove(at);
 				Object[] prevSel = state.selectionSnapshot();
-				return record(new Command()
+				return record(Commands.of("Remove " + removed.getName() + " from result", () ->
 				{
-					public boolean apply()
+					if (remaining.isEmpty())
 					{
-						if (remaining.isEmpty())
-						{
-							// Removing the last mob returns to the start
-							// state, exactly as if nothing were searched
-							// yet (field ask 2026-08-22).
-							state.select(null);
-							clearResults();
-							publishIdle();
-							return true;
-						}
-						if (remaining.size() == 1)
-						{
-							state.select(remaining.get(0));
-						}
-						else
-						{
-							state.selectRoster(remaining, "Custom roster");
-						}
-						recompute();
+						// Removing the last mob returns to the start state, exactly as
+						// if nothing were searched yet (field ask 2026-08-22).
+						state.select(null);
+						clearResults();
+						publishIdle();
 						return true;
 					}
-
-					public boolean revert()
+					if (remaining.size() == 1)
 					{
-						state.restoreSelection(prevSel);
-						recompute();
-						return true;
+						state.select(remaining.get(0));
 					}
-
-					public String getDescription()
+					else
 					{
-						return "Remove " + removed.getName() + " from result";
+						state.selectRoster(remaining, "Custom roster");
 					}
-				});
+					recompute();
+					return true;
+				}, () ->
+				{
+					state.restoreSelection(prevSel);
+					recompute();
+					return true;
+				}));
 			}
 			case "set-param":
 			{
@@ -629,33 +609,29 @@ public class CommandEngine
 				{
 					return true;
 				}
-				if ("lensIndex".equals(key))
+				if ("lensIndex".equals(key) || "ladderSlot".equals(key))
 				{
 					// Switching which roster row is expanded is a VIEW
 					// gesture, not an action - Back must never land on it
-					// (field ask 2026-08-20).
+					// (field ask 2026-08-20). Opening a slot's ladder strip
+					// is the same kind of gesture.
 					return applyParam(key, next);
 				}
 				String label = PARAM_LABELS.getOrDefault(key, key);
-				return record(new Command()
+				return record(Commands.of(Boolean.TRUE.equals(next) ? label + " on"
+					: Boolean.FALSE.equals(next) ? label + " off" : label + " " + next,
+					() -> applyParam(key, next), () -> applyParam(key, prev)));
+			}
+			case "ner-open":
+			{
+				// A link out, not an action - never recorded in history.
+				Object itemId = args.get("itemId");
+				if (!(itemId instanceof Number) || !nerAvailable.getAsBoolean())
 				{
-					public boolean apply()
-					{
-						return applyParam(key, next);
-					}
-
-					public boolean revert()
-					{
-						return applyParam(key, prev);
-					}
-
-					public String getDescription()
-					{
-						return Boolean.TRUE.equals(next) ? label + " on"
-							: Boolean.FALSE.equals(next) ? label + " off"
-							: label + " " + next;
-					}
-				});
+					return false;
+				}
+				nerOpen.accept(((Number) itemId).intValue());
+				return true;
 			}
 			case "toggle-degradable":
 			{
@@ -831,33 +807,38 @@ public class CommandEngine
 				// one live stack) - the classic recorded into the plugin's
 				// stack, orphaned since the merge-back, so Back skipped
 				// every exclude/sim (field report 2026-08-20).
-				return record(new Command()
+				// Pins dropped when this toggle turned a sim off (by mob) - put back by
+				// the next toggle (the undo).
+				Map<Integer, List<Object[]>> dropped = new HashMap<>();
+				BooleanSupplier toggle = () ->
 				{
-					public boolean apply()
+					if (!(exclusion ? ops.toggleExclusion(id) : ops.toggleSim(id)))
 					{
-						if (!(exclusion ? ops.toggleExclusion(id) : ops.toggleSim(id)))
-						{
-							return false;
-						}
-						refreshAfterStoreToggle();
-						return true;
+						return false;
 					}
-
-					public boolean revert()
+					MonsterStats mob = shownMob();
+					if (!exclusion && !dropped.isEmpty())
 					{
-						return apply();
+						dropped.forEach((mobId, pins) -> restorePins(ops, mobId, id, pins));
+						dropped.clear();
 					}
-
-					public String getDescription()
+					else if (!exclusion && mob != null)
 					{
-						return (exclusion ? "Exclude " : "Sim ") + what;
+						dropped.put(mob.getId(), dropPinsIfNotYours(ops, mob.getId(), id));
 					}
-				});
+					refreshAfterStoreToggle();
+					return true;
+				};
+				return record(Commands.of((exclusion ? "Exclude " : "Sim ") + what, toggle, toggle));
 			}
 			case "pin":
 			case "unpin":
 			{
-				MonsterStats mob = state.mob();
+				// The monster the card shows, like exclude/sim: a roster view
+				// has no state.mob(), and the click used to do nothing there
+				// (ISS-01M5HANBV7VC08XCH850AW7Q39, Andrew 2026-10-22: Unpin
+				// weapon on Araxxor - "Nothing changed at all").
+				MonsterStats mob = shownMob();
 				Object slot = arg(args, "slot");
 				if (ops == null || mob == null || !(slot instanceof String))
 				{
@@ -908,28 +889,10 @@ public class CommandEngine
 					return true;
 				}
 				String kind = prayer ? "Prayer" : "Boost";
-				return record(new Command()
-				{
-					public boolean apply()
-					{
-						state.setPick(prayer, combatStyle, next);
-						recompute();
-						return true;
-					}
-
-					public boolean revert()
-					{
-						state.setPick(prayer, combatStyle, prev);
-						recompute();
-						return true;
-					}
-
-					public String getDescription()
-					{
-						return kind + " " + (next == null ? "detect" : next.toLowerCase())
-							+ " - " + combatStyle.name().toLowerCase();
-					}
-				});
+				return recorded(kind + " " + (next == null ? "detect" : next.toLowerCase())
+					+ " - " + combatStyle.name().toLowerCase(),
+					() -> state.setPick(prayer, combatStyle, next),
+					() -> state.setPick(prayer, combatStyle, prev));
 			}
 			case "exclude-for-mob":
 			case "sim-for-mob":
@@ -951,39 +914,83 @@ public class CommandEngine
 				String what = labelArg instanceof String ? (String) labelArg : "item";
 				int mobId = mob.getId();
 				String mobName = mob.getName();
-				return record(new Command()
+				return recorded((exclude ? "Exclude " : "Sim ") + what + " - " + mobName, () ->
 				{
-					public boolean apply()
+					if (exclude)
 					{
-						if (exclude)
-						{
-							ops.excludeForMob(mobId, scope, id);
-						}
-						else
-						{
-							ops.simForMob(mobId, id);
-						}
-						recompute();
-						return true;
+						ops.excludeForMob(mobId, scope, id);
 					}
-
-					public boolean revert()
+					else
 					{
-						if (exclude)
-						{
-							ops.mobs().removeMobExclusion(mobId, scope, id);
-						}
-						else
-						{
-							ops.mobs().removeMobSim(mobId, id);
-						}
-						recompute();
-						return true;
+						ops.simForMob(mobId, id);
 					}
-
-					public String getDescription()
+				}, () ->
+				{
+					if (exclude)
 					{
-						return (exclude ? "Exclude " : "Sim ") + what + " - " + mobName;
+						ops.mobs().removeMobExclusion(mobId, scope, id);
+					}
+					else
+					{
+						ops.mobs().removeMobSim(mobId, id);
+					}
+				});
+			}
+			case "ladder-try":
+			{
+				// A ladder step picked (ISS-01M5GNMHHCD8M56JD4GAZBFV7Y, Andrew
+				// 2026-10-21: "Sim + pin for this mob"): sim it here when it is
+				// not yours yet AND pin it into its slot - one undo step that
+				// takes the sim back and restores the slot's earlier pin.
+				MonsterStats mob = shownMob();
+				Object slotArg = arg(args, "slot");
+				Object itemId = args.get("itemId");
+				if (ops == null || mob == null || !(slotArg instanceof String) || !(itemId instanceof Number))
+				{
+					return false;
+				}
+				String slot = (String) slotArg;
+				if ("spec".equals(slot))
+				{
+					return trySpec(ops, mob, ((Number) itemId).intValue(), args.get("label"));
+				}
+				GearSlot gearSlot;
+				try
+				{
+					gearSlot = GearSlot.valueOf(slot.toUpperCase());
+				}
+				catch (IllegalArgumentException ex)
+				{
+					return false;
+				}
+				int id = ((Number) itemId).intValue();
+				Object labelArg = args.get("label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				int mobId = mob.getId();
+				String mobName = mob.getName();
+				Integer previousPin = ops.mobs().allPins(mobId)
+					.getOrDefault("ALL", Map.of()).get(gearSlot);
+				boolean sim = ownedCheck == null || !ownedCheck.test(id);
+				return recorded("Try " + what + " - " + mobName, () ->
+				{
+					if (sim)
+					{
+						ops.simForMob(mobId, id);
+					}
+					ops.pin(mobId, slot, id);
+				}, () ->
+				{
+					if (sim)
+					{
+						ops.mobs().removeMobSim(mobId, id);
+					}
+					if (previousPin != null)
+					{
+						ops.pin(mobId, slot, previousPin);
+					}
+					else
+					{
+						ops.unpin(mobId, slot);
 					}
 				});
 			}
@@ -999,6 +1006,10 @@ public class CommandEngine
 				}
 				String kind = (String) kindArg;
 				int mobId = mob.getId();
+				if ("mobPins".equals(kind))
+				{
+					return clearPins(ops, mob);
+				}
 				List<Map<String, Object>> entries = new ArrayList<>(
 					"mobSims".equals(kind) ? ops.mobSims(mobId)
 						: "mobFilters".equals(kind) ? ops.mobFilters(mobId) : ops.mobExclusions(mobId));
@@ -1008,53 +1019,166 @@ public class CommandEngine
 				}
 				String noun = "mobSims".equals(kind) ? "sims" : "mobFilters".equals(kind) ? "filters" : "exclusions";
 				String mobName = mob.getName();
-				return record(new Command()
+				// Sims take their pins along when the item is not yours.
+				Map<Integer, List<Object[]>> droppedPins = new HashMap<>();
+				Runnable finish = () ->
 				{
-					public boolean apply()
+					if ("mobFilters".equals(kind))
 					{
-						eachEntry(entries, (id, scope) ->
-						{
-							switch (kind)
-							{
-								case "mobSims": ops.mobs().removeMobSim(mobId, id); break;
-								case "mobFilters": ops.mobs().removeMobFilter(mobId, scope, id); break;
-								default: ops.mobs().removeMobExclusion(mobId, scope, id); break;
-							}
-						});
-						finish();
-						return true;
+						republish();
 					}
-
-					public boolean revert()
+					else
 					{
-						eachEntry(entries, (id, scope) ->
-						{
-							switch (kind)
-							{
-								case "mobSims": ops.simForMob(mobId, id); break;
-								case "mobFilters": ops.addMobFilter(mobId, id); break;
-								default: ops.excludeForMob(mobId, scope, id); break;
-							}
-						});
-						finish();
-						return true;
+						recompute();
 					}
-
-					private void finish()
+				};
+				return record(Commands.of("Clear " + noun + " (" + entries.size() + ") - " + mobName, () ->
+				{
+					eachEntry(entries, (id, scope) ->
 					{
-						if ("mobFilters".equals(kind))
+						switch (kind)
 						{
-							republish();
+							case "mobSims": ops.mobs().removeMobSim(mobId, id); break;
+							case "mobFilters": ops.mobs().removeMobFilter(mobId, scope, id); break;
+							default: ops.mobs().removeMobExclusion(mobId, scope, id); break;
 						}
-						else
-						{
-							recompute();
-						}
-					}
-
-					public String getDescription()
+					});
+					if ("mobSims".equals(kind))
 					{
-						return "Clear " + noun + " (" + entries.size() + ") - " + mobName;
+						eachEntry(entries, (id, scope) -> droppedPins.put(id, dropPinsIfNotYours(ops, mobId, id)));
+					}
+					finish.run();
+					return true;
+				}, () ->
+				{
+					eachEntry(entries, (id, scope) ->
+					{
+						switch (kind)
+						{
+							case "mobSims": ops.simForMob(mobId, id); break;
+							case "mobFilters": ops.addMobFilter(mobId, id); break;
+							default: ops.excludeForMob(mobId, scope, id); break;
+						}
+					});
+					droppedPins.forEach((id, pins) -> restorePins(ops, mobId, id, pins));
+					droppedPins.clear();
+					finish.run();
+					return true;
+				}));
+			}
+			case "sim-for-group":
+			{
+				// A group step (Andrew 2026-10-22: "if you upgrade your melee
+				// chest in a group you should replace the melee chest for the
+				// whole group but not pin a melee chest for mob that has a range
+				// swap"): sim it on every member - each member's own answer
+				// decides whether it wears it - one undo step, no pin.
+				List<MonsterStats> group = state.rosterMobs();
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || group == null || group.isEmpty() || itemId == null)
+				{
+					return false;
+				}
+				int id = itemId;
+				Object labelArg = arg(args, "label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				List<Integer> added = new ArrayList<>();
+				for (MonsterStats member : group)
+				{
+					int mobId = member.getId();
+					boolean has = ops.mobSims(mobId).stream().anyMatch(row -> row.get("id") instanceof Number
+						&& ((Number) row.get("id")).intValue() == id);
+					if (!has && !added.contains(mobId))
+					{
+						added.add(mobId);
+					}
+				}
+				if (added.isEmpty())
+				{
+					return false;
+				}
+				return recorded("Sim " + what + " - group", () ->
+				{
+					for (int mobId : added)
+					{
+						ops.simForMob(mobId, id);
+					}
+				}, () ->
+				{
+					for (int mobId : added)
+					{
+						ops.mobs().removeMobSim(mobId, id);
+					}
+				});
+			}
+			case "remove-mob-pin":
+			case "pin-for-mob":
+			{
+				// The mob line's pin list (ISS-01M5HJ84ADBHWB2302G66WW2G4):
+				// remove one pin in its scope, or pin a searched item into
+				// its own slot - each one undo step.
+				MonsterStats mob = shownMob();
+				Integer itemId = intArg(args, "itemId");
+				if (ops == null || mob == null || itemId == null)
+				{
+					return false;
+				}
+				int id = itemId;
+				boolean adding = "pin-for-mob".equals(name);
+				GearSlot gearSlot;
+				String scope;
+				if (adding)
+				{
+					GearItem item = data.getGear(id);
+					if (item == null || item.getSlot() == null)
+					{
+						return false;
+					}
+					gearSlot = item.getSlot();
+					scope = "ALL";
+				}
+				else
+				{
+					Object slotArg = arg(args, "slot");
+					Object scopeArg = arg(args, "scope");
+					if (!(slotArg instanceof String))
+					{
+						return false;
+					}
+					try
+					{
+						gearSlot = GearSlot.valueOf(((String) slotArg).toUpperCase());
+					}
+					catch (IllegalArgumentException ex)
+					{
+						return false;
+					}
+					scope = scopeArg instanceof String ? (String) scopeArg : "ALL";
+				}
+				Object labelArg = arg(args, "label");
+				String what = labelArg instanceof String ? (String) labelArg : "item";
+				int mobId = mob.getId();
+				String mobName = mob.getName();
+				Integer previous = ops.mobs().allPins(mobId).getOrDefault(scope, Map.of()).get(gearSlot);
+				return recorded((adding ? "Pin " : "Unpin ") + what + " - " + mobName, () ->
+				{
+					if (adding)
+					{
+						ops.mobs().pin(mobId, scope, gearSlot, id);
+					}
+					else
+					{
+						ops.mobs().unpin(mobId, scope, gearSlot);
+					}
+				}, () ->
+				{
+					if (previous != null)
+					{
+						ops.mobs().pin(mobId, scope, gearSlot, previous);
+					}
+					else
+					{
+						ops.mobs().unpin(mobId, scope, gearSlot);
 					}
 				});
 			}
@@ -1077,68 +1201,49 @@ public class CommandEngine
 				int mobId = mob.getId();
 				String mobName = mob.getName();
 				String command = name;
-				return record(new Command()
+				// A removed sim's pins (by item), back with the sim on undo.
+				Map<Integer, List<Object[]>> dropped = new HashMap<>();
+				Consumer<String> run = cmd ->
 				{
-					private void run(String cmd)
+					switch (cmd)
 					{
-						switch (cmd)
-						{
-							case "remove-mob-exclusion":
-								ops.mobs().removeMobExclusion(mobId, scopeKey, id);
-								recompute();
-								break;
-							case "remove-mob-sim":
-								ops.mobs().removeMobSim(mobId, id);
-								recompute();
-								break;
-							case "add-mob-filter":
-								ops.addMobFilter(mobId, id);
-								republish();
-								break;
-							case "remove-mob-filter":
-								ops.mobs().removeMobFilter(mobId, scopeKey, id);
-								republish();
-								break;
-							case "exclude-for-mob":
-								ops.excludeForMob(mobId, scopeKey, id);
-								recompute();
-								break;
-							default:
-								ops.simForMob(mobId, id);
-								recompute();
-								break;
-						}
+						case "remove-mob-exclusion":
+							ops.mobs().removeMobExclusion(mobId, scopeKey, id);
+							recompute();
+							break;
+						case "remove-mob-sim":
+							ops.mobs().removeMobSim(mobId, id);
+							dropped.put(id, dropPinsIfNotYours(ops, mobId, id));
+							recompute();
+							break;
+						case "add-mob-filter":
+							ops.addMobFilter(mobId, id);
+							republish();
+							break;
+						case "remove-mob-filter":
+							ops.mobs().removeMobFilter(mobId, scopeKey, id);
+							republish();
+							break;
+						case "exclude-for-mob":
+							ops.excludeForMob(mobId, scopeKey, id);
+							recompute();
+							break;
+						default:
+							ops.simForMob(mobId, id);
+							restorePins(ops, mobId, id, dropped.getOrDefault(id, List.of()));
+							dropped.remove(id);
+							recompute();
+							break;
 					}
-
-					public boolean apply()
-					{
-						run(command);
-						return true;
-					}
-
-					public boolean revert()
-					{
-						switch (command)
-						{
-							case "remove-mob-exclusion": run("exclude-for-mob"); break;
-							case "remove-mob-sim": run("sim-for-mob"); break;
-							case "add-mob-filter": run("remove-mob-filter"); break;
-							default: run("add-mob-filter"); break;
-						}
-						return true;
-					}
-
-					public String getDescription()
-					{
-						switch (command)
-						{
-							case "remove-mob-exclusion": return "Allow " + what + " - " + mobName;
-							case "remove-mob-sim": return "Stop simming " + what + " - " + mobName;
-							case "add-mob-filter": return "Filter " + what + " - " + mobName;
-							default: return "Unfilter " + what + " - " + mobName;
-						}
-					}
-				});
+				};
+				boolean exclusionGone = "remove-mob-exclusion".equals(command);
+				boolean simGone = "remove-mob-sim".equals(command);
+				boolean filtered = "add-mob-filter".equals(command);
+				String undo = exclusionGone ? "exclude-for-mob" : simGone ? "sim-for-mob"
+					: filtered ? "remove-mob-filter" : "add-mob-filter";
+				return record(Commands.of((exclusionGone ? "Allow " : simGone ? "Stop simming "
+					: filtered ? "Filter " : "Unfilter ") + what + " - " + mobName,
+					() -> { run.accept(command); return true; }, () -> { run.accept(undo); return true; }));
 			}
 			case "set-supply-override":
 			{
@@ -2047,6 +2152,32 @@ public class CommandEngine
 	private volatile int rangedLevel = 99;
 	private volatile int sailingLevel = 1;
 
+	/** The mode the optimizer should run - the player's tab, for every
+	 * player since 2026-10-22 (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6). */
+	public OptimizerService.OptimizeMode optimizeMode()
+	{
+		return OptimizerService.OptimizeMode.valueOf(String.valueOf(state.paramsNode().get("optimizeMode")));
+	}
+
+	/** Not Enough Runes, for the slot ladder's "how to get it" (ISS-01M5GE9EJSX6YWCKMSYEWKZ132):
+	 * whether it is enabled, and how to open it on an item (the plugin posts
+	 * PluginMessage "notenoughrunes"/"displayItemById"). Re-set when plugins change. */
+	private BooleanSupplier nerAvailable = () -> false;
+	private IntConsumer nerOpen = id -> { };
+
+	public void setNerLink(BooleanSupplier available, IntConsumer open)
+	{
+		this.nerAvailable = available;
+		this.nerOpen = open;
+		state.setParam("nerAvailable", available.getAsBoolean());
+	}
+
+	/** The GWD Ancient chip (the Nex bank) - read by the plugin per compute. */
+	public boolean gwdAncient()
+	{
+		return Boolean.TRUE.equals(state.paramsNode().get("gwdAncient"));
+	}
+
 	public void setMagicLevel(int magicLevel)
 	{
 		this.magicLevel = magicLevel;
@@ -2074,120 +2205,115 @@ public class CommandEngine
 	{
 		Object[] prev = state.selectionSnapshot();
 		boolean hadSelection = state.hasSelection();
-		return record(new Command()
+		return record(Commands.of("vs " + (groupPick != null ? groupPick.getName() : mobPick.label()), () ->
 		{
-			public boolean apply()
+			if (groupPick != null)
 			{
-				if (groupPick != null)
+				state.selectRoster(groupPick.getMobs(), groupPick.getName(),
+					groupPick.isRaid());
+			}
+			else
+			{
+				state.select(mobPick);
+			}
+			Function<List<MonsterStats>, Integer> resolve = antifireResolver;
+			List<MonsterStats> selected = groupPick != null
+				? groupPick.getMobs() : List.of(mobPick);
+			if (resolve != null)
+			{
+				state.setParam("antifireMode", resolve.apply(selected));
+			}
+			seedSunfire();
+			// A fresh selection resets the tab so the default (the
+			// best style for THIS mob) applies - the classic made a
+			// new entry per selection, which cleared it implicitly.
+			state.setParam("selectedTab", "");
+			// A fresh search opens on YOURS - the answer you can act
+			// on now; BiS is the aspirational view you opt into
+			// (field ask 2026-08-22).
+			state.setParam("viewingBis", false);
+			// A slayer monster opens ON task (Andrew 2026-10-19: most
+			// people meet these through slayer); anything else opens
+			// off. Task-only bosses are always on task (the classic
+			// rule: the Sire cannot be fought off-task, so the search
+			// must never show it that way). Seeded at every selection
+			// like the antifire tier; the chip overrides afterwards.
+			boolean slayer = false;
+			for (MonsterStats m : selected)
+			{
+				slayer |= m.isSlayerMonster() || SlayerLockedMonsters.isTaskOnly(m);
+			}
+			state.setParam("onTask", slayer);
+			// Wilderness-exclusives set the PARAM, not just the chip
+			// (field report 2026-08-15: a 75k risk cap produced a 21M
+			// recommendation - the display honored the exclusive but
+			// the COMPUTE derived tradeables=-1 from the raw param and
+			// ran unconstrained).
+			boolean anyWilderness = false;
+			for (MonsterStats m : selected)
+			{
+				anyWilderness |= WildernessMonsters.isWilderness(m);
+				if (WildernessMonsters.isExclusive(m))
 				{
-					state.selectRoster(groupPick.getMobs(), groupPick.getName(),
-						groupPick.isRaid());
+					state.setParam("inWilderness", true);
 				}
-				else
+			}
+			// A selection with NO wilderness-capable member cannot be a
+			// wilderness trip: the param resets, or a stale wildy
+			// session warps the next one (field report 2026-08-31: a
+			// ToA roster under "Wilderness: yes" + a 75k risk cap chose
+			// cheap-to-lose junk - Ring of shadows, Shayzien boots -
+			// over real gear; the risk optimizer working in the wrong
+			// context).
+			if (!anyWilderness)
+			{
+				state.setParam("inWilderness", false);
+			}
+			// Raids are never a slayer-task context: the chip is
+			// suppressed elsewhere, and the PARAM resets too so slayer
+			// helm math never leaks in (same report: "On task: yes").
+			if (groupPick != null && groupPick.isRaid())
+			{
+				state.setParam("onTask", false);
+			}
+			// Recommended trip inventory per selection (Andrew
+			// 2026-09-03: raids 10, other groups 4, singles 1 - "bad
+			// results at 3/8"). The
+			// GROUP DATA declares its inventory - deriving raid-ness
+			// from supplied-boost coverage missed Theatre of Blood,
+			// which has no supplied boost (field report 2026-08-31).
+			// GWD (Andrew 2026-10-21: "add more inventory slot default for
+			// GWD"): the spec + every route god carried + the Ancient.
+			List<String> gwdGods = selected.size() == 1
+				? GwdProtection.godsFor(selected.get(0), false) : List.of();
+			state.setParam("maxSwaps",
+				groupPick != null && groupPick.getInventory() > 0
+					? groupPick.getInventory()
+					: !gwdGods.isEmpty() ? 2 + gwdGods.size()
+					: selected.size() > 1 ? 4 : 1);
+			Supplier<Map<String, Object>> seeder = assumptionSeeder;
+			if (seeder != null)
+			{
+				for (Map.Entry<String, Object> seed : seeder.get().entrySet())
 				{
-					state.select(mobPick);
+					state.setParam(seed.getKey(), seed.getValue());
 				}
-				Function<List<MonsterStats>, Integer> resolve = antifireResolver;
-				List<MonsterStats> selected = groupPick != null
-					? groupPick.getMobs() : List.of(mobPick);
-				if (resolve != null)
-				{
-					state.setParam("antifireMode", resolve.apply(selected));
-				}
-				seedSunfire();
-				// A fresh selection resets the tab so the default (the
-				// best style for THIS mob) applies - the classic made a
-				// new entry per selection, which cleared it implicitly.
-				state.setParam("selectedTab", "");
-				// A fresh search opens on YOURS - the answer you can act
-				// on now; BiS is the aspirational view you opt into
-				// (field ask 2026-08-22).
-				state.setParam("viewingBis", false);
-				// A slayer monster opens ON task (Andrew 2026-10-19: most
-				// people meet these through slayer); anything else opens
-				// off. Task-only bosses are always on task (the classic
-				// rule: the Sire cannot be fought off-task, so the search
-				// must never show it that way). Seeded at every selection
-				// like the antifire tier; the chip overrides afterwards.
-				boolean slayer = false;
-				for (MonsterStats m : selected)
-				{
-					slayer |= m.isSlayerMonster() || SlayerLockedMonsters.isTaskOnly(m);
-				}
-				state.setParam("onTask", slayer);
-				// Wilderness-exclusives set the PARAM, not just the chip
-				// (field report 2026-08-15: a 75k risk cap produced a 21M
-				// recommendation - the display honored the exclusive but
-				// the COMPUTE derived tradeables=-1 from the raw param and
-				// ran unconstrained).
-				boolean anyWilderness = false;
-				for (MonsterStats m : selected)
-				{
-					anyWilderness |= WildernessMonsters.isWilderness(m);
-					if (WildernessMonsters.isExclusive(m))
-					{
-						state.setParam("inWilderness", true);
-					}
-				}
-				// A selection with NO wilderness-capable member cannot be a
-				// wilderness trip: the param resets, or a stale wildy
-				// session warps the next one (field report 2026-08-31: a
-				// ToA roster under "Wilderness: yes" + a 75k risk cap chose
-				// cheap-to-lose junk - Ring of shadows, Shayzien boots -
-				// over real gear; the risk optimizer working in the wrong
-				// context).
-				if (!anyWilderness)
-				{
-					state.setParam("inWilderness", false);
-				}
-				// Raids are never a slayer-task context: the chip is
-				// suppressed elsewhere, and the PARAM resets too so slayer
-				// helm math never leaks in (same report: "On task: yes").
-				if (groupPick != null && groupPick.isRaid())
-				{
-					state.setParam("onTask", false);
-				}
-				// Recommended trip inventory per selection (Andrew
-				// 2026-09-03: raids 10, other groups 4, singles 1 - "bad
-				// results at 3/8"). The
-				// GROUP DATA declares its inventory - deriving raid-ness
-				// from supplied-boost coverage missed Theatre of Blood,
-				// which has no supplied boost (field report 2026-08-31).
-				state.setParam("maxSwaps",
-					groupPick != null && groupPick.getInventory() > 0
-						? groupPick.getInventory()
-						: selected.size() > 1 ? 4 : 1);
-				Supplier<Map<String, Object>> seeder = assumptionSeeder;
-				if (seeder != null)
-				{
-					for (Map.Entry<String, Object> seed : seeder.get().entrySet())
-					{
-						state.setParam(seed.getKey(), seed.getValue());
-					}
-				}
+			}
+			recompute();
+			return true;
+		}, () ->
+		{
+			state.restoreSelection(prev);
+			if (hadSelection)
+			{
 				recompute();
-				return true;
 			}
-
-			public boolean revert()
+			else
 			{
-				state.restoreSelection(prev);
-				if (hadSelection)
-				{
-					recompute();
-				}
-				else
-				{
-					clearResults();
-				}
-				return true;
+				clearResults();
 			}
-
-			public String getDescription()
-			{
-				return "vs " + (groupPick != null ? groupPick.getName() : mobPick.label());
-			}
-		});
+			return true;
+		}));
 	}
 
 	/** The classic search dropdown feed: under 2 chars nothing, then
@@ -2322,6 +2448,88 @@ public class CommandEngine
 	 * one, else the lensed roster row. Rosters have no state.mob() - the
 	 * set-note lesson (field report 2026-08-15: notes never saved on a
 	 * trip), which every per-mob command has since had to repeat. */
+	/** A spec swap tried (ISS-01M5HCS725N7XVVBC7CMK6Y43A): sim it here when
+	 * it is not yours yet AND make it this mob's pinned spec - one undo step
+	 * that takes the sim back and restores the earlier pinned spec. */
+	private boolean trySpec(StoreOps ops, MonsterStats mob, int id, Object labelArg)
+	{
+		String what = labelArg instanceof String ? (String) labelArg : "spec weapon";
+		int mobId = mob.getId();
+		String mobName = mob.getName();
+		int previousSpec = ops.mobs().pinnedSpec(mobId);
+		boolean sim = ownedCheck == null || !ownedCheck.test(id);
+		return recorded("Try spec " + what + " - " + mobName, () ->
+		{
+			if (sim)
+			{
+				ops.simForMob(mobId, id);
+			}
+			ops.setPinnedSpec(mobId, id);
+		}, () ->
+		{
+			if (sim)
+			{
+				ops.mobs().removeMobSim(mobId, id);
+			}
+			ops.setPinnedSpec(mobId, previousSpec);
+		});
+	}
+
+	/** Unpins this item on the mob in every scope and slot it holds;
+	 * what went, scope + slot, for the undo (ISS-01M5HJ84ADBHWB2302G66WW2G4). */
+	private static List<Object[]> dropPinsOf(StoreOps ops, int mobId, int itemId)
+	{
+		List<Object[]> dropped = new ArrayList<>();
+		ops.mobs().allPins(mobId).forEach((scope, slots) -> slots.forEach((slot, pinned) ->
+		{
+			if (pinned == itemId)
+			{
+				dropped.add(new Object[]{scope, slot});
+			}
+		}));
+		for (Object[] pin : dropped)
+		{
+			ops.mobs().unpin(mobId, (String) pin[0], (GearSlot) pin[1]);
+		}
+		return dropped;
+	}
+
+	private static void restorePins(StoreOps ops, int mobId, int itemId, List<Object[]> dropped)
+	{
+		for (Object[] pin : dropped)
+		{
+			ops.mobs().pin(mobId, (String) pin[0], (GearSlot) pin[1], itemId);
+		}
+	}
+
+	/** A sim went: the item's pins on this mob go with it unless the item
+	 * is still yours - owned, simmed everywhere, or still simmed here
+	 * (Andrew 2026-10-22: "it is showing me a fang, i dont have fang"). */
+	private List<Object[]> dropPinsIfNotYours(StoreOps ops, int mobId, int itemId)
+	{
+		boolean yours = ownedCheck != null && ownedCheck.test(itemId)
+			|| ops.mobSims(mobId).stream().anyMatch(row -> row.get("id") instanceof Number
+				&& ((Number) row.get("id")).intValue() == itemId);
+		return yours ? List.of() : dropPinsOf(ops, mobId, itemId);
+	}
+
+	/** Clear all pins on the mob - one undo step that puts each back in
+	 * its scope. */
+	private boolean clearPins(StoreOps ops, MonsterStats mob)
+	{
+		int mobId = mob.getId();
+		String mobName = mob.getName();
+		Map<String, Map<GearSlot, Integer>> pins = ops.mobs().allPins(mobId);
+		int count = pins.values().stream().mapToInt(Map::size).sum();
+		if (count == 0)
+		{
+			return false;
+		}
+		return recorded("Clear pins (" + count + ") - " + mobName,
+			() -> pins.forEach((scope, slots) -> slots.keySet().forEach(slot -> ops.mobs().unpin(mobId, scope, slot))),
+			() -> pins.forEach((scope, slots) -> slots.forEach((slot, id) -> ops.mobs().pin(mobId, scope, slot, id))));
+	}
+
 	private MonsterStats shownMob()
 	{
 		return state.mob() != null ? state.mob() : lensedMob();
@@ -2517,6 +2725,14 @@ public class CommandEngine
 		{
 			addUtilityRunes(out, fightSpell, fightSpell + " (fight mechanic)");
 		}
+		// The slayer item the kill needs - listed even when not owned
+		// (Andrew 2026-10-22: "show them as necessary even when the player
+		// doesn't own those items").
+		IntPredicate owns = ownedCheck;
+		out.addAll(RequiredGear.carriedPicks(stats, owns == null ? id -> false : owns));
+		// The loot containers you own that this monster's drops warrant
+		// (Andrew 2026-10-22: "killerwatts have a predominant herb drop table").
+		out.addAll(LootContainers.picks(stats, owns, flag("inWilderness")));
 		Map<String, Object> params = state.paramsNode();
 		boolean seaMob = stats != null
 			&& NavalCombat.isNaval(stats.getName());
@@ -2705,6 +2921,31 @@ public class CommandEngine
 						pins.put(scope, named);
 					});
 					mob.put("pins", pins);
+					List<Map<String, Object>> pinRows = new ArrayList<>();
+					ops.mobs().allPins(monsterId).forEach((scope, slots) -> slots.forEach((slot, itemId) ->
+					{
+						Map<String, Object> row = new LinkedHashMap<>();
+						row.put("id", itemId);
+						row.put("name", data.getGear(itemId) == null ? String.valueOf(itemId) : data.getGear(itemId).label());
+						row.put("scope", scope);
+						row.put("slot", Names.lower(slot.name()));
+						pinRows.add(row);
+					}));
+					mob.put("mobPins", pinRows);
+					// The worn slayer requirements, for the cells' "needed" note.
+					MonsterStats requiredFor = null;
+					for (MonsterStats m : data.getMonsters())
+					{
+						if (m.getId() == monsterId)
+						{
+							requiredFor = m;
+							break;
+						}
+					}
+					List<Integer> requiredIds = new ArrayList<>();
+					RequiredGear.requiredIds(requiredFor, data, Boolean.TRUE.equals(state.paramsNode().get("kourendElite"))
+						? Set.of(RequiredGear.KOUREND_ELITE) : Set.of()).values().forEach(requiredIds::addAll);
+					mob.put("requiredGear", requiredIds);
 					mob.put("mobSims", ops.mobSims(monsterId));
 					mob.put("mobFilters", ops.mobFilters(monsterId));
 				}

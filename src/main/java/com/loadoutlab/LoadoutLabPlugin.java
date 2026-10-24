@@ -89,10 +89,6 @@ public class LoadoutLabPlugin extends Plugin
 	private MonsterIcons monsterIcons;
 
 	@Inject
-	@javax.inject.Named("developerMode")
-	private boolean developerMode;
-
-	@Inject
 	private ItemManager itemManager;
 
 	@Inject
@@ -438,6 +434,8 @@ public class LoadoutLabPlugin extends Plugin
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setSupplyDefaults(this::buildSupplyDefaults);
 				commandEngine.setOwnedCheck(this::ownsOrSimmed);
+				// The slot ladder's "how to get it" opens Not Enough Runes.
+				commandEngine.setNerLink(this::nerPresent, this::openNer);
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
@@ -458,6 +456,7 @@ public class LoadoutLabPlugin extends Plugin
 					boolean members = !Boolean.TRUE.equals(lastF2pWorld);
 					Map<String, Object> seeds = new LinkedHashMap<>();
 					seeds.put("specWeapon", config.defaultSpecWeapon());
+					seeds.put("optimizeMode", config.defaultOptimizeMode().name());
 					// DETECT keeps the derived answer; NONE means off, as
 					// the settings promise. Both were hardcoded and
 					// ignored the config outright (audit 2026-08-22).
@@ -659,8 +658,7 @@ public class LoadoutLabPlugin extends Plugin
 
 					public void unpin(int monsterId, String slot)
 					{
-						mobProfiles.unpin(monsterId, MonsterProfileStore.ALL_SETS,
-							GearSlot.valueOf(slot.toUpperCase()));
+						mobProfiles.unpinEverywhere(monsterId, GearSlot.valueOf(slot.toUpperCase()));
 					}
 
 					public void showInBank(Set<Integer> itemIds)
@@ -989,6 +987,8 @@ public class LoadoutLabPlugin extends Plugin
 				types.contains(WorldType.HIGH_RISK));
 			boolean pvpFlipped = lastPvpWorld == null || lastPvpWorld != pvp;
 			lastPvpWorld = pvp;
+			// Karuulm's boots rule lifts with the elite Kourend & Kebos diary.
+			boolean kourendElite = client.getVarbitValue(VarbitID.KOUREND_DIARY_ELITE_COMPLETE) == 1;
 			SwingUtilities.invokeLater(() ->
 			{
 				CommandEngine engine = commandEngine;
@@ -1000,6 +1000,7 @@ public class LoadoutLabPlugin extends Plugin
 						engine.execute("set-param", Map.of("param", "f2pOnly", "value", f2p));
 					}
 					engine.execute("set-param", Map.of("param", "pvpWorldHere", "value", pvp > 0));
+					engine.execute("set-param", Map.of("param", "kourendElite", "value", kourendElite));
 					if (pvpFlipped)
 					{
 						engine.execute("set-param", Map.of("param", "pvpWorld", "value", pvp));
@@ -1615,6 +1616,39 @@ public class LoadoutLabPlugin extends Plugin
 		}
 		eventBus.post(new PluginMessage(StoragesApi.NAMESPACE, StoragesApi.RESPONSE_NAME,
 			StoragesApi.response(target, storages)));
+	}
+
+	/** Not Enough Runes enabled? Same all-copies rule as DWMS below. */
+	private boolean nerPresent()
+	{
+		for (Plugin p : pluginManager.getPlugins())
+		{
+			if ("Not Enough Runes".equals(p.getName()) && pluginManager.isPluginEnabled(p))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Open Not Enough Runes on an item - its own PluginMessage contract
+	 * (Hannah-GBS/notenoughrunes: "displayItemById" {itemId: Integer}). */
+	private void openNer(int itemId)
+	{
+		Map<String, Object> data = new HashMap<>();
+		data.put("itemId", itemId);
+		eventBus.post(new PluginMessage("notenoughrunes", "displayItemById", data));
+	}
+
+	/** A plugin turned on or off: the ladder's NER link follows. */
+	@Subscribe
+	public void onPluginChanged(net.runelite.client.events.PluginChanged event)
+	{
+		CommandEngine engine = commandEngine;
+		if (engine != null)
+		{
+			SwingUtilities.invokeLater(() -> engine.setNerLink(this::nerPresent, this::openNer));
+		}
 	}
 
 	/** Check ALL same-named plugins - a hub copy and a sideloaded dev copy

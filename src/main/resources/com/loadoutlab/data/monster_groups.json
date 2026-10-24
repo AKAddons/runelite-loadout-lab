@@ -859,13 +859,12 @@
 		"members": [
 			{
 				"name": "Archive Guardian",
+				"version": "Flying",
 				"label": "Shield (flying)"
 			},
 			{
 				"name": "Archive Guardian",
-				"without": [
-					"flying"
-				],
+				"version": "Grounded",
 				"label": "Grounded"
 			},
 			{
@@ -876,6 +875,12 @@
 			},
 			{
 				"name": "The Smorks"
+			},
+			{
+				"name": "Dagon'hai Elder"
+			},
+			{
+				"name": "Dagon'hai Monk"
 			},
 			{
 				"name": "Dreadnoth the Jellied"
@@ -914,7 +919,7 @@
 			"fred",
 			"raids 4"
 		],
-		"note": "The encounters with published stats (wiki, 2026-10-20): the Archive Guardian flying until its shield breaks (ranged, magic or a halberd) and grounded, the second-room pair (Ezekiel, or Bork and the Smorks), Moia or Dreadnoth, Xarth with his first phase fought from behind the pillars (the strategy guide's approach, so no melee card), and Ocellus's three phases. The Guardian is immune to Ancient Magicks. The Dagon'hai Elder and Monk have no published stats yet and are out. Team-size hitpoint scaling and the Elemental fragments are not modelled.",
+		"note": "The encounters with published stats (wiki, 2026-10-20): the Archive Guardian flying until its shield breaks (ranged, magic or a halberd) and grounded (its own stats since 2026-10-22), the second-room encounters (Ezekiel, Bork and the Smorks, or the Dagon'hai Elder and two Monks), Moia or Dreadnoth, Xarth with his first phase fought from behind the pillars (the strategy guide's approach, so no melee card), and Ocellus's three phases. The Guardian is immune to Ancient Magicks. Drains stop at 60% of base Defence on the Guardian, Ezekiel, Bork, Moia, Xarth and Ocellus's phases 1 and 3 (Jagex hotfix). Team-size hitpoint scaling and the Elemental fragments are not modelled.",
 		"raid": true
 	}
 ]
