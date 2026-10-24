@@ -14,56 +14,45 @@ import java.util.List;
  *
  * <p>Not modeled: silver bolts making a crossbow effective vs tier 2.
  */
-public final class VampyreRules
-{
+public final class VampyreRules {
 	/** The only weapons that harm tier-3 vampyres (Vyrewatch Sentinel page). */
 	private static final String[] TIER3_WEAPONS = weapons("tier3");
 
 	/** Silver weaponry: full damage vs tier 2 (regular weapons deal half). */
 	private static final String[] SILVER_WEAPONS = weapons("silver");
 
-	private VampyreRules()
-	{
+	private VampyreRules() {
 	}
 
 	/** False when this weapon cannot damage the monster at all (tier 3). */
-	public static boolean canDamage(MonsterStats monster, GearItem weapon)
-	{
-		if (monster == null || !monster.hasAttribute("vampyre3"))
-		{
+	public static boolean canDamage(MonsterStats monster, GearItem weapon) {
+		if (monster == null || !monster.hasAttribute("vampyre3")) {
 			return true;
 		}
 		return matches(weapon, TIER3_WEAPONS);
 	}
 
 	/** Damage scale: 0.5 for non-silver weapons vs tier 2, otherwise 1. */
-	public static double damageFactor(MonsterStats monster, GearItem weapon)
-	{
-		if (monster == null || !monster.hasAttribute("vampyre2") || matches(weapon, SILVER_WEAPONS))
-		{
+	public static double damageFactor(MonsterStats monster, GearItem weapon) {
+		if (monster == null || !monster.hasAttribute("vampyre2") || matches(weapon, SILVER_WEAPONS)) {
 			return 1.0;
 		}
 		return 0.5;
 	}
 
-	private static String[] weapons(String key)
-	{
+	private static String[] weapons(String key) {
 		List<String> names = new ArrayList<>();
 		JsonResources.strings(JsonResources.objectOrThrow("vampyre_weapons.json"), key, names);
 		return names.toArray(new String[0]);
 	}
 
-	private static boolean matches(GearItem weapon, String[] prefixes)
-	{
-		if (weapon == null)
-		{
+	private static boolean matches(GearItem weapon, String[] prefixes) {
+		if (weapon == null) {
 			return false;
 		}
 		String name = weapon.getNameLower();
-		for (String prefix : prefixes)
-		{
-			if (name.startsWith(prefix))
-			{
+		for (String prefix : prefixes) {
+			if (name.startsWith(prefix)) {
 				return true;
 			}
 		}

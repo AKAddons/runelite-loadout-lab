@@ -12,21 +12,17 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class RatBoneRulesTest
-{
+public class RatBoneRulesTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static OptimizationRequest request(MonsterStats monster, CombatStyle style)
-	{
+	private static OptimizationRequest request(MonsterStats monster, CombatStyle style) {
 		return new OptimizationRequest(
 			monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -34,16 +30,14 @@ public class RatBoneRulesTest
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static DpsResult calculate(MonsterStats monster, CombatStyle style, int weaponId)
-	{
+	private static DpsResult calculate(MonsterStats monster, CombatStyle style, int weaponId) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, data().getGear(weaponId));
 		return new DpsCalculator().calculate(request(monster, style), new Loadout(gear));
 	}
 
 	@Test
-	public void boneStaffCannotBeUsedAgainstNonRats()
-	{
+	public void boneStaffCannotBeUsedAgainstNonRats() {
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
 		Assert.assertNull(calculate(goblin, CombatStyle.MAGIC, 28796));
 		// And a player who owns one is never told to bring it.
@@ -54,15 +48,13 @@ public class RatBoneRulesTest
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.OWNED_ONLY, true, false,
 			new OwnedItems(owned, true), RequirementProfile.MAXED, 5);
-		for (DpsResult result : new LoadoutOptimizer().optimize(data(), ownedMagic))
-		{
+		for (DpsResult result : new LoadoutOptimizer().optimize(data(), ownedMagic)) {
 			Assert.assertNotEquals(28796, result.getLoadout().getWeapon().getId());
 		}
 	}
 
 	@Test
-	public void boneStaffHitsThirtyEightAgainstScurriusAtMaxed()
-	{
+	public void boneStaffHitsThirtyEightAgainstScurriusAtMaxed() {
 		MonsterStats scurrius = data().searchMonsters("scurrius", 1).get(0);
 		Assert.assertTrue(scurrius.hasAttribute("rat"));
 		// Prayer-less, to match the wiki's max-hit table exactly.
@@ -80,8 +72,7 @@ public class RatBoneRulesTest
 	}
 
 	@Test
-	public void boneMaceGetsTheRatBonusOnlyAgainstRats()
-	{
+	public void boneMaceGetsTheRatBonusOnlyAgainstRats() {
 		MonsterStats scurrius = data().searchMonsters("scurrius", 1).get(0);
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
 		Assert.assertEquals(10, RatBoneRules.flatMaxHitBonus(scurrius, data().getGear(28792)));
@@ -90,8 +81,7 @@ public class RatBoneRulesTest
 	}
 
 	@Test
-	public void gameBestMagicAgainstNonRatsIsNeverTheBoneStaff()
-	{
+	public void gameBestMagicAgainstNonRatsIsNeverTheBoneStaff() {
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data(), request(goblin, CombatStyle.MAGIC));
 		Assert.assertFalse(results.isEmpty());

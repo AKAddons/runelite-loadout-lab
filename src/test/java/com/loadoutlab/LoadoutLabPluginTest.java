@@ -6,8 +6,7 @@ import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 
-public class LoadoutLabPluginTest
-{
+public class LoadoutLabPluginTest {
 	/**
 	 * Hub plugins loaded alongside when their jar (and its dependency
 	 * jars) sit in dev-plugins/ (gitignored): lets cross-plugin
@@ -21,21 +20,16 @@ public class LoadoutLabPluginTest
 		"com.loadoutlabui.LoadoutLabUiPlugin",
 	};
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		List<Class<? extends Plugin>> plugins = new ArrayList<>();
 		plugins.add(LoadoutLabPlugin.class);
-		for (String className : COMPANION_PLUGINS)
-		{
-			try
-			{
+		for (String className : COMPANION_PLUGINS) {
+			try {
 				@SuppressWarnings("unchecked")
 				Class<? extends Plugin> plugin = (Class<? extends Plugin>) Class.forName(className);
 				plugins.add(plugin);
 				System.out.println("dev client: loading companion plugin " + className);
-			}
-			catch (ClassNotFoundException e)
-			{
+			} catch (ClassNotFoundException e) {
 				// jar not in dev-plugins/ - run without it
 			}
 		}

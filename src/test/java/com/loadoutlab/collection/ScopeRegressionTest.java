@@ -19,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * every region change, and at least once before getAccountHash() is populated.
  * These tests recreate those two conditions.
  */
-class ScopeRegressionTest
-{
+class ScopeRegressionTest {
 	private ConfigManager configManager;
 	private Gson gson;
 
@@ -28,8 +27,7 @@ class ScopeRegressionTest
 	private static final String ALT = "std.2222";
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		configManager = InMemoryConfigManager.create();
 		gson = new Gson();
 		// A real 0.4.0 install: the main's list under the unscoped key.
@@ -38,8 +36,7 @@ class ScopeRegressionTest
 
 	@Test
 	@DisplayName("an upgraded install does not hand the main's list to a second character")
-	void legacyListDoesNotLeakToTheAlt()
-	{
+	void legacyListDoesNotLeakToTheAlt() {
 		ExclusionStore store = new ExclusionStore(configManager, gson);
 
 		store.loadScope(MAIN);
@@ -52,8 +49,7 @@ class ScopeRegressionTest
 
 	@Test
 	@DisplayName("whichever character logs in first claims the pre-0.4.1 list")
-	void adoptionFollowsLoginOrder()
-	{
+	void adoptionFollowsLoginOrder() {
 		// The pre-0.4.1 entry records no owner, so there is no signal for which
 		// account it belonged to - only one of them can have it, and the first
 		// to load wins. Documented because it makes the UPGRADE order matter
@@ -70,8 +66,7 @@ class ScopeRegressionTest
 
 	@Test
 	@DisplayName("an item added on the alt survives the next region change")
-	void addOnTheAltSurvivesAReload()
-	{
+	void addOnTheAltSurvivesAReload() {
 		ExclusionStore store = new ExclusionStore(configManager, gson);
 		store.loadScope(ALT);
 
@@ -86,8 +81,7 @@ class ScopeRegressionTest
 
 	@Test
 	@DisplayName("an item added before any character is known is adopted, not abandoned")
-	void addBeforeTheHashArrivesIsNotLost()
-	{
+	void addBeforeTheHashArrivesIsNotLost() {
 		// getAccountHash() is -1 until a character is known, and LOGGED_IN can
 		// fire before then. The plugin no longer reloads at that point, so the
 		// store is still unscoped and writes to the pre-0.4.1 key - which the

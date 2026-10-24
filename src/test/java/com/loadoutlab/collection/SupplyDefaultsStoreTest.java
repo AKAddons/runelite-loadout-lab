@@ -9,15 +9,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SupplyDefaultsStoreTest
-{
+class SupplyDefaultsStoreTest {
 	private static final String SCOPE = "std.1111";
 	private ConfigManager configManager;
 	private SupplyDefaultsStore store;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		configManager = InMemoryConfigManager.create();
 		store = freshStore();
 	}
@@ -25,8 +23,7 @@ class SupplyDefaultsStoreTest
 	/** The plugin always loads a character scope before use; a store
 	 * without one writes to the pre-0.4.1 unscoped key, so a reload
 	 * through a second instance would read a different key entirely. */
-	private SupplyDefaultsStore freshStore()
-	{
+	private SupplyDefaultsStore freshStore() {
 		SupplyDefaultsStore fresh = new SupplyDefaultsStore(configManager, new Gson());
 		fresh.loadScope(SCOPE);
 		return fresh;
@@ -34,8 +31,7 @@ class SupplyDefaultsStoreTest
 
 	@Test
 	@DisplayName("every category is Detect best (always on) until changed")
-	void detectBestIsTheUniversalDefault()
-	{
+	void detectBestIsTheUniversalDefault() {
 		assertEquals("DETECT_BEST", store.choice("food"));
 		assertEquals("DETECT_BEST", store.choice("antivenom"));
 		assertNull(configManager.getConfiguration("loadoutlab", SCOPE + ".supplyDefaults"),
@@ -44,8 +40,7 @@ class SupplyDefaultsStoreTest
 
 	@Test
 	@DisplayName("a changed choice persists; returning to Detect best removes it")
-	void choicesPersistAndClear()
-	{
+	void choicesPersistAndClear() {
 		store.setChoice("prayerRestore", "SANFEW_SERUM");
 		store.setChoice("surge", "NONE");
 		SupplyDefaultsStore reloaded = freshStore();
@@ -61,8 +56,7 @@ class SupplyDefaultsStoreTest
 
 	@Test
 	@DisplayName("clear() returns every category to Detect best and persists it")
-	void clearReturnsToDetect()
-	{
+	void clearReturnsToDetect() {
 		SupplyDefaultsStore store = new SupplyDefaultsStore(configManager, new Gson());
 		store.setChoice("food", "SHARK");
 		store.clear();

@@ -21,36 +21,31 @@ import static org.junit.jupiter.api.Assertions.*;
  * encounters with published stats as a raid group, the rewards as gear
  * rows (scripts/wiki_intake.py, ids from runelite-api 1.13.3 gameval).
  */
-class TfaIntakeTest
-{
+class TfaIntakeTest {
 	private static LoadoutData data;
 	private static MonsterGroups.MonsterGroup tfa;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		tfa = MonsterGroups.load(data).stream()
 			.filter(g -> g.getName().equals("The Fractured Archive"))
 			.findFirst().orElseThrow();
 	}
 
-	private static MonsterStats guardian()
-	{
+	private static MonsterStats guardian() {
 		return tfa.getMobs().stream().filter(m -> m.getName().equals("Archive Guardian")).findFirst().orElseThrow();
 	}
 
 	@Test
 	@DisplayName("the raid group lists the encounters that have stats: the Guardian and Xarth in two phases, the Dagon'hai trio, Ocellus in three")
-	void groupRoster()
-	{
+	void groupRoster() {
 		assertTrue(tfa.isRaid());
 		// The two Monks share one stat block, so the corpus folds them into one row.
 		assertEquals(14, tfa.getMobs().size());
 		Set<String> names = tfa.getMobs().stream().map(MonsterStats::getName).collect(Collectors.toSet());
 		for (String name : new String[]{"Archive Guardian", "Ezekiel", "Bork", "The Smorks",
-			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus", "Dagon'hai Elder", "Dagon'hai Monk"})
-		{
+			"Dreadnoth the Jellied", "Moia", "Xarth", "Ocellus", "Dagon'hai Elder", "Dagon'hai Monk"}) {
 			assertTrue(names.contains(name), name);
 		}
 		assertEquals(3, tfa.getMobs().stream().filter(m -> m.getName().equals("Ocellus")).count());
@@ -58,8 +53,7 @@ class TfaIntakeTest
 
 	@Test
 	@DisplayName("the Archive Guardian reads 550 hitpoints and an 80% fire weakness")
-	void guardianStats()
-	{
+	void guardianStats() {
 		MonsterStats guardian = guardian();
 		assertEquals(550, guardian.getHitpoints());
 		assertEquals("fire", guardian.getWeaknessElement());
@@ -68,10 +62,8 @@ class TfaIntakeTest
 
 	@Test
 	@DisplayName("every style computes a set against the Guardian")
-	void everyStyleComputes()
-	{
-		for (CombatStyle style : CombatStyle.values())
-		{
+	void everyStyleComputes() {
+		for (CombatStyle style : CombatStyle.values()) {
 			OptimizationRequest request = TestRequests.of(guardian(), style, PlayerLevels.MAXED,
 				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
 				true, false, OwnedItems.EMPTY, 1);
@@ -81,10 +73,8 @@ class TfaIntakeTest
 
 	@Test
 	@DisplayName("the tradeable rewards are priced so the game-best pool admits them; the charged weapons are untradeable")
-	void rewardsArePricedAndTradeableByVersion()
-	{
-		for (int id : new int[]{34681, 34719, 34717, 34727, 34684, 34702})
-		{
+	void rewardsArePricedAndTradeableByVersion() {
+		for (int id : new int[]{34681, 34719, 34717, 34727, 34684, 34702}) {
 			GearItem item = data.getGear(id);
 			assertTrue(item.isTradeable(), item.getName());
 			assertNotNull(item.getEstimatedPrice(), item.getName() + " needs a price for ALL_STANDARD");
@@ -103,8 +93,7 @@ class TfaIntakeTest
 
 	@Test
 	@DisplayName("the rewards are gear rows: the Obligator a crush two-hander, the tome a powered staff, the crossbows and bolts, the Rondache")
-	void rewardsInTheCorpus()
-	{
+	void rewardsInTheCorpus() {
 		GearItem obligator = data.getGear(34715);
 		assertNotNull(obligator);
 		assertEquals("Obligator", obligator.getName());
@@ -116,8 +105,7 @@ class TfaIntakeTest
 		assertTrue(tome.isTwoHanded());
 		assertNotNull(data.getGear(34681), "Ascension crossbows");
 		assertNotNull(data.getGear(34719), "Rondache");
-		for (int bolts : new int[]{34684, 34690, 34696, 34702, 34708})
-		{
+		for (int bolts : new int[]{34684, 34690, 34696, 34702, 34708}) {
 			assertEquals(GearSlot.AMMO, data.getGear(bolts).getSlot(), "bolts " + bolts);
 		}
 	}

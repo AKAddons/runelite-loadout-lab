@@ -14,11 +14,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * the exact value the config seeds, so the UI promised a cap the
  * optimizer ignored and the report called it "none".
  */
-class RiskCapTruthTest
-{
+class RiskCapTruthTest {
 
-	private static PageState wilderness()
-	{
+	private static PageState wilderness() {
 		PageState state = new PageState();
 		state.setParam("inWilderness", true);
 		return state;
@@ -26,8 +24,7 @@ class RiskCapTruthTest
 
 	@Test
 	@DisplayName("a cap equal to the engine's sentinel still binds")
-	void theSentinelValueIsStillARealCap()
-	{
+	void theSentinelValueIsStillARealCap() {
 		PageState state = wilderness();
 		state.setParam("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 		assertEquals(Boolean.TRUE, state.paramsNode().get("riskCapped"),
@@ -38,8 +35,7 @@ class RiskCapTruthTest
 
 	@Test
 	@DisplayName("no cap by default, and clearing it releases the constraint")
-	void clearedCapReleasesTheConstraint()
-	{
+	void clearedCapReleasesTheConstraint() {
 		PageState fresh = wilderness();
 		assertEquals(Boolean.FALSE, fresh.paramsNode().get("riskCapped"));
 		assertEquals(-1, fresh.computeParams().maxTradeables, "unconstrained by default");
@@ -55,16 +51,14 @@ class RiskCapTruthTest
 
 	@Test
 	@DisplayName("a cap can be typed even when it equals the sentinel")
-	void typingTheSentinelValueTakesEffect()
-	{
+	void typingTheSentinelValueTakesEffect() {
 		// Found by the adversarial pass 2026-08-22: set-param's no-op
 		// guard compared only the gp number, and 75k reads identically
 		// capped or not - so typing 75k was silently swallowed.
 		PageState state = wilderness();
 		CommandEngine engine = new CommandEngine(
 			new com.loadoutlab.data.DataService().load(), state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 		assertEquals(Boolean.FALSE, state.paramsNode().get("riskCapped"));
@@ -78,8 +72,7 @@ class RiskCapTruthTest
 
 	@Test
 	@DisplayName("Protect Item keeps a fourth slot under a bound cap")
-	void protectItemKeepsAFourthSlot()
-	{
+	void protectItemKeepsAFourthSlot() {
 		PageState state = wilderness();
 		state.setParam("riskBudgetGp", 1_000_000);
 		state.setParam("protectItem", true);
@@ -88,8 +81,7 @@ class RiskCapTruthTest
 
 	@Test
 	@DisplayName("a cap outside the wilderness never constrains")
-	void tameContentIgnoresTheCap()
-	{
+	void tameContentIgnoresTheCap() {
 		PageState state = new PageState();
 		state.setParam("riskBudgetGp", 1_000_000);
 		assertEquals(-1, state.computeParams().maxTradeables);

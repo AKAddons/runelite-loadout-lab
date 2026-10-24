@@ -14,29 +14,24 @@ import org.junit.Test;
  * "Accursed sceptre (Charged), Accursed sceptre (Charged)" in one
  * lost list, and the beam's fast path double-counted it too.
  */
-public class WornSpecRiskTest
-{
+public class WornSpecRiskTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String name)
-	{
+	private static GearItem byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + name));
 	}
 
 	@Test
-	public void aWornSpecWeaponIsChargedOnce()
-	{
+	public void aWornSpecWeaponIsChargedOnce() {
 		GearItem weapon = byName("abyssal whip");
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
@@ -60,8 +55,7 @@ public class WornSpecRiskTest
 	}
 
 	@Test
-	public void aSeparatelyCarriedSpecStillCounts()
-	{
+	public void aSeparatelyCarriedSpecStillCounts() {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName("abyssal whip"));
 		gear.put(GearSlot.BODY, byName("bandos chestplate"));

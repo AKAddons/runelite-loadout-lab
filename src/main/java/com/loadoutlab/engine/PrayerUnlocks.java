@@ -10,8 +10,7 @@ import lombok.AllArgsConstructor;
  * the unlock varbits at snapshot time.
  */
 @AllArgsConstructor
-public final class PrayerUnlocks
-{
+public final class PrayerUnlocks {
 	/** Everything unlocked - tests, harness, and the game-best ceiling. */
 	public static final PrayerUnlocks ALL = new PrayerUnlocks(true, true, true, true, true, true);
 
@@ -29,49 +28,40 @@ public final class PrayerUnlocks
 	private final boolean zeal;
 
 	/** The pre-Zeal form (older profiles, the harness). */
-	public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour)
-	{
+	public PrayerUnlocks(boolean kingsRansom, boolean rigour, boolean augury, boolean deadeye, boolean mysticVigour) {
 		this(kingsRansom, rigour, augury, deadeye, mysticVigour, false);
 	}
 
 	/** Zeal: the Fractured Archive's Piety upgrade. */
-	public boolean zeal()
-	{
+	public boolean zeal() {
 		return zeal;
 	}
 
-	public boolean piety()
-	{
+	public boolean piety() {
 		return kingsRansom;
 	}
 
-	public boolean chivalry()
-	{
+	public boolean chivalry() {
 		return kingsRansom;
 	}
 
-	public boolean rigour()
-	{
+	public boolean rigour() {
 		return rigour;
 	}
 
-	public boolean augury()
-	{
+	public boolean augury() {
 		return augury;
 	}
 
-	public boolean deadeye()
-	{
+	public boolean deadeye() {
 		return deadeye;
 	}
 
-	public boolean mysticVigour()
-	{
+	public boolean mysticVigour() {
 		return mysticVigour;
 	}
 
-	public String key()
-	{
+	public String key() {
 		return "" + (kingsRansom ? 1 : 0) + (rigour ? 1 : 0) + (augury ? 1 : 0)
 			+ (deadeye ? 1 : 0) + (mysticVigour ? 1 : 0) + (zeal ? 1 : 0);
 	}

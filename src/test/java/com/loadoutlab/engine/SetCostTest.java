@@ -18,20 +18,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * - the item's price when you do not own it, zero when you do - so these
  * pin that behaviour down rather than the formatting.
  */
-class SetCostTest
-{
+class SetCostTest {
 	private static LoadoutData data;
 	private static MonsterStats target;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		target = data.searchMonsters("abyssal demon", 1).get(0);
 	}
 
-	private static DpsResult best(OwnedItems owned, CandidateMode mode)
-	{
+	private static DpsResult best(OwnedItems owned, CandidateMode mode) {
 		OptimizationRequest request = TestRequests.of(target,
 			CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -43,8 +40,7 @@ class SetCostTest
 
 	@Test
 	@DisplayName("a game-best set owned by nobody prices its whole self")
-	void gameBestPricesTheGap()
-	{
+	void gameBestPricesTheGap() {
 		DpsResult r = best(OwnedItems.EMPTY, CandidateMode.ALL_STANDARD);
 		assertTrue(r.getPurchaseCost() > 0,
 			"the BiS set must carry the gp cost of the pieces you lack - "
@@ -53,8 +49,7 @@ class SetCostTest
 
 	@Test
 	@DisplayName("owning the pieces drives the cost to zero")
-	void owningThemCostsNothing()
-	{
+	void owningThemCostsNothing() {
 		// Own precisely what the game-best search picked, then re-run: every
 		// slot now returns budgetCost 0, so the line is suppressed.
 		DpsResult bis = best(OwnedItems.EMPTY, CandidateMode.ALL_STANDARD);

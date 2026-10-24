@@ -29,22 +29,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * top ten by raw magic stats and the gauntlets score zero there - their
  * value lives in the DPS model, like the leaf-bladed battleaxe. Same for
  * the element amulets, which tie a crowd of glories at +10. */
-class BoltGearPoolTest
-{
+class BoltGearPoolTest {
 	private static LoadoutData data;
 	private static MonsterStats goblin;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		goblin = data.searchMonsters("Goblin", 1).get(0);
 	}
 
 	@Test
 	@DisplayName("chaos gauntlets reach the beam past ten better-statted gloves and win the Fire Bolt card")
-	void gauntlets() throws Exception
-	{
+	void gauntlets() throws Exception {
 		Map<Integer, Integer> owned = own("staff of fire", "occult necklace", "chaos gauntlets", "tormented bracelet",
 			"barrows gloves", "infinity gloves", "dragon gloves", "rune gloves", "lunar gloves", "bloodbark gauntlets",
 			"adamant gloves", "swampbark gauntlets", "regen bracelet", "mystic gloves");
@@ -53,57 +50,46 @@ class BoltGearPoolTest
 
 	@Test
 	@DisplayName("an amulet of air reaches the beam past ten +10 necks and wins the Wind Bolt card")
-	void elementAmulet() throws Exception
-	{
+	void elementAmulet() throws Exception {
 		Map<Integer, Integer> owned = own("staff of air", "occult necklace", "amulet of air", "amulet of fury",
 			"amulet of glory", "amulet of magic", "amulet of magic (t)", "dragonbone necklace", "bonecrusher necklace",
 			"3rd age amulet", "amulet of the damned", "amulet of power", "amulet of glory (t)");
 		assertEquals(34407, slot(owned, "Wind Bolt", GearSlot.NECK).getId(), "amulet of air: 14 max hit beats 13");
 	}
 
-	private static Map<Integer, Integer> own(String... names)
-	{
+	private static Map<Integer, Integer> own(String... names) {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (String name : names)
-		{
+		for (String name : names) {
 			owned.put(byName(name).getId(), 1);
 		}
 		return owned;
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals(nameLower)) {
 				return g;
 			}
 		}
 		throw new AssertionError("missing from the gear data: " + nameLower);
 	}
 
-	private static GearItem slot(Map<Integer, Integer> owned, String spellName, GearSlot slot) throws Exception
-	{
+	private static GearItem slot(Map<Integer, Integer> owned, String spellName, GearSlot slot) throws Exception {
 		SpellStats spell = data.getSpells().stream().filter(s -> s.getName().equals(spellName)).findFirst().orElseThrow();
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, goblin, PlayerLevels.MAXED, PlayerLevels.MAXED,
 				PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "",
 				Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
-				Collections.emptyMap(), spell, results ->
-				{
+				Collections.emptyMap(), spell, results -> {
 					out.set(results);
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS));
 			return out.get().get(CombatStyle.MAGIC).owned.get(0).getLoadout().get(slot);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

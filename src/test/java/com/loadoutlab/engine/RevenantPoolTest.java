@@ -19,20 +19,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * changed). These run the real search end to end, the same path the
  * panel and the headless query render.
  */
-class RevenantPoolTest
-{
+class RevenantPoolTest {
 	private static LoadoutData data;
 	private static MonsterStats revDemon;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		revDemon = data.searchMonsters("revenant demon", 1).get(0);
 	}
 
-	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned)
-	{
+	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned) {
 		return new OptimizationRequest(revDemon, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, RequirementProfile.MAXED, 1);
@@ -40,8 +37,7 @@ class RevenantPoolTest
 
 	@Test
 	@DisplayName("game best at revenants reaches for a charged wilderness bow")
-	void gameBestFindsTheWildernessBow()
-	{
+	void gameBestFindsTheWildernessBow() {
 		List<DpsResult> results = new LoadoutOptimizer()
 			.optimize(data, request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY));
 		assertFalse(results.isEmpty());
@@ -59,8 +55,7 @@ class RevenantPoolTest
 
 	@Test
 	@DisplayName("an owned charged craw's bow wins the owned search at revenants")
-	void ownedCrawsBowGetsPicked()
-	{
+	void ownedCrawsBowGetsPicked() {
 		// Craw's bow charged (22550) vs a magic shortbow (861) + amethyst
 		// arrows (21326): without the pool fix the charged bow never even
 		// reached the DPS calculator.
@@ -75,10 +70,8 @@ class RevenantPoolTest
 
 	@Test
 	@DisplayName("low-risk sets NEVER risk a rebuild item, no matter the cap")
-	void lowRiskNeverRisksARebuildItem()
-	{
-		for (int cap : new int[]{25_000, 5_000_000})
-		{
+	void lowRiskNeverRisksARebuildItem() {
+		for (int cap : new int[]{25_000, 5_000_000}) {
 			OptimizationRequest constrained = request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY)
 				.withMaxTradeables(3).withRiskBudgetGp(cap);
 			List<DpsResult> results = new LoadoutOptimizer().optimize(data, constrained);
@@ -93,8 +86,7 @@ class RevenantPoolTest
 
 	@Test
 	@DisplayName("the ethereum bracelet and avarice survive the candidate pool at revenants")
-	void conditionalItemsSurviveThePool()
-	{
+	void conditionalItemsSurviveThePool() {
 		// Zero-stat hands (ethereum) died at the zero-score prune; the
 		// score boosts must keep both alive ONLY at revenants.
 		OptimizationRequest atRevs = request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY);
@@ -105,15 +97,12 @@ class RevenantPoolTest
 
 		com.loadoutlab.data.GearItem ethereum = null;
 		com.loadoutlab.data.GearItem avarice = null;
-		for (com.loadoutlab.data.GearItem item : data.getGearItems())
-		{
+		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
 			if (item.getNameLower().equals("bracelet of ethereum")
-				&& "charged".equals(item.getVersionLower()))
-			{
+				&& "charged".equals(item.getVersionLower())) {
 				ethereum = item;
 			}
-			if (item.getNameLower().equals("amulet of avarice"))
-			{
+			if (item.getNameLower().equals("amulet of avarice")) {
 				avarice = item;
 			}
 		}

@@ -13,27 +13,20 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** The dev-mode defensive modes as one 3-way control - look B, picked 2026-10-21. */
-class ModeTabsTest
-{
-	private static JLabel word(JPanel tabs, String mode)
-	{
-		for (Component c : tabs.getComponents())
-		{
-			if (mode.equals(c.getName()))
-			{
+class ModeTabsTest {
+	private static JLabel word(JPanel tabs, String mode) {
+		for (Component c : tabs.getComponents()) {
+			if (mode.equals(c.getName())) {
 				return (JLabel) c;
 			}
 		}
 		throw new AssertionError("no " + mode + " word");
 	}
 
-	private static void layoutDeep(java.awt.Container container)
-	{
+	private static void layoutDeep(java.awt.Container container) {
 		container.doLayout();
-		for (Component child : container.getComponents())
-		{
-			if (child instanceof java.awt.Container)
-			{
+		for (Component child : container.getComponents()) {
+			if (child instanceof java.awt.Container) {
 				layoutDeep((java.awt.Container) child);
 			}
 		}
@@ -41,16 +34,14 @@ class ModeTabsTest
 
 	@Test
 	@DisplayName("each tab says what it optimises and what the card and the swaps show; Balanced and Tanky are beta")
-	void tooltips()
-	{
+	void tooltips() {
 		// Andrew 2026-10-22: "better descriptions to what the differences are
 		// and what you'll see in regular/ladder results" - "Tab tooltips".
 		JPanel tabs = RenderSurface.modeTabs("MAX_DPS", (name, args) -> { });
 		String max = word(tabs, "MAX_DPS").getToolTipText();
 		String balanced = word(tabs, "BALANCED").getToolTipText();
 		String tanky = word(tabs, "TANKY").getToolTipText();
-		for (String tip : new String[]{max, balanced, tanky})
-		{
+		for (String tip : new String[]{max, balanced, tanky}) {
 			assertFalse(tip.contains("Dev prototype"), tip);
 			assertTrue(tip.contains("card") && tip.contains("swaps"), "card + swaps explained: " + tip);
 		}
@@ -61,8 +52,7 @@ class ModeTabsTest
 
 	@Test
 	@DisplayName("one rounded outline, three words, only the active one in the accent; a click sends its mode")
-	void tabs() throws Exception
-	{
+	void tabs() throws Exception {
 		List<Map<String, Object>> sent = new ArrayList<>();
 		JPanel tabs = RenderSurface.modeTabs("BALANCED", (name, args) -> sent.add(args));
 		assertTrue(tabs.getBorder() instanceof RoundedBorder, "the chips' rounded outline");
@@ -76,8 +66,7 @@ class ModeTabsTest
 		assertNotEquals(ResultCards.ACCENT, max.getForeground());
 		assertNotEquals(ResultCards.ACCENT, tanky.getForeground());
 
-		for (java.awt.event.MouseListener l : tanky.getMouseListeners())
-		{
+		for (java.awt.event.MouseListener l : tanky.getMouseListeners()) {
 			l.mouseClicked(new java.awt.event.MouseEvent(tanky, java.awt.event.MouseEvent.MOUSE_CLICKED,
 				0, 0, 1, 1, 1, false, java.awt.event.MouseEvent.BUTTON1));
 			l.mouseReleased(new java.awt.event.MouseEvent(tanky, java.awt.event.MouseEvent.MOUSE_RELEASED,

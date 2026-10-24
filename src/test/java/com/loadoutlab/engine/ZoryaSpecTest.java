@@ -15,11 +15,9 @@ import org.junit.Test;
  * fire every two ticks. The energy cost is unpublished: 50% assumed (the
  * Gatekeeper's Cane proposal's cost; the blog changed the buff, not it).
  */
-public class ZoryaSpecTest
-{
+public class ZoryaSpecTest {
 	@Test
-	public void aLandedSpecBuysThreeBuffedCastsAndTheirTime()
-	{
+	public void aLandedSpecBuysThreeBuffedCastsAndTheirTime() {
 		LoadoutData data = new DataService().load();
 		GearItem tome = data.getGear(34725);
 		SpecialAttack spec = SpecialAttack.match(tome, CombatStyle.MAGIC);

@@ -10,29 +10,24 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SpecialAttackTest
-{
+public class SpecialAttackTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String name)
-	{
+	private static GearItem byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name) && g.isStandardGear())
 			.findFirst()
 			.orElseThrow(() -> new AssertionError("missing item: " + name));
 	}
 
-	private static OptimizationRequest request(CombatStyle style)
-	{
+	private static OptimizationRequest request(CombatStyle style) {
 		MonsterStats monster = data().searchMonsters("goblin", 1).get(0);
 		return new OptimizationRequest(
 			monster,
@@ -49,19 +44,16 @@ public class SpecialAttackTest
 			1);
 	}
 
-	private static DpsResult calculate(CombatStyle style, GearItem... items)
-	{
+	private static DpsResult calculate(CombatStyle style, GearItem... items) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem item : items)
-		{
+		for (GearItem item : items) {
 			gear.put(item.getSlot(), item);
 		}
 		return new DpsCalculator().calculate(request(style), new Loadout(gear));
 	}
 
 	@Test
-	public void voidwakerSpecAveragesExactlyTheMaxHit()
-	{
+	public void voidwakerSpecAveragesExactlyTheMaxHit() {
 		GearItem voidwaker = byName("Voidwaker");
 		DpsResult base = calculate(CombatStyle.MELEE, voidwaker);
 		SpecialAttack spec = SpecialAttack.match(voidwaker, CombatStyle.MELEE);
@@ -73,8 +65,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void dragonDaggerSpecBeatsTwoUnboostedHits()
-	{
+	public void dragonDaggerSpecBeatsTwoUnboostedHits() {
 		GearItem dagger = byName("Dragon dagger");
 		DpsResult base = calculate(CombatStyle.MELEE, dagger);
 		SpecialAttack spec = SpecialAttack.match(dagger, CombatStyle.MELEE);
@@ -86,8 +77,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void clawsCascadeApproachesOneAndAHalfMaxAtGuaranteedAccuracy()
-	{
+	public void clawsCascadeApproachesOneAndAHalfMaxAtGuaranteedAccuracy() {
 		GearItem claws = byName("Dragon claws");
 		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -102,8 +92,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void magicShortbowImbuedCostsLessThanRegular()
-	{
+	public void magicShortbowImbuedCostsLessThanRegular() {
 		SpecialAttack imbued = SpecialAttack.match(byName("Magic shortbow (i)"), CombatStyle.RANGED);
 		SpecialAttack regular = SpecialAttack.match(byName("Magic shortbow"), CombatStyle.RANGED);
 		Assert.assertNotNull(imbued);
@@ -113,8 +102,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void specWeaponsOnlyMatchTheirOwnStyle()
-	{
+	public void specWeaponsOnlyMatchTheirOwnStyle() {
 		Assert.assertNull(SpecialAttack.match(byName("Dragon dagger"), CombatStyle.RANGED));
 		Assert.assertNull(SpecialAttack.match(byName("Dark bow"), CombatStyle.MELEE));
 		Assert.assertNull(SpecialAttack.match(byName("Abyssal whip"), CombatStyle.MELEE));
@@ -125,8 +113,7 @@ public class SpecialAttackTest
 	 * exact hit chances for these: (1_000_000_000, 1) is ~1,
 	 * (1, 0) is exactly 0.5, (0, 1) is exactly 0.
 	 */
-	private static DpsResult fabricated(GearItem weapon, int maxHit, long attackRoll, long defenceRoll)
-	{
+	private static DpsResult fabricated(GearItem weapon, int maxHit, long attackRoll, long defenceRoll) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
 		return new DpsResult(new Loadout(gear), 0, 0, 0, maxHit, 4, "melee: slash",
@@ -134,8 +121,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void sunspearSpecDealsExactlySeventyPercentOfMaxOnAHit()
-	{
+	public void sunspearSpecDealsExactlySeventyPercentOfMaxOnAHit() {
 		GearItem sunspear = byName("Sunspear");
 		SpecialAttack spec = SpecialAttack.match(sunspear, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -149,8 +135,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void crimsonKistenLandsAllFourRollsAtGuaranteedAccuracyForOneAndAHalfMax()
-	{
+	public void crimsonKistenLandsAllFourRollsAtGuaranteedAccuracyForOneAndAHalfMax() {
 		GearItem kisten = byName("Crimson kisten");
 		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -161,8 +146,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void crimsonKistenDealsNothingWhenEveryRollMisses()
-	{
+	public void crimsonKistenDealsNothingWhenEveryRollMisses() {
 		GearItem kisten = byName("Crimson kisten");
 		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -171,8 +155,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void crimsonKistenMidAccuracyMatchesTheBinomialClosedForm()
-	{
+	public void crimsonKistenMidAccuracyMatchesTheBinomialClosedForm() {
 		GearItem kisten = byName("Crimson kisten");
 		SpecialAttack spec = SpecialAttack.match(kisten, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -183,8 +166,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void burningClawsFirstCascadeTierAveragesFiveQuartersOfMaxAtGuaranteedAccuracy()
-	{
+	public void burningClawsFirstCascadeTierAveragesFiveQuartersOfMaxAtGuaranteedAccuracy() {
 		GearItem claws = byName("Burning claws");
 		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -194,8 +176,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void burningClawsFullMissStillAveragesOnePointTwo()
-	{
+	public void burningClawsFullMissStillAveragesOnePointTwo() {
 		GearItem claws = byName("Burning claws");
 		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -205,8 +186,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void burningClawsMidAccuracyMatchesTheCascadeClosedForm()
-	{
+	public void burningClawsMidAccuracyMatchesTheCascadeClosedForm() {
 		GearItem claws = byName("Burning claws");
 		SpecialAttack spec = SpecialAttack.match(claws, CombatStyle.MELEE);
 		Assert.assertNotNull(spec);
@@ -216,8 +196,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void newAuditSpecWeaponsResolveFromTheRegistry()
-	{
+	public void newAuditSpecWeaponsResolveFromTheRegistry() {
 		SpecialAttack zgs = SpecialAttack.match(byName("Zamorak godsword"), CombatStyle.MELEE);
 		Assert.assertNotNull(zgs);
 		Assert.assertEquals("Zamorak godsword", zgs.getDisplayName());
@@ -242,8 +221,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void ornateGraniteMaulSpecCostsFiftyWhileThePlainMaulCostsSixty()
-	{
+	public void ornateGraniteMaulSpecCostsFiftyWhileThePlainMaulCostsSixty() {
 		SpecialAttack ornate = SpecialAttack.match(byName("Granite maul (ornate handle)"), CombatStyle.MELEE);
 		SpecialAttack plain = SpecialAttack.match(byName("Granite maul"), CombatStyle.MELEE);
 		Assert.assertNotNull(ornate);
@@ -255,8 +233,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void accursedSceptreSpecBoostsDamageByHalf()
-	{
+	public void accursedSceptreSpecBoostsDamageByHalf() {
 		GearItem sceptre = byName("Accursed sceptre");
 		SpecialAttack spec = SpecialAttack.match(sceptre, CombatStyle.MAGIC);
 		Assert.assertNotNull(spec);
@@ -267,8 +244,7 @@ public class SpecialAttackTest
 	}
 
 	@Test
-	public void volatileSpellMaxMatchesTheWikiAnchorsAtEightyFourAndNinetyNineMagic()
-	{
+	public void volatileSpellMaxMatchesTheWikiAnchorsAtEightyFourAndNinetyNineMagic() {
 		GearItem staff = byName("Volatile nightmare staff");
 		SpecialAttack spec = SpecialAttack.match(staff, CombatStyle.MAGIC);
 		Assert.assertNotNull(spec);

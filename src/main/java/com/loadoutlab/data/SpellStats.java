@@ -3,8 +3,7 @@ package com.loadoutlab.data;
 
 import lombok.Getter;
 
-public final class SpellStats
-{
+public final class SpellStats {
 	@Getter
 	private final String name;
 	@Getter
@@ -20,8 +19,7 @@ public final class SpellStats
 	@Getter
 	private final String nameSecondWord;
 
-	public SpellStats(String name, int maxHit, int magicLevel, String spellbook, String element)
-	{
+	public SpellStats(String name, int maxHit, int magicLevel, String spellbook, String element) {
 		this.name = name == null ? "" : name;
 		this.maxHit = maxHit;
 		this.magicLevel = magicLevel;
@@ -46,8 +44,7 @@ public final class SpellStats
 
 
 
-	public String toString()
-	{
+	public String toString() {
 		return name;
 	}
 }

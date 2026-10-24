@@ -9,14 +9,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class StoragesApiTest
-{
+class StoragesApiTest {
 	private static final IntUnaryOperator IDENTITY = IntUnaryOperator.identity();
 
 	@Test
 	@DisplayName("a request needs a non-empty source; anything else has no requester")
-	void requesterValidation()
-	{
+	void requesterValidation() {
 		assertEquals("Some Plugin", StoragesApi.requester(Map.of("source", "Some Plugin")));
 		assertNull(StoragesApi.requester(null));
 		assertNull(StoragesApi.requester(Map.of()));
@@ -26,8 +24,7 @@ class StoragesApiTest
 
 	@Test
 	@DisplayName("a storage entry carries category, name, lastUpdated, and the item list")
-	void storageEntryShape()
-	{
+	void storageEntryShape() {
 		Map<String, Object> entry = StoragesApi.storage(
 			"collection", "bank", -1L, Map.of(4151, 1), IDENTITY);
 
@@ -44,8 +41,7 @@ class StoragesApiTest
 
 	@Test
 	@DisplayName("ids are canonicalized, and variants that collapse to one id sum quantities")
-	void canonicalizationMergesVariants()
-	{
+	void canonicalizationMergesVariants() {
 		// Pretend 4151 (whip) and 12773 (whip (or)) both canonicalize to 4151.
 		IntUnaryOperator canonicalize = id -> id == 12773 ? 4151 : id;
 		Map<Integer, Integer> items = new HashMap<>();
@@ -65,8 +61,7 @@ class StoragesApiTest
 
 	@Test
 	@DisplayName("empty or all-junk storages produce no entry, and junk items are dropped")
-	void emptyStoragesProduceNoEntry()
-	{
+	void emptyStoragesProduceNoEntry() {
 		assertNull(StoragesApi.storage("collection", "bank", -1L, Map.of(), IDENTITY));
 
 		Map<Integer, Integer> junk = new HashMap<>();
@@ -79,8 +74,7 @@ class StoragesApiTest
 
 	@Test
 	@DisplayName("the response envelope echoes the requester and states version 1")
-	void responseEnvelope()
-	{
+	void responseEnvelope() {
 		List<Map<String, Object>> storages = List.of(
 			StoragesApi.storage("collection", "bank", -1L, Map.of(4151, 1), IDENTITY));
 

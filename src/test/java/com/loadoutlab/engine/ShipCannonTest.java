@@ -12,12 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * documented formula (Boat combat / Cannons, 2026-08-31):
  * floor((level * (cannonStr + ballStr + wornStr + 64) + 320) / 640).
  */
-class ShipCannonTest
-{
+class ShipCannonTest {
 	@Test
 	@DisplayName("player max hit matches the wiki formula at hand-computed points")
-	void playerMaxHitPins()
-	{
+	void playerMaxHitPins() {
 		// 99 ranged, dragon cannon (32) + dragon ball (270), nothing worn:
 		// (99 * 366 + 320) / 640 = 57.11 -> 57.
 		assertEquals(57, ShipCannon.playerMaxHit(99, 32, 270, 0, false));
@@ -36,8 +34,7 @@ class ShipCannonTest
 
 	@Test
 	@DisplayName("crew scaling is the documented (priv + 13) / 20 - and flagged stale")
-	void crewScalingPins()
-	{
+	void crewScalingPins() {
 		assertEquals(48, ShipCannon.crewMaxHit(57, 4)); // 57 * 17/20 = 48.45
 		assertEquals(39, ShipCannon.crewMaxHit(57, 1)); // 57 * 14/20 = 39.9
 		assertEquals(0, ShipCannon.crewMaxHit(0, 4));
@@ -50,8 +47,7 @@ class ShipCannonTest
 
 	@Test
 	@DisplayName("cannon DPS averages the uniform roll over the 7-tick cycle")
-	void dpsShape()
-	{
+	void dpsShape() {
 		// Max 57 at guaranteed hits: 28.5 damage per 4.2s cycle.
 		assertEquals(57 / 2.0 / 4.2, ShipCannon.dps(57, 1.0), 1e-9);
 		// Halved hit chance halves it; zero chance is zero.
@@ -61,8 +57,7 @@ class ShipCannonTest
 
 	@Test
 	@DisplayName("a cannon fires balls at or below its tier - granite rides above mithril")
-	void ballTierClamps()
-	{
+	void ballTierClamps() {
 		assertTrue(NavalCombat.canFire("dragon", "dragon"));
 		assertTrue(NavalCombat.canFire("dragon", "bronze"));
 		assertFalse(NavalCombat.canFire("bronze", "iron"));
@@ -74,8 +69,7 @@ class ShipCannonTest
 
 	@Test
 	@DisplayName("shared ammo caps at the LOWER cannon's tier (REQ-SC-2)")
-	void sharedAmmoCap()
-	{
+	void sharedAmmoCap() {
 		assertEquals("mithril", NavalCombat.bestSharedBall(List.of("dragon", "mithril")));
 		assertEquals("dragon", NavalCombat.bestSharedBall(List.of("dragon", "dragon")));
 		assertEquals("bronze", NavalCombat.bestSharedBall(List.of("bronze")));
@@ -84,8 +78,7 @@ class ShipCannonTest
 
 	@Test
 	@DisplayName("the data tables carry the wiki's current numbers")
-	void dataPins()
-	{
+	void dataPins() {
 		// Dragon ball at the post-2026-03-18 +270, never the launch +174.
 		assertEquals(270, NavalCombat.ball("dragon").strength);
 		assertEquals(31916, NavalCombat.ball("dragon").itemId);

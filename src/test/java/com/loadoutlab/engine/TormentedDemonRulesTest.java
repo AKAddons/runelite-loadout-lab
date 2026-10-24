@@ -20,41 +20,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * demonbane cast bypasses, a plain elemental cast through any staff
  * does not.
  */
-class TormentedDemonRulesTest
-{
+class TormentedDemonRulesTest {
 	private static LoadoutData data;
 	private static MonsterStats demon;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		demon = data.searchMonsters("tormented demon", 1).get(0);
 		assertTrue(TormentedDemonRules.applies(demon), "test premise: the TD row");
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static double factor(CombatStyle style, String weapon, String spellName)
-	{
+	private static double factor(CombatStyle style, String weapon, String spellName) {
 		return TormentedDemonRules.damageFactor(demon, style,
 			weapon == null ? null : byName(weapon), spellName);
 	}
 
 	@Test
 	@DisplayName("demonbane and abyssal melee bypass the reduction; plain melee pays it")
-	void meleeBypasses()
-	{
+	void meleeBypasses() {
 		assertEquals(1.0, factor(CombatStyle.MELEE, "arclight", null), 1e-9);
 		assertEquals(1.0, factor(CombatStyle.MELEE, "burning claws", null), 1e-9,
 			"the claws are demonbane - the pre-restructure list carried them");
@@ -64,16 +57,14 @@ class TormentedDemonRulesTest
 
 	@Test
 	@DisplayName("the Scorching bow bypasses on the ranged side; a blowpipe pays")
-	void rangedBypasses()
-	{
+	void rangedBypasses() {
 		assertEquals(1.0, factor(CombatStyle.RANGED, "scorching bow", null), 1e-9);
 		assertEquals(0.8, factor(CombatStyle.RANGED, "toxic blowpipe", null), 1e-9);
 	}
 
 	@Test
 	@DisplayName("magic bypasses by the SPELL being demonbane, not the staff held")
-	void magicGoesBySpell()
-	{
+	void magicGoesBySpell() {
 		assertEquals(1.0, factor(CombatStyle.MAGIC, "purging staff", "Dark Demonbane"), 1e-9);
 		assertEquals(0.8, factor(CombatStyle.MAGIC, "purging staff", "Fire Surge"), 1e-9,
 			"a plain cast is not demonbane damage, whatever stick throws it");
@@ -82,8 +73,7 @@ class TormentedDemonRulesTest
 
 	@Test
 	@DisplayName("the reduction exists only at Tormented Demons")
-	void scopedToTds()
-	{
+	void scopedToTds() {
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		assertEquals(1.0, TormentedDemonRules.damageFactor(goblin,
 			CombatStyle.MELEE, byName("dragon scimitar"), null), 1e-9);

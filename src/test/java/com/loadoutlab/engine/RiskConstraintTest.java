@@ -9,20 +9,17 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class RiskConstraintTest
-{
+public class RiskConstraintTest {
 	private static LoadoutData data;
 	private static MonsterStats callisto;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 		callisto = data.searchMonsters("callisto", 1).get(0);
 	}
 
-	private static OptimizationRequest request(CombatStyle style, int maxTradeables)
-	{
+	private static OptimizationRequest request(CombatStyle style, int maxTradeables) {
 		return TestRequests.of(callisto, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1)
@@ -30,8 +27,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void wildernessBossesAreDetectedAndRegularBossesAreNot()
-	{
+	public void wildernessBossesAreDetectedAndRegularBossesAreNot() {
 		Assert.assertTrue(WildernessMonsters.isWilderness(callisto));
 		Assert.assertTrue(WildernessMonsters.isWilderness(
 			data.searchMonsters("revenant dragon", 1).get(0)));
@@ -45,8 +41,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void taskOnlySlayerBossesAreDetectedAndOthersAreNot()
-	{
+	public void taskOnlySlayerBossesAreDetectedAndOthersAreNot() {
 		Assert.assertTrue(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
 			data.searchMonsters("alchemical hydra", 1).get(0)));
 		Assert.assertTrue(com.loadoutlab.data.SlayerLockedMonsters.isTaskOnly(
@@ -59,11 +54,9 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void riskCappedSetsTotalDroppableValueStaysWithinTheBudget()
-	{
+	public void riskCappedSetsTotalDroppableValueStaysWithinTheBudget() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED})
-		{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED}) {
 			List<DpsResult> capped = optimizer.optimize(data, request(style, 3));
 			Assert.assertFalse(capped.isEmpty());
 			DpsResult best = optimizer.fillDpsNeutralSlots(data, request(style, 3), capped.get(0));
@@ -74,8 +67,7 @@ public class RiskConstraintTest
 			PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), null, 3);
 			Assert.assertTrue(style + " risks " + risk.riskGp,
 				risk.riskGp <= OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
-			for (PvpRisk.Charge charge : risk.untradeableCharges)
-			{
+			for (PvpRisk.Charge charge : risk.untradeableCharges) {
 				Assert.assertTrue(charge.item.label() + " costs " + charge.costGp,
 					charge.costGp <= OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
 			}
@@ -83,8 +75,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void aRichBankNeverStarvesTheBeamOfCheapCompliantSets()
-	{
+	public void aRichBankNeverStarvesTheBeamOfCheapCompliantSets() {
 		// Field bug 2026-07-18: KBD magic, wildy 75k cap, anti-dragon shield
 		// excluded. The bank's expensive magic gear filled the score-cut
 		// beam with partials that all bust the cap once the forced
@@ -98,8 +89,7 @@ public class RiskConstraintTest
 		// The cheap compliant line...
 		for (String name : new String[]{"mystic hat", "mystic robe top", "mystic robe bottom",
 			"mystic gloves", "mystic boots", "battlestaff", "ancient wyvern shield",
-			"anti-dragon shield"})
-		{
+			"anti-dragon shield"}) {
 			owned.put(gear(name).getId(), 1);
 		}
 		// ...buried under the expensive flood that dominates the beam. The
@@ -115,8 +105,7 @@ public class RiskConstraintTest
 			"dagon'hai hat", "dagon'hai robe top", "dagon'hai robe bottom",
 			"occult necklace", "amulet of torture", "amulet of fury",
 			"tormented bracelet", "eternal boots", "magus ring",
-			"kodai wand", "nightmare staff", "dragon hunter wand"})
-		{
+			"kodai wand", "nightmare staff", "dragon hunter wand"}) {
 			owned.put(gear(name).getId(), 1);
 		}
 		// No prayer: augury saturates magic accuracy vs KBD, ties the
@@ -138,12 +127,9 @@ public class RiskConstraintTest
 			PvpRisk.riskGp(found, null, 3) <= 75_000);
 	}
 
-	private static com.loadoutlab.data.GearItem gear(String name)
-	{
-		for (com.loadoutlab.data.GearItem item : data.getGearItems())
-		{
-			if (name.equalsIgnoreCase(item.getName()))
-			{
+	private static com.loadoutlab.data.GearItem gear(String name) {
+		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+			if (name.equalsIgnoreCase(item.getName())) {
 				return item;
 			}
 		}
@@ -151,8 +137,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void realUntradeablesCarryTheirWikiDeathFees()
-	{
+	public void realUntradeablesCarryTheirWikiDeathFees() {
 		Assert.assertEquals(500_000, costOf("infernal cape"));
 		Assert.assertEquals(150_000, costOf("fire cape"));
 		Assert.assertEquals(500_000, costOf("elite void top"));
@@ -160,8 +145,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void curatedConvertsArePricedAtWhatTheKillerGets()
-	{
+	public void curatedConvertsArePricedAtWhatTheKillerGets() {
 		// Charged items drop uncharged for the killer (wiki, 2026-07).
 		Assert.assertEquals(10_700_000, costOf("toxic blowpipe"));
 		Assert.assertEquals(4, categoryOf("toxic blowpipe"));
@@ -177,8 +161,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void curatedCheapReclaimsNoLongerPayTheUnknownDefault()
-	{
+	public void curatedCheapReclaimsNoLongerPayTheUnknownDefault() {
 		// Quest and shop reclaims (wiki-priced), not the 500k fallback.
 		Assert.assertEquals(100_000, costOf("sunspear"));
 		Assert.assertEquals(2, categoryOf("sunspear"));
@@ -189,22 +172,17 @@ public class RiskConstraintTest
 		Assert.assertEquals(1, categoryOf("max cape"));
 	}
 
-	private static long costOf(String name)
-	{
+	private static long costOf(String name) {
 		return UntradeableDeathCosts.costFor(untradeable(name));
 	}
 
-	private static int categoryOf(String name)
-	{
+	private static int categoryOf(String name) {
 		return UntradeableDeathCosts.categoryFor(untradeable(name));
 	}
 
-	private static com.loadoutlab.data.GearItem untradeable(String name)
-	{
-		for (com.loadoutlab.data.GearItem item : data.getGearItems())
-		{
-			if (name.equalsIgnoreCase(item.getName()) && !item.isTradeable())
-			{
+	private static com.loadoutlab.data.GearItem untradeable(String name) {
+		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
+			if (name.equalsIgnoreCase(item.getName()) && !item.isTradeable()) {
 				return item;
 			}
 		}
@@ -212,8 +190,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void dpsTiesBreakTowardLessRisk_gloryBeatsTheCrumblingDamnedAmulet()
-	{
+	public void dpsTiesBreakTowardLessRisk_gloryBeatsTheCrumblingDamnedAmulet() {
 		// Amulet of the damned and amulet of glory have IDENTICAL stats.
 		// The damned crumbles to dust on death (34k every time); the glory
 		// rides a kept slot for free. In risk mode the tie must go to the
@@ -235,8 +212,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void theDamnedAmuletLosesStatTiesOutsideTheWildernessToo()
-	{
+	public void theDamnedAmuletLosesStatTiesOutsideTheWildernessToo() {
 		// It crumbles on ANY death (PvM included); its barrows set bonus is
 		// not modeled, so with a glory owned it should never be suggested.
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
@@ -251,15 +227,13 @@ public class RiskConstraintTest
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req);
 		Assert.assertFalse(out.isEmpty());
 		com.loadoutlab.data.GearItem neck = out.get(0).getLoadout().get(com.loadoutlab.data.GearSlot.NECK);
-		if (neck != null)
-		{
+		if (neck != null) {
 			Assert.assertEquals("Amulet of glory", neck.getName());
 		}
 	}
 
 	@Test
-	public void protectItemBuysAFourthRiskSlotAndAtLeastAsMuchDps()
-	{
+	public void protectItemBuysAFourthRiskSlotAndAtLeastAsMuchDps() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		double three = optimizer.optimize(data, request(CombatStyle.MELEE, 3)).get(0).getDps();
 		List<DpsResult> four = optimizer.optimize(data, request(CombatStyle.MELEE, 4));
@@ -268,8 +242,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void aProtectOnlyItemIsNeverLeftInTheLostPile()
-	{
+	public void aProtectOnlyItemIsNeverLeftInTheLostPile() {
 		// Flag a mid-value tradeable "only bring if protected on death". In a
 		// low-risk set it must come back either protected (a kept slot) or
 		// not at all - never in the dropped pile.
@@ -297,8 +270,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void unconstrainedIsAtLeastAsStrongAsTheCappedSet()
-	{
+	public void unconstrainedIsAtLeastAsStrongAsTheCappedSet() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		double capped = optimizer.optimize(data, request(CombatStyle.RANGED, 3)).get(0).getDps();
 		double free = optimizer.optimize(data, request(CombatStyle.RANGED, -1)).get(0).getDps();
@@ -306,8 +278,7 @@ public class RiskConstraintTest
 	}
 
 	@Test
-	public void aTighterRiskBudgetIsHonoredAndNeverBeatsTheDefault()
-	{
+	public void aTighterRiskBudgetIsHonoredAndNeverBeatsTheDefault() {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		List<DpsResult> tight = optimizer.optimize(data,
 			request(CombatStyle.MELEE, 3).withRiskBudgetGp(10_000));

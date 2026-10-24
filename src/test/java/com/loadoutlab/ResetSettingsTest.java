@@ -15,15 +15,12 @@ import static org.mockito.Mockito.when;
  * setting. Hub review of 0.5.2 (Psychemaster, 2026-09-29): "Reflection is
  * not allowed" - the key list now comes from RuneLite's own config
  * descriptor, never from walking the interface ourselves. */
-class ResetSettingsTest
-{
+class ResetSettingsTest {
 	@Test
 	@DisplayName("the reset unsets every setting the config descriptor lists, in our group")
-	void unsetsEverySetting()
-	{
+	void unsetsEverySetting() {
 		ConfigManager manager = mock(ConfigManager.class);
-		LoadoutLabConfig config = new LoadoutLabConfig()
-		{
+		LoadoutLabConfig config = new LoadoutLabConfig() {
 		};
 		when(manager.getConfigDescriptor(config)).thenCallRealMethod();
 

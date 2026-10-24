@@ -9,15 +9,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * completes it seems to use the first search's animation". A compute that
  * starts while the loader is already running must re-pick from the NEW
  * selection's pool. */
-class LoaderRepickTest
-{
+class LoaderRepickTest {
 	@Test
 	@DisplayName("a compute started mid-animation plays the new selection's pool")
-	void repicksWhenTheKeyChanges()
-	{
+	void repicksWhenTheKeyChanges() {
 		AsciiLoader loader = new AsciiLoader();
-		try
-		{
+		try {
 			loader.setKey("sea");
 			loader.setRunning(true);
 			assertEquals("sea", loader.playingKey());
@@ -29,9 +26,7 @@ class LoaderRepickTest
 			loader.setKey(null);
 			loader.setRunning(true);
 			assertNull(loader.playingKey());
-		}
-		finally
-		{
+		} finally {
 			loader.setRunning(false);
 		}
 	}

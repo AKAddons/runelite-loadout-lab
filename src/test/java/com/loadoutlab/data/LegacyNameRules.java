@@ -15,14 +15,11 @@ import net.runelite.api.Quest;
  * and asserts the resource-driven implementations agree exactly. Do not
  * "improve" this file - its whole value is being the frozen old behaviour.
  */
-final class LegacyNameRules
-{
-	private LegacyNameRules()
-	{
+final class LegacyNameRules {
+	private LegacyNameRules() {
 	}
 
-	static Set<String> forItem(int id, String name, String version)
-	{
+	static Set<String> forItem(int id, String name, String version) {
 		String item = ((name == null ? "" : name) + " " + (version == null ? "" : version)).toLowerCase(Locale.ROOT);
 		Set<String> quests = new LinkedHashSet<>();
 
@@ -65,18 +62,14 @@ final class LegacyNameRules
 		return quests;
 	}
 
-	private static void requireIf(Set<String> quests, boolean condition, Quest quest)
-	{
-		if (condition)
-		{
+	private static void requireIf(Set<String> quests, boolean condition, Quest quest) {
+		if (condition) {
 			quests.add(quest.name());
 		}
 	}
 
-	static int spellLevel(String name)
-	{
-		switch (name == null ? "" : name)
-		{
+	static int spellLevel(String name) {
+		switch (name == null ? "" : name) {
 			case "Wind Strike":
 				return 1;
 			case "Water Strike":
@@ -176,8 +169,7 @@ final class LegacyNameRules
 		}
 	}
 
-	static boolean knownSlayerMonster(String name)
-	{
+	static boolean knownSlayerMonster(String name) {
 		String normalized = name == null ? "" : name.toLowerCase(Locale.ROOT);
 		return normalized.contains("aberrant spectre")
 			|| normalized.contains("abyssal demon")

@@ -14,12 +14,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * non-JSON-safe values fail loudly instead of leaking classes across
  * the classloader seam.
  */
-class ModelShapeTest
-{
+class ModelShapeTest {
 	@Test
 	@DisplayName("every page carries the contract version")
-	void pageCarriesVersion()
-	{
+	void pageCarriesVersion() {
 		Map<String, Object> page = RenderModel.page(List.of());
 		assertEquals(RenderModel.VERSION, page.get("v"));
 		assertTrue(Json.write(page).startsWith("{\"v\":" + RenderModel.VERSION));
@@ -27,8 +25,7 @@ class ModelShapeTest
 
 	@Test
 	@DisplayName("canonical JSON is byte-stable and escapes strictly")
-	void canonicalAndEscaped()
-	{
+	void canonicalAndEscaped() {
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("name", "Rada's \"blessing\"\n4\\");
 		node.put("dps", 9.196969696969697d);
@@ -43,8 +40,7 @@ class ModelShapeTest
 
 	@Test
 	@DisplayName("non-JSON-safe values fail loudly, never cross the seam")
-	void unsafeValuesRejected()
-	{
+	void unsafeValuesRejected() {
 		assertThrows(IllegalArgumentException.class,
 			() -> Json.write(Map.of("bad", new Object())));
 		assertThrows(IllegalArgumentException.class,

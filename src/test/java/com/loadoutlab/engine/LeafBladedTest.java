@@ -20,33 +20,27 @@ import static org.junit.jupiter.api.Assertions.*;
  * the conditional also needs a candidate-score boost and an
  * optimizer-level test proving the axe actually gets PICKED.
  */
-class LeafBladedTest
-{
+class LeafBladedTest {
 	private static LoadoutData data;
 	private static MonsterStats kurask;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		kurask = data.searchMonsters("kurask", 1).get(0);
 		assertTrue(kurask.hasAttribute("leafy"), "test premise: kurask is leafy");
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static DpsResult calc(MonsterStats monster, GearItem weapon)
-	{
+	private static DpsResult calc(MonsterStats monster, GearItem weapon) {
 		OptimizationRequest request = new OptimizationRequest(monster,
 			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, true,
@@ -58,8 +52,7 @@ class LeafBladedTest
 
 	@Test
 	@DisplayName("the battleaxe hits 17.5% harder at a kurask than its raw stats say")
-	void damageBoostApplies()
-	{
+	void damageBoostApplies() {
 		GearItem axe = byName("leaf-bladed battleaxe");
 		GearItem sword = byName("leaf-bladed sword");
 
@@ -77,8 +70,7 @@ class LeafBladedTest
 
 	@Test
 	@DisplayName("the optimizer PICKS the battleaxe at kurask (pool lesson)")
-	void optimizerPicksTheAxe()
-	{
+	void optimizerPicksTheAxe() {
 		OptimizationRequest request = new OptimizationRequest(kurask,
 			CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,

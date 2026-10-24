@@ -16,14 +16,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * sentinel values (-1), which the render side draws as the prayer-book
  * wings and the muted dash, both still clickable.
  */
-class AssumeSentinelTest
-{
+class AssumeSentinelTest {
 	@Test
 	@DisplayName("an empty assume label yields sentinel pickers, never null")
-	void emptyLabelKeepsThePickers()
-	{
-		for (String label : new String[]{null, ""})
-		{
+	void emptyLabelKeepsThePickers() {
+		for (String label : new String[]{null, ""}) {
 			Map<String, Object> node = RenderModel.assumeNode(label);
 			assertNotNull(node, "a null node erases the pickers (label=" + label + ")");
 			assertEquals(-1, node.get("prayerSprite"), "sentinel prayer sprite");
@@ -34,8 +31,7 @@ class AssumeSentinelTest
 
 	@Test
 	@DisplayName("real labels still resolve their icons")
-	void realLabelsUnchanged()
-	{
+	void realLabelsUnchanged() {
 		Map<String, Object> node = RenderModel.assumeNode("Piety + Super combat");
 		assertNotNull(node);
 		assertTrue((int) node.get("prayerSprite") > 0, "Piety resolves a sprite");
@@ -46,8 +42,7 @@ class AssumeSentinelTest
 	 * the raid hands it out (CoX overloads, ToA salts). */
 	@Test
 	@DisplayName("a raid-supplied boost is flagged so the supplies row does not pack it")
-	void raidSuppliedBoostsAreFlagged()
-	{
+	void raidSuppliedBoostsAreFlagged() {
 		Map<String, Object> potion = RenderModel.assumeNode("Rigour + Divine ranging potion");
 		assertEquals(23733, potion.get("boostItem"));
 		assertEquals(false, potion.get("boostSupplied"));

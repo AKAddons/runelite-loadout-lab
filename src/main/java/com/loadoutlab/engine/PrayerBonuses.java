@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 @RequiredArgsConstructor
-public final class PrayerBonuses
-{
+public final class PrayerBonuses {
 	public static final PrayerBonuses NONE = new PrayerBonuses(1.0, 1.0, 1.0, 1.0, 1.0, 0.0);
 
 	@Getter
@@ -33,67 +32,48 @@ public final class PrayerBonuses
 	@Getter
 	private final double magicDamagePercent;
 
-	public static PrayerBonuses bestAvailable(PlayerLevels levels)
-	{
+	public static PrayerBonuses bestAvailable(PlayerLevels levels) {
 		return bestAvailable(levels, PrayerUnlocks.ALL);
 	}
 
-	public static PrayerBonuses bestAvailable(PlayerLevels levels, PrayerUnlocks unlocks)
-	{
+	public static PrayerBonuses bestAvailable(PlayerLevels levels, PrayerUnlocks unlocks) {
 		String meleeName;
 		double meleeAcc = 1.0;
 		double meleeStr = 1.0;
-		if (levels.getPrayer() >= 84 && levels.getAttack() >= 75 && levels.getStrength() >= 75 && unlocks.zeal())
-		{
+		if (levels.getPrayer() >= 84 && levels.getAttack() >= 75 && levels.getStrength() >= 75 && unlocks.zeal()) {
 			// Zeal also gates on 75 Attack and Strength.
 			meleeAcc = 1.25;
 			meleeStr = 1.28;
 			meleeName = "Zeal";
-		}
-		else if (levels.getPrayer() >= 70 && unlocks.piety())
-		{
+		} else if (levels.getPrayer() >= 70 && unlocks.piety()) {
 			meleeAcc = 1.20;
 			meleeStr = 1.23;
 			meleeName = "Piety";
-		}
-		else if (levels.getPrayer() >= 60 && unlocks.chivalry())
-		{
+		} else if (levels.getPrayer() >= 60 && unlocks.chivalry()) {
 			meleeAcc = 1.15;
 			meleeStr = 1.18;
 			meleeName = "Chivalry";
-		}
-		else
-		{
+		} else {
 			// Every applied tier is NAMED - the assumes chip must never fold
 			// in a multiplier it does not admit to (audit A2.12).
 			List<String> parts = new ArrayList<>();
-			if (levels.getPrayer() >= 34)
-			{
+			if (levels.getPrayer() >= 34) {
 				meleeAcc = 1.15;
 				parts.add("Incredible Reflexes");
-			}
-			else if (levels.getPrayer() >= 16)
-			{
+			} else if (levels.getPrayer() >= 16) {
 				meleeAcc = 1.10;
 				parts.add("Improved Reflexes");
-			}
-			else if (levels.getPrayer() >= 7)
-			{
+			} else if (levels.getPrayer() >= 7) {
 				meleeAcc = 1.05;
 				parts.add("Clarity of Thought");
 			}
-			if (levels.getPrayer() >= 31)
-			{
+			if (levels.getPrayer() >= 31) {
 				meleeStr = 1.15;
 				parts.add("Ultimate Strength");
-			}
-			else if (levels.getPrayer() >= 13)
-			{
+			} else if (levels.getPrayer() >= 13) {
 				meleeStr = 1.10;
 				parts.add("Superhuman Strength");
-			}
-			else if (levels.getPrayer() >= 4)
-			{
+			} else if (levels.getPrayer() >= 4) {
 				meleeStr = 1.05;
 				parts.add("Burst of Strength");
 			}
@@ -129,12 +109,10 @@ public final class PrayerBonuses
 	/** The selectable named tiers per style, best first - the assume-chip
 	 * picker (field direction 2026-07-21: "I don't use Piety against every
 	 * mob"). Factors mirror bestAvailable's cascade exactly. */
-	public static String[] optionsFor(CombatStyle style)
-	{
+	public static String[] optionsFor(CombatStyle style) {
 		Object[][] picks = picksFor(style);
 		String[] names = new String[picks.length];
-		for (int i = 0; i < picks.length; i++)
-		{
+		for (int i = 0; i < picks.length; i++) {
 			names[i] = (String) picks[i][0];
 		}
 		return names;
@@ -148,15 +126,12 @@ public final class PrayerBonuses
 
 	private static final Map<String, Object[][]> PICKS = new HashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.objectOrThrow("prayer_picks.json");
-		for (String style : new String[]{"melee", "ranged", "magic"})
-		{
+		for (String style : new String[]{"melee", "ranged", "magic"}) {
 			JsonArray rows = root.getAsJsonArray(style);
 			Object[][] picks = new Object[rows.size()][];
-			for (int i = 0; i < picks.length; i++)
-			{
+			for (int i = 0; i < picks.length; i++) {
 				JsonArray row = rows.get(i).getAsJsonArray();
 				picks[i] = new Object[]{row.get(0).getAsString(), row.get(1).getAsDouble(), row.get(2).getAsDouble()};
 			}
@@ -164,20 +139,16 @@ public final class PrayerBonuses
 		}
 	}
 
-	private static Object[][] picksFor(CombatStyle style)
-	{
+	private static Object[][] picksFor(CombatStyle style) {
 		return PICKS.get(Names.lower(style.name()));
 	}
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with
 	 * this style's replaced by the named tier (the other styles' values are
 	 * irrelevant to a single-style request). Unknown names fall back. */
-	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback)
-	{
-		for (Object[] row : picksFor(style))
-		{
-			if (!row[0].equals(pick))
-			{
+	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback) {
+		for (Object[] row : picksFor(style)) {
+			if (!row[0].equals(pick)) {
 				continue;
 			}
 			// The fallback's six factors with this style's pair replaced.
@@ -196,10 +167,8 @@ public final class PrayerBonuses
 	}
 
 	/** The prayer tier the numbers assume for a style ("Piety", "Rigour"). */
-	public String nameFor(CombatStyle style)
-	{
-		switch (style)
-		{
+	public String nameFor(CombatStyle style) {
+		switch (style) {
 			case RANGED: return rangedName;
 			case MAGIC: return magicName;
 			default: return meleeName;

@@ -19,18 +19,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * any shop sells them, and requiring every air rune in the bank would be
  * noise, not honesty.
  */
-class PremiumRuneGateTest
-{
+class PremiumRuneGateTest {
 	private static final int BLOOD = 565;
 	private static final int DEATH = 560;
 	private static final int SOUL = 566;
 	private static final int WRATH = 21880;
 
-	private static OwnedItems bank(int... ids)
-	{
+	private static OwnedItems bank(int... ids) {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (int id : ids)
-		{
+		for (int id : ids) {
 			owned.put(id, 1000);
 		}
 		return new OwnedItems(owned, true);
@@ -38,8 +35,7 @@ class PremiumRuneGateTest
 
 	@Test
 	@DisplayName("a runeless bank blocks blood, death, soul and wrath spells")
-	void runelessBankBlocksPremiumSpells()
-	{
+	void runelessBankBlocksPremiumSpells() {
 		OwnedItems empty = bank();
 		assertFalse(SpellRunes.premiumRunesOwned("Fire Wave", empty), "Fire Wave costs a blood rune");
 		assertFalse(SpellRunes.premiumRunesOwned("Ice Barrage", empty), "Ice Barrage costs blood + death");
@@ -49,8 +45,7 @@ class PremiumRuneGateTest
 
 	@Test
 	@DisplayName("cheap-rune spells always pass - shops sell their runes")
-	void cheapSpellsAlwaysPass()
-	{
+	void cheapSpellsAlwaysPass() {
 		OwnedItems empty = bank();
 		assertTrue(SpellRunes.premiumRunesOwned("Fire Strike", empty));
 		assertTrue(SpellRunes.premiumRunesOwned("Fire Bolt", empty));
@@ -58,8 +53,7 @@ class PremiumRuneGateTest
 
 	@Test
 	@DisplayName("owning exactly the needed premium runes unlocks the spell")
-	void owningTheRunesUnlocks()
-	{
+	void owningTheRunesUnlocks() {
 		assertTrue(SpellRunes.premiumRunesOwned("Fire Wave", bank(BLOOD)));
 		assertFalse(SpellRunes.premiumRunesOwned("Ice Barrage", bank(BLOOD)),
 			"Ice Barrage also needs death runes");
@@ -70,8 +64,7 @@ class PremiumRuneGateTest
 
 	@Test
 	@DisplayName("unknown spells and a null bank fail open")
-	void failsOpen()
-	{
+	void failsOpen() {
 		assertTrue(SpellRunes.premiumRunesOwned("Some Future Spell", bank()));
 		assertTrue(SpellRunes.premiumRunesOwned("Fire Wave", null));
 		assertTrue(SpellRunes.premiumRunesOwned(null, bank()));

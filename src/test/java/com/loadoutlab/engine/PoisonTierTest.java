@@ -17,25 +17,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * recommend dragon dagger p++ over plain). Optimizer-level: the real
  * search must pick the p++ when tiers tie.
  */
-class PoisonTierTest
-{
+class PoisonTierTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("poison tiers parse from corpus versions, unpoisoned included")
-	void tiersParse()
-	{
+	void tiersParse() {
 		int[] tiers = new int[4];
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals("dragon dagger"))
-			{
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals("dragon dagger")) {
 				tiers[item.poisonTier()]++;
 			}
 		}
@@ -45,8 +40,7 @@ class PoisonTierTest
 
 	@Test
 	@DisplayName("owning every dagger tier, the search recommends the p++")
-	void ownedDaggersPickThePlusPlus()
-	{
+	void ownedDaggersPickThePlusPlus() {
 		// 1215 unpoisoned, 1231 p, 5680 p+, 5698 p++.
 		OwnedItems owned = new OwnedItems(
 			Map.of(1215, 1, 1231, 1, 5680, 1, 5698, 1), true);

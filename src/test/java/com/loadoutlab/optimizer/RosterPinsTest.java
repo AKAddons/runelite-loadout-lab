@@ -22,8 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  * Apathy (Discord, 2026-10-09): "Pinning a new spell sdhould change the
  * spell of the set." Until this issue computeRoster handed the optimizer
  * the FIRST member's pins, pinned spell and pinned spec for everyone. */
-class RosterPinsTest
-{
+class RosterPinsTest {
 	private static final int WHIP = 4151;
 	private static final int DRAGON_SCIMITAR = 4587;
 	private static LoadoutData data;
@@ -31,8 +30,7 @@ class RosterPinsTest
 	private static MonsterStats fireGiant;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		graardor = data.searchMonsters("general graardor", 1).get(0);
 		fireGiant = data.searchMonsters("fire giant", 1).get(0);
@@ -40,30 +38,25 @@ class RosterPinsTest
 
 	@Test
 	@DisplayName("a spell pinned on the second member's profile is cast against that member only")
-	void spellPinnedOnTheSecondMember() throws Exception
-	{
+	void spellPinnedOnTheSecondMember() throws Exception {
 		SpellStats fireBolt = spell("Fire Bolt");
 		Map<Integer, SpellStats> spellByMob =
 			Collections.singletonMap(fireGiant.profileId(), fireBolt);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRosterPinned(service,
 				Arrays.asList(graardor, fireGiant), owned(), 1,
 				Collections.emptyMap(), spellByMob, Collections.emptyMap());
 			assertEquals("Fire Bolt", spellAgainst(roster, 1), "the fire giant's magic set casts the pin");
 			assertNotEquals("Fire Bolt", spellAgainst(roster, 0), "Graardor's magic set keeps its own spell");
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
 	@DisplayName("an item pinned on the second member's weapon slot is worn against that member only")
-	void itemPinnedOnTheSecondMember() throws Exception
-	{
+	void itemPinnedOnTheSecondMember() throws Exception {
 		Map<GearSlot, Integer> weapon = new EnumMap<>(GearSlot.class);
 		weapon.put(GearSlot.WEAPON, DRAGON_SCIMITAR);
 		Map<CombatStyle, Map<GearSlot, Integer>> melee = new EnumMap<>(CombatStyle.class);
@@ -71,22 +64,18 @@ class RosterPinsTest
 		Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob =
 			Collections.singletonMap(fireGiant.profileId(), melee);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRosterPinned(service,
 				Arrays.asList(graardor, fireGiant), owned(), 1,
 				pinsByMob, Collections.emptyMap(), Collections.emptyMap());
 			assertEquals(DRAGON_SCIMITAR, weaponAgainst(roster, 1), "the fire giant wears the pin");
 			assertEquals(WHIP, weaponAgainst(roster, 0), "Graardor keeps the whip");
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static Map<Integer, Integer> owned()
-	{
+	private static Map<Integer, Integer> owned() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(WHIP, 1);
 		owned.put(DRAGON_SCIMITAR, 1);
@@ -99,19 +88,16 @@ class RosterPinsTest
 		return owned;
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data.getSpells().stream().filter(s -> s.getName().equals(name))
 			.findFirst().orElseThrow();
 	}
 
-	private static String spellAgainst(OptimizerService.RosterResult roster, int member)
-	{
+	private static String spellAgainst(OptimizerService.RosterResult roster, int member) {
 		return roster.perMob.get(member).get(CombatStyle.MAGIC).owned.get(0).getSpellName();
 	}
 
-	private static int weaponAgainst(OptimizerService.RosterResult roster, int member)
-	{
+	private static int weaponAgainst(OptimizerService.RosterResult roster, int member) {
 		return roster.perMob.get(member).get(CombatStyle.MELEE).owned.get(0)
 			.getLoadout().get(GearSlot.WEAPON).getId();
 	}

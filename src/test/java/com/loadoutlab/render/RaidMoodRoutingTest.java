@@ -19,49 +19,40 @@ import static org.junit.jupiter.api.Assertions.*;
  * surface can see at that moment must already carry the new selection
  * (and a roster's name), not the previous page.
  */
-class RaidMoodRoutingTest
-{
+class RaidMoodRoutingTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** Records the page visible at the moment the computing status lands. */
-	private static final class RecordingLink extends CompanionLink
-	{
+	private static final class RecordingLink extends CompanionLink {
 		Map<String, Object> last;
 		Map<String, Object> atComputing;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			last = page;
 		}
 
 		@Override
-		public void publishStatus(boolean computing)
-		{
-			if (computing)
-			{
+		public void publishStatus(boolean computing) {
+			if (computing) {
 				atComputing = last;
 			}
 		}
 	}
 
-	private static String keyFor(String query) throws Exception
-	{
+	private static String keyFor(String query) throws Exception {
 		PageState state = new PageState();
 		RecordingLink link = new RecordingLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
-		engine.setRosterCompute((mobs, p, onDone) ->
-		{
+		engine.setRosterCompute((mobs, p, onDone) -> {
 		});
 		// Commands arrive on the EDT in the client; the pending publish is
 		// synchronous there, which is the order this test pins.
@@ -73,8 +64,7 @@ class RaidMoodRoutingTest
 
 	@Test
 	@DisplayName("the page seen when computing starts already routes the raid, Zulrah, sea or land")
-	void routesFromTheFreshSelection() throws Exception
-	{
+	void routesFromTheFreshSelection() throws Exception {
 		assertEquals("cox", keyFor("Chambers of Xeric"));
 		assertEquals("tob", keyFor("Theatre of Blood (Entry)"));
 		assertEquals("toa", keyFor("Tombs of Amascut"));

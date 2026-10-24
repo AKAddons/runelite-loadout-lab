@@ -14,22 +14,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * fail here, not silently orphan a requirement (grZ field request
  * 2026-08-08, every row wiki-verified before encoding).
  */
-class RequiredGearTest
-{
+class RequiredGearTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("every curated monster key binds to a loaded corpus row")
-	void keysBindToCorpus()
-	{
-		for (String key : RequiredGear.monsterKeys())
-		{
+	void keysBindToCorpus() {
+		for (String key : RequiredGear.monsterKeys()) {
 			List<MonsterStats> hits = data.searchMonsters(key, 10);
 			assertTrue(hits.stream().anyMatch(
 				m -> m.getName().equalsIgnoreCase(key)),
@@ -39,10 +35,8 @@ class RequiredGearTest
 
 	@Test
 	@DisplayName("every rule's items resolve to standard gear in its slot")
-	void itemsResolve()
-	{
-		for (String key : RequiredGear.monsterKeys())
-		{
+	void itemsResolve() {
+		for (String key : RequiredGear.monsterKeys()) {
 			MonsterStats mob = data.searchMonsters(key, 10).stream()
 				.filter(m -> m.getName().equalsIgnoreCase(key))
 				.findFirst().orElseThrow();
@@ -50,8 +44,7 @@ class RequiredGearTest
 			assertNotNull(rule, key);
 			Set<Integer> ids = rule.ids(data);
 			assertFalse(ids.isEmpty(), key + ": no item resolved");
-			for (int id : ids)
-			{
+			for (int id : ids) {
 				GearItem item = data.getGear(id);
 				assertNotNull(item, key + ": id " + id);
 				assertEquals(rule.slot, item.getSlot(),
@@ -63,8 +56,7 @@ class RequiredGearTest
 
 	@Test
 	@DisplayName("the basilisk family requires a gaze shield; goblins require nothing")
-	void spotChecks()
-	{
+	void spotChecks() {
 		MonsterStats basilisk = data.searchMonsters("basilisk", 1).get(0);
 		RequiredGear.Rule rule = ruleFor(basilisk);
 		assertNotNull(rule);
@@ -78,12 +70,10 @@ class RequiredGearTest
 
 	@Test
 	@DisplayName("every wyvern requires one of the five icy-breath shields")
-	void wyvernsRequireABreathShield()
-	{
+	void wyvernsRequireABreathShield() {
 		// Andrew (2026-10-15): "for the ancient wyvern it's not recommending wyvern shield".
 		Set<Integer> shields = Set.of(2890, 9731, 11283, 11284, 22002, 22003, 21633, 21634);
-		for (String name : new String[]{"ancient wyvern", "spitting wyvern", "taloned wyvern", "long-tailed wyvern", "skeletal wyvern"})
-		{
+		for (String name : new String[]{"ancient wyvern", "spitting wyvern", "taloned wyvern", "long-tailed wyvern", "skeletal wyvern"}) {
 			MonsterStats wyvern = data.searchMonsters(name, 1).get(0);
 			List<RequiredGear.Rule> rules = RequiredGear.rulesFor(wyvern);
 			assertEquals(1, rules.size(), name + ": one shield rule");
@@ -94,19 +84,16 @@ class RequiredGearTest
 
 	@Test
 	@DisplayName("Lizardman shamans outside CoX require the full tier-5 Shayzien set; the slayer helmet may stand in for the helm; the CoX shaman needs nothing")
-	void shamansRequireShayzien()
-	{
+	void shamansRequireShayzien() {
 		MonsterStats temple = data.searchMonsters("Lizardman shaman", 5).stream()
 			.filter(m -> "Lizardman Temple".equals(m.getVersion())).findFirst().orElseThrow();
 		List<RequiredGear.Rule> rules = RequiredGear.rulesFor(temple);
 		assertEquals(5, rules.size(), "head, body, legs, hands, feet");
 		Set<Integer> ids = new java.util.HashSet<>();
-		for (RequiredGear.Rule rule : rules)
-		{
+		for (RequiredGear.Rule rule : rules) {
 			ids.addAll(rule.ids(data));
 		}
-		for (int id : new int[]{13379, 13381, 13380, 13377, 13378})
-		{
+		for (int id : new int[]{13379, 13381, 13380, 13377, 13378}) {
 			assertTrue(ids.contains(id), "Shayzien tier-5 piece " + id);
 		}
 		assertTrue(ids.contains(11864), "the slayer helmet stands in for the helm (hard Kourend & Kebos diary)");
@@ -115,8 +102,7 @@ class RequiredGearTest
 	}
 
 	/** The first rule, or null - the pre-2026-09-17 single-rule view. */
-	private static RequiredGear.Rule ruleFor(MonsterStats mob)
-	{
+	private static RequiredGear.Rule ruleFor(MonsterStats mob) {
 		List<RequiredGear.Rule> rules = RequiredGear.rulesFor(mob);
 		return rules.isEmpty() ? null : rules.get(0);
 	}

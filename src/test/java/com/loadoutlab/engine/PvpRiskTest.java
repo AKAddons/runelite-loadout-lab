@@ -8,25 +8,21 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PvpRiskTest
-{
+public class PvpRiskTest {
 	/** The retired risksRebuild() overloads: the friction-only case
 	 * of risksUnprotected(), i.e. no protect-only flags. They had no
 	 * production callers, so they live here as delegates instead. */
-	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots)
-	{
+	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots) {
 		return risksRebuild(loadout, carriedSpecWeapon, keptSlots, java.util.Collections.emptySet());
 	}
 
 	private static boolean risksRebuild(Loadout loadout, GearItem carriedSpecWeapon, int keptSlots,
-		java.util.Set<Integer> pinnedIds)
-	{
+		java.util.Set<Integer> pinnedIds) {
 		return PvpRisk.risksUnprotected(loadout, carriedSpecWeapon, keptSlots, pinnedIds,
 			java.util.Collections.emptySet());
 	}
 
-	private static GearItem item(int id, GearSlot slot, boolean tradeable, int price)
-	{
+	private static GearItem item(int id, GearSlot slot, boolean tradeable, int price) {
 		return new GearItem(id, "Item" + id, "", slot, "", 0, false, true,
 			tradeable, true, price, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 	}
@@ -34,25 +30,21 @@ public class PvpRiskTest
 	private static final StatBlock SOME_DEFENCE =
 		new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 2);
 
-	private static GearItem untradeable(int id, String name, GearSlot slot, StatBlock bonuses)
-	{
+	private static GearItem untradeable(int id, String name, GearSlot slot, StatBlock bonuses) {
 		return new GearItem(id, name, "", slot, "", 0, false, true,
 			false, true, null, StatBlock.ZERO, StatBlock.ZERO, bonuses, null);
 	}
 
-	private static Loadout worn(GearItem... items)
-	{
+	private static Loadout worn(GearItem... items) {
 		Map<GearSlot, GearItem> gear = new HashMap<>();
-		for (GearItem g : items)
-		{
+		for (GearItem g : items) {
 			gear.put(g.getSlot(), g);
 		}
 		return new Loadout(gear);
 	}
 
 	@Test
-	public void tradeablesBeyondTheKeptSlotsAreTheRisk()
-	{
+	public void tradeablesBeyondTheKeptSlotsAreTheRisk() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			item(2, GearSlot.BODY, true, 80),
@@ -67,8 +59,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void avariceSkullsTheWearerSoDefaultProtectionVanishes()
-	{
+	public void avariceSkullsTheWearerSoDefaultProtectionVanishes() {
 		// The amulet of avarice keeps the wearer permanently skulled:
 		// keep-3 becomes keep-0, keep-4 (Protect Item) becomes keep-1.
 		GearItem avarice = new GearItem(9, "Amulet of avarice", "", GearSlot.NECK, "", 0,
@@ -89,8 +80,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void costFreeBreakersChargeTheirRebuildFriction()
-	{
+	public void costFreeBreakersChargeTheirRebuildFriction() {
 		// Salve amulet(ei): gp cost 0 (free tomb re-obtain, imbue points
 		// refunded) but the death still costs the rebuild errand - the
 		// curated 150k friction charges into the risk total and the risk
@@ -106,8 +96,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void risksRebuildFlagsUnprotectedFrictionItemsOnly()
-	{
+	public void risksRebuildFlagsUnprotectedFrictionItemsOnly() {
 		// Salve: unprotectable in the model - always a risked rebuild.
 		Loadout salve = worn(
 			item(1, GearSlot.WEAPON, true, 100),
@@ -136,8 +125,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void imbuedConvertsCarryTheirReimbueFrictionInThePool()
-	{
+	public void imbuedConvertsCarryTheirReimbueFrictionInThePool() {
 		// Warrior ring (i): the killer gets the 60k base ring and the
 		// victim owes a re-imbue visit - loss price is 60k + 50k friction.
 		Loadout loadout = worn(
@@ -149,8 +137,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void untradeablesAreKeptOutsideTheSlotRanking()
-	{
+	public void untradeablesAreKeptOutsideTheSlotRanking() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			item(2, GearSlot.BODY, false, 999_999),
@@ -161,8 +148,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void theCarriedSpecWeaponCompetesForKeptSlotsAndCanDisplaceCheaperGear()
-	{
+	public void theCarriedSpecWeaponCompetesForKeptSlotsAndCanDisplaceCheaperGear() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			item(2, GearSlot.BODY, true, 80),
@@ -177,8 +163,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void aTrouverClassUntradeableAddsTheFlat500kManglFeeToTheRisk()
-	{
+	public void aTrouverClassUntradeableAddsTheFlat500kManglFeeToTheRisk() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(2, "Infernal cape", GearSlot.CAPE, SOME_DEFENCE));
@@ -190,8 +175,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void aBreakableUntradeableAddsItsOwnWikiRepairFee()
-	{
+	public void aBreakableUntradeableAddsItsOwnWikiRepairFee() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(2, "Fire cape", GearSlot.CAPE, SOME_DEFENCE),
@@ -204,8 +188,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void untradeablesWithoutCombatStatsStillCostNothing()
-	{
+	public void untradeablesWithoutCombatStatsStillCostNothing() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			untradeable(2, "Graceful hood", GearSlot.HEAD, StatBlock.ZERO),
@@ -216,8 +199,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void anUncuratedCombatUntradeableDefaultsToTheConservative500k()
-	{
+	public void anUncuratedCombatUntradeableDefaultsToTheConservative500k() {
 		// Unknowns must not smuggle into "low-risk" sets for free.
 		Loadout loadout = worn(
 			untradeable(2, "Some future combat relic", GearSlot.BODY, SOME_DEFENCE));
@@ -226,8 +208,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void anUntradeableCarriedSpecWeaponAddsItsFeeToo()
-	{
+	public void anUntradeableCarriedSpecWeaponAddsItsFeeToo() {
 		Loadout loadout = worn(item(1, GearSlot.WEAPON, true, 100));
 		GearItem spec = untradeable(9, "Void knight mace", GearSlot.WEAPON, SOME_DEFENCE);
 		PvpRisk.Assessment risk = PvpRisk.assess(loadout, spec, 3);
@@ -236,8 +217,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void aConvertClassUntradeableCompetesForProtectionAndIsFreeWhenItWins()
-	{
+	public void aConvertClassUntradeableCompetesForProtectionAndIsFreeWhenItWins() {
 		// Slayer helmet (converts to a 1.5M black mask) worn with two cheap
 		// tradeables: the helm ranks FIRST into the kept slots - protected,
 		// no drop, no fee. This is why wildy slayers count it as one of
@@ -255,8 +235,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void aConvertClassUntradeableOutrankedByPricierItemsDropsAtItsComponentValue()
-	{
+	public void aConvertClassUntradeableOutrankedByPricierItemsDropsAtItsComponentValue() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100_000_000),
 			item(2, GearSlot.BODY, true, 50_000_000),
@@ -269,8 +248,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void untradeableFeesStackOnTopOfTheTradeableLosses()
-	{
+	public void untradeableFeesStackOnTopOfTheTradeableLosses() {
 		Loadout loadout = worn(
 			item(1, GearSlot.WEAPON, true, 100),
 			item(2, GearSlot.BODY, true, 80),
@@ -285,8 +263,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void theLeanRiskGpMatchesTheFullAssessmentExactly()
-	{
+	public void theLeanRiskGpMatchesTheFullAssessmentExactly() {
 		// The beam calls riskGp() thousands of times per optimize; it must
 		// be the same number assess() reports, for every item class at once.
 		Loadout loadout = worn(
@@ -299,10 +276,8 @@ public class PvpRiskTest
 			untradeable(7, "Rune defender", GearSlot.SHIELD, SOME_DEFENCE),
 			untradeable(8, "Amulet of the damned", GearSlot.NECK, SOME_DEFENCE));
 		GearItem spec = item(9, GearSlot.WEAPON, true, 500_000);
-		for (GearItem carried : new GearItem[]{null, spec})
-		{
-			for (int kept : new int[]{0, 1, 3, 4, 10})
-			{
+		for (GearItem carried : new GearItem[]{null, spec}) {
+			for (int kept : new int[]{0, 1, 3, 4, 10}) {
 				Assert.assertEquals(
 					PvpRisk.assess(loadout, carried, kept).riskGp,
 					PvpRisk.riskGp(loadout, carried, kept));
@@ -317,22 +292,17 @@ public class PvpRiskTest
 	/** The assess()-derived meaning of risksRebuild - the lean production
 	 * implementation must agree with this everywhere, ties included. */
 	private static boolean rebuildViaAssess(Loadout loadout, GearItem spec, int kept,
-		java.util.Set<Integer> pinnedIds)
-	{
+		java.util.Set<Integer> pinnedIds) {
 		PvpRisk.Assessment fates = PvpRisk.assess(loadout, spec, kept);
-		for (PvpRisk.Charge charge : fates.untradeableCharges)
-		{
+		for (PvpRisk.Charge charge : fates.untradeableCharges) {
 			if (UntradeableDeathCosts.frictionFor(charge.item) > 0
-				&& !pinnedIds.contains(charge.item.getId()))
-			{
+				&& !pinnedIds.contains(charge.item.getId())) {
 				return true;
 			}
 		}
-		for (GearItem lost : fates.lost)
-		{
+		for (GearItem lost : fates.lost) {
 			if (UntradeableDeathCosts.frictionFor(lost) > 0
-				&& !pinnedIds.contains(lost.getId()))
-			{
+				&& !pinnedIds.contains(lost.getId())) {
 				return true;
 			}
 		}
@@ -340,8 +310,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void theLeanRisksRebuildMatchesTheAssessmentSemanticsExactly()
-	{
+	public void theLeanRisksRebuildMatchesTheAssessmentSemanticsExactly() {
 		// The beam calls risksRebuild() per candidate set; it must agree with
 		// the full assessment's kept/lost/charge classification everywhere -
 		// charge-class friction (salve), convertible friction inside and
@@ -377,16 +346,12 @@ public class PvpRiskTest
 			java.util.Collections.emptySet(),
 			java.util.Set.of(2, 3),
 			java.util.Set.of(6, 10));
-		for (Loadout loadout : loadouts)
-		{
-			for (GearItem spec : new GearItem[]{null, specTradeable, specFriction})
-			{
+		for (Loadout loadout : loadouts) {
+			for (GearItem spec : new GearItem[]{null, specTradeable, specFriction}) {
 				// kept=2 lands ON the tieA/tieRing boundary: exactly one of
 				// the two 110k equals wins the slot, by stable pool order.
-				for (int kept : new int[]{0, 1, 2, 3, 4})
-				{
-					for (java.util.Set<Integer> pins : pinSets)
-					{
+				for (int kept : new int[]{0, 1, 2, 3, 4}) {
+					for (java.util.Set<Integer> pins : pinSets) {
 						Assert.assertEquals(
 							"kept=" + kept + " pins=" + pins,
 							rebuildViaAssess(loadout, spec, kept, pins),
@@ -398,8 +363,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void protectOnlyItemsAreVetoedWhenTheyLandInTheLostPile()
-	{
+	public void protectOnlyItemsAreVetoedWhenTheyLandInTheLostPile() {
 		// User flag "only bring if protected on death": a plain tradeable
 		// with no friction is normally fine to risk, but once flagged the
 		// set is vetoed exactly when the item ranks OUTSIDE the kept slots.
@@ -433,8 +397,7 @@ public class PvpRiskTest
 	}
 
 	@Test
-	public void protectOnlyStacksWithTheFrictionVeto()
-	{
+	public void protectOnlyStacksWithTheFrictionVeto() {
 		// Both vetoes live in the same pass: a salve (friction) AND a
 		// separately-flagged tradeable in the lost pile each trip it.
 		java.util.Set<Integer> noPins = java.util.Collections.emptySet();

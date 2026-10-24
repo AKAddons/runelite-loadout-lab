@@ -22,29 +22,24 @@ import org.junit.Test;
  * (Field report 2026-08-09: simmed Soulreaper axe lost to Noxious
  * halberd on Thermy because the axe was priced as a plain axe.)
  */
-public class SoulreaperAxeTest
-{
+public class SoulreaperAxeTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String nameLower)
-	{
+	private static GearItem byName(String nameLower) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 	}
 
 	@Test
-	public void fiveSoulStacksBeatTheNoxiousHalberdOnThermy()
-	{
+	public void fiveSoulStacksBeatTheNoxiousHalberdOnThermy() {
 		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(byName("soulreaper axe").getId(), 1);
@@ -62,8 +57,7 @@ public class SoulreaperAxeTest
 	}
 
 	@Test
-	public void theStackBonusIsFlatPostPrayerOffTheBoostedLevel()
-	{
+	public void theStackBonusIsFlatPostPrayerOffTheBoostedLevel() {
 		// The exact wiki-calc chain: effective strength gains
 		// floor(level * 30/100) on top of the prayer-multiplied level -
 		// never level * prayer * 1.30 (that would over-price the axe).
@@ -89,8 +83,7 @@ public class SoulreaperAxeTest
 	}
 
 	@Test
-	public void otherAxesDoNotInheritTheStackBonus()
-	{
+	public void otherAxesDoNotInheritTheStackBonus() {
 		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
 			thermy, CombatStyle.MELEE, PlayerLevels.MAXED,
@@ -110,8 +103,7 @@ public class SoulreaperAxeTest
 	}
 
 	/** The strength-stance bonus of the variant the engine chose. */
-	private static int stanceBonus(DpsResult result)
-	{
+	private static int stanceBonus(DpsResult result) {
 		return result.getAttackType().contains("aggressive") ? 3
 			: result.getAttackType().contains("controlled") ? 1 : 0;
 	}

@@ -19,36 +19,30 @@ import org.junit.Test;
  * fire its own built-in). The auto-spell path already enforces
  * autocast legality per weapon; the fixed-spell path skipped it.
  */
-public class PinnedSpellLegalityTest
-{
+public class PinnedSpellLegalityTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data().getSpells().stream()
 			.filter(s -> s.getName().equalsIgnoreCase(name))
 			.findFirst().orElseThrow(AssertionError::new);
 	}
 
-	private static void own(Map<Integer, Integer> owned, String nameLower)
-	{
+	private static void own(Map<Integer, Integer> owned, String nameLower) {
 		GearItem item = data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 		owned.put(item.getId(), 1);
 	}
 
-	private static OptimizationRequest ownedMagicRequest(MonsterStats mob, Map<Integer, Integer> owned)
-	{
+	private static OptimizationRequest ownedMagicRequest(MonsterStats mob, Map<Integer, Integer> owned) {
 		return new OptimizationRequest(
 			mob, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -57,8 +51,7 @@ public class PinnedSpellLegalityTest
 	}
 
 	@Test
-	public void aPinnedBarrageNeverRidesAPoweredStaff()
-	{
+	public void aPinnedBarrageNeverRidesAPoweredStaff() {
 		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "trident of the seas");
@@ -75,8 +68,7 @@ public class PinnedSpellLegalityTest
 	}
 
 	@Test
-	public void noAutocastCapableWeaponMeansNoResultNotAnIllegalPair()
-	{
+	public void noAutocastCapableWeaponMeansNoResultNotAnIllegalPair() {
 		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "trident of the seas");
@@ -91,8 +83,7 @@ public class PinnedSpellLegalityTest
 	}
 
 	@Test
-	public void aStandardPinStillPricesNormally()
-	{
+	public void aStandardPinStillPricesNormally() {
 		MonsterStats thermy = data().searchMonsters("thermonuclear smoke devil", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		own(owned, "kodai wand");

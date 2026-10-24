@@ -19,32 +19,24 @@ import org.junit.Test;
  * they are out of melee distance. The near-phase base rows keep all
  * three styles; the roster kit must therefore seat a ranged answer.
  */
-public class RoyalTitansTest
-{
+public class RoyalTitansTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static MonsterStats farTitan(String name)
-	{
-		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data()))
-		{
-			if (!"Royal Titans".equals(group.getName()))
-			{
+	private static MonsterStats farTitan(String name) {
+		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data())) {
+			if (!"Royal Titans".equals(group.getName())) {
 				continue;
 			}
-			for (MonsterStats mob : group.getMobs())
-			{
+			for (MonsterStats mob : group.getMobs()) {
 				if (mob.getName().toLowerCase().contains(name)
-					&& mob.label().contains("Out of reach"))
-				{
+					&& mob.label().contains("Out of reach")) {
 					return mob;
 				}
 			}
@@ -53,8 +45,7 @@ public class RoyalTitansTest
 	}
 
 	@Test
-	public void farFormsAreMeleeImmuneNearFormsAreNot()
-	{
+	public void farFormsAreMeleeImmuneNearFormsAreNot() {
 		MonsterStats far = farTitan("branda");
 		Assert.assertTrue(MonsterMechanics.styleImmune(far, CombatStyle.MELEE));
 		Assert.assertFalse(MonsterMechanics.styleImmune(far, CombatStyle.RANGED));
@@ -65,19 +56,15 @@ public class RoyalTitansTest
 	}
 
 	@Test
-	public void outOfReachGrantsSixTimesRangedAccuracyOnly()
-	{
+	public void outOfReachGrantsSixTimesRangedAccuracyOnly() {
 		MonsterStats near = data().searchMonsters("branda the fire queen", 1).get(0);
 		MonsterStats far = farTitan("branda");
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data().getGearItems())
-		{
-			if (g.getNameLower().equals("twisted bow") && g.isStandardGear())
-			{
+		for (GearItem g : data().getGearItems()) {
+			if (g.getNameLower().equals("twisted bow") && g.isStandardGear()) {
 				gear.put(GearSlot.WEAPON, g);
 			}
-			if (g.getNameLower().equals("dragon arrow") && g.isStandardGear())
-			{
+			if (g.getNameLower().equals("dragon arrow") && g.isStandardGear()) {
 				gear.put(GearSlot.AMMO, g);
 			}
 		}
@@ -92,8 +79,7 @@ public class RoyalTitansTest
 			atFar.getAccuracy() > atNear.getAccuracy() * 2);
 	}
 
-	private static DpsResult calc(MonsterStats mob, Loadout loadout)
-	{
+	private static DpsResult calc(MonsterStats mob, Loadout loadout) {
 		OptimizationRequest request = TestRequests.of(mob, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -103,12 +89,9 @@ public class RoyalTitansTest
 	}
 
 	@Test
-	public void theGroupCarriesSixForms()
-	{
-		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data()))
-		{
-			if ("Royal Titans".equals(group.getName()))
-			{
+	public void theGroupCarriesSixForms() {
+		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data())) {
+			if ("Royal Titans".equals(group.getName())) {
 				Assert.assertEquals(6, group.getMobs().size());
 				List<MonsterStats> mobs = group.getMobs();
 				long far = mobs.stream().filter(m -> m.label().contains("Out of reach")).count();

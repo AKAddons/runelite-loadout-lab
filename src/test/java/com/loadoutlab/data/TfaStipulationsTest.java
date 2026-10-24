@@ -27,28 +27,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * and Xarth's first phase is fought from behind the pillars. The Guardian
  * is also immune to Ancient Magicks.
  */
-class TfaStipulationsTest
-{
+class TfaStipulationsTest {
 	private static LoadoutData data;
 	private static List<MonsterStats> tfa;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		tfa = MonsterGroups.load(data).stream()
 			.filter(g -> g.getName().equals("The Fractured Archive"))
 			.findFirst().orElseThrow().getMobs();
 	}
 
-	private static MonsterStats member(String label)
-	{
+	private static MonsterStats member(String label) {
 		return tfa.stream().filter(m -> label.equals(m.getVersion()))
 			.findFirst().orElseThrow(() -> new AssertionError("no member " + label));
 	}
 
-	private static List<DpsResult> best(MonsterStats mob, CombatStyle style)
-	{
+	private static List<DpsResult> best(MonsterStats mob, CombatStyle style) {
 		OptimizationRequest request = TestRequests.of(mob, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,
 			true, false, OwnedItems.EMPTY, 3);
@@ -57,28 +53,24 @@ class TfaStipulationsTest
 
 	@Test
 	@DisplayName("the roster carries the Guardian's two phases, Xarth's two phases and the Dagon'hai Elder and Monk: fourteen rows")
-	void fourteenRows()
-	{
+	void fourteenRows() {
 		// The Dagon'hai joined 2026-10-22 (ISS-01M5JBYYKPE7192Z24NTR432M8).
 		assertEquals(14, tfa.size());
 	}
 
 	@Test
 	@DisplayName("the shielded Guardian flies: a melee set must be a halberd")
-	void shieldFlies()
-	{
+	void shieldFlies() {
 		MonsterStats shield = member("Shield (flying)");
 		assertTrue(shield.hasAttribute("flying"));
-		for (DpsResult r : best(shield, CombatStyle.MELEE))
-		{
+		for (DpsResult r : best(shield, CombatStyle.MELEE)) {
 			assertEquals("Polearm", r.getLoadout().getWeapon().getCategory(), r.getLoadout().getWeapon().getName());
 		}
 	}
 
 	@Test
 	@DisplayName("the grounded Guardian takes any melee weapon")
-	void groundedTakesMelee()
-	{
+	void groundedTakesMelee() {
 		MonsterStats grounded = member("Grounded");
 		assertFalse(grounded.hasAttribute("flying"));
 		List<DpsResult> melee = best(grounded, CombatStyle.MELEE);
@@ -88,8 +80,7 @@ class TfaStipulationsTest
 
 	@Test
 	@DisplayName("Xarth's first phase has no melee card; his second does")
-	void xarthPhases()
-	{
+	void xarthPhases() {
 		assertTrue(MonsterMechanics.styleImmune(member("P1 (from the pillars)"), CombatStyle.MELEE));
 		assertFalse(MonsterMechanics.styleImmune(member("P2"), CombatStyle.MELEE));
 		assertFalse(best(member("P2"), CombatStyle.MELEE).isEmpty());
@@ -97,15 +88,13 @@ class TfaStipulationsTest
 
 	@Test
 	@DisplayName("the Guardian takes no Ancient Magicks in either phase")
-	void guardianShrugsOffAncients()
-	{
+	void guardianShrugsOffAncients() {
 		SpellStats barrage = data.getSpells().stream().filter(s -> s.getName().equals("Ice Barrage")).findFirst().orElseThrow();
 		SpellStats surge = data.getSpells().stream().filter(s -> s.getName().equals("Fire Surge")).findFirst().orElseThrow();
 		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.WEAPON, data.getGear(21006));
 		Loadout kodai = new Loadout(worn);
-		for (String phase : new String[]{"Shield (flying)", "Grounded"})
-		{
+		for (String phase : new String[]{"Shield (flying)", "Grounded"}) {
 			MonsterStats guardian = member(phase);
 			assertTrue(MonsterMechanics.isImmune(guardian, CombatStyle.MAGIC, kodai, barrage), phase);
 			assertFalse(MonsterMechanics.isImmune(guardian, CombatStyle.MAGIC, kodai, surge), phase);
@@ -114,12 +103,9 @@ class TfaStipulationsTest
 
 	@Test
 	@DisplayName("Ocellus is a demon in phases 1 and 3 only - the wiki leaves phase 2's attributes blank")
-	void ocellusDemonPhases()
-	{
-		for (MonsterStats m : tfa)
-		{
-			if (m.getName().equals("Ocellus"))
-			{
+	void ocellusDemonPhases() {
+		for (MonsterStats m : tfa) {
+			if (m.getName().equals("Ocellus")) {
 				assertEquals(!"Phase 2".equals(m.getVersion()), m.hasAttribute("demon"), m.getVersion());
 			}
 		}
@@ -127,8 +113,7 @@ class TfaStipulationsTest
 
 	@Test
 	@DisplayName("Ocellus's third phase reads its own 5,250 hitpoints")
-	void ocellusThree()
-	{
+	void ocellusThree() {
 		assertEquals(5250, tfa.stream().filter(m -> "Phase 3".equals(m.getVersion()) && m.getName().equals("Ocellus"))
 			.findFirst().orElseThrow().getHitpoints());
 	}

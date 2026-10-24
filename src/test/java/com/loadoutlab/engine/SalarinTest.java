@@ -17,21 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * equipment is meaningless, which the answer must SAY rather than
  * pretend otherwise.
  */
-class SalarinTest
-{
+class SalarinTest {
 	private static LoadoutData data;
 	private static MonsterStats salarin;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		salarin = data.searchMonsters("salarin", 1).get(0);
 		assertEquals(304, salarin.getId());
 	}
 
-	private static OptimizationRequest req(CombatStyle style)
-	{
+	private static OptimizationRequest req(CombatStyle style) {
 		return TestRequests.of(salarin, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -39,16 +36,14 @@ class SalarinTest
 
 	@Test
 	@DisplayName("melee and ranged never land")
-	void meleeAndRangedAreImmune()
-	{
+	void meleeAndRangedAreImmune() {
 		assertTrue(new LoadoutOptimizer().optimize(data, req(CombatStyle.MELEE)).isEmpty());
 		assertTrue(new LoadoutOptimizer().optimize(data, req(CombatStyle.RANGED)).isEmpty());
 	}
 
 	@Test
 	@DisplayName("the magic answer is a Strike at a flat 12, plus the elemental amulet's 2")
-	void magicIsAFlatStrike()
-	{
+	void magicIsAFlatStrike() {
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC));
 		assertFalse(out.isEmpty(), "strikes must survive the elemental prune");
 		DpsResult best = out.get(0);

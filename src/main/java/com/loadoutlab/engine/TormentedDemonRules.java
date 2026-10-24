@@ -17,53 +17,42 @@ import com.loadoutlab.data.MonsterStats;
  *
  * Not modeled: the Unshielded-phase bonus for crush/heavy/spell attacks.
  */
-public final class TormentedDemonRules
-{
+public final class TormentedDemonRules {
 	private static final String[] ABYSSAL = {
 		"abyssal whip", "abyssal tentacle", "abyssal dagger", "abyssal bludgeon",
 	};
 
-	private TormentedDemonRules()
-	{
+	private TormentedDemonRules() {
 	}
 
-	public static boolean applies(MonsterStats monster)
-	{
+	public static boolean applies(MonsterStats monster) {
 		return monster != null && "Tormented Demon".equalsIgnoreCase(monster.getName());
 	}
 
 	/** The flat 20% reduction, bypassed by demonbane and abyssal weapons. */
-	public static double damageFactor(MonsterStats monster, CombatStyle style, GearItem weapon, String spellName)
-	{
-		if (!applies(monster))
-		{
+	public static double damageFactor(MonsterStats monster, CombatStyle style, GearItem weapon, String spellName) {
+		if (!applies(monster)) {
 			return 1.0;
 		}
 		return bypassesReduction(style, weapon, spellName) ? 1.0 : 0.8;
 	}
 
-	private static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName)
-	{
-		if (style == CombatStyle.MAGIC)
-		{
+	private static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName) {
+		if (style == CombatStyle.MAGIC) {
 			return spellName != null && spellName.contains("Demonbane");
 		}
 		// The demonbane weapon vocabulary lives on GearItem (one list with
 		// MonsterMechanics and the optimizer's demon bump); a melee name
 		// can never be the weapon of a RANGED attack, so one flag serves
 		// both remaining styles.
-		if (weapon == null)
-		{
+		if (weapon == null) {
 			return false;
 		}
-		if (weapon.isDemonbane())
-		{
+		if (weapon.isDemonbane()) {
 			return true;
 		}
-		for (String abyssal : ABYSSAL)
-		{
-			if (weapon.getNameLower().startsWith(abyssal))
-			{
+		for (String abyssal : ABYSSAL) {
+			if (weapon.getNameLower().startsWith(abyssal)) {
 				return true;
 			}
 		}

@@ -12,12 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * automatically assume you are going to pick a crew member at minimum that
  * can man the cannon". Explicit higher picks are never lowered.
  */
-class ShipOperatorTest
-{
+class ShipOperatorTest {
 	@Test
 	@DisplayName("picking a dragon cannon raises its crew to P4 automatically")
-	void materialRaisesTheCrew()
-	{
+	void materialRaisesTheCrew() {
 		PageState state = new PageState();
 		state.setParam("cannon1Operator", "crew1");
 		state.setParam("cannon1Material", "dragon");
@@ -29,8 +27,7 @@ class ShipOperatorTest
 
 	@Test
 	@DisplayName("a crew pick below the material's gate is raised on the spot")
-	void operatorPickIsGated()
-	{
+	void operatorPickIsGated() {
 		PageState state = new PageState();
 		state.setParam("cannon1Material", "rune");
 		state.setParam("cannon1Operator", "crew2");
@@ -40,8 +37,7 @@ class ShipOperatorTest
 
 	@Test
 	@DisplayName("only one cannon can be Yours - picking it flips the other to crew")
-	void oneYouAcrossTheShip()
-	{
+	void oneYouAcrossTheShip() {
 		PageState state = new PageState();
 		state.setParam("cannon1Material", "dragon");
 		state.setParam("cannon2Material", "bronze");

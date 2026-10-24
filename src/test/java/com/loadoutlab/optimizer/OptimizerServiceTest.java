@@ -17,11 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class OptimizerServiceTest
-{
+public class OptimizerServiceTest {
 	@Test
-	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception
-	{
+	public void defenceDrainMakesTheWarhammerTheSpecPickOnTankyBosses() throws Exception {
 		LoadoutData data = new DataService().load();
 		// Dagannoth Rex (255 defence, 255 hp; not a GWD boss, whose carried
 		// god protection would take the one Inventory slot): a drain pays off over the
@@ -42,29 +40,24 @@ public class OptimizerServiceTest
 		// assumes - otherwise the goblin survives and a spec DOES pay.
 		owned.put(12695, 1);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			Assert.assertEquals("Dragon warhammer", specPick(service, rex, owned));
 			Assert.assertEquals("Dragon dagger", specPick(service, fireGiant, owned));
 			Assert.assertNull("a one-hit kill is not worth a spec slot",
 				specPick(service, goblin, owned));
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void togglingAConditionMidLoadAbandonsTheStaleComputationAndDeliversTheNewOne() throws Exception
-	{
+	public void togglingAConditionMidLoadAbandonsTheStaleComputationAndDeliversTheNewOne() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch fresh = new CountDownLatch(1);
 			java.util.concurrent.atomic.AtomicInteger staleDelivered = new java.util.concurrent.atomic.AtomicInteger();
 			// Stale request (off-task), immediately superseded by the toggle.
@@ -81,21 +74,17 @@ public class OptimizerServiceTest
 			Assert.assertEquals("the superseded request must never deliver", 0, staleDelivered.get());
 			Assert.assertTrue("the stale computation must have been abandoned",
 				service.abandonedForTest >= 1);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static String specPick(OptimizerService service, MonsterStats monster,
-		Map<Integer, Integer> owned) throws Exception
-	{
+		Map<Integer, Integer> owned) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
-			{
+			new OwnedItems(owned, true), owned.hashCode(), false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> {
 				out.set(results);
 				done.countDown();
 			});
@@ -107,16 +96,14 @@ public class OptimizerServiceTest
 	}
 
 	@Test
-	public void pinningOneStyleReusesTheOtherStylesCachedAnswers() throws Exception
-	{
+	public void pinningOneStyleReusesTheOtherStylesCachedAnswers() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip
 		owned.put(1215, 1); // dragon dagger - a pinnable melee weapon
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			Map<CombatStyle, OptimizerService.StyleResult> first =
 				resultsFor(service, goblin, owned, java.util.Collections.emptyMap());
 			// Pin the dagger for MELEE only: the ranged and magic answers are
@@ -135,25 +122,21 @@ public class OptimizerServiceTest
 				first.get(CombatStyle.MELEE), pinned.get(CombatStyle.MELEE));
 			Assert.assertEquals("the pin must be honored", 1215,
 				pinned.get(CombatStyle.MELEE).owned.get(0).getLoadout().getWeapon().getId());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static Map<CombatStyle, OptimizerService.StyleResult> resultsFor(
 		OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
-		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins) throws Exception
-	{
+		Map<CombatStyle, Map<com.loadoutlab.data.GearSlot, Integer>> pins) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, java.util.Collections.emptySet(), 0, 			pins, null, results ->
-			{
+			false, java.util.Collections.emptySet(), 0, 			pins, null, results -> {
 				out.set(results);
 				done.countDown();
 			});
@@ -162,16 +145,14 @@ public class OptimizerServiceTest
 	}
 
 	@Test
-	public void aStyleScopedExclusionRecomputesOnlyThatStyle() throws Exception
-	{
+	public void aStyleScopedExclusionRecomputesOnlyThatStyle() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip
 		owned.put(1333, 1); // rune scimitar - the fallback once the whip is excluded
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			Map<CombatStyle, Set<Integer>> none = uniformExclusions(java.util.Collections.emptySet());
 			Map<CombatStyle, OptimizerService.StyleResult> first =
 				resultsForExcluding(service, goblin, owned, none);
@@ -190,18 +171,14 @@ public class OptimizerServiceTest
 				first.get(CombatStyle.RANGED), excluded.get(CombatStyle.RANGED));
 			Assert.assertSame("magic must be the cached result",
 				first.get(CombatStyle.MAGIC), excluded.get(CombatStyle.MAGIC));
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static Map<CombatStyle, Set<Integer>> uniformExclusions(Set<Integer> set)
-	{
+	private static Map<CombatStyle, Set<Integer>> uniformExclusions(Set<Integer> set) {
 		Map<CombatStyle, Set<Integer>> byStyle = new java.util.EnumMap<>(CombatStyle.class);
-		for (CombatStyle style : CombatStyle.concreteValues())
-		{
+		for (CombatStyle style : CombatStyle.concreteValues()) {
 			byStyle.put(style, set);
 		}
 		return byStyle;
@@ -209,16 +186,14 @@ public class OptimizerServiceTest
 
 	private static Map<CombatStyle, OptimizerService.StyleResult> resultsForExcluding(
 		OptimizerService service, MonsterStats monster, Map<Integer, Integer> owned,
-		Map<CombatStyle, Set<Integer>> excludedByStyle) throws Exception
-	{
+		Map<CombatStyle, Set<Integer>> excludedByStyle) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
 			com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			new OwnedItems(owned, true), 1, false, false, "",
 			excludedByStyle, -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
-			false, false, java.util.Collections.emptySet(), 0, 			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results ->
-			{
+			false, false, java.util.Collections.emptySet(), 0, 			java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(), results -> {
 				out.set(results);
 				done.countDown();
 			});
@@ -227,8 +202,7 @@ public class OptimizerServiceTest
 	}
 
 	@Test
-	public void crossStyleSpecWeaponsCompeteOnEverySet() throws Exception
-	{
+	public void crossStyleSpecWeaponsCompeteOnEverySet() throws Exception {
 		// Field request 2026-07-17: "sometimes you want to use magic +
 		// chally" - the spec swap is its own weapon switch, so a MELEE
 		// spec weapon must surface on the MAGIC set when it is the best
@@ -240,8 +214,7 @@ public class OptimizerServiceTest
 		owned.put(11907, 1);  // trident of the seas
 		owned.put(1215, 1);   // dragon dagger
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,
@@ -250,8 +223,7 @@ public class OptimizerServiceTest
 				java.util.Collections.emptySet(), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 				false, java.util.Collections.emptySet(), 0,
-								java.util.Collections.emptyMap(), null, results ->
-				{
+								java.util.Collections.emptyMap(), null, results -> {
 					out.set(results);
 					done.countDown();
 				});
@@ -262,16 +234,13 @@ public class OptimizerServiceTest
 			Assert.assertNotNull("the melee dagger specs for the magic set", magic.spec);
 			Assert.assertEquals(1215, magic.specWeapon.getId());
 			Assert.assertTrue(magic.specExpectedDamage > 0);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception
-	{
+	public void ownedSpecWeaponSurfacesOnTheStyleResult() throws Exception {
 		LoadoutData data = new DataService().load();
 		// A fire giant, not a goblin: enough HP that a spec earns its slot
 		// (a goblin dies in one hit, so the value model carries no spec).
@@ -280,13 +249,11 @@ public class OptimizerServiceTest
 		owned.put(4151, 1);   // abyssal whip - the sustained-DPS weapon
 		owned.put(1215, 1);   // dragon dagger - the spec weapon
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.optimizer.ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED, com.loadoutlab.engine.PrayerUnlocks.ALL, RequirementProfile.MAXED,
-				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results ->
-				{
+				new OwnedItems(owned, true), 1, false, false, "", java.util.Collections.emptySet(), -1, OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, java.util.Collections.emptySet(), 0, results -> {
 					out.set(results);
 					done.countDown();
 				});
@@ -314,9 +281,7 @@ public class OptimizerServiceTest
 			Assert.assertNotNull(melee.incoming);
 			Assert.assertNotNull(melee.gameIncoming);
 			Assert.assertTrue(melee.gameIncoming.unprayedDps > 0);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

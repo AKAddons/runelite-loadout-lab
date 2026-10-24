@@ -17,21 +17,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * barrage win the row on honest math instead of a blowpipe headlining
  * (field decision 2026-08-06).
  */
-class NibblerBarrageTest
-{
+class NibblerBarrageTest {
 	private static LoadoutData data;
 	private static MonsterStats nibbler;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		nibbler = data.searchMonsters("jal-nib", 1).get(0);
 		assertEquals(7691, nibbler.getId());
 	}
 
-	private static OptimizationRequest req(CombatStyle style)
-	{
+	private static OptimizationRequest req(CombatStyle style) {
 		return TestRequests.of(nibbler, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -39,8 +36,7 @@ class NibblerBarrageTest
 
 	@Test
 	@DisplayName("the magic autocast is locked to the barrages")
-	void magicLockedToBarrages()
-	{
+	void magicLockedToBarrages() {
 		List<DpsResult> out = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC));
 		assertFalse(out.isEmpty());
 		String spell = out.get(0).getSpellName();
@@ -51,8 +47,7 @@ class NibblerBarrageTest
 
 	@Test
 	@DisplayName("the trio multiplier makes the barrage the row's best answer")
-	void barrageWinsTheRow()
-	{
+	void barrageWinsTheRow() {
 		DpsResult magic = new LoadoutOptimizer().optimize(data, req(CombatStyle.MAGIC)).get(0);
 		DpsResult ranged = new LoadoutOptimizer().optimize(data, req(CombatStyle.RANGED)).get(0);
 		assertTrue(magic.getDps() > ranged.getDps(),

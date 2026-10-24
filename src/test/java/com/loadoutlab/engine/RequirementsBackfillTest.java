@@ -19,30 +19,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * (a fang at 40 Attack; a 500m budget buying Oathplate for a fresh
  * account). These lock the flagship rows - all wiki-cited, 2026-07-15.
  */
-class RequirementsBackfillTest
-{
+class RequirementsBackfillTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static RequirementProfile freshAccount()
-	{
+	private static RequirementProfile freshAccount() {
 		Map<Skill, Integer> levels = new EnumMap<>(Skill.class);
 		levels.put(Skill.ATTACK, 40);
 		levels.put(Skill.STRENGTH, 40);
@@ -54,8 +48,7 @@ class RequirementsBackfillTest
 
 	@Test
 	@DisplayName("post-2022 flagship gear now carries its wiki requirements")
-	void flagshipRowsExist()
-	{
+	void flagshipRowsExist() {
 		assertEquals(82, byName("osmumten's fang").getRequirements().getSkills().get("attack"));
 		assertEquals(85, byName("tumeken's shadow").getRequirements().getSkills().get("magic"));
 		assertEquals(80, byName("torva full helm").getRequirements().getSkills().get("defence"));
@@ -73,8 +66,7 @@ class RequirementsBackfillTest
 
 	@Test
 	@DisplayName("stale rows corrected: bowfa is 80 Ranged + 70 Agility, saeldor 80 Attack")
-	void staleRowsCorrected()
-	{
+	void staleRowsCorrected() {
 		Map<String, Integer> bowfa = byName("bow of faerdhinen").getRequirements().getSkills();
 		assertEquals(80, bowfa.get("ranged"));
 		assertEquals(70, bowfa.get("agility"));
@@ -83,8 +75,7 @@ class RequirementsBackfillTest
 
 	@Test
 	@DisplayName("a 40-Attack fresh account can no longer equip the fang (the audit's headline repro)")
-	void freshAccountCannotWearFang()
-	{
+	void freshAccountCannotWearFang() {
 		RequirementProfile fresh = freshAccount();
 		assertFalse(fresh.canEquip(byName("osmumten's fang").getRequirements()));
 		assertFalse(fresh.canEquip(byName("masori body").getRequirements()));

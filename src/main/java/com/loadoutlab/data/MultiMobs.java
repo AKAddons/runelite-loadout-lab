@@ -13,42 +13,34 @@ import java.util.Map;
  * pages (docs/data/multi-mobs.md), keyed name + version as the loader
  * sees them. A listed mob gets the Multi switch on its card.
  */
-public final class MultiMobs
-{
+public final class MultiMobs {
 	private static final Map<String, List<String>> LOCATIONS = new HashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.objectOrThrow("/com/loadoutlab/data/multi_mobs.json");
-		for (JsonElement e : root.getAsJsonArray("mobs"))
-		{
+		for (JsonElement e : root.getAsJsonArray("mobs")) {
 			JsonObject mob = e.getAsJsonObject();
 			List<String> locations = new ArrayList<>();
-			for (JsonElement l : mob.getAsJsonArray("locations"))
-			{
+			for (JsonElement l : mob.getAsJsonArray("locations")) {
 				locations.add(l.getAsJsonObject().get("location").getAsString());
 			}
 			LOCATIONS.put(key(mob.get("name").getAsString(), mob.get("version").getAsString()), locations);
 		}
 	}
 
-	private MultiMobs()
-	{
+	private MultiMobs() {
 	}
 
-	private static String key(String name, String version)
-	{
+	private static String key(String name, String version) {
 		return Names.lower(name) + "#" + Names.lower(version == null ? "" : version);
 	}
 
-	public static boolean isMultiAble(MonsterStats mob)
-	{
+	public static boolean isMultiAble(MonsterStats mob) {
 		return mob != null && LOCATIONS.containsKey(key(mob.getName(), mob.getVersion()));
 	}
 
 	/** The multi locations the mob is fought in, for the switch's tooltip. */
-	public static List<String> locations(MonsterStats mob)
-	{
+	public static List<String> locations(MonsterStats mob) {
 		return mob == null ? List.of() : LOCATIONS.getOrDefault(key(mob.getName(), mob.getVersion()), List.of());
 	}
 }

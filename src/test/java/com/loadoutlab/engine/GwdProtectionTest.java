@@ -27,33 +27,27 @@ import static org.junit.jupiter.api.Assertions.*;
  * needs the wiki route table's gods (corner + encampment), worn when it
  * costs no DPS, otherwise carried - Andrew 2026-10-21.
  */
-class GwdProtectionTest
-{
+class GwdProtectionTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name)
-	{
+	private static MonsterStats mob(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
-	private static int id(String nameLower)
-	{
+	private static int id(String nameLower) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + nameLower)).getId();
 	}
 
-	private static OwnedItems owned(String... names)
-	{
+	private static OwnedItems owned(String... names) {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (String name : names)
-		{
+		for (String name : names) {
 			owned.put(id(name), 1);
 		}
 		return new OwnedItems(data.canonicalizeOwned(owned), true);
@@ -61,8 +55,7 @@ class GwdProtectionTest
 
 	@Test
 	@DisplayName("each general's route needs the wiki table's gods; bodyguards share their general's")
-	void routeGods()
-	{
+	void routeGods() {
 		assertEquals(List.of("armadyl", "bandos", "zamorak"), GwdProtection.godsFor(mob("general graardor"), false));
 		assertEquals(List.of("armadyl", "bandos", "saradomin", "zamorak"), GwdProtection.godsFor(mob("kree'arra"), false));
 		assertEquals(List.of("armadyl", "saradomin", "zamorak"), GwdProtection.godsFor(mob("commander zilyana"), false));
@@ -76,8 +69,7 @@ class GwdProtectionTest
 
 	@Test
 	@DisplayName("an item's gods come from the wiki table; the Staff of light counts twice")
-	void itemGods()
-	{
+	void itemGods() {
 		GearItem light = data.getGear(id("staff of light"));
 		assertEquals(Set.of("saradomin", "zamorak"), GwdProtection.godsOf(light));
 		assertEquals(Set.of("bandos"), GwdProtection.godsOf(data.getGear(id("war blessing"))));
@@ -86,8 +78,7 @@ class GwdProtectionTest
 
 	@Test
 	@DisplayName("a god item is worn only when it costs no DPS; the rest are carried")
-	void wornWhenFreeElseCarried()
-	{
+	void wornWhenFreeElseCarried() {
 		MonsterStats graardor = mob("general graardor");
 		OwnedItems owned = owned("abyssal whip", "dragon defender", "fighter torso", "dragon platelegs",
 			"barrows gloves", "dragon boots", "amulet of fury", "berserker ring", "fire cape", "helm of neitiznot",
@@ -104,30 +95,26 @@ class GwdProtectionTest
 		assertFalse(covered.isEmpty(), "a blessing in the free ammo slot covers one god");
 		List<GearItem> carried = optimizer.carriedGodItems(data, request, worn.getLoadout(), gods);
 		Set<String> all = new HashSet<>(covered);
-		for (GearItem item : carried)
-		{
+		for (GearItem item : carried) {
 			Set<String> adds = GwdProtection.godsOf(item);
 			assertFalse(adds.isEmpty(), item.getName() + " protects nothing");
 			all.addAll(adds);
 		}
 		assertTrue(all.containsAll(gods), "every route god covered: " + all);
 		assertTrue(carried.size() < gods.size() + 1 && carried.size() <= gods.size() - covered.size() + 1);
-		for (GearItem item : carried)
-		{
+		for (GearItem item : carried) {
 			assertTrue(owned.owns(item.getId()), "owned protection is preferred: " + item.getName());
 		}
 	}
 
 	@Test
 	@DisplayName("the card's set covers every route god between what it wears and what it carries")
-	void serviceCoversTheRoute() throws Exception
-	{
+	void serviceCoversTheRoute() throws Exception {
 		MonsterStats kree = mob("kree'arra");
 		OwnedItems owned = owned("magic shortbow", "rune arrow", "black d'hide body", "black d'hide chaps",
 			"zamorak stole", "saradomin stole", "bandos stole", "armadyl stole", "honourable blessing");
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
@@ -135,23 +122,19 @@ class GwdProtectionTest
 			p.gwdAncient = true;
 			service.bestPerStyle(kree, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, owned, 1, p, Collections.emptyMap(), Collections.emptySet(),
-				Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), result ->
-				{
+				Collections.emptyMap(), null, 0, Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
 			OptimizerService.StyleResult ranged = out.get().get(CombatStyle.RANGED);
 			Set<String> all = new HashSet<>(GwdProtection.coveredGods(ranged.owned.get(0).getLoadout()));
-			for (GearItem item : ranged.protection)
-			{
+			for (GearItem item : ranged.protection) {
 				all.addAll(GwdProtection.godsOf(item));
 				assertTrue(ranged.bench.contains(item), "carried protection rides the Inventory");
 			}
 			assertTrue(all.containsAll(GwdProtection.godsFor(kree, true)), "all four + Zaros: " + all);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

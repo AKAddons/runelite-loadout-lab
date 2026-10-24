@@ -23,18 +23,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * numbers for these exact vectors (fang-baba-i300, fang-warden3-i300:
  * maxed levels, Piety, invocation 300, the fang alone).
  */
-class FangToaTest
-{
+class FangToaTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static DpsResult fangAt(String monster, String version, int invocation)
-	{
+	private static DpsResult fangAt(String monster, String version, int invocation) {
 		MonsterStats mob = version.isEmpty() ? data.searchMonsters(monster, 1).get(0)
 			: data.getMonsters().stream()
 				.filter(m -> m.getName().equalsIgnoreCase(monster) && m.getVersion().equalsIgnoreCase(version))
@@ -58,8 +55,7 @@ class FangToaTest
 
 	@Test
 	@DisplayName("inside the Tombs the fang rolls accuracy twice - the official calc's hit chances")
-	void fangRollsTwiceInsideToa()
-	{
+	void fangRollsTwiceInsideToa() {
 		assertEquals(0.624, fangAt("Ba-Ba", "", 300).getAccuracy(), 0.006, "Ba-Ba at invocation 300");
 		assertEquals(0.441, fangAt("Elidinis' Warden", "Enraged", 300).getAccuracy(), 0.006,
 			"the Enraged Warden at invocation 300");
@@ -67,8 +63,7 @@ class FangToaTest
 
 	@Test
 	@DisplayName("outside the Tombs the fang keeps its reroll formula - vector fang-goblin stays exact")
-	void fangRerollOutsideToa()
-	{
+	void fangRerollOutsideToa() {
 		DpsResult goblin = fangAt("Goblin", "", 0);
 		assertEquals(RollMath.fangAccuracy(goblin.getAttackRoll(), goblin.getDefenceRoll()),
 			goblin.getAccuracy(), 1e-9);

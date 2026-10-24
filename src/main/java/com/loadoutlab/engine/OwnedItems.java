@@ -5,8 +5,7 @@ import lombok.Getter;
 import java.util.*;
 import java.util.Map;
 
-public final class OwnedItems
-{
+public final class OwnedItems {
 	public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
 
 	@Getter
@@ -14,19 +13,16 @@ public final class OwnedItems
 	@Getter
 	private final boolean bankScanned;
 
-	public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned)
-	{
+	public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned) {
 		this.quantities = Collections.unmodifiableMap(new HashMap<>(quantities));
 		this.bankScanned = bankScanned;
 	}
 
-	public boolean owns(int itemId)
-	{
+	public boolean owns(int itemId) {
 		return quantities.getOrDefault(itemId, 0) > 0;
 	}
 
-	public int size()
-	{
+	public int size() {
 		return quantities.size();
 	}
 
@@ -38,21 +34,17 @@ public final class OwnedItems
 	 * arrow or picked up loot (field-observed: a 22s Balanced compute
 	 * re-paid on every revisit while grinding).
 	 */
-	public int presenceFingerprint()
-	{
+	public int presenceFingerprint() {
 		int[] ids = new int[quantities.size()];
 		int count = 0;
-		for (Map.Entry<Integer, Integer> entry : quantities.entrySet())
-		{
-			if (entry.getValue() != null && entry.getValue() > 0)
-			{
+		for (Map.Entry<Integer, Integer> entry : quantities.entrySet()) {
+			if (entry.getValue() != null && entry.getValue() > 0) {
 				ids[count++] = entry.getKey();
 			}
 		}
 		Arrays.sort(ids, 0, count);
 		int hash = count;
-		for (int i = 0; i < count; i++)
-		{
+		for (int i = 0; i < count; i++) {
 			hash = 31 * hash + ids[i];
 		}
 		return hash;

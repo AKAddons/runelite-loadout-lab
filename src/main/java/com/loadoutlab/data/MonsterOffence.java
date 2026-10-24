@@ -14,8 +14,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public final class MonsterOffence
-{
+public final class MonsterOffence {
 	public static final MonsterOffence NONE = new MonsterOffence(
 		1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, List.of());
 
@@ -48,8 +47,7 @@ public final class MonsterOffence
 		int magicBonus,
 		int magicStrengthBonus,
 		int speedTicks,
-		List<String> styles)
-	{
+		List<String> styles) {
 		this(attackLevel, strengthLevel, rangedLevel, magicLevel, attackBonus, strengthBonus,
 			rangedBonus, rangedStrengthBonus, magicBonus, magicStrengthBonus, speedTicks,
 			styles == null ? List.of() : Collections.unmodifiableList(styles), MaxHits.NONE);

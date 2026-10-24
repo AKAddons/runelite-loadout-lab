@@ -19,32 +19,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * water / earth / fire +2 on its own element. All added BEFORE the magic
  * damage percentage. Field report: Mike, Discord, 2026-09-07.
  */
-class BoltSpellModifiersTest
-{
+class BoltSpellModifiersTest {
 	private static LoadoutData data;
 	private static MonsterStats goblin;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		goblin = data.searchMonsters("Goblin", 1).iterator().next();
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals(nameLower)) {
 				return g;
 			}
 		}
 		throw new AssertionError("missing from the gear data: " + nameLower);
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data.getSpells().stream().filter(s -> s.getName().equals(name)).findFirst()
 			.orElseThrow(() -> new AssertionError("missing spell " + name));
 	}
@@ -52,8 +46,7 @@ class BoltSpellModifiersTest
 	/** Max hit for a spell on a staff of fire, plus any named extras. */
 	@Test
 	@DisplayName("Salarin honours the elemental amulet alone: strikes stay a flat 12 for every other item, 14 with it")
-	void salarin()
-	{
+	void salarin() {
 		MonsterStats salarin = data.searchMonsters("Salarin", 1).iterator().next();
 		assertEquals(12, maxHitVs(salarin, "Fire Strike"));
 		assertEquals(12, maxHitVs(salarin, "Fire Strike", "occult necklace"), "spell damage items do nothing");
@@ -62,20 +55,17 @@ class BoltSpellModifiersTest
 		assertEquals(14, maxHitVs(salarin, "Wind Strike", "elemental amulet"), "every strike is treated as the top bolt");
 	}
 
-	private static int maxHit(String spellName, String... extras)
-	{
+	private static int maxHit(String spellName, String... extras) {
 		return maxHitVs(goblin, spellName, extras);
 	}
 
-	private static int maxHitVs(MonsterStats monster, String spellName, String... extras)
-	{
+	private static int maxHitVs(MonsterStats monster, String spellName, String... extras) {
 		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, spell(spellName), 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.WEAPON, byName("staff of fire"));
-		for (String extra : extras)
-		{
+		for (String extra : extras) {
 			GearItem item = byName(extra);
 			worn.put(item.getSlot(), item);
 		}
@@ -84,8 +74,7 @@ class BoltSpellModifiersTest
 
 	@Test
 	@DisplayName("chaos gauntlets add 3 to a bolt spell and nothing to a strike")
-	void chaosGauntlets()
-	{
+	void chaosGauntlets() {
 		assertEquals(12, maxHit("Fire Bolt"), "Fire Bolt at 99 Magic");
 		assertEquals(15, maxHit("Fire Bolt", "chaos gauntlets"));
 		assertEquals(8, maxHit("Fire Strike"));
@@ -94,8 +83,7 @@ class BoltSpellModifiersTest
 
 	@Test
 	@DisplayName("the elemental amulet adds 2 to every elemental spell and stacks with the gauntlets")
-	void elementalAmulet()
-	{
+	void elementalAmulet() {
 		assertEquals(14, maxHit("Fire Bolt", "elemental amulet"));
 		assertEquals(17, maxHit("Fire Bolt", "chaos gauntlets", "elemental amulet"));
 		assertEquals(10, maxHit("Fire Strike", "elemental amulet"));
@@ -104,8 +92,7 @@ class BoltSpellModifiersTest
 
 	@Test
 	@DisplayName("an element amulet only lifts its own element")
-	void elementAmulets()
-	{
+	void elementAmulets() {
 		assertEquals(14, maxHit("Fire Bolt", "amulet of fire"));
 		assertEquals(12, maxHit("Fire Bolt", "amulet of air"));
 		assertEquals(14, maxHit("Wind Bolt", "amulet of air"));

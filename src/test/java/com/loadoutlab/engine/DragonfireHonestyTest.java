@@ -24,38 +24,31 @@ import static org.junit.jupiter.api.Assertions.*;
  * UNCONSTRAINED set comes back flagged antifire-assumed, so the panel can
  * say "needs a super antifire" instead of quietly recommending nonsense.
  */
-class DragonfireHonestyTest
-{
+class DragonfireHonestyTest {
 	private static LoadoutData data;
 	private static MonsterStats vorkath;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		vorkath = data.searchMonsters("vorkath", 1).get(0);
 		assertEquals("", vorkath.getVersion(), "test premise: everyday Vorkath owns the bare name");
 		assertTrue(DragonfireRules.breathesFire(vorkath));
 	}
 
-	private static GearItem byName(String nameLower, String versionLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
+	private static GearItem byName(String nameLower, String versionLower) {
+		for (GearItem item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)
-				&& (versionLower == null || versionLower.equals(item.getVersionLower())))
-			{
+				&& (versionLower == null || versionLower.equals(item.getVersionLower()))) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizationRequest owning(CombatStyle style, GearItem... items)
-	{
+	private static OptimizationRequest owning(CombatStyle style, GearItem... items) {
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem item : items)
-		{
+		for (GearItem item : items) {
 			owned.put(item.getId(), 1);
 		}
 		return new OptimizationRequest(vorkath, style, PlayerLevels.MAXED,
@@ -66,8 +59,7 @@ class DragonfireHonestyTest
 
 	@Test
 	@DisplayName("no protective shield owned: the 2h Shadow comes back, flagged antifire-assumed")
-	void unsatisfiableConstraintFallsBackHonestly()
-	{
+	void unsatisfiableConstraintFallsBackHonestly() {
 		GearItem shadow = byName("tumeken's shadow", "charged");
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, owning(CombatStyle.MAGIC, shadow));
 		assertFalse(results.isEmpty(), "the shadow line must not die");
@@ -78,8 +70,7 @@ class DragonfireHonestyTest
 
 	@Test
 	@DisplayName("a protective shield owned: the constraint applies and nothing is assumed")
-	void satisfiableConstraintStaysHonest()
-	{
+	void satisfiableConstraintStaysHonest() {
 		GearItem sang = byName("sanguinesti staff", "charged");
 		GearItem antiDragon = byName("anti-dragon shield", null);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(
@@ -95,8 +86,7 @@ class DragonfireHonestyTest
 
 	@Test
 	@DisplayName("an explicit antifire potion is the user's own assumption - not flagged")
-	void explicitPotionIsNotFlagged()
-	{
+	void explicitPotionIsNotFlagged() {
 		GearItem shadow = byName("tumeken's shadow", "charged");
 		List<DpsResult> results = new LoadoutOptimizer().optimize(
 			data, owning(CombatStyle.MAGIC, shadow).withAntifirePotion(true));

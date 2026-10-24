@@ -22,11 +22,9 @@ import org.junit.Test;
  * (flooring order verified in-game by the wiki calc devs). Inactive pieces
  * give nothing, and only the two bows scale - not the blade or halberd.
  */
-public class CrystalSetTest
-{
+public class CrystalSetTest {
 	@Test
-	public void eachCrystalPieceScalesTheBofaByItsExactWeight()
-	{
+	public void eachCrystalPieceScalesTheBofaByItsExactWeight() {
 		LoadoutData data = new DataService().load();
 		OptimizationRequest request = request(data, false);
 		DpsResult bare = calc(data, request, "Bow of faerdhinen", null, null);
@@ -37,8 +35,7 @@ public class CrystalSetTest
 	}
 
 	@Test
-	public void fullCrystalSetBoostsTheCrystalBowByThirtyAccFifteenDamage()
-	{
+	public void fullCrystalSetBoostsTheCrystalBowByThirtyAccFifteenDamage() {
 		LoadoutData data = new DataService().load();
 		OptimizationRequest request = request(data, false);
 		DpsResult bare = calc(data, request, "Crystal bow", null, null);
@@ -50,8 +47,7 @@ public class CrystalSetTest
 	}
 
 	@Test
-	public void inactiveCrystalPiecesGiveTheBofaNothing()
-	{
+	public void inactiveCrystalPiecesGiveTheBofaNothing() {
 		LoadoutData data = new DataService().load();
 		OptimizationRequest request = request(data, false);
 		DpsResult bare = calc(data, request, "Bow of faerdhinen", null, null);
@@ -63,8 +59,7 @@ public class CrystalSetTest
 	}
 
 	@Test
-	public void crystalScalingFloorsBeforeTheSlayerHelmMultiplier()
-	{
+	public void crystalScalingFloorsBeforeTheSlayerHelmMultiplier() {
 		// The wiki calc devs verified in-game that crystal applies to the
 		// base max hit before the slayer helm multiplier; the reverse order
 		// gives a max hit one higher at these stats.
@@ -81,8 +76,7 @@ public class CrystalSetTest
 	}
 
 	@Test
-	public void crystalArmourDoesNotScaleTheBladeOfSaeldor()
-	{
+	public void crystalArmourDoesNotScaleTheBladeOfSaeldor() {
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
@@ -97,8 +91,7 @@ public class CrystalSetTest
 	}
 
 	private static void assertExactScaling(LoadoutData data, OptimizationRequest request,
-		DpsResult bare, int pieces, String... armour)
-	{
+		DpsResult bare, int pieces, String... armour) {
 		DpsResult result = calc(data, request, "Bow of faerdhinen", null, armour);
 		Assert.assertEquals(String.join("+", armour) + " accuracy",
 			expectedRoll(bare, result, pieces), result.getAttackRoll());
@@ -115,8 +108,7 @@ public class CrystalSetTest
 	 * other multiplier. Derive the effective level from the bare bow's roll
 	 * (identity multiplier), then rebuild the scaled loadout's expectation.
 	 */
-	private static long expectedRoll(DpsResult bare, DpsResult scaled, int pieces)
-	{
+	private static long expectedRoll(DpsResult bare, DpsResult scaled, int pieces) {
 		long bareBonus = bare.getLoadout().getOffensive().getRanged() + 64;
 		Assert.assertEquals("effective level derivation", 0, bare.getAttackRoll() % bareBonus);
 		long effective = bare.getAttackRoll() / bareBonus;
@@ -124,8 +116,7 @@ public class CrystalSetTest
 		return effective * scaledBonus * (20 + pieces) / 20;
 	}
 
-	private static OptimizationRequest request(LoadoutData data, boolean onTask)
-	{
+	private static OptimizationRequest request(LoadoutData data, boolean onTask) {
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		return new OptimizationRequest(
 			graardor, CombatStyle.RANGED, PlayerLevels.MAXED,
@@ -135,14 +126,11 @@ public class CrystalSetTest
 	}
 
 	private static DpsResult calc(LoadoutData data, OptimizationRequest request,
-		String weapon, String armourVersion, String[] armour)
-	{
+		String weapon, String armourVersion, String[] armour) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(data, weapon, null));
-		if (armour != null)
-		{
-			for (String name : armour)
-			{
+		if (armour != null) {
+			for (String name : armour) {
 				GearItem item = byName(data, name, armourVersion);
 				gear.put(item.getSlot(), item);
 			}
@@ -150,8 +138,7 @@ public class CrystalSetTest
 		return new DpsCalculator().calculate(request, new Loadout(gear));
 	}
 
-	private static GearItem byName(LoadoutData data, String name, String version)
-	{
+	private static GearItem byName(LoadoutData data, String name, String version) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name))
 			.filter(g -> version == null ? g.isStandardGear() : version.equalsIgnoreCase(g.getVersion()))

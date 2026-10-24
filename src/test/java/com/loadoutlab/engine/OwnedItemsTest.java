@@ -5,16 +5,13 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class OwnedItemsTest
-{
-	private static OwnedItems of(Map<Integer, Integer> quantities)
-	{
+public class OwnedItemsTest {
+	private static OwnedItems of(Map<Integer, Integer> quantities) {
 		return new OwnedItems(quantities, true);
 	}
 
 	@Test
-	public void presenceFingerprintIgnoresQuantityChanges()
-	{
+	public void presenceFingerprintIgnoresQuantityChanges() {
 		// The optimizer's answers depend only on owns() (quantity > 0), so
 		// shooting arrows or scaling ether must NOT invalidate its cache.
 		Map<Integer, Integer> before = new HashMap<>();
@@ -27,8 +24,7 @@ public class OwnedItemsTest
 	}
 
 	@Test
-	public void presenceFingerprintChangesWhenOwnershipActuallyChanges()
-	{
+	public void presenceFingerprintChangesWhenOwnershipActuallyChanges() {
 		Map<Integer, Integer> base = new HashMap<>();
 		base.put(4151, 1);
 
@@ -44,8 +40,7 @@ public class OwnedItemsTest
 	}
 
 	@Test
-	public void presenceFingerprintMatchesOwnsSemanticsExactly()
-	{
+	public void presenceFingerprintMatchesOwnsSemanticsExactly() {
 		// owns() is the contract: any two ledgers agreeing on owns() for
 		// every id must fingerprint identically.
 		Map<Integer, Integer> a = new HashMap<>();

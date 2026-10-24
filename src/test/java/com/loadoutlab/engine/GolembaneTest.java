@@ -9,28 +9,23 @@ import java.util.EnumMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class GolembaneTest
-{
+public class GolembaneTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem weapon(String weaponName)
-	{
+	private static GearItem weapon(String weaponName) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(weaponName) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("missing " + weaponName));
 	}
 
-	private static DpsResult calculate(MonsterStats monster, String weaponName)
-	{
+	private static DpsResult calculate(MonsterStats monster, String weaponName) {
 		GearItem weapon = weapon(weaponName);
 		OptimizationRequest request = new OptimizationRequest(
 			monster, CombatStyle.MELEE, PlayerLevels.MAXED,
@@ -43,8 +38,7 @@ public class GolembaneTest
 	}
 
 	@Test
-	public void graniteHammerGolembaneBeatsTheTentacleAgainstDusk()
-	{
+	public void graniteHammerGolembaneBeatsTheTentacleAgainstDusk() {
 		// Aug 2025: the granite hammer deals 30% extra damage AND accuracy
 		// vs golem-type monsters (Dusk, Dawn, gargoyles...).
 		MonsterStats dusk = data().searchMonsters("dusk", 1).get(0);
@@ -54,8 +48,7 @@ public class GolembaneTest
 	}
 
 	@Test
-	public void golembaneDoesNotApplyToNonGolems()
-	{
+	public void golembaneDoesNotApplyToNonGolems() {
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
 		// Against a non-golem the hammer is just its stat sheet: the
 		// tentacle wins comfortably.
@@ -64,8 +57,7 @@ public class GolembaneTest
 	}
 
 	@Test
-	public void optimizerPicksTheHammerAtAGolem()
-	{
+	public void optimizerPicksTheHammerAtAGolem() {
 		// The pool lesson, which the model tests above do NOT cover: golembane
 		// lives in the DPS model, not in the hammer's raw stats (crush +57 /
 		// str +56), so the weapon-pool cut dropped it before the bonus could
@@ -95,8 +87,7 @@ public class GolembaneTest
 	}
 
 	@Test
-	public void barroniteMaceGetsItsFifteenPercentAgainstGolems()
-	{
+	public void barroniteMaceGetsItsFifteenPercentAgainstGolems() {
 		// Grey golem: golem-typed with zero flat armour, so the max-hit
 		// ratio is exactly the 15% golembane factor.
 		MonsterStats golem = data().searchMonsters("grey golem", 1).get(0);

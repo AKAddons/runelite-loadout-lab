@@ -18,8 +18,7 @@ import net.runelite.api.Skill;
  * shift the fixture to different items), mid-90s combat levels, piety and
  * rigour unlocked but not augury/deadeye.
  */
-public final class FixtureBank
-{
+public final class FixtureBank {
 	private static final String[] BANK_NAMES = {
 		// Melee
 		"Abyssal whip",
@@ -72,12 +71,10 @@ public final class FixtureBank
 		"Rune platelegs",
 	};
 
-	private FixtureBank()
-	{
+	private FixtureBank() {
 	}
 
-	public static PlayerProfile profile(LoadoutData data)
-	{
+	public static PlayerProfile profile(LoadoutData data) {
 		PlayerLevels levels = new PlayerLevels(90, 92, 85, 94, 89, 77, 90);
 		PrayerUnlocks unlocks = new PrayerUnlocks(true, true, false, false, false);
 		Map<Skill, Integer> reqLevels = new LinkedHashMap<>();
@@ -110,8 +107,7 @@ public final class FixtureBank
 	}
 
 	/** Item ids for the fixture bank, resolved by name; fails loudly on a miss. */
-	public static Map<Integer, Integer> bank(LoadoutData data)
-	{
+	public static Map<Integer, Integer> bank(LoadoutData data) {
 		Map<Integer, Integer> owned = new LinkedHashMap<>();
 		// Potions are consumables, not gear, so they cannot be resolved by name
 		// from the equipment corpus - they go in by id.
@@ -135,41 +131,31 @@ public final class FixtureBank
 		owned.put(566, 10000);   // soul rune
 		owned.put(21880, 10000); // wrath rune
 		List<String> missing = new ArrayList<>();
-		for (String name : BANK_NAMES)
-		{
+		for (String name : BANK_NAMES) {
 			GearItem item = firstByName(data, name);
-			if (item == null)
-			{
+			if (item == null) {
 				missing.add(name);
-			}
-			else
-			{
+			} else {
 				owned.put(item.getId(), 1);
 			}
 		}
-		if (!missing.isEmpty())
-		{
+		if (!missing.isEmpty()) {
 			throw new IllegalStateException("Fixture bank items not in dataset: " + missing);
 		}
 		return owned;
 	}
 
-	private static GearItem firstByName(LoadoutData data, String name)
-	{
+	private static GearItem firstByName(LoadoutData data, String name) {
 		GearItem fallback = null;
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			if (!item.getName().equalsIgnoreCase(name) || !item.isStandardGear()
-				|| data.isVariant(item.getId()))
-			{
+				|| data.isVariant(item.getId())) {
 				continue;
 			}
-			if (item.getVersion().isEmpty())
-			{
+			if (item.getVersion().isEmpty()) {
 				return item;
 			}
-			if (fallback == null)
-			{
+			if (fallback == null) {
 				fallback = item;
 			}
 		}

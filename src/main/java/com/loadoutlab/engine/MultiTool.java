@@ -8,8 +8,7 @@ package com.loadoutlab.engine;
  * two-thirds of the max hit on its own accuracy roll (wiki). The engine
  * prices one target; the card multiplies by the stack.
  */
-public enum MultiTool
-{
+public enum MultiTool {
 	BARRAGE("barrage", CombatStyle.MAGIC, "area"),
 	CHINS("chins", CombatStyle.RANGED, "area"),
 	VENATOR("venator", CombatStyle.RANGED, "chain");
@@ -24,18 +23,15 @@ public enum MultiTool
 	public final CombatStyle style;
 	public final String kind;
 
-	MultiTool(String key, CombatStyle style, String kind)
-	{
+	MultiTool(String key, CombatStyle style, String kind) {
 		this.key = key;
 		this.style = style;
 		this.kind = kind;
 	}
 
 	/** The multiplier on a per-target number at a stack of targets. */
-	public static double factor(String kind, int stack, int maxHit)
-	{
-		if ("chain".equals(kind))
-		{
+	public static double factor(String kind, int stack, int maxHit) {
+		if ("chain".equals(kind)) {
 			return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1;
 		}
 		return Math.max(1, Math.min(stack, AREA_CAP));

@@ -25,11 +25,9 @@ import org.junit.Test;
 /** Per-mob sims scope to their mob (field bug 2026-07-18): "Sim here"
  * on one group member must equip that mob's answer WITHOUT leaking the
  * pretend-owned item into the rest of the roster's shared answers. */
-public class GroupSimScopingTest
-{
+public class GroupSimScopingTest {
 	@Test
-	public void perMobSimReachesTheRosterAnswer() throws Exception
-	{
+	public void perMobSimReachesTheRosterAnswer() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
@@ -41,10 +39,8 @@ public class GroupSimScopingTest
 		Map<Integer, java.util.Set<Integer>> dreamsByMob =
 			Collections.singletonMap(goblin.profileId(), Collections.singleton(rapier));
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
-			for (int maxSwaps : new int[]{1, 3})
-			{
+		try {
+			for (int maxSwaps : new int[]{1, 3}) {
 				CountDownLatch done = new CountDownLatch(1);
 				AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 				com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
@@ -68,17 +64,13 @@ public class GroupSimScopingTest
 				Assert.assertEquals("vorkath stays on the real bank",
 					whip, vsVorkath.owned.get(0).getLoadout().get(GearSlot.WEAPON).getId());
 			}
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static String name(OptimizerService.StyleResult r)
-	{
-		if (r == null || r.owned == null || r.owned.isEmpty())
-		{
+	private static String name(OptimizerService.StyleResult r) {
+		if (r == null || r.owned == null || r.owned.isEmpty()) {
 			return "EMPTY";
 		}
 		return r.owned.get(0).getLoadout().get(GearSlot.WEAPON) == null ? "none"

@@ -8,18 +8,15 @@ import java.util.Set;
 import net.runelite.api.Quest;
 import net.runelite.api.Skill;
 
-public final class RequirementProfile
-{
+public final class RequirementProfile {
 	public static final RequirementProfile MAXED = new RequirementProfile(maxedLevels(), allQuests());
 
 	private final Map<Skill, Integer> levels;
 	private final Set<String> completedQuests;
 
-	public RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests)
-	{
+	public RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests) {
 		EnumMap<Skill, Integer> copy = new EnumMap<>(Skill.class);
-		if (levels != null)
-		{
+		if (levels != null) {
 			copy.putAll(levels);
 		}
 		this.levels = Collections.unmodifiableMap(copy);
@@ -28,90 +25,69 @@ public final class RequirementProfile
 
 	/** The same levels with every quest done - the game-best ceiling never
 	 * trims on the quest log (Andrew 2026-09-09). */
-	public RequirementProfile withAllQuests()
-	{
+	public RequirementProfile withAllQuests() {
 		return new RequirementProfile(levels, allQuests());
 	}
 
 	/** Both already unmodifiable (the constructor wraps its copies). */
-	public Map<Skill, Integer> getLevels()
-	{
+	public Map<Skill, Integer> getLevels() {
 		return levels;
 	}
 
-	public Set<String> getCompletedQuests()
-	{
+	public Set<String> getCompletedQuests() {
 		return completedQuests;
 	}
 
-	public boolean canEquip(GearRequirements requirements)
-	{
-		if (requirements == null || requirements.isEmpty())
-		{
+	public boolean canEquip(GearRequirements requirements) {
+		if (requirements == null || requirements.isEmpty()) {
 			return true;
 		}
-		for (Map.Entry<String, Integer> entry : requirements.getSkills().entrySet())
-		{
+		for (Map.Entry<String, Integer> entry : requirements.getSkills().entrySet()) {
 			Skill skill = skill(entry.getKey());
-			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue())
-			{
+			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) {
 				return false;
 			}
 		}
-		for (String quest : requirements.getQuests())
-		{
-			if (!completedQuests.contains(quest))
-			{
+		for (String quest : requirements.getQuests()) {
+			if (!completedQuests.contains(quest)) {
 				return false;
 			}
 		}
 		return true;
 	}
 
-	int level(Skill skill)
-	{
+	int level(Skill skill) {
 		return levels.getOrDefault(skill, 1);
 	}
 
-	private static Skill skill(String name)
-	{
-		if (name == null)
-		{
+	private static Skill skill(String name) {
+		if (name == null) {
 			return null;
 		}
 		String normalized = name.toUpperCase(Locale.ROOT);
-		if ("RUNECRAFTING".equals(normalized))
-		{
+		if ("RUNECRAFTING".equals(normalized)) {
 			normalized = "RUNECRAFT";
 		}
-		try
-		{
+		try {
 			return Skill.valueOf(normalized);
-		}
-		catch (IllegalArgumentException ex)
-		{
+		} catch (IllegalArgumentException ex) {
 			return null;
 		}
 	}
 
-	private static Map<Skill, Integer> maxedLevels()
-	{
+	private static Map<Skill, Integer> maxedLevels() {
 		EnumMap<Skill, Integer> result = new EnumMap<>(Skill.class);
-		for (Skill skill : Skill.values())
-		{
-			if (skill != Skill.OVERALL)
-			{
+		for (Skill skill : Skill.values()) {
+			if (skill != Skill.OVERALL) {
 				result.put(skill, 99);
 			}
 		}
 		return result;
 	}
 
-	private static Set<String> allQuests()
-	{
+	private static Set<String> allQuests() {
 		Set<String> result = new HashSet<>();
-		for (Quest quest : Quest.values())
-		{
+		for (Quest quest : Quest.values()) {
 			result.add(quest.name());
 		}
 		return result;

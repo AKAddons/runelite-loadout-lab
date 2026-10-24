@@ -7,11 +7,9 @@ import org.junit.Test;
  * Thrall display-dps math (field direction 2026-07-21): wiki-verified
  * tier values at their Magic boundaries.
  */
-public class ExtraDpsTest
-{
+public class ExtraDpsTest {
 	@Test
-	public void thrallTiersMatchTheWikiTableAtTheirBoundaries()
-	{
+	public void thrallTiersMatchTheWikiTableAtTheirBoundaries() {
 		Assert.assertEquals(0.625, ExtraDps.thrallDps(99), 1e-9);
 		Assert.assertEquals(0.625, ExtraDps.thrallDps(76), 1e-9);
 		Assert.assertEquals(0.416, ExtraDps.thrallDps(75), 1e-9);

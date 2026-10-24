@@ -18,36 +18,30 @@ import static org.junit.jupiter.api.Assertions.*;
  * the wilderness never recommends an unlocked pouch - a locked one (divine
  * 27509, then regular 24416) or none at all. Land trips are unchanged.
  */
-class WildyPouchTest
-{
+class WildyPouchTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
-	private Object pouchFor(Set<Integer> bank, boolean wildy)
-	{
+	private Object pouchFor(Set<Integer> bank, boolean wildy) {
 		// Callisto is wilderness-EXCLUSIVE (select forces the param), so the
 		// land case uses Graardor - a Callisto trip cannot be a land trip.
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps());
@@ -56,19 +50,14 @@ class WildyPouchTest
 		MonsterStats mob = data.searchMonsters(wildy ? "callisto" : "general graardor", 1).get(0);
 		engine.execute("select", Map.of("id", mob.getId()));
 		state.setParam("thralls", true); // a casting trip, so the kit renders
-		if (wildy)
-		{
+		if (wildy) {
 			state.setParam("inWilderness", true);
 		}
 		engine.onResults(mob, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
@@ -78,8 +67,7 @@ class WildyPouchTest
 
 	@Test
 	@DisplayName("the wilderness never recommends an unlocked pouch - locked or nothing")
-	void wildyPouchIsLockedOrNothing()
-	{
+	void wildyPouchIsLockedOrNothing() {
 		// Unlocked divine owned: recommended on land, NEVER in the wildy.
 		assertEquals(27281, pouchFor(Set.of(27281), false));
 		assertNull(pouchFor(Set.of(27281), true),
@@ -95,8 +83,7 @@ class WildyPouchTest
 	 * does not protect its contents - wiki) and every supply pick lost. */
 	@Test
 	@DisplayName("the carried kit joins the lost/kept lists by fate")
-	void carriedKitFates()
-	{
+	void carriedKitFates() {
 		Map<String, List<String>> fates = CommandEngine.wildyCarriedFates(
 			27509, true, List.of("Anglerfish", "Super restore"), true);
 		assertEquals(List.of("Divine rune pouch (locked - kept)", "Magic cape (kept)"),

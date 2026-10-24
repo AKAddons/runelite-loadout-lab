@@ -23,17 +23,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * the areas' own pages (docs/data/multi-mobs.md). Every entry must name
  * exactly one corpus monster, or the card could never find it.
  */
-class MultiMobsTest
-{
+class MultiMobsTest {
 	private static LoadoutData data;
 	private static JsonArray mobs;
 
 	@BeforeAll
-	static void load() throws Exception
-	{
+	static void load() throws Exception {
 		data = new DataService().load();
-		try (InputStream in = MultiMobsTest.class.getResourceAsStream("/com/loadoutlab/data/multi_mobs.json"))
-		{
+		try (InputStream in = MultiMobsTest.class.getResourceAsStream("/com/loadoutlab/data/multi_mobs.json")) {
 			assertNotNull(in, "multi_mobs.json is on the classpath");
 			JsonObject root = new Gson().fromJson(new InputStreamReader(in, StandardCharsets.UTF_8), JsonObject.class);
 			assertEquals(1, root.get("version").getAsInt());
@@ -41,18 +38,15 @@ class MultiMobsTest
 		}
 	}
 
-	private static String version(MonsterStats m)
-	{
+	private static String version(MonsterStats m) {
 		return m.getVersion() == null ? "" : m.getVersion();
 	}
 
 	@Test
 	@DisplayName("crowds only: the Catacombs nechryaels are listed, a boss standing alone in a multi area is not (Andrew 2026-10-19)")
-	void crowdsNotBosses()
-	{
+	void crowdsNotBosses() {
 		java.util.Set<String> names = new HashSet<>();
-		for (JsonElement e : mobs)
-		{
+		for (JsonElement e : mobs) {
 			names.add(e.getAsJsonObject().get("name").getAsString());
 		}
 		assertTrue(names.contains("Greater Nechryael"));
@@ -64,12 +58,10 @@ class MultiMobsTest
 
 	@Test
 	@DisplayName("every entry resolves to exactly one corpus monster by name and version, and carries a location")
-	void entriesResolve()
-	{
+	void entriesResolve() {
 		assertTrue(mobs.size() > 50, "the list is not a stub: " + mobs.size());
 		Set<String> seen = new HashSet<>();
-		for (JsonElement e : mobs)
-		{
+		for (JsonElement e : mobs) {
 			JsonObject mob = e.getAsJsonObject();
 			String name = mob.get("name").getAsString();
 			String version = mob.get("version").getAsString();
@@ -80,8 +72,7 @@ class MultiMobsTest
 			assertEquals(1, exact, name + " [" + version + "] must name one corpus monster, found " + exact);
 			JsonArray locations = mob.getAsJsonArray("locations");
 			assertTrue(locations.size() > 0, name + " has no location");
-			for (JsonElement l : locations)
-			{
+			for (JsonElement l : locations) {
 				assertFalse(l.getAsJsonObject().get("location").getAsString().isBlank());
 				assertFalse(l.getAsJsonObject().get("source").getAsString().isBlank());
 			}

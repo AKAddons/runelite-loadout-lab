@@ -21,21 +21,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * are air-weak (severity 50), and the un-modeled staff lost to a
  * powered staff it should beat.
  */
-class TwinflameStaffTest
-{
+class TwinflameStaffTest {
 	private static LoadoutData data;
 	private static MonsterStats dharok;
 	private static final DpsCalculator calc = new DpsCalculator();
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		dharok = data.searchMonsters("dharok", 1).get(0);
 	}
 
-	private static Loadout wielding(int weaponId)
-	{
+	private static Loadout wielding(int weaponId) {
 		GearItem weapon = data.getGear(weaponId);
 		assertNotNull(weapon, "corpus is missing item " + weaponId);
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
@@ -43,14 +40,12 @@ class TwinflameStaffTest
 		return new Loadout(gear);
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data.getSpells().stream().filter(s -> s.getName().equalsIgnoreCase(name))
 			.findFirst().orElseThrow(() -> new AssertionError("no spell " + name));
 	}
 
-	private static OptimizationRequest request()
-	{
+	private static OptimizationRequest request() {
 		return new OptimizationRequest(dharok, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
@@ -59,8 +54,7 @@ class TwinflameStaffTest
 
 	@Test
 	@DisplayName("the twinflame casts at 6 ticks and doubles Wave but not Surge")
-	void doublesWaveNotSurge()
-	{
+	void doublesWaveNotSurge() {
 		DpsResult wave = calc.calculate(request().withSpell(spell("Wind Wave")), wielding(30634));
 		DpsResult surge = calc.calculate(request().withSpell(spell("Wind Surge")), wielding(30634));
 		assertNotNull(wave);
@@ -74,8 +68,7 @@ class TwinflameStaffTest
 
 	@Test
 	@DisplayName("vs an air-weak brother the swamp trident legitimately wins")
-	void tridentBeatsTwinflameVsBarrows()
-	{
+	void tridentBeatsTwinflameVsBarrows() {
 		// REFEREE'D 2026-08-21 (vectors twinflame-dharok 6.02 vs
 		// swamptrident-dharok 6.53, both engines agreeing to <0.1%):
 		// the July field pin ("twinflame must beat the trident") was an

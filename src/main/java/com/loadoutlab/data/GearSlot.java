@@ -4,8 +4,7 @@ package com.loadoutlab.data;
 
 import lombok.Getter;
 
-public enum GearSlot
-{
+public enum GearSlot {
 	HEAD("head"),
 	CAPE("cape"),
 	NECK("neck"),
@@ -21,24 +20,19 @@ public enum GearSlot
 	@Getter
 	private final String jsonName;
 
-	GearSlot(String jsonName)
-	{
+	GearSlot(String jsonName) {
 		this.jsonName = jsonName;
 	}
 
 
-	public static GearSlot fromJson(String value)
-	{
-		if (value == null)
-		{
+	public static GearSlot fromJson(String value) {
+		if (value == null) {
 			return null;
 		}
 
 		String normalized = Names.lower(value);
-		for (GearSlot slot : values())
-		{
-			if (slot.jsonName.equals(normalized))
-			{
+		for (GearSlot slot : values()) {
+			if (slot.jsonName.equals(normalized)) {
 				return slot;
 			}
 		}

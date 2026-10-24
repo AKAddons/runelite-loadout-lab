@@ -22,8 +22,7 @@ import org.junit.Test;
  * spec is ranked and shown by the DPS it ADDS to the kill over just
  * attacking - marginal, regen-aware and drain-inclusive for every style.
  */
-public class SpecValueTest
-{
+public class SpecValueTest {
 	/**
 	 * The origin bug: a defence-drain spec (dragon warhammer) was valued for
 	 * MELEE main-hands only, so it never surfaced on a ranged or magic set
@@ -32,8 +31,7 @@ public class SpecValueTest
 	 * surface with positive added DPS.
 	 */
 	@Test
-	public void defenceDrainIsValuedOnRangedSetsNotOnlyMelee() throws Exception
-	{
+	public void defenceDrainIsValuedOnRangedSetsNotOnlyMelee() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -41,24 +39,20 @@ public class SpecValueTest
 		                      // so the warhammer is the only spec candidate
 		owned.put(13576, 1);  // dragon warhammer - the drain spec
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			OptimizerService.StyleResult ranged = rangedResult(service, vorkath, owned);
 			Assert.assertNotNull("a ranged set must exist", ranged);
 			Assert.assertNotNull("the drain spec must surface on a ranged set", ranged.spec);
 			Assert.assertEquals("Dragon warhammer", ranged.spec.getDisplayName());
 			Assert.assertTrue("the drain must add positive dps on ranged",
 				ranged.specDpsAdded > 0);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static OptimizerService.StyleResult rangedResult(OptimizerService service,
-		MonsterStats monster, Map<Integer, Integer> owned) throws Exception
-	{
+		MonsterStats monster, Map<Integer, Integer> owned) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 		ServiceCalls.bestPerStyle(service, monster, PlayerLevels.MAXED, PlayerLevels.MAXED,

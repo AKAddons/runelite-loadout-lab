@@ -25,11 +25,9 @@ import org.junit.Test;
  * PREVIOUS level's cached results). The defence scaling
  * (x(250+invo)/250) guarantees the two levels' numbers must differ.
  */
-public class InvocationCacheKeyTest
-{
+public class InvocationCacheKeyTest {
 	private static Map<CombatStyle, OptimizerService.StyleResult> best(
-		OptimizerService service, MonsterStats monster) throws Exception
-	{
+		OptimizerService service, MonsterStats monster) throws Exception {
 		CountDownLatch done = new CountDownLatch(1);
 		AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out =
 			new AtomicReference<>();
@@ -46,15 +44,13 @@ public class InvocationCacheKeyTest
 	}
 
 	@Test
-	public void flippingTheInvocationLevelNeverServesStaleResults() throws Exception
-	{
+	public void flippingTheInvocationLevelNeverServesStaleResults() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats warden = data.searchMonsters("tumeken's warden", 6).stream()
 			.filter(m -> MonsterMechanics.isToaInvocationScaled(m))
 			.findFirst().orElseThrow();
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			double atZero = best(service, MonsterMechanics.atToaInvocation(warden, 0))
 				.get(CombatStyle.RANGED).overallBest.getDps();
 			double at300 = best(service, MonsterMechanics.atToaInvocation(warden, 300))
@@ -64,9 +60,7 @@ public class InvocationCacheKeyTest
 				atZero, at300, 1e-9);
 			Assert.assertTrue("higher invocation means lower dps",
 				at300 < atZero);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

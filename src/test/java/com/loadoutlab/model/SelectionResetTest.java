@@ -12,33 +12,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Field asks 2026-08-22: removing the last mob returns to the start
  * state, and a fresh search opens on Yours. */
-class SelectionResetTest
-{
+class SelectionResetTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(PageState state, CaptureLink link)
-	{
+	private static CommandEngine engine(PageState state, CaptureLink link) {
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
-		engine.setRosterCompute((mobs, p, onDone) ->
-			{
+		engine.setRosterCompute((mobs, p, onDone) -> {
 			});
 		return engine;
 	}
 
 	@Test
 	@DisplayName("removing the only mob returns to the start state")
-	void removingTheLastMobClears()
-	{
+	void removingTheLastMobClears() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = engine(state, link);
@@ -56,8 +50,7 @@ class SelectionResetTest
 
 	@Test
 	@DisplayName("a fresh search opens on Yours, not BiS")
-	void freshSearchOpensOnYours()
-	{
+	void freshSearchOpensOnYours() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state, new CaptureLink());
 		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
@@ -69,27 +62,20 @@ class SelectionResetTest
 			"the next search comes back to Yours");
 	}
 
-	private static void flushEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flushEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}

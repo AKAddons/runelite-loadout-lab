@@ -19,34 +19,28 @@ import static org.junit.jupiter.api.Assertions.*;
  * what the player asked for (the filter itself). Collapsing them back into one
  * flag is what made the control hide the moment it was used.
  */
-class F2pFilterTest
-{
+class F2pFilterTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(PageState state)
-	{
+	private static CommandEngine engine(PageState state) {
 		return new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 	}
 
-	private static boolean flag(PageState state, String param)
-	{
+	private static boolean flag(PageState state, String param) {
 		return Boolean.TRUE.equals(state.paramsNode().get(param));
 	}
 
 	@Test
 	@DisplayName("unticking the F2P filter leaves the chip's own visibility flag alone")
-	void untickingKeepsTheChipOnScreen()
-	{
+	void untickingKeepsTheChipOnScreen() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 
@@ -70,8 +64,7 @@ class F2pFilterTest
 
 	@Test
 	@DisplayName("a members world reports neither flag")
-	void membersWorldHidesTheChip()
-	{
+	void membersWorldHidesTheChip() {
 		PageState state = new PageState();
 		assertFalse(flag(state, "f2pWorld"), "the chip would show on a members world");
 		assertFalse(flag(state, "f2pOnly"));

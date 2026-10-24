@@ -9,21 +9,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** The defensive modes are a developer-mode prototype (ISS-01M5G5CZC9SK46499FACRSJ8ZT). */
-class OptimizeModeParamTest
-{
-	private static CommandEngine engine(PageState state)
-	{
+class OptimizeModeParamTest {
+	private static CommandEngine engine(PageState state) {
 		return new CommandEngine(new DataService().load(), state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 	}
 
 	@Test
 	@DisplayName("the mode param defaults to Max DPS and only takes the three modes")
-	void paramValues()
-	{
+	void paramValues() {
 		PageState state = new PageState();
 		assertEquals("MAX_DPS", state.paramsNode().get("optimizeMode"));
 		assertTrue(state.setParam("optimizeMode", "TANKY"));
@@ -34,8 +30,7 @@ class OptimizeModeParamTest
 
 	@Test
 	@DisplayName("every player's optimizer gets the chosen mode - released 2026-10-22, no developer-mode gate")
-	void releasedToEveryone()
-	{
+	void releasedToEveryone() {
 		// Andrew 2026-10-22: "Release to everyone" (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6).
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);

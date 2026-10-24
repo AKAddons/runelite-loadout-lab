@@ -24,21 +24,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * autocast Wind Surge while Wind Wave computed ~18% more dps (field
  * report 2026-08-06, reproduced at Guthan).
  */
-class TwinflameSpellPickTest
-{
+class TwinflameSpellPickTest {
 	private static LoadoutData data;
 	private static MonsterStats guthan;
 	private static GearItem staff;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		guthan = data.searchMonsters("guthan", 1).get(0);
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().contains("twinflame") && g.isStandardGear())
-			{
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().contains("twinflame") && g.isStandardGear()) {
 				staff = g;
 			}
 		}
@@ -47,8 +43,7 @@ class TwinflameSpellPickTest
 
 	@Test
 	@DisplayName("a pinned twinflame autocasts a doubled tier, not the pruned-to Surge")
-	void pinnedTwinflamePicksADoubledTier()
-	{
+	void pinnedTwinflamePicksADoubledTier() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(staff.getId(), 1);
 		// The premium runes, so the rune-ownership gate (0.4.1) leaves the
@@ -88,8 +83,7 @@ class TwinflameSpellPickTest
 
 	@Test
 	@DisplayName("without a twinflame the surge tier still wins - no over-correction")
-	void plainStaffStillPicksSurge()
-	{
+	void plainStaffStillPicksSurge() {
 		OptimizationRequest request = TestRequests.of(guthan,
 			CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -101,8 +95,7 @@ class TwinflameSpellPickTest
 		// is a plain elemental autocast.
 		if (spell != null && DpsCalculator.isPlainElemental(
 			data.getSpells().stream().filter(s -> spell.equals(s.getName()))
-				.findFirst().orElse(null)))
-		{
+				.findFirst().orElse(null))) {
 			assertFalse(spell.endsWith("Wave") || spell.endsWith("Blast"),
 				"with no twinflame the doubled tiers have no edge, picked: " + spell);
 		}

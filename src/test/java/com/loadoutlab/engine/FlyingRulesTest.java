@@ -10,21 +10,17 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class FlyingRulesTest
-{
+public class FlyingRulesTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String name)
-	{
+	private static GearItem byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name))
 			.findFirst()
@@ -32,8 +28,7 @@ public class FlyingRulesTest
 	}
 
 	@Test
-	public void meleeCannotReachFlyingMonstersExceptHalberds()
-	{
+	public void meleeCannotReachFlyingMonstersExceptHalberds() {
 		MonsterStats kree = data().searchMonsters("kree'arra", 1).get(0);
 		Assert.assertTrue(kree.hasAttribute("flying"));
 		Assert.assertFalse(FlyingRules.canReach(kree, CombatStyle.MELEE, byName("Abyssal whip")));
@@ -43,8 +38,7 @@ public class FlyingRulesTest
 	}
 
 	@Test
-	public void meleeVsDawnOnlyProducesHalberdSets()
-	{
+	public void meleeVsDawnOnlyProducesHalberdSets() {
 		MonsterStats dawn = data().searchMonsters("dawn", 1).get(0);
 		Assert.assertTrue(dawn.hasAttribute("flying"));
 

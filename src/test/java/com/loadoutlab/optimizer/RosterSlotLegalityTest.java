@@ -21,11 +21,9 @@ import org.junit.Test;
  * 2h guard), with a second hole in the dps-neutral utility swap; this
  * test walks EVERY set the roster answer publishes.
  */
-public class RosterSlotLegalityTest
-{
+public class RosterSlotLegalityTest {
 	@Test
-	public void moonsRosterNeverWearsAShieldUnderATwoHander() throws Exception
-	{
+	public void moonsRosterNeverWearsAShieldUnderATwoHander() throws Exception {
 		LoadoutData data = new DataService().load();
 		List<MonsterStats> moons = List.of(
 			data.searchMonsters("blood moon", 1).get(0),
@@ -36,19 +34,15 @@ public class RosterSlotLegalityTest
 			service, moons, Collections.emptyMap(), 3, Collections.emptyMap());
 		Assert.assertNotNull(roster);
 		int checked = 0;
-		for (int i = 0; i < roster.mobs.size(); i++)
-		{
+		for (int i = 0; i < roster.mobs.size(); i++) {
 			Map<CombatStyle, OptimizerService.StyleResult> styles = roster.perMob.get(i);
-			for (Map.Entry<CombatStyle, OptimizerService.StyleResult> e : styles.entrySet())
-			{
+			for (Map.Entry<CombatStyle, OptimizerService.StyleResult> e : styles.entrySet()) {
 				OptimizerService.StyleResult result = e.getValue();
-				if (result.overallBest != null)
-				{
+				if (result.overallBest != null) {
 					assertLegal(roster.mobs.get(i), e.getKey(), "BiS", result.overallBest);
 					checked++;
 				}
-				if (result.owned != null && !result.owned.isEmpty())
-				{
+				if (result.owned != null && !result.owned.isEmpty()) {
 					assertLegal(roster.mobs.get(i), e.getKey(), "Yours", result.owned.get(0));
 					checked++;
 				}
@@ -58,12 +52,10 @@ public class RosterSlotLegalityTest
 	}
 
 	private static void assertLegal(MonsterStats mob, CombatStyle style,
-		String side, DpsResult result)
-	{
+		String side, DpsResult result) {
 		GearItem weapon = result.getLoadout().getWeapon();
 		GearItem shield = result.getLoadout().get(GearSlot.SHIELD);
-		if (weapon != null && weapon.isTwoHanded())
-		{
+		if (weapon != null && weapon.isTwoHanded()) {
 			Assert.assertNull(mob.label() + " " + style + " " + side + " wears "
 					+ weapon.label() + " (two-handed) WITH " + (shield == null ? "" : shield.label()),
 				shield);

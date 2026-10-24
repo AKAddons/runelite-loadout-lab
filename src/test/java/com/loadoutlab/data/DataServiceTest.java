@@ -4,11 +4,9 @@ package com.loadoutlab.data;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class DataServiceTest
-{
+public class DataServiceTest {
 	@Test
-	public void loadsMergedGearAndMonsterDataset()
-	{
+	public void loadsMergedGearAndMonsterDataset() {
 		LoadoutData data = new DataService().load();
 		Assert.assertTrue(data.getGearItems().size() > 5000);
 		// 1,941 distinct stat blocks after collapsing combat-identical spawns
@@ -22,8 +20,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void monsterOffensiveSheetIsParsed()
-	{
+	public void monsterOffensiveSheetIsParsed() {
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		MonsterOffence off = graardor.getOffence();
@@ -37,8 +34,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void impossiblePvpVariantsAreNotStandardGear()
-	{
+	public void impossiblePvpVariantsAreNotStandardGear() {
 		LoadoutData data = new DataService().load();
 		GearItem vesta = data.getGear(22616);
 		Assert.assertNotNull(vesta);
@@ -46,8 +42,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void discontinuedEventGearIsNotStandardGear()
-	{
+	public void discontinuedEventGearIsNotStandardGear() {
 		// The Wilderness champion amulet was a Wilderness Wars (Aug 2017)
 		// reward - five players ever owned it, and an update removed it. It
 		// still ships upstream as ordinary gear carrying +100 to EVERY attack
@@ -61,8 +56,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void pvpArenaExclusiveGearIsNotStandardGear()
-	{
+	public void pvpArenaExclusiveGearIsNotStandardGear() {
 		// The calamity outfit exists only inside Emir's Arena equipment
 		// chests - never ownable in the overworld - yet upstream ships
 		// attack-bonus stats that put the breeches into melee BiS legs
@@ -70,8 +64,7 @@ public class DataServiceTest
 		LoadoutData data = new DataService().load();
 		// Wristbands of the Arena (2026-10-06 refresh): a never-released
 		// tournament-world test item with Barrows glove stats.
-		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751, 26723, 26725, 26727, 26729})
-		{
+		for (int id : new int[]{26749, 26753, 26759, 26755, 26757, 26751, 26723, 26725, 26727, 26729}) {
 			GearItem piece = data.getGear(id);
 			Assert.assertNotNull("calamity row missing: " + id, piece);
 			Assert.assertFalse("PvP Arena exclusive gear must never be recommended: "
@@ -80,8 +73,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void dawnbringerIsNotStandardGear()
-	{
+	public void dawnbringerIsNotStandardGear() {
 		// Caia (Discord 2026-10-07): "its suggesting the dawnbringer in a
 		// setup lol" - game-best magic at Gemstone Crab. The Dawnbringer
 		// breaks Verzik's shield and is destroyed if it leaves the Theatre
@@ -94,8 +86,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void questIssueKitIsNotStandardGear()
-	{
+	public void questIssueKitIsNotStandardGear() {
 		// The Silvthrill ballista and its javelins ship upstream as ordinary
 		// gear with real stats (ranged +125 / ranged str +124), but they are
 		// handed out during The Blood Moon Rises and destroyed on completion
@@ -103,8 +94,7 @@ public class DataServiceTest
 		// recommends a weapon nobody can own (see refresh_data.py
 		// NONSTANDARD_OVERRIDES).
 		LoadoutData data = new DataService().load();
-		for (int id : new int[]{33800, 33801})
-		{
+		for (int id : new int[]{33800, 33801}) {
 			GearItem item = data.getGear(id);
 			Assert.assertNotNull("missing gear id " + id, item);
 			Assert.assertFalse(item.getName() + " must not be standard gear",
@@ -113,16 +103,14 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void releasedYamaGearIsStandardNotFrozenOffAsPreRelease()
-	{
+	public void releasedYamaGearIsStandardNotFrozenOffAsPreRelease() {
 		// Field report: oathplate never appeared. best-dps froze these ids
 		// non-standard while unreleased and the refresh preserved the stale
 		// False, so they were filtered out of every candidate pool. Now
 		// live, tradeable, ordinary equip - the refresh override forces them
 		// standard (see scripts/refresh_data.py STANDARD_OVERRIDES).
 		LoadoutData data = new DataService().load();
-		for (int id : new int[]{30750, 30753, 30756, 31106})
-		{
+		for (int id : new int[]{30750, 30753, 30756, 31106}) {
 			GearItem item = data.getGear(id);
 			Assert.assertNotNull("missing gear id " + id, item);
 			Assert.assertTrue(item.getName() + " must be standard gear",
@@ -131,8 +119,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void snapshotContainsPostMay2026Content()
-	{
+	public void snapshotContainsPostMay2026Content() {
 		LoadoutData data = new DataService().load();
 		// Blood Moon Rises wave (June 2026): the Maggot King and the
 		// Necklace of rupture, which outclasses the Necklace of anguish.
@@ -144,14 +131,12 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void leaguesRewardsAreExcludedFromTheCorpus()
-	{
+	public void leaguesRewardsAreExcludedFromTheCorpus() {
 		LoadoutData data = new DataService().load();
 		// Main-game 'Echo boots' (Colosseum recoil boots) must NOT be
 		// caught by the leagues echo filter.
 		Assert.assertNotNull(data.getGear(28945));
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			String name = item.getName().toLowerCase();
 			Assert.assertFalse("leagues-only gear must not be suggestible: " + item.getName(),
 				name.startsWith("echo venator") || name.startsWith("echo virtus")
@@ -162,11 +147,9 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void effectOnlySpellsAreExcludedFromTheCorpus()
-	{
+	public void effectOnlySpellsAreExcludedFromTheCorpus() {
 		LoadoutData data = new DataService().load();
-		for (SpellStats spell : data.getSpells())
-		{
+		for (SpellStats spell : data.getSpells()) {
 			Assert.assertNotEquals("unselectable effect spells must not be castable",
 				"Flames of Cerberus", spell.getName());
 			Assert.assertNotEquals("unselectable effect spells must not be castable",
@@ -175,8 +158,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void combatIdenticalMonsterSpawnsCollapseToOneEntry()
-	{
+	public void combatIdenticalMonsterSpawnsCollapseToOneEntry() {
 		LoadoutData data = new DataService().load();
 		// Four Tormented Demon spawns share one stat block -> one unlabeled entry.
 		java.util.List<MonsterStats> tds = data.searchMonsters("tormented demon", 10);
@@ -190,8 +172,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void minigameOnlyAmmoIsExcludedFromTheCorpus()
-	{
+	public void minigameOnlyAmmoIsExcludedFromTheCorpus() {
 		LoadoutData data = new DataService().load();
 		// Barbarian Assault arrows: ranged str 125, usable only inside BA.
 		Assert.assertNull(data.getGear(22227)); // Bullet arrow
@@ -201,8 +182,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void ornamentVariantsCanonicalizeToTheBaseItem()
-	{
+	public void ornamentVariantsCanonicalizeToTheBaseItem() {
 		LoadoutData data = new DataService().load();
 		// Abyssal whip (or) = 12773, Volcanic abyssal whip = 12774 -> whip 4151.
 		Assert.assertTrue(data.isVariant(12773));
@@ -225,8 +205,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void equivalentIdsSpanTheWholeVariantFamily()
-	{
+	public void equivalentIdsSpanTheWholeVariantFamily() {
 		LoadoutData data = new DataService().load();
 		// Base whip expands to its ornament variants and back.
 		java.util.Set<Integer> family = data.equivalentIds(4151);
@@ -238,8 +217,7 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void loadsEquipmentRequirements()
-	{
+	public void loadsEquipmentRequirements() {
 		LoadoutData data = new DataService().load();
 		GearItem whip = data.getGear(4151);
 		GearItem bandosChestplate = data.getGear(11832);
@@ -250,16 +228,14 @@ public class DataServiceTest
 	}
 
 	@Test
-	public void leaguesOnlyRewardsNeverEnterTheCorpus()
-	{
+	public void leaguesOnlyRewardsNeverEnterTheCorpus() {
 		// Discord 2026-09-09: a Drygore blowpipe (Demonic Pacts League, Echo
 		// Kalphite Queen) showed as ranged BiS. The examine text is not in
 		// the corpus, so the filter is a name list (leagues_items.json).
 		LoadoutData data = new DataService().load();
 		java.util.Set<Integer> ids = new java.util.HashSet<>();
 		java.util.Set<String> names = new java.util.HashSet<>();
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			ids.add(item.getId());
 			names.add(item.getNameLower());
 		}
@@ -273,8 +249,7 @@ public class DataServiceTest
 		// Demonic Pacts echo weapons (wiki "Echo bosses and echo equipment",
 		// 2026-09-27; found chasing N's temotli report).
 		for (String echo : new String[]{"infernal tecpatl", "fang of the hound",
-			"nature's recurve", "king's barrage", "lithic sceptre"})
-		{
+			"nature's recurve", "king's barrage", "lithic sceptre"}) {
 			Assert.assertFalse(echo, names.contains(echo));
 		}
 	}

@@ -18,56 +18,43 @@ import static org.junit.jupiter.api.Assertions.*;
  * shared ammo clamps per cannon, and the operate gates (player Ranged, crew
  * Privateering) zero a cannon they block - with the reason on the node.
  */
-class ShipNodeTest
-{
+class ShipNodeTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
-	private static CommandEngine engine(PageState state, CaptureLink link)
-	{
+	private static CommandEngine engine(PageState state, CaptureLink link) {
 		return new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 	}
 
-	private static void flushEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flushEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
 	private static Map<String, Object> shipNodeFor(String mobName,
-		Map<String, Object> shipParams, int ranged, int sailing)
-	{
+		Map<String, Object> shipParams, int ranged, int sailing) {
 		PageState state = new PageState();
-		for (Map.Entry<String, Object> e : shipParams.entrySet())
-		{
+		for (Map.Entry<String, Object> e : shipParams.entrySet()) {
 			state.setParam(e.getKey(), e.getValue());
 		}
 		CaptureLink link = new CaptureLink();
@@ -88,8 +75,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("a manned dragon cannon prices at the hand-computed wiki numbers")
-	void mannedCannonPrices()
-	{
+	void mannedCannonPrices() {
 		Map<String, Object> ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
 				"cannonAmmo", "dragon", "cannon1Operator", "you"),
@@ -111,8 +97,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("gear station: both cannons are crew-fired; mixed tiers clamp the shared ammo per cannon")
-	void gearStationCrewsAndClamps()
-	{
+	void gearStationCrewsAndClamps() {
 		Map<String, Object> ship = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 2, "cannon1Material", "dragon",
 				"cannon2Material", "mithril", "cannonAmmo", "dragon",
@@ -138,8 +123,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("crew auto-raises to the cannon's gate; the player Ranged gate still blocks")
-	void operateGates()
-	{
+	void operateGates() {
 		// REQ-SC-9: picking crew3 for a dragon cannon is auto-raised to the
 		// minimum that can man it - the under-crewed state is unreachable,
 		// so the cannon prices instead of blocking.
@@ -164,8 +148,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("the manned cannon borrows the worn ranged bonuses, minus weapon/shield/ammo")
-	void mannedCannonWearsTheArmour()
-	{
+	void mannedCannonWearsTheArmour() {
 		// Without a ranged result the cannon prices bare: the 57 pin.
 		Map<String, Object> bare = shipNodeFor("hammerhead shark",
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
@@ -183,8 +166,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("a mixed roster prices cannons only under the sea lens (REQ-SC-7)")
-	void mixedRosterFollowsTheLens()
-	{
+	void mixedRosterFollowsTheLens() {
 		PageState state = new PageState();
 		state.setParam("cannonCount", 1);
 		state.setParam("cannon1Material", "dragon");
@@ -214,8 +196,7 @@ class ShipNodeTest
 
 	@Test
 	@DisplayName("land mobs and cannonless ships carry no node - the params survive unread")
-	void landAndZeroVeto()
-	{
+	void landAndZeroVeto() {
 		assertNull(shipNodeFor("general graardor",
 			Map.of("cannonCount", 2, "cannon1Material", "dragon",
 				"cannonAmmo", "dragon", "cannon1Operator", "you"),

@@ -16,24 +16,20 @@ import com.loadoutlab.data.GearSlot;
  * blessing. {@link #strength} keeps every recompute honest - re-show
  * paths price the relocated set identically to the pre-relocation one.
  */
-public final class QuiverAmmo
-{
-	private QuiverAmmo()
-	{
+public final class QuiverAmmo {
+	private QuiverAmmo() {
 	}
 
 	/** A Dizana's quiver in the cape slot (uncharged/charged/blessed -
 	 * all variants hold ammunition; the max-cape build is out of corpus). */
-	public static boolean wearsQuiver(Loadout loadout)
-	{
+	public static boolean wearsQuiver(Loadout loadout) {
 		GearItem cape = loadout.get(GearSlot.CAPE);
 		return cape != null && cape.getNameLower().contains("dizana's quiver");
 	}
 
 	/** The quiver only holds arrows and bolts - a ballista's javelins and
 	 * a blowpipe's darts stay where they are. */
-	public static boolean relocatable(Loadout loadout)
-	{
+	public static boolean relocatable(Loadout loadout) {
 		GearItem ammo = loadout.get(GearSlot.AMMO);
 		GearItem weapon = loadout.getWeapon();
 		return wearsQuiver(loadout) && ammo != null && weapon != null
@@ -46,11 +42,9 @@ public final class QuiverAmmo
 	 * blessed quiver with applicable ammo grants +10 ranged accuracy
 	 * and +1 ranged strength on top of everything - our chain counted
 	 * only the stored arrows' stats and ran every quiver set low). */
-	private static boolean quiverBonusApplies(Loadout loadout)
-	{
+	private static boolean quiverBonusApplies(Loadout loadout) {
 		GearItem cape = loadout.get(GearSlot.CAPE);
-		if (cape == null)
-		{
+		if (cape == null) {
 			return false;
 		}
 		String name = cape.getNameLower();
@@ -58,8 +52,7 @@ public final class QuiverAmmo
 			|| name.contains("dizana's max cape")
 			|| (name.contains("dizana's quiver")
 				&& "charged".equalsIgnoreCase(cape.getVersion()));
-		if (!charged)
-		{
+		if (!charged) {
 			return false;
 		}
 		GearItem weapon = loadout.getWeapon();
@@ -73,8 +66,7 @@ public final class QuiverAmmo
 	/** The quiver-carried ammo's ranged strength - added beside
 	 * BlowpipeDarts.strength in the max-hit chain, so the arrows count
 	 * from the quiver exactly as they did from the slot. */
-	public static int strength(Loadout loadout)
-	{
+	public static int strength(Loadout loadout) {
 		GearItem carried = loadout.getQuiverAmmo();
 		return (carried == null ? 0 : carried.getBonuses().getRangedStrength())
 			+ (quiverBonusApplies(loadout) ? 1 : 0);
@@ -85,8 +77,7 @@ public final class QuiverAmmo
 	 * (field report 2026-08-09: Seeking dragon arrows carry +20 ranged
 	 * accuracy, and pricing only the strength made their relocation
 	 * dps-negative, so the freed-slot blessing never happened). */
-	public static int accuracy(Loadout loadout)
-	{
+	public static int accuracy(Loadout loadout) {
 		GearItem carried = loadout.getQuiverAmmo();
 		return (carried == null ? 0 : carried.getOffensive().getRanged())
 			+ (quiverBonusApplies(loadout) ? 10 : 0);

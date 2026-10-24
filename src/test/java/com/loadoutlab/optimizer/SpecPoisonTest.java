@@ -20,12 +20,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** The spec-weapon pick prefers the higher poison tier on damage ties. */
-class SpecPoisonTest
-{
+class SpecPoisonTest {
 	@Test
 	@DisplayName("the suggested spec dagger is the p++ when every tier is owned")
-	void specPicksThePlusPlusDagger()
-	{
+	void specPicksThePlusPlusDagger() {
 		LoadoutData data = new DataService().load();
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		// All four dagger tiers plus a whip as the main-hand.
@@ -39,16 +37,13 @@ class SpecPoisonTest
 		assertFalse(base.isEmpty());
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			OptimizerService.SpecPick pick = service.bestSpec(data, request, base.get(0), owned, null, false);
 			assertNotNull(pick, "a dagger spec should be available");
 			assertEquals("dragon dagger", pick.weapon.getNameLower());
 			assertEquals(3, pick.weapon.poisonTier(),
 				"expected the p++ tier, got version: " + pick.weapon.getVersionLower());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

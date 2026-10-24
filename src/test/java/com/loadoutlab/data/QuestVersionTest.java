@@ -14,18 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * to the bottom of a bare-name search - the everyday fight owns the
  * bare name.
  */
-class QuestVersionTest
-{
+class QuestVersionTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static List<String> versions(String name)
-	{
+	private static List<String> versions(String name) {
 		return data.searchMonsters(name, 10).stream()
 			.filter(m -> m.getName().equalsIgnoreCase(name))
 			.map(MonsterStats::getVersion)
@@ -34,8 +31,7 @@ class QuestVersionTest
 
 	@Test
 	@DisplayName("Vorkath: the everyday fight is bare, the DS2 fight reads QUEST and sorts last")
-	void vorkath()
-	{
+	void vorkath() {
 		List<String> versions = versions("Vorkath");
 		assertEquals(2, versions.size());
 		assertEquals("", versions.get(0), "post-quest owns the bare name and leads");
@@ -44,15 +40,13 @@ class QuestVersionTest
 
 	@Test
 	@DisplayName("Duke Sucellus: bare / Awakened / QUEST, noise tokens gone")
-	void dukeSucellus()
-	{
+	void dukeSucellus() {
 		List<String> versions = versions("Duke Sucellus");
 		assertEquals(3, versions.size());
 		assertEquals("", versions.get(0), "the everyday fight leads");
 		assertTrue(versions.contains("Awakened"), versions.toString());
 		assertTrue(versions.contains("QUEST"), versions.toString());
-		for (String v : versions)
-		{
+		for (String v : versions) {
 			assertFalse(v.toLowerCase().contains("awake,")
 				|| v.toLowerCase().contains(", awake")
 				|| v.toLowerCase().contains("post-quest"), "noise token survived: " + v);

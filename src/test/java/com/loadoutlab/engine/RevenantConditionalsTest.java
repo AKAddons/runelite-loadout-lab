@@ -18,43 +18,35 @@ import static org.junit.jupiter.api.Assertions.*;
  * charged wilderness weapons get 3/2 accuracy AND damage vs wilderness
  * monsters, and a charged bracelet of ethereum zeroes revenant damage.
  */
-class RevenantConditionalsTest
-{
+class RevenantConditionalsTest {
 	private static LoadoutData data;
 	private static MonsterStats revDemon;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		revDemon = data.searchMonsters("revenant demon", 1).get(0);
 	}
 
-	private static GearItem byName(String name, String version)
-	{
-		for (GearItem item : data.getGearItems())
-		{
+	private static GearItem byName(String name, String version) {
+		for (GearItem item : data.getGearItems()) {
 			if (item.getNameLower().equals(name)
-				&& (version == null || version.equalsIgnoreCase(item.getVersionLower())))
-			{
+				&& (version == null || version.equalsIgnoreCase(item.getVersionLower()))) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + name + " (" + version + ")");
 	}
 
-	private static Loadout worn(GearItem... items)
-	{
+	private static Loadout worn(GearItem... items) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem item : items)
-		{
+		for (GearItem item : items) {
 			gear.put(item.getSlot(), item);
 		}
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest request(MonsterStats monster, CombatStyle style)
-	{
+	private static OptimizationRequest request(MonsterStats monster, CombatStyle style) {
 		return new OptimizationRequest(monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
@@ -63,8 +55,7 @@ class RevenantConditionalsTest
 
 	@Test
 	@DisplayName("the wilderness weapon buff needs a wilderness monster AND the charged version")
-	void revWeaponBuffGates()
-	{
+	void revWeaponBuffGates() {
 		OptimizationRequest atRevs = request(revDemon, CombatStyle.RANGED);
 		OptimizationRequest atGoblin =
 			request(data.searchMonsters("goblin", 1).get(0), CombatStyle.RANGED);
@@ -83,8 +74,7 @@ class RevenantConditionalsTest
 
 	@Test
 	@DisplayName("a charged craw's bow at revenants outputs more dps than the raw stats say")
-	void crawsBowBuffShowsUpInDps()
-	{
+	void crawsBowBuffShowsUpInDps() {
 		Loadout charged = worn(byName("craw's bow", "charged"));
 		DpsResult atRevs = new DpsCalculator().calculate(request(revDemon, CombatStyle.RANGED), charged);
 		assertNotNull(atRevs);
@@ -106,8 +96,7 @@ class RevenantConditionalsTest
 
 	@Test
 	@DisplayName("avarice heads the salve chain at revenants: it beats the same neck stats unbuffed")
-	void avariceBeatsFuryAtRevenants()
-	{
+	void avariceBeatsFuryAtRevenants() {
 		Loadout base = worn(byName("magic shortbow", null), byName("amethyst arrow", null),
 			byName("amulet of fury", null));
 		Loadout avarice = worn(byName("magic shortbow", null), byName("amethyst arrow", null),
@@ -121,8 +110,7 @@ class RevenantConditionalsTest
 
 	@Test
 	@DisplayName("Max DPS keeps the offensive gloves over the ethereum bracelet at revenants")
-	void maxDpsKeepsGloves()
-	{
+	void maxDpsKeepsGloves() {
 		// msb + amethyst arrows + barrows gloves + charged ethereum owned:
 		// the small glove dps gain must beat the zero-offense bracelet.
 		OwnedItems owned = new OwnedItems(java.util.Map.of(
@@ -141,8 +129,7 @@ class RevenantConditionalsTest
 
 	@Test
 	@DisplayName("a charged bracelet of ethereum zeroes revenant incoming damage")
-	void ethereumZeroesIncoming()
-	{
+	void ethereumZeroesIncoming() {
 		Loadout with = worn(byName("bracelet of ethereum", "charged"));
 		Loadout without = worn(byName("bracelet of ethereum", "uncharged"));
 

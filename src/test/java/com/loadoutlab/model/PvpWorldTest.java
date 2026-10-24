@@ -20,19 +20,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * without the wilderness weapon buff. High Risk worlds keep nothing
  * (wiki: all items lost, Protect Item unusable).
  */
-class PvpWorldTest
-{
+class PvpWorldTest {
 
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static PageState pvp(int mode)
-	{
+	private static PageState pvp(int mode) {
 		PageState state = new PageState();
 		state.setParam("pvpWorld", mode);
 		state.setParam("riskBudgetGp", 75_000);
@@ -41,8 +38,7 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("a PvP world with a bound cap keeps 3 items, 4 with Protect Item")
-	void pvpWorldKeepsThree()
-	{
+	void pvpWorldKeepsThree() {
 		PageState state = pvp(1);
 		assertEquals(3, state.computeParams().maxTradeables);
 		state.setParam("protectItem", true);
@@ -51,8 +47,7 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("a High Risk world keeps nothing, Protect Item or not")
-	void highRiskKeepsNothing()
-	{
+	void highRiskKeepsNothing() {
 		PageState state = pvp(2);
 		assertEquals(0, state.computeParams().maxTradeables);
 		state.setParam("protectItem", true);
@@ -61,16 +56,14 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("a PvP world never switches on the wilderness weapon buff")
-	void pvpWorldIsNotTheWilderness()
-	{
+	void pvpWorldIsNotTheWilderness() {
 		assertEquals(false, pvp(1).computeParams().inWilderness);
 		assertEquals(false, pvp(2).computeParams().inWilderness);
 	}
 
 	@Test
 	@DisplayName("the mode clamps to off / PvP / High Risk and is off by default")
-	void modeClamps()
-	{
+	void modeClamps() {
 		PageState state = new PageState();
 		assertEquals(0, state.paramsNode().get("pvpWorld"));
 		state.setParam("pvpWorld", 7);
@@ -83,33 +76,28 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("the client-side flag is its own param, like f2pWorld")
-	void hereFlagIsSeparate()
-	{
+	void hereFlagIsSeparate() {
 		PageState state = new PageState();
 		assertTrue(state.setParam("pvpWorldHere", true));
 		assertEquals(Boolean.TRUE, state.paramsNode().get("pvpWorldHere"));
 		assertEquals(0, state.paramsNode().get("pvpWorld"), "being on one does not pick the mode");
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
 	/** Graardor's page under the given mode, with a bank and a casting trip. */
-	private static Map<?, ?> graardorEntry(int mode, Set<Integer> bank)
-	{
+	private static Map<?, ?> graardorEntry(int mode, Set<Integer> bank) {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps());
@@ -124,14 +112,10 @@ class PvpWorldTest
 		state.setParam("riskBudgetGp", 75_000);
 		state.setParam("thralls", true);
 		engine.onResults(mob, WildernessReportTest.styles(data, mob));
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		assertNotNull(link.published, "a page published");
@@ -141,8 +125,7 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("a PvP-world report prices a death on a non-wilderness boss")
-	void pvpReportCarriesRisk()
-	{
+	void pvpReportCarriesRisk() {
 		String report = (String) graardorEntry(1, Set.of()).get("report");
 		assertTrue(report.contains("Risk:"), "a PvP-world answer must price a death:\n" + report);
 		assertTrue(report.contains("PvP world: yes"), report);
@@ -154,8 +137,7 @@ class PvpWorldTest
 
 	@Test
 	@DisplayName("a PvP world offers only a locked pouch and prefers banked blighted food")
-	void pvpKitAndSupplies()
-	{
+	void pvpKitAndSupplies() {
 		Set<Integer> bank = Set.of(27281, 27509, 13441, 24592);
 		Map<?, ?> entry = (Map<?, ?>) graardorEntry(1, bank).get("entry");
 		Map<?, ?> mobNode = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(0);
@@ -166,11 +148,9 @@ class PvpWorldTest
 		assertFalse(supplyNames(land).contains("Blighted anglerfish"), "blighted food stays off normal worlds");
 	}
 
-	private static List<String> supplyNames(Map<?, ?> entry)
-	{
+	private static List<String> supplyNames(Map<?, ?> entry) {
 		List<String> names = new java.util.ArrayList<>();
-		for (Object supply : (List<?>) entry.get("supplies"))
-		{
+		for (Object supply : (List<?>) entry.get("supplies")) {
 			names.add(String.valueOf(((Map<?, ?>) supply).get("name")));
 		}
 		return names;

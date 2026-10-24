@@ -9,21 +9,17 @@ import java.util.Set;
  * a ... Slayer task") - for these the on-task toggle is forced on, the
  * opposite of unassignable monsters where it is forced off.
  */
-public final class SlayerLockedMonsters
-{
+public final class SlayerLockedMonsters {
 	private static final Set<String> NAMES = new HashSet<>();
 
-	static
-	{
+	static {
 		JsonResources.strings(JsonResources.objectOrThrow("slayer_locked_monsters.json"), "names", NAMES);
 	}
 
-	private SlayerLockedMonsters()
-	{
+	private SlayerLockedMonsters() {
 	}
 
-	public static boolean isTaskOnly(MonsterStats monster)
-	{
+	public static boolean isTaskOnly(MonsterStats monster) {
 		return monster != null && NAMES.contains(Names.lower(monster.getName()));
 	}
 }

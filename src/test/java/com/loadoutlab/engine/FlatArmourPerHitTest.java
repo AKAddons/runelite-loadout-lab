@@ -18,28 +18,23 @@ import org.junit.Test;
  * punishes them twice. The old order split the macuahuitl's max AFTER
  * armour, crediting the -5 only once.
  */
-public class FlatArmourPerHitTest
-{
+public class FlatArmourPerHitTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String nameLower)
-	{
+	private static GearItem byName(String nameLower) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear())
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 	}
 
-	private static DpsResult macuahuitlVs(String monster)
-	{
+	private static DpsResult macuahuitlVs(String monster) {
 		MonsterStats mob = data().searchMonsters(monster, 1).get(0);
 		OptimizationRequest request = TestRequests.of(mob, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -52,8 +47,7 @@ public class FlatArmourPerHitTest
 	}
 
 	@Test
-	public void blueMoonCreditsTheMinusFiveOnBothHitsplats()
-	{
+	public void blueMoonCreditsTheMinusFiveOnBothHitsplats() {
 		DpsResult result = macuahuitlVs("blue moon");
 		// Each hitsplat carries its own +5, applied AFTER the accurate-
 		// zero rule (a landed 0 counts as 1) - repinned 2026-08-21 from
@@ -70,8 +64,7 @@ public class FlatArmourPerHitTest
 	}
 
 	@Test
-	public void eclipseMoonChargesTheArmourOnBothHitsplats()
-	{
+	public void eclipseMoonChargesTheArmourOnBothHitsplats() {
 		MonsterStats mob = data().searchMonsters("eclipse moon", 1).get(0);
 		int armour = mob.getDefensive().getFlatArmour();
 		Assert.assertTrue("eclipse forms carry positive flat armour", armour > 0);

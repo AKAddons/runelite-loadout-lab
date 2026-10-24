@@ -12,15 +12,13 @@ import java.util.Set;
  * calculator's constants (game facts, regenerated with the data - see
  * scripts/official-harness/README.md); the weapon rules are wiki-sourced.
  */
-public final class MonsterMechanics
-{
+public final class MonsterMechanics {
 	private static final JsonObject ROOT =
 		JsonResources.gz("/com/loadoutlab/data/npc_mechanics.json.gz").getAsJsonObject();
 
 	/** One of the file's id lists (resolved once, below: the immunity
 	 * checks sit on the beam's path, so the reads stay plain set lookups). */
-	private static Set<Integer> ids(String key)
-	{
+	private static Set<Integer> ids(String key) {
 		Set<Integer> ids = new HashSet<>();
 		JsonResources.ints(ROOT, key, ids);
 		return ids;
@@ -46,25 +44,20 @@ public final class MonsterMechanics
 		TOA_INVOCATION_SCALED = ids("toaInvocationScaled");
 
 
-	private MonsterMechanics()
-	{
+	private MonsterMechanics() {
 	}
 
 	/** Style-level immunity, independent of the weapon (panel messaging). */
-	public static boolean styleImmune(MonsterStats monster, CombatStyle style)
-	{
-		if (monster == null)
-		{
+	public static boolean styleImmune(MonsterStats monster, CombatStyle style) {
+		if (monster == null) {
 			return false;
 		}
 		// Data-driven immunity (synthetic group variants - the tormented
 		// demon shield phases): the attribute wins before the id lists.
-		if (monster.hasAttribute("immune_" + Names.lower(style.name())))
-		{
+		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) {
 			return true;
 		}
-		switch (style)
-		{
+		switch (style) {
 			case MAGIC: return IMMUNE_MAGIC.contains(monster.getId());
 			case RANGED: return IMMUNE_RANGED.contains(monster.getId());
 			case MELEE: return IMMUNE_MELEE.contains(monster.getId()) && !ZULRAH.contains(monster.getId());
@@ -73,10 +66,8 @@ public final class MonsterMechanics
 	}
 
 	/** Full immunity check for a concrete loadout (mirrors the official calc). */
-	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell)
-	{
-		if (monster == null)
-		{
+	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
+		if (monster == null) {
 			return false;
 		}
 		// Data-driven immunity (synthetic group variants) gates the
@@ -84,14 +75,12 @@ public final class MonsterMechanics
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
 		// pierced by Verac's set - the flail gates entry here, and the
 		// calculator prices set-complete-or-zero.
-		if (monster.hasAttribute("immune_" + Names.lower(style.name())))
-		{
+		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) {
 			boolean veracPierce = style == CombatStyle.MELEE
 				&& monster.hasAttribute("prayer_immunity")
 				&& loadout.getWeapon() != null
 				&& loadout.getWeapon().getNameLower().contains("verac");
-			if (!veracPierce)
-			{
+			if (!veracPierce) {
 				return true;
 			}
 		}
@@ -101,36 +90,30 @@ public final class MonsterMechanics
 		// card - the same shape as Zulrah's rejection. (The salamander
 		// scorch curiosity is deliberately unmodeled.)
 		if (style == CombatStyle.MELEE
-			&& NavalCombat.isNaval(monster.getName()))
-		{
+			&& NavalCombat.isNaval(monster.getName())) {
 			return true;
 		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();
 		String category = weapon == null ? "" : weapon.getCategory();
-		if (style == CombatStyle.MAGIC && IMMUNE_MAGIC.contains(id))
-		{
+		if (style == CombatStyle.MAGIC && IMMUNE_MAGIC.contains(id)) {
 			return true;
 		}
 		// By the real id, so phase variants inherit it (Archive Guardian).
 		if (style == CombatStyle.MAGIC && spell != null && "ancient".equals(spell.getSpellbook())
-			&& IMMUNE_ANCIENTS.contains(monster.profileId()))
-		{
+			&& IMMUNE_ANCIENTS.contains(monster.profileId())) {
 			return true;
 		}
 		// Salarin the twisted (wiki): "can only be damaged by Strike
 		// spells, ring of recoil damage, and dynamite(p)". Melee and
 		// ranged never land; magic lands only as a Strike cast.
-		if (SALARIN.contains(id))
-		{
+		if (SALARIN.contains(id)) {
 			return style != CombatStyle.MAGIC || !salarinDamagingSpell(spell);
 		}
-		if (style == CombatStyle.RANGED && IMMUNE_RANGED.contains(id))
-		{
+		if (style == CombatStyle.RANGED && IMMUNE_RANGED.contains(id)) {
 			return true;
 		}
-		if (style == CombatStyle.MELEE && meleeBarred(id, category))
-		{
+		if (style == CombatStyle.MELEE && meleeBarred(id, category)) {
 			return true;
 		}
 		return monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell);
@@ -139,8 +122,7 @@ public final class MonsterMechanics
 	/** The id-list melee bars: the melee-immune rows (Zulrah can be reached
 	 * with a polearm), Vespula (immune despite the polearm rule for flying),
 	 * the salamander-only rows and the Guardians' pickaxe rule. */
-	private static boolean meleeBarred(int id, String category)
-	{
+	private static boolean meleeBarred(int id, String category) {
 		return IMMUNE_MELEE.contains(id) && !(ZULRAH.contains(id) && "Polearm".equals(category))
 			|| VESPULA.contains(id)
 			|| SALAMANDER_ONLY_MELEE.contains(id) && !"Salamander".equals(category)
@@ -148,16 +130,13 @@ public final class MonsterMechanics
 	}
 
 	/** Leafy monsters (turoths/kurasks): leaf-bladed melee, broad ammo, or Magic Dart. */
-	private static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell)
-	{
+	private static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell) {
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
-		if (style == CombatStyle.MELEE)
-		{
+		if (style == CombatStyle.MELEE) {
 			return weaponName.startsWith("leaf-bladed");
 		}
-		if (style == CombatStyle.RANGED)
-		{
+		if (style == CombatStyle.RANGED) {
 			GearItem ammo = loadout.get(GearSlot.AMMO);
 			String ammoName = ammo == null ? "" : ammo.getNameLower();
 			return ammoName.contains("broad");
@@ -167,8 +146,7 @@ public final class MonsterMechanics
 
 	/** The weapon-level bars a worn weapon faces at this monster (vampyre
 	 * tiers, flying, rat bone) - the calculator's gate and the pool share it. */
-	public static boolean weaponUsable(MonsterStats monster, CombatStyle style, GearItem weapon)
-	{
+	public static boolean weaponUsable(MonsterStats monster, CombatStyle style, GearItem weapon) {
 		return VampyreRules.canDamage(monster, weapon)
 			&& FlyingRules.canReach(monster, style, weapon)
 			&& RatBoneRules.canUse(monster, weapon);
@@ -176,10 +154,8 @@ public final class MonsterMechanics
 
 	/** Weapon-level pre-filter for candidate selection (conservative: only
 	 * prunes when the weapon alone decides; ammo/spell-dependent cases pass). */
-	public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon)
-	{
-		if (monster == null || style != CombatStyle.MELEE)
-		{
+	public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon) {
+		if (monster == null || style != CombatStyle.MELEE) {
 			return true;
 		}
 		int id = monster.getId();
@@ -200,8 +176,7 @@ public final class MonsterMechanics
 	 * it lands straight on the attack interval. The vents sit apart
 	 * across the arena; ranged and magic one-shot each from one spot,
 	 * which is why the bow "drastically cuts the time between kills". */
-	public static int meleeReachPenaltyTicks(MonsterStats monster)
-	{
+	public static int meleeReachPenaltyTicks(MonsterStats monster) {
 		return isRespiratorySystem(monster) ? VENT_MELEE_WALK_TICKS : 0;
 	}
 
@@ -209,29 +184,25 @@ public final class MonsterMechanics
 	 * per the wiki, plus the melee demonbane one-shot. weaponCanEverWork
 	 * prunes the pool with this and damageFactor zeroes re-shows with it,
 	 * so pool and math can never disagree. */
-	private static boolean ventMeleeLands(GearItem weapon)
-	{
+	private static boolean ventMeleeLands(GearItem weapon) {
 		return "Polearm".equals(weapon == null ? "" : weapon.getCategory())
 			|| isMeleeDemonbane(weapon);
 	}
 
 	/** The Inferno's nibblers - the mob whose whole role is being
 	 * barraged: three spawn per wave and one AoE cast clears the set. */
-	public static boolean isNibbler(MonsterStats monster)
-	{
+	public static boolean isNibbler(MonsterStats monster) {
 		return monster != null && NIBBLERS.contains(monster.getId());
 	}
 
 	/** Salarin the twisted - strike-spells-only, flat damage. */
-	public static boolean isSalarin(MonsterStats monster)
-	{
+	public static boolean isSalarin(MonsterStats monster) {
 		return monster != null && SALARIN.contains(monster.getId());
 	}
 
 	/** Salarin's whitelist - the only casts that damage him. isImmune and
 	 * the optimizer's spell pool enforce the same fact through this. */
-	public static boolean salarinDamagingSpell(SpellStats spell)
-	{
+	public static boolean salarinDamagingSpell(SpellStats spell) {
 		return spell != null && "Strike".equals(spell.getNameSecondWord());
 	}
 
@@ -241,13 +212,11 @@ public final class MonsterMechanics
 	/** One fight per seed, totem, casket or entry (Hespori, Skotizo, the
 	 * Mimic, Jad, Zuk, the Hunllefs, Obor, Bryophyta): the spec bar opens
 	 * full, so burst specs count there (DES-01M5914JFX6HHTNSAP0HANN5GA). */
-	public static boolean startsWithFullBar(MonsterStats monster)
-	{
+	public static boolean startsWithFullBar(MonsterStats monster) {
 		return monster != null && FRESH_BAR.contains(monster.getId());
 	}
 
-	public static boolean isWardenCore(MonsterStats monster)
-	{
+	public static boolean isWardenCore(MonsterStats monster) {
 		return monster != null && WARDEN_CORES.contains(monster.getId())
 			&& monster.versionStartsWith("Core-ejected");
 	}
@@ -257,35 +226,30 @@ public final class MonsterMechanics
 	 * overlords). profileId maps the group's synthetic phase variants
 	 * back to their real rows. */
 	/** HP times the group's kit weight - the shared-kit currency. */
-	public static double kitWeight(MonsterStats monster)
-	{
+	public static double kitWeight(MonsterStats monster) {
 		String w = monster == null ? null : monster.attributeValue("weight:");
 		return Math.max(1, monster == null ? 1 : monster.getHitpoints()) * (w == null ? 1 : Integer.parseInt(w));
 	}
 
 	/** The spec weapon family a group stipulates for this mob, or null. */
-	public static String specStipulation(MonsterStats monster)
-	{
+	public static String specStipulation(MonsterStats monster) {
 		return monster == null ? null : monster.attributeValue("spec:");
 	}
 
-	public static boolean isToaInvocationScaled(MonsterStats monster)
-	{
+	public static boolean isToaInvocationScaled(MonsterStats monster) {
 		return monster != null && TOA_INVOCATION_SCALED.contains(monster.profileId());
 	}
 
 	/** The monster priced at a raid level: a factored copy for scaled ToA
 	 * rows (level 0 clears an earlier factor), the monster itself
 	 * otherwise. */
-	public static MonsterStats atToaInvocation(MonsterStats monster, int level)
-	{
+	public static MonsterStats atToaInvocation(MonsterStats monster, int level) {
 		return isToaInvocationScaled(monster)
 			? monster.withToaInvocation(level) : monster;
 	}
 
 	/** The Sire's vents (per-monster rules live on the id set). */
-	public static boolean isRespiratorySystem(MonsterStats monster)
-	{
+	public static boolean isRespiratorySystem(MonsterStats monster) {
 		return monster != null && RESPIRATORY_SYSTEMS.contains(monster.getId());
 	}
 
@@ -295,22 +259,19 @@ public final class MonsterMechanics
 	 * melee-only reading ranked a blowpipe above the bow that one-shots.
 	 * The vocabulary itself is precomputed on GearItem (one list for this,
 	 * TormentedDemonRules, and the optimizer's demon bump). */
-	public static boolean isDemonbane(GearItem weapon)
-	{
+	public static boolean isDemonbane(GearItem weapon) {
 		return weapon != null && weapon.isDemonbane();
 	}
 
 	/** Melee demonbane - the class that destroys a respiratory system on
 	 * any successful hit (wiki: "demonbane weapons (other than holy water)
 	 * will instantly kill the systems"). */
-	private static boolean isMeleeDemonbane(GearItem weapon)
-	{
+	private static boolean isMeleeDemonbane(GearItem weapon) {
 		return weapon != null && weapon.isMeleeDemonbane();
 	}
 
 	/** Some NPCs' magic defence rolls use their Defence level, not Magic. */
-	public static boolean magicDefenceUsesDefenceLevel(MonsterStats monster)
-	{
+	public static boolean magicDefenceUsesDefenceLevel(MonsterStats monster) {
 		return monster != null && MAGIC_DEFENCE_BY_DEF_LEVEL.contains(monster.getId());
 	}
 
@@ -322,10 +283,8 @@ public final class MonsterMechanics
 	 * pickaxe; zogres quarter damage (Crumble Undead: half).
 	 */
 	public static double damageFactor(MonsterStats monster, CombatStyle style,
-		Loadout loadout, String attackType, SpellStats spell)
-	{
-		if (monster == null)
-		{
+		Loadout loadout, String attackType, SpellStats spell) {
+		if (monster == null) {
 			return 1.0;
 		}
 		String name = monster.getName();
@@ -337,39 +296,30 @@ public final class MonsterMechanics
 		// directly, so the math must agree or a whip line renders a
 		// phantom dps against them.
 		if (style == CombatStyle.MELEE
-			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon))
-		{
+			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon)) {
 			return 0.0;
 		}
-		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType))
-		{
+		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType)) {
 			return 0.5;
 		}
 		if (("Kraken".equalsIgnoreCase(name) || "Cave kraken".equalsIgnoreCase(name))
-			&& style == CombatStyle.RANGED)
-		{
+			&& style == CombatStyle.RANGED) {
 			return 1.0 / 7.0;
 		}
-		if (TEKTON.contains(monster.getId()) && style == CombatStyle.MAGIC)
-		{
+		if (TEKTON.contains(monster.getId()) && style == CombatStyle.MAGIC) {
 			return 0.2;
 		}
-		if (ICE_DEMON.contains(monster.getId()))
-		{
+		if (ICE_DEMON.contains(monster.getId())) {
 			boolean fire = spell != null && "fire".equals(spell.getElement());
-			if (!fire)
-			{
+			if (!fire) {
 				return 1.0 / 3.0;
 			}
 		}
-		if ("Slagilith".equalsIgnoreCase(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory()))
-		{
+		if ("Slagilith".equalsIgnoreCase(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
 			return 1.0 / 3.0;
 		}
-		if ("Zogre".equalsIgnoreCase(name) || "Skogre".equalsIgnoreCase(name) || "Slash Bash".equalsIgnoreCase(name))
-		{
-			if (spell != null && "Crumble Undead".equals(spell.getName()))
-			{
+		if ("Zogre".equalsIgnoreCase(name) || "Skogre".equalsIgnoreCase(name) || "Slash Bash".equalsIgnoreCase(name)) {
+			if (spell != null && "Crumble Undead".equals(spell.getName())) {
 				return 0.5;
 			}
 			return 0.25;
@@ -377,14 +327,11 @@ public final class MonsterMechanics
 		return 1.0;
 	}
 
-	private static boolean corpbane(CombatStyle style, String weaponName, String attackType)
-	{
-		if (style == CombatStyle.MAGIC)
-		{
+	private static boolean corpbane(CombatStyle style, String weaponName, String attackType) {
+		if (style == CombatStyle.MAGIC) {
 			return true;
 		}
-		if (style != CombatStyle.MELEE || attackType == null || !attackType.startsWith("stab"))
-		{
+		if (style != CombatStyle.MELEE || attackType == null || !attackType.startsWith("stab")) {
 			return false;
 		}
 		return weaponName.contains("osmumten's fang")

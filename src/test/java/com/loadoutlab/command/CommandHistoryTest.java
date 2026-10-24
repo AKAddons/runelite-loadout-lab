@@ -16,53 +16,43 @@ import static org.junit.jupiter.api.Assertions.*;
  * verify exactly which commands ran (and in which direction) without
  * touching the real stores.
  */
-class CommandHistoryTest
-{
+class CommandHistoryTest {
 	private CommandHistory history;
 	/** Trace of "apply:N" / "revert:N" calls in the order they happened. */
 	private List<String> trace;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		history = new CommandHistory();
 		trace = new ArrayList<>();
 	}
 
-	private Command stubCmd(int id)
-	{
-		return new Command()
-		{
+	private Command stubCmd(int id) {
+		return new Command() {
 			@Override public boolean apply() { trace.add("apply:" + id); return true; }
 			@Override public boolean revert() { trace.add("revert:" + id); return true; }
 			@Override public String getDescription() { return "cmd-" + id; }
 		};
 	}
 
-	private Command failingApply(int id)
-	{
-		return new Command()
-		{
+	private Command failingApply(int id) {
+		return new Command() {
 			@Override public boolean apply() { trace.add("apply:" + id); return false; }
 			@Override public boolean revert() { trace.add("revert:" + id); return true; }
 			@Override public String getDescription() { return "cmd-" + id; }
 		};
 	}
 
-	private Command failingRevert(int id)
-	{
-		return new Command()
-		{
+	private Command failingRevert(int id) {
+		return new Command() {
 			@Override public boolean apply() { trace.add("apply:" + id); return true; }
 			@Override public boolean revert() { trace.add("revert:" + id); return false; }
 			@Override public String getDescription() { return "cmd-" + id; }
 		};
 	}
 
-	private Command throwingRevert(int id)
-	{
-		return new Command()
-		{
+	private Command throwingRevert(int id) {
+		return new Command() {
 			@Override public boolean apply() { trace.add("apply:" + id); return true; }
 			@Override public boolean revert() { throw new RuntimeException("boom"); }
 			@Override public String getDescription() { return "cmd-" + id; }
@@ -71,8 +61,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("execute runs apply and pushes onto undo stack")
-	void executePushes()
-	{
+	void executePushes() {
 		assertTrue(history.execute(stubCmd(1)));
 		assertEquals(List.of("apply:1"), trace);
 		assertTrue(history.canUndo());
@@ -83,8 +72,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("undo pops the most recent entry and reverts it, moving to redo stack")
-	void undoMovesToRedo()
-	{
+	void undoMovesToRedo() {
 		history.execute(stubCmd(1));
 		history.execute(stubCmd(2));
 		assertTrue(history.undo());
@@ -97,8 +85,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("redo re-applies the entry and moves it back to undo stack")
-	void redoMovesBack()
-	{
+	void redoMovesBack() {
 		history.execute(stubCmd(1));
 		history.undo();
 		assertTrue(history.redo());
@@ -109,8 +96,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("a new execute clears the redo stack (forking history)")
-	void newExecuteClearsRedo()
-	{
+	void newExecuteClearsRedo() {
 		history.execute(stubCmd(1));
 		history.execute(stubCmd(2));
 		history.undo(); // 2 → redo
@@ -121,30 +107,26 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("undo on empty stack returns false")
-	void emptyUndo()
-	{
+	void emptyUndo() {
 		assertFalse(history.undo());
 	}
 
 	@Test
 	@DisplayName("redo on empty stack returns false")
-	void emptyRedo()
-	{
+	void emptyRedo() {
 		assertFalse(history.redo());
 	}
 
 	@Test
 	@DisplayName("execute returning false (no-op) is not pushed onto the stack")
-	void failingApplyNotPushed()
-	{
+	void failingApplyNotPushed() {
 		assertFalse(history.execute(failingApply(1)));
 		assertFalse(history.canUndo());
 	}
 
 	@Test
 	@DisplayName("undo with failing revert drops the entry and returns false")
-	void failingRevertDropped()
-	{
+	void failingRevertDropped() {
 		history.execute(stubCmd(1));
 		history.execute(failingRevert(2));
 		assertFalse(history.undo()); // revert returned false
@@ -155,8 +137,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("undo with throwing revert drops the entry and returns false")
-	void throwingRevertDropped()
-	{
+	void throwingRevertDropped() {
 		history.execute(stubCmd(1));
 		history.execute(throwingRevert(2));
 		assertFalse(history.undo());
@@ -166,15 +147,12 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("undo stack is bounded at CAP entries — oldest are trimmed")
-	void capTrim()
-	{
-		for (int i = 0; i < CommandHistory.CAP + 5; i++)
-		{
+	void capTrim() {
+		for (int i = 0; i < CommandHistory.CAP + 5; i++) {
 			history.execute(stubCmd(i));
 		}
 		int undone = 0;
-		while (history.undo())
-		{
+		while (history.undo()) {
 			undone++;
 		}
 		assertEquals(CommandHistory.CAP, undone);
@@ -182,8 +160,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("clear wipes both stacks")
-	void clearWipes()
-	{
+	void clearWipes() {
 		history.execute(stubCmd(1));
 		history.execute(stubCmd(2));
 		history.undo();
@@ -194,8 +171,7 @@ class CommandHistoryTest
 
 	@Test
 	@DisplayName("multi-step undo/redo round-trip preserves order")
-	void roundTrip()
-	{
+	void roundTrip() {
 		history.execute(stubCmd(1));
 		history.execute(stubCmd(2));
 		history.execute(stubCmd(3));

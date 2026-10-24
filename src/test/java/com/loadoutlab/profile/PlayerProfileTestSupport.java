@@ -11,15 +11,12 @@ import java.util.Map;
  * bot's 200k token budget; construction is the production version
  * verbatim.
  */
-public final class PlayerProfileTestSupport
-{
-	private PlayerProfileTestSupport()
-	{
+public final class PlayerProfileTestSupport {
+	private PlayerProfileTestSupport() {
 	}
 
 	/** A maxed account that owns nothing - game-best queries only. */
-	public static PlayerProfile maxed()
-	{
+	public static PlayerProfile maxed() {
 		return new PlayerProfile(PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, Map.of(), true);
 	}

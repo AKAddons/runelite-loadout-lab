@@ -6,12 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AsciiLoaderTest
-{
+class AsciiLoaderTest {
 	@Test
 	@DisplayName("the frames resource parses into steady-sized moods")
-	void framesParseSteady()
-	{
+	void framesParseSteady() {
 		List<List<String>> land = new java.util.ArrayList<>();
 		java.util.Map<String, List<List<String>>> pools = new java.util.HashMap<>();
 		AsciiLoader.load(land, pools);
@@ -21,16 +19,14 @@ class AsciiLoaderTest
 		// Raid pools (Andrew 2026-09-02: "hit raids first"): the Obelisk is
 		// hand-drawn; Verzik, Olm and Zulrah are Braille renders of the real
 		// wiki sprites ("make these look like the actual monster sprites").
-		for (String key : new String[]{"toa", "tob", "cox", "tfa", "zulrah", "cerberus", "brutus", "dbrutus", "madangel", "guardians", "kraken", "thermy", "vetion", "kbd", "kq", "muspah", "jad", "zuk", "dks", "barrows", "moons", "tormented", "gorilla", "sire", "sol", "hunllef", "huey", "nex", "titans", "maggot", "yama", "scurrius", "obor", "bryophyta", "crab", "duke", "vardorvis", "leviathan", "whisperer", "callisto", "artio", "venenatis", "spindel", "scorpia", "chaos", "drgreen", "drblue", "drred", "drblack", "drmetal", "vorkath", "hydra", "araxxor", "fanatic", "graardor", "kree", "kril", "zilyana", "corp", "archaeologist", "doom", "nightmare", "mimic", "shaman", "hespori", "sarachnis", "gryphon", "skotizo"})
-		{
+		for (String key : new String[]{"toa", "tob", "cox", "tfa", "zulrah", "cerberus", "brutus", "dbrutus", "madangel", "guardians", "kraken", "thermy", "vetion", "kbd", "kq", "muspah", "jad", "zuk", "dks", "barrows", "moons", "tormented", "gorilla", "sire", "sol", "hunllef", "huey", "nex", "titans", "maggot", "yama", "scurrius", "obor", "bryophyta", "crab", "duke", "vardorvis", "leviathan", "whisperer", "callisto", "artio", "venenatis", "spindel", "scorpia", "chaos", "drgreen", "drblue", "drred", "drblack", "drmetal", "vorkath", "hydra", "araxxor", "fanatic", "graardor", "kree", "kril", "zilyana", "corp", "archaeologist", "doom", "nightmare", "mimic", "shaman", "hespori", "sarachnis", "gryphon", "skotizo"}) {
 			assertFalse(pools.getOrDefault(key, List.of()).isEmpty(), key + " pool has a mood");
 		}
 		// Three sea moods (sail, cannon, kraken - Andrew 2026-09-02) at the
 		// land flask's 19x9, so the compute block keeps one shape.
 		assertEquals(3, sea.size(), "sail, cannon, kraken");
 		boolean wideMood = false;
-		for (List<String> frames : sea)
-		{
+		for (List<String> frames : sea) {
 			String[] lines = frames.get(0).split("\n");
 			assertEquals(12, lines.length, "sea frames are 12 rows like every mood since pass eight");
 			assertTrue(lines[0].length() >= 19, "sea frames are at least the flask's width");
@@ -40,26 +36,21 @@ class AsciiLoaderTest
 		// (Andrew 2026-09-02); moods may differ in width, one plays per compute.
 		assertTrue(wideMood, "the cannon mood is wider than the flask");
 		List<List<String>> moods = new java.util.ArrayList<>(land);
-		for (List<List<String>> pool : pools.values())
-		{
+		for (List<List<String>> pool : pools.values()) {
 			moods.addAll(pool);
 		}
-		for (List<String> frames : moods)
-		{
+		for (List<String> frames : moods) {
 			assertTrue(frames.size() > 1, "a mood animates - two frames minimum");
 			String[] first = frames.get(0).split("\n");
-			for (String frame : frames)
-			{
+			for (String frame : frames) {
 				String[] lines = frame.split("\n");
 				// Same height and width every frame, or the centred
 				// block wobbles mid-animation.
 				assertEquals(first.length, lines.length, "frame height drifted");
-				for (String line : lines)
-				{
+				for (String line : lines) {
 					line = line.replaceAll("<[^>]*>", "");
 					assertEquals(first[0].replaceAll("<[^>]*>", "").length(), line.length(), "frame width drifted");
-					for (char c : line.toCharArray())
-					{
+					for (char c : line.toCharArray()) {
 						// ASCII, or the Braille block: the sprite renders use
 						// U+2800 dots for detail. Braille is the ONE exception
 						// to the ASCII rule, pending Andrew's tofu check in the
@@ -79,8 +70,7 @@ class AsciiLoaderTest
 
 	@Test
 	@DisplayName("the loader is an HTML pane, so a frame's cells can carry their own colours")
-	void loaderDrawsHtml()
-	{
+	void loaderDrawsHtml() {
 		javax.swing.text.JTextComponent pane = new AsciiLoader();
 		assertTrue(pane instanceof javax.swing.JEditorPane, "frames are HTML (Andrew 2026-09-03: colour per pixel at zero cost)");
 	}

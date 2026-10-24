@@ -18,25 +18,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * demonbane hit destroys one outright (wiki-verified 2026-08-05). Standard
  * melee was being recommended - a whip line vs a target it cannot damage.
  */
-class RespiratorySystemTest
-{
+class RespiratorySystemTest {
 	private static LoadoutData data;
 	private static MonsterStats vents;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		vents = data.searchMonsters("respiratory system", 1).get(0);
 		assertEquals(5914, vents.getId(), "test premise: the corpus vent row");
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}
@@ -44,8 +39,7 @@ class RespiratorySystemTest
 	}
 
 	/** A loadout wielding just this weapon. */
-	private static Loadout wielding(String nameLower)
-	{
+	private static Loadout wielding(String nameLower) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(nameLower));
 		return new Loadout(gear);
@@ -53,8 +47,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("standard melee can never work on a vent; halberds and demonbane can")
-	void meleeGating()
-	{
+	void meleeGating() {
 		assertFalse(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
 			byName("abyssal whip")), "a whip cannot damage the vents");
 		assertFalse(MonsterMechanics.weaponCanEverWork(vents, CombatStyle.MELEE,
@@ -69,8 +62,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("the melee pick vs a vent is a halberd or demonbane, never a whip line")
-	void optimizerRespectsTheGate()
-	{
+	void optimizerRespectsTheGate() {
 		OptimizationRequest request = TestRequests.of(vents,
 			CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -84,8 +76,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("the math agrees with the pool: a whip does ZERO dps to a vent")
-	void calculateAgreesWithTheGate()
-	{
+	void calculateAgreesWithTheGate() {
 		// The candidate pool filters standard melee out, but re-show paths
 		// (the roster kit pass, shared-set evaluation) call calculate()
 		// directly - without the damageFactor rule a whip line rendered a
@@ -103,8 +94,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("a demonbane hit is modeled as the one-shot it is, in every style")
-	void demonbaneOneShotMath()
-	{
+	void demonbaneOneShotMath() {
 		DpsResult arclight = new DpsCalculator().calculate(req(vents), wielding("arclight"));
 		assertNotNull(arclight);
 		assertEquals(vents.getHitpoints(), arclight.getMaxHit(),
@@ -115,8 +105,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("the bow beats melee demonbane at the vents: no walking between them")
-	void rangedDemonbaneOutranksMeleeDemonbane()
-	{
+	void rangedDemonbaneOutranksMeleeDemonbane() {
 		DpsResult bow = new DpsCalculator().calculate(
 			TestRequests.of(vents, CombatStyle.RANGED, PlayerLevels.MAXED,
 				PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false,
@@ -141,8 +130,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("the ranged pick vs a vent is the Scorching bow, not a blowpipe")
-	void scorchingBowBeatsTheBlowpipe()
-	{
+	void scorchingBowBeatsTheBlowpipe() {
 		OptimizationRequest request = TestRequests.of(vents,
 			CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -156,8 +144,7 @@ class RespiratorySystemTest
 
 	@Test
 	@DisplayName("every other landed hit deals at least half its max (1.5x expectation)")
-	void minHitScalesTheExpectation()
-	{
+	void minHitScalesTheExpectation() {
 		// Compare mean damage PER LANDED HIT (expected/accuracy) against the
 		// same weapon at a plain target: gear and levels identical, so the
 		// only difference is the vents' min-hit rule. Asserting against a
@@ -176,8 +163,7 @@ class RespiratorySystemTest
 			"the vents' min-hit must scale the per-hit mean by exactly 1.5");
 	}
 
-	private static OptimizationRequest req(MonsterStats monster)
-	{
+	private static OptimizationRequest req(MonsterStats monster) {
 		return TestRequests.of(monster,
 			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);

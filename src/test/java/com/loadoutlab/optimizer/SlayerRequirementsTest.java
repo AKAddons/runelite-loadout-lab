@@ -34,39 +34,32 @@ import static org.junit.jupiter.api.Assertions.*;
  * suggestions based on that", "we should pin/require those by default and
  * show them as necessary even when the player doesn't own those items").
  */
-class SlayerRequirementsTest
-{
+class SlayerRequirementsTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats mob(String name)
-	{
+	private static MonsterStats mob(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
-	private static int id(String nameLower)
-	{
+	private static int id(String nameLower) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + nameLower)).getId();
 	}
 
 	private static OptimizerService.StyleResult melee(MonsterStats monster, boolean kourendElite, String... owned)
-		throws Exception
-	{
+		throws Exception {
 		Map<Integer, Integer> bank = new HashMap<>();
-		for (String name : owned)
-		{
+		for (String name : owned) {
 			bank.put(id(name), 1);
 		}
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
@@ -75,24 +68,20 @@ class SlayerRequirementsTest
 			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(data.canonicalizeOwned(bank), true), 1, p,
 				Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
-				Collections.<Integer>emptySet(), result ->
-				{
+				Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
 			return out.get().get(CombatStyle.MELEE);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
 	@DisplayName("a required item you do not own is still worn on Yours - the cave horror's witchwood icon")
-	void unownedRequiredIsWorn() throws Exception
-	{
+	void unownedRequiredIsWorn() throws Exception {
 		OptimizerService.StyleResult melee = melee(mob("cave horror"), false,
 			"abyssal whip", "amulet of torture", "fighter torso", "dragon defender");
 		assertEquals("Witchwood icon", melee.owned.get(0).getLoadout().get(GearSlot.NECK).getName(),
@@ -101,8 +90,7 @@ class SlayerRequirementsTest
 
 	@Test
 	@DisplayName("Karuulm needs boots of stone (or brimstone, granite) until the elite Kourend & Kebos diary")
-	void karuulmBoots() throws Exception
-	{
+	void karuulmBoots() throws Exception {
 		MonsterStats drake = mob("drake");
 		assertTrue(RequiredGear.requiredIds(drake, data, Set.of()).containsKey(GearSlot.FEET));
 		assertFalse(RequiredGear.requiredIds(drake, data, Set.of(RequiredGear.KOUREND_ELITE)).containsKey(GearSlot.FEET),
@@ -117,12 +105,10 @@ class SlayerRequirementsTest
 
 	@Test
 	@DisplayName("the finishing items ride as trip supplies, owned or not: hammer, fungicide, salt, ice cooler")
-	void finishingItems()
-	{
+	void finishingItems() {
 		Map<String, Integer> expect = Map.of("gargoyle", 21742, "zygomite", 7421, "rockslug", 4161,
 			"desert lizard", 6696);
-		for (Map.Entry<String, Integer> e : expect.entrySet())
-		{
+		for (Map.Entry<String, Integer> e : expect.entrySet()) {
 			List<Map<String, Object>> picks = RequiredGear.carriedPicks(mob(e.getKey()), item -> false);
 			assertEquals(1, picks.size(), e.getKey());
 			assertEquals(e.getValue(), picks.get(0).get("id"), e.getKey() + ": the best when you own none");
@@ -136,8 +122,7 @@ class SlayerRequirementsTest
 
 	@Test
 	@DisplayName("the existing worn rules still hold: killerwatts insulated boots, harpies the lit lantern")
-	void existingRules()
-	{
+	void existingRules() {
 		Set<String> killerwatt = RequiredGear.requiredIds(mob("killerwatt"), data, Set.of()).get(GearSlot.FEET)
 			.stream().map(i -> data.getGear(i).getName()).collect(Collectors.toSet());
 		assertTrue(killerwatt.contains("Insulated boots"), killerwatt.toString());

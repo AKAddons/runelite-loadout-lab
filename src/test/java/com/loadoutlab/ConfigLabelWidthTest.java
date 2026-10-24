@@ -14,26 +14,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * across the config enums stays within a hard cap so the rows keep their
  * names.
  */
-class ConfigLabelWidthTest
-{
+class ConfigLabelWidthTest {
 	private static final int MAX_LABEL = 16;
 
 	@Test
 	@DisplayName("every config dropdown label fits the panel (max 16 chars)")
-	void dropdownLabelsFit()
-	{
+	void dropdownLabelsFit() {
 		List<String> over = new ArrayList<>();
-		for (Class<?> nested : LoadoutLabConfig.class.getDeclaredClasses())
-		{
-			if (!nested.isEnum())
-			{
+		for (Class<?> nested : LoadoutLabConfig.class.getDeclaredClasses()) {
+			if (!nested.isEnum()) {
 				continue;
 			}
-			for (Object constant : nested.getEnumConstants())
-			{
+			for (Object constant : nested.getEnumConstants()) {
 				String label = constant.toString();
-				if (label.length() > MAX_LABEL)
-				{
+				if (label.length() > MAX_LABEL) {
 					over.add(nested.getSimpleName() + "." + constant + " -> \"" + label + "\"");
 				}
 			}

@@ -12,12 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * overload (+) inside, ToA hands out smelling salts - fights inside
  * never assume the bank's potions.
  */
-class RaidBoostsTest
-{
+class RaidBoostsTest {
 	@Test
 	@DisplayName("CoX mobs assume overload (+), ToA mobs smelling salts, outside null")
-	void suppliedBoosts()
-	{
+	void suppliedBoosts() {
 		LoadoutData data = new DataService().load();
 		assertEquals(BoostProfile.OVERLOAD_PLUS,
 			RaidBoosts.suppliedBoost(data.searchMonsters("tekton", 1).get(0)));

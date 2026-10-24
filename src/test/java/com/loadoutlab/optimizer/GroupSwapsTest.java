@@ -19,18 +19,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * "ladder view is disabled for group searches but i think it should be
  * included" - scored by "The whole group").
  */
-class GroupSwapsTest
-{
+class GroupSwapsTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static int id(String nameLower)
-	{
+	private static int id(String nameLower) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear() && !data.isVariant(g.getId()))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing " + nameLower)).getId();
@@ -38,19 +35,16 @@ class GroupSwapsTest
 
 	@Test
 	@DisplayName("a group search has swaps: one strip on every member, scored by the group's HP-weighted DPS")
-	void groupStrip() throws Exception
-	{
+	void groupStrip() throws Exception {
 		List<MonsterStats> mobs = List.of(data.searchMonsters("abyssal demon", 1).get(0),
 			data.searchMonsters("black demon", 1).get(0));
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String name : new String[]{"abyssal whip", "dragon scimitar", "rune scimitar", "fighter torso",
-			"dragon defender"})
-		{
+			"dragon defender"}) {
 			owned.put(id(name), 1);
 		}
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			OptimizerService.RosterResult roster = ServiceCalls.runRoster(service, mobs, owned, 0, Map.of());
 			OptimizerService.StyleResult first = roster.perMob.get(0).get(CombatStyle.MELEE);
 			OptimizerService.StyleResult second = roster.perMob.get(1).get(CombatStyle.MELEE);
@@ -58,18 +52,14 @@ class GroupSwapsTest
 			assertNotNull(weapon, "the group's weapon slot has swaps");
 			assertTrue(weapon.group, "scored across the group");
 			assertSame(weapon, second.ladder.get(GearSlot.WEAPON), "every member shows the same strip");
-			for (OptimizerService.Rung rung : weapon.up)
-			{
+			for (OptimizerService.Rung rung : weapon.up) {
 				assertTrue(rung.dps > weapon.baseDps, rung.item.getName() + " helps the group");
 			}
-			for (OptimizerService.Rung rung : weapon.down)
-			{
+			for (OptimizerService.Rung rung : weapon.down) {
 				assertTrue(rung.owned && rung.dps < weapon.baseDps, rung.item.getName() + " is yours and worse");
 			}
 			assertFalse(weapon.up.isEmpty());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

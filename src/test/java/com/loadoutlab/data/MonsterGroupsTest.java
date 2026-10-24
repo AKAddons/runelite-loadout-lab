@@ -20,34 +20,28 @@ import static org.junit.jupiter.api.Assertions.*;
  * (the loader itself stays lenient so a bad row never takes the panel
  * down). Members with ambiguous names must name a version.
  */
-class MonsterGroupsTest
-{
+class MonsterGroupsTest {
 	private static LoadoutData data;
 	private static List<MonsterGroups.MonsterGroup> groups;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		groups = MonsterGroups.load(data);
 	}
 
 	@Test
 	@DisplayName("every curated member resolves to exactly one loaded row")
-	void everyMemberResolves() throws Exception
-	{
+	void everyMemberResolves() throws Exception {
 		try (InputStreamReader reader = new InputStreamReader(
 			MonsterGroupsTest.class.getResourceAsStream("/com/loadoutlab/data/monster_groups.json"),
-			StandardCharsets.UTF_8))
-		{
+			StandardCharsets.UTF_8)) {
 			JsonArray rows = new JsonParser().parse(reader).getAsJsonArray();
 			int curated = 0;
-			for (JsonElement element : rows)
-			{
+			for (JsonElement element : rows) {
 				JsonObject row = element.getAsJsonObject();
 				String group = row.get("name").getAsString();
-				for (JsonElement m : row.getAsJsonArray("members"))
-				{
+				for (JsonElement m : row.getAsJsonArray("members")) {
 					JsonObject member = m.getAsJsonObject();
 					String name = member.get("name").getAsString();
 					String version = member.has("version") ? member.get("version").getAsString() : null;
@@ -65,8 +59,7 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("the flagship groups load with their full rosters")
-	void flagshipRosters()
-	{
+	void flagshipRosters() {
 		assertEquals(26, groups.size(), "25 plus the Fractured Archive (2026-10-20)");
 		assertEquals(4, byName("Yama").getMobs().size());
 		assertEquals(3, byName("Grotesque Guardians").getMobs().size());
@@ -127,8 +120,7 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("Inferno and Fight Caves rows wear their community names")
-	void communityNicknames()
-	{
+	void communityNicknames() {
 		// The Jal-/Tz- vocabulary is what made a field report say "the
 		// bats" (2026-08-06): rows display the name players actually use.
 		// getName() stays the in-game name, so name-keyed rules (the
@@ -152,8 +144,7 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("group search finds by fragment, in curated order")
-	void searchFindsGroups()
-	{
+	void searchFindsGroups() {
 		assertEquals("Fight Caves",
 			MonsterGroups.search(groups, "fight", 5).get(0).getName());
 		assertEquals("Inferno",
@@ -175,8 +166,7 @@ class MonsterGroupsTest
 		assertEquals("Fossil Island Wyverns",
 			MonsterGroups.search(groups, "fossil wyverns", 5).get(0).getName());
 		List<String> wyverns = new ArrayList<>();
-		for (MonsterStats m : byName("Fossil Island Wyverns").getMobs())
-		{
+		for (MonsterStats m : byName("Fossil Island Wyverns").getMobs()) {
 			wyverns.add(m.getName());
 		}
 		assertEquals(List.of("Spitting Wyvern", "Taloned Wyvern", "Long-tailed Wyvern", "Ancient Wyvern"), wyverns);
@@ -186,13 +176,11 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("tormented demon phases are synthetic style-immune variants of one sheet")
-	void tormentedDemonPhases()
-	{
+	void tormentedDemonPhases() {
 		MonsterGroups.MonsterGroup tds = byName("Tormented Demons");
 		assertEquals(3, tds.getMobs().size());
 		java.util.Set<Integer> ids = new java.util.HashSet<>();
-		for (MonsterStats phase : tds.getMobs())
-		{
+		for (MonsterStats phase : tds.getMobs()) {
 			assertTrue(ids.add(phase.getId()), "synthetic ids must be distinct");
 			assertEquals("Tormented Demon", phase.getName(),
 				"the NAME survives - name-keyed TD rules keep applying");
@@ -204,10 +192,8 @@ class MonsterGroupsTest
 			com.loadoutlab.engine.CombatStyle.MELEE,
 			com.loadoutlab.engine.CombatStyle.RANGED,
 			com.loadoutlab.engine.CombatStyle.MAGIC};
-		for (int i = 0; i < 3; i++)
-		{
-			for (int j = 0; j < 3; j++)
-			{
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
 				assertEquals(i == j, com.loadoutlab.engine.MonsterMechanics
 						.styleImmune(tds.getMobs().get(i), styles[j]),
 					tds.getMobs().get(i).getVersion() + " vs " + styles[j]);
@@ -220,8 +206,7 @@ class MonsterGroupsTest
 		// synthetic style-immune phases of one sheet, demon attribute kept.
 		MonsterGroups.MonsterGroup gorillas = byName("Demonic gorillas");
 		assertEquals(3, gorillas.getMobs().size());
-		for (MonsterStats phase : gorillas.getMobs())
-		{
+		for (MonsterStats phase : gorillas.getMobs()) {
 			assertEquals("Demonic gorilla", phase.getName());
 			assertTrue(phase.hasAttribute("demon"));
 		}
@@ -230,8 +215,7 @@ class MonsterGroupsTest
 		// A synthetic phase's profile id maps back to its real monster,
 		// so pins/exclusions/notes set on the plain mob follow it into
 		// the group (transitive exclusions).
-		for (MonsterStats phase : tds.getMobs())
-		{
+		for (MonsterStats phase : tds.getMobs()) {
 			assertTrue(phase.getId() >= MonsterStats.SYNTHETIC_ID_BASE);
 			assertTrue(phase.profileId() < MonsterStats.SYNTHETIC_ID_BASE);
 			assertEquals(MonsterGroups.resolve(data, "Tormented Demon", null).getId(),
@@ -241,8 +225,7 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("the raid groups resolve and answer to player vocabulary")
-	void raidGroups()
-	{
+	void raidGroups() {
 		assertTrue(MonsterGroups.search(groups, "tob", 5).get(0).getName()
 			.startsWith("Theatre of Blood"));
 		assertEquals("Tombs of Amascut",
@@ -250,8 +233,7 @@ class MonsterGroupsTest
 		assertEquals("Chambers of Xeric",
 			MonsterGroups.search(groups, "cox", 5).get(0).getName());
 		// Verzik's three phases and Vasilias's three forms ride each mode.
-		for (String mode : new String[]{"Theatre of Blood (Entry)", "Theatre of Blood (Hard)"})
-		{
+		for (String mode : new String[]{"Theatre of Blood (Entry)", "Theatre of Blood (Hard)"}) {
 			assertEquals(3, byName(mode).getMobs().stream()
 				.filter(m -> m.getName().equals("Verzik Vitur")).count());
 			assertEquals(3, byName(mode).getMobs().stream()
@@ -292,13 +274,10 @@ class MonsterGroupsTest
 		assertEquals("Final stand (melee only)", akkha.get(3).getVersion());
 		assertFalse(com.loadoutlab.engine.MonsterMechanics.styleImmune(
 			akkha.get(3), com.loadoutlab.engine.CombatStyle.MELEE));
-		for (MonsterStats phase : akkha)
-		{
+		for (MonsterStats phase : akkha) {
 			int immune = 0;
-			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
-			{
-				if (com.loadoutlab.engine.MonsterMechanics.styleImmune(phase, style))
-				{
+			for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues()) {
+				if (com.loadoutlab.engine.MonsterMechanics.styleImmune(phase, style)) {
 					immune++;
 				}
 			}
@@ -321,8 +300,7 @@ class MonsterGroupsTest
 		assertEquals(0, byName("Fight Caves").getInventory());
 	}
 
-	private static MonsterGroups.MonsterGroup byName(String name)
-	{
+	private static MonsterGroups.MonsterGroup byName(String name) {
 		return groups.stream().filter(g -> g.getName().equals(name))
 			.findFirst().orElseThrow(() -> new AssertionError("missing group " + name));
 	}
@@ -330,20 +308,16 @@ class MonsterGroupsTest
 
 	@Test
 	@DisplayName("Tombs of Amascut carries its stipulations: the P2 Wardens weigh 3x in the kit and the Wardens' spec is the dragon dagger")
-	void toaStipulations()
-	{
+	void toaStipulations() {
 		int weighted = 0;
 		int dagger = 0;
-		for (MonsterStats mob : byName("Tombs of Amascut").getMobs())
-		{
-			if ("3".equals(mob.attributeValue("weight:")))
-			{
+		for (MonsterStats mob : byName("Tombs of Amascut").getMobs()) {
+			if ("3".equals(mob.attributeValue("weight:"))) {
 				weighted++;
 				assertTrue(mob.getVersion().startsWith("P2"), mob.label());
 				assertEquals(3 * mob.getHitpoints(), (int) com.loadoutlab.engine.MonsterMechanics.kitWeight(mob));
 			}
-			if ("dragon dagger".equals(com.loadoutlab.engine.MonsterMechanics.specStipulation(mob)))
-			{
+			if ("dragon dagger".equals(com.loadoutlab.engine.MonsterMechanics.specStipulation(mob))) {
 				dagger++;
 			}
 		}

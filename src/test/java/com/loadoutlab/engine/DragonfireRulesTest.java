@@ -10,24 +10,20 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class DragonfireRulesTest
-{
+public class DragonfireRulesTest {
 	private static LoadoutData data;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 	}
 
-	private static MonsterStats monster(String name)
-	{
+	private static MonsterStats monster(String name) {
 		return data.searchMonsters(name, 1).get(0);
 	}
 
 	@Test
-	public void firebreathersAreDetectedByTheirDragonfireStyleAndBabiesAreNot()
-	{
+	public void firebreathersAreDetectedByTheirDragonfireStyleAndBabiesAreNot() {
 		Assert.assertTrue(DragonfireRules.breathesFire(monster("green dragon")));
 		Assert.assertTrue(DragonfireRules.breathesFire(monster("steel dragon")));
 		Assert.assertTrue(DragonfireRules.breathesFire(monster("vorkath")));
@@ -37,8 +33,7 @@ public class DragonfireRulesTest
 	}
 
 	@Test
-	public void gearModeForcesAProtectiveShieldAndBansTwoHanders()
-	{
+	public void gearModeForcesAProtectiveShieldAndBansTwoHanders() {
 		OptimizationRequest req = TestRequests.of(monster("vorkath"), CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -52,8 +47,7 @@ public class DragonfireRulesTest
 	}
 
 	@Test
-	public void thePotionToggleLiftsTheConstraintAndNeverCostsDps()
-	{
+	public void thePotionToggleLiftsTheConstraintAndNeverCostsDps() {
 		OptimizationRequest gear = TestRequests.of(monster("green dragon"), CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -63,8 +57,7 @@ public class DragonfireRulesTest
 	}
 
 	@Test
-	public void nonDragonsAreUnaffectedByTheShieldRule()
-	{
+	public void nonDragonsAreUnaffectedByTheShieldRule() {
 		OptimizationRequest req = TestRequests.of(monster("general graardor"), CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);

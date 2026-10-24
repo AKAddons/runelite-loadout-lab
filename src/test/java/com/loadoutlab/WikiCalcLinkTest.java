@@ -26,21 +26,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * boost deltas / {id} equipment / prayer+potion enum ordinals, and a
  * monster resolved by id with mergeable inputs.
  */
-class WikiCalcLinkTest
-{
+class WikiCalcLinkTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	@DisplayName("a melee result maps to their document: version 10, ids, enums, deltas")
-	void meleePayloadShape()
-	{
+	void meleePayloadShape() {
 		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
 		OptimizationRequest request = TestRequests.of(monster, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
@@ -95,8 +92,7 @@ class WikiCalcLinkTest
 	@SuppressWarnings("unchecked")
 	@Test
 	@DisplayName("the blowpipe's dart rides the weapon's itemVars, never the ammo slot")
-	void blowpipeDartRidesItemVars()
-	{
+	void blowpipeDartRidesItemVars() {
 		// Their harness note (2026-08-06): an ammo-slot dart is a
 		// hand-thrown weapon; field report 2026-08-21: the cow payload
 		// carried a dartless blowpipe (the blessing owns the ammo slot).
@@ -118,8 +114,7 @@ class WikiCalcLinkTest
 		assertNotNull(vars, "the dart travels on the weapon");
 		assertEquals(dragonDart, vars.get("blowpipeDartId"));
 		Map<String, Object> ammo = (Map<String, Object>) equipment.get("ammo");
-		if (ammo != null)
-		{
+		if (ammo != null) {
 			assertNotEquals(dragonDart, ammo.get("id"),
 				"the ammo slot never carries the dart");
 		}
@@ -128,8 +123,7 @@ class WikiCalcLinkTest
 	@SuppressWarnings("unchecked")
 	@Test
 	@DisplayName("a powered staff exports Accurate - their category has no Autocast")
-	void poweredStaffCastsAccurate()
-	{
+	void poweredStaffCastsAccurate() {
 		// Field report 2026-08-21: trident vs cow opened at 5 ticks
 		// (Longrange fallback) - exactly 4/5 of our dps. A powered
 		// staff's attackType wears the autocast prefix but carries no
@@ -154,8 +148,7 @@ class WikiCalcLinkTest
 
 	@Test
 	@DisplayName("the monster travels under its RAW wiki version")
-	void monsterCarriesTheWikiVersion()
-	{
+	void monsterCarriesTheWikiVersion() {
 		// The everyday Duke displays version '' but the official data
 		// keys 'Post-quest, Awake' - a display version makes their
 		// import fall back to the Awakened row (field 2026-08-21).
@@ -177,8 +170,7 @@ class WikiCalcLinkTest
 
 	@Test
 	@DisplayName("attack-type strings map to their {type, stance} pairs")
-	void styleMapping()
-	{
+	void styleMapping() {
 		assertEquals(Map.of("type", "slash", "stance", "Aggressive"),
 			WikiCalcLink.styleOf("slash (aggressive)"));
 		assertEquals(Map.of("type", "stab", "stance", "Controlled"),
@@ -194,8 +186,7 @@ class WikiCalcLinkTest
 
 	@Test
 	@DisplayName("the payload carries the invocation and maps synthetic ids to real rows")
-	void invocationAndSyntheticIds()
-	{
+	void invocationAndSyntheticIds() {
 		MonsterStats warden = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> "Enraged".equals(m.getVersion()))
 			.findFirst().orElseThrow();

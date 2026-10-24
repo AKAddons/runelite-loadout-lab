@@ -9,11 +9,9 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BlowpipeTest
-{
+public class BlowpipeTest {
 	@Test
-	public void blowpipeWithDragonDartsBeatsBareThrownDarts()
-	{
+	public void blowpipeWithDragonDartsBeatsBareThrownDarts() {
 		LoadoutData data = new DataService().load();
 		MonsterStats hydra = data.searchMonsters("alchemical hydra", 1).get(0);
 		OptimizationRequest game = new OptimizationRequest(
@@ -23,8 +21,7 @@ public class BlowpipeTest
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 3);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, game);
 		Assert.assertFalse(results.isEmpty());
-		for (DpsResult r : results)
-		{
+		for (DpsResult r : results) {
 			Assert.assertFalse("bare thrown darts must never outrank a loaded blowpipe: "
 					+ r.getLoadout().getWeapon().getName(),
 				r.getLoadout().getWeapon().getName().endsWith(" dart"));
@@ -32,8 +29,7 @@ public class BlowpipeTest
 	}
 
 	@Test
-	public void ownedBlowpipeUsesTheBestOwnedDartTierAndNeedsDarts()
-	{
+	public void ownedBlowpipeUsesTheBestOwnedDartTierAndNeedsDarts() {
 		LoadoutData data = new DataService().load();
 		MonsterStats hydra = data.searchMonsters("alchemical hydra", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();

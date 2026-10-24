@@ -16,23 +16,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * sea monster is melee-immune through the same mechanism Zulrah uses, so no
  * melee card is ever produced for one.
  */
-class SeaMeleeTest
-{
+class SeaMeleeTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("every roster sea monster rejects melee; land mobs are untouched")
-	void seaMonstersRejectMelee()
-	{
+	void seaMonstersRejectMelee() {
 		Loadout bare = new Loadout(new EnumMap<>(com.loadoutlab.data.GearSlot.class));
-		for (String name : com.loadoutlab.data.NavalCombat.navalNames())
-		{
+		for (String name : com.loadoutlab.data.NavalCombat.navalNames()) {
 			MonsterStats mob = data.searchMonsters(name, 1).get(0);
 			assertTrue(MonsterMechanics.isImmune(mob, CombatStyle.MELEE, bare, null),
 				name + " must reject melee at sea");

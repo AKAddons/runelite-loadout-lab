@@ -15,29 +15,23 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Andrew 2026-09-02: "the ability to reorder monsters in the list for a
  * group search". Order is presentation: the roster list reorders, the
  * lens follows the moved row, undo restores both. */
-class RosterReorderTest
-{
+class RosterReorderTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 		}
 	}
 
-	private static List<String> labels(PageState state)
-	{
+	private static List<String> labels(PageState state) {
 		List<String> out = new ArrayList<>();
-		for (MonsterStats mob : state.rosterMobs())
-		{
+		for (MonsterStats mob : state.rosterMobs()) {
 			out.add(mob.label());
 		}
 		return out;
@@ -45,12 +39,10 @@ class RosterReorderTest
 
 	@Test
 	@DisplayName("a roster row moves up or down, the lens follows it, and undo puts it back")
-	void moveUpAndDown()
-	{
+	void moveUpAndDown() {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CaptureLink());
 		engine.setStoreOps(new TestStoreOps());
@@ -82,8 +74,7 @@ class RosterReorderTest
 
 	@Test
 	@DisplayName("moving a row reorders the results it already has - no recompute, and undo does not recompute either")
-	void moveDoesNotRecompute()
-	{
+	void moveDoesNotRecompute() {
 		java.util.concurrent.atomic.AtomicInteger searches = new java.util.concurrent.atomic.AtomicInteger();
 		PageState state = new PageState();
 		CapturePages link = new CapturePages();
@@ -94,8 +85,7 @@ class RosterReorderTest
 		assertTrue(engine.execute("select", Map.of("query", "Tombs of Amascut")));
 		List<MonsterStats> mobs = state.rosterMobs();
 		List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> perMob = new ArrayList<>();
-		for (int i = 0; i < mobs.size(); i++)
-		{
+		for (int i = 0; i < mobs.size(); i++) {
 			perMob.add(Map.of());
 		}
 		engine.onRosterResults(mobs, perMob);
@@ -115,34 +105,26 @@ class RosterReorderTest
 		assertEquals(before.get(0), link.firstMobName());
 	}
 
-	private static final class CapturePages extends CompanionLink
-	{
+	private static final class CapturePages extends CompanionLink {
 		Map<String, Object> page;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			this.page = page;
 		}
 
-		String firstMobName()
-		{
+		String firstMobName() {
 			Map<?, ?> entry = (Map<?, ?>) ((List<?>) page.get("entries")).get(0);
 			Map<?, ?> mob = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(0);
 			return String.valueOf(mob.get("label"));
 		}
 	}
 
-	private static void flush()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flush() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}

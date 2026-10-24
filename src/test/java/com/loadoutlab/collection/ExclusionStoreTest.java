@@ -6,11 +6,9 @@ import net.runelite.client.config.ConfigManager;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ExclusionStoreTest
-{
+public class ExclusionStoreTest {
 	@Test
-	public void togglePersistsAcrossInstancesAndClears()
-	{
+	public void togglePersistsAcrossInstancesAndClears() {
 		ConfigManager configManager = InMemoryConfigManager.create();
 		ExclusionStore store = new ExclusionStore(configManager, new Gson());
 		Assert.assertTrue(store.toggle(11230));

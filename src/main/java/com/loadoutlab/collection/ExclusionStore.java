@@ -3,23 +3,19 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import net.runelite.client.config.ConfigManager;
 
-public class ExclusionStore extends IdSetStore
-{
+public class ExclusionStore extends IdSetStore {
 	static final String KEY = "excludedItems";
 
-	public ExclusionStore(ConfigManager configManager, Gson gson)
-	{
+	public ExclusionStore(ConfigManager configManager, Gson gson) {
 		super(configManager, gson);
 		load();
 	}
 
-	String legacyKey()
-	{
+	String legacyKey() {
 		return KEY;
 	}
 
-	public boolean isExcluded(int itemId)
-	{
+	public boolean isExcluded(int itemId) {
 		return contains(itemId);
 	}
 }

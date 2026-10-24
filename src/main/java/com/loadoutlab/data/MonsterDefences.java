@@ -5,8 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor
-public final class MonsterDefences
-{
+public final class MonsterDefences {
 	public static final MonsterDefences ZERO = new MonsterDefences(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	private final int stab;
@@ -20,15 +19,12 @@ public final class MonsterDefences
 	private final int standard;
 	private final int heavy;
 
-	public MonsterDefences(int stab, int slash, int crush, int magic, int ranged, int light, int standard, int heavy)
-	{
+	public MonsterDefences(int stab, int slash, int crush, int magic, int ranged, int light, int standard, int heavy) {
 		this(stab, slash, crush, magic, ranged, 0, light, standard, heavy);
 	}
 
-	public int get(String type)
-	{
-		switch (type)
-		{
+	public int get(String type) {
+		switch (type) {
 			case "stab":
 				return stab;
 			case "slash":

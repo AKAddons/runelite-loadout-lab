@@ -23,14 +23,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * blowpipe's small attack roll and the bowfa wins - modeling zero
  * silently told the wrong story.
  */
-class ToaInvocationTest
-{
+class ToaInvocationTest {
 	private static LoadoutData data;
 	private static MonsterStats enraged;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		enraged = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> "Enraged".equals(m.getVersion()))
@@ -38,13 +36,10 @@ class ToaInvocationTest
 		assertTrue(MonsterMechanics.isToaInvocationScaled(enraged));
 	}
 
-	private static GearItem byName(String nameLower, String versionLower)
-	{
-		for (GearItem g : data.getGearItems())
-		{
+	private static GearItem byName(String nameLower, String versionLower) {
+		for (GearItem g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower)
-				&& (versionLower == null || g.getVersionLower().equals(versionLower)))
-			{
+				&& (versionLower == null || g.getVersionLower().equals(versionLower))) {
 				return g;
 			}
 		}
@@ -52,8 +47,7 @@ class ToaInvocationTest
 	}
 
 	private static OptimizationRequest req(MonsterStats monster, CandidateMode mode,
-		OwnedItems owned)
-	{
+		OwnedItems owned) {
 		return TestRequests.of(monster, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			mode, true, false, owned, 1);
@@ -61,8 +55,7 @@ class ToaInvocationTest
 
 	@Test
 	@DisplayName("the defence roll scales by exactly (250+invocation)/250, truncated")
-	void defenceRollScalesExactly()
-	{
+	void defenceRollScalesExactly() {
 		java.util.EnumMap<com.loadoutlab.data.GearSlot, GearItem> gear =
 			new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
 		gear.put(com.loadoutlab.data.GearSlot.WEAPON, byName("bow of faerdhinen", "charged"));
@@ -81,8 +74,7 @@ class ToaInvocationTest
 
 	@Test
 	@DisplayName("the field report both ways: blowpipe wins invocation 0, bowfa wins 300")
-	void bowfaOvertakesTheBlowpipeAtRealRaidLevels()
-	{
+	void bowfaOvertakesTheBlowpipeAtRealRaidLevels() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (GearItem g : new GearItem[]{
 			byName("toxic blowpipe", "charged"), byName("bow of faerdhinen", "charged"),
@@ -90,8 +82,7 @@ class ToaInvocationTest
 			byName("crystal legs", "active"),
 			byName("masori mask (f)", null), byName("masori body (f)", null),
 			byName("masori chaps (f)", null), byName("necklace of anguish", null),
-			byName("zaryte vambraces", null), byName("dragon dart", "unpoisoned")})
-		{
+			byName("zaryte vambraces", null), byName("dragon dart", "unpoisoned")}) {
 			owned.put(g.getId(), 10000);
 		}
 		OwnedItems bank = new OwnedItems(owned, true);
@@ -113,8 +104,7 @@ class ToaInvocationTest
 
 	@Test
 	@DisplayName("the group's synthetic warden phases scale too (profileId mapping)")
-	void syntheticVariantsScale()
-	{
+	void syntheticVariantsScale() {
 		MonsterStats p2 = MonsterGroups.load(data).stream()
 			.filter(g -> "Tombs of Amascut".equals(g.getName()))
 			.flatMap(g -> g.getMobs().stream())
@@ -128,8 +118,7 @@ class ToaInvocationTest
 
 	@Test
 	@DisplayName("non-ToA monsters and level 0 are no-ops; re-applying replaces, never compounds")
-	void scalingIsScopedAndSetNotCompounded()
-	{
+	void scalingIsScopedAndSetNotCompounded() {
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		assertSame(goblin, MonsterMechanics.atToaInvocation(goblin, 300),
 			"a goblin has no raid level");

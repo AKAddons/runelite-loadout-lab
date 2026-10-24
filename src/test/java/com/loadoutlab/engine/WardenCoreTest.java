@@ -19,14 +19,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * reason the phase is a spec dump (field report 2026-08-06: "ToA is
  * missing the crucial heart phase with the DDS spec").
  */
-class WardenCoreTest
-{
+class WardenCoreTest {
 	private static LoadoutData data;
 	private static MonsterStats core;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		core = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> m.getVersion().startsWith("Core-ejected"))
@@ -37,27 +35,22 @@ class WardenCoreTest
 			+ " (field report 2026-08-06)");
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static Loadout wielding(String nameLower)
-	{
+	private static Loadout wielding(String nameLower) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(nameLower));
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest req(MonsterStats monster)
-	{
+	private static OptimizationRequest req(MonsterStats monster) {
 		return TestRequests.of(monster,
 			CombatStyle.MELEE, PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -65,8 +58,7 @@ class WardenCoreTest
 
 	@Test
 	@DisplayName("melee at the core always deals its max: accuracy 1, expectation = max")
-	void meleeAlwaysMaxes()
-	{
+	void meleeAlwaysMaxes() {
 		DpsResult whip = new DpsCalculator().calculate(req(core), wielding("abyssal whip"));
 		assertNotNull(whip);
 		assertEquals(1.0, whip.getAccuracy(), 1e-9, "no accuracy roll at the core");
@@ -80,8 +72,7 @@ class WardenCoreTest
 
 	@Test
 	@DisplayName("the DDS spec prices as both boosted hits at max - the classic dump")
-	void ddsSpecIsTwoMaxHits()
-	{
+	void ddsSpecIsTwoMaxHits() {
 		DpsResult base = new DpsCalculator().calculate(req(core), wielding("dragon dagger"));
 		assertNotNull(base);
 		SpecialAttack spec = SpecialAttack.match(byName("dragon dagger"));
@@ -93,8 +84,7 @@ class WardenCoreTest
 
 	@Test
 	@DisplayName("the always-max rule stays at the core - a goblin still rolls normally")
-	void ruleIsScopedToTheCore()
-	{
+	void ruleIsScopedToTheCore() {
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		DpsResult base = new DpsCalculator().calculate(req(goblin), wielding("dragon dagger"));
 		assertNotNull(base);

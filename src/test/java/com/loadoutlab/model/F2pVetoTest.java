@@ -16,10 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>computeArgs() is the single funnel into the optimizer, so the veto is
  * asserted there: position 1 = onTask, position 7 = deathCharge.
  */
-class F2pVetoTest
-{
-	private static PageState configured()
-	{
+class F2pVetoTest {
+	private static PageState configured() {
 		PageState state = new PageState();
 		state.setParam("onTask", true);
 		state.setParam("deathCharge", 2);
@@ -29,8 +27,7 @@ class F2pVetoTest
 
 	@Test
 	@DisplayName("the F2P lock silences task and Death Charge in the compute args")
-	void lockVetoesComputeArgs()
-	{
+	void lockVetoesComputeArgs() {
 		PageState state = configured();
 
 		ComputeParams unlocked = state.computeParams();
@@ -45,8 +42,7 @@ class F2pVetoTest
 
 	@Test
 	@DisplayName("the veto never clears the params - unticking restores the setup")
-	void untickRestoresEverything()
-	{
+	void untickRestoresEverything() {
 		PageState state = configured();
 		state.setParam("f2pOnly", true);
 

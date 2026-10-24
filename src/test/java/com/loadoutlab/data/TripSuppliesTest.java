@@ -12,11 +12,9 @@ import org.junit.Test;
  * that picks the best owned tier, and anti-venom gated on the wiki's
  * venom-inflictor list.
  */
-public class TripSuppliesTest
-{
+public class TripSuppliesTest {
 	@Test
-	public void everyCategoryLoadsWithBestFirstOrdering()
-	{
+	public void everyCategoryLoadsWithBestFirstOrdering() {
 		// Spot-check the verified tier heads (wiki 2026-07-20): moonlight
 		// antelope 26 hp leads food, karambwan leads fast food, super
 		// restore leads prayer, extended anti-venom+ leads anti-venom.
@@ -29,8 +27,7 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void detectBestPicksTheBestOwnedTierAcrossAnyDose()
-	{
+	public void detectBestPicksTheBestOwnedTierAcrossAnyDose() {
 		// Owning only a 1-dose prayer potion (id 143) must still detect
 		// PRAYER_POTION - the filter and detection cover every dose.
 		Set<Integer> owned = new HashSet<>();
@@ -50,8 +47,7 @@ public class TripSuppliesTest
 	 * there takes a banked one over any tradeable tier, and a land trip
 	 * never picks one (ids objtypes-verified 2026-09-02). */
 	@Test
-	public void blightedSuppliesWinInTheWildernessAndNeverOnLand()
-	{
+	public void blightedSuppliesWinInTheWildernessAndNeverOnLand() {
 		Set<Integer> bank = new HashSet<>(List.of(29143, 24592, 3024, 24598, 3144, 24595));
 		Assert.assertEquals("BLIGHTED_ANGLERFISH",
 			TripSupplies.detectBest(TripSupplies.FOOD, bank::contains, true).key);
@@ -74,14 +70,12 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void detectBestReturnsNullWhenNothingIsOwned()
-	{
+	public void detectBestReturnsNullWhenNothingIsOwned() {
 		Assert.assertNull(TripSupplies.detectBest(TripSupplies.FOOD, id -> false));
 	}
 
 	@Test
-	public void prayerRegenerationIsNeverAutoDetected()
-	{
+	public void prayerRegenerationIsNeverAutoDetected() {
 		// Its over-time mechanism must not win a detect - explicitly
 		// selectable only (detect:false in the resource).
 		Set<Integer> owned = new HashSet<>();
@@ -91,8 +85,7 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void spellbookCapeDetectPrefersTheMaxCape()
-	{
+	public void spellbookCapeDetectPrefersTheMaxCape() {
 		Set<Integer> owned = new HashSet<>();
 		owned.add(9763); // Magic cape(t)
 		Assert.assertEquals("MAGIC_CAPE",
@@ -103,27 +96,22 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void onlyTheSpellbookCapesAreUtilityPlacement()
-	{
+	public void onlyTheSpellbookCapesAreUtilityPlacement() {
 		// Utility = fight-relevant gear that is neither worn nor carried:
 		// the bank layout's third strip. Consumables stay inventory-placed.
-		for (TripSupplies.Option o : TripSupplies.options(TripSupplies.SPELLBOOK_CAPE))
-		{
+		for (TripSupplies.Option o : TripSupplies.options(TripSupplies.SPELLBOOK_CAPE)) {
 			Assert.assertTrue(o.key + " should be utility", o.utility);
 		}
 		for (String category : new String[]{TripSupplies.FOOD, TripSupplies.FAST_FOOD,
-			TripSupplies.PRAYER_RESTORE, TripSupplies.SURGE, TripSupplies.ANTIVENOM})
-		{
-			for (TripSupplies.Option o : TripSupplies.options(category))
-			{
+			TripSupplies.PRAYER_RESTORE, TripSupplies.SURGE, TripSupplies.ANTIVENOM}) {
+			for (TripSupplies.Option o : TripSupplies.options(category)) {
 				Assert.assertFalse(o.key + " should not be utility", o.utility);
 			}
 		}
 	}
 
 	@Test
-	public void theCannonIsAnExplicitFiveCellKit()
-	{
+	public void theCannonIsAnExplicitFiveCellKit() {
 		// miko (Discord 2026-10-17) wanted the cannon in every setup; AKAddons:
 		// "an easy option to include it in inventory" - no dps modelled, so
 		// Detect best never picks it; chosen, it is one cell per part.
@@ -146,16 +134,14 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void unknownAndModeKeysResolveToNoOption()
-	{
+	public void unknownAndModeKeysResolveToNoOption() {
 		Assert.assertNull(TripSupplies.option(TripSupplies.FOOD, "DETECT_BEST"));
 		Assert.assertNull(TripSupplies.option(TripSupplies.FOOD, "NONE"));
 		Assert.assertNull(TripSupplies.option(TripSupplies.FOOD, "NO_SUCH"));
 	}
 
 	@Test
-	public void venomInflictorsMatchByNameIncludingVariants()
-	{
+	public void venomInflictorsMatchByNameIncludingVariants() {
 		Assert.assertTrue(TripSupplies.inflictsVenom(named("Zulrah")));
 		Assert.assertTrue(TripSupplies.inflictsVenom(named("Araxxor")));
 		Assert.assertTrue(TripSupplies.inflictsVenom(named("Dreadborn Araxyte")));
@@ -166,34 +152,28 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void displayIdLeadsEachIdList()
-	{
+	public void displayIdLeadsEachIdList() {
 		// ids[0] is the display/cell id: the 4-dose potion or cooked food.
 		for (String category : new String[]{TripSupplies.FOOD, TripSupplies.FAST_FOOD,
 			TripSupplies.PRAYER_RESTORE, TripSupplies.SURGE, TripSupplies.SPELLBOOK_CAPE,
-			TripSupplies.ANTIVENOM})
-		{
+			TripSupplies.ANTIVENOM}) {
 			List<TripSupplies.Option> options = TripSupplies.options(category);
 			Assert.assertFalse(category + " must not be empty", options.isEmpty());
-			for (TripSupplies.Option o : options)
-			{
+			for (TripSupplies.Option o : options) {
 				Assert.assertTrue(o.key + " needs at least one id", o.ids.length >= 1);
 			}
 		}
 	}
 
-	private static MonsterStats named(String name)
-	{
-		if (name == null)
-		{
+	private static MonsterStats named(String name) {
+		if (name == null) {
 			return null;
 		}
 		return new MonsterStats(1, name, "", 100, 100, 1, 1, null, null);
 	}
 
 	@Test
-	public void cureMeAndThePrayerBookAreChoicesNeverADetectBestPick()
-	{
+	public void cureMeAndThePrayerBookAreChoicesNeverADetectBestPick() {
 		TripSupplies.Option cureMe = TripSupplies.option(TripSupplies.ANTIVENOM, "CURE_ME");
 		TripSupplies.Option book = TripSupplies.option(TripSupplies.ANTIVENOM, "PRAYER_BOOK");
 		org.junit.jupiter.api.Assertions.assertNotNull(cureMe, "Cure Me option");
@@ -213,8 +193,7 @@ public class TripSuppliesTest
 	}
 
 	@Test
-	public void antipoisonCoversThePoisonersTheVenomListDoesNot()
-	{
+	public void antipoisonCoversThePoisonersTheVenomListDoesNot() {
 		LoadoutData data = new DataService().load();
 		MonsterStats rex = data.searchMonsters("Dagannoth Rex", 1).get(0);
 		MonsterStats zulrah = data.searchMonsters("Zulrah", 1).get(0);
@@ -231,8 +210,7 @@ public class TripSuppliesTest
 	/** Kendyy (Discord 2026-10-19): antipoison rode the Sarachnis trip; her
 	 * wiki infobox says poisonous = No. The name had been on the list. */
 	@Test
-	public void sarachnisDoesNotPoison()
-	{
+	public void sarachnisDoesNotPoison() {
 		MonsterStats sarachnis = new DataService().load().searchMonsters("sarachnis", 1).get(0);
 		Assert.assertEquals("Sarachnis", sarachnis.getName());
 		Assert.assertFalse("wiki infobox: poisonous = No", TripSupplies.inflictsPoison(sarachnis));

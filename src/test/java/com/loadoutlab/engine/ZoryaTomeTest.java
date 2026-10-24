@@ -14,11 +14,9 @@ import org.junit.Test;
  * powered staff, 3-tick, base max hit 18 (flat, like the crystal staff),
  * 15% magic damage of its own.
  */
-public class ZoryaTomeTest
-{
+public class ZoryaTomeTest {
 	@Test
-	public void threeTicksFromABaseOfEighteen()
-	{
+	public void threeTicksFromABaseOfEighteen() {
 		LoadoutData data = new DataService().load();
 		GearItem tome = data.getGear(34725);
 		Assert.assertNotNull(tome);

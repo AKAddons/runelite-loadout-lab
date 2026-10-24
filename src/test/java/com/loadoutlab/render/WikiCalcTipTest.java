@@ -11,12 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Andrew 2026-09-02: the Wiki calc chip lost its "you will see this
  * number in their engine" line on cards without a spec or thrall fold.
  * The ledger is the subtext that says we know what they will show. */
-class WikiCalcTipTest
-{
+class WikiCalcTipTest {
 	@Test
 	@DisplayName("the Wiki calc tooltip always names the set dps the calculator will show")
-	void tipAlwaysCarriesTheLedger()
-	{
+	void tipAlwaysCarriesTheLedger() {
 		Map<String, Object> yours = new LinkedHashMap<>();
 		yours.put("dps", 6.344);
 		Map<String, Object> melee = new LinkedHashMap<>();

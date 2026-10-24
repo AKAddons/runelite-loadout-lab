@@ -25,8 +25,7 @@ package com.loadoutlab.command;
  * <p>Ported from goal planner's {@code com.goalplanner.command} - keep the
  * semantics in lockstep so the module stays shareable between the plugins.
  */
-public interface Command
-{
+public interface Command {
 	/** Run the action. Returns true if it actually changed state. */
 	boolean apply();
 

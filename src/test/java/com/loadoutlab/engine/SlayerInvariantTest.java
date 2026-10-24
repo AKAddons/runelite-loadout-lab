@@ -9,8 +9,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SlayerInvariantTest
-{
+public class SlayerInvariantTest {
 	/**
 	 * Turning the slayer task ON only ADDS options (the slayer helm), so
 	 * the resulting DPS can never be lower. This regressed once: with the
@@ -18,17 +17,14 @@ public class SlayerInvariantTest
 	 * before the legs completed the set (whale-bank repro from the field).
 	 */
 	@Test
-	public void slayerTaskNeverLowersTheAnswer()
-	{
+	public void slayerTaskNeverLowersTheAnswer() {
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (GearItem g : data.getGearItems())
-		{
+		for (GearItem g : data.getGearItems()) {
 			String n = g.getName().toLowerCase();
 			if (!n.contains("twisted bow") && !n.contains("dragon knife")
-				&& !n.contains("masori") && !n.contains("scorching"))
-			{
+				&& !n.contains("masori") && !n.contains("scorching")) {
 				owned.put(g.getId(), 100);
 			}
 		}
@@ -38,8 +34,7 @@ public class SlayerInvariantTest
 			onTask >= offTask - 1e-9);
 	}
 
-	private static double best(LoadoutData data, MonsterStats monster, Map<Integer, Integer> owned, boolean task)
-	{
+	private static double best(LoadoutData data, MonsterStats monster, Map<Integer, Integer> owned, boolean task) {
 		OptimizationRequest request = new OptimizationRequest(
 			monster, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,

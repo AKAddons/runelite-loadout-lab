@@ -17,8 +17,7 @@ import static com.loadoutlab.data.JsonResources.*;
  * dose of. Anti-venom only applies against the wiki Venom page's inflictor
  * list (the only monsters able to inflict venom).
  */
-public final class TripSupplies
-{
+public final class TripSupplies {
 	public static final String FOOD = "food";
 	public static final String FAST_FOOD = "fastFood";
 	public static final String PRAYER_RESTORE = "prayerRestore";
@@ -37,8 +36,7 @@ public final class TripSupplies
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
 	@lombok.AllArgsConstructor
-	public static final class Option
-	{
+	public static final class Option {
 		public final String key;
 		public final String name;
 		public final int[] ids;
@@ -65,19 +63,14 @@ public final class TripSupplies
 	private static final Set<String> POISONOUS = new HashSet<>();
 	private static final Set<String> NO_CANNON = new HashSet<>();
 
-	static
-	{
+	static {
 		JsonObject root = object("trip_supplies.json");
-		if (root != null)
-		{
-			for (String category : CATEGORY_KEYS)
-			{
+		if (root != null) {
+			for (String category : CATEGORY_KEYS) {
 				List<Option> options = new ArrayList<>();
 				JsonArray arr = root.getAsJsonArray(category);
-				if (arr != null)
-				{
-					for (JsonElement e : arr)
-					{
+				if (arr != null) {
+					for (JsonElement e : arr) {
 						JsonObject o = e.getAsJsonObject();
 						List<String> names = new ArrayList<>();
 						strings(o, "names", names);
@@ -100,67 +93,53 @@ public final class TripSupplies
 		}
 	}
 
-	private static int[][] cells(JsonObject o)
-	{
+	private static int[][] cells(JsonObject o) {
 		JsonArray rows = o.getAsJsonArray("cells");
-		if (rows == null)
-		{
+		if (rows == null) {
 			return null;
 		}
 		int[][] out = new int[rows.size()][];
-		for (int i = 0; i < out.length; i++)
-		{
+		for (int i = 0; i < out.length; i++) {
 			out[i] = ints(rows.get(i).getAsJsonArray());
 		}
 		return out;
 	}
 
-	private TripSupplies()
-	{
+	private TripSupplies() {
 	}
 
 	/** The grey chip's submenu label, or null for a category the menu never
 	 * shows (ship repair kits ride the sea card). */
-	public static String label(String category)
-	{
+	public static String label(String category) {
 		return LABELS.get(category);
 	}
 
 	/** The category's options, best first. */
-	public static List<Option> options(String category)
-	{
+	public static List<Option> options(String category) {
 		return CATEGORIES.getOrDefault(category, List.of());
 	}
 
 	/** The option a config-enum constant names, or null (NONE/DETECT_BEST
 	 * and unknown keys resolve to null). */
-	public static Option option(String category, String key)
-	{
+	public static Option option(String category, String key) {
 		return options(category).stream().filter(o -> o.key.equals(key)).findFirst().orElse(null);
 	}
 
 	/** Detect best for a trip: in the wilderness a banked blighted variant
 	 * wins outright (cheap to lose, wilderness-only); on land no
 	 * wilderness-only option is ever picked (Andrew 2026-09-01). */
-	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness)
-	{
+	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness) {
 		Option pick = null;
-		for (Option o : options(category))
-		{
-			if (!o.detect || (o.wildyOnly && !inWilderness))
-			{
+		for (Option o : options(category)) {
+			if (!o.detect || (o.wildyOnly && !inWilderness)) {
 				continue;
 			}
-			for (int id : o.ids)
-			{
-				if (owns.test(id))
-				{
-					if (o.wildyOnly)
-					{
+			for (int id : o.ids) {
+				if (owns.test(id)) {
+					if (o.wildyOnly) {
 						return o;
 					}
-					if (pick == null)
-					{
+					if (pick == null) {
 						pick = o;
 					}
 					break;
@@ -172,35 +151,29 @@ public final class TripSupplies
 
 	/** Detect best on land: the first detectable option the player owns
 	 * any dose of, or null when they own none. */
-	public static Option detectBest(String category, IntPredicate owns)
-	{
+	public static Option detectBest(String category, IntPredicate owns) {
 		return detectBest(category, owns, false);
 	}
 
 	/** True when the monster can inflict venom (wiki Venom page inflictor
 	 * list, matched by name so araxyte/snakeling variants count). */
-	public static boolean inflictsVenom(MonsterStats monster)
-	{
+	public static boolean inflictsVenom(MonsterStats monster) {
 		return named(monster, VENOMOUS);
 	}
 
 	/** Poisons but does not envenom (the Kings' spinolyps, KQ...) - the
 	 * antipoison category; venomous mobs keep anti-venom. */
-	public static boolean inflictsPoison(MonsterStats monster)
-	{
+	public static boolean inflictsPoison(MonsterStats monster) {
 		return named(monster, POISONOUS) && !named(monster, VENOMOUS);
 	}
 
 	/** No cannon here: a prohibited arena or cannon-immune (exact names). */
-	public static boolean noCannon(MonsterStats monster)
-	{
+	public static boolean noCannon(MonsterStats monster) {
 		return monster != null && NO_CANNON.contains(Names.lower(monster.getName()));
 	}
 
-	private static boolean named(MonsterStats monster, Set<String> tokens)
-	{
-		if (monster == null)
-		{
+	private static boolean named(MonsterStats monster, Set<String> tokens) {
+		if (monster == null) {
 			return false;
 		}
 		String name = Names.lower(monster.getName());

@@ -18,42 +18,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * your melee chest in a group you should replace the melee chest for the
  * whole group but not pin a melee chest for mob that has a range swap").
  */
-class SimForGroupTest
-{
+class SimForGroupTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("sim-for-group sims the item on every group member - no pin - and one undo takes them all back")
-	void simsEveryMember()
-	{
+	void simsEveryMember() {
 		List<String> calls = new ArrayList<>();
 		PageState state = new PageState();
-		CommandEngine engine = new CommandEngine(data, state, (mob, p, onDone) ->
-		{
+		CommandEngine engine = new CommandEngine(data, state, (mob, p, onDone) -> {
 		}, new CompanionLink());
-		engine.setStoreOps(new TestStoreOps()
-		{
+		engine.setStoreOps(new TestStoreOps() {
 			@Override
-			public void simForMob(int monsterId, int itemId)
-			{
+			public void simForMob(int monsterId, int itemId) {
 				calls.add("sim " + monsterId + " " + itemId);
 			}
 
 			@Override
-			public void removeMobSim(int monsterId, int itemId)
-			{
+			public void removeMobSim(int monsterId, int itemId) {
 				calls.add("unsim " + monsterId + " " + itemId);
 			}
 
 			@Override
-			public void pin(int monsterId, String scope, GearSlot slot, int itemId)
-			{
+			public void pin(int monsterId, String scope, GearSlot slot, int itemId) {
 				calls.add("pin");
 			}
 		});

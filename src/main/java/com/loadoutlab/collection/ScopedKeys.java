@@ -15,56 +15,44 @@ import net.runelite.client.config.ConfigManager;
  * then stop, which means MOVING the entry into the first character that loads
  * it rather than copying it.
  */
-final class ScopedKeys
-{
-	private ScopedKeys()
-	{
+final class ScopedKeys {
+	private ScopedKeys() {
 	}
 
 	/** A scope with no account hash behaves as the pre-0.4.1 bucket, so edits
 	 * made before login are adopted by the first character instead of landing
 	 * in a key nothing reads. */
-	static String key(String scope, String legacyKey)
-	{
+	static String key(String scope, String legacyKey) {
 		return scope == null || scope.isEmpty() ? legacyKey : scope + "." + legacyKey;
 	}
 
 	/** Stored JSON for this scope, adopting the legacy entry once. */
-	static String read(ConfigManager configManager, String group, String scope, String legacyKey)
-	{
+	static String read(ConfigManager configManager, String group, String scope, String legacyKey) {
 		return adopt(configManager, group, key(scope, legacyKey), legacyKey);
 	}
 
 	/** A stored JSON value, or null when the entry is empty or corrupt (a
 	 * corrupt entry starts the store fresh rather than failing the plugin). */
-	static <T> T parse(Gson gson, String json, Type type)
-	{
-		try
-		{
+	static <T> T parse(Gson gson, String json, Type type) {
+		try {
 			return json == null || json.isEmpty() ? null : gson.fromJson(json, type);
-		}
-		catch (RuntimeException ex)
-		{
+		} catch (RuntimeException ex) {
 			return null;
 		}
 	}
 
 	/** As {@link #read}, for a store whose legacy key is not simply the
 	 * scoped key without its prefix. */
-	static String adopt(ConfigManager configManager, String group, String key, String legacyKey)
-	{
+	static String adopt(ConfigManager configManager, String group, String key, String legacyKey) {
 		String json = configManager.getConfiguration(group, key);
-		if (json != null && !json.isEmpty())
-		{
+		if (json != null && !json.isEmpty()) {
 			return json;
 		}
-		if (key.equals(legacyKey))
-		{
+		if (key.equals(legacyKey)) {
 			return null;
 		}
 		String legacy = configManager.getConfiguration(group, legacyKey);
-		if (legacy == null || legacy.isEmpty())
-		{
+		if (legacy == null || legacy.isEmpty()) {
 			return null;
 		}
 		// A move, not a copy: the second character must find nothing here.

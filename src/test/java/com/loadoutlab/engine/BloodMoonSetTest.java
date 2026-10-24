@@ -22,45 +22,37 @@ import static org.junit.jupiter.api.Assertions.*;
  * Before this, the engine treated the macuahuitl as a plain one-hit 4t
  * weapon, so a dreamed-in full set never beat anything.
  */
-class BloodMoonSetTest
-{
+class BloodMoonSetTest {
 	private static LoadoutData data;
 	private static MonsterStats ankou;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		ankou = data.searchMonsters("ankou", 1).get(0);
 	}
 
-	private static GearItem byNameVersion(String nameLower, String version)
-	{
-		for (GearItem item : data.getGearItems())
-		{
+	private static GearItem byNameVersion(String nameLower, String version) {
+		for (GearItem item : data.getGearItems()) {
 			if (item.getNameLower().equals(nameLower)
-				&& (version == null || version.equalsIgnoreCase(item.getVersion())))
-			{
+				&& (version == null || version.equalsIgnoreCase(item.getVersion()))) {
 				return item;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower + " " + version);
 	}
 
-	private static OptimizationRequest request()
-	{
+	private static OptimizationRequest request() {
 		return new OptimizationRequest(ankou, CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
 			OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 	}
 
-	private static DpsResult calc(boolean fullSet)
-	{
+	private static DpsResult calc(boolean fullSet) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byNameVersion("dual macuahuitl", null));
-		if (fullSet)
-		{
+		if (fullSet) {
 			gear.put(GearSlot.HEAD, byNameVersion("blood moon helm", "New"));
 			gear.put(GearSlot.BODY, byNameVersion("blood moon chestplate", "New"));
 			gear.put(GearSlot.LEGS, byNameVersion("blood moon tassets", "New"));
@@ -70,8 +62,7 @@ class BloodMoonSetTest
 
 	@Test
 	@DisplayName("the macuahuitl's second hit is chained - expected damage is below a single roll of the full max")
-	void chainedHitsExpectation()
-	{
+	void chainedHitsExpectation() {
 		DpsResult result = calc(false);
 		double acc = result.getAccuracy();
 		int max = result.getMaxHit();
@@ -87,8 +78,7 @@ class BloodMoonSetTest
 
 	@Test
 	@DisplayName("Bloodrager: the full blood moon set speeds the macuahuitl up by acc/3 + acc^2*2/9 ticks")
-	void bloodragerExpectedSpeed()
-	{
+	void bloodragerExpectedSpeed() {
 		DpsResult bare = calc(false);
 		DpsResult set = calc(true);
 		double acc = set.getAccuracy();
@@ -111,8 +101,7 @@ class BloodMoonSetTest
 
 	@Test
 	@DisplayName("Used and Broken blood moon pieces still trigger Bloodrager (wiki: works while broken)")
-	void brokenPiecesStillCount()
-	{
+	void brokenPiecesStillCount() {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byNameVersion("dual macuahuitl", null));
 		gear.put(GearSlot.HEAD, byNameVersion("blood moon helm", "Broken"));

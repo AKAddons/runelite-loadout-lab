@@ -25,24 +25,19 @@ import org.junit.Test;
  * of the competition (field report 2026-08-06: simmed Burning claws vs
  * a Barrows brother still recommended the owned abyssal dagger).
  */
-public class SpecSimTest
-{
+public class SpecSimTest {
 	@Test
-	public void aSimmedSpecWeaponCompetes() throws Exception
-	{
+	public void aSimmedSpecWeaponCompetes() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats guthan = data.searchMonsters("guthan", 1).get(0);
 
 		GearItem claws = null;
 		GearItem whip = null;
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().startsWith("burning claws") && g.isStandardGear())
-			{
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().startsWith("burning claws") && g.isStandardGear()) {
 				claws = g;
 			}
-			if (g.getNameLower().equals("abyssal whip"))
-			{
+			if (g.getNameLower().equals("abyssal whip")) {
 				whip = g;
 			}
 		}
@@ -62,8 +57,7 @@ public class SpecSimTest
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 			false, false, Set.of(claws.getId()), 0,
 			Collections.emptyMap(), null, Collections.emptySet(),
-			results ->
-			{
+			results -> {
 				out.set(results);
 				done.countDown();
 			});

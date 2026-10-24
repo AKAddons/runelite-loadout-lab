@@ -15,10 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * live in LoadoutLabPlugin.containerFor(...), so a typo in the enum table
  * shows up here rather than as silently unscanned storage.
  */
-class SourceContainerIdTest
-{
-	private static Map<CollectionLedger.Source, Integer> oracle()
-	{
+class SourceContainerIdTest {
+	private static Map<CollectionLedger.Source, Integer> oracle() {
 		Map<CollectionLedger.Source, Integer> m = new EnumMap<>(CollectionLedger.Source.class);
 		m.put(CollectionLedger.Source.EQUIPMENT, net.runelite.api.InventoryID.EQUIPMENT.getId());
 		m.put(CollectionLedger.Source.INVENTORY, net.runelite.api.InventoryID.INVENTORY.getId());
@@ -39,22 +37,19 @@ class SourceContainerIdTest
 
 	@Test
 	@DisplayName("every source carries the container id the old switch returned")
-	void containerIdMatchesTheOldSwitch()
-	{
+	void containerIdMatchesTheOldSwitch() {
 		Map<CollectionLedger.Source, Integer> oracle = oracle();
 		assertEquals(12, CollectionLedger.Source.values().length,
 			"the oracle covers exactly the sources that exist");
 		assertEquals(12, oracle.size());
-		for (CollectionLedger.Source s : CollectionLedger.Source.values())
-		{
+		for (CollectionLedger.Source s : CollectionLedger.Source.values()) {
 			assertEquals(oracle.get(s).intValue(), s.containerId(), s.name());
 		}
 	}
 
 	@Test
 	@DisplayName("the reverse lookup returns the storage sources the plugin used to switch on")
-	void forContainerResolvesStorageSources()
-	{
+	void forContainerResolvesStorageSources() {
 		assertEquals(CollectionLedger.Source.LOOTING_BAG,
 			CollectionLedger.Source.forContainer(InventoryID.LOOTING_BAG));
 		assertEquals(CollectionLedger.Source.POH_COSTUMES,
@@ -67,8 +62,7 @@ class SourceContainerIdTest
 
 	@Test
 	@DisplayName("the reverse lookup rejects the STASH sentinel and unknown containers")
-	void forContainerRejectsSentinelAndUnknown()
-	{
+	void forContainerRejectsSentinelAndUnknown() {
 		assertNull(CollectionLedger.Source.forContainer(-1));
 		assertNull(CollectionLedger.Source.forContainer(Integer.MIN_VALUE));
 		assertNull(CollectionLedger.Source.forContainer(Integer.MAX_VALUE));
@@ -76,13 +70,10 @@ class SourceContainerIdTest
 
 	@Test
 	@DisplayName("no two sources claim the same container id")
-	void containerIdsAreUnique()
-	{
+	void containerIdsAreUnique() {
 		Map<Integer, CollectionLedger.Source> seen = new java.util.HashMap<>();
-		for (CollectionLedger.Source s : CollectionLedger.Source.values())
-		{
-			if (s.containerId() < 0)
-			{
+		for (CollectionLedger.Source s : CollectionLedger.Source.values()) {
+			if (s.containerId() < 0) {
 				continue;
 			}
 			CollectionLedger.Source clash = seen.put(s.containerId(), s);

@@ -20,8 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * against the REAL stores (in-memory ConfigManager fake). These are the
  * semantics the undo/redo buttons stand on.
  */
-class CommandsTest
-{
+class CommandsTest {
 	private static final int MOB = 2042; // Zulrah, as good an id as any
 	private static final int WHIP = 4151;
 	private static final int FANG = 26219;
@@ -30,16 +29,14 @@ class CommandsTest
 	private CommandHistory history;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		cfg = InMemoryConfigManager.create();
 		history = new CommandHistory();
 	}
 
 	@Test
 	@DisplayName("exclusion toggle: execute excludes, undo restores, redo re-excludes")
-	void exclusionRoundTrip()
-	{
+	void exclusionRoundTrip() {
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
 		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
 		assertEquals("Exclude Abyssal whip", cmd.getDescription());
@@ -54,8 +51,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("exclusion toggle on an excluded item reads as Include and un-excludes")
-	void exclusionToggleOff()
-	{
+	void exclusionToggleOff() {
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
 		store.toggle(WHIP);
 		Command cmd = TestCommands.toggleExclusion(store, WHIP, "Abyssal whip");
@@ -68,8 +64,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("clear exclusions is ONE undo entry and undo restores every item")
-	void clearExclusionsRestoresAll()
-	{
+	void clearExclusionsRestoresAll() {
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
 		store.toggle(WHIP);
 		store.toggle(FANG);
@@ -90,8 +85,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("clear exclusions on an empty store is a no-op and never lands on the stack")
-	void clearEmptyNoop()
-	{
+	void clearEmptyNoop() {
 		ExclusionStore store = new ExclusionStore(cfg, new Gson());
 		assertFalse(history.execute(TestCommands.clearExclusions(store)));
 		assertFalse(history.canUndo());
@@ -100,8 +94,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("pin with no prior pin: undo empties the slot")
-	void pinFreshSlot()
-	{
+	void pinFreshSlot() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		history.execute(TestCommands.pin(mobs, MOB, "MELEE", GearSlot.WEAPON, FANG, "Osmumten's fang"));
 		assertEquals(FANG, mobs.allPins(MOB).get("MELEE").get(GearSlot.WEAPON));
@@ -115,8 +108,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("pin over an existing pin: undo restores the PRIOR item, not an empty slot")
-	void pinOverExisting()
-	{
+	void pinOverExisting() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.pin(MOB, "MELEE", GearSlot.WEAPON, WHIP);
 
@@ -129,8 +121,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("unpin: undo restores the pin; unpinning an empty slot is a no-op")
-	void unpinRestores()
-	{
+	void unpinRestores() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.pin(MOB, "ALL", GearSlot.HEAD, 11665);
 
@@ -145,8 +136,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("note: undo restores the previous text; saving identical text is a no-op")
-	void noteRestores()
-	{
+	void noteRestores() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		mobs.setNote(MOB, "bring antivenom");
 
@@ -161,8 +151,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("pinned spell: undo restores the previous spell")
-	void spellRestores()
-	{
+	void spellRestores() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		history.execute(TestCommands.setPinnedSpell(mobs, MOB, "Ice Barrage"));
 		assertEquals("Ice Barrage", mobs.pinnedSpell(MOB));
@@ -172,8 +161,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("mob exclusion: exclude and remove both round-trip")
-	void mobExclusionRoundTrip()
-	{
+	void mobExclusionRoundTrip() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		history.execute(TestCommands.excludeForMob(mobs, MOB, "RANGED", WHIP, "Abyssal whip"));
 		assertTrue(mobs.allExclusions(MOB).get("RANGED").contains(WHIP));
@@ -190,8 +178,7 @@ class CommandsTest
 
 	@Test
 	@DisplayName("filter item: an add is one undo step and keeps its display name")
-	void filterItemKeepsName()
-	{
+	void filterItemKeepsName() {
 		MonsterProfileStore mobs = new MonsterProfileStore(cfg, new Gson());
 		history.execute(TestCommands.addFilterItem(mobs, MOB, "ALL", 12695, "Super combat potion(4)"));
 		assertEquals("Super combat potion(4)", mobs.allFilterItems(MOB).get("ALL").get(12695));

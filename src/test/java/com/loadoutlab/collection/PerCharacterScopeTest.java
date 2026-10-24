@@ -19,22 +19,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * family, plus the one-time migration that stops an existing install losing
  * its lists when the key gains the account hash.
  */
-class PerCharacterScopeTest
-{
+class PerCharacterScopeTest {
 	private ConfigManager configManager;
 	private Gson gson;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		configManager = InMemoryConfigManager.create();
 		gson = new Gson();
 	}
 
 	@Test
 	@DisplayName("two characters keep separate exclude, sim and protect lists")
-	void listsDoNotBleedBetweenCharacters()
-	{
+	void listsDoNotBleedBetweenCharacters() {
 		ExclusionStore exclusions = new ExclusionStore(configManager, gson);
 		DreamStore dreams = new DreamStore(configManager, gson);
 		ProtectOnlyStore protect = new ProtectOnlyStore(configManager, gson);
@@ -68,8 +65,7 @@ class PerCharacterScopeTest
 
 	@Test
 	@DisplayName("an existing install carries its pre-0.4.1 list into the first character")
-	void legacyKeyMigratesOnce()
-	{
+	void legacyKeyMigratesOnce() {
 		// What a pre-0.4.1 install looks like: a bare, unscoped key.
 		configManager.setConfiguration("loadoutlab", "excludedItems", "[11832,4151]");
 
@@ -81,8 +77,7 @@ class PerCharacterScopeTest
 
 	@Test
 	@DisplayName("seasonal and standard worlds are separate scopes for the same account")
-	void seasonalIsItsOwnScope()
-	{
+	void seasonalIsItsOwnScope() {
 		ExclusionStore exclusions = new ExclusionStore(configManager, gson);
 		exclusions.loadScope("std.1111");
 		exclusions.toggle(11832);
@@ -94,8 +89,7 @@ class PerCharacterScopeTest
 
 	@Test
 	@DisplayName("monster profiles and supply defaults scope per character too")
-	void profilesAndSuppliesScope()
-	{
+	void profilesAndSuppliesScope() {
 		MonsterProfileStore profiles = new MonsterProfileStore(configManager, gson);
 		SupplyDefaultsStore supplies = new SupplyDefaultsStore(configManager, gson);
 

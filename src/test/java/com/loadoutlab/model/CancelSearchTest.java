@@ -13,57 +13,45 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Andrew, 2026-09-04: "a cancel button while we are in the computing
  * phase ... bring it immediately back to the neutral state". */
-class CancelSearchTest
-{
+class CancelSearchTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> page;
 		Boolean status;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			this.page = page;
 		}
 
 		@Override
-		public void publishStatus(boolean computing)
-		{
+		public void publishStatus(boolean computing) {
 			status = computing;
 		}
 	}
 
-	private static void flush()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flush() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
 	@Test
 	@DisplayName("cancel mid-compute returns to the start state, and a result that lands afterwards is dropped")
-	void cancelDropsTheLateResult()
-	{
+	void cancelDropsTheLateResult() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps());

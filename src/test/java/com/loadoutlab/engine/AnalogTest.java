@@ -10,20 +10,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Stat-identical analogs (god d'hide) must track what the player owns. */
-public class AnalogTest
-{
+public class AnalogTest {
 	private static LoadoutData data;
 	private static MonsterStats callisto;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 		callisto = data.searchMonsters("callisto", 1).get(0);
 	}
 
-	private static GearItem headPick(int ownedCoif)
-	{
+	private static GearItem headPick(int ownedCoif) {
 		OptimizationRequest req = TestRequests.of(callisto, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false,
@@ -39,8 +36,7 @@ public class AnalogTest
 	}
 
 	@Test
-	public void legAnalogsAreStatIdenticalInTheData()
-	{
+	public void legAnalogsAreStatIdenticalInTheData() {
 		// Platelegs vs plateskirts, proselyte cuisse vs tasset: the
 		// dedupe's owned-preference and the gold border's stat
 		// equivalence both rest on these being true stat clones.
@@ -49,8 +45,7 @@ public class AnalogTest
 		assertClones(9676, 9678);  // proselyte cuisse / tasset
 	}
 
-	private static void assertClones(int a, int b)
-	{
+	private static void assertClones(int a, int b) {
 		GearItem left = data.getGear(a);
 		GearItem right = data.getGear(b);
 		Assert.assertNotNull(left);
@@ -58,8 +53,7 @@ public class AnalogTest
 		Assert.assertEquals(left.getSlot(), right.getSlot());
 		for (java.util.function.Function<GearItem, com.loadoutlab.data.StatBlock> block
 			: java.util.List.<java.util.function.Function<GearItem, com.loadoutlab.data.StatBlock>>of(
-				GearItem::getOffensive, GearItem::getDefensive, GearItem::getBonuses))
-		{
+				GearItem::getOffensive, GearItem::getDefensive, GearItem::getBonuses)) {
 			com.loadoutlab.data.StatBlock l = block.apply(left);
 			com.loadoutlab.data.StatBlock r = block.apply(right);
 			Assert.assertEquals(l.getStab(), r.getStab());
@@ -75,8 +69,7 @@ public class AnalogTest
 	}
 
 	@Test
-	public void prayerDistinguishesStatClones_radasBlessingBeatsAncientBlessing()
-	{
+	public void prayerDistinguishesStatClones_radasBlessingBeatsAncientBlessing() {
 		// Both are zero-offense ammo-slot blessings; Rada's 4 gives +2
 		// prayer vs +1. The old dedupe key ignored prayer, collapsed them,
 		// and the tradeable preference picked the ancient blessing.
@@ -98,19 +91,16 @@ public class AnalogTest
 	}
 
 	@Test
-	public void statTiedAnalogsFollowOwnership()
-	{
+	public void statTiedAnalogsFollowOwnership() {
 		GearItem armadyl = headPick(12512);
 		GearItem bandos = headPick(12504);
 		// Only assert when the head pick lands in the god-coif class at all
 		// (data drift could promote another helm); when it does, it must be
 		// the OWNED god's.
-		if (armadyl != null && armadyl.getName().endsWith("coif"))
-		{
+		if (armadyl != null && armadyl.getName().endsWith("coif")) {
 			Assert.assertEquals("Armadyl coif", armadyl.getName());
 		}
-		if (bandos != null && bandos.getName().endsWith("coif"))
-		{
+		if (bandos != null && bandos.getName().endsWith("coif")) {
 			Assert.assertEquals("Bandos coif", bandos.getName());
 		}
 		Assert.assertNotNull(armadyl);

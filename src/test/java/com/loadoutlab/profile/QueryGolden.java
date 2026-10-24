@@ -16,8 +16,7 @@ import java.util.List;
  *
  *   ./gradlew -q golden > golden.txt
  */
-public final class QueryGolden
-{
+public final class QueryGolden {
 	private static final String[] MONSTERS = {"general graardor", "zulrah", "callisto"};
 	private static final String[] MODES = {"max_dps", "balanced"};
 	private static final int[] RISKS = {-1, 3};
@@ -37,12 +36,10 @@ public final class QueryGolden
 		"kril", "dusk", "dawn", "abomination", "hellhound", "goblin",
 	};
 
-	private QueryGolden()
-	{
+	private QueryGolden() {
 	}
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		LoadoutData data = new DataService().load();
 		PlayerProfile fixture = FixtureBank.profile(data);
 		Path fixturePath = Files.createTempFile("loadout-lab-fixture", ".json");
@@ -50,32 +47,23 @@ public final class QueryGolden
 		Files.writeString(fixturePath, fixture.toJson());
 
 		System.out.println("fixture bank ids: " + FixtureBank.bank(data).keySet());
-		for (String profileKind : new String[]{"maxed", "fixture"})
-		{
-			for (String monster : MONSTERS)
-			{
-				for (String mode : MODES)
-				{
-					for (int risk : RISKS)
-					{
+		for (String profileKind : new String[]{"maxed", "fixture"}) {
+			for (String monster : MONSTERS) {
+				for (String mode : MODES) {
+					for (int risk : RISKS) {
 						List<String> query = new ArrayList<>();
-						for (String word : monster.split(" "))
-						{
+						for (String word : monster.split(" ")) {
 							query.add(word);
 						}
-						if ("maxed".equals(profileKind))
-						{
+						if ("maxed".equals(profileKind)) {
 							query.add("--maxed");
-						}
-						else
-						{
+						} else {
 							query.add("--profile");
 							query.add(fixturePath.toString());
 						}
 						query.add("--mode");
 						query.add(mode);
-						if (risk >= 0)
-						{
+						if (risk >= 0) {
 							query.add("--low-risk");
 							query.add(String.valueOf(risk));
 						}
@@ -88,21 +76,15 @@ public final class QueryGolden
 		}
 
 		// The BROAD conditional sweep: both profiles, max dps, risk off.
-		for (String profileKind : new String[]{"maxed", "fixture"})
-		{
-			for (String monster : BROAD)
-			{
+		for (String profileKind : new String[]{"maxed", "fixture"}) {
+			for (String monster : BROAD) {
 				List<String> query = new ArrayList<>();
-				for (String word : monster.split(" "))
-				{
+				for (String word : monster.split(" ")) {
 					query.add(word);
 				}
-				if ("maxed".equals(profileKind))
-				{
+				if ("maxed".equals(profileKind)) {
 					query.add("--maxed");
-				}
-				else
-				{
+				} else {
 					query.add("--profile");
 					query.add(fixturePath.toString());
 				}

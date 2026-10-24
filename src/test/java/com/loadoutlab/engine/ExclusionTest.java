@@ -10,22 +10,18 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ExclusionTest
-{
+public class ExclusionTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
 	@Test
-	public void excludingDragonDartsDropsTheBlowpipeToTheNextOwnedTier()
-	{
+	public void excludingDragonDartsDropsTheBlowpipeToTheNextOwnedTier() {
 		MonsterStats hydra = data().searchMonsters("alchemical hydra", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(12926, 1);   // toxic blowpipe
@@ -47,8 +43,7 @@ public class ExclusionTest
 	}
 
 	@Test
-	public void excludedItemsNeverAppearInAnySlot()
-	{
+	public void excludedItemsNeverAppearInAnySlot() {
 		MonsterStats goblin = data().searchMonsters("goblin", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
 			goblin, CombatStyle.MELEE, PlayerLevels.MAXED,
@@ -61,10 +56,8 @@ public class ExclusionTest
 		DpsResult without = new LoadoutOptimizer().optimize(data(),
 			request.withExcludedItems(Set.of(weaponId))).get(0);
 		Assert.assertNotEquals(weaponId, without.getLoadout().getWeapon().getId());
-		for (GearSlot slot : GearSlot.values())
-		{
-			if (without.getLoadout().get(slot) != null)
-			{
+		for (GearSlot slot : GearSlot.values()) {
+			if (without.getLoadout().get(slot) != null) {
 				Assert.assertNotEquals(weaponId, without.getLoadout().get(slot).getId());
 			}
 		}

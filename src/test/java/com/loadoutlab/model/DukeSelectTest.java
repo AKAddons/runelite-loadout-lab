@@ -14,18 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Shared-npc-id selection (the Duke disease, id-collision family
  * member four): Awakened and Post-quest Duke are both id 12191 with
  * Awakened first in corpus order. */
-class DukeSelectTest
-{
+class DukeSelectTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(AtomicReference<MonsterStats> computed)
-	{
+	private static CommandEngine engine(AtomicReference<MonsterStats> computed) {
 		PageState state = new PageState();
 		return new CommandEngine(data, state,
 			(mob, p, onDone) -> computed.set(mob),
@@ -34,8 +31,7 @@ class DukeSelectTest
 
 	@Test
 	@DisplayName("a versioned dropdown pick selects exactly its row")
-	void versionedPickSelectsItsRow()
-	{
+	void versionedPickSelectsItsRow() {
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		CommandEngine engine = engine(computed);
 		assertTrue(engine.execute("select",
@@ -47,8 +43,7 @@ class DukeSelectTest
 
 	@Test
 	@DisplayName("a bare shared id selects the search-ranked everyday row")
-	void bareIdPrefersTheEverydayRow()
-	{
+	void bareIdPrefersTheEverydayRow() {
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		CommandEngine engine = engine(computed);
 		assertTrue(engine.execute("select", Map.of("id", 12191)));
@@ -58,8 +53,7 @@ class DukeSelectTest
 
 	@Test
 	@DisplayName("the dropdown rows carry their version")
-	void dropdownRowsCarryVersion()
-	{
+	void dropdownRowsCarryVersion() {
 		CommandEngine engine = engine(new AtomicReference<>());
 		boolean sawVersioned = engine.searchOptions("duke sucellus").stream()
 			.anyMatch(o -> "Awakened".equals(o.get("version")));

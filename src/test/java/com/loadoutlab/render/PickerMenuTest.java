@@ -26,19 +26,15 @@ import static org.mockito.Mockito.mock;
  * the card's style. Popups are not in the rendered tree, so this reads the
  * menus directly.
  */
-class PickerMenuTest
-{
-	private static Map<String, Object> page(String prayerPick, String boostPick)
-	{
+class PickerMenuTest {
+	private static Map<String, Object> page(String prayerPick, String boostPick) {
 		Map<String, Object> params = new LinkedHashMap<>();
 		Map<String, Object> prayerPicks = new LinkedHashMap<>();
 		Map<String, Object> boostPicks = new LinkedHashMap<>();
-		if (prayerPick != null)
-		{
+		if (prayerPick != null) {
 			prayerPicks.put("melee", prayerPick);
 		}
-		if (boostPick != null)
-		{
+		if (boostPick != null) {
 			boostPicks.put("melee", boostPick);
 		}
 		params.put("prayerPicks", prayerPicks);
@@ -59,8 +55,7 @@ class PickerMenuTest
 		return page;
 	}
 
-	private static ResultCards cards(List<String> sent, Map<String, Object> page)
-	{
+	private static ResultCards cards(List<String> sent, Map<String, Object> page) {
 		ResultCards cards = new ResultCards(
 			mock(ItemManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
 			mock(SpriteManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
@@ -70,28 +65,21 @@ class PickerMenuTest
 		return cards;
 	}
 
-	private static List<JCheckBoxMenuItem> checks(JPopupMenu menu)
-	{
+	private static List<JCheckBoxMenuItem> checks(JPopupMenu menu) {
 		List<JCheckBoxMenuItem> out = new ArrayList<>();
-		for (Component c : menu.getComponents())
-		{
-			if (c instanceof JCheckBoxMenuItem)
-			{
+		for (Component c : menu.getComponents()) {
+			if (c instanceof JCheckBoxMenuItem) {
 				out.add((JCheckBoxMenuItem) c);
 			}
 		}
 		return out;
 	}
 
-	private static List<JLabel> cells(JPopupMenu menu)
-	{
+	private static List<JLabel> cells(JPopupMenu menu) {
 		List<JLabel> out = new ArrayList<>();
-		for (Component c : menu.getComponents())
-		{
-			if (c instanceof JPanel)
-			{
-				for (Component cell : ((JPanel) c).getComponents())
-				{
+		for (Component c : menu.getComponents()) {
+			if (c instanceof JPanel) {
+				for (Component cell : ((JPanel) c).getComponents()) {
 					out.add((JLabel) cell);
 				}
 			}
@@ -99,10 +87,8 @@ class PickerMenuTest
 		return out;
 	}
 
-	private static void click(Component cell)
-	{
-		for (MouseListener l : cell.getMouseListeners())
-		{
+	private static void click(Component cell) {
+		for (MouseListener l : cell.getMouseListeners()) {
 			l.mouseClicked(new MouseEvent(cell, MouseEvent.MOUSE_CLICKED, 0, 0, 1, 1, 1, false,
 				MouseEvent.BUTTON1));
 		}
@@ -110,8 +96,7 @@ class PickerMenuTest
 
 	@Test
 	@DisplayName("the prayer book: Detect / None, then a cell per prayer, the pick lit and tagged assumed")
-	void prayerBook()
-	{
+	void prayerBook() {
 		List<String> sent = new ArrayList<>();
 		JPopupMenu menu = cards(sent, page("Chivalry", null)).prayerMenu("melee");
 		List<JCheckBoxMenuItem> checks = checks(menu);
@@ -138,8 +123,7 @@ class PickerMenuTest
 
 	@Test
 	@DisplayName("the boost rack: the same shape with potion cells keyed by the option key")
-	void boostRack()
-	{
+	void boostRack() {
 		List<String> sent = new ArrayList<>();
 		JPopupMenu menu = cards(sent, page(null, "DIVINE_SUPER_COMBAT")).boostMenu("melee");
 		List<JCheckBoxMenuItem> checks = checks(menu);
@@ -156,8 +140,7 @@ class PickerMenuTest
 
 	@Test
 	@DisplayName("no pick yet: Detect is checked; no options for the style: the check items alone")
-	void detectAndEmpty()
-	{
+	void detectAndEmpty() {
 		List<String> sent = new ArrayList<>();
 		ResultCards cards = cards(sent, page(null, "NONE"));
 		assertTrue(checks(cards.prayerMenu("melee")).get(0).isSelected(), "Detect = no pick");

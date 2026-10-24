@@ -15,22 +15,19 @@ import org.junit.Test;
  * Candidate pool semantics: candidates = (owned + dreams + within-budget
  * purchases) - exclusions.
  */
-public class DreamAndBudgetTest
-{
+public class DreamAndBudgetTest {
 	private static LoadoutData data;
 	private static MonsterStats zulrah;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 		// Zulrah: magic 300, the twisted bow's home turf - a dreamed tbow
 		// must dominate here (vs a low-magic monster it may honestly lose).
 		zulrah = data.searchMonsters("zulrah", 1).get(0);
 	}
 
-	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp)
-	{
+	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp) {
 		return TestRequests.of(zulrah, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
@@ -39,8 +36,7 @@ public class DreamAndBudgetTest
 	}
 
 	@Test
-	public void aDreamedTwistedBowJoinsAnOwnedOnlySearch()
-	{
+	public void aDreamedTwistedBowJoinsAnOwnedOnlySearch() {
 		// Owned: magic shortbow + rune arrows. Dreamed: a twisted bow.
 		OptimizationRequest plain = owned(Map.of(861, 1, 892, 100), 0);
 		OptimizationRequest dreaming = plain.withDreamItems(Set.of(20997)); // twisted bow
@@ -51,8 +47,7 @@ public class DreamAndBudgetTest
 	}
 
 	@Test
-	public void anExcludedDreamItemStaysOut()
-	{
+	public void anExcludedDreamItemStaysOut() {
 		OptimizationRequest req = owned(Map.of(861, 1, 892, 100), 0)
 			.withDreamItems(Set.of(20997))
 			.withExcludedItems(Set.of(20997));
@@ -61,8 +56,7 @@ public class DreamAndBudgetTest
 	}
 
 	@Test
-	public void aBudgetShopsUpgradesWithinTotalSpend()
-	{
+	public void aBudgetShopsUpgradesWithinTotalSpend() {
 		// Own a maple shortbow + adamant arrows (rune arrows outclass the
 		// bow's ammo tier); 1M budget must buy real upgrades but keep the
 		// TOTAL purchase cost within budget.
@@ -78,8 +72,7 @@ public class DreamAndBudgetTest
 	}
 
 	@Test
-	public void dreamItemsDoNotChargeTheUpgradeBudget()
-	{
+	public void dreamItemsDoNotChargeTheUpgradeBudget() {
 		// 100k budget + dreamed tbow: the dream is pretend-owned (free),
 		// the budget still shops small upgrades around it.
 		OptimizationRequest req = owned(Map.of(892, 100), 100_000)

@@ -38,22 +38,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>The goldens cannot catch this: FixtureBank is a maxed account, where the
  * two requirement profiles agree.
  */
-class LowLevelCeilingTest
-{
+class LowLevelCeilingTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** A fresh account: 10 Attack, nothing trained, every quest unstarted. */
-	private static RequirementProfile freshAccount()
-	{
+	private static RequirementProfile freshAccount() {
 		Map<Skill, Integer> levels = new HashMap<>();
-		for (Skill s : Skill.values())
-		{
+		for (Skill s : Skill.values()) {
 			levels.put(s, 1);
 		}
 		levels.put(Skill.ATTACK, 10);
@@ -63,15 +59,13 @@ class LowLevelCeilingTest
 
 	@Test
 	@DisplayName("the BiS ceiling never names gear the player cannot equip")
-	void ceilingRespectsThePlayersRequirements() throws Exception
-	{
+	void ceilingRespectsThePlayersRequirements() throws Exception {
 		MonsterStats obor = data.searchMonsters("obor", 1).get(0);
 		RequirementProfile fresh = freshAccount();
 		PlayerLevels levels = new PlayerLevels(10, 1, 1, 10, 1, 1, 1);
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out =
 				new AtomicReference<>();
@@ -82,8 +76,7 @@ class LowLevelCeilingTest
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0,
 				Collections.emptyMap(), null, 0, Collections.emptySet(),
-				r ->
-				{
+				r -> {
 					out.set(r);
 					done.countDown();
 				});
@@ -93,11 +86,9 @@ class LowLevelCeilingTest
 			assertNotNull(melee, "no melee result for Obor");
 			assertNotNull(melee.overallBest, "no game-best set for Obor");
 
-			for (GearSlot slot : GearSlot.values())
-			{
+			for (GearSlot slot : GearSlot.values()) {
 				GearItem worn = melee.overallBest.getLoadout().get(slot);
-				if (worn == null)
-				{
+				if (worn == null) {
 					continue;
 				}
 				// Levels only: the ceiling never trims on the quest log (2026-09-09).
@@ -105,9 +96,7 @@ class LowLevelCeilingTest
 					"the ceiling put on " + worn.getName()
 						+ ", which a 10 Attack account cannot equip");
 			}
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

@@ -18,38 +18,31 @@ import static org.junit.jupiter.api.Assertions.*;
  * that cannot fire at all until fed 1,000 ether. badVersion() is a pool
  * FILTER for the weapon slot now, not just a dedupe tie-break.
  */
-class UnchargedWeaponPoolTest
-{
+class UnchargedWeaponPoolTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static boolean bad(String versionLower)
-	{
+	private static boolean bad(String versionLower) {
 		return versionLower.contains("uncharged") || versionLower.contains("broken")
 			|| versionLower.contains("locked") || versionLower.contains("inactive");
 	}
 
 	@Test
 	@DisplayName("a 500m budget never recommends buying an uncharged/broken weapon")
-	void budgetNeverBuysDeadWeapons()
-	{
+	void budgetNeverBuysDeadWeapons() {
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
-		{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
 			OptimizationRequest request = new OptimizationRequest(graardor, style,
 				PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 				null, 500_000_000, CandidateMode.BUDGET, true, false,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 3);
 			List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
-			for (DpsResult result : results)
-			{
-				if (result.getLoadout().getWeapon() == null)
-				{
+			for (DpsResult result : results) {
+				if (result.getLoadout().getWeapon() == null) {
 					continue;
 				}
 				String version = result.getLoadout().getWeapon().getVersionLower();
@@ -62,19 +55,15 @@ class UnchargedWeaponPoolTest
 
 	@Test
 	@DisplayName("game-best pools never surface an uncharged weapon either")
-	void allStandardNeverPicksDeadWeapons()
-	{
+	void allStandardNeverPicksDeadWeapons() {
 		MonsterStats revDragon = data.searchMonsters("revenant dragon", 1).get(0);
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED})
-		{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED}) {
 			OptimizationRequest request = new OptimizationRequest(revDragon, style,
 				PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 				null, 0, CandidateMode.ALL_STANDARD, true, false,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 3);
-			for (DpsResult result : new LoadoutOptimizer().optimize(data, request))
-			{
-				if (result.getLoadout().getWeapon() == null)
-				{
+			for (DpsResult result : new LoadoutOptimizer().optimize(data, request)) {
+				if (result.getLoadout().getWeapon() == null) {
 					continue;
 				}
 				assertFalse(bad(result.getLoadout().getWeapon().getVersionLower()),

@@ -21,8 +21,7 @@ import okhttp3.*;
  */
 @Slf4j
 @lombok.AllArgsConstructor
-public class WikiCalcLink
-{
+public class WikiCalcLink {
 	static final String SHORTLINK_API = "https://tools.runescape.wiki/osrs-dps/shortlink";
 	static final String CALC_URL = "https://tools.runescape.wiki/osrs-dps/?id=";
 
@@ -36,13 +35,11 @@ public class WikiCalcLink
 	private static final Map<String, Integer> PRAYER_IDS = new LinkedHashMap<>();
 	private static final Map<String, int[]> POTION_IDS = new LinkedHashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.object("wiki_calc_ids.json");
 		JsonResources.stringIntMap(root, "prayerIds", PRAYER_IDS);
 		JsonObject potions = root == null ? null : root.getAsJsonObject("potionIds");
-		for (String label : potions == null ? Set.<String>of() : potions.keySet())
-		{
+		for (String label : potions == null ? Set.<String>of() : potions.keySet()) {
 			POTION_IDS.put(label, JsonResources.ints(potions.getAsJsonArray(label)));
 		}
 	}
@@ -53,33 +50,26 @@ public class WikiCalcLink
 	/** POST the setup to the shortlink service, then open the calculator
 	 * on the returned id. Fire-and-forget; failures only log. */
 	public void open(MonsterStats mob, DpsResult shown, int dartId, String assumes,
-		PlayerLevels real, PlayerLevels live, boolean onSlayerTask, boolean inWilderness)
-	{
+		PlayerLevels real, PlayerLevels live, boolean onSlayerTask, boolean inWilderness) {
 		Map<String, Object> data = payload(mob, shown, dartId, assumes,
 			real, live, onSlayerTask, inWilderness);
 		Request request = new Request.Builder()
 			.url(SHORTLINK_API)
 			.post(RequestBody.create(MediaType.parse("application/json"), gson.toJson(data)))
 			.build();
-		http.newCall(request).enqueue(new Callback()
-		{
-			public void onFailure(Call call, IOException e)
-			{
+		http.newCall(request).enqueue(new Callback() {
+			public void onFailure(Call call, IOException e) {
 				log.warn("wiki calc shortlink failed", e);
 			}
 
-			public void onResponse(Call call, Response response) throws IOException
-			{
-				try (Response r = response)
-				{
-					if (!r.isSuccessful() || r.body() == null)
-					{
+			public void onResponse(Call call, Response response) throws IOException {
+				try (Response r = response) {
+					if (!r.isSuccessful() || r.body() == null) {
 						log.warn("wiki calc shortlink HTTP {}", r.code());
 						return;
 					}
 					JsonObject body = gson.fromJson(r.body().string(), JsonObject.class);
-					if (body == null || !body.has("data"))
-					{
+					if (body == null || !body.has("data")) {
 						log.warn("wiki calc shortlink: unexpected response shape");
 						return;
 					}
@@ -92,27 +82,21 @@ public class WikiCalcLink
 	/** The ImportableData document, built pure for testability. */
 	static Map<String, Object> payload(MonsterStats mob, DpsResult shown, int dartId,
 		String assumes, PlayerLevels real, PlayerLevels live,
-		boolean onSlayerTask, boolean inWilderness)
-	{
+		boolean onSlayerTask, boolean inWilderness) {
 		List<Integer> prayers = new ArrayList<>();
 		BoostProfile boost = null;
 		List<Integer> potions = new ArrayList<>();
-		for (String token : (assumes == null ? "" : assumes).split(" \\+ "))
-		{
+		for (String token : (assumes == null ? "" : assumes).split(" \\+ ")) {
 			Integer prayerId = PRAYER_IDS.get(token);
-			if (prayerId != null)
-			{
+			if (prayerId != null) {
 				prayers.add(prayerId);
 				continue;
 			}
-			for (int id : POTION_IDS.getOrDefault(token, new int[0]))
-			{
+			for (int id : POTION_IDS.getOrDefault(token, new int[0])) {
 				potions.add(id);
 			}
-			for (BoostProfile profile : BoostProfile.values())
-			{
-				if (profile.toString().equals(token))
-				{
+			for (BoostProfile profile : BoostProfile.values()) {
+				if (profile.toString().equals(token)) {
 					boost = profile;
 				}
 			}
@@ -120,20 +104,17 @@ public class WikiCalcLink
 
 		Map<String, Object> equipment = new LinkedHashMap<>();
 		GearItem quiverAmmo = shown.getLoadout().getQuiverAmmo();
-		for (GearSlot slot : GearSlot.values())
-		{
+		for (GearSlot slot : GearSlot.values()) {
 			GearItem worn = shown.getLoadout().get(slot);
 			// The calc has no quiver concept: the bolts the quiver carries
 			// must ride the AMMO slot or their side prices an empty
 			// crossbow (field report 2026-08-21). The displaced blessing
 			// only carries prayer bonus - nothing the dps math reads.
-			if (slot == GearSlot.AMMO && quiverAmmo != null)
-			{
+			if (slot == GearSlot.AMMO && quiverAmmo != null) {
 				worn = quiverAmmo;
 			}
 			int id = worn != null ? worn.getId() : -1;
-			if (id > 0)
-			{
+			if (id > 0) {
 				// Plain maps/lists ONLY in this document (JsonResources.map
 				// is a LinkedHashMap): gson's map adapter reflects the
 				// runtime type, and the JDK's private
@@ -141,8 +122,7 @@ public class WikiCalcLink
 				// InaccessibleObjectException under the module system
 				// (field-found 2026-07-23 - the button silently died).
 				Map<String, Object> idMap = JsonResources.map("id", id);
-				if (slot == GearSlot.WEAPON && dartId > 0)
-				{
+				if (slot == GearSlot.WEAPON && dartId > 0) {
 					// The blowpipe's dart rides the WEAPON's itemVars -
 					// never the ammo slot (their own harness note: an
 					// ammo-slot dart is a hand-thrown weapon; and the
@@ -158,8 +138,7 @@ public class WikiCalcLink
 		Map<String, Object> buffs = JsonResources.map("potions", potions, "onSlayerTask", onSlayerTask,
 			"inWilderness", inWilderness);
 		GearItem soulWeapon = shown.getLoadout().getWeapon();
-		if (soulWeapon != null && soulWeapon.getNameLower().contains("soulreaper"))
-		{
+		if (soulWeapon != null && soulWeapon.getNameLower().contains("soulreaper")) {
 			// Our sustained model prices the 5-stack steady state - the
 			// calc must open there too or it prices ZERO stacks (field
 			// 2026-08-21: Jad BiS -23%).
@@ -170,8 +149,7 @@ public class WikiCalcLink
 		Map<String, String> style = styleOf(shown.getAttackType());
 		String spell = shown.getSpellName();
 		if (style != null && "Autocast".equals(style.get("stance"))
-			&& (spell == null || spell.isEmpty()))
-		{
+			&& (spell == null || spell.isEmpty())) {
 			// A powered staff: its attackType wears the "magic: <name>"
 			// prefix like an autocast, but their POWERED_STAFF category
 			// has no Autocast stance - the import fell back to LONGRANGE,
@@ -180,18 +158,15 @@ public class WikiCalcLink
 			// spell name; a powered staff never does.
 			style.put("stance", "Accurate");
 		}
-		if (style != null)
-		{
+		if (style != null) {
 			loadout.put("style", style);
 		}
-		if (spell != null && !spell.isEmpty())
-		{
+		if (spell != null && !spell.isEmpty()) {
 			loadout.put("spell", JsonResources.map("name", spell));
 		}
 
 		Map<String, Object> inputs = JsonResources.map("defenceReductions", new LinkedHashMap<>());
-		if (mob.getToaInvocationLevel() > 0)
-		{
+		if (mob.getToaInvocationLevel() > 0) {
 			// The card's Invocation chip - the calculator must open at the
 			// same raid level or the cross-check numbers cannot match.
 			inputs.put("toaInvocationLevel", mob.getToaInvocationLevel());
@@ -213,8 +188,7 @@ public class WikiCalcLink
 
 	/** Their PlayerSkills shape. Mining/herblore are not tracked here -
 	 * 99 keeps the rare pickaxe-dependent checks permissive. */
-	private static Map<String, Object> skillsMap(PlayerLevels levels)
-	{
+	private static Map<String, Object> skillsMap(PlayerLevels levels) {
 		return JsonResources.map("atk", levels.getAttack(), "str", levels.getStrength(), "def", levels.getDefence(),
 			"hp", levels.getHitpoints(), "ranged", levels.getRanged(), "magic", levels.getMagic(),
 			"prayer", levels.getPrayer(), "mining", 99, "herblore", 99);
@@ -223,8 +197,7 @@ public class WikiCalcLink
 	/** The per-skill boost DELTAS the calculator adds to the base skills -
 	 * computed from our own boost model so the math matches exactly. */
 	private static Map<String, Object> boostsMap(BoostProfile boost,
-		PlayerLevels real, PlayerLevels live)
-	{
+		PlayerLevels real, PlayerLevels live) {
 		PlayerLevels boosted = boost == null ? real : boost.apply(real, live);
 		return JsonResources.map("atk", boosted.getAttack() - real.getAttack(),
 			"str", boosted.getStrength() - real.getStrength(), "def", boosted.getDefence() - real.getDefence(),
@@ -236,21 +209,17 @@ public class WikiCalcLink
 	 * "slash (aggressive)", "ranged rapid - dragon dart", "magic: Fire
 	 * Surge". The style NAME is omitted - the calculator's math reads only
 	 * type and stance. */
-	static Map<String, String> styleOf(String attackType)
-	{
-		if (attackType == null || attackType.isEmpty())
-		{
+	static Map<String, String> styleOf(String attackType) {
+		if (attackType == null || attackType.isEmpty()) {
 			return null;
 		}
 		Map<String, String> style = new LinkedHashMap<>();
-		if (attackType.startsWith("magic"))
-		{
+		if (attackType.startsWith("magic")) {
 			style.put("type", "magic");
 			style.put("stance", attackType.startsWith("magic:") ? "Autocast" : "Accurate");
 			return style;
 		}
-		if (attackType.startsWith("ranged"))
-		{
+		if (attackType.startsWith("ranged")) {
 			style.put("type", "ranged");
 			style.put("stance", attackType.contains("rapid") ? "Rapid" : "Accurate");
 			return style;

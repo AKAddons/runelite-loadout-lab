@@ -11,17 +11,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * (F-01M5FY64VERY7X0PG7S1A5J373: never loaded until now). Every shape
  * below is a real corpus string.
  */
-class MaxHitsTest
-{
-	private static int of(String raw, Family family)
-	{
+class MaxHitsTest {
+	private static int of(String raw, Family family) {
 		return MaxHits.parse(raw).of(family);
 	}
 
 	@Test
 	@DisplayName("a labelled value lands on its family and nowhere else")
-	void labelledValue()
-	{
+	void labelledValue() {
 		assertEquals(13, of("13 (Ranged)", Family.RANGED));
 		assertEquals(-1, of("13 (Ranged)", Family.MELEE));
 		assertEquals(55, of("55 (Crush)", Family.MELEE));
@@ -31,8 +28,7 @@ class MaxHitsTest
 
 	@Test
 	@DisplayName("a plain number or a 'normal' label is the general max")
-	void generalValue()
-	{
+	void generalValue() {
 		assertEquals(8, of("8", Family.GENERAL));
 		assertEquals(-1, of("8", Family.MAGIC));
 		assertEquals(34, of("34 (normal)", Family.GENERAL));
@@ -42,16 +38,14 @@ class MaxHitsTest
 
 	@Test
 	@DisplayName("ranges and alternatives take the larger value")
-	void rangesTakeTheMax()
-	{
+	void rangesTakeTheMax() {
 		assertEquals(37, of("30-37 (Melee)\u007f\u007f", Family.MELEE));
 		assertEquals(60, of("50/60 (Melee)", Family.MELEE));
 	}
 
 	@Test
 	@DisplayName("multi-hit attacks count their total")
-	void multiHitTotals()
-	{
+	void multiHitTotals() {
 		assertEquals(14, of("7x2 (Magic)", Family.MAGIC));
 		assertEquals(60, of("30 (x2) (Melee)", Family.MELEE));
 		assertEquals(6, of("2 (x3)", Family.GENERAL));
@@ -61,8 +55,7 @@ class MaxHitsTest
 
 	@Test
 	@DisplayName("several entries split on breaks, list bullets and plain runs")
-	void severalEntries()
-	{
+	void severalEntries() {
 		String araxxor = "38 (melee) <br/> 21 (magic) <br/> 34 (ranged)";
 		assertEquals(38, of(araxxor, Family.MELEE));
 		assertEquals(21, of(araxxor, Family.MAGIC));
@@ -75,16 +68,14 @@ class MaxHitsTest
 
 	@Test
 	@DisplayName("a label naming two families feeds both")
-	void twoFamilyLabel()
-	{
+	void twoFamilyLabel() {
 		assertEquals(46, of("46 (Magic / Ranged)", Family.MAGIC));
 		assertEquals(46, of("46 (Magic / Ranged)", Family.RANGED));
 	}
 
 	@Test
 	@DisplayName("specials, dragonfire and non-attackers give no regular max")
-	void ignoredValues()
-	{
+	void ignoredValues() {
 		assertEquals(-1, of("99 (charge)", Family.GENERAL));
 		assertEquals(50, of("50 <br/>80 (charge)", Family.GENERAL));
 		assertEquals(-1, of("50 (Dragonfire)", Family.MELEE));

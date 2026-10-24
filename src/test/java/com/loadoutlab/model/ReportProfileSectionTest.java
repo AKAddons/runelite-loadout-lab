@@ -12,12 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Lostmind (Discord 2026-09-17): "no usable set" on every style for one mob
  * and a report that could not show why. The report now prints what is
  * customised for each mob and names the global excludes. */
-class ReportProfileSectionTest
-{
+class ReportProfileSectionTest {
 	@Test
 	@DisplayName("the report names the global excludes and, per mob, its pins, exclusions, sims, note and skipped degradables")
-	void perMobCustomisations()
-	{
+	void perMobCustomisations() {
 		LoadoutData data = new DataService().load();
 		MonsterStats shaman = data.searchMonsters("Lizardman shaman", 1).get(0);
 		Map<String, Object> counts = Map.of("excludedItems", List.of(Map.of("id", 4151, "name", "Abyssal whip")));

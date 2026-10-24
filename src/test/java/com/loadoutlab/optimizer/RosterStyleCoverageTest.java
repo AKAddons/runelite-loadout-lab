@@ -21,12 +21,10 @@ import org.junit.Test;
  * pins the invariant: any style a mob can answer alone, it must also
  * answer inside a roster.
  */
-public class RosterStyleCoverageTest
-{
+public class RosterStyleCoverageTest {
 	/** A style-complete midgame kit: one real weapon per style plus
 	 * enough armour that every optimize has genuine candidates. */
-	private static Map<Integer, Integer> styleCompleteKit()
-	{
+	private static Map<Integer, Integer> styleCompleteKit() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);   // abyssal whip
 		owned.put(12926, 1);  // toxic blowpipe (charged)
@@ -44,8 +42,7 @@ public class RosterStyleCoverageTest
 	}
 
 	@Test
-	public void everyStyleASingleAnswersSurvivesTheRoster() throws Exception
-	{
+	public void everyStyleASingleAnswersSurvivesTheRoster() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats vents = data.searchMonsters("respiratory system", 1).get(0);
 		MonsterStats phase1 = sire(data, "Phase 1");
@@ -58,18 +55,15 @@ public class RosterStyleCoverageTest
 			service, mobs, styleCompleteKit(), 3, Collections.emptyMap());
 		Assert.assertNotNull("roster returned null (superseded?)", roster);
 
-		for (int j = 0; j < mobs.size(); j++)
-		{
+		for (int j = 0; j < mobs.size(); j++) {
 			Map<CombatStyle, OptimizerService.StyleResult> byStyle = roster.perMob.get(j);
-			for (CombatStyle style : CombatStyle.concreteValues())
-			{
+			for (CombatStyle style : CombatStyle.concreteValues()) {
 				OptimizerService.StyleResult sr = byStyle.get(style);
 				Assert.assertNotNull(
 					mobs.get(j).label() + " lost its " + style + " answer inside the roster"
 						+ " (fine alone, dash in the roster - the field bug)",
 					sr);
-				if (style != CombatStyle.MELEE)
-				{
+				if (style != CombatStyle.MELEE) {
 					Assert.assertFalse(
 						mobs.get(j).label() + " " + style + " owned list is empty in the roster",
 						sr.owned == null || sr.owned.isEmpty());
@@ -79,8 +73,7 @@ public class RosterStyleCoverageTest
 	}
 
 	@Test
-	public void fallbackAnswersNeverMasqueradeAsKitAnswers() throws Exception
-	{
+	public void fallbackAnswersNeverMasqueradeAsKitAnswers() throws Exception {
 		// Inventory 1: the kit carries at most one cross-style weapon, so at
 		// least one style per mob must be a tab-only fallback. The dash fix
 		// keeps that style's numbers visible; the kitBacked flag keeps it
@@ -96,14 +89,11 @@ public class RosterStyleCoverageTest
 			service, mobs, styleCompleteKit(), 1, Collections.emptyMap());
 		Assert.assertNotNull(roster);
 
-		for (int j = 0; j < mobs.size(); j++)
-		{
+		for (int j = 0; j < mobs.size(); j++) {
 			boolean anyKitBacked = false;
 			boolean anyFallbackWithNumbers = false;
-			for (OptimizerService.StyleResult sr : roster.perMob.get(j).values())
-			{
-				if (sr == null)
-				{
+			for (OptimizerService.StyleResult sr : roster.perMob.get(j).values()) {
+				if (sr == null) {
 					continue;
 				}
 				anyKitBacked |= sr.ownedKitBacked;
@@ -119,8 +109,7 @@ public class RosterStyleCoverageTest
 		}
 	}
 
-	private static MonsterStats sire(LoadoutData data, String version)
-	{
+	private static MonsterStats sire(LoadoutData data, String version) {
 		return data.searchMonsters("abyssal sire", 6).stream()
 			.filter(m -> version.equals(m.getVersion()))
 			.findFirst().orElseThrow(() -> new AssertionError("missing Sire " + version));

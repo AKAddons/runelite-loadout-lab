@@ -22,8 +22,7 @@ import java.util.Map;
  * un-assumed. Ids verified against net.runelite.api.ItemID 2026-08-25; the
  * divine arrays below match its DIVINE_* constants exactly.
  */
-public final class BoostSelector
-{
+public final class BoostSelector {
 	/** All dose variants - owning any counts (GE-verified ids 2026-07-21). */
 	/** Base (non-divine) potions - these used to be assumed unconditionally. */
 	/** Bastion and battlemage carry the SAME offensive boost as the ranging /
@@ -35,13 +34,10 @@ public final class BoostSelector
 	/** Every dose of each boost, by BoostProfile name (boost_items.json). */
 	private static final Map<String, int[]> IDS = new HashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.objectOrThrow("boost_items.json");
-		for (String key : root.keySet())
-		{
-			if (!key.startsWith("_"))
-			{
+		for (String key : root.keySet()) {
+			if (!key.startsWith("_")) {
 				List<Integer> ids = new ArrayList<>();
 				JsonResources.ints(root, key, ids);
 				IDS.put(key, ids.stream().mapToInt(Integer::intValue).toArray());
@@ -49,26 +45,21 @@ public final class BoostSelector
 		}
 	}
 
-	private static int[] ids(String profile)
-	{
+	private static int[] ids(String profile) {
 		return IDS.get(profile);
 	}
 
-	private BoostSelector()
-	{
+	private BoostSelector() {
 	}
 
 	/** The best boost in the GAME per style - the BiS ceiling assumption.
 	 * F2P mode: members consumables do not exist on a free world - the
 	 * only boosts are the attack/strength potion pair (audit A3.5). */
-	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p)
-	{
-		if (f2p)
-		{
+	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p) {
+		if (f2p) {
 			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
 		}
-		switch (style)
-		{
+		switch (style) {
 			// Divine variants hold the boost at ceiling for the whole fight
 			// - same numbers, better assumption (field ask 2026-07-21).
 			case MELEE: return BoostProfile.DIVINE_SUPER_COMBAT;
@@ -91,19 +82,15 @@ public final class BoostSelector
 	 * 2026-07-18): both hearts are tradeable and worth far more than any
 	 * sane risk cap, so the assumption falls back to the magic potion. */
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p,
-		boolean noHearts)
-	{
-		if (f2p)
-		{
+		boolean noHearts) {
+		if (f2p) {
 			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
 		}
 		// Each ladder walks best -> worst and ends at NONE: an unowned boost is
 		// never assumed, so a low-level account sees the numbers it can
 		// actually reach today.
-		for (String name : LADDERS.getOrDefault(style, new String[0]))
-		{
-			if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name)))
-			{
+		for (String name : LADDERS.getOrDefault(style, new String[0])) {
+			if (!(noHearts && name.endsWith("_HEART")) && ownsAny(owned, ids(name))) {
 				return BoostProfile.valueOf(name);
 			}
 		}
@@ -115,15 +102,12 @@ public final class BoostSelector
 	 * never a potion they don't have, and never MAXED as a stand-in for
 	 * unknown levels (the old Death Charge seed did both). */
 	public static int reachableMagic(PlayerLevels real,
-		PlayerLevels live, OwnedItems owned)
-	{
-		if (real == null)
-		{
+		PlayerLevels live, OwnedItems owned) {
+		if (real == null) {
 			return live == null ? 0 : live.getMagic();
 		}
 		int reachable = live == null ? real.getMagic() : live.getMagic();
-		if (owned != null)
-		{
+		if (owned != null) {
 			BoostProfile best = bestFor(CombatStyle.MAGIC,
 				owned, false, false);
 			reachable = Math.max(reachable, best.apply(real, live).getMagic());
@@ -131,12 +115,9 @@ public final class BoostSelector
 		return Math.max(reachable, real.getMagic());
 	}
 
-	private static boolean ownsAny(OwnedItems owned, int[] ids)
-	{
-		for (int id : ids)
-		{
-			if (owned.owns(id))
-			{
+	private static boolean ownsAny(OwnedItems owned, int[] ids) {
+		for (int id : ids) {
+			if (owned.owns(id)) {
 				return true;
 			}
 		}

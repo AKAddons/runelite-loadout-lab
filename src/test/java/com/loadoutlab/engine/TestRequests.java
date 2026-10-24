@@ -11,10 +11,8 @@ import com.loadoutlab.data.SpellStats;
  * so it lived on only for the tests while counting against the Plugin Hub's
  * main-source token cap. Moved here, where test sources are free.
  */
-public final class TestRequests
-{
-	private TestRequests()
-	{
+public final class TestRequests {
+	private TestRequests() {
 	}
 
 	/** A request with the requirement profile defaulted to MAXED. */
@@ -29,8 +27,7 @@ public final class TestRequests
 		boolean includeUntradeables,
 		boolean onSlayerTask,
 		OwnedItems ownedItems,
-		int resultLimit)
-	{
+		int resultLimit) {
 		return new OptimizationRequest(
 			monster,
 			style,

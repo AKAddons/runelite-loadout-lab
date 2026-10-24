@@ -29,8 +29,7 @@ import java.util.List;
  * default; the arms of {@link #setParam} cover the few with rules of
  * their own.
  */
-public class PageState
-{
+public class PageState {
 	private MonsterStats mob;
 	private List<MonsterStats> rosterMobs;
 	private String rosterName;
@@ -104,18 +103,15 @@ public class PageState
 	private static final List<String> SNAPSHOT_KEYS = new ArrayList<>();
 	private static final Set<String> VIEW_PARAMS = new HashSet<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.objectOrThrow("page_params.json");
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("defaults").entrySet())
-		{
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("defaults").entrySet()) {
 			JsonPrimitive v = e.getValue().getAsJsonPrimitive();
 			DEFAULTS.put(e.getKey(), v.isBoolean() ? v.getAsBoolean() : v.isNumber() ? (Object) v.getAsInt() : v.getAsString());
 		}
 		// The one default the engine owns (its uncapped sentinel), never the file.
 		DEFAULTS.replace("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("clamps").entrySet())
-		{
+		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("clamps").entrySet()) {
 			CLAMPS.put(e.getKey(), JsonResources.ints(e.getValue().getAsJsonArray()));
 		}
 		JsonResources.strings(root, "snapshotKeys", SNAPSHOT_KEYS);
@@ -127,13 +123,11 @@ public class PageState
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
 	/** Parameters that change what is SHOWN, not what is computed. */
-	public static boolean isViewParam(String param)
-	{
+	public static boolean isViewParam(String param) {
 		return VIEW_PARAMS.contains(param);
 	}
 
-	public synchronized void select(MonsterStats mob)
-	{
+	public synchronized void select(MonsterStats mob) {
 		params.put("raidSelection", false);
 		this.mob = mob;
 		this.rosterMobs = null;
@@ -141,64 +135,53 @@ public class PageState
 	}
 
 	public synchronized void selectRoster(List<MonsterStats> mobs, String name,
-		boolean raid)
-	{
+		boolean raid) {
 		params.put("raidSelection", raid);
 		this.mob = null;
 		this.rosterMobs = mobs;
 		this.rosterName = name;
 	}
 
-	public synchronized MonsterStats mob()
-	{
+	public synchronized MonsterStats mob() {
 		return mob;
 	}
 
-	public synchronized List<MonsterStats> rosterMobs()
-	{
+	public synchronized List<MonsterStats> rosterMobs() {
 		return rosterMobs;
 	}
 
 	/** Selection snapshot for undo: restore() reinstates it exactly -
 	 * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
-	public synchronized Object[] selectionSnapshot()
-	{
+	public synchronized Object[] selectionSnapshot() {
 		Map<String, Object> seeded = new LinkedHashMap<>();
-		for (String key : SNAPSHOT_KEYS)
-		{
+		for (String key : SNAPSHOT_KEYS) {
 			seeded.put(key, params.get(key));
 		}
 		return new Object[]{mob, rosterMobs, rosterName, seeded};
 	}
 
 	@SuppressWarnings("unchecked")
-	public synchronized void restoreSelection(Object[] snapshot)
-	{
+	public synchronized void restoreSelection(Object[] snapshot) {
 		this.mob = (MonsterStats) snapshot[0];
 		this.rosterMobs = (List<MonsterStats>) snapshot[1];
 		this.rosterName = (String) snapshot[2];
 		params.putAll((Map<String, Object>) snapshot[3]);
 	}
 
-	public synchronized boolean hasSelection()
-	{
+	public synchronized boolean hasSelection() {
 		return mob != null || rosterMobs != null;
 	}
 
 	/** Apply one named parameter; returns false for an unknown name so
 	 * the engine can refuse loudly instead of silently dropping it. */
-	public synchronized boolean setParam(String param, Object value)
-	{
+	public synchronized boolean setParam(String param, Object value) {
 		Object current = param == null ? null : params.get(param);
-		if (current == null || DERIVED.contains(param))
-		{
+		if (current == null || DERIVED.contains(param)) {
 			return false;
 		}
-		switch (param)
-		{
+		switch (param) {
 			case "cannon1Material":
-			case "cannon2Material":
-			{
+			case "cannon2Material": {
 				// The material gates its crew: a pick raises the operator.
 				String operator = "cannon" + param.charAt(6) + "Operator";
 				params.put(param, String.valueOf(value));
@@ -206,15 +189,13 @@ public class PageState
 				return true;
 			}
 			case "cannon1Operator":
-			case "cannon2Operator":
-			{
+			case "cannon2Operator": {
 				// At most one cannon is yours: picking "you" on one demotes the other.
 				int i = param.charAt(6) - '1';
 				String mine = operator(value, str("cannon" + (i + 1) + "Material"));
 				params.put(param, mine);
 				String other = "cannon" + (2 - i) + "Operator";
-				if ("you".equals(mine) && "you".equals(params.get(other)))
-				{
+				if ("you".equals(mine) && "you".equals(params.get(other))) {
 					params.put(other, raiseCrewToGate("crew1", str("cannon" + (2 - i) + "Material")));
 				}
 				return true;
@@ -228,8 +209,7 @@ public class PageState
 			case "optimizeMode":
 				params.put(param, "BALANCED".equals(value) || "TANKY".equals(value) ? value : "MAX_DPS");
 				return true;
-			case "riskBudgetGp":
-			{
+			case "riskBudgetGp": {
 				// ONE source of truth for "is there a cap" (field report
 				// 2026-08-22): the chip lit up on riskBudgetGp > 0 while
 				// the compute asked riskBudgetGp != DEFAULT - and the
@@ -252,16 +232,11 @@ public class PageState
 				params.put("selectedTab", "");
 				return true;
 			default:
-				if (current instanceof Boolean)
-				{
+				if (current instanceof Boolean) {
 					params.put(param, Boolean.TRUE.equals(value));
-				}
-				else if (current instanceof String)
-				{
+				} else if (current instanceof String) {
 					params.put(param, value instanceof String ? value : "");
-				}
-				else
-				{
+				} else {
 					int[] clamp = CLAMPS.getOrDefault(param, new int[]{Integer.MIN_VALUE, Integer.MAX_VALUE});
 					params.put(param, Math.max(clamp[0], Math.min(clamp[1], asInt(value, defaultInt(param)))));
 				}
@@ -270,25 +245,21 @@ public class PageState
 	}
 
 	/** An int param's default - what a non-numeric value falls back to. */
-	private static int defaultInt(String param)
-	{
+	private static int defaultInt(String param) {
 		return (Integer) DEFAULTS.get(param);
 	}
 
 	/** Normalize an operator pick; a crew pick is clamped 1-4 and then
 	 * raised to the material's gate. */
-	private static String operator(Object value, String material)
-	{
+	private static String operator(Object value, String material) {
 		String v = String.valueOf(value);
 		return "you".equals(v) ? "you" : raiseCrewToGate("crew" + Math.max(1, Math.min(4, crewLevel(v))), material);
 	}
 
 	/** Crew operators rise to the minimum Privateering the material demands;
 	 * "you" and already-sufficient crew pass through untouched. */
-	private static String raiseCrewToGate(String operator, String material)
-	{
-		if ("you".equals(operator))
-		{
+	private static String raiseCrewToGate(String operator, String material) {
+		if ("you".equals(operator)) {
 			return operator;
 		}
 		NavalCombat.Cannon cannon =
@@ -299,45 +270,35 @@ public class PageState
 
 	/** The Privateering of a "crewN" operator; 1 for "you", a bare "crew"
 	 * or anything else. */
-	static int crewLevel(String operator)
-	{
-		if (operator != null && operator.startsWith("crew"))
-		{
-			try
-			{
+	static int crewLevel(String operator) {
+		if (operator != null && operator.startsWith("crew")) {
+			try {
 				return Integer.parseInt(operator.substring(4));
-			}
-			catch (NumberFormatException ignored)
-			{
+			} catch (NumberFormatException ignored) {
 			}
 		}
 		return 1;
 	}
 
-	private static int asInt(Object value, int fallback)
-	{
+	private static int asInt(Object value, int fallback) {
 		return value instanceof Number ? ((Number) value).intValue() : fallback;
 	}
 
-	private boolean flag(String key)
-	{
+	private boolean flag(String key) {
 		return Boolean.TRUE.equals(params.get(key));
 	}
 
-	private int num(String key)
-	{
+	private int num(String key) {
 		return (Integer) params.get(key);
 	}
 
-	private String str(String key)
-	{
+	private String str(String key) {
 		return (String) params.get(key);
 	}
 
 	/** The params node of the model page - what a renderer needs to
 	 * draw every chip in its current position. */
-	public synchronized Map<String, Object> paramsNode()
-	{
+	public synchronized Map<String, Object> paramsNode() {
 		Map<String, Object> node = new LinkedHashMap<>(params);
 		node.put("prayerPicks", lowered(prayerPicks));
 		node.put("boostPicks", lowered(boostPicks));
@@ -345,39 +306,31 @@ public class PageState
 	}
 
 	/** A pick map keyed by the style's lower-case name, for the page. */
-	private static Map<String, Object> lowered(Map<CombatStyle, String> picks)
-	{
+	private static Map<String, Object> lowered(Map<CombatStyle, String> picks) {
 		Map<String, Object> out = new LinkedHashMap<>();
-		for (Map.Entry<CombatStyle, String> pick : picks.entrySet())
-		{
+		for (Map.Entry<CombatStyle, String> pick : picks.entrySet()) {
 			out.put(pick.getKey().name().toLowerCase(), pick.getValue());
 		}
 		return out;
 	}
 
-	public synchronized int toaInvocation()
-	{
+	public synchronized int toaInvocation() {
 		return num("toaInvocation");
 	}
 
 	/** Prayer/boost pick per style: null value = Detect (remove),
 	 * "NONE" = explicitly none, else the option key. */
-	public synchronized void setPick(boolean prayer, CombatStyle style, String value)
-	{
+	public synchronized void setPick(boolean prayer, CombatStyle style, String value) {
 		Map<CombatStyle, String> picks = prayer ? prayerPicks : boostPicks;
-		if (value == null)
-		{
+		if (value == null) {
 			picks.remove(style);
-		}
-		else
-		{
+		} else {
 			picks.put(style, value);
 		}
 	}
 
 	/** The compute settings, one object per compute (see CommandEngine). */
-	public synchronized ComputeParams computeParams()
-	{
+	public synchronized ComputeParams computeParams() {
 		// Kept-slots mirror the classic riskCap() gate: a risk cap only
 		// binds in the wilderness or on a PvP world, and Protect Item
 		// keeps a 4th slot - none on High Risk. The wilderness flag itself

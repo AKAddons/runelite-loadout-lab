@@ -6,8 +6,7 @@ import com.loadoutlab.data.*;
 import java.util.*;
 import java.util.Map;
 
-public final class Loadout
-{
+public final class Loadout {
 	private final EnumMap<GearSlot, GearItem> gear;
 	@Getter
 	private final StatBlock offensive;
@@ -25,8 +24,7 @@ public final class Loadout
 	/** namesLower minus "Inactive"-version items (uncharged crystal). */
 	private final String activeNamesLower;
 
-	public Loadout(Map<GearSlot, GearItem> gear)
-	{
+	public Loadout(Map<GearSlot, GearItem> gear) {
 		this(copyOf(gear), true);
 	}
 
@@ -36,13 +34,11 @@ public final class Loadout
 	 * EnumMap per beam trial - the public constructor's defensive copy
 	 * doubled that work across hundreds of thousands of trials.
 	 */
-	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear)
-	{
+	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) {
 		return new Loadout(gear, true);
 	}
 
-	private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear)
-	{
+	private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
 		EnumMap<GearSlot, GearItem> copy = new EnumMap<>(GearSlot.class);
 		copy.putAll(gear);
 		return copy;
@@ -50,8 +46,7 @@ public final class Loadout
 
 	/** The marker keeps this overload from ever being chosen by a plain
 	 * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
-	private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker)
-	{
+	private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
 		this.gear = gear;
 
 		// Summed into an int array, not StatBlock.plus chains - the chain
@@ -62,10 +57,8 @@ public final class Loadout
 		int totalCost = 0;
 		StringBuilder names = new StringBuilder(160);
 		StringBuilder activeNames = new StringBuilder(160);
-		for (GearItem item : this.gear.values())
-		{
-			if (item == null)
-			{
+		for (GearItem item : this.gear.values()) {
+			if (item == null) {
 				continue;
 			}
 			add(off, item.getOffensive());
@@ -73,8 +66,7 @@ public final class Loadout
 			add(bon, item.getBonuses());
 			totalCost += item.getPriceOrZero();
 			names.append(item.getNameLower()).append('\n');
-			if (!"inactive".equalsIgnoreCase(item.getVersion()))
-			{
+			if (!"inactive".equalsIgnoreCase(item.getVersion())) {
 				activeNames.append(item.getNameLower()).append('\n');
 			}
 		}
@@ -86,8 +78,7 @@ public final class Loadout
 		this.activeNamesLower = activeNames.toString();
 	}
 
-	private static void add(int[] acc, StatBlock block)
-	{
+	private static void add(int[] acc, StatBlock block) {
 		acc[0] += block.getStab();
 		acc[1] += block.getSlash();
 		acc[2] += block.getCrush();
@@ -99,8 +90,7 @@ public final class Loadout
 		acc[8] += block.getPrayer();
 	}
 
-	private static StatBlock block(int[] acc)
-	{
+	private static StatBlock block(int[] acc) {
 		return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4],
 			acc[5], acc[6], acc[7], acc[8]);
 	}
@@ -114,8 +104,7 @@ public final class Loadout
 	private GearItem quiverAmmo;
 
 	/** A copy with ammunition moved into the quiver (see QuiverAmmo). */
-	public Loadout withQuiverAmmo(GearItem carried)
-	{
+	public Loadout withQuiverAmmo(GearItem carried) {
 		Loadout copy = new Loadout(copyOf(gear), true);
 		copy.quiverAmmo = carried;
 		return copy;
@@ -123,15 +112,11 @@ public final class Loadout
 
 	/** A copy with one slot changed (null empties it); the quiver's
 	 * carried ammo rides along. */
-	public Loadout with(GearSlot slot, GearItem item)
-	{
+	public Loadout with(GearSlot slot, GearItem item) {
 		EnumMap<GearSlot, GearItem> copy = copyOf(gear);
-		if (item == null)
-		{
+		if (item == null) {
 			copy.remove(slot);
-		}
-		else
-		{
+		} else {
 			copy.put(slot, item);
 		}
 		Loadout out = new Loadout(copy, true);
@@ -140,13 +125,10 @@ public final class Loadout
 	}
 
 	/** The worn items, empty slots skipped. */
-	public List<GearItem> items()
-	{
+	public List<GearItem> items() {
 		List<GearItem> items = new ArrayList<>(gear.size());
-		for (GearItem item : gear.values())
-		{
-			if (item != null)
-			{
+		for (GearItem item : gear.values()) {
+			if (item != null) {
 				items.add(item);
 			}
 		}
@@ -154,40 +136,33 @@ public final class Loadout
 	}
 
 	/** The worn item ids. */
-	public Set<Integer> ids()
-	{
+	public Set<Integer> ids() {
 		Set<Integer> ids = new HashSet<>();
-		for (GearItem item : items())
-		{
+		for (GearItem item : items()) {
 			ids.add(item.getId());
 		}
 		return ids;
 	}
 
-	public GearItem get(GearSlot slot)
-	{
+	public GearItem get(GearSlot slot) {
 		return gear.get(slot);
 	}
 
-	public GearItem getWeapon()
-	{
+	public GearItem getWeapon() {
 		return gear.get(GearSlot.WEAPON);
 	}
 
-	public Map<GearSlot, GearItem> getGear()
-	{
+	public Map<GearSlot, GearItem> getGear() {
 		return Collections.unmodifiableMap(gear);
 	}
 
 	/** Lowercased worn item names, newline-joined (see field doc). */
-	String namesLower()
-	{
+	String namesLower() {
 		return namesLower;
 	}
 
 	/** namesLower() without "Inactive"-version items. */
-	String activeNamesLower()
-	{
+	String activeNamesLower() {
 		return activeNamesLower;
 	}
 }

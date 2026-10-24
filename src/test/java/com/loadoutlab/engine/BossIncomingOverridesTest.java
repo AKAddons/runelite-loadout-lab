@@ -15,30 +15,25 @@ import com.loadoutlab.data.LoadoutData;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BossIncomingOverridesTest
-{
+public class BossIncomingOverridesTest {
 	/** Graardor-shaped stats: atk 280 (+120), str 350 (+43), rng 350, 6t.
 	 * The NPC formula derives a ranged max hit of 58 from these. */
-	private static MonsterOffence offence(List<String> styles)
-	{
+	private static MonsterOffence offence(List<String> styles) {
 		return new MonsterOffence(280, 350, 350, 80,
 			120, 43, 100, 40, 0, 0, 6, styles);
 	}
 
-	private static MonsterStats named(String name, List<String> styles)
-	{
+	private static MonsterStats named(String name, List<String> styles) {
 		return versioned(name, "", styles);
 	}
 
-	private static MonsterStats versioned(String name, String version, List<String> styles)
-	{
+	private static MonsterStats versioned(String name, String version, List<String> styles) {
 		return new MonsterStats(1, name, version, 600, 255, 4, 250, 80, 0,
 			MonsterDefences.ZERO, offence(styles),
 			java.util.Collections.emptyList(), false, "", 0);
 	}
 
-	private static Loadout armour(int stab, int slash, int crush, int magic, int ranged)
-	{
+	private static Loadout armour(int stab, int slash, int crush, int magic, int ranged) {
 		GearItem body = new GearItem(1, "Test platebody", "", GearSlot.BODY, "", 0,
 			false, true, true, true, 0,
 			StatBlock.ZERO,
@@ -48,12 +43,9 @@ public class BossIncomingOverridesTest
 	}
 
 	private static IncomingDpsCalculator.StyleThreat threat(
-		IncomingDpsCalculator.Result result, String style)
-	{
-		for (IncomingDpsCalculator.StyleThreat t : result.threats)
-		{
-			if (t.style.toLowerCase(Locale.ROOT).equals(style))
-			{
+		IncomingDpsCalculator.Result result, String style) {
+		for (IncomingDpsCalculator.StyleThreat t : result.threats) {
+			if (t.style.toLowerCase(Locale.ROOT).equals(style)) {
 				return t;
 			}
 		}
@@ -62,8 +54,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void overrideReplacesTheDerivedMaxHitWithGraardorsScripted35Ranged()
-	{
+	public void overrideReplacesTheDerivedMaxHitWithGraardorsScripted35Ranged() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("General Graardor", Arrays.asList("Crush", "Ranged")),
 			armour(200, 200, 200, 0, 150), 99, 99);
@@ -77,8 +68,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void krakenRollsMagicAccuracyButPiercesPrayer()
-	{
+	public void krakenRollsMagicAccuracyButPiercesPrayer() {
 		// Wiki: "uses typeless Magic, and as such Protect from Magic does
 		// not provide any degree of damage reduction", yet it "can hit very
 		// hard [28] but has very poor accuracy" - so the model is a normal
@@ -100,8 +90,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void partialPierceAttacksAlwaysContributeSomething()
-	{
+	public void partialPierceAttacksAlwaysContributeSomething() {
 		// Corporeal Beast: magic carries TRUE max 65 with prayerFactor
 		// 0.667 - whichever prayer is chosen, the prayed total must equal
 		// the per-threat identity sum and stay strictly positive.
@@ -111,8 +100,7 @@ public class BossIncomingOverridesTest
 		IncomingDpsCalculator.StyleThreat magic = threat(result, "magic");
 		Assert.assertEquals(65, magic.maxHit);
 		double identity = 0;
-		for (IncomingDpsCalculator.StyleThreat threat : result.threats)
-		{
+		for (IncomingDpsCalculator.StyleThreat threat : result.threats) {
 			identity += threat.dps * threat.share * (threat.blocked ? threat.prayerFactor : 1);
 		}
 		Assert.assertEquals(identity, result.totalDps, 1e-9);
@@ -121,8 +109,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void rotationSharesWeightEachStylesContributionToTheTotal()
-	{
+	public void rotationSharesWeightEachStylesContributionToTheTotal() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("General Graardor", Arrays.asList("Crush", "Ranged")),
 			armour(200, 200, 200, 0, 150), 99, 99);
@@ -137,8 +124,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void typelessChipDamageIsModeledAsAlwaysHittingAndNeverBlocked()
-	{
+	public void typelessChipDamageIsModeledAsAlwaysHittingAndNeverBlocked() {
 		// King Black Dragon: dragonfire (65 and 50) is typeless - accuracy 1
 		// against any armour, contributing at its share regardless of prayer.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
@@ -154,8 +140,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void monstersWithoutAnOverrideKeepTheUniformV1Model()
-	{
+	public void monstersWithoutAnOverrideKeepTheUniformV1Model() {
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
 			named("Test Boss", Arrays.asList("Crush", "Ranged")),
 			armour(200, 200, 200, 0, 150), 99, 99);
@@ -166,8 +151,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void zulrahFormsCarryTheirOwnAttacksAndPrayers()
-	{
+	public void zulrahFormsCarryTheirOwnAttacksAndPrayers() {
 		// Field bug 2026-07-17: the name-keyed whole-fight entry told every
 		// form to pray mage. Version-keyed entries give each form ITS OWN
 		// protect prayer; the bare name stays as the whole-fight fallback.
@@ -223,8 +207,7 @@ public class BossIncomingOverridesTest
 		"melee", "stab", "slash", "crush", "ranged", "magic", "typeless");
 
 	@Test
-	public void everySeededBossIsPresentAndItsSharesSumToAtMostOne()
-	{
+	public void everySeededBossIsPresentAndItsSharesSumToAtMostOne() {
 		List<String> expected = Arrays.asList(
 			"general graardor", "k'ril tsutsaroth", "kree'arra",
 			"commander zilyana", "zulrah", "vorkath", "cerberus", "callisto",
@@ -232,8 +215,7 @@ public class BossIncomingOverridesTest
 			"chaos elemental", "king black dragon", "alchemical hydra",
 			"corporeal beast", "kraken",
 			"zulrah|serpentine", "zulrah|tanzanite", "zulrah|magma");
-		for (String name : expected)
-		{
+		for (String name : expected) {
 			BossIncomingOverrides.BossOverride override = BossIncomingOverrides
 				.overridesFor(named(name, List.of("Melee")));
 			Assert.assertNotNull(name, override);
@@ -241,8 +223,7 @@ public class BossIncomingOverridesTest
 			// so demand attacks before looking at them.
 			Assert.assertFalse(name + ": no attacks", override.getAttacks().isEmpty());
 			double shares = 0;
-			for (BossIncomingOverrides.Attack attack : override.getAttacks())
-			{
+			for (BossIncomingOverrides.Attack attack : override.getAttacks()) {
 				Assert.assertTrue(name + ": unknown style " + attack.getStyle(),
 					STYLES.contains(attack.getStyle()));
 				Assert.assertTrue(name, attack.getMaxHit() > 0);
@@ -251,8 +232,7 @@ public class BossIncomingOverridesTest
 				Assert.assertTrue(name, attack.getSpeedTicks() >= 0);
 				Assert.assertTrue(name + ": prayerFactor out of range",
 					attack.getPrayerFactor() >= 0 && attack.getPrayerFactor() <= 1);
-				if ("typeless".equals(attack.getStyle()))
-				{
+				if ("typeless".equals(attack.getStyle())) {
 					Assert.assertFalse(name, attack.isPrayable());
 				}
 				shares += attack.getShare();
@@ -263,8 +243,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void fullyPrayerPiercingBossesRecommendNoProtectionPrayer()
-	{
+	public void fullyPrayerPiercingBossesRecommendNoProtectionPrayer() {
 		// Vet'ion's lightning and shield bash are dodge-based, not prayable:
 		// no prayer recommendation, and praying changes nothing.
 		IncomingDpsCalculator.Result result = IncomingDpsCalculator.calculate(
@@ -276,8 +255,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void partialPrayerPierceCountsTheThroughDamage()
-	{
+	public void partialPrayerPierceCountsTheThroughDamage() {
 		// Corp's magic: TRUE max 65, Protect from Magic blocks only 1/3
 		// (factor 0.667). Prayed total must include the pierce-through;
 		// unprayed must use the full 65-based dps.
@@ -291,10 +269,8 @@ public class BossIncomingOverridesTest
 		Assert.assertTrue(result.totalDps > 0);
 		Assert.assertTrue(result.totalDps < result.unprayedDps);
 		boolean sawPierce = false;
-		for (IncomingDpsCalculator.StyleThreat threat : result.threats)
-		{
-			if (threat.blocked && threat.prayerFactor > 0)
-			{
+		for (IncomingDpsCalculator.StyleThreat threat : result.threats) {
+			if (threat.blocked && threat.prayerFactor > 0) {
 				sawPierce = true;
 				Assert.assertEquals(65, threat.maxHit);
 				Assert.assertEquals(0.667, threat.prayerFactor, 1e-9);
@@ -304,8 +280,7 @@ public class BossIncomingOverridesTest
 	}
 
 	@Test
-	public void prayerChoiceMaximizesSavingsNotRawSize()
-	{
+	public void prayerChoiceMaximizesSavingsNotRawSize() {
 		// Callisto: melee 55 but only half-blocked; magic 50 fully
 		// blockable. Praying magic SAVES more than praying melee even
 		// though the melee hit is bigger - the chosen prayer must be the
@@ -317,8 +292,7 @@ public class BossIncomingOverridesTest
 		Assert.assertEquals("Protect from Magic", result.protectPrayer);
 	}
 
-	private static Loadout tankMeleeArmour()
-	{
+	private static Loadout tankMeleeArmour() {
 		com.loadoutlab.data.GearItem body = new com.loadoutlab.data.GearItem(
 			99, "Tank platebody", "", com.loadoutlab.data.GearSlot.BODY, "", 0,
 			false, true, true, true, 0,

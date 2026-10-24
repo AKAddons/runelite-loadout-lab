@@ -14,28 +14,23 @@ import net.runelite.client.config.ConfigManager;
  * thread), matching the mob-profile filter items. Per character since
  * 0.4.1 (a main and a test account had shared this list).
  */
-public class AlwaysFilterStore extends ScopedMapStore<Integer, String>
-{
+public class AlwaysFilterStore extends ScopedMapStore<Integer, String> {
 	static final String KEY = "alwaysFilterItems";
 
-	public AlwaysFilterStore(ConfigManager configManager, Gson gson)
-	{
+	public AlwaysFilterStore(ConfigManager configManager, Gson gson) {
 		super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
 	}
 
-	public synchronized Map<Integer, String> all()
-	{
+	public synchronized Map<Integer, String> all() {
 		return Collections.unmodifiableMap(new LinkedHashMap<>(items));
 	}
 
-	public synchronized void add(int itemId, String name)
-	{
+	public synchronized void add(int itemId, String name) {
 		items.put(itemId, name == null ? ("item " + itemId) : name);
 		save();
 	}
 
-	public synchronized void remove(int itemId)
-	{
+	public synchronized void remove(int itemId) {
 		items.remove(itemId);
 		save();
 	}

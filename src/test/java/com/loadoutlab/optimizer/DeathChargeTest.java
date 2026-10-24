@@ -16,11 +16,9 @@ import org.junit.Test;
  * blow, one refund per 60s cast window - an extra energy stream for the
  * spec value model, plumbed panel -> request -> specDpsAdded.
  */
-public class DeathChargeTest
-{
+public class DeathChargeTest {
 	@Test
-	public void deathChargeAddsOneRefundPerCastWindow()
-	{
+	public void deathChargeAddsOneRefundPerCastWindow() {
 		// SUSTAINED pricing (field direction 2026-08-08): the budget is
 		// regen over the kill - no opening bar; a 50-200 mob grind is
 		// regen-bound and the bar amortises to nothing.
@@ -43,8 +41,7 @@ public class DeathChargeTest
 	}
 
 	@Test
-	public void yamasRiteHalvesTheEffectiveWindow()
-	{
+	public void yamasRiteHalvesTheEffectiveWindow() {
 		// Upgraded (level 2): two refunds per cast = a 30s window. A 30s
 		// kill now earns the FULL 15 (vs 7.5 base); a long kill is
 		// unchanged (only one kill fits the minute either way).
@@ -57,8 +54,7 @@ public class DeathChargeTest
 	}
 
 	@Test
-	public void theRequestCarriesTheFlagThroughItsWither()
-	{
+	public void theRequestCarriesTheFlagThroughItsWither() {
 		MonsterStats dummy = new MonsterStats(1, "Test", "", 100, 100, 1, 1, null, null);
 		OptimizationRequest base = new OptimizationRequest(dummy, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.NONE, null, 0,

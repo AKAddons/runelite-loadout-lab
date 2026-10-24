@@ -21,10 +21,8 @@ import java.util.List;
  * folded into the number.
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class SpecialAttack
-{
-	public enum Kind
-	{
+public final class SpecialAttack {
+	public enum Kind {
 		/** One hit: accuracy and/or damage multipliers. */
 		SINGLE,
 		/** Two fully independent hits (dragon dagger, dragon knife). */
@@ -87,14 +85,11 @@ public final class SpecialAttack
 	 * prefixes ("magic shortbow (i)") come first in the file. */
 	private static final List<SpecialAttack> REGISTRY = loadRegistry();
 
-	private static List<SpecialAttack> loadRegistry()
-	{
+	private static List<SpecialAttack> loadRegistry() {
 		List<SpecialAttack> specs = new ArrayList<>();
-		try
-		{
+		try {
 			for (com.google.gson.JsonElement element : JsonResources.array(
-				"special_attacks.json"))
-			{
+				"special_attacks.json")) {
 				com.google.gson.JsonObject row = element.getAsJsonObject();
 				List<String> prefixes = new ArrayList<>();
 				JsonResources.strings(row, "prefixes", prefixes);
@@ -112,9 +107,7 @@ public final class SpecialAttack
 						? row.get("drainMagicFraction").getAsDouble() : 0,
 					row.has("multi") ? row.get("multi").getAsInt() : 0));
 			}
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			// A malformed table must never take the client down; the spec
 			// tests fail loudly on an empty registry instead.
 			return List.of();
@@ -124,8 +117,7 @@ public final class SpecialAttack
 
 
 	/** The definition for this weapon at this combat style, or null. */
-	public static SpecialAttack match(GearItem item, CombatStyle style)
-	{
+	public static SpecialAttack match(GearItem item, CombatStyle style) {
 		SpecialAttack spec = match(item);
 		return spec != null && spec.style == style ? spec : null;
 	}
@@ -133,19 +125,14 @@ public final class SpecialAttack
 	/** Style-free match: the spec swap is its own weapon switch, so every
 	 * spec weapon is a candidate for ANY set (field request 2026-07-17 -
 	 * "sometimes you want to use magic + chally"). */
-	public static SpecialAttack match(GearItem item)
-	{
-		if (item == null || item.getSlot() != GearSlot.WEAPON)
-		{
+	public static SpecialAttack match(GearItem item) {
+		if (item == null || item.getSlot() != GearSlot.WEAPON) {
 			return null;
 		}
 		String name = item.getNameLower();
-		for (SpecialAttack spec : REGISTRY)
-		{
-			for (String prefix : spec.namePrefixes)
-			{
-				if (name.startsWith(prefix))
-				{
+		for (SpecialAttack spec : REGISTRY) {
+			for (String prefix : spec.namePrefixes) {
+				if (name.startsWith(prefix)) {
 					return spec;
 				}
 			}
@@ -159,19 +146,16 @@ public final class SpecialAttack
 	 */
 	/** The spec's multiplier at a stack of targets (the Multi card, Andrew
 	 * 2026-10-19): the stack capped at the targets it hits; 1 single-target. */
-	public double multiFactor(int stack)
-	{
+	public double multiFactor(int stack) {
 		return multiTargets <= 0 ? 1 : Math.max(1, Math.min(stack, multiTargets));
 	}
 
-	public double expectedDamage(DpsResult base, MonsterStats monster, PlayerLevels levels)
-	{
+	public double expectedDamage(DpsResult base, MonsterStats monster, PlayerLevels levels) {
 		// The Wardens' ejected core (wiki): melee "will always deal their
 		// max hit" - hitChance and every damage roll collapse to their
 		// caps. Without this, the rolls below would halve every spec's
 		// value at the one place the game is built around spec dumping.
-		if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster))
-		{
+		if (style == CombatStyle.MELEE && MonsterMechanics.isWardenCore(monster)) {
 			return coreMaxDamage(base, monster);
 		}
 		long attackRoll = base.getAttackRoll();
@@ -183,8 +167,7 @@ public final class SpecialAttack
 		double boosted = mean((int) (max * damageMultiplier));
 		double hit = hitChance * boosted;
 
-		switch (kind)
-		{
+		switch (kind) {
 			case SINGLE:
 				return hit;
 			case DOUBLE_INDEPENDENT:
@@ -228,11 +211,9 @@ public final class SpecialAttack
 	 * tier-1 cap, the voidwaker's uniform roll caps at 150%. The 1x1
 	 * core denies the halberd sweep its second hit - which is exactly
 	 * why the DDS dump beats a chally there (field report 2026-08-06). */
-	private double coreMaxDamage(DpsResult base, MonsterStats monster)
-	{
+	private double coreMaxDamage(DpsResult base, MonsterStats monster) {
 		int max = base.getMaxHit();
-		switch (kind)
-		{
+		switch (kind) {
 			case HALBERD_SWEEP:
 				return (monster.getSize() > 1 ? 2.0 : 1.0)
 					* (int) (max * damageMultiplier);
@@ -262,8 +243,7 @@ public final class SpecialAttack
 	 * max added to the minimum). Expected totals per tier: 1.5max-1,
 	 * 1.25max, max, 0.75max; a full miss averages ~1.
 	 */
-	private static double clawsExpected(double p, int max)
-	{
+	private static double clawsExpected(double p, int max) {
 		double miss = 1 - p;
 		return p * (1.5 * max - 1)
 			+ miss * p * (1.25 * max)
@@ -277,13 +257,11 @@ public final class SpecialAttack
 	 * k >= 1 successes damage is uniform in [(50+20k)%, (90+20k)%] of max
 	 * (mean (0.7 + 0.2k) * max); zero successes deal nothing.
 	 */
-	private static double multiRollTieredExpected(double p, int max)
-	{
+	private static double multiRollTieredExpected(double p, int max) {
 		// Binomial coefficients C(4, k) for k = 0..4.
 		final int[] choose = {1, 4, 6, 4, 1};
 		double expected = 0;
-		for (int k = 1; k <= 4; k++)
-		{
+		for (int k = 1; k <= 4; k++) {
 			expected += choose[k] * Math.pow(p, k) * Math.pow(1 - p, 4 - k)
 				* (0.7 + 0.2 * k) * max;
 		}
@@ -296,8 +274,7 @@ public final class SpecialAttack
 	 * full miss deals 0/1/2 with 20/40/40% odds (expected 1.2). The burn
 	 * damage-over-time is described in the note, not counted here.
 	 */
-	private static double cascadeClawsExpected(double p, int max)
-	{
+	private static double cascadeClawsExpected(double p, int max) {
 		double miss = 1 - p;
 		return p * (1.25 * max)
 			+ miss * p * (1.00 * max)
@@ -306,20 +283,17 @@ public final class SpecialAttack
 	}
 
 	/** Dark bow: two hits, each rolled 0..boostedMax then clamped [min, 48]. */
-	private static double darkBowExpected(double p, int max, boolean dragonArrows)
-	{
+	private static double darkBowExpected(double p, int max, boolean dragonArrows) {
 		int boosted = (int) (max * (dragonArrows ? 1.5 : 1.3));
 		int min = dragonArrows ? 8 : 5;
 		double sum = 0;
-		for (int d = 0; d <= boosted; d++)
-		{
+		for (int d = 0; d <= boosted; d++) {
 			sum += Math.min(DARK_BOW_CAP, Math.max(min, d));
 		}
 		return 2 * p * (sum / (boosted + 1));
 	}
 
-	private static boolean usesDragonArrows(DpsResult base)
-	{
+	private static boolean usesDragonArrows(DpsResult base) {
 		GearItem ammo = base.getLoadout().get(GearSlot.AMMO);
 		return ammo != null && ammo.getNameLower().startsWith("dragon arrow");
 	}
@@ -328,8 +302,7 @@ public final class SpecialAttack
 	 * Snapshot max hit ignores prayers and void:
 	 * floor(0.5 + (visible ranged + 10) * (ammo ranged str + 64) / 640).
 	 */
-	private static int snapshotMax(DpsResult base, PlayerLevels levels)
-	{
+	private static int snapshotMax(DpsResult base, PlayerLevels levels) {
 		GearItem ammo = base.getLoadout().get(GearSlot.AMMO);
 		int ammoStrength = ammo == null ? 0 : ammo.getBonuses().getRangedStrength();
 		return (int) Math.floor(0.5 + (levels.getRanged() + 10) * (ammoStrength + 64) / 640.0);
@@ -341,29 +314,24 @@ public final class SpecialAttack
 	 * (tenths of a percent) scales it. Wiki anchors: level 84 gives spell
 	 * max 50 (57 with the staff's 15% bonus); level 99 gives 58 (66).
 	 */
-	private static int volatileMax(DpsResult base, PlayerLevels levels)
-	{
+	private static int volatileMax(DpsResult base, PlayerLevels levels) {
 		int spellMax = Math.min((int) Math.floor(58.0 * levels.getMagic() / 99.0) + 1, 58);
 		double gearBonus = 1 + base.getLoadout().getBonuses().getMagicDamage() / 1000.0;
 		return (int) Math.floor(spellMax * gearBonus);
 	}
 
-	private static double mean(int maxHit)
-	{
+	private static double mean(int maxHit) {
 		return maxHit / 2.0;
 	}
 
 	/** Ticks a spec spends beyond its own cast: the tome's follow-ups. */
-	public double extraTicks(DpsResult base)
-	{
+	public double extraTicks(DpsResult base) {
 		return kind == Kind.BUFFED_FOLLOWUPS ? 6 * landChance(base) : 0;
 	}
 
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */
-	public double landChance(DpsResult base)
-	{
-		if (kind == Kind.VOIDWAKER)
-		{
+	public double landChance(DpsResult base) {
+		if (kind == Kind.VOIDWAKER) {
 			return 1.0;
 		}
 		return RollMath.normalAccuracy(
@@ -374,14 +342,11 @@ public final class SpecialAttack
 	 * The monster's Defence level after ONE successful use of this spec, or
 	 * the unchanged level for non-drain specs. BGS drains by damage dealt.
 	 */
-	public int drainedDefence(int currentDefence, double specExpectedDamage)
-	{
-		if (drainsByDamage)
-		{
+	public int drainedDefence(int currentDefence, double specExpectedDamage) {
+		if (drainsByDamage) {
 			return Math.max(0, currentDefence - (int) specExpectedDamage);
 		}
-		if (defenceDrainFraction > 0)
-		{
+		if (defenceDrainFraction > 0) {
 			return currentDefence - (int) (currentDefence * defenceDrainFraction);
 		}
 		return currentDefence;
@@ -390,18 +355,15 @@ public final class SpecialAttack
 	/** Monster-aware drain: the Division spec measures its DEFENCE drain
 	 * off the target's MAGIC level, so it shines exactly where a DWH
 	 * cannot reach (the wiki's example: Zulrah's 300 Magic). */
-	public int drainedDefence(MonsterStats monster, double specExpectedDamage)
-	{
-		if (magicDrainFraction > 0)
-		{
+	public int drainedDefence(MonsterStats monster, double specExpectedDamage) {
+		if (magicDrainFraction > 0) {
 			return Math.max(0, monster.getDefence()
 				- (int) (monster.getMagic() * magicDrainFraction));
 		}
 		return drainedDefence(monster.getDefence(), specExpectedDamage);
 	}
 
-	public boolean drainsDefence()
-	{
+	public boolean drainsDefence() {
 		return drainsByDamage || defenceDrainFraction > 0 || magicDrainFraction > 0;
 	}
 }

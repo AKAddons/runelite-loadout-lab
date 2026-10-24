@@ -25,11 +25,9 @@ import org.junit.Test;
  * dagger in the bank, the melee card at the core must surface its spec
  * at a positive win-over-replacement.
  */
-public class WardenCoreSpecTest
-{
+public class WardenCoreSpecTest {
 	@Test
-	public void ddsSpecSurfacesAtTheCore() throws Exception
-	{
+	public void ddsSpecSurfacesAtTheCore() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats core = data.searchMonsters("tumeken's warden", 8).stream()
 			.filter(m -> m.getVersion().startsWith("Core-ejected"))
@@ -38,18 +36,14 @@ public class WardenCoreSpecTest
 		GearItem dds = null;
 		GearItem whip = null;
 		GearItem chally = null;
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals("dragon dagger") && g.isStandardGear())
-			{
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals("dragon dagger") && g.isStandardGear()) {
 				dds = g;
 			}
-			if (g.getNameLower().equals("abyssal whip"))
-			{
+			if (g.getNameLower().equals("abyssal whip")) {
 				whip = g;
 			}
-			if (g.getNameLower().equals("crystal halberd") && g.isStandardGear())
-			{
+			if (g.getNameLower().equals("crystal halberd") && g.isStandardGear()) {
 				chally = g;
 			}
 		}
@@ -75,8 +69,7 @@ public class WardenCoreSpecTest
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 			false, false, Collections.emptySet(), 0,
 			Collections.emptyMap(), null, Collections.emptySet(),
-			results ->
-			{
+			results -> {
 				out.set(results);
 				done.countDown();
 			});

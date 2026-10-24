@@ -26,14 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * search" - his Obligator exclusion was holding the ceiling down; answer
  * "BiS ignores exclusions (Recommended)").
  */
-class BisIgnoresExclusionsTest
-{
+class BisIgnoresExclusionsTest {
 	private static OptimizerService.StyleResult melee(LoadoutData data, MonsterStats mob,
-		Map<CombatStyle, Set<Integer>> excluded) throws Exception
-	{
+		Map<CombatStyle, Set<Integer>> excluded) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ComputeParams p = new ComputeParams();
@@ -41,24 +38,20 @@ class BisIgnoresExclusionsTest
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(Map.of(4151, 1), true), 1, p,
 				excluded, Collections.emptySet(), Collections.emptyMap(), null, 0,
-				Collections.<Integer>emptySet(), result ->
-				{
+				Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS));
 			return out.get().get(CombatStyle.MELEE);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
 	@DisplayName("excluding the best weapon leaves Best in game wearing it - exclusions shape Yours only")
-	void exclusionsLeaveTheCeiling() throws Exception
-	{
+	void exclusionsLeaveTheCeiling() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
 		int bisWeapon = melee(data, demon, Map.of()).overallBest.getLoadout().getWeapon().getId();

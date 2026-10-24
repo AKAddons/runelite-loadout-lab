@@ -14,10 +14,8 @@ import javax.swing.Icon;
  * history for the painters): the hitsplat for max hit, the crosshair for
  * accuracy, and the fixed-width wrapper that gives every stat line one
  * hard left edge. */
-final class StatIcons
-{
-	private StatIcons()
-	{
+final class StatIcons {
+	private StatIcons() {
 	}
 
 	/** Baked images by resource name. A missing or unreadable resource
@@ -25,23 +23,16 @@ final class StatIcons
 	 * it never throws inside a Swing paint pass. */
 	private static final Map<String, BufferedImage> BAKED = new ConcurrentHashMap<>();
 
-	private static BufferedImage baked(String name, int size)
-	{
-		return BAKED.computeIfAbsent(name, n ->
-		{
-			try (InputStream in = StatIcons.class.getResourceAsStream(n))
-			{
-				if (in != null)
-				{
+	private static BufferedImage baked(String name, int size) {
+		return BAKED.computeIfAbsent(name, n -> {
+			try (InputStream in = StatIcons.class.getResourceAsStream(n)) {
+				if (in != null) {
 					BufferedImage img = ImageIO.read(in);
-					if (img != null)
-					{
+					if (img != null) {
 						return img;
 					}
 				}
-			}
-			catch (IOException ignored)
-			{
+			} catch (IOException ignored) {
 				// fall through to the transparent placeholder
 			}
 			return new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
@@ -54,30 +45,25 @@ final class StatIcons
 	 * paint code - "hitsplat" (the red hitsplat for the max-hit line) and
 	 * "crosshair" (the accuracy line), both glyph-safe.
 	 */
-	static class SizedIcon implements Icon
-	{
+	static class SizedIcon implements Icon {
 		/** Icon edge length in pixels. */
 		private final int size;
 		private final BufferedImage image;
 
-		SizedIcon(String bakedName, int size)
-		{
+		SizedIcon(String bakedName, int size) {
 			this.size = size;
 			this.image = baked("stat-" + bakedName + "-" + size + ".png", size);
 		}
 
-		public int getIconWidth()
-		{
+		public int getIconWidth() {
 			return size;
 		}
 
-		public int getIconHeight()
-		{
+		public int getIconHeight() {
 			return size;
 		}
 
-		public void paintIcon(Component c, Graphics g, int x, int y)
-		{
+		public void paintIcon(Component c, Graphics g, int x, int y) {
 			g.drawImage(image, x, y, size, size, null);
 		}
 	}
@@ -87,24 +73,20 @@ final class StatIcons
 	 * line's icon occupies the SAME column width, so the values start on
 	 * one hard left edge (field spec: a strong visual column). */
 	@lombok.AllArgsConstructor
-	static final class FixedWidthIcon implements Icon
-	{
+	static final class FixedWidthIcon implements Icon {
 		static final int WIDTH = 20;
 		static final int HEIGHT = 16;
 		final Icon delegate;
 
-		public int getIconWidth()
-		{
+		public int getIconWidth() {
 			return WIDTH;
 		}
 
-		public int getIconHeight()
-		{
+		public int getIconHeight() {
 			return Math.max(HEIGHT, delegate.getIconHeight());
 		}
 
-		public void paintIcon(Component c, Graphics g, int x, int y)
-		{
+		public void paintIcon(Component c, Graphics g, int x, int y) {
 			delegate.paintIcon(c,
 				g,
 				x + Math.max(0, (WIDTH - delegate.getIconWidth()) / 2),

@@ -35,23 +35,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * least damage taken per damage dealt. Graardor ranged is the July
  * reference case; the pool is every buyable item (budget, no bank).
  */
-class OptimizeModeTest
-{
+class OptimizeModeTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	private static OptimizerService.StyleResult run(String mob, CombatStyle style,
-		OptimizerService.OptimizeMode mode) throws Exception
-	{
+		OptimizerService.OptimizeMode mode) throws Exception {
 		MonsterStats monster = data.searchMonsters(mob, 1).get(0);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
@@ -61,30 +57,25 @@ class OptimizeModeTest
 			service.bestPerStyle(monster, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, OwnedItems.EMPTY, 1, p,
 				Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
-				Collections.<Integer>emptySet(), result ->
-				{
+				Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(300, TimeUnit.SECONDS), "compute finished");
 			return out.get().get(style);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static double dtps(String mob, OptimizerService.StyleResult result)
-	{
+	private static double dtps(String mob, OptimizerService.StyleResult result) {
 		return IncomingDpsCalculator.calculate(data.searchMonsters(mob, 1).get(0),
 			result.owned.get(0).getLoadout(), 99, 99).totalDps;
 	}
 
 	@Test
 	@DisplayName("a defense-weighted beam can pick pure-defence gear (ring of suffering over archers ring)")
-	void weightedBeamSeesDefenceGear()
-	{
+	void weightedBeamSeesDefenceGear() {
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(861, 1);    // magic shortbow
@@ -103,8 +94,7 @@ class OptimizeModeTest
 
 	@Test
 	@DisplayName("Tanky takes the least damage, Balanced has the best DTPS/DPS, Max DPS deals the most")
-	void modesHonourTheirObjectives() throws Exception
-	{
+	void modesHonourTheirObjectives() throws Exception {
 		String mob = "general graardor";
 		OptimizerService.StyleResult max = run(mob, CombatStyle.RANGED, OptimizerService.OptimizeMode.MAX_DPS);
 		OptimizerService.StyleResult balanced = run(mob, CombatStyle.RANGED, OptimizerService.OptimizeMode.BALANCED);
@@ -130,8 +120,7 @@ class OptimizeModeTest
 
 	@Test
 	@DisplayName("a partly modeled monster keeps Max DPS and says why")
-	void partialCoverageKeepsMaxDps() throws Exception
-	{
+	void partialCoverageKeepsMaxDps() throws Exception {
 		OptimizerService.StyleResult max = run("blue dragon", CombatStyle.MELEE, OptimizerService.OptimizeMode.MAX_DPS);
 		OptimizerService.StyleResult tanky = run("blue dragon", CombatStyle.MELEE, OptimizerService.OptimizeMode.TANKY);
 		assertNotNull(tanky.modeTrade);
@@ -141,8 +130,7 @@ class OptimizeModeTest
 
 	@Test
 	@DisplayName("when the max-DPS set takes ~0 damage, every mode keeps it")
-	void zeroDamageKeepsMaxDps() throws Exception
-	{
+	void zeroDamageKeepsMaxDps() throws Exception {
 		// One magic attack, prayed off entirely.
 		OptimizerService.StyleResult max = run("aberrant spectre", CombatStyle.MELEE, OptimizerService.OptimizeMode.MAX_DPS);
 		OptimizerService.StyleResult balanced = run("aberrant spectre", CombatStyle.MELEE, OptimizerService.OptimizeMode.BALANCED);

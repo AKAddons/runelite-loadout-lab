@@ -17,37 +17,31 @@ import org.junit.Test;
  * bow fires two full arrows; charged Tonalztics throw twice at 75%.
  * Flat armour applies to each hitsplat.
  */
-public class TwoHitWeaponsTest
-{
+public class TwoHitWeaponsTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static GearItem byName(String nameLower, String version)
-	{
+	private static GearItem byName(String nameLower, String version) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower) && g.isStandardGear()
 				&& (version == null || version.equalsIgnoreCase(g.getVersion())))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 	}
 
-	private static DpsResult swing(String monster, CombatStyle style, GearItem weapon, String ammo)
-	{
+	private static DpsResult swing(String monster, CombatStyle style, GearItem weapon, String ammo) {
 		MonsterStats mob = data().searchMonsters(monster, 1).get(0);
 		OptimizationRequest request = TestRequests.of(mob, style,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, weapon);
-		if (ammo != null)
-		{
+		if (ammo != null) {
 			gear.put(GearSlot.AMMO, byName(ammo, null));
 		}
 		DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
@@ -55,8 +49,7 @@ public class TwoHitWeaponsTest
 		return result;
 	}
 
-	private static void assertTwoIndependentHits(String weapon, String version)
-	{
+	private static void assertTwoIndependentHits(String weapon, String version) {
 		MonsterStats moon = data().searchMonsters("blue moon", 1).get(0);
 		int armour = moon.getDefensive().getFlatArmour();
 		Assert.assertTrue("blue moon carries negative flat armour", armour < 0);
@@ -72,8 +65,7 @@ public class TwoHitWeaponsTest
 	}
 
 	@Test
-	public void theTwinWeaponsRollTwoIndependentHits()
-	{
+	public void theTwinWeaponsRollTwoIndependentHits() {
 		assertTwoIndependentHits("glacial temotli", null);
 		assertTwoIndependentHits("sulphur blades", null);
 		assertTwoIndependentHits("earthbound tecpatl", null);
@@ -81,16 +73,14 @@ public class TwoHitWeaponsTest
 	}
 
 	@Test
-	public void theDarkBowFiresTwoFullArrows()
-	{
+	public void theDarkBowFiresTwoFullArrows() {
 		DpsResult bow = swing("goblin", CombatStyle.RANGED, byName("dark bow", "Regular"), "dragon arrow");
 		double one = RollMath.expectedHitWithFlatArmour(bow.getAccuracy(), 0, bow.getMaxHit(), 0);
 		Assert.assertEquals("two arrows, each a full roll", 2 * one, bow.getExpectedHit(), 1e-9);
 	}
 
 	@Test
-	public void chargedTonalzticsThrowTwiceAtThreeQuarters()
-	{
+	public void chargedTonalzticsThrowTwiceAtThreeQuarters() {
 		DpsResult charged = swing("goblin", CombatStyle.RANGED, byName("tonalztics of ralos", "Charged"), null);
 		DpsResult uncharged = swing("goblin", CombatStyle.RANGED, byName("tonalztics of ralos", "Uncharged"), null);
 		Assert.assertEquals("both versions roll 75% of the max", uncharged.getMaxHit(), charged.getMaxHit());

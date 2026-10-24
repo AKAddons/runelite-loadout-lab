@@ -11,50 +11,34 @@ import java.util.Map;
  * (String, Number, Boolean, List, Map, null); anything else is a bug in
  * the model builder and fails loudly.
  */
-public final class Json
-{
-	private Json()
-	{
+public final class Json {
+	private Json() {
 	}
 
-	public static String write(Object value)
-	{
+	public static String write(Object value) {
 		StringBuilder sb = new StringBuilder();
 		append(sb, value);
 		return sb.toString();
 	}
 
-	private static void append(StringBuilder sb, Object v)
-	{
-		if (v == null)
-		{
+	private static void append(StringBuilder sb, Object v) {
+		if (v == null) {
 			sb.append("null");
-		}
-		else if (v instanceof String)
-		{
+		} else if (v instanceof String) {
 			string(sb, (String) v);
-		}
-		else if (v instanceof Boolean || v instanceof Integer || v instanceof Long)
-		{
+		} else if (v instanceof Boolean || v instanceof Integer || v instanceof Long) {
 			sb.append(v);
-		}
-		else if (v instanceof Double || v instanceof Float)
-		{
+		} else if (v instanceof Double || v instanceof Float) {
 			double d = ((Number) v).doubleValue();
-			if (Double.isNaN(d) || Double.isInfinite(d))
-			{
+			if (Double.isNaN(d) || Double.isInfinite(d)) {
 				throw new IllegalArgumentException("non-finite number in model");
 			}
 			sb.append(d);
-		}
-		else if (v instanceof Map)
-		{
+		} else if (v instanceof Map) {
 			sb.append('{');
 			boolean first = true;
-			for (Map.Entry<?, ?> e : ((Map<?, ?>) v).entrySet())
-			{
-				if (!first)
-				{
+			for (Map.Entry<?, ?> e : ((Map<?, ?>) v).entrySet()) {
+				if (!first) {
 					sb.append(',');
 				}
 				first = false;
@@ -63,36 +47,27 @@ public final class Json
 				append(sb, e.getValue());
 			}
 			sb.append('}');
-		}
-		else if (v instanceof List)
-		{
+		} else if (v instanceof List) {
 			sb.append('[');
 			boolean first = true;
-			for (Object item : (List<?>) v)
-			{
-				if (!first)
-				{
+			for (Object item : (List<?>) v) {
+				if (!first) {
 					sb.append(',');
 				}
 				first = false;
 				append(sb, item);
 			}
 			sb.append(']');
-		}
-		else
-		{
+		} else {
 			throw new IllegalArgumentException("not JSON-safe: " + v.getClass().getName());
 		}
 	}
 
-	private static void string(StringBuilder sb, String s)
-	{
+	private static void string(StringBuilder sb, String s) {
 		sb.append('"');
-		for (int i = 0; i < s.length(); i++)
-		{
+		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			switch (c)
-			{
+			switch (c) {
 				case '"':
 					sb.append("\\\"");
 					break;
@@ -109,12 +84,9 @@ public final class Json
 					sb.append("\\t");
 					break;
 				default:
-					if (c < 0x20)
-					{
+					if (c < 0x20) {
 						sb.append(String.format("\\u%04x", (int) c));
-					}
-					else
-					{
+					} else {
 						sb.append(c);
 					}
 			}

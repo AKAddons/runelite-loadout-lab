@@ -28,12 +28,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * "Raid boost" chip was a second control for the same choice, so it goes
  * and DETECT on a raid mob resolves to the raid's own boost.
  */
-class RaidBoostPickerTest
-{
+class RaidBoostPickerTest {
 	@Test
 	@DisplayName("raidBoost is no longer a page param - the picker owns the choice")
-	void raidBoostIsNotAPageParam()
-	{
+	void raidBoostIsNotAPageParam() {
 		PageState state = new PageState();
 		assertFalse(state.setParam("raidBoost", false), "an unknown param is ignored");
 		assertFalse(state.paramsNode().containsKey("raidBoost"));
@@ -41,26 +39,21 @@ class RaidBoostPickerTest
 
 	@Test
 	@DisplayName("DETECT on a raid mob assumes the raid boost; outside a raid it never does")
-	void detectAssumesTheRaidBoost() throws Exception
-	{
+	void detectAssumesTheRaidBoost() throws Exception {
 		LoadoutData data = new DataService().load();
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			assertTrue(boostLabel(service, data, "tekton").contains("Overload (+)"),
 				"CoX supplies overload (+)");
 			assertFalse(boostLabel(service, data, "vorkath").contains("Overload (+)"),
 				"no raid, no raid boost");
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static String boostLabel(OptimizerService service, LoadoutData data, String name)
-		throws Exception
-	{
+		throws Exception {
 		MonsterStats mob = data.searchMonsters(name, 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip: a melee set exists, no potions banked
@@ -70,8 +63,7 @@ class RaidBoostPickerTest
 			PrayerUnlocks.ALL, RequirementProfile.MAXED, new OwnedItems(owned, true),
 			owned.hashCode(), false, false, "", Collections.emptySet(), -1,
 			OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, Collections.emptySet(), 0,
-			results ->
-			{
+			results -> {
 				got.set(results);
 				done.countDown();
 			});

@@ -10,17 +10,14 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class QuestRewardItemsTest
-{
-	private static GearItem gear(String name)
-	{
+public class QuestRewardItemsTest {
+	private static GearItem gear(String name) {
 		return new GearItem(1, name, "", GearSlot.HANDS, "", 0, false, true,
 			false, true, null, StatBlock.ZERO, StatBlock.ZERO, StatBlock.ZERO, null);
 	}
 
 	@Test
-	public void knownEntriesResolveToTheirSourceQuest()
-	{
+	public void knownEntriesResolveToTheirSourceQuest() {
 		Assert.assertEquals("Recipe for Disaster", QuestRewardItems.questFor(gear("Barrows gloves")));
 		Assert.assertEquals("The Blood Moon Rises", QuestRewardItems.questFor(gear("Sunspear")));
 		Assert.assertEquals("Underground Pass", QuestRewardItems.questFor(gear("Iban's staff (u)")));
@@ -28,15 +25,13 @@ public class QuestRewardItemsTest
 	}
 
 	@Test
-	public void nameMatchingIgnoresCase()
-	{
+	public void nameMatchingIgnoresCase() {
 		Assert.assertEquals("Recipe for Disaster", QuestRewardItems.questFor(gear("BARROWS GLOVES")));
 		Assert.assertTrue(QuestRewardItems.isQuestReward(gear("blisterwood FLAIL")));
 	}
 
 	@Test
-	public void nonQuestItemsAreNotQuestRewards()
-	{
+	public void nonQuestItemsAreNotQuestRewards() {
 		Assert.assertNull(QuestRewardItems.questFor(gear("Twisted bow")));
 		Assert.assertFalse(QuestRewardItems.isQuestReward(gear("Fire cape")));
 		Assert.assertNull(QuestRewardItems.questFor(null));
@@ -44,15 +39,12 @@ public class QuestRewardItemsTest
 	}
 
 	@Test
-	public void everyCuratedEntryResolvesToARealCorpusItemName()
-	{
+	public void everyCuratedEntryResolvesToARealCorpusItemName() {
 		Set<String> corpus = new HashSet<>();
-		for (GearItem item : new DataService().load().getGearItems())
-		{
+		for (GearItem item : new DataService().load().getGearItems()) {
 			corpus.add(item.getName().toLowerCase(Locale.ROOT));
 		}
-		for (String name : QuestRewardItems.QUEST_BY_NAME.keySet())
-		{
+		for (String name : QuestRewardItems.QUEST_BY_NAME.keySet()) {
 			Assert.assertTrue("quest_rewards.json entry '" + name
 				+ "' does not match any gear corpus item name", corpus.contains(name));
 		}

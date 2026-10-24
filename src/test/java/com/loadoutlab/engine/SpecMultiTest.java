@@ -17,18 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * sweep a 3x1 line on 1x1 targets. A spec's factor at a stack is the
  * stack capped at its targets; a single-target spec stays at one.
  */
-class SpecMultiTest
-{
+class SpecMultiTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static SpecialAttack spec(String nameLower)
-	{
+	private static SpecialAttack spec(String nameLower) {
 		GearItem item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(nameLower))
 			.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + nameLower));
 		SpecialAttack spec = SpecialAttack.match(item);
@@ -38,8 +35,7 @@ class SpecMultiTest
 
 	@Test
 	@DisplayName("Powerstab scales with the stack up to nine; the sweep caps at three; the claws stay at one")
-	void factors()
-	{
+	void factors() {
 		SpecialAttack d2h = spec("dragon 2h sword");
 		assertEquals(60, d2h.getEnergyCost());
 		assertEquals(3, d2h.multiFactor(3), 1e-12);

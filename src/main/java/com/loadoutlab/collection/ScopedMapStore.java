@@ -11,8 +11,7 @@ import net.runelite.client.config.ConfigManager;
  * list and the supply defaults share this exact shape (scoped key, load on
  * scope change, unset when empty, corrupt JSON starts fresh).
  */
-abstract class ScopedMapStore<K, V> implements ScopedStore
-{
+abstract class ScopedMapStore<K, V> implements ScopedStore {
 	static final String CONFIG_GROUP = "loadoutlab";
 
 	private final ConfigManager configManager;
@@ -22,8 +21,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore
 	private String worldScope;
 	final Map<K, V> items = new LinkedHashMap<>();
 
-	ScopedMapStore(ConfigManager configManager, Gson gson, String configKey, Type type)
-	{
+	ScopedMapStore(ConfigManager configManager, Gson gson, String configKey, Type type) {
 		this.configManager = configManager;
 		this.gson = gson;
 		this.configKey = configKey;
@@ -31,44 +29,36 @@ abstract class ScopedMapStore<K, V> implements ScopedStore
 		load();
 	}
 
-	private String key()
-	{
+	private String key() {
 		return ScopedKeys.key(worldScope, configKey);
 	}
 
 	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). */
-	public synchronized void loadScope(String scope)
-	{
+	public synchronized void loadScope(String scope) {
 		this.worldScope = scope;
 		load();
 	}
 
 	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void reload()
-	{
+	public synchronized void reload() {
 		load();
 	}
 
-	public synchronized void clear()
-	{
+	public synchronized void clear() {
 		items.clear();
 		save();
 	}
 
-	private void load()
-	{
+	private void load() {
 		items.clear();
 		Map<K, V> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey), type);
-		if (stored != null)
-		{
+		if (stored != null) {
 			items.putAll(stored);
 		}
 	}
 
-	void save()
-	{
-		if (items.isEmpty())
-		{
+	void save() {
+		if (items.isEmpty()) {
 			configManager.unsetConfiguration(CONFIG_GROUP, key());
 			return;
 		}

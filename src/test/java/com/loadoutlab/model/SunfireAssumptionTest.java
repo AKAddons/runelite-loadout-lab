@@ -19,20 +19,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * page param seeded from ownership at each selection, toggled from the
  * card's sunfire plate, passed to every compute, re-seeded by Detect.
  */
-class SunfireAssumptionTest
-{
+class SunfireAssumptionTest {
 	private static final int SUNFIRE_RUNE = 28929;
 	private static final int FIRE_RUNE = 554;
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(AtomicReference<Boolean> seen, boolean ownsSunfire)
-	{
+	private static CommandEngine engine(AtomicReference<Boolean> seen, boolean ownsSunfire) {
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> seen.set(p.sunfireRunes),
 			new CompanionLink());
@@ -43,8 +40,7 @@ class SunfireAssumptionTest
 
 	@Test
 	@DisplayName("selection seeds the sunfire assumption from ownership and passes it to the compute")
-	void seededFromOwnership()
-	{
+	void seededFromOwnership() {
 		AtomicReference<Boolean> seen = new AtomicReference<>();
 		CommandEngine engine = engine(seen, true);
 		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
@@ -58,8 +54,7 @@ class SunfireAssumptionTest
 
 	@Test
 	@DisplayName("a simmed sunfire rune counts as owned for the seed (Andrew, client test 2026-10-19)")
-	void simmedRuneSeeds()
-	{
+	void simmedRuneSeeds() {
 		AtomicReference<Boolean> seen = new AtomicReference<>();
 		CommandEngine engine = engine(seen, false);
 		engine.setCounts(() -> Map.of("simmedItems",
@@ -74,8 +69,7 @@ class SunfireAssumptionTest
 
 	@Test
 	@DisplayName("the plate's toggle sticks and Detect re-seeds it")
-	void toggleAndDetect()
-	{
+	void toggleAndDetect() {
 		AtomicReference<Boolean> seen = new AtomicReference<>();
 		CommandEngine engine = engine(seen, true);
 		MonsterStats araxxor = data.searchMonsters("araxxor", 1).get(0);
@@ -88,8 +82,7 @@ class SunfireAssumptionTest
 
 	@Test
 	@DisplayName("with the assumption on, the trip runes carry sunfire runes in place of fire runes")
-	void tripRunesSwap()
-	{
+	void tripRunesSwap() {
 		List<Map<String, Object>> runes = SpellRunes.costFor("Fire Surge", null, null);
 		assertTrue(ids(runes).contains(FIRE_RUNE), "fixture: a bare Fire Surge costs fire runes");
 		List<Map<String, Object>> swapped = SpellRunes.withSunfire(runes);
@@ -104,11 +97,9 @@ class SunfireAssumptionTest
 		assertEquals(ids(water), ids(SpellRunes.withSunfire(water)), "a water spell's runes are untouched");
 	}
 
-	private static List<Integer> ids(List<Map<String, Object>> runes)
-	{
+	private static List<Integer> ids(List<Map<String, Object>> runes) {
 		List<Integer> out = new ArrayList<>();
-		for (Map<String, Object> r : runes)
-		{
+		for (Map<String, Object> r : runes) {
 			out.add(((Number) r.get("id")).intValue());
 		}
 		return out;

@@ -28,23 +28,19 @@ import org.junit.Test;
  * tasks where u need to equip something. would be cool if it was
  * autopinned". Every registry row wiki-verified before encoding.
  */
-public class RequiredGearOptimizerTest
-{
+public class RequiredGearOptimizerTest {
 	private static LoadoutData data;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 	}
 
 	private static Map<CombatStyle, OptimizerService.StyleResult> best(
 		MonsterStats monster, Map<Integer, Integer> owned,
-		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle) throws Exception
-	{
+		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out =
 				new AtomicReference<>();
@@ -58,21 +54,17 @@ public class RequiredGearOptimizerTest
 				r -> { out.set(r); done.countDown(); });
 			Assert.assertTrue("compute timed out", done.await(120, TimeUnit.SECONDS));
 			return out.get();
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static GearItem shieldOf(OptimizerService.StyleResult sr)
-	{
+	private static GearItem shieldOf(OptimizerService.StyleResult sr) {
 		return sr.owned.get(0).getLoadout().get(GearSlot.SHIELD);
 	}
 
 	@Test
-	public void basiliskForcesTheGazeShieldOverADpsShield() throws Exception
-	{
+	public void basiliskForcesTheGazeShieldOverADpsShield() throws Exception {
 		MonsterStats basilisk = data.searchMonsters("basilisk", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);    // whip
@@ -94,8 +86,7 @@ public class RequiredGearOptimizerTest
 	}
 
 	@Test
-	public void aPinOutranksTheRequirement() throws Exception
-	{
+	public void aPinOutranksTheRequirement() throws Exception {
 		MonsterStats basilisk = data.searchMonsters("basilisk", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);
@@ -105,8 +96,7 @@ public class RequiredGearOptimizerTest
 		pin.put(GearSlot.SHIELD, 12954);
 		Map<CombatStyle, Map<GearSlot, Integer>> pinnedByStyle =
 			new EnumMap<>(CombatStyle.class);
-		for (CombatStyle s : CombatStyle.concreteValues())
-		{
+		for (CombatStyle s : CombatStyle.concreteValues()) {
 			pinnedByStyle.put(s, pin);
 		}
 		OptimizerService.StyleResult melee =
@@ -116,8 +106,7 @@ public class RequiredGearOptimizerTest
 	}
 
 	@Test
-	public void missingProtectionStillAnswersWithTheBestSet() throws Exception
-	{
+	public void missingProtectionStillAnswersWithTheBestSet() throws Exception {
 		// Owning no acceptable item still answers - and since 2026-10-22
 		// (Andrew: "show them as necessary even when the player doesn't own
 		// those items") the set wears the mirror shield, marked not owned.
@@ -134,8 +123,7 @@ public class RequiredGearOptimizerTest
 	}
 
 	@Test
-	public void harpiesNeedTheLitLanternToBeHarmedAtAll() throws Exception
-	{
+	public void harpiesNeedTheLitLanternToBeHarmedAtAll() throws Exception {
 		MonsterStats harpie = data.searchMonsters("harpie bug swarm", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1);

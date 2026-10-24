@@ -19,24 +19,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of Amascut is +108 stab / +67 strength INSIDE the Tombs and the base
  * partisan's +58 / +45 outside; Tumeken's shadow multiplies by four inside
  * and three outside. */
-class ToaGearRulesTest
-{
+class ToaGearRulesTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static DpsResult swing(String monster, CombatStyle style, String... gearNames)
-	{
+	private static DpsResult swing(String monster, CombatStyle style, String... gearNames) {
 		MonsterStats mob = data.searchMonsters(monster, 1).get(0);
 		OptimizationRequest request = TestRequests.of(mob, style, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (String name : gearNames)
-		{
+		for (String name : gearNames) {
 			GearItem item = data.getGearItems().stream()
 				.filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 				.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + name));
@@ -47,8 +43,7 @@ class ToaGearRulesTest
 
 	@Test
 	@DisplayName("outside the Tombs the keris partisan of Amascut is a plain keris partisan")
-	void amascutPartisanOutside()
-	{
+	void amascutPartisanOutside() {
 		DpsResult amascut = swing("aquanite", CombatStyle.MELEE, "keris partisan of amascut");
 		DpsResult plain = swing("aquanite", CombatStyle.MELEE, "keris partisan");
 		assertEquals(plain.getMaxHit(), amascut.getMaxHit(), "strength +45, not +67");
@@ -57,8 +52,7 @@ class ToaGearRulesTest
 
 	@Test
 	@DisplayName("inside the Tombs it keeps its +108 stab and +67 strength")
-	void amascutPartisanInside()
-	{
+	void amascutPartisanInside() {
 		DpsResult amascut = swing("akkha", CombatStyle.MELEE, "keris partisan of amascut");
 		DpsResult plain = swing("akkha", CombatStyle.MELEE, "keris partisan");
 		assertTrue(amascut.getMaxHit() > plain.getMaxHit());
@@ -67,8 +61,7 @@ class ToaGearRulesTest
 
 	@Test
 	@DisplayName("Tumeken's shadow multiplies by four inside the Tombs, three outside")
-	void shadowInside()
-	{
+	void shadowInside() {
 		DpsResult inside = swing("akkha", CombatStyle.MAGIC, "tumeken's shadow", "occult necklace");
 		DpsResult outside = swing("goblin", CombatStyle.MAGIC, "tumeken's shadow", "occult necklace");
 		assertTrue(inside.getAttackRoll() > outside.getAttackRoll(), "the magic attack bonus is quadrupled");

@@ -10,8 +10,7 @@ package com.loadoutlab.engine;
  * a(ttack) s(trength) d(efence) r(anged) m(agic). Magic potion's flat +4 is
  * encoded as factor 0.0, which makes floor(4 + level * 0.0) exactly 4.
  */
-public enum BoostProfile
-{
+public enum BoostProfile {
 	NONE("No boosts", 0, 0, ""),
 	LIVE_CURRENT("Current boosted levels", 0, 0, ""),
 	// Label deliberately avoids " + " - the assumes chips split on it.
@@ -45,25 +44,21 @@ public enum BoostProfile
 	/** Which skills this profile boosts, as letters from "asdrm". */
 	private final String skills;
 
-	BoostProfile(String label, int flat, double factor, String skills)
-	{
+	BoostProfile(String label, int flat, double factor, String skills) {
 		this.label = label;
 		this.flat = flat;
 		this.factor = factor;
 		this.skills = skills;
 	}
 
-	public PlayerLevels apply(PlayerLevels base, PlayerLevels current)
-	{
+	public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-		if (this == LIVE_CURRENT)
-		{
+		if (this == LIVE_CURRENT) {
 			return current == null ? source : current;
 		}
 		// NONE boosts nothing and must hand back the SAME instance: the
 		// general path below always allocates a fresh PlayerLevels.
-		if (skills.isEmpty())
-		{
+		if (skills.isEmpty()) {
 			return source;
 		}
 		return source.withBoosts(
@@ -76,19 +71,16 @@ public enum BoostProfile
 
 	/** True when this profile boosts the skill letter (from "asdrm") - the
 	 * assume-chip picker filters style-relevant boosts with it. */
-	public boolean boosts(char skill)
-	{
+	public boolean boosts(char skill) {
 		return skills.indexOf(skill) >= 0;
 	}
 
 	/** floor(flat + level * factor), or 0 when this profile skips the skill. */
-	private int boostIf(char skill, int level)
-	{
+	private int boostIf(char skill, int level) {
 		return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
 	}
 
-	public String toString()
-	{
+	public String toString() {
 		return label;
 	}
 }

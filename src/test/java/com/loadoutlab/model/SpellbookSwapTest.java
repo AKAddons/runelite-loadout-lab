@@ -15,21 +15,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * 2026-08-22): it changes which runes the trip carries and nothing
  * else - the damage Vengeance returns is deliberately unmodelled.
  */
-class SpellbookSwapTest
-{
+class SpellbookSwapTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(PageState state, CaptureLink link, int magic)
-	{
+	private static CommandEngine engine(PageState state, CaptureLink link, int magic) {
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setMagicLevel(magic);
@@ -38,8 +34,7 @@ class SpellbookSwapTest
 		return engine;
 	}
 
-	private static List<Map<String, Object>> runesOf(Map<String, Object> page)
-	{
+	private static List<Map<String, Object>> runesOf(Map<String, Object> page) {
 		List<?> entries = (List<?>) page.get("entries");
 		Map<?, ?> entry = (Map<?, ?>) entries.get(0);
 		List<?> mobs = (List<?>) entry.get("mobs");
@@ -48,24 +43,18 @@ class SpellbookSwapTest
 			: java.util.Collections.emptyList();
 	}
 
-	private static void flushEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flushEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
 	@Test
 	@DisplayName("the option is offered only when 96 Magic is reachable")
-	void offeredOnlyWhenReachable()
-	{
+	void offeredOnlyWhenReachable() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine high = engine(state, link, 91);
@@ -89,8 +78,7 @@ class SpellbookSwapTest
 
 	@Test
 	@DisplayName("switching it on brings the swap and Vengeance runes")
-	void bringsTheRunes()
-	{
+	void bringsTheRunes() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = engine(state, link, 99);
@@ -115,8 +103,7 @@ class SpellbookSwapTest
 
 	@Test
 	@DisplayName("it never moves a dps number - supplies only")
-	void neverTouchesTheAnswer()
-	{
+	void neverTouchesTheAnswer() {
 		PageState state = new PageState();
 		state.setParam("spellbookSwap", true);
 		// A view param: it republishes the held answer, never recomputes.
@@ -125,8 +112,7 @@ class SpellbookSwapTest
 
 	@Test
 	@DisplayName("Vengeance alone brings no Spellbook Swap runes")
-	void vengeanceStandsAlone()
-	{
+	void vengeanceStandsAlone() {
 		// No thralls, no Death Charge, no fight book: nothing else wants
 		// another spellbook, so there is nothing to swap into.
 		PageState state = new PageState();
@@ -154,8 +140,7 @@ class SpellbookSwapTest
 
 	@Test
 	@DisplayName("combination runes are a panel preference, detected by default")
-	void comboRunesPreference()
-	{
+	void comboRunesPreference() {
 		// Field ask 2026-08-22: the choice belongs in the panel, and
 		// "detect" means combine when you own combination runes.
 		PageState state = new PageState();
@@ -173,13 +158,11 @@ class SpellbookSwapTest
 			"the preference rides the supplies menu: " + catalog);
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}

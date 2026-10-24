@@ -16,10 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * multiplied by the stack - area tools by the stack up to nine, the
  * venator chain by its bounce factor from the max hit.
  */
-class MultiViewTest
-{
-	private static Map<String, Object> card(double dps, int maxHit)
-	{
+class MultiViewTest {
+	private static Map<String, Object> card(double dps, int maxHit) {
 		Map<String, Object> card = new LinkedHashMap<>();
 		card.put("dps", dps);
 		card.put("maxHit", maxHit);
@@ -27,8 +25,7 @@ class MultiViewTest
 		return card;
 	}
 
-	private static Map<String, Object> tool(String kind, double dps, int maxHit)
-	{
+	private static Map<String, Object> tool(String kind, double dps, int maxHit) {
 		Map<String, Object> node = new LinkedHashMap<>();
 		node.put("multiKind", kind);
 		// tab = set + a 0.5 spec line, which the stack must leave alone
@@ -39,8 +36,7 @@ class MultiViewTest
 		return node;
 	}
 
-	private static List<Object> page()
-	{
+	private static List<Object> page() {
 		Map<String, Object> multi = new LinkedHashMap<>();
 		multi.put("barrage", tool("area", 5.0, 30));
 		multi.put("venator", tool("chain", 4.0, 30));
@@ -53,15 +49,13 @@ class MultiViewTest
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, Object> styles(List<Object> mobs)
-	{
+	private static Map<String, Object> styles(List<Object> mobs) {
 		return (Map<String, Object>) ((Map<?, ?>) mobs.get(0)).get("styles");
 	}
 
 	@Test
 	@DisplayName("at a stack of three the tools replace the styles: area x3, the chain by its bounce factor")
-	void stackOfThree()
-	{
+	void stackOfThree() {
 		List<Object> mobs = page();
 		CommandEngine.multiView(mobs, 3);
 		Map<String, Object> styles = styles(mobs);
@@ -80,8 +74,7 @@ class MultiViewTest
 
 	@Test
 	@DisplayName("a stack of one leaves every number per target, and a mob without tools keeps its styles")
-	void stackOfOneAndNoTools()
-	{
+	void stackOfOneAndNoTools() {
 		List<Object> mobs = page();
 		CommandEngine.multiView(mobs, 1);
 		Map<?, ?> venator = (Map<?, ?>) styles(mobs).get("venator");

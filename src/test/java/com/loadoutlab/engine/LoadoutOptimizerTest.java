@@ -19,11 +19,9 @@ import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class LoadoutOptimizerTest
-{
+public class LoadoutOptimizerTest {
 	@Test
-	public void optimizerReturnsLegalStandardGear()
-	{
+	public void optimizerReturnsLegalStandardGear() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("zulrah", 1).get(0);
 		OptimizationRequest request = TestRequests.of(
@@ -47,8 +45,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void betterPicksTheHigherDpsAndTheFirstOnTiesOrNulls()
-	{
+	public void betterPicksTheHigherDpsAndTheFirstOnTiesOrNulls() {
 		DpsResult low = new DpsResult(null, 1.0, 0.5, 1.0, 10, 4, "stab", 100, 100);
 		DpsResult high = new DpsResult(null, 2.0, 0.5, 2.0, 20, 4, "stab", 100, 100);
 		DpsResult tie = new DpsResult(null, 2.0, 0.5, 2.0, 20, 4, "slash", 100, 100);
@@ -61,15 +58,13 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void prebuiltPoolsProduceTheSameResultsAsAFreshOptimize()
-	{
+	public void prebuiltPoolsProduceTheSameResultsAsAFreshOptimize() {
 		// The pool-taking overload must be indistinguishable from
 		// optimize(data, request) for the same request.
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.RANGED, CombatStyle.MAGIC})
-		{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.RANGED, CombatStyle.MAGIC}) {
 			OptimizationRequest request = TestRequests.of(
 				monster, style, PlayerLevels.MAXED,
 				PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null,
@@ -81,11 +76,9 @@ public class LoadoutOptimizerTest
 		}
 	}
 
-	private static void assertSameResults(List<DpsResult> expected, List<DpsResult> actual)
-	{
+	private static void assertSameResults(List<DpsResult> expected, List<DpsResult> actual) {
 		Assert.assertEquals(expected.size(), actual.size());
-		for (int i = 0; i < expected.size(); i++)
-		{
+		for (int i = 0; i < expected.size(); i++) {
 			Assert.assertEquals(expected.get(i).getDps(), actual.get(i).getDps(), 0.0);
 			Assert.assertEquals(expected.get(i).getSpellName(), actual.get(i).getSpellName());
 			Assert.assertEquals(expected.get(i).getPurchaseCost(), actual.get(i).getPurchaseCost());
@@ -94,8 +87,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void anyStyleReturnsBestConcreteSetups()
-	{
+	public void anyStyleReturnsBestConcreteSetups() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("zulrah", 1).get(0);
 		OptimizationRequest request = TestRequests.of(
@@ -117,8 +109,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void onTaskBestNeverScoresBelowOffTask()
-	{
+	public void onTaskBestNeverScoresBelowOffTask() {
 		// Field invariant: being on a slayer task only ADDS the slayer-helm
 		// option, so the on-task best set can never do LESS damage than the
 		// off-task best. The beam breaks this on undead slayer targets - the
@@ -128,11 +119,9 @@ public class LoadoutOptimizerTest
 		// off-task fold-in guarantees monotonicity. Vorkath and Vet'ion are
 		// undead slayer targets where the raw beam went backwards on ranged.
 		LoadoutData data = new DataService().load();
-		for (String name : new String[]{"vorkath", "vet'ion", "alchemical hydra"})
-		{
+		for (String name : new String[]{"vorkath", "vet'ion", "alchemical hydra"}) {
 			MonsterStats monster = data.searchMonsters(name, 1).get(0);
-			for (CombatStyle style : CombatStyle.concreteValues())
-			{
+			for (CombatStyle style : CombatStyle.concreteValues()) {
 				double off = taskBestDps(data, monster, style, false);
 				double on = taskBestDps(data, monster, style, true);
 				Assert.assertTrue(name + " " + style + ": on-task " + on
@@ -142,8 +131,7 @@ public class LoadoutOptimizerTest
 	}
 
 	private static double taskBestDps(LoadoutData data, MonsterStats monster,
-		CombatStyle style, boolean onTask)
-	{
+		CombatStyle style, boolean onTask) {
 		OptimizationRequest req = TestRequests.of(
 			monster, style, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -153,8 +141,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void slayerHelmetWinsItsDpsTieWithTheBlackMask()
-	{
+	public void slayerHelmetWinsItsDpsTieWithTheBlackMask() {
 		// Field bug: both give the same on-task melee multiplier, so they
 		// tie exactly on DPS - and the winner fell out of fragile beam
 		// ordering (the client and a headless run over the same account
@@ -188,22 +175,17 @@ public class LoadoutOptimizerTest
 			"slayer helmet", head.getNameLower());
 	}
 
-	private static int nameToId(LoadoutData data, String name)
-	{
+	private static int nameToId(LoadoutData data, String name) {
 		GearItem fallback = null;
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			if (!item.getName().equalsIgnoreCase(name) || !item.isStandardGear()
-				|| data.isVariant(item.getId()))
-			{
+				|| data.isVariant(item.getId())) {
 				continue;
 			}
-			if (item.getVersion().isEmpty())
-			{
+			if (item.getVersion().isEmpty()) {
 				return item.getId();
 			}
-			if (fallback == null)
-			{
+			if (fallback == null) {
 				fallback = item;
 			}
 		}
@@ -212,8 +194,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void theFillPassUpgradesFilledSlotsToHigherUtilityStatTies()
-	{
+	public void theFillPassUpgradesFilledSlotsToHigherUtilityStatTies() {
 		// Field bug two: game best showed the Blood moon chestplate over the
 		// Torva platebody. They tie EXACTLY on DPS (the +2 str floors away),
 		// but the beam's cost tie-break starves the expensive branch at the
@@ -224,11 +205,9 @@ public class LoadoutOptimizerTest
 		MonsterStats monster = data.searchMonsters("general graardor", 1).get(0);
 		GearItem torva = data.getGear(nameToId(data, "torva platebody"));
 		GearItem bloodMoon = null;
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			if (item.getName().equalsIgnoreCase("blood moon chestplate")
-				&& "new".equalsIgnoreCase(item.getVersion()))
-			{
+				&& "new".equalsIgnoreCase(item.getVersion())) {
 				bloodMoon = item;
 				break;
 			}
@@ -272,8 +251,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void theFillPassNeverTradesDamageForUtility()
-	{
+	public void theFillPassNeverTradesDamageForUtility() {
 		// Field bug: a max-dps melee set showed Proselyte tassets (0 strength,
 		// +6 prayer) over Blood moon tassets (+2 strength) - the fill-upgrade
 		// swapped a DPS leg for a pure-prayer tank leg on a floored DPS tie.
@@ -306,8 +284,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void tiedOrnamentVariantsLoseToTheDominatingMaxKit()
-	{
+	public void tiedOrnamentVariantsLoseToTheDominatingMaxKit() {
 		// Field bug (2026-07-17): on the MAGIC tab the Avernic treads (et)
 		// kit ties the (max) kit exactly - same magic damage, defence and
 		// prayer - so data order picked the shown feet. The cross-style
@@ -331,8 +308,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void ownedGearDoesNotConsumePurchaseBudget()
-	{
+	public void ownedGearDoesNotConsumePurchaseBudget() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -357,8 +333,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void untradeablesMustBeCachedAndEnabled()
-	{
+	public void untradeablesMustBeCachedAndEnabled() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -397,8 +372,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void useMyLevelsBlocksGearAboveCurrentLevel()
-	{
+	public void useMyLevelsBlocksGearAboveCurrentLevel() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -422,8 +396,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void questRequirementsBlockLockedQuestGear()
-	{
+	public void questRequirementsBlockLockedQuestGear() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -462,8 +435,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void magicAutomaticallyChoosesBestAvailableSpell()
-	{
+	public void magicAutomaticallyChoosesBestAvailableSpell() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -489,8 +461,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void autoMagicUsesPoweredStaffAttackInsteadOfCastingSpell()
-	{
+	public void autoMagicUsesPoweredStaffAttackInsteadOfCastingSpell() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -517,8 +488,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void thrownWeaponsDoNotBorrowProjectileAmmoStrength()
-	{
+	public void thrownWeaponsDoNotBorrowProjectileAmmoStrength() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		GearItem knife = data.getGear(22804);
@@ -549,8 +519,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void huntersSunlightCrossbowOnlyUsesAntlerBolts()
-	{
+	public void huntersSunlightCrossbowOnlyUsesAntlerBolts() {
 		LoadoutData data = new DataService().load();
 		GearItem crossbow = data.getGear(28869);
 		GearItem sunlightBolts = data.getGear(28872);
@@ -564,8 +533,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void magicDamageBonusUsesTenthsOfAPercent()
-	{
+	public void magicDamageBonusUsesTenthsOfAPercent() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		SpellStats earthSurge = data.getSpells().stream()
@@ -599,8 +567,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void autoMagicDoesNotUseDemonbaneOnNonDemon()
-	{
+	public void autoMagicDoesNotUseDemonbaneOnNonDemon() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(
@@ -624,8 +591,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void superCombatBoostRaisesMeleeDps()
-	{
+	public void superCombatBoostRaisesMeleeDps() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -663,8 +629,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void bestAvailablePrayersUseExactRangedAndMagicFactors()
-	{
+	public void bestAvailablePrayersUseExactRangedAndMagicFactors() {
 		PrayerBonuses prayers = PrayerBonuses.bestAvailable(PlayerLevels.MAXED);
 		Assert.assertEquals(1.20, prayers.getRangedAccuracy(), 0.00001);
 		Assert.assertEquals(1.23, prayers.getRangedStrength(), 0.00001);
@@ -676,8 +641,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void slayerHeadIsIgnoredForNonSlayerMonster()
-	{
+	public void slayerHeadIsIgnoredForNonSlayerMonster() {
 		LoadoutData data = new DataService().load();
 		// Abomination is not an assignable slayer monster. (Goblins ARE -
 		// the upstream fixture used one and only passed because the old
@@ -707,8 +671,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void slayerTaskCanChooseMeleeSlayerHead()
-	{
+	public void slayerTaskCanChooseMeleeSlayerHead() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("aberrant spectre", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -735,8 +698,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void slayerTaskCanChooseImbuedRangedSlayerHead()
-	{
+	public void slayerTaskCanChooseImbuedRangedSlayerHead() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("aberrant spectre", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -768,8 +730,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void slayerTaskCanChooseImbuedMagicSlayerHead()
-	{
+	public void slayerTaskCanChooseImbuedMagicSlayerHead() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("aberrant spectre", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
@@ -796,8 +757,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void suggestionsNeverUseOrnamentVariants()
-	{
+	public void suggestionsNeverUseOrnamentVariants() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		// Own ONLY the ornamented whip: the canonicalized ownership credits
@@ -820,18 +780,15 @@ public class LoadoutOptimizerTest
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data, request);
 		Assert.assertFalse(results.isEmpty());
 		Assert.assertEquals("Abyssal whip", results.get(0).getLoadout().getWeapon().getName());
-		for (DpsResult result : results)
-		{
-			for (GearItem item : result.getLoadout().getGear().values())
-			{
+		for (DpsResult result : results) {
+			for (GearItem item : result.getLoadout().getGear().values()) {
 				Assert.assertFalse("variant suggested: " + item.getName(), data.isVariant(item.getId()));
 			}
 		}
 	}
 
 	@Test
-	public void allStandardIncludesUnownedUntradeables()
-	{
+	public void allStandardIncludesUnownedUntradeables() {
 		// Fix over upstream best-dps: ALL_STANDARD is the "game best" ceiling
 		// query - untradeables (fire cape etc.) must count without ownership,
 		// or the ceiling silently means "best tradeable set".
@@ -859,8 +816,7 @@ public class LoadoutOptimizerTest
 	}
 
 	@Test
-	public void dpsNeutralSlotsFillWithPrayerGearWithoutChangingDps()
-	{
+	public void dpsNeutralSlotsFillWithPrayerGearWithoutChangingDps() {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		GearItem blessing = data.getGearItems().stream()
@@ -895,13 +851,10 @@ public class LoadoutOptimizerTest
 		Assert.assertEquals(bare.getDps(), filled.getDps(), 1e-9);
 	}
 
-	private static RequirementProfile requirements(int level, Set<String> quests)
-	{
+	private static RequirementProfile requirements(int level, Set<String> quests) {
 		EnumMap<Skill, Integer> levels = new EnumMap<>(Skill.class);
-		for (Skill skill : Skill.values())
-		{
-			if (skill != Skill.OVERALL)
-			{
+		for (Skill skill : Skill.values()) {
+			if (skill != Skill.OVERALL) {
 				levels.put(skill, level);
 			}
 		}

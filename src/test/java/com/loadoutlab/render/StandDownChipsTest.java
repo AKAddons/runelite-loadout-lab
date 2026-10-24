@@ -15,10 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * this configuration however it keeps the chips for them active. it should
  * just disable the chips in this case").
  */
-class StandDownChipsTest
-{
-	private static Map<String, Object> page(String tab)
-	{
+class StandDownChipsTest {
+	private static Map<String, Object> page(String tab) {
 		Map<String, Object> magic = Map.of("tabDps", 5.0,
 			"yours", Map.of("kitBacked", true, "arceuusStandDown", "Earth Surge autocasts from the standard book"));
 		Map<String, Object> melee = Map.of("tabDps", 3.0, "yours", Map.of("kitBacked", true));
@@ -29,8 +27,7 @@ class StandDownChipsTest
 
 	@Test
 	@DisplayName("viewing the magic card that stands down, the chips get its reason; viewing melee, none")
-	void reasonFollowsTheViewedCard()
-	{
+	void reasonFollowsTheViewedCard() {
 		assertEquals("Earth Surge autocasts from the standard book", RenderSurface.viewedStandDown(page("magic")));
 		assertNull(RenderSurface.viewedStandDown(page("melee")), "thralls still work with a melee set");
 		assertEquals("Earth Surge autocasts from the standard book", RenderSurface.viewedStandDown(page("")),
@@ -39,8 +36,7 @@ class StandDownChipsTest
 
 	@Test
 	@DisplayName("a stood-down chip is shown disabled with the reason, and does nothing")
-	void disabledChip()
-	{
+	void disabledChip() {
 		JLabel chip = RenderSurface.disabledPill("Thralls", "Stands down: Earth Surge autocasts from the standard book");
 		assertFalse(chip.isEnabled());
 		assertTrue(chip.getToolTipText().contains("Stands down"));

@@ -17,39 +17,31 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Andrew, 2026-09-03: "the line item dps output should show the player +
  * cannon output for sea monsters" - every sea mob in a roster carries its
  * own cannon dps, not just the lensed one. */
-class SeaRowDpsTest
-{
+class SeaRowDpsTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
-	private static List<MonsterStats> twoSeaMobs()
-	{
+	private static List<MonsterStats> twoSeaMobs() {
 		List<MonsterStats> out = new ArrayList<>();
-		for (MonsterStats m : data.getMonsters())
-		{
+		for (MonsterStats m : data.getMonsters()) {
 			if (NavalCombat.isNaval(m.getName())
-				&& (out.isEmpty() || out.get(0).getDefence() != m.getDefence()))
-			{
+				&& (out.isEmpty() || out.get(0).getDefence() != m.getDefence())) {
 				out.add(m);
 			}
-			if (out.size() == 2)
-			{
+			if (out.size() == 2) {
 				break;
 			}
 		}
@@ -57,8 +49,7 @@ class SeaRowDpsTest
 		return out;
 	}
 
-	private static Map<String, Object> entryFor(List<MonsterStats> mobs, String operator)
-	{
+	private static Map<String, Object> entryFor(List<MonsterStats> mobs, String operator) {
 		PageState state = new PageState();
 		state.setParam("cannonCount", 1);
 		state.setParam("cannon1Material", "dragon");
@@ -67,26 +58,20 @@ class SeaRowDpsTest
 		state.setParam("lensIndex", 0);
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setRangedLevel(99);
 		engine.setSailingLevel(99);
 		List<Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> results = new ArrayList<>();
-		for (int i = 0; i < mobs.size(); i++)
-		{
+		for (int i = 0; i < mobs.size(); i++) {
 			results.add(Map.of());
 		}
 		engine.onRosterResults(mobs, results);
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		@SuppressWarnings("unchecked")
@@ -94,8 +79,7 @@ class SeaRowDpsTest
 		return entry;
 	}
 
-	private static double shipDps(Map<String, Object> entry, int i)
-	{
+	private static double shipDps(Map<String, Object> entry, int i) {
 		Map<?, ?> mob = (Map<?, ?>) ((List<?>) entry.get("mobs")).get(i);
 		Object v = mob.get("shipDps");
 		return v instanceof Number ? ((Number) v).doubleValue() : Double.NaN;
@@ -103,8 +87,7 @@ class SeaRowDpsTest
 
 	@Test
 	@DisplayName("every sea mob in the roster carries its own cannon dps; the lensed one matches the ship total")
-	void eachSeaMobPriced()
-	{
+	void eachSeaMobPriced() {
 		List<MonsterStats> mobs = twoSeaMobs();
 		Map<String, Object> entry = entryFor(mobs, "crew1");
 		double first = shipDps(entry, 0);
@@ -118,8 +101,7 @@ class SeaRowDpsTest
 
 	@Test
 	@DisplayName("a land mob carries no cannon dps, and a manned cannon zeroes the rows")
-	void landAndManned()
-	{
+	void landAndManned() {
 		List<MonsterStats> sea = twoSeaMobs();
 		MonsterStats land = data.searchMonsters("general graardor", 1).get(0);
 		Map<String, Object> mixed = entryFor(List.of(sea.get(0), land), "crew1");

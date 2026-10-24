@@ -16,8 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * setup; Andrew made it a slayer-task option. The overlay turns the
  * preference into hands pins the optimizer already honours.
  */
-class TaskBraceletTest
-{
+class TaskBraceletTest {
 	private static final LoadoutData DATA = new DataService().load();
 	private static final MonsterStats DEMON = DATA.searchMonsters("abyssal demon", 1).get(0);
 	private static final MonsterStats ORCA = DATA.searchMonsters("orca", 1).get(0);
@@ -25,8 +24,7 @@ class TaskBraceletTest
 	private static final int EXPEDITIOUS = 21177;
 	private static final int BARROWS_GLOVES = 7462;
 
-	private static Map<CombatStyle, Map<GearSlot, Integer>> meleeHandsPinned()
-	{
+	private static Map<CombatStyle, Map<GearSlot, Integer>> meleeHandsPinned() {
 		EnumMap<CombatStyle, Map<GearSlot, Integer>> pins = new EnumMap<>(CombatStyle.class);
 		EnumMap<GearSlot, Integer> melee = new EnumMap<>(GearSlot.class);
 		melee.put(GearSlot.HANDS, BARROWS_GLOVES);
@@ -36,20 +34,17 @@ class TaskBraceletTest
 
 	@Test
 	@DisplayName("on task: every concrete style's hands slot is pinned to the bracelet")
-	void onTaskPinsEveryStyle()
-	{
+	void onTaskPinsEveryStyle() {
 		Map<CombatStyle, Map<GearSlot, Integer>> out =
 			TaskBracelet.overlay(Map.of(), DEMON, true, TaskBracelet.EXPEDITIOUS_BRACELET);
-		for (CombatStyle style : CombatStyle.concreteValues())
-		{
+		for (CombatStyle style : CombatStyle.concreteValues()) {
 			assertEquals(EXPEDITIOUS, out.get(style).get(GearSlot.HANDS), style.name());
 		}
 	}
 
 	@Test
 	@DisplayName("the mob's own hands pin wins on its style; the others still get the bracelet")
-	void mobPinWins()
-	{
+	void mobPinWins() {
 		Map<CombatStyle, Map<GearSlot, Integer>> in = meleeHandsPinned();
 		Map<CombatStyle, Map<GearSlot, Integer>> out =
 			TaskBracelet.overlay(in, DEMON, true, TaskBracelet.BRACELET_OF_SLAUGHTER);
@@ -61,8 +56,7 @@ class TaskBraceletTest
 
 	@Test
 	@DisplayName("a monster that is never a slayer task gets no bracelet, task param or not (Orca, 2026-10-18)")
-	void nonSlayerMonsterIsUntouched()
-	{
+	void nonSlayerMonsterIsUntouched() {
 		Map<CombatStyle, Map<GearSlot, Integer>> in = meleeHandsPinned();
 		assertFalse(ORCA.isSlayerMonster(), "the fixture needs a non-slayer monster");
 		assertSame(in, TaskBracelet.overlay(in, ORCA, true, TaskBracelet.EXPEDITIOUS_BRACELET));
@@ -71,8 +65,7 @@ class TaskBraceletTest
 
 	@Test
 	@DisplayName("off task, or with None chosen, the pins pass through untouched")
-	void offTaskOrNoneIsIdentity()
-	{
+	void offTaskOrNoneIsIdentity() {
 		Map<CombatStyle, Map<GearSlot, Integer>> in = meleeHandsPinned();
 		assertSame(in, TaskBracelet.overlay(in, DEMON, false, TaskBracelet.EXPEDITIOUS_BRACELET));
 		assertSame(in, TaskBracelet.overlay(in, DEMON, true, TaskBracelet.NONE));

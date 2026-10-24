@@ -8,8 +8,7 @@ import java.util.Map;
 
 /** The seven combat levels; toString() is the optimizer's cache-key form. */
 @ToString
-public final class PlayerLevels
-{
+public final class PlayerLevels {
 	public static final PlayerLevels MAXED = new PlayerLevels(99, 99, 99, 99, 99, 99, 99);
 
 	@Getter
@@ -27,8 +26,7 @@ public final class PlayerLevels
 	@Getter
 	private final int hitpoints;
 
-	public PlayerLevels(int attack, int strength, int defence, int ranged, int magic, int prayer, int hitpoints)
-	{
+	public PlayerLevels(int attack, int strength, int defence, int ranged, int magic, int prayer, int hitpoints) {
 		this.attack = clamp(attack);
 		this.strength = clamp(strength);
 		this.defence = clamp(defence);
@@ -38,10 +36,8 @@ public final class PlayerLevels
 		this.hitpoints = clamp(hitpoints);
 	}
 
-	public static PlayerLevels from(RequirementProfile profile)
-	{
-		if (profile == null)
-		{
+	public static PlayerLevels from(RequirementProfile profile) {
+		if (profile == null) {
 			return MAXED;
 		}
 		return new PlayerLevels(
@@ -54,10 +50,8 @@ public final class PlayerLevels
 			profile.level(Skill.HITPOINTS));
 	}
 
-	public static PlayerLevels from(Map<Skill, Integer> levels)
-	{
-		if (levels == null || levels.isEmpty())
-		{
+	public static PlayerLevels from(Map<Skill, Integer> levels) {
+		if (levels == null || levels.isEmpty()) {
 			return MAXED;
 		}
 		return new PlayerLevels(
@@ -70,8 +64,7 @@ public final class PlayerLevels
 			levels.getOrDefault(Skill.HITPOINTS, 10));
 	}
 
-	public PlayerLevels withBoosts(int attackBoost, int strengthBoost, int defenceBoost, int rangedBoost, int magicBoost)
-	{
+	public PlayerLevels withBoosts(int attackBoost, int strengthBoost, int defenceBoost, int rangedBoost, int magicBoost) {
 		return new PlayerLevels(
 			attack + attackBoost,
 			strength + strengthBoost,
@@ -83,10 +76,8 @@ public final class PlayerLevels
 	}
 
 	/** Element-wise max - never assume a boost below what is already live. */
-	public PlayerLevels max(PlayerLevels other)
-	{
-		if (other == null)
-		{
+	public PlayerLevels max(PlayerLevels other) {
+		if (other == null) {
 			return this;
 		}
 		return new PlayerLevels(
@@ -99,13 +90,11 @@ public final class PlayerLevels
 			Math.max(hitpoints, other.hitpoints));
 	}
 
-	public PlayerLevels boosted(BoostProfile boostProfile, PlayerLevels liveCurrent)
-	{
+	public PlayerLevels boosted(BoostProfile boostProfile, PlayerLevels liveCurrent) {
 		return (boostProfile == null ? BoostProfile.NONE : boostProfile).apply(this, liveCurrent);
 	}
 
-	private static int clamp(int value)
-	{
+	private static int clamp(int value) {
 		return Math.max(1, Math.min(126, value));
 	}
 }

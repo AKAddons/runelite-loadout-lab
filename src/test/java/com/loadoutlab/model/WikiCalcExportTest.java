@@ -18,30 +18,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * opened at raid level 0 while the card sat at 300 - the same shape as
  * the Warden dispute. The exported mob must carry the card's invocation.
  */
-class WikiCalcExportTest
-{
+class WikiCalcExportTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 		}
 	}
 
-	private static MonsterStats exported(String query, int invocation) throws Exception
-	{
+	private static MonsterStats exported(String query, int invocation) throws Exception {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CaptureLink());
 		engine.setStoreOps(new TestStoreOps());
@@ -50,8 +44,7 @@ class WikiCalcExportTest
 		assertNotNull(mob, query + " selected");
 		state.setParam("toaInvocation", invocation);
 		engine.onResults(mob, WildernessReportTest.styles(data, mob));
-		javax.swing.SwingUtilities.invokeAndWait(() ->
-		{
+		javax.swing.SwingUtilities.invokeAndWait(() -> {
 		});
 		AtomicReference<MonsterStats> got = new AtomicReference<>();
 		engine.setWikiCalcOpener((m, shown, dartId, assumes, onTask, inWilderness) -> got.set(m));
@@ -63,8 +56,7 @@ class WikiCalcExportTest
 
 	@Test
 	@DisplayName("the wiki-calc link opens a ToA mob at the card's raid level, a land mob at 0")
-	void linkCarriesTheCardsInvocation() throws Exception
-	{
+	void linkCarriesTheCardsInvocation() throws Exception {
 		assertEquals(300, exported("obelisk", 300).getToaInvocationLevel());
 		assertEquals(0, exported("vorkath", 300).getToaInvocationLevel());
 	}

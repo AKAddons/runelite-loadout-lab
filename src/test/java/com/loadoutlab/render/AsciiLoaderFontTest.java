@@ -21,14 +21,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * that has the whole alphabet at one width (DejaVu Sans Mono, Menlo's
  * ancestor, turned out to have no Braille) and every platform draws the same.
  */
-class AsciiLoaderFontTest
-{
+class AsciiLoaderFontTest {
 	private static final String FRAMES = "/com/loadoutlab/render/loader_frames.txt";
 
 	@Test
 	@DisplayName("the art draws in DejaVu Sans Mono (Menlo's parent: the shades the frames were tuned on) and Braille in Cascadia Mono")
-	void bundledFontsLoad()
-	{
+	void bundledFontsLoad() {
 		// Andrew (2026-10-15): "looks better shape wise but the color tone is off in the
 		// potion" - Cascadia's medium shade inks 21% of its cell, DejaVu's 48%.
 		Font art = AsciiLoader.moodFont();
@@ -39,8 +37,7 @@ class AsciiLoaderFontTest
 	}
 
 	/** Ink coverage of one glyph's cell at 12 pt, 0..1. */
-	private static double shadeInk(Font font, char glyph)
-	{
+	private static double shadeInk(Font font, char glyph) {
 		BufferedImage img = new BufferedImage(20, 24, BufferedImage.TYPE_INT_ARGB);
 		java.awt.Graphics2D g = img.createGraphics();
 		g.setFont(font);
@@ -49,10 +46,8 @@ class AsciiLoaderFontTest
 		g.drawString(String.valueOf(glyph), 2, m.getAscent() + 2);
 		g.dispose();
 		long ink = 0;
-		for (int y = 0; y < img.getHeight(); y++)
-		{
-			for (int x = 0; x < img.getWidth(); x++)
-			{
+		for (int y = 0; y < img.getHeight(); y++) {
+			for (int x = 0; x < img.getWidth(); x++) {
 				ink += img.getRGB(x, y) >>> 24;
 			}
 		}
@@ -61,13 +56,11 @@ class AsciiLoaderFontTest
 
 	@Test
 	@DisplayName("every distinct character of the frames resource is drawable, at one advance width")
-	void framesFitTheFont() throws Exception
-	{
+	void framesFitTheFont() throws Exception {
 		Font font = AsciiLoader.moodFont();
 		Font braille = AsciiLoader.brailleFont();
 		Set<Integer> glyphs = new LinkedHashSet<>();
-		try (InputStream in = AsciiLoaderFontTest.class.getResourceAsStream(FRAMES))
-		{
+		try (InputStream in = AsciiLoaderFontTest.class.getResourceAsStream(FRAMES)) {
 			assertNotNull(in, "frames resource");
 			String text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
 			text.codePoints().filter(cp -> cp > ' ' && cp != '\n' && cp != '\r').forEach(glyphs::add);
@@ -80,18 +73,14 @@ class AsciiLoaderFontTest
 		StringBuilder missing = new StringBuilder();
 		StringBuilder uneven = new StringBuilder();
 		FontMetrics brailleMetrics = new BufferedImage(8, 8, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(braille);
-		for (int cp : glyphs)
-		{
+		for (int cp : glyphs) {
 			// Braille cells draw in the Braille face; everything else in the art face.
 			boolean isBraille = cp >= 0x2800 && cp <= 0x28FF;
 			Font face = isBraille ? braille : font;
 			int w = (isBraille ? brailleMetrics : metrics).charWidth(cp);
-			if (!face.canDisplay(cp))
-			{
+			if (!face.canDisplay(cp)) {
 				missing.append(String.format(" U+%04X", cp));
-			}
-			else if (w != width)
-			{
+			} else if (w != width) {
 				uneven.append(String.format(" U+%04X=%d", cp, w));
 			}
 		}
@@ -101,8 +90,7 @@ class AsciiLoaderFontTest
 
 	@Test
 	@DisplayName("a frame's lines end at the same x whatever glyph class they use - the pre element draws in the bundled face")
-	void preDrawsInTheBundledFace() throws Exception
-	{
+	void preDrawsInTheBundledFace() throws Exception {
 		// Andrew (2026-10-15), after the bundled font: "the animation of the flask
 		// is still bad". Swing's stylesheet gives pre its own font-family rule,
 		// which overrode the component font the pane was given.
@@ -113,12 +101,9 @@ class AsciiLoaderFontTest
 		Set<Integer> ends = new LinkedHashSet<>();
 		Set<Integer> heights = new LinkedHashSet<>();
 		int start = 0;
-		for (int i = 0; i <= text.length(); i++)
-		{
-			if (i == text.length() || text.charAt(i) == '\n')
-			{
-				if (i > start)
-				{
+		for (int i = 0; i <= text.length(); i++) {
+			if (i == text.length() || text.charAt(i) == '\n') {
+				if (i > start) {
 					ends.add((int) loader.modelToView2D(i).getX());
 					heights.add((int) loader.modelToView2D(start).getHeight());
 				}

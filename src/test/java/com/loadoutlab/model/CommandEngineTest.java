@@ -19,61 +19,49 @@ import static org.junit.jupiter.api.Assertions.*;
  * core-owned PageState, trigger computes, and publish pages that carry
  * the params node.
  */
-class CommandEngineTest
-{
+class CommandEngineTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** Page assembly marshals to the EDT (the deadlock fix); drain it
 	 * before asserting on what was published. */
-	private static void flushEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flushEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 		private Map<String, Object> last;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 			last = page;
 		}
 
 		@Override
-		public Map<String, Object> lastPage()
-		{
+		public Map<String, Object> lastPage() {
 			return last;
 		}
 	}
 
 	@Test
 	@DisplayName("select finds the mob and triggers a compute with the state's params")
-	void selectComputes()
-	{
+	void selectComputes() {
 		AtomicReference<MonsterStats> computed = new AtomicReference<>();
 		AtomicReference<Boolean> taskFlag = new AtomicReference<>();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 				computed.set(mob);
 				taskFlag.set(p.onSlayerTask);
 			}, new CaptureLink());
@@ -89,8 +77,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("unknown commands, params, and empty queries are refused")
-	void refusals()
-	{
+	void refusals() {
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> fail("must not compute"),
 			new CaptureLink());
@@ -103,8 +90,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("view params republish the held results without recomputing")
-	void viewParamsDoNotRecompute()
-	{
+	void viewParamsDoNotRecompute() {
 		CaptureLink link = new CaptureLink();
 		java.util.concurrent.atomic.AtomicInteger computes = new java.util.concurrent.atomic.AtomicInteger();
 		PageState state = new PageState();
@@ -127,8 +113,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("a group query opens the roster; undo returns to the single mob")
-	void groupSelect()
-	{
+	void groupSelect() {
 		java.util.List<String> rosterRuns = new java.util.ArrayList<>();
 		java.util.List<String> singleRuns = new java.util.ArrayList<>();
 		PageState state = new PageState();
@@ -150,8 +135,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("mob-scoped exclude/sim work on a roster via the lensed mob")
-	void mobScopedAddsWorkOnRosters()
-	{
+	void mobScopedAddsWorkOnRosters() {
 		// The lensedMob-fallback family, third member (field report
 		// 2026-08-20: the card trio's add-by-search silently no-oped on
 		// the Maggot King roster): set-note and the REMOVE commands got
@@ -160,130 +144,102 @@ class CommandEngineTest
 		java.util.List<String> captured = new java.util.ArrayList<>();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CaptureLink());
-		engine.setRosterCompute((mobs, p, onDone) ->
-			{
+		engine.setRosterCompute((mobs, p, onDone) -> {
 			});
-		engine.setStoreOps(new TestStoreOps()
-		{
+		engine.setStoreOps(new TestStoreOps() {
 
-			public boolean toggleExclusion(int itemId)
-			{
+			public boolean toggleExclusion(int itemId) {
 				return true;
 			}
 
-			public boolean toggleSim(int itemId)
-			{
+			public boolean toggleSim(int itemId) {
 				return true;
 			}
 
-			public void toggleAlwaysFilter(int itemId)
-			{
+			public void toggleAlwaysFilter(int itemId) {
 			}
 
-			public void setSupplyDefault(String category, String choice)
-			{
+			public void setSupplyDefault(String category, String choice) {
 			}
 
-			public void showInBank(java.util.Set<Integer> itemIds)
-			{
+			public void showInBank(java.util.Set<Integer> itemIds) {
 			}
 
-			public void filterBank(java.util.Set<Integer> itemIds, int[] layout)
-			{
+			public void filterBank(java.util.Set<Integer> itemIds, int[] layout) {
 			}
 
-			public String pinnedSpell(int monsterId)
-			{
+			public String pinnedSpell(int monsterId) {
 				return null;
 			}
 
-			public int pinnedSpec(int monsterId)
-			{
+			public int pinnedSpec(int monsterId) {
 				return -1;
 			}
 
-			public List<Map<String, Object>> mobExclusions(int monsterId)
-			{
+			public List<Map<String, Object>> mobExclusions(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 
-			public List<Map<String, Object>> mobSims(int monsterId)
-			{
+			public List<Map<String, Object>> mobSims(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 
-			public List<Map<String, Object>> mobFilters(int monsterId)
-			{
+			public List<Map<String, Object>> mobFilters(int monsterId) {
 				return java.util.Collections.emptyList();
 			}
 
-			public void setPinnedSpell(int monsterId, String spellName)
-			{
+			public void setPinnedSpell(int monsterId, String spellName) {
 			}
 
-			public void setPinnedSpec(int monsterId, int itemId)
-			{
+			public void setPinnedSpec(int monsterId, int itemId) {
 			}
 
-			public String note(int monsterId)
-			{
+			public String note(int monsterId) {
 				return null;
 			}
 
-			public void setNote(int monsterId, String note)
-			{
+			public void setNote(int monsterId, String note) {
 			}
 
-			public void excludeForMob(int monsterId, String scope, int itemId)
-			{
+			public void excludeForMob(int monsterId, String scope, int itemId) {
 				captured.add("exclude:" + monsterId + ":" + itemId);
 			}
 
-			public void simForMob(int monsterId, int itemId)
-			{
+			public void simForMob(int monsterId, int itemId) {
 				captured.add("sim:" + monsterId + ":" + itemId);
 			}
 
-			public void removeMobExclusion(int monsterId, String scope, int itemId)
-			{
+			public void removeMobExclusion(int monsterId, String scope, int itemId) {
 				captured.add("removeExclude:" + monsterId + ":" + itemId);
 			}
 
-			public void removeMobSim(int monsterId, int itemId)
-			{
+			public void removeMobSim(int monsterId, int itemId) {
 				captured.add("removeSim:" + monsterId + ":" + itemId);
 			}
 
-			public void addMobFilter(int monsterId, int itemId)
-			{
+			public void addMobFilter(int monsterId, int itemId) {
 			}
 
-			public void removeMobFilter(int monsterId, String scope, int itemId)
-			{
+			public void removeMobFilter(int monsterId, String scope, int itemId) {
 			}
 
-			public void setSupplyOverride(int profileId, String category, String choice)
-			{
+			public void setSupplyOverride(int profileId, String category, String choice) {
 			}
 
-			public Map<String, String> supplyOverrides(int profileId)
-			{
+			public Map<String, String> supplyOverrides(int profileId) {
 				return java.util.Collections.emptyMap();
 			}
 
 			@Override
-			public boolean skipDegradable(int monsterId)
-			{
+			public boolean skipDegradable(int monsterId) {
 				return false;
 			}
 
 			
-			public void setSkipDegradable(int monsterId, boolean skip)
-			{
+			public void setSkipDegradable(int monsterId, boolean skip) {
 			}
 		});
 		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")),
@@ -309,8 +265,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("undo restores the captured page instantly - no recompute")
-	void undoRestoresSnapshotWithoutComputing()
-	{
+	void undoRestoresSnapshotWithoutComputing() {
 		CaptureLink link = new CaptureLink();
 		java.util.concurrent.atomic.AtomicInteger computes = new java.util.concurrent.atomic.AtomicInteger();
 		PageState state = new PageState();
@@ -354,16 +309,13 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("switching the roster lens is a view gesture - never in history")
-	void lensSwitchNeverRecords()
-	{
+	void lensSwitchNeverRecords() {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CaptureLink());
-		engine.setRosterCompute((mobs, p, onDone) ->
-			{
+		engine.setRosterCompute((mobs, p, onDone) -> {
 			});
 		assertTrue(engine.execute("select", Map.of("query", "dagannoth kings")));
 		assertTrue(engine.execute("set-param", Map.of("param", "lensIndex", "value", 2)),
@@ -378,8 +330,7 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("engine commands are undoable and history rides the page")
-	void undoRedo()
-	{
+	void undoRedo() {
 		CaptureLink link = new CaptureLink();
 		java.util.List<String> computedMobs = new java.util.ArrayList<>();
 		PageState state = new PageState();
@@ -411,14 +362,12 @@ class CommandEngineTest
 
 	@Test
 	@DisplayName("results publish as a page carrying the params node")
-	void resultsCarryParams()
-	{
+	void resultsCarryParams() {
 		CaptureLink link = new CaptureLink();
 		PageState state = new PageState();
 		state.setParam("specWeapon", true);
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			}, link);
 		MonsterStats mob = data.searchMonsters("zulrah", 1).get(0);
 		engine.onResults(mob, Map.<CombatStyle, OptimizerService.StyleResult>of());

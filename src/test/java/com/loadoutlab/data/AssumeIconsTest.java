@@ -5,12 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AssumeIconsTest
-{
+class AssumeIconsTest {
 	@Test
 	@DisplayName("a compound prayer label wears its lead prayer's icon")
-	void compoundLabelsResolveToTheLeadPrayer()
-	{
+	void compoundLabelsResolveToTheLeadPrayer() {
 		// The picker offers the paired tiers; the icon is the strength
 		// prayer's (field ask 2026-08-20: no more U/S/B letters).
 		assertEquals(AssumeIcons.prayerSprite("Ultimate Strength"),
@@ -24,8 +22,7 @@ class AssumeIconsTest
 
 	@Test
 	@DisplayName("exact names still hit their own row and unknowns still miss")
-	void exactAndUnknownBehaviourUnchanged()
-	{
+	void exactAndUnknownBehaviourUnchanged() {
 		assertEquals(946, AssumeIcons.prayerSprite("Piety"));
 		assertEquals(-1, AssumeIcons.prayerSprite("Not a prayer"));
 		assertEquals(-1, AssumeIcons.prayerSprite("Not a prayer + Also not one"));

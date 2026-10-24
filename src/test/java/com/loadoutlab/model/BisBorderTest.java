@@ -30,8 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * border compared slots with the game-best set, which casts from a Shadow;
  * on a Fire Bolt card the fire amulet beats the occult. The border now
  * stands only where nothing in the game beats the item IN YOUR SET. */
-class BisBorderTest
-{
+class BisBorderTest {
 	private static final int OCCULT = 12002;
 	private static final int PURGING_STAFF = 29594;
 	private static final int SHADOW = 27275;
@@ -39,17 +38,14 @@ class BisBorderTest
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static OptimizerService.StyleResult magicAtFrostNagua(Map<Integer, Integer> owned) throws Exception
-	{
+	private static OptimizerService.StyleResult magicAtFrostNagua(Map<Integer, Integer> owned) throws Exception {
 		MonsterStats mob = data.searchMonsters("frost nagua", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
@@ -57,23 +53,19 @@ class BisBorderTest
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, p,
 				Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
-				Collections.<Integer>emptySet(), result ->
-				{
+				Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS), "compute finished");
 			return out.get().get(CombatStyle.MAGIC);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	private static boolean neckBordered(OptimizerService.StyleResult result, Map<Integer, Integer> owned)
-	{
+	private static boolean neckBordered(OptimizerService.StyleResult result, Map<Integer, Integer> owned) {
 		Map<String, Object> card = RenderModel.card(result, false, -1, owned::containsKey,
 			Collections.emptySet());
 		Map<String, Object> gear = (Map<String, Object>) card.get("gear");
@@ -83,8 +75,7 @@ class BisBorderTest
 
 	@Test
 	@DisplayName("an occult on a Fire Bolt card loses the border: a fire amulet beats it in that set")
-	void boltCard() throws Exception
-	{
+	void boltCard() throws Exception {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(PURGING_STAFF, 1);
 		owned.put(OCCULT, 1);
@@ -98,8 +89,7 @@ class BisBorderTest
 
 	@Test
 	@DisplayName("the same occult under a Shadow keeps the border")
-	void shadowCard() throws Exception
-	{
+	void shadowCard() throws Exception {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(SHADOW, 1);
 		owned.put(OCCULT, 1);

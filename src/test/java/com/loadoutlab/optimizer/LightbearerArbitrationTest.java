@@ -27,22 +27,17 @@ import org.junit.Test;
  * argmax wins (field report 2026-08-08: "it can be really impactful in
  * fights with big spec utility").
  */
-public class LightbearerArbitrationTest
-{
+public class LightbearerArbitrationTest {
 	private static LoadoutData data;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals(nameLower) && g.isStandardGear())
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals(nameLower) && g.isStandardGear()) {
 				return g;
 			}
 		}
@@ -50,11 +45,9 @@ public class LightbearerArbitrationTest
 	}
 
 	private static OptimizerService.StyleResult melee(MonsterStats monster,
-		Map<Integer, Integer> owned) throws Exception
-	{
+		Map<Integer, Integer> owned) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, monster,
@@ -64,23 +57,19 @@ public class LightbearerArbitrationTest
 				com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP,
 				false, false, Collections.emptySet(), 0,
 				Collections.emptyMap(), null, Collections.emptySet(),
-				results ->
-				{
+				results -> {
 					out.set(results);
 					done.countDown();
 				});
 			Assert.assertTrue("compute timed out", done.await(120, TimeUnit.SECONDS));
 			return out.get().get(CombatStyle.MELEE);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void aPinnedSpecWeaponOverridesTheAutoPick() throws Exception
-	{
+	public void aPinnedSpecWeaponOverridesTheAutoPick() throws Exception {
 		// Field request 2026-08-09: "i'm unable to pin to the spec slot."
 		// A pinned melee spec forces the melee card to it, even when the
 		// model would pick something else - and never starves the ranged
@@ -95,8 +84,7 @@ public class LightbearerArbitrationTest
 		owned.put(byName("abyssal whip").getId(), 1);
 		int tonalId = byName("tonalztics of ralos").getId();
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, rex,
@@ -113,16 +101,13 @@ public class LightbearerArbitrationTest
 				melee.specWeapon);
 			Assert.assertEquals("the pinned Tonalztics rides the melee spec slot too",
 				tonalId, melee.specWeapon.getId());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void aPinnedSpecShowsEvenWhenItAddsNothing() throws Exception
-	{
+	public void aPinnedSpecShowsEvenWhenItAddsNothing() throws Exception {
 		// Field report 2026-08-09: pinning the Tonalztics on a set it does
 		// not help showed NOTHING for the spec ("it would be great if that
 		// was more clear"). A pin is the player's explicit choice - it must
@@ -130,14 +115,12 @@ public class LightbearerArbitrationTest
 		// dies before any spec fires, so a pinned DDS adds ~0 here.
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (String n : new String[]{"abyssal whip", "dragon dagger"})
-		{
+		for (String n : new String[]{"abyssal whip", "dragon dagger"}) {
 			owned.put(byName(n).getId(), 1);
 		}
 		int daggerId = byName("dragon dagger").getId();
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, goblin,
@@ -154,24 +137,20 @@ public class LightbearerArbitrationTest
 			Assert.assertEquals(daggerId, melee.specWeapon.getId());
 			Assert.assertTrue("its honest ~0 value is displayed, not hidden",
 				melee.specDpsAdded >= 0);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void lightbearerWinsALongFightWhenTheRingCostsNoDps() throws Exception
-	{
+	public void lightbearerWinsALongFightWhenTheRingCostsNoDps() throws Exception {
 		// Ring of dueling and the Lightbearer are both stat-less: equal set
 		// dps, so the doubled regen's extra claws are pure profit and the
 		// Lightbearer MUST take the slot at a long fight.
 		MonsterStats nex = data.searchMonsters("nex", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"abyssal whip", "dragon claws",
-			"ring of dueling", "lightbearer"})
-		{
+			"ring of dueling", "lightbearer"}) {
 			owned.put(byName(n).getId(), 1);
 		}
 		OptimizerService.StyleResult melee = melee(nex, owned);
@@ -184,15 +163,13 @@ public class LightbearerArbitrationTest
 	}
 
 	@Test
-	public void aDpsRingKeepsTheSlotWhenSpecValueIsTiny() throws Exception
-	{
+	public void aDpsRingKeepsTheSlotWhenSpecValueIsTiny() throws Exception {
 		// A goblin dies before a second spec fires - the Berserker ring's
 		// strength is worth more than regen nobody uses.
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String n : new String[]{"abyssal whip", "dragon claws",
-			"berserker ring (i)", "lightbearer"})
-		{
+			"berserker ring (i)", "lightbearer"}) {
 			owned.put(byName(n).getId(), 1);
 		}
 		OptimizerService.StyleResult melee = melee(goblin, owned);
@@ -204,8 +181,7 @@ public class LightbearerArbitrationTest
 	}
 
 	@Test
-	public void flooredBossesYieldNoDrainValue() throws Exception
-	{
+	public void flooredBossesYieldNoDrainValue() throws Exception {
 		// The same high-defence dummy twice: once synthetic (unfloored),
 		// once wearing Verzik's id - whose defence_floors.json floor is
 		// its own base, so the drain block must contribute NOTHING and
@@ -222,12 +198,10 @@ public class LightbearerArbitrationTest
 			def, null, java.util.Collections.emptyList(), false, "", 0);
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			double[] added = new double[2];
 			com.loadoutlab.data.MonsterStats[] dummies = {unfloored, floored};
-			for (int i = 0; i < 2; i++)
-			{
+			for (int i = 0; i < 2; i++) {
 				com.loadoutlab.engine.OptimizationRequest request =
 					com.loadoutlab.engine.TestRequests.of(dummies[i],
 						CombatStyle.MELEE, PlayerLevels.MAXED,
@@ -252,16 +226,13 @@ public class LightbearerArbitrationTest
 			}
 			Assert.assertTrue("the floor must strip the drain value: unfloored "
 				+ added[0] + " vs floored " + added[1], added[0] > added[1] + 1e-9);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	@Test
-	public void doubledRegenRaisesDrainValueWhenTheBudgetLimitsFishing() throws Exception
-	{
+	public void doubledRegenRaisesDrainValueWhenTheBudgetLimitsFishing() throws Exception {
 		// A synthetic high-defence dummy: the DWH land chance is low, so
 		// P(landed) = 1-(1-p)^attempts is budget-bound - exactly where the
 		// Lightbearer's extra specs buy real drain probability. v1 priced
@@ -296,17 +267,14 @@ public class LightbearerArbitrationTest
 		double expected = dwh.expectedDamage(specBase, dummy, PlayerLevels.MAXED);
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			double without = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
 				dwh, specBase, expected, request, main, false);
 			double with = service.specDpsAdded(new com.loadoutlab.engine.DpsCalculator(),
 				dwh, specBase, expected, request, main, true);
 			Assert.assertTrue("more attempts must buy drain probability: "
 				+ without + " -> " + with, with > without + 1e-9);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

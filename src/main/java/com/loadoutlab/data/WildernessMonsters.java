@@ -18,8 +18,7 @@ import java.util.HashSet;
  * moneymaker mobs) - many also exist elsewhere, but the low-risk
  * toggles default off, so offering them costs nothing outside.
  */
-public final class WildernessMonsters
-{
+public final class WildernessMonsters {
 	/** Curated lists live in wilderness_monsters.json (hub token cap). */
 	private static final Set<String> NAMES = new HashSet<>();
 	/**
@@ -34,32 +33,27 @@ public final class WildernessMonsters
 	 */
 	private static final Set<String> EXCLUSIVE = new HashSet<>();
 
-	static
-	{
+	static {
 		com.google.gson.JsonObject root = JsonResources.object(
 			"wilderness_monsters.json");
 		JsonResources.strings(root, "names", NAMES);
 		JsonResources.strings(root, "exclusive", EXCLUSIVE);
 	}
 
-	private WildernessMonsters()
-	{
+	private WildernessMonsters() {
 	}
 
-	public static boolean isWilderness(MonsterStats monster)
-	{
+	public static boolean isWilderness(MonsterStats monster) {
 		return monster != null && monster.isWildernessMonster();
 	}
 
 	/** True when the monster exists nowhere but the Wilderness. */
-	public static boolean isExclusive(MonsterStats monster)
-	{
+	public static boolean isExclusive(MonsterStats monster) {
 		return monster != null && EXCLUSIVE.contains(monster.getNameLower());
 	}
 
 	/** The raw name-list membership - MonsterStats caches this at build. */
-	static boolean containsName(String nameLower)
-	{
+	static boolean containsName(String nameLower) {
 		return NAMES.contains(nameLower);
 	}
 }

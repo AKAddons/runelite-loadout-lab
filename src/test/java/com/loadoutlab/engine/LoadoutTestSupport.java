@@ -8,20 +8,15 @@ import com.loadoutlab.data.GearItem;
  * logic is the production version verbatim, over the public
  * {@link Loadout#getGear()} view.
  */
-public final class LoadoutTestSupport
-{
-	private LoadoutTestSupport()
-	{
+public final class LoadoutTestSupport {
+	private LoadoutTestSupport() {
 	}
 
 	/** Items in this set you would risk in PvP (tradeables). */
-	public static int tradeableCount(Loadout loadout)
-	{
+	public static int tradeableCount(Loadout loadout) {
 		int count = 0;
-		for (GearItem item : loadout.getGear().values())
-		{
-			if (item != null && item.isTradeable())
-			{
+		for (GearItem item : loadout.getGear().values()) {
+			if (item != null && item.isTradeable()) {
 				count++;
 			}
 		}

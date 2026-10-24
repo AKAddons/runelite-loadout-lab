@@ -16,24 +16,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Wiki, Arrows: seeking arrows "have +20 ranged accuracy more than their
  * normal counterpart and a minimum hit of 3" - a landed 0, 1 or 2 becomes
  * 3. The official calc clamps every accurate hitsplat to 3. */
-class SeekingArrowsTest
-{
+class SeekingArrowsTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static DpsResult shoot(String bow, String ammo)
-	{
+	private static DpsResult shoot(String bow, String ammo) {
 		MonsterStats mob = data.searchMonsters("goblin", 1).get(0);
 		OptimizationRequest request = TestRequests.of(mob, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (String name : new String[]{bow, ammo})
-		{
+		for (String name : new String[]{bow, ammo}) {
 			GearItem item = data.getGearItems().stream()
 				.filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 				.findFirst().orElseThrow(() -> new AssertionError("corpus is missing: " + name));
@@ -44,8 +40,7 @@ class SeekingArrowsTest
 
 	@Test
 	@DisplayName("a landed seeking arrow deals at least 3: the 0, 1 and 2 rolls lift to 3")
-	void minimumHitOfThree()
-	{
+	void minimumHitOfThree() {
 		DpsResult seeking = shoot("magic shortbow", "seeking rune arrow");
 		DpsResult plain = shoot("magic shortbow", "rune arrow");
 		assertEquals(plain.getMaxHit(), seeking.getMaxHit(), "same max hit");
@@ -60,8 +55,7 @@ class SeekingArrowsTest
 
 	@Test
 	@DisplayName("seeking arrows in the ammo slot of a blowpipe count for nothing")
-	void onlyWhenTheWeaponFiresThem()
-	{
+	void onlyWhenTheWeaponFiresThem() {
 		DpsResult pipe = shoot("toxic blowpipe", "seeking rune arrow");
 		double acc = pipe.getAccuracy();
 		assertEquals(RollMath.expectedHitWithFlatArmour(acc, 0, pipe.getMaxHit(), 0),

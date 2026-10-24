@@ -18,35 +18,26 @@ import static org.junit.jupiter.api.Assertions.*;
  * mob; and a refused revert consumed history depth the snapshot
  * deques never followed, putting every later restore out of phase.
  */
-class UndoIntegrityTest
-{
+class UndoIntegrityTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static void flushEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void flushEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 	}
 
-	private static String firstMobLabel(Map<String, Object> page)
-	{
+	private static String firstMobLabel(Map<String, Object> page) {
 		List<?> entries = (List<?>) page.get("entries");
-		if (entries == null || entries.isEmpty())
-		{
+		if (entries == null || entries.isEmpty()) {
 			return null;
 		}
 		List<?> mobs = (List<?>) ((Map<?, ?>) entries.get(0)).get("mobs");
@@ -56,13 +47,11 @@ class UndoIntegrityTest
 
 	@Test
 	@DisplayName("after undo, a republish draws the restored mob - not the undone one")
-	void undoRestoresTheResultsWithThePage()
-	{
+	void undoRestoresTheResultsWithThePage() {
 		CaptureLink link = new CaptureLink();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 
@@ -88,13 +77,11 @@ class UndoIntegrityTest
 
 	@Test
 	@DisplayName("a refused revert keeps the snapshot stacks in phase")
-	void refusedRevertKeepsPhase()
-	{
+	void refusedRevertKeepsPhase() {
 		CaptureLink link = new CaptureLink();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps(1));
@@ -117,13 +104,11 @@ class UndoIntegrityTest
 
 	@Test
 	@DisplayName("undoing a select also undoes the params it seeded")
-	void undoRestoresSeededParams()
-	{
+	void undoRestoresSeededParams() {
 		CaptureLink link = new CaptureLink();
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 
@@ -142,21 +127,18 @@ class UndoIntegrityTest
 	}
 
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 		private Map<String, Object> last;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 			last = page;
 		}
 
 		@Override
-		public Map<String, Object> lastPage()
-		{
+		public Map<String, Object> lastPage() {
 			return last;
 		}
 	}

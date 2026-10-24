@@ -24,8 +24,7 @@ import java.util.Map;
  * (drop, never guess) and the snapshot swap is a volatile write, so no
  * marshalling is needed here.
  */
-public class DwmsLink
-{
+public class DwmsLink {
 	/** PluginMessage namespace = DWMS's config group, per RuneLite convention. */
 	public static final String DWMS_NAMESPACE = "dudewheresmystuff";
 	public static final String REQUEST_NAME = "storages-request";
@@ -45,8 +44,7 @@ public class DwmsLink
 	private volatile boolean live;
 
 	/** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
-	public static Map<String, Object> request()
-	{
+	public static Map<String, Object> request() {
 		return Collections.singletonMap("source", SOURCE);
 	}
 
@@ -55,35 +53,29 @@ public class DwmsLink
 	 * happens at the caller). Returns true - and replaces the snapshot -
 	 * only for a well-formed version-1 response addressed to us.
 	 */
-	public boolean accept(Map<String, Object> data)
-	{
+	public boolean accept(Map<String, Object> data) {
 		if (data == null
 			|| !SOURCE.equals(data.get("target"))
 			|| !(data.get("version") instanceof Number)
 			|| ((Number) data.get("version")).intValue() != SUPPORTED_VERSION
-			|| !(data.get("storages") instanceof List))
-		{
+			|| !(data.get("storages") instanceof List)) {
 			return false;
 		}
 		Map<Integer, Integer> next = new HashMap<>();
 		Map<String, Map<Integer, Integer>> nextFamilies = new HashMap<>();
-		for (Object storage : (List<?>) data.get("storages"))
-		{
-			if (!(storage instanceof Map))
-			{
+		for (Object storage : (List<?>) data.get("storages")) {
+			if (!(storage instanceof Map)) {
 				continue;
 			}
 			Object storageItems = ((Map<?, ?>) storage).get("items");
-			if (!(storageItems instanceof List))
-			{
+			if (!(storageItems instanceof List)) {
 				continue;
 			}
 			Object category = ((Map<?, ?>) storage).get("category");
 			Map<Integer, Integer> family = nextFamilies.computeIfAbsent(
 				category instanceof String ? (String) category : "world",
 				k -> new HashMap<>());
-			for (Object item : (List<?>) storageItems)
-			{
+			for (Object item : (List<?>) storageItems) {
 				mergeItem(item, next);
 				mergeItem(item, family);
 			}
@@ -96,22 +88,18 @@ public class DwmsLink
 	}
 
 	/** One {"id", "quantity"} entry; anything malformed is dropped. */
-	private static void mergeItem(Object item, Map<Integer, Integer> into)
-	{
-		if (!(item instanceof Map))
-		{
+	private static void mergeItem(Object item, Map<Integer, Integer> into) {
+		if (!(item instanceof Map)) {
 			return;
 		}
 		Object id = ((Map<?, ?>) item).get("id");
 		Object quantity = ((Map<?, ?>) item).get("quantity");
-		if (!(id instanceof Number) || !(quantity instanceof Number))
-		{
+		if (!(id instanceof Number) || !(quantity instanceof Number)) {
 			return;
 		}
 		int itemId = ((Number) id).intValue();
 		long amount = ((Number) quantity).longValue();
-		if (itemId <= 0 || amount <= 0)
-		{
+		if (itemId <= 0 || amount <= 0) {
 			return;
 		}
 		into.merge(itemId, (int) Math.min(amount, Integer.MAX_VALUE),
@@ -119,34 +107,29 @@ public class DwmsLink
 	}
 
 	/** A different account/profile: nothing from the previous one survives. */
-	public void reset()
-	{
+	public void reset() {
 		items = Map.of();
 		families = Map.of();
 		live = false;
 	}
 
 	/** Category -> merged items, for the location-hint provenance. */
-	public Map<String, Map<Integer, Integer>> families()
-	{
+	public Map<String, Map<Integer, Integer>> families() {
 		return families;
 	}
 
 	/** Item id -> quantity from the latest response, merged across storages. */
-	public Map<Integer, Integer> snapshot()
-	{
+	public Map<Integer, Integer> snapshot() {
 		return items;
 	}
 
 	/** Distinct live item count - the panel's provenance line. */
-	public int count()
-	{
+	public int count() {
 		return items.size();
 	}
 
 	/** Fold the live items into an owned map (quantities sum). */
-	public Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned)
-	{
+	public Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned) {
 		items.forEach((id, n) -> owned.merge(id, n, Integer::sum));
 		return owned;
 	}

@@ -12,34 +12,28 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Zulrah demands a recoil source; the optimizer must actually bring one. */
-public class RequiredUtilityTest
-{
+public class RequiredUtilityTest {
 	private static LoadoutData data;
 	private static MonsterStats zulrah;
 	private static final java.util.Set<Integer> RECOIL_IDS =
 		java.util.Set.of(2550, 20655, 20657, 28945);
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 		zulrah = data.searchMonsters("zulrah", 1).get(0);
 	}
 
-	private static DpsResult best(OptimizationRequest request)
-	{
+	private static DpsResult best(OptimizationRequest request) {
 		LoadoutOptimizer optimizer = new LoadoutOptimizer();
 		DpsResult result = optimizer.optimize(data, request).get(0);
 		result = optimizer.fillDpsNeutralSlots(data, request, result);
 		return optimizer.ensureRequiredUtility(data, request, result);
 	}
 
-	private static boolean hasRecoil(DpsResult result)
-	{
-		for (GearItem item : result.getLoadout().getGear().values())
-		{
-			if (item != null && RECOIL_IDS.contains(item.getId()))
-			{
+	private static boolean hasRecoil(DpsResult result) {
+		for (GearItem item : result.getLoadout().getGear().values()) {
+			if (item != null && RECOIL_IDS.contains(item.getId())) {
 				return true;
 			}
 		}
@@ -47,8 +41,7 @@ public class RequiredUtilityTest
 	}
 
 	@Test
-	public void theGameBestZulrahSetCarriesARecoilSource()
-	{
+	public void theGameBestZulrahSetCarriesARecoilSource() {
 		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -56,8 +49,7 @@ public class RequiredUtilityTest
 	}
 
 	@Test
-	public void anUnchargedSufferingCountsAsAccessToTheRecoilForm()
-	{
+	public void anUnchargedSufferingCountsAsAccessToTheRecoilForm() {
 		// Own tbow + arrows + an UNCHARGED suffering (i): the set must show
 		// the Recoil-charged form (20657) in the ring slot.
 		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
@@ -71,8 +63,7 @@ public class RequiredUtilityTest
 	}
 
 	@Test
-	public void owningNoRecoilSourceLeavesTheSetUnchanged()
-	{
+	public void owningNoRecoilSourceLeavesTheSetUnchanged() {
 		OptimizationRequest req = TestRequests.of(zulrah, CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, 0, CandidateMode.OWNED_ONLY, true, false,
@@ -81,8 +72,7 @@ public class RequiredUtilityTest
 	}
 
 	@Test
-	public void nonZulrahMonstersAreUntouchedByTheRecoilRule()
-	{
+	public void nonZulrahMonstersAreUntouchedByTheRecoilRule() {
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		Assert.assertFalse(RequiredUtility.requiresRecoil(graardor));
 		Assert.assertTrue(RequiredUtility.requiresRecoil(zulrah));

@@ -33,23 +33,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * landed spec. It shines exactly where a DWH cannot reach (the wiki's
  * example: Zulrah's 300 Magic and Defence).
  */
-class TonalzticsTest
-{
+class TonalzticsTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static GearItem byName(String nameLower, String version)
-	{
-		for (GearItem g : data.getGearItems())
-		{
+	private static GearItem byName(String nameLower, String version) {
+		for (GearItem g : data.getGearItems()) {
 			if (g.getNameLower().equals(nameLower)
-				&& (version == null || version.equals(g.getVersion())))
-			{
+				&& (version == null || version.equals(g.getVersion()))) {
 				return g;
 			}
 		}
@@ -58,8 +53,7 @@ class TonalzticsTest
 
 	@Test
 	@DisplayName("the registry matches both charge states as a ranged drain spec")
-	void registryMatch()
-	{
+	void registryMatch() {
 		SpecialAttack charged = SpecialAttack.match(
 			byName("tonalztics of ralos", "Charged"));
 		assertNotNull(charged, "charged must carry Division");
@@ -70,8 +64,7 @@ class TonalzticsTest
 
 	@Test
 	@DisplayName("the drain measures off the target's Magic level, floored at zero")
-	void drainArithmetic()
-	{
+	void drainArithmetic() {
 		SpecialAttack division = SpecialAttack.match(
 			byName("tonalztics of ralos", "Charged"));
 		// A Zulrah-shaped dummy: 300 Defence, 300 Magic -> one landed
@@ -91,8 +84,7 @@ class TonalzticsTest
 
 	@Test
 	@DisplayName("Division earns positive drain value on a high-magic tank")
-	void drainValue()
-	{
+	void drainValue() {
 		GearItem tonalztics = byName("tonalztics of ralos", "Charged");
 		SpecialAttack division = SpecialAttack.match(tonalztics);
 		MonsterStats zulrahLike = new MonsterStats(
@@ -118,15 +110,12 @@ class TonalzticsTest
 		assertTrue(expected > 0, "two glaives must expect damage");
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			double added = service.specDpsAdded(new DpsCalculator(), division,
 				specBase, expected, request, main, false);
 			assertTrue(added > 0,
 				"draining 75 defence off a 300/300 tank must add dps: " + added);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

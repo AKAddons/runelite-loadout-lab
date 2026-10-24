@@ -14,19 +14,16 @@ import org.junit.Test;
  * two-handed 3-tick crossbow that fires only ascension bolts (plain,
  * diamond, onyx and their enchanted forms), which fit no other weapon.
  */
-public class AscensionCrossbowsTest
-{
+public class AscensionCrossbowsTest {
 	private static final int CROSSBOWS = 34681;
 	private static final int[] ASCENSION_BOLTS = {34684, 34690, 34696, 34702, 34708};
 
 	@Test
-	public void onlyAscensionBoltsFitAndTheyFitNothingElse()
-	{
+	public void onlyAscensionBoltsFitAndTheyFitNothingElse() {
 		LoadoutData data = new DataService().load();
 		GearItem crossbows = data.getGear(CROSSBOWS);
 		Assert.assertNotNull(crossbows);
-		for (int id : ASCENSION_BOLTS)
-		{
+		for (int id : ASCENSION_BOLTS) {
 			Assert.assertTrue("bolts " + id, RangedAmmo.compatible(data.getGear(id), crossbows));
 		}
 		Assert.assertFalse("no ammo", RangedAmmo.compatible(null, crossbows));
@@ -39,8 +36,7 @@ public class AscensionCrossbowsTest
 	}
 
 	@Test
-	public void rapidFiresAtTwoTicks()
-	{
+	public void rapidFiresAtTwoTicks() {
 		LoadoutData data = new DataService().load();
 		MonsterStats goblin = data.searchMonsters("goblin", 1).get(0);
 		OptimizationRequest request = new OptimizationRequest(goblin, CombatStyle.RANGED, PlayerLevels.MAXED,

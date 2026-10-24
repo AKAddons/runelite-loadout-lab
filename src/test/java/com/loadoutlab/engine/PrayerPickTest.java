@@ -8,11 +8,9 @@ import org.junit.Test;
  * Piety against every mob"): named tiers per style whose factors mirror
  * bestAvailable's cascade exactly.
  */
-public class PrayerPickTest
-{
+public class PrayerPickTest {
 	@Test
-	public void picksReplaceOnlyTheChosenStylesFactors()
-	{
+	public void picksReplaceOnlyTheChosenStylesFactors() {
 		PrayerBonuses best = PrayerBonuses.bestAvailable(PlayerLevels.MAXED);
 		PrayerBonuses chivalry = PrayerBonuses.forPick(CombatStyle.MELEE, "Chivalry", best);
 		Assert.assertEquals(1.15, chivalry.getMeleeAccuracy(), 1e-9);
@@ -55,23 +53,20 @@ public class PrayerPickTest
 	}
 
 	@Test
-	public void unknownPicksFallBackToDetect()
-	{
+	public void unknownPicksFallBackToDetect() {
 		PrayerBonuses best = PrayerBonuses.bestAvailable(PlayerLevels.MAXED);
 		Assert.assertSame(best, PrayerBonuses.forPick(CombatStyle.MELEE, "Retribution", best));
 	}
 
 	@Test
-	public void everyStyleOffersItsNamedTiers()
-	{
+	public void everyStyleOffersItsNamedTiers() {
 		Assert.assertEquals("Zeal", PrayerBonuses.optionsFor(CombatStyle.MELEE)[0]);
 		Assert.assertEquals("Rigour", PrayerBonuses.optionsFor(CombatStyle.RANGED)[0]);
 		Assert.assertEquals("Augury", PrayerBonuses.optionsFor(CombatStyle.MAGIC)[0]);
 	}
 
 	@Test
-	public void boostMembershipDrivesTheStyleMenus()
-	{
+	public void boostMembershipDrivesTheStyleMenus() {
 		Assert.assertTrue(BoostProfile.SMELLING_SALTS.boosts('a'));
 		Assert.assertTrue(BoostProfile.SMELLING_SALTS.boosts('m'));
 		Assert.assertTrue(BoostProfile.SUPER_COMBAT.boosts('a'));

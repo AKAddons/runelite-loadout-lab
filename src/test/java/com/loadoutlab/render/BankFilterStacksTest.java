@@ -11,13 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Andrew, 2026-09-02: "not seeing all of the supplies in the filter
  * view" - the filter carried gear, bench and runes; the Supplies and
  * Inventory rows draw more than that. */
-class BankFilterStacksTest
-{
-	private static List<Integer> ids(List<Map<String, Object>> stacks)
-	{
+class BankFilterStacksTest {
+	private static List<Integer> ids(List<Map<String, Object>> stacks) {
 		List<Integer> out = new ArrayList<>();
-		for (Map<String, Object> s : stacks)
-		{
+		for (Map<String, Object> s : stacks) {
 			out.add(Model.id(s, "id"));
 		}
 		return out;
@@ -25,8 +22,7 @@ class BankFilterStacksTest
 
 	@Test
 	@DisplayName("the filter carries every supply dose, the assumed potion, the cape, the pouch, the runes and the mob's own filter list")
-	void everythingTheRowsDraw()
-	{
+	void everythingTheRowsDraw() {
 		Map<String, Object> mob = Map.of("castingPouch", 27281, "castingCape", 9763,
 			"mobFilters", List.of(Map.of("id", 9789, "name", "Construction cape", "scope", "all")));
 		Map<String, Object> assume = Map.of("boostItem", 23685, "boostSupplied", false);
@@ -40,8 +36,7 @@ class BankFilterStacksTest
 
 	@Test
 	@DisplayName("a raid-supplied boost, and the cape and pouch of a trip that casts nothing, stay out")
-	void gated()
-	{
+	void gated() {
 		Map<String, Object> mob = Map.of("castingPouch", 27281, "castingCape", 9763);
 		Map<String, Object> assume = Map.of("boostItem", 23685, "boostSupplied", true);
 		assertEquals(List.of(), ids(BankLayout.tripStacks(mob, assume, List.of(), List.of(), List.of())));

@@ -20,20 +20,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * OWNED side only, and before the mob whitelists so a nibbler lock cannot
  * resurrect a spell the bank cannot pay for.
  */
-class SpellRuneWiringTest
-{
+class SpellRuneWiringTest {
 	private static LoadoutData data;
 	private static MonsterStats zulrah;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		zulrah = data.searchMonsters("zulrah", 1).get(0);
 	}
 
-	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned)
-	{
+	private static OptimizationRequest request(CandidateMode mode, OwnedItems owned) {
 		return new OptimizationRequest(
 			zulrah, CombatStyle.MAGIC, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
@@ -43,13 +40,11 @@ class SpellRuneWiringTest
 
 	@Test
 	@DisplayName("a runeless bank's own spell pool holds no premium-rune spell")
-	void ownedPoolDropsPremiumSpells()
-	{
+	void ownedPoolDropsPremiumSpells() {
 		List<SpellStats> pool = LoadoutOptimizer.spellsFor(data,
 			request(CandidateMode.OWNED_ONLY, OwnedItems.EMPTY));
 		assertFalse(pool.isEmpty(), "the pool should still hold shop-rune spells");
-		for (SpellStats spell : pool)
-		{
+		for (SpellStats spell : pool) {
 			assertTrue(SpellRunes.premiumRunesOwned(spell.getName(), OwnedItems.EMPTY),
 				spell.getName() + " needs premium runes the bank does not hold");
 		}
@@ -57,8 +52,7 @@ class SpellRuneWiringTest
 
 	@Test
 	@DisplayName("owning the runes restores the barrage-class spells")
-	void owningRunesRestoresThePool()
-	{
+	void owningRunesRestoresThePool() {
 		Map<Integer, Integer> runes = new HashMap<>();
 		runes.put(565, 1000); // blood
 		runes.put(560, 1000); // death
@@ -67,8 +61,7 @@ class SpellRuneWiringTest
 		List<SpellStats> pool = LoadoutOptimizer.spellsFor(data,
 			request(CandidateMode.OWNED_ONLY, new OwnedItems(runes, true)));
 		boolean premium = false;
-		for (SpellStats spell : pool)
-		{
+		for (SpellStats spell : pool) {
 			premium |= !SpellRunes.premiumRunesOwned(spell.getName(), OwnedItems.EMPTY);
 		}
 		assertTrue(premium, "with the runes banked, premium spells should be back");
@@ -76,13 +69,11 @@ class SpellRuneWiringTest
 
 	@Test
 	@DisplayName("the ceiling keeps every spell - it prices the game, not the bank")
-	void ceilingIsUngated()
-	{
+	void ceilingIsUngated() {
 		List<SpellStats> pool = LoadoutOptimizer.spellsFor(data,
 			request(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY));
 		boolean premium = false;
-		for (SpellStats spell : pool)
-		{
+		for (SpellStats spell : pool) {
 			premium |= !SpellRunes.premiumRunesOwned(spell.getName(), OwnedItems.EMPTY);
 		}
 		assertTrue(premium, "the BiS side must not be rune-gated");

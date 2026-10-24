@@ -9,45 +9,35 @@ package com.loadoutlab.engine;
  * 0.208/0.416/0.625 dps, requiring the Arceuus book and the book of the
  * dead wielded or carried. (Vengeance modeling deferred - roadmap.)
  */
-public final class ExtraDps
-{
+public final class ExtraDps {
 	public static final int BOOK_OF_THE_DEAD = 25818;
 
-	private ExtraDps()
-	{
+	private ExtraDps() {
 	}
 
 	/** The best thrall tier's flat dps at this Magic level (0 below 38). */
-	public static double thrallDps(int magicLevel)
-	{
-		if (magicLevel >= 76)
-		{
+	public static double thrallDps(int magicLevel) {
+		if (magicLevel >= 76) {
 			return 0.625;
 		}
-		if (magicLevel >= 57)
-		{
+		if (magicLevel >= 57) {
 			return 0.416;
 		}
-		if (magicLevel >= 38)
-		{
+		if (magicLevel >= 38) {
 			return 0.208;
 		}
 		return 0;
 	}
 
 	/** The tier name the Magic level reaches, or null below 38. */
-	public static String thrallTier(int magicLevel)
-	{
-		if (magicLevel >= 76)
-		{
+	public static String thrallTier(int magicLevel) {
+		if (magicLevel >= 76) {
 			return "Greater";
 		}
-		if (magicLevel >= 57)
-		{
+		if (magicLevel >= 57) {
 			return "Superior";
 		}
-		if (magicLevel >= 38)
-		{
+		if (magicLevel >= 38) {
 			return "Lesser";
 		}
 		return null;

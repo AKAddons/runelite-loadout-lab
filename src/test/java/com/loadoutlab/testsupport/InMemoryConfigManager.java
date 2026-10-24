@@ -10,14 +10,11 @@ import org.mockito.Mockito;
  * backed by an in-memory map - the same fake pattern proven on goal-planner:
  * real stores run against this instead of parallel fake store classes.
  */
-public final class InMemoryConfigManager
-{
-	private InMemoryConfigManager()
-	{
+public final class InMemoryConfigManager {
+	private InMemoryConfigManager() {
 	}
 
-	public static ConfigManager create()
-	{
+	public static ConfigManager create() {
 		ConfigManager mock = Mockito.mock(ConfigManager.class);
 		Map<String, String> store = new HashMap<>();
 
@@ -26,13 +23,11 @@ public final class InMemoryConfigManager
 		// Stub the STRING overload specifically: javac resolves
 		// setConfiguration(group, key, someString) to (String,String,String),
 		// and a stub on the (String,String,Object) overload would not match it.
-		Mockito.doAnswer(inv ->
-		{
+		Mockito.doAnswer(inv -> {
 			store.put(inv.getArgument(0) + "." + inv.getArgument(1), inv.getArgument(2));
 			return null;
 		}).when(mock).setConfiguration(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
-		Mockito.doAnswer(inv ->
-		{
+		Mockito.doAnswer(inv -> {
 			store.remove(inv.getArgument(0) + "." + inv.getArgument(1));
 			return null;
 		}).when(mock).unsetConfiguration(Mockito.anyString(), Mockito.anyString());

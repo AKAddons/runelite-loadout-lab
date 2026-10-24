@@ -3,8 +3,7 @@ package com.loadoutlab.engine;
 
 import lombok.Getter;
 
-public enum CombatStyle
-{
+public enum CombatStyle {
 	ANY("Any"),
 	MELEE("Melee"),
 	RANGED("Ranged"),
@@ -13,18 +12,15 @@ public enum CombatStyle
 	@Getter
 	private final String label;
 
-	CombatStyle(String label)
-	{
+	CombatStyle(String label) {
 		this.label = label;
 	}
 
-	public static CombatStyle[] concreteValues()
-	{
+	public static CombatStyle[] concreteValues() {
 		return new CombatStyle[]{MELEE, RANGED, MAGIC};
 	}
 
-	public String toString()
-	{
+	public String toString() {
 		return label;
 	}
 }

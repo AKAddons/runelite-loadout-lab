@@ -16,8 +16,7 @@ import net.runelite.api.Skill;
  * running client. The plugin exports the real account to
  * .runelite/loadout-lab/profile.json on every query.
  */
-public final class PlayerProfile
-{
+public final class PlayerProfile {
 	public final PlayerLevels realLevels;
 	public final PlayerLevels boostedLevels;
 	public final PrayerUnlocks prayerUnlocks;
@@ -30,16 +29,14 @@ public final class PlayerProfile
 
 	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
-		Map<Integer, Integer> owned, boolean bankScanned)
-	{
+		Map<Integer, Integer> owned, boolean bankScanned) {
 		this(realLevels, boostedLevels, prayerUnlocks, requirements, owned, bankScanned, null);
 	}
 
 	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
 		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
 		Map<Integer, Integer> owned, boolean bankScanned,
-		Map<String, Map<Integer, Integer>> ownedBySource)
-	{
+		Map<String, Map<Integer, Integer>> ownedBySource) {
 		this.realLevels = realLevels;
 		this.boostedLevels = boostedLevels == null ? realLevels : boostedLevels;
 		this.prayerUnlocks = prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
@@ -49,23 +46,19 @@ public final class PlayerProfile
 		// Deep-copied on the constructing thread: the export writer runs
 		// off-thread while the client keeps mutating the live snapshots.
 		LinkedHashMap<String, Map<Integer, Integer>> copy = new LinkedHashMap<>();
-		if (ownedBySource != null)
-		{
-			for (Map.Entry<String, Map<Integer, Integer>> e : ownedBySource.entrySet())
-			{
+		if (ownedBySource != null) {
+			for (Map.Entry<String, Map<Integer, Integer>> e : ownedBySource.entrySet()) {
 				copy.put(e.getKey(), Map.copyOf(e.getValue()));
 			}
 		}
 		this.ownedBySource = Collections.unmodifiableMap(copy);
 	}
 
-	public OwnedItems ownedItems()
-	{
+	public OwnedItems ownedItems() {
 		return new OwnedItems(owned, bankScanned);
 	}
 
-	public String toJson()
-	{
+	public String toJson() {
 		JsonObject root = new JsonObject();
 		root.add("realLevels", levels(realLevels));
 		root.add("boostedLevels", levels(boostedLevels));
@@ -78,22 +71,19 @@ public final class PlayerProfile
 		prayers.addProperty("zeal", prayerUnlocks.zeal());
 		root.add("prayerUnlocks", prayers);
 		JsonObject reqSkills = new JsonObject();
-		for (Map.Entry<Skill, Integer> entry : requirements.getLevels().entrySet())
-		{
+		for (Map.Entry<Skill, Integer> entry : requirements.getLevels().entrySet()) {
 			reqSkills.addProperty(entry.getKey().name(), entry.getValue());
 		}
 		JsonObject reqs = new JsonObject();
 		reqs.add("skills", reqSkills);
 		com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
-		for (String quest : requirements.getCompletedQuests())
-		{
+		for (String quest : requirements.getCompletedQuests()) {
 			quests.add(quest);
 		}
 		reqs.add("quests", quests);
 		root.add("requirements", reqs);
 		root.add("owned", items(owned));
-		if (!ownedBySource.isEmpty())
-		{
+		if (!ownedBySource.isEmpty()) {
 			JsonObject bySource = new JsonObject();
 			ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
 			root.add("ownedBySource", bySource);
@@ -103,25 +93,21 @@ public final class PlayerProfile
 	}
 
 	/** {"itemId": quantity} for an owned map. */
-	private static JsonObject items(Map<Integer, Integer> items)
-	{
+	private static JsonObject items(Map<Integer, Integer> items) {
 		JsonObject out = new JsonObject();
 		items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
 		return out;
 	}
 
-	private static Map<Integer, Integer> parseItems(JsonObject object)
-	{
+	private static Map<Integer, Integer> parseItems(JsonObject object) {
 		Map<Integer, Integer> out = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : object.entrySet())
-		{
+		for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
 			out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
 		}
 		return out;
 	}
 
-	public static PlayerProfile fromJson(String json)
-	{
+	public static PlayerProfile fromJson(String json) {
 		JsonObject root = new JsonParser().parse(json).getAsJsonObject();
 		JsonObject prayers = root.getAsJsonObject("prayerUnlocks");
 		PrayerUnlocks unlocks = new PrayerUnlocks(
@@ -133,19 +119,16 @@ public final class PlayerProfile
 			prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
 		JsonObject reqs = root.getAsJsonObject("requirements");
 		Map<Skill, Integer> reqSkills = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : reqs.getAsJsonObject("skills").entrySet())
-		{
+		for (Map.Entry<String, JsonElement> entry : reqs.getAsJsonObject("skills").entrySet()) {
 			reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
 		}
 		Set<String> quests = new HashSet<>();
 		JsonResources.strings(reqs, "quests", quests);
 		// Optional (older exports lack it) - absence means no provenance.
 		Map<String, Map<Integer, Integer>> bySource = null;
-		if (root.has("ownedBySource"))
-		{
+		if (root.has("ownedBySource")) {
 			bySource = new LinkedHashMap<>();
-			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet())
-			{
+			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet()) {
 				bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
 			}
 		}
@@ -159,8 +142,7 @@ public final class PlayerProfile
 			bySource);
 	}
 
-	private static JsonObject levels(PlayerLevels levels)
-	{
+	private static JsonObject levels(PlayerLevels levels) {
 		JsonObject object = new JsonObject();
 		object.addProperty("attack", levels.getAttack());
 		object.addProperty("strength", levels.getStrength());
@@ -175,8 +157,7 @@ public final class PlayerProfile
 	/** Whether the plugin's cached level/prayer/quest snapshot, taken while
 	 * {@code snapshotAccount} was logged in, may still serve now that the
 	 * client reports {@code currentAccount} (-1 = logged out). */
-	public static boolean snapshotSurvives(long snapshotAccount, long currentAccount)
-	{
+	public static boolean snapshotSurvives(long snapshotAccount, long currentAccount) {
 		// Logout keeps the last character (field report 2026-09-01: Piety at
 		// 45 prayer once the snapshot was dropped and MAXED filled in); only
 		// a DIFFERENT account replaces it - including a hashless snapshot
@@ -184,8 +165,7 @@ public final class PlayerProfile
 		return currentAccount == -1 || currentAccount == snapshotAccount;
 	}
 
-	private static PlayerLevels parseLevels(JsonObject object)
-	{
+	private static PlayerLevels parseLevels(JsonObject object) {
 		return new PlayerLevels(
 			object.get("attack").getAsInt(),
 			object.get("strength").getAsInt(),

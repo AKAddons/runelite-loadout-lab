@@ -13,27 +13,22 @@ import static org.junit.jupiter.api.Assertions.*;
  * regeneration that renames a sea monster goes red here instead of silently
  * un-navaling it.
  */
-class NavalCombatTest
-{
+class NavalCombatTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("every curated naval name resolves to a corpus row with heavy defence")
-	void rosterResolvesAgainstTheCorpus()
-	{
+	void rosterResolvesAgainstTheCorpus() {
 		assertFalse(NavalCombat.navalNames().isEmpty());
 		StringBuilder missing = new StringBuilder();
-		for (String name : NavalCombat.navalNames())
-		{
+		for (String name : NavalCombat.navalNames()) {
 			List<MonsterStats> hits = data.searchMonsters(name, 1);
-			if (hits.isEmpty() || !hits.get(0).getName().equalsIgnoreCase(name))
-			{
+			if (hits.isEmpty() || !hits.get(0).getName().equalsIgnoreCase(name)) {
 				missing.append("\n  ").append(name)
 					.append(hits.isEmpty() ? " (no hit)" : " (top hit: " + hits.get(0).getName() + ")");
 			}
@@ -44,8 +39,7 @@ class NavalCombatTest
 
 	@Test
 	@DisplayName("naval detection is name-exact and case-insensitive")
-	void detection()
-	{
+	void detection() {
 		assertTrue(NavalCombat.isNaval("Hammerhead shark"));
 		assertTrue(NavalCombat.isNaval("hammerhead SHARK"));
 		assertFalse(NavalCombat.isNaval("General Graardor"));
@@ -57,8 +51,7 @@ class NavalCombatTest
 
 	@Test
 	@DisplayName("every roster mob carries an 8-keel max-hit row")
-	void keelRowsCoverTheRoster()
-	{
+	void keelRowsCoverTheRoster() {
 		assertEquals(8, NavalCombat.keels().size());
 		// Keels are METAL tiers (wiki Keel page; Andrew 2026-09-02: "there is
 		// a rune keel but not a mahogany keel"). The Boat combat table's
@@ -72,10 +65,8 @@ class NavalCombatTest
 		assertEquals("none", NavalCombat.normalizeKeel("regular"));
 		assertEquals("dragon", NavalCombat.normalizeKeel("dragon"));
 		assertEquals("steel", NavalCombat.normalizeKeel("steel"));
-		for (String name : NavalCombat.navalNames())
-		{
-			for (String keel : NavalCombat.keels())
-			{
+		for (String name : NavalCombat.navalNames()) {
+			for (String keel : NavalCombat.keels()) {
 				assertTrue(NavalCombat.keelMaxHit(name, keel) >= 0,
 					name + " has no keel row for " + keel);
 			}

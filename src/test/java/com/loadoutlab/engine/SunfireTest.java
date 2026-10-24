@@ -21,28 +21,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * damage pool and the elemental weakness and BEFORE the tome step, so
  * a charged tome of fire lifts the max hit without lifting the floor.
  */
-class SunfireTest
-{
+class SunfireTest {
 	private static LoadoutData data;
 	private static MonsterStats araxxor;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		araxxor = data.searchMonsters("araxxor", 1).get(0);
 		assertEquals("Araxxor", araxxor.getName());
 		assertEquals("fire", araxxor.getWeaknessElement(), "the fixture needs a fire-weak target");
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data.getSpells().stream().filter(s -> s.getName().equalsIgnoreCase(name))
 			.findFirst().orElseThrow(AssertionError::new);
 	}
 
-	private static GearItem item(String nameLower, String versionLower)
-	{
+	private static GearItem item(String nameLower, String versionLower) {
 		return data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower)
 				&& (versionLower == null ? g.isStandardGear() : g.getVersionLower().equals(versionLower)))
@@ -55,16 +51,13 @@ class SunfireTest
 	private static final String[] MAGIC_SET = {"kodai wand", "occult necklace",
 		"tormented bracelet", "ancestral hat", "ancestral robe top", "ancestral robe bottom"};
 
-	private static DpsResult cast(SpellStats spell, boolean sunfire, boolean fireTome)
-	{
+	private static DpsResult cast(SpellStats spell, boolean sunfire, boolean fireTome) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (String name : MAGIC_SET)
-		{
+		for (String name : MAGIC_SET) {
 			GearItem piece = item(name, null);
 			gear.put(piece.getSlot(), piece);
 		}
-		if (fireTome)
-		{
+		if (fireTome) {
 			gear.put(GearSlot.SHIELD, item("tome of fire", "charged"));
 		}
 		OptimizationRequest request = new OptimizationRequest(
@@ -79,8 +72,7 @@ class SunfireTest
 
 	@Test
 	@DisplayName("sunfire runes give Fire Surge a minimum hit of a tenth of its max, priced uniform over [min, max]")
-	void sunfireRunesRaiseTheFloor()
-	{
+	void sunfireRunesRaiseTheFloor() {
 		DpsResult plain = cast(spell("Fire Surge"), false, false);
 		DpsResult sunfire = cast(spell("Fire Surge"), true, false);
 		assertEquals(plain.getMaxHit(), sunfire.getMaxHit(), "the max hit is untouched");
@@ -94,8 +86,7 @@ class SunfireTest
 
 	@Test
 	@DisplayName("the floor is a tenth of the pre-tome max: a charged tome of fire lifts the max, not the minimum")
-	void floorIsTakenBeforeTheTome()
-	{
+	void floorIsTakenBeforeTheTome() {
 		DpsResult bare = cast(spell("Fire Wave"), true, false);
 		DpsResult tome = cast(spell("Fire Wave"), true, true);
 		assertTrue(tome.getMaxHit() > bare.getMaxHit(), "the charged fire tome adds damage");
@@ -108,8 +99,7 @@ class SunfireTest
 
 	@Test
 	@DisplayName("the flag does nothing to a water spell")
-	void waterSpellsIgnoreTheFlag()
-	{
+	void waterSpellsIgnoreTheFlag() {
 		DpsResult plain = cast(spell("Water Surge"), false, false);
 		DpsResult flagged = cast(spell("Water Surge"), true, false);
 		assertEquals(plain.getDps(), flagged.getDps(), 1e-12);

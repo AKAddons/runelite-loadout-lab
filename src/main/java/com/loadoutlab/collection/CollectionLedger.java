@@ -28,15 +28,13 @@ import net.runelite.client.config.ConfigManager;
  * forms mapping to the engine's canonical gear ids via equipment aliases)
  * happens at query time once the data pipeline vendors the alias table.
  */
-public class CollectionLedger implements ScopedStore
-{
+public class CollectionLedger implements ScopedStore {
 	static final String CONFIG_GROUP = "loadoutlab";
 	private static final TypeToken<Map<Integer, Integer>> MAP_TYPE = new TypeToken<Map<Integer, Integer>>() {};
 
 	/** Ledger sources, each persisted under its own key. */
 	@lombok.RequiredArgsConstructor
-	public enum Source
-	{
+	public enum Source {
 		EQUIPMENT("equipment", net.runelite.api.InventoryID.EQUIPMENT.getId()),
 		INVENTORY("inventory", net.runelite.api.InventoryID.INVENTORY.getId()),
 		BANK("bank", net.runelite.api.InventoryID.BANK.getId()),
@@ -68,8 +66,7 @@ public class CollectionLedger implements ScopedStore
 
 		/** The item-container id this source is scanned from, or -1 when
 		 * the source is not container-backed (STASH). */
-		public int containerId()
-		{
+		public int containerId() {
 			return containerId;
 		}
 
@@ -78,8 +75,7 @@ public class CollectionLedger implements ScopedStore
 		 * null when no source uses it. Callers pass an UNMASKED container
 		 * id (the 0x8000 modified-container bit already stripped).
 		 */
-		public static Source forContainer(int containerId)
-		{
+		public static Source forContainer(int containerId) {
 			// Guard the STASH sentinel: without it, -1 would resolve to
 			// STASH instead of "no such container".
 			return containerId < 0 ? null
@@ -88,8 +84,7 @@ public class CollectionLedger implements ScopedStore
 
 		/** The persisted config-key segment; also the storage name in the
 		 * storages-response PluginMessage (see StoragesApi). */
-		public String key()
-		{
+		public String key() {
 			return key;
 		}
 	}
@@ -105,12 +100,10 @@ public class CollectionLedger implements ScopedStore
 	/** Cached fingerprint of the merged view; recomputed lazily. */
 	private transient Integer fingerprint;
 
-	public CollectionLedger(ConfigManager configManager, Gson gson)
-	{
+	public CollectionLedger(ConfigManager configManager, Gson gson) {
 		this.configManager = configManager;
 		this.gson = gson;
-		for (Source s : Source.values())
-		{
+		for (Source s : Source.values()) {
 			snapshots.put(s, new HashMap<>());
 		}
 	}
@@ -119,11 +112,9 @@ public class CollectionLedger implements ScopedStore
 	 * Point the ledger at a world scope ("std" or "seasonal") and load that
 	 * scope's persisted snapshots, replacing in-memory state.
 	 */
-	public void loadScope(String scope)
-	{
+	public void loadScope(String scope) {
 		this.worldScope = scope;
-		for (Source s : Source.values())
-		{
+		for (Source s : Source.values()) {
 			// One-time adoption of pre-account-scoping data ("std.*"): the
 			// FIRST character to load it takes it and the legacy entry is
 			// removed. Copying instead of moving is what let a second account
@@ -142,11 +133,9 @@ public class CollectionLedger implements ScopedStore
 	 * Replace one source's snapshot. Persists only when the content actually
 	 * changed; returns true in that case (callers use it to invalidate caches).
 	 */
-	public boolean update(Source source, Map<Integer, Integer> items)
-	{
+	public boolean update(Source source, Map<Integer, Integer> items) {
 		Map<Integer, Integer> next = new HashMap<>(items);
-		if (next.equals(snapshots.get(source)))
-		{
+		if (next.equals(snapshots.get(source))) {
 			return false;
 		}
 		snapshots.put(source, next);
@@ -156,22 +145,19 @@ public class CollectionLedger implements ScopedStore
 	}
 
 	/** One source's current snapshot, read-only (itemId → quantity). */
-	public Map<Integer, Integer> snapshot(Source source)
-	{
+	public Map<Integer, Integer> snapshot(Source source) {
 		return Collections.unmodifiableMap(snapshots.get(source));
 	}
 
 	/** Merged itemId → total quantity across all sources. */
-	public Map<Integer, Integer> owned()
-	{
+	public Map<Integer, Integer> owned() {
 		Map<Integer, Integer> merged = new HashMap<>();
 		snapshots.values().forEach(snap -> snap.forEach((id, n) -> merged.merge(id, n, Integer::sum)));
 		return merged;
 	}
 
 	/** True once a bank snapshot exists (this session or any previous one). */
-	public boolean bankKnown()
-	{
+	public boolean bankKnown() {
 		return !snapshots.get(Source.BANK).isEmpty();
 	}
 
@@ -179,17 +165,14 @@ public class CollectionLedger implements ScopedStore
 	 * Stable fingerprint of the merged view - the optimizer cache key
 	 * component. Changes iff ownership actually changed.
 	 */
-	public int fingerprint()
-	{
-		if (fingerprint == null)
-		{
+	public int fingerprint() {
+		if (fingerprint == null) {
 			fingerprint = owned().hashCode();
 		}
 		return fingerprint;
 	}
 
-	private String key(Source s)
-	{
+	private String key(Source s) {
 		return worldScope + ".collection." + s.key;
 	}
 }

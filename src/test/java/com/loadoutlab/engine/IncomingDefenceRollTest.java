@@ -19,14 +19,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * official calculator's NPCVsPlayerCalc. The old Defence + 9 sat the +9
  * inside the 30% and read magic damage taken 4-7% high.
  */
-class IncomingDefenceRollTest
-{
+class IncomingDefenceRollTest {
 	private static final Loadout NAKED = new Loadout(new EnumMap<>(GearSlot.class));
 
 	@Test
 	@DisplayName("matches the official calculator's own Abyssal demon vectors")
-	void abyssalDemonVectors()
-	{
+	void abyssalDemonVectors() {
 		MonsterStats demon = new DataService().load().searchMonsters("abyssal demon", 1).get(0);
 		// Roll (97+9)*64 = 6784 vs 576 at Defence 1 and 6848 at Defence 99
 		// (osrs-dps-calc DamageTaken.test.ts: 1.596 and 0.825 dps).
@@ -36,8 +34,7 @@ class IncomingDefenceRollTest
 
 	@Test
 	@DisplayName("magic defence is 70% Magic plus 30% Defence plus 8, each floored")
-	void magicDefenceLevel()
-	{
+	void magicDefenceLevel() {
 		// Magic 99, Defence 70: 69 + 21 + 8 = 98 -> roll 98 * 64 = 6272.
 		MonsterStats mage = new MonsterStats(1, "Test mage", "", 300, 255, 1, 1, 200, 0,
 			MonsterDefences.ZERO, new MonsterOffence(1, 1, 1, 200, 0, 0, 0, 0, 0, 0, 4,

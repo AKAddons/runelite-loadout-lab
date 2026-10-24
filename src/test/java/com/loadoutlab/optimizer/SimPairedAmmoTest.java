@@ -32,12 +32,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * ascension bolts; a sim of the weapon alone had no ammo it could use, so
  * the line died. A simmed weapon with exclusive ammo brings that ammo.
  */
-class SimPairedAmmoTest
-{
+class SimPairedAmmoTest {
 	@Test
 	@DisplayName("a simmed weapon with exclusive ammo brings it; other sims are untouched")
-	void pairedAmmoJoinsTheSim()
-	{
+	void pairedAmmoJoinsTheSim() {
 		Set<Integer> sims = RangedAmmo.withPairedAmmo(Set.of(34681, 12926));
 		assertTrue(sims.containsAll(Set.of(34681, 12926, 34684, 34690, 34696, 34702, 34708)), sims.toString());
 		assertEquals(Set.of(12926), RangedAmmo.withPairedAmmo(Set.of(12926)));
@@ -46,27 +44,23 @@ class SimPairedAmmoTest
 
 	@Test
 	@DisplayName("simming only the crossbows, the Gemstone Crab's ranged card wears them with ascension bolts")
-	void simmedCrossbowsFire() throws Exception
-	{
+	void simmedCrossbowsFire() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats crab = data.searchMonsters("gemstone crab", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		for (String n : new String[]{"toxic blowpipe", "masori body (f)", "masori chaps (f)", "necklace of anguish", "zaryte vambraces"})
-		{
+		for (String n : new String[]{"toxic blowpipe", "masori body (f)", "masori chaps (f)", "necklace of anguish", "zaryte vambraces"}) {
 			GearItem item = data.getGearItems().stream().filter(g -> g.getNameLower().equals(n) && g.isStandardGear())
 				.findFirst().orElseThrow(() -> new AssertionError("missing " + n));
 			owned.put(item.getId(), 1);
 		}
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyleAcross(service, List.of(crab), PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned, true), 1, false, false, "", Collections.emptyMap(), -1,
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false, Set.of(34681), 0, 1, Collections.emptyMap(), null,
-				Collections.emptySet(), r ->
-				{
+				Collections.emptySet(), r -> {
 					out.set(r);
 					done.countDown();
 				});
@@ -75,9 +69,7 @@ class SimPairedAmmoTest
 			assertEquals("Ascension crossbows", best.getLoadout().getWeapon().getName());
 			assertTrue(best.getLoadout().get(GearSlot.AMMO).getNameLower().contains("ascension bolts"),
 				best.getLoadout().get(GearSlot.AMMO).getName());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

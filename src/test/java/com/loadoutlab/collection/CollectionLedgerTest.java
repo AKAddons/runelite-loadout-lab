@@ -11,14 +11,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class CollectionLedgerTest
-{
+class CollectionLedgerTest {
 	private ConfigManager configManager;
 	private CollectionLedger ledger;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		configManager = InMemoryConfigManager.create();
 		ledger = new CollectionLedger(configManager, new Gson());
 		ledger.loadScope("std");
@@ -26,8 +24,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("the merged view sums quantities across equipment, inventory, and bank")
-	void mergeSumsAcrossSources()
-	{
+	void mergeSumsAcrossSources() {
 		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1, 861, 2));
 		ledger.update(CollectionLedger.Source.INVENTORY, Map.of(861, 1));
 		ledger.update(CollectionLedger.Source.EQUIPMENT, Map.of(11832, 1));
@@ -40,8 +37,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("the ledger survives a new session - bank from LAST visit still counts")
-	void persistsAcrossInstances()
-	{
+	void persistsAcrossInstances() {
 		ledger.update(CollectionLedger.Source.BANK, Map.of(20997, 1));
 
 		// A fresh instance on the same backing store stands in for the next
@@ -54,8 +50,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("a seasonal-world login never touches the standard ledger")
-	void worldScopesAreIsolated()
-	{
+	void worldScopesAreIsolated() {
 		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
 
 		ledger.loadScope("seasonal");
@@ -69,8 +64,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("an unchanged snapshot neither rewrites config nor changes the fingerprint")
-	void unchangedSnapshotIsANoOp()
-	{
+	void unchangedSnapshotIsANoOp() {
 		assertTrue(ledger.update(CollectionLedger.Source.INVENTORY, Map.of(4151, 1)));
 		int fp = ledger.fingerprint();
 
@@ -82,8 +76,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("the fingerprint changes when ownership actually changes")
-	void fingerprintTracksOwnership()
-	{
+	void fingerprintTracksOwnership() {
 		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));
 		int before = ledger.fingerprint();
 		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1, 11802, 1));
@@ -92,8 +85,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("a corrupt persisted entry starts that snapshot fresh instead of failing")
-	void corruptEntryDegradesGracefully()
-	{
+	void corruptEntryDegradesGracefully() {
 		configManager.setConfiguration(CollectionLedger.CONFIG_GROUP, "std.collection.bank", "{not json!");
 		CollectionLedger fresh = new CollectionLedger(configManager, new Gson());
 		fresh.loadScope("std");
@@ -103,8 +95,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("the looting bag is a ledger source: its contents count as owned and persist")
-	void lootingBagCountsAndPersists()
-	{
+	void lootingBagCountsAndPersists() {
 		ledger.update(CollectionLedger.Source.LOOTING_BAG, Map.of(2434, 3));
 		assertEquals(3, ledger.owned().get(2434));
 
@@ -116,8 +107,7 @@ class CollectionLedgerTest
 
 	@Test
 	@DisplayName("the storage sources (POH, STASH, cargo) merge into owned and persist independently")
-	void storageSourcesMergeAndPersist()
-	{
+	void storageSourcesMergeAndPersist() {
 		ledger.update(CollectionLedger.Source.POH_COSTUMES, Map.of(11832, 1));
 		ledger.update(CollectionLedger.Source.STASH, Map.of(4151, 1));
 		ledger.update(CollectionLedger.Source.CARGO_HOLD_1, Map.of(2, 5000));
@@ -136,8 +126,7 @@ class CollectionLedgerTest
 	}
 
 	@org.junit.jupiter.api.Test
-	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce()
-	{
+	void accountScopesNeverShareAndLegacyDataIsAdoptedOnce() {
 		com.google.gson.Gson gson = new com.google.gson.Gson();
 		CollectionLedger ledger = new CollectionLedger(configManager, gson);
 		// Legacy pre-account data saved under the bare world scope.
@@ -162,8 +151,7 @@ class CollectionLedgerTest
 	}
 
 	@org.junit.jupiter.api.Test
-	void perSourceSnapshotsAreReadableAndReadOnly()
-	{
+	void perSourceSnapshotsAreReadableAndReadOnly() {
 		CollectionLedger ledger = new CollectionLedger(configManager, new Gson());
 		ledger.loadScope("std");
 		ledger.update(CollectionLedger.Source.BANK, Map.of(4151, 1));

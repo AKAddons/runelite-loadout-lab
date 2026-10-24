@@ -21,24 +21,19 @@ import java.util.concurrent.TimeUnit;
  *
  *   ./gradlew benchmark
  */
-public final class QueryBenchmark
-{
+public final class QueryBenchmark {
 	private static final int[] RISKS = {-1, 3};
 	private static final int PASSES = 3;
 
 	private static String[] MONSTERS = {"general graardor", "zulrah", "callisto"};
 
-	private QueryBenchmark()
-	{
+	private QueryBenchmark() {
 	}
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		// Optional: --only <monster substring> narrows the matrix (profiling).
-		for (int i = 0; i + 1 < args.length; i++)
-		{
-			if ("--only".equals(args[i]))
-			{
+		for (int i = 0; i + 1 < args.length; i++) {
+			if ("--only".equals(args[i])) {
 				MONSTERS = new String[]{args[i + 1]};
 			}
 		}
@@ -46,13 +41,10 @@ public final class QueryBenchmark
 		PlayerProfile profile = FixtureBank.profile(data);
 		OptimizerService service = new OptimizerService(data);
 		int[] fingerprint = {1};
-		try
-		{
+		try {
 			// Warmup: one untimed full pass so the JIT sees every path.
-			for (String monster : MONSTERS)
-			{
-				for (int risk : RISKS)
-				{
+			for (String monster : MONSTERS) {
+				for (int risk : RISKS) {
 					runOnce(service, data, profile, monster, risk, fingerprint);
 				}
 			}
@@ -61,13 +53,10 @@ public final class QueryBenchmark
 			// and pinned-risk-floor paths the standard matrix never touches.
 			runPinnedSalve(service, data, profile, fingerprint);
 			System.out.println("monster            risk  median_ms  passes_ms");
-			for (String monster : MONSTERS)
-			{
-				for (int risk : RISKS)
-				{
+			for (String monster : MONSTERS) {
+				for (int risk : RISKS) {
 					long[] times = new long[PASSES];
-					for (int pass = 0; pass < PASSES; pass++)
-					{
+					for (int pass = 0; pass < PASSES; pass++) {
 						times[pass] = runOnce(service, data, profile, monster, risk, fingerprint);
 					}
 					long[] sorted = times.clone();
@@ -79,8 +68,7 @@ public final class QueryBenchmark
 				}
 			}
 			long[] times = new long[PASSES];
-			for (int pass = 0; pass < PASSES; pass++)
-			{
+			for (int pass = 0; pass < PASSES; pass++) {
 				times[pass] = runPinnedSalve(service, data, profile, fingerprint);
 			}
 			long[] sorted = times.clone();
@@ -89,9 +77,7 @@ public final class QueryBenchmark
 				"%-18s %-5s %9d  %s",
 				"rev demon+salvepin", "lr3",
 				sorted[PASSES / 2], Arrays.toString(times)));
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
@@ -103,20 +89,16 @@ public final class QueryBenchmark
 	 * the pin keeps the pinned-risk-floor path live.
 	 */
 	private static long runPinnedSalve(OptimizerService service, LoadoutData data,
-		PlayerProfile profile, int[] fingerprint) throws Exception
-	{
+		PlayerProfile profile, int[] fingerprint) throws Exception {
 		com.loadoutlab.data.GearItem salve = null;
-		for (com.loadoutlab.data.GearItem item : data.getGearItems())
-		{
+		for (com.loadoutlab.data.GearItem item : data.getGearItems()) {
 			if ("salve amulet(ei)".equalsIgnoreCase(item.getName())
-				&& item.isStandardGear() && !data.isVariant(item.getId()))
-			{
+				&& item.isStandardGear() && !data.isVariant(item.getId())) {
 				salve = item;
 				break;
 			}
 		}
-		if (salve == null)
-		{
+		if (salve == null) {
 			throw new IllegalStateException("salve amulet(ei) not in dataset");
 		}
 		java.util.Map<Integer, Integer> owned =
@@ -125,8 +107,7 @@ public final class QueryBenchmark
 		java.util.Map<com.loadoutlab.engine.CombatStyle,
 			java.util.Map<com.loadoutlab.data.GearSlot, Integer>> pins = new java.util.EnumMap<>(
 			com.loadoutlab.engine.CombatStyle.class);
-		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues())
-		{
+		for (com.loadoutlab.engine.CombatStyle style : com.loadoutlab.engine.CombatStyle.concreteValues()) {
 			pins.put(style, java.util.Map.of(com.loadoutlab.data.GearSlot.NECK, salve.getId()));
 		}
 		MonsterStats monster = data.searchMonsters("revenant demon", 1).get(0);
@@ -141,8 +122,7 @@ public final class QueryBenchmark
 			Collections.emptySet(), 0,
 			pins, null,
 			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
-		if (!done.await(600, TimeUnit.SECONDS))
-		{
+		if (!done.await(600, TimeUnit.SECONDS)) {
 			throw new IllegalStateException("benchmark cell timed out: pinned salve");
 		}
 		return (System.nanoTime() - start) / 1_000_000L;
@@ -150,8 +130,7 @@ public final class QueryBenchmark
 
 	private static long runOnce(OptimizerService service, LoadoutData data,
 		PlayerProfile profile, String monsterName,
-		int lowRisk, int[] fingerprint) throws Exception
-	{
+		int lowRisk, int[] fingerprint) throws Exception {
 		MonsterStats monster = data.searchMonsters(monsterName, 1).get(0);
 		CountDownLatch done = new CountDownLatch(1);
 		long start = System.nanoTime();
@@ -164,8 +143,7 @@ public final class QueryBenchmark
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false,
 			Collections.emptySet(), 0,
 			(Map<CombatStyle, OptimizerService.StyleResult> results) -> done.countDown());
-		if (!done.await(600, TimeUnit.SECONDS))
-		{
+		if (!done.await(600, TimeUnit.SECONDS)) {
 			throw new IllegalStateException("benchmark cell timed out: " + monsterName);
 		}
 		return (System.nanoTime() - start) / 1_000_000L;

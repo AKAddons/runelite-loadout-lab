@@ -18,11 +18,9 @@ import org.junit.Test;
  * crossbows' strength lives in their bolts (+34 ranged attack, no ranged
  * strength of their own), so a full bank cut them before the damage step.
  */
-public class AscensionShortlistTest
-{
+public class AscensionShortlistTest {
 	@Test
-	public void theCrossbowsMakeTheRangedShortlistInAFullBank()
-	{
+	public void theCrossbowsMakeTheRangedShortlistInAFullBank() {
 		LoadoutData data = new DataService().load();
 		MonsterStats crab = data.searchMonsters("gemstone crab", 1).get(0);
 		OptimizationRequest request = TestRequests.of(crab, CombatStyle.RANGED, PlayerLevels.MAXED,

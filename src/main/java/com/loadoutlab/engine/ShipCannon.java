@@ -17,13 +17,11 @@ package com.loadoutlab.engine;
  * by NavalCombat.crewFormulaStale() - when the corrected formula lands,
  * this one method changes and every caller stays put.
  */
-public final class ShipCannon
-{
+public final class ShipCannon {
 	/** All cannons fire on the same cycle regardless of tier. */
 	public static final double ATTACK_SECONDS = 4.2;
 
-	private ShipCannon()
-	{
+	private ShipCannon() {
 	}
 
 	/**
@@ -32,16 +30,14 @@ public final class ShipCannon
 	 * plus one when a perildance bitter keg is aboard.
 	 */
 	public static int playerMaxHit(int effectiveRanged, int cannonStrength,
-		int ballStrength, int wornRangedStrength, boolean perildance)
-	{
+		int ballStrength, int wornRangedStrength, boolean perildance) {
 		long strength = cannonStrength + ballStrength + wornRangedStrength + 64L;
 		int hit = (int) ((effectiveRanged * strength + 320L) / 640L);
 		return hit + (perildance ? 1 : 0);
 	}
 
 	/** The stale-but-documented crew scaling: floor(base * (priv + 13) / 20). */
-	public static int crewMaxHit(int baseMaxHit, int privateering)
-	{
+	public static int crewMaxHit(int baseMaxHit, int privateering) {
 		return (int) (baseMaxHit * (privateering + 13L) / 20L);
 	}
 
@@ -49,8 +45,7 @@ public final class ShipCannon
 	 * ball's, plus worn ranged accuracy excluding weapon/shield/ammo. Rolls
 	 * against the monster's HEAVY defence through the standard machinery. */
 	public static int equipmentAccuracy(int cannonHeavyAccuracy, int ballAccuracy,
-		int wornRangedAccuracy)
-	{
+		int wornRangedAccuracy) {
 		return cannonHeavyAccuracy + ballAccuracy + wornRangedAccuracy;
 	}
 
@@ -62,8 +57,7 @@ public final class ShipCannon
 	 * prayer as an input to the level term.
 	 */
 	public static double hitChance(int effectiveRanged, int equipmentAccuracy,
-		int monsterDefence, int monsterHeavyBonus)
-	{
+		int monsterDefence, int monsterHeavyBonus) {
 		long attack = RollMath.attackRoll(effectiveRanged + 8, equipmentAccuracy);
 		long defence = RollMath.defenceRoll(monsterDefence + 9, monsterHeavyBonus);
 		return RollMath.normalAccuracy(attack, defence);
@@ -72,8 +66,7 @@ public final class ShipCannon
 	/** DPS of one cannon: average landed damage over the 7-tick cycle.
 	 * hitChance in [0,1]; a landed hit averages (maxHit / 2) with the
 	 * uniform damage roll the game uses. */
-	public static double dps(int maxHit, double hitChance)
-	{
+	public static double dps(int maxHit, double hitChance) {
 		return hitChance * (maxHit / 2.0) / ATTACK_SECONDS;
 	}
 }

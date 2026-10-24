@@ -12,8 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MonsterProfileStoreTest
-{
+class MonsterProfileStoreTest {
 	private static final String ALL = MonsterProfileStore.ALL;
 
 	private static final String SCOPE = "std.1111";
@@ -21,8 +20,7 @@ class MonsterProfileStoreTest
 	private MonsterProfileStore store;
 
 	@BeforeEach
-	void setUp()
-	{
+	void setUp() {
 		configManager = InMemoryConfigManager.create();
 		store = freshStore();
 	}
@@ -30,8 +28,7 @@ class MonsterProfileStoreTest
 	/** The plugin always loads a character scope before use; a store without
 	 * one writes to the pre-0.4.1 unscoped key, so an assertion on a scoped
 	 * key would pass without testing anything. */
-	private MonsterProfileStore freshStore()
-	{
+	private MonsterProfileStore freshStore() {
 		MonsterProfileStore fresh = new MonsterProfileStore(configManager, new Gson());
 		fresh.loadScope(SCOPE);
 		return fresh;
@@ -42,8 +39,7 @@ class MonsterProfileStoreTest
 	 * lensed card's synthetic phase id and read back under the first card's. */
 	@Test
 	@DisplayName("a pin made on a phase-variant card is the real monster's pin, seen from every variant")
-	void variantPinsLandOnTheRealMonster()
-	{
+	void variantPinsLandOnTheRealMonster() {
 		int demon = 13600;
 		int rangedPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
 		int magicPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 4;
@@ -59,8 +55,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("a profile saved under a variant id before the fix is adopted by the real monster on load")
-	void strandedVariantProfilesFoldOnLoad()
-	{
+	void strandedVariantProfilesFoldOnLoad() {
 		int demon = 13600;
 		int gorilla = 7144;
 		int demonPhase = com.loadoutlab.data.MonsterStats.SYNTHETIC_ID_BASE + demon * 10 + 2;
@@ -76,8 +71,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("pins are per monster AND per scope: a style pin overlays the all-sets pin")
-	void pinsScopeAndOverlay()
-	{
+	void pinsScopeAndOverlay() {
 		store.pin(415, ALL, GearSlot.HANDS, 21183);
 		store.pin(415, "RANGED", GearSlot.HANDS, 7462);
 
@@ -94,8 +88,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("filter items merge all-sets with the style scope")
-	void filterItemsMerge()
-	{
+	void filterItemsMerge() {
 		store.addFilterItem(415, ALL, 385, "Shark");
 		store.addFilterItem(415, "MELEE", 12695, "Super combat potion(4)");
 		store.addFilterItem(415, "RANGED", 2444, "Ranging potion(4)");
@@ -107,8 +100,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("per-mob exclusions merge all-sets with the style scope, per monster")
-	void exclusionsMergeScopes()
-	{
+	void exclusionsMergeScopes() {
 		store.exclude(415, ALL, 4151);
 		store.exclude(415, "MELEE", 11802);
 		store.exclude(9999, ALL, 12006);
@@ -124,8 +116,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("removing a per-mob exclusion restores the item for that scope only")
-	void exclusionRemoval()
-	{
+	void exclusionRemoval() {
 		store.exclude(415, ALL, 4151);
 		store.exclude(415, "MELEE", 4151);
 
@@ -141,8 +132,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("per-mob exclusions survive a reload (config round-trip)")
-	void exclusionsPersist()
-	{
+	void exclusionsPersist() {
 		store.exclude(415, ALL, 4151);
 		store.exclude(415, "RANGED", 12926);
 
@@ -154,8 +144,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("a profile holding only exclusions is not pruned; removing them prunes it")
-	void exclusionsKeepTheProfileAlive()
-	{
+	void exclusionsKeepTheProfileAlive() {
 		store.exclude(415, ALL, 4151);
 		MonsterProfileStore reloaded = freshStore();
 		assertEquals(Set.of(4151), reloaded.exclusionsFor(415, "MELEE"));
@@ -167,8 +156,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("the whole profile survives a new session, scopes intact")
-	void profilePersistsAcrossSessions()
-	{
+	void profilePersistsAcrossSessions() {
 		store.pin(415, ALL, GearSlot.HANDS, 21183);
 		store.setNote(415, "bring antidote++, pray melee after the spec");
 		store.addFilterItem(415, "MELEE", 12695, "Super combat potion(4)");
@@ -183,8 +171,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("the pinned spell persists per mob and clears to auto")
-	void pinnedSpellPersists()
-	{
+	void pinnedSpellPersists() {
 		store.setPinnedSpell(415, "Wind Bolt");
 		assertEquals("Wind Bolt", freshStore()
 			.pinnedSpell(415));
@@ -195,8 +182,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("a spec-only profile survives save (not judged empty and pruned)")
-	void pinnedSpecPersists()
-	{
+	void pinnedSpecPersists() {
 		// Field report 2026-08-09: pinning a spec did nothing because the
 		// save() empty-check omitted the spec field, so a spec-only profile
 		// was pruned in the same call that set it (the exact 2026-07-18 sims
@@ -212,8 +198,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("clearing every field prunes the profile from config entirely")
-	void emptyProfilesPrune()
-	{
+	void emptyProfilesPrune() {
 		store.pin(415, ALL, GearSlot.HANDS, 21183);
 		store.setNote(415, "note");
 		store.setPinnedSpell(415, "Wind Bolt");
@@ -229,8 +214,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("corrupt config degrades to no profiles")
-	void corruptDegrades()
-	{
+	void corruptDegrades() {
 		configManager.setConfiguration("loadoutlab", SCOPE + ".monsterProfiles", "{not json!");
 		MonsterProfileStore fresh = freshStore();
 		assertTrue(fresh.pinsFor(415, "MELEE").isEmpty());
@@ -239,8 +223,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("a sims-only profile survives the save (the Sim here field bug)")
-	void simsOnlyProfilePersists()
-	{
+	void simsOnlyProfilePersists() {
 		// Field bug 2026-07-18: save()'s empty-profile prune did not count
 		// sims, so a profile holding ONLY a sim was erased by the very call
 		// that added it - "Sim here" appeared to do nothing.
@@ -260,8 +243,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("supply overrides persist per mob and clear back to the global default")
-	void supplyOverridesPersistAndClear()
-	{
+	void supplyOverridesPersistAndClear() {
 		store.setSupplyOverride(8781, "prayerRestore", "SANFEW_SERUM");
 		store.setSupplyOverride(8781, "food", "NONE");
 		assertEquals(Map.of("prayerRestore", "SANFEW_SERUM", "food", "NONE"),
@@ -279,8 +261,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("a supplies-only profile survives the save (the every-field prune rule)")
-	void suppliesOnlyProfilePersists()
-	{
+	void suppliesOnlyProfilePersists() {
 		// The Sim-here field bug's lesson: every Stored field must join
 		// save()'s empty check, or a supplies-only profile would be erased
 		// by the very call that set it.
@@ -295,8 +276,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("skipping degradable gear for a mob folds the degradable ids into every scope's exclusions, keeps the manage list clean, and survives a reload")
-	void skipDegradable()
-	{
+	void skipDegradable() {
 		MonsterProfileStore store = new MonsterProfileStore(configManager, new Gson());
 		store.setDegradableIds(Set.of(4716, 12006));
 		assertFalse(store.skipDegradable(7, false), "unset follows the panel default");
@@ -316,14 +296,11 @@ class MonsterProfileStoreTest
 	}
 
 	/** ALL plus the style, as the card sees it. */
-	private static Set<Integer> filterItemsFor(MonsterProfileStore store, int monsterId, String style)
-	{
+	private static Set<Integer> filterItemsFor(MonsterProfileStore store, int monsterId, String style) {
 		Set<Integer> ids = new java.util.LinkedHashSet<>();
 		Map<String, Map<Integer, String>> all = store.allFilterItems(monsterId);
-		for (String scope : new String[]{MonsterProfileStore.ALL, style})
-		{
-			if (all.get(scope) != null)
-			{
+		for (String scope : new String[]{MonsterProfileStore.ALL, style}) {
+			if (all.get(scope) != null) {
 				ids.addAll(all.get(scope).keySet());
 			}
 		}
@@ -332,8 +309,7 @@ class MonsterProfileStoreTest
 
 	@Test
 	@DisplayName("clear() empties every profile in the scope and persists the wipe (the reset-customisations control)")
-	void clearWipesTheScope()
-	{
+	void clearWipesTheScope() {
 		MonsterProfileStore store = new MonsterProfileStore(configManager, new Gson());
 		store.setNote(415, "keep away");
 		store.setSkipDegradable(416, true);

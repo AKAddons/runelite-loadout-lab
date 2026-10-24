@@ -14,18 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * 2026-10-22: "its hard to do an individual search for the phase 2 version
  * of elidinis/tumeken ward without searching for toa").
  */
-class WardenSearchTest
-{
+class WardenSearchTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static List<String> rows(String query)
-	{
+	private static List<String> rows(String query) {
 		return data.searchMonsters(query, 20).stream()
 			.map(m -> m.getName() + " (" + m.getVersion() + ")")
 			.collect(Collectors.toList());
@@ -33,8 +30,7 @@ class WardenSearchTest
 
 	@Test
 	@DisplayName("'tumeken warden', 'wardens' and 'elidinis active' find their rows - each word starts a word")
-	void wordMatching()
-	{
+	void wordMatching() {
 		assertTrue(rows("tumeken warden").contains("Tumeken's Warden (Active)"), rows("tumeken warden").toString());
 		assertTrue(rows("wardens").contains("Elidinis' Warden (Active)"), rows("wardens").toString());
 		assertEquals(List.of("Elidinis' Warden (Active)"), rows("elidinis active"));
@@ -42,8 +38,7 @@ class WardenSearchTest
 
 	@Test
 	@DisplayName("'warden p2' finds exactly the phase-2 rows of both Wardens; p3 the phase-3 ones")
-	void phaseWords()
-	{
+	void phaseWords() {
 		assertEquals(Set.of("Elidinis' Warden (Active)", "Elidinis' Warden (Core-ejected)",
 			"Tumeken's Warden (Active)", "Tumeken's Warden (Core-ejected)"), Set.copyOf(rows("warden p2")));
 		assertEquals(Set.of("Elidinis' Warden (Active)", "Elidinis' Warden (Core-ejected)"),
@@ -57,8 +52,7 @@ class WardenSearchTest
 
 	@Test
 	@DisplayName("nothing found before is lost: 'core' still finds the Manticore, 'kril' still K'ril first")
-	void noRegressions()
-	{
+	void noRegressions() {
 		assertTrue(rows("core").contains("Manticore ()"), rows("core").toString());
 		assertTrue(rows("kril").get(0).startsWith("K'ril Tsutsaroth"), rows("kril").toString());
 		assertEquals(rows("elidinis").subList(0, 2), rows("elidinis").subList(0, 2), "stable order");

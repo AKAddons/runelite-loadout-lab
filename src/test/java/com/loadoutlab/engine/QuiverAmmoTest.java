@@ -18,47 +18,38 @@ import static org.junit.jupiter.api.Assertions.*;
  * rule: with a non-ammunition item in the ammo slot, the quiver's
  * stored ammunition fires at full ranged strength.
  */
-class QuiverAmmoTest
-{
+class QuiverAmmoTest {
 	private static LoadoutData data;
 	private static MonsterStats target;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		target = data.searchMonsters("general graardor", 1).get(0);
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals(nameLower) && g.isStandardGear())
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals(nameLower) && g.isStandardGear()) {
 				return g;
 			}
 		}
 		throw new AssertionError("corpus is missing: " + nameLower);
 	}
 
-	private static OptimizationRequest req()
-	{
+	private static OptimizationRequest req() {
 		return TestRequests.of(target, CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
 			CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
 	}
 
-	private static Loadout worn(String weapon, String ammo, String cape)
-	{
+	private static Loadout worn(String weapon, String ammo, String cape) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
 		gear.put(GearSlot.WEAPON, byName(weapon));
-		if (ammo != null)
-		{
+		if (ammo != null) {
 			gear.put(GearSlot.AMMO, byName(ammo));
 		}
-		if (cape != null)
-		{
+		if (cape != null) {
 			gear.put(GearSlot.CAPE, byName(cape));
 		}
 		return new Loadout(gear);
@@ -66,8 +57,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("the fill pass moves a bow's arrows into the quiver and frees the slot")
-	void bowArrowsRelocate()
-	{
+	void bowArrowsRelocate() {
 		OptimizationRequest request = req();
 		Loadout start = worn("magic shortbow (i)", "amethyst arrow", "blessed dizana's quiver");
 		DpsResult base = new DpsCalculator().calculate(request, start);
@@ -89,8 +79,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("the roster relocation helper frees the ammo slot on its own")
-	void rosterRelocationHelper()
-	{
+	void rosterRelocationHelper() {
 		// The roster path calls relocateQuiverAmmo (not the full sweep) on
 		// each shown set (field report 2026-08-09: a roster BiS kept the
 		// arrow in the ammo slot instead of Rada's). It relocates AND fills
@@ -114,8 +103,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("the roster helper no-ops on a set without a relocatable quiver")
-	void rosterRelocationNoOp()
-	{
+	void rosterRelocationNoOp() {
 		OptimizationRequest request = req();
 		Loadout plain = worn("twisted bow", "dragon arrow", "ava's assembler");
 		DpsResult base = new DpsCalculator().calculate(request, plain);
@@ -126,8 +114,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("a re-show prices the relocated set identically")
-	void reShowParity()
-	{
+	void reShowParity() {
 		OptimizationRequest request = req();
 		Loadout start = worn("magic shortbow (i)", "amethyst arrow", "blessed dizana's quiver");
 		DpsResult base = new DpsCalculator().calculate(request, start);
@@ -144,8 +131,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("accuracy-bearing arrows keep their bonus from the quiver")
-	void accuracyParity()
-	{
+	void accuracyParity() {
 		// Field report 2026-08-09: Seeking dragon arrows carry +20 ranged
 		// ACCURACY; pricing only the strength made the relocation
 		// dps-negative and the ammo slot never freed for a blessing. The
@@ -167,8 +153,7 @@ class QuiverAmmoTest
 
 	@Test
 	@DisplayName("crossbow bolts relocate; a ballista's javelins and a plain cape do not")
-	void scoping()
-	{
+	void scoping() {
 		assertTrue(QuiverAmmo.relocatable(
 			worn("dragon crossbow", "ruby dragon bolts (e)", "blessed dizana's quiver")));
 		assertFalse(QuiverAmmo.relocatable(

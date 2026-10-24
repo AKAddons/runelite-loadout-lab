@@ -14,8 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * dragonfire plate's Detect best said shield. The storage now counts as
  * owned, by the doses each varbit reports.
  */
-class PotionStorageTest
-{
+class PotionStorageTest {
 	private static final int SUPER_ANTIFIRE_VARBIT = 11075;
 	private static final int ANTIFIRE_VARBIT = 11040;
 	private static final int SUPER_ANTIFIRE_4 = 21978;
@@ -23,8 +22,7 @@ class PotionStorageTest
 
 	@Test
 	@DisplayName("doses in storage become owned 4-dose potions; empty slots are absent")
-	void dosesBecomeOwnedPotions()
-	{
+	void dosesBecomeOwnedPotions() {
 		Map<Integer, Integer> owned = PotionStorage.owned(varbit ->
 			varbit == SUPER_ANTIFIRE_VARBIT ? 3 : varbit == ANTIFIRE_VARBIT ? 8 : 0);
 		assertEquals(1, owned.get(SUPER_ANTIFIRE_4), "three doses count as one potion");
@@ -36,28 +34,22 @@ class PotionStorageTest
 
 	@Test
 	@DisplayName("the table covers every potion a feature detects: antifire, supplies, boosts")
-	void tableCoversTheDetectedPotions()
-	{
+	void tableCoversTheDetectedPotions() {
 		var items = PotionStorage.BY_VARBIT.values();
 		for (int id : new int[]{DragonfireRules.SUPER_ANTIFIRE_IDS[0], DragonfireRules.SUPER_ANTIFIRE_IDS[4],
-			DragonfireRules.REGULAR_ANTIFIRE_IDS[0], DragonfireRules.REGULAR_ANTIFIRE_IDS[4]})
-		{
+			DragonfireRules.REGULAR_ANTIFIRE_IDS[0], DragonfireRules.REGULAR_ANTIFIRE_IDS[4]}) {
 			assertTrue(items.contains(id), "antifire tier missing from potion_storage.json: " + id);
 		}
 		for (String category : new String[]{TripSupplies.PRAYER_RESTORE, TripSupplies.ANTIVENOM,
-			TripSupplies.ANTIPOISON, TripSupplies.SURGE})
-		{
-			for (TripSupplies.Option option : TripSupplies.options(category))
-			{
-				if (option.detect && option.ids.length > 0 && !option.name.contains("Blighted"))
-				{
+			TripSupplies.ANTIPOISON, TripSupplies.SURGE}) {
+			for (TripSupplies.Option option : TripSupplies.options(category)) {
+				if (option.detect && option.ids.length > 0 && !option.name.contains("Blighted")) {
 					assertTrue(items.contains(option.ids[0]),
 						category + " option missing from potion_storage.json: " + option.name);
 				}
 			}
 		}
-		for (int id : new int[]{12695, 23685, 2444, 23733, 3040, 23745, 22461, 24635, 22449, 24623})
-		{
+		for (int id : new int[]{12695, 23685, 2444, 23733, 3040, 23745, 22461, 24635, 22449, 24623}) {
 			assertTrue(items.contains(id), "boost missing from potion_storage.json: " + id);
 		}
 	}

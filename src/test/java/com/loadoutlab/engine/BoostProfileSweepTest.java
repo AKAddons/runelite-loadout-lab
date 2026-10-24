@@ -12,19 +12,15 @@ import org.junit.Test;
  * numbers - including MAGIC's flat +4 as factor 0.0 and NONE's same-instance
  * identity return.
  */
-public class BoostProfileSweepTest
-{
-	private static int boost(int level, int base, double factor)
-	{
+public class BoostProfileSweepTest {
+	private static int boost(int level, int base, double factor) {
 		return (int) Math.floor(base + level * factor);
 	}
 
 	/** Verbatim copy of the pre-refactor apply() body. */
-	private static PlayerLevels oldApply(BoostProfile profile, PlayerLevels base, PlayerLevels current)
-	{
+	private static PlayerLevels oldApply(BoostProfile profile, PlayerLevels base, PlayerLevels current) {
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-		switch (profile)
-		{
+		switch (profile) {
 			case LIVE_CURRENT:
 				return current == null ? source : current;
 			case F2P_COMBAT:
@@ -88,12 +84,9 @@ public class BoostProfileSweepTest
 	}
 
 	@Test
-	public void tableDrivenBoostsMatchTheOldPerConstantSwitchAtEveryLevel()
-	{
-		for (BoostProfile profile : BoostProfile.values())
-		{
-			for (int level = 1; level <= 126; level++)
-			{
+	public void tableDrivenBoostsMatchTheOldPerConstantSwitchAtEveryLevel() {
+		for (BoostProfile profile : BoostProfile.values()) {
+			for (int level = 1; level <= 126; level++) {
 				// Asymmetric levels so a mis-wired skill letter cannot hide.
 				PlayerLevels base = new PlayerLevels(level, level + 1, level + 2,
 					level + 3, level + 4, level + 5, level + 6);

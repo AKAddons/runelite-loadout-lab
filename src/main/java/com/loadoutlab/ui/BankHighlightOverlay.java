@@ -12,25 +12,21 @@ import net.runelite.client.ui.overlay.WidgetItemOverlay;
  * The id set is pre-expanded with variants (whip (or) glows when the
  * set says whip); null/empty means off.
  */
-public class BankHighlightOverlay extends WidgetItemOverlay
-{
+public class BankHighlightOverlay extends WidgetItemOverlay {
 	private static final Color GLOW = new Color(0x8CC88C);
 	private static final Color FILL = new Color(0x288CC88C, true);
 
 	private final Supplier<Set<Integer>> highlighted;
 
-	public BankHighlightOverlay(Supplier<Set<Integer>> highlighted)
-	{
+	public BankHighlightOverlay(Supplier<Set<Integer>> highlighted) {
 		this.highlighted = highlighted;
 		showOnBank();
 		showOnInventory();
 	}
 
-	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
-	{
+	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem) {
 		Set<Integer> ids = highlighted.get();
-		if (ids == null || !ids.contains(itemId))
-		{
+		if (ids == null || !ids.contains(itemId)) {
 			return;
 		}
 		Rectangle bounds = widgetItem.getCanvasBounds();

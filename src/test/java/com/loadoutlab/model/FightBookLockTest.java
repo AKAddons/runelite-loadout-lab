@@ -14,37 +14,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * however it is recommending magic with dark demonbane which is arceuss".
  * The fight book already drove the plate and the Arceuus gate; now it is
  * the autocast lock too, unless the player locked a book or pinned a spell. */
-class FightBookLockTest
-{
+class FightBookLockTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class PinOps extends TestStoreOps
-	{
+	private static final class PinOps extends TestStoreOps {
 		String pinned = "";
 
 		@Override
-		public String pinnedSpell(int monsterId)
-		{
+		public String pinnedSpell(int monsterId) {
 			return pinned;
 		}
 
 		@Override
-		public void setPinnedSpell(int monsterId, String spellName)
-		{
+		public void setPinnedSpell(int monsterId, String spellName) {
 			pinned = spellName == null ? "" : spellName;
 		}
 	}
 
 	@Test
 	@DisplayName("the Sire computes with the Ancients lock; an explicit lock or a pinned spell wins; a goblin has no lock")
-	void fightBookLocksTheSpell()
-	{
+	void fightBookLocksTheSpell() {
 		AtomicReference<String> lock = new AtomicReference<>();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> lock.set(p.spellbookLock), new CompanionLink());

@@ -14,44 +14,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Andrew, 2026-09-18: "for each of the exclude/sim/item filters can you
  * have a reset all in list option". One command, one recompute, one undo
  * step that puts every entry back. */
-class ClearMobListTest
-{
+class ClearMobListTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** Store ops with a real per-mob exclusion list. */
-	private static final class ListOps extends TestStoreOps
-	{
+	private static final class ListOps extends TestStoreOps {
 		final List<Map<String, Object>> exclusions = new ArrayList<>();
 
 		@Override
-		public List<Map<String, Object>> mobExclusions(int monsterId)
-		{
+		public List<Map<String, Object>> mobExclusions(int monsterId) {
 			return new ArrayList<>(exclusions);
 		}
 
 		@Override
-		public void removeMobExclusion(int monsterId, String scope, int itemId)
-		{
+		public void removeMobExclusion(int monsterId, String scope, int itemId) {
 			exclusions.removeIf(e -> ((Number) e.get("id")).intValue() == itemId && scope.equals(e.get("scope")));
 		}
 
 		@Override
-		public void excludeForMob(int monsterId, String scope, int itemId)
-		{
+		public void excludeForMob(int monsterId, String scope, int itemId) {
 			exclusions.add(Map.of("id", itemId, "name", "item " + itemId, "scope", scope));
 		}
 	}
 
 	@Test
 	@DisplayName("clear-mob-list empties the mob's exclusions in one recompute and undo restores every entry")
-	void clearAndUndo()
-	{
+	void clearAndUndo() {
 		java.util.concurrent.atomic.AtomicInteger computes = new java.util.concurrent.atomic.AtomicInteger();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> computes.incrementAndGet(), new CompanionLink());

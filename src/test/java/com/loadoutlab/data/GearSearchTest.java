@@ -8,20 +8,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GearSearchTest
-{
+class GearSearchTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("an exact item name is the first result")
-	void exactNameFirst()
-	{
+	void exactNameFirst() {
 		List<GearItem> results = GearSearchTestSupport.searchGear(data, "abyssal whip", 10);
 		assertFalse(results.isEmpty());
 		assertEquals("abyssal whip", results.get(0).getNameLower());
@@ -29,23 +26,20 @@ class GearSearchTest
 
 	@Test
 	@DisplayName("prefix matches rank ahead of substring matches and the limit holds")
-	void prefixBeforeContainsWithinLimit()
-	{
+	void prefixBeforeContainsWithinLimit() {
 		List<GearItem> results = GearSearchTestSupport.searchGear(data, "abyssal w", 5);
 		assertFalse(results.isEmpty());
 		assertTrue(results.size() <= 5);
 		assertTrue(results.get(0).labelLower().startsWith("abyssal w"),
 			"first result should be a prefix match, got: " + results.get(0).label());
-		for (GearItem item : results)
-		{
+		for (GearItem item : results) {
 			assertTrue(item.labelLower().contains("abyssal w"));
 		}
 	}
 
 	@Test
 	@DisplayName("a numeric query matches the item id exactly")
-	void idQueryMatches()
-	{
+	void idQueryMatches() {
 		List<GearItem> results = GearSearchTestSupport.searchGear(data, "4151", 5);
 		assertFalse(results.isEmpty());
 		assertEquals(4151, results.get(0).getId());
@@ -53,8 +47,7 @@ class GearSearchTest
 
 	@Test
 	@DisplayName("blank and unknown queries return no matches")
-	void blankAndUnknownReturnEmpty()
-	{
+	void blankAndUnknownReturnEmpty() {
 		assertTrue(GearSearchTestSupport.searchGear(data, "   ", 10).isEmpty());
 		assertTrue(GearSearchTestSupport.searchGear(data, null, 10).isEmpty());
 		assertTrue(GearSearchTestSupport.searchGear(data, "zzz not an item zzz", 10).isEmpty());
@@ -62,8 +55,7 @@ class GearSearchTest
 
 	@Test
 	@DisplayName("queries are case-insensitive")
-	void caseInsensitive()
-	{
+	void caseInsensitive() {
 		List<GearItem> lower = GearSearchTestSupport.searchGear(data, "dragon dagger", 5);
 		List<GearItem> upper = GearSearchTestSupport.searchGear(data, "DRAGON Dagger", 5);
 		assertFalse(lower.isEmpty());

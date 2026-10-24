@@ -9,10 +9,8 @@ import org.junit.Test;
  * nullable-argument helper has to normalise at its own call site - this test
  * is what catches a new helper that forgets.
  */
-public class OptimizationRequestTest
-{
-	private static OptimizationRequest base()
-	{
+public class OptimizationRequestTest {
+	private static OptimizationRequest base() {
 		return TestRequests.of(
 			null, CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
@@ -21,8 +19,7 @@ public class OptimizationRequestTest
 	}
 
 	@Test
-	public void withExcludedItemsNullYieldsAnEmptySetNotNull()
-	{
+	public void withExcludedItemsNullYieldsAnEmptySetNotNull() {
 		OptimizationRequest r = base().withExcludedItems(null);
 		Assert.assertNotNull(r.getExcludedItems());
 		Assert.assertTrue(r.getExcludedItems().isEmpty());
@@ -32,8 +29,7 @@ public class OptimizationRequestTest
 	}
 
 	@Test
-	public void theOtherNullableWithersNormaliseToo()
-	{
+	public void theOtherNullableWithersNormaliseToo() {
 		OptimizationRequest r = base()
 			.withDreamItems(null)
 			.withProtectOnlyItems(null)

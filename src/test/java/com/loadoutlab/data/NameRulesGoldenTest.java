@@ -18,32 +18,28 @@ import static org.junit.Assert.assertTrue;
  * DataService agree on every single row. This, plus the byte-identical golden
  * DPS run, is the proof that the extraction changed no behaviour.
  */
-public class NameRulesGoldenTest
-{
+public class NameRulesGoldenTest {
 	private static LoadoutData data;
 	private static Method questsFor;
 	private static Method spellLevel;
 	private static Method knownSlayerMonster;
 
 	@BeforeClass
-	public static void loadCorpus() throws Exception
-	{
+	public static void loadCorpus() throws Exception {
 		data = new DataService().load();
 		questsFor = privateStatic("questsFor", String.class, String.class);
 		spellLevel = privateStatic("spellLevel", String.class);
 		knownSlayerMonster = privateStatic("knownSlayerMonster", String.class);
 	}
 
-	private static Method privateStatic(String name, Class<?>... params) throws Exception
-	{
+	private static Method privateStatic(String name, Class<?>... params) throws Exception {
 		Method method = DataService.class.getDeclaredMethod(name, params);
 		method.setAccessible(true);
 		return method;
 	}
 
 	@Test
-	public void corpusIsBigEnoughToBeMeaningful()
-	{
+	public void corpusIsBigEnoughToBeMeaningful() {
 		// Guards against a silently empty corpus making every assertion vacuous.
 		assertTrue("gear corpus suspiciously small: " + data.getGearItems().size(),
 			data.getGearItems().size() > 4000);
@@ -53,23 +49,19 @@ public class NameRulesGoldenTest
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void questUnlocksMatchTheOldImplementationForEveryGearItem() throws Exception
-	{
+	public void questUnlocksMatchTheOldImplementationForEveryGearItem() throws Exception {
 		List<String> mismatches = new ArrayList<>();
 		int withQuests = 0;
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			List<String> expected = new ArrayList<>(
 				LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
 			List<String> actual = new ArrayList<>(
 				(java.util.Set<String>) questsFor.invoke(null, item.getName(), item.getVersion()));
-			if (!expected.equals(actual))
-			{
+			if (!expected.equals(actual)) {
 				mismatches.add(item.getId() + " " + item.getName() + " [" + item.getVersion()
 					+ "] expected " + expected + " but got " + actual);
 			}
-			if (!expected.isEmpty())
-			{
+			if (!expected.isEmpty()) {
 				withQuests++;
 			}
 		}
@@ -80,16 +72,13 @@ public class NameRulesGoldenTest
 
 	/** The end-to-end path: the GearRequirements actually attached to items. */
 	@Test
-	public void attachedGearRequirementsMatchTheOldImplementation()
-	{
+	public void attachedGearRequirementsMatchTheOldImplementation() {
 		List<String> mismatches = new ArrayList<>();
-		for (GearItem item : data.getGearItems())
-		{
+		for (GearItem item : data.getGearItems()) {
 			List<String> expected = new ArrayList<>(
 				LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
 			List<String> actual = new ArrayList<>(item.getRequirements().getQuests());
-			if (!expected.equals(actual))
-			{
+			if (!expected.equals(actual)) {
 				mismatches.add(item.getId() + " " + item.getName()
 					+ " expected " + expected + " but got " + actual);
 			}
@@ -98,10 +87,8 @@ public class NameRulesGoldenTest
 	}
 
 	@Test
-	public void spellLevelsMatchTheOldSwitchForEverySpell() throws Exception
-	{
-		for (SpellStats spell : data.getSpells())
-		{
+	public void spellLevelsMatchTheOldSwitchForEverySpell() throws Exception {
+		for (SpellStats spell : data.getSpells()) {
 			assertEquals(spell.getName(),
 				LegacyNameRules.spellLevel(spell.getName()),
 				((Integer) spellLevel.invoke(null, spell.getName())).intValue());
@@ -112,20 +99,16 @@ public class NameRulesGoldenTest
 	}
 
 	@Test
-	public void slayerMonsterDetectionMatchesTheOldOrChain() throws Exception
-	{
+	public void slayerMonsterDetectionMatchesTheOldOrChain() throws Exception {
 		List<String> mismatches = new ArrayList<>();
 		int matched = 0;
-		for (MonsterStats monster : data.getMonsters())
-		{
+		for (MonsterStats monster : data.getMonsters()) {
 			boolean expected = LegacyNameRules.knownSlayerMonster(monster.getName());
 			boolean actual = (Boolean) knownSlayerMonster.invoke(null, monster.getName());
-			if (expected != actual)
-			{
+			if (expected != actual) {
 				mismatches.add(monster.getName() + " expected " + expected);
 			}
-			if (expected)
-			{
+			if (expected) {
 				matched++;
 			}
 		}
@@ -141,18 +124,13 @@ public class NameRulesGoldenTest
 	 * otherwise silently degrade an item to "no quest requirement".
 	 */
 	@Test
-	public void everyQuestNameStillResolvesAgainstTheRuneLiteEnum()
-	{
+	public void everyQuestNameStillResolvesAgainstTheRuneLiteEnum() {
 		List<String> unknown = new ArrayList<>();
 		List<String> names = questNames();
-		for (String name : names)
-		{
-			try
-			{
+		for (String name : names) {
+			try {
 				Quest.valueOf(name);
-			}
-			catch (IllegalArgumentException ex)
-			{
+			} catch (IllegalArgumentException ex) {
 				unknown.add(name);
 			}
 		}
@@ -161,13 +139,11 @@ public class NameRulesGoldenTest
 			unknown.isEmpty());
 	}
 
-	private static List<String> questNames()
-	{
+	private static List<String> questNames() {
 		com.google.gson.JsonObject root =
 			JsonResources.objectOrThrow("/com/loadoutlab/data/name_rules.json");
 		List<String> names = new ArrayList<>();
-		for (com.google.gson.JsonElement rule : root.getAsJsonArray("questRules"))
-		{
+		for (com.google.gson.JsonElement rule : root.getAsJsonArray("questRules")) {
 			names.add(rule.getAsJsonObject().get("quest").getAsString());
 		}
 		return names;
@@ -175,8 +151,7 @@ public class NameRulesGoldenTest
 
 	/** The resource must carry the full tables, not a truncated file. */
 	@Test
-	public void resourceTableSizesAreTheVerifiedCounts()
-	{
+	public void resourceTableSizesAreTheVerifiedCounts() {
 		com.google.gson.JsonObject root =
 			JsonResources.objectOrThrow("/com/loadoutlab/data/name_rules.json");
 		assertEquals("spell rows", 48, root.getAsJsonObject("spellLevels").size());

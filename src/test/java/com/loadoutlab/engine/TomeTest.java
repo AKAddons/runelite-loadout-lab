@@ -24,27 +24,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * multiplicative with the magic damage pool. Empty tomes, off-element
  * spells and Ancients get nothing.
  */
-class TomeTest
-{
+class TomeTest {
 	private static LoadoutData data;
 	private static MonsterStats drake;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		drake = data.searchMonsters("drake", 1).get(0);
 		assertEquals("Drake", drake.getName());
 	}
 
-	private static SpellStats spell(String name)
-	{
+	private static SpellStats spell(String name) {
 		return data.getSpells().stream().filter(s -> s.getName().equalsIgnoreCase(name))
 			.findFirst().orElseThrow(AssertionError::new);
 	}
 
-	private static void own(Map<Integer, Integer> owned, String nameLower, String versionLower)
-	{
+	private static void own(Map<Integer, Integer> owned, String nameLower, String versionLower) {
 		GearItem item = data.getGearItems().stream()
 			.filter(g -> g.getNameLower().equals(nameLower)
 				&& (versionLower == null ? g.isStandardGear() : g.getVersionLower().equals(versionLower)))
@@ -60,16 +56,13 @@ class TomeTest
 		"ancestral robe bottom", "occult necklace", "tormented bracelet", "eternal boots"};
 	private static final int WRATH_RUNE = 21880;
 
-	private static DpsResult best(SpellStats pinned, String... ownedNames)
-	{
+	private static DpsResult best(SpellStats pinned, String... ownedNames) {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(WRATH_RUNE, 1000);
-		for (String name : MAGIC_SET)
-		{
+		for (String name : MAGIC_SET) {
 			own(owned, name, null);
 		}
-		for (String name : ownedNames)
-		{
+		for (String name : ownedNames) {
 			String[] parts = name.split("#");
 			own(owned, parts[0], parts.length > 1 ? parts[1] : null);
 		}
@@ -86,8 +79,7 @@ class TomeTest
 
 	@Test
 	@DisplayName("a charged tome of water lifts Water Surge above the fortified ward at a drake")
-	void chargedTomeBeatsTheWard()
-	{
+	void chargedTomeBeatsTheWard() {
 		DpsResult tome = best(spell("Water Surge"), "kodai wand", "tome of water#charged");
 		DpsResult ward = best(spell("Water Surge"), "kodai wand", "elidinis' ward (f)");
 		assertEquals("tome of water", tome.getLoadout().get(GearSlot.SHIELD).getNameLower());
@@ -99,8 +91,7 @@ class TomeTest
 
 	@Test
 	@DisplayName("an empty tome, an off-element tome and an Ancients spell get nothing")
-	void onlyAChargedMatchingTomeCounts()
-	{
+	void onlyAChargedMatchingTomeCounts() {
 		DpsResult bare = best(spell("Water Surge"), "kodai wand");
 		assertEquals(bare.getMaxHit(), best(spell("Water Surge"), "kodai wand", "tome of water#empty").getMaxHit());
 		assertEquals(bare.getMaxHit(), best(spell("Water Surge"), "kodai wand", "tome of fire#charged").getMaxHit());
@@ -111,8 +102,7 @@ class TomeTest
 
 	@Test
 	@DisplayName("the fire and earth tomes boost damage only; the water tome alone adds accuracy (wiki)")
-	void onlyTheWaterTomeAddsAccuracy()
-	{
+	void onlyTheWaterTomeAddsAccuracy() {
 		// The empty tome carries the same +8 magic attack, so it isolates
 		// the charge's own effect.
 		DpsResult empty = best(spell("Fire Surge"), "kodai wand", "tome of fire#empty");
@@ -127,8 +117,7 @@ class TomeTest
 
 	@Test
 	@DisplayName("with both owned, the drake's magic card wears the charged tome, not the ward")
-	void optimizerPicksTheTome()
-	{
+	void optimizerPicksTheTome() {
 		DpsResult best = best(null, "kodai wand", "tome of water#charged", "elidinis' ward (f)");
 		assertEquals("tome of water", best.getLoadout().get(GearSlot.SHIELD).getNameLower());
 		assertEquals("Water Surge", best.getSpellName());

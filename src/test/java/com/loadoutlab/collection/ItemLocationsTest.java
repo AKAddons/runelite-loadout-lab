@@ -10,17 +10,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ItemLocationsTest
-{
-	private static ItemLocations locations(Map<String, Map<Integer, Integer>> origins)
-	{
+class ItemLocationsTest {
+	private static ItemLocations locations(Map<String, Map<Integer, Integer>> origins) {
 		// Variant map for the tests: 100 and 101 are interchangeable.
 		return new ItemLocations(origins,
 			id -> id == 100 || id == 101 ? Set.of(100, 101) : Set.of(id));
 	}
 
-	private static Map<String, Map<Integer, Integer>> origins()
-	{
+	private static Map<String, Map<Integer, Integer>> origins() {
 		Map<String, Map<Integer, Integer>> origins = new LinkedHashMap<>();
 		origins.put("equipped", Map.of(1, 1));
 		origins.put("bank", Map.of(2, 1));
@@ -33,8 +30,7 @@ class ItemLocationsTest
 
 	@Test
 	@DisplayName("where() lists every origin holding the item, in display order")
-	void whereListsOriginsInOrder()
-	{
+	void whereListsOriginsInOrder() {
 		assertEquals(List.of("STASH", "POH costume room", "STASH" + ItemLocations.VIA_DWMS),
 			locations(origins()).where(3));
 		assertTrue(locations(origins()).where(99).isEmpty());
@@ -42,15 +38,13 @@ class ItemLocationsTest
 
 	@Test
 	@DisplayName("a stored variant answers for the base id the optimizer suggests")
-	void variantAnswersForBase()
-	{
+	void variantAnswersForBase() {
 		assertEquals(List.of("STASH"), locations(origins()).where(100));
 	}
 
 	@Test
 	@DisplayName("no hint when the item is at hand or not owned at all")
-	void noHintWhenAtHandOrUnowned()
-	{
+	void noHintWhenAtHandOrUnowned() {
 		ItemLocations locations = locations(origins());
 		assertEquals("", fetchHint(locations, 1), "equipped is at hand");
 		assertEquals("", fetchHint(locations, 2), "banked is at hand");
@@ -59,8 +53,7 @@ class ItemLocationsTest
 
 	@Test
 	@DisplayName("the hint names remote storages, preferring native labels over DWMS twins")
-	void hintNamesRemoteStores()
-	{
+	void hintNamesRemoteStores() {
 		ItemLocations locations = locations(origins());
 		assertEquals("stored in STASH + POH costume room", fetchHint(locations, 3));
 		assertEquals("stored in STASH" + ItemLocations.VIA_DWMS, fetchHint(locations, 4),
@@ -70,8 +63,7 @@ class ItemLocationsTest
 
 	@Test
 	@DisplayName("the primary label folds DWMS twins onto native names and buckets the rest")
-	void primaryLabels()
-	{
+	void primaryLabels() {
 		ItemLocations locations = locations(origins());
 		assertEquals("equipped", locations.primary(1));
 		assertEquals("bank", locations.primary(2));
@@ -83,38 +75,30 @@ class ItemLocationsTest
 
 	@Test
 	@DisplayName("without a variant map, matching falls back to exact ids")
-	void exactMatchingWithoutDataset()
-	{
+	void exactMatchingWithoutDataset() {
 		ItemLocations locations = new ItemLocations(origins(), null);
 		assertTrue(locations.where(100).isEmpty(), "101 no longer answers for 100");
 		assertEquals(List.of("STASH"), locations.where(101));
 	}
 
 	/** The tooltip clause the plugin once built here; kept as the test's oracle. */
-	private static String fetchHint(ItemLocations locations, int itemId)
-	{
+	private static String fetchHint(ItemLocations locations, int itemId) {
 		List<String> where = locations.where(itemId);
-		if (where.isEmpty())
-		{
+		if (where.isEmpty()) {
 			return "";
 		}
-		for (String label : where)
-		{
-			if (java.util.Set.of("equipped", "inventory", "bank").contains(label))
-			{
+		for (String label : where) {
+			if (java.util.Set.of("equipped", "inventory", "bank").contains(label)) {
 				return "";
 			}
 		}
 		List<String> named = new ArrayList<>();
-		for (String label : where)
-		{
-			if (!label.endsWith(ItemLocations.VIA_DWMS))
-			{
+		for (String label : where) {
+			if (!label.endsWith(ItemLocations.VIA_DWMS)) {
 				named.add(label);
 			}
 		}
-		if (named.isEmpty())
-		{
+		if (named.isEmpty()) {
 			named = where;
 		}
 		return "stored in " + String.join(" + ", named);

@@ -7,22 +7,18 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SpellbookLockTest
-{
+public class SpellbookLockTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
 	@Test
-	public void lockRestrictsAutoSpellToTheChosenBook()
-	{
+	public void lockRestrictsAutoSpellToTheChosenBook() {
 		MonsterStats td = data().searchMonsters("tormented demon", 1).get(0);
 		OptimizationRequest base = new OptimizationRequest(
 			td, CombatStyle.MAGIC, PlayerLevels.MAXED,
@@ -38,23 +34,20 @@ public class SpellbookLockTest
 		// Locked to standard: no arceuus spell may appear.
 		DpsResult standard = new LoadoutOptimizer().optimize(data(),
 			base.withSpellbookLock("standard")).get(0);
-		if (standard.getSpellName() != null)
-		{
+		if (standard.getSpellName() != null) {
 			Assert.assertEquals("standard", bookOf(standard.getSpellName()));
 		}
 
 		// Locked to ancient: the pick is an ancient spell or a powered staff.
 		DpsResult ancient = new LoadoutOptimizer().optimize(data(),
 			base.withSpellbookLock("ancient")).get(0);
-		if (ancient.getSpellName() != null)
-		{
+		if (ancient.getSpellName() != null) {
 			Assert.assertEquals("ancient", bookOf(ancient.getSpellName()));
 		}
 	}
 
 	@Test
-	public void purgingStaffAutocastsAncientsAndNoSpellMeansNoResult()
-	{
+	public void purgingStaffAutocastsAncientsAndNoSpellMeansNoResult() {
 		MonsterStats graardor = data().searchMonsters("general graardor", 1).get(0);
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
 		data().getGearItems().stream().filter(g -> g.getName().equalsIgnoreCase("Purging staff"))
@@ -80,16 +73,14 @@ public class SpellbookLockTest
 		Assert.assertTrue(results.get(0).getMaxHit() > 0);
 	}
 
-	private static String bookOf(String spellName)
-	{
+	private static String bookOf(String spellName) {
 		return data().getSpells().stream()
 			.filter(s -> s.getName().equals(spellName))
 			.findFirst().orElseThrow(AssertionError::new).getSpellbook();
 	}
 
 	@Test
-	public void eyeOfAyakEvaluatesAsAPoweredStaffInTheOptimizer()
-	{
+	public void eyeOfAyakEvaluatesAsAPoweredStaffInTheOptimizer() {
 		// The optimizer once had its own powered-staff list missing the
 		// eye of ayak, sending it down the autocast path. A powered staff
 		// result carries no spell name.

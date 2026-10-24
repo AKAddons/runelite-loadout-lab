@@ -3,11 +3,9 @@ package com.loadoutlab.engine;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PrayerUnlocksTest
-{
+public class PrayerUnlocksTest {
 	@Test
-	public void lockedPrayersFallBackToTheBestUnlockedTier()
-	{
+	public void lockedPrayersFallBackToTheBestUnlockedTier() {
 		PlayerLevels maxed = PlayerLevels.MAXED;
 
 		// No King's Ransom: no Piety - falls to Ultimate Strength tier.

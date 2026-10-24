@@ -16,29 +16,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * things through slayer". Selection seeds On task from the mob: on for
  * a slayer monster, off otherwise, always off for a raid.
  */
-class OnTaskSeedTest
-{
+class OnTaskSeedTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static CommandEngine engine(PageState state)
-	{
+	private static CommandEngine engine(PageState state) {
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 		engine.setStoreOps(new TestStoreOps());
 		return engine;
 	}
 
-	private static MonsterStats mob(String query, String name)
-	{
+	private static MonsterStats mob(String query, String name) {
 		MonsterStats mob = data.searchMonsters(query, 1).get(0);
 		assertEquals(name, mob.getName());
 		return mob;
@@ -46,8 +41,7 @@ class OnTaskSeedTest
 
 	@Test
 	@DisplayName("a slayer monster seeds On task on; a non-slayer mob after it seeds it off")
-	void slayerMonsterSeedsOn()
-	{
+	void slayerMonsterSeedsOn() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 		MonsterStats demon = mob("abyssal demon", "Abyssal demon");
@@ -62,8 +56,7 @@ class OnTaskSeedTest
 
 	@Test
 	@DisplayName("a task-only boss is on task and a raid is never on task")
-	void taskOnlyAndRaid()
-	{
+	void taskOnlyAndRaid() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 		MonsterStats sire = mob("abyssal sire", "Abyssal Sire");

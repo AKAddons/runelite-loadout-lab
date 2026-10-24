@@ -17,12 +17,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * "v0.3.3" reports from a 0.3.4 client (field report 2026-08-07) fails
  * the gate instead of reaching users.
  */
-class VersionStampTest
-{
+class VersionStampTest {
 	@Test
 	@DisplayName("the report's stamped version matches runelite-plugin.properties")
-	void stampMatchesPluginProperties() throws Exception
-	{
+	void stampMatchesPluginProperties() throws Exception {
 		Properties plugin = new Properties();
 		plugin.load(Files.newInputStream(Path.of("runelite-plugin.properties")));
 		String released = plugin.getProperty("version");
@@ -36,8 +34,7 @@ class VersionStampTest
 
 	@Test
 	@DisplayName("hub builds never show ${version}: the source fallback matches build.gradle and the stamp is never a placeholder")
-	void fallbackMatchesBuild() throws Exception
-	{
+	void fallbackMatchesBuild() throws Exception {
 		String gradle = java.nio.file.Files.readString(java.nio.file.Path.of("build.gradle"));
 		java.util.regex.Matcher m = java.util.regex.Pattern.compile("version = '([^']+)'").matcher(gradle);
 		assertTrue(m.find(), "build.gradle declares the version");

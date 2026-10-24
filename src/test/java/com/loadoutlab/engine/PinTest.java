@@ -18,18 +18,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * set AROUND the pin. Optimizer-level by mandate: these run the real
  * search, the same path the panel renders.
  */
-class PinTest
-{
+class PinTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static OptimizationRequest ranged(CandidateMode mode, OwnedItems owned)
-	{
+	private static OptimizationRequest ranged(CandidateMode mode, OwnedItems owned) {
 		return new OptimizationRequest(
 			data.searchMonsters("goblin", 1).get(0), CombatStyle.RANGED,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0,
@@ -38,8 +35,7 @@ class PinTest
 
 	@Test
 	@DisplayName("a pinned bracelet of slaughter holds the hands slot against better dps gloves")
-	void pinnedSlaughterBraceletWins()
-	{
+	void pinnedSlaughterBraceletWins() {
 		OwnedItems owned = new OwnedItems(
 			Map.of(861, 1, 21326, 100, 7462, 1, 21183, 1), true);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data,
@@ -54,8 +50,7 @@ class PinTest
 
 	@Test
 	@DisplayName("an UNOWNED pin still rides in owned-only mode - 'I am bringing this'")
-	void unownedPinAppears()
-	{
+	void unownedPinAppears() {
 		OwnedItems owned = new OwnedItems(Map.of(861, 1, 21326, 100), true);
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data,
 			ranged(CandidateMode.OWNED_ONLY, owned)
@@ -68,15 +63,12 @@ class PinTest
 
 	@Test
 	@DisplayName("a pinned salve rides a low-risk set - the never-risk veto yields to the pin")
-	void pinnedSalveSurvivesLowRisk()
-	{
+	void pinnedSalveSurvivesLowRisk() {
 		MonsterStatsHolder rev = new MonsterStatsHolder();
 		rev.monster = data.searchMonsters("revenant demon", 1).get(0);
 		GearItem salve = null;
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals("salve amulet(ei)"))
-			{
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals("salve amulet(ei)")) {
 				salve = item;
 			}
 		}
@@ -100,8 +92,7 @@ class PinTest
 
 	@Test
 	@DisplayName("a pinned weapon locks the weapon line")
-	void pinnedWeaponForced()
-	{
+	void pinnedWeaponForced() {
 		List<DpsResult> results = new LoadoutOptimizer().optimize(data,
 			ranged(CandidateMode.ALL_STANDARD, OwnedItems.EMPTY)
 				.withPinnedItems(Map.of(GearSlot.WEAPON, 861)));
@@ -111,8 +102,7 @@ class PinTest
 			"got: " + weapon.getNameLower());
 	}
 
-	private static final class MonsterStatsHolder
-	{
+	private static final class MonsterStatsHolder {
 		com.loadoutlab.data.MonsterStats monster;
 	}
 }

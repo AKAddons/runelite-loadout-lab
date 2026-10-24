@@ -4,8 +4,7 @@ import com.loadoutlab.engine.TaskBracelet;
 import net.runelite.client.config.*;
 
 @ConfigGroup("loadoutlab")
-public interface LoadoutLabConfig extends Config
-{
+public interface LoadoutLabConfig extends Config {
 	@ConfigSection(
 		name = "Display",
 		description = "Which detail lines each set card shows",
@@ -54,8 +53,7 @@ public interface LoadoutLabConfig extends Config
 		section = display,
 		position = 12
 	)
-	default boolean loadingAnimation()
-	{
+	default boolean loadingAnimation() {
 		return true;
 	}
 
@@ -68,8 +66,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 2
 	)
-	default boolean defaultSpecWeapon()
-	{
+	default boolean defaultSpecWeapon() {
 		return true;
 	}
 
@@ -80,8 +77,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 14
 	)
-	default String defaultUpgradeBudget()
-	{
+	default String defaultUpgradeBudget() {
 		return "";
 	}
 
@@ -92,8 +88,7 @@ public interface LoadoutLabConfig extends Config
 		section = controls,
 		position = 3
 	)
-	default boolean showTripBreakdown()
-	{
+	default boolean showTripBreakdown() {
 		return true;
 	}
 
@@ -104,8 +99,7 @@ public interface LoadoutLabConfig extends Config
 		section = controls,
 		position = 2
 	)
-	default boolean showWildyRisk()
-	{
+	default boolean showWildyRisk() {
 		return true;
 	}
 
@@ -117,8 +111,7 @@ public interface LoadoutLabConfig extends Config
 		section = controls,
 		position = 6
 	)
-	default boolean showPvpWorldChip()
-	{
+	default boolean showPvpWorldChip() {
 		return false;
 	}
 
@@ -129,8 +122,7 @@ public interface LoadoutLabConfig extends Config
 		section = controls,
 		position = 4
 	)
-	default boolean showDegradableChip()
-	{
+	default boolean showDegradableChip() {
 		return true;
 	}
 
@@ -141,8 +133,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 16
 	)
-	default boolean skipDegradableDefault()
-	{
+	default boolean skipDegradableDefault() {
 		return false;
 	}
 
@@ -153,18 +144,15 @@ public interface LoadoutLabConfig extends Config
 		section = reset,
 		position = 1
 	)
-	default boolean resetCustomizations()
-	{
+	default boolean resetCustomizations() {
 		return false;
 	}
 
 	/** Unset every setting so each goes back to its default (the reset
 	 * tick included). The key list is RuneLite's own config descriptor -
 	 * the hub allows no reflection in plugin code. */
-	static void unsetAll(ConfigManager manager, Config config)
-	{
-		for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems())
-		{
+	static void unsetAll(ConfigManager manager, Config config) {
+		for (ConfigItemDescriptor item : manager.getConfigDescriptor(config).getItems()) {
 			manager.unsetConfiguration("loadoutlab", item.key());
 		}
 	}
@@ -176,8 +164,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 15
 	)
-	default String defaultRiskCap()
-	{
+	default String defaultRiskCap() {
 		return "75k";
 	}
 
@@ -189,8 +176,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 1
 	)
-	default OptimizeModeDefault defaultOptimizeMode()
-	{
+	default OptimizeModeDefault defaultOptimizeMode() {
 		return OptimizeModeDefault.MAX_DPS;
 	}
 
@@ -198,8 +184,7 @@ public interface LoadoutLabConfig extends Config
 	 * Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
 	 * default search option"). Names match OptimizerService.OptimizeMode. */
 	@lombok.RequiredArgsConstructor
-	enum OptimizeModeDefault
-	{
+	enum OptimizeModeDefault {
 		MAX_DPS("Max DPS"),
 		BALANCED("Balanced (beta)"),
 		TANKY("Tanky (beta)");
@@ -207,14 +192,12 @@ public interface LoadoutLabConfig extends Config
 		private final String label;
 
 		@Override
-		public String toString()
-		{
+		public String toString() {
 			return label;
 		}
 	}
 
-	enum AssumeDefault
-	{
+	enum AssumeDefault {
 		DETECT,
 		NONE
 	}
@@ -226,8 +209,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 9
 	)
-	default AssumeDefault defaultThralls()
-	{
+	default AssumeDefault defaultThralls() {
 		return AssumeDefault.DETECT;
 	}
 
@@ -238,8 +220,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 11
 	)
-	default TaskBracelet slayerTaskBracelet()
-	{
+	default TaskBracelet slayerTaskBracelet() {
 		return TaskBracelet.NONE;
 	}
 
@@ -250,8 +231,7 @@ public interface LoadoutLabConfig extends Config
 		section = defaults,
 		position = 10
 	)
-	default AssumeDefault defaultDeathCharge()
-	{
+	default AssumeDefault defaultDeathCharge() {
 		return AssumeDefault.DETECT;
 	}
 
@@ -262,8 +242,7 @@ public interface LoadoutLabConfig extends Config
 		section = controls,
 		position = 10
 	)
-	default boolean npcRightClickEntry()
-	{
+	default boolean npcRightClickEntry() {
 		return true;
 	}
 
@@ -277,8 +256,7 @@ public interface LoadoutLabConfig extends Config
 		section = connections,
 		position = 1
 	)
-	default boolean useDwmsData()
-	{
+	default boolean useDwmsData() {
 		return true;
 	}
 
@@ -291,8 +269,7 @@ public interface LoadoutLabConfig extends Config
 		section = connections,
 		position = 2
 	)
-	default boolean fetchMonsterIcons()
-	{
+	default boolean fetchMonsterIcons() {
 		return true;
 	}
 

@@ -14,18 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Andrew, 2026-09-03: "does the copy report output for a sea creature
  * have all of the debug information needed for new stuff?" - it had
  * none of the ship. */
-class ReportShipSectionTest
-{
+class ReportShipSectionTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static Map<String, Object> ship()
-	{
+	private static Map<String, Object> ship() {
 		return Map.of("station", "helm", "ammo", "rune", "ammoDetected", true, "dps", 4.02,
 			"cannons", List.of(
 				Map.of("tier", "rune", "firedBy", "crew", "dps", 4.02, "maxHit", 20),
@@ -37,8 +34,7 @@ class ReportShipSectionTest
 
 	@Test
 	@DisplayName("a sea report carries the keel, the damage taken, every cannon with its reason, the station, the per-mob cannon dps and the supplies")
-	void seaReportCarriesTheShip()
-	{
+	void seaReportCarriesTheShip() {
 		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		String report = ReportBuilder.build("test", new PageState(), List.of(shark), List.of(Map.of()), 0,
 			null, null, ship(), List.of(Map.of("name", "Ship repair kit")), false, null);
@@ -54,8 +50,7 @@ class ReportShipSectionTest
 
 	@Test
 	@DisplayName("a land report has no ship section")
-	void landReportStaysClean()
-	{
+	void landReportStaysClean() {
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		String report = ReportBuilder.build("test", new PageState(), List.of(graardor), List.of(Map.of()), 0,
 			null, null, null, List.of(), false, null);

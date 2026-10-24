@@ -14,57 +14,48 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Andrew, 2026-09-08: "cure me should lock the spell book into lunar and
  * shouldn't be an option if relying on other spellbooks. it should
  * override the thrall setting." */
-class CureMeLockTest
-{
+class CureMeLockTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** Store ops whose lensed mob chose Cure Me, with a pin the test can flip. */
-	private static final class CureMeOps extends TestStoreOps
-	{
+	private static final class CureMeOps extends TestStoreOps {
 		String pinned = "";
 
 		@Override
-		public Map<String, String> supplyOverrides(int profileId)
-		{
+		public Map<String, String> supplyOverrides(int profileId) {
 			return Map.of("antivenom", "CURE_ME");
 		}
 
 		@Override
-		public String pinnedSpell(int monsterId)
-		{
+		public String pinnedSpell(int monsterId) {
 			return pinned;
 		}
 
 		@Override
-		public void setPinnedSpell(int monsterId, String spellName)
-		{
+		public void setPinnedSpell(int monsterId, String spellName) {
 			pinned = spellName == null ? "" : spellName;
 		}
 	}
 
 	@Test
 	@DisplayName("Cure Me on a venomous mob computes with the Lunar lock and no Death Charge; a pinned spell or a non-venomous mob leaves both alone")
-	void cureMeLocksLunar()
-	{
+	void cureMeLocksLunar() {
 		AtomicReference<String> lock = new AtomicReference<>();
 		AtomicInteger charge = new AtomicInteger(-1);
 		AtomicInteger computes = new AtomicInteger();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 				lock.set(p.spellbookLock);
 				charge.set(p.deathCharge);
 				computes.incrementAndGet();
 			}, new CompanionLink());
 		// "zulrah" resolves to the roster group, so capture that path too.
-		engine.setRosterCompute((mobs, p, onDone) ->
-		{
+		engine.setRosterCompute((mobs, p, onDone) -> {
 			lock.set(p.spellbookLock);
 			charge.set(p.deathCharge);
 			computes.incrementAndGet();
@@ -98,8 +89,7 @@ class CureMeLockTest
 
 	@Test
 	@DisplayName("a fight book elsewhere blocks Arceuus casts: the Sire (Ancients) computes without Death Charge until Spellbook Swap is on")
-	void fightBookBlocksArceuus()
-	{
+	void fightBookBlocksArceuus() {
 		AtomicInteger charge = new AtomicInteger(-1);
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> charge.set(p.deathCharge), new CompanionLink());
@@ -116,17 +106,14 @@ class CureMeLockTest
 
 	@Test
 	@DisplayName("Cure Me chosen for a poisoner (Dagannoth Rex, antipoison) camps Lunar like it does for venom")
-	void cureMeForPoison()
-	{
+	void cureMeForPoison() {
 		AtomicReference<String> lock = new AtomicReference<>();
 		CommandEngine engine = new CommandEngine(data, new PageState(),
 			(mob, p, onDone) -> lock.set(p.spellbookLock), new CompanionLink());
 		engine.setRosterCompute((mobs, p, onDone) -> lock.set(p.spellbookLock));
-		engine.setStoreOps(new TestStoreOps()
-		{
+		engine.setStoreOps(new TestStoreOps() {
 			@Override
-			public Map<String, String> supplyOverrides(int profileId)
-			{
+			public Map<String, String> supplyOverrides(int profileId) {
 				return Map.of("antipoison", "CURE_ME");
 			}
 		});

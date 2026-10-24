@@ -29,12 +29,10 @@ import lombok.RequiredArgsConstructor;
  * entries and the 9-entry fallback row - regenerate with that script, never
  * by hand.
  */
-public final class WeaponStyles
-{
+public final class WeaponStyles {
 	/** One selectable style: the attack type plus its stance bonuses. */
 	@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-	public static final class MeleeStyle
-	{
+	public static final class MeleeStyle {
 		public final String attackType;
 		public final int attackStance;
 		public final int strengthStance;
@@ -51,19 +49,15 @@ public final class WeaponStyles
 	private static final List<MeleeStyle> ALL =
 		BY_CATEGORY.getOrDefault(FALLBACK, List.of());
 
-	private static Map<String, List<MeleeStyle>> load()
-	{
+	private static Map<String, List<MeleeStyle>> load() {
 		Map<String, List<MeleeStyle>> table = new HashMap<>();
 		JsonObject root = JsonResources.object(RESOURCE);
-		if (root == null)
-		{
+		if (root == null) {
 			return table;
 		}
-		for (Map.Entry<String, JsonElement> entry : root.entrySet())
-		{
+		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
 			List<MeleeStyle> styles = new ArrayList<>();
-			for (JsonElement element : entry.getValue().getAsJsonArray())
-			{
+			for (JsonElement element : entry.getValue().getAsJsonArray()) {
 				JsonObject style = element.getAsJsonObject();
 				styles.add(new MeleeStyle(style.get("attackType").getAsString(),
 					style.get("attackStance").getAsInt(),
@@ -74,13 +68,11 @@ public final class WeaponStyles
 		return table;
 	}
 
-	private WeaponStyles()
-	{
+	private WeaponStyles() {
 	}
 
 	/** The melee styles this weapon actually offers (unknown category: all). */
-	public static List<MeleeStyle> melee(GearItem weapon)
-	{
+	public static List<MeleeStyle> melee(GearItem weapon) {
 		// Null weapon = bare fists, which is a real category row. Looking it up
 		// through the same map (rather than returning it directly) is what
 		// keeps a missing resource from returning null here and NPE-ing

@@ -14,12 +14,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * (everything through Mystic Might) and F2P potions (attack + strength).
  * Also locks A2.12: sub-31 prayer tiers are NAMED, not silently applied.
  */
-class F2pAssumptionsTest
-{
+class F2pAssumptionsTest {
 	@Test
 	@DisplayName("the F2P prayer ceiling is the 1.15 tier, by name")
-	void f2pPrayerCeiling()
-	{
+	void f2pPrayerCeiling() {
 		PrayerBonuses f2p = PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.F2P);
 		assertEquals("Incredible Reflexes + Ultimate Strength", f2p.nameFor(CombatStyle.MELEE));
 		assertEquals("Eagle Eye", f2p.nameFor(CombatStyle.RANGED));
@@ -28,8 +26,7 @@ class F2pAssumptionsTest
 
 	@Test
 	@DisplayName("F2P boosts: attack+strength potions for melee, nothing for ranged/magic")
-	void f2pBoosts()
-	{
+	void f2pBoosts() {
 		assertEquals(BoostProfile.F2P_COMBAT, BoostSelector.bestFor(CombatStyle.MELEE, OwnedItems.EMPTY, true, false));
 		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.RANGED, OwnedItems.EMPTY, true, false));
 		assertEquals(BoostProfile.NONE, BoostSelector.bestFor(CombatStyle.MAGIC, OwnedItems.EMPTY, true, false));
@@ -43,8 +40,7 @@ class F2pAssumptionsTest
 
 	@Test
 	@DisplayName("attack/strength potions boost +3 plus 10% of the level")
-	void f2pCombatPotionMath()
-	{
+	void f2pCombatPotionMath() {
 		PlayerLevels boosted = BoostProfile.F2P_COMBAT.apply(PlayerLevels.MAXED, null);
 		assertEquals(99 + 3 + 9, boosted.getAttack());
 		assertEquals(99 + 3 + 9, boosted.getStrength());
@@ -54,8 +50,7 @@ class F2pAssumptionsTest
 
 	@Test
 	@DisplayName("sub-31 prayer tiers are named in the assumes label (audit A2.12)")
-	void lowTierPrayersAreNamed()
-	{
+	void lowTierPrayersAreNamed() {
 		PlayerLevels low = new PlayerLevels(99, 99, 99, 99, 99, 16, 99);
 		PrayerBonuses prayers = PrayerBonuses.bestAvailable(low, PrayerUnlocks.ALL);
 		assertEquals("Improved Reflexes + Superhuman Strength", prayers.nameFor(CombatStyle.MELEE));

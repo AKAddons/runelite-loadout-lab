@@ -25,24 +25,20 @@ import java.util.function.IntUnaryOperator;
  * <p>This class is the pure, testable part; the plugin gathers the
  * snapshots and posts on the client thread (ids canonicalize there).
  */
-public final class StoragesApi
-{
+public final class StoragesApi {
 	public static final String NAMESPACE = "loadoutlab";
 	public static final String REQUEST_NAME = "storages-request";
 	public static final String RESPONSE_NAME = "storages-response";
 	static final int VERSION = 1;
 	static final String SOURCE = "Loadout Lab";
 
-	private StoragesApi()
-	{
+	private StoragesApi() {
 	}
 
 	/** The validated requester name from a storages-request payload,
 	 * or null when the request carries no usable source. */
-	public static String requester(Map<String, Object> data)
-	{
-		if (data == null)
-		{
+	public static String requester(Map<String, Object> data) {
+		if (data == null) {
 			return null;
 		}
 		Object source = data.get("source");
@@ -56,32 +52,26 @@ public final class StoragesApi
 	 * matching the DWMS side of the contract.
 	 */
 	public static Map<String, Object> storage(String category, String name, long lastUpdated,
-		Map<Integer, Integer> items, IntUnaryOperator canonicalize)
-	{
+		Map<Integer, Integer> items, IntUnaryOperator canonicalize) {
 		Map<Integer, Long> canonical = new LinkedHashMap<>();
-		for (Map.Entry<Integer, Integer> e : items.entrySet())
-		{
-			if (e.getKey() <= 0 || e.getValue() <= 0)
-			{
+		for (Map.Entry<Integer, Integer> e : items.entrySet()) {
+			if (e.getKey() <= 0 || e.getValue() <= 0) {
 				continue;
 			}
 			canonical.merge(canonicalize.applyAsInt(e.getKey()), (long) e.getValue(), Long::sum);
 		}
-		if (canonical.isEmpty())
-		{
+		if (canonical.isEmpty()) {
 			return null;
 		}
 		List<Map<String, Object>> itemList = new ArrayList<>(canonical.size());
-		for (Map.Entry<Integer, Long> e : canonical.entrySet())
-		{
+		for (Map.Entry<Integer, Long> e : canonical.entrySet()) {
 			itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));
 		}
 		return JsonResources.map("category", category, "name", name, "lastUpdated", lastUpdated, "items", itemList);
 	}
 
 	/** The response envelope addressed back to the requester. */
-	public static Map<String, Object> response(String target, List<Map<String, Object>> storages)
-	{
+	public static Map<String, Object> response(String target, List<Map<String, Object>> storages) {
 		return JsonResources.map("source", SOURCE, "target", target, "version", VERSION, "storages", storages);
 	}
 }

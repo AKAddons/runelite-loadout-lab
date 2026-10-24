@@ -27,8 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  *   ./gradlew -q modelGolden > model-golden.txt
  */
-public final class ModelGolden
-{
+public final class ModelGolden {
 	/** Single mobs chosen for card-shape coverage: tri-style + spec
 	 * (Graardor), recoil/venom + magic-led (Zulrah), antifire +
 	 * required-gear (Vorkath), incoming-override boss (Muspah). */
@@ -45,16 +44,13 @@ public final class ModelGolden
 	private static final String WILDERNESS_MOB = "callisto";
 	private static final int LOW_RISK_TRADEABLES = 3;
 
-	private ModelGolden()
-	{
+	private ModelGolden() {
 	}
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		LoadoutData data = new DataService().load();
 		PlayerProfile profile = FixtureBank.profile(data);
-		for (String name : MOBS)
-		{
+		for (String name : MOBS) {
 			MonsterStats mob = data.searchMonsters(name, 1).get(0);
 			System.out.println("##### " + mob.label());
 			System.out.println(Json.write(RenderModel.page(List.of(single(data, profile, mob)))));
@@ -65,15 +61,12 @@ public final class ModelGolden
 			List.of(single(data, profile, wildy, LOW_RISK_TRADEABLES)))));
 
 		MonsterGroups.MonsterGroup group = null;
-		for (MonsterGroups.MonsterGroup candidate : MonsterGroups.load(data))
-		{
-			if (candidate.getName().equalsIgnoreCase(ROSTER_GROUP))
-			{
+		for (MonsterGroups.MonsterGroup candidate : MonsterGroups.load(data)) {
+			if (candidate.getName().equalsIgnoreCase(ROSTER_GROUP)) {
 				group = candidate;
 			}
 		}
-		if (group == null)
-		{
+		if (group == null) {
 			throw new IllegalStateException("group gone: " + ROSTER_GROUP);
 		}
 		System.out.println("##### " + group.label() + " | bench=" + ROSTER_BENCH);
@@ -82,17 +75,14 @@ public final class ModelGolden
 	}
 
 	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
-		MonsterStats mob) throws Exception
-	{
+		MonsterStats mob) throws Exception {
 		return single(data, profile, mob, -1);
 	}
 
 	private static Map<String, Object> single(LoadoutData data, PlayerProfile profile,
-		MonsterStats mob, int maxTradeables) throws Exception
-	{
+		MonsterStats mob, int maxTradeables) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, mob,
@@ -102,13 +92,11 @@ public final class ModelGolden
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0,
 				Collections.emptyMap(), null, 0, Collections.emptySet(),
-				r ->
-				{
+				r -> {
 					out.set(r);
 					done.countDown();
 				});
-			if (!done.await(300, TimeUnit.SECONDS))
-			{
+			if (!done.await(300, TimeUnit.SECONDS)) {
 				throw new IllegalStateException("query timed out: " + mob.label());
 			}
 			// riskKeptSlots >= 0 is what emits the wilderness risk node
@@ -116,19 +104,15 @@ public final class ModelGolden
 			return RenderModel.entry(List.of(mob), List.of(out.get()),
 				maxTradeables >= 0 ? maxTradeables : -1, null,
 				java.util.Collections.emptySet(), null);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static Map<String, Object> roster(LoadoutData data, PlayerProfile profile,
-		List<MonsterStats> mobs, int bench) throws Exception
-	{
+		List<MonsterStats> mobs, int bench) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<OptimizerService.RosterResult> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyleAcross(service, mobs,
@@ -138,19 +122,15 @@ public final class ModelGolden
 				OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 				Collections.emptySet(), 0, bench,
 				Collections.emptyMap(), null, Collections.emptySet(),
-				roster ->
-				{
+				roster -> {
 					out.set(roster);
 					done.countDown();
 				});
-			if (!done.await(300, TimeUnit.SECONDS))
-			{
+			if (!done.await(300, TimeUnit.SECONDS)) {
 				throw new IllegalStateException("roster query timed out");
 			}
 			return RenderModel.entry(out.get().mobs, out.get().perMob);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

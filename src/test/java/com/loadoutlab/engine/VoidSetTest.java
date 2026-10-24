@@ -20,27 +20,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * 2026-07-17). These tests pin the seeding and the set math, including
  * the previously missing elite magic void damage.
  */
-class VoidSetTest
-{
+class VoidSetTest {
 	private static LoadoutData data;
 	private static MonsterStats ankou;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		ankou = data.searchMonsters("ankou", 1).get(0);
 	}
 
-	private static GearItem byId(int id)
-	{
+	private static GearItem byId(int id) {
 		GearItem item = data.getGear(id);
 		assertNotNull(item, "corpus is missing item " + id);
 		return item;
 	}
 
-	private static OptimizationRequest request(CombatStyle style)
-	{
+	private static OptimizationRequest request(CombatStyle style) {
 		return new OptimizationRequest(ankou, style, PlayerLevels.MAXED,
 			PrayerBonuses.NONE, null, 0,
 			CandidateMode.ALL_STANDARD, true, false,
@@ -49,14 +45,11 @@ class VoidSetTest
 
 	@Test
 	@DisplayName("every void piece is seeded into its style's candidate pool")
-	void voidPiecesScoreIntoThePool()
-	{
+	void voidPiecesScoreIntoThePool() {
 		// The shared pieces enter every style's pool; each helm only its own.
 		int[] shared = {8839, 8840, 8842, 13072, 13073}; // top, robe, gloves, elite top, elite robe
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
-		{
-			for (int id : shared)
-			{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
+			for (int id : shared) {
 				assertTrue(LoadoutOptimizer.candidateScore(request(style), byId(id)) > 0,
 					"piece " + id + " must be seeded for " + style);
 			}
@@ -74,8 +67,7 @@ class VoidSetTest
 
 	@Test
 	@DisplayName("elite magic void grants +2.5% magic damage on top of the 45% accuracy")
-	void eliteMagicVoidDamage()
-	{
+	void eliteMagicVoidDamage() {
 		DpsResult regular = calcMagic(8839, 8840); // regular top + robe
 		DpsResult elite = calcMagic(13072, 13073); // elite top + robe
 		assertTrue(regular.getMaxHit() > 0);
@@ -83,8 +75,7 @@ class VoidSetTest
 			"elite = floor(regular x 1.025)");
 	}
 
-	private DpsResult calcMagic(int topId, int robeId)
-	{
+	private DpsResult calcMagic(int topId, int robeId) {
 		com.loadoutlab.data.SpellStats surge = data.getSpells().stream()
 			.filter(sp -> sp.getName().equalsIgnoreCase("Fire Surge"))
 			.findFirst().orElseThrow(() -> new AssertionError("no Fire Surge"));
@@ -98,12 +89,9 @@ class VoidSetTest
 			request(CombatStyle.MAGIC).withSpell(surge), new Loadout(gear));
 	}
 
-	private static GearItem byName(String nameLower)
-	{
-		for (GearItem item : data.getGearItems())
-		{
-			if (item.getNameLower().equals(nameLower))
-			{
+	private static GearItem byName(String nameLower) {
+		for (GearItem item : data.getGearItems()) {
+			if (item.getNameLower().equals(nameLower)) {
 				return item;
 			}
 		}

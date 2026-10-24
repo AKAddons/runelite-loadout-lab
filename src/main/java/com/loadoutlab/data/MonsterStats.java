@@ -8,8 +8,7 @@ import java.util.Set;
 import lombok.Getter;
 
 @Getter
-public final class MonsterStats
-{
+public final class MonsterStats {
 	private final int id;
 	private final String name;
 	private final String version;
@@ -40,8 +39,7 @@ public final class MonsterStats
 		int defence,
 		int magic,
 		MonsterDefences defensive,
-		List<String> attributes)
-	{
+		List<String> attributes) {
 		this(id, name, version, combatLevel, hitpoints, 1, defence, magic, 0, defensive,
 			MonsterOffence.NONE, attributes, false, "", 0);
 	}
@@ -61,8 +59,7 @@ public final class MonsterStats
 		List<String> attributes,
 		boolean slayerMonster,
 		String weaknessElement,
-		int weaknessSeverity)
-	{
+		int weaknessSeverity) {
 		this.id = id;
 		this.name = name == null ? "" : name;
 		this.version = version == null ? "" : version;
@@ -81,10 +78,8 @@ public final class MonsterStats
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
 		HashSet<String> lower = new HashSet<>();
-		for (String value : this.attributes)
-		{
-			if (value != null)
-			{
+		for (String value : this.attributes) {
+			if (value != null) {
 				lower.add(Names.lower(value));
 			}
 		}
@@ -106,13 +101,11 @@ public final class MonsterStats
 	 */
 	/** Same sheet under a different version label (load-time
 	 * normalization of quest/post-quest noise). */
-	public MonsterStats withVersion(String newVersion)
-	{
+	public MonsterStats withVersion(String newVersion) {
 		return copy(id, newVersion, attributes, defence);
 	}
 
-	private MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence)
-	{
+	private MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence) {
 		MonsterStats copy = new MonsterStats(newId, name, newVersion, combatLevel, hitpoints,
 			size, newDefence, magic, offensiveMagic, defensive, offence, newAttributes,
 			slayerMonster, weaknessElement, weaknessSeverity);
@@ -130,8 +123,7 @@ public final class MonsterStats
 	 * the post-quest Duke opened as Awakened. */
 	private String wikiVersion;
 
-	public String getWikiVersion()
-	{
+	public String getWikiVersion() {
 		return wikiVersion == null ? version : wikiVersion;
 	}
 
@@ -143,22 +135,19 @@ public final class MonsterStats
 	private String displayName;
 
 	/** The value after a "prefix:" attribute (group stipulations), or null. */
-	public String attributeValue(String prefix)
-	{
+	public String attributeValue(String prefix) {
 		return attributes.stream().filter(a -> a.startsWith(prefix))
 			.map(a -> a.substring(prefix.length())).findFirst().orElse(null);
 	}
 
 	/** A copy carrying extra attributes (the group's stipulations). */
-	public MonsterStats withAttributes(List<String> extra)
-	{
+	public MonsterStats withAttributes(List<String> extra) {
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(extra);
 		return copy(id, version, extended, defence);
 	}
 
-	public MonsterStats withDisplayName(String nick)
-	{
+	public MonsterStats withDisplayName(String nick) {
 		MonsterStats copy = withVersion(version);
 		copy.displayName = nick;
 		return copy;
@@ -170,19 +159,16 @@ public final class MonsterStats
 	 * official engine's rule) for invocation-scaled rows. */
 	private int toaInvocationLevel;
 
-	public int getToaInvocationLevel()
-	{
+	public int getToaInvocationLevel() {
 		return toaInvocationLevel;
 	}
 
 	/** A copy priced at this raid level (SET, not compounded - re-applying
 	 * a different level replaces the old one); returns this when the
 	 * level already matches. */
-	public MonsterStats withToaInvocation(int level)
-	{
+	public MonsterStats withToaInvocation(int level) {
 		int clamped = Math.max(0, level);
-		if (clamped == toaInvocationLevel)
-		{
+		if (clamped == toaInvocationLevel) {
 			return this;
 		}
 		MonsterStats copy = withVersion(version);
@@ -190,8 +176,7 @@ public final class MonsterStats
 		return copy;
 	}
 
-	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute)
-	{
+	public MonsterStats immuneVariant(int syntheticId, String versionLabel, String immuneAttribute) {
 		return immuneVariant(syntheticId, versionLabel,
 			Collections.singletonList(immuneAttribute));
 	}
@@ -200,16 +185,14 @@ public final class MonsterStats
 	 * once (Kalphite Queen's first form prays off magic AND ranged; a
 	 * Nylocas form takes only its own style). */
 	public MonsterStats immuneVariant(int syntheticId, String versionLabel,
-		List<String> immuneAttributes)
-	{
+		List<String> immuneAttributes) {
 		List<String> extended = new ArrayList<>(attributes);
 		extended.addAll(immuneAttributes);
 		return copy(syntheticId, versionLabel, extended, defence);
 	}
 
 	/** A phase variant with attributes taken away. */
-	public MonsterStats withoutAttributes(int syntheticId, String versionLabel, List<String> removed)
-	{
+	public MonsterStats withoutAttributes(int syntheticId, String versionLabel, List<String> removed) {
 		List<String> kept = new ArrayList<>(attributes);
 		kept.removeIf(a -> removed.contains(Names.lower(a)));
 		return copy(syntheticId, versionLabel, kept, defence);
@@ -219,39 +202,33 @@ public final class MonsterStats
 
 	/** Fought in the Wilderness (see WildernessMonsters) - cached, the
 	 * wilderness-weapon gate asks several times per DPS trial. */
-	public boolean isWildernessMonster()
-	{
+	public boolean isWildernessMonster() {
 		return wilderness;
 	}
 
 	/** Name starts with "revenant" - the avarice/ethereum gates. */
-	public boolean isRevenantMonster()
-	{
+	public boolean isRevenantMonster() {
 		return revenant;
 	}
 
 	/** A copy at a different Defence level - defence-drain spec modeling.
 	 * Carries the invocation level: a drained ToA row keeps its raid
 	 * scaling or the drain would be valued at invocation 0. */
-	public MonsterStats withDefence(int newDefence)
-	{
+	public MonsterStats withDefence(int newDefence) {
 		return copy(id, version, attributes, Math.max(0, newDefence));
 	}
 
-	public boolean hasAttribute(String attribute)
-	{
+	public boolean hasAttribute(String attribute) {
 		return attributesLower.contains(Names.lower(attribute));
 	}
 
 	/** True when this variant's version label starts with the prefix - the
 	 * phase gate the mechanics rules share ("Phase 1..."). */
-	public boolean versionStartsWith(String prefix)
-	{
+	public boolean versionStartsWith(String prefix) {
 		return version != null && version.startsWith(prefix);
 	}
 
-	public String label()
-	{
+	public String label() {
 		// Level-derived version labels ("Level 137") are redundant with -
 		// and after group-collapsing can contradict - the lvl suffix.
 		boolean levelVersion = version.regionMatches(true, 0, "level", 0, 5);
@@ -260,20 +237,16 @@ public final class MonsterStats
 		return (displayName != null ? displayName : name) + suffix + level;
 	}
 
-	public String searchText()
-	{
+	public String searchText() {
 		return normalizeQuery(name + " " + version + " " + id);
 	}
 
 	/** Search matching ignores punctuation: "kril" finds K'ril Tsutsaroth,
 	 * "kreearra" finds Kree'arra. */
-	public static String normalizeQuery(String text)
-	{
+	public static String normalizeQuery(String text) {
 		StringBuilder sb = new StringBuilder(text.length());
-		for (char c : Names.lower(text).toCharArray())
-		{
-			if (Character.isLetterOrDigit(c) || c == ' ')
-			{
+		for (char c : Names.lower(text).toCharArray()) {
+			if (Character.isLetterOrDigit(c) || c == ' ') {
 				sb.append(c);
 			}
 		}
@@ -288,16 +261,14 @@ public final class MonsterStats
 	/** The id user-profile data (pins, exclusions, notes) attaches to -
 	 * a synthetic phase variant maps back to its real monster, so a
 	 * profile set on the plain mob follows it into groups. */
-	public int profileId()
-	{
+	public int profileId() {
 		return profileIdOf(id);
 	}
 
 	/** The same mapping for a bare id (the profile store normalises every
 	 * read and write through it, so a pin made on a phase card is the
 	 * real monster's pin - Apathy, Discord 2026-10-09, Tormented Demons). */
-	public static int profileIdOf(int id)
-	{
+	public static int profileIdOf(int id) {
 		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
 	}
 

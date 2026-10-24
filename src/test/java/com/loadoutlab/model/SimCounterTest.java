@@ -24,19 +24,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * stale if the page is not rebuilt from the live counts. This wires the real
  * DreamStore behind the engine and asserts the number the pill would draw.
  */
-class SimCounterTest
-{
+class SimCounterTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	/** The count the "+N" pill renders, straight off the published page. */
-	private static int pillCount(CompanionLink link, String listKey)
-	{
+	private static int pillCount(CompanionLink link, String listKey) {
 		drainEdt();
 		Map<String, Object> page = link.lastPage();
 		assertNotNull(page, "nothing was published");
@@ -46,39 +43,30 @@ class SimCounterTest
 	}
 
 	/** republish() hops to the EDT, so the page lands after execute() returns. */
-	private static void drainEdt()
-	{
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+	private static void drainEdt() {
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
 	@Test
 	@DisplayName("the sim pill counts up as items are simmed")
-	void simPillTracksTheStore()
-	{
+	void simPillTracksTheStore() {
 		DreamStore dreams = new DreamStore(InMemoryConfigManager.create(), new Gson());
 		dreams.loadScope("std.1111");
 
 		PageState state = new PageState();
 		CompanionLink link = new CompanionLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
-		engine.setCounts(() ->
-		{
+		engine.setCounts(() -> {
 			List<Map<String, Object>> simmed = new ArrayList<>();
-			for (int id : dreams.snapshot())
-			{
+			for (int id : dreams.snapshot()) {
 				simmed.add(Map.of("id", id, "name", "item " + id));
 			}
 			Map<String, Object> counts = new LinkedHashMap<>();
@@ -86,11 +74,9 @@ class SimCounterTest
 			counts.put("simmedItems", simmed);
 			return counts;
 		});
-		engine.setStoreOps(new TestStoreOps()
-		{
+		engine.setStoreOps(new TestStoreOps() {
 			@Override
-			public boolean toggleSim(int itemId)
-			{
+			public boolean toggleSim(int itemId) {
 				dreams.toggle(itemId);
 				return true;
 			}

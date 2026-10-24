@@ -31,8 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * list computes nothing extra, and a tool the player does not own has
  * no Yours side.
  */
-class MultiToolsTest
-{
+class MultiToolsTest {
 	private static final int BLACK_CHIN = 11959;
 	private static final int VENATOR = 27610;
 	private static final int ADAMANT_ARROW = 890;
@@ -44,18 +43,15 @@ class MultiToolsTest
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception
-	{
+	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView) throws Exception {
 		return compute(query, owned, multiView, 3);
 	}
 
-	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception
-	{
+	private static Map<CombatStyle, OptimizerService.StyleResult> compute(String query, Map<Integer, Integer> owned, boolean multiView, int stack) throws Exception {
 		MonsterStats mob = data.searchMonsters(query, 1).get(0);
 		OptimizerService service = new OptimizerService(data);
 		CountDownLatch done = new CountDownLatch(1);
@@ -66,8 +62,7 @@ class MultiToolsTest
 		service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 			RequirementProfile.MAXED, new OwnedItems(owned, true), 1, p,
 			Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
-			Collections.<Integer>emptySet(), result ->
-			{
+			Collections.<Integer>emptySet(), result -> {
 				out.set(result);
 				done.countDown();
 			});
@@ -75,28 +70,23 @@ class MultiToolsTest
 		return out.get();
 	}
 
-	private static Map<Integer, Integer> kit(boolean chins, boolean venator, boolean runes)
-	{
+	private static Map<Integer, Integer> kit(boolean chins, boolean venator, boolean runes) {
 		Map<Integer, Integer> owned = new HashMap<>();
 		for (String name : new String[]{"rune scimitar", "rune full helm", "rune platebody", "rune platelegs",
-			"ancient staff", "mystic robe top", "mystic robe bottom", "magic shortbow", "black d'hide body", "black d'hide chaps"})
-		{
+			"ancient staff", "mystic robe top", "mystic robe bottom", "magic shortbow", "black d'hide body", "black d'hide chaps"}) {
 			data.getGearItems().stream().filter(g -> g.getNameLower().equals(name) && g.isStandardGear())
 				.findFirst().ifPresent(g -> owned.put(g.getId(), 1));
 		}
-		if (chins)
-		{
+		if (chins) {
 			owned.put(BLACK_CHIN, 5000);
 		}
-		if (venator)
-		{
+		if (venator) {
 			// The bow fires arrows (wiki: any arrow up to dragon); without
 			// them the owned row is rightly empty.
 			owned.put(VENATOR, 1);
 			owned.put(ADAMANT_ARROW, 1000);
 		}
-		if (runes)
-		{
+		if (runes) {
 			owned.put(BLOOD_RUNE, 1000);
 			owned.put(DEATH_RUNE, 1000);
 			owned.put(WATER_RUNE, 1000);
@@ -104,12 +94,9 @@ class MultiToolsTest
 		return owned;
 	}
 
-	private static Map<String, OptimizerService.StyleResult> tools(Map<CombatStyle, OptimizerService.StyleResult> results)
-	{
-		for (OptimizerService.StyleResult r : results.values())
-		{
-			if (r.multiTools != null)
-			{
+	private static Map<String, OptimizerService.StyleResult> tools(Map<CombatStyle, OptimizerService.StyleResult> results) {
+		for (OptimizerService.StyleResult r : results.values()) {
+			if (r.multiTools != null) {
 				return r.multiTools;
 			}
 		}
@@ -118,8 +105,7 @@ class MultiToolsTest
 
 	@Test
 	@DisplayName("Greater Nechryaels with the switch on rank barrage, chins and the venator bow, each a per-target set")
-	void nechryaelsHaveThreeTools() throws Exception
-	{
+	void nechryaelsHaveThreeTools() throws Exception {
 		Map<String, OptimizerService.StyleResult> tools = tools(compute("greater nechryael", kit(true, true, true), true));
 		assertNotNull(tools, "the multi tools ride the results");
 		assertEquals(3, tools.size());
@@ -132,8 +118,7 @@ class MultiToolsTest
 
 	@Test
 	@DisplayName("a tool you do not own has no Yours side; the ceiling still shows it")
-	void unownedToolHasNoYours() throws Exception
-	{
+	void unownedToolHasNoYours() throws Exception {
 		Map<String, OptimizerService.StyleResult> tools = tools(compute("greater nechryael", kit(true, false, true), true));
 		assertNotNull(tools);
 		assertTrue(tools.get(MultiTool.VENATOR.key).owned.isEmpty(), "no venator bow, no Yours row");
@@ -143,8 +128,7 @@ class MultiToolsTest
 
 	@Test
 	@DisplayName("at a stack of nine the chins row's spec is the d2h over the claws; at one it is not (Andrew 2026-10-19)")
-	void multiSpecAtTheStack() throws Exception
-	{
+	void multiSpecAtTheStack() throws Exception {
 		Map<Integer, Integer> owned = kit(true, false, false);
 		owned.put(DRAGON_2H, 1);
 		owned.put(DRAGON_CLAWS, 1);
@@ -159,8 +143,7 @@ class MultiToolsTest
 
 	@Test
 	@DisplayName("the switch off, or a mob outside the multi list, computes no tools")
-	void offOrNotMultiAble() throws Exception
-	{
+	void offOrNotMultiAble() throws Exception {
 		assertNull(tools(compute("greater nechryael", kit(true, true, true), false)), "switch off");
 		assertNull(tools(compute("vorkath", kit(true, true, true), true)), "Vorkath is single-way");
 	}

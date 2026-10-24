@@ -6,11 +6,9 @@ import net.runelite.client.config.ConfigManager;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ProtectOnlyStoreTest
-{
+public class ProtectOnlyStoreTest {
 	@Test
-	public void togglePersistsAcrossInstances()
-	{
+	public void togglePersistsAcrossInstances() {
 		ConfigManager configManager = InMemoryConfigManager.create();
 		ProtectOnlyStore store = new ProtectOnlyStore(configManager, new Gson());
 		Assert.assertTrue("toggle on returns true", store.toggle(11802)); // dragon warhammer

@@ -18,44 +18,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * DATA now owns both facts: its inventory seeds the slider, its raid flag
  * suppresses the task context.
  */
-class RaidSelectionTest
-{
+class RaidSelectionTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
 	private static Map<String, Object> selectGroup(String group,
-		PageState state, CaptureLink link)
-	{
+		PageState state, CaptureLink link) {
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.execute("select", Map.of("query", group));
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		return state.paramsNode();
@@ -63,11 +53,9 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("every raid opens at its declared inventory - ToB included")
-	void raidsOpenAtTwelve()
-	{
+	void raidsOpenAtTwelve() {
 		for (String raidName : new String[]{"Theatre of Blood (Entry)",
-			"Theatre of Blood (Hard)", "Chambers of Xeric", "Tombs of Amascut"})
-		{
+			"Theatre of Blood (Hard)", "Chambers of Xeric", "Tombs of Amascut"}) {
 			PageState state = new PageState();
 			Map<String, Object> params = selectGroup(raidName, state, new CaptureLink());
 			// 12 since 2026-10-18 (mrapw: the shadow set lost at 10 in ToA).
@@ -78,8 +66,7 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("non-raid groups keep the 4-swap default and no raid flag")
-	void groupsKeepFour()
-	{
+	void groupsKeepFour() {
 		PageState state = new PageState();
 		Map<String, Object> params = selectGroup("Dagannoth Kings", state, new CaptureLink());
 		assertEquals(4, params.get("maxSwaps"));
@@ -88,13 +75,11 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("the entry carries the raid flag the chip row suppresses on")
-	void entryCarriesTheFlag()
-	{
+	void entryCarriesTheFlag() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.execute("select", Map.of("query", "Chambers of Xeric"));
@@ -102,19 +87,14 @@ class RaidSelectionTest
 		assertNotNull(mobs, "the group select must set a roster");
 		List<Map<com.loadoutlab.engine.CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>> empty =
 			new java.util.ArrayList<>();
-		for (int i = 0; i < mobs.size(); i++)
-		{
+		for (int i = 0; i < mobs.size(); i++) {
 			empty.add(Map.of());
 		}
 		engine.onRosterResults(mobs, empty);
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		assertNotNull(link.published);
@@ -124,8 +104,7 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("a raid selection sheds stale wilderness and task context")
-	void staleContextResets()
-	{
+	void staleContextResets() {
 		// The field setup: a wildy session left Wilderness + On task + a
 		// risk cap behind, then a ToA select inherited all three and the
 		// risk optimizer picked cheap-to-lose junk over real gear.
@@ -142,8 +121,7 @@ class RaidSelectionTest
 
 	@Test
 	@DisplayName("arrow-nav opens each mob on its own recommended style (issue #15)")
-	void lensClearsTheStickyTab()
-	{
+	void lensClearsTheStickyTab() {
 		PageState state = new PageState();
 		state.setParam("selectedTab", "magic");
 		state.setParam("lensIndex", 1);

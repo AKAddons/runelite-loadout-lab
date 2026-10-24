@@ -22,17 +22,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * spends its shield slot on protection; Yours keeps the owned-tier
  * detection and the manual pick.
  */
-class CeilingAntifireTest
-{
+class CeilingAntifireTest {
 	@Test
 	@DisplayName("the game-best card at Vorkath assumes a super antifire: no protective shield")
-	void ceilingAssumesSuperAntifire() throws Exception
-	{
+	void ceilingAssumesSuperAntifire() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats vorkath = data.searchMonsters("vorkath", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			ServiceCalls.bestPerStyle(service, vorkath, PlayerLevels.MAXED, PlayerLevels.MAXED,
@@ -48,9 +45,7 @@ class CeilingAntifireTest
 			assertNotNull(shield, "the ceiling still wears a shield slot item");
 			assertFalse(DragonfireRules.isProtectiveShield(shield),
 				"the ceiling spends the slot on dps, not protection: " + shield.getNameLower());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

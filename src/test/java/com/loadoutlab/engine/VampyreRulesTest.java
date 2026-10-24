@@ -10,26 +10,21 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class VampyreRulesTest
-{
+public class VampyreRulesTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static MonsterStats monster(String query)
-	{
+	private static MonsterStats monster(String query) {
 		return data().searchMonsters(query, 1).get(0);
 	}
 
-	private static GearItem byName(String name)
-	{
+	private static GearItem byName(String name) {
 		return data().getGearItems().stream()
 			.filter(g -> g.getName().equalsIgnoreCase(name))
 			.findFirst()
@@ -37,8 +32,7 @@ public class VampyreRulesTest
 	}
 
 	@Test
-	public void regularWeaponsCannotDamageVyrewatchSentinels()
-	{
+	public void regularWeaponsCannotDamageVyrewatchSentinels() {
 		MonsterStats sentinel = monster("vyrewatch sentinel");
 		Assert.assertTrue(sentinel.hasAttribute("vampyre3"));
 		Assert.assertFalse(VampyreRules.canDamage(sentinel, byName("Abyssal whip")));
@@ -47,8 +41,7 @@ public class VampyreRulesTest
 	}
 
 	@Test
-	public void optimizerNeverSuggestsNonVyreWeaponsAgainstSentinels()
-	{
+	public void optimizerNeverSuggestsNonVyreWeaponsAgainstSentinels() {
 		MonsterStats sentinel = monster("vyrewatch sentinel");
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(4151, 1); // abyssal whip - must NOT be suggested
@@ -70,8 +63,7 @@ public class VampyreRulesTest
 	}
 
 	@Test
-	public void gameBestAgainstSentinelsUsesAVyreWeapon()
-	{
+	public void gameBestAgainstSentinelsUsesAVyreWeapon() {
 		MonsterStats sentinel = monster("vyrewatch sentinel");
 		OptimizationRequest request = new OptimizationRequest(
 			sentinel,
@@ -94,8 +86,7 @@ public class VampyreRulesTest
 	}
 
 	@Test
-	public void tormentedDemonRangedBisUsesRealStatGearDespiteGuaranteedHits()
-	{
+	public void tormentedDemonRangedBisUsesRealStatGearDespiteGuaranteedHits() {
 		// Vs guaranteed-hit monsters all accuracy gear ties on DPS; the
 		// attack-roll tie-break must still pick the strongest gear, and the
 		// Avernic treads combos (wrongly non-standard upstream) must be in.
@@ -116,8 +107,7 @@ public class VampyreRulesTest
 	}
 
 	@Test
-	public void juvinatesHalveNonSilverDamageOnly()
-	{
+	public void juvinatesHalveNonSilverDamageOnly() {
 		MonsterStats juvinate = monster("vampyre juvinate");
 		Assert.assertTrue(juvinate.hasAttribute("vampyre2"));
 		Assert.assertEquals(0.5, VampyreRules.damageFactor(juvinate, byName("Abyssal whip")), 0.0001);

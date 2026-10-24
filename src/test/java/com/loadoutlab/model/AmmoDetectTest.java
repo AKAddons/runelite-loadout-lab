@@ -18,39 +18,32 @@ import static org.junit.jupiter.api.Assertions.*;
  * carried cannon can fire, and a bank with no cannonballs prices every
  * cannon at zero with the reason - never an assumed ball.
  */
-class AmmoDetectTest
-{
+class AmmoDetectTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}
 
 	private static Map<String, Object> shipWith(Set<Integer> bank,
-		Map<String, Object> shipParams)
-	{
+		Map<String, Object> shipParams) {
 		PageState state = new PageState();
-		for (Map.Entry<String, Object> e : shipParams.entrySet())
-		{
+		for (Map.Entry<String, Object> e : shipParams.entrySet()) {
 			state.setParam(e.getKey(), e.getValue());
 		}
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setRangedLevel(99);
@@ -58,14 +51,10 @@ class AmmoDetectTest
 		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
@@ -76,8 +65,7 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("detect resolves to the best banked ball every cannon can fire")
-	void detectResolvesFromTheBank()
-	{
+	void detectResolvesFromTheBank() {
 		// Bank holds mithril (31910) and rune (31914) balls; a dragon +
 		// mithril pair can share at most mithril - rune is banked but the
 		// mithril cannon cannot fire it.
@@ -91,8 +79,7 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("a dry bank fires nothing - the reason rides the node")
-	void dryBankBlocks()
-	{
+	void dryBankBlocks() {
 		Map<String, Object> ship = shipWith(Set.of(),
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
 				"cannon1Operator", "you"));
@@ -104,8 +91,7 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("an explicit tier pick bypasses detection entirely")
-	void explicitPickBypasses()
-	{
+	void explicitPickBypasses() {
 		Map<String, Object> ship = shipWith(Set.of(),
 			Map.of("cannonCount", 1, "cannon1Material", "dragon",
 				"cannonAmmo", "dragon", "cannon1Operator", "you"));
@@ -117,21 +103,17 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("ship params persist per character through the scoped store")
-	void shipParamsPersist()
-	{
+	void shipParamsPersist() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		java.util.Map<String, String> saved = new java.util.HashMap<>();
-		engine.setStoreOps(new TestStoreOps()
-		{
+		engine.setStoreOps(new TestStoreOps() {
 			@Override
-			public void setSupplyDefault(String category, String choice)
-			{
+			public void setSupplyDefault(String category, String choice) {
 				saved.put(category, choice);
 			}
 		});
@@ -147,8 +129,7 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("ship damage taken rides the node per keel - even with no cannons")
-	void shipIncomingPerKeel()
-	{
+	void shipIncomingPerKeel() {
 		// Hammerhead: keel row 7,6,5,4,3,1,0,0; speed 4 ticks (2.4s).
 		Map<String, Object> ship = shipWith(Set.of(),
 			Map.of("cannonCount", 0, "shipKeel", "none"));
@@ -167,8 +148,7 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("an explicit pick downranks at resolution and springs back")
-	void explicitPickDownranksAtResolution()
-	{
+	void explicitPickDownranksAtResolution() {
 		// Dragon pick on a rune cannon resolves to rune...
 		Map<String, Object> ship = shipWith(Set.of(),
 			Map.of("cannonCount", 1, "cannon1Material", "rune",
@@ -184,28 +164,22 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("thralls cannot be cast on a boat - they add nothing at sea")
-	void thrallsVetoedAtSea()
-	{
+	void thrallsVetoedAtSea() {
 		PageState state = new PageState();
 		state.setParam("thralls", true);
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setMagicLevel(99);
 		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
@@ -216,14 +190,10 @@ class AmmoDetectTest
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		engine.execute("select", Map.of("id", graardor.getId()));
 		engine.onResults(graardor, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
@@ -235,14 +205,12 @@ class AmmoDetectTest
 	 * kits only; food and the rest stay on land trips. */
 	@Test
 	@DisplayName("a sea-only trip carries repair kits, never food")
-	void seaTripsCarryRepairKitsOnly()
-	{
+	void seaTripsCarryRepairKitsOnly() {
 		PageState state = new PageState();
 		state.setParam("shipKeel", "none");
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setStoreOps(new TestStoreOps());
@@ -253,20 +221,15 @@ class AmmoDetectTest
 		MonsterStats shark = data.searchMonsters("hammerhead shark", 1).get(0);
 		engine.execute("select", Map.of("id", shark.getId()));
 		engine.onResults(shark, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
 		java.util.List<Object> categories = new java.util.ArrayList<>();
-		for (Object node : (List<?>) entry.get("supplies"))
-		{
+		for (Object node : (List<?>) entry.get("supplies")) {
 			categories.add(((Map<?, ?>) node).get("category"));
 		}
 		assertEquals(List.of("shipRepairKit"), categories,
@@ -275,16 +238,13 @@ class AmmoDetectTest
 
 	@Test
 	@DisplayName("repair kits recommend only when the mob can damage YOUR keel")
-	void repairKitsFollowTheKeel()
-	{
-		java.util.function.BiFunction<String, String, Boolean> kitShown = (mobName, keel) ->
-		{
+	void repairKitsFollowTheKeel() {
+		java.util.function.BiFunction<String, String, Boolean> kitShown = (mobName, keel) -> {
 			PageState state = new PageState();
 			state.setParam("shipKeel", keel);
 			CaptureLink link = new CaptureLink();
 			CommandEngine engine = new CommandEngine(data, state,
-				(mob, p, onDone) ->
-				{
+				(mob, p, onDone) -> {
 				},
 				link);
 			engine.setStoreOps(new TestStoreOps());
@@ -294,21 +254,15 @@ class AmmoDetectTest
 			MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
 			engine.execute("select", Map.of("id", mob.getId()));
 			engine.onResults(mob, Map.of());
-			try
-			{
-				javax.swing.SwingUtilities.invokeAndWait(() ->
-				{
+			try {
+				javax.swing.SwingUtilities.invokeAndWait(() -> {
 				});
-			}
-			catch (Exception ex)
-			{
+			} catch (Exception ex) {
 				throw new AssertionError(ex);
 			}
 			Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
-			for (Object node : (List<?>) entry.get("supplies"))
-			{
-				if ("shipRepairKit".equals(((Map<?, ?>) node).get("category")))
-				{
+			for (Object node : (List<?>) entry.get("supplies")) {
+				if ("shipRepairKit".equals(((Map<?, ?>) node).get("category"))) {
 					return true;
 				}
 			}

@@ -15,22 +15,18 @@ import static com.loadoutlab.data.JsonResources.*;
  * staves (smoke/mist/dust/mud/lava/steam) cover two, the Kodai wand
  * covers water, the tomes cover their book's element.
  */
-public final class SpellRunes
-{
+public final class SpellRunes {
 	private static final Map<String, Integer> RUNE_ITEMS = new LinkedHashMap<>();
 	/** Sunfire rune (gameval ItemID.SUNFIRERUNE). */
 	public static final int SUNFIRE_RUNE = 28929;
 	private static final Map<String, Map<String, Integer>> BY_SPELL = new LinkedHashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = object("spell_runes.json");
-		if (root != null)
-		{
+		if (root != null) {
 			stringIntMap(root, "runeItems", RUNE_ITEMS);
 			JsonObject bySpell = root.getAsJsonObject("bySpell");
-			for (String spell : bySpell == null ? Set.<String>of() : bySpell.keySet())
-			{
+			for (String spell : bySpell == null ? Set.<String>of() : bySpell.keySet()) {
 				Map<String, Integer> runes = new LinkedHashMap<>();
 				stringIntMap(bySpell, spell, runes);
 				BY_SPELL.put(spell, runes);
@@ -38,8 +34,7 @@ public final class SpellRunes
 		}
 	}
 
-	private SpellRunes()
-	{
+	private SpellRunes() {
 	}
 
 	/** Runes a player cannot conjure from pocket change: the high-level
@@ -53,12 +48,10 @@ public final class SpellRunes
 	 * account was told to autocast blood-rune spells). Unknown spells fail
 	 * OPEN - the corpus, not this gate, decides what exists. */
 	public static boolean premiumRunesOwned(String spellName,
-		com.loadoutlab.engine.OwnedItems owned)
-	{
+		com.loadoutlab.engine.OwnedItems owned) {
 		Map<String, Integer> cost = spellName == null
 			? null : BY_SPELL.get(spellName);
-		if (cost == null || owned == null)
-		{
+		if (cost == null || owned == null) {
 			return true;
 		}
 		return cost.keySet().stream().noneMatch(rune -> PREMIUM.contains(rune)
@@ -70,26 +63,20 @@ public final class SpellRunes
 	 * "staff of air", "air battlestaff", "mystic fire staff", "tome of fire"
 	 * - the element word is the signal, but only on staves and tomes (an
 	 * "earth warrior" style name never reaches here: gear names only). */
-	private static List<String> covers(String nameLower)
-	{
+	private static List<String> covers(String nameLower) {
 		List<String> out = new ArrayList<>(2);
-		if (nameLower == null)
-		{
+		if (nameLower == null) {
 			return out;
 		}
-		for (String[] staff : STAVES)
-		{
-			if (nameLower.contains(staff[0]))
-			{
+		for (String[] staff : STAVES) {
+			if (nameLower.contains(staff[0])) {
 				out.addAll(Arrays.asList(staff).subList(1, staff.length));
 				return out;
 			}
 		}
-		for (String element : new String[]{"air", "water", "earth", "fire"})
-		{
+		for (String element : new String[]{"air", "water", "earth", "fire"}) {
 			if (nameLower.contains(element)
-				&& (nameLower.contains("staff") || nameLower.contains("tome")))
-			{
+				&& (nameLower.contains("staff") || nameLower.contains("tome"))) {
 				out.add(element);
 			}
 		}
@@ -99,25 +86,20 @@ public final class SpellRunes
 	/** [{id, name, qty}] for one cast of the spell, minus what the worn
 	 * weapon/shield provide; null when the spell is unknown. */
 	public static List<Map<String, Object>> costFor(String spellName,
-		String weaponNameLower, String shieldNameLower)
-	{
+		String weaponNameLower, String shieldNameLower) {
 		Map<String, Integer> runes = spellName == null ? null : BY_SPELL.get(spellName);
-		if (runes == null)
-		{
+		if (runes == null) {
 			return null;
 		}
 		List<String> covered = covers(weaponNameLower);
 		covered.addAll(covers(shieldNameLower));
 		List<Map<String, Object>> out = new ArrayList<>();
-		for (Map.Entry<String, Integer> rune : runes.entrySet())
-		{
-			if (covered.contains(rune.getKey()))
-			{
+		for (Map.Entry<String, Integer> rune : runes.entrySet()) {
+			if (covered.contains(rune.getKey())) {
 				continue;
 			}
 			Integer itemId = RUNE_ITEMS.get(rune.getKey());
-			if (itemId == null)
-			{
+			if (itemId == null) {
 				continue;
 			}
 			out.add(map("id", itemId, "name", Names.cap(rune.getKey()) + " rune", "qty", rune.getValue()));
@@ -129,25 +111,19 @@ public final class SpellRunes
 	 * becomes the same count of sunfire runes, everything else as it was.
 	 * A cost with no fire runes (a fire staff or tome covers them) comes
 	 * back unchanged; null stays null. */
-	public static List<Map<String, Object>> withSunfire(List<Map<String, Object>> runes)
-	{
-		if (runes == null)
-		{
+	public static List<Map<String, Object>> withSunfire(List<Map<String, Object>> runes) {
+		if (runes == null) {
 			return null;
 		}
 		Integer fire = RUNE_ITEMS.get("fire");
 		List<Map<String, Object>> out = new ArrayList<>(runes.size());
-		for (Map<String, Object> rune : runes)
-		{
-			if (fire != null && fire.equals(rune.get("id")))
-			{
+		for (Map<String, Object> rune : runes) {
+			if (fire != null && fire.equals(rune.get("id"))) {
 				Map<String, Object> swap = new LinkedHashMap<>(rune);
 				swap.put("id", SUNFIRE_RUNE);
 				swap.put("name", "Sunfire rune");
 				out.add(swap);
-			}
-			else
-			{
+			} else {
 				out.add(rune);
 			}
 		}
@@ -161,8 +137,7 @@ public final class SpellRunes
 	/** The combo staves and the Kodai wand: [name fragment, elements covered...]. */
 	private static final String[][] STAVES;
 
-	static
-	{
+	static {
 		JsonObject root = objectOrThrow("combo_runes.json");
 		COMBOS = rows(root.getAsJsonArray("combos"));
 		STAVES = rows(root.getAsJsonArray("staves"));
@@ -170,29 +145,23 @@ public final class SpellRunes
 
 	/** The combination-rune item ids - the ownership detection behind
 	 * the panel's "Detect" preference reads these. */
-	public static int[] comboRuneIds()
-	{
+	public static int[] comboRuneIds() {
 		return Arrays.stream(COMBOS).mapToInt(combo -> Integer.parseInt(combo[3])).toArray();
 	}
 
-	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes)
-	{
-		if (runes == null)
-		{
+	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes) {
+		if (runes == null) {
 			return null;
 		}
 		Map<String, Map<String, Object>> byName = new LinkedHashMap<>();
-		for (Map<String, Object> rune : runes)
-		{
+		for (Map<String, Object> rune : runes) {
 			byName.put(String.valueOf(rune.get("name")).replace(" rune", "")
 				.toLowerCase(Locale.ROOT), rune);
 		}
-		for (String[] combo : COMBOS)
-		{
+		for (String[] combo : COMBOS) {
 			Map<String, Object> a = byName.get(combo[1]);
 			Map<String, Object> b = byName.get(combo[2]);
-			if (a == null || b == null)
-			{
+			if (a == null || b == null) {
 				continue;
 			}
 			int qty = Math.max(((Number) a.get("qty")).intValue(),
@@ -200,8 +169,7 @@ public final class SpellRunes
 			Map<String, Object> merged = map("id", Integer.parseInt(combo[3]),
 				"name", Names.cap(combo[0]) + " rune", "qty", qty);
 			Object why = a.get("why") != null ? a.get("why") : b.get("why");
-			if (why != null)
-			{
+			if (why != null) {
 				merged.put("why", why);
 			}
 			byName.remove(combo[1]);

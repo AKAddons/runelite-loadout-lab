@@ -12,30 +12,23 @@ import net.runelite.client.config.ConfigManager;
  * the player changed are persisted; clearing back to Detect best removes
  * the entry.
  */
-public class SupplyDefaultsStore extends ScopedMapStore<String, String>
-{
+public class SupplyDefaultsStore extends ScopedMapStore<String, String> {
 	static final String KEY = "supplyDefaults";
 	public static final String DETECT_BEST = "DETECT_BEST";
 
-	public SupplyDefaultsStore(ConfigManager configManager, Gson gson)
-	{
+	public SupplyDefaultsStore(ConfigManager configManager, Gson gson) {
 		super(configManager, gson, KEY, new TypeToken<Map<String, String>>(){}.getType());
 	}
 
 	/** The category's default: DETECT_BEST (always on) unless changed. */
-	public synchronized String choice(String category)
-	{
+	public synchronized String choice(String category) {
 		return items.getOrDefault(category, DETECT_BEST);
 	}
 
-	public synchronized void setChoice(String category, String choice)
-	{
-		if (choice == null || choice.isEmpty() || DETECT_BEST.equals(choice))
-		{
+	public synchronized void setChoice(String category, String choice) {
+		if (choice == null || choice.isEmpty() || DETECT_BEST.equals(choice)) {
 			items.remove(category);
-		}
-		else
-		{
+		} else {
 			items.put(category, choice);
 		}
 		save();

@@ -10,10 +10,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** The compute animation follows the selection: sea, a raid, Zulrah, or
  * the land flask (Andrew 2026-09-02: "definitely want to hit raids first"). */
-class MoodKeyTest
-{
-	private static Map<String, Object> page(String raid, String mobName, boolean naval)
-	{
+class MoodKeyTest {
+	private static Map<String, Object> page(String raid, String mobName, boolean naval) {
 		Map<String, Object> mob = new LinkedHashMap<>();
 		mob.put("name", mobName);
 		mob.put("naval", naval);
@@ -30,8 +28,7 @@ class MoodKeyTest
 
 	@Test
 	@DisplayName("the animation pool follows the selection")
-	void poolFollowsTheSelection()
-	{
+	void poolFollowsTheSelection() {
 		assertEquals("sea", RenderSurface.moodKey(page(null, "Hammerhead shark", true)));
 		assertEquals("toa", RenderSurface.moodKey(page("toa", "Ba-Ba", false)));
 		assertEquals("tob", RenderSurface.moodKey(page("tob", "Verzik Vitur", false)));
@@ -43,16 +40,14 @@ class MoodKeyTest
 
 	@Test
 	@DisplayName("the ten bosses route to their own pools by name, Echo and companion forms included")
-	void bossesRouteByName()
-	{
+	void bossesRouteByName() {
 		String[][] routes = {
 			{"Cerberus", "cerberus"}, {"Cerberus (Echo)", "cerberus"}, {"Brutus", "brutus"},
 			{"Mad Angel", "madangel"}, {"Dusk", "guardians"}, {"Dawn", "guardians"}, {"Kraken", "kraken"},
 			{"Thermonuclear smoke devil", "thermy"}, {"Vet'ion", "vetion"}, {"Calvar'ion", "vetion"},
 			{"King Black Dragon", "kbd"}, {"Kalphite Queen", "kq"}, {"Kalphite Queen (Echo)", "kq"},
 			{"Phantom Muspah", "muspah"}, {"Zulrah", "zulrah"}};
-		for (String[] route : routes)
-		{
+		for (String[] route : routes) {
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
 		assertNull(RenderSurface.moodKey(page(null, "Big Brutus", false)), "a prefix, not a substring");
@@ -61,16 +56,14 @@ class MoodKeyTest
 
 	@Test
 	@DisplayName("Demonic Brutus wears the demonic reskin of the Brutus mood")
-	void demonicBrutusReskin()
-	{
+	void demonicBrutusReskin() {
 		assertEquals("dbrutus", RenderSurface.moodKey(page(null, "Demonic Brutus", false)));
 		assertEquals("brutus", RenderSurface.moodKey(page(null, "Brutus", false)));
 	}
 
 	@Test
 	@DisplayName("the fifteen group pools route from every member of their group")
-	void groupsRoute()
-	{
+	void groupsRoute() {
 		String[][] routes = {
 			{"TzTok-Jad", "jad"}, {"Tz-Kih", "jad"}, {"TzKal-Zuk", "zuk"}, {"Jal-Nib", "zuk"},
 			{"Dagannoth Rex", "dks"}, {"Dharok the Wretched", "barrows"}, {"Verac the Defiled", "barrows"},
@@ -79,16 +72,14 @@ class MoodKeyTest
 			{"Crystalline Hunllef", "hunllef"}, {"Corrupted Hunllef", "hunllef"}, {"The Hueycoatl", "huey"},
 			{"Nex", "nex"}, {"Cruor", "nex"}, {"Branda the Fire Queen", "titans"}, {"Eldric the Ice King", "titans"},
 			{"Maggot King", "maggot"}, {"Yama", "yama"}, {"Judge of Yama", "yama"}};
-		for (String[] route : routes)
-		{
+		for (String[] route : routes) {
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
 	}
 
 	@Test
 	@DisplayName("Scurrius, Obor, Bryophyta, the crab, the DT2 four, the wilderness bosses and the dragon family route to their pools")
-	void passTenRoutes()
-	{
+	void passTenRoutes() {
 		String[][] routes = {
 			{"Scurrius", "scurrius"}, {"Giant rat (Scurrius)", "scurrius"}, {"Obor", "obor"}, {"Bryophyta", "bryophyta"},
 			{"Gemstone Crab", "crab"}, {"Duke Sucellus", "duke"}, {"Vardorvis", "vardorvis"}, {"The Leviathan", "leviathan"},
@@ -97,8 +88,7 @@ class MoodKeyTest
 			{"Green dragon", "drgreen"}, {"Brutal green dragon", "drgreen"}, {"Baby blue dragon", "drblue"}, {"Frost dragon", "drblue"},
 			{"Red dragon", "drred"}, {"Lava dragon", "drred"}, {"Brutal black dragon", "drblack"}, {"Rune dragon", "drmetal"},
 			{"Steel dragon (Construction)", "drmetal"}};
-		for (String[] route : routes)
-		{
+		for (String[] route : routes) {
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
 		assertEquals("kbd", RenderSurface.moodKey(page(null, "King Black Dragon", false)), "the boss dragon keeps its own");
@@ -108,8 +98,7 @@ class MoodKeyTest
 
 	@Test
 	@DisplayName("Vorkath through Skotizo route to their pools; both Nightmares share one")
-	void passTwelveRoutes()
-	{
+	void passTwelveRoutes() {
 		String[][] routes = {
 			{"Vorkath", "vorkath"}, {"Alchemical Hydra", "hydra"}, {"Araxxor", "araxxor"}, {"Chaos Fanatic", "fanatic"},
 			{"General Graardor", "graardor"}, {"Kree'arra", "kree"}, {"K'ril Tsutsaroth", "kril"}, {"Commander Zilyana", "zilyana"},
@@ -117,8 +106,7 @@ class MoodKeyTest
 			{"The Nightmare", "nightmare"}, {"Phosani's Nightmare", "nightmare"}, {"The Mimic", "mimic"},
 			{"Lizardman shaman", "shaman"}, {"Lizardman shaman (Chambers of Xeric)", "shaman"}, {"Hespori", "hespori"},
 			{"Sarachnis", "sarachnis"}, {"Shellbane gryphon", "gryphon"}, {"Gryphon", "gryphon"}, {"Skotizo", "skotizo"}};
-		for (String[] route : routes)
-		{
+		for (String[] route : routes) {
 			assertEquals(route[1], RenderSurface.moodKey(page(null, route[0], false)), route[0]);
 		}
 	}

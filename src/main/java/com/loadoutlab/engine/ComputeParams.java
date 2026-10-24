@@ -9,8 +9,7 @@ import java.util.Map;
  * its copy before handing it on: the fire gate, the fight-book lock, the
  * Arceuus veto.
  */
-public final class ComputeParams
-{
+public final class ComputeParams {
 	public boolean f2pOnly;
 	public boolean onSlayerTask;
 	public boolean inWilderness;

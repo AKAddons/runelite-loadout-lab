@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.With;
 import java.util.List;
 
-public final class DpsResult
-{
+public final class DpsResult {
 	@Getter
 	private final Loadout loadout;
 	@Getter
@@ -47,8 +46,7 @@ public final class DpsResult
 		int attackSpeed,
 		String attackType,
 		long attackRoll,
-		long defenceRoll)
-	{
+		long defenceRoll) {
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType, attackRoll, defenceRoll, loadout == null ? 0 : loadout.getCost(), "");
 	}
 
@@ -63,8 +61,7 @@ public final class DpsResult
 		long attackRoll,
 		long defenceRoll,
 		int purchaseCost,
-		String spellName)
-	{
+		String spellName) {
 		this(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed, attackType,
 			attackRoll, defenceRoll, purchaseCost, spellName, List.of(), false);
 	}
@@ -82,8 +79,7 @@ public final class DpsResult
 		int purchaseCost,
 		String spellName,
 		List<String> countedBonuses,
-		boolean antifireAssumed)
-	{
+		boolean antifireAssumed) {
 		this.loadout = loadout;
 		this.dps = dps;
 		this.accuracy = accuracy;
@@ -100,8 +96,7 @@ public final class DpsResult
 		this.antifireAssumed = antifireAssumed;
 	}
 
-	public DpsResult withCountedBonuses(List<String> bonuses)
-	{
+	public DpsResult withCountedBonuses(List<String> bonuses) {
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName,
 			List.copyOf(bonuses), antifireAssumed);
@@ -112,14 +107,11 @@ public final class DpsResult
 	 * one comparison rule for "keep the better candidate" - previously
 	 * duplicated by DpsCalculator and LoadoutOptimizer.
 	 */
-	public static DpsResult better(DpsResult first, DpsResult second)
-	{
-		if (second == null)
-		{
+	public static DpsResult better(DpsResult first, DpsResult second) {
+		if (second == null) {
 			return first;
 		}
-		if (first == null || second.getDps() > first.getDps())
-		{
+		if (first == null || second.getDps() > first.getDps()) {
 			return second;
 		}
 		return first;
@@ -128,8 +120,7 @@ public final class DpsResult
 	/** Copy with a reshaped hit model - the per-monster overrides in
 	 * DpsCalculator.calculate() (Zulrah cap, vent one-shot, nibbler trio,
 	 * Salarin flat, Verac proc) change only these four numbers. */
-	DpsResult withHitModel(double dps, double accuracy, double expectedHit, int maxHit)
-	{
+	DpsResult withHitModel(double dps, double accuracy, double expectedHit, int maxHit) {
 		return new DpsResult(loadout, dps, accuracy, expectedHit, maxHit, attackSpeed,
 			attackType, attackRoll, defenceRoll, purchaseCost, spellName, countedBonuses,
 			antifireAssumed);
@@ -138,8 +129,7 @@ public final class DpsResult
 	/** The autocast spell, or null for powered staves / non-magic - the
 	 * calculator passes "" internally for the powered path, which made
 	 * null-keyed consumers (the panel's built-in-spell line) miss. */
-	public String getSpellName()
-	{
+	public String getSpellName() {
 		return spellName == null || spellName.isEmpty() ? null : spellName;
 	}
 }

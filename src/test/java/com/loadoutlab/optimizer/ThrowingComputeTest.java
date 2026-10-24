@@ -20,17 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * the card on Computing for good. A compute that fails now answers with
  * an empty result so the card shows its empty state and Reload works.
  */
-class ThrowingComputeTest
-{
+class ThrowingComputeTest {
 	@Test
 	@DisplayName("a compute whose request the engine rejects still calls back, empty")
-	void throwingComputeStillAnswers() throws Exception
-	{
+	void throwingComputeStillAnswers() throws Exception {
 		LoadoutData data = new DataService().load();
 		MonsterStats graardor = data.searchMonsters("general graardor", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			// A null requirement profile blows up inside the candidate pool,
@@ -42,9 +39,7 @@ class ThrowingComputeTest
 				results -> { out.set(results); done.countDown(); });
 			assertTrue(done.await(30, TimeUnit.SECONDS), "the compute must call back even when it throws");
 			assertTrue(out.get().isEmpty(), "a failed compute answers empty: " + out.get().keySet());
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}

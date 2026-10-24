@@ -30,8 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * recommend a shield/defender for the offhand on the spec switch". A
  * one-handed spec weapon swapped in for a two-hander leaves the shield
  * slot empty; with a second inventory slot the switch brings an offhand. */
-class SpecOffhandTest
-{
+class SpecOffhandTest {
 	private static final int SCYTHE = 22325;
 	private static final int VOIDWAKER = 27690;
 	private static final int AVERNIC = 22322;
@@ -39,13 +38,11 @@ class SpecOffhandTest
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static Map<Integer, Integer> owned()
-	{
+	private static Map<Integer, Integer> owned() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(SCYTHE, 1);
 		owned.put(VOIDWAKER, 1);
@@ -53,17 +50,14 @@ class SpecOffhandTest
 		return owned;
 	}
 
-	private static boolean carries(List<GearItem> bench, int id)
-	{
+	private static boolean carries(List<GearItem> bench, int id) {
 		return bench.stream().anyMatch(i -> i.getId() == id);
 	}
 
-	private static OptimizerService.StyleResult single(int maxSwaps) throws Exception
-	{
+	private static OptimizerService.StyleResult single(int maxSwaps) throws Exception {
 		MonsterStats mob = data.searchMonsters("dagannoth rex", 1).get(0);
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			com.loadoutlab.engine.ComputeParams p = new com.loadoutlab.engine.ComputeParams();
@@ -72,38 +66,30 @@ class SpecOffhandTest
 			service.bestPerStyle(mob, PlayerLevels.MAXED, PlayerLevels.MAXED, PrayerUnlocks.ALL,
 				RequirementProfile.MAXED, new OwnedItems(owned(), true), 1, p,
 				Collections.emptyMap(), Collections.emptySet(), Collections.emptyMap(), null, 0,
-				Collections.<Integer>emptySet(), result ->
-				{
+				Collections.<Integer>emptySet(), result -> {
 					out.set(result);
 					done.countDown();
 				});
 			assertTrue(done.await(120, TimeUnit.SECONDS), "compute finished");
 			return out.get().get(CombatStyle.MELEE);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static OptimizerService.StyleResult roster(int maxSwaps, String... mobs) throws Exception
-	{
+	private static OptimizerService.StyleResult roster(int maxSwaps, String... mobs) throws Exception {
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			MonsterStats[] stats = Arrays.stream(mobs)
 				.map(m -> data.searchMonsters(m, 1).get(0)).toArray(MonsterStats[]::new);
 			return ServiceCalls.runRoster(service, Arrays.asList(stats), owned(), maxSwaps,
 				Collections.emptyMap()).perMob.get(0).get(CombatStyle.MELEE);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
-	private static void assertOffhandAtTwo(OptimizerService.StyleResult one, OptimizerService.StyleResult two)
-	{
+	private static void assertOffhandAtTwo(OptimizerService.StyleResult one, OptimizerService.StyleResult two) {
 		assertEquals(SCYTHE, two.owned.get(0).getLoadout().getWeapon().getId(), "the two-hander is the main hand");
 		assertEquals(VOIDWAKER, two.specWeapon.getId(), "the one-handed spec weapon");
 		assertTrue(carries(two.bench, VOIDWAKER), "the spec weapon is carried");
@@ -115,15 +101,13 @@ class SpecOffhandTest
 
 	@Test
 	@DisplayName("a single mob: inventory 2 adds the offhand to a one-handed spec switch off a two-hander")
-	void singleMob() throws Exception
-	{
+	void singleMob() throws Exception {
 		assertOffhandAtTwo(single(1), single(2));
 	}
 
 	@Test
 	@DisplayName("a roster does the same, and the offhand costs its inventory slot")
-	void rosterPath() throws Exception
-	{
+	void rosterPath() throws Exception {
 		assertOffhandAtTwo(roster(1, "general graardor", "k'ril tsutsaroth"),
 			roster(2, "general graardor", "k'ril tsutsaroth"));
 	}

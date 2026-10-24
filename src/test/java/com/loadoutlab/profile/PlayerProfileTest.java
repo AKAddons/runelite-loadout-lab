@@ -9,11 +9,9 @@ import net.runelite.api.Skill;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PlayerProfileTest
-{
+public class PlayerProfileTest {
 	@Test
-	public void aProfileSurvivesTheJsonRoundTripExactly()
-	{
+	public void aProfileSurvivesTheJsonRoundTripExactly() {
 		PlayerProfile original = new PlayerProfile(
 			new PlayerLevels(75, 80, 70, 85, 77, 52, 82),
 			new PlayerLevels(80, 85, 70, 89, 77, 52, 82),
@@ -35,8 +33,7 @@ public class PlayerProfileTest
 	}
 
 	@Test
-	public void theHeadlessRunnerAnswersAQueryWithoutAClient() throws Exception
-	{
+	public void theHeadlessRunnerAnswersAQueryWithoutAClient() throws Exception {
 		String out = HeadlessQuery.run(new String[]{"vorkath", "--maxed"});
 		Assert.assertTrue(out, out.contains("vs Vorkath"));
 		Assert.assertTrue(out, out.contains("game best:"));
@@ -44,8 +41,7 @@ public class PlayerProfileTest
 	}
 
 	@Test
-	public void aMockUserWithABankDrivesOwnedResults() throws Exception
-	{
+	public void aMockUserWithABankDrivesOwnedResults() throws Exception {
 		PlayerProfile mock = new PlayerProfile(PlayerLevels.MAXED, PlayerLevels.MAXED,
 			PrayerUnlocks.ALL, RequirementProfile.MAXED,
 			Map.of(4151, 1, 1712, 1), true);
@@ -61,8 +57,7 @@ public class PlayerProfileTest
 	 * stranger wearing its bank. Logout keeps the last character; only a
 	 * different character replaces it. */
 	@Test
-	public void theLastCharactersSnapshotSurvivesLogoutButNotASwitch()
-	{
+	public void theLastCharactersSnapshotSurvivesLogoutButNotASwitch() {
 		long me = 1234L;
 		Assert.assertTrue("logout keeps the last character",
 			PlayerProfile.snapshotSurvives(me, -1));

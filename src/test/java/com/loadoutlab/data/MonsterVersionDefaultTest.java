@@ -15,18 +15,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * headless harness and every name-based link-in take hits.get(0), so the
  * first exact hit must be the version a player means by the bare name.
  */
-class MonsterVersionDefaultTest
-{
+class MonsterVersionDefaultTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
-	private static String defaultVersion(String query)
-	{
+	private static String defaultVersion(String query) {
 		List<MonsterStats> hits = data.searchMonsters(query, 5);
 		assertFalse(hits.isEmpty(), "no hits for " + query);
 		return hits.get(0).getVersion() == null ? "" : hits.get(0).getVersion();
@@ -34,8 +31,7 @@ class MonsterVersionDefaultTest
 
 	@Test
 	@DisplayName("bare boss names default to the everyday version, not quest/awakened/enraged")
-	void everydayVersionsWin()
-	{
+	void everydayVersionsWin() {
 		assertEquals("", defaultVersion("vorkath"));
 		assertEquals("", defaultVersion("vardorvis"));
 		assertEquals("", defaultVersion("the whisperer"));
@@ -48,8 +44,7 @@ class MonsterVersionDefaultTest
 
 	@Test
 	@DisplayName("multi-mode bosses default to the everyday-numbers row, delves to the first")
-	void modesAndDelves()
-	{
+	void modesAndDelves() {
 		// ToB's Normal-mode rows stat-collapse into the Hard-labeled ones
 		// (identical defensive block), so the hard-labeled Phase 1 row IS the
 		// everyday fight's numbers; Entry mode (genuinely weaker) never leads.
@@ -61,8 +56,7 @@ class MonsterVersionDefaultTest
 
 	@Test
 	@DisplayName("asking for a specific version still finds it")
-	void explicitVersionStillReachable()
-	{
+	void explicitVersionStillReachable() {
 		List<MonsterStats> hits = data.searchMonsters("zulrah", 5);
 		assertTrue(hits.stream().anyMatch(m -> "Magma".equals(m.getVersion())),
 			"all versions stay reachable in the hit list");

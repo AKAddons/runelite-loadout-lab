@@ -10,21 +10,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** A ladder rung opens Not Enough Runes on its item (ISS-01M5GE9EJSX6YWCKMSYEWKZ132). */
-class LadderNerTest
-{
-	private static CommandEngine engine(PageState state)
-	{
+class LadderNerTest {
+	private static CommandEngine engine(PageState state) {
 		return new CommandEngine(new DataService().load(), state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 	}
 
 	@Test
 	@DisplayName("ner-open hands the item to Not Enough Runes when it is enabled")
-	void opensNer()
-	{
+	void opensNer() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 		List<Integer> opened = new ArrayList<>();
@@ -36,8 +32,7 @@ class LadderNerTest
 
 	@Test
 	@DisplayName("without Not Enough Runes the command refuses and nothing is sent")
-	void refusesWithoutNer()
-	{
+	void refusesWithoutNer() {
 		PageState state = new PageState();
 		CommandEngine engine = engine(state);
 		List<Integer> opened = new ArrayList<>();

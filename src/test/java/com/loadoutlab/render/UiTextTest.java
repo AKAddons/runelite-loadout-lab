@@ -22,22 +22,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * the source names but the file lacks would render as "null" in a tooltip
  * nobody hovers in a test, so this pins the two to each other both ways.
  */
-class UiTextTest
-{
+class UiTextTest {
 	private static final Path RENDER = Paths.get("src/main/java/com/loadoutlab/render");
 
 	/** Every key the render sources ask Ui.text for, with the file naming it. */
-	private static List<String[]> referencedKeys() throws IOException
-	{
+	private static List<String[]> referencedKeys() throws IOException {
 		List<String[]> keys = new ArrayList<>();
 		Pattern call = Pattern.compile("Ui\\.text\\(\"([^\"]+)\"\\)");
-		try (Stream<Path> files = Files.list(RENDER))
-		{
-			for (Path file : (Iterable<Path>) files.filter(p -> p.toString().endsWith(".java"))::iterator)
-			{
+		try (Stream<Path> files = Files.list(RENDER)) {
+			for (Path file : (Iterable<Path>) files.filter(p -> p.toString().endsWith(".java"))::iterator) {
 				Matcher m = call.matcher(new String(Files.readAllBytes(file), StandardCharsets.UTF_8));
-				while (m.find())
-				{
+				while (m.find()) {
 					keys.add(new String[]{m.group(1), file.getFileName().toString()});
 				}
 			}
@@ -48,10 +43,8 @@ class UiTextTest
 
 	@Test
 	@DisplayName("every key the source asks for resolves to a non-blank text")
-	void everyReferencedKeyResolves() throws IOException
-	{
-		for (String[] key : referencedKeys())
-		{
+	void everyReferencedKeyResolves() throws IOException {
+		for (String[] key : referencedKeys()) {
 			String text = Ui.text(key[0]);
 			assertNotNull(text, key[1] + " asks for \"" + key[0] + "\", which text.tsv does not hold");
 			assertFalse(text.isBlank(), key[0] + " is blank");
@@ -60,17 +53,14 @@ class UiTextTest
 
 	@Test
 	@DisplayName("every text.tsv key is asked for somewhere, so the file carries no dead prose")
-	void everyKeyIsReferenced() throws IOException
-	{
+	void everyKeyIsReferenced() throws IOException {
 		Map<String, String> table = Ui.tsv("text.tsv");
 		assertFalse(table.isEmpty(), "text.tsv missing or empty");
 		TreeSet<String> referenced = new TreeSet<>();
-		for (String[] key : referencedKeys())
-		{
+		for (String[] key : referencedKeys()) {
 			referenced.add(key[0]);
 		}
-		for (Map.Entry<String, String> row : table.entrySet())
-		{
+		for (Map.Entry<String, String> row : table.entrySet()) {
 			assertTrue(referenced.contains(row.getKey()), "text.tsv key \"" + row.getKey() + "\" is never asked for");
 			// The tofu-glyph gate (scripts/check_glyphs.py) reads Java literals
 			// only, so the file keeps itself to plain ASCII here.
@@ -80,8 +70,7 @@ class UiTextTest
 
 	@Test
 	@DisplayName("the loader reads key-tab-value rows and skips comments, as the mood routes rely on")
-	void loaderShape()
-	{
+	void loaderShape() {
 		Map<String, String> routes = Ui.tsv("mood_routes.tsv");
 		assertEquals("zulrah", routes.get("Zulrah"));
 		assertFalse(routes.containsKey("# monster-name prefix -> compute-animation pool"), "comment lines skipped");

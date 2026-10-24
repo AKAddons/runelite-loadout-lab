@@ -16,8 +16,7 @@ import org.junit.Test;
  * (OWNED_OR_BUDGET) - the budget is the "show me obtainable gear" switch -
  * and they never charge the budget: they cost effort, not gp.
  */
-public class QuestRewardPoolTest
-{
+public class QuestRewardPoolTest {
 	private static final int WHIP = 4151;
 	private static final int BARROWS_GLOVES = 7462;
 
@@ -25,15 +24,13 @@ public class QuestRewardPoolTest
 	private static MonsterStats graardor;
 
 	@BeforeClass
-	public static void load()
-	{
+	public static void load() {
 		data = new DataService().load();
 		// A meleeable monster where barrows gloves' offensive bonuses matter.
 		graardor = data.searchMonsters("graardor", 1).get(0);
 	}
 
-	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp)
-	{
+	private static OptimizationRequest owned(Map<Integer, Integer> owned, int budgetGp) {
 		return TestRequests.of(graardor, CombatStyle.MELEE, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED, PrayerUnlocks.ALL),
 			null, budgetGp,
@@ -41,15 +38,13 @@ public class QuestRewardPoolTest
 			true, false, new OwnedItems(data.canonicalizeOwned(owned), true), 1);
 	}
 
-	private static String handsName(DpsResult result)
-	{
+	private static String handsName(DpsResult result) {
 		GearItem hands = result.getLoadout().get(GearSlot.HANDS);
 		return hands == null ? "" : hands.getName();
 	}
 
 	@Test
-	public void barrowsGlovesJoinTheBudgetSearchWithoutBeingOwned()
-	{
+	public void barrowsGlovesJoinTheBudgetSearchWithoutBeingOwned() {
 		// Owned: just a whip. With a budget on, the untradeable barrows
 		// gloves (Recipe for Disaster) are obtainable and dominate the
 		// hands slot for melee.
@@ -59,16 +54,14 @@ public class QuestRewardPoolTest
 	}
 
 	@Test
-	public void withoutABudgetQuestRewardsStayOutOfAnOwnedOnlySearch()
-	{
+	public void withoutABudgetQuestRewardsStayOutOfAnOwnedOnlySearch() {
 		DpsResult best = new LoadoutOptimizer()
 			.optimize(data, owned(Map.of(WHIP, 1), 0)).get(0);
 		Assert.assertNotEquals("Barrows gloves", handsName(best));
 	}
 
 	@Test
-	public void questRewardsNeverChargeTheUpgradeBudget()
-	{
+	public void questRewardsNeverChargeTheUpgradeBudget() {
 		// A 1 gp budget cannot BUY anything real, but quest rewards are
 		// free against it: the tradeable helm of neitiznot (The Fremennik
 		// Isles, ~50k on the GE) must still surface, and the total
@@ -83,8 +76,7 @@ public class QuestRewardPoolTest
 	}
 
 	@Test
-	public void anExcludedQuestRewardStaysOut()
-	{
+	public void anExcludedQuestRewardStaysOut() {
 		OptimizationRequest req = owned(Map.of(WHIP, 1), 100_000)
 			.withExcludedItems(Set.of(BARROWS_GLOVES));
 		DpsResult best = new LoadoutOptimizer().optimize(data, req).get(0);

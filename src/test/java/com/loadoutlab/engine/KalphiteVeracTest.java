@@ -22,14 +22,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * encoded the prayer as absolute immunity - the classic full-Verac's KQ
  * kill was impossible in the model.
  */
-class KalphiteVeracTest
-{
+class KalphiteVeracTest {
 	private static LoadoutData data;
 	private static MonsterStats airborne;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		airborne = MonsterGroups.load(data).stream()
 			.filter(g -> "Kalphite Queen".equals(g.getName()))
@@ -41,38 +39,30 @@ class KalphiteVeracTest
 			"test premise: the airborne form's immunity is prayer-based");
 	}
 
-	private static Loadout verac(boolean full)
-	{
+	private static Loadout verac(boolean full) {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data.getGearItems())
-		{
+		for (GearItem g : data.getGearItems()) {
 			String n = g.getNameLower();
-			if (!g.isStandardGear())
-			{
+			if (!g.isStandardGear()) {
 				continue;
 			}
-			if (n.startsWith("verac's flail"))
-			{
+			if (n.startsWith("verac's flail")) {
 				gear.put(GearSlot.WEAPON, g);
 			}
-			if (full && n.startsWith("verac's helm"))
-			{
+			if (full && n.startsWith("verac's helm")) {
 				gear.put(GearSlot.HEAD, g);
 			}
-			if (full && n.startsWith("verac's brassard"))
-			{
+			if (full && n.startsWith("verac's brassard")) {
 				gear.put(GearSlot.BODY, g);
 			}
-			if (full && n.startsWith("verac's plateskirt"))
-			{
+			if (full && n.startsWith("verac's plateskirt")) {
 				gear.put(GearSlot.LEGS, g);
 			}
 		}
 		return new Loadout(gear);
 	}
 
-	private static OptimizationRequest req()
-	{
+	private static OptimizationRequest req() {
 		return TestRequests.of(airborne, CombatStyle.MELEE,
 			PlayerLevels.MAXED, PrayerBonuses.bestAvailable(PlayerLevels.MAXED),
 			null, 0, CandidateMode.ALL_STANDARD, true, false, OwnedItems.EMPTY, 1);
@@ -80,8 +70,7 @@ class KalphiteVeracTest
 
 	@Test
 	@DisplayName("full Verac's pierces the airborne prayer at exactly the proc rate")
-	void fullSetPierces()
-	{
+	void fullSetPierces() {
 		DpsResult r = new DpsCalculator().calculate(req(), verac(true));
 		assertNotNull(r, "the flail must gate melee entry through the prayer");
 		assertTrue(r.getDps() > 0, "the classic full-Verac's kill must be possible");
@@ -92,8 +81,7 @@ class KalphiteVeracTest
 
 	@Test
 	@DisplayName("the flail without the set lands nothing - but stays a zero, not a null")
-	void partialSetIsZeroNotNull()
-	{
+	void partialSetIsZeroNotNull() {
 		DpsResult r = new DpsCalculator().calculate(req(), verac(false));
 		assertNotNull(r, "partial Verac states must survive for the beam to finish the set");
 		assertEquals(0.0, r.getDps(), 1e-9);
@@ -101,13 +89,10 @@ class KalphiteVeracTest
 
 	@Test
 	@DisplayName("a whip is still simply immune")
-	void whipStaysImmune()
-	{
+	void whipStaysImmune() {
 		EnumMap<GearSlot, GearItem> gear = new EnumMap<>(GearSlot.class);
-		for (GearItem g : data.getGearItems())
-		{
-			if (g.getNameLower().equals("abyssal whip"))
-			{
+		for (GearItem g : data.getGearItems()) {
+			if (g.getNameLower().equals("abyssal whip")) {
 				gear.put(GearSlot.WEAPON, g);
 			}
 		}
@@ -116,15 +101,12 @@ class KalphiteVeracTest
 
 	@Test
 	@DisplayName("the optimizer assembles the set on its own when the pieces are owned")
-	void optimizerAssemblesTheSet()
-	{
+	void optimizerAssemblesTheSet() {
 		java.util.Map<Integer, Integer> owned = new java.util.HashMap<>();
-		for (GearItem g : data.getGearItems())
-		{
+		for (GearItem g : data.getGearItems()) {
 			String n = g.getNameLower();
 			if (g.isStandardGear() && (n.startsWith("verac's") || n.equals("abyssal whip")
-				|| n.equals("bandos chestplate") || n.equals("bandos tassets")))
-			{
+				|| n.equals("bandos chestplate") || n.equals("bandos tassets"))) {
 				owned.put(g.getId(), 1);
 			}
 		}

@@ -23,14 +23,12 @@ import java.util.Set;
  * matching protection prayer fully blocks it, and an optional per-attack
  * speed. Numeric facts are wiki-sourced; see each entry's note.
  */
-public final class BossIncomingOverrides
-{
+public final class BossIncomingOverrides {
 	private static final String RESOURCE = "boss_incoming.json";
 
 	/** One curated attack in the boss's rotation. */
 	@AllArgsConstructor(access = AccessLevel.PACKAGE)
-	public static final class Attack
-	{
+	public static final class Attack {
 		@Getter
 		private final String style;
 		@Getter
@@ -57,15 +55,13 @@ public final class BossIncomingOverrides
 	}
 
 	/** The full curated picture for one boss. */
-	public static final class BossOverride
-	{
+	public static final class BossOverride {
 		@Getter
 		private final List<Attack> attacks;
 		@Getter
 		private final String note;
 
-		BossOverride(List<Attack> attacks, String note)
-		{
+		BossOverride(List<Attack> attacks, String note) {
 			this.attacks = Collections.unmodifiableList(attacks);
 			this.note = note;
 		}
@@ -73,11 +69,9 @@ public final class BossIncomingOverrides
 
 	private static final Map<String, BossOverride> OVERRIDES = new HashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
-		for (Map.Entry<String, JsonElement> entry : root.entrySet())
-		{
+		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
 			OVERRIDES.put(Names.lower(entry.getKey()),
 				parse(entry.getValue().getAsJsonObject()));
 		}
@@ -93,11 +87,9 @@ public final class BossIncomingOverrides
 	 * "resource missing" throw stays here: that is a packaging failure, not
 	 * bad data.
 	 */
-	private static BossOverride parse(JsonObject json)
-	{
+	private static BossOverride parse(JsonObject json) {
 		List<Attack> attacks = new ArrayList<>();
-		for (JsonElement element : json.getAsJsonArray("attacks"))
-		{
+		for (JsonElement element : json.getAsJsonArray("attacks")) {
 			JsonObject a = element.getAsJsonObject();
 			boolean prayable = !a.has("prayable") || a.get("prayable").getAsBoolean();
 			// Legacy semantics preserved: prayable = full block (0 through),
@@ -116,16 +108,13 @@ public final class BossIncomingOverrides
 		return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
 	}
 
-	private BossIncomingOverrides()
-	{
+	private BossIncomingOverrides() {
 	}
 
 	/** The curated override for this monster, or null to use the v1 model.
 	 * Keyed by display name so every version/phase row shares one entry. */
-	public static BossOverride overridesFor(MonsterStats monster)
-	{
-		if (monster == null)
-		{
+	public static BossOverride overridesFor(MonsterStats monster) {
+		if (monster == null) {
 			return null;
 		}
 		// Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
@@ -134,12 +123,10 @@ public final class BossIncomingOverrides
 		// report 2026-07-17: every Zulrah form said pray mage). The bare
 		// name stays as the whole-fight fallback.
 		String version = monster.getVersion();
-		if (version != null && !version.isEmpty())
-		{
+		if (version != null && !version.isEmpty()) {
 			BossOverride byForm = OVERRIDES.get(
 				(monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
-			if (byForm != null)
-			{
+			if (byForm != null) {
 				return byForm;
 			}
 		}
@@ -147,8 +134,7 @@ public final class BossIncomingOverrides
 	}
 
 	/** All curated boss names (lowercase) - test and tooling surface. */
-	public static Set<String> names()
-	{
+	public static Set<String> names() {
 		return Collections.unmodifiableSet(OVERRIDES.keySet());
 	}
 }

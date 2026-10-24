@@ -16,26 +16,20 @@ import org.junit.Test;
  * pattern: the Far row is melee-immune, the group rosters all three
  * corpus versions so the fight reads as one result.
  */
-public class MaggotKingTest
-{
+public class MaggotKingTest {
 	private static LoadoutData data;
 
-	private static LoadoutData data()
-	{
-		if (data == null)
-		{
+	private static LoadoutData data() {
+		if (data == null) {
 			data = new DataService().load();
 		}
 		return data;
 	}
 
-	private static MonsterStats version(String version)
-	{
-		for (MonsterStats monster : data().getMonsters())
-		{
+	private static MonsterStats version(String version) {
+		for (MonsterStats monster : data().getMonsters()) {
 			if ("Maggot King".equalsIgnoreCase(monster.getName())
-				&& version.equalsIgnoreCase(monster.getVersion()))
-			{
+				&& version.equalsIgnoreCase(monster.getVersion())) {
 				return monster;
 			}
 		}
@@ -43,8 +37,7 @@ public class MaggotKingTest
 	}
 
 	@Test
-	public void theFarPhaseIsMeleeImmuneTheOthersAreNot()
-	{
+	public void theFarPhaseIsMeleeImmuneTheOthersAreNot() {
 		MonsterStats far = version("Far");
 		Assert.assertTrue("Far is out of melee reach",
 			MonsterMechanics.styleImmune(far, CombatStyle.MELEE));
@@ -63,12 +56,10 @@ public class MaggotKingTest
 	 * ONE service is the deterministic poisoning: Far's melee must still
 	 * come back empty (it is immune), not Nearby's cached 5.92. */
 	@Test
-	public void aWarmSiblingCacheNeverLendsFarAMeleeSet() throws Exception
-	{
+	public void aWarmSiblingCacheNeverLendsFarAMeleeSet() throws Exception {
 		com.loadoutlab.optimizer.OptimizerService service =
 			new com.loadoutlab.optimizer.OptimizerService(data());
-		try
-		{
+		try {
 			Assert.assertNotNull("Nearby answers melee",
 				singleStyles(service, version("Nearby"))
 					.get(CombatStyle.MELEE).overallBest);
@@ -78,17 +69,14 @@ public class MaggotKingTest
 				far == null || far.owned == null || far.owned.isEmpty());
 			Assert.assertTrue("Far melee BiS must stay empty on a warm cache",
 				far == null || far.overallBest == null);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static java.util.Map<CombatStyle, com.loadoutlab.optimizer.OptimizerService.StyleResult>
 		singleStyles(com.loadoutlab.optimizer.OptimizerService service, MonsterStats mob)
-		throws Exception
-	{
+		throws Exception {
 		java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
 		java.util.concurrent.atomic.AtomicReference<java.util.Map<CombatStyle,
 			com.loadoutlab.optimizer.OptimizerService.StyleResult>> out =
@@ -100,8 +88,7 @@ public class MaggotKingTest
 			com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP, false, false,
 			java.util.Collections.emptySet(), 0,
 			java.util.Collections.emptyMap(), null, 0, java.util.Collections.emptySet(),
-			r ->
-			{
+			r -> {
 				out.set(r);
 				done.countDown();
 			});
@@ -110,12 +97,9 @@ public class MaggotKingTest
 	}
 
 	@Test
-	public void theGroupRostersAllThreePhases()
-	{
-		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data()))
-		{
-			if ("Maggot King".equals(group.getName()))
-			{
+	public void theGroupRostersAllThreePhases() {
+		for (MonsterGroups.MonsterGroup group : MonsterGroups.load(data())) {
+			if ("Maggot King".equals(group.getName())) {
 				Assert.assertEquals(3, group.getMobs().size());
 				long meleeImmune = group.getMobs().stream()
 					.filter(m -> MonsterMechanics.styleImmune(m, CombatStyle.MELEE))

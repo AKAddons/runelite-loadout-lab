@@ -5,8 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @AllArgsConstructor
-public final class StatBlock
-{
+public final class StatBlock {
 	public static final StatBlock ZERO = new StatBlock(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	@Getter
@@ -28,10 +27,8 @@ public final class StatBlock
 	@Getter
 	private final int prayer;
 
-	public int getAttackBonus(String type)
-	{
-		switch (type)
-		{
+	public int getAttackBonus(String type) {
+		switch (type) {
 			case "stab":
 				return stab;
 			case "slash":

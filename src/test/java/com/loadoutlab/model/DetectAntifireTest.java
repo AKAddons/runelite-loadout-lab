@@ -17,24 +17,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * owned antifire tier); the plate's menu gains Detect best, which runs
  * it again for the current selection after a manual pick.
  */
-class DetectAntifireTest
-{
+class DetectAntifireTest {
 	private static LoadoutData data;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 	}
 
 	@Test
 	@DisplayName("Detect best on the dragonfire plate re-runs the owned-tier detection for the selection")
-	void detectAntifireReseeds()
-	{
+	void detectAntifireReseeds() {
 		PageState state = new PageState();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			new CompanionLink());
 		engine.setAntifireResolver(mobs -> 2);
@@ -51,13 +47,11 @@ class DetectAntifireTest
 
 	@Test
 	@DisplayName("the assumed antifire potion rides the Supplies row, every dose")
-	void assumedPotionIsASupply()
-	{
+	void assumedPotionIsASupply() {
 		PageState state = new PageState();
 		CaptureLink link = new CaptureLink();
 		CommandEngine engine = new CommandEngine(data, state,
-			(mob, p, onDone) ->
-			{
+			(mob, p, onDone) -> {
 			},
 			link);
 		engine.setAntifireResolver(mobs -> 2);
@@ -73,37 +67,28 @@ class DetectAntifireTest
 		assertNull(antifireSupply(engine, link, vorkath), "shield mode brings no potion");
 	}
 
-	private static Map<?, ?> antifireSupply(CommandEngine engine, CaptureLink link, MonsterStats mob)
-	{
+	private static Map<?, ?> antifireSupply(CommandEngine engine, CaptureLink link, MonsterStats mob) {
 		engine.onResults(mob, Map.of());
-		try
-		{
-			javax.swing.SwingUtilities.invokeAndWait(() ->
-			{
+		try {
+			javax.swing.SwingUtilities.invokeAndWait(() -> {
 			});
-		}
-		catch (Exception ex)
-		{
+		} catch (Exception ex) {
 			throw new AssertionError(ex);
 		}
 		Map<?, ?> entry = (Map<?, ?>) ((List<?>) link.published.get("entries")).get(0);
-		for (Object node : (List<?>) entry.get("supplies"))
-		{
-			if ("antifire".equals(((Map<?, ?>) node).get("category")))
-			{
+		for (Object node : (List<?>) entry.get("supplies")) {
+			if ("antifire".equals(((Map<?, ?>) node).get("category"))) {
 				return (Map<?, ?>) node;
 			}
 		}
 		return null;
 	}
 
-	private static final class CaptureLink extends CompanionLink
-	{
+	private static final class CaptureLink extends CompanionLink {
 		Map<String, Object> published;
 
 		@Override
-		public void publishPage(Map<String, Object> page)
-		{
+		public void publishPage(Map<String, Object> page) {
 			published = page;
 		}
 	}

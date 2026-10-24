@@ -28,8 +28,7 @@ import org.junit.Test;
  * and {path}/ours.json (this engine's numbers). scripts/verify_official.py
  * orchestrates the full comparison.
  */
-public class OfficialVectorExport
-{
+public class OfficialVectorExport {
 	private static final String[][] SCENARIOS = {
 		// name | monster | version | style | weapon | ammo | forced spell | extra gear (slayer helm implies on-task)
 		{"whip-goblin", "Goblin", "", "MELEE", "Abyssal whip", null},
@@ -257,8 +256,7 @@ public class OfficialVectorExport
 	};
 
 	@Test
-	public void sweep() throws Exception
-	{
+	public void sweep() throws Exception {
 		String dir = System.getenv("LOADOUT_LAB_VECTORS");
 		Assume.assumeNotNull(dir);
 		Assume.assumeNotNull(System.getenv("LOADOUT_LAB_SWEEP"));
@@ -269,36 +267,30 @@ public class OfficialVectorExport
 		List<Map<String, Object>> vectors = new ArrayList<>();
 		List<Map<String, Object>> ours = new ArrayList<>();
 
-		for (String[] m : SWEEP_MONSTERS)
-		{
+		for (String[] m : SWEEP_MONSTERS) {
 			MonsterStats monster = data.searchMonsters(m[0], 10).stream()
 				.filter(x -> m[1].isEmpty() || m[1].equalsIgnoreCase(x.getVersion()))
 				.findFirst()
 				.orElse(data.searchMonsters(m[0], 1).stream().findFirst().orElse(null));
-			if (monster == null)
-			{
+			if (monster == null) {
 				continue;
 			}
-			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
-			{
+			for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
 				OptimizationRequest request = new OptimizationRequest(
 					monster, style, PlayerLevels.MAXED,
 					prayersFor(style), null, 0,
 					CandidateMode.ALL_STANDARD, true, false,
 					OwnedItems.EMPTY, RequirementProfile.MAXED, 1);
 				List<DpsResult> results = optimizer.optimize(data, request);
-				if (results.isEmpty())
-				{
+				if (results.isEmpty()) {
 					continue;
 				}
 				DpsResult result = results.get(0);
 				String name = (m[0] + "-" + style).toLowerCase().replace(" ", "").replace("'", "");
 
 				List<Object> gearNames = new ArrayList<>();
-				for (GearItem item : result.getLoadout().getGear().values())
-				{
-					if (item != null)
-					{
+				for (GearItem item : result.getLoadout().getGear().values()) {
+					if (item != null) {
 						gearNames.add(gearRef(item));
 					}
 				}
@@ -308,11 +300,9 @@ public class OfficialVectorExport
 				vector.put("monsterVersion", m[1]);
 				vector.put("gear", gearNames);
 				vector.put("prayers", prayerNames(style));
-				if (!result.getSpellName().isEmpty())
-				{
+				if (!result.getSpellName().isEmpty()) {
 					vector.put("spell", result.getSpellName());
-					if (result.getSpellName().contains("Demonbane"))
-					{
+					if (result.getSpellName().contains("Demonbane")) {
 						vector.put("markOfDarkness", true);
 					}
 				}
@@ -328,20 +318,17 @@ public class OfficialVectorExport
 				ours.add(mine);
 			}
 		}
-		try (FileWriter w = new FileWriter(dir + "/vectors.json"))
-		{
+		try (FileWriter w = new FileWriter(dir + "/vectors.json")) {
 			gson.toJson(vectors, w);
 		}
-		try (FileWriter w = new FileWriter(dir + "/ours.json"))
-		{
+		try (FileWriter w = new FileWriter(dir + "/ours.json")) {
 			gson.toJson(ours, w);
 		}
 		System.out.println("sweep exported " + vectors.size() + " vectors");
 	}
 
 	@Test
-	public void export() throws Exception
-	{
+	public void export() throws Exception {
 		String dir = System.getenv("LOADOUT_LAB_VECTORS");
 		Assume.assumeNotNull(dir);
 		Assume.assumeTrue(System.getenv("LOADOUT_LAB_SWEEP") == null);
@@ -351,10 +338,8 @@ public class OfficialVectorExport
 		List<Map<String, Object>> vectors = new ArrayList<>();
 		List<Map<String, Object>> ours = new ArrayList<>();
 
-		for (String[] s : SCENARIOS)
-		{
-			if (s[4] == null)
-			{
+		for (String[] s : SCENARIOS) {
+			if (s[4] == null) {
 				continue; // placeholder rows
 			}
 			String name = s[0];
@@ -371,8 +356,7 @@ public class OfficialVectorExport
 				.findFirst()
 				.orElse(data.searchMonsters(s[1], 1).stream().findFirst().orElse(null));
 			GearItem weapon = byName(data, s[4]);
-			if (monster == null || weapon == null)
-			{
+			if (monster == null || weapon == null) {
 				continue;
 			}
 			CombatStyle style = CombatStyle.valueOf(s[3]);
@@ -384,17 +368,14 @@ public class OfficialVectorExport
 			List<Object> gearNames = new ArrayList<>();
 			gearNames.add(gearRef(weapon));
 			Integer blowpipeDartId = null;
-			if (s[5] != null && s[5].startsWith("DART:"))
-			{
+			if (s[5] != null && s[5].startsWith("DART:")) {
 				// The blowpipe's loaded dart: itemVars on the official side
 				// (a dart as gear is a thrown WEAPON there and would replace
 				// the blowpipe); our side keeps the BlowpipeDarts assumption
 				// - game-best assumes dragon, so name a dragon dart here.
 				GearItem dart = byName(data, s[5].substring(5));
 				blowpipeDartId = dart.getId();
-			}
-			else if (s[5] != null)
-			{
+			} else if (s[5] != null) {
 				GearItem ammo = byName(data, s[5]);
 				gear.put(GearSlot.AMMO, ammo);
 				gearNames.add(gearRef(ammo));
@@ -402,19 +383,15 @@ public class OfficialVectorExport
 			boolean onTask = false;
 			boolean sunfire = false;
 			int toaInvocation = 0;
-			for (int i = 7; i < s.length; i++)
-			{
-				if (s[i] == null)
-				{
+			for (int i = 7; i < s.length; i++) {
+				if (s[i] == null) {
 					continue;
 				}
-				if (s[i].startsWith("INVO:"))
-				{
+				if (s[i].startsWith("INVO:")) {
 					toaInvocation = Integer.parseInt(s[i].substring(5));
 					continue;
 				}
-				if (s[i].equals("SUNFIRE"))
-				{
+				if (s[i].equals("SUNFIRE")) {
 					sunfire = true;
 					continue;
 				}
@@ -431,8 +408,7 @@ public class OfficialVectorExport
 				CandidateMode.ALL_STANDARD, true, onTask,
 				OwnedItems.EMPTY, RequirementProfile.MAXED, 1).withSunfireRunes(sunfire);
 			DpsResult result = new DpsCalculator().calculate(request, new Loadout(gear));
-			if (result == null)
-			{
+			if (result == null) {
 				continue;
 			}
 
@@ -441,29 +417,23 @@ public class OfficialVectorExport
 			vector.put("monster", s[1]);
 			vector.put("monsterVersion", s[2] == null ? "" : s[2]);
 			vector.put("gear", gearNames);
-			if (blowpipeDartId != null)
-			{
+			if (blowpipeDartId != null) {
 				vector.put("blowpipeDartId", blowpipeDartId);
 			}
-			if (toaInvocation > 0)
-			{
+			if (toaInvocation > 0) {
 				vector.put("toaInvocationLevel", toaInvocation);
 			}
 			vector.put("prayers", prayerNames(style));
-			if (onTask)
-			{
+			if (onTask) {
 				vector.put("onSlayerTask", true);
 			}
-			if (sunfire)
-			{
+			if (sunfire) {
 				vector.put("sunfireRunes", true);
 			}
 			String spellName = result.getSpellName();
-			if (spellName != null && !spellName.isEmpty())
-			{
+			if (spellName != null && !spellName.isEmpty()) {
 				vector.put("spell", spellName);
-				if (spellName.contains("Demonbane"))
-				{
+				if (spellName.contains("Demonbane")) {
 					vector.put("markOfDarkness", true);
 				}
 			}
@@ -479,37 +449,31 @@ public class OfficialVectorExport
 			ours.add(mine);
 		}
 
-		try (FileWriter w = new FileWriter(dir + "/vectors.json"))
-		{
+		try (FileWriter w = new FileWriter(dir + "/vectors.json")) {
 			gson.toJson(vectors, w);
 		}
-		try (FileWriter w = new FileWriter(dir + "/ours.json"))
-		{
+		try (FileWriter w = new FileWriter(dir + "/ours.json")) {
 			gson.toJson(ours, w);
 		}
 		System.out.println("exported " + vectors.size() + " vectors to " + dir);
 	}
 
-	private static Object gearRef(GearItem item)
-	{
+	private static Object gearRef(GearItem item) {
 		// [name, version, id]: the harness looks the piece up by id first -
 		// the official data cases names differently (Tonalztics of Ralos,
 		// Trident of the Swamp) and a name miss drops the vector.
 		return new Object[]{item.getName(), item.getVersion(), item.getId()};
 	}
 
-	private static String firstToken(String version)
-	{
-		if (version == null)
-		{
+	private static String firstToken(String version) {
+		if (version == null) {
 			return "";
 		}
 		int comma = version.indexOf(',');
 		return (comma < 0 ? version : version.substring(0, comma)).trim();
 	}
 
-	private static GearItem byName(LoadoutData data, String name)
-	{
+	private static GearItem byName(LoadoutData data, String name) {
 		// "Name#Version" pins an exact variant (Toxic blowpipe#Charged);
 		// plain names keep first-standard-match, where Empty can precede
 		// Charged in corpus order.
@@ -523,15 +487,12 @@ public class OfficialVectorExport
 			.findFirst().orElse(null);
 	}
 
-	private static PrayerBonuses prayersFor(CombatStyle style)
-	{
+	private static PrayerBonuses prayersFor(CombatStyle style) {
 		return PrayerBonuses.bestAvailable(PlayerLevels.MAXED);
 	}
 
-	private static List<String> prayerNames(CombatStyle style)
-	{
-		switch (style)
-		{
+	private static List<String> prayerNames(CombatStyle style) {
+		switch (style) {
 			case RANGED: return List.of("RIGOUR");
 			// Augury only - the wiki engine stacks any prayers it is fed,
 			// but the game's prayer groups forbid two magic prayers at once.

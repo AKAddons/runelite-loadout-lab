@@ -15,8 +15,7 @@ import java.util.stream.Collectors;
  * the optimizer suggests.
  */
 @lombok.AllArgsConstructor
-public final class ItemLocations
-{
+public final class ItemLocations {
 	/** Suffix convention for origins the DWMS import contributed. */
 	public static final String VIA_DWMS = " (via DWMS)";
 
@@ -28,8 +27,7 @@ public final class ItemLocations
 	private final Function<Integer, Set<Integer>> equivalents;
 
 	/** Origin labels holding this item or an interchangeable variant. */
-	public List<String> where(int itemId)
-	{
+	public List<String> where(int itemId) {
 		Set<Integer> ids = equivalents == null ? Set.of(itemId) : equivalents.apply(itemId);
 		return origins.entrySet().stream().filter(origin -> ids.stream().anyMatch(origin.getValue()::containsKey))
 			.map(Map.Entry::getKey).collect(Collectors.toList());
@@ -41,21 +39,17 @@ public final class ItemLocations
 	 * ("STASH (via DWMS)" -> "STASH") and DWMS-only families bucketed as
 	 * "DWMS". "" when the location is unknown.
 	 */
-	public String primary(int itemId)
-	{
+	public String primary(int itemId) {
 		List<String> where = where(itemId);
-		if (where.isEmpty())
-		{
+		if (where.isEmpty()) {
 			return "";
 		}
 		String label = where.get(0);
-		if (!label.endsWith(VIA_DWMS))
-		{
+		if (!label.endsWith(VIA_DWMS)) {
 			return label;
 		}
 		String base = label.substring(0, label.length() - VIA_DWMS.length());
-		switch (base)
-		{
+		switch (base) {
 			case "POH costume room":
 			case "STASH":
 			case "cargo hold":

@@ -14,12 +14,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * Cape -> Quest Cape -> Diary Cape -> Consruction Cape -> Max Cape / Alt:
  * Crafting Cape"). Ids from runelite-api 1.13.3 gameval ItemID.
  */
-class TeleportCapeTest
-{
+class TeleportCapeTest {
 	private static final String CATEGORY = "teleportCape";
 
-	private static String detect(Integer... owned)
-	{
+	private static String detect(Integer... owned) {
 		Set<Integer> bank = Set.of(owned);
 		TripSupplies.Option pick = TripSupplies.detectBest(CATEGORY, bank::contains);
 		return pick == null ? null : pick.key;
@@ -27,8 +25,7 @@ class TeleportCapeTest
 
 	@Test
 	@DisplayName("a general supply, best first: Max cape, Construction, Diary, Quest point, Ardougne cloak; the Crafting cape a choice")
-	void tiers()
-	{
+	void tiers() {
 		assertTrue(List.of(TripSupplies.CATEGORY_KEYS).contains(CATEGORY));
 		assertEquals("Teleport cape", TripSupplies.label(CATEGORY));
 		assertEquals(List.of("MAX_CAPE", "CONSTRUCTION_CAPE", "ACHIEVEMENT_DIARY_CAPE", "QUEST_POINT_CAPE",
@@ -41,8 +38,7 @@ class TeleportCapeTest
 
 	@Test
 	@DisplayName("Detect Best takes the best cape you own - any Ardougne cloak tier, trimmed capes, combined max capes")
-	void detectBest()
-	{
+	void detectBest() {
 		assertEquals("ARDOUGNE_CLOAK", detect(13122));
 		assertEquals("QUEST_POINT_CAPE", detect(13122, 9813));
 		assertEquals("ACHIEVEMENT_DIARY_CAPE", detect(13068, 13069));

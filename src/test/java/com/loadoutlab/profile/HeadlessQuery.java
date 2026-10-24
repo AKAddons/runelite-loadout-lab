@@ -30,19 +30,15 @@ import java.util.concurrent.atomic.AtomicReference;
  * exports your real account there on every in-game query). --maxed uses
  * a maxed account owning nothing (game-best only).
  */
-public final class HeadlessQuery
-{
-	private HeadlessQuery()
-	{
+public final class HeadlessQuery {
+	private HeadlessQuery() {
 	}
 
-	public static void main(String[] args) throws Exception
-	{
+	public static void main(String[] args) throws Exception {
 		System.out.println(run(args));
 	}
 
-	public static String run(String[] args) throws Exception
-	{
+	public static String run(String[] args) throws Exception {
 		StringBuilder monsterName = new StringBuilder();
 		Path profilePath = Path.of(System.getProperty("user.home"),
 			".runelite", "loadout-lab", "profile.json");
@@ -56,10 +52,8 @@ public final class HeadlessQuery
 		int riskBudget = com.loadoutlab.engine.OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 		int upgradeBudget = 0;
 		java.util.Set<Integer> excluded = new java.util.HashSet<>();
-		for (int i = 0; i < args.length; i++)
-		{
-			switch (args[i])
-			{
+		for (int i = 0; i < args.length; i++) {
+			switch (args[i]) {
 				case "--profile": profilePath = Path.of(args[++i]); break;
 				case "--maxed": maxed = true; break;
 				case "--slayer": slayer = true; break;
@@ -73,8 +67,7 @@ public final class HeadlessQuery
 				// Comma-separated item ids - reproduce a client report with
 				// the player's exclusion list (config: loadoutlab.excludedItems).
 				case "--exclude":
-					for (String id : args[++i].split(","))
-					{
+					for (String id : args[++i].split(",")) {
 						excluded.add(Integer.parseInt(id.trim()));
 					}
 					break;
@@ -86,21 +79,18 @@ public final class HeadlessQuery
 
 		LoadoutData data = new DataService().load();
 		java.util.List<MonsterStats> hits = data.searchMonsters(monsterName.toString(), 1);
-		if (hits.isEmpty())
-		{
+		if (hits.isEmpty()) {
 			return "No monster matches '" + monsterName + "'";
 		}
 		MonsterStats monster = hits.get(0);
 
 		OptimizerService service = new OptimizerService(data);
-		try
-		{
+		try {
 			CountDownLatch done = new CountDownLatch(1);
 			AtomicReference<Map<CombatStyle, OptimizerService.StyleResult>> out = new AtomicReference<>();
 			java.util.Map<CombatStyle, java.util.Set<Integer>> excludedByStyle =
 				new java.util.EnumMap<>(CombatStyle.class);
-			for (CombatStyle style : CombatStyle.concreteValues())
-			{
+			for (CombatStyle style : CombatStyle.concreteValues()) {
 				excludedByStyle.put(style, excluded);
 			}
 			boolean inWilderness = wilderness
@@ -111,72 +101,56 @@ public final class HeadlessQuery
 				excludedByStyle, lowRisk, riskBudget, antifirePotion, inWilderness,
 				java.util.Collections.emptySet(), upgradeBudget,
 				java.util.Collections.emptyMap(), null, java.util.Collections.emptySet(),
-				results ->
-				{
+				results -> {
 					out.set(results);
 					done.countDown();
 				});
-			if (!done.await(180, TimeUnit.SECONDS))
-			{
+			if (!done.await(180, TimeUnit.SECONDS)) {
 				return "Query timed out";
 			}
 			return render(monster, out.get(), lowRisk);
-		}
-		finally
-		{
+		} finally {
 			service.shutdown();
 		}
 	}
 
 	private static String render(MonsterStats monster,
-		Map<CombatStyle, OptimizerService.StyleResult> results, int lowRisk)
-	{
+		Map<CombatStyle, OptimizerService.StyleResult> results, int lowRisk) {
 		StringBuilder sb = new StringBuilder("=== vs ").append(monster.label()).append(" ===\n");
-		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC})
-		{
+		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
 			OptimizerService.StyleResult result = results.get(style);
 			sb.append("\n[").append(style).append("]\n");
-			if (result == null || result.owned.isEmpty())
-			{
+			if (result == null || result.owned.isEmpty()) {
 				sb.append("  yours: no usable set\n");
-			}
-			else
-			{
+			} else {
 				DpsResult best = result.owned.get(0);
 				sb.append(String.format("  yours: %.2f dps (max %d, %.0f%% acc)  assumes: %s%n",
 					best.getDps(), best.getMaxHit(), best.getAccuracy() * 100, result.boostLabel));
-				for (GearSlot slot : GearSlot.values())
-				{
+				for (GearSlot slot : GearSlot.values()) {
 					GearItem item = best.getLoadout().get(slot);
-					if (item != null)
-					{
+					if (item != null) {
 						sb.append(String.format("    %-7s %s%n", slot, item.label()));
 					}
 				}
-				if (best.getSpellName() != null)
-				{
+				if (best.getSpellName() != null) {
 					sb.append("    spell   ").append(best.getSpellName()).append('\n');
 				}
-				if (result.specWeapon != null)
-				{
+				if (result.specWeapon != null) {
 					sb.append(String.format("    spec    %s (adds ~%.2f dps, avg %.0f dmg)%n",
 						result.specWeapon.label(), result.specDpsAdded, result.specExpectedDamage));
 				}
-				if (result.incoming != null && result.incoming.protectPrayer != null)
-				{
+				if (result.incoming != null && result.incoming.protectPrayer != null) {
 					sb.append(String.format("    incoming ~%.2f dps praying %s (~%.2f unprayed)%n",
 						result.incoming.totalDps, result.incoming.protectPrayer,
 						result.incoming.unprayedDps));
 				}
-				if (lowRisk >= 0)
-				{
+				if (lowRisk >= 0) {
 					PvpRisk.Assessment risk = PvpRisk.assess(best.getLoadout(), result.specWeapon, lowRisk);
 					sb.append(String.format("    risk    %s gp (%d kept)%n",
 						formatGp(risk.riskGp), lowRisk));
 				}
 			}
-			if (result != null && result.overallBest != null)
-			{
+			if (result != null && result.overallBest != null) {
 				sb.append(String.format("  game best: %.2f dps  assumes: %s%n",
 					result.overallBest.getDps(), result.gameBoostLabel));
 			}
@@ -185,14 +159,11 @@ public final class HeadlessQuery
 	}
 
 	/** Compact gp: 1.20B / 45.3M / 820k / 950. */
-	private static String formatGp(long gp)
-	{
-		if (gp >= 1_000_000_000L)
-		{
+	private static String formatGp(long gp) {
+		if (gp >= 1_000_000_000L) {
 			return String.format("%.2fB", gp / 1_000_000_000.0);
 		}
-		if (gp >= 1_000_000L)
-		{
+		if (gp >= 1_000_000L) {
 			return String.format("%.1fM", gp / 1_000_000.0);
 		}
 		return gp >= 1_000L ? gp / 1_000L + "k" : String.valueOf(gp);

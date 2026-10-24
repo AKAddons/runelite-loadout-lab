@@ -6,19 +6,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class StashUnitsTest
-{
+class StashUnitsTest {
 	@Test
 	@DisplayName("the vendored STASH table loads with every unit and positive item ids")
-	void tableLoads()
-	{
+	void tableLoads() {
 		StashUnits units = StashUnits.load();
 		assertTrue(units.size() >= 100, "expected 100+ STASH units, got " + units.size());
 
 		int[] warriors = units.itemsFor("Warriors' Guild bank");
 		assertNotNull(warriors);
-		for (int id : warriors)
-		{
+		for (int id : warriors) {
 			assertTrue(id > 0);
 		}
 		assertNull(units.itemsFor("not a stash unit"));
@@ -26,8 +23,7 @@ class StashUnitsTest
 
 	@Test
 	@DisplayName("the two Warriors' Guild bank units stay distinct across tiers")
-	void warriorsGuildTiersAreDistinct()
-	{
+	void warriorsGuildTiersAreDistinct() {
 		StashUnits units = StashUnits.load();
 		assertNotNull(units.itemsFor("Warriors' Guild bank"));
 		assertNotNull(units.itemsFor("Warriors' Guild bank (master)"));
@@ -39,8 +35,7 @@ class StashUnitsTest
 
 	@Test
 	@DisplayName("a unit is filled only when its text cell is followed by two sprites")
-	void chartStateMachine()
-	{
+	void chartStateMachine() {
 		List<StashUnits.Cell> cells = List.of(
 			new StashUnits.Cell(StashUnits.TEXT_CELL, "Filled unit"),
 			new StashUnits.Cell(StashUnits.SPRITE_CELL, ""),
@@ -58,8 +53,7 @@ class StashUnitsTest
 
 	@Test
 	@DisplayName("a leading sprite with no unit yet is ignored")
-	void leadingSpriteIsIgnored()
-	{
+	void leadingSpriteIsIgnored() {
 		List<StashUnits.Cell> cells = List.of(
 			new StashUnits.Cell(StashUnits.SPRITE_CELL, ""),
 			new StashUnits.Cell(StashUnits.TEXT_CELL, "Unit"),
@@ -69,8 +63,7 @@ class StashUnitsTest
 
 	@Test
 	@DisplayName("the master tier renames the Warriors' Guild bank chart text")
-	void masterTierRename()
-	{
+	void masterTierRename() {
 		List<StashUnits.Cell> cells = List.of(
 			new StashUnits.Cell(StashUnits.TEXT_CELL, "Warriors' Guild bank"),
 			new StashUnits.Cell(StashUnits.SPRITE_CELL, ""),

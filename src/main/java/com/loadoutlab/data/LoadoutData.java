@@ -9,8 +9,7 @@ import java.util.stream.Collectors;
 
 import lombok.Getter;
 
-public final class LoadoutData
-{
+public final class LoadoutData {
 	@Getter
 	private final List<GearItem> gearItems;
 	@Getter
@@ -28,16 +27,14 @@ public final class LoadoutData
 		List<MonsterStats> monsters,
 		List<SpellStats> spells,
 		Map<Integer, GearItem> gearById,
-		Map<Integer, Integer> variantToBase)
-	{
+		Map<Integer, Integer> variantToBase) {
 		this.gearItems = Collections.unmodifiableList(gearItems);
 		this.monsters = Collections.unmodifiableList(monsters);
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
 		this.variantToBase = Collections.unmodifiableMap(variantToBase);
 		EnumMap<GearSlot, List<GearItem>> bySlot = new EnumMap<>(GearSlot.class);
-		for (GearSlot slot : GearSlot.values())
-		{
+		for (GearSlot slot : GearSlot.values()) {
 			bySlot.put(slot, Collections.unmodifiableList(this.gearItems.stream()
 				.filter(item -> item.getSlot() == slot).collect(Collectors.toList())));
 		}
@@ -52,8 +49,7 @@ public final class LoadoutData
 	 * WITHIN the standard book still pass - a finer F2P spell table can
 	 * tighten that later.
 	 */
-	public LoadoutData freeToPlayView()
-	{
+	public LoadoutData freeToPlayView() {
 		List<GearItem> free = gearItems.stream().filter(g -> !g.isMembers()).collect(Collectors.toList());
 		Map<Integer, GearItem> byId = new HashMap<>();
 		free.forEach(g -> byId.put(g.getId(), g));
@@ -66,8 +62,7 @@ public final class LoadoutData
 	 * True for ornament/locked/degraded variants of a base item with the
 	 * same stats - never suggested; the base version stands in for them.
 	 */
-	public boolean isVariant(int itemId)
-	{
+	public boolean isVariant(int itemId) {
 		return variantToBase.containsKey(itemId);
 	}
 
@@ -75,14 +70,11 @@ public final class LoadoutData
 	 * Owned quantities with every variant also credited to its base item,
 	 * so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
 	 */
-	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned)
-	{
+	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned) {
 		Map<Integer, Integer> result = new HashMap<>(owned);
-		for (Map.Entry<Integer, Integer> entry : owned.entrySet())
-		{
+		for (Map.Entry<Integer, Integer> entry : owned.entrySet()) {
 			Integer base = variantToBase.get(entry.getKey());
-			if (base != null)
-			{
+			if (base != null) {
 				result.merge(base, entry.getValue(), Integer::sum);
 			}
 		}
@@ -100,38 +92,29 @@ public final class LoadoutData
 	 * Wardens' "p2 phase 2" (ISS-01M5HKWBZNJF0V8ZD58FH9XS5B). */
 	private static final Map<String, String> VERSION_TERMS = new HashMap<>();
 
-	static
-	{
+	static {
 		com.google.gson.JsonObject aliases = JsonResources.objectOrThrow("search_aliases.json");
 		JsonResources.stringMap(aliases, "aliases", SEARCH_ALIASES);
 		JsonResources.stringMap(aliases, "version_terms", VERSION_TERMS);
 	}
 
-	public List<MonsterStats> searchMonsters(String query, int limit)
-	{
+	public List<MonsterStats> searchMonsters(String query, int limit) {
 		String text = query == null ? "" : MonsterStats.normalizeQuery(query.trim());
 		text = SEARCH_ALIASES.getOrDefault(text, text);
-		if (text.isEmpty())
-		{
+		if (text.isEmpty()) {
 			return List.of();
 		}
 
 		ArrayList<MonsterStats> exact = new ArrayList<>();
 		ArrayList<MonsterStats> prefix = new ArrayList<>();
 		ArrayList<MonsterStats> contains = new ArrayList<>();
-		for (MonsterStats monster : monsters)
-		{
+		for (MonsterStats monster : monsters) {
 			String name = MonsterStats.normalizeQuery(monster.getName());
-			if (name.equals(text) || String.valueOf(monster.getId()).equals(text))
-			{
+			if (name.equals(text) || String.valueOf(monster.getId()).equals(text)) {
 				exact.add(monster);
-			}
-			else if (name.startsWith(text))
-			{
+			} else if (name.startsWith(text)) {
 				prefix.add(monster);
-			}
-			else if (monster.searchText().contains(text) || wordsMatch(text, monster))
-			{
+			} else if (monster.searchText().contains(text) || wordsMatch(text, monster)) {
 				contains.add(monster);
 			}
 		}
@@ -161,29 +144,23 @@ public final class LoadoutData
 	 * version terms, a trailing "s" forgiven - "tumeken warden" ("tumekens
 	 * warden"), "wardens", "elidinis active", "warden p2" (Andrew 2026-10-22:
 	 * the phase-2 Warden was unsearchable without "toa"). */
-	private static boolean wordsMatch(String text, MonsterStats monster)
-	{
+	private static boolean wordsMatch(String text, MonsterStats monster) {
 		String terms = VERSION_TERMS.get(MonsterStats.normalizeQuery(monster.getName())
 			+ "|" + MonsterStats.normalizeQuery(monster.getVersion()));
 		String[] words = (monster.searchText() + (terms == null ? "" : " " + terms)).split(" +");
-		for (String typed : text.split(" +"))
-		{
-			if (typed.isEmpty())
-			{
+		for (String typed : text.split(" +")) {
+			if (typed.isEmpty()) {
 				continue;
 			}
 			boolean found = false;
-			for (String word : words)
-			{
+			for (String word : words) {
 				if (word.startsWith(typed)
-					|| typed.length() > 2 && typed.endsWith("s") && word.equals(typed.substring(0, typed.length() - 1)))
-				{
+					|| typed.length() > 2 && typed.endsWith("s") && word.equals(typed.substring(0, typed.length() - 1))) {
 					found = true;
 					break;
 				}
 			}
-			if (!found)
-			{
+			if (!found) {
 				return false;
 			}
 		}
@@ -191,24 +168,19 @@ public final class LoadoutData
 	}
 
 	/** Lower = a better default for a bare-name search. */
-	private static int versionTier(String version)
-	{
-		if (version == null || version.isEmpty())
-		{
+	private static int versionTier(String version) {
+		if (version == null || version.isEmpty()) {
 			return 1;
 		}
 		String v = Names.lower(version);
-		if (v.contains("post-quest"))
-		{
+		if (v.contains("post-quest")) {
 			return 0;   // the everyday fight
 		}
-		if (v.contains("normal") || v.contains("serpentine"))
-		{
+		if (v.contains("normal") || v.contains("serpentine")) {
 			return 1;   // normal mode / Zulrah's spawn form
 		}
 		if (v.contains("awakened") || v.contains("enraged") || v.contains("entry mode")
-			|| v.contains("deep delve") || v.contains("quest"))
-		{
+			|| v.contains("deep delve") || v.contains("quest")) {
 			return 3;   // scaled/hard variants and quest-only rows: never the default
 		}
 		// "Hard mode" stays neutral (tier 2): where a true Normal row exists it
@@ -218,12 +190,9 @@ public final class LoadoutData
 		return 2;
 	}
 
-	private static <T> void addLimited(List<T> target, List<T> source, int limit)
-	{
-		for (T entry : source)
-		{
-			if (target.size() >= limit)
-			{
+	private static <T> void addLimited(List<T> target, List<T> source, int limit) {
+		for (T entry : source) {
+			if (target.size() >= limit) {
 				return;
 			}
 			target.add(entry);
@@ -235,29 +204,24 @@ public final class LoadoutData
 	 * base plus every variant that canonicalizes to it - so a bank
 	 * highlight for "Abyssal whip" also lights the (or) version.
 	 */
-	public Set<Integer> equivalentIds(int itemId)
-	{
+	public Set<Integer> equivalentIds(int itemId) {
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
 		Set<Integer> ids = new HashSet<>(List.of(itemId, base));
-		variantToBase.forEach((variant, b) ->
-		{
-			if (b.equals(base))
-			{
+		variantToBase.forEach((variant, b) -> {
+			if (b.equals(base)) {
 				ids.add(variant);
 			}
 		});
 		return ids;
 	}
 
-	public GearItem getGear(int id)
-	{
+	public GearItem getGear(int id) {
 		return gearById.get(id);
 	}
 
 
 	/** The corpus items for one equip slot, in getGearItems() order. */
-	public List<GearItem> getGearItems(GearSlot slot)
-	{
+	public List<GearItem> getGearItems(GearSlot slot) {
 		return gearBySlot.get(slot);
 	}
 

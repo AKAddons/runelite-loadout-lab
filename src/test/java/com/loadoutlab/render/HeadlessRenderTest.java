@@ -35,8 +35,7 @@ import static org.mockito.Mockito.mock;
  * no sprites), tooltips (assembled on hover, never in the panel), and sub-pixel
  * drift (the tree cannot see a 3px move).
  */
-class HeadlessRenderTest
-{
+class HeadlessRenderTest {
 	private static final String BASELINE = "structure-baseline.txt";
 	private static final java.io.File SHOTS = new java.io.File("build/render-shots");
 
@@ -57,15 +56,13 @@ class HeadlessRenderTest
 		new Variant("narrow", 200, false, false),
 	};
 
-	private static final class Variant
-	{
+	private static final class Variant {
 		final String name;
 		final int width;
 		final boolean bis;
 		final boolean gated;
 
-		Variant(String name, int width, boolean bis, boolean gated)
-		{
+		Variant(String name, int width, boolean bis, boolean gated) {
 			this.name = name;
 			this.width = width;
 			this.bis = bis;
@@ -74,24 +71,18 @@ class HeadlessRenderTest
 	}
 
 	/** The modelGolden scenarios: "##### name" lines then a page json. */
-	private static Map<String, Map<String, Object>> scenarios() throws Exception
-	{
+	private static Map<String, Map<String, Object>> scenarios() throws Exception {
 		Map<String, Map<String, Object>> out = new LinkedHashMap<>();
-		try (java.io.InputStream in = HeadlessRenderTest.class.getResourceAsStream("pages.txt"))
-		{
+		try (java.io.InputStream in = HeadlessRenderTest.class.getResourceAsStream("pages.txt")) {
 			assertNotNull(in, "pages.txt fixture missing");
 			List<String> lines = new java.io.BufferedReader(new java.io.InputStreamReader(
 				in, java.nio.charset.StandardCharsets.UTF_8)).lines()
 				.collect(java.util.stream.Collectors.toList());
 			String name = null;
-			for (String line : lines)
-			{
-				if (line.startsWith("#####"))
-				{
+			for (String line : lines) {
+				if (line.startsWith("#####")) {
 					name = line.substring(5).trim();
-				}
-				else if (!line.isBlank() && name != null)
-				{
+				} else if (!line.isBlank() && name != null) {
 					out.put(name, new com.google.gson.Gson().fromJson(line, Map.class));
 					name = null;
 				}
@@ -105,8 +96,7 @@ class HeadlessRenderTest
 	 * ItemManager hands back without a null guard - safe in the live
 	 * client, which always yields one, but a plain mock returns null
 	 * and NPEs at ResultCards.mobCard. */
-	private static ResultCards cards()
-	{
+	private static ResultCards cards() {
 		return new ResultCards(
 			mock(ItemManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
 			mock(SpriteManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
@@ -115,10 +105,8 @@ class HeadlessRenderTest
 
 	/** The BiS side is a page parameter, not a different model. */
 	@SuppressWarnings("unchecked")
-	private static void selectBis(Map<String, Object> page)
-	{
-		for (Object entry : (List<Object>) page.get("entries"))
-		{
+	private static void selectBis(Map<String, Object> page) {
+		for (Object entry : (List<Object>) page.get("entries")) {
 			((Map<String, Object>) entry).put("params",
 				new LinkedHashMap<>(Map.of("viewingBis", true, "lensIndex", 0.0)));
 		}
@@ -126,20 +114,17 @@ class HeadlessRenderTest
 
 	/** Compose exactly as the live surface does (RenderSurface:1028 then
 	 * :1040): the roster list above, the lens-selected card below. */
-	private static JPanel compose(Map<String, Object> page, int width)
-	{
+	private static JPanel compose(Map<String, Object> page, int width) {
 		ResultCards cards = cards();
 		JPanel panel = new JPanel();
 		panel.setLayout(new javax.swing.BoxLayout(panel, javax.swing.BoxLayout.Y_AXIS));
 		panel.setBackground(net.runelite.client.ui.ColorScheme.DARK_GRAY_COLOR);
 		JPanel roster = cards.renderRoster(page);
-		if (roster != null)
-		{
+		if (roster != null) {
 			panel.add(roster);
 		}
 		JPanel card = cards.render(page);
-		if (card != null && card.getComponentCount() > 0)
-		{
+		if (card != null && card.getComponentCount() > 0) {
 			panel.add(card);
 		}
 		assertTrue(panel.getComponentCount() > 0, "nothing rendered for this page");
@@ -151,27 +136,21 @@ class HeadlessRenderTest
 
 	/** Every (scenario, variant) rendered once: structure text, keyed. */
 	private static Map<String, String> renderAll(List<BufferedImage> shots, List<String> labels)
-		throws Exception
-	{
+		throws Exception {
 		Map<String, String> structures = new LinkedHashMap<>();
-		for (Variant variant : VARIANTS)
-		{
-			for (Map.Entry<String, Map<String, Object>> scenario : scenarios().entrySet())
-			{
+		for (Variant variant : VARIANTS) {
+			for (Map.Entry<String, Map<String, Object>> scenario : scenarios().entrySet()) {
 				Map<String, Object> page = scenario.getValue();
-				if (variant.bis)
-				{
+				if (variant.bis) {
 					selectBis(page);
 				}
 				JPanel panel = compose(page, variant.width);
 				String key = scenario.getKey() + " [" + variant.name + "]";
-				if (variant.gated)
-				{
+				if (variant.gated) {
 					structures.put(key, structure(panel));
 				}
 
-				if (shots != null)
-				{
+				if (shots != null) {
 					BufferedImage image = new BufferedImage(variant.width,
 						panel.getHeight(), BufferedImage.TYPE_INT_ARGB);
 					java.awt.Graphics2D g = image.createGraphics();
@@ -193,25 +172,21 @@ class HeadlessRenderTest
 
 	@Test
 	@DisplayName("the rendered component tree matches the committed baseline")
-	void treeMatchesBaseline() throws Exception
-	{
+	void treeMatchesBaseline() throws Exception {
 		String actual = render(renderAll(null, null));
 		String expected;
-		try (java.io.InputStream in = HeadlessRenderTest.class.getResourceAsStream(BASELINE))
-		{
+		try (java.io.InputStream in = HeadlessRenderTest.class.getResourceAsStream(BASELINE)) {
 			expected = in == null ? null : new String(in.readAllBytes(),
 				java.nio.charset.StandardCharsets.UTF_8);
 		}
-		if (expected == null)
-		{
+		if (expected == null) {
 			SHOTS.mkdirs();
 			java.nio.file.Files.write(new java.io.File(SHOTS, BASELINE).toPath(),
 				actual.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 			fail("no baseline committed; one was generated at build/render-shots/"
 				+ BASELINE + " - review it, then copy it into src/test/resources");
 		}
-		if (!expected.equals(actual))
-		{
+		if (!expected.equals(actual)) {
 			SHOTS.mkdirs();
 			java.nio.file.Files.write(new java.io.File(SHOTS, "structure-actual.txt").toPath(),
 				actual.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -223,8 +198,7 @@ class HeadlessRenderTest
 
 	@Test
 	@DisplayName("every scenario and view paints, and lands in a contact sheet")
-	void everyViewPaints() throws Exception
-	{
+	void everyViewPaints() throws Exception {
 		List<BufferedImage> shots = new ArrayList<>();
 		List<String> labels = new ArrayList<>();
 		renderAll(shots, labels);
@@ -233,21 +207,17 @@ class HeadlessRenderTest
 	}
 
 	/** Which scenario moved, so the failure names the panel to look at. */
-	private static String firstDifference(String expected, String actual)
-	{
+	private static String firstDifference(String expected, String actual) {
 		String[] want = expected.split("\n");
 		String[] got = actual.split("\n");
 		String section = "?";
-		for (int i = 0; i < Math.max(want.length, got.length); i++)
-		{
+		for (int i = 0; i < Math.max(want.length, got.length); i++) {
 			String w = i < want.length ? want[i] : "<end>";
 			String g = i < got.length ? got[i] : "<end>";
-			if (w.startsWith("== "))
-			{
+			if (w.startsWith("== ")) {
 				section = w.substring(3);
 			}
-			if (!w.equals(g))
-			{
+			if (!w.equals(g)) {
 				return "first change in [" + section + "] line " + (i + 1)
 					+ "\n  expected: " + w.trim() + "\n  actual:   " + g.trim();
 			}
@@ -255,11 +225,9 @@ class HeadlessRenderTest
 		return "(no line differs; whitespace only)";
 	}
 
-	private static String render(Map<String, String> structures)
-	{
+	private static String render(Map<String, String> structures) {
 		StringBuilder out = new StringBuilder();
-		for (Map.Entry<String, String> e : structures.entrySet())
-		{
+		for (Map.Entry<String, String> e : structures.entrySet()) {
 			out.append("== ").append(e.getKey()).append('\n').append(e.getValue());
 		}
 		return out.toString();
@@ -271,53 +239,41 @@ class HeadlessRenderTest
 	 * machine, and baking that in would make this fail everywhere but the
 	 * machine that wrote it.
 	 */
-	private static String structure(java.awt.Component component)
-	{
+	private static String structure(java.awt.Component component) {
 		StringBuilder out = new StringBuilder();
 		walk(component, 0, out);
 		return out.toString();
 	}
 
-	private static void walk(java.awt.Component component, int depth, StringBuilder out)
-	{
-		for (int i = 0; i < depth; i++)
-		{
+	private static void walk(java.awt.Component component, int depth, StringBuilder out) {
+		for (int i = 0; i < depth; i++) {
 			out.append("  ");
 		}
 		out.append(component.getClass().getSimpleName());
 		String text = null;
-		if (component instanceof javax.swing.JLabel)
-		{
+		if (component instanceof javax.swing.JLabel) {
 			text = ((javax.swing.JLabel) component).getText();
-		}
-		else if (component instanceof javax.swing.AbstractButton)
-		{
+		} else if (component instanceof javax.swing.AbstractButton) {
 			text = ((javax.swing.AbstractButton) component).getText();
 		}
-		if (text != null && !text.isEmpty())
-		{
+		if (text != null && !text.isEmpty()) {
 			out.append(" \"").append(text.replace('\n', ' ')).append('"');
 		}
 		// Tooltips ARE in the tree: setToolTipText runs at build time, not
 		// on hover. Snapshotting them is what gives REQ-007's surface - the
 		// tooltip kit - a test that can actually go red.
-		if (component instanceof javax.swing.JComponent)
-		{
+		if (component instanceof javax.swing.JComponent) {
 			String hover = ((javax.swing.JComponent) component).getToolTipText();
-			if (hover != null && !hover.isEmpty())
-			{
+			if (hover != null && !hover.isEmpty()) {
 				out.append(" tip=").append(hover.replace('\n', ' '));
 			}
 		}
-		if (!component.isVisible())
-		{
+		if (!component.isVisible()) {
 			out.append(" (hidden)");
 		}
 		out.append('\n');
-		if (component instanceof java.awt.Container)
-		{
-			for (java.awt.Component child : ((java.awt.Container) component).getComponents())
-			{
+		if (component instanceof java.awt.Container) {
+			for (java.awt.Component child : ((java.awt.Container) component).getComponents()) {
 				walk(child, depth + 1, out);
 			}
 		}
@@ -325,13 +281,11 @@ class HeadlessRenderTest
 
 	/** One image to scan instead of one in-client session per view. */
 	private static void contactSheet(List<BufferedImage> shots, List<String> names)
-		throws Exception
-	{
+		throws Exception {
 		int gap = 8;
 		int tall = 0;
 		int wide = gap;
-		for (BufferedImage shot : shots)
-		{
+		for (BufferedImage shot : shots) {
 			tall = Math.max(tall, shot.getHeight());
 			wide += shot.getWidth() + gap;
 		}
@@ -341,8 +295,7 @@ class HeadlessRenderTest
 		g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
 		g.setColor(java.awt.Color.LIGHT_GRAY);
 		int x = gap;
-		for (int i = 0; i < shots.size(); i++)
-		{
+		for (int i = 0; i < shots.size(); i++) {
 			g.drawImage(shots.get(i), x, 20, null);
 			g.drawString(names.get(i), x, 14);
 			x += shots.get(i).getWidth() + gap;
@@ -352,27 +305,20 @@ class HeadlessRenderTest
 	}
 
 	/** Swing only lays out REALIZED containers; walk it ourselves. */
-	private static void layoutDeep(java.awt.Container container)
-	{
+	private static void layoutDeep(java.awt.Container container) {
 		container.doLayout();
-		for (java.awt.Component child : container.getComponents())
-		{
-			if (child instanceof java.awt.Container)
-			{
+		for (java.awt.Component child : container.getComponents()) {
+			if (child instanceof java.awt.Container) {
 				layoutDeep((java.awt.Container) child);
 			}
 		}
 	}
 
-	private static int nonBlank(BufferedImage image)
-	{
+	private static int nonBlank(BufferedImage image) {
 		int count = 0;
-		for (int x = 0; x < image.getWidth(); x++)
-		{
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				if ((image.getRGB(x, y) >>> 24) != 0)
-				{
+		for (int x = 0; x < image.getWidth(); x++) {
+			for (int y = 0; y < image.getHeight(); y++) {
+				if ((image.getRGB(x, y) >>> 24) != 0) {
 					count++;
 				}
 			}

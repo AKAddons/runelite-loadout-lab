@@ -31,8 +31,7 @@ import java.util.Set;
  * must go back to final (see DECISIONS.md).
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class OptimizationRequest implements Cloneable
-{
+public final class OptimizationRequest implements Cloneable {
 	@Getter @With
 	private MonsterStats monster;
 	@Getter @With
@@ -134,8 +133,7 @@ public final class OptimizationRequest implements Cloneable
 		boolean onSlayerTask,
 		OwnedItems ownedItems,
 		RequirementProfile requirementProfile,
-		int resultLimit)
-	{
+		int resultLimit) {
 		this.monster = monster;
 		this.style = style;
 		this.levels = levels;
@@ -156,14 +154,10 @@ public final class OptimizationRequest implements Cloneable
 	 * at once, the helper overwrites the one it changes, and the fresh
 	 * instance is what escapes. Adding a field costs nothing here.
 	 */
-	private OptimizationRequest copy()
-	{
-		try
-		{
+	private OptimizationRequest copy() {
+		try {
 			return (OptimizationRequest) super.clone();
-		}
-		catch (CloneNotSupportedException e)
-		{
+		} catch (CloneNotSupportedException e) {
 			// Unreachable: the class implements Cloneable.
 			throw new AssertionError(e);
 		}
@@ -173,46 +167,39 @@ public final class OptimizationRequest implements Cloneable
 	 * the panel means "no constraint", never a null field). Both public
 	 * constructors already set these non-null, so the withers are the only
 	 * door a null can come through. */
-	private static <T> Set<T> orEmpty(Set<T> set)
-	{
+	private static <T> Set<T> orEmpty(Set<T> set) {
 		return set == null ? Set.of() : set;
 	}
 
-	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids)
-	{
+	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids) {
 		OptimizationRequest c = copy();
 		c.protectOnlyItems = orEmpty(ids);
 		return c;
 	}
 
-	public boolean isExcluded(int itemId)
-	{
+	public boolean isExcluded(int itemId) {
 		return excludedItems.contains(itemId);
 	}
 
-	public OptimizationRequest withExcludedItems(Set<Integer> excluded)
-	{
+	public OptimizationRequest withExcludedItems(Set<Integer> excluded) {
 		OptimizationRequest c = copy();
 		c.excludedItems = orEmpty(excluded);
 		return c;
 	}
 
-	public OptimizationRequest withSpellbookLock(String spellbook)
-	{
+	public OptimizationRequest withSpellbookLock(String spellbook) {
 		OptimizationRequest c = copy();
 		c.spellbookLock = spellbook == null ? "" : spellbook;
 		return c;
 	}
 
-	public OptimizationRequest withMultiStack(int multiStack)
-	{
+	public OptimizationRequest withMultiStack(int multiStack) {
 		OptimizationRequest c = copy();
 		c.multiStack = Math.max(1, multiStack);
 		return c;
 	}
 
-	public boolean isRiskConstrained()
-	{
+	public boolean isRiskConstrained() {
 		return maxTradeables >= 0;
 	}
 
@@ -227,50 +214,42 @@ public final class OptimizationRequest implements Cloneable
 	 */
 	public static final int DEFAULT_RISK_BUDGET_GP = 75_000;
 
-	public OptimizationRequest withWaivers(Set<String> waivers)
-	{
+	public OptimizationRequest withWaivers(Set<String> waivers) {
 		OptimizationRequest c = copy();
 		c.waivers = waivers == null ? Set.of() : waivers;
 		return c;
 	}
 
-	public boolean isDream(int itemId)
-	{
+	public boolean isDream(int itemId) {
 		return dreamItems.contains(itemId);
 	}
 
-	public OptimizationRequest withDreamItems(Set<Integer> dreamItems)
-	{
+	public OptimizationRequest withDreamItems(Set<Integer> dreamItems) {
 		OptimizationRequest c = copy();
 		c.dreamItems = orEmpty(dreamItems);
 		return c;
 	}
 
 	/** The pinned item id for this slot, or null when unpinned. */
-	public Integer pinnedFor(GearSlot slot)
-	{
+	public Integer pinnedFor(GearSlot slot) {
 		return pinnedItems.get(slot);
 	}
 
-	public boolean isPinned(int itemId)
-	{
+	public boolean isPinned(int itemId) {
 		return pinnedItems.containsValue(itemId);
 	}
 
-	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems)
-	{
+	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems) {
 		OptimizationRequest c = copy();
 		c.pinnedItems = pinnedItems == null ? Map.of() : pinnedItems;
 		return c;
 	}
 
-	public boolean isAutoSpell()
-	{
+	public boolean isAutoSpell() {
 		return spell == null;
 	}
 
-	public OptimizationRequest withSlayerTask(boolean onSlayerTask)
-	{
+	public OptimizationRequest withSlayerTask(boolean onSlayerTask) {
 		OptimizationRequest c = copy();
 		c.onSlayerTask = onSlayerTask;
 		return c;

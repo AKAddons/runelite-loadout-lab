@@ -9,8 +9,7 @@ import java.util.Set;
 
 import static com.loadoutlab.data.JsonResources.*;
 
-public final class DataService
-{
+public final class DataService {
 	private static final String GEAR_RESOURCE = "gear_prices.json.gz";
 	private static final String REQUIREMENTS_RESOURCE = "equipment_requirements.json.gz";
 	private static final String MONSTER_RESOURCE = "monsters.json.gz";
@@ -28,8 +27,7 @@ public final class DataService
 	private static final List<List<String>> QUEST_TERMS = new ArrayList<>();
 	private static final List<String> QUEST_NAMES = new ArrayList<>();
 
-	static
-	{
+	static {
 		// Fail LOUD, unlike the fail-soft tables elsewhere. An empty table here
 		// would silently pin every spell to level 1 and drop every quest
 		// requirement - that changes DPS and gear recommendations with no
@@ -38,8 +36,7 @@ public final class DataService
 		stringIntMap(rules, "spellLevels", SPELL_LEVELS);
 		strings(rules, "slayerContains", SLAYER_CONTAINS);
 		strings(rules, "slayerStartsWith", SLAYER_STARTS_WITH);
-		for (JsonElement rule : rules.getAsJsonArray("questRules"))
-		{
+		for (JsonElement rule : rules.getAsJsonArray("questRules")) {
 			JsonObject row = rule.getAsJsonObject();
 			List<String> terms = new ArrayList<>();
 			strings(row, "terms", terms);
@@ -47,14 +44,12 @@ public final class DataService
 			QUEST_NAMES.add(row.get("quest").getAsString());
 		}
 		if (SPELL_LEVELS.isEmpty() || SLAYER_CONTAINS.isEmpty()
-			|| SLAYER_STARTS_WITH.isEmpty() || QUEST_TERMS.isEmpty())
-		{
+			|| SLAYER_STARTS_WITH.isEmpty() || QUEST_TERMS.isEmpty()) {
 			throw new IllegalStateException("Empty table in " + NAME_RULES_RESOURCE);
 		}
 	}
 
-	public LoadoutData load()
-	{
+	public LoadoutData load() {
 		List<GearItem> gear = loadGear();
 		List<MonsterStats> monsters = normalizeQuestVersions(loadMonsters());
 		List<SpellStats> spells = loadSpells();
@@ -64,40 +59,32 @@ public final class DataService
 	}
 
 	/** Variant id -> base id (ornament/locked/degraded, identical stats). */
-	private Map<Integer, Integer> loadAliases()
-	{
+	private Map<Integer, Integer> loadAliases() {
 		Map<Integer, Integer> aliases = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet())
-		{
+		for (Map.Entry<String, JsonElement> entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet()) {
 			int variant = Integer.parseInt(entry.getKey());
 			int base = entry.getValue().getAsInt();
-			if (variant != base)
-			{
+			if (variant != base) {
 				aliases.put(variant, base);
 			}
 		}
 		return aliases;
 	}
 
-	private List<GearItem> loadGear()
-	{
+	private List<GearItem> loadGear() {
 		JsonArray rows = gz(GEAR_RESOURCE).getAsJsonArray();
 		Map<Integer, Map<String, Integer>> skillRequirements = loadSkillRequirements();
 		List<GearItem> result = new ArrayList<>(rows.size());
-		for (JsonElement element : rows)
-		{
+		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
 			GearSlot slot = GearSlot.fromJson(string(row, "slot"));
-			if (slot == null)
-			{
+			if (slot == null) {
 				continue;
 			}
-			if (isLeaguesReward(string(row, "name"), string(row, "examine")))
-			{
+			if (isLeaguesReward(string(row, "name"), string(row, "examine"))) {
 				continue;
 			}
-			if (isMinigameOnly(string(row, "name")))
-			{
+			if (isMinigameOnly(string(row, "name"))) {
 				continue;
 			}
 
@@ -132,8 +119,7 @@ public final class DataService
 	 * upgrade combinations carry real ranged/magic strength, and the
 	 * Confliction gauntlets are a 7% magic damage glove. Force them usable.
 	 */
-	private static boolean isWronglyFlaggedUsable(String name)
-	{
+	private static boolean isWronglyFlaggedUsable(String name) {
 		String n = name == null ? "" : name.toLowerCase();
 		return n.startsWith("avernic treads") || n.equals("confliction gauntlets");
 	}
@@ -149,16 +135,14 @@ public final class DataService
 	private static final List<String> LEAGUES_CONTAINS = new ArrayList<>();
 	private static final List<String> MINIGAME_ONLY = new ArrayList<>();
 
-	static
-	{
+	static {
 		JsonObject leagues = objectOrThrow("leagues_items.json");
 		strings(leagues, "prefixes", LEAGUES_PREFIXES);
 		strings(leagues, "contains", LEAGUES_CONTAINS);
 		strings(leagues, "minigameOnly", MINIGAME_ONLY);
 	}
 
-	private static boolean isLeaguesReward(String name, String examine)
-	{
+	private static boolean isLeaguesReward(String name, String examine) {
 		String n = name == null ? "" : name.toLowerCase();
 		return LEAGUES_PREFIXES.stream().anyMatch(n::startsWith)
 			|| LEAGUES_CONTAINS.stream().anyMatch(n::contains)
@@ -171,37 +155,30 @@ public final class DataService
 	 * than dragon arrows - but can only be fired at penance inside BA
 	 * (upstream best-dps flagged only two of the four non-standard).
 	 */
-	private static boolean isMinigameOnly(String name)
-	{
+	private static boolean isMinigameOnly(String name) {
 		return MINIGAME_ONLY.contains(name == null ? "" : name.toLowerCase());
 	}
 
-	private Map<Integer, Map<String, Integer>> loadSkillRequirements()
-	{
+	private Map<Integer, Map<String, Integer>> loadSkillRequirements() {
 		JsonArray rows = gz(REQUIREMENTS_RESOURCE).getAsJsonArray();
 		Map<Integer, Map<String, Integer>> result = new HashMap<>();
-		for (JsonElement element : rows)
-		{
+		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
 			JsonObject skills = object(row, "skills");
 			Map<String, Integer> levels = new LinkedHashMap<>();
-			for (Map.Entry<String, JsonElement> entry : skills.entrySet())
-			{
-				if (!entry.getValue().isJsonNull())
-				{
+			for (Map.Entry<String, JsonElement> entry : skills.entrySet()) {
+				if (!entry.getValue().isJsonNull()) {
 					levels.put(entry.getKey(), Math.max(1, entry.getValue().getAsInt()));
 				}
 			}
-			if (!levels.isEmpty())
-			{
+			if (!levels.isEmpty()) {
 				result.put(integer(row, "id", 0), levels);
 			}
 		}
 		return result;
 	}
 
-	private static GearRequirements requirementsFor(int id, String name, String version, Map<Integer, Map<String, Integer>> skillRequirements)
-	{
+	private static GearRequirements requirementsFor(int id, String name, String version, Map<Integer, Map<String, Integer>> skillRequirements) {
 		Map<String, Integer> skills = skillRequirements.getOrDefault(id, Map.of());
 		Set<String> quests = questsFor(name, version);
 		return skills.isEmpty() && quests.isEmpty() ? GearRequirements.NONE : new GearRequirements(skills, quests);
@@ -214,51 +191,41 @@ public final class DataService
 	 * Vorkath's 'Dragon Slayer II' next to 'Post-quest' - the sibling
 	 * that is not the post-quest fight). versionTier already sorts
 	 * anything containing "quest" to the bottom of a bare-name search. */
-	static List<MonsterStats> normalizeQuestVersions(List<MonsterStats> monsters)
-	{
+	static List<MonsterStats> normalizeQuestVersions(List<MonsterStats> monsters) {
 		Map<String, List<MonsterStats>> byName = new LinkedHashMap<>();
-		for (MonsterStats monster : monsters)
-		{
+		for (MonsterStats monster : monsters) {
 			byName.computeIfAbsent(monster.getNameLower(), k -> new ArrayList<>()).add(monster);
 		}
 		List<MonsterStats> out = new ArrayList<>(monsters.size());
-		for (List<MonsterStats> group : byName.values())
-		{
+		for (List<MonsterStats> group : byName.values()) {
 			boolean pairWithPostQuest = group.size() == 2 && group.stream()
 				.anyMatch(m -> Names.lower(m.getVersion()).contains("post-quest"));
-			for (MonsterStats monster : group)
-			{
+			for (MonsterStats monster : group) {
 				String version = monster.getVersion();
-				if (version == null || version.isEmpty())
-				{
+				if (version == null || version.isEmpty()) {
 					out.add(monster);
 					continue;
 				}
 				List<String> kept = new ArrayList<>();
 				boolean quest = false;
-				for (String token : version.split(",\\s*"))
-				{
-					if (token.equalsIgnoreCase("awake") || token.equalsIgnoreCase("post-quest"))
-					{
+				for (String token : version.split(",\\s*")) {
+					if (token.equalsIgnoreCase("awake") || token.equalsIgnoreCase("post-quest")) {
 						continue;
 					}
-					if (token.equalsIgnoreCase("quest"))
-					{
+					if (token.equalsIgnoreCase("quest")) {
 						quest = true;
 						continue;
 					}
 					kept.add(token);
 				}
 				if (pairWithPostQuest && !quest
-					&& !Names.lower(version).contains("post-quest"))
-				{
+					&& !Names.lower(version).contains("post-quest")) {
 					// The non-post-quest half of the pair IS the quest fight.
 					quest = true;
 					kept.clear();
 				}
 				String normalized = String.join(", ", kept);
-				if (quest)
-				{
+				if (quest) {
 					normalized = normalized.isEmpty() ? "QUEST" : normalized + ", QUEST";
 				}
 				out.add(normalized.equals(version) ? monster : monster.withVersion(normalized));
@@ -269,16 +236,14 @@ public final class DataService
 
 	/** Leagues echo bosses are seasonal, never main-game (Andrew 2026-09-03:
 	 * "should not be able to search 'echo' version in main mode"). */
-	private static boolean isEcho(JsonObject row)
-	{
+	private static boolean isEcho(JsonObject row) {
 		String name = string(row, "name");
 		// Nightmare Zone versions too (Andrew 2026-09-04: "nobody needs theory
 		// crafting for that") - they swamped a search for the Nightmare.
 		return name.contains("(Echo)") || name.contains("(Nightmare Zone)");
 	}
 
-	private List<MonsterStats> loadMonsters()
-	{
+	private List<MonsterStats> loadMonsters() {
 		JsonArray rows = gz(MONSTER_RESOURCE).getAsJsonArray();
 		// The wiki data lists one row per SPAWN - Tormented Demon (1)..(4)
 		// are four combat-identical rows. Collapse same-name rows whose
@@ -288,11 +253,9 @@ public final class DataService
 		Map<String, Set<String>> statKeysByName = new HashMap<>();
 		// Collapsed groups display the HIGHEST combat level among their spawns.
 		Map<String, Integer> maxLevelByGroup = new HashMap<>();
-		for (JsonElement element : rows)
-		{
+		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
-			if (isEcho(row))
-			{
+			if (isEcho(row)) {
 				continue;
 			}
 			String nameKey = Names.lower(string(row, "name"));
@@ -303,11 +266,9 @@ public final class DataService
 
 		Set<String> emitted = new HashSet<>();
 		List<MonsterStats> result = new ArrayList<>(rows.size());
-		for (JsonElement element : rows)
-		{
+		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
-			if (isEcho(row))
-			{
+			if (isEcho(row)) {
 				continue;
 			}
 			String nameKey = Names.lower(string(row, "name"));
@@ -316,8 +277,7 @@ public final class DataService
 			// offensive sheet (used for incoming dps) matches the combat
 			// level the label displays.
 			if (integer(row, "level", 0) != maxLevelByGroup.get(groupKey)
-				|| !emitted.add(groupKey))
-			{
+				|| !emitted.add(groupKey)) {
 				continue;
 			}
 			boolean distinctVersions = statKeysByName.get(nameKey).size() > 1;
@@ -327,10 +287,8 @@ public final class DataService
 			JsonObject weakness = object(row, "weakness");
 			List<String> attributes = new ArrayList<>();
 			JsonArray attrArray = array(row, "attributes");
-			for (JsonElement attr : attrArray)
-			{
-				if (!attr.isJsonNull())
-				{
+			for (JsonElement attr : attrArray) {
+				if (!attr.isJsonNull()) {
 					attributes.add(attr.getAsString());
 				}
 			}
@@ -341,8 +299,7 @@ public final class DataService
 			JsonObject immunities = row.has("immunities") && row.get("immunities").isJsonObject()
 				? row.getAsJsonObject("immunities") : null;
 			String burn = immunities == null ? "" : string(immunities, "burn");
-			if ("normal".equalsIgnoreCase(burn) || "strong".equalsIgnoreCase(burn))
-			{
+			if ("normal".equalsIgnoreCase(burn) || "strong".equalsIgnoreCase(burn)) {
 				attributes.add("burn_immune");
 			}
 
@@ -352,8 +309,7 @@ public final class DataService
 			// Far recommended a melee set). The corpus carries no attribute
 			// for it, so the marker rides here like burn_immune.
 			if ("Maggot King".equals(string(row, "name"))
-				&& "Far".equalsIgnoreCase(string(row, "version")))
-			{
+				&& "Far".equalsIgnoreCase(string(row, "version"))) {
 				attributes.add("immune_melee");
 			}
 
@@ -398,21 +354,16 @@ public final class DataService
 		return result;
 	}
 
-	private static List<String> styleList(JsonObject row)
-	{
+	private static List<String> styleList(JsonObject row) {
 		List<String> styles = new ArrayList<>();
-		for (JsonElement e : array(row, "style"))
-		{
-			if (e.isJsonNull())
-			{
+		for (JsonElement e : array(row, "style")) {
+			if (e.isJsonNull()) {
 				continue;
 			}
 			// "Ranged <br/> Typeless" is two styles; stray DEL characters
 			// (Araxxor, Dusk) are wiki noise.
-			for (String style : e.getAsString().replace('\u007f', ' ').split("(?i)<br\\s*/?>"))
-			{
-				if (!style.trim().isEmpty())
-				{
+			for (String style : e.getAsString().replace('\u007f', ' ').split("(?i)<br\\s*/?>")) {
+				if (!style.trim().isEmpty()) {
 					styles.add(style.trim());
 				}
 			}
@@ -421,8 +372,7 @@ public final class DataService
 	}
 
 	/** Everything the engine reads from a monster - rows agreeing on this are one entry. */
-	private static String monsterStatKey(JsonObject row)
-	{
+	private static String monsterStatKey(JsonObject row) {
 		JsonObject skills = object(row, "skills");
 		JsonObject offensive = object(row, "offensive");
 		// The Wardens' Core-ejected rows are stat-identical to their
@@ -441,24 +391,20 @@ public final class DataService
 			+ "|" + mechanicVersion;
 	}
 
-	private List<SpellStats> loadSpells()
-	{
+	private List<SpellStats> loadSpells() {
 		JsonArray rows = gz(SPELL_RESOURCE).getAsJsonArray();
 		List<SpellStats> result = new ArrayList<>(rows.size());
-		for (JsonElement element : rows)
-		{
+		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
 			int maxHit = integer(row, "max_hit", 0);
 			String name = string(row, "name");
-			if (maxHit <= 0 && !"Magic Dart".equals(name))
-			{
+			if (maxHit <= 0 && !"Magic Dart".equals(name)) {
 				continue;
 			}
 			// Effect-only spells (leagues echoes, boss mechanics - e.g.
 			// Flames of Cerberus) are flagged unselectable in the wiki data;
 			// a player can never cast them, so they never enter the corpus.
-			if (bool(row, "unselectable", false))
-			{
+			if (bool(row, "unselectable", false)) {
 				continue;
 			}
 			result.add(new SpellStats(
@@ -473,15 +419,12 @@ public final class DataService
 	}
 
 	/** Casting level for a spell name; unknown names fall back to 1. */
-	private static int spellLevel(String name)
-	{
+	private static int spellLevel(String name) {
 		return SPELL_LEVELS.getOrDefault(name == null ? "" : name, 1);
 	}
 
-	private static StatBlock parseOffensive(JsonObject object)
-	{
-		if (object == null)
-		{
+	private static StatBlock parseOffensive(JsonObject object) {
+		if (object == null) {
 			return StatBlock.ZERO;
 		}
 		int[] c = combat(object);
@@ -492,10 +435,8 @@ public final class DataService
 			0);
 	}
 
-	private static StatBlock parseDefensive(JsonObject object)
-	{
-		if (object == null)
-		{
+	private static StatBlock parseDefensive(JsonObject object) {
+		if (object == null) {
 			return StatBlock.ZERO;
 		}
 		int[] c = combat(object);
@@ -506,10 +447,8 @@ public final class DataService
 			integer(object, "heavy", 0));
 	}
 
-	private static MonsterDefences parseMonsterDefences(JsonObject object)
-	{
-		if (object == null)
-		{
+	private static MonsterDefences parseMonsterDefences(JsonObject object) {
+		if (object == null) {
 			return MonsterDefences.ZERO;
 		}
 		int[] c = combat(object);
@@ -520,10 +459,8 @@ public final class DataService
 			integer(object, "heavy", 0));
 	}
 
-	private static StatBlock parseBonuses(JsonObject object)
-	{
-		if (object == null)
-		{
+	private static StatBlock parseBonuses(JsonObject object) {
+		if (object == null) {
 			return StatBlock.ZERO;
 		}
 		return new StatBlock(
@@ -539,14 +476,12 @@ public final class DataService
 	}
 
 	/** stab, slash, crush, magic, ranged - the five every stat block shares. */
-	private static int[] combat(JsonObject object)
-	{
+	private static int[] combat(JsonObject object) {
 		return new int[]{integer(object, "stab", 0), integer(object, "slash", 0),
 			integer(object, "crush", 0), integer(object, "magic", 0), integer(object, "ranged", 0)};
 	}
 
-	private static boolean knownSlayerMonster(String name)
-	{
+	private static boolean knownSlayerMonster(String name) {
 		String normalized = name == null ? "" : Names.lower(name);
 		return SLAYER_CONTAINS.stream().anyMatch(normalized::contains)
 			|| SLAYER_STARTS_WITH.stream().anyMatch(normalized::startsWith);
@@ -557,17 +492,13 @@ public final class DataService
 	 * order. LinkedHashSet, so a quest named by two rules keeps the position of
 	 * its first match - the same behaviour the old requireIf chain had.
 	 */
-	private static Set<String> questsFor(String name, String version)
-	{
+	private static Set<String> questsFor(String name, String version) {
 		String item = ((name == null ? "" : name) + " " + (version == null ? "" : version))
 			.toLowerCase(Locale.ROOT);
 		Set<String> quests = new LinkedHashSet<>();
-		for (int i = 0; i < QUEST_TERMS.size(); i++)
-		{
-			for (String term : QUEST_TERMS.get(i))
-			{
-				if (item.contains(term))
-				{
+		for (int i = 0; i < QUEST_TERMS.size(); i++) {
+			for (String term : QUEST_TERMS.get(i)) {
+				if (item.contains(term)) {
 					quests.add(QUEST_NAMES.get(i));
 					break;
 				}

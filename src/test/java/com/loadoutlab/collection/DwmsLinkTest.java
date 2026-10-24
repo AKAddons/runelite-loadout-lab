@@ -8,11 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DwmsLinkTest
-{
+class DwmsLinkTest {
 	/** A well-formed version-1 response payload, as DWMS builds it. */
-	private static Map<String, Object> response(Object storages)
-	{
+	private static Map<String, Object> response(Object storages) {
 		Map<String, Object> data = new HashMap<>();
 		data.put("source", "Dude, Where's My Stuff?");
 		data.put("target", "Loadout Lab");
@@ -21,8 +19,7 @@ class DwmsLinkTest
 		return data;
 	}
 
-	private static Map<String, Object> storage(String category, String name, Object items)
-	{
+	private static Map<String, Object> storage(String category, String name, Object items) {
 		Map<String, Object> data = new HashMap<>();
 		data.put("category", category);
 		data.put("name", name);
@@ -31,8 +28,7 @@ class DwmsLinkTest
 		return data;
 	}
 
-	private static Map<String, Object> item(Object id, Object quantity)
-	{
+	private static Map<String, Object> item(Object id, Object quantity) {
 		Map<String, Object> data = new HashMap<>();
 		data.put("id", id);
 		data.put("quantity", quantity);
@@ -41,8 +37,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("families group items by response category for the location hints")
-	void familiesGroupByCategory()
-	{
+	void familiesGroupByCategory() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of(
 			storage("stash", "Hosidius STASH", List.of(item(11864, 1))),
@@ -58,8 +53,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("a well-formed response goes live, merging duplicate items across storages")
-	void wellFormedResponseParses()
-	{
+	void wellFormedResponseParses() {
 		DwmsLink link = new DwmsLink();
 		assertFalse(link.isLive(), "not live before the first response");
 
@@ -75,8 +69,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("responses addressed to another plugin are ignored")
-	void otherTargetsAreIgnored()
-	{
+	void otherTargetsAreIgnored() {
 		DwmsLink link = new DwmsLink();
 		Map<String, Object> data = response(List.of(storage("stash", "STASH Units",
 			List.of(item(4151, 1L)))));
@@ -89,8 +82,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("an unknown contract version is rejected, leaving the config-read fallback in charge")
-	void unknownVersionIsRejected()
-	{
+	void unknownVersionIsRejected() {
 		DwmsLink link = new DwmsLink();
 		Map<String, Object> data = response(List.of(storage("stash", "STASH Units",
 			List.of(item(4151, 1L)))));
@@ -102,8 +94,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("malformed payloads and entries are dropped, never guessed at")
-	void defensiveParsingDropsMalformedEntries()
-	{
+	void defensiveParsingDropsMalformedEntries() {
 		DwmsLink link = new DwmsLink();
 		assertFalse(link.accept(null));
 		assertFalse(link.accept(Map.of()));
@@ -132,8 +123,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("quantities beyond int range clamp instead of overflowing")
-	void hugeQuantitiesClamp()
-	{
+	void hugeQuantitiesClamp() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of(
 			storage("coins", "Coffer", List.of(item(995, 999_999_999_999L)))))));
@@ -142,8 +132,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("an empty response still counts as live - DWMS answered, it just tracks nothing")
-	void emptyResponseIsLive()
-	{
+	void emptyResponseIsLive() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of())));
 		assertTrue(link.isLive());
@@ -152,8 +141,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("a newer response replaces the previous snapshot wholesale")
-	void newerResponseReplaces()
-	{
+	void newerResponseReplaces() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of(
 			storage("stash", "STASH Units", List.of(item(4151, 1L)))))));
@@ -165,8 +153,7 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("reset (identity change) drops the snapshot and live status")
-	void resetClears()
-	{
+	void resetClears() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of(
 			storage("stash", "STASH Units", List.of(item(4151, 1L)))))));
@@ -180,15 +167,13 @@ class DwmsLinkTest
 
 	@Test
 	@DisplayName("the request payload carries our display name as the source")
-	void requestCarriesSource()
-	{
+	void requestCarriesSource() {
 		assertEquals("Loadout Lab", DwmsLink.request().get("source"));
 	}
 
 	@Test
 	@DisplayName("merge folds the live items into an owned map, summing quantities")
-	void mergeSumsIntoOwned()
-	{
+	void mergeSumsIntoOwned() {
 		DwmsLink link = new DwmsLink();
 		assertTrue(link.accept(response(List.of(
 			storage("stash", "STASH Units", List.of(item(4151, 1L)))))));

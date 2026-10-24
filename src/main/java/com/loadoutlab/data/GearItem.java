@@ -10,8 +10,7 @@ import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
 
 @Getter
-public final class GearItem
-{
+public final class GearItem {
 	/** The name vocabulary behind poweredStaff, the demonbane class and
 	 * isWeaponFor lives in gear_words.json (hub token cap); the lists are
 	 * walked once per item at load, or once per pool build. */
@@ -21,8 +20,7 @@ public final class GearItem
 	private static final List<String> MAGIC_WEAPON = new ArrayList<>();
 	private static final List<String> NOT_MELEE = new ArrayList<>();
 
-	static
-	{
+	static {
 		JsonObject words = JsonResources.objectOrThrow("gear_words.json");
 		JsonResources.strings(words, "poweredStaff", POWERED);
 		JsonResources.strings(words, "meleeDemonbane", MELEE_DEMONBANE);
@@ -74,8 +72,7 @@ public final class GearItem
 		StatBlock offensive,
 		StatBlock defensive,
 		StatBlock bonuses,
-		GearRequirements requirements)
-	{
+		GearRequirements requirements) {
 		this.id = id;
 		this.name = name == null ? "" : name;
 		this.version = version == null ? "" : version;
@@ -111,14 +108,11 @@ public final class GearItem
 			|| nameLower.startsWith("purging staff");
 	}
 
-	public boolean isWeaponFor(CombatStyle style)
-	{
-		if (slot != GearSlot.WEAPON)
-		{
+	public boolean isWeaponFor(CombatStyle style) {
+		if (slot != GearSlot.WEAPON) {
 			return false;
 		}
-		switch (style)
-		{
+		switch (style) {
 			case RANGED:
 				return RANGED_WEAPON.stream().anyMatch(categoryLower::contains)
 					|| offensive.getRanged() > 0;
@@ -131,10 +125,8 @@ public final class GearItem
 		}
 	}
 
-	public double roughScore(CombatStyle style)
-	{
-		switch (style)
-		{
+	public double roughScore(CombatStyle style) {
+		switch (style) {
 			case MELEE:
 				return Math.max(offensive.getStab(), Math.max(offensive.getSlash(), offensive.getCrush()))
 					+ bonuses.getStrength() * 2.5
@@ -151,28 +143,23 @@ public final class GearItem
 		}
 	}
 
-	public boolean isSlayerHead()
-	{
-		if (slot != GearSlot.HEAD)
-		{
+	public boolean isSlayerHead() {
+		if (slot != GearSlot.HEAD) {
 			return false;
 		}
 		return nameVersionLower.contains("black mask") || nameVersionLower.contains("slayer helmet");
 	}
 
-	public boolean isImbuedSlayerHead()
-	{
+	public boolean isImbuedSlayerHead() {
 		return isSlayerHead() && nameVersionLower.contains("(i)");
 	}
 
-	public String label()
-	{
+	public String label() {
 		return version.isEmpty() ? name : name + " (" + version + ")";
 	}
 
 	/** label() lowercased (Locale.ROOT), precomputed. */
-	public String labelLower()
-	{
+	public String labelLower() {
 		return labelLower;
 	}
 
@@ -182,25 +169,20 @@ public final class GearItem
 	 * price, so suggestion tie-breaks prefer the higher tier (field
 	 * request: always recommend dragon dagger p++ over plain).
 	 */
-	public int poisonTier()
-	{
-		if (versionLower.contains("unpoison"))
-		{
+	public int poisonTier() {
+		if (versionLower.contains("unpoison")) {
 			return 0;
 		}
-		if (versionLower.contains("poison++"))
-		{
+		if (versionLower.contains("poison++")) {
 			return 3;
 		}
-		if (versionLower.contains("poison+"))
-		{
+		if (versionLower.contains("poison+")) {
 			return 2;
 		}
 		return versionLower.contains("poison") ? 1 : 0;
 	}
 
-	public int getPriceOrZero()
-	{
+	public int getPriceOrZero() {
 		return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice);
 	}
 }

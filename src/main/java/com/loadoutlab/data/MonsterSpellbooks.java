@@ -12,20 +12,16 @@ import java.util.Map;
  * case (field report 2026-08-15). Matched by lowercase name-contains
  * so phase and form suffixes ride along.
  */
-public final class MonsterSpellbooks
-{
+public final class MonsterSpellbooks {
 	/** name-fragment -> [book, reason] */
 	private static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
 
-	static
-	{
+	static {
 		JsonObject root = JsonResources.object(
 			"monster_spellbooks.json");
-		if (root != null && root.has("byNameContains"))
-		{
+		if (root != null && root.has("byNameContains")) {
 			for (Map.Entry<String, JsonElement> e
-				: root.getAsJsonObject("byNameContains").entrySet())
-			{
+				: root.getAsJsonObject("byNameContains").entrySet()) {
 				JsonObject node = e.getValue().getAsJsonObject();
 				BY_NAME.put(Names.lower(e.getKey()), new String[]{
 					node.get("book").getAsString(), node.get("reason").getAsString(),
@@ -34,35 +30,29 @@ public final class MonsterSpellbooks
 		}
 	}
 
-	private MonsterSpellbooks()
-	{
+	private MonsterSpellbooks() {
 	}
 
 	/** The fight's required book ("ancient"...) or null. */
-	public static String bookFor(MonsterStats monster)
-	{
+	public static String bookFor(MonsterStats monster) {
 		String[] entry = lookup(monster);
 		return entry == null ? null : entry[0];
 	}
 
 	/** Why the fight wants it, or null. */
-	public static String reasonFor(MonsterStats monster)
-	{
+	public static String reasonFor(MonsterStats monster) {
 		String[] entry = lookup(monster);
 		return entry == null ? null : entry[1];
 	}
 
 	/** The utility cast the fight wants (its runes ride the trip). */
-	public static String spellFor(MonsterStats monster)
-	{
+	public static String spellFor(MonsterStats monster) {
 		String[] entry = lookup(monster);
 		return entry == null ? null : entry[2];
 	}
 
-	private static String[] lookup(MonsterStats monster)
-	{
-		if (monster == null)
-		{
+	private static String[] lookup(MonsterStats monster) {
+		if (monster == null) {
 			return null;
 		}
 		String name = Names.lower(monster.getName());

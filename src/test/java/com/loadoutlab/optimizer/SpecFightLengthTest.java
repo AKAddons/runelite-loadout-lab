@@ -25,8 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * there while a grind keeps the sustained answer. Design:
  * DES-01M5914JFX6HHTNSAP0HANN5GA.
  */
-class SpecFightLengthTest
-{
+class SpecFightLengthTest {
 	private static final int WHIP = 4151;
 	private static final int DRAGON_CLAWS = 13652;
 	private static final int CRYSTAL_HALBERD = 23987;
@@ -34,20 +33,17 @@ class SpecFightLengthTest
 	private static OptimizerService service;
 
 	@BeforeAll
-	static void load()
-	{
+	static void load() {
 		data = new DataService().load();
 		service = new OptimizerService(data);
 	}
 
 	@AfterAll
-	static void stop()
-	{
+	static void stop() {
 		service.shutdown();
 	}
 
-	private static OptimizerService.StyleResult melee(String mobName, int pinnedSpec) throws Exception
-	{
+	private static OptimizerService.StyleResult melee(String mobName, int pinnedSpec) throws Exception {
 		MonsterStats mob = data.searchMonsters(mobName, 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(WHIP, 1);
@@ -66,15 +62,13 @@ class SpecFightLengthTest
 		return out.get().get(CombatStyle.MELEE);
 	}
 
-	private static String specName(OptimizerService.StyleResult result)
-	{
+	private static String specName(OptimizerService.StyleResult result) {
 		return result.spec == null ? "none" : result.spec.getDisplayName();
 	}
 
 	@Test
 	@DisplayName("Hespori is one fight per seed: the full opening bar prices two claw specs, not a fraction")
-	void hesporiCountsTheOpeningBar() throws Exception
-	{
+	void hesporiCountsTheOpeningBar() throws Exception {
 		OptimizerService.StyleResult auto = melee("hespori", 0);
 		double claws = melee("hespori", DRAGON_CLAWS).specDpsAdded;
 		double halberd = melee("hespori", CRYSTAL_HALBERD).specDpsAdded;
@@ -93,8 +87,7 @@ class SpecFightLengthTest
 
 	@Test
 	@DisplayName("a grind keeps the sustained answer: abyssal demons still price regen only")
-	void grindIsUnchanged() throws Exception
-	{
+	void grindIsUnchanged() throws Exception {
 		OptimizerService.StyleResult auto = melee("abyssal demon", 0);
 		double claws = melee("abyssal demon", DRAGON_CLAWS).specDpsAdded;
 		double halberd = melee("abyssal demon", CRYSTAL_HALBERD).specDpsAdded;
@@ -108,8 +101,7 @@ class SpecFightLengthTest
 
 	@Test
 	@DisplayName("the energy budget adds the opening bar for a fresh-bar fight and nothing else")
-	void freshBarAddsOneHundred()
-	{
+	void freshBarAddsOneHundred() {
 		assertEquals(OptimizerService.specEnergyOverKill(60, false, 0, false) + 100,
 			OptimizerService.specEnergyOverKill(60, false, 0, true), 1e-9);
 		assertTrue(MonsterMechanics.startsWithFullBar(data.searchMonsters("hespori", 1).get(0)));

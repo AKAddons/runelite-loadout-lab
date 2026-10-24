@@ -16,12 +16,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * 2026-07-18): both hearts are tradeable and worth far more than any
  * sane risk cap - the magic assumption falls back to the potion.
  */
-class BoostSelectorTest
-{
+class BoostSelectorTest {
 	@Test
 	@DisplayName("a risk-capped wildy search downgrades the heart to a magic potion")
-	void noHeartsUnderARiskCap()
-	{
+	void noHeartsUnderARiskCap() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(27641, 1); // saturated heart
 		owned.put(3040, 1);  // magic potion(4) - the fallback must be OWNED now
@@ -34,8 +32,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("the BiS ceiling assumes divine potions for melee and ranged")
-	void ceilingPrefersDivine()
-	{
+	void ceilingPrefersDivine() {
 		assertEquals(BoostProfile.DIVINE_SUPER_COMBAT,
 			BoostSelector.ceilingFor(CombatStyle.MELEE, false));
 		assertEquals(BoostProfile.DIVINE_RANGING,
@@ -47,8 +44,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("owned divine potions are preferred over the base assumption")
-	void ownedDivinePreferred()
-	{
+	void ownedDivinePreferred() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(23691, 1); // divine super combat (2) - any dose counts
 		owned.put(23733, 1); // divine ranging (4)
@@ -64,8 +60,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("an empty bank assumes NO boost - not a potion you do not own")
-	void emptyBankAssumesNothing()
-	{
+	void emptyBankAssumesNothing() {
 		// RE-PINNED 2026-08-25. This test previously asserted SUPER_COMBAT /
 		// RANGING / MAGIC for an EMPTY bank, encoding the old "tradeables are
 		// always assumed" rule. Field report from a fresh ironman: the card
@@ -82,8 +77,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("owning the base potion still assumes it")
-	void ownedBasePotionsAreAssumed()
-	{
+	void ownedBasePotionsAreAssumed() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(12695, 1);  // super combat potion(4)
 		owned.put(2444, 1);   // ranging potion(4)
@@ -99,8 +93,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("bastion outranks ranging, battlemage outranks magic - even divine ones")
-	void bastionAndBattlemageOutrankThePlainFamily()
-	{
+	void bastionAndBattlemageOutrankThePlainFamily() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(22461, 1);  // bastion potion(4)
 		owned.put(22449, 1);  // battlemage potion(4)
@@ -123,8 +116,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("a divine bastion owner is told to bring the divine one, not the plain")
-	void divineBastionAndBattlemage()
-	{
+	void divineBastionAndBattlemage() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(24635, 1);  // divine bastion potion(4)
 		owned.put(24623, 1);  // divine battlemage potion(4)
@@ -141,8 +133,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("reachable magic never assumes MAXED or an unowned potion")
-	void reachableMagicIsHonest()
-	{
+	void reachableMagicIsHonest() {
 		// Unknown levels -> 0, never 99 (the old fallback seeded Death
 		// Charge ON for a fresh login, F2P included: field report 2026-08-27).
 		assertEquals(0, BoostSelector.reachableMagic(null, null, null));
@@ -168,8 +159,7 @@ class BoostSelectorTest
 
 	@Test
 	@DisplayName("an owned heart still beats an owned divine magic potion")
-	void heartBeatsDivineMagic()
-	{
+	void heartBeatsDivineMagic() {
 		Map<Integer, Integer> owned = new HashMap<>();
 		owned.put(27641, 1); // saturated heart
 		owned.put(23745, 1); // divine magic (4)

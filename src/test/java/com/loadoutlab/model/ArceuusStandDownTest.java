@@ -18,21 +18,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * number without the thrall fold and says why. Melee and ranged cards,
  * powered staves and Arceuus spells are untouched.
  */
-class ArceuusStandDownTest
-{
+class ArceuusStandDownTest {
 	private static final Map<String, Object> BOOKS = Map.of(
 		"Water Surge", "standard", "Ice Barrage", "ancient", "Dark Demonbane", "arceuus");
 
-	private static Map<String, Object> card(String spell)
-	{
+	private static Map<String, Object> card(String spell) {
 		Map<String, Object> card = new LinkedHashMap<>();
 		card.put("spell", spell);
 		card.put("dps", 9.56);
 		return card;
 	}
 
-	private static List<Object> page(String yoursSpell, String bisSpell)
-	{
+	private static List<Object> page(String yoursSpell, String bisSpell) {
 		Map<String, Object> magic = new LinkedHashMap<>();
 		magic.put("yours", card(yoursSpell));
 		magic.put("bis", card(bisSpell));
@@ -49,8 +46,7 @@ class ArceuusStandDownTest
 	}
 
 	@SuppressWarnings("unchecked")
-	private static String reason(List<Object> mobs, String style, String side)
-	{
+	private static String reason(List<Object> mobs, String style, String side) {
 		Map<String, Object> styles = (Map<String, Object>) ((Map<?, ?>) mobs.get(0)).get("styles");
 		Map<String, Object> card = (Map<String, Object>) ((Map<?, ?>) styles.get(style)).get(side);
 		return (String) card.get("arceuusStandDown");
@@ -58,8 +54,7 @@ class ArceuusStandDownTest
 
 	@Test
 	@DisplayName("a standard or Ancients autocast stands thralls and Death Charge down, with the book named")
-	void otherBooksStandDown()
-	{
+	void otherBooksStandDown() {
 		List<Object> mobs = page("Water Surge", "Ice Barrage");
 		CommandEngine.arceuusStandDown(mobs, BOOKS, true);
 		assertEquals("Water Surge autocasts from the standard book", reason(mobs, "magic", "yours"));
@@ -69,8 +64,7 @@ class ArceuusStandDownTest
 
 	@Test
 	@DisplayName("an Arceuus spell, a powered staff and an unknown spell keep the fold")
-	void arceuusAndStavesKeepIt()
-	{
+	void arceuusAndStavesKeepIt() {
 		List<Object> mobs = page("Dark Demonbane", null);
 		CommandEngine.arceuusStandDown(mobs, BOOKS, true);
 		assertNull(reason(mobs, "magic", "yours"));
@@ -82,8 +76,7 @@ class ArceuusStandDownTest
 
 	@Test
 	@DisplayName("with neither thralls nor Death Charge on, no card is marked")
-	void nothingWantedNothingMarked()
-	{
+	void nothingWantedNothingMarked() {
 		List<Object> mobs = page("Water Surge", "Water Surge");
 		CommandEngine.arceuusStandDown(mobs, BOOKS, false);
 		assertNull(reason(mobs, "magic", "yours"));

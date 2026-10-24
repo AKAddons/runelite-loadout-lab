@@ -19,17 +19,14 @@ import org.junit.Test;
  * re-rolls and the size bonus. Assumed: one accuracy roll (the post says
  * "rolls damage"), a defence tie is not weaker.
  */
-public class ObligatorTest
-{
-	private static MonsterStats dummy(int size, int stab, int slash, int crush)
-	{
+public class ObligatorTest {
+	private static MonsterStats dummy(int size, int stab, int slash, int crush) {
 		return new MonsterStats(-50 - size, "Obligator Dummy", "", 300, 2000, size, 150, 1, 0,
 			new MonsterDefences(stab, slash, crush, 100, 0, 60, 60, 60), null,
 			Collections.emptyList(), false, "", 0);
 	}
 
-	private static DpsResult swing(MonsterStats target)
-	{
+	private static DpsResult swing(MonsterStats target) {
 		LoadoutData data = new DataService().load();
 		EnumMap<GearSlot, GearItem> worn = new EnumMap<>(GearSlot.class);
 		worn.put(GearSlot.WEAPON, data.getGear(34715));
@@ -40,10 +37,8 @@ public class ObligatorTest
 	}
 
 	@Test
-	public void bestOfOneIsTheOrdinaryHit()
-	{
-		for (int max : new int[]{1, 7, 42})
-		{
+	public void bestOfOneIsTheOrdinaryHit() {
+		for (int max : new int[]{1, 7, 42}) {
 			Assert.assertEquals(RollMath.normalExpectedHit(0.7, max), RollMath.bestOfExpected(0.7, max, 1, 0), 1e-9);
 			Assert.assertEquals(RollMath.expectedHitWithFlatArmour(0.7, 0, max, 3), RollMath.bestOfExpected(0.7, max, 1, 3), 1e-9);
 			Assert.assertEquals(RollMath.expectedHitWithFlatArmour(0.7, 0, max, -5), RollMath.bestOfExpected(0.7, max, 1, -5), 1e-9);
@@ -54,8 +49,7 @@ public class ObligatorTest
 	}
 
 	@Test
-	public void lungeRollsFourTimesWithTheSizeBonusOnABigCrushWeakTarget()
-	{
+	public void lungeRollsFourTimesWithTheSizeBonusOnABigCrushWeakTarget() {
 		DpsResult small = swing(dummy(1, 0, 0, 300));
 		DpsResult big = swing(dummy(3, 200, 200, 10));
 		Assert.assertEquals(5, big.getAttackSpeed());
@@ -65,8 +59,7 @@ public class ObligatorTest
 	}
 
 	@Test
-	public void crushSecondWeakestRollsThreeTimesAndATwoByTwoTakesTwentyPercent()
-	{
+	public void crushSecondWeakestRollsThreeTimesAndATwoByTwoTakesTwentyPercent() {
 		DpsResult small = swing(dummy(1, 0, 0, 300));
 		DpsResult mid = swing(dummy(2, 200, 0, 100));
 		Assert.assertTrue(mid.getAttackType(), mid.getAttackType().contains("lunge"));
@@ -75,8 +68,7 @@ public class ObligatorTest
 	}
 
 	@Test
-	public void theGameBestSearchReachesItOnABigCrushWeakBoss()
-	{
+	public void theGameBestSearchReachesItOnABigCrushWeakBoss() {
 		// Cerberus (5x5, crush the weakest melee defence): the Lunge beats
 		// every other melee weapon (pinned 11.7 vs 9.8 in the 2026-10-20
 		// sweep), so the unpinned search must reach it - the raw-stat
@@ -91,8 +83,7 @@ public class ObligatorTest
 	}
 
 	@Test
-	public void smashWinsWhereTheLungeHasLittleToRoll()
-	{
+	public void smashWinsWhereTheLungeHasLittleToRoll() {
 		DpsResult small = swing(dummy(1, 0, 0, 300));
 		Assert.assertEquals(3, small.getAttackSpeed());
 		Assert.assertTrue(small.getAttackType(), small.getAttackType().contains("smash"));

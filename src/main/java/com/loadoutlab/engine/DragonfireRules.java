@@ -12,8 +12,7 @@ import java.util.Set;
  * handed weapons); the antifire-potion toggle assumes a super
  * antifire instead and lifts the constraint.
  */
-public final class DragonfireRules
-{
+public final class DragonfireRules {
 	/** Antifire potion dose ids per tier - the Detect scan and the
 	 * consumable chips share them (relocated from the classic panel). */
 	public static final int[] SUPER_ANTIFIRE_IDS = {
@@ -27,35 +26,28 @@ public final class DragonfireRules
 		"dragonfire ward",
 		"ancient wyvern shield");
 
-	private DragonfireRules()
-	{
+	private DragonfireRules() {
 	}
 
-	public static boolean breathesFire(MonsterStats monster)
-	{
-		if (monster == null)
-		{
+	public static boolean breathesFire(MonsterStats monster) {
+		if (monster == null) {
 			return false;
 		}
-		for (String style : monster.getOffence().getStyles())
-		{
-			if ("dragonfire".equalsIgnoreCase(style))
-			{
+		for (String style : monster.getOffence().getStyles()) {
+			if ("dragonfire".equalsIgnoreCase(style)) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public static boolean isProtectiveShield(GearItem item)
-	{
+	public static boolean isProtectiveShield(GearItem item) {
 		return item != null
 			&& PROTECTIVE_SHIELDS.contains(item.getNameLower());
 	}
 
 	/** Must this request's sets carry a dragonfire shield? */
-	public static boolean shieldRequired(OptimizationRequest request)
-	{
+	public static boolean shieldRequired(OptimizationRequest request) {
 		return breathesFire(request.getMonster()) && !request.isAntifirePotion();
 	}
 }
