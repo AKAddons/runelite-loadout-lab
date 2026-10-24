@@ -515,7 +515,8 @@ public final class DpsCalculator {
 			// applyMagicDamageBonuses) exactly like theirs - a separate
 			// multiplier here floors differently (verified 2026-08-21,
 			// vector twinflame-firegiant: 44 vs their 42 max).
-			counted("twinflame staff", "+10% accuracy and damage on standard spells");
+			counted(wearing(loadout, "twinflame") ? "twinflame staff" : "smoke staff",
+				"+10% accuracy and damage on standard spells");
 			attackRoll = (long) Math.floor(attackRoll * 1.10);
 		}
 		// The official calc applies flat armour to melee and ranged ONLY
@@ -534,7 +535,12 @@ public final class DpsCalculator {
 			accuracy = RollMath.conflictionAccuracy(attackRoll, defenceRoll);
 		}
 		double expected = RollMath.expectedHit(accuracy, sunfireMinHit, maxHit);
-		if (twinflame && twinflameDoubles(twinflameSpell)) {
+		// Only the Twinflame itself splits the hit: the smoke battlestaff and
+		// the mystic smoke staff share its +10% and nothing more (wiki;
+		// ISS-01M5PHE6WD81W8542RW71EXSHC - the phantom second hit had an
+		// Earth Wave off a smoke staff reading ~28% high, and the strip
+		// calling an owned smoke staff an upgrade over the Purging staff).
+		if (twinflame && wearing(loadout, "twinflame") && twinflameDoubles(twinflameSpell)) {
 			// Their exact model (verified 2026-08-21, vector
 			// twinflame-firegiant): the second splat rolls NOTHING of its
 			// own - it is trunc(0.4 x the first hit's roll), truncated
