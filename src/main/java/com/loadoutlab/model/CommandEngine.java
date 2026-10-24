@@ -159,6 +159,39 @@ public class CommandEngine {
 		}
 	}
 
+	private static final String[] SIM_ARGS = {"attack", "strength", "defence", "ranged", "magic", "prayer", "hitpoints"};
+
+	/** Your live levels, for the stat sim's boxes and the report (myLevels). */
+	public void setLevels(PlayerLevels real) {
+		String next = real == null ? "" : real.getAttack() + "/" + real.getStrength() + "/" + real.getDefence() + "/"
+			+ real.getRanged() + "/" + real.getMagic() + "/" + real.getPrayer() + "/" + real.getHitpoints();
+		boolean changed = !next.equals(String.valueOf(state.paramsNode().get("myLevels")));
+		state.setMyLevels(next);
+		if (changed) {
+			republish();
+		}
+	}
+
+	private boolean applyStats(int[] levels, boolean maxCape) {
+		for (int i = 0; i < levels.length; i++) {
+			state.setParam(PageState.SIM_KEYS[i], levels[i]);
+		}
+		state.setParam("simMaxCape", maxCape);
+		recompute();
+		return true;
+	}
+
+	/** "99/-/-/-/-/-/- + max cape", "mine" when nothing is simmed. */
+	private static String statsLabel(int[] levels, boolean maxCape) {
+		StringBuilder sb = new StringBuilder();
+		boolean any = false;
+		for (int i = 0; i < levels.length; i++) {
+			any |= levels[i] > 0;
+			sb.append(i > 0 ? "/" : "").append(levels[i] > 0 ? String.valueOf(levels[i]) : "-");
+		}
+		return any || maxCape ? sb + (maxCape ? " + max cape" : "") : "mine";
+	}
+
 	/** spellName -> its book, built once from the corpus - every corpus
 	 * name is distinct, so its keys are the page's spell list too. */
 	private final Map<String, Object> spellbooks = new LinkedHashMap<>();
@@ -438,6 +471,26 @@ public class CommandEngine {
 					recompute();
 					return true;
 				}));
+			}
+			case "sim-stats": {
+				// The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
+				// "sim as any stat, defaulted to your current ones. lower or
+				// higher should work too"): the seven levels (0 = your own) and
+				// the max cape tick as ONE action - one recompute, one undo step.
+				int[] next = new int[PageState.SIM_KEYS.length];
+				int[] prev = new int[next.length];
+				for (int i = 0; i < next.length; i++) {
+					Integer level = intArg(args, SIM_ARGS[i]);
+					next[i] = level == null ? 0 : Math.max(0, Math.min(99, level));
+					prev[i] = (int) num(state.paramsNode().get(PageState.SIM_KEYS[i]));
+				}
+				boolean nextCape = Boolean.TRUE.equals(args.get("maxCape"));
+				boolean prevCape = flag("simMaxCape");
+				if (Arrays.equals(prev, next) && prevCape == nextCape) {
+					return true;
+				}
+				return record(Commands.of("Stats " + statsLabel(next, nextCape),
+					() -> applyStats(next, nextCape), () -> applyStats(prev, prevCape)));
 			}
 			case "set-param": {
 				String key = strArg(args, "param", null);

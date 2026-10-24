@@ -1,0 +1,19 @@
+{
+ "_comment": "The max cape sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): with the max cape simmed, each combo max cape is simmed too when you own its other half - base cape name -> combo name (lower case, the corpus's names).",
+ "combos": {
+  "fire cape": "fire max cape",
+  "infernal cape": "infernal max cape",
+  "imbued saradomin cape": "imbued saradomin max cape",
+  "imbued guthix cape": "imbued guthix max cape",
+  "imbued zamorak cape": "imbued zamorak max cape",
+  "saradomin cape": "saradomin max cape",
+  "guthix cape": "guthix max cape",
+  "zamorak cape": "zamorak max cape",
+  "ava's assembler": "assembler max cape",
+  "masori assembler": "masori assembler max cape",
+  "ava's accumulator": "accumulator max cape",
+  "ardougne cloak 4": "ardougne max cape",
+  "mythical cape": "mythical max cape",
+  "blessed dizana's quiver": "dizana's max cape"
+ }
+}

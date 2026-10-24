@@ -403,6 +403,96 @@ public class RenderSurface {
 		return label;
 	}
 
+	private static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
+	private static final String[] SIM_ARGS = {"attack", "strength", "defence", "ranged", "magic", "prayer", "hitpoints"};
+	private static final String[] SIM_NAMES = {"Att", "Str", "Def", "Rng", "Mag", "Pray", "HP"};
+	/** Whether the stat sim's boxes are open - a view choice kept across publishes. */
+	private boolean statsOpen;
+
+	/** The stat sim chip (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
+	 * "sim as any stat, defaulted to your current ones"): "Stats", or the
+	 * simmed levels with the cape marked; it opens seven boxes holding the
+	 * simmed or your live level, a Max cape tick, Max (all 99 and the cape)
+	 * and Mine. Every edit is one sim-stats command; a box left at your own
+	 * level sends 0 = yours, so a level-up keeps following you. */
+	private JComponent statsChip(Map<String, Object> params) {
+		String mineText = Model.str(params, "myLevels");
+		String[] mine = mineText == null ? new String[0] : mineText.split("/");
+		String[] shown = new String[SIM_KEYS.length];
+		boolean any = false;
+		for (int i = 0; i < SIM_KEYS.length; i++) {
+			int sim = Model.id(params, SIM_KEYS[i]);
+			any |= sim > 0;
+			shown[i] = sim > 0 ? String.valueOf(sim) : mine.length == 7 ? mine[i] : "?";
+		}
+		boolean cape = Model.flag(params, "simMaxCape");
+		boolean on = any || cape;
+		JPanel holder = Ui.panel(new BorderLayout(0, 2));
+		JPanel editor = Ui.panel(new WrapLayout(FlowLayout.LEFT, 3, 1));
+		JTextField[] boxes = new JTextField[SIM_KEYS.length];
+		JCheckBox capeBox = new JCheckBox("Max cape", cape);
+		Runnable send = () -> {
+			Map<String, Object> args = new HashMap<>();
+			for (int i = 0; i < boxes.length; i++) {
+				int level = parseLevel(boxes[i].getText());
+				args.put(SIM_ARGS[i], mine.length == 7 && String.valueOf(level).equals(mine[i]) ? 0 : level);
+			}
+			args.put("maxCape", capeBox.isSelected());
+			commands.send("sim-stats", args);
+		};
+		for (int i = 0; i < boxes.length; i++) {
+			boxes[i] = new JTextField(shown[i], 2);
+			boxes[i].setToolTipText(SIM_NAMES[i] + " to sim (1-99)");
+			boxes[i].addActionListener(e -> send.run());
+			editor.add(Ui.small(SIM_NAMES[i], ResultCards.LIGHT));
+			editor.add(boxes[i]);
+		}
+		capeBox.setOpaque(false);
+		capeBox.setForeground(ResultCards.LIGHT);
+		capeBox.setFocusable(false);
+		capeBox.setToolTipText("Sim the max cape, and the combos you can make with the capes you own");
+		capeBox.addActionListener(e -> send.run());
+		editor.add(capeBox);
+		JLabel max = Ui.small("Max", ResultCards.ACCENT);
+		Ui.onClick(max, () -> {
+			for (JTextField box : boxes) {
+				box.setText("99");
+			}
+			capeBox.setSelected(true);
+			send.run();
+		});
+		JLabel mineLabel = Ui.small("Mine", ResultCards.ACCENT);
+		Ui.onClick(mineLabel, () -> {
+			Map<String, Object> args = new HashMap<>();
+			for (String arg : SIM_ARGS) {
+				args.put(arg, 0);
+			}
+			args.put("maxCape", false);
+			commands.send("sim-stats", args);
+		});
+		editor.add(max);
+		editor.add(mineLabel);
+		editor.setVisible(statsOpen);
+		holder.add(pill(on ? "Stats " + String.join("/", shown) + (cape ? " +cape" : "") : "Stats", on, on,
+			Ui.text("chip.stats.tip"), () -> {
+				statsOpen = !statsOpen;
+				editor.setVisible(statsOpen);
+				holder.revalidate();
+			}), BorderLayout.NORTH);
+		holder.add(editor, BorderLayout.CENTER);
+		return holder;
+	}
+
+	/** A box's level: 1-99, or 0 (= yours) for anything else. */
+	private static int parseLevel(String text) {
+		try {
+			int level = Integer.parseInt(text.trim());
+			return level >= 1 && level <= 99 ? level : 0;
+		} catch (NumberFormatException ex) {
+			return 0;
+		}
+	}
+
 	private JLabel paramChip(String label, String key, boolean selected) {
 		return pill(label, selected, label + (selected ? " on" : " off"),
 			() -> commands.set(key, !selected));
@@ -889,6 +979,7 @@ public class RenderSurface {
 				budgetGp > 0,
 				Ui.text("chip.budget.tip"),
 				Gp.format(budgetGp), text -> commands.set("upgradeBudgetGp", Gp.parse(text))));
+			chipRow.add(statsChip(params));
 			if (wildyRiskGate.getAsBoolean() && (pvp > 0
 				|| anyWilderness && (allExclusive || Model.flag(params, "inWilderness")))) {
 				int riskGp = Model.id(params, "riskBudgetGp");

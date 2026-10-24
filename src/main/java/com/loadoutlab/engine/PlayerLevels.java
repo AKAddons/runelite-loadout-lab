@@ -75,6 +75,22 @@ public final class PlayerLevels {
 			hitpoints);
 	}
 
+	/** These levels with each named sim in place of your own (seven, in
+	 * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 =
+	 * yours): the stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
+	public PlayerLevels overridden(int[] sims) {
+		if (sims == null || sims.length < 7) {
+			return this;
+		}
+		int[] mine = {attack, strength, defence, ranged, magic, prayer, hitpoints};
+		for (int i = 0; i < mine.length; i++) {
+			if (sims[i] > 0) {
+				mine[i] = sims[i];
+			}
+		}
+		return new PlayerLevels(mine[0], mine[1], mine[2], mine[3], mine[4], mine[5], mine[6]);
+	}
+
 	/** Element-wise max - never assume a boost below what is already live. */
 	public PlayerLevels max(PlayerLevels other) {
 		if (other == null) {

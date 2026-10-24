@@ -1199,6 +1199,17 @@ public class LoadoutLabPlugin extends Plugin {
 
 	/** The lensed mob's local sims join the global simmed set for a
 	 * single-mob compute (field spec 2026-07-18). */
+	/** The max cape and the combos you can make, simmed with it
+	 * (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
+	private Set<Integer> withMaxCape(ComputeParams p, Set<Integer> sims) {
+		if (p == null || !p.simMaxCape) {
+			return sims;
+		}
+		Set<Integer> out = new HashSet<>(sims);
+		out.addAll(MaxCapeSims.ids(data, this::ownsOrSimmed));
+		return out;
+	}
+
 	private Set<Integer> dreamsWithMobSims(MonsterStats monster) {
 		Set<Integer> global = dreams.snapshot();
 		Set<Integer> local = mobProfiles == null
@@ -1502,16 +1513,22 @@ public class LoadoutLabPlugin extends Plugin {
 		final int fingerprint;
 		final PrayerUnlocks unlocks;
 
-		Staging() {
+		Staging(ComputeParams p) {
 			if (client.getGameState() == GameState.LOGGED_IN) {
 				snapshotProfileIfNeeded();
 			}
 			if (config.useDwmsData()) {
 				requestDwmsStorages();
 			}
-			profile = requirementProfile != null ? requirementProfile : RequirementProfile.MAXED;
-			live = boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
-			real = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			RequirementProfile known = requirementProfile != null ? requirementProfile : RequirementProfile.MAXED;
+			PlayerLevels mine = realLevels != null ? realLevels : PlayerLevels.MAXED;
+			// The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): simmed levels stand
+			// in for yours everywhere - the maths, the live boosts (not stacked
+			// on a sim), and the gear you can wear.
+			boolean simmed = p != null && p.simLevels != null;
+			real = simmed ? mine.overridden(p.simLevels) : mine;
+			live = simmed ? real : boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
+			profile = simmed ? known.withLevels(real) : known;
 			pushPanelCastState(live);
 			potionStorage = PotionStorage.owned(client::getVarbitValue);
 			mergedOwned = ownedItems();
@@ -1523,7 +1540,7 @@ public class LoadoutLabPlugin extends Plugin {
 
 	public void computeRoster(List<MonsterStats> mobs, ComputeParams p, Runnable onDone) {
 		clientThread.invokeLater(() -> {
-			Staging s = new Staging();
+			Staging s = new Staging(p);
 			Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob = new HashMap<>();
 			Map<Integer, SpellStats> spellByMob = new HashMap<>();
 			Map<Integer, Integer> specByMob = new HashMap<>();
@@ -1534,7 +1551,7 @@ public class LoadoutLabPlugin extends Plugin {
 				specByMob.put(id, mobProfiles.pinnedSpec(id));
 			}
 			optimizerService.bestPerStyleAcross(mobs, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, p,
-				excludedByStyle(-1), dreams.snapshot(), perMobExclusions(mobs),
+				excludedByStyle(-1), withMaxCape(p, dreams.snapshot()), perMobExclusions(mobs),
 				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
 				protectOnly.snapshot(),
 				roster -> SwingUtilities.invokeLater(() -> {
@@ -1557,12 +1574,12 @@ public class LoadoutLabPlugin extends Plugin {
 			// DWMS saves on its own cadence (ConfigSync/shutdown); the staging
 			// re-read keeps imported storages as fresh as they can be (its
 			// reply lands after this compute - one-query lag).
-			Staging s = new Staging();
+			Staging s = new Staging(p);
 			exportProfile(new PlayerProfile(
 				s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
 			optimizerService.bestPerStyle(monster, s.real, s.live, s.unlocks, s.profile, s.owned, s.fingerprint, p,
-				excludedByStyle(monster.getId()), dreamsWithMobSims(monster),
+				excludedByStyle(monster.getId()), withMaxCape(p, dreamsWithMobSims(monster)),
 				pinnedByStyle(monster, monster.getId(), p.onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
@@ -1674,6 +1691,9 @@ public class LoadoutLabPlugin extends Plugin {
 		requirementProfile = new RequirementProfile(real, quests);
 		realLevels = PlayerLevels.from(real);
 		boostedLevels = PlayerLevels.from(boosted);
+		if (commandEngine != null) {
+			commandEngine.setLevels(realLevels); // the stat sim's boxes default to these
+		}
 		// Unlock-gated prayers: King's Ransom for Piety/Chivalry; scroll
 		// unlock varbits for Rigour/Augury (CoX), Deadeye/Mystic Vigour
 		// and Zeal (16578 = PRAYER_ZEAL_UNLOCKED).

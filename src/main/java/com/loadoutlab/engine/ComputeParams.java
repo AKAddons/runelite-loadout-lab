@@ -40,11 +40,18 @@ public final class ComputeParams {
 	/** Thralls are on (members, not F2P): with Death Charge, the reason a
 	 * group defaults to Arceuus (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
 	public boolean thralls;
+	/** The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): seven levels in
+	 * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 = your
+	 * own; null when nothing is simmed. simMaxCape sims the max cape. */
+	public int[] simLevels;
+	public boolean simMaxCape;
 
 	/** A field-for-field copy: the roster's second pass edits the lock
 	 * and Death Charge without touching the page's own params. */
 	public ComputeParams copy() {
 		ComputeParams c = new ComputeParams();
+		c.simLevels = simLevels;
+		c.simMaxCape = simMaxCape;
 		c.f2pOnly = f2pOnly;
 		c.onSlayerTask = onSlayerTask;
 		c.inWilderness = inWilderness;

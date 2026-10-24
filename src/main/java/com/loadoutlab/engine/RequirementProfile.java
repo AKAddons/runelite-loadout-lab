@@ -29,6 +29,22 @@ public final class RequirementProfile {
 		return new RequirementProfile(levels, allQuests());
 	}
 
+	/** The same quests with the seven combat levels replaced: the stat
+	 * sim's gear gate (ISS-01M5QY13K6YHTYDW1CCYD30CSY) - 99 Attack admits the
+	 * fang, 60 drops it; the other skills ride along unchanged. */
+	public RequirementProfile withLevels(PlayerLevels simmed) {
+		Map<Skill, Integer> next = new EnumMap<>(Skill.class);
+		next.putAll(levels);
+		next.put(Skill.ATTACK, simmed.getAttack());
+		next.put(Skill.STRENGTH, simmed.getStrength());
+		next.put(Skill.DEFENCE, simmed.getDefence());
+		next.put(Skill.RANGED, simmed.getRanged());
+		next.put(Skill.MAGIC, simmed.getMagic());
+		next.put(Skill.PRAYER, simmed.getPrayer());
+		next.put(Skill.HITPOINTS, simmed.getHitpoints());
+		return new RequirementProfile(next, completedQuests);
+	}
+
 	/** Both already unmodifiable (the constructor wraps its copies). */
 	public Map<Skill, Integer> getLevels() {
 		return levels;

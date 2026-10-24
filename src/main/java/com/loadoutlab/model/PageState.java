@@ -93,7 +93,14 @@ public class PageState {
 	 * </ul> */
 	private static final Map<String, Object> DEFAULTS = new LinkedHashMap<>();
 	/** Set by the engine (the selects, the risk cap), never by a command. */
-	private static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped");
+	private static final Set<String> DERIVED = Set.of("raidSelection", "riskCapped", "myLevels");
+	static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
+
+	/** Your live levels for the page ("a/s/d/r/m/p/h"): what the stat sim's
+	 * boxes and the report show where nothing is simmed. */
+	public synchronized void setMyLevels(String levels) {
+		params.put("myLevels", levels == null ? "" : levels);
+	}
 	/** Int params with a range: {min, max}. */
 	private static final Map<String, int[]> CLAMPS = new HashMap<>();
 	/** The params a select seeds (antifire, tab, view side, on-task,
@@ -367,6 +374,14 @@ public class PageState {
 		p.optimizeMode = str("optimizeMode");
 		p.kourendElite = flag("kourendElite");
 		p.gwdAncient = flag("gwdAncient");
+		int[] sims = new int[SIM_KEYS.length];
+		boolean simmed = false;
+		for (int i = 0; i < sims.length; i++) {
+			sims[i] = num(SIM_KEYS[i]);
+			simmed |= sims[i] > 0;
+		}
+		p.simLevels = simmed ? sims : null;
+		p.simMaxCape = flag("simMaxCape");
 		return p;
 	}
 }

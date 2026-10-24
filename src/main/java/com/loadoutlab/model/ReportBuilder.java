@@ -211,6 +211,10 @@ final class ReportBuilder {
 				? "; Risk cap: " + (Boolean.TRUE.equals(params.get("riskCapped"))
 					? gp((long) num(params.get("riskBudgetGp"))) : "none")
 					+ "; Protect item: " + yesNo(params.get("protectItem")) : ""));
+		String stats = statsLine(params);
+		if (stats != null) {
+			sb.append(stats);
+		}
 		if (counts != null) {
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed\n");
@@ -283,6 +287,22 @@ final class ReportBuilder {
 	}
 
 	/** A page number as a double, 0 when the node holds none. */
+	/** "  Stats: simmed a/s/d/r/m/p/h + max cape" while a stat sim is on
+	 * (ISS-01M5QY13K6YHTYDW1CCYD30CSY), your own level where a box is not
+	 * simmed; null when nothing is. */
+	static String statsLine(Map<String, Object> params) {
+		String[] mine = String.valueOf(params.getOrDefault("myLevels", "")).split("/");
+		boolean cape = Boolean.TRUE.equals(params.get("simMaxCape"));
+		StringBuilder levels = new StringBuilder();
+		boolean any = false;
+		for (int i = 0; i < PageState.SIM_KEYS.length; i++) {
+			int sim = (int) num(params.get(PageState.SIM_KEYS[i]));
+			any |= sim > 0;
+			levels.append(i > 0 ? "/" : "").append(sim > 0 ? String.valueOf(sim) : mine.length == 7 ? mine[i] : "?");
+		}
+		return any || cape ? "  Stats: simmed " + levels + (cape ? " + max cape" : "") + "\n" : null;
+	}
+
 	private static double num(Object value) {
 		return value instanceof Number ? ((Number) value).doubleValue() : 0;
 	}
