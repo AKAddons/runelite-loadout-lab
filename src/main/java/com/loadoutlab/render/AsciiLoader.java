@@ -1,6 +1,8 @@
 package com.loadoutlab.render;
 
 import java.awt.Font;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +109,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 		boolean repick = running && !Objects.equals(key, playingKey);
 		if (running && (!timer.isRunning() || repick)) {
 			List<List<String>> keyed = key == null ? null : POOLS.get(key);
-			List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : MOODS;
+			List<List<String>> pool = keyed != null && !keyed.isEmpty() ? keyed : seasonal(LocalDate.now());
 			frames = pool.get(java.util.concurrent.ThreadLocalRandom.current()
 				.nextInt(pool.size()));
 			playingKey = key;
@@ -123,6 +125,17 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 	public void removeNotify() {
 		timer.stop();
 		super.removeNotify();
+	}
+
+	/** The land pool for a date: the Halloween moods from Oct 15 to Oct 31,
+	 * every year (ISS-01M5PR1FRK0XT2PHQ7HJD0D1FZ, Andrew 2026-10-24: "a
+	 * halloween themed loading screen that can override the main loadout lab
+	 * guy from 10/15-10/31 (yearly)"), the flask otherwise. A keyed
+	 * selection's own art outranks the season (setRunning). */
+	static List<List<String>> seasonal(LocalDate today) {
+		List<List<String>> halloween = POOLS.get("halloween");
+		boolean season = today.getMonth() == Month.OCTOBER && today.getDayOfMonth() >= 15;
+		return season && halloween != null && !halloween.isEmpty() ? halloween : MOODS;
 	}
 
 	private void advance() {

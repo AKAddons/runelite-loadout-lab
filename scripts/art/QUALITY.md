@@ -32,6 +32,12 @@ shield and crash, Ocellus's bolts and void, 2026-10-20); Vorkath, Chaos Fanatic,
 four, Crazy archaeologist, Doom, the Nightmare, Mimic, shaman, Hespori,
 Sarachnis, gryphon, Skotizo.
 
+## Seasonal
+
+Halloween, Oct 15-31 (2026-10-24, `halloween.py`, Andrew: "it should have
+both"): the flask on its legs in a witch hat beside a jack-o'-lantern, meeting
+a ghost, and boiling over a fire. First pass, due a refine.
+
 ## Legacy, colour by glyph rules only
 
 The flask, the sea sail and kraken moods, Zulrah (their generators

@@ -16070,3 +16070,239 @@
          <font color=#706060>░</font><font color=#806060>░░░</font><font color=#706060>░</font><font color=#705050>░░</font><font color=#605050>░░</font><font color=#807050>░</font><font color=#705070>░░</font><font color=#704080>░</font><font color=#b060f0>▌</font>        
         <font color=#604040>'</font><font color=#704040>░</font><font color=#705050>░░▀░</font> <font color=#604040>░▒</font><font color=#504040>▒</font><font color=#705040>▀</font><font color=#504040>.</font><font color=#9050d0>.</font><font color=#a060e0>.</font><font color=#b060f0>.</font>        
   <font color=#9a4ae0>▒▒</font>  <font color=#9a4ae0>▒░</font>  <font color=#9a4ae0>░▒</font>       <font color=#9a4ae0>░▒</font>  <font color=#9a4ae0>▒▒</font>  <font color=#9a4ae0>▒░</font>  
+# Halloween, Oct 15-31 every year: land computes play these in place of the
+# flask (AsciiLoader.seasonal); a keyed selection keeps its own art. Source: scripts/art/halloween.py
+==halloween hat
+       <font color=#4a2a6a>▄██▄</font>       <font color=#8a6ab0>v^v</font>          
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>         <font color=#8a6ab0>^v^</font>    
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                   
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                <font color=#d8d8e8>*</font> 
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#e8d0ff>:</font><font color=#b070e8>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓▓▓▓▓▓▓▓</font><font color=#e8d0ff>o</font><font color=#b070e8>▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>████</font><font color=#e8d0ff>.</font><font color=#b070e8>███████</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#ffd23a>▀</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+--
+       <font color=#4a2a6a>▄██▄</font>        <font color=#8a6ab0>^v^</font>         
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>          <font color=#8a6ab0>v^v</font>   
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                 <font color=#d8d8e8>*</font> 
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                  
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#b070e8>▒▒▒▒▒▒▒</font><font color=#e8d0ff>.</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓▓▓</font><font color=#e8d0ff>o</font><font color=#b070e8>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>██████████</font><font color=#e8d0ff>:</font><font color=#b070e8>█</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#c89020>▀</font><font color=#ff8c1a>█</font><font color=#c89020>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#c89020>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+--
+       <font color=#4a2a6a>▄██▄</font>         <font color=#8a6ab0>v^v</font>        
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>           <font color=#8a6ab0>^v^</font>  
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                   
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                <font color=#d8d8e8>*</font> 
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#b070e8>▒▒</font><font color=#e8d0ff>.</font><font color=#b070e8>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓</font><font color=#e8d0ff>O</font><font color=#b070e8>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>█████████</font><font color=#e8d0ff>o</font><font color=#b070e8>██</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#ffd23a>▀</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+--
+       <font color=#4a2a6a>▄██▄</font>       <font color=#8a6ab0>^v^</font>          
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>         <font color=#8a6ab0>v^v</font>    
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                 <font color=#d8d8e8>*</font> 
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                  
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#e8d0ff>:</font><font color=#b070e8>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓▓▓▓▓▓▓▓</font><font color=#e8d0ff>o</font><font color=#b070e8>▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>████</font><font color=#e8d0ff>.</font><font color=#b070e8>███████</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#c89020>▀</font><font color=#ff8c1a>█</font><font color=#c89020>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#c89020>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+--
+       <font color=#4a2a6a>▄██▄</font>        <font color=#8a6ab0>v^v</font>         
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>          <font color=#8a6ab0>^v^</font>   
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                   
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                <font color=#d8d8e8>*</font> 
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#b070e8>▒▒▒▒▒▒▒</font><font color=#e8d0ff>.</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓▓▓</font><font color=#e8d0ff>o</font><font color=#b070e8>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>██████████</font><font color=#e8d0ff>:</font><font color=#b070e8>█</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#ffd23a>▀</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#ffd23a>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+--
+       <font color=#4a2a6a>▄██▄</font>         <font color=#8a6ab0>^v^</font>        
+   <font color=#4a2a6a>▀▀▀</font><font color=#ff8c1a>██████</font><font color=#4a2a6a>▀▀▀</font>           <font color=#8a6ab0>v^v</font>  
+      <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                 <font color=#d8d8e8>*</font> 
+     <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                  
+    <font color=#7fd48a>╔╝</font><font color=#b070e8>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>                 
+   <font color=#7fd48a>╔╝</font><font color=#b070e8>▒▒</font><font color=#e8d0ff>.</font><font color=#b070e8>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>                
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>▓</font><font color=#e8d0ff>O</font><font color=#b070e8>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>        <font color=#3f8a4a>█</font>      
+ <font color=#7fd48a>╔╝</font><font color=#b070e8>█████████</font><font color=#e8d0ff>o</font><font color=#b070e8>██</font><font color=#7fd48a>╚╗</font>    <font color=#c85f0a>▄███████▄</font> 
+ <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>██</font><font color=#c89020>▀</font><font color=#ff8c1a>█</font><font color=#c89020>▀</font><font color=#ff8c1a>██</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#b070e8>█</font><font color=#7fd48a>║</font>     <font color=#c85f0a>▐</font><font color=#ff8c1a>███████</font><font color=#c85f0a>▌</font>  
+  <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#b070e8>█</font><font color=#7fd48a>║═╗</font>   <font color=#c85f0a>▐</font><font color=#ff8c1a>█</font><font color=#c89020>▀████</font><font color=#ff8c1a>█</font><font color=#c85f0a>▌</font>  
+   <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>    <font color=#c85f0a>▀▀▀▀▀▀▀</font>   
+==halloween ghost
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>.</font>            
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                    
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>                   
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>         <font color=#eeeef6>▄█████▄</font>  
+  <font color=#7fd48a>╔╝</font><font color=#fff6c0>:</font><font color=#ffd23a>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>      <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓▓▓▓▓▓▓▓</font><font color=#fff6c0>o</font><font color=#ffd23a>▓</font><font color=#7fd48a>╚╗</font>     <font color=#eeeef6>▐████████▌</font> 
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>████</font><font color=#fff6c0>.</font><font color=#ffd23a>███████</font><font color=#7fd48a>╚╗</font>    <font color=#eeeef6>▐█████████▌</font>
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>     <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+--
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>*</font>            
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                    
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>          <font color=#eeeef6>▄█████▄</font>  
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▁▂▂▂▁▁</font><font color=#7fd48a>╚╗</font>       <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#ffd23a>▒▒▒▒▒▒▒</font><font color=#fff6c0>.</font><font color=#7fd48a>╚╗</font>      <font color=#eeeef6>▐████████▌</font> 
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓▓▓</font><font color=#fff6c0>o</font><font color=#ffd23a>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>     <font color=#eeeef6>▐█████████▌</font>
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>██████████</font><font color=#fff6c0>:</font><font color=#ffd23a>█</font><font color=#7fd48a>╚╗</font>     <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>               
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+--
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>.</font>            
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>           <font color=#eeeef6>▄█████▄</font>  
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>        <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>       <font color=#eeeef6>▐████████▌</font> 
+  <font color=#7fd48a>╔╝</font><font color=#ffd23a>▒▒</font><font color=#fff6c0>.</font><font color=#ffd23a>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>      <font color=#eeeef6>▐█████████▌</font>
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓</font><font color=#fff6c0>O</font><font color=#ffd23a>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>      <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>█████████</font><font color=#fff6c0>o</font><font color=#ffd23a>██</font><font color=#7fd48a>╚╗</font>               
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>               
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+--
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>*</font>            
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>                    
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>          <font color=#eeeef6>Boo!</font>     
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▁▂▂▂▁▁</font><font color=#7fd48a>╚╗</font>         <font color=#eeeef6>▄█████▄</font>  
+  <font color=#7fd48a>╔╝</font><font color=#fff6c0>:</font><font color=#ffd23a>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>      <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓▓▓▓▓▓▓▓</font><font color=#fff6c0>o</font><font color=#ffd23a>▓</font><font color=#7fd48a>╚╗</font>     <font color=#eeeef6>▐███</font><font color=#202030>▄</font><font color=#eeeef6>████▌</font> 
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>████</font><font color=#fff6c0>.</font><font color=#ffd23a>███████</font><font color=#7fd48a>╚╗</font>    <font color=#eeeef6>▐█████████▌</font>
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>     <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+--
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>.</font>            
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>           <font color=#eeeef6>Boo!</font>     
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>          <font color=#eeeef6>▄█████▄</font>  
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>       <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+  <font color=#7fd48a>╔╝</font><font color=#ffd23a>▒▒▒▒▒▒▒</font><font color=#fff6c0>.</font><font color=#7fd48a>╚╗</font>      <font color=#eeeef6>▐███</font><font color=#202030>▄</font><font color=#eeeef6>████▌</font> 
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓▓▓</font><font color=#fff6c0>o</font><font color=#ffd23a>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>     <font color=#eeeef6>▐█████████▌</font>
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>██████████</font><font color=#fff6c0>:</font><font color=#ffd23a>█</font><font color=#7fd48a>╚╗</font>     <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>               
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+--
+     <font color=#7fd48a>╔════╗</font>                    
+     <font color=#7fd48a>╠════╣</font>       <font color=#d8d8e8>*</font>   <font color=#eeeef6>Boo!</font>     
+     <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>           <font color=#eeeef6>▄█████▄</font>  
+    <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>        <font color=#b8b8cc>▐</font><font color=#eeeef6>█</font><font color=#202030>█</font><font color=#eeeef6>███</font><font color=#202030>█</font><font color=#eeeef6>█</font><font color=#b8b8cc>▌</font>  
+   <font color=#7fd48a>╔╝</font><font color=#ffd23a>▁▂▂▂▁▁</font><font color=#7fd48a>╚╗</font>       <font color=#eeeef6>▐███</font><font color=#202030>▄</font><font color=#eeeef6>████▌</font> 
+  <font color=#7fd48a>╔╝</font><font color=#ffd23a>▒▒</font><font color=#fff6c0>.</font><font color=#ffd23a>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>      <font color=#eeeef6>▐█████████▌</font>
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>▓</font><font color=#fff6c0>O</font><font color=#ffd23a>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>      <font color=#b8b8cc>▀</font> <font color=#b8b8cc>█▀</font> <font color=#b8b8cc>▀█</font> <font color=#b8b8cc>▀</font> 
+<font color=#7fd48a>╔╝</font><font color=#ffd23a>█████████</font><font color=#fff6c0>o</font><font color=#ffd23a>██</font><font color=#7fd48a>╚╗</font>               
+<font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>               
+ <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>     <font color=#7fd48a>╔╝</font><font color=#ffd23a>█</font><font color=#7fd48a>║</font>                 
+ <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>   <font color=#7fd48a>╚╗</font><font color=#ffd23a>█</font><font color=#7fd48a>║═╗</font>               
+  <font color=#7fd48a>╚═══╝</font>    <font color=#7fd48a>╚═══╝</font>               
+==halloween brew
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠════╣</font>     <font color=#8a6ab0>v^v</font>     
+            <font color=#7fd48a>║</font>  <font color=#ffe08a>O</font> <font color=#7fd48a>║</font>        <font color=#d8d8e8>*</font><font color=#8a6ab0>^v^</font> 
+           <font color=#7fd48a>╔╝</font> <font color=#ffe08a>o</font>  <font color=#7fd48a>╚╗</font>            
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ffe08a>:</font><font color=#ff8c1a>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓▓▓▓▓▓▓▓</font><font color=#ffe08a>o</font><font color=#ff8c1a>▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>████</font><font color=#ffe08a>.</font><font color=#ff8c1a>███████</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font> <font color=#ffd23a>'</font>   <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>▄█▄</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ffd23a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
+--
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠</font><font color=#ffe08a>o</font><font color=#7fd48a>═══╣</font>      <font color=#8a6ab0>^v^</font>    
+            <font color=#7fd48a>║</font> <font color=#ffe08a>O</font>  <font color=#7fd48a>║</font>          <font color=#8a6ab0>v^v</font>
+           <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>       <font color=#d8d8e8>*</font>    
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▒▒▒▒▒▒▒</font><font color=#ffe08a>.</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓▓▓</font><font color=#ffe08a>o</font><font color=#ff8c1a>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>██████████</font><font color=#ffe08a>:</font><font color=#ff8c1a>█</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>  <font color=#ffd23a>^</font>  <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>▄██</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ff8c1a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
+--
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠</font><font color=#ffe08a>O</font><font color=#7fd48a>═══╣</font>       <font color=#8a6ab0>v^v</font>   
+            <font color=#7fd48a>║</font>  <font color=#ffe08a>o</font> <font color=#7fd48a>║</font>        <font color=#d8d8e8>*</font>  <font color=#8a6ab0>^v</font>
+           <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>            
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▒▒</font><font color=#ffe08a>.</font><font color=#ff8c1a>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓</font><font color=#ffe08a>O</font><font color=#ff8c1a>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█████████</font><font color=#ffe08a>o</font><font color=#ff8c1a>██</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>   <font color=#ffd23a>'</font> <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>██▄</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ffd23a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
+--
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠════╣</font>     <font color=#8a6ab0>^v^</font>     
+            <font color=#7fd48a>║</font> <font color=#ffe08a>oO</font> <font color=#7fd48a>║</font>         <font color=#8a6ab0>v^v</font> 
+           <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>       <font color=#d8d8e8>*</font>    
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ffe08a>:</font><font color=#ff8c1a>▒▒▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓▓▓▓▓▓▓▓</font><font color=#ffe08a>o</font><font color=#ff8c1a>▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>████</font><font color=#ffe08a>.</font><font color=#ff8c1a>███████</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font> <font color=#ffd23a>^</font>   <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>▄█▄</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ff8c1a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
+--
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠</font><font color=#ffe08a>o</font><font color=#7fd48a>═══╣</font>      <font color=#8a6ab0>v^v</font>    
+            <font color=#7fd48a>║</font>    <font color=#7fd48a>║</font>        <font color=#d8d8e8>*</font> <font color=#8a6ab0>^v^</font>
+           <font color=#7fd48a>╔╝</font> <font color=#ffe08a>O</font>  <font color=#7fd48a>╚╗</font>            
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▒▒▒▒▒▒▒</font><font color=#ffe08a>.</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓▓▓</font><font color=#ffe08a>o</font><font color=#ff8c1a>▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>██████████</font><font color=#ffe08a>:</font><font color=#ff8c1a>█</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>  <font color=#ffd23a>'</font>  <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>▄██</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ffd23a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
+--
+            <font color=#7fd48a>╔════╗</font>             
+            <font color=#7fd48a>╠</font><font color=#ffe08a>O</font><font color=#7fd48a>═══╣</font>       <font color=#8a6ab0>^v^</font>   
+            <font color=#7fd48a>║</font>  <font color=#ffe08a>o</font> <font color=#7fd48a>║</font>           <font color=#8a6ab0>v^</font>
+           <font color=#7fd48a>╔╝</font>    <font color=#7fd48a>╚╗</font>       <font color=#d8d8e8>*</font>    
+          <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▂▂▁▁▂▂</font><font color=#7fd48a>╚╗</font>           
+         <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▒▒</font><font color=#ffe08a>.</font><font color=#ff8c1a>▒▒▒▒▒</font><font color=#7fd48a>╚╗</font>          
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>▓</font><font color=#ffe08a>O</font><font color=#ff8c1a>▓▓▓▓▓▓▓▓</font><font color=#7fd48a>╚╗</font>         
+       <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█████████</font><font color=#ffe08a>o</font><font color=#ff8c1a>██</font><font color=#7fd48a>╚╗</font>        
+       <font color=#7fd48a>╚═╦═╦══════╦═╦═╝</font>        
+        <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>   <font color=#ffd23a>^</font> <font color=#7fd48a>╔╝</font><font color=#ff8c1a>█</font><font color=#7fd48a>║</font>          
+        <font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font><font color=#ff8c1a>██▄</font><font color=#7fd48a>╚╗</font><font color=#ff8c1a>█</font><font color=#7fd48a>║═╗</font>        
+<font color=#505050>░░</font>       <font color=#7fd48a>╚═══╝</font><font color=#8a3a10>▄</font><font color=#ff8c1a>██</font><font color=#8a3a10>▄</font><font color=#7fd48a>╚═══╝</font>      <font color=#505050>░░</font>
