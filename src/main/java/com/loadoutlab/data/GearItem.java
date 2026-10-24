@@ -108,6 +108,13 @@ public final class GearItem {
 			|| nameLower.startsWith("purging staff");
 	}
 
+	/** This item as a tradeable at a price: a charged weapon priced as the
+	 * uncharged twin you buy and charge (ISS-01M5QQV2TGQ5X730T0JJ75S1RD). */
+	public GearItem priced(int price) {
+		return new GearItem(id, name, version, slot, category, speed, twoHanded, standardGear, true, members, price,
+			offensive, defensive, bonuses, requirements);
+	}
+
 	public boolean isWeaponFor(CombatStyle style) {
 		if (slot != GearSlot.WEAPON) {
 			return false;

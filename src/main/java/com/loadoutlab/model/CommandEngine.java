@@ -1702,6 +1702,11 @@ public class CommandEngine {
 			// on now; BiS is the aspirational view you opt into
 			// (field ask 2026-08-22).
 			state.setParam("viewingBis", false);
+			// ...with no swaps strip open and its page back at the start
+			// (Andrew 2026-10-24: "whenver a new search is done the ladder
+			// view should be reset ... wait until an item slot is clicked").
+			state.setParam("ladderSlot", "");
+			state.setParam("ladderPage", 0);
 			// A slayer monster opens ON task (Andrew 2026-10-19: most
 			// people meet these through slayer); anything else opens
 			// off. Task-only bosses are always on task (the classic

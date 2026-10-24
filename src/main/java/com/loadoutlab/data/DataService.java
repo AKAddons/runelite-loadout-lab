@@ -50,16 +50,21 @@ public final class DataService {
 	}
 
 	public LoadoutData load() {
-		List<GearItem> gear = loadGear();
+		List<GearItem> gear = priceChargedTwins(loadGear());
 		List<MonsterStats> monsters = normalizeQuestVersions(loadMonsters());
 		List<SpellStats> spells = loadSpells();
 		Map<Integer, GearItem> gearById = new HashMap<>();
 		gear.forEach(item -> gearById.put(item.getId(), item));
-		return new LoadoutData(gear, monsters, spells, gearById, loadAliases());
+		return new LoadoutData(gear, monsters, spells, gearById, loadAliases(gear));
 	}
 
-	/** Variant id -> base id (ornament/locked/degraded, identical stats). */
-	private Map<Integer, Integer> loadAliases() {
+	/** Variant id -> base id (ornament/locked/degraded, identical stats),
+	 * plus every uncharged, inactive, broken or locked WEAPON version behind
+	 * its charged twin (ISS-01M5QQV2TGQ5X730T0JJ75S1RD, Andrew 2026-10-24:
+	 * "let's only consider charged versions of weapons, don't think about eye
+	 * of ayak uncharged or obligator uncharged"): never suggested, and owning
+	 * one is owning the twin you charge before the trip. */
+	private Map<Integer, Integer> loadAliases(List<GearItem> gear) {
 		Map<Integer, Integer> aliases = new HashMap<>();
 		for (Map.Entry<String, JsonElement> entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet()) {
 			int variant = Integer.parseInt(entry.getKey());
@@ -68,7 +73,67 @@ public final class DataService {
 				aliases.put(variant, base);
 			}
 		}
+		for (Map.Entry<GearItem, GearItem> twin : chargedTwins(gear).entrySet()) {
+			if (!aliases.containsKey(twin.getKey().getId())) {
+				aliases.put(twin.getKey().getId(), aliases.getOrDefault(twin.getValue().getId(), twin.getValue().getId()));
+			}
+		}
 		return aliases;
+	}
+
+	/** Every dead weapon version -> its live twin of the same name: the
+	 * "charged" one, else active, normal, fixed or regular, else the first. */
+	private static Map<GearItem, GearItem> chargedTwins(List<GearItem> gear) {
+		Map<String, List<GearItem>> weapons = new HashMap<>();
+		for (GearItem item : gear) {
+			if (item.getSlot() == GearSlot.WEAPON) {
+				weapons.computeIfAbsent(item.getNameLower(), k -> new ArrayList<>()).add(item);
+			}
+		}
+		Map<GearItem, GearItem> twins = new HashMap<>();
+		for (List<GearItem> family : weapons.values()) {
+			GearItem charged = null;
+			for (String want : new String[]{"charged", "active", "normal", "fixed", "regular", ""}) {
+				for (GearItem item : family) {
+					if (charged == null && !deadVersion(item) && (want.isEmpty() || item.getVersionLower().equals(want))) {
+						charged = item;
+					}
+				}
+			}
+			for (GearItem item : family) {
+				if (charged != null && deadVersion(item)) {
+					twins.put(item, charged);
+				}
+			}
+		}
+		return twins;
+	}
+
+	/** The charged twin inherits the tradeable dead twin's price: the
+	 * uncharged Obligator is how you buy the Obligator, so the charged one
+	 * passes the untradeable gate and the budget modes can afford it. */
+	private static List<GearItem> priceChargedTwins(List<GearItem> gear) {
+		Map<Integer, GearItem> priced = new HashMap<>();
+		for (Map.Entry<GearItem, GearItem> twin : chargedTwins(gear).entrySet()) {
+			GearItem dead = twin.getKey();
+			GearItem charged = twin.getValue();
+			if (dead.isTradeable() && dead.getEstimatedPrice() != null
+				&& (!charged.isTradeable() || charged.getEstimatedPrice() == null)) {
+				priced.putIfAbsent(charged.getId(), charged.priced(dead.getEstimatedPrice()));
+			}
+		}
+		List<GearItem> out = new ArrayList<>(gear.size());
+		for (GearItem item : gear) {
+			out.add(priced.getOrDefault(item.getId(), item));
+		}
+		return out;
+	}
+
+	/** A weapon version that cannot attack as it is. */
+	private static boolean deadVersion(GearItem item) {
+		String version = item.getVersionLower();
+		return version.contains("uncharged") || version.contains("inactive")
+			|| version.contains("broken") || version.contains("locked");
 	}
 
 	private List<GearItem> loadGear() {

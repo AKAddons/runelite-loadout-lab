@@ -72,15 +72,19 @@ class TfaIntakeTest {
 	}
 
 	@Test
-	@DisplayName("the tradeable rewards are priced so the game-best pool admits them; the charged weapons are untradeable")
+	@DisplayName("the tradeable rewards are priced so the game-best pool admits them; a charged weapon is priced as the uncharged twin you buy")
 	void rewardsArePricedAndTradeableByVersion() {
 		for (int id : new int[]{34681, 34719, 34717, 34727, 34684, 34702}) {
 			GearItem item = data.getGear(id);
 			assertTrue(item.isTradeable(), item.getName());
 			assertNotNull(item.getEstimatedPrice(), item.getName() + " needs a price for ALL_STANDARD");
 		}
-		assertFalse(data.getGear(34715).isTradeable(), "Obligator (charged)");
-		assertFalse(data.getGear(34725).isTradeable(), "Zorya's tome (charged)");
+		// Charged versions only (ISS-01M5QQV2TGQ5X730T0JJ75S1RD): the uncharged
+		// twin is a variant, and the charged one carries its price and trades.
+		assertTrue(data.isVariant(34717), "Obligator (uncharged) stands behind the charged one");
+		assertTrue(data.getGear(34715).isTradeable(), "Obligator (charged) is bought as the uncharged one");
+		assertEquals(data.getGear(34717).getEstimatedPrice(), data.getGear(34715).getEstimatedPrice(), "at its price");
+		assertTrue(data.getGear(34725).isTradeable(), "Zorya's tome (charged) the same way");
 		GearItem xbow = data.getGear(34681);
 		OptimizationRequest request = TestRequests.of(guardian(), CombatStyle.RANGED, PlayerLevels.MAXED,
 			PrayerBonuses.bestAvailable(PlayerLevels.MAXED), null, 0, CandidateMode.ALL_STANDARD,

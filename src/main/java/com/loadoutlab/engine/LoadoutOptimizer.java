@@ -1133,20 +1133,15 @@ public final class LoadoutOptimizer {
 			if (!eligible(data, request, item)) {
 				continue;
 			}
-			// An uncharged/broken/locked WEAPON is never suggested for
-			// ACQUISITION: when the charged version is untradeable (wilderness
-			// weapons) the dead tradeable twin used to win the budget pool
-			// outright, priced and scored as if it could attack (audit A3.4).
-			// An OWNED uncharged twin stays: it stands in for the weapon you
-			// own - charge it before the trip (the Tumeken-uncharged rule).
-			// Armour keeps the dedupe tie-break instead of this filter: an
-			// inactive crystal piece is still legitimately wearable.
-			// The weapon bars must come BEFORE the top-N cut: vyre weapons and
-			// halberds never win generic rough-score ranking, but vs tier-3
-			// vampyres / flying monsters they are the only weapons that can
-			// deal damage at all.
+			// An uncharged/broken/locked WEAPON is a variant of its charged
+			// twin since ISS-01M5QQV2TGQ5X730T0JJ75S1RD (eligible() drops it,
+			// ownership credits the twin). Armour keeps the dedupe tie-break
+			// instead: an inactive crystal piece is still legitimately
+			// wearable. The weapon bars must come BEFORE the top-N cut: vyre
+			// weapons and halberds never win generic rough-score ranking, but
+			// vs tier-3 vampyres / flying monsters they are the only weapons
+			// that can deal damage at all.
 			if (slot == GearSlot.WEAPON && (!item.isWeaponFor(request.getStyle())
-				|| badVersion(item) && !request.getOwnedItems().owns(item.getId()) && !request.isDream(item.getId())
 				|| !MonsterMechanics.weaponUsable(request.getMonster(), request.getStyle(), item)
 				|| !MonsterMechanics.weaponCanEverWork(request.getMonster(), request.getStyle(), item))) {
 				continue;

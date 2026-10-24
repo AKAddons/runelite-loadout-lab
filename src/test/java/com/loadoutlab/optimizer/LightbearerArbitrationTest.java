@@ -37,7 +37,9 @@ public class LightbearerArbitrationTest {
 
 	private static GearItem byName(String nameLower) {
 		for (GearItem g : data.getGearItems()) {
-			if (g.getNameLower().equals(nameLower) && g.isStandardGear()) {
+			// The charged version: an uncharged one is its variant now
+			// (ISS-01M5QQV2TGQ5X730T0JJ75S1RD) and no pin can wear it.
+			if (g.getNameLower().equals(nameLower) && g.isStandardGear() && !data.isVariant(g.getId())) {
 				return g;
 			}
 		}

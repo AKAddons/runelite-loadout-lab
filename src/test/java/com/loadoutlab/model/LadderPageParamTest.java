@@ -50,4 +50,26 @@ class LadderPageParamTest {
 		assertEquals(0, ((Number) state.paramsNode().get("ladderPage")).intValue(), "a fresh slot opens on its first page");
 		assertEquals(before, computes.get());
 	}
+
+	@Test
+	@DisplayName("a new search closes the strip and resets its page (Andrew 2026-10-24: \"whenver a new search is done the ladder view should be reset\")")
+	void aNewSearchClosesTheStrip() {
+		LoadoutData data = new DataService().load();
+		PageState state = new PageState();
+		CommandEngine engine = new CommandEngine(data, state, (mob, p, onDone) -> {
+		}, new Link());
+		assertTrue(engine.execute("select", Map.of("query", "abyssal demon")));
+		assertTrue(engine.execute("set-param", Map.of("param", "ladderSlot", "value", "weapon")));
+		assertTrue(engine.execute("set-param", Map.of("param", "ladderPage", "value", 2)));
+
+		assertTrue(engine.execute("select", Map.of("query", "zulrah")));
+		assertEquals("", state.paramsNode().get("ladderSlot"), "no strip until a slot is clicked");
+		assertEquals(0, ((Number) state.paramsNode().get("ladderPage")).intValue(), "page one");
+
+		assertTrue(engine.execute("set-param", Map.of("param", "ladderSlot", "value", "weapon")));
+		assertTrue(engine.execute("set-param", Map.of("param", "ladderPage", "value", 1)));
+		assertTrue(engine.execute("select", Map.of("query", "tombs of amascut")), "a group search resets it too");
+		assertEquals("", state.paramsNode().get("ladderSlot"));
+		assertEquals(0, ((Number) state.paramsNode().get("ladderPage")).intValue());
+	}
 }

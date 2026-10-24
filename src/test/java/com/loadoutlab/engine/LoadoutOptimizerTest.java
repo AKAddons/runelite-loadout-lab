@@ -465,7 +465,7 @@ public class LoadoutOptimizerTest {
 		LoadoutData data = new DataService().load();
 		MonsterStats monster = data.searchMonsters("goblin", 1).get(0);
 		Map<Integer, Integer> owned = new HashMap<>();
-		owned.put(27277, 1);
+		owned.put(27275, 1); // Tumeken's shadow (Charged): charged versions only (ISS-01M5QQV2TGQ5X730T0JJ75S1RD)
 		OptimizationRequest request = new OptimizationRequest(
 			monster,
 			CombatStyle.MAGIC,
