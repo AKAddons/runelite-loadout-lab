@@ -12,6 +12,7 @@
 		"gwdAncient": false,
 		"nerAvailable": false,
 		"ladderSlot": "",
+		"ladderPage": 0,
 		"cannonCount": 0,
 		"cannon1Material": "bronze",
 		"cannon2Material": "bronze",
@@ -65,6 +66,7 @@
 		"lensIndex",
 		"spellbookSwap",
 		"nerAvailable",
-		"ladderSlot"
+		"ladderSlot",
+		"ladderPage"
 	]
 }

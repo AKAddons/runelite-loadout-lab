@@ -1113,15 +1113,19 @@ public class OptimizerService {
 
 	/** A group search's swaps (ISS-01M5JAGFEJ5QHXE37B37XM8HJJ, Andrew 2026-10-22: "ladder
 	 * view is disabled for group searches but i think it should be
-	 * included" - scored by "The whole group"): each slot of the group's
-	 * shared kit swapped for every member, the DPS averaged by the same
-	 * weights that picked the kit (side.weights). One strip for the group. */
-	private Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, SharedSide side, List<MonsterStats> mobs) {
+	 * included" - scored by "The whole group"): each slot of what each member
+	 * WEARS for the style - the kit-backed set where the kit answers
+	 * (ISS-01M5QJMTBRNAWX5WT7NRJD8JWC, Andrew 2026-10-24: "melee dps is
+	 * calcing to 4.44 with nox halberd but ladder is showing 6.06") - swapped
+	 * for every member, the DPS averaged by the weights that picked the kit
+	 * (side.weights). The strip's worn item is the one most members wear in
+	 * the slot. One strip for the group. */
+	private Map<GearSlot, Ladder> groupLadderFor(ComputeContext ctx, SharedSide side, List<MonsterStats> mobs,
+		List<Map<CombatStyle, StyleResult>> perMob, CombatStyle style) {
 		Map<GearSlot, Ladder> ladders = new EnumMap<>(GearSlot.class);
 		if (side == null || side.shared == null) {
 			return ladders;
 		}
-		DpsCalculator calc = new DpsCalculator();
 		int n = side.reqs.size();
 		double[] weight = new double[n];
 		DpsResult[] base = new DpsResult[n];
@@ -1130,7 +1134,8 @@ public class OptimizerService {
 		Set<Integer> dreams = new HashSet<>();
 		double[] basePerMob = new double[n];
 		for (int j = 0; j < n; j++) {
-			base[j] = calcRespecting(calc, side.reqs.get(j), side.shared);
+			StyleResult shown = perMob.get(j).get(style);
+			base[j] = shown == null || shown.owned.isEmpty() ? null : shown.owned.get(0);
 			weight[j] = side.weights[j];
 			dreams.addAll(dreamsFor(ctx, mobs.get(j)));
 			if (base[j] != null) {
@@ -1143,14 +1148,13 @@ public class OptimizerService {
 			return ladders;
 		}
 		baseDps /= total;
-		CombatStyle style = side.reqs.get(0).getStyle();
 		for (GearSlot slot : GearSlot.values()) {
-			GearItem worn = side.shared.get(slot);
+			GearItem worn = mostWorn(base, slot);
 			if (worn == null) {
 				continue;
 			}
 			Map<Integer, double[]> sums = new LinkedHashMap<>();
-			Map<Integer, double[]> perMob = new HashMap<>();
+			Map<Integer, double[]> perMobDps = new HashMap<>();
 			Map<Integer, GearItem> items = new HashMap<>();
 			for (int j = 0; j < n; j++) {
 				if (base[j] == null) {
@@ -1158,11 +1162,14 @@ public class OptimizerService {
 				}
 				for (DpsResult swap : optimizer.slotSwaps(ctx.dataset, side.reqs.get(j), base[j], slot)) {
 					GearItem item = swap.getLoadout().get(slot);
+					if (item.getId() == worn.getId()) {
+						continue; // the strip's worn item: a member wearing another reads its own card
+					}
 					items.putIfAbsent(item.getId(), item);
 					sums.computeIfAbsent(item.getId(), k -> new double[1])[0] += swap.getDps() * weight[j];
 					// Each member's own number for the step: its card shows
 					// that, the group figure ranks (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW).
-					perMob.computeIfAbsent(item.getId(), k -> new double[n])[j] = swap.getDps();
+					perMobDps.computeIfAbsent(item.getId(), k -> new double[n])[j] = swap.getDps();
 				}
 			}
 			List<Rung> candidates = new ArrayList<>();
@@ -1170,7 +1177,7 @@ public class OptimizerService {
 				int id = entry.getKey();
 				Rung rung = new Rung(items.get(id), entry.getValue()[0] / total, 0,
 					ctx.effectiveOwned.owns(id) || dreams.contains(id), null);
-				rung.perMob = perMob.get(id);
+				rung.perMob = perMobDps.get(id);
 				candidates.add(rung);
 			}
 			Rung wornRung = new Rung(worn, baseDps, 0, true, null);
@@ -1190,6 +1197,21 @@ public class OptimizerService {
 			}
 		}
 		return ladders;
+	}
+
+	/** The item most members wear in a slot; null when none does. */
+	private static GearItem mostWorn(DpsResult[] base, GearSlot slot) {
+		Map<Integer, int[]> counts = new HashMap<>();
+		GearItem best = null;
+		int most = 0;
+		for (DpsResult result : base) {
+			GearItem item = result == null ? null : result.getLoadout().get(slot);
+			if (item != null && ++counts.computeIfAbsent(item.getId(), k -> new int[1])[0] > most) {
+				most = counts.get(item.getId())[0];
+				best = item;
+			}
+		}
+		return best;
 	}
 
 	/** The carried spec's swaps (ISS-01M5HCS725N7XVVBC7CMK6Y43A, Andrew
@@ -2459,9 +2481,10 @@ public class OptimizerService {
 				}
 			}
 		}
-		// The group's swaps: one strip per style, on every member's card.
+		// The group's swaps: one strip per style, on every member's card,
+		// built from what the cards wear after the kit merge.
 		for (Map.Entry<CombatStyle, SharedSide> entry : ownedSides.entrySet()) {
-			Map<GearSlot, Ladder> group = groupLadderFor(ctx, entry.getValue(), mobs);
+			Map<GearSlot, Ladder> group = groupLadderFor(ctx, entry.getValue(), mobs, perMob, entry.getKey());
 			for (int j = 0; j < n; j++) {
 				StyleResult sr = perMob.get(j).get(entry.getKey());
 				if (sr != null) {
