@@ -26,6 +26,16 @@ final class ReportBuilder {
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
 		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
 		List<Map<String, Object>> supplies, boolean lunarCamp, List<Map<String, Object>> mobNodes) {
+		return build(version, state, mobs, perMob, keptSlots, counts, thralls, ship, supplies, lunarCamp,
+			mobNodes, "", "");
+	}
+
+	/** With the group's one spellbook and its reason ("" = none pinned). */
+	static String build(String version, PageState state, List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
+		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
+		List<Map<String, Object>> supplies, boolean lunarCamp, List<Map<String, Object>> mobNodes,
+		String groupBook, String groupBookReason) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
 		for (int i = 0; i < mobs.size(); i++) {
@@ -38,6 +48,11 @@ final class ReportBuilder {
 				if (thralls != null) {
 					sb.append("  Thralls: ").append(thralls.get("tier"))
 						.append(String.format(" (dps shown includes it: %.2f)%n", num(thralls.get("dps"))));
+				}
+				if (groupBook != null && !groupBook.isEmpty()) {
+					sb.append("  Group spellbook: ").append(groupBook)
+						.append(groupBookReason == null || groupBookReason.isEmpty() ? "" : " - " + groupBookReason)
+						.append('\n');
 				}
 				if (ship != null) {
 					appendShip(sb, ship);

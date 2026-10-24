@@ -55,7 +55,8 @@ public class PageState {
 	 * <li>nerAvailable - Not Enough Runes is enabled - the ladder's "how
 	 * to get it" link.
 	 * <li>ladderSlot - the slot whose ladder strip is open on the Yours
-	 * card ("" = none).
+	 * card ("" = none); ladderPage - the strip's page (0 = the strip, n =
+	 * the nth five further steps up), reset when another slot opens.
 	 * <li>cannonCount, cannon1/2Material, cannonAmmo, shipKeel,
 	 * cannon1/2Operator - ship combat (REQ-SC-2/3/3b). Post-compute
 	 * additive like thralls - none of these enter the optimizer request,

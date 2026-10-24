@@ -125,6 +125,11 @@ public final class MonsterGroups {
 					if (member.has("spec")) {
 						extra.add("spec:" + Names.lower(member.get("spec").getAsString()));
 					}
+					// A spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY):
+					// its main weapon has no say in the kit; its spec hits still count.
+					if (member.has("specOnly") && member.get("specOnly").getAsBoolean()) {
+						extra.add("spec_only");
+					}
 					if (!extra.isEmpty()) {
 						resolved = resolved.withAttributes(extra);
 					}

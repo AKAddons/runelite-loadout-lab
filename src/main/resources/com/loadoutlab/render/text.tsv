@@ -25,7 +25,7 @@ book.choose	<br>Click to choose how you get there
 book.swapinto	Lunar home, Spellbook Swap into %s - brings the swap and Vengeance runes
 book.lunar	Lunar home for Vengeance - brings Vengeance runes
 dtps.tip	%s - takes ~%.1f dps (%.2f unprayed)
-ladder.group.tip	Each step swapped into the group's shared set, scored by the group's HP-weighted DPS
+ladder.group.tip	Each step swapped into the group's shared set: this mob's own numbers, ranked by the group's HP-weighted DPS (the group figure is in each tooltip)
 ladder.solo.tip	Each step swapped in alone. Click a step you do not own to sim it for this monster
 ladder.sim.ner	%s - not owned, click to sim it for this %s (the rest of the set re-fits around it). Right-click for how to get it
 ladder.sim.noner	%s - not owned, click to sim it for this %s (the rest of the set re-fits around it). Install Not Enough Runes to see how to get it

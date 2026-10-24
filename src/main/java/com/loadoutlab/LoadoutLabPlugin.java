@@ -1544,7 +1544,7 @@ public class LoadoutLabPlugin extends Plugin {
 					// building pages under their locks).
 					CommandEngine engine = commandEngine;
 					if (engine != null) {
-						engine.onRosterResults(roster.mobs, roster.perMob);
+						engine.onRosterResults(roster.mobs, roster.perMob, roster.groupBook, roster.groupBookReason);
 						refreshHostedView();
 					}
 					onDone.run();

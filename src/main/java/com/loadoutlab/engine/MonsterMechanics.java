@@ -225,8 +225,17 @@ public final class MonsterMechanics {
 	 * (vendored from the official calc, which excludes the Kephri
 	 * overlords). profileId maps the group's synthetic phase variants
 	 * back to their real rows. */
-	/** HP times the group's kit weight - the shared-kit currency. */
+	/** HP times the group's kit weight - the shared-kit currency. Zero for
+	 * a spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY,
+	 * Andrew 2026-10-24: "we dont care about he backup melee weapon for it"):
+	 * its main weapon has no say in any kit, swap or strip. */
 	public static double kitWeight(MonsterStats monster) {
+		return monster != null && monster.hasAttribute("spec_only") ? 0 : specWeight(monster);
+	}
+
+	/** HP times the group's weight - the trip's spec currency, a spec-only
+	 * member at full weight ("we should only be measuring the spec hits of DDS"). */
+	public static double specWeight(MonsterStats monster) {
 		String w = monster == null ? null : monster.attributeValue("weight:");
 		return Math.max(1, monster == null ? 1 : monster.getHitpoints()) * (w == null ? 1 : Integer.parseInt(w));
 	}

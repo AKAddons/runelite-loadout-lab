@@ -77,6 +77,61 @@ class LadderStripTest {
 		return out;
 	}
 
+	/** A ladder with steps past the strip's two up (ISS-01M5QD7PNMCMNRZD92RPRMHWRP). */
+	private static Map<String, Object> deepLadder() {
+		Map<String, Object> ladder = ladder();
+		List<Map<String, Object>> more = new ArrayList<>();
+		for (int i = 0; i < 7; i++) {
+			more.add(rung(30000 + i, "Step " + (i + 3), i == 4, 1.0 + i, String.format("+%.2f DPS", 1.0 + i)));
+		}
+		ladder.put("upMore", more);
+		return ladder;
+	}
+
+	private static ResultCards cardsParams(List<String> sent) {
+		return new ResultCards(
+			mock(ItemManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
+			mock(SpriteManager.class, org.mockito.Mockito.RETURNS_DEEP_STUBS),
+			(name, args) -> sent.add(name + ":" + args.get("param") + "=" + args.get("value")), mock(ItemPicker.class));
+	}
+
+	@Test
+	@DisplayName("show more (Andrew 2026-10-24: \"an option to 'show more' on the ladder to see more alternatives\"): with further steps up the strip draws a more control that turns the page; without them, none")
+	void moreControlTurnsThePage() {
+		List<String> sent = new ArrayList<>();
+		JPanel strip = cardsParams(sent).ladderStrip(deepLadder(), worn(), "weapon", true, null, 0);
+		assertEquals(5, named(strip, "rung:").size(), "page zero is the strip as before");
+		List<JComponent> more = named(strip, "ladder-more");
+		assertEquals(1, more.size(), "a more control at the right");
+		assertTrue(named(strip, "ladder-back").isEmpty(), "nothing to go back to on page zero");
+		click(more.get(0), MouseEvent.BUTTON1);
+		assertEquals(List.of("set-param:ladderPage=1"), sent, "the page is view state like the open slot");
+
+		JPanel plain = cardsParams(new ArrayList<>()).ladderStrip(ladder(), worn(), "weapon", true, null, 0);
+		assertTrue(named(plain, "ladder-more").isEmpty(), "no further steps: no control");
+	}
+
+	@Test
+	@DisplayName("page one draws the next five steps up against the worn item, with back and more; the last page has no more")
+	void pagesThroughTheSteps() {
+		List<String> sent = new ArrayList<>();
+		JPanel page1 = cardsParams(sent).ladderStrip(deepLadder(), worn(), "weapon", true, null, 1);
+		List<String> ids = new ArrayList<>();
+		for (JComponent cell : named(page1, "rung:")) {
+			ids.add(cell.getName().substring("rung:".length()));
+		}
+		assertEquals(List.of("30000", "30001", "30002", "30003", "30004"), ids, "steps three to seven, no worn column");
+		assertEquals(1, named(page1, "ladder-back").size());
+		assertEquals(1, named(page1, "ladder-more").size(), "two steps remain");
+		click(named(page1, "ladder-back").get(0), MouseEvent.BUTTON1);
+		assertEquals(List.of("set-param:ladderPage=0"), sent);
+
+		JPanel page2 = cardsParams(new ArrayList<>()).ladderStrip(deepLadder(), worn(), "weapon", true, null, 2);
+		assertEquals(2, named(page2, "rung:").size(), "the last two steps");
+		assertTrue(named(page2, "ladder-more").isEmpty(), "the last page");
+		paint(page1);
+	}
+
 	@Test
 	@DisplayName("down (farthest first), worn, up (closest first) - bars rising left to right")
 	void orderAndBars() {

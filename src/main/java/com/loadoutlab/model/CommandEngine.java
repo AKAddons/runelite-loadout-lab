@@ -459,11 +459,15 @@ public class CommandEngine {
 				if (unchanged) {
 					return true;
 				}
-				if ("lensIndex".equals(key) || "ladderSlot".equals(key)) {
+				if ("lensIndex".equals(key) || "ladderSlot".equals(key) || "ladderPage".equals(key)) {
 					// Switching which roster row is expanded is a VIEW
 					// gesture, not an action - Back must never land on it
-					// (field ask 2026-08-20). Opening a slot's ladder strip
-					// is the same kind of gesture.
+					// (field ask 2026-08-20). Opening a slot's ladder strip,
+					// or turning its page, is the same kind of gesture; a
+					// fresh slot opens on its first page.
+					if ("ladderSlot".equals(key)) {
+						applyParam("ladderPage", 0);
+					}
 					return applyParam(key, next);
 				}
 				String label = PARAM_LABELS.getOrDefault(key, key);
@@ -1055,6 +1059,7 @@ public class CommandEngine {
 			link.publishStatus(true);
 		}
 		ComputeParams p = state.computeParams();
+		p.thralls = membersFlag("thralls");
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
 		p.antifirePotion &= computed.stream().anyMatch(DragonfireRules::breathesFire);
 		MonsterStats lensed = shownMob();
@@ -1121,6 +1126,10 @@ public class CommandEngine {
 
 	private volatile List<MonsterStats> lastMobs;
 	private volatile List<Map<CombatStyle, OptimizerService.StyleResult>> lastPerMob;
+	/** The one book the last roster computed under ("" = none pinned) and
+	 * why (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
+	private volatile String groupBook = "";
+	private volatile String groupBookReason = "";
 	/** Set by cancel; a fresh compute clears it. Results arriving while set are dropped. */
 	private volatile boolean cancelled;
 
@@ -1128,7 +1137,7 @@ public class CommandEngine {
 	 * driven) - assemble the page, attach the params the state holds,
 	 * and publish. */
 	public void onResults(MonsterStats mob, Map<CombatStyle, OptimizerService.StyleResult> results) {
-		onRosterResults(List.of(mob), List.of(results));
+		onRosterResults(List.of(mob), List.of(results), "", "");
 	}
 
 	/** Roster computes: published with the shared params node. */
@@ -1157,13 +1166,21 @@ public class CommandEngine {
 		onRosterResults(order, moved);
 	}
 
+	/** A reorder republishes under the book the results were computed with. */
 	public void onRosterResults(List<MonsterStats> mobs,
 		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob) {
+		onRosterResults(mobs, perMob, groupBook, groupBookReason);
+	}
+
+	public void onRosterResults(List<MonsterStats> mobs,
+		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, String book, String reason) {
 		if (cancelled) {
 			return;
 		}
 		lastMobs = mobs;
 		lastPerMob = perMob;
+		groupBook = book == null ? "" : book;
+		groupBookReason = reason == null ? "" : reason;
 		link.publishStatus(false);
 		republish();
 	}
@@ -1323,6 +1340,28 @@ public class CommandEngine {
 	 * he picked: that card stands down - it carries the reason here and
 	 * the render shows its number without the thrall fold. Melee and
 	 * ranged cards, powered staves and Arceuus spells are untouched. */
+	/** A group book that is not Arceuus stands the summons down on EVERY
+	 * card - the whole raid runs that book (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
+	static void groupStandDown(List<?> mobNodes, String book, String reason) {
+		if (book.isEmpty() || "arceuus".equals(book)) {
+			return;
+		}
+		eachCard(mobNodes, (side, card) -> card.put("arceuusStandDown", reason));
+	}
+
+	/** Every mob plate in the group names the group's book; a mob's own
+	 * fight book (the Sire's Ancients) keeps its own reason. */
+	private static void groupBookPlates(List<?> mobNodes, String book, String reason) {
+		for (Object node : mobNodes) {
+			if (node instanceof Map && ((Map<?, ?>) node).get("fightBook") == null) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> mob = (Map<String, Object>) node;
+				mob.put("fightBook", book);
+				mob.put("fightBookReason", reason.isEmpty() ? "One book for the whole group" : reason);
+			}
+		}
+	}
+
 	static void arceuusStandDown(List<?> mobNodes, Map<String, Object> books, boolean wanted) {
 		if (!wanted) {
 			return;
@@ -1541,6 +1580,14 @@ public class CommandEngine {
 		int keptSlots = PvpRisk.keptSlots(wildy ? Math.max(1, pvp) : pvp, flag("protectItem"));
 		Map<String, Object> entry = RenderModel.entry(mobs, perMob, keptSlots,
 			ownedCheck, simmedIds(), itemLocation);
+		// One book for a group: on every plate, and - off Arceuus - the
+		// summons stand down on every card (ISS-01M5PB4R0MP149NXWNFSEEHVP8).
+		String book = mobs.size() > 1 ? groupBook : "";
+		if (!book.isEmpty()) {
+			groupBookPlates((List<?>) entry.get("mobs"), book, groupBookReason);
+			groupStandDown((List<?>) entry.get("mobs"), book,
+				groupBookReason.isEmpty() ? "the group runs the " + book + " book" : groupBookReason);
+		}
 		if (flag("multiView")) {
 			multiView((List<?>) entry.get("mobs"), intParam("multiStack"));
 		}
@@ -1573,7 +1620,8 @@ public class CommandEngine {
 		// fold and the trip runes are permanently vetoed for a sea lens.
 		// The param persists for the land half of a mixed roster.
 		boolean seaLens = !mobs.isEmpty() && NavalCombat.isNaval(lensOf(mobs).getName());
-		if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs)) {
+		if (!seaLens && membersFlag("thralls") && !arceuusBlocked(mobs)
+			&& (book.isEmpty() || "arceuus".equals(book))) {
 			double dps = ExtraDps.thrallDps(magicLevel);
 			String tier = ExtraDps.thrallTier(magicLevel);
 			if (dps > 0 && tier != null) {
@@ -1587,7 +1635,7 @@ public class CommandEngine {
 		Supplier<Map<String, Object>> countSupplier = counts;
 		page.put("reportText", ReportBuilder.build(coreVersion, state, mobs, perMob, keptSlots,
 			countSupplier == null ? null : countSupplier.get(), thrallsNode, shipNode, supplies, cureMe(mobs),
-			(List<Map<String, Object>>) entry.get("mobs")));
+			(List<Map<String, Object>>) entry.get("mobs"), book, groupBookReason));
 		link.publishPage(page);
 	}
 

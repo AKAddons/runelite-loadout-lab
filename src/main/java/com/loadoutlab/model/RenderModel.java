@@ -80,15 +80,24 @@ public final class RenderModel {
 		List<Object> mobNodes = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++) {
 			Map<String, Object> node = mob(mobs.get(i));
-			node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
-			Map<String, Object> multi = multi(perMob.get(i), riskKeptSlots, owned, simmed);
-			if (multi != null) {
-				node.put("multi", multi);
+			MOB.set(i);
+			try {
+				node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
+				Map<String, Object> multi = multi(perMob.get(i), riskKeptSlots, owned, simmed);
+				if (multi != null) {
+					node.put("multi", multi);
+				}
+			} finally {
+				MOB.remove();
 			}
 			mobNodes.add(node);
 		}
 		return map("mobs", mobNodes);
 	}
+
+	/** The roster index of the mob whose card is being built: a group
+	 * ladder reads that mob's own numbers (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW). */
+	private static final ThreadLocal<Integer> MOB = new ThreadLocal<>();
 
 	static Map<String, Object> mob(MonsterStats mob) {
 		return map("id", mob.getId(), "profileId", mob.profileId(), "name", mob.getName(),
@@ -163,15 +172,58 @@ public final class RenderModel {
 	 * better under the mode) that sizes the strip's bars; base = the worn
 	 * item's own value in the same terms. */
 	public static Map<String, Object> ladderNode(OptimizerService.Ladder ladder) {
+		return ladderNode(ladder, MOB.get());
+	}
+
+	/** The ladder for mob `mob` of a roster (null = a solo card): a group
+	 * ladder shows that mob's own base and changes and names the group
+	 * figure beside them (Andrew 2026-10-24: "3.97 but in the card it is
+	 * showing 5.54 which is a confusing mismatch"). */
+	public static Map<String, Object> ladderNode(OptimizerService.Ladder ladder, Integer mob) {
+		boolean own = ladder.basePerMob != null && mob != null && mob < ladder.basePerMob.length;
+		double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
 		Map<String, Object> node = map("base", ladder.mode == OptimizerService.OptimizeMode.TANKY
 			? String.format("%.2f taken/s", ladder.baseDtps)
-			: String.format("%.2f DPS", ladder.baseDps));
+			: String.format("%.2f DPS", base));
+		if (own) {
+			node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps));
+		}
 		// Balanced weighs both, so it shows both (Andrew 2026-10-22: "show
 		// in the ladder view both the dps gain and the dtps change").
 		if (ladder.mode == OptimizerService.OptimizeMode.BALANCED) {
 			node.put("base2", String.format("%.2f taken/s", ladder.baseDtps));
 		}
-		node.putAll(map("group", ladder.group, "up", rungs(ladder, ladder.up), "down", rungs(ladder, ladder.down)));
+		Integer at = own ? mob : null;
+		node.putAll(map("group", ladder.group, "up", rungs(ladder, ladder.up, at), "down", rungs(ladder, ladder.down, at)));
+		// The steps past the strip, for its "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP).
+		if (!ladder.upMore.isEmpty()) {
+			node.put("upMore", rungs(ladder, ladder.upMore, at));
+		}
+		if (!ladder.downMore.isEmpty()) {
+			node.put("downMore", rungs(ladder, ladder.downMore, at));
+		}
+		if (ladder.all != null) {
+			// Every option the strip could show, best first (the "All weapons" list).
+			List<Object> all = new ArrayList<>();
+			for (OptimizerService.Rung rung : ladder.all) {
+				double dps = at != null && rung.perMob != null ? rung.perMob[at] : rung.dps;
+				all.add(map("id", rung.item.getId(), "name", rung.item.getName(), "owned", rung.owned,
+					"dps", dps, "delta", String.format("%+.2f DPS", dps - base)));
+			}
+			node.put("all", all);
+		}
+		if (ladder.powered != null || ladder.autocast != null) {
+			// The magic weapon slot's two strips (ISS-01M5PKSQBAP823XNC13QBW8830):
+			// powered staves and autocast staves, each a ladder of its own.
+			Map<String, Object> kinds = new LinkedHashMap<>();
+			if (ladder.powered != null) {
+				kinds.put("powered", ladderNode(ladder.powered, mob));
+			}
+			if (ladder.autocast != null) {
+				kinds.put("autocast", ladderNode(ladder.autocast, mob));
+			}
+			node.put("kinds", kinds);
+		}
 		return node;
 	}
 
@@ -189,17 +241,25 @@ public final class RenderModel {
 		}
 	}
 
-	private static List<Object> rungs(OptimizerService.Ladder ladder, List<OptimizerService.Rung> rungs) {
+	private static List<Object> rungs(OptimizerService.Ladder ladder, List<OptimizerService.Rung> rungs, Integer mob) {
 		List<Object> out = new ArrayList<>();
 		for (OptimizerService.Rung rung : rungs) {
+			// A group step reads this mob's own change; the group's ranks it.
+			boolean own = mob != null && rung.perMob != null && mob < rung.perMob.length;
+			double dps = own ? rung.perMob[mob] : rung.dps;
+			double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
 			Map<String, Object> node = map("id", rung.item.getId(), "name", rung.item.getName(),
-				"owned", rung.owned, "price", rung.item.getPriceOrZero(), "delta", ladderDelta(ladder, rung));
+				"owned", rung.owned, "price", rung.item.getPriceOrZero(),
+				"delta", own ? String.format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
+			if (own) {
+				node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps));
+			}
 			if (ladder.mode == OptimizerService.OptimizeMode.BALANCED) {
 				node.put("delta2", String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
 			}
 			node.put("gain", ladderGain(ladder, rung));
 			// Same result as the worn item - ranked by its better stats.
-			node.put("same", Math.abs(rung.dps - ladder.baseDps) <= 1e-9
+			node.put("same", Math.abs(dps - base) <= 1e-9
 				&& Math.abs(rung.dtps - ladder.baseDtps) <= 1e-9);
 			if (rung.with != null || rung.offhand != null) {
 				node.put("with", rung.with == null ? rung.offhand.getName()

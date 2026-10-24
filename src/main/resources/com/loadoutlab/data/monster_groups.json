@@ -503,7 +503,8 @@
 				"name": "Tumeken's Warden",
 				"version": "Core-ejected",
 				"nick": "Warden's Core (spec dump)",
-				"spec": "dragon dagger"
+				"spec": "dragon dagger",
+				"specOnly": true
 			},
 			{
 				"name": "Elidinis' Warden",

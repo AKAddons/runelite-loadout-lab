@@ -1422,8 +1422,34 @@ public class ResultCards {
 	 * right-click menu adds sim everywhere and Not Enough Runes.
 	 */
 	JPanel ladderStrip(Map<String, Object> ladder, Map<String, Object> worn, String slot, boolean nerAvailable) {
+		return ladderStrip(ladder, worn, slot, nerAvailable, null);
+	}
+
+	/** kind names this strip among the slot's several ("powered staves" /
+	 * "autocast staves", ISS-01M5PKSQBAP823XNC13QBW8830); null for the one strip. */
+	JPanel ladderStrip(Map<String, Object> ladder, Map<String, Object> worn, String slot, boolean nerAvailable,
+		String kind) {
+		return ladderStrip(ladder, worn, slot, nerAvailable, kind, 0);
+	}
+
+	/** Steps up per page past the strip (ISS-01M5QD7PNMCMNRZD92RPRMHWRP). */
+	static final int PAGE = 5;
+
+	/** page 0 is the strip; page n draws the nth PAGE further steps up, no
+	 * worn column, every delta still against the worn item, with back and
+	 * more controls (Andrew 2026-10-24: "an option to 'show more' on the
+	 * ladder to see more alternatives" - the panel is too narrow to widen). */
+	JPanel ladderStrip(Map<String, Object> ladder, Map<String, Object> worn, String slot, boolean nerAvailable,
+		String kind, int page) {
 		List<Map<String, Object>> down = Model.list(ladder, "down");
 		List<Map<String, Object>> up = Model.list(ladder, "up");
+		List<Map<String, Object>> more = Model.list(ladder, "upMore");
+		int pages = (more.size() + PAGE - 1) / PAGE;
+		page = Math.max(0, Math.min(page, pages));
+		if (page > 0) {
+			down = List.of();
+			up = more.subList((page - 1) * PAGE, Math.min(page * PAGE, more.size()));
+		}
 		double maxGain = 1e-9;
 		for (Map<String, Object> rung : down) {
 			maxGain = Math.max(maxGain, Math.abs(Model.num(rung, "gain")));
@@ -1434,23 +1460,40 @@ public class ResultCards {
 		boolean group = Model.flag(ladder, "group");
 		// No gaps between columns, so the bars' baselines join into one line.
 		JPanel row = Ui.clear(new FlowLayout(FlowLayout.CENTER, 0, 0));
-		for (int i = down.size() - 1; i >= 0; i--) {
-			row.add(ladderColumn(down.get(i), slot, maxGain, LADDER_DOWN, nerAvailable, group));
+		if (page > 0) {
+			row.add(pager("ladder-back", "<", "Back to the strip", page - 1));
+		} else {
+			for (int i = down.size() - 1; i >= 0; i--) {
+				row.add(ladderColumn(down.get(i), slot, maxGain, LADDER_DOWN, nerAvailable, group));
+			}
+			JPanel wornColumn = ladderColumn(worn, slot, maxGain, LADDER_WORN, nerAvailable, group);
+			// The weapon strip's worn column lists every option on right-click
+			// (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW, Andrew 2026-10-24: "id like to see
+			// what a trident or toxic trident compares to the purging staff").
+			List<Map<String, Object>> all = Model.list(ladder, "all");
+			if (!all.isEmpty()) {
+				wornColumn.setComponentPopupMenu(allWeaponsMenu(all, group));
+			}
+			row.add(wornColumn);
 		}
-		row.add(ladderColumn(worn, slot, maxGain, LADDER_WORN, nerAvailable, group));
 		for (Map<String, Object> rung : up) {
 			row.add(ladderColumn(rung, slot, maxGain, LADDER_UP, nerAvailable, group));
+		}
+		if (page < pages) {
+			row.add(pager("ladder-more", ">", "More steps up", page + 1));
 		}
 
 		JPanel strip = new RoundPanel(LADDER_INSET, 8);
 		strip.setLayout(new BoxLayout(strip, BoxLayout.Y_AXIS));
 		strip.setBorder(BorderFactory.createEmptyBorder(4, 2, 4, 2));
-		JLabel title = Ui.small(Names.cap(slot) + " swaps" + (group ? " (group)" : ""), TEXT);
+		JLabel title = Ui.small(Names.cap(slot) + " swaps" + (kind == null ? "" : " - " + kind)
+			+ (group ? " (group)" : ""), TEXT);
 		title.setToolTipText(group
 			? Ui.text("ladder.group.tip")
 			: Ui.text("ladder.solo.tip"));
 		JPanel legend = Ui.clear(new BorderLayout());
-		legend.add(Ui.small("your gear", LADDER_DOWN), BorderLayout.WEST);
+		legend.add(Ui.small(page > 0 ? "steps " + (stepsShown(ladder) + (page - 1) * PAGE + 1) + " up" : "your gear",
+			LADDER_DOWN), BorderLayout.WEST);
 		legend.add(Ui.small("upgrades", LADDER_UP), BorderLayout.EAST);
 		legend.setMaximumSize(new Dimension(row.getPreferredSize().width, legend.getPreferredSize().height));
 		for (JComponent part : new JComponent[]{title, row, legend}) {
@@ -1458,6 +1501,45 @@ public class ResultCards {
 			strip.add(part);
 		}
 		return strip;
+	}
+
+	/** How many steps up page zero shows: the pages count on from there. */
+	private static int stepsShown(Map<String, Object> ladder) {
+		return Model.list(ladder, "up").size();
+	}
+
+	/** A page control at the strip's edge: a click turns the page, view state
+	 * like the open slot (never an action in the history). */
+	private JLabel pager(String name, String glyph, String tip, int page) {
+		JLabel label = Ui.label(glyph, TEXT);
+		label.setName(name);
+		label.setToolTipText(tip);
+		label.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+		Ui.onClick(label, () -> commands.send("set-param", Map.of("param", "ladderPage", "value", page)));
+		return label;
+	}
+
+	/** Every weapon the request may wear, best first, this mob's number on
+	 * each; an unowned one sims on click, like a step. */
+	private JPopupMenu allWeaponsMenu(List<Map<String, Object>> all, boolean group) {
+		JPopupMenu menu = new JPopupMenu();
+		JMenu list = new JMenu("All weapons (" + all.size() + ")");
+		for (Map<String, Object> option : all) {
+			String name = Model.str(option, "name");
+			boolean owned = Model.flag(option, "owned");
+			JMenuItem item = new JMenuItem(String.format("%s - %.2f DPS (%s)%s", name,
+				Model.num(option, "dps"), Model.str(option, "delta"), owned ? " - yours" : ""));
+			if (!owned) {
+				int id = Model.id(option, "id");
+				item.setToolTipText("Pretend you own " + name
+					+ (group ? " for every monster in this group" : " for this monster"));
+				item.addActionListener(e -> commands.send(group ? "sim-for-group" : "sim-for-mob",
+					Map.of("itemId", id, "label", name)));
+			}
+			list.add(item);
+		}
+		menu.add(list);
+		return menu;
 	}
 
 	/** The card-wide row that centres the ladder strip, under a divider. */
@@ -1591,8 +1673,11 @@ public class ResultCards {
 		String with = Model.str(rung, "with");
 		String second = Model.str(rung, worn ? "base2" : "delta2");
 		boolean same = !worn && Model.flag(rung, "same");
+		// A group strip's numbers are this mob's; the group figure rides here.
+		String groupNote = Model.str(rung, worn ? "groupBase" : "groupDelta");
 		String tip = name + (with == null ? "" : " with " + with)
 			+ (worn ? " - worn" : " " + change + (second == null ? "" : ", " + second))
+			+ (groupNote == null ? "" : " (" + groupNote + ")")
 			+ (same ? " - same result here, better stats" : "")
 			+ (price.isEmpty() ? "" : " - " + price + " gp");
 		cell.setBorder(owned ? BorderFactory.createLineBorder(color)
@@ -2188,12 +2273,34 @@ public class ResultCards {
 			: Model.map(openGear, openSlot);
 		Map<String, Object> openLadder = Model.map(openNode, "ladder");
 		if (openLadder != null) {
-			Map<String, Object> wornColumn = new LinkedHashMap<>(openNode);
-			wornColumn.put("base", Model.str(openLadder, "base"));
-			wornColumn.put("base2", Model.str(openLadder, "base2"));
-			panel.add(centered(ladderStrip(openLadder, wornColumn, openSlot, nerAvailable())));
+			Map<String, Object> kinds = Model.map(openLadder, "kinds");
+			int page = Model.id(pageParams, "ladderPage");
+			if (kinds == null || kinds.isEmpty()) {
+				panel.add(centered(ladderStrip(openLadder, wornColumn(openNode, openLadder), openSlot, nerAvailable(),
+					null, page)));
+			} else {
+				// The magic weapon slot shows two strips, powered staves and
+				// autocast staves (ISS-01M5PKSQBAP823XNC13QBW8830, Andrew
+				// 2026-10-24: "for magic just show two ladders: a powered and
+				// a non powered one so we don't need to do the math of
+				// combining them").
+				for (String kind : kinds.keySet()) {
+					Map<String, Object> kindLadder = Model.map(kinds, kind);
+					panel.add(centered(ladderStrip(kindLadder, wornColumn(openNode, kindLadder), openSlot,
+						nerAvailable(), kind + " staves", page)));
+				}
+			}
 		}
 		return panel;
+	}
+
+	/** A strip's worn column: the slot's own node with the ladder's base figures. */
+	private static Map<String, Object> wornColumn(Map<String, Object> node, Map<String, Object> ladder) {
+		Map<String, Object> worn = new LinkedHashMap<>(node);
+		worn.put("base", Model.str(ladder, "base"));
+		worn.put("base2", Model.str(ladder, "base2"));
+		worn.put("groupBase", Model.str(ladder, "groupBase"));
+		return worn;
 	}
 
 	/** The worn-equipment silhouette (5 rows x 3): blank corners, the
