@@ -234,6 +234,32 @@ public class OfficialVectorExport {
 		{"firesurge-sunfire-araxxor", "Araxxor", "", "MAGIC", "Kodai wand", null, "Fire Surge", "SUNFIRE"},
 		{"firesurge-sunfire-tome-araxxor", "Araxxor", "", "MAGIC", "Kodai wand", null, "Fire Surge", "SUNFIRE", "Tome of Fire#Charged"},
 		{"shadow-td", "Tormented Demon", "1", "MAGIC", "Tumeken's shadow", null},
+		// Vampyres (ISS-01M5RM2A7FFR9XWKATPX877TDD): the vyre weapons' accuracy
+		// and per-hit damage, Efaritay's aid, tier 2's halving and silver cap,
+		// tier 1's silver bonus. The two silver-bolt / sickle (e) rows are the
+		// documented wiki divergences - the calc reads them as immune.
+		{"blisterwoodflail-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Blisterwood flail", null},
+		{"blisterwoodflail-efaritay-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Blisterwood flail", null, null, "Efaritay's aid"},
+		{"ivandisflail-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Ivandis flail", null},
+		{"blisterwoodsickle-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Blisterwood sickle", null},
+		{"hallowedflail-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Hallowed flail", null},
+		{"hallowedflail-efaritay-sentinel", "Vyrewatch Sentinel", "1", "MELEE", "Hallowed flail", null, null, "Efaritay's aid"},
+		{"sunspear-efaritay-venator", "Venator", "1", "MELEE", "Sunspear", null, null, "Efaritay's aid"},
+		{"stake-sentinel", "Vyrewatch Sentinel", "1", "RANGED", "Blisterwood stake", null},
+		{"stake-efaritay-sentinel", "Vyrewatch Sentinel", "1", "RANGED", "Blisterwood stake", null, null, "Efaritay's aid"},
+		{"blisterwoodflail-efaritay-vanstrom", "Vanstrom Klause", "Sins of the Father", "MELEE", "Blisterwood flail", null, null, "Efaritay's aid"},
+		{"whip-efaritay-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Abyssal whip", null, null, "Efaritay's aid"},
+		{"silverlight-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Silverlight", null},
+		{"silverlight-efaritay-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Silverlight", null, null, "Efaritay's aid"},
+		{"ivandisflail-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Ivandis flail", null},
+		{"sunspear-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Sunspear", null},
+		{"stake-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "RANGED", "Blisterwood stake", null},
+		{"firebolt-efaritay-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MAGIC", "Staff of fire", null, "Fire Bolt", "Efaritay's aid"},
+		{"silverlight-feral", "Feral Vampyre", "Level 61", "MELEE", "Silverlight", null},
+		{"silverlight-efaritay-feral", "Feral Vampyre", "Level 61", "MELEE", "Silverlight", null, null, "Efaritay's aid"},
+		{"whip-efaritay-feral", "Feral Vampyre", "Level 61", "MELEE", "Abyssal whip", null, null, "Efaritay's aid"},
+		{"runecbow-silverbolts-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "RANGED", "Rune crossbow", "Silver bolts#Unpoisoned"},
+		{"sickle-e-juvinate", "Vampyre Juvinate", "Level 90 (Temple Trekking)", "MELEE", "Blisterwood sickle (e)", null},
 	};
 
 	/** Sweep battery: the official engine adjudicates OUR optimizer's own

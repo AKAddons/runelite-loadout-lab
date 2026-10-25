@@ -106,14 +106,28 @@ public class VampyreRulesTest {
 		Assert.assertEquals("Zaryte vambraces", hands.getName());
 	}
 
+	/** The 2026-07-05 rule halved non-silver weapons vs tier 2; the
+	 * official calc makes them immune unless Efaritay's aid is worn
+	 * (ISS-01M5RM2A7FFR9XWKATPX877TDD - VampyreParityTest pins the maths). */
 	@Test
-	public void juvinatesHalveNonSilverDamageOnly() {
+	public void juvinatesNeedSilverAVampyrebaneWeaponOrEfaritaysAid() {
 		MonsterStats juvinate = monster("vampyre juvinate");
 		Assert.assertTrue(juvinate.hasAttribute("vampyre2"));
-		Assert.assertEquals(0.5, VampyreRules.damageFactor(juvinate, byName("Abyssal whip")), 0.0001);
-		Assert.assertEquals(1.0, VampyreRules.damageFactor(juvinate, byName("Blisterwood flail")), 0.0001);
-		// Tier 1 and normal monsters: full damage from anything.
-		Assert.assertEquals(1.0, VampyreRules.damageFactor(monster("feral vampyre"), byName("Abyssal whip")), 0.0001);
-		Assert.assertEquals(1.0, VampyreRules.damageFactor(monster("goblin"), byName("Abyssal whip")), 0.0001);
+		Assert.assertTrue(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Abyssal whip")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Abyssal whip", "Efaritay's aid")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Blisterwood flail")));
+		Assert.assertFalse(VampyreRules.immune(juvinate, CombatStyle.MELEE, wearing("Silverlight")));
+		// Tier 1 and normal monsters: anything lands.
+		Assert.assertFalse(VampyreRules.immune(monster("feral vampyre"), CombatStyle.MELEE, wearing("Abyssal whip")));
+		Assert.assertFalse(VampyreRules.immune(monster("goblin"), CombatStyle.MELEE, wearing("Abyssal whip")));
+	}
+
+	private static Loadout wearing(String... names) {
+		Map<com.loadoutlab.data.GearSlot, GearItem> gear = new java.util.EnumMap<>(com.loadoutlab.data.GearSlot.class);
+		for (String name : names) {
+			GearItem item = byName(name);
+			gear.put(item.getSlot(), item);
+		}
+		return new Loadout(gear);
 	}
 }

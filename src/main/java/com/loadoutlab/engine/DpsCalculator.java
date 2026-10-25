@@ -73,8 +73,8 @@ public final class DpsCalculator {
 				result = calculateMelee(request, loadout);
 		}
 		if (result == null) { return null; }
-		double factor = VampyreRules.damageFactor(request.getMonster(), loadout.getWeapon())
-			* TormentedDemonRules.damageFactor(
+		result = VampyreRules.apply(request.getMonster(), request.getStyle(), loadout, result); // ISS-01M5RM2A7FFR9XWKATPX877TDD
+		double factor = TormentedDemonRules.damageFactor(
 				request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName())
 			* MonsterMechanics.damageFactor(request.getMonster(), request.getStyle(),
 				loadout, result.getAttackType(), request.getSpell());
@@ -719,6 +719,7 @@ public final class DpsCalculator {
 		value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_PRE : MELEE_ACCURACY_PRE);
 		value = salveOrSlayer(request, loadout, value, what, MELEE, false);
 		value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_POST : MELEE_ACCURACY_POST);
+		if (!damage) { value = VampyreRules.accuracy(request.getMonster(), loadout, value); }
 		return "crush".equals(attackType) ? applyInquisitorBonus(loadout, value) : value;
 	}
 

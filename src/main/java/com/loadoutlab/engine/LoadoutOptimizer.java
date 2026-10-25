@@ -676,6 +676,8 @@ public final class LoadoutOptimizer {
 				request.getLevels().getDefence(), request.getLevels().getMagic())
 			: null;
 		RiskGuard risk = RiskGuard.of(data, request);
+		GearItem efaritay = data.getGear(VampyreRules.EFARITAY);
+		boolean seedRing = VampyreRules.tier(request.getMonster()) == 2 && pools.slotCandidates.get(RING).contains(efaritay);
 		for (GearItem weapon : weapons) {
 			// Dragonfire without a potion: the shield slot is spoken for,
 			// so two-handed weapons cannot provide protection.
@@ -692,6 +694,13 @@ public final class LoadoutOptimizer {
 			var baseGear = new EnumMap<GearSlot, GearItem>(GearSlot.class);
 			baseGear.put(WEAPON, weapon);
 			states.add(new SearchState(baseGear, budgetCost(request, weapon)));
+			if (seedRing) {
+				// vs tier 2 the line also starts with the ring on: an immune
+				// partial set dies before the ring slot (ISS-01M5RM2A7FFR9XWKATPX877TDD)
+				var ringed = new EnumMap<GearSlot, GearItem>(baseGear);
+				ringed.put(RING, efaritay);
+				states.add(new SearchState(ringed, budgetCost(request, weapon) + budgetCost(request, efaritay)));
+			}
 
 			// Beam trials never reach the panel - skip the counted-bonus
 			// bookkeeping until the final rescore below.
@@ -1022,6 +1031,12 @@ public final class LoadoutOptimizer {
 		Set<Integer> requiredKeep = request.pinnedFor(slot) == null
 			? RequiredGear.requiredIds(request.getMonster(), data, request.getWaivers()).get(slot) : null;
 		boolean atlatl = slot != WEAPON && atlatlInPlay(data, request);
+		// Vampyres (ISS-01M5RM2A7FFR9XWKATPX877TDD): Efaritay's aid has no
+		// stats, so it rides past the score cut; vs tier 2 so does a
+		// vampyrebane weapon (the sunspear hits uncapped there; silver ones
+		// cap at 10, and every other weapon needs the ring, which the beam
+		// seeds - immune lines just score nothing).
+		int tier = VampyreRules.tier(request.getMonster());
 		List<GearItem> protectives = new ArrayList<>();
 		List<GearItem> rows = new ArrayList<>();
 		for (GearItem item : data.getGearItems(slot)) {
@@ -1043,13 +1058,15 @@ public final class LoadoutOptimizer {
 				|| !weaponCanEverWork(request.getMonster(), request.getStyle(), item))) {
 				continue;
 			}
+			boolean hurts = tier == 2 && slot == WEAPON && VampyreRules.bane(2, request.getStyle(), item);
 			// A charged tome scores like an empty shield (0% damage) and the
 			// three share one stat key, so without this rescue the pool keeps
 			// at most one and the spell-matched one is luck (rakaykhan1512,
 			// Discord 2026-10-18: the tome of water lost to the ward).
 			boolean protective = needProtectiveShield && isProtectiveShield(item)
 				|| slot == SHIELD && request.getStyle() == MAGIC
-					&& item.getNameLower().startsWith("tome of ") && "charged".equals(item.getVersionLower());
+					&& item.getNameLower().startsWith("tome of ") && "charged".equals(item.getVersionLower())
+				|| hurts || slot == RING && tier > 0 && item.getId() == VampyreRules.EFARITAY;
 			boolean requiredItem = requiredKeep != null && requiredKeep.contains(item.getId());
 			// Defense-weighted runs must SEE pure-defence gear - ring of
 			// suffering, guardian boots, tank shields score zero offence and

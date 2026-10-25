@@ -64,6 +64,7 @@ public final class MonsterMechanics {
 	/** Full immunity check for a concrete loadout (mirrors the official calc). */
 	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
 		if (monster == null) { return false; }
+		if (VampyreRules.immune(monster, style, loadout)) { return true; }
 		// Data-driven immunity (synthetic group variants) gates the
 		// calculator too - no loadout reaches a shielded style. One
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is

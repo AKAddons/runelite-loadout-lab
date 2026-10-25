@@ -1,31 +1,62 @@
 {
-	"_comment": "Vampyre weapon sets (wiki): tier3 = the only weapons that harm tier-3 vampyres (Vyrewatch Sentinel page); silver = full damage vs tier 2 (others deal half).",
-	"tier3": [
+	"_comment": "Vampyre rules at parity with the official calculator's engine (osrs-dps-calc 89c3e25b: PlayerVsNPCCalc vampyre accuracy, damage, tier-2 transforms and immunity; BaseCalc isWearingSilverWeapon and wearingVampyrebane; PR #671) - ISS-01M5RM2A7FFR9XWKATPX877TDD. Names match the lower-cased item NAME exactly. silver = silver weapons in melee (the wiki's Silver weaponry adds the diamond sickles, emberlight and the blisterwood sickle (e), newer than the calc's list; silvthrill is a quest-only ballista in neither). silverRanged = silver ammo, or the stake as the weapon (the calc's 'Silver bolts#version' names never match a worn item; its intent and the wiki count them). bane2 = vampyrebane vs tier 2 in ANY style (the calc's wearingVampyrebane), bane3 = vs tier 3 in melee only; the blisterwood stake is vampyrebane in ranged at both tiers. numbers: 'acc <weapon>' = the melee roll per cent vs any vampyre, after the post rules; 'dmg <weapon>' = the per-hit per cent vs any vampyre, Efaritay's aid scaling the hit by efaritayDamage first; a silver weapon without its own entry takes silverTier1 vs tier 1 (the calc's 'Rod of ivandis' branch is lower-case and dead - the rod gets only that). Tier 2 last: no vampyrebane + Efaritay's aid halves each hit, else silver caps it at tier2Cap. Each step floors.",
+	"silver": [
+		"blessed axe",
 		"ivandis flail",
 		"blisterwood flail",
+		"hallowed flail",
+		"silver sickle",
+		"silver sickle (b)",
+		"emerald sickle",
+		"emerald sickle (b)",
+		"enchanted emerald sickle (b)",
+		"ruby sickle (b)",
+		"enchanted ruby sickle (b)",
+		"diamond sickle (b)",
+		"enchanted diamond sickle (b)",
 		"blisterwood sickle",
-		"blisterwood stake",
-		"sunspear",
-		"hallowed flail"
-	],
-	"silver": [
+		"blisterwood sickle (e)",
 		"silverlight",
 		"darklight",
 		"arclight",
-		"wolfbane",
+		"emberlight",
 		"rod of ivandis",
-		"silver sickle",
-		"emerald sickle",
-		"enchanted emerald sickle",
-		"diamond sickle",
-		"enchanted diamond sickle",
-		"blessed axe",
-		"silvthrill",
+		"wolfbane"
+	],
+	"silverRanged": [
+		"silver bolts",
+		"blisterwood stake"
+	],
+	"bane2": [
+		"rod of ivandis",
 		"ivandis flail",
-		"blisterwood flail",
 		"blisterwood sickle",
-		"blisterwood stake",
-		"sunspear",
-		"hallowed flail"
-	]
+		"blisterwood flail",
+		"hallowed flail",
+		"sunspear"
+	],
+	"bane3": [
+		"ivandis flail",
+		"blisterwood sickle",
+		"blisterwood flail",
+		"hallowed flail",
+		"sunspear"
+	],
+	"numbers": {
+		"efaritay": 21140,
+		"efaritayAccuracy": 115,
+		"efaritayDamage": 110,
+		"silverTier1": 110,
+		"tier2Cap": 10,
+		"acc blisterwood flail": 105,
+		"acc blisterwood sickle": 105,
+		"acc hallowed flail": 125,
+		"acc sunspear": 125,
+		"dmg blisterwood flail": 125,
+		"dmg hallowed flail": 125,
+		"dmg blisterwood stake": 125,
+		"dmg sunspear": 150,
+		"dmg blisterwood sickle": 115,
+		"dmg ivandis flail": 120
+	}
 }
