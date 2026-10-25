@@ -22,8 +22,6 @@ public final class PluginVersion {
 		try (java.io.InputStream in = PluginVersion.class.getResourceAsStream(
 			"/com/loadoutlab/version.properties")) {
 			return stamp(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
-		} catch (Exception ex) {
-			return "unknown";
-		}
+		} catch (Exception ex) { return "unknown"; }
 	}
 }

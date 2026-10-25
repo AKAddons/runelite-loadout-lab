@@ -1,18 +1,10 @@
 package com.loadoutlab.model;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.loadoutlab.engine.ComputeParams;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.data.NavalCombat;
-import com.loadoutlab.engine.CombatStyle;
-import com.loadoutlab.engine.OptimizationRequest;
-import com.loadoutlab.engine.PvpRisk;
+import com.google.gson.*;
+import com.loadoutlab.engine.*;
+import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Map;
-import java.util.List;
+import com.loadoutlab.data.NavalCombat.Cannon;
 
 /**
  * Core-owned page state for the Companion seam (ADR-0008: Core owns
@@ -98,9 +90,7 @@ public class PageState {
 
 	/** Your live levels for the page ("a/s/d/r/m/p/h"): what the stat sim's
 	 * boxes and the report show where nothing is simmed. */
-	public synchronized void setMyLevels(String levels) {
-		params.put("myLevels", levels == null ? "" : levels);
-	}
+	public synchronized void setMyLevels(String levels) { params.put("myLevels", levels == null ? "" : levels); }
 	/** Int params with a range: {min, max}. */
 	private static final Map<String, int[]> CLAMPS = new HashMap<>();
 	/** The params a select seeds (antifire, tab, view side, on-task,
@@ -113,13 +103,13 @@ public class PageState {
 
 	static {
 		JsonObject root = JsonResources.objectOrThrow("page_params.json");
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("defaults").entrySet()) {
+		for (var e : root.getAsJsonObject("defaults").entrySet()) {
 			JsonPrimitive v = e.getValue().getAsJsonPrimitive();
 			DEFAULTS.put(e.getKey(), v.isBoolean() ? v.getAsBoolean() : v.isNumber() ? (Object) v.getAsInt() : v.getAsString());
 		}
 		// The one default the engine owns (its uncapped sentinel), never the file.
 		DEFAULTS.replace("riskBudgetGp", OptimizationRequest.DEFAULT_RISK_BUDGET_GP);
-		for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("clamps").entrySet()) {
+		for (var e : root.getAsJsonObject("clamps").entrySet()) {
 			CLAMPS.put(e.getKey(), JsonResources.ints(e.getValue().getAsJsonArray()));
 		}
 		JsonResources.strings(root, "snapshotKeys", SNAPSHOT_KEYS);
@@ -131,9 +121,7 @@ public class PageState {
 	private final Map<CombatStyle, String> prayerPicks = new LinkedHashMap<>();
 
 	/** Parameters that change what is SHOWN, not what is computed. */
-	public static boolean isViewParam(String param) {
-		return VIEW_PARAMS.contains(param);
-	}
+	public static boolean isViewParam(String param) { return VIEW_PARAMS.contains(param); }
 
 	public synchronized void select(MonsterStats mob) {
 		params.put("raidSelection", false);
@@ -150,21 +138,15 @@ public class PageState {
 		this.rosterName = name;
 	}
 
-	public synchronized MonsterStats mob() {
-		return mob;
-	}
+	public synchronized MonsterStats mob() { return mob; }
 
-	public synchronized List<MonsterStats> rosterMobs() {
-		return rosterMobs;
-	}
+	public synchronized List<MonsterStats> rosterMobs() { return rosterMobs; }
 
 	/** Selection snapshot for undo: restore() reinstates it exactly -
 	 * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
 	public synchronized Object[] selectionSnapshot() {
 		Map<String, Object> seeded = new LinkedHashMap<>();
-		for (String key : SNAPSHOT_KEYS) {
-			seeded.put(key, params.get(key));
-		}
+		for (String key : SNAPSHOT_KEYS) { seeded.put(key, params.get(key)); }
 		return new Object[]{mob, rosterMobs, rosterName, seeded};
 	}
 
@@ -176,17 +158,13 @@ public class PageState {
 		params.putAll((Map<String, Object>) snapshot[3]);
 	}
 
-	public synchronized boolean hasSelection() {
-		return mob != null || rosterMobs != null;
-	}
+	public synchronized boolean hasSelection() { return mob != null || rosterMobs != null; }
 
 	/** Apply one named parameter; returns false for an unknown name so
 	 * the engine can refuse loudly instead of silently dropping it. */
 	public synchronized boolean setParam(String param, Object value) {
 		Object current = param == null ? null : params.get(param);
-		if (current == null || DERIVED.contains(param)) {
-			return false;
-		}
+		if (current == null || DERIVED.contains(param)) { return false; }
 		switch (param) {
 			case "cannon1Material":
 			case "cannon2Material": {
@@ -253,9 +231,7 @@ public class PageState {
 	}
 
 	/** An int param's default - what a non-numeric value falls back to. */
-	private static int defaultInt(String param) {
-		return (Integer) DEFAULTS.get(param);
-	}
+	private static int defaultInt(String param) { return (Integer) DEFAULTS.get(param); }
 
 	/** Normalize an operator pick; a crew pick is clamped 1-4 and then
 	 * raised to the material's gate. */
@@ -267,10 +243,8 @@ public class PageState {
 	/** Crew operators rise to the minimum Privateering the material demands;
 	 * "you" and already-sufficient crew pass through untouched. */
 	private static String raiseCrewToGate(String operator, String material) {
-		if ("you".equals(operator)) {
-			return operator;
-		}
-		NavalCombat.Cannon cannon =
+		if ("you".equals(operator)) { return operator; }
+		Cannon cannon =
 			NavalCombat.cannon(material);
 		int gate = cannon == null ? 1 : cannon.privateering;
 		return "crew" + Math.max(crewLevel(operator), gate);
@@ -292,17 +266,11 @@ public class PageState {
 		return value instanceof Number ? ((Number) value).intValue() : fallback;
 	}
 
-	private boolean flag(String key) {
-		return Boolean.TRUE.equals(params.get(key));
-	}
+	private boolean flag(String key) { return Boolean.TRUE.equals(params.get(key)); }
 
-	private int num(String key) {
-		return (Integer) params.get(key);
-	}
+	private int num(String key) { return (Integer) params.get(key); }
 
-	private String str(String key) {
-		return (String) params.get(key);
-	}
+	private String str(String key) { return (String) params.get(key); }
 
 	/** The params node of the model page - what a renderer needs to
 	 * draw every chip in its current position. */
@@ -316,15 +284,11 @@ public class PageState {
 	/** A pick map keyed by the style's lower-case name, for the page. */
 	private static Map<String, Object> lowered(Map<CombatStyle, String> picks) {
 		Map<String, Object> out = new LinkedHashMap<>();
-		for (Map.Entry<CombatStyle, String> pick : picks.entrySet()) {
-			out.put(pick.getKey().name().toLowerCase(), pick.getValue());
-		}
+		for (var pick : picks.entrySet()) { out.put(pick.getKey().name().toLowerCase(), pick.getValue()); }
 		return out;
 	}
 
-	public synchronized int toaInvocation() {
-		return num("toaInvocation");
-	}
+	public synchronized int toaInvocation() { return num("toaInvocation"); }
 
 	/** Prayer/boost pick per style: null value = Detect (remove),
 	 * "NONE" = explicitly none, else the option key. */
@@ -351,7 +315,7 @@ public class PageState {
 		// stop steering the math while the lock is on (field ask
 		// 2026-08-27: D charge / thralls / task have no meaning on F2P).
 		boolean f2p = flag("f2pOnly");
-		ComputeParams p = new ComputeParams();
+		var p = new ComputeParams();
 		p.f2pOnly = f2p;
 		p.onSlayerTask = !f2p && flag("onTask");
 		p.inWilderness = flag("inWilderness");

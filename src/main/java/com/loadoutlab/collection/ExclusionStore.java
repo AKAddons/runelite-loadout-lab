@@ -11,11 +11,7 @@ public class ExclusionStore extends IdSetStore {
 		load();
 	}
 
-	String legacyKey() {
-		return KEY;
-	}
+	String legacyKey() { return KEY; }
 
-	public boolean isExcluded(int itemId) {
-		return contains(itemId);
-	}
+	public boolean isExcluded(int itemId) { return contains(itemId); }
 }

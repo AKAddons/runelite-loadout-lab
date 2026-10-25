@@ -1,11 +1,8 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.Names;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.GearItem;
+import com.loadoutlab.data.*;
+import com.google.gson.*;
 import java.util.*;
-import java.util.Map;
 
 /**
  * Gear earned by QUESTING rather than bought: quest rewards, reward-chest
@@ -32,7 +29,7 @@ public final class QuestRewardItems {
 		// Fail-loud on purpose: a silently empty table would quietly drop
 		// every quest reward out of the obtainable-gear pool.
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
-		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+		for (var entry : root.entrySet()) {
 			QUEST_BY_NAME.put(Names.lower(entry.getKey()),
 				entry.getValue().getAsJsonObject().get("quest").getAsString());
 		}
@@ -42,15 +39,11 @@ public final class QuestRewardItems {
 	}
 
 	/** True when this item is earned through a quest rather than bought. */
-	public static boolean isQuestReward(GearItem item) {
-		return questFor(item) != null;
-	}
+	public static boolean isQuestReward(GearItem item) { return questFor(item) != null; }
 
 	/** The source quest's name, or null when the item is not a quest reward. */
 	public static String questFor(GearItem item) {
-		if (item == null) {
-			return null;
-		}
+		if (item == null) { return null; }
 		return QUEST_BY_NAME.get(item.getNameLower());
 	}
 }

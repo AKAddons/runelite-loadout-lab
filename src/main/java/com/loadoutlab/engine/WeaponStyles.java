@@ -1,14 +1,9 @@
 package com.loadoutlab.engine;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.JsonResources;
+import com.google.gson.*;
+import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 /**
  * Melee combat styles available per weapon category - game facts from the
@@ -52,10 +47,8 @@ public final class WeaponStyles {
 	private static Map<String, List<MeleeStyle>> load() {
 		Map<String, List<MeleeStyle>> table = new HashMap<>();
 		JsonObject root = JsonResources.object(RESOURCE);
-		if (root == null) {
-			return table;
-		}
-		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+		if (root == null) { return table; }
+		for (var entry : root.entrySet()) {
 			List<MeleeStyle> styles = new ArrayList<>();
 			for (JsonElement element : entry.getValue().getAsJsonArray()) {
 				JsonObject style = element.getAsJsonObject();

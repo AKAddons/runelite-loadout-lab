@@ -1,8 +1,7 @@
 package com.loadoutlab.engine;
 
 import com.loadoutlab.data.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Vampyre tier weapon rules, verified against the OSRS Wiki 2026-07-05:
@@ -26,17 +25,13 @@ public final class VampyreRules {
 
 	/** False when this weapon cannot damage the monster at all (tier 3). */
 	public static boolean canDamage(MonsterStats monster, GearItem weapon) {
-		if (monster == null || !monster.hasAttribute("vampyre3")) {
-			return true;
-		}
+		if (monster == null || !monster.hasAttribute("vampyre3")) { return true; }
 		return matches(weapon, TIER3_WEAPONS);
 	}
 
 	/** Damage scale: 0.5 for non-silver weapons vs tier 2, otherwise 1. */
 	public static double damageFactor(MonsterStats monster, GearItem weapon) {
-		if (monster == null || !monster.hasAttribute("vampyre2") || matches(weapon, SILVER_WEAPONS)) {
-			return 1.0;
-		}
+		if (monster == null || !monster.hasAttribute("vampyre2") || matches(weapon, SILVER_WEAPONS)) { return 1.0; }
 		return 0.5;
 	}
 
@@ -47,14 +42,10 @@ public final class VampyreRules {
 	}
 
 	private static boolean matches(GearItem weapon, String[] prefixes) {
-		if (weapon == null) {
-			return false;
-		}
+		if (weapon == null) { return false; }
 		String name = weapon.getNameLower();
 		for (String prefix : prefixes) {
-			if (name.startsWith(prefix)) {
-				return true;
-			}
+			if (name.startsWith(prefix)) { return true; }
 		}
 		return false;
 	}

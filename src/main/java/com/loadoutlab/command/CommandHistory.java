@@ -43,14 +43,10 @@ public class CommandHistory {
 	 * @return whatever {@link Command#apply()} returned
 	 */
 	public boolean execute(Command cmd) {
-		if (!attempt(cmd, true, "apply")) {
-			return false;
-		}
+		if (!attempt(cmd, true, "apply")) { return false; }
 		undoStack.push(cmd);
 		redoStack.clear();
-		while (undoStack.size() > CAP) {
-			undoStack.pollLast();
-		}
+		while (undoStack.size() > CAP) { undoStack.pollLast(); }
 		return true;
 	}
 
@@ -61,28 +57,20 @@ public class CommandHistory {
 	 * @return true if an entry was reverted, false if the stack was empty
 	 *         or the revert failed
 	 */
-	public boolean undo() {
-		return move(undoStack, redoStack, false, "revert");
-	}
+	public boolean undo() { return move(undoStack, redoStack, false, "revert"); }
 
 	/**
 	 * Pop the most recent redo entry and re-apply it. On success the entry
 	 * moves back to the undo stack. On failure the entry is dropped.
 	 */
-	public boolean redo() {
-		return move(redoStack, undoStack, true, "re-apply");
-	}
+	public boolean redo() { return move(redoStack, undoStack, true, "re-apply"); }
 
 	/** Pop from one stack, run the command, push onto the other; a refusal
 	 * or a throw drops the entry (fail-open). */
 	private static boolean move(Deque<Command> from, Deque<Command> to, boolean apply, String verb) {
-		if (from.isEmpty()) {
-			return false;
-		}
+		if (from.isEmpty()) { return false; }
 		Command cmd = from.pop();
-		if (!attempt(cmd, apply, verb)) {
-			return false;
-		}
+		if (!attempt(cmd, apply, verb)) { return false; }
 		to.push(cmd);
 		return true;
 	}
@@ -90,9 +78,7 @@ public class CommandHistory {
 	/** Runs apply or revert; false - and a warning - when it refused or threw. */
 	private static boolean attempt(Command cmd, boolean apply, String verb) {
 		try {
-			if (apply ? cmd.apply() : cmd.revert()) {
-				return true;
-			}
+			if (apply ? cmd.apply() : cmd.revert()) { return true; }
 			log.warn("Command {} returned false, dropping: {}", verb, cmd.getDescription());
 		} catch (Exception ex) {
 			log.warn("Command {} threw, dropping: {}", verb, cmd.getDescription(), ex);
@@ -104,14 +90,10 @@ public class CommandHistory {
 	public boolean canRedo() { return !redoStack.isEmpty(); }
 
 	/** Description of the next undo target, or null if the stack is empty. */
-	public String peekUndoDescription() {
-		return undoStack.isEmpty() ? null : undoStack.peek().getDescription();
-	}
+	public String peekUndoDescription() { return undoStack.isEmpty() ? null : undoStack.peek().getDescription(); }
 
 	/** Description of the next redo target, or null if the stack is empty. */
-	public String peekRedoDescription() {
-		return redoStack.isEmpty() ? null : redoStack.peek().getDescription();
-	}
+	public String peekRedoDescription() { return redoStack.isEmpty() ? null : redoStack.peek().getDescription(); }
 
 	/** Wipe both stacks. */
 	public void clear() {

@@ -1,16 +1,9 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.Names;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
+import lombok.*;
+import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Curated per-boss incoming-attack overrides - the D-2 layer on top of the
@@ -31,53 +24,42 @@ public final class BossIncomingOverrides {
 
 	/** One curated attack in the boss's rotation. */
 	@AllArgsConstructor(access = AccessLevel.PACKAGE)
+	@Getter
 	public static final class Attack {
-		@Getter
 		private final String style;
-		@Getter
 		private final int maxHit;
-		@Getter
 		private final double share;
-		@Getter
 		private final boolean prayable;
 		/** Fraction of damage that gets THROUGH the matching protection
 		 * prayer: 0 = fully blocked, 0.5 = half pierces (Callisto melee,
 		 * Corp magic), 1 = prayer does nothing. maxHit is always the TRUE
 		 * unprayed value. */
-		@Getter
 		private final double prayerFactor;
 		/** 0 means "use the stat sheet's attack speed". */
-		@Getter
 		private final int speedTicks;
 		/** Dodgeable by design (Zulrah's magma slam): the standard play
 		 * takes zero, so the attack is excluded from both dps totals and
 		 * kept in the threat list for the tooltip - the same philosophy as
 		 * assuming the protection prayer is up. */
-		@Getter
 		private final boolean avoidable;
 		/** The card's row label when the style alone would not tell two
 		 * rows apart ("ranged volley", "melee (x2)"); "" = the style. */
-		@Getter
 		private final String name;
 		/** Hits per attack (three projectiles a volley, a 42 x2 melee):
 		 * the rate scales with it, the card's max hit does not. */
-		@Getter
 		private final int hits;
 		/** Telegraphed: the standard play prays it on cue whatever single
 		 * prayer it camps (ISS-01M5PBSZBBBAS9Y46X04MVMHZB). */
-		@Getter
 		private final boolean flicked;
 		/** The fraction of a flicked attack that still lands under standard
 		 * play - a mixed volley's odd projectile, a late swap. */
-		@Getter
 		private final double leak;
 	}
 
 	/** The full curated picture for one boss. */
+	@Getter
 	public static final class BossOverride {
-		@Getter
 		private final List<Attack> attacks;
-		@Getter
 		private final String note;
 
 		BossOverride(List<Attack> attacks, String note) {
@@ -92,9 +74,9 @@ public final class BossIncomingOverrides {
 
 	static {
 		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
-		for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+		for (var entry : root.entrySet()) {
 			if ("_unpriced".equals(entry.getKey())) {
-				for (Map.Entry<String, JsonElement> why : entry.getValue().getAsJsonObject().entrySet()) {
+				for (var why : entry.getValue().getAsJsonObject().entrySet()) {
 					UNPRICED.put(Names.lower(why.getKey()), why.getValue().getAsString());
 				}
 			} else if (!entry.getKey().startsWith("_")) {
@@ -144,15 +126,11 @@ public final class BossIncomingOverrides {
 
 	/** The curated override for this monster, or null to use the v1 model.
 	 * Keyed by display name so every version/phase row shares one entry. */
-	public static BossOverride overridesFor(MonsterStats monster) {
-		return lookup(OVERRIDES, monster);
-	}
+	public static BossOverride overridesFor(MonsterStats monster) { return lookup(OVERRIDES, monster); }
 
 	/** Why the card shows no estimate for this monster, or null when the
 	 * curated data or the sheet prices it. */
-	public static String unpricedReason(MonsterStats monster) {
-		return lookup(UNPRICED, monster);
-	}
+	public static String unpricedReason(MonsterStats monster) { return lookup(UNPRICED, monster); }
 
 	/** Version-keyed first ("zulrah|serpentine"): multi-form bosses fight
 	 * differently per form, and the roster lens shows one form at a time -
@@ -160,21 +138,15 @@ public final class BossIncomingOverrides {
 	 * 2026-07-17: every Zulrah form said pray mage). The bare name stays as
 	 * the whole-fight fallback. */
 	private static <T> T lookup(Map<String, T> map, MonsterStats monster) {
-		if (monster == null) {
-			return null;
-		}
+		if (monster == null) { return null; }
 		String version = monster.getVersion();
 		if (version != null && !version.isEmpty()) {
 			T byForm = map.get((monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
-			if (byForm != null) {
-				return byForm;
-			}
+			if (byForm != null) { return byForm; }
 		}
 		return map.get(monster.getNameLower());
 	}
 
 	/** All curated boss names (lowercase) - test and tooling surface. */
-	public static Set<String> names() {
-		return Collections.unmodifiableSet(OVERRIDES.keySet());
-	}
+	public static Set<String> names() { return Collections.unmodifiableSet(OVERRIDES.keySet()); }
 }

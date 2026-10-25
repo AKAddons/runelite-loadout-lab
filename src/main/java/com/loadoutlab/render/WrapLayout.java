@@ -5,9 +5,7 @@ import java.awt.*;
 /** The classic chip-row layout (ported verbatim): FlowLayout that
  * actually wraps, so no control silently clips off the row's end. */
 final class WrapLayout extends FlowLayout {
-	WrapLayout(int align, int hgap, int vgap) {
-		super(align, hgap, vgap);
-	}
+	WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
 
 	public Dimension preferredLayoutSize(Container target) {
 		synchronized (target.getTreeLock()) {
@@ -22,12 +20,10 @@ final class WrapLayout extends FlowLayout {
 			int maxWidth = targetWidth - insets.left - insets.right - getHgap() * 2;
 			int x = 0;
 			int rowHeight = 0;
-			Dimension dim = new Dimension(0, insets.top + getVgap());
+			var dim = new Dimension(0, insets.top + getVgap());
 			for (int i = 0; i < target.getComponentCount(); i++) {
 				Component c = target.getComponent(i);
-				if (!c.isVisible()) {
-					continue;
-				}
+				if (!c.isVisible()) { continue; }
 				Dimension d = c.getPreferredSize();
 				if (x == 0 || x + getHgap() + d.width <= maxWidth) {
 					x += (x > 0 ? getHgap() : 0) + d.width;

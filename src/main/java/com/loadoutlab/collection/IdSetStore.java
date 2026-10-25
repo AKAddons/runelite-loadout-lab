@@ -3,7 +3,6 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.util.*;
-import java.util.Set;
 import net.runelite.client.config.ConfigManager;
 
 @lombok.RequiredArgsConstructor
@@ -23,31 +22,23 @@ public abstract class IdSetStore implements ScopedStore {
 	 * existing install keeps its list when the key gains the account hash. */
 	abstract String legacyKey();
 
-	String key() {
-		return ScopedKeys.key(worldScope, legacyKey());
-	}
+	String key() { return ScopedKeys.key(worldScope, legacyKey()); }
 
 	public synchronized void loadScope(String scope) {
 		this.worldScope = scope;
 		load();
 	}
 
-	public synchronized void reload() {
-		load();
-	}
+	public synchronized void reload() { load(); }
 
 	final void load() {
 		ids.clear();
 		Set<Integer> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey()),
 			new TypeToken<Set<Integer>>(){}.getType());
-		if (stored != null) {
-			ids.addAll(stored);
-		}
+		if (stored != null) { ids.addAll(stored); }
 	}
 
-	final void save() {
-		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(ids));
-	}
+	final void save() { configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(ids)); }
 
 	public synchronized boolean toggle(int itemId) {
 		boolean added = !ids.remove(itemId) && ids.add(itemId);
@@ -60,11 +51,7 @@ public abstract class IdSetStore implements ScopedStore {
 		save();
 	}
 
-	public synchronized boolean contains(int itemId) {
-		return ids.contains(itemId);
-	}
+	public synchronized boolean contains(int itemId) { return ids.contains(itemId); }
 
-	public synchronized Set<Integer> snapshot() {
-		return Collections.unmodifiableSet(new LinkedHashSet<>(ids));
-	}
+	public synchronized Set<Integer> snapshot() { return Collections.unmodifiableSet(new LinkedHashSet<>(ids)); }
 }

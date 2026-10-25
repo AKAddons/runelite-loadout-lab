@@ -3,7 +3,6 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.util.*;
-import java.util.Map;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.config.ConfigManager;
 
@@ -66,9 +65,7 @@ public class CollectionLedger implements ScopedStore {
 
 		/** The item-container id this source is scanned from, or -1 when
 		 * the source is not container-backed (STASH). */
-		public int containerId() {
-			return containerId;
-		}
+		public int containerId() { return containerId; }
 
 		/**
 		 * Reverse lookup: the source scanned from {@code containerId}, or
@@ -84,9 +81,7 @@ public class CollectionLedger implements ScopedStore {
 
 		/** The persisted config-key segment; also the storage name in the
 		 * storages-response PluginMessage (see StoragesApi). */
-		public String key() {
-			return key;
-		}
+		public String key() { return key; }
 	}
 
 	private final ConfigManager configManager;
@@ -103,9 +98,7 @@ public class CollectionLedger implements ScopedStore {
 	public CollectionLedger(ConfigManager configManager, Gson gson) {
 		this.configManager = configManager;
 		this.gson = gson;
-		for (Source s : Source.values()) {
-			snapshots.put(s, new HashMap<>());
-		}
+		for (Source s : Source.values()) { snapshots.put(s, new HashMap<>()); }
 	}
 
 	/**
@@ -135,9 +128,7 @@ public class CollectionLedger implements ScopedStore {
 	 */
 	public boolean update(Source source, Map<Integer, Integer> items) {
 		Map<Integer, Integer> next = new HashMap<>(items);
-		if (next.equals(snapshots.get(source))) {
-			return false;
-		}
+		if (next.equals(snapshots.get(source))) { return false; }
 		snapshots.put(source, next);
 		configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE.getType()));
 		fingerprint = null;
@@ -145,9 +136,7 @@ public class CollectionLedger implements ScopedStore {
 	}
 
 	/** One source's current snapshot, read-only (itemId → quantity). */
-	public Map<Integer, Integer> snapshot(Source source) {
-		return Collections.unmodifiableMap(snapshots.get(source));
-	}
+	public Map<Integer, Integer> snapshot(Source source) { return Collections.unmodifiableMap(snapshots.get(source)); }
 
 	/** Merged itemId → total quantity across all sources. */
 	public Map<Integer, Integer> owned() {
@@ -157,22 +146,16 @@ public class CollectionLedger implements ScopedStore {
 	}
 
 	/** True once a bank snapshot exists (this session or any previous one). */
-	public boolean bankKnown() {
-		return !snapshots.get(Source.BANK).isEmpty();
-	}
+	public boolean bankKnown() { return !snapshots.get(Source.BANK).isEmpty(); }
 
 	/**
 	 * Stable fingerprint of the merged view - the optimizer cache key
 	 * component. Changes iff ownership actually changed.
 	 */
 	public int fingerprint() {
-		if (fingerprint == null) {
-			fingerprint = owned().hashCode();
-		}
+		if (fingerprint == null) { fingerprint = owned().hashCode(); }
 		return fingerprint;
 	}
 
-	private String key(Source s) {
-		return worldScope + ".collection." + s.key;
-	}
+	private String key(Source s) { return worldScope + ".collection." + s.key; }
 }

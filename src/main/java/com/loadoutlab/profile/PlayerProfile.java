@@ -4,8 +4,6 @@ import com.google.gson.*;
 import com.loadoutlab.data.JsonResources;
 import com.loadoutlab.engine.*;
 import java.util.*;
-import java.util.Map;
-import java.util.Set;
 import net.runelite.api.Skill;
 
 /**
@@ -45,24 +43,20 @@ public final class PlayerProfile {
 		this.bankScanned = bankScanned;
 		// Deep-copied on the constructing thread: the export writer runs
 		// off-thread while the client keeps mutating the live snapshots.
-		LinkedHashMap<String, Map<Integer, Integer>> copy = new LinkedHashMap<>();
+		var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
 		if (ownedBySource != null) {
-			for (Map.Entry<String, Map<Integer, Integer>> e : ownedBySource.entrySet()) {
-				copy.put(e.getKey(), Map.copyOf(e.getValue()));
-			}
+			for (var e : ownedBySource.entrySet()) { copy.put(e.getKey(), Map.copyOf(e.getValue())); }
 		}
 		this.ownedBySource = Collections.unmodifiableMap(copy);
 	}
 
-	public OwnedItems ownedItems() {
-		return new OwnedItems(owned, bankScanned);
-	}
+	public OwnedItems ownedItems() { return new OwnedItems(owned, bankScanned); }
 
 	public String toJson() {
-		JsonObject root = new JsonObject();
+		var root = new JsonObject();
 		root.add("realLevels", levels(realLevels));
 		root.add("boostedLevels", levels(boostedLevels));
-		JsonObject prayers = new JsonObject();
+		var prayers = new JsonObject();
 		prayers.addProperty("kingsRansom", prayerUnlocks.piety());
 		prayers.addProperty("rigour", prayerUnlocks.rigour());
 		prayers.addProperty("augury", prayerUnlocks.augury());
@@ -70,21 +64,19 @@ public final class PlayerProfile {
 		prayers.addProperty("mysticVigour", prayerUnlocks.mysticVigour());
 		prayers.addProperty("zeal", prayerUnlocks.zeal());
 		root.add("prayerUnlocks", prayers);
-		JsonObject reqSkills = new JsonObject();
-		for (Map.Entry<Skill, Integer> entry : requirements.getLevels().entrySet()) {
+		var reqSkills = new JsonObject();
+		for (var entry : requirements.getLevels().entrySet()) {
 			reqSkills.addProperty(entry.getKey().name(), entry.getValue());
 		}
-		JsonObject reqs = new JsonObject();
+		var reqs = new JsonObject();
 		reqs.add("skills", reqSkills);
 		com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
-		for (String quest : requirements.getCompletedQuests()) {
-			quests.add(quest);
-		}
+		for (String quest : requirements.getCompletedQuests()) { quests.add(quest); }
 		reqs.add("quests", quests);
 		root.add("requirements", reqs);
 		root.add("owned", items(owned));
 		if (!ownedBySource.isEmpty()) {
-			JsonObject bySource = new JsonObject();
+			var bySource = new JsonObject();
 			ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
 			root.add("ownedBySource", bySource);
 		}
@@ -94,23 +86,21 @@ public final class PlayerProfile {
 
 	/** {"itemId": quantity} for an owned map. */
 	private static JsonObject items(Map<Integer, Integer> items) {
-		JsonObject out = new JsonObject();
+		var out = new JsonObject();
 		items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
 		return out;
 	}
 
 	private static Map<Integer, Integer> parseItems(JsonObject object) {
 		Map<Integer, Integer> out = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-			out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
-		}
+		for (var entry : object.entrySet()) { out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt()); }
 		return out;
 	}
 
 	public static PlayerProfile fromJson(String json) {
 		JsonObject root = new JsonParser().parse(json).getAsJsonObject();
 		JsonObject prayers = root.getAsJsonObject("prayerUnlocks");
-		PrayerUnlocks unlocks = new PrayerUnlocks(
+		var unlocks = new PrayerUnlocks(
 			prayers.get("kingsRansom").getAsBoolean(),
 			prayers.get("rigour").getAsBoolean(),
 			prayers.get("augury").getAsBoolean(),
@@ -119,7 +109,7 @@ public final class PlayerProfile {
 			prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
 		JsonObject reqs = root.getAsJsonObject("requirements");
 		Map<Skill, Integer> reqSkills = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : reqs.getAsJsonObject("skills").entrySet()) {
+		for (var entry : reqs.getAsJsonObject("skills").entrySet()) {
 			reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
 		}
 		Set<String> quests = new HashSet<>();
@@ -128,7 +118,7 @@ public final class PlayerProfile {
 		Map<String, Map<Integer, Integer>> bySource = null;
 		if (root.has("ownedBySource")) {
 			bySource = new LinkedHashMap<>();
-			for (Map.Entry<String, JsonElement> origin : root.getAsJsonObject("ownedBySource").entrySet()) {
+			for (var origin : root.getAsJsonObject("ownedBySource").entrySet()) {
 				bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
 			}
 		}
@@ -143,7 +133,7 @@ public final class PlayerProfile {
 	}
 
 	private static JsonObject levels(PlayerLevels levels) {
-		JsonObject object = new JsonObject();
+		var object = new JsonObject();
 		object.addProperty("attack", levels.getAttack());
 		object.addProperty("strength", levels.getStrength());
 		object.addProperty("defence", levels.getDefence());

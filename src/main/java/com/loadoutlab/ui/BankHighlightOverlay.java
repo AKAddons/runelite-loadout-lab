@@ -26,9 +26,7 @@ public class BankHighlightOverlay extends WidgetItemOverlay {
 
 	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem) {
 		Set<Integer> ids = highlighted.get();
-		if (ids == null || !ids.contains(itemId)) {
-			return;
-		}
+		if (ids == null || !ids.contains(itemId)) { return; }
 		Rectangle bounds = widgetItem.getCanvasBounds();
 		graphics.setColor(FILL);
 		graphics.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 6, 6);

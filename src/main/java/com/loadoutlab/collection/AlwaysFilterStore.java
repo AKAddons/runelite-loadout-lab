@@ -3,7 +3,6 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.util.*;
-import java.util.Map;
 import net.runelite.client.config.ConfigManager;
 
 /**
@@ -21,9 +20,7 @@ public class AlwaysFilterStore extends ScopedMapStore<Integer, String> {
 		super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
 	}
 
-	public synchronized Map<Integer, String> all() {
-		return Collections.unmodifiableMap(new LinkedHashMap<>(items));
-	}
+	public synchronized Map<Integer, String> all() { return Collections.unmodifiableMap(new LinkedHashMap<>(items)); }
 
 	public synchronized void add(int itemId, String name) {
 		items.put(itemId, name == null ? ("item " + itemId) : name);

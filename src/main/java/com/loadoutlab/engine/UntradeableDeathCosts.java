@@ -1,12 +1,8 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.Names;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.StatBlock;
+import com.loadoutlab.data.*;
+import com.google.gson.*;
 import java.util.*;
-import java.util.Map;
 
 /**
  * What dying to another player above level 20 Wilderness costs per worn
@@ -51,14 +47,12 @@ public final class UntradeableDeathCosts {
 		if (root == null) {
 			throw new IllegalStateException("Could not load " + RESOURCE);
 		} {
-			for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+			for (var entry : root.entrySet()) {
 				JsonObject row = entry.getValue().getAsJsonObject();
 				String name = Names.lower(entry.getKey());
 				COST_BY_NAME.put(name, row.get("costGp").getAsLong());
 				CATEGORY_BY_NAME.put(name, row.get("category").getAsInt());
-				if (row.has("frictionGp")) {
-					FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong());
-				}
+				if (row.has("frictionGp")) { FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong()); }
 			}
 		}
 	}
@@ -73,34 +67,26 @@ public final class UntradeableDeathCosts {
 	 * protection does not help), which charges regardless of tradeability.
 	 */
 	public static long costFor(GearItem item) {
-		if (item == null) {
-			return 0L;
-		}
+		if (item == null) { return 0L; }
 		if (item.isTradeable()) {
 			Long destroyed = categoryFor(item) == 5
 				? COST_BY_NAME.get(item.getNameLower()) : null;
 			return destroyed == null ? 0L : destroyed;
 		}
 		Long listed = COST_BY_NAME.get(item.getNameLower());
-		if (listed != null) {
-			return listed;
-		}
+		if (listed != null) { return listed; }
 		return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
 	}
 
 	/** Rebuild-errand proxy for a death loss (0 when none curated). */
 	public static long frictionFor(GearItem item) {
-		if (item == null) {
-			return 0L;
-		}
+		if (item == null) { return 0L; }
 		Long friction = FRICTION_BY_NAME.get(item.getNameLower());
 		return friction == null ? 0L : friction;
 	}
 
 	/** Category 5: destroyed on any death - never protectable. */
-	public static boolean isDestroyedOnDeath(GearItem item) {
-		return categoryFor(item) == 5;
-	}
+	public static boolean isDestroyedOnDeath(GearItem item) { return categoryFor(item) == 5; }
 
 	/**
 	 * Category 4: converts to a tradeable component dropped for the
@@ -108,15 +94,11 @@ public final class UntradeableDeathCosts {
 	 * LOSABLE, so they compete for kept-on-death protection slots at
 	 * their component value - protecting one prevents the drop.
 	 */
-	public static boolean isConvertible(GearItem item) {
-		return categoryFor(item) == 4;
-	}
+	public static boolean isConvertible(GearItem item) { return categoryFor(item) == 4; }
 
 	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
 	public static int categoryFor(GearItem item) {
-		if (item == null) {
-			return 0;
-		}
+		if (item == null) { return 0; }
 		Integer listed = CATEGORY_BY_NAME.get(item.getNameLower());
 		return listed == null ? 0 : listed;
 	}

@@ -10,15 +10,11 @@ import net.runelite.client.ui.PluginPanel;
  * mounts HERE - same icon, same slot, prettier inside. EDT only.
  */
 public class CompanionHost extends PluginPanel {
-	public CompanionHost() {
-		setLayout(new BorderLayout());
-	}
+	public CompanionHost() { setLayout(new BorderLayout()); }
 
 	public void mount(JComponent component) {
 		removeAll();
-		if (component != null) {
-			add(component, BorderLayout.NORTH);
-		}
+		if (component != null) { add(component, BorderLayout.NORTH); }
 		revalidate();
 		repaint();
 	}

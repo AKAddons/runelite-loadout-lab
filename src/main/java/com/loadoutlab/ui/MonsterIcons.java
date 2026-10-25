@@ -9,12 +9,9 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.*;
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import net.runelite.client.RuneLite;
 import okhttp3.*;
 
@@ -46,7 +43,7 @@ public final class MonsterIcons {
 	 * worker thread the first time an icon is asked for. */
 	private volatile Map<String, String> files;
 	private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
-		Thread t = new Thread(r, "loadout-lab-monster-icons");
+		var t = new Thread(r, "loadout-lab-monster-icons");
 		t.setDaemon(true);
 		// A background fetch must never compete with the client thread.
 		t.setPriority(Thread.MIN_PRIORITY + 1);
@@ -62,22 +59,14 @@ public final class MonsterIcons {
 		String lower = key(name, version);
 		String cacheKey = lower + "@" + height;
 		ImageIcon hit = cache.get(cacheKey);
-		if (hit != null) {
-			return hit;
-		}
-		if (failed.contains(lower)) {
-			return null;
-		}
+		if (hit != null) { return hit; }
+		if (failed.contains(lower)) { return null; }
 		synchronized (waiting) {
 			// A load already in flight takes the callback and that is all.
 			boolean loading = waiting.containsKey(cacheKey);
 			List<Runnable> waiters = waiting.computeIfAbsent(cacheKey, k -> new ArrayList<>());
-			if (onReady != null) {
-				waiters.add(onReady);
-			}
-			if (loading) {
-				return null;
-			}
+			if (onReady != null) { waiters.add(onReady); }
+			if (loading) { return null; }
 		}
 		worker.execute(() -> {
 			try {
@@ -92,13 +81,9 @@ public final class MonsterIcons {
 					cache.put(cacheKey, new ImageIcon(
 						img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
 				}
-			} catch (Exception e) {
-				failed.add(lower);
-			}
+			} catch (Exception e) { failed.add(lower); }
 			List<Runnable> waiters;
-			synchronized (waiting) {
-				waiters = waiting.remove(cacheKey);
-			}
+			synchronized (waiting) { waiters = waiting.remove(cacheKey); }
 			if (waiters != null && !waiters.isEmpty()) {
 				SwingUtilities.invokeLater(() -> waiters.forEach(Runnable::run));
 			}
@@ -107,12 +92,10 @@ public final class MonsterIcons {
 	}
 
 	private BufferedImage load(String name, String version, String lower) throws IOException {
-		File file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
+		var file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
 		if (file.isFile()) {
 			BufferedImage disk = ImageIO.read(file);
-			if (disk != null) {
-				return disk;
-			}
+			if (disk != null) { return disk; }
 		}
 		String wikiFile = wikiFile(name, version);
 		if (wikiFile == null || wikiFile.isEmpty()) {
@@ -120,9 +103,7 @@ public final class MonsterIcons {
 			return null;
 		}
 		BufferedImage img = fetch(wikiFile);
-		if (img == null) {
-			return null;
-		}
+		if (img == null) { return null; }
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 			ImageIO.write(img, "png", out);
 			//noinspection ResultOfMethodCallIgnored
@@ -146,18 +127,14 @@ public final class MonsterIcons {
 	/** Built once, on the worker thread, from the bundled corpus. */
 	private Map<String, String> index() {
 		Map<String, String> local = files;
-		if (local != null) {
-			return local;
-		}
+		if (local != null) { return local; }
 		local = new HashMap<>();
 		try {
 			for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray()) {
 				JsonObject row = element.getAsJsonObject();
 				String name = JsonResources.string(row, "name");
 				String image = JsonResources.string(row, "image");
-				if (name.isEmpty() || image.isEmpty()) {
-					continue;
-				}
+				if (name.isEmpty() || image.isEmpty()) { continue; }
 				local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
 				// The panel asks with an empty version whenever the corpus
 				// holds one form, and with a normalized label when it holds
@@ -194,14 +171,10 @@ public final class MonsterIcons {
 			.url(WIKI + encoded + "?width=96")
 			.build();
 		try (Response response = http.newCall(request).execute()) {
-			if (!response.isSuccessful() || response.body() == null) {
-				return null;
-			}
+			if (!response.isSuccessful() || response.body() == null) { return null; }
 			return ImageIO.read(new ByteArrayInputStream(response.body().bytes()));
 		}
 	}
 
-	public void shutdown() {
-		worker.shutdown();
-	}
+	public void shutdown() { worker.shutdown(); }
 }

@@ -4,8 +4,7 @@ import com.loadoutlab.data.JsonResources;
 import com.google.gson.JsonObject;
 import com.loadoutlab.engine.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
+import static com.loadoutlab.engine.BoostProfile.*;
 
 /**
  * The best stat boost assumed per style, given what the player actually owns.
@@ -45,9 +44,7 @@ public final class BoostSelector {
 		}
 	}
 
-	private static int[] ids(String profile) {
-		return IDS.get(profile);
-	}
+	private static int[] ids(String profile) { return IDS.get(profile); }
 
 	private BoostSelector() {
 	}
@@ -56,16 +53,14 @@ public final class BoostSelector {
 	 * F2P mode: members consumables do not exist on a free world - the
 	 * only boosts are the attack/strength potion pair (audit A3.5). */
 	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p) {
-		if (f2p) {
-			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
-		}
+		if (f2p) { return style == CombatStyle.MELEE ? F2P_COMBAT : NONE; }
 		switch (style) {
 			// Divine variants hold the boost at ceiling for the whole fight
 			// - same numbers, better assumption (field ask 2026-07-21).
-			case MELEE: return BoostProfile.DIVINE_SUPER_COMBAT;
-			case RANGED: return BoostProfile.DIVINE_RANGING;
-			case MAGIC: return BoostProfile.SATURATED_HEART;
-			default: return BoostProfile.NONE;
+			case MELEE: return DIVINE_SUPER_COMBAT;
+			case RANGED: return DIVINE_RANGING;
+			case MAGIC: return SATURATED_HEART;
+			default: return NONE;
 		}
 	}
 
@@ -83,9 +78,7 @@ public final class BoostSelector {
 	 * sane risk cap, so the assumption falls back to the magic potion. */
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p,
 		boolean noHearts) {
-		if (f2p) {
-			return style == CombatStyle.MELEE ? BoostProfile.F2P_COMBAT : BoostProfile.NONE;
-		}
+		if (f2p) { return style == CombatStyle.MELEE ? F2P_COMBAT : NONE; }
 		// Each ladder walks best -> worst and ends at NONE: an unowned boost is
 		// never assumed, so a low-level account sees the numbers it can
 		// actually reach today.
@@ -94,7 +87,7 @@ public final class BoostSelector {
 				return BoostProfile.valueOf(name);
 			}
 		}
-		return BoostProfile.NONE;
+		return NONE;
 	}
 
 	/** The highest magic level this player can REACH: their live boosted
@@ -103,9 +96,7 @@ public final class BoostSelector {
 	 * unknown levels (the old Death Charge seed did both). */
 	public static int reachableMagic(PlayerLevels real,
 		PlayerLevels live, OwnedItems owned) {
-		if (real == null) {
-			return live == null ? 0 : live.getMagic();
-		}
+		if (real == null) { return live == null ? 0 : live.getMagic(); }
 		int reachable = live == null ? real.getMagic() : live.getMagic();
 		if (owned != null) {
 			BoostProfile best = bestFor(CombatStyle.MAGIC,
@@ -117,9 +108,7 @@ public final class BoostSelector {
 
 	private static boolean ownsAny(OwnedItems owned, int[] ids) {
 		for (int id : ids) {
-			if (owned.owns(id)) {
-				return true;
-			}
+			if (owned.owns(id)) { return true; }
 		}
 		return false;
 	}

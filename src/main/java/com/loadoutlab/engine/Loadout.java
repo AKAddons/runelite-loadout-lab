@@ -4,7 +4,6 @@ package com.loadoutlab.engine;
 import lombok.Getter;
 import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Map;
 
 public final class Loadout {
 	private final EnumMap<GearSlot, GearItem> gear;
@@ -24,9 +23,7 @@ public final class Loadout {
 	/** namesLower minus "Inactive"-version items (uncharged crystal). */
 	private final String activeNamesLower;
 
-	public Loadout(Map<GearSlot, GearItem> gear) {
-		this(copyOf(gear), true);
-	}
+	public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
 	/**
 	 * Adopt the given map WITHOUT copying: the caller hands over ownership
@@ -34,12 +31,10 @@ public final class Loadout {
 	 * EnumMap per beam trial - the public constructor's defensive copy
 	 * doubled that work across hundreds of thousands of trials.
 	 */
-	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) {
-		return new Loadout(gear, true);
-	}
+	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) { return new Loadout(gear, true); }
 
 	private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
-		EnumMap<GearSlot, GearItem> copy = new EnumMap<>(GearSlot.class);
+		var copy = new EnumMap<GearSlot, GearItem>(GearSlot.class);
 		copy.putAll(gear);
 		return copy;
 	}
@@ -55,12 +50,10 @@ public final class Loadout {
 		int[] def = new int[9];
 		int[] bon = new int[9];
 		int totalCost = 0;
-		StringBuilder names = new StringBuilder(160);
-		StringBuilder activeNames = new StringBuilder(160);
+		var names = new StringBuilder(160);
+		var activeNames = new StringBuilder(160);
 		for (GearItem item : this.gear.values()) {
-			if (item == null) {
-				continue;
-			}
+			if (item == null) { continue; }
 			add(off, item.getOffensive());
 			add(def, item.getDefensive());
 			add(bon, item.getBonuses());
@@ -105,7 +98,7 @@ public final class Loadout {
 
 	/** A copy with ammunition moved into the quiver (see QuiverAmmo). */
 	public Loadout withQuiverAmmo(GearItem carried) {
-		Loadout copy = new Loadout(copyOf(gear), true);
+		var copy = new Loadout(copyOf(gear), true);
 		copy.quiverAmmo = carried;
 		return copy;
 	}
@@ -119,7 +112,7 @@ public final class Loadout {
 		} else {
 			copy.put(slot, item);
 		}
-		Loadout out = new Loadout(copy, true);
+		var out = new Loadout(copy, true);
 		out.quiverAmmo = quiverAmmo;
 		return out;
 	}
@@ -128,9 +121,7 @@ public final class Loadout {
 	public List<GearItem> items() {
 		List<GearItem> items = new ArrayList<>(gear.size());
 		for (GearItem item : gear.values()) {
-			if (item != null) {
-				items.add(item);
-			}
+			if (item != null) { items.add(item); }
 		}
 		return items;
 	}
@@ -138,31 +129,19 @@ public final class Loadout {
 	/** The worn item ids. */
 	public Set<Integer> ids() {
 		Set<Integer> ids = new HashSet<>();
-		for (GearItem item : items()) {
-			ids.add(item.getId());
-		}
+		for (GearItem item : items()) { ids.add(item.getId()); }
 		return ids;
 	}
 
-	public GearItem get(GearSlot slot) {
-		return gear.get(slot);
-	}
+	public GearItem get(GearSlot slot) { return gear.get(slot); }
 
-	public GearItem getWeapon() {
-		return gear.get(GearSlot.WEAPON);
-	}
+	public GearItem getWeapon() { return gear.get(GearSlot.WEAPON); }
 
-	public Map<GearSlot, GearItem> getGear() {
-		return Collections.unmodifiableMap(gear);
-	}
+	public Map<GearSlot, GearItem> getGear() { return Collections.unmodifiableMap(gear); }
 
 	/** Lowercased worn item names, newline-joined (see field doc). */
-	String namesLower() {
-		return namesLower;
-	}
+	String namesLower() { return namesLower; }
 
 	/** namesLower() without "Inactive"-version items. */
-	String activeNamesLower() {
-		return activeNamesLower;
-	}
+	String activeNamesLower() { return activeNamesLower; }
 }

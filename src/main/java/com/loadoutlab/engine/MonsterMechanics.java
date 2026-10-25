@@ -3,7 +3,7 @@ package com.loadoutlab.engine;
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Set;
+import static com.loadoutlab.engine.CombatStyle.*;
 
 /**
  * Per-NPC combat mechanics the stat sheets cannot express: style
@@ -49,14 +49,10 @@ public final class MonsterMechanics {
 
 	/** Style-level immunity, independent of the weapon (panel messaging). */
 	public static boolean styleImmune(MonsterStats monster, CombatStyle style) {
-		if (monster == null) {
-			return false;
-		}
+		if (monster == null) { return false; }
 		// Data-driven immunity (synthetic group variants - the tormented
 		// demon shield phases): the attribute wins before the id lists.
-		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) {
-			return true;
-		}
+		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) { return true; }
 		switch (style) {
 			case MAGIC: return IMMUNE_MAGIC.contains(monster.getId());
 			case RANGED: return IMMUNE_RANGED.contains(monster.getId());
@@ -67,55 +63,43 @@ public final class MonsterMechanics {
 
 	/** Full immunity check for a concrete loadout (mirrors the official calc). */
 	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
-		if (monster == null) {
-			return false;
-		}
+		if (monster == null) { return false; }
 		// Data-driven immunity (synthetic group variants) gates the
 		// calculator too - no loadout reaches a shielded style. One
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
 		// pierced by Verac's set - the flail gates entry here, and the
 		// calculator prices set-complete-or-zero.
 		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) {
-			boolean veracPierce = style == CombatStyle.MELEE
+			boolean veracPierce = style == MELEE
 				&& monster.hasAttribute("prayer_immunity")
 				&& loadout.getWeapon() != null
 				&& loadout.getWeapon().getNameLower().contains("verac");
-			if (!veracPierce) {
-				return true;
-			}
+			if (!veracPierce) { return true; }
 		}
 		// Boat combat (wiki, verified 2026-08-31): "only ranged and magic
 		// can be used; melee weapons cannot attack enemies, even if they
 		// are in range to do so." A sea monster simply has no melee style
 		// card - the same shape as Zulrah's rejection. (The salamander
 		// scorch curiosity is deliberately unmodeled.)
-		if (style == CombatStyle.MELEE
+		if (style == MELEE
 			&& NavalCombat.isNaval(monster.getName())) {
 			return true;
 		}
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();
 		String category = weapon == null ? "" : weapon.getCategory();
-		if (style == CombatStyle.MAGIC && IMMUNE_MAGIC.contains(id)) {
-			return true;
-		}
+		if (style == MAGIC && IMMUNE_MAGIC.contains(id)) { return true; }
 		// By the real id, so phase variants inherit it (Archive Guardian).
-		if (style == CombatStyle.MAGIC && spell != null && "ancient".equals(spell.getSpellbook())
+		if (style == MAGIC && spell != null && "ancient".equals(spell.getSpellbook())
 			&& IMMUNE_ANCIENTS.contains(monster.profileId())) {
 			return true;
 		}
 		// Salarin the twisted (wiki): "can only be damaged by Strike
 		// spells, ring of recoil damage, and dynamite(p)". Melee and
 		// ranged never land; magic lands only as a Strike cast.
-		if (SALARIN.contains(id)) {
-			return style != CombatStyle.MAGIC || !salarinDamagingSpell(spell);
-		}
-		if (style == CombatStyle.RANGED && IMMUNE_RANGED.contains(id)) {
-			return true;
-		}
-		if (style == CombatStyle.MELEE && meleeBarred(id, category)) {
-			return true;
-		}
+		if (SALARIN.contains(id)) { return style != MAGIC || !salarinDamagingSpell(spell); }
+		if (style == RANGED && IMMUNE_RANGED.contains(id)) { return true; }
+		if (style == MELEE && meleeBarred(id, category)) { return true; }
 		return monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell);
 	}
 
@@ -133,10 +117,8 @@ public final class MonsterMechanics {
 	private static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell) {
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
-		if (style == CombatStyle.MELEE) {
-			return weaponName.startsWith("leaf-bladed");
-		}
-		if (style == CombatStyle.RANGED) {
+		if (style == MELEE) { return weaponName.startsWith("leaf-bladed"); }
+		if (style == RANGED) {
 			GearItem ammo = loadout.get(GearSlot.AMMO);
 			String ammoName = ammo == null ? "" : ammo.getNameLower();
 			return ammoName.contains("broad");
@@ -155,9 +137,7 @@ public final class MonsterMechanics {
 	/** Weapon-level pre-filter for candidate selection (conservative: only
 	 * prunes when the weapon alone decides; ammo/spell-dependent cases pass). */
 	public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon) {
-		if (monster == null || style != CombatStyle.MELEE) {
-			return true;
-		}
+		if (monster == null || style != MELEE) { return true; }
 		int id = monster.getId();
 		// Salarin: strike spells only - no melee weapon ever works.
 		return !(meleeBarred(id, weapon == null ? "" : weapon.getCategory())
@@ -268,16 +248,12 @@ public final class MonsterMechanics {
 	 * melee-only reading ranked a blowpipe above the bow that one-shots.
 	 * The vocabulary itself is precomputed on GearItem (one list for this,
 	 * TormentedDemonRules, and the optimizer's demon bump). */
-	public static boolean isDemonbane(GearItem weapon) {
-		return weapon != null && weapon.isDemonbane();
-	}
+	public static boolean isDemonbane(GearItem weapon) { return weapon != null && weapon.isDemonbane(); }
 
 	/** Melee demonbane - the class that destroys a respiratory system on
 	 * any successful hit (wiki: "demonbane weapons (other than holy water)
 	 * will instantly kill the systems"). */
-	private static boolean isMeleeDemonbane(GearItem weapon) {
-		return weapon != null && weapon.isMeleeDemonbane();
-	}
+	private static boolean isMeleeDemonbane(GearItem weapon) { return weapon != null && weapon.isMeleeDemonbane(); }
 
 	/** Some NPCs' magic defence rolls use their Defence level, not Magic. */
 	public static boolean magicDefenceUsesDefenceLevel(MonsterStats monster) {
@@ -293,9 +269,7 @@ public final class MonsterMechanics {
 	 */
 	public static double damageFactor(MonsterStats monster, CombatStyle style,
 		Loadout loadout, String attackType, SpellStats spell) {
-		if (monster == null) {
-			return 1.0;
-		}
+		if (monster == null) { return 1.0; }
 		String name = monster.getName();
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
@@ -304,45 +278,33 @@ public final class MonsterMechanics {
 		// re-shows (the kit pass, shared-set evaluation) call calculate()
 		// directly, so the math must agree or a whip line renders a
 		// phantom dps against them.
-		if (style == CombatStyle.MELEE
+		if (style == MELEE
 			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon)) {
 			return 0.0;
 		}
-		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType)) {
-			return 0.5;
-		}
+		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType)) { return 0.5; }
 		if (("Kraken".equalsIgnoreCase(name) || "Cave kraken".equalsIgnoreCase(name))
-			&& style == CombatStyle.RANGED) {
+			&& style == RANGED) {
 			return 1.0 / 7.0;
 		}
-		if (TEKTON.contains(monster.getId()) && style == CombatStyle.MAGIC) {
-			return 0.2;
-		}
+		if (TEKTON.contains(monster.getId()) && style == MAGIC) { return 0.2; }
 		if (ICE_DEMON.contains(monster.getId())) {
 			boolean fire = spell != null && "fire".equals(spell.getElement());
-			if (!fire) {
-				return 1.0 / 3.0;
-			}
+			if (!fire) { return 1.0 / 3.0; }
 		}
 		if ("Slagilith".equalsIgnoreCase(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
 			return 1.0 / 3.0;
 		}
 		if ("Zogre".equalsIgnoreCase(name) || "Skogre".equalsIgnoreCase(name) || "Slash Bash".equalsIgnoreCase(name)) {
-			if (spell != null && "Crumble Undead".equals(spell.getName())) {
-				return 0.5;
-			}
+			if (spell != null && "Crumble Undead".equals(spell.getName())) { return 0.5; }
 			return 0.25;
 		}
 		return 1.0;
 	}
 
 	private static boolean corpbane(CombatStyle style, String weaponName, String attackType) {
-		if (style == CombatStyle.MAGIC) {
-			return true;
-		}
-		if (style != CombatStyle.MELEE || attackType == null || !attackType.startsWith("stab")) {
-			return false;
-		}
+		if (style == MAGIC) { return true; }
+		if (style != MELEE || attackType == null || !attackType.startsWith("stab")) { return false; }
 		return weaponName.contains("osmumten's fang")
 			|| weaponName.endsWith("halberd")
 			|| (weaponName.contains("spear") && !weaponName.equals("blue moon spear"));

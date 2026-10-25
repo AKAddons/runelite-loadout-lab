@@ -50,18 +50,18 @@ class VoidSetTest {
 		int[] shared = {8839, 8840, 8842, 13072, 13073}; // top, robe, gloves, elite top, elite robe
 		for (CombatStyle style : new CombatStyle[]{CombatStyle.MELEE, CombatStyle.RANGED, CombatStyle.MAGIC}) {
 			for (int id : shared) {
-				assertTrue(LoadoutOptimizer.candidateScore(request(style), byId(id)) > 0,
+				assertTrue(LoadoutOptimizer.candidateScore(request(style), byId(id), false) > 0,
 					"piece " + id + " must be seeded for " + style);
 			}
 		}
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.RANGED), byId(11664)) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.RANGED), byId(11664), false) > 0,
 			"ranger helm seeds the ranged pool");
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MAGIC), byId(11663)) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MAGIC), byId(11663), false) > 0,
 			"mage helm seeds the magic pool");
-		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11665)) > 0,
+		assertTrue(LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11665), false) > 0,
 			"melee helm seeds the melee pool");
 		// The off-style helm stays unseeded (zero score - pruned).
-		assertEquals(0.0, LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11664)),
+		assertEquals(0.0, LoadoutOptimizer.candidateScore(request(CombatStyle.MELEE), byId(11664), false),
 			1e-9, "ranger helm has no business in the melee pool");
 	}
 

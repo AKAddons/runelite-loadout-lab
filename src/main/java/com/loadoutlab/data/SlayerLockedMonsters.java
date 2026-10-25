@@ -1,7 +1,6 @@
 package com.loadoutlab.data;
 
 import java.util.*;
-import java.util.Set;
 
 /**
  * Slayer bosses that can ONLY be fought while on the corresponding

@@ -11,11 +11,7 @@ public class DreamStore extends IdSetStore {
 		load();
 	}
 
-	String legacyKey() {
-		return KEY;
-	}
+	String legacyKey() { return KEY; }
 
-	public boolean isDreamed(int itemId) {
-		return contains(itemId);
-	}
+	public boolean isDreamed(int itemId) { return contains(itemId); }
 }

@@ -1,10 +1,7 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.Names;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Set;
 
 /**
  * Raids SUPPLY their own boosts (field spec 2026-07-18): Chambers of
@@ -43,12 +40,8 @@ public final class RaidBoosts {
 	/** The raid-supplied boost for a fight inside, or null outside. */
 	public static BoostProfile suppliedBoost(MonsterStats monster) {
 		String name = Names.lower(monster.getName());
-		if (XERIC.contains(name)) {
-			return BoostProfile.OVERLOAD_PLUS;
-		}
-		if (AMASCUT.contains(name)) {
-			return BoostProfile.SMELLING_SALTS;
-		}
+		if (XERIC.contains(name)) { return BoostProfile.OVERLOAD_PLUS; }
+		if (AMASCUT.contains(name)) { return BoostProfile.SMELLING_SALTS; }
 		return null;
 	}
 }

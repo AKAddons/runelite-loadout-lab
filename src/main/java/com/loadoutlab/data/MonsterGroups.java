@@ -1,9 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import java.util.*;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -38,9 +36,7 @@ public final class MonsterGroups {
 
 		/** "Fight Caves - 7 mobs" for list rows (the coming-soon note
 		 * renders in the RESULT card, not here - field spec 2026-07-18). */
-		public String label() {
-			return name + " - " + mobs.size() + " mobs";
-		}
+		public String label() { return name + " - " + mobs.size() + " mobs"; }
 	}
 
 	private MonsterGroups() {
@@ -60,9 +56,7 @@ public final class MonsterGroups {
 					MonsterStats resolved = resolve(data,
 						member.get("name").getAsString(),
 						member.has("version") ? member.get("version").getAsString() : null);
-					if (resolved == null) {
-						continue;
-					}
+					if (resolved == null) { continue; }
 					if (member.has("immuneTo")) {
 						// A synthetic per-phase variant (TD shields, KQ
 						// forms, Nylocas forms, Warden P2): same sheet, new
@@ -86,13 +80,11 @@ public final class MonsterGroups {
 							// shield: Verac's set pierces it (KQ forms).
 							attributes.add("prayer_immunity");
 						}
-						StringBuilder joined = new StringBuilder();
+						var joined = new StringBuilder();
 						for (String style : styles) {
 							mask |= styleBit(style);
 							attributes.add("immune_" + style);
-							if (joined.length() > 0) {
-								joined.append(" + ");
-							}
+							if (joined.length() > 0) { joined.append(" + "); }
 							joined.append(Names.cap(style));
 						}
 						String label = member.has("label")
@@ -113,33 +105,21 @@ public final class MonsterGroups {
 					} else if (member.has("label")) {
 						resolved = resolved.withVersion(member.get("label").getAsString());
 					}
-					if (member.has("nick")) {
-						resolved = resolved.withDisplayName(member.get("nick").getAsString());
-					}
+					if (member.has("nick")) { resolved = resolved.withDisplayName(member.get("nick").getAsString()); }
 					// Raid stipulations (Andrew 2026-09-10): a kit weight (the
 					// fight that decides the raid) and a spec weapon family.
 					List<String> extra = new ArrayList<>();
-					if (member.has("weight")) {
-						extra.add("weight:" + member.get("weight").getAsInt());
-					}
-					if (member.has("spec")) {
-						extra.add("spec:" + Names.lower(member.get("spec").getAsString()));
-					}
+					if (member.has("weight")) { extra.add("weight:" + member.get("weight").getAsInt()); }
+					if (member.has("spec")) { extra.add("spec:" + Names.lower(member.get("spec").getAsString())); }
 					// A spec-only member (the Warden's Core, ISS-01M5QEFMBSZXAHV84ZXF1YZHWY):
 					// its main weapon has no say in the kit; its spec hits still count.
-					if (member.has("specOnly") && member.get("specOnly").getAsBoolean()) {
-						extra.add("spec_only");
-					}
-					if (!extra.isEmpty()) {
-						resolved = resolved.withAttributes(extra);
-					}
+					if (member.has("specOnly") && member.get("specOnly").getAsBoolean()) { extra.add("spec_only"); }
+					if (!extra.isEmpty()) { resolved = resolved.withAttributes(extra); }
 					mobs.add(resolved);
 				}
 				List<String> aliases = new ArrayList<>();
 				if (row.has("aliases")) {
-					for (JsonElement a : row.getAsJsonArray("aliases")) {
-						aliases.add(Names.lower(a.getAsString()));
-					}
+					for (JsonElement a : row.getAsJsonArray("aliases")) { aliases.add(Names.lower(a.getAsString())); }
 				}
 				if (!mobs.isEmpty()) {
 					groups.add(new MonsterGroup(name, note, Collections.unmodifiableList(mobs),
@@ -174,9 +154,7 @@ public final class MonsterGroups {
 	/** Name-contains search over the groups, hits in curated order. */
 	public static List<MonsterGroup> search(List<MonsterGroup> groups, String query, int limit) {
 		String text = query == null ? "" : Names.lower(query.trim());
-		if (text.length() < 2) {
-			return new ArrayList<>();
-		}
+		if (text.length() < 2) { return new ArrayList<>(); }
 		// Player vocabulary ("jad", "zuk", "dks") reaches the group through its aliases.
 		return groups.stream().filter(group -> Names.lower(group.getName()).contains(text)
 			|| group.aliases.stream().anyMatch(alias -> alias.contains(text) || text.contains(alias)))

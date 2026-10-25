@@ -2,9 +2,6 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.loadoutlab.data.JsonResources.*;
 
@@ -51,9 +48,7 @@ public final class SpellRunes {
 		com.loadoutlab.engine.OwnedItems owned) {
 		Map<String, Integer> cost = spellName == null
 			? null : BY_SPELL.get(spellName);
-		if (cost == null || owned == null) {
-			return true;
-		}
+		if (cost == null || owned == null) { return true; }
 		return cost.keySet().stream().noneMatch(rune -> PREMIUM.contains(rune)
 			&& RUNE_ITEMS.get(rune) != null && !owned.owns(RUNE_ITEMS.get(rune)));
 	}
@@ -65,9 +60,7 @@ public final class SpellRunes {
 	 * "earth warrior" style name never reaches here: gear names only). */
 	private static List<String> covers(String nameLower) {
 		List<String> out = new ArrayList<>(2);
-		if (nameLower == null) {
-			return out;
-		}
+		if (nameLower == null) { return out; }
 		for (String[] staff : STAVES) {
 			if (nameLower.contains(staff[0])) {
 				out.addAll(Arrays.asList(staff).subList(1, staff.length));
@@ -88,20 +81,14 @@ public final class SpellRunes {
 	public static List<Map<String, Object>> costFor(String spellName,
 		String weaponNameLower, String shieldNameLower) {
 		Map<String, Integer> runes = spellName == null ? null : BY_SPELL.get(spellName);
-		if (runes == null) {
-			return null;
-		}
+		if (runes == null) { return null; }
 		List<String> covered = covers(weaponNameLower);
 		covered.addAll(covers(shieldNameLower));
 		List<Map<String, Object>> out = new ArrayList<>();
-		for (Map.Entry<String, Integer> rune : runes.entrySet()) {
-			if (covered.contains(rune.getKey())) {
-				continue;
-			}
+		for (var rune : runes.entrySet()) {
+			if (covered.contains(rune.getKey())) { continue; }
 			Integer itemId = RUNE_ITEMS.get(rune.getKey());
-			if (itemId == null) {
-				continue;
-			}
+			if (itemId == null) { continue; }
 			out.add(map("id", itemId, "name", Names.cap(rune.getKey()) + " rune", "qty", rune.getValue()));
 		}
 		return out;
@@ -112,9 +99,7 @@ public final class SpellRunes {
 	 * A cost with no fire runes (a fire staff or tome covers them) comes
 	 * back unchanged; null stays null. */
 	public static List<Map<String, Object>> withSunfire(List<Map<String, Object>> runes) {
-		if (runes == null) {
-			return null;
-		}
+		if (runes == null) { return null; }
 		Integer fire = RUNE_ITEMS.get("fire");
 		List<Map<String, Object>> out = new ArrayList<>(runes.size());
 		for (Map<String, Object> rune : runes) {
@@ -150,9 +135,7 @@ public final class SpellRunes {
 	}
 
 	public static List<Map<String, Object>> combineCombos(List<Map<String, Object>> runes) {
-		if (runes == null) {
-			return null;
-		}
+		if (runes == null) { return null; }
 		Map<String, Map<String, Object>> byName = new LinkedHashMap<>();
 		for (Map<String, Object> rune : runes) {
 			byName.put(String.valueOf(rune.get("name")).replace(" rune", "")
@@ -161,17 +144,13 @@ public final class SpellRunes {
 		for (String[] combo : COMBOS) {
 			Map<String, Object> a = byName.get(combo[1]);
 			Map<String, Object> b = byName.get(combo[2]);
-			if (a == null || b == null) {
-				continue;
-			}
+			if (a == null || b == null) { continue; }
 			int qty = Math.max(((Number) a.get("qty")).intValue(),
 				((Number) b.get("qty")).intValue());
 			Map<String, Object> merged = map("id", Integer.parseInt(combo[3]),
 				"name", Names.cap(combo[0]) + " rune", "qty", qty);
 			Object why = a.get("why") != null ? a.get("why") : b.get("why");
-			if (why != null) {
-				merged.put("why", why);
-			}
+			if (why != null) { merged.put("why", why); }
 			byName.remove(combo[1]);
 			byName.remove(combo[2]);
 			byName.put(combo[0], merged);

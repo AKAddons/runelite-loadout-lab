@@ -1,11 +1,9 @@
 package com.loadoutlab.engine;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.List;
+import static java.lang.Math.*;
 
 /**
  * Special-attack definitions and expected-damage math.
@@ -126,15 +124,11 @@ public final class SpecialAttack {
 	 * spec weapon is a candidate for ANY set (field request 2026-07-17 -
 	 * "sometimes you want to use magic + chally"). */
 	public static SpecialAttack match(GearItem item) {
-		if (item == null || item.getSlot() != GearSlot.WEAPON) {
-			return null;
-		}
+		if (item == null || item.getSlot() != GearSlot.WEAPON) { return null; }
 		String name = item.getNameLower();
 		for (SpecialAttack spec : REGISTRY) {
 			for (String prefix : spec.namePrefixes) {
-				if (name.startsWith(prefix)) {
-					return spec;
-				}
+				if (name.startsWith(prefix)) { return spec; }
 			}
 		}
 		return null;
@@ -146,9 +140,7 @@ public final class SpecialAttack {
 	 */
 	/** The spec's multiplier at a stack of targets (the Multi card, Andrew
 	 * 2026-10-19): the stack capped at the targets it hits; 1 single-target. */
-	public double multiFactor(int stack) {
-		return multiTargets <= 0 ? 1 : Math.max(1, Math.min(stack, multiTargets));
-	}
+	public double multiFactor(int stack) { return multiTargets <= 0 ? 1 : max(1, min(stack, multiTargets)); }
 
 	public double expectedDamage(DpsResult base, MonsterStats monster, PlayerLevels levels) {
 		// The Wardens' ejected core (wiki): melee "will always deal their
@@ -249,7 +241,7 @@ public final class SpecialAttack {
 			+ miss * p * (1.25 * max)
 			+ miss * miss * p * max
 			+ miss * miss * miss * p * (0.75 * max)
-			+ Math.pow(miss, 4) * 1.0;
+			+ pow(miss, 4) * 1.0;
 	}
 
 	/**
@@ -262,7 +254,7 @@ public final class SpecialAttack {
 		final int[] choose = {1, 4, 6, 4, 1};
 		double expected = 0;
 		for (int k = 1; k <= 4; k++) {
-			expected += choose[k] * Math.pow(p, k) * Math.pow(1 - p, 4 - k)
+			expected += choose[k] * pow(p, k) * pow(1 - p, 4 - k)
 				* (0.7 + 0.2 * k) * max;
 		}
 		return expected;
@@ -287,9 +279,7 @@ public final class SpecialAttack {
 		int boosted = (int) (max * (dragonArrows ? 1.5 : 1.3));
 		int min = dragonArrows ? 8 : 5;
 		double sum = 0;
-		for (int d = 0; d <= boosted; d++) {
-			sum += Math.min(DARK_BOW_CAP, Math.max(min, d));
-		}
+		for (int d = 0; d <= boosted; d++) { sum += min(DARK_BOW_CAP, max(min, d)); }
 		return 2 * p * (sum / (boosted + 1));
 	}
 
@@ -305,7 +295,7 @@ public final class SpecialAttack {
 	private static int snapshotMax(DpsResult base, PlayerLevels levels) {
 		GearItem ammo = base.getLoadout().get(GearSlot.AMMO);
 		int ammoStrength = ammo == null ? 0 : ammo.getBonuses().getRangedStrength();
-		return (int) Math.floor(0.5 + (levels.getRanged() + 10) * (ammoStrength + 64) / 640.0);
+		return (int) floor(0.5 + (levels.getRanged() + 10) * (ammoStrength + 64) / 640.0);
 	}
 
 	/**
@@ -315,25 +305,19 @@ public final class SpecialAttack {
 	 * max 50 (57 with the staff's 15% bonus); level 99 gives 58 (66).
 	 */
 	private static int volatileMax(DpsResult base, PlayerLevels levels) {
-		int spellMax = Math.min((int) Math.floor(58.0 * levels.getMagic() / 99.0) + 1, 58);
+		int spellMax = min((int) floor(58.0 * levels.getMagic() / 99.0) + 1, 58);
 		double gearBonus = 1 + base.getLoadout().getBonuses().getMagicDamage() / 1000.0;
-		return (int) Math.floor(spellMax * gearBonus);
+		return (int) floor(spellMax * gearBonus);
 	}
 
-	private static double mean(int maxHit) {
-		return maxHit / 2.0;
-	}
+	private static double mean(int maxHit) { return maxHit / 2.0; }
 
 	/** Ticks a spec spends beyond its own cast: the tome's follow-ups. */
-	public double extraTicks(DpsResult base) {
-		return kind == Kind.BUFFED_FOLLOWUPS ? 6 * landChance(base) : 0;
-	}
+	public double extraTicks(DpsResult base) { return kind == Kind.BUFFED_FOLLOWUPS ? 6 * landChance(base) : 0; }
 
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */
 	public double landChance(DpsResult base) {
-		if (kind == Kind.VOIDWAKER) {
-			return 1.0;
-		}
+		if (kind == Kind.VOIDWAKER) { return 1.0; }
 		return RollMath.normalAccuracy(
 			(long) (base.getAttackRoll() * accuracyMultiplier), base.getDefenceRoll());
 	}
@@ -343,12 +327,8 @@ public final class SpecialAttack {
 	 * the unchanged level for non-drain specs. BGS drains by damage dealt.
 	 */
 	public int drainedDefence(int currentDefence, double specExpectedDamage) {
-		if (drainsByDamage) {
-			return Math.max(0, currentDefence - (int) specExpectedDamage);
-		}
-		if (defenceDrainFraction > 0) {
-			return currentDefence - (int) (currentDefence * defenceDrainFraction);
-		}
+		if (drainsByDamage) { return max(0, currentDefence - (int) specExpectedDamage); }
+		if (defenceDrainFraction > 0) { return currentDefence - (int) (currentDefence * defenceDrainFraction); }
 		return currentDefence;
 	}
 
@@ -357,13 +337,11 @@ public final class SpecialAttack {
 	 * cannot reach (the wiki's example: Zulrah's 300 Magic). */
 	public int drainedDefence(MonsterStats monster, double specExpectedDamage) {
 		if (magicDrainFraction > 0) {
-			return Math.max(0, monster.getDefence()
+			return max(0, monster.getDefence()
 				- (int) (monster.getMagic() * magicDrainFraction));
 		}
 		return drainedDefence(monster.getDefence(), specExpectedDamage);
 	}
 
-	public boolean drainsDefence() {
-		return drainsByDamage || defenceDrainFraction > 0 || magicDrainFraction > 0;
-	}
+	public boolean drainsDefence() { return drainsByDamage || defenceDrainFraction > 0 || magicDrainFraction > 0; }
 }

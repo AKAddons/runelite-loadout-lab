@@ -97,12 +97,12 @@ class StatSimParamsTest {
 
 		MonsterStats demon = data.searchMonsters("abyssal demon", 1).get(0);
 		String off = ReportBuilder.build("test", state, List.of(demon), List.of(Map.of()), 0,
-			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())));
+			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())), "", "");
 		assertFalse(off.contains("Stats:"), off);
 
 		assertTrue(engine.execute("sim-stats", stats(99, 0, 0, 0, 0, 0, 0, true)));
 		String on = ReportBuilder.build("test", state, List.of(demon), List.of(Map.of()), 0,
-			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())));
+			Map.of(), null, null, List.of(), false, List.of(Map.of("id", demon.getId())), "", "");
 		assertTrue(on.contains("Stats: simmed 99/70/70/80/85/60/80 + max cape"), on);
 	}
 }

@@ -27,7 +27,7 @@ class ReportProfileSectionTest {
 			"note", "pray range",
 			"skipDegradable", true);
 		String report = ReportBuilder.build("test", new PageState(), List.of(shaman), List.of(Map.of()), 0,
-			counts, null, null, List.of(), false, List.of(mob));
+			counts, null, null, List.of(), false, List.of(mob), "", "");
 		assertTrue(report.contains("Excluded: Abyssal whip"), report);
 		assertTrue(report.contains("Pins: head=Slayer helmet (i)"), report);
 		assertTrue(report.contains("Excluded here: Armadyl godsword (MELEE)"), report);

@@ -1,16 +1,10 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.Names;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.JsonResources;
-import java.util.HashMap;
-import java.util.Map;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import java.util.List;
-import java.util.ArrayList;
+import com.loadoutlab.data.*;
+import com.google.gson.*;
+import java.util.*;
+import lombok.*;
 
 @RequiredArgsConstructor
 public final class PrayerBonuses {
@@ -32,9 +26,7 @@ public final class PrayerBonuses {
 	@Getter
 	private final double magicDamagePercent;
 
-	public static PrayerBonuses bestAvailable(PlayerLevels levels) {
-		return bestAvailable(levels, PrayerUnlocks.ALL);
-	}
+	public static PrayerBonuses bestAvailable(PlayerLevels levels) { return bestAvailable(levels, PrayerUnlocks.ALL); }
 
 	public static PrayerBonuses bestAvailable(PlayerLevels levels, PrayerUnlocks unlocks) {
 		String meleeName;
@@ -93,7 +85,7 @@ public final class PrayerBonuses {
 		// the harness). Augury strictly dominates when both are unlocked.
 		double magicDamage = augury ? 4.0 : vigour ? 3.0
 			: levels.getPrayer() >= 45 ? 2.0 : levels.getPrayer() >= 27 ? 1.0 : 0.0;
-		PrayerBonuses result = new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
+		var result = new PrayerBonuses(meleeAcc, meleeStr, rangedAccuracy, rangedStrength, magic, magicDamage);
 		result.meleeName = meleeName;
 		result.rangedName = rigour ? "Rigour" : deadeye ? "Deadeye"
 			: levels.getPrayer() >= 44 ? "Eagle Eye"
@@ -112,9 +104,7 @@ public final class PrayerBonuses {
 	public static String[] optionsFor(CombatStyle style) {
 		Object[][] picks = picksFor(style);
 		String[] names = new String[picks.length];
-		for (int i = 0; i < picks.length; i++) {
-			names[i] = (String) picks[i][0];
-		}
+		for (int i = 0; i < picks.length; i++) { names[i] = (String) picks[i][0]; }
 		return names;
 	}
 
@@ -139,25 +129,21 @@ public final class PrayerBonuses {
 		}
 	}
 
-	private static Object[][] picksFor(CombatStyle style) {
-		return PICKS.get(Names.lower(style.name()));
-	}
+	private static Object[][] picksFor(CombatStyle style) { return PICKS.get(Names.lower(style.name())); }
 
 	/** A specific pick's bonuses for ONE style: the fallback's factors with
 	 * this style's replaced by the named tier (the other styles' values are
 	 * irrelevant to a single-style request). Unknown names fall back. */
 	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback) {
 		for (Object[] row : picksFor(style)) {
-			if (!row[0].equals(pick)) {
-				continue;
-			}
+			if (!row[0].equals(pick)) { continue; }
 			// The fallback's six factors with this style's pair replaced.
 			double[] f = {fallback.meleeAccuracy, fallback.meleeStrength, fallback.rangedAccuracy,
 				fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent};
 			int at = style == CombatStyle.RANGED ? 2 : style == CombatStyle.MAGIC ? 4 : 0;
 			f[at] = (Double) row[1];
 			f[at + 1] = (Double) row[2];
-			PrayerBonuses result = new PrayerBonuses(f[0], f[1], f[2], f[3], f[4], f[5]);
+			var result = new PrayerBonuses(f[0], f[1], f[2], f[3], f[4], f[5]);
 			result.meleeName = style == CombatStyle.MELEE ? pick : fallback.meleeName;
 			result.rangedName = style == CombatStyle.RANGED ? pick : fallback.rangedName;
 			result.magicName = style == CombatStyle.MAGIC ? pick : fallback.magicName;

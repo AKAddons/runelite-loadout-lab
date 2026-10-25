@@ -53,14 +53,10 @@ public enum BoostProfile {
 
 	public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-		if (this == LIVE_CURRENT) {
-			return current == null ? source : current;
-		}
+		if (this == LIVE_CURRENT) { return current == null ? source : current; }
 		// NONE boosts nothing and must hand back the SAME instance: the
 		// general path below always allocates a fresh PlayerLevels.
-		if (skills.isEmpty()) {
-			return source;
-		}
+		if (skills.isEmpty()) { return source; }
 		return source.withBoosts(
 			boostIf('a', source.getAttack()),
 			boostIf('s', source.getStrength()),
@@ -71,16 +67,12 @@ public enum BoostProfile {
 
 	/** True when this profile boosts the skill letter (from "asdrm") - the
 	 * assume-chip picker filters style-relevant boosts with it. */
-	public boolean boosts(char skill) {
-		return skills.indexOf(skill) >= 0;
-	}
+	public boolean boosts(char skill) { return skills.indexOf(skill) >= 0; }
 
 	/** floor(flat + level * factor), or 0 when this profile skips the skill. */
 	private int boostIf(char skill, int level) {
 		return skills.indexOf(skill) < 0 ? 0 : (int) Math.floor(flat + level * factor);
 	}
 
-	public String toString() {
-		return label;
-	}
+	public String toString() { return label; }
 }

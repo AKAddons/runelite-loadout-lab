@@ -2,8 +2,6 @@
 package com.loadoutlab.data;
 
 import java.util.*;
-import java.util.Map;
-import java.util.Set;
 
 import lombok.Getter;
 
@@ -19,12 +17,8 @@ public final class GearRequirements {
 		this.quests = Collections.unmodifiableSet(new LinkedHashSet<>(quests == null ? Set.of() : quests));
 	}
 
-	public Map<String, Integer> getSkills() {
-		return skills;
-	}
+	public Map<String, Integer> getSkills() { return skills; }
 
 
-	public boolean isEmpty() {
-		return skills.isEmpty() && quests.isEmpty();
-	}
+	public boolean isEmpty() { return skills.isEmpty() && quests.isEmpty(); }
 }

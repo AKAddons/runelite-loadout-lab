@@ -9,7 +9,7 @@ import java.util.Map;
  * its copy before handing it on: the fire gate, the fight-book lock, the
  * Arceuus veto.
  */
-public final class ComputeParams {
+public final class ComputeParams implements Cloneable {
 	public boolean f2pOnly;
 	public boolean onSlayerTask;
 	public boolean inWilderness;
@@ -48,30 +48,6 @@ public final class ComputeParams {
 
 	/** A field-for-field copy: the roster's second pass edits the lock
 	 * and Death Charge without touching the page's own params. */
-	public ComputeParams copy() {
-		ComputeParams c = new ComputeParams();
-		c.simLevels = simLevels;
-		c.simMaxCape = simMaxCape;
-		c.f2pOnly = f2pOnly;
-		c.onSlayerTask = onSlayerTask;
-		c.inWilderness = inWilderness;
-		c.spellbookLock = spellbookLock;
-		c.maxTradeables = maxTradeables;
-		c.riskBudgetGp = riskBudgetGp;
-		c.antifirePotion = antifirePotion;
-		c.sunfireRunes = sunfireRunes;
-		c.deathCharge = deathCharge;
-		c.specWeapon = specWeapon;
-		c.boostPicks = boostPicks;
-		c.prayerPicks = prayerPicks;
-		c.upgradeBudgetGp = upgradeBudgetGp;
-		c.maxSwaps = maxSwaps;
-		c.multiView = multiView;
-		c.multiStack = multiStack;
-		c.optimizeMode = optimizeMode;
-		c.gwdAncient = gwdAncient;
-		c.kourendElite = kourendElite;
-		c.thralls = thralls;
-		return c;
-	}
+	@lombok.SneakyThrows
+	public ComputeParams copy() { return (ComputeParams) clone(); }
 }

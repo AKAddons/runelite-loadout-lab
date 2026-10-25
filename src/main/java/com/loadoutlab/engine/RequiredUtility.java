@@ -2,8 +2,6 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Utility items a fight REQUIRES that pure dps ranking would never
@@ -40,9 +38,7 @@ public final class RequiredUtility {
 
 	public static boolean hasRecoil(Loadout loadout) {
 		for (GearItem item : loadout.getGear().values()) {
-			if (item != null && RECOIL_ACCESS.containsKey(item.getId())) {
-				return true;
-			}
+			if (item != null && RECOIL_ACCESS.containsKey(item.getId())) { return true; }
 		}
 		return false;
 	}
@@ -50,7 +46,7 @@ public final class RequiredUtility {
 	/** Recoil items this request may equip, best-first preference. */
 	public static List<GearItem> recoilCandidates(LoadoutData data, OptimizationRequest request) {
 		List<GearItem> result = new ArrayList<>();
-		for (Map.Entry<Integer, Integer> entry : RECOIL_ACCESS.entrySet()) {
+		for (var entry : RECOIL_ACCESS.entrySet()) {
 			GearItem item = data.getGear(entry.getKey());
 			if (item == null || request.isExcluded(item.getId())
 				|| !request.getRequirementProfile().canEquip(item.getRequirements())) {
@@ -60,9 +56,7 @@ public final class RequiredUtility {
 				|| request.getOwnedItems().owns(entry.getKey())
 				|| request.getOwnedItems().owns(entry.getValue())
 				|| request.isDream(entry.getKey());
-			if (accessible) {
-				result.add(item);
-			}
+			if (accessible) { result.add(item); }
 		}
 		return result;
 	}

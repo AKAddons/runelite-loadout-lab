@@ -1,10 +1,8 @@
 package com.loadoutlab.render;
 
-import java.awt.Component;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.imageio.ImageIO;
@@ -28,9 +26,7 @@ final class StatIcons {
 			try (InputStream in = StatIcons.class.getResourceAsStream(n)) {
 				if (in != null) {
 					BufferedImage img = ImageIO.read(in);
-					if (img != null) {
-						return img;
-					}
+					if (img != null) { return img; }
 				}
 			} catch (IOException ignored) {
 				// fall through to the transparent placeholder
@@ -55,17 +51,11 @@ final class StatIcons {
 			this.image = baked("stat-" + bakedName + "-" + size + ".png", size);
 		}
 
-		public int getIconWidth() {
-			return size;
-		}
+		public int getIconWidth() { return size; }
 
-		public int getIconHeight() {
-			return size;
-		}
+		public int getIconHeight() { return size; }
 
-		public void paintIcon(Component c, Graphics g, int x, int y) {
-			g.drawImage(image, x, y, size, size, null);
-		}
+		public void paintIcon(Component c, Graphics g, int x, int y) { g.drawImage(image, x, y, size, size, null); }
 	}
 
 
@@ -78,13 +68,9 @@ final class StatIcons {
 		static final int HEIGHT = 16;
 		final Icon delegate;
 
-		public int getIconWidth() {
-			return WIDTH;
-		}
+		public int getIconWidth() { return WIDTH; }
 
-		public int getIconHeight() {
-			return Math.max(HEIGHT, delegate.getIconHeight());
-		}
+		public int getIconHeight() { return Math.max(HEIGHT, delegate.getIconHeight()); }
 
 		public void paintIcon(Component c, Graphics g, int x, int y) {
 			delegate.paintIcon(c,

@@ -1,12 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.*;
+import java.util.*;
 import java.util.function.IntPredicate;
 
 import static com.loadoutlab.data.JsonResources.*;
@@ -44,9 +39,7 @@ public final class LootContainers {
 		}
 		JsonObject bag = root.getAsJsonObject("lootingBag");
 		lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", Map.of());
-		if (CONTAINERS.isEmpty()) {
-			throw new IllegalStateException("loot_containers.json loaded empty");
-		}
+		if (CONTAINERS.isEmpty()) { throw new IllegalStateException("loot_containers.json loaded empty"); }
 	}
 
 	private LootContainers() {
@@ -57,9 +50,7 @@ public final class LootContainers {
 	 * rides on a wilderness trip. */
 	public static List<Map<String, Object>> picks(MonsterStats monster, IntPredicate owns, boolean wilderness) {
 		List<Map<String, Object>> out = new ArrayList<>();
-		if (monster == null || owns == null) {
-			return out;
-		}
+		if (monster == null || owns == null) { return out; }
 		String key = Names.lower(monster.getName());
 		for (Container container : CONTAINERS) {
 			Double rate = container.perKill.get(key);
@@ -71,9 +62,7 @@ public final class LootContainers {
 		}
 		if (wilderness || monster.isWildernessMonster()) {
 			int id = ownedId(lootingBag, owns);
-			if (id > 0) {
-				out.add(row(id, lootingBag.name, "Wilderness: the looting bag stores loot as you fight"));
-			}
+			if (id > 0) { out.add(row(id, lootingBag.name, "Wilderness: the looting bag stores loot as you fight")); }
 		}
 		return out;
 	}

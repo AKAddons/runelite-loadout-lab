@@ -3,10 +3,7 @@ package com.loadoutlab.engine;
 
 import com.loadoutlab.data.GearRequirements;
 import java.util.*;
-import java.util.Map;
-import java.util.Set;
-import net.runelite.api.Quest;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 
 public final class RequirementProfile {
 	public static final RequirementProfile MAXED = new RequirementProfile(maxedLevels(), allQuests());
@@ -15,19 +12,15 @@ public final class RequirementProfile {
 	private final Set<String> completedQuests;
 
 	public RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests) {
-		EnumMap<Skill, Integer> copy = new EnumMap<>(Skill.class);
-		if (levels != null) {
-			copy.putAll(levels);
-		}
+		var copy = new EnumMap<Skill, Integer>(Skill.class);
+		if (levels != null) { copy.putAll(levels); }
 		this.levels = Collections.unmodifiableMap(copy);
 		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Set.of() : completedQuests));
 	}
 
 	/** The same levels with every quest done - the game-best ceiling never
 	 * trims on the quest log (Andrew 2026-09-09). */
-	public RequirementProfile withAllQuests() {
-		return new RequirementProfile(levels, allQuests());
-	}
+	public RequirementProfile withAllQuests() { return new RequirementProfile(levels, allQuests()); }
 
 	/** The same quests with the seven combat levels replaced: the stat
 	 * sim's gear gate (ISS-01M5QY13K6YHTYDW1CCYD30CSY) - 99 Attack admits the
@@ -46,66 +39,44 @@ public final class RequirementProfile {
 	}
 
 	/** Both already unmodifiable (the constructor wraps its copies). */
-	public Map<Skill, Integer> getLevels() {
-		return levels;
-	}
+	public Map<Skill, Integer> getLevels() { return levels; }
 
-	public Set<String> getCompletedQuests() {
-		return completedQuests;
-	}
+	public Set<String> getCompletedQuests() { return completedQuests; }
 
 	public boolean canEquip(GearRequirements requirements) {
-		if (requirements == null || requirements.isEmpty()) {
-			return true;
-		}
-		for (Map.Entry<String, Integer> entry : requirements.getSkills().entrySet()) {
+		if (requirements == null || requirements.isEmpty()) { return true; }
+		for (var entry : requirements.getSkills().entrySet()) {
 			Skill skill = skill(entry.getKey());
-			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) {
-				return false;
-			}
+			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) { return false; }
 		}
 		for (String quest : requirements.getQuests()) {
-			if (!completedQuests.contains(quest)) {
-				return false;
-			}
+			if (!completedQuests.contains(quest)) { return false; }
 		}
 		return true;
 	}
 
-	int level(Skill skill) {
-		return levels.getOrDefault(skill, 1);
-	}
+	int level(Skill skill) { return levels.getOrDefault(skill, 1); }
 
 	private static Skill skill(String name) {
-		if (name == null) {
-			return null;
-		}
+		if (name == null) { return null; }
 		String normalized = name.toUpperCase(Locale.ROOT);
-		if ("RUNECRAFTING".equals(normalized)) {
-			normalized = "RUNECRAFT";
-		}
+		if ("RUNECRAFTING".equals(normalized)) { normalized = "RUNECRAFT"; }
 		try {
 			return Skill.valueOf(normalized);
-		} catch (IllegalArgumentException ex) {
-			return null;
-		}
+		} catch (IllegalArgumentException ex) { return null; }
 	}
 
 	private static Map<Skill, Integer> maxedLevels() {
-		EnumMap<Skill, Integer> result = new EnumMap<>(Skill.class);
+		var result = new EnumMap<Skill, Integer>(Skill.class);
 		for (Skill skill : Skill.values()) {
-			if (skill != Skill.OVERALL) {
-				result.put(skill, 99);
-			}
+			if (skill != Skill.OVERALL) { result.put(skill, 99); }
 		}
 		return result;
 	}
 
 	private static Set<String> allQuests() {
 		Set<String> result = new HashSet<>();
-		for (Quest quest : Quest.values()) {
-			result.add(quest.name());
-		}
+		for (Quest quest : Quest.values()) { result.add(quest.name()); }
 		return result;
 	}
 }

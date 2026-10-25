@@ -1,11 +1,10 @@
 package com.loadoutlab.render;
 
 import java.awt.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import javax.swing.*;
-import net.runelite.client.ui.ColorScheme;
-import net.runelite.client.ui.FontManager;
+import javax.swing.Timer;
+import net.runelite.client.ui.*;
 import java.awt.image.BufferedImage;
 
 /**
@@ -24,9 +23,7 @@ final class Ui {
 	 * missing key renders "null", which the key-resolution test catches. */
 	private static final Map<String, String> TEXT = tsv("text.tsv");
 
-	static String text(String key) {
-		return TEXT.get(key);
-	}
+	static String text(String key) { return TEXT.get(key); }
 
 	/** key<TAB>value rows of a resource beside this class ('#' lines are
 	 * comments, values trimmed) - text.tsv and the mood routes share it. */
@@ -48,21 +45,21 @@ final class Ui {
 
 	/** A panel on the standard dark ground. */
 	static JPanel panel(LayoutManager layout) {
-		JPanel panel = new JPanel(layout);
+		var panel = new JPanel(layout);
 		panel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		return panel;
 	}
 
 	/** A panel on the darker inset ground. */
 	static JPanel darker(LayoutManager layout) {
-		JPanel panel = new JPanel(layout);
+		var panel = new JPanel(layout);
 		panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		return panel;
 	}
 
 	/** A vertical box column on the given ground. */
 	static JPanel column(Color bg) {
-		JPanel panel = new JPanel();
+		var panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBackground(bg);
 		return panel;
@@ -70,24 +67,22 @@ final class Ui {
 
 	/** A see-through panel: a seat inside a row that already has a ground. */
 	static JPanel clear(LayoutManager layout) {
-		JPanel panel = new JPanel(layout);
+		var panel = new JPanel(layout);
 		panel.setOpaque(false);
 		return panel;
 	}
 
 	/** A small-font label; null keeps the default foreground. */
 	static JLabel small(String text, Color fg) {
-		JLabel label = new JLabel(text);
+		var label = new JLabel(text);
 		label.setFont(FontManager.getRunescapeSmallFont());
-		if (fg != null) {
-			label.setForeground(fg);
-		}
+		if (fg != null) { label.setForeground(fg); }
 		return label;
 	}
 
 	/** A label with a fixed foreground. */
 	static JLabel label(String text, Color fg) {
-		JLabel label = new JLabel(text);
+		var label = new JLabel(text);
 		label.setForeground(fg);
 		return label;
 	}
@@ -96,9 +91,7 @@ final class Ui {
 	static void onClick(Component component, Runnable action) {
 		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		component.addMouseListener(new java.awt.event.MouseAdapter() {
-			public void mouseClicked(java.awt.event.MouseEvent e) {
-				action.run();
-			}
+			public void mouseClicked(java.awt.event.MouseEvent e) { action.run(); }
 		});
 	}
 
@@ -108,9 +101,7 @@ final class Ui {
 		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		component.addMouseListener(new java.awt.event.MouseAdapter() {
 			public void mouseClicked(java.awt.event.MouseEvent e) {
-				if (SwingUtilities.isLeftMouseButton(e)) {
-					action.run();
-				}
+				if (SwingUtilities.isLeftMouseButton(e)) { action.run(); }
 			}
 		});
 	}
@@ -124,18 +115,12 @@ final class Ui {
 		x.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		x.addMouseListener(new java.awt.event.MouseAdapter() {
 			public void mouseClicked(java.awt.event.MouseEvent e) {
-				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e)) {
-					action.run();
-				}
+				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e)) { action.run(); }
 			}
 
-			public void mouseEntered(java.awt.event.MouseEvent e) {
-				x.setForeground(new Color(0xDC7878));
-			}
+			public void mouseEntered(java.awt.event.MouseEvent e) { x.setForeground(new Color(0xDC7878)); }
 
-			public void mouseExited(java.awt.event.MouseEvent e) {
-				x.setForeground(new Color(0x969696));
-			}
+			public void mouseExited(java.awt.event.MouseEvent e) { x.setForeground(new Color(0x969696)); }
 		});
 		return x;
 	}
@@ -154,7 +139,7 @@ final class Ui {
 
 	/** A one-shot Swing timer (the debounce shape). */
 	static Timer once(int delay, java.awt.event.ActionListener action) {
-		Timer timer = new Timer(delay, action);
+		var timer = new Timer(delay, action);
 		timer.setRepeats(false);
 		return timer;
 	}
@@ -164,7 +149,7 @@ final class Ui {
 	 * a prayer being ON). Drawn graphics, so the ASCII glyph gate is not in
 	 * play. */
 	static ImageIcon crossedOut(Image image, int size) {
-		BufferedImage out = new BufferedImage(
+		var out = new BufferedImage(
 			size, size, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = out.createGraphics();
 		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
@@ -188,12 +173,10 @@ final class Ui {
 	}
 
 	/** A menu item wired to an action, added to the menu. */
-	static void item(JPopupMenu menu, String label, Runnable action) {
-		item(menu, label, null, action);
-	}
+	static void item(JPopupMenu menu, String label, Runnable action) { item(menu, label, null, action); }
 
 	static void item(JPopupMenu menu, String label, String tip, Runnable action) {
-		JMenuItem item = new JMenuItem(label);
+		var item = new JMenuItem(label);
 		item.setToolTipText(tip);
 		item.addActionListener(e -> action.run());
 		menu.add(item);
@@ -201,23 +184,19 @@ final class Ui {
 
 	/** A radio-style check item (checked = the current pick), wired to an action. */
 	static JCheckBoxMenuItem check(String label, boolean selected, Runnable action) {
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, selected);
+		var item = new JCheckBoxMenuItem(label, selected);
 		item.addActionListener(e -> action.run());
 		return item;
 	}
 
 	/** A popup dropped from the bottom edge of its anchor. */
-	static void show(JPopupMenu menu, Component anchor) {
-		menu.show(anchor, 0, anchor.getHeight());
-	}
+	static void show(JPopupMenu menu, Component anchor) { menu.show(anchor, 0, anchor.getHeight()); }
 
 	/** A tooltip body wrapped for Swing's html renderer. Six builders
 	 * each wrote their own wrapper; this is the one. */
 	static String tip(String... parts) {
-		StringBuilder out = new StringBuilder("<html>");
-		for (String part : parts) {
-			out.append(part);
-		}
+		var out = new StringBuilder("<html>");
+		for (String part : parts) { out.append(part); }
 		return out.append("</html>").toString();
 	}
 
@@ -225,10 +204,8 @@ final class Ui {
 	 * counted-bonus tips each hand-rolled. The house rule: a breakdown
 	 * is a list and numbers, never prose. */
 	static String list(String heading, Iterable<?> items) {
-		StringBuilder out = new StringBuilder(heading);
-		for (Object item : items) {
-			out.append("<br> ").append(item);
-		}
+		var out = new StringBuilder(heading);
+		for (Object item : items) { out.append("<br> ").append(item); }
 		return out.toString();
 	}
 
@@ -242,16 +219,12 @@ final class Ui {
 	static String ledger(double set, String setNote, double specDps, boolean showSpec,
 		double thrallsDps) {
 		// One row template (ledger.line: label, right-aligned value, note cell).
-		String row = Ui.text("ledger.line");
-		StringBuilder sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
+		String row = text("ledger.line");
+		var sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
 		sum.append(String.format(row, "set", String.format("%.3f", set),
 			"<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
-		if (showSpec) {
-			sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), ""));
-		}
-		if (thrallsDps > 0) {
-			sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), ""));
-		}
+		if (showSpec) { sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), "")); }
+		if (thrallsDps > 0) { sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), "")); }
 		return sum.append(String.format(row, "<b>= shown here</b>",
 			"<b>" + String.format("%.2f", set + specDps + thrallsDps) + "</b>", "")).append("</table>").toString();
 	}

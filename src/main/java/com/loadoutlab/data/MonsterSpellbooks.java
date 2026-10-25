@@ -1,9 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import java.util.*;
-import java.util.Map;
 
 /**
  * Fight-level spellbook requirements (wiki-verified, curated): some
@@ -52,9 +50,7 @@ public final class MonsterSpellbooks {
 	}
 
 	private static String[] lookup(MonsterStats monster) {
-		if (monster == null) {
-			return null;
-		}
+		if (monster == null) { return null; }
 		String name = Names.lower(monster.getName());
 		return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey()))
 			.map(Map.Entry::getValue).findFirst().orElse(null);

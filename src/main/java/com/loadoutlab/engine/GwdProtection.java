@@ -1,15 +1,8 @@
 package com.loadoutlab.engine;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.MonsterStats;
-import com.loadoutlab.data.Names;
+import com.google.gson.*;
+import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * God Wars Dungeon protection (ISS-01M5G9KPDQWBR014Z10F79B29T). Followers
@@ -29,16 +22,14 @@ public final class GwdProtection {
 
 	static {
 		JsonObject root = JsonResources.objectOrThrow("gwd_protection.json");
-		for (Map.Entry<String, JsonElement> route : root.getAsJsonObject("routes").entrySet()) {
+		for (var route : root.getAsJsonObject("routes").entrySet()) {
 			List<String> gods = new ArrayList<>();
 			JsonResources.strings(route.getValue().getAsJsonObject(), "gods", gods);
 			List<String> monsters = new ArrayList<>();
 			JsonResources.strings(route.getValue().getAsJsonObject(), "monsters", monsters);
-			for (String monster : monsters) {
-				ROUTE_BY_MONSTER.put(monster, Collections.unmodifiableList(gods));
-			}
+			for (String monster : monsters) { ROUTE_BY_MONSTER.put(monster, Collections.unmodifiableList(gods)); }
 		}
-		for (Map.Entry<String, JsonElement> god : root.getAsJsonObject("items").entrySet()) {
+		for (var god : root.getAsJsonObject("items").entrySet()) {
 			for (JsonElement name : god.getValue().getAsJsonArray()) {
 				GODS_BY_ITEM.computeIfAbsent(name.getAsString(), n -> new TreeSet<>()).add(god.getKey());
 			}
@@ -57,12 +48,8 @@ public final class GwdProtection {
 	 * empty anywhere else. */
 	public static List<String> godsFor(MonsterStats monster, boolean ancient) {
 		List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(Names.lower(monster.getName()));
-		if (route == null) {
-			return List.of();
-		}
-		if (!ancient) {
-			return route;
-		}
+		if (route == null) { return List.of(); }
+		if (!ancient) { return route; }
 		List<String> gods = new ArrayList<>(route);
 		gods.add(ZAROS);
 		return gods;
@@ -76,9 +63,7 @@ public final class GwdProtection {
 	/** Every god the worn set already protects against. */
 	public static Set<String> coveredGods(Loadout loadout) {
 		Set<String> covered = new TreeSet<>();
-		for (GearItem item : loadout.getGear().values()) {
-			covered.addAll(godsOf(item));
-		}
+		for (GearItem item : loadout.getGear().values()) { covered.addAll(godsOf(item)); }
 		return covered;
 	}
 }

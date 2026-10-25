@@ -1,9 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.gson.*;
+import java.util.*;
 
 /**
  * Per-boss defence floors for drain valuation (competitor audit
@@ -27,13 +25,9 @@ public final class DefenceFloors {
 			JsonObject row = e.getAsJsonObject();
 			int floor = "base".equals(row.get("floor").getAsString())
 				? BASE : row.get("floor").getAsInt();
-			for (JsonElement id : row.getAsJsonArray("ids")) {
-				BY_ID.put(id.getAsInt(), floor);
-			}
+			for (JsonElement id : row.getAsJsonArray("ids")) { BY_ID.put(id.getAsInt(), floor); }
 		}
-		if (BY_ID.isEmpty()) {
-			throw new IllegalStateException("defence_floors.json loaded empty");
-		}
+		if (BY_ID.isEmpty()) { throw new IllegalStateException("defence_floors.json loaded empty"); }
 	}
 
 	private DefenceFloors() {
@@ -42,13 +36,9 @@ public final class DefenceFloors {
 	/** The defence level a drain cannot pass for this monster - 0 when
 	 * unfloored. Synthetic group rows resolve through profileId(). */
 	public static int floorFor(MonsterStats monster) {
-		if (monster == null) {
-			return 0;
-		}
+		if (monster == null) { return 0; }
 		Integer floor = BY_ID.get(monster.profileId());
-		if (floor == null) {
-			return 0;
-		}
+		if (floor == null) { return 0; }
 		return floor == BASE ? monster.getDefence() : floor;
 	}
 }

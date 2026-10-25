@@ -66,7 +66,5 @@ public final class ShipCannon {
 	/** DPS of one cannon: average landed damage over the 7-tick cycle.
 	 * hitChance in [0,1]; a landed hit averages (maxHit / 2) with the
 	 * uniform damage roll the game uses. */
-	public static double dps(int maxHit, double hitChance) {
-		return hitChance * (maxHit / 2.0) / ATTACK_SECONDS;
-	}
+	public static double dps(int maxHit, double hitChance) { return hitChance * (maxHit / 2.0) / ATTACK_SECONDS; }
 }

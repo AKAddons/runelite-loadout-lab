@@ -3,20 +3,14 @@ package com.loadoutlab.data;
 
 import lombok.Getter;
 
+@Getter
 public final class SpellStats {
-	@Getter
 	private final String name;
-	@Getter
 	private final int maxHit;
-	@Getter
 	private final int magicLevel;
-	@Getter
 	private final String spellbook;
-	@Getter
 	private final String element;
-	@Getter
 	private final String nameFirstWord;
-	@Getter
 	private final String nameSecondWord;
 
 	public SpellStats(String name, int maxHit, int magicLevel, String spellbook, String element) {
@@ -44,7 +38,5 @@ public final class SpellStats {
 
 
 
-	public String toString() {
-		return name;
-	}
+	public String toString() { return name; }
 }

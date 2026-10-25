@@ -3,9 +3,6 @@ package com.loadoutlab.data;
 
 import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.loadoutlab.data.JsonResources.*;
 
@@ -66,14 +63,12 @@ public final class DataService {
 	 * one is owning the twin you charge before the trip. */
 	private Map<Integer, Integer> loadAliases(List<GearItem> gear) {
 		Map<Integer, Integer> aliases = new HashMap<>();
-		for (Map.Entry<String, JsonElement> entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet()) {
+		for (var entry : gz(ALIAS_RESOURCE).getAsJsonObject().entrySet()) {
 			int variant = Integer.parseInt(entry.getKey());
 			int base = entry.getValue().getAsInt();
-			if (variant != base) {
-				aliases.put(variant, base);
-			}
+			if (variant != base) { aliases.put(variant, base); }
 		}
-		for (Map.Entry<GearItem, GearItem> twin : chargedTwins(gear).entrySet()) {
+		for (var twin : chargedTwins(gear).entrySet()) {
 			if (!aliases.containsKey(twin.getKey().getId())) {
 				aliases.put(twin.getKey().getId(), aliases.getOrDefault(twin.getValue().getId(), twin.getValue().getId()));
 			}
@@ -101,9 +96,7 @@ public final class DataService {
 				}
 			}
 			for (GearItem item : family) {
-				if (charged != null && deadVersion(item)) {
-					twins.put(item, charged);
-				}
+				if (charged != null && deadVersion(item)) { twins.put(item, charged); }
 			}
 		}
 		return twins;
@@ -114,7 +107,7 @@ public final class DataService {
 	 * passes the untradeable gate and the budget modes can afford it. */
 	private static List<GearItem> priceChargedTwins(List<GearItem> gear) {
 		Map<Integer, GearItem> priced = new HashMap<>();
-		for (Map.Entry<GearItem, GearItem> twin : chargedTwins(gear).entrySet()) {
+		for (var twin : chargedTwins(gear).entrySet()) {
 			GearItem dead = twin.getKey();
 			GearItem charged = twin.getValue();
 			if (dead.isTradeable() && dead.getEstimatedPrice() != null
@@ -123,9 +116,7 @@ public final class DataService {
 			}
 		}
 		List<GearItem> out = new ArrayList<>(gear.size());
-		for (GearItem item : gear) {
-			out.add(priced.getOrDefault(item.getId(), item));
-		}
+		for (GearItem item : gear) { out.add(priced.getOrDefault(item.getId(), item)); }
 		return out;
 	}
 
@@ -143,15 +134,9 @@ public final class DataService {
 		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
 			GearSlot slot = GearSlot.fromJson(string(row, "slot"));
-			if (slot == null) {
-				continue;
-			}
-			if (isLeaguesReward(string(row, "name"), string(row, "examine"))) {
-				continue;
-			}
-			if (isMinigameOnly(string(row, "name"))) {
-				continue;
-			}
+			if (slot == null) { continue; }
+			if (isLeaguesReward(string(row, "name"), string(row, "examine"))) { continue; }
+			if (isMinigameOnly(string(row, "name"))) { continue; }
 
 			result.add(new GearItem(
 				integer(row, "id", 0),
@@ -231,14 +216,12 @@ public final class DataService {
 			JsonObject row = element.getAsJsonObject();
 			JsonObject skills = object(row, "skills");
 			Map<String, Integer> levels = new LinkedHashMap<>();
-			for (Map.Entry<String, JsonElement> entry : skills.entrySet()) {
+			for (var entry : skills.entrySet()) {
 				if (!entry.getValue().isJsonNull()) {
 					levels.put(entry.getKey(), Math.max(1, entry.getValue().getAsInt()));
 				}
 			}
-			if (!levels.isEmpty()) {
-				result.put(integer(row, "id", 0), levels);
-			}
+			if (!levels.isEmpty()) { result.put(integer(row, "id", 0), levels); }
 		}
 		return result;
 	}
@@ -274,9 +257,7 @@ public final class DataService {
 				List<String> kept = new ArrayList<>();
 				boolean quest = false;
 				for (String token : version.split(",\\s*")) {
-					if (token.equalsIgnoreCase("awake") || token.equalsIgnoreCase("post-quest")) {
-						continue;
-					}
+					if (token.equalsIgnoreCase("awake") || token.equalsIgnoreCase("post-quest")) { continue; }
 					if (token.equalsIgnoreCase("quest")) {
 						quest = true;
 						continue;
@@ -290,9 +271,7 @@ public final class DataService {
 					kept.clear();
 				}
 				String normalized = String.join(", ", kept);
-				if (quest) {
-					normalized = normalized.isEmpty() ? "QUEST" : normalized + ", QUEST";
-				}
+				if (quest) { normalized = normalized.isEmpty() ? "QUEST" : normalized + ", QUEST"; }
 				out.add(normalized.equals(version) ? monster : monster.withVersion(normalized));
 			}
 		}
@@ -320,9 +299,7 @@ public final class DataService {
 		Map<String, Integer> maxLevelByGroup = new HashMap<>();
 		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
-			if (isEcho(row)) {
-				continue;
-			}
+			if (isEcho(row)) { continue; }
 			String nameKey = Names.lower(string(row, "name"));
 			String statKey = monsterStatKey(row);
 			statKeysByName.computeIfAbsent(nameKey, k -> new LinkedHashSet<>()).add(statKey);
@@ -333,9 +310,7 @@ public final class DataService {
 		List<MonsterStats> result = new ArrayList<>(rows.size());
 		for (JsonElement element : rows) {
 			JsonObject row = element.getAsJsonObject();
-			if (isEcho(row)) {
-				continue;
-			}
+			if (isEcho(row)) { continue; }
 			String nameKey = Names.lower(string(row, "name"));
 			String groupKey = nameKey + "|" + monsterStatKey(row);
 			// Emit the HIGHEST-LEVEL spawn of each collapsed group, so the
@@ -353,9 +328,7 @@ public final class DataService {
 			List<String> attributes = new ArrayList<>();
 			JsonArray attrArray = array(row, "attributes");
 			for (JsonElement attr : attrArray) {
-				if (!attr.isJsonNull()) {
-					attributes.add(attr.getAsString());
-				}
+				if (!attr.isJsonNull()) { attributes.add(attr.getAsString()); }
 			}
 			// Burn immunity rides the attribute list as a synthetic marker
 			// (no MonsterStats signature churn): the eclipse/scorching burn
@@ -364,9 +337,7 @@ public final class DataService {
 			JsonObject immunities = row.has("immunities") && row.get("immunities").isJsonObject()
 				? row.getAsJsonObject("immunities") : null;
 			String burn = immunities == null ? "" : string(immunities, "burn");
-			if ("normal".equalsIgnoreCase(burn) || "strong".equalsIgnoreCase(burn)) {
-				attributes.add("burn_immune");
-			}
+			if ("normal".equalsIgnoreCase(burn) || "strong".equalsIgnoreCase(burn)) { attributes.add("burn_immune"); }
 
 			// The Maggot King fights at range until ~65% hp - melee CANNOT
 			// land on the Far phase (wiki: "cannot be attacked with melee
@@ -422,15 +393,11 @@ public final class DataService {
 	private static List<String> styleList(JsonObject row) {
 		List<String> styles = new ArrayList<>();
 		for (JsonElement e : array(row, "style")) {
-			if (e.isJsonNull()) {
-				continue;
-			}
+			if (e.isJsonNull()) { continue; }
 			// "Ranged <br/> Typeless" is two styles; stray DEL characters
 			// (Araxxor, Dusk) are wiki noise.
 			for (String style : e.getAsString().replace('\u007f', ' ').split("(?i)<br\\s*/?>")) {
-				if (!style.trim().isEmpty()) {
-					styles.add(style.trim());
-				}
+				if (!style.trim().isEmpty()) { styles.add(style.trim()); }
 			}
 		}
 		return styles;
@@ -463,15 +430,11 @@ public final class DataService {
 			JsonObject row = element.getAsJsonObject();
 			int maxHit = integer(row, "max_hit", 0);
 			String name = string(row, "name");
-			if (maxHit <= 0 && !"Magic Dart".equals(name)) {
-				continue;
-			}
+			if (maxHit <= 0 && !"Magic Dart".equals(name)) { continue; }
 			// Effect-only spells (leagues echoes, boss mechanics - e.g.
 			// Flames of Cerberus) are flagged unselectable in the wiki data;
 			// a player can never cast them, so they never enter the corpus.
-			if (bool(row, "unselectable", false)) {
-				continue;
-			}
+			if (bool(row, "unselectable", false)) { continue; }
 			result.add(new SpellStats(
 				name,
 				"Magic Dart".equals(name) ? 1 : maxHit,
@@ -484,14 +447,10 @@ public final class DataService {
 	}
 
 	/** Casting level for a spell name; unknown names fall back to 1. */
-	private static int spellLevel(String name) {
-		return SPELL_LEVELS.getOrDefault(name == null ? "" : name, 1);
-	}
+	private static int spellLevel(String name) { return SPELL_LEVELS.getOrDefault(name == null ? "" : name, 1); }
 
 	private static StatBlock parseOffensive(JsonObject object) {
-		if (object == null) {
-			return StatBlock.ZERO;
-		}
+		if (object == null) { return StatBlock.ZERO; }
 		int[] c = combat(object);
 		return new StatBlock(c[0], c[1], c[2], c[3], c[4],
 			0,
@@ -501,9 +460,7 @@ public final class DataService {
 	}
 
 	private static StatBlock parseDefensive(JsonObject object) {
-		if (object == null) {
-			return StatBlock.ZERO;
-		}
+		if (object == null) { return StatBlock.ZERO; }
 		int[] c = combat(object);
 		return new StatBlock(c[0], c[1], c[2], c[3], c[4],
 			0,
@@ -513,9 +470,7 @@ public final class DataService {
 	}
 
 	private static MonsterDefences parseMonsterDefences(JsonObject object) {
-		if (object == null) {
-			return MonsterDefences.ZERO;
-		}
+		if (object == null) { return MonsterDefences.ZERO; }
 		int[] c = combat(object);
 		return new MonsterDefences(c[0], c[1], c[2], c[3], c[4],
 			integer(object, "flat_armour", 0),
@@ -525,9 +480,7 @@ public final class DataService {
 	}
 
 	private static StatBlock parseBonuses(JsonObject object) {
-		if (object == null) {
-			return StatBlock.ZERO;
-		}
+		if (object == null) { return StatBlock.ZERO; }
 		return new StatBlock(
 			0,
 			0,

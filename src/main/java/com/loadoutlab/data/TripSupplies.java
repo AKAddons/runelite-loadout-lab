@@ -2,9 +2,6 @@ package com.loadoutlab.data;
 
 import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.IntPredicate;
 
 import static com.loadoutlab.data.JsonResources.*;
@@ -95,13 +92,9 @@ public final class TripSupplies {
 
 	private static int[][] cells(JsonObject o) {
 		JsonArray rows = o.getAsJsonArray("cells");
-		if (rows == null) {
-			return null;
-		}
+		if (rows == null) { return null; }
 		int[][] out = new int[rows.size()][];
-		for (int i = 0; i < out.length; i++) {
-			out[i] = ints(rows.get(i).getAsJsonArray());
-		}
+		for (int i = 0; i < out.length; i++) { out[i] = ints(rows.get(i).getAsJsonArray()); }
 		return out;
 	}
 
@@ -110,14 +103,10 @@ public final class TripSupplies {
 
 	/** The grey chip's submenu label, or null for a category the menu never
 	 * shows (ship repair kits ride the sea card). */
-	public static String label(String category) {
-		return LABELS.get(category);
-	}
+	public static String label(String category) { return LABELS.get(category); }
 
 	/** The category's options, best first. */
-	public static List<Option> options(String category) {
-		return CATEGORIES.getOrDefault(category, List.of());
-	}
+	public static List<Option> options(String category) { return CATEGORIES.getOrDefault(category, List.of()); }
 
 	/** The option a config-enum constant names, or null (NONE/DETECT_BEST
 	 * and unknown keys resolve to null). */
@@ -131,17 +120,11 @@ public final class TripSupplies {
 	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness) {
 		Option pick = null;
 		for (Option o : options(category)) {
-			if (!o.detect || (o.wildyOnly && !inWilderness)) {
-				continue;
-			}
+			if (!o.detect || (o.wildyOnly && !inWilderness)) { continue; }
 			for (int id : o.ids) {
 				if (owns.test(id)) {
-					if (o.wildyOnly) {
-						return o;
-					}
-					if (pick == null) {
-						pick = o;
-					}
+					if (o.wildyOnly) { return o; }
+					if (pick == null) { pick = o; }
 					break;
 				}
 			}
@@ -151,15 +134,11 @@ public final class TripSupplies {
 
 	/** Detect best on land: the first detectable option the player owns
 	 * any dose of, or null when they own none. */
-	public static Option detectBest(String category, IntPredicate owns) {
-		return detectBest(category, owns, false);
-	}
+	public static Option detectBest(String category, IntPredicate owns) { return detectBest(category, owns, false); }
 
 	/** True when the monster can inflict venom (wiki Venom page inflictor
 	 * list, matched by name so araxyte/snakeling variants count). */
-	public static boolean inflictsVenom(MonsterStats monster) {
-		return named(monster, VENOMOUS);
-	}
+	public static boolean inflictsVenom(MonsterStats monster) { return named(monster, VENOMOUS); }
 
 	/** Poisons but does not envenom (the Kings' spinolyps, KQ...) - the
 	 * antipoison category; venomous mobs keep anti-venom. */
@@ -173,9 +152,7 @@ public final class TripSupplies {
 	}
 
 	private static boolean named(MonsterStats monster, Set<String> tokens) {
-		if (monster == null) {
-			return false;
-		}
+		if (monster == null) { return false; }
 		String name = Names.lower(monster.getName());
 		return tokens.stream().anyMatch(name::contains);
 	}

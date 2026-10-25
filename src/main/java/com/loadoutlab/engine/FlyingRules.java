@@ -1,7 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 
 /**
  * Flying monsters (Kree'arra and the aviansies, Dawn, Vespula...) cannot be
@@ -18,9 +17,7 @@ public final class FlyingRules {
 
 	/** False when a melee weapon cannot reach this monster. */
 	public static boolean canReach(MonsterStats monster, CombatStyle style, GearItem weapon) {
-		if (style != CombatStyle.MELEE || monster == null || !monster.hasAttribute("flying")) {
-			return true;
-		}
+		if (style != CombatStyle.MELEE || monster == null || !monster.hasAttribute("flying")) { return true; }
 		if (weapon == null) {
 			return false; // fists reach even less far than swords
 		}

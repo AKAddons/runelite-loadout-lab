@@ -3,7 +3,6 @@ package com.loadoutlab.engine;
 
 import lombok.Getter;
 import java.util.*;
-import java.util.Map;
 
 public final class OwnedItems {
 	public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
@@ -18,13 +17,9 @@ public final class OwnedItems {
 		this.bankScanned = bankScanned;
 	}
 
-	public boolean owns(int itemId) {
-		return quantities.getOrDefault(itemId, 0) > 0;
-	}
+	public boolean owns(int itemId) { return quantities.getOrDefault(itemId, 0) > 0; }
 
-	public int size() {
-		return quantities.size();
-	}
+	public int size() { return quantities.size(); }
 
 	/**
 	 * Fingerprint of what owns() answers - the ids with quantity > 0,
@@ -37,16 +32,12 @@ public final class OwnedItems {
 	public int presenceFingerprint() {
 		int[] ids = new int[quantities.size()];
 		int count = 0;
-		for (Map.Entry<Integer, Integer> entry : quantities.entrySet()) {
-			if (entry.getValue() != null && entry.getValue() > 0) {
-				ids[count++] = entry.getKey();
-			}
+		for (var entry : quantities.entrySet()) {
+			if (entry.getValue() != null && entry.getValue() > 0) { ids[count++] = entry.getKey(); }
 		}
 		Arrays.sort(ids, 0, count);
 		int hash = count;
-		for (int i = 0; i < count; i++) {
-			hash = 31 * hash + ids[i];
-		}
+		for (int i = 0; i < count; i++) { hash = 31 * hash + ids[i]; }
 		return hash;
 	}
 }

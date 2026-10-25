@@ -1,11 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.loadoutlab.data.JsonResources.*;
@@ -42,9 +38,7 @@ public final class RequiredGear {
 		 * pool's own canonicalization). */
 		public Set<Integer> ids(LoadoutData data) {
 			Set<Integer> out = resolved;
-			if (out != null) {
-				return out;
-			}
+			if (out != null) { return out; }
 			out = new LinkedHashSet<>();
 			for (String spec : itemSpecs) {
 				String name = spec;
@@ -93,7 +87,7 @@ public final class RequiredGear {
 			JsonObject row = e.getAsJsonObject();
 			List<String> items = new ArrayList<>();
 			strings(row, "items", items);
-			Rule rule = new Rule(
+			var rule = new Rule(
 				GearSlot.valueOf(string(row, "slot")),
 				string(row, "note"),
 				Collections.unmodifiableList(items),
@@ -103,9 +97,7 @@ public final class RequiredGear {
 				BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(rule);
 			}
 		}
-		if (BY_NAME.isEmpty()) {
-			throw new IllegalStateException("required_gear.json loaded empty");
-		}
+		if (BY_NAME.isEmpty()) { throw new IllegalStateException("required_gear.json loaded empty"); }
 		if (root.has("carried")) {
 			for (JsonElement e : root.getAsJsonArray("carried")) {
 				JsonObject row = e.getAsJsonObject();
@@ -116,7 +108,7 @@ public final class RequiredGear {
 					names.add(string(item, "name"));
 					ids.add(ints(item.getAsJsonArray("ids")));
 				}
-				Carried carried = new Carried(string(row, "note"), names, ids);
+				var carried = new Carried(string(row, "note"), names, ids);
 				for (JsonElement m : row.getAsJsonArray("monsters")) {
 					CARRIED_BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
 				}
@@ -150,9 +142,7 @@ public final class RequiredGear {
 	public static Map<GearSlot, Set<Integer>> requiredIds(MonsterStats monster, LoadoutData data,
 		Set<String> waivers) {
 		Map<GearSlot, Set<Integer>> out = new EnumMap<>(GearSlot.class);
-		for (Rule rule : rulesFor(monster, waivers)) {
-			out.put(rule.slot, rule.ids(data));
-		}
+		for (Rule rule : rulesFor(monster, waivers)) { out.put(rule.slot, rule.ids(data)); }
 		return out;
 	}
 
@@ -163,9 +153,7 @@ public final class RequiredGear {
 	public static List<java.util.Map<String, Object>> carriedPicks(MonsterStats monster,
 		java.util.function.IntPredicate owns) {
 		List<java.util.Map<String, Object>> out = new ArrayList<>();
-		if (monster == null) {
-			return out;
-		}
+		if (monster == null) { return out; }
 		for (Carried rule : CARRIED_BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of())) {
 			int pick = -1;
 			for (int i = 0; i < rule.ids.size() && pick < 0; i++) {
@@ -185,7 +173,5 @@ public final class RequiredGear {
 	}
 
 	/** Every curated monster key (test seam). */
-	public static Set<String> monsterKeys() {
-		return Collections.unmodifiableSet(BY_NAME.keySet());
-	}
+	public static Set<String> monsterKeys() { return Collections.unmodifiableSet(BY_NAME.keySet()); }
 }

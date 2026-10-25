@@ -1,7 +1,6 @@
 package com.loadoutlab.render;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 /** Monster/group search for the dropdown - async so both the in-core

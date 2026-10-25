@@ -2,9 +2,7 @@
 package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import lombok.Getter;
 import com.loadoutlab.engine.CombatStyle;
@@ -116,9 +114,7 @@ public final class GearItem {
 	}
 
 	public boolean isWeaponFor(CombatStyle style) {
-		if (slot != GearSlot.WEAPON) {
-			return false;
-		}
+		if (slot != GearSlot.WEAPON) { return false; }
 		switch (style) {
 			case RANGED:
 				return RANGED_WEAPON.stream().anyMatch(categoryLower::contains)
@@ -151,24 +147,16 @@ public final class GearItem {
 	}
 
 	public boolean isSlayerHead() {
-		if (slot != GearSlot.HEAD) {
-			return false;
-		}
+		if (slot != GearSlot.HEAD) { return false; }
 		return nameVersionLower.contains("black mask") || nameVersionLower.contains("slayer helmet");
 	}
 
-	public boolean isImbuedSlayerHead() {
-		return isSlayerHead() && nameVersionLower.contains("(i)");
-	}
+	public boolean isImbuedSlayerHead() { return isSlayerHead() && nameVersionLower.contains("(i)"); }
 
-	public String label() {
-		return version.isEmpty() ? name : name + " (" + version + ")";
-	}
+	public String label() { return version.isEmpty() ? name : name + " (" + version + ")"; }
 
 	/** label() lowercased (Locale.ROOT), precomputed. */
-	public String labelLower() {
-		return labelLower;
-	}
+	public String labelLower() { return labelLower; }
 
 	/**
 	 * Poison tier of this version: Poison++ 3, Poison+ 2, Poison 1,
@@ -177,19 +165,11 @@ public final class GearItem {
 	 * request: always recommend dragon dagger p++ over plain).
 	 */
 	public int poisonTier() {
-		if (versionLower.contains("unpoison")) {
-			return 0;
-		}
-		if (versionLower.contains("poison++")) {
-			return 3;
-		}
-		if (versionLower.contains("poison+")) {
-			return 2;
-		}
+		if (versionLower.contains("unpoison")) { return 0; }
+		if (versionLower.contains("poison++")) { return 3; }
+		if (versionLower.contains("poison+")) { return 2; }
 		return versionLower.contains("poison") ? 1 : 0;
 	}
 
-	public int getPriceOrZero() {
-		return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice);
-	}
+	public int getPriceOrZero() { return estimatedPrice == null ? 0 : Math.max(0, estimatedPrice); }
 }

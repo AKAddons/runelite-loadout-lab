@@ -1,14 +1,9 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.With;
+import lombok.*;
 import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * An optimizer request. Effectively immutable: the with- helpers never
@@ -167,9 +162,7 @@ public final class OptimizationRequest implements Cloneable {
 	 * the panel means "no constraint", never a null field). Both public
 	 * constructors already set these non-null, so the withers are the only
 	 * door a null can come through. */
-	private static <T> Set<T> orEmpty(Set<T> set) {
-		return set == null ? Set.of() : set;
-	}
+	private static <T> Set<T> orEmpty(Set<T> set) { return set == null ? Set.of() : set; }
 
 	public OptimizationRequest withProtectOnlyItems(Set<Integer> ids) {
 		OptimizationRequest c = copy();
@@ -177,9 +170,7 @@ public final class OptimizationRequest implements Cloneable {
 		return c;
 	}
 
-	public boolean isExcluded(int itemId) {
-		return excludedItems.contains(itemId);
-	}
+	public boolean isExcluded(int itemId) { return excludedItems.contains(itemId); }
 
 	public OptimizationRequest withExcludedItems(Set<Integer> excluded) {
 		OptimizationRequest c = copy();
@@ -199,9 +190,7 @@ public final class OptimizationRequest implements Cloneable {
 		return c;
 	}
 
-	public boolean isRiskConstrained() {
-		return maxTradeables >= 0;
-	}
+	public boolean isRiskConstrained() { return maxTradeables >= 0; }
 
 	/**
 	 * Default wilderness risk budget: the TOTAL gp the set may drop on a
@@ -220,9 +209,7 @@ public final class OptimizationRequest implements Cloneable {
 		return c;
 	}
 
-	public boolean isDream(int itemId) {
-		return dreamItems.contains(itemId);
-	}
+	public boolean isDream(int itemId) { return dreamItems.contains(itemId); }
 
 	public OptimizationRequest withDreamItems(Set<Integer> dreamItems) {
 		OptimizationRequest c = copy();
@@ -231,13 +218,9 @@ public final class OptimizationRequest implements Cloneable {
 	}
 
 	/** The pinned item id for this slot, or null when unpinned. */
-	public Integer pinnedFor(GearSlot slot) {
-		return pinnedItems.get(slot);
-	}
+	public Integer pinnedFor(GearSlot slot) { return pinnedItems.get(slot); }
 
-	public boolean isPinned(int itemId) {
-		return pinnedItems.containsValue(itemId);
-	}
+	public boolean isPinned(int itemId) { return pinnedItems.containsValue(itemId); }
 
 	public OptimizationRequest withPinnedItems(Map<GearSlot, Integer> pinnedItems) {
 		OptimizationRequest c = copy();
@@ -245,9 +228,7 @@ public final class OptimizationRequest implements Cloneable {
 		return c;
 	}
 
-	public boolean isAutoSpell() {
-		return spell == null;
-	}
+	public boolean isAutoSpell() { return spell == null; }
 
 	public OptimizationRequest withSlayerTask(boolean onSlayerTask) {
 		OptimizationRequest c = copy();

@@ -1,14 +1,10 @@
 package com.loadoutlab.data;
 
 import com.google.gson.*;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
 
 /**
  * Loaders for the bundled JSON data tables (the hub token cap keeps data
@@ -24,9 +20,7 @@ public final class JsonResources {
 	private static JsonElement parse(String resource) {
 		try (InputStream in = JsonResources.class.getResourceAsStream(resource)) {
 			return new JsonParser().parse(new InputStreamReader(in, StandardCharsets.UTF_8));
-		} catch (Exception e) {
-			return null;
-		}
+		} catch (Exception e) { return null; }
 	}
 
 	/** The parsed root object, or null when missing/malformed. */
@@ -43,9 +37,7 @@ public final class JsonResources {
 	 */
 	public static JsonObject objectOrThrow(String resource) {
 		JsonObject root = object(resource);
-		if (root == null) {
-			throw new IllegalStateException("Could not load " + resource);
-		}
+		if (root == null) { throw new IllegalStateException("Could not load " + resource); }
 		return root;
 	}
 
@@ -59,14 +51,10 @@ public final class JsonResources {
 	 * unreadable bundle throws - the corpus is not optional. */
 	public static JsonElement gz(String resource) {
 		try (InputStream in = JsonResources.class.getResourceAsStream(resource)) {
-			if (in == null) {
-				throw new IllegalStateException("Missing resource " + resource);
-			}
+			if (in == null) { throw new IllegalStateException("Missing resource " + resource); }
 			return new JsonParser().parse(new InputStreamReader(
 				new java.util.zip.GZIPInputStream(in), StandardCharsets.UTF_8));
-		} catch (java.io.IOException ex) {
-			throw new IllegalStateException("Could not load " + resource, ex);
-		}
+		} catch (java.io.IOException ex) { throw new IllegalStateException("Could not load " + resource, ex); }
 	}
 
 	/** Copy the string array at root[key] into the collection. */
@@ -80,17 +68,13 @@ public final class JsonResources {
 	}
 
 	private static <T> void each(JsonObject root, String key, Function<JsonElement, T> read, Collection<T> into) {
-		if (root != null && root.has(key)) {
-			root.getAsJsonArray(key).forEach(e -> into.add(read.apply(e)));
-		}
+		if (root != null && root.has(key)) { root.getAsJsonArray(key).forEach(e -> into.add(read.apply(e))); }
 	}
 
 	/** A JSON int array as an int[]. */
 	public static int[] ints(JsonArray array) {
 		int[] out = new int[array.size()];
-		for (int i = 0; i < out.length; i++) {
-			out[i] = array.get(i).getAsInt();
-		}
+		for (int i = 0; i < out.length; i++) { out[i] = array.get(i).getAsInt(); }
 		return out;
 	}
 
@@ -100,9 +84,7 @@ public final class JsonResources {
 		for (int i = 0; i < out.length; i++) {
 			JsonArray row = array.get(i).getAsJsonArray();
 			out[i] = new String[row.size()];
-			for (int j = 0; j < out[i].length; j++) {
-				out[i][j] = row.get(j).getAsString();
-			}
+			for (int j = 0; j < out[i].length; j++) { out[i][j] = row.get(j).getAsString(); }
 		}
 		return out;
 	}
@@ -125,9 +107,7 @@ public final class JsonResources {
 	/** Each member of the object at root[key]; nothing when absent. */
 	private static void entries(JsonObject root, String key, BiConsumer<String, JsonElement> fn) {
 		JsonObject obj = root == null ? null : root.getAsJsonObject(key);
-		if (obj != null) {
-			obj.entrySet().forEach(e -> fn.accept(e.getKey(), e.getValue()));
-		}
+		if (obj != null) { obj.entrySet().forEach(e -> fn.accept(e.getKey(), e.getValue())); }
 	}
 
 	/** A JSON-safe node from key/value pairs, in argument order (the rows
@@ -135,9 +115,7 @@ public final class JsonResources {
 	 * adapter and the canonical page JSON both see a plain ordered map). */
 	public static Map<String, Object> map(Object... kv) {
 		Map<String, Object> node = new LinkedHashMap<>();
-		for (int i = 0; i < kv.length; i += 2) {
-			node.put((String) kv[i], kv[i + 1]);
-		}
+		for (int i = 0; i < kv.length; i += 2) { node.put((String) kv[i], kv[i + 1]); }
 		return node;
 	}
 
@@ -166,14 +144,10 @@ public final class JsonResources {
 
 	public static int integer(JsonObject object, String key, int fallback) {
 		JsonElement element = object.get(key);
-		if (element == null || element.isJsonNull()) {
-			return fallback;
-		}
+		if (element == null || element.isJsonNull()) { return fallback; }
 		try {
 			return element.getAsInt();
-		} catch (NumberFormatException ex) {
-			return fallback;
-		}
+		} catch (NumberFormatException ex) { return fallback; }
 	}
 
 	public static boolean bool(JsonObject object, String key, boolean fallback) {

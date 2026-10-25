@@ -1,6 +1,5 @@
 package com.loadoutlab;
 
-import net.runelite.client.plugins.banktags.tabs.LayoutManager;
 import com.loadoutlab.collection.*;
 import com.loadoutlab.data.*;
 import com.google.gson.Gson;
@@ -9,12 +8,8 @@ import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
 import com.loadoutlab.profile.PlayerProfile;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.*;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
@@ -23,29 +18,31 @@ import net.runelite.api.events.*;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.EventBus;
-import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.eventbus.*;
 import net.runelite.client.events.*;
-import net.runelite.client.game.ItemManager;
-import net.runelite.client.game.SpriteManager;
+import net.runelite.client.game.*;
 import net.runelite.client.plugins.*;
 import net.runelite.client.ui.*;
-import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.Text;
+import net.runelite.client.util.*;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.plugins.banktags.TagManager;
-import net.runelite.client.plugins.banktags.BankTagsService;
+import net.runelite.client.plugins.banktags.*;
 import net.runelite.client.plugins.banktags.tabs.*;
 import net.runelite.client.game.chatbox.ChatboxItemSearch;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
-import com.loadoutlab.model.CommandEngine;
-import com.loadoutlab.model.CompanionLink;
+import net.runelite.api.gameval.*;
+import com.loadoutlab.model.*;
 import com.loadoutlab.render.*;
 import com.loadoutlab.ui.*;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
+import com.loadoutlab.collection.CollectionLedger.Source;
+import com.loadoutlab.model.CommandEngine.MobProfiles;
+import com.loadoutlab.LoadoutLabConfig.AssumeDefault;
+import com.loadoutlab.data.StashUnits.Cell;
+import static com.loadoutlab.collection.CollectionLedger.Source.*;
+import static com.loadoutlab.collection.StoragesApi.*;
+import static javax.swing.SwingUtilities.*;
+import static net.runelite.api.gameval.VarbitID.*;
 
 /**
  * Loadout Lab - best-in-slot from the gear YOU own.
@@ -171,20 +168,20 @@ public class LoadoutLabPlugin extends Plugin {
 	/** Trailing debounce for ledger-driven recomputes (game ticks). */
 	private int ledgerRecomputeTicks;
 
-	private final EnumSet<CollectionLedger.Source> dirtySources =
-		EnumSet.noneOf(CollectionLedger.Source.class);
+	private final EnumSet<Source> dirtySources =
+		EnumSet.noneOf(Source.class);
 
 	/** The rune pouch's six slots: a type varbit (RUNEPOUCH_RUNE enum key)
 	 * and a quantity varbit each, as RuneLite's own pouch overlay reads them. */
-	private static final int[] POUCH_TYPES = {VarbitID.RUNE_POUCH_TYPE_1, VarbitID.RUNE_POUCH_TYPE_2,
-		VarbitID.RUNE_POUCH_TYPE_3, VarbitID.RUNE_POUCH_TYPE_4, VarbitID.RUNE_POUCH_TYPE_5, VarbitID.RUNE_POUCH_TYPE_6};
-	private static final int[] POUCH_QUANTITIES = {VarbitID.RUNE_POUCH_QUANTITY_1, VarbitID.RUNE_POUCH_QUANTITY_2,
-		VarbitID.RUNE_POUCH_QUANTITY_3, VarbitID.RUNE_POUCH_QUANTITY_4, VarbitID.RUNE_POUCH_QUANTITY_5, VarbitID.RUNE_POUCH_QUANTITY_6};
+	private static final int[] POUCH_TYPES = {RUNE_POUCH_TYPE_1, RUNE_POUCH_TYPE_2,
+		RUNE_POUCH_TYPE_3, RUNE_POUCH_TYPE_4, RUNE_POUCH_TYPE_5, RUNE_POUCH_TYPE_6};
+	private static final int[] POUCH_QUANTITIES = {RUNE_POUCH_QUANTITY_1, RUNE_POUCH_QUANTITY_2,
+		RUNE_POUCH_QUANTITY_3, RUNE_POUCH_QUANTITY_4, RUNE_POUCH_QUANTITY_5, RUNE_POUCH_QUANTITY_6};
 
 	/** Event-time snapshots for storage containers that cannot be
 	 * re-fetched by id at drain time (see onItemContainerChanged). */
-	private final Map<CollectionLedger.Source, Map<Integer, Integer>> pendingScans =
-		new EnumMap<>(CollectionLedger.Source.class);
+	private final Map<Source, Map<Integer, Integer>> pendingScans =
+		new EnumMap<>(Source.class);
 
 	/** Ticks left to re-scan the looting bag after its Check screen opens
 	 * (the contents can land a tick after the widget). */
@@ -218,25 +215,19 @@ public class LoadoutLabPlugin extends Plugin {
 		// and posted on the client thread (ids canonicalize there).
 		if (StoragesApi.NAMESPACE.equals(event.getNamespace())
 			&& StoragesApi.REQUEST_NAME.equals(event.getName())) {
-			String requester = StoragesApi.requester(event.getData());
-			if (requester != null) {
-				clientThread.invokeLater(() -> respondWithStorages(requester));
-			}
+			String requester = requester(event.getData());
+			if (requester != null) { clientThread.invokeLater(() -> respondWithStorages(requester)); }
 			return;
 		}
-		if (!"loadoutlab".equals(event.getNamespace()) || !"search".equals(event.getName())) {
-			return;
-		}
+		if (!"loadoutlab".equals(event.getNamespace()) || !"search".equals(event.getName())) { return; }
 		Object monster = event.getData().get("monster");
 		String name = monster instanceof String ? (String) monster : null;
-		SwingUtilities.invokeLater(() -> {
+		invokeLater(() -> {
 			CommandEngine engine = commandEngine;
 			if (engine == null || navButton == null || name == null) {
 				return; // dataset still loading - drop rather than queue
 			}
-			if (engine.execute("select", Map.of("query", name))) {
-				clientToolbar.openPanel(navButton);
-			}
+			if (engine.execute("select", Map.of("query", name))) { clientToolbar.openPanel(navButton); }
 		});
 	}
 
@@ -247,14 +238,10 @@ public class LoadoutLabPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onMenuOpened(MenuOpened event) {
-		if (data == null || commandEngine == null || navButton == null || !config.npcRightClickEntry()) {
-			return;
-		}
+		if (data == null || commandEngine == null || navButton == null || !config.npcRightClickEntry()) { return; }
 		for (MenuEntry entry : event.getMenuEntries()) {
 			NPC npc = entry.getNpc();
-			if (npc == null || npc.getName() == null) {
-				continue;
-			}
+			if (npc == null || npc.getName() == null) { continue; }
 			final String name = npc.getName();
 			final int id = npc.getId();
 			if (!attackable(npc)) {
@@ -271,7 +258,7 @@ public class LoadoutLabPlugin extends Plugin {
 				.setOption("Search in Loadout Lab")
 				.setTarget(entry.getTarget())
 				.setType(MenuAction.RUNELITE)
-				.onClick(e -> SwingUtilities.invokeLater(() -> {
+				.onClick(e -> invokeLater(() -> {
 					CommandEngine engine = commandEngine;
 					if (engine != null && engine.execute("select", Map.of("query", name))) {
 						clientToolbar.openPanel(navButton);
@@ -326,19 +313,17 @@ public class LoadoutLabPlugin extends Plugin {
 		if (client.getGameState() == GameState.LOGGED_IN) {
 			loadAllScopes();
 			requestDwmsStorages();
-			dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+			dirtySources.addAll(EnumSet.allOf(Source.class));
 		}
 
 		// The dataset is ~3MB of gzipped JSON - parse off the startup path.
-		Thread loader = new Thread(() -> {
+		var loader = new Thread(() -> {
 			try {
 				stashUnits = StashUnits.load();
-			} catch (RuntimeException ex) {
-				log.warn("STASH unit table unavailable; chart scans disabled", ex);
-			}
+			} catch (RuntimeException ex) { log.warn("STASH unit table unavailable; chart scans disabled", ex); }
 			LoadoutData loaded = new DataService().load();
 			Set<Integer> degradable = Degradable.ids(loaded);
-			SwingUtilities.invokeLater(() -> {
+			invokeLater(() -> {
 				data = loaded;
 				mobProfiles.setDegradableIds(degradable);
 				optimizerService = new OptimizerService(loaded);
@@ -371,7 +356,7 @@ public class LoadoutLabPlugin extends Plugin {
 					// (never MAXED as a stand-in for unknown levels - that
 					// fallback seeded Death Charge ON for a fresh login, and
 					// on a F2P account: field report 2026-08-27).
-					OwnedItems bag = new OwnedItems(ownedItems(),
+					var bag = new OwnedItems(ownedItems(),
 						ledger != null && ledger.bankKnown());
 					int magic = com.loadoutlab.optimizer.BoostSelector
 						.reachableMagic(realLevels, boostedLevels, bag);
@@ -383,7 +368,7 @@ public class LoadoutLabPlugin extends Plugin {
 					// the settings promise. Both were hardcoded and
 					// ignored the config outright (audit 2026-08-22).
 					boolean detectThralls =
-						config.defaultThralls() == LoadoutLabConfig.AssumeDefault.DETECT;
+						config.defaultThralls() == AssumeDefault.DETECT;
 					seeds.put("thralls", detectThralls && members
 						&& ExtraDps.thrallDps(magic) > 0
 						&& ownsCanonical(ExtraDps.BOOK_OF_THE_DEAD));
@@ -391,7 +376,7 @@ public class LoadoutLabPlugin extends Plugin {
 					// a blood + death + soul rune per cast - seed it only for
 					// a player who can actually cast it (wiki-verified).
 					boolean detectCharge =
-						config.defaultDeathCharge() == LoadoutLabConfig.AssumeDefault.DETECT;
+						config.defaultDeathCharge() == AssumeDefault.DETECT;
 					RequirementProfile reqs = requirementProfile;
 					boolean canCharge = members && magic >= 90
 						&& reqs != null && reqs.getCompletedQuests()
@@ -431,12 +416,12 @@ public class LoadoutLabPlugin extends Plugin {
 				// The chips exist before the first search (idle page).
 				commandEngine.publishIdle();
 				clientThread.invokeLater(() -> commandEngine.setLiveSpellbook(spellbookName(
-					client.getVarbitValue(VarbitID.SPELLBOOK))));
+					client.getVarbitValue(SPELLBOOK))));
 				commandEngine.setCoreVersion(PluginVersion.VERSION);
 				// The network features (individually reviewable): the
 				// wiki-calc shortlink is strictly CLICK-initiated; the
 				// monster thumbnails are config-gated (Connections).
-				WikiCalcLink wikiCalc = new WikiCalcLink(okHttpClient, gson);
+				var wikiCalc = new WikiCalcLink(okHttpClient, gson);
 				commandEngine.setWikiCalcOpener((mob, shown, dartId, assumes, onTask, wildy) ->
 					wikiCalc.open(mob, shown, dartId, assumes,
 						realLevels != null ? realLevels : PlayerLevels.MAXED,
@@ -451,9 +436,7 @@ public class LoadoutLabPlugin extends Plugin {
 				// single surface (the 2026-08 merge-back).
 				CommandSink sink = (n, a) -> {
 					CommandEngine engine = commandEngine;
-					if (engine != null) {
-						engine.execute(n, a);
-					}
+					if (engine != null) { engine.execute(n, a); }
 				};
 				ItemPicker picker = (prompt, onPicked) ->
 					itemSearchView().search(prompt, onPicked);
@@ -482,16 +465,12 @@ public class LoadoutLabPlugin extends Plugin {
 					() -> config.showPvpWorldChip());
 				companionLink.setPageListener(() -> {
 					RenderSurface surface = internalSurface;
-					if (surface != null) {
-						surface.onModelChanged();
-					}
+					if (surface != null) { surface.onModelChanged(); }
 					refreshHostedView();
 				});
 				companionLink.setStatusListener(computing -> {
 					RenderSurface surface = internalSurface;
-					if (surface != null) {
-						surface.setComputing(computing);
-					}
+					if (surface != null) { surface.setComputing(computing); }
 				});
 				commandEngine.setStoreOps(new CommandEngine.StoreOps() {
 					public boolean toggleExclusion(int itemId) {
@@ -522,13 +501,9 @@ public class LoadoutLabPlugin extends Plugin {
 						}
 					}
 
-					public void showInBank(Set<Integer> itemIds) {
-						setBankHighlight(itemIds);
-					}
+					public void showInBank(Set<Integer> itemIds) { setBankHighlight(itemIds); }
 
-					public void filterBank(Set<Integer> itemIds, int[] layout) {
-						setBankFilter(itemIds, layout);
-					}
+					public void filterBank(Set<Integer> itemIds, int[] layout) { setBankFilter(itemIds, layout); }
 
 					public void setPinnedSpec(int monsterId, int itemId) {
 						mobProfiles.setPinnedSpec(monsterId, itemId);
@@ -568,9 +543,7 @@ public class LoadoutLabPlugin extends Plugin {
 							itemId, itemLabel(itemId));
 					}
 
-					public CommandEngine.MobProfiles mobs() {
-						return mobProfiles;
-					}
+					public MobProfiles mobs() { return mobProfiles; }
 
 					public boolean skipDegradable(int monsterId) {
 						return mobProfiles.skipDegradable(monsterId, config.skipDegradableDefault());
@@ -647,18 +620,14 @@ public class LoadoutLabPlugin extends Plugin {
 	/** A different character logged in: nothing from the previous one may
 	 * survive - ledger scope, caches, snapshot, panel results, bank tools. */
 	@Subscribe
-	public void onAccountHashChanged(AccountHashChanged event) {
-		resetForIdentityChange();
-	}
+	public void onAccountHashChanged(AccountHashChanged event) { resetForIdentityChange(); }
 
 	/** The Connections toggle changed: effective ownership changed with it,
 	 * so refresh the shown answer (the ownership fingerprint keys the
 	 * optimizer cache - neither direction can serve a stale set). */
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event) {
-		if (!"loadoutlab".equals(event.getGroup())) {
-			return;
-		}
+		if (!"loadoutlab".equals(event.getGroup())) { return; }
 		// The stores share this config group (ledger, exclusions, dreams,
 		// profiles all write "loadoutlab" keys) and fire ConfigChanged on
 		// every drain - a bank deposit is an event storm. React ONLY to the
@@ -666,9 +635,7 @@ public class LoadoutLabPlugin extends Plugin {
 		// rebuild the whole results panel on the EDT.
 		String key = event.getKey();
 		CommandEngine engine = commandEngine;
-		if (engine == null) {
-			return;
-		}
+		if (engine == null) { return; }
 		if ("useDwmsData".equals(key) || "slayerTaskBracelet".equals(key)) {
 			// Ownership or the task bracelet changed -> recompute (not just re-render).
 			engine.execute("recompute", Map.of());
@@ -683,9 +650,7 @@ public class LoadoutLabPlugin extends Plugin {
 			// (2026-09-18): a just-installed state - settings back to their
 			// defaults and the page back to empty as well. Bank memory is
 			// not a customisation and stays.
-			for (ScopedStore store : stores) {
-				store.clear();
-			}
+			for (ScopedStore store : stores) { store.clear(); }
 			LoadoutLabConfig.unsetAll(configManager, config);
 			engine.clearForIdentityChange();
 		}
@@ -735,9 +700,7 @@ public class LoadoutLabPlugin extends Plugin {
 	/** The RuneLite config profile changed: config-backed stores re-read. */
 	@Subscribe
 	public void onProfileChanged(ProfileChanged event) {
-		for (ScopedStore store : stores) {
-			store.reload();
-		}
+		for (ScopedStore store : stores) { store.reload(); }
 		resetForIdentityChange();
 	}
 
@@ -762,17 +725,13 @@ public class LoadoutLabPlugin extends Plugin {
 		canonicalOwnedCache = null;
 		bankHighlight = null;
 		bankFilter = null;
-		if (optimizerService != null) {
-			optimizerService.clearCache();
-		}
-		dirtySources.addAll(EnumSet.allOf(CollectionLedger.Source.class));
+		if (optimizerService != null) { optimizerService.clearCache(); }
+		dirtySources.addAll(EnumSet.allOf(Source.class));
 		pendingScans.clear();
 		stashChartSeen = false;
-		SwingUtilities.invokeLater(() -> {
+		invokeLater(() -> {
 			CommandEngine engine = commandEngine;
-			if (engine != null) {
-				engine.clearForIdentityChange();
-			}
+			if (engine != null) { engine.clearForIdentityChange(); }
 		});
 	}
 
@@ -781,8 +740,8 @@ public class LoadoutLabPlugin extends Plugin {
 		if (event.getGameState() == GameState.LOGGED_IN) {
 			loadAllScopes();
 			requestDwmsStorages();
-			dirtySources.add(CollectionLedger.Source.EQUIPMENT);
-			dirtySources.add(CollectionLedger.Source.INVENTORY);
+			dirtySources.add(EQUIPMENT);
+			dirtySources.add(INVENTORY);
 			// New login = possibly a different account/levels: re-snapshot lazily.
 			requirementProfile = null;
 			realLevels = null;
@@ -805,19 +764,15 @@ public class LoadoutLabPlugin extends Plugin {
 			boolean pvpFlipped = lastPvpWorld == null || lastPvpWorld != pvp;
 			lastPvpWorld = pvp;
 			// Karuulm's boots rule lifts with the elite Kourend & Kebos diary.
-			boolean kourendElite = client.getVarbitValue(VarbitID.KOUREND_DIARY_ELITE_COMPLETE) == 1;
-			SwingUtilities.invokeLater(() -> {
+			boolean kourendElite = client.getVarbitValue(KOUREND_DIARY_ELITE_COMPLETE) == 1;
+			invokeLater(() -> {
 				CommandEngine engine = commandEngine;
 				if (engine != null) {
 					engine.set("f2pWorld", f2p);
-					if (flipped) {
-						engine.set("f2pOnly", f2p);
-					}
+					if (flipped) { engine.set("f2pOnly", f2p); }
 					engine.set("pvpWorldHere", pvp > 0);
 					engine.set("kourendElite", kourendElite);
-					if (pvpFlipped) {
-						engine.set("pvpWorld", pvp);
-					}
+					if (pvpFlipped) { engine.set("pvpWorld", pvp); }
 				}
 			});
 		}
@@ -827,8 +782,8 @@ public class LoadoutLabPlugin extends Plugin {
 	 * storage, the looting bag, the cargo holds) may not be re-fetchable
 	 * later under the unmasked id, so its contents are captured off the
 	 * event (rare one-shot opens, not bank-style event storms). */
-	private static final EnumSet<CollectionLedger.Source> LIVE_SOURCES = EnumSet.of(
-		CollectionLedger.Source.EQUIPMENT, CollectionLedger.Source.INVENTORY, CollectionLedger.Source.BANK);
+	private static final EnumSet<Source> LIVE_SOURCES = EnumSet.of(
+		EQUIPMENT, INVENTORY, BANK);
 
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event) {
@@ -837,19 +792,13 @@ public class LoadoutLabPlugin extends Plugin {
 		// DWMS applies. Field report: the treasure chest fired 0x8000|637
 		// and the unmasked comparison missed it.
 		int id = event.getContainerId();
-		if (id >= 0x8000) {
-			id -= 0x8000;
-		}
-		CollectionLedger.Source source = CollectionLedger.Source.forContainer(id);
-		if (source == null) {
-			return;
-		}
+		if (id >= 0x8000) { id -= 0x8000; }
+		Source source = forContainer(id);
+		if (source == null) { return; }
 		if (!LIVE_SOURCES.contains(source)) {
 			// The per-tick drain still does the coalesced ledger write.
 			ItemContainer container = event.getItemContainer();
-			if (container != null) {
-				pendingScans.put(source, itemsOf(container));
-			}
+			if (container != null) { pendingScans.put(source, itemsOf(container)); }
 		}
 		dirtySources.add(source);
 	}
@@ -863,9 +812,7 @@ public class LoadoutLabPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event) {
-		if (event.getGroupId() == InterfaceID.WILDERNESS_LOOTINGBAG) {
-			lootingBagScanTicks = 3;
-		}
+		if (event.getGroupId() == InterfaceID.WILDERNESS_LOOTINGBAG) { lootingBagScanTicks = 3; }
 	}
 
 	// The container id per source (looting bag, POH costume storage, the
@@ -874,9 +821,7 @@ public class LoadoutLabPlugin extends Plugin {
 
 	@Subscribe
 	public void onGameTick(GameTick event) {
-		if (client.getGameState() != GameState.LOGGED_IN) {
-			return;
-		}
+		if (client.getGameState() != GameState.LOGGED_IN) { return; }
 		scanStashChart();
 		// The pouch is read every tick (twelve varbits) rather than filtered out
 		// of the per-tick varbit spray - but it goes DIRTY only on a change:
@@ -885,13 +830,13 @@ public class LoadoutLabPlugin extends Plugin {
 		// bank scan kept its empty Detect-best supplies (Andrew, 2026-10-15,
 		// live in 0.5.4).
 		Map<Integer, Integer> pouch = scanRunePouch();
-		if (!pouch.equals(ledger.snapshot(CollectionLedger.Source.RUNE_POUCH))) {
-			pendingScans.put(CollectionLedger.Source.RUNE_POUCH, pouch);
-			dirtySources.add(CollectionLedger.Source.RUNE_POUCH);
+		if (!pouch.equals(ledger.snapshot(RUNE_POUCH))) {
+			pendingScans.put(RUNE_POUCH, pouch);
+			dirtySources.add(RUNE_POUCH);
 		}
 		if (lootingBagScanTicks > 0) {
 			lootingBagScanTicks--;
-			dirtySources.add(CollectionLedger.Source.LOOTING_BAG);
+			dirtySources.add(LOOTING_BAG);
 		}
 		if (dirtySources.isEmpty()) {
 			// Quiet tick: the debounce countdown runs HERE (the early
@@ -900,7 +845,7 @@ public class LoadoutLabPlugin extends Plugin {
 			return;
 		}
 		boolean ledgerChanged = false;
-		for (CollectionLedger.Source source : EnumSet.copyOf(dirtySources)) {
+		for (Source source : EnumSet.copyOf(dirtySources)) {
 			Map<Integer, Integer> pending = pendingScans.remove(source);
 			if (pending != null) {
 				ledgerChanged |= ledger.update(source, pending);
@@ -931,11 +876,9 @@ public class LoadoutLabPlugin extends Plugin {
 
 	private void tickLedgerDebounce() {
 		if (ledgerRecomputeTicks > 0 && --ledgerRecomputeTicks == 0) {
-			SwingUtilities.invokeLater(() -> {
+			invokeLater(() -> {
 				CommandEngine engine = commandEngine;
-				if (engine != null) {
-					engine.execute("refresh", Map.of());
-				}
+				if (engine != null) { engine.execute("refresh", Map.of()); }
 			});
 		}
 	}
@@ -979,29 +922,21 @@ public class LoadoutLabPlugin extends Plugin {
 			return;
 		}
 		StashUnits units = stashUnits;
-		if (stashChartSeen || units == null) {
-			return;
-		}
+		if (stashChartSeen || units == null) { return; }
 		stashChartSeen = true;
 		Map<Integer, Integer> items = new HashMap<>();
 		for (int childId : STASH_TIER_CHILDREN) {
 			Widget tier = client.getWidget(493, childId);
-			if (tier == null || tier.getChildren() == null) {
-				continue;
-			}
-			List<StashUnits.Cell> cells = Arrays.stream(tier.getChildren()).filter(Objects::nonNull)
+			if (tier == null || tier.getChildren() == null) { continue; }
+			List<Cell> cells = Arrays.stream(tier.getChildren()).filter(Objects::nonNull)
 				.map(child -> new StashUnits.Cell(child.getType(), child.getText())).collect(Collectors.toList());
 			for (String name : StashUnits.filledNames(cells, childId == 14)) {
 				int[] ids = units.itemsFor(name);
-				if (ids == null) {
-					continue;
-				}
-				for (int id : ids) {
-					items.merge(id, 1, Integer::sum);
-				}
+				if (ids == null) { continue; }
+				for (int id : ids) { items.merge(id, 1, Integer::sum); }
 			}
 		}
-		ledger.update(CollectionLedger.Source.STASH, items);
+		ledger.update(STASH, items);
 	}
 
 	// ------------------------------------------------------------------
@@ -1025,9 +960,7 @@ public class LoadoutLabPlugin extends Plugin {
 	}
 
 	private boolean ownsCanonical(int itemId) {
-		if (data == null) {
-			return ledger != null && ownedItems().containsKey(itemId);
-		}
+		if (data == null) { return ledger != null && ownedItems().containsKey(itemId); }
 		int fingerprint = ownedFingerprint();
 		Set<Integer> cache = canonicalOwnedCache;
 		if (cache == null || canonicalOwnedFingerprint != fingerprint) {
@@ -1078,15 +1011,15 @@ public class LoadoutLabPlugin extends Plugin {
 	 * origin simply gets no hint.
 	 */
 	private Map<String, Map<Integer, Integer>> ownedBySources() {
-		LinkedHashMap<String, Map<Integer, Integer>> origins = new LinkedHashMap<>();
-		origins.put("equipped", ledger.snapshot(CollectionLedger.Source.EQUIPMENT));
-		origins.put("inventory", ledger.snapshot(CollectionLedger.Source.INVENTORY));
-		origins.put("bank", ledger.snapshot(CollectionLedger.Source.BANK));
-		origins.put("looting bag", ledger.snapshot(CollectionLedger.Source.LOOTING_BAG));
-		origins.put("POH costume room", ledger.snapshot(CollectionLedger.Source.POH_COSTUMES));
-		origins.put("STASH", ledger.snapshot(CollectionLedger.Source.STASH));
+		var origins = new LinkedHashMap<String, Map<Integer, Integer>>();
+		origins.put("equipped", ledger.snapshot(EQUIPMENT));
+		origins.put("inventory", ledger.snapshot(INVENTORY));
+		origins.put("bank", ledger.snapshot(BANK));
+		origins.put("looting bag", ledger.snapshot(LOOTING_BAG));
+		origins.put("POH costume room", ledger.snapshot(POH_COSTUMES));
+		origins.put("STASH", ledger.snapshot(STASH));
 		Map<Integer, Integer> cargo = new HashMap<>();
-		for (CollectionLedger.Source hold : CollectionLedger.Source.values()) {
+		for (Source hold : Source.values()) {
 			if (hold.name().startsWith("CARGO_HOLD")) {
 				ledger.snapshot(hold).forEach((id, n) -> cargo.merge(id, n, Integer::sum));
 			}
@@ -1094,7 +1027,7 @@ public class LoadoutLabPlugin extends Plugin {
 		origins.put("cargo hold", cargo);
 		origins.put("potion storage", potionStorage);
 		if (config.useDwmsData()) {
-			for (Map.Entry<String, Map<Integer, Integer>> family : dwmsLink.families().entrySet()) {
+			for (var family : dwmsLink.families().entrySet()) {
 				origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
 			}
 		}
@@ -1121,13 +1054,9 @@ public class LoadoutLabPlugin extends Plugin {
 		for (CombatStyle style : CombatStyle.values()) {
 			Map<GearSlot, Integer> pins = new EnumMap<>(GearSlot.class);
 			mobProfiles.pinsFor(monsterId, style.name()).forEach((slot, id) -> {
-				if (data == null || data.getGear(id) != null) {
-					pins.put(slot, id);
-				}
+				if (data == null || data.getGear(id) != null) { pins.put(slot, id); }
 			});
-			if (!pins.isEmpty()) {
-				byStyle.put(style, pins);
-			}
+			if (!pins.isEmpty()) { byStyle.put(style, pins); }
 		}
 		return TaskBracelet.overlay(byStyle, mob, onTask, config.slayerTaskBracelet());
 	}
@@ -1183,16 +1112,12 @@ public class LoadoutLabPlugin extends Plugin {
 		Map<Integer, Map<CombatStyle, Set<Integer>>> byMob =
 			new HashMap<>();
 		for (MonsterStats mob : mobs) {
-			EnumMap<CombatStyle, Set<Integer>> byStyle = new EnumMap<>(CombatStyle.class);
+			var byStyle = new EnumMap<CombatStyle, Set<Integer>>(CombatStyle.class);
 			for (CombatStyle style : CombatStyle.concreteValues()) {
 				Set<Integer> per = mobProfiles.exclusionsFor(mob.profileId(), style.name());
-				if (!per.isEmpty()) {
-					byStyle.put(style, per);
-				}
+				if (!per.isEmpty()) { byStyle.put(style, per); }
 			}
-			if (!byStyle.isEmpty()) {
-				byMob.put(mob.profileId(), byStyle);
-			}
+			if (!byStyle.isEmpty()) { byMob.put(mob.profileId(), byStyle); }
 		}
 		return byMob;
 	}
@@ -1202,9 +1127,7 @@ public class LoadoutLabPlugin extends Plugin {
 	/** The max cape and the combos you can make, simmed with it
 	 * (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
 	private Set<Integer> withMaxCape(ComputeParams p, Set<Integer> sims) {
-		if (p == null || !p.simMaxCape) {
-			return sims;
-		}
+		if (p == null || !p.simMaxCape) { return sims; }
 		Set<Integer> out = new HashSet<>(sims);
 		out.addAll(MaxCapeSims.ids(data, this::ownsOrSimmed));
 		return out;
@@ -1214,9 +1137,7 @@ public class LoadoutLabPlugin extends Plugin {
 		Set<Integer> global = dreams.snapshot();
 		Set<Integer> local = mobProfiles == null
 			? Set.of() : mobProfiles.simsFor(monster.profileId());
-		if (local.isEmpty()) {
-			return global;
-		}
+		if (local.isEmpty()) { return global; }
 		Set<Integer> merged = new HashSet<>(global);
 		merged.addAll(local);
 		return merged;
@@ -1225,14 +1146,10 @@ public class LoadoutLabPlugin extends Plugin {
 	/** Per-mob sims for a roster, keyed by profileId. */
 	private Map<Integer, Set<Integer>> perMobSims(List<MonsterStats> mobs) {
 		Map<Integer, Set<Integer>> byMob = new HashMap<>();
-		if (mobProfiles == null) {
-			return byMob;
-		}
+		if (mobProfiles == null) { return byMob; }
 		for (MonsterStats mob : mobs) {
 			Set<Integer> sims = mobProfiles.simsFor(mob.profileId());
-			if (!sims.isEmpty()) {
-				byMob.put(mob.profileId(), sims);
-			}
+			if (!sims.isEmpty()) { byMob.put(mob.profileId(), sims); }
 		}
 		return byMob;
 	}
@@ -1240,9 +1157,7 @@ public class LoadoutLabPlugin extends Plugin {
 	/** The mob's pinned autocast spell resolved to the dataset, or null. */
 	private SpellStats resolvedPinnedSpell(int monsterId) {
 		String name = mobProfiles == null ? "" : mobProfiles.pinnedSpell(monsterId);
-		if (name.isEmpty() || data == null) {
-			return null;
-		}
+		if (name.isEmpty() || data == null) { return null; }
 		return data.getSpells().stream().filter(spell -> spell.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
 	}
 
@@ -1259,7 +1174,7 @@ public class LoadoutLabPlugin extends Plugin {
 					.tooltipText(prompt)
 					.onItemSelected(itemId -> {
 						String name = itemManager.getItemComposition(itemId).getName();
-						SwingUtilities.invokeLater(() -> onPicked.accept(itemId, name));
+						invokeLater(() -> onPicked.accept(itemId, name));
 					})
 					.build());
 			// The click came from the Swing sidebar - hand the OS focus to
@@ -1275,9 +1190,7 @@ public class LoadoutLabPlugin extends Plugin {
 	 * count until it updates.
 	 */
 	private void requestDwmsStorages() {
-		if (!config.useDwmsData() || !pluginEnabled(DWMS_PLUGIN_NAME)) {
-			return;
-		}
+		if (!config.useDwmsData() || !pluginEnabled(DWMS_PLUGIN_NAME)) { return; }
 		eventBus.post(new PluginMessage(
 			DwmsLink.DWMS_NAMESPACE, DwmsLink.REQUEST_NAME, DwmsLink.request()));
 	}
@@ -1290,26 +1203,22 @@ public class LoadoutLabPlugin extends Plugin {
 	 */
 	private void respondWithStorages(String target) {
 		CollectionLedger currentLedger = ledger;
-		if (currentLedger == null) {
-			return;
-		}
+		if (currentLedger == null) { return; }
 		// Canonicalization needs the item cache; before the login screen
 		// exists, ship raw ids rather than crash (DWMS guards the same way).
 		IntUnaryOperator canonicalize =
 			client.getGameState().getState() >= GameState.LOGIN_SCREEN.getState()
 				? itemManager::canonicalize
 				: IntUnaryOperator.identity();
-		List<Map<String, Object>> storages = Arrays.stream(CollectionLedger.Source.values())
-			.map(source -> StoragesApi.storage("collection", source.key(), -1L, currentLedger.snapshot(source), canonicalize))
+		List<Map<String, Object>> storages = Arrays.stream(Source.values())
+			.map(source -> storage("collection", source.key(), -1L, currentLedger.snapshot(source), canonicalize))
 			.filter(Objects::nonNull).collect(Collectors.toList());
-		eventBus.post(new PluginMessage(StoragesApi.NAMESPACE, StoragesApi.RESPONSE_NAME,
-			StoragesApi.response(target, storages)));
+		eventBus.post(new PluginMessage(NAMESPACE, RESPONSE_NAME,
+			response(target, storages)));
 	}
 
 	/** Not Enough Runes enabled? (A method reference for the engine's NER link.) */
-	private boolean nerPresent() {
-		return pluginEnabled("Not Enough Runes");
-	}
+	private boolean nerPresent() { return pluginEnabled("Not Enough Runes"); }
 
 	/** The named plugin is on. Check ALL same-named plugins - a hub copy
 	 * and a sideloaded dev copy can coexist and the first match may be
@@ -1317,9 +1226,7 @@ public class LoadoutLabPlugin extends Plugin {
 	 * detections. */
 	private boolean pluginEnabled(String name) {
 		for (Plugin p : pluginManager.getPlugins()) {
-			if (name.equals(p.getName()) && pluginManager.isPluginEnabled(p)) {
-				return true;
-			}
+			if (name.equals(p.getName()) && pluginManager.isPluginEnabled(p)) { return true; }
 		}
 		return false;
 	}
@@ -1336,9 +1243,7 @@ public class LoadoutLabPlugin extends Plugin {
 	@Subscribe
 	public void onPluginChanged(net.runelite.client.events.PluginChanged event) {
 		CommandEngine engine = commandEngine;
-		if (engine != null) {
-			SwingUtilities.invokeLater(() -> engine.setNerLink(this::nerPresent, this::openNer));
-		}
+		if (engine != null) { invokeLater(() -> engine.setNerLink(this::nerPresent, this::openNer)); }
 	}
 
 	/**
@@ -1347,15 +1252,13 @@ public class LoadoutLabPlugin extends Plugin {
 	 * (./gradlew query) or attached to a bug report. Local only.
 	 */
 	private void exportProfile(PlayerProfile profile) {
-		Thread writer = new Thread(() -> {
+		var writer = new Thread(() -> {
 			try {
 				Path file = new File(RuneLite.RUNELITE_DIR,
 					"loadout-lab/profile.json").toPath();
 				Files.createDirectories(file.getParent());
 				Files.writeString(file, profile.toJson());
-			} catch (Exception ex) {
-				log.warn("could not export the player profile", ex);
-			}
+			} catch (Exception ex) { log.warn("could not export the player profile", ex); }
 		}, "loadout-lab-profile-export");
 		writer.setDaemon(true);
 		writer.start();
@@ -1380,9 +1283,7 @@ public class LoadoutLabPlugin extends Plugin {
 		if (itemIds == null || itemIds.isEmpty() || data == null) {
 			bankFilter = null;
 			clientThread.invokeLater(() -> {
-				if (BANK_TAG.equals(bankTagsService.getActiveTag())) {
-					bankTagsService.closeBankTag();
-				}
+				if (BANK_TAG.equals(bankTagsService.getActiveTag())) { bankTagsService.closeBankTag(); }
 				dropBankTag();
 				forgetRememberedTab();
 			});
@@ -1430,19 +1331,15 @@ public class LoadoutLabPlugin extends Plugin {
 	 * the tab strip both read the live list, so persistence buys nothing;
 	 * the bank-build hook below re-adds it whenever core reloads the list. */
 	private void ensureBankTagTab() {
-		if (!pluginEnabled("Bank Tag Layouts") || tabManager.find(BANK_TAG) != null) {
-			return;
-		}
-		TagTab tab = new TagTab();
+		if (!pluginEnabled("Bank Tag Layouts") || tabManager.find(BANK_TAG) != null) { return; }
+		var tab = new TagTab();
 		tab.setTag(BANK_TAG);
 		tab.setIconItemId(BANK_TAB_ICON);
 		tabManager.add(tab);
 	}
 
 	private void removeBankTagTab() {
-		if (tabManager.find(BANK_TAG) != null) {
-			tabManager.remove(BANK_TAG);
-		}
+		if (tabManager.find(BANK_TAG) != null) { tabManager.remove(BANK_TAG); }
 	}
 
 	/** The virtual tag's layout, tab and registration all go (shutdown
@@ -1514,12 +1411,8 @@ public class LoadoutLabPlugin extends Plugin {
 		final PrayerUnlocks unlocks;
 
 		Staging(ComputeParams p) {
-			if (client.getGameState() == GameState.LOGGED_IN) {
-				snapshotProfileIfNeeded();
-			}
-			if (config.useDwmsData()) {
-				requestDwmsStorages();
-			}
+			if (client.getGameState() == GameState.LOGGED_IN) { snapshotProfileIfNeeded(); }
+			if (config.useDwmsData()) { requestDwmsStorages(); }
 			RequirementProfile known = requirementProfile != null ? requirementProfile : RequirementProfile.MAXED;
 			PlayerLevels mine = realLevels != null ? realLevels : PlayerLevels.MAXED;
 			// The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): simmed levels stand
@@ -1540,7 +1433,7 @@ public class LoadoutLabPlugin extends Plugin {
 
 	public void computeRoster(List<MonsterStats> mobs, ComputeParams p, Runnable onDone) {
 		clientThread.invokeLater(() -> {
-			Staging s = new Staging(p);
+			var s = new Staging(p);
 			Map<Integer, Map<CombatStyle, Map<GearSlot, Integer>>> pinsByMob = new HashMap<>();
 			Map<Integer, SpellStats> spellByMob = new HashMap<>();
 			Map<Integer, Integer> specByMob = new HashMap<>();
@@ -1554,7 +1447,7 @@ public class LoadoutLabPlugin extends Plugin {
 				excludedByStyle(-1), withMaxCape(p, dreams.snapshot()), perMobExclusions(mobs),
 				perMobSims(mobs), pinsByMob, spellByMob, specByMob,
 				protectOnly.snapshot(),
-				roster -> SwingUtilities.invokeLater(() -> {
+				roster -> invokeLater(() -> {
 					// EDT-only page assembly: it reads the ledger, profile
 					// and config stores the client thread writes (deadlock
 					// report 2026-08-12 - the callback thread had been
@@ -1574,7 +1467,7 @@ public class LoadoutLabPlugin extends Plugin {
 			// DWMS saves on its own cadence (ConfigSync/shutdown); the staging
 			// re-read keeps imported storages as fresh as they can be (its
 			// reply lands after this compute - one-query lag).
-			Staging s = new Staging(p);
+			var s = new Staging(p);
 			exportProfile(new PlayerProfile(
 				s.real, s.live, s.unlocks, s.profile, s.mergedOwned, ledger.bankKnown(),
 				ownedBySources()));
@@ -1583,7 +1476,7 @@ public class LoadoutLabPlugin extends Plugin {
 				pinnedByStyle(monster, monster.getId(), p.onSlayerTask), resolvedPinnedSpell(monster.getId()),
 				mobProfiles.pinnedSpec(monster.getId()),
 				protectOnly.snapshot(),
-				results -> SwingUtilities.invokeLater(() -> {
+				results -> invokeLater(() -> {
 					CommandEngine engine = commandEngine;
 					if (engine != null) {
 						engine.onResults(monster, results);
@@ -1597,16 +1490,14 @@ public class LoadoutLabPlugin extends Plugin {
 	/** The one-surface mount: Core's single nav slot hosts the
 	 * model-driven surface. */
 	private void refreshHostedView() {
-		SwingUtilities.invokeLater(() -> {
+		invokeLater(() -> {
 			if (navButton == null || companionHost == null || internalSurface == null) {
 				return; // still loading
 			}
 			try {
 				companionHost.mount(internalSurface.asFunction().apply(
 					companionLink == null ? null : companionLink.lastPage()));
-			} catch (RuntimeException ex) {
-				log.warn("renderer failed; keeping the previous content", ex);
-			}
+			} catch (RuntimeException ex) { log.warn("renderer failed; keeping the previous content", ex); }
 		});
 	}
 
@@ -1629,13 +1520,9 @@ public class LoadoutLabPlugin extends Plugin {
 			ledgerRecomputeTicks = 5;
 			return;
 		}
-		if (event.getVarbitId() != VarbitID.SPELLBOOK) {
-			return;
-		}
+		if (event.getVarbitId() != SPELLBOOK) { return; }
 		CommandEngine engine = commandEngine;
-		if (engine != null) {
-			engine.setLiveSpellbook(spellbookName(event.getValue()));
-		}
+		if (engine != null) { engine.setLiveSpellbook(spellbookName(event.getValue())); }
 	}
 
 	/** The classic provenance memo (rebuilt only when ownership moves):
@@ -1645,9 +1532,7 @@ public class LoadoutLabPlugin extends Plugin {
 	private volatile int cachedLocationsFingerprint;
 
 	private String primaryLocationOf(int itemId) {
-		if (ledger == null || dwmsLink == null) {
-			return "";
-		}
+		if (ledger == null || dwmsLink == null) { return ""; }
 		int fingerprint = ownedFingerprint();
 		ItemLocations found = cachedLocations;
 		if (found == null || cachedLocationsFingerprint != fingerprint) {
@@ -1661,9 +1546,7 @@ public class LoadoutLabPlugin extends Plugin {
 
 	/** Client-thread only. Quest scan is the expensive part - done once per login. */
 	private void snapshotProfileIfNeeded() {
-		if (requirementProfile != null && boostedLevels != null && realLevels != null) {
-			return;
-		}
+		if (requirementProfile != null && boostedLevels != null && realLevels != null) { return; }
 		Map<Skill, Integer> real = new EnumMap<>(Skill.class);
 		Map<Skill, Integer> boosted = new EnumMap<>(Skill.class);
 		for (Skill skill : Skill.values()) {
@@ -1674,18 +1557,14 @@ public class LoadoutLabPlugin extends Plugin {
 		// the client stats were not populated yet (login race) - skip the
 		// snapshot so the next compute retries, instead of poisoning every
 		// number this session (field report: all magic at 0.06 dps).
-		if (real.getOrDefault(Skill.HITPOINTS, 0) < 10) {
-			return;
-		}
+		if (real.getOrDefault(Skill.HITPOINTS, 0) < 10) { return; }
 		// Stronger canary: stats stream in Skill-ordinal order at login, so a
 		// fast first search can catch attack/str/def/hp populated while
 		// ranged/prayer/magic still read 1 - and the HP check above passes.
 		// The client's own total level is authoritative: a partial snapshot
 		// always sums BELOW it (field report: ranged/magic/prayer poisoned
 		// at 1 -> blisterwood-stake ranged picks and Wind Strike autocasts).
-		if (real.values().stream().mapToInt(Integer::intValue).sum() < client.getTotalLevel()) {
-			return;
-		}
+		if (real.values().stream().mapToInt(Integer::intValue).sum() < client.getTotalLevel()) { return; }
 		Set<String> quests = Arrays.stream(Quest.values()).filter(quest -> quest.getState(client) == QuestState.FINISHED)
 			.map(Enum::name).collect(Collectors.toSet());
 		requirementProfile = new RequirementProfile(real, quests);
@@ -1727,9 +1606,7 @@ public class LoadoutLabPlugin extends Plugin {
 			// stores keep the last known character until the hash arrives.
 			return;
 		}
-		for (ScopedStore store : stores) {
-			store.loadScope(scope);
-		}
+		for (ScopedStore store : stores) { store.loadScope(scope); }
 	}
 
 	/** Every per-character store, ONE list (loadAllScopes, the profile
@@ -1738,9 +1615,7 @@ public class LoadoutLabPlugin extends Plugin {
 
 	private String worldScope() {
 		long account = client.getAccountHash();
-		if (account == -1) {
-			return null;
-		}
+		if (account == -1) { return null; }
 		String world = client.getWorldType().contains(WorldType.SEASONAL) ? "seasonal" : "std";
 		return world + "." + account;
 	}

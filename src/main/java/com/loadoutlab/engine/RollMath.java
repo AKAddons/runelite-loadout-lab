@@ -1,5 +1,6 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
+import static java.lang.Math.*;
 
 public final class RollMath {
 	static final double SECONDS_PER_TICK = 0.6;
@@ -10,23 +11,15 @@ public final class RollMath {
 	public static double normalAccuracy(long attackRoll, long defenceRoll) {
 		double atk = attackRoll;
 		double def = defenceRoll;
-		if (atk < 0) {
-			atk = Math.min(0, atk + 2);
-		}
-		if (def < 0) {
-			def = Math.min(0, def + 2);
-		}
+		if (atk < 0) { atk = min(0, atk + 2); }
+		if (def < 0) { def = min(0, def + 2); }
 		if (atk >= 0 && def >= 0) {
 			return atk > def
 				? 1.0 - ((def + 2.0) / (2.0 * (atk + 1.0)))
 				: atk / (2.0 * (def + 1.0));
 		}
-		if (atk >= 0) {
-			return 1.0 - 1.0 / ((-def + 1.0) * (atk + 1.0));
-		}
-		if (def >= 0) {
-			return 0.0;
-		}
+		if (atk >= 0) { return 1.0 - 1.0 / ((-def + 1.0) * (atk + 1.0)); }
+		if (def >= 0) { return 0.0; }
 		double swappedAtk = -def;
 		double swappedDef = -atk;
 		return swappedAtk > swappedDef
@@ -35,11 +28,11 @@ public final class RollMath {
 	}
 
 	public static int effectiveLevel(int level, double prayer, int stanceBonus) {
-		return (int) Math.floor(level * prayer) + stanceBonus + 8;
+		return (int) floor(level * prayer) + stanceBonus + 8;
 	}
 
 	public static int maxHitFromEffective(int effectiveLevel, int strengthBonus) {
-		return Math.max(0, (int) Math.floor((effectiveLevel * (strengthBonus + 64.0) + 320.0) / 640.0));
+		return max(0, (int) floor((effectiveLevel * (strengthBonus + 64.0) + 320.0) / 640.0));
 	}
 
 	public static long attackRoll(int effectiveLevel, int attackBonus) {
@@ -51,9 +44,7 @@ public final class RollMath {
 	}
 
 	public static double normalExpectedHit(double accuracy, int maxHit) {
-		if (maxHit <= 0 || accuracy <= 0.0) {
-			return 0.0;
-		}
+		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
 		return accuracy * (maxHit / 2.0 + 1.0 / (maxHit + 1.0));
 	}
 
@@ -62,9 +53,7 @@ public final class RollMath {
 	 * the whole arrow is worth 1 + 2 x E(floor(2m/3)) / E(m) single hits
 	 * (accuracy cancels). One target: 1. */
 	public static double venatorFactor(int maxHit) {
-		if (maxHit <= 0) {
-			return 1.0;
-		}
+		if (maxHit <= 0) { return 1.0; }
 		return 1.0 + 2.0 * normalExpectedHit(1.0, maxHit * 2 / 3) / normalExpectedHit(1.0, maxHit);
 	}
 
@@ -87,15 +76,13 @@ public final class RollMath {
 			// of the normal expectation keeps the bump AND the shift.
 			return expectedHit(accuracy, minHit, maxHit) + accuracy * -armour;
 		}
-		if (maxHit <= 0 || accuracy <= 0.0) {
-			return 0.0;
-		}
-		int lo = Math.max(0, Math.min(minHit, maxHit));
+		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
+		int lo = max(0, min(minHit, maxHit));
 		// sum(max(0, k - armour)) over k in [lo, maxHit], closed form: the
 		// rolls at or under the armour contribute nothing, the rest are a
 		// run of consecutive integers. Walking the rolls gave the same
 		// total, but this runs on EVERY melee and ranged trial.
-		long first = Math.max((long) lo, (long) armour + 1);
+		long first = max((long) lo, (long) armour + 1);
 		long sum = first > maxHit ? 0
 			: triangle(maxHit - armour) - triangle(first - armour - 1);
 		return accuracy * ((double) sum / (maxHit - lo + 1));
@@ -105,32 +92,24 @@ public final class RollMath {
 	 * Lunge): P(best = v) weights each roll's damage under the same flat
 	 * armour rule as expectedHitWithFlatArmour; best of one is that hit. */
 	public static double bestOfExpected(double accuracy, int maxHit, int rolls, int armour) {
-		if (maxHit <= 0 || accuracy <= 0.0) {
-			return 0.0;
-		}
+		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
 		double total = 0;
 		double below = 0;
 		for (int v = 0; v <= maxHit; v++) {
-			double atMost = Math.pow((v + 1.0) / (maxHit + 1.0), rolls);
-			total += (atMost - below) * (armour > 0 ? Math.max(0, v - armour) : Math.max(1, v) - armour);
+			double atMost = pow((v + 1.0) / (maxHit + 1.0), rolls);
+			total += (atMost - below) * (armour > 0 ? max(0, v - armour) : max(1, v) - armour);
 			below = atMost;
 		}
 		return accuracy * total;
 	}
 
 	/** 0 + 1 + ... + n; n below zero is an empty run. */
-	private static long triangle(long n) {
-		return n <= 0 ? 0 : n * (n + 1) / 2;
-	}
+	private static long triangle(long n) { return n <= 0 ? 0 : n * (n + 1) / 2; }
 
 	public static double expectedHit(double accuracy, int minHit, int maxHit) {
-		if (maxHit <= 0 || accuracy <= 0.0) {
-			return 0.0;
-		}
-		if (minHit <= 0) {
-			return normalExpectedHit(accuracy, maxHit);
-		}
-		int minimum = Math.min(minHit, maxHit);
+		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
+		if (minHit <= 0) { return normalExpectedHit(accuracy, maxHit); }
+		int minimum = min(minHit, maxHit);
 		return accuracy * ((minimum + maxHit) / 2.0);
 	}
 
@@ -148,23 +127,15 @@ public final class RollMath {
 	public static double fangAccuracy(long attackRoll, long defenceRoll) {
 		double atk = attackRoll;
 		double def = defenceRoll;
-		if (atk < 0) {
-			atk = Math.min(0, atk + 2);
-		}
-		if (def < 0) {
-			def = Math.min(0, def + 2);
-		}
+		if (atk < 0) { atk = min(0, atk + 2); }
+		if (def < 0) { def = min(0, def + 2); }
 		if (atk >= 0 && def >= 0) {
 			return atk > def
 				? 1.0 - (def + 2.0) * (2.0 * def + 3.0) / (atk + 1.0) / (atk + 1.0) / 6.0
 				: atk * (4.0 * atk + 5.0) / 6.0 / (atk + 1.0) / (def + 1.0);
 		}
-		if (atk >= 0) {
-			return 1.0 - 1.0 / (-def + 1.0) / (atk + 1.0);
-		}
-		if (def >= 0) {
-			return 0.0;
-		}
+		if (atk >= 0) { return 1.0 - 1.0 / (-def + 1.0) / (atk + 1.0); }
+		if (def >= 0) { return 0.0; }
 		double reversedAttack = -def;
 		double reversedDefence = -atk;
 		return reversedAttack < reversedDefence

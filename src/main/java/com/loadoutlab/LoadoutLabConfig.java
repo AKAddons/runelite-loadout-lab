@@ -53,9 +53,7 @@ public interface LoadoutLabConfig extends Config {
 		section = display,
 		position = 12
 	)
-	default boolean loadingAnimation() {
-		return true;
-	}
+	default boolean loadingAnimation() { return true; }
 
 	// --- Controls --------------------------------------------------------
 
@@ -66,9 +64,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 2
 	)
-	default boolean defaultSpecWeapon() {
-		return true;
-	}
+	default boolean defaultSpecWeapon() { return true; }
 
 	@ConfigItem(
 		keyName = "defaultUpgradeBudget",
@@ -77,9 +73,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 14
 	)
-	default String defaultUpgradeBudget() {
-		return "";
-	}
+	default String defaultUpgradeBudget() { return ""; }
 
 	@ConfigItem(
 		keyName = "showTripBreakdown",
@@ -88,9 +82,7 @@ public interface LoadoutLabConfig extends Config {
 		section = controls,
 		position = 3
 	)
-	default boolean showTripBreakdown() {
-		return true;
-	}
+	default boolean showTripBreakdown() { return true; }
 
 	@ConfigItem(
 		keyName = "showWildyRisk",
@@ -99,9 +91,7 @@ public interface LoadoutLabConfig extends Config {
 		section = controls,
 		position = 2
 	)
-	default boolean showWildyRisk() {
-		return true;
-	}
+	default boolean showWildyRisk() { return true; }
 
 	@ConfigItem(
 		keyName = "showPvpWorldChip",
@@ -111,9 +101,7 @@ public interface LoadoutLabConfig extends Config {
 		section = controls,
 		position = 6
 	)
-	default boolean showPvpWorldChip() {
-		return false;
-	}
+	default boolean showPvpWorldChip() { return false; }
 
 	@ConfigItem(
 		keyName = "showDegradableChip",
@@ -122,9 +110,7 @@ public interface LoadoutLabConfig extends Config {
 		section = controls,
 		position = 4
 	)
-	default boolean showDegradableChip() {
-		return true;
-	}
+	default boolean showDegradableChip() { return true; }
 
 	@ConfigItem(
 		keyName = "skipDegradableDefault",
@@ -133,9 +119,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 16
 	)
-	default boolean skipDegradableDefault() {
-		return false;
-	}
+	default boolean skipDegradableDefault() { return false; }
 
 	@ConfigItem(
 		keyName = "resetCustomizations",
@@ -144,9 +128,7 @@ public interface LoadoutLabConfig extends Config {
 		section = reset,
 		position = 1
 	)
-	default boolean resetCustomizations() {
-		return false;
-	}
+	default boolean resetCustomizations() { return false; }
 
 	/** Unset every setting so each goes back to its default (the reset
 	 * tick included). The key list is RuneLite's own config descriptor -
@@ -164,9 +146,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 15
 	)
-	default String defaultRiskCap() {
-		return "75k";
-	}
+	default String defaultRiskCap() { return "75k"; }
 
 	@ConfigItem(
 		keyName = "defaultOptimizeMode",
@@ -176,9 +156,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 1
 	)
-	default OptimizeModeDefault defaultOptimizeMode() {
-		return OptimizeModeDefault.MAX_DPS;
-	}
+	default OptimizeModeDefault defaultOptimizeMode() { return OptimizeModeDefault.MAX_DPS; }
 
 	/** The mode new searches start on (ISS-01M5JBYYWHQNTM0CGNYWQBNYX6,
 	 * Andrew 2026-10-22: "a setting to make max dps/balanced/tanky the
@@ -192,9 +170,7 @@ public interface LoadoutLabConfig extends Config {
 		private final String label;
 
 		@Override
-		public String toString() {
-			return label;
-		}
+		public String toString() { return label; }
 	}
 
 	enum AssumeDefault {
@@ -209,9 +185,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 9
 	)
-	default AssumeDefault defaultThralls() {
-		return AssumeDefault.DETECT;
-	}
+	default AssumeDefault defaultThralls() { return AssumeDefault.DETECT; }
 
 	@ConfigItem(
 		keyName = "slayerTaskBracelet",
@@ -220,9 +194,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 11
 	)
-	default TaskBracelet slayerTaskBracelet() {
-		return TaskBracelet.NONE;
-	}
+	default TaskBracelet slayerTaskBracelet() { return TaskBracelet.NONE; }
 
 	@ConfigItem(
 		keyName = "defaultDeathCharge",
@@ -231,9 +203,7 @@ public interface LoadoutLabConfig extends Config {
 		section = defaults,
 		position = 10
 	)
-	default AssumeDefault defaultDeathCharge() {
-		return AssumeDefault.DETECT;
-	}
+	default AssumeDefault defaultDeathCharge() { return AssumeDefault.DETECT; }
 
 	@ConfigItem(
 		keyName = "npcRightClickEntry",
@@ -242,9 +212,7 @@ public interface LoadoutLabConfig extends Config {
 		section = controls,
 		position = 10
 	)
-	default boolean npcRightClickEntry() {
-		return true;
-	}
+	default boolean npcRightClickEntry() { return true; }
 
 	// --- Connections -----------------------------------------------------
 
@@ -256,9 +224,7 @@ public interface LoadoutLabConfig extends Config {
 		section = connections,
 		position = 1
 	)
-	default boolean useDwmsData() {
-		return true;
-	}
+	default boolean useDwmsData() { return true; }
 
 	@ConfigItem(
 		keyName = "fetchMonsterIcons",
@@ -269,8 +235,6 @@ public interface LoadoutLabConfig extends Config {
 		section = connections,
 		position = 2
 	)
-	default boolean fetchMonsterIcons() {
-		return true;
-	}
+	default boolean fetchMonsterIcons() { return true; }
 
 }

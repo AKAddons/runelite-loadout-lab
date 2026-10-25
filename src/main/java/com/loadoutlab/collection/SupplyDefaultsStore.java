@@ -21,9 +21,7 @@ public class SupplyDefaultsStore extends ScopedMapStore<String, String> {
 	}
 
 	/** The category's default: DETECT_BEST (always on) unless changed. */
-	public synchronized String choice(String category) {
-		return items.getOrDefault(category, DETECT_BEST);
-	}
+	public synchronized String choice(String category) { return items.getOrDefault(category, DETECT_BEST); }
 
 	public synchronized void setChoice(String category, String choice) {
 		if (choice == null || choice.isEmpty() || DETECT_BEST.equals(choice)) {

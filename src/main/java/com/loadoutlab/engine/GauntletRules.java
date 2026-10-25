@@ -1,7 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 
 /**
  * The Gauntlet locks fights to gear CRAFTED INSIDE the run (field spec
@@ -18,21 +17,15 @@ public final class GauntletRules {
 	 * Gauntlet, null anywhere else. */
 	public static String family(MonsterStats monster) {
 		String name = monster.getNameLower();
-		if (name.startsWith("corrupted ")) {
-			return "corrupted";
-		}
-		if (name.startsWith("crystalline ")) {
-			return "crystal";
-		}
+		if (name.startsWith("corrupted ")) { return "corrupted"; }
+		if (name.startsWith("crystalline ")) { return "crystal"; }
 		return null;
 	}
 
 	/** Only the family's raid-crafted tiers exist inside. */
 	public static boolean allowed(String family, GearItem item) {
 		String name = item.getNameLower();
-		if (!name.startsWith(family + " ")) {
-			return false;
-		}
+		if (!name.startsWith(family + " ")) { return false; }
 		return name.endsWith("(basic)") || name.endsWith("(attuned)")
 			|| name.endsWith("(perfected)");
 	}

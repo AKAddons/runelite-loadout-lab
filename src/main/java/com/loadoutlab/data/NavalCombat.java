@@ -2,9 +2,6 @@ package com.loadoutlab.data;
 
 import com.google.gson.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.loadoutlab.data.JsonResources.*;
 
@@ -70,9 +67,7 @@ public final class NavalCombat {
 				integer(b, "accuracy", 0), integer(b, "strength", 0)));
 		}
 		strings(root, "ballTierOrder", BALL_ORDER);
-		for (JsonElement e : root.getAsJsonArray("navalMonsters")) {
-			NAVAL.add(Names.lower(e.getAsString()));
-		}
+		for (JsonElement e : root.getAsJsonArray("navalMonsters")) { NAVAL.add(Names.lower(e.getAsString())); }
 		strings(root, "keels", KEELS);
 		strings(root, "legacyWoodKeels", LEGACY_WOOD_KEELS);
 		for (Map.Entry<String, JsonElement> row
@@ -84,21 +79,13 @@ public final class NavalCombat {
 	private NavalCombat() {
 	}
 
-	public static Cannon cannon(String tier) {
-		return CANNONS.get(tier);
-	}
+	public static Cannon cannon(String tier) { return CANNONS.get(tier); }
 
-	public static Ball ball(String tier) {
-		return BALLS.get(tier);
-	}
+	public static Ball ball(String tier) { return BALLS.get(tier); }
 
-	public static List<Cannon> cannons() {
-		return List.copyOf(CANNONS.values());
-	}
+	public static List<Cannon> cannons() { return List.copyOf(CANNONS.values()); }
 
-	public static List<Ball> balls() {
-		return List.copyOf(BALLS.values());
-	}
+	public static List<Ball> balls() { return List.copyOf(BALLS.values()); }
 
 	/** True when a cannon of {@code cannonTier} may fire {@code ballTier}:
 	 * at or below its own tier in the firing order (granite rides between
@@ -112,15 +99,11 @@ public final class NavalCombat {
 	/** The best ball a set of cannons can SHARE (REQ-SC-2: one ammo tier for
 	 * all): the highest tier every cannon can fire, or null for no cannons. */
 	public static String bestSharedBall(List<String> cannonTiers) {
-		if (cannonTiers == null || cannonTiers.isEmpty()) {
-			return null;
-		}
+		if (cannonTiers == null || cannonTiers.isEmpty()) { return null; }
 		int min = Integer.MAX_VALUE;
 		for (String tier : cannonTiers) {
 			int i = BALL_ORDER.indexOf(tier);
-			if (i < 0) {
-				return null;
-			}
+			if (i < 0) { return null; }
 			min = Math.min(min, i);
 		}
 		return BALL_ORDER.get(min);
@@ -132,13 +115,9 @@ public final class NavalCombat {
 		return monsterName != null && NAVAL.contains(Names.lower(monsterName));
 	}
 
-	public static Set<String> navalNames() {
-		return Collections.unmodifiableSet(NAVAL);
-	}
+	public static Set<String> navalNames() { return Collections.unmodifiableSet(NAVAL); }
 
-	public static List<String> keels() {
-		return Collections.unmodifiableList(KEELS);
-	}
+	public static List<String> keels() { return Collections.unmodifiableList(KEELS); }
 
 	public static String normalizeKeel(String keel) {
 		int i = keel == null ? -1 : LEGACY_WOOD_KEELS.indexOf(Names.lower(keel));
@@ -157,7 +136,5 @@ public final class NavalCombat {
 
 	/** Crew-fired numbers are estimates while the wiki flags the crewmate
 	 * formula out-of-date; the UI cites this on crew tooltips. */
-	public static boolean crewFormulaStale() {
-		return CREW_FORMULA_STALE;
-	}
+	public static boolean crewFormulaStale() { return CREW_FORMULA_STALE; }
 }

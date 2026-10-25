@@ -25,10 +25,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class UiTextTest {
 	private static final Path RENDER = Paths.get("src/main/java/com/loadoutlab/render");
 
-	/** Every key the render sources ask Ui.text for, with the file naming it. */
+	/** Every key the render sources ask Ui.text for, with the file naming it:
+	 * Ui.text("key"), or text("key") where Ui is statically imported. */
 	private static List<String[]> referencedKeys() throws IOException {
 		List<String[]> keys = new ArrayList<>();
-		Pattern call = Pattern.compile("Ui\\.text\\(\"([^\"]+)\"\\)");
+		Pattern call = Pattern.compile("(?<![\\w.])(?:Ui\\.)?text\\(\"([^\"]+)\"\\)");
 		try (Stream<Path> files = Files.list(RENDER)) {
 			for (Path file : (Iterable<Path>) files.filter(p -> p.toString().endsWith(".java"))::iterator) {
 				Matcher m = call.matcher(new String(Files.readAllBytes(file), StandardCharsets.UTF_8));

@@ -3,9 +3,10 @@ package com.loadoutlab.model;
 import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import com.loadoutlab.optimizer.OptimizerService.StyleResult;
+import com.loadoutlab.engine.PvpRisk.Assessment;
 
 /**
  * The copy-report for the hosted view, built CORE-SIDE at page
@@ -21,22 +22,14 @@ final class ReportBuilder {
 	/** keptSlots is the page's OWN wilderness gate (-1 = not out there),
 	 * handed in rather than re-derived: the CARD showed the risk line and
 	 * the copied report never mentioned it (field report 2026-08-22), so
-	 * the two must read from one derivation or they drift again. */
+	 * the two must read from one derivation or they drift again. With the
+	 * group's one spellbook and its reason ("" = none pinned). */
 	static String build(String version, PageState state, List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
-		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
-		List<Map<String, Object>> supplies, boolean lunarCamp, List<Map<String, Object>> mobNodes) {
-		return build(version, state, mobs, perMob, keptSlots, counts, thralls, ship, supplies, lunarCamp,
-			mobNodes, "", "");
-	}
-
-	/** With the group's one spellbook and its reason ("" = none pinned). */
-	static String build(String version, PageState state, List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int keptSlots,
+		List<Map<CombatStyle, StyleResult>> perMob, int keptSlots,
 		Map<String, Object> counts, Map<String, Object> thralls, Map<String, Object> ship,
 		List<Map<String, Object>> supplies, boolean lunarCamp, List<Map<String, Object>> mobNodes,
 		String groupBook, String groupBookReason) {
-		StringBuilder sb = new StringBuilder();
+		var sb = new StringBuilder();
 		sb.append("Loadout Lab data (v").append(version).append(", hosted view)\n");
 		for (int i = 0; i < mobs.size(); i++) {
 			MonsterStats mob = mobs.get(i);
@@ -54,9 +47,7 @@ final class ReportBuilder {
 						.append(groupBookReason == null || groupBookReason.isEmpty() ? "" : " - " + groupBookReason)
 						.append('\n');
 				}
-				if (ship != null) {
-					appendShip(sb, ship);
-				}
+				if (ship != null) { appendShip(sb, ship); }
 				if (supplies != null) {
 					items(sb, "  Supplies:", supplies.stream().map(s -> s.get("name")).collect(Collectors.toList()), "\n");
 				}
@@ -65,10 +56,8 @@ final class ReportBuilder {
 			Object byMob = ship == null ? null : ship.get("byMob");
 			double cannonDps = byMob instanceof List && i < ((List<?>) byMob).size()
 				? num(((List<?>) byMob).get(i)) : 0;
-			if (cannonDps > 0) {
-				sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps));
-			}
-			Map<CombatStyle, OptimizerService.StyleResult> results = perMob.get(i);
+			if (cannonDps > 0) { sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps)); }
+			Map<CombatStyle, StyleResult> results = perMob.get(i);
 			// The kit contract (field report 2026-08-14, the Sire: "a
 			// multi-mob result needs to return 1 set of gear and the
 			// recommendations can't deviate"): full sets print ONLY for
@@ -77,20 +66,14 @@ final class ReportBuilder {
 			// one-liner so an informational view never reads as a
 			// recommendation. Single-mob results are kit-backed by
 			// definition and print exactly as before.
-			StringBuilder others = new StringBuilder();
+			var others = new StringBuilder();
 			for (CombatStyle style : CombatStyle.concreteValues()) {
-				OptimizerService.StyleResult result = results == null ? null : results.get(style);
-				if (result == null) {
-					continue;
-				}
+				StyleResult result = results == null ? null : results.get(style);
+				if (result == null) { continue; }
 				if (result.ownedKitBacked || result.gameKitBacked) {
 					sb.append("-- ").append(style).append(" --\n");
-					if (result.ownedKitBacked) {
-						appendSide(sb, "Yours", result, false, keptSlots);
-					}
-					if (result.gameKitBacked) {
-						appendSide(sb, "Best in game", result, true, keptSlots);
-					}
+					if (result.ownedKitBacked) { appendSide(sb, "Yours", result, false, keptSlots); }
+					if (result.gameKitBacked) { appendSide(sb, "Best in game", result, true, keptSlots); }
 					appendStandDown(sb, mobNodes != null && i < mobNodes.size() ? mobNodes.get(i) : null,
 						String.valueOf(style).toLowerCase());
 				}
@@ -100,16 +83,14 @@ final class ReportBuilder {
 							result.owned.get(0).getDps()));
 				}
 			}
-			Map<String, OptimizerService.StyleResult> tools = null;
-			for (OptimizerService.StyleResult r : results.values()) {
-				if (r != null && r.multiTools != null) {
-					tools = r.multiTools;
-				}
+			Map<String, StyleResult> tools = null;
+			for (StyleResult r : results.values()) {
+				if (r != null && r.multiTools != null) { tools = r.multiTools; }
 			}
 			if (tools != null) {
 				sb.append("-- Multi (").append((int) num(state.paramsNode().get("multiStack")))
 					.append(" targets stacked; sets priced per target) --\n");
-				for (Map.Entry<String, OptimizerService.StyleResult> e : tools.entrySet()) {
+				for (var e : tools.entrySet()) {
 					sb.append(e.getKey()).append(":\n");
 					appendSide(sb, "Yours", e.getValue(), false, keptSlots);
 					appendSide(sb, "Best in game", e.getValue(), true, keptSlots);
@@ -129,9 +110,7 @@ final class ReportBuilder {
 	private static void appendStandDown(StringBuilder sb, Map<String, Object> mob, String style) {
 		Object styles = mob == null ? null : mob.get("styles");
 		Object node = styles instanceof Map ? ((Map<?, ?>) styles).get(style) : null;
-		if (!(node instanceof Map)) {
-			return;
-		}
+		if (!(node instanceof Map)) { return; }
 		String last = null;
 		for (String side : new String[]{"yours", "bis"}) {
 			Object card = ((Map<?, ?>) node).get(side);
@@ -147,9 +126,7 @@ final class ReportBuilder {
 	 * (Lostmind, Discord 2026-09-17). */
 	@SuppressWarnings("unchecked")
 	private static void appendProfile(StringBuilder sb, Map<String, Object> mob) {
-		if (mob == null) {
-			return;
-		}
+		if (mob == null) { return; }
 		Object pins = mob.get("pins");
 		if (pins instanceof Map) {
 			((Map<String, Map<String, String>>) pins).forEach((scope, slots) -> {
@@ -164,20 +141,14 @@ final class ReportBuilder {
 		names(sb, "  Excluded here: ", mob.get("mobExclusions"), true);
 		names(sb, "  Simmed here: ", mob.get("mobSims"), false);
 		Object note = mob.get("note");
-		if (note instanceof String && !((String) note).isEmpty()) {
-			sb.append("  Note: ").append(note).append('\n');
-		}
-		if (Boolean.TRUE.equals(mob.get("skipDegradable"))) {
-			sb.append("  Degradable gear skipped\n");
-		}
+		if (note instanceof String && !((String) note).isEmpty()) { sb.append("  Note: ").append(note).append('\n'); }
+		if (Boolean.TRUE.equals(mob.get("skipDegradable"))) { sb.append("  Degradable gear skipped\n"); }
 	}
 
 	/** "label: name (scope), name" from a [{name, scope?}] list; nothing when empty. */
 	@SuppressWarnings("unchecked")
 	private static void names(StringBuilder sb, String label, Object list, boolean scoped) {
-		if (!(list instanceof List) || ((List<?>) list).isEmpty()) {
-			return;
-		}
+		if (!(list instanceof List) || ((List<?>) list).isEmpty()) { return; }
 		sb.append(label);
 		for (Object o : (List<?>) list) {
 			Map<String, Object> item = (Map<String, Object>) o;
@@ -212,22 +183,18 @@ final class ReportBuilder {
 					? gp((long) num(params.get("riskBudgetGp"))) : "none")
 					+ "; Protect item: " + yesNo(params.get("protectItem")) : ""));
 		String stats = statsLine(params);
-		if (stats != null) {
-			sb.append(stats);
-		}
+		if (stats != null) { sb.append(stats); }
 		if (counts != null) {
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed\n");
 			names(sb, "  Excluded: ", counts.get("excludedItems"), false);
 			Object names = counts.get("simmedNames");
-			if (names instanceof List) {
-				items(sb, "  Simmed as owned:", (List<?>) names, "\n");
-			}
+			if (names instanceof List) { items(sb, "  Simmed as owned:", (List<?>) names, "\n"); }
 		}
 	}
 
 	private static void appendSide(StringBuilder sb, String caption,
-		OptimizerService.StyleResult result, boolean bis, int keptSlots) {
+		StyleResult result, boolean bis, int keptSlots) {
 		DpsResult shown = RenderModel.shown(result, bis);
 		if (shown == null) {
 			sb.append(caption).append(": no usable set\n");
@@ -244,28 +211,22 @@ final class ReportBuilder {
 		sb.append(" ");
 		for (GearSlot slot : GearSlot.values()) {
 			GearItem item = shown.getLoadout().get(slot);
-			if (item != null) {
-				sb.append(' ').append(item.label()).append(',');
-			}
+			if (item != null) { sb.append(' ').append(item.label()).append(','); }
 		}
 		if (shown.getLoadout().getQuiverAmmo() != null) {
 			sb.append(" [quiver: ").append(shown.getLoadout().getQuiverAmmo().label()).append(']');
 		}
 		sb.append('\n');
 		String boost = bis ? result.gameBoostLabel : result.boostLabel;
-		if (boost != null) {
-			sb.append("  Assumes: ").append(boost).append('\n');
-		}
-		if (shown.getSpellName() != null) {
-			sb.append("  Spell: ").append(shown.getSpellName()).append('\n');
-		}
+		if (boost != null) { sb.append("  Assumes: ").append(boost).append('\n'); }
+		if (shown.getSpellName() != null) { sb.append("  Spell: ").append(shown.getSpellName()).append('\n'); }
 		if (specWeapon != null) {
 			sb.append(String.format("  Spec: %s (adds ~%.2f dps)%n", specWeapon.label(), specAdded));
 		}
 		if (keptSlots >= 0) {
 			// What this answer costs you on a death out there - the same
 			// assessment the card's Risk line shows.
-			PvpRisk.Assessment risk =
+			Assessment risk =
 				PvpRisk.assess(shown.getLoadout(), specWeapon, keptSlots);
 			sb.append("  Risk: ").append(gp(risk.riskGp)).append(" per death");
 			items(sb, " - lost:", risk.lost, "");
@@ -293,7 +254,7 @@ final class ReportBuilder {
 	static String statsLine(Map<String, Object> params) {
 		String[] mine = String.valueOf(params.getOrDefault("myLevels", "")).split("/");
 		boolean cape = Boolean.TRUE.equals(params.get("simMaxCape"));
-		StringBuilder levels = new StringBuilder();
+		var levels = new StringBuilder();
 		boolean any = false;
 		for (int i = 0; i < PageState.SIM_KEYS.length; i++) {
 			int sim = (int) num(params.get(PageState.SIM_KEYS[i]));
@@ -303,9 +264,7 @@ final class ReportBuilder {
 		return any || cape ? "  Stats: simmed " + levels + (cape ? " + max cape" : "") + "\n" : null;
 	}
 
-	private static double num(Object value) {
-		return value instanceof Number ? ((Number) value).doubleValue() : 0;
-	}
+	private static double num(Object value) { return value instanceof Number ? ((Number) value).doubleValue() : 0; }
 
 	/** Short gp for the report line (the card's own vocabulary). */
 	/** The ship, for a sea report (Andrew 2026-09-03: the copied report
@@ -329,18 +288,14 @@ final class ReportBuilder {
 			sb.append("; ammo: ").append(ammo)
 				.append(Boolean.TRUE.equals(ship.get("ammoDetected")) ? " (detected)" : "");
 		}
-		if (ship.get("ammoBlocked") != null) {
-			sb.append("; ").append(ship.get("ammoBlocked"));
-		}
+		if (ship.get("ammoBlocked") != null) { sb.append("; ").append(ship.get("ammoBlocked")); }
 		sb.append('\n');
 		Object cannons = ship.get("cannons");
 		if (cannons instanceof List && !((List<?>) cannons).isEmpty()) {
 			sb.append("  Cannons:");
 			int i = 1;
 			for (Object c : (List<?>) cannons) {
-				if (!(c instanceof Map)) {
-					continue;
-				}
+				if (!(c instanceof Map)) { continue; }
 				Map<?, ?> cannon = (Map<?, ?>) c;
 				sb.append(i > 1 ? "; " : " ").append("cannon ").append(i++).append(": ")
 					.append(cannon.get("tier")).append(", ")
@@ -357,16 +312,10 @@ final class ReportBuilder {
 	}
 
 	private static String gp(long value) {
-		if (value >= 1_000_000) {
-			return String.format("%.1fm", value / 1_000_000.0);
-		}
-		if (value >= 1_000) {
-			return String.format("%.0fk", value / 1_000.0);
-		}
+		if (value >= 1_000_000) { return String.format("%.1fm", value / 1_000_000.0); }
+		if (value >= 1_000) { return String.format("%.0fk", value / 1_000.0); }
 		return Long.toString(value);
 	}
 
-	private static String yesNo(Object value) {
-		return Boolean.TRUE.equals(value) ? "yes" : "no";
-	}
+	private static String yesNo(Object value) { return Boolean.TRUE.equals(value) ? "yes" : "no"; }
 }

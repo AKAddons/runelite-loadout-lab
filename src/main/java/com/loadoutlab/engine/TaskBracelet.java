@@ -1,9 +1,7 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 import java.util.*;
-import java.util.Map;
 
 /**
  * The slayer-task bracelet preference (miko, Discord 2026-10-17: "include
@@ -20,9 +18,7 @@ public enum TaskBracelet {
 
 	public final int itemId;
 
-	TaskBracelet(int itemId) {
-		this.itemId = itemId;
-	}
+	TaskBracelet(int itemId) { this.itemId = itemId; }
 
 	/** The mob's pins with this bracelet in HANDS for every concrete style
 	 * that has no hands pin of its own; the input is never mutated. Only a
@@ -34,14 +30,12 @@ public enum TaskBracelet {
 		if (!onTask || monster == null || !monster.isSlayerMonster() || choice == null || choice == NONE) {
 			return pins;
 		}
-		EnumMap<CombatStyle, Map<GearSlot, Integer>> out = new EnumMap<>(CombatStyle.class);
+		var out = new EnumMap<CombatStyle, Map<GearSlot, Integer>>(CombatStyle.class);
 		out.putAll(pins);
 		for (CombatStyle style : CombatStyle.concreteValues()) {
-			EnumMap<GearSlot, Integer> mine = new EnumMap<>(GearSlot.class);
+			var mine = new EnumMap<GearSlot, Integer>(GearSlot.class);
 			Map<GearSlot, Integer> had = pins.get(style);
-			if (had != null) {
-				mine.putAll(had);
-			}
+			if (had != null) { mine.putAll(had); }
 			mine.putIfAbsent(GearSlot.HANDS, choice.itemId);
 			out.put(style, mine);
 		}

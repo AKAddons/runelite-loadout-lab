@@ -1,13 +1,7 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.GearSlot;
-import com.loadoutlab.data.JsonResources;
-import com.loadoutlab.data.LoadoutData;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import com.loadoutlab.data.*;
+import java.util.*;
 import java.util.function.IntPredicate;
 
 /** The max cape sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
@@ -27,15 +21,11 @@ public final class MaxCapeSims {
 	public static Set<Integer> ids(LoadoutData data, IntPredicate owns) {
 		Set<Integer> out = new LinkedHashSet<>();
 		GearItem max = cape(data, "max cape");
-		if (max != null) {
-			out.add(max.getId());
-		}
-		for (Map.Entry<String, String> combo : COMBOS.entrySet()) {
+		if (max != null) { out.add(max.getId()); }
+		for (var combo : COMBOS.entrySet()) {
 			GearItem base = cape(data, combo.getKey());
 			GearItem made = cape(data, combo.getValue());
-			if (base != null && made != null && owns.test(base.getId())) {
-				out.add(made.getId());
-			}
+			if (base != null && made != null && owns.test(base.getId())) { out.add(made.getId()); }
 		}
 		return out;
 	}

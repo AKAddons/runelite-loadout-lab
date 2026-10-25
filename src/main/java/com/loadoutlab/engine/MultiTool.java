@@ -31,9 +31,7 @@ public enum MultiTool {
 
 	/** The multiplier on a per-target number at a stack of targets. */
 	public static double factor(String kind, int stack, int maxHit) {
-		if ("chain".equals(kind)) {
-			return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1;
-		}
+		if ("chain".equals(kind)) { return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1; }
 		return Math.max(1, Math.min(stack, AREA_CAP));
 	}
 }

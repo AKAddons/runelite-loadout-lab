@@ -36,25 +36,17 @@ final class ScopedKeys {
 	static <T> T parse(Gson gson, String json, Type type) {
 		try {
 			return json == null || json.isEmpty() ? null : gson.fromJson(json, type);
-		} catch (RuntimeException ex) {
-			return null;
-		}
+		} catch (RuntimeException ex) { return null; }
 	}
 
 	/** As {@link #read}, for a store whose legacy key is not simply the
 	 * scoped key without its prefix. */
 	static String adopt(ConfigManager configManager, String group, String key, String legacyKey) {
 		String json = configManager.getConfiguration(group, key);
-		if (json != null && !json.isEmpty()) {
-			return json;
-		}
-		if (key.equals(legacyKey)) {
-			return null;
-		}
+		if (json != null && !json.isEmpty()) { return json; }
+		if (key.equals(legacyKey)) { return null; }
 		String legacy = configManager.getConfiguration(group, legacyKey);
-		if (legacy == null || legacy.isEmpty()) {
-			return null;
-		}
+		if (legacy == null || legacy.isEmpty()) { return null; }
 		// A move, not a copy: the second character must find nothing here.
 		configManager.setConfiguration(group, key, legacy);
 		configManager.unsetConfiguration(group, legacyKey);

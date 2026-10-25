@@ -1,11 +1,8 @@
 package com.loadoutlab.render;
 
 import java.awt.Font;
-import java.time.LocalDate;
-import java.time.Month;
+import java.time.*;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 import java.io.BufferedReader;
 import javax.swing.Timer;
 
@@ -43,13 +40,9 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 	private static final Font BRAILLE_FONT = loadFont("CascadiaMono.ttf");
 	private static final java.util.regex.Pattern BRAILLE = java.util.regex.Pattern.compile("[\u2800-\u28ff]+");
 
-	static Font moodFont() {
-		return MOOD_FONT;
-	}
+	static Font moodFont() { return MOOD_FONT; }
 
-	static Font brailleFont() {
-		return BRAILLE_FONT;
-	}
+	static Font brailleFont() { return BRAILLE_FONT; }
 
 	private static Font loadFont(String resource) {
 		try (java.io.InputStream in = AsciiLoader.class.getResourceAsStream(resource)) {
@@ -59,15 +52,11 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 			// is why setFont alone changed nothing (Andrew 2026-10-15, still bad).
 			java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
 			return font;
-		} catch (Exception e) {
-			return new Font(Font.MONOSPACED, Font.PLAIN, 12);
-		}
+		} catch (Exception e) { return new Font(Font.MONOSPACED, Font.PLAIN, 12); }
 	}
 
 	/** The pool key for the pending selection, or null for land. */
-	void setKey(String key) {
-		this.key = key;
-	}
+	void setKey(String key) { this.key = key; }
 
 	private final Timer timer = new Timer(140, e -> advance());
 	private List<String> frames = MOODS.get(0);
@@ -98,9 +87,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 	/** The key the current frames were picked for (a sentinel while idle). */
 	private String playingKey = "-";
 
-	String playingKey() {
-		return playingKey;
-	}
+	String playingKey() { return playingKey; }
 
 	void setRunning(boolean running) {
 		// A search started while the last one still animates re-picks from
@@ -138,9 +125,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 		return season && halloween != null && !halloween.isEmpty() ? halloween : MOODS;
 	}
 
-	private void advance() {
-		show(frames.get(tick++ % frames.size()));
-	}
+	private void advance() { show(frames.get(tick++ % frames.size())); }
 
 	/** Package for the parse test. Fail-soft: a missing or empty
 	 * resource degrades to the plain text line, never a crash. A mood
@@ -152,7 +137,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 
 	static void load(List<List<String>> land, Map<String, List<List<String>>> pools) {
 		List<String> frames = new ArrayList<>();
-		StringBuilder frame = new StringBuilder();
+		var frame = new StringBuilder();
 		String moodKey = null;
 		try (BufferedReader reader = new BufferedReader(
 			new java.io.InputStreamReader(
@@ -160,9 +145,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 				java.nio.charset.StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("#")) {
-					continue;
-				}
+				if (line.startsWith("#")) { continue; }
 				boolean mood = line.startsWith("==");
 				// Frame separators are EXACTLY "--": sea art legitimately
 				// starts lines with dashes (waves), and a prefix match ate
@@ -183,22 +166,14 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 					}
 					continue;
 				}
-				if (frame.length() > 0) {
-					frame.append('\n');
-				}
+				if (frame.length() > 0) { frame.append('\n'); }
 				frame.append(line);
 			}
 		} catch (Exception e) {
 			// fall through to the fail-soft default below
 		}
-		if (frame.length() > 0) {
-			frames.add(frame.toString());
-		}
-		if (!frames.isEmpty()) {
-			poolFor(land, pools, moodKey).add(frames);
-		}
-		if (land.isEmpty()) {
-			land.add(List.of("Computing..."));
-		}
+		if (frame.length() > 0) { frames.add(frame.toString()); }
+		if (!frames.isEmpty()) { poolFor(land, pools, moodKey).add(frames); }
+		if (land.isEmpty()) { land.add(List.of("Computing...")); }
 	}
 }

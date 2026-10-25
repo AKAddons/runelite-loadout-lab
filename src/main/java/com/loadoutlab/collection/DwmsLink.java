@@ -2,8 +2,6 @@ package com.loadoutlab.collection;
 
 import lombok.Getter;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Live link to "Dude, Where's My Stuff?" over RuneLite's PluginMessage
@@ -44,9 +42,7 @@ public class DwmsLink {
 	private volatile boolean live;
 
 	/** The request payload for PluginMessage(DWMS_NAMESPACE, REQUEST_NAME, ...). */
-	public static Map<String, Object> request() {
-		return Collections.singletonMap("source", SOURCE);
-	}
+	public static Map<String, Object> request() { return Collections.singletonMap("source", SOURCE); }
 
 	/**
 	 * Consume a candidate storages-response payload (namespace/name gating
@@ -64,13 +60,9 @@ public class DwmsLink {
 		Map<Integer, Integer> next = new HashMap<>();
 		Map<String, Map<Integer, Integer>> nextFamilies = new HashMap<>();
 		for (Object storage : (List<?>) data.get("storages")) {
-			if (!(storage instanceof Map)) {
-				continue;
-			}
+			if (!(storage instanceof Map)) { continue; }
 			Object storageItems = ((Map<?, ?>) storage).get("items");
-			if (!(storageItems instanceof List)) {
-				continue;
-			}
+			if (!(storageItems instanceof List)) { continue; }
 			Object category = ((Map<?, ?>) storage).get("category");
 			Map<Integer, Integer> family = nextFamilies.computeIfAbsent(
 				category instanceof String ? (String) category : "world",
@@ -89,19 +81,13 @@ public class DwmsLink {
 
 	/** One {"id", "quantity"} entry; anything malformed is dropped. */
 	private static void mergeItem(Object item, Map<Integer, Integer> into) {
-		if (!(item instanceof Map)) {
-			return;
-		}
+		if (!(item instanceof Map)) { return; }
 		Object id = ((Map<?, ?>) item).get("id");
 		Object quantity = ((Map<?, ?>) item).get("quantity");
-		if (!(id instanceof Number) || !(quantity instanceof Number)) {
-			return;
-		}
+		if (!(id instanceof Number) || !(quantity instanceof Number)) { return; }
 		int itemId = ((Number) id).intValue();
 		long amount = ((Number) quantity).longValue();
-		if (itemId <= 0 || amount <= 0) {
-			return;
-		}
+		if (itemId <= 0 || amount <= 0) { return; }
 		into.merge(itemId, (int) Math.min(amount, Integer.MAX_VALUE),
 			(a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
 	}
@@ -114,19 +100,13 @@ public class DwmsLink {
 	}
 
 	/** Category -> merged items, for the location-hint provenance. */
-	public Map<String, Map<Integer, Integer>> families() {
-		return families;
-	}
+	public Map<String, Map<Integer, Integer>> families() { return families; }
 
 	/** Item id -> quantity from the latest response, merged across storages. */
-	public Map<Integer, Integer> snapshot() {
-		return items;
-	}
+	public Map<Integer, Integer> snapshot() { return items; }
 
 	/** Distinct live item count - the panel's provenance line. */
-	public int count() {
-		return items.size();
-	}
+	public int count() { return items.size(); }
 
 	/** Fold the live items into an owned map (quantities sum). */
 	public Map<Integer, Integer> mergeInto(Map<Integer, Integer> owned) {

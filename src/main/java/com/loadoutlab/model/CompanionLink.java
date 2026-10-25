@@ -15,20 +15,14 @@ public class CompanionLink {
 	private volatile Runnable pageListener;
 	private volatile Consumer<Boolean> statusListener;
 
-	public void setPageListener(Runnable pageListener) {
-		this.pageListener = pageListener;
-	}
+	public void setPageListener(Runnable pageListener) { this.pageListener = pageListener; }
 
-	public void setStatusListener(Consumer<Boolean> statusListener) {
-		this.statusListener = statusListener;
-	}
+	public void setStatusListener(Consumer<Boolean> statusListener) { this.statusListener = statusListener; }
 
 	/** Compute-in-flight signal - drives the renderer's waiting state. */
 	public void publishStatus(boolean computing) {
 		Consumer<Boolean> listener = statusListener;
-		if (listener != null) {
-			listener.accept(computing);
-		}
+		if (listener != null) { listener.accept(computing); }
 	}
 
 	/** Publish an assembled page (the CommandEngine builds them). */
@@ -36,18 +30,12 @@ public class CompanionLink {
 		// Identical pages do not republish (perf, 2026-08-15: post-boss
 		// silent refreshes usually land the SAME answer - the deep
 		// equals is pennies next to the render it prevents).
-		if (page != null && page.equals(lastPage)) {
-			return;
-		}
+		if (page != null && page.equals(lastPage)) { return; }
 		lastPage = page;
 		Runnable listener = pageListener;
-		if (listener != null) {
-			listener.run();
-		}
+		if (listener != null) { listener.run(); }
 	}
 
 	/** The latest published page - the hosted view renders it. */
-	public Map<String, Object> lastPage() {
-		return lastPage;
-	}
+	public Map<String, Object> lastPage() { return lastPage; }
 }

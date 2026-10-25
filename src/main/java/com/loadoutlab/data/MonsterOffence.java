@@ -1,7 +1,6 @@
 package com.loadoutlab.data;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * A monster's offensive sheet - everything needed to compute the damage it
@@ -9,8 +8,7 @@ import java.util.List;
  * the styles it attacks with (wiki infobox strings such as "Crush",
  * "Ranged", "Magic", "Typeless", "Dragonfire").
  */
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
 @AllArgsConstructor

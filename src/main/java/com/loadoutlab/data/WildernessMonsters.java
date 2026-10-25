@@ -1,7 +1,6 @@
 package com.loadoutlab.data;
 
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Monsters fought in the Wilderness, where dying to a PKer risks your
@@ -53,7 +52,5 @@ public final class WildernessMonsters {
 	}
 
 	/** The raw name-list membership - MonsterStats caches this at build. */
-	static boolean containsName(String nameLower) {
-		return NAMES.contains(nameLower);
-	}
+	static boolean containsName(String nameLower) { return NAMES.contains(nameLower); }
 }

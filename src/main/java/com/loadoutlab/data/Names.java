@@ -7,9 +7,7 @@ public final class Names {
 	private Names() {
 	}
 
-	public static String lower(String s) {
-		return s.toLowerCase(Locale.ROOT);
-	}
+	public static String lower(String s) { return s.toLowerCase(Locale.ROOT); }
 
 	/** The first letter upper-cased, the rest as it was; null and "" read "". */
 	public static String cap(String s) {

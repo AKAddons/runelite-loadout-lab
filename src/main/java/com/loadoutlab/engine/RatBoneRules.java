@@ -1,7 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 
 /**
  * Rat bone weapons (bone mace / bone shortbow / bone staff, from Scurrius)
@@ -17,30 +16,22 @@ public final class RatBoneRules {
 	}
 
 	/** False when this weapon literally cannot be swung at this monster. */
-	public static boolean canUse(MonsterStats monster, GearItem weapon) {
-		return !isRatBone(weapon) || isRat(monster);
-	}
+	public static boolean canUse(MonsterStats monster, GearItem weapon) { return !isRatBone(weapon) || isRat(monster); }
 
 	/** Flat max-hit bonus vs rats for the non-staff rat bone weapons. */
 	public static int flatMaxHitBonus(MonsterStats monster, GearItem weapon) {
-		if (weapon == null || !isRat(monster)) {
-			return 0;
-		}
+		if (weapon == null || !isRat(monster)) { return 0; }
 		String name = weapon.getNameLower();
 		return name.startsWith("bone mace") || name.startsWith("bone shortbow") ? 10 : 0;
 	}
 
 	private static boolean isRatBone(GearItem weapon) {
-		if (weapon == null) {
-			return false;
-		}
+		if (weapon == null) { return false; }
 		String name = weapon.getNameLower();
 		return name.startsWith("bone mace")
 			|| name.startsWith("bone shortbow")
 			|| name.startsWith("bone staff");
 	}
 
-	private static boolean isRat(MonsterStats monster) {
-		return monster != null && monster.hasAttribute("rat");
-	}
+	private static boolean isRat(MonsterStats monster) { return monster != null && monster.hasAttribute("rat"); }
 }

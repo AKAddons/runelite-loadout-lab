@@ -1,11 +1,7 @@
 package com.loadoutlab.data;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.*;
+import java.util.*;
 
 /**
  * The mobs fought in multi-combat areas: multi_mobs.json, curated from the

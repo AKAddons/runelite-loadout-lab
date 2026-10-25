@@ -11,7 +11,5 @@ public class ProtectOnlyStore extends IdSetStore {
 		load();
 	}
 
-	String legacyKey() {
-		return KEY;
-	}
+	String legacyKey() { return KEY; }
 }

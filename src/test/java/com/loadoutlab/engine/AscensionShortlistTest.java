@@ -28,7 +28,7 @@ public class AscensionShortlistTest {
 			OwnedItems.EMPTY, 1);
 		List<GearItem> ranked = data.getGearItems(GearSlot.WEAPON).stream()
 			.filter(g -> g.isStandardGear() && g.isWeaponFor(CombatStyle.RANGED))
-			.sorted(Comparator.comparingDouble((GearItem g) -> LoadoutOptimizer.candidateScore(request, g)).reversed())
+			.sorted(Comparator.comparingDouble((GearItem g) -> LoadoutOptimizer.candidateScore(request, g, false)).reversed())
 			.collect(Collectors.toList());
 		int at = ranked.indexOf(data.getGear(34681));
 		Assert.assertTrue("ranked " + at + " of " + ranked.size(), at >= 0 && at < 24);

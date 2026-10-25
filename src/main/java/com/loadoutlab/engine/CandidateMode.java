@@ -9,11 +9,7 @@ public enum CandidateMode {
 
 	private final String label;
 
-	CandidateMode(String label) {
-		this.label = label;
-	}
+	CandidateMode(String label) { this.label = label; }
 
-	public String toString() {
-		return label;
-	}
+	public String toString() { return label; }
 }

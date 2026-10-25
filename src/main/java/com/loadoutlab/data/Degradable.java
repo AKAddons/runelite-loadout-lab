@@ -2,8 +2,6 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
 import java.util.*;
-import java.util.List;
-import java.util.Set;
 
 /** Gear that costs to use: wears down or burns charges per hit/cast
  * (degradable_gear.json; definition Andrew 2026-09-08). */
@@ -24,9 +22,7 @@ public final class Degradable {
 	public static Set<Integer> ids(LoadoutData data) {
 		Set<Integer> ids = new HashSet<>();
 		data.getGearItems().forEach(item -> {
-			if (matches(item.getNameLower())) {
-				ids.add(item.getId());
-			}
+			if (matches(item.getNameLower())) { ids.add(item.getId()); }
 		});
 		return ids;
 	}

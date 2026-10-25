@@ -3,7 +3,6 @@ package com.loadoutlab.collection;
 import com.google.gson.Gson;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.Map;
 import net.runelite.client.config.ConfigManager;
 
 /**
@@ -29,9 +28,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
 		load();
 	}
 
-	private String key() {
-		return ScopedKeys.key(worldScope, configKey);
-	}
+	private String key() { return ScopedKeys.key(worldScope, configKey); }
 
 	/** Per-character scope ("std"/"seasonal" plus ".<accountHash>"). */
 	public synchronized void loadScope(String scope) {
@@ -40,9 +37,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
 	}
 
 	/** Re-read from config - the active RuneLite profile may have changed. */
-	public synchronized void reload() {
-		load();
-	}
+	public synchronized void reload() { load(); }
 
 	public synchronized void clear() {
 		items.clear();
@@ -52,9 +47,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
 	private void load() {
 		items.clear();
 		Map<K, V> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey), type);
-		if (stored != null) {
-			items.putAll(stored);
-		}
+		if (stored != null) { items.putAll(stored); }
 	}
 
 	void save() {

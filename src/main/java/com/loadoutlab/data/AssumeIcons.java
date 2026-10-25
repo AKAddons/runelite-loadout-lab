@@ -2,8 +2,7 @@ package com.loadoutlab.data;
 
 import com.google.gson.JsonObject;
 import com.loadoutlab.data.JsonResources;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import net.runelite.api.gameval.SpriteID;
 
 /**
@@ -43,13 +42,9 @@ public final class AssumeIcons {
 	 * LEAD prayer's icon (field ask 2026-08-20: no letter fallbacks). */
 	public static int prayerSprite(String name) {
 		Integer exact = PRAYERS.get(name);
-		if (exact != null) {
-			return exact;
-		}
+		if (exact != null) { return exact; }
 		int plus = name == null ? -1 : name.indexOf(" + ");
-		if (plus > 0) {
-			return PRAYERS.getOrDefault(name.substring(0, plus), -1);
-		}
+		if (plus > 0) { return PRAYERS.getOrDefault(name.substring(0, plus), -1); }
 		return -1;
 	}
 
@@ -67,9 +62,7 @@ public final class AssumeIcons {
 	}
 
 	/** Item id whose icon represents this boost label, or -1. */
-	public static int boostItem(String label) {
-		return BOOST_ITEMS.getOrDefault(label, -1);
-	}
+	public static int boostItem(String label) { return BOOST_ITEMS.getOrDefault(label, -1); }
 
 	/** A bundled image for a prayer with no api sprite yet (Zeal), or null. */
 	public static String prayerImage(String name) {
@@ -78,7 +71,5 @@ public final class AssumeIcons {
 	}
 
 	/** Spellbook sprite id for this spell name, or -1. */
-	public static int spellSprite(String name) {
-		return SPELLS.getOrDefault(name, -1);
-	}
+	public static int spellSprite(String name) { return SPELLS.getOrDefault(name, -1); }
 }

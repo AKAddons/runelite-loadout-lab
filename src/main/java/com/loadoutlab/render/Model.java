@@ -1,8 +1,6 @@
 package com.loadoutlab.render;
 
 import java.util.*;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Typed accessors over the render-model's JSON-safe maps (the core
@@ -43,9 +41,7 @@ final class Model {
 		return v instanceof Number ? ((Number) v).doubleValue() : 0;
 	}
 
-	static int id(Map<String, Object> node, String key) {
-		return (int) num(node, key);
-	}
+	static int id(Map<String, Object> node, String key) { return (int) num(node, key); }
 
 	static boolean flag(Map<String, Object> node, String key) {
 		Object v = node == null ? null : node.get(key);

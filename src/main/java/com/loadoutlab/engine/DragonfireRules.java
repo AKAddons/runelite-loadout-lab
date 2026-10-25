@@ -1,7 +1,6 @@
 package com.loadoutlab.engine;
 
-import com.loadoutlab.data.GearItem;
-import com.loadoutlab.data.MonsterStats;
+import com.loadoutlab.data.*;
 import java.util.Set;
 
 /**
@@ -30,13 +29,9 @@ public final class DragonfireRules {
 	}
 
 	public static boolean breathesFire(MonsterStats monster) {
-		if (monster == null) {
-			return false;
-		}
+		if (monster == null) { return false; }
 		for (String style : monster.getOffence().getStyles()) {
-			if ("dragonfire".equalsIgnoreCase(style)) {
-				return true;
-			}
+			if ("dragonfire".equalsIgnoreCase(style)) { return true; }
 		}
 		return false;
 	}

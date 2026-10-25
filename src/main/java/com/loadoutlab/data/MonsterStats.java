@@ -2,8 +2,6 @@
 package com.loadoutlab.data;
 
 import java.util.*;
-import java.util.List;
-import java.util.Set;
 
 import lombok.Getter;
 
@@ -77,11 +75,9 @@ public final class MonsterStats {
 		this.weaknessSeverity = Math.max(0, weaknessSeverity);
 		// hasAttribute runs per candidate set in the optimizer's inner loop;
 		// lowercase once instead of per query.
-		HashSet<String> lower = new HashSet<>();
+		var lower = new HashSet<String>();
 		for (String value : this.attributes) {
-			if (value != null) {
-				lower.add(Names.lower(value));
-			}
+			if (value != null) { lower.add(Names.lower(value)); }
 		}
 		this.attributesLower = lower;
 		// The revenant/wilderness gates lowercase the name per DPS trial -
@@ -101,12 +97,10 @@ public final class MonsterStats {
 	 */
 	/** Same sheet under a different version label (load-time
 	 * normalization of quest/post-quest noise). */
-	public MonsterStats withVersion(String newVersion) {
-		return copy(id, newVersion, attributes, defence);
-	}
+	public MonsterStats withVersion(String newVersion) { return copy(id, newVersion, attributes, defence); }
 
 	private MonsterStats copy(int newId, String newVersion, List<String> newAttributes, int newDefence) {
-		MonsterStats copy = new MonsterStats(newId, name, newVersion, combatLevel, hitpoints,
+		var copy = new MonsterStats(newId, name, newVersion, combatLevel, hitpoints,
 			size, newDefence, magic, offensiveMagic, defensive, offence, newAttributes,
 			slayerMonster, weaknessElement, weaknessSeverity);
 		copy.wikiVersion = getWikiVersion();
@@ -123,9 +117,7 @@ public final class MonsterStats {
 	 * the post-quest Duke opened as Awakened. */
 	private String wikiVersion;
 
-	public String getWikiVersion() {
-		return wikiVersion == null ? version : wikiVersion;
-	}
+	public String getWikiVersion() { return wikiVersion == null ? version : wikiVersion; }
 
 	/** What the label SHOWS when the community name beats the in-game one
 	 * (the Inferno's Jal- vocabulary: "Bat" for Jal-MejRah). Display only:
@@ -159,18 +151,14 @@ public final class MonsterStats {
 	 * official engine's rule) for invocation-scaled rows. */
 	private int toaInvocationLevel;
 
-	public int getToaInvocationLevel() {
-		return toaInvocationLevel;
-	}
+	public int getToaInvocationLevel() { return toaInvocationLevel; }
 
 	/** A copy priced at this raid level (SET, not compounded - re-applying
 	 * a different level replaces the old one); returns this when the
 	 * level already matches. */
 	public MonsterStats withToaInvocation(int level) {
 		int clamped = Math.max(0, level);
-		if (clamped == toaInvocationLevel) {
-			return this;
-		}
+		if (clamped == toaInvocationLevel) { return this; }
 		MonsterStats copy = withVersion(version);
 		copy.toaInvocationLevel = clamped;
 		return copy;
@@ -202,31 +190,21 @@ public final class MonsterStats {
 
 	/** Fought in the Wilderness (see WildernessMonsters) - cached, the
 	 * wilderness-weapon gate asks several times per DPS trial. */
-	public boolean isWildernessMonster() {
-		return wilderness;
-	}
+	public boolean isWildernessMonster() { return wilderness; }
 
 	/** Name starts with "revenant" - the avarice/ethereum gates. */
-	public boolean isRevenantMonster() {
-		return revenant;
-	}
+	public boolean isRevenantMonster() { return revenant; }
 
 	/** A copy at a different Defence level - defence-drain spec modeling.
 	 * Carries the invocation level: a drained ToA row keeps its raid
 	 * scaling or the drain would be valued at invocation 0. */
-	public MonsterStats withDefence(int newDefence) {
-		return copy(id, version, attributes, Math.max(0, newDefence));
-	}
+	public MonsterStats withDefence(int newDefence) { return copy(id, version, attributes, Math.max(0, newDefence)); }
 
-	public boolean hasAttribute(String attribute) {
-		return attributesLower.contains(Names.lower(attribute));
-	}
+	public boolean hasAttribute(String attribute) { return attributesLower.contains(Names.lower(attribute)); }
 
 	/** True when this variant's version label starts with the prefix - the
 	 * phase gate the mechanics rules share ("Phase 1..."). */
-	public boolean versionStartsWith(String prefix) {
-		return version != null && version.startsWith(prefix);
-	}
+	public boolean versionStartsWith(String prefix) { return version != null && version.startsWith(prefix); }
 
 	public String label() {
 		// Level-derived version labels ("Level 137") are redundant with -
@@ -237,18 +215,14 @@ public final class MonsterStats {
 		return (displayName != null ? displayName : name) + suffix + level;
 	}
 
-	public String searchText() {
-		return normalizeQuery(name + " " + version + " " + id);
-	}
+	public String searchText() { return normalizeQuery(name + " " + version + " " + id); }
 
 	/** Search matching ignores punctuation: "kril" finds K'ril Tsutsaroth,
 	 * "kreearra" finds Kree'arra. */
 	public static String normalizeQuery(String text) {
-		StringBuilder sb = new StringBuilder(text.length());
+		var sb = new StringBuilder(text.length());
 		for (char c : Names.lower(text).toCharArray()) {
-			if (Character.isLetterOrDigit(c) || c == ' ') {
-				sb.append(c);
-			}
+			if (Character.isLetterOrDigit(c) || c == ' ') { sb.append(c); }
 		}
 		return sb.toString();
 	}
@@ -261,16 +235,12 @@ public final class MonsterStats {
 	/** The id user-profile data (pins, exclusions, notes) attaches to -
 	 * a synthetic phase variant maps back to its real monster, so a
 	 * profile set on the plain mob follows it into groups. */
-	public int profileId() {
-		return profileIdOf(id);
-	}
+	public int profileId() { return profileIdOf(id); }
 
 	/** The same mapping for a bare id (the profile store normalises every
 	 * read and write through it, so a pin made on a phase card is the
 	 * real monster's pin - Apathy, Discord 2026-10-09, Tormented Demons). */
-	public static int profileIdOf(int id) {
-		return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id;
-	}
+	public static int profileIdOf(int id) { return id >= SYNTHETIC_ID_BASE ? (id - SYNTHETIC_ID_BASE) / 10 : id; }
 
 
 

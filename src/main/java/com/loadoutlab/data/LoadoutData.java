@@ -2,9 +2,6 @@
 package com.loadoutlab.data;
 
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
@@ -33,7 +30,7 @@ public final class LoadoutData {
 		this.spells = Collections.unmodifiableList(spells);
 		this.gearById = Collections.unmodifiableMap(gearById);
 		this.variantToBase = Collections.unmodifiableMap(variantToBase);
-		EnumMap<GearSlot, List<GearItem>> bySlot = new EnumMap<>(GearSlot.class);
+		var bySlot = new EnumMap<GearSlot, List<GearItem>>(GearSlot.class);
 		for (GearSlot slot : GearSlot.values()) {
 			bySlot.put(slot, Collections.unmodifiableList(this.gearItems.stream()
 				.filter(item -> item.getSlot() == slot).collect(Collectors.toList())));
@@ -62,9 +59,7 @@ public final class LoadoutData {
 	 * True for ornament/locked/degraded variants of a base item with the
 	 * same stats - never suggested; the base version stands in for them.
 	 */
-	public boolean isVariant(int itemId) {
-		return variantToBase.containsKey(itemId);
-	}
+	public boolean isVariant(int itemId) { return variantToBase.containsKey(itemId); }
 
 	/**
 	 * Owned quantities with every variant also credited to its base item,
@@ -72,11 +67,9 @@ public final class LoadoutData {
 	 */
 	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned) {
 		Map<Integer, Integer> result = new HashMap<>(owned);
-		for (Map.Entry<Integer, Integer> entry : owned.entrySet()) {
+		for (var entry : owned.entrySet()) {
 			Integer base = variantToBase.get(entry.getKey());
-			if (base != null) {
-				result.merge(base, entry.getValue(), Integer::sum);
-			}
+			if (base != null) { result.merge(base, entry.getValue(), Integer::sum); }
 		}
 		return result;
 	}
@@ -101,22 +94,18 @@ public final class LoadoutData {
 	public List<MonsterStats> searchMonsters(String query, int limit) {
 		String text = query == null ? "" : MonsterStats.normalizeQuery(query.trim());
 		text = SEARCH_ALIASES.getOrDefault(text, text);
-		if (text.isEmpty()) {
-			return List.of();
-		}
+		if (text.isEmpty()) { return List.of(); }
 
-		ArrayList<MonsterStats> exact = new ArrayList<>();
-		ArrayList<MonsterStats> prefix = new ArrayList<>();
-		ArrayList<MonsterStats> contains = new ArrayList<>();
+		var exact = new ArrayList<MonsterStats>();
+		var prefix = new ArrayList<MonsterStats>();
+		var contains = new ArrayList<MonsterStats>();
 		for (MonsterStats monster : monsters) {
 			String name = MonsterStats.normalizeQuery(monster.getName());
 			if (name.equals(text) || String.valueOf(monster.getId()).equals(text)) {
 				exact.add(monster);
 			} else if (name.startsWith(text)) {
 				prefix.add(monster);
-			} else if (monster.searchText().contains(text) || wordsMatch(text, monster)) {
-				contains.add(monster);
-			}
+			} else if (monster.searchText().contains(text) || wordsMatch(text, monster)) { contains.add(monster); }
 		}
 
 		// Among same-name versions, surface the fight a player MEANS by the
@@ -133,7 +122,7 @@ public final class LoadoutData {
 		prefix.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
 		contains.sort(Comparator.comparingInt(m -> versionTier(m.getVersion())));
 
-		ArrayList<MonsterStats> result = new ArrayList<>(limit);
+		var result = new ArrayList<MonsterStats>(limit);
 		addLimited(result, exact, limit);
 		addLimited(result, prefix, limit);
 		addLimited(result, contains, limit);
@@ -149,9 +138,7 @@ public final class LoadoutData {
 			+ "|" + MonsterStats.normalizeQuery(monster.getVersion()));
 		String[] words = (monster.searchText() + (terms == null ? "" : " " + terms)).split(" +");
 		for (String typed : text.split(" +")) {
-			if (typed.isEmpty()) {
-				continue;
-			}
+			if (typed.isEmpty()) { continue; }
 			boolean found = false;
 			for (String word : words) {
 				if (word.startsWith(typed)
@@ -160,18 +147,14 @@ public final class LoadoutData {
 					break;
 				}
 			}
-			if (!found) {
-				return false;
-			}
+			if (!found) { return false; }
 		}
 		return true;
 	}
 
 	/** Lower = a better default for a bare-name search. */
 	private static int versionTier(String version) {
-		if (version == null || version.isEmpty()) {
-			return 1;
-		}
+		if (version == null || version.isEmpty()) { return 1; }
 		String v = Names.lower(version);
 		if (v.contains("post-quest")) {
 			return 0;   // the everyday fight
@@ -192,9 +175,7 @@ public final class LoadoutData {
 
 	private static <T> void addLimited(List<T> target, List<T> source, int limit) {
 		for (T entry : source) {
-			if (target.size() >= limit) {
-				return;
-			}
+			if (target.size() >= limit) { return; }
 			target.add(entry);
 		}
 	}
@@ -208,22 +189,16 @@ public final class LoadoutData {
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
 		Set<Integer> ids = new HashSet<>(List.of(itemId, base));
 		variantToBase.forEach((variant, b) -> {
-			if (b.equals(base)) {
-				ids.add(variant);
-			}
+			if (b.equals(base)) { ids.add(variant); }
 		});
 		return ids;
 	}
 
-	public GearItem getGear(int id) {
-		return gearById.get(id);
-	}
+	public GearItem getGear(int id) { return gearById.get(id); }
 
 
 	/** The corpus items for one equip slot, in getGearItems() order. */
-	public List<GearItem> getGearItems(GearSlot slot) {
-		return gearBySlot.get(slot);
-	}
+	public List<GearItem> getGearItems(GearSlot slot) { return gearBySlot.get(slot); }
 
 
 }

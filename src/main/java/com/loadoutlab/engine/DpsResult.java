@@ -1,7 +1,6 @@
 // Derived from guccifurs/best-dps (BSD-2-Clause, Copyright (c) 2026, Noid) - see licenses/best-dps-LICENSE.
 package com.loadoutlab.engine;
-import lombok.Getter;
-import lombok.With;
+import lombok.*;
 import java.util.List;
 
 public final class DpsResult {
@@ -108,12 +107,8 @@ public final class DpsResult {
 	 * duplicated by DpsCalculator and LoadoutOptimizer.
 	 */
 	public static DpsResult better(DpsResult first, DpsResult second) {
-		if (second == null) {
-			return first;
-		}
-		if (first == null || second.getDps() > first.getDps()) {
-			return second;
-		}
+		if (second == null) { return first; }
+		if (first == null || second.getDps() > first.getDps()) { return second; }
 		return first;
 	}
 
@@ -129,7 +124,5 @@ public final class DpsResult {
 	/** The autocast spell, or null for powered staves / non-magic - the
 	 * calculator passes "" internally for the powered path, which made
 	 * null-keyed consumers (the panel's built-in-spell line) miss. */
-	public String getSpellName() {
-		return spellName == null || spellName.isEmpty() ? null : spellName;
-	}
+	public String getSpellName() { return spellName == null || spellName.isEmpty() ? null : spellName; }
 }

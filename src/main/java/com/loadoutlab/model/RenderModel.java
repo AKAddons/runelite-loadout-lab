@@ -4,11 +4,11 @@ import com.loadoutlab.data.*;
 import com.loadoutlab.engine.*;
 import com.loadoutlab.optimizer.OptimizerService;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
+import java.util.function.*;
+import com.loadoutlab.engine.IncomingDpsCalculator.*;
+import com.loadoutlab.optimizer.OptimizerService.*;
+import com.loadoutlab.engine.PvpRisk.Assessment;
+import static com.loadoutlab.data.AssumeIcons.*;
 
 /**
  * The generic render-model of ADR-0008: everything a UI needs to draw,
@@ -32,13 +32,11 @@ public final class RenderModel {
 
 	/** A node from key/value pairs, in argument order (the JSON stays
 	 * canonical: every builder below lists its keys in the contract's order). */
-	static Map<String, Object> map(Object... kv) {
-		return JsonResources.map(kv);
-	}
+	static Map<String, Object> map(Object... kv) { return JsonResources.map(kv); }
 
 	/** The side a card shows: the game-wide best, or the first owned set
 	 * (null for none, or for no result). */
-	static DpsResult shown(OptimizerService.StyleResult result, boolean bis) {
+	static DpsResult shown(StyleResult result, boolean bis) {
 		return result == null ? null : bis ? result.overallBest
 			: result.owned == null || result.owned.isEmpty() ? null : result.owned.get(0);
 	}
@@ -50,7 +48,7 @@ public final class RenderModel {
 	/** One result entry: its mobs and, per mob, the per-style cards.
 	 * Single-mob pages are the one-mob case of the same shape. */
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob) {
+		List<Map<CombatStyle, StyleResult>> perMob) {
 		return entry(mobs, perMob, -1, null, Set.of(), null);
 	}
 
@@ -63,7 +61,7 @@ public final class RenderModel {
 		new ThreadLocal<>();
 
 	public static Map<String, Object> entry(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
+		List<Map<CombatStyle, StyleResult>> perMob, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed,
 		IntFunction<String> locationOf) {
 		LOCATION.set(locationOf);
@@ -75,7 +73,7 @@ public final class RenderModel {
 	}
 
 	private static Map<String, Object> buildEntry(List<MonsterStats> mobs,
-		List<Map<CombatStyle, OptimizerService.StyleResult>> perMob, int riskKeptSlots,
+		List<Map<CombatStyle, StyleResult>> perMob, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed) {
 		List<Object> mobNodes = new ArrayList<>();
 		for (int i = 0; i < mobs.size(); i++) {
@@ -84,9 +82,7 @@ public final class RenderModel {
 			try {
 				node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
 				Map<String, Object> multi = multi(perMob.get(i), riskKeptSlots, owned, simmed);
-				if (multi != null) {
-					node.put("multi", multi);
-				}
+				if (multi != null) { node.put("multi", multi); }
 			} finally {
 				MOB.remove();
 			}
@@ -111,14 +107,12 @@ public final class RenderModel {
 			"wildernessExclusive", WildernessMonsters.isExclusive(mob), "gwd", GwdProtection.isGwd(mob));
 	}
 
-	private static Map<String, Object> styles(Map<CombatStyle, OptimizerService.StyleResult> results,
+	private static Map<String, Object> styles(Map<CombatStyle, StyleResult> results,
 		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed) {
 		Map<String, Object> styles = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues()) {
-			OptimizerService.StyleResult result = results == null ? null : results.get(style);
-			if (result == null) {
-				continue;
-			}
+			StyleResult result = results == null ? null : results.get(style);
+			if (result == null) { continue; }
 			styles.put(style.name().toLowerCase(), styleNode(style, result, riskKeptSlots, owned, simmed));
 		}
 		return styles;
@@ -126,20 +120,16 @@ public final class RenderModel {
 
 	/** The Multi card rows as style nodes keyed by tool, unscaled (the
 	 * engine's decoration applies the stack); null without the switch. */
-	private static Map<String, Object> multi(Map<CombatStyle, OptimizerService.StyleResult> results,
+	private static Map<String, Object> multi(Map<CombatStyle, StyleResult> results,
 		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed) {
-		Map<String, OptimizerService.StyleResult> tools = null;
-		for (OptimizerService.StyleResult r : results == null ? List.<OptimizerService.StyleResult>of() : results.values()) {
-			if (r != null && r.multiTools != null) {
-				tools = r.multiTools;
-			}
+		Map<String, StyleResult> tools = null;
+		for (StyleResult r : results == null ? List.<StyleResult>of() : results.values()) {
+			if (r != null && r.multiTools != null) { tools = r.multiTools; }
 		}
-		if (tools == null) {
-			return null;
-		}
+		if (tools == null) { return null; }
 		Map<String, Object> out = new LinkedHashMap<>();
 		for (MultiTool tool : MultiTool.values()) {
-			OptimizerService.StyleResult r = tools.get(tool.key);
+			StyleResult r = tools.get(tool.key);
 			if (r != null) {
 				Map<String, Object> node = styleNode(tool.style, r, riskKeptSlots, owned, simmed);
 				node.put("multiKind", tool.kind);
@@ -153,7 +143,7 @@ public final class RenderModel {
 		return out;
 	}
 
-	private static Map<String, Object> styleNode(CombatStyle style, OptimizerService.StyleResult result,
+	private static Map<String, Object> styleNode(CombatStyle style, StyleResult result,
 		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed) {
 		DpsResult ownedShown = shown(result, false);
 		// Tab facts after the sides: the sprite and each side's SHOWN dps
@@ -162,7 +152,7 @@ public final class RenderModel {
 			"bis", card(result, true, riskKeptSlots, owned, simmed),
 			"boostLabel", result.boostLabel, "bisBoostLabel", result.gameBoostLabel,
 			"assume", assumeNode(result.boostLabel), "bisAssume", assumeNode(result.gameBoostLabel),
-			"styleSprite", AssumeIcons.styleSprite(style),
+			"styleSprite", styleSprite(style),
 			"tabDps", ownedShown == null ? 0 : ownedShown.getDps() + result.specDpsAdded,
 			"bisTabDps", result.overallBest == null ? 0 : result.overallBest.getDps() + result.gameSpecDpsAdded);
 	}
@@ -171,41 +161,31 @@ public final class RenderModel {
 	 * with its change in the mode's own terms and a signed gain (positive =
 	 * better under the mode) that sizes the strip's bars; base = the worn
 	 * item's own value in the same terms. */
-	public static Map<String, Object> ladderNode(OptimizerService.Ladder ladder) {
-		return ladderNode(ladder, MOB.get());
-	}
+	public static Map<String, Object> ladderNode(Ladder ladder) { return ladderNode(ladder, MOB.get()); }
 
 	/** The ladder for mob `mob` of a roster (null = a solo card): a group
 	 * ladder shows that mob's own base and changes and names the group
 	 * figure beside them (Andrew 2026-10-24: "3.97 but in the card it is
 	 * showing 5.54 which is a confusing mismatch"). */
-	public static Map<String, Object> ladderNode(OptimizerService.Ladder ladder, Integer mob) {
+	public static Map<String, Object> ladderNode(Ladder ladder, Integer mob) {
 		boolean own = ladder.basePerMob != null && mob != null && mob < ladder.basePerMob.length;
 		double base = own ? ladder.basePerMob[mob] : ladder.baseDps;
-		Map<String, Object> node = map("base", ladder.mode == OptimizerService.OptimizeMode.TANKY
+		Map<String, Object> node = map("base", ladder.mode == OptimizeMode.TANKY
 			? String.format("%.2f taken/s", ladder.baseDtps)
 			: String.format("%.2f DPS", base));
-		if (own) {
-			node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps));
-		}
+		if (own) { node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps)); }
 		// Balanced weighs both, so it shows both (Andrew 2026-10-22: "show
 		// in the ladder view both the dps gain and the dtps change").
-		if (ladder.mode == OptimizerService.OptimizeMode.BALANCED) {
-			node.put("base2", String.format("%.2f taken/s", ladder.baseDtps));
-		}
+		if (ladder.mode == OptimizeMode.BALANCED) { node.put("base2", String.format("%.2f taken/s", ladder.baseDtps)); }
 		Integer at = own ? mob : null;
 		node.putAll(map("group", ladder.group, "up", rungs(ladder, ladder.up, at), "down", rungs(ladder, ladder.down, at)));
 		// The steps past the strip, for its "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP).
-		if (!ladder.upMore.isEmpty()) {
-			node.put("upMore", rungs(ladder, ladder.upMore, at));
-		}
-		if (!ladder.downMore.isEmpty()) {
-			node.put("downMore", rungs(ladder, ladder.downMore, at));
-		}
+		if (!ladder.upMore.isEmpty()) { node.put("upMore", rungs(ladder, ladder.upMore, at)); }
+		if (!ladder.downMore.isEmpty()) { node.put("downMore", rungs(ladder, ladder.downMore, at)); }
 		if (ladder.all != null) {
 			// Every option the strip could show, best first (the "All weapons" list).
 			List<Object> all = new ArrayList<>();
-			for (OptimizerService.Rung rung : ladder.all) {
+			for (Rung rung : ladder.all) {
 				double dps = at != null && rung.perMob != null ? rung.perMob[at] : rung.dps;
 				all.add(map("id", rung.item.getId(), "name", rung.item.getName(), "owned", rung.owned,
 					"dps", dps, "delta", String.format("%+.2f DPS", dps - base)));
@@ -216,19 +196,15 @@ public final class RenderModel {
 			// The magic weapon slot's two strips (ISS-01M5PKSQBAP823XNC13QBW8830):
 			// powered staves and autocast staves, each a ladder of its own.
 			Map<String, Object> kinds = new LinkedHashMap<>();
-			if (ladder.powered != null) {
-				kinds.put("powered", ladderNode(ladder.powered, mob));
-			}
-			if (ladder.autocast != null) {
-				kinds.put("autocast", ladderNode(ladder.autocast, mob));
-			}
+			if (ladder.powered != null) { kinds.put("powered", ladderNode(ladder.powered, mob)); }
+			if (ladder.autocast != null) { kinds.put("autocast", ladderNode(ladder.autocast, mob)); }
 			node.put("kinds", kinds);
 		}
 		return node;
 	}
 
 	/** The rung's improvement over the worn item under the ladder's mode. */
-	static double ladderGain(OptimizerService.Ladder ladder, OptimizerService.Rung rung) {
+	static double ladderGain(Ladder ladder, Rung rung) {
 		switch (ladder.mode) {
 			case TANKY:
 				return ladder.baseDtps - rung.dtps;
@@ -241,9 +217,9 @@ public final class RenderModel {
 		}
 	}
 
-	private static List<Object> rungs(OptimizerService.Ladder ladder, List<OptimizerService.Rung> rungs, Integer mob) {
+	private static List<Object> rungs(Ladder ladder, List<Rung> rungs, Integer mob) {
 		List<Object> out = new ArrayList<>();
-		for (OptimizerService.Rung rung : rungs) {
+		for (Rung rung : rungs) {
 			// A group step reads this mob's own change; the group's ranks it.
 			boolean own = mob != null && rung.perMob != null && mob < rung.perMob.length;
 			double dps = own ? rung.perMob[mob] : rung.dps;
@@ -251,10 +227,8 @@ public final class RenderModel {
 			Map<String, Object> node = map("id", rung.item.getId(), "name", rung.item.getName(),
 				"owned", rung.owned, "price", rung.item.getPriceOrZero(),
 				"delta", own ? String.format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
-			if (own) {
-				node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps));
-			}
-			if (ladder.mode == OptimizerService.OptimizeMode.BALANCED) {
+			if (own) { node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps)); }
+			if (ladder.mode == OptimizeMode.BALANCED) {
 				node.put("delta2", String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
 			}
 			node.put("gain", ladderGain(ladder, rung));
@@ -273,7 +247,7 @@ public final class RenderModel {
 
 	/** "+0.12 DPS" (Max DPS and Balanced, whose damage taken rides as
 	 * delta2), "-0.30 taken/s" (Tanky). */
-	static String ladderDelta(OptimizerService.Ladder ladder, OptimizerService.Rung rung) {
+	static String ladderDelta(Ladder ladder, Rung rung) {
 		switch (ladder.mode) {
 			case TANKY:
 				return String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps);
@@ -283,12 +257,10 @@ public final class RenderModel {
 	}
 
 	/** One side's card: the shown set and everything rendered around it. */
-	static Map<String, Object> card(OptimizerService.StyleResult result, boolean bis, int riskKeptSlots,
+	static Map<String, Object> card(StyleResult result, boolean bis, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed) {
 		DpsResult shown = shown(result, bis);
-		if (shown == null) {
-			return null;
-		}
+		if (shown == null) { return null; }
 		Map<String, Object> card = map("dps", shown.getDps(), "maxHit", shown.getMaxHit(),
 			"accuracy", shown.getAccuracy());
 		// The blowpipe's loaded dart rides the attackType STRING
@@ -331,14 +303,10 @@ public final class RenderModel {
 					// Only FETCH-TRIP storages carry a dot (the classic
 					// rule: at-hand gear stays unmarked).
 					String where = locationOf.apply(item.getId());
-					if (where != null && !where.isEmpty()) {
-						node.put("source", where);
-					}
+					if (where != null && !where.isEmpty()) { node.put("source", where); }
 				}
-				OptimizerService.Ladder ladder = bis ? null : result.ladder.get(slot);
-				if (ladder != null) {
-					node.put("ladder", ladderNode(ladder));
-				}
+				Ladder ladder = bis ? null : result.ladder.get(slot);
+				if (ladder != null) { node.put("ladder", ladderNode(ladder)); }
 				gear.put(slot.name().toLowerCase(), node);
 			}
 		}
@@ -346,7 +314,7 @@ public final class RenderModel {
 			"spec", spec(result, bis), "incoming", incoming(bis ? result.gameIncoming : result.incoming)));
 		// The defensive mode's trade belongs to the Yours side only (BiS
 		// stays the pure-DPS ceiling).
-		OptimizerService.ModeTrade trade = bis ? null : result.modeTrade;
+		ModeTrade trade = bis ? null : result.modeTrade;
 		if (trade != null) {
 			card.put("modeTrade", map("mode", trade.mode.name(), "dpsLossPct", trade.dpsLossPct,
 				"dmgCutPct", trade.dmgCutPct, "reason", trade.reason));
@@ -370,21 +338,17 @@ public final class RenderModel {
 				"strength", bonuses.getStrength(), "rangedStrength", bonuses.getRangedStrength(),
 				"magicDamage", bonuses.getMagicDamage(), "prayer", bonuses.getPrayer())));
 		if (riskKeptSlots >= 0) {
-			PvpRisk.Assessment risk = PvpRisk.assess(
+			Assessment risk = PvpRisk.assess(
 				shown.getLoadout(), bis ? result.gameSpecWeapon : result.specWeapon, riskKeptSlots);
 			card.put("risk", map("riskGp", risk.riskGp, "kept", labels(risk.kept), "lost", labels(risk.lost)));
 			// Per-cell fate (the classic risk dots): kept / dropped.
 			for (Object slotNode : gear.values()) {
-				if (!(slotNode instanceof Map)) {
-					continue;
-				}
+				if (!(slotNode instanceof Map)) { continue; }
 				@SuppressWarnings("unchecked")
 				Map<String, Object> node = (Map<String, Object>) slotNode;
 				int id = ((Number) node.get("id")).intValue();
 				for (GearItem k : risk.kept) {
-					if (k.getId() == id) {
-						node.put("fate", "kept");
-					}
+					if (k.getId() == id) { node.put("fate", "kept"); }
 				}
 				for (GearItem l : risk.lost) {
 					if (l.getId() == id) {
@@ -400,9 +364,7 @@ public final class RenderModel {
 	/** The items' labels, for the risk node's kept/lost lists. */
 	private static List<Object> labels(List<GearItem> items) {
 		List<Object> out = new ArrayList<>();
-		for (GearItem item : items) {
-			out.add(item.label());
-		}
+		for (GearItem item : items) { out.add(item.label()); }
 		return out;
 	}
 
@@ -417,9 +379,7 @@ public final class RenderModel {
 			&& sameBlock(a.getBonuses(), b.getBonuses());
 	}
 
-	private static boolean sameBlock(StatBlock a, StatBlock b) {
-		return Arrays.equals(values(a), values(b));
-	}
+	private static boolean sameBlock(StatBlock a, StatBlock b) { return Arrays.equals(values(a), values(b)); }
 
 	/** Every stat of the block, in one array to compare. */
 	private static int[] values(StatBlock b) {
@@ -445,9 +405,9 @@ public final class RenderModel {
 		String boostPart = plus > 0 ? boostLabel.substring(plus + 3) : null;
 		// boostSupplied: the raid hands these out (CoX overloads, ToA salts) -
 		// assumed, never packed (Andrew 2026-09-02: potions are supplies to bring).
-		return map("text", boostLabel, "prayerSprite", AssumeIcons.prayerSprite(prayerPart),
-			"prayerImage", AssumeIcons.prayerImage(prayerPart),
-			"boostItem", boostPart == null ? -1 : AssumeIcons.boostItem(boostPart),
+		return map("text", boostLabel, "prayerSprite", prayerSprite(prayerPart),
+			"prayerImage", prayerImage(prayerPart),
+			"boostItem", boostPart == null ? -1 : boostItem(boostPart),
 			"boostSupplied", boostPart != null
 				&& (boostPart.equals(BoostProfile.OVERLOAD.toString())
 				|| boostPart.equals(BoostProfile.OVERLOAD_PLUS.toString())
@@ -459,11 +419,9 @@ public final class RenderModel {
 			"magic", block.getMagic(), "ranged", block.getRanged());
 	}
 
-	private static Map<String, Object> spec(OptimizerService.StyleResult result, boolean bis) {
+	private static Map<String, Object> spec(StyleResult result, boolean bis) {
 		GearItem weapon = bis ? result.gameSpecWeapon : result.specWeapon;
-		if (weapon == null) {
-			return null;
-		}
+		if (weapon == null) { return null; }
 		Map<String, Object> weaponNode = item(weapon);
 		// The spec cell's swaps strip (ISS-01M5HCS725N7XVVBC7CMK6Y43A).
 		if (!bis && result.specLadder != null && weaponNode != null) {
@@ -473,18 +431,16 @@ public final class RenderModel {
 			"expectedDamage", bis ? result.gameSpecExpectedDamage : result.specExpectedDamage);
 	}
 
-	private static Map<String, Object> incoming(IncomingDpsCalculator.Result incoming) {
-		if (incoming == null) {
-			return null;
-		}
+	private static Map<String, Object> incoming(Result incoming) {
+		if (incoming == null) { return null; }
 		List<Object> threats = new ArrayList<>();
-		for (IncomingDpsCalculator.StyleThreat threat : incoming.threats) {
+		for (StyleThreat threat : incoming.threats) {
 			threats.add(map("style", threat.style, "dps", threat.dps, "maxHit", threat.maxHit,
 				"modeled", threat.modeled, "blocked", threat.blocked, "prayerFactor", threat.prayerFactor));
 		}
 		return map("dps", incoming.totalDps, "unprayedDps", incoming.unprayedDps,
 			"protectSprite", incoming.protectPrayer == null ? -1
-				: AssumeIcons.prayerSprite(String.valueOf(incoming.protectPrayer)),
+				: prayerSprite(String.valueOf(incoming.protectPrayer)),
 			"protectPrayer", incoming.protectPrayer, "fullyModeled", incoming.fullyModeled,
 			"coverage", incoming.coverage, "unmodeled", new ArrayList<>(incoming.unmodeled),
 			"overrideNote", incoming.overrideNote, "threats", threats);
@@ -493,21 +449,15 @@ public final class RenderModel {
 	private static List<Object> items(List<GearItem> items) {
 		List<Object> nodes = new ArrayList<>();
 		if (items != null) {
-			for (GearItem item : items) {
-				nodes.add(item(item));
-			}
+			for (GearItem item : items) { nodes.add(item(item)); }
 		}
 		return nodes;
 	}
 
 	private static Map<String, Object> item(GearItem item) {
-		if (item == null) {
-			return null;
-		}
+		if (item == null) { return null; }
 		Map<String, Object> node = map("id", item.getId(), "name", item.label());
-		if (Degradable.matches(item.getNameLower())) {
-			node.put("degrades", true);
-		}
+		if (Degradable.matches(item.getNameLower())) { node.put("degrades", true); }
 		node.put("price", item.getPriceOrZero());
 		return node;
 	}

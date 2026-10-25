@@ -1,8 +1,7 @@
 package com.loadoutlab.data;
 
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 /**
  * The wiki infobox's listed max hits, per attack family (ISS-01M5FZ3KYCGEMMX1A45D3J9NQ9).
@@ -32,23 +31,15 @@ public final class MaxHits {
 
 	private final int[] max;
 
-	private MaxHits(int[] max) {
-		this.max = max;
-	}
+	private MaxHits(int[] max) { this.max = max; }
 
 	/** The listed max for this family, or -1 when the wiki lists none. */
-	public int of(Family family) {
-		return max[family.ordinal()];
-	}
+	public int of(Family family) { return max[family.ordinal()]; }
 
-	public boolean isEmpty() {
-		return Arrays.stream(max).allMatch(v -> v < 0);
-	}
+	public boolean isEmpty() { return Arrays.stream(max).allMatch(v -> v < 0); }
 
 	public static MaxHits parse(String raw) {
-		if (raw == null || raw.isEmpty()) {
-			return NONE;
-		}
+		if (raw == null || raw.isEmpty()) { return NONE; }
 		int[] max = {-1, -1, -1, -1};
 		String text = raw.replace('\u007f', ' ').replace("&thinsp;", " ").replace("&thinsp", " ")
 			.replaceAll("(?i)<br\\s*/?>", "\n").replaceAll("<[^>]*>", "\n").replace('*', '\n');
@@ -56,9 +47,7 @@ public final class MaxHits {
 			// "32 total 4+8+20": the total is the hit; the parts are its pieces.
 			line = line.trim().replaceAll("(?i)^(\\d+)\\s*total.*", "$1");
 			Matcher m = ENTRY.matcher(line);
-			while (m.find()) {
-				record(max, m);
-			}
+			while (m.find()) { record(max, m); }
 		}
 		return new MaxHits(max);
 	}
@@ -69,9 +58,7 @@ public final class MaxHits {
 			int other = Integer.parseInt(m.group(3));
 			value = "+".equals(m.group(2)) ? value + other : Math.max(value, other);
 		}
-		if (m.group(4) != null) {
-			value *= Integer.parseInt(m.group(4));
-		}
+		if (m.group(4) != null) { value *= Integer.parseInt(m.group(4)); }
 		boolean[] families = new boolean[4];
 		boolean labelled = false;
 		Matcher label = LABEL.matcher(m.group(5));
@@ -102,16 +89,10 @@ public final class MaxHits {
 			families[word.find() ? 0 : "ranged".equalsIgnoreCase(m.group(6)) ? 1 : 2] = true;
 			labelled = true;
 		}
-		if (value <= 0) {
-			return;
-		}
-		if (!labelled) {
-			families[Family.GENERAL.ordinal()] = true;
-		}
+		if (value <= 0) { return; }
+		if (!labelled) { families[Family.GENERAL.ordinal()] = true; }
 		for (int f = 0; f < 4; f++) {
-			if (families[f]) {
-				max[f] = Math.max(max[f], value);
-			}
+			if (families[f]) { max[f] = Math.max(max[f], value); }
 		}
 	}
 }

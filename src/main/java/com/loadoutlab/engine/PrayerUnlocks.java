@@ -33,33 +33,19 @@ public final class PrayerUnlocks {
 	}
 
 	/** Zeal: the Fractured Archive's Piety upgrade. */
-	public boolean zeal() {
-		return zeal;
-	}
+	public boolean zeal() { return zeal; }
 
-	public boolean piety() {
-		return kingsRansom;
-	}
+	public boolean piety() { return kingsRansom; }
 
-	public boolean chivalry() {
-		return kingsRansom;
-	}
+	public boolean chivalry() { return kingsRansom; }
 
-	public boolean rigour() {
-		return rigour;
-	}
+	public boolean rigour() { return rigour; }
 
-	public boolean augury() {
-		return augury;
-	}
+	public boolean augury() { return augury; }
 
-	public boolean deadeye() {
-		return deadeye;
-	}
+	public boolean deadeye() { return deadeye; }
 
-	public boolean mysticVigour() {
-		return mysticVigour;
-	}
+	public boolean mysticVigour() { return mysticVigour; }
 
 	public String key() {
 		return "" + (kingsRansom ? 1 : 0) + (rigour ? 1 : 0) + (augury ? 1 : 0)
