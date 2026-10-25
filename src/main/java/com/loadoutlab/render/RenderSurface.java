@@ -250,6 +250,8 @@ public class RenderSurface {
 	/** The dev-mode Max DPS | Balanced | Tanky control's own row. */
 	private JPanel modeRow;
 	private JPanel invRow;
+	/** The stat sim's editor row, under the chips (ISS-01M5S1MXR1R6BV5FCWBREV6471). */
+	private JPanel statsRow;
 	private JPanel rosterArea;
 	private JPanel countsRow;
 	private JPanel footerRow;
@@ -387,29 +389,41 @@ public class RenderSurface {
 	private static final String[] SIM_KEYS = {"simAttack", "simStrength", "simDefence", "simRanged", "simMagic", "simPrayer", "simHitpoints"};
 	private static final String[] SIM_ARGS = {"attack", "strength", "defence", "ranged", "magic", "prayer", "hitpoints"};
 	private static final String[] SIM_NAMES = {"Att", "Str", "Def", "Rng", "Mag", "Pray", "HP"};
-	/** Whether the stat sim's boxes are open - a view choice kept across publishes. */
+	/** Whether the stat sim's row is open - a view choice kept across publishes. */
 	private boolean statsOpen;
 
+	/** The stat sim chip's label (ISS-01M5T4Y0N8S474ACHVFBBCQTZJ, Andrew
+	 * 2026-10-25: "by default it should say stats: yours and if it's running
+	 * modified stats it should say stats: custom"); the levels ride the tooltip. */
+	static String statsLabel(int simmed, boolean cape) {
+		return simmed > 0 || cape ? "Stats: custom" : "Stats: yours";
+	}
+
 	/** The stat sim chip (ISS-01M5QY13K6YHTYDW1CCYD30CSY, Andrew 2026-10-24:
-	 * "sim as any stat, defaulted to your current ones"): "Stats", or the
-	 * simmed levels with the cape marked; it opens seven boxes holding the
-	 * simmed or your live level, a Max cape tick, Max (all 99 and the cape)
-	 * and Mine. Every edit is one sim-stats command; a box left at your own
-	 * level sends 0 = yours, so a level-up keeps following you. */
+	 * "sim as any stat, defaulted to your current ones"): it toggles the stat
+	 * row under the Inv slider (ISS-01M5S1MXR1R6BV5FCWBREV6471) - seven boxes in a
+	 * fixed grid holding the simmed or your live level, a Max cape tick, Max
+	 * (all 99 and the cape) and Mine. Every edit is one sim-stats command; a
+	 * box left at your own level sends 0 = yours, so a level-up keeps
+	 * following you. */
 	private JComponent statsChip(Map<String, Object> params) {
 		String mineText = str(params, "myLevels");
 		String[] mine = mineText == null ? new String[0] : mineText.split("/");
 		String[] shown = new String[SIM_KEYS.length];
-		boolean any = false;
+		var levels = new StringBuilder();
+		int simmed = 0;
 		for (int i = 0; i < SIM_KEYS.length; i++) {
 			int sim = id(params, SIM_KEYS[i]);
-			any |= sim > 0;
+			simmed += sim > 0 ? 1 : 0;
 			shown[i] = sim > 0 ? String.valueOf(sim) : mine.length == 7 ? mine[i] : "?";
+			levels.append(SIM_NAMES[i]).append(' ').append(shown[i]).append(i < 6 ? ", " : "");
 		}
 		boolean cape = flag(params, "simMaxCape");
-		boolean on = any || cape;
-		JPanel holder = panel(new BorderLayout(0, 2));
-		JPanel editor = panel(new WrapLayout(FlowLayout.LEFT, 3, 1));
+		boolean on = simmed > 0 || cape;
+		// Three columns (Att Str Def / Rng Mag Pray / HP) with every label as
+		// wide as "Pray", so each box holds two digits and the boxes line up.
+		JPanel grid = panel(new GridLayout(0, 3, 6, 2));
+		int labelWidth = small("Pray", LIGHT).getPreferredSize().width;
 		JTextField[] boxes = new JTextField[SIM_KEYS.length];
 		var capeBox = new JCheckBox("Max cape", cape);
 		Runnable send = () -> {
@@ -425,15 +439,18 @@ public class RenderSurface {
 			boxes[i] = new JTextField(shown[i], 2);
 			boxes[i].setToolTipText(SIM_NAMES[i] + " to sim (1-99)");
 			boxes[i].addActionListener(e -> send.run());
-			editor.add(small(SIM_NAMES[i], LIGHT));
-			editor.add(boxes[i]);
+			JPanel cell = panel(new BorderLayout(3, 0));
+			JLabel name = small(SIM_NAMES[i], LIGHT);
+			name.setPreferredSize(new Dimension(labelWidth, name.getPreferredSize().height));
+			cell.add(name, BorderLayout.WEST);
+			cell.add(boxes[i], BorderLayout.CENTER);
+			grid.add(cell);
 		}
 		capeBox.setOpaque(false);
 		capeBox.setForeground(LIGHT);
 		capeBox.setFocusable(false);
 		capeBox.setToolTipText("Sim the max cape, and the combos you can make with the capes you own");
 		capeBox.addActionListener(e -> send.run());
-		editor.add(capeBox);
 		JLabel max = small("Max", ACCENT);
 		onClick(max, () -> {
 			for (JTextField box : boxes) { box.setText("99"); }
@@ -447,17 +464,20 @@ public class RenderSurface {
 			args.put("maxCape", false);
 			commands.send("sim-stats", args);
 		});
-		editor.add(max);
-		editor.add(mineLabel);
-		editor.setVisible(statsOpen);
-		holder.add(pill(on ? "Stats " + String.join("/", shown) + (cape ? " +cape" : "") : "Stats", on, on,
-			text("chip.stats.tip"), () -> {
+		JPanel foot = panel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+		foot.add(capeBox);
+		foot.add(max);
+		foot.add(mineLabel);
+		statsRow.removeAll();
+		statsRow.add(grid, BorderLayout.NORTH);
+		statsRow.add(foot, BorderLayout.CENTER);
+		statsRow.setVisible(statsOpen);
+		return pill(statsLabel(simmed, cape), on, on,
+			(on ? "Simmed " + levels + (cape ? " + max cape. " : ". ") : "") + text("chip.stats.tip"), () -> {
 				statsOpen = !statsOpen;
-				editor.setVisible(statsOpen);
-				holder.revalidate();
-			}), BorderLayout.NORTH);
-		holder.add(editor, BorderLayout.CENTER);
-		return holder;
+				statsRow.setVisible(statsOpen);
+				statsRow.getParent().revalidate();
+			});
 	}
 
 	/** A box's level: 1-99, or 0 (= yours) for anything else. */
@@ -641,6 +661,9 @@ public class RenderSurface {
 			// The inventory slider rides its own row under the chips.
 			invRow = panel(new BorderLayout());
 			top.add(invRow);
+			statsRow = panel(new BorderLayout(0, 2));
+			statsRow.setBorder(createEmptyBorder(2, 6, 4, 6));
+			top.add(statsRow);
 			root.add(top, BorderLayout.NORTH);
 			JPanel resultsArea = column(DARK_GRAY_COLOR);
 			cardArea = column(DARK_GRAY_COLOR);
@@ -762,6 +785,7 @@ public class RenderSurface {
 		// (field report 2026-08-27). Built inside the params branch below,
 		// so without this it simply kept whatever it last drew.
 		invRow.setVisible(params != null);
+		statsRow.setVisible(false);
 		if (params == null) { invRow.removeAll(); }
 		if (params != null) {
 			// Members chips (task, thralls, D charge) disappear under the
