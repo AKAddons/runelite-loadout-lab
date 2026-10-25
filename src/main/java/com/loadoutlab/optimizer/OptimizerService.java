@@ -3422,15 +3422,23 @@ public class OptimizerService {
 	 * never occur, since reaching 40 Attack changes the number. */
 	private OptimizationRequest gameRequestFor(ComputeContext ctx, MonsterStats mob,
 		CombatStyle style, PlayerLevels gameLevels, ToolPick tool) {
+		// The max cape options (ISS-01M5T53FBMHVMJTDPS5ZW4WS50, Andrew
+		// 2026-10-25: "any maxxed player or anyone simming as max should always
+		// see max cape options instead of the alternative" ... "the yours view
+		// could be based on what you have, the BIS should show the max cape"):
+		// a simmed max cape waives every combo, owned half or not; a maxed or
+		// simmed ceiling drops the base capes the combos tie with.
+		RequirementProfile req = ctx.requirements.withAllQuests();
+		if (ctx.p.simMaxCape) { req = req.waiving(MaxCapeSims.ids(data, id -> true)); }
 		OptimizationRequest r = request(ctx, mob, style, gameLevels, ALL,
-			ctx.requirements.withAllQuests(), CandidateMode.ALL_STANDARD, 1, 0)
+			req, CandidateMode.ALL_STANDARD, 1, 0)
 			// The ceiling drinks a super antifire and casts with sunfire runes:
 			// its shield slot is for dps (Andrew 2026-10-19: best aligns with
 			// the highest-dps option).
 			.withAntifirePotion(true).withSunfireRunes(true)
 			// The true ceiling ignores your exclusions - they shape Yours and
 			// the swaps strip (Andrew 2026-10-22: "BiS ignores exclusions").
-			.withExcludedItems(Set.of())
+			.withExcludedItems(MaxCapeSims.wearable(data, req) ? MaxCapeSims.bases(data) : Set.of())
 			// The ceiling is a finished account: no Karuulm boots needed.
 			.withWaivers(Set.of(RequiredGear.KOUREND_ELITE));
 		if (tool != null) {

@@ -20,10 +20,11 @@ public final class QuiverAmmo {
 	}
 
 	/** A Dizana's quiver in the cape slot (uncharged/charged/blessed -
-	 * all variants hold ammunition; the max-cape build is out of corpus). */
+	 * all variants hold ammunition), or Dizana's max cape, which keeps the
+	 * blessed quiver's perks (wiki; ISS-01M5T53FBMHVMJTDPS5ZW4WS50). */
 	public static boolean wearsQuiver(Loadout loadout) {
 		GearItem cape = loadout.get(GearSlot.CAPE);
-		return cape != null && cape.getNameLower().contains("dizana's quiver");
+		return cape != null && (cape.getNameLower().contains("dizana's quiver") || cape.getNameLower().contains("dizana's max cape"));
 	}
 
 	/** The quiver only holds arrows and bolts - a ballista's javelins and

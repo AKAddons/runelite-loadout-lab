@@ -30,6 +30,27 @@ public final class MaxCapeSims {
 		return out;
 	}
 
+	/** Whether these requirements wear the max cape (a maxed account, or the sim's waiver). */
+	public static boolean wearable(LoadoutData data, RequirementProfile requirements) {
+		GearItem max = cape(data, "max cape");
+		return max != null && requirements.canWear(max);
+	}
+
+	/** Every row of each base cape whose combo max cape exists: the
+	 * alternatives Best in game drops under the max cape options - a combo
+	 * keeps its base's perks and offence, so the two tie on dps
+	 * (ISS-01M5T53FBMHVMJTDPS5ZW4WS50). */
+	public static Set<Integer> bases(LoadoutData data) {
+		Set<Integer> out = new HashSet<>();
+		for (var combo : COMBOS.entrySet()) {
+			if (cape(data, combo.getValue()) == null) { continue; }
+			for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
+				if (item.getNameLower().equals(combo.getKey())) { out.add(item.getId()); }
+			}
+		}
+		return out;
+	}
+
 	/** The wearable row of a cape by name (not a broken or locked twin). */
 	private static GearItem cape(LoadoutData data, String name) {
 		for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
