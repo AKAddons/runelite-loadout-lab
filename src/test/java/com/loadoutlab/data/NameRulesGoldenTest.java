@@ -42,12 +42,30 @@ public class NameRulesGoldenTest {
 	 * extraction (LegacyNameRules itself stays frozen): the blisterwood
 	 * flail wields at 50 Attack with no quest - it is made partway through
 	 * Sins of the Father and the quest's own Vanstrom fight needs it (wiki;
-	 * ISS-01M5RGMT70PG86MWHPF28DBJ3V). */
+	 * ISS-01M5RGMT70PG86MWHPF28DBJ3V). From the quest-boss audit
+	 * (ISS-01M5RRTHQ3F1FCCJA30HQKMJ5R, each on the item's wiki page): only the
+	 * green and gilded d'hide bodies need Dragon Slayer I; the dwarven helmet
+	 * needs Grim Tales, not Between a Rock...; the light ballista and the
+	 * Dorgeshuun crossbow need no quest (the Dorgeshuun-crest heraldry keeps
+	 * The Lost Tribe). */
 	private static List<String> expectedQuests(GearItem item) {
 		List<String> expected = new ArrayList<>(
 			LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
-		if (item.getNameLower().contains("blisterwood flail")) {
+		String key = (item.getName() + " " + item.getVersion()).toLowerCase(java.util.Locale.ROOT);
+		if (key.contains("blisterwood flail")) {
 			expected.remove(Quest.SINS_OF_THE_FATHER.name());
+		}
+		if (key.contains("d'hide body") && !key.contains("green d'hide body") && !key.contains("gilded d'hide body")) {
+			expected.remove(Quest.DRAGON_SLAYER_I.name());
+		}
+		if (key.contains("dwarven helmet")) {
+			expected.replaceAll(q -> q.equals(Quest.BETWEEN_A_ROCK.name()) ? Quest.GRIM_TALES.name() : q);
+		}
+		if (key.contains("light ballista") && !key.contains("heavy ballista")) {
+			expected.remove(Quest.MONKEY_MADNESS_II.name());
+		}
+		if ((key.contains("dorgeshuun") && !key.contains("(dorgeshuun)")) || key.contains("bone crossbow")) {
+			expected.remove(Quest.THE_LOST_TRIBE.name());
 		}
 		return expected;
 	}

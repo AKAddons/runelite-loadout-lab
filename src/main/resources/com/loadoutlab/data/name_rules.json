@@ -105,8 +105,7 @@
   },
   {
    "terms": [
-    "heavy ballista",
-    "light ballista"
+    "heavy ballista"
    ],
    "quest": "MONKEY_MADNESS_II"
   },
@@ -126,7 +125,8 @@
   {
    "terms": [
     "rune platebody",
-    "d'hide body"
+    "green d'hide body",
+    "gilded d'hide body"
    ],
    "quest": "DRAGON_SLAYER_I"
   },
@@ -274,7 +274,7 @@
    "terms": [
     "dwarven helmet"
    ],
-   "quest": "BETWEEN_A_ROCK"
+   "quest": "GRIM_TALES"
   },
   {
    "terms": [
@@ -290,8 +290,7 @@
   },
   {
    "terms": [
-    "dorgeshuun",
-    "bone crossbow"
+    "(dorgeshuun)"
    ],
    "quest": "THE_LOST_TRIBE"
   },

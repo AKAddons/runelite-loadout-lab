@@ -121,6 +121,18 @@
 		},
 		{
 			"monsters": [
+				"flambeed",
+				"fareed"
+			],
+			"slot": "HANDS",
+			"items": [
+				"ice gloves",
+				"smiths gloves (i)"
+			],
+			"note": "Ice gloves or smiths gloves (i) are REQUIRED - without them Flambeed and Fareed unequip your weapon in melee range (wiki; quest-boss audit 2026-10-24)."
+		},
+		{
+			"monsters": [
 				"harpie bug swarm"
 			],
 			"slot": "SHIELD",
