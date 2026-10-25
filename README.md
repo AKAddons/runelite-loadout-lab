@@ -165,11 +165,33 @@ Stability promise: these semantics never change silently. If the message
 or config schema ever has to change, the new shape gets a new version /
 a NEW key, and existing shapes keep their meaning.
 
+## Credits
+
+Loadout Lab builds on other people's work:
+
+- [OSRS Wiki](https://oldschool.runescape.wiki/) - monster, gear and spell
+  stats, monster images, and the item details and Grand Exchange prices from
+  its [real-time prices API](https://prices.runescape.wiki/). Wiki content is
+  licensed [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+- [osrs-dps-calc](https://github.com/weirdgloop/osrs-dps-calc) by Weird Gloop,
+  the official wiki DPS calculator - its data files feed our stat refresh, its
+  engine is the reference our numbers are checked against, and "Open in the
+  official wiki calculator" hands a set to [dps.osrs.wiki](https://dps.osrs.wiki/).
+  Data only: none of its GPL-3 code is included.
+- [best-dps](https://github.com/guccifurs/best-dps) (BSD-2-Clause) - the DPS
+  engine Loadout Lab's was derived from.
+- [Dude, Where's My Stuff?](https://github.com/Thource/dude-wheres-my-stuff)
+  by Thource (BSD-2-Clause) - the items it tracks (STASH units, the POH, death
+  storage and more) count as owned, and its STASH unit table is vendored as
+  `stash-units.tsv`.
+- [Not Enough Runes](https://github.com/Hannah-GBS/notenoughrunes) by
+  Hannah-GBS - the swaps ladder's "how to get it" link opens the item there.
+- [RuneLite](https://runelite.net/) - the client and plugin platform.
+- [DejaVu Sans Mono](https://dejavu-fonts.github.io/) (Bitstream Vera licence)
+  and [Cascadia Mono](https://github.com/microsoft/cascadia-code) (SIL Open
+  Font Licence) draw the compute animations, the Braille cells from Cascadia.
+
 ## License
 
-BSD 2-Clause. DPS engine derived from
-[best-dps](https://github.com/guccifurs/best-dps) (BSD-2-Clause);
-monster and gear data from the OSRS Wiki. The compute animations are drawn
-in [DejaVu Sans Mono](https://dejavu-fonts.github.io/) (Bitstream Vera licence)
-with Braille cells from [Cascadia Mono](https://github.com/microsoft/cascadia-code)
-(SIL Open Font Licence); both licences are bundled beside the fonts.
+BSD 2-Clause (`LICENSE`). The bundled third-party licences sit in
+`licenses/` (best-dps, Dude, Where's My Stuff?) and beside the fonts.
