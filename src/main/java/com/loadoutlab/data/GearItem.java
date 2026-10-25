@@ -17,6 +17,7 @@ public final class GearItem {
 	private static final List<String> RANGED_WEAPON = new ArrayList<>();
 	private static final List<String> MAGIC_WEAPON = new ArrayList<>();
 	private static final List<String> NOT_MELEE = new ArrayList<>();
+	private static final List<String> MELEE_STAFF = new ArrayList<>();
 
 	static {
 		JsonObject words = JsonResources.objectOrThrow("gear_words.json");
@@ -25,6 +26,7 @@ public final class GearItem {
 		JsonResources.strings(words, "rangedWeapon", RANGED_WEAPON);
 		JsonResources.strings(words, "magicWeapon", MAGIC_WEAPON);
 		JsonResources.strings(words, "notMelee", NOT_MELEE);
+		JsonResources.strings(words, "meleeStaff", MELEE_STAFF);
 	}
 
 	private final int id;
@@ -124,7 +126,7 @@ public final class GearItem {
 					|| offensive.getMagic() > 0;
 			case MELEE:
 			default:
-				return NOT_MELEE.stream().noneMatch(categoryLower::contains);
+				return NOT_MELEE.stream().noneMatch(categoryLower::contains) || MELEE_STAFF.stream().anyMatch(nameLower::startsWith);
 		}
 	}
 

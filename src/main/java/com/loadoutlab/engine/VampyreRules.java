@@ -23,10 +23,13 @@ public final class VampyreRules {
 	private VampyreRules() {
 	}
 
-	/** False when this weapon cannot damage the monster at all (tier 3). */
-	public static boolean canDamage(MonsterStats monster, GearItem weapon) {
+	/** False when this weapon cannot damage the monster at all (tier 3):
+	 * a tier-3 weapon is needed, and no spell ever lands, whatever casts it
+	 * (wiki: "no spells are capable of dealing damage to vampyres"; the
+	 * reference calc's wearingVampyrebane(VAMPYRE_3) - ISS-01M5RGMT70PG86MWHPF28DBJ3V). */
+	public static boolean canDamage(MonsterStats monster, CombatStyle style, GearItem weapon) {
 		if (monster == null || !monster.hasAttribute("vampyre3")) { return true; }
-		return matches(weapon, TIER3_WEAPONS);
+		return style != CombatStyle.MAGIC && matches(weapon, TIER3_WEAPONS);
 	}
 
 	/** Damage scale: 0.5 for non-silver weapons vs tier 2, otherwise 1. */

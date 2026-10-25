@@ -38,6 +38,20 @@ public class NameRulesGoldenTest {
 		return method;
 	}
 
+	/** The legacy rules, less the deliberate corrections made since the
+	 * extraction (LegacyNameRules itself stays frozen): the blisterwood
+	 * flail wields at 50 Attack with no quest - it is made partway through
+	 * Sins of the Father and the quest's own Vanstrom fight needs it (wiki;
+	 * ISS-01M5RGMT70PG86MWHPF28DBJ3V). */
+	private static List<String> expectedQuests(GearItem item) {
+		List<String> expected = new ArrayList<>(
+			LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
+		if (item.getNameLower().contains("blisterwood flail")) {
+			expected.remove(Quest.SINS_OF_THE_FATHER.name());
+		}
+		return expected;
+	}
+
 	@Test
 	public void corpusIsBigEnoughToBeMeaningful() {
 		// Guards against a silently empty corpus making every assertion vacuous.
@@ -53,8 +67,7 @@ public class NameRulesGoldenTest {
 		List<String> mismatches = new ArrayList<>();
 		int withQuests = 0;
 		for (GearItem item : data.getGearItems()) {
-			List<String> expected = new ArrayList<>(
-				LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
+			List<String> expected = expectedQuests(item);
 			List<String> actual = new ArrayList<>(
 				(java.util.Set<String>) questsFor.invoke(null, item.getName(), item.getVersion()));
 			if (!expected.equals(actual)) {
@@ -75,8 +88,7 @@ public class NameRulesGoldenTest {
 	public void attachedGearRequirementsMatchTheOldImplementation() {
 		List<String> mismatches = new ArrayList<>();
 		for (GearItem item : data.getGearItems()) {
-			List<String> expected = new ArrayList<>(
-				LegacyNameRules.forItem(item.getId(), item.getName(), item.getVersion()));
+			List<String> expected = expectedQuests(item);
 			List<String> actual = new ArrayList<>(item.getRequirements().getQuests());
 			if (!expected.equals(actual)) {
 				mismatches.add(item.getId() + " " + item.getName()
@@ -134,7 +146,7 @@ public class NameRulesGoldenTest {
 				unknown.add(name);
 			}
 		}
-		assertEquals("name_rules.json has 35 quest rules", 35, names.size());
+		assertEquals("name_rules.json has 34 quest rules (35 at the extraction; the blisterwood flail gate went, ISS-01M5RGMT70PG86MWHPF28DBJ3V)", 34, names.size());
 		assertTrue("quest names no longer in net.runelite.api.Quest: " + unknown,
 			unknown.isEmpty());
 	}
@@ -157,6 +169,6 @@ public class NameRulesGoldenTest {
 		assertEquals("spell rows", 48, root.getAsJsonObject("spellLevels").size());
 		assertEquals("slayer contains terms", 29, root.getAsJsonArray("slayerContains").size());
 		assertEquals("slayer startsWith terms", 1, root.getAsJsonArray("slayerStartsWith").size());
-		assertEquals("quest rules", 35, root.getAsJsonArray("questRules").size());
+		assertEquals("quest rules", 34, root.getAsJsonArray("questRules").size());
 	}
 }

@@ -35,9 +35,9 @@ public class VampyreRulesTest {
 	public void regularWeaponsCannotDamageVyrewatchSentinels() {
 		MonsterStats sentinel = monster("vyrewatch sentinel");
 		Assert.assertTrue(sentinel.hasAttribute("vampyre3"));
-		Assert.assertFalse(VampyreRules.canDamage(sentinel, byName("Abyssal whip")));
-		Assert.assertTrue(VampyreRules.canDamage(sentinel, byName("Blisterwood flail")));
-		Assert.assertTrue(VampyreRules.canDamage(sentinel, byName("Ivandis flail")));
+		Assert.assertFalse(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Abyssal whip")));
+		Assert.assertTrue(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Blisterwood flail")));
+		Assert.assertTrue(VampyreRules.canDamage(sentinel, CombatStyle.MELEE, byName("Ivandis flail")));
 	}
 
 	@Test
@@ -82,7 +82,7 @@ public class VampyreRulesTest {
 		Assert.assertFalse(results.isEmpty());
 		String weapon = results.get(0).getLoadout().getWeapon().getName().toLowerCase();
 		Assert.assertTrue("expected a vyre-baneful weapon, got: " + weapon,
-			VampyreRules.canDamage(sentinel, results.get(0).getLoadout().getWeapon()));
+			VampyreRules.canDamage(sentinel, CombatStyle.MELEE, results.get(0).getLoadout().getWeapon()));
 	}
 
 	@Test

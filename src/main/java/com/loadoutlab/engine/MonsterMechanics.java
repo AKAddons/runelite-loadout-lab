@@ -129,7 +129,7 @@ public final class MonsterMechanics {
 	/** The weapon-level bars a worn weapon faces at this monster (vampyre
 	 * tiers, flying, rat bone) - the calculator's gate and the pool share it. */
 	public static boolean weaponUsable(MonsterStats monster, CombatStyle style, GearItem weapon) {
-		return VampyreRules.canDamage(monster, weapon)
+		return VampyreRules.canDamage(monster, style, weapon)
 			&& FlyingRules.canReach(monster, style, weapon)
 			&& RatBoneRules.canUse(monster, weapon);
 	}
