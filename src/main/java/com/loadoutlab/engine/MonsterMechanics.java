@@ -62,8 +62,33 @@ public final class MonsterMechanics {
 	}
 
 	/** Full immunity check for a concrete loadout (mirrors the official calc). */
+	private static final Set<String> ZOGRES = Set.of("zogre", "skogre", "slash bash");
+
+	/** Gear a monster's own rule needs, kept past the pool's score cut: a
+	 * pickaxe for Slagilith, the comp ogre bow and brutal arrows for zogres,
+	 * ice arrows for the Fire Warrior (ISS-01M5RVDTMR5XG16HM6G2JTF7FF). */
+	public static boolean keepInPool(MonsterStats monster, GearItem item) {
+		if (monster == null) { return false; }
+		String name = Names.lower(monster.getName());
+		String it = item.getNameLower();
+		return "slagilith".equals(name) && "Pickaxe".equals(item.getCategory())
+			|| ZOGRES.contains(name) && (it.equals("comp ogre bow") || it.contains("brutal"))
+			|| "fire warrior of lesarkus".equals(name) && it.equals("ice arrows");
+	}
+
 	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
 		if (monster == null) { return false; }
+		String name = Names.lower(monster.getName());
+		String element = spell == null || spell.getElement() == null ? "" : spell.getElement();
+		GearItem ammo = loadout.get(GearSlot.AMMO);
+		String ammoName = ammo == null ? "" : ammo.getNameLower();
+		// Reference isImmune (Fareed, the Fire Warrior) and the wiki (Kamil:
+		// fire spells only, no powered staves) - ISS-01M5RVDTMR5XG16HM6G2JTF7FF.
+		if ("fareed".equals(name) && (style == MAGIC && !"water".equals(element) || style == RANGED && !ammoName.contains("arrow"))
+			|| "kamil".equals(name) && style == MAGIC && !"fire".equals(element)
+			|| "fire warrior of lesarkus".equals(name) && (style != RANGED || !"ice arrows".equals(ammoName))) {
+			return true;
+		}
 		if (VampyreRules.immune(monster, style, loadout)) { return true; }
 		// Data-driven immunity (synthetic group variants) gates the
 		// calculator too - no loadout reaches a shielded style. One
@@ -296,9 +321,13 @@ public final class MonsterMechanics {
 		if ("Slagilith".equalsIgnoreCase(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
 			return 1.0 / 3.0;
 		}
-		if ("Zogre".equalsIgnoreCase(name) || "Skogre".equalsIgnoreCase(name) || "Slash Bash".equalsIgnoreCase(name)) {
+		if (ZOGRES.contains(Names.lower(name))) {
 			if (spell != null && "Crumble Undead".equals(spell.getName())) { return 0.5; }
-			return 0.25;
+			// Brutal arrows from a comp ogre bow land in full (reference; ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
+			GearItem ammo = loadout.get(GearSlot.AMMO);
+			boolean brutal = style == RANGED && weaponName.equals("comp ogre bow") && ammo != null
+				&& ammo.getNameLower().contains("brutal");
+			return brutal ? 1.0 : 0.25;
 		}
 		return 1.0;
 	}

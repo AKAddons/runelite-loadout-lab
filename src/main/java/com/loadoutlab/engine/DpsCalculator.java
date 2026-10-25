@@ -90,6 +90,15 @@ public final class DpsCalculator {
 			result = result.withHitModel(result.getDps() * capFactor,
 				result.getAccuracy(), result.getExpectedHit() * capFactor, 50);
 		}
+		// The Fragment of Seren: a hit lands as min(hit, 22..24) (reference
+		// linearMinTransformer(2, 22); ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
+		if ("Fragment of Seren".equalsIgnoreCase(request.getMonster().getName()) && result.getMaxHit() > 22) {
+			int max = result.getMaxHit();
+			double capped = 0;
+			for (int d = 0; d <= max; d++) { capped += (min(d, 22) + min(d, 23) + min(d, 24)) / 3.0; }
+			double f = capped / (max + 1) / (max / 2.0);
+			result = result.withHitModel(result.getDps() * f, result.getAccuracy(), result.getExpectedHit() * f, min(max, 24));
+		}
 		// Tormented demons: guaranteed hits in the official default phase -
 		// scale the expectation up to accuracy 1 (all hit models here are
 		// linear in accuracy).

@@ -1066,7 +1066,8 @@ public final class LoadoutOptimizer {
 			boolean protective = needProtectiveShield && isProtectiveShield(item)
 				|| slot == SHIELD && request.getStyle() == MAGIC
 					&& item.getNameLower().startsWith("tome of ") && "charged".equals(item.getVersionLower())
-				|| hurts || slot == RING && tier > 0 && item.getId() == VampyreRules.EFARITAY;
+				|| hurts || slot == RING && tier > 0 && item.getId() == VampyreRules.EFARITAY
+				|| keepInPool(request.getMonster(), item);
 			boolean requiredItem = requiredKeep != null && requiredKeep.contains(item.getId());
 			// Defense-weighted runs must SEE pure-defence gear - ring of
 			// suffering, guardian boots, tank shields score zero offence and
