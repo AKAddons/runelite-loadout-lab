@@ -255,6 +255,8 @@ public class RenderSurface {
 	private JPanel rosterArea;
 	private JPanel countsRow;
 	private JPanel footerRow;
+	/** The Shortest Path link, above the footer (ISS-01M5TE7QAZYZQMTPA1JZ0BQN1Z). */
+	private JPanel pathRow;
 	private JButton undoButton;
 	private JButton redoButton;
 
@@ -683,7 +685,11 @@ public class RenderSurface {
 			root.add(resultsArea, BorderLayout.CENTER);
 			// Footer actions (the classic position): below the results.
 			footerRow = panel(new WrapLayout(FlowLayout.CENTER, 4, 2));
-			root.add(footerRow, BorderLayout.SOUTH);
+			pathRow = panel(new FlowLayout(FlowLayout.CENTER, 4, 2));
+			JPanel south = panel(new BorderLayout());
+			south.add(pathRow, BorderLayout.NORTH);
+			south.add(footerRow, BorderLayout.CENTER);
+			root.add(south, BorderLayout.SOUTH);
 		}
 		repaint();
 		return root;
@@ -998,6 +1004,12 @@ public class RenderSurface {
 			cards.setAddMob(addMobButton);
 		}
 		footerRow.removeAll();
+		// Shortest Path walks you to the nearest spawn (ISS-01M5TCXDV8HF2V5C627SZEY2W3,
+		// Andrew 2026-10-25: "above the discord/cancel/wiki calc/copy report
+		// buttons so it can be displayed statically while loading").
+		pathRow.removeAll();
+		pathRow.setVisible(flag(page, "pathable"));
+		pathRow.add(chip("Path here", "Shortest Path: walk to the nearest spawn", () -> commands.send("path-to")));
 		String reportText = str(page, "reportText");
 		if (reportText != null) {
 			footerRow.add(chip("Copy report", "Copy the shown result as text", () -> {

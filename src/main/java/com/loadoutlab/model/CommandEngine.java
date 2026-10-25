@@ -507,6 +507,13 @@ public class CommandEngine {
 				nerOpen.accept(itemId);
 				return true;
 			}
+			case "path-to": {
+				// A link out, like ner-open - never recorded in history.
+				MonsterStats mob = shownMob();
+				if (mob == null || !pathable(mob)) { return false; }
+				pathOpen.accept(mob.getName());
+				return true;
+			}
 			case "toggle-degradable": {
 				MonsterStats mob = shownMob();
 				if (ops == null || mob == null) { return false; }
@@ -1558,6 +1565,21 @@ public class CommandEngine {
 		state.setParam("nerAvailable", available.getAsBoolean());
 	}
 
+	/** Shortest Path, for the path link above the footer (ISS-01M5TCXDV8HF2V5C627SZEY2W3,
+	 * Andrew 2026-10-25: "card output", "all mobs if possible", "hidden"):
+	 * whether it is enabled, and how to walk to a mob. Re-set when plugins change. */
+	private BooleanSupplier pathAvailable = () -> false;
+	private Consumer<String> pathOpen = name -> { };
+
+	public void setPathLink(BooleanSupplier available, Consumer<String> open) {
+		this.pathAvailable = available;
+		this.pathOpen = open;
+	}
+
+	private boolean pathable(MonsterStats mob) {
+		return mob != null && pathAvailable.getAsBoolean() && MobLocations.of(mob.getName()) != null;
+	}
+
 	/** The GWD Ancient chip (the Nex bank) - read by the plugin per compute. */
 	public boolean gwdAncient() { return Boolean.TRUE.equals(state.paramsNode().get("gwdAncient")); }
 
@@ -2340,6 +2362,9 @@ public class CommandEngine {
 	}
 
 	private Map<String, Object> withHistory(Map<String, Object> page) {
+		// Every publish, the pending page too: the path link needs only the
+		// mob, never its results (ISS-01M5TE7QAZYZQMTPA1JZ0BQN1Z).
+		page.put("pathable", pathable(shownMob()));
 		page.put("history", map("canUndo", history.canUndo(), "canRedo", history.canRedo(),
 			"undoLabel", history.peekUndoDescription(), "redoLabel", history.peekRedoDescription()));
 		Supplier<Map<String, Object>> supplier = counts;

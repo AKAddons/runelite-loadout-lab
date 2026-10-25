@@ -345,6 +345,7 @@ public class LoadoutLabPlugin extends Plugin {
 				commandEngine.setOwnedCheck(this::ownsOrSimmed);
 				// The slot ladder's "how to get it" opens Not Enough Runes.
 				commandEngine.setNerLink(this::nerPresent, this::openNer);
+				commandEngine.setPathLink(this::pathPresent, this::openPath);
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);
@@ -1243,11 +1244,30 @@ public class LoadoutLabPlugin extends Plugin {
 		eventBus.post(new PluginMessage("notenoughrunes", "displayItemById", data));
 	}
 
-	/** A plugin turned on or off: the ladder's NER link follows. */
+	private boolean pathPresent() { return pluginEnabled("Shortest Path"); }
+
+	/** Walk to a mob with Shortest Path (Skretzo/shortest-path: "path" {target:
+	 * a Collection of its packed points, the nearest walked to; no start =
+	 * you}), posted on the client thread, where it reads your location. The
+	 * engine only asks for a mob MobLocations places. */
+	private void openPath(String mob) {
+		List<Integer> targets = new ArrayList<>();
+		for (int p : MobLocations.of(mob)) { targets.add(p); }
+		Map<String, Object> data = new HashMap<>();
+		data.put("target", targets);
+		clientThread.invokeLater(() -> eventBus.post(new PluginMessage("shortestpath", "path", data)));
+	}
+
+	/** A plugin turned on or off: the ladder's NER and the footer's path links follow. */
 	@Subscribe
 	public void onPluginChanged(net.runelite.client.events.PluginChanged event) {
 		CommandEngine engine = commandEngine;
-		if (engine != null) { invokeLater(() -> engine.setNerLink(this::nerPresent, this::openNer)); }
+		if (engine != null) {
+			invokeLater(() -> {
+				engine.setNerLink(this::nerPresent, this::openNer);
+				engine.setPathLink(this::pathPresent, this::openPath);
+			});
+		}
 	}
 
 	/**
