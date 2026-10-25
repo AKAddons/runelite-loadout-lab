@@ -270,7 +270,7 @@ public final class LoadoutOptimizer {
 	public static boolean eligible(LoadoutData data, OptimizationRequest request, GearItem item) {
 		return item.isStandardGear() && !data.isVariant(item.getId())
 			&& !request.isExcluded(item.getId())
-			&& request.getRequirementProfile().canEquip(item.getRequirements());
+			&& request.getRequirementProfile().canWear(item);
 	}
 
 	/** The dps-neutral fill for ONE slot: swap in the highest-utility item

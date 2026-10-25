@@ -1425,7 +1425,8 @@ public class LoadoutLabPlugin extends Plugin {
 			boolean simmed = p != null && p.simLevels != null;
 			real = simmed ? mine.overridden(p.simLevels) : mine;
 			live = simmed ? real : boostedLevels != null ? boostedLevels : PlayerLevels.MAXED;
-			profile = simmed ? known.withLevels(real) : known;
+			RequirementProfile gear = simmed ? known.withLevels(real) : known;
+			profile = p != null && p.simMaxCape ? gear.waiving(MaxCapeSims.ids(data, LoadoutLabPlugin.this::ownsOrSimmed)) : gear;
 			pushPanelCastState(live);
 			potionStorage = PotionStorage.owned(client::getVarbitValue);
 			supplyUnlocks = TripSupplies.unlocked(client::getVarbitValue);
