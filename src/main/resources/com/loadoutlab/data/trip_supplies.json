@@ -9,8 +9,23 @@
 		"teleportCape": "Teleport cape",
 		"antivenom": "Anti-venom",
 		"antipoison": "Antipoison",
-		"cannon": "Cannon"
+		"cannon": "Cannon",
+		"bossTeleport": "Boss teleport"
 	},
+	"_bossTeleport_comment": "Boss teleports (ISS-01M5RMNK62507Q42KKCJ9A7AEE, Kendyy and Andrew on Discord 2026-10-24: the giantsoul amulet for the Royal Titans/Obor/Bryophyta, Zulrah's own teleport or the master scroll book). Carried in the INVENTORY (no placement), best first; monsters = the exact lower-case boss names each serves - the line only appears on a trip with one of them, and Detect best picks the best owned option that serves the trip. unlock = a varbit that must be set (the ring of shadows' tablets, gameval VarbitID DT2_*_TELEPORT). Wiki-checked 2026-10-24: giantsoul amulet (charged) teleports to Bryophyta's lair, Obor's lair and the Royal Titans, from the inventory too; Zul-andra teleport to Zul-Andra (Regicide, as the fight); Key master teleport beside the Key Master in Cerberus' Lair; Drakan's medallion to Ver Sinhaza, the Theatre of Blood; the ring of shadows to Ghorrock (Duke Sucellus), the Scar (the Leviathan), Lassar Undercity (the Whisperer) and the Stranglewood (Vardorvis) once each tablet is used on it; the games necklace to the Corporeal Beast's lair; the skills necklace to the Farming Guild (Hespori), charged 1-6 (11113 is uncharged). Not listed: Xeric's talisman (Xeric's Honour needs an ancient tablet, no unlock varbit found), the Gauntlet's teleport crystal (only back to its starting room), the eternal teleport crystal (Prifddinas, not the boss). Ids from runelite-api 1.13.4 gameval ItemID.",
+	"bossTeleport": [
+		{"key": "GIANTSOUL_AMULET", "name": "Giantsoul amulet", "ids": [30638], "monsters": ["branda the fire queen", "eldric the ice king", "obor", "bryophyta"]},
+		{"key": "ZUL_ANDRA_TELEPORT", "name": "Zul-andra teleport", "ids": [12938], "monsters": ["zulrah"]},
+		{"key": "KEY_MASTER_TELEPORT", "name": "Key master teleport", "ids": [13249], "monsters": ["cerberus"]},
+		{"key": "DRAKANS_MEDALLION", "name": "Drakan's medallion", "ids": [22400], "monsters": ["the maiden of sugadinti", "pestilent bloat", "nylocas vasilias", "nylocas prinkipas", "sotetseg", "xarpus", "verzik vitur"]},
+		{"key": "RING_OF_SHADOWS_GHORROCK", "name": "Ring of shadows", "ids": [28327], "monsters": ["duke sucellus"], "unlock": 15142},
+		{"key": "RING_OF_SHADOWS_SCAR", "name": "Ring of shadows", "ids": [28327], "monsters": ["the leviathan"], "unlock": 15141},
+		{"key": "RING_OF_SHADOWS_LASSAR", "name": "Ring of shadows", "ids": [28327], "monsters": ["the whisperer"], "unlock": 15139},
+		{"key": "RING_OF_SHADOWS_STRANGLEWOOD", "name": "Ring of shadows", "ids": [28327], "monsters": ["vardorvis"], "unlock": 15140},
+		{"key": "GAMES_NECKLACE", "name": "Games necklace", "ids": [3853, 3855, 3857, 3859, 3861, 3863, 3865, 3867], "monsters": ["corporeal beast"]},
+		{"key": "SKILLS_NECKLACE", "name": "Skills necklace", "ids": [11968, 11970, 11105, 11107, 11109, 11111], "monsters": ["hespori"]}
+	],
+
 	"_cannon_comment": "cannon (2026-10-18, miko): the dwarf multicannon as one explicit-only five-cell kit - ids from gameval (TWPART1-4 = base 6, stand 8, barrels 10, furnace 12; MCANNONBALL 2). detect:false so Detect best never packs it; no dps and no placement rules are modelled; a raid selection skips the category.",
 	"cannon": [
 		{

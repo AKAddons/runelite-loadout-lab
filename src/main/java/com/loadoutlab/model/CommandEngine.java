@@ -206,6 +206,11 @@ public class CommandEngine {
 	@Setter
 	private volatile IntPredicate ownedCheck;
 
+	/** The supply unlock varbits that are set - the ring of shadows' tablets
+	 * (ISS-01M5RMNK62507Q42KKCJ9A7AEE); the plugin reads them on the client thread. */
+	@Setter
+	private volatile IntPredicate unlocks = v -> false;
+
 	/** Classic seedAssumptionDefaults: config-driven params for a NEW
 	 * selection (spec chip, thralls when reachable+book owned, Death
 	 * Charge at Magic 80) - supplied by the plugin, which owns the
@@ -1684,7 +1689,7 @@ public class CommandEngine {
 		Map<String, String> defaults = supplier.get();
 		for (String category : CATEGORY_KEYS) {
 			String label = label(category);
-			if (label != null) { out.add(catalogNode(category, label, defaults, optionNodes(category, false))); }
+			if (label != null) { out.add(catalogNode(category, label, defaults, optionNodes(options(category), false))); }
 		}
 		// The Arceuus-access choice rides the same menu in the classic.
 		out.add(catalogNode("arceuusAccess", "Arceuus access", defaults, List.of(
@@ -1711,9 +1716,9 @@ public class CommandEngine {
 	/** {key, name} rows for a category's options - the catalog's and the
 	 * per-mob override menu's; Cure Me is hidden where the setup relies
 	 * on another book. */
-	private static List<Map<String, Object>> optionNodes(String category, boolean hideCureMe) {
+	private static List<Map<String, Object>> optionNodes(List<Option> all, boolean hideCureMe) {
 		List<Map<String, Object>> options = new ArrayList<>();
-		for (Option option : options(category)) {
+		for (Option option : all) {
 			if (!(hideCureMe && "CURE_ME".equals(option.key))) {
 				options.add(map("key", option.key, "name", option.name));
 			}
@@ -1924,12 +1929,17 @@ public class CommandEngine {
 				|| TripSupplies.CANNON.equals(category) && mobs.stream().anyMatch(TripSupplies::noCannon)) {
 				continue;
 			}
-			Option pick =
-				"DETECT_BEST".equals(mode) || "DETECT".equals(mode)
-					? detectBest(category, owns, pvpDeathTrip())
-					: option(category, mode);
+			// A boss's own teleport (ISS-01M5RMNK62507Q42KKCJ9A7AEE) fits only a
+			// trip with that boss: the pick and the menu come from the options
+			// that fit, and a stored choice for another boss falls back to the
+			// best fitting one you own. General categories fit every trip.
+			List<Option> fit = fitting(category, mobs, unlocks);
+			Option pick = option(category, mode);
+			if (pick == null && mode.startsWith("DETECT") || pick != null && !fit.contains(pick)) {
+				pick = detectBest(fit, owns, pvpDeathTrip());
+			}
 			if (pick == null) { continue; }
-			List<Map<String, Object>> options = optionNodes(category, otherBook);
+			List<Map<String, Object>> options = optionNodes(fit, otherBook);
 			// A kit names every item and gets a cell each (field 2026-09-08:
 			// the holy symbol was filter-only); doses share one cell.
 			boolean kit = pick.names.length == pick.ids.length && pick.names.length > 1;

@@ -341,6 +341,7 @@ public class LoadoutLabPlugin extends Plugin {
 				});
 				commandEngine.setRosterCompute(this::computeRoster);
 				commandEngine.setSupplyDefaults(this::buildSupplyDefaults);
+				commandEngine.setUnlocks(v -> supplyUnlocks.contains(v));
 				commandEngine.setOwnedCheck(this::ownsOrSimmed);
 				// The slot ladder's "how to get it" opens Not Enough Runes.
 				commandEngine.setNerLink(this::nerPresent, this::openNer);
@@ -979,6 +980,9 @@ public class LoadoutLabPlugin extends Plugin {
 	/** The bank's potion storage, read from its varbits at each compute
 	 * and on change (Andrew 2026-10-19: the super antifires lived there). */
 	private volatile Map<Integer, Integer> potionStorage = Map.of();
+	/** The supply unlock varbits that are set (the ring of shadows' tablets,
+	 * ISS-01M5RMNK62507Q42KKCJ9A7AEE), read with the potion storage. */
+	private volatile Set<Integer> supplyUnlocks = Set.of();
 
 	private Map<Integer, Integer> ownedItems() {
 		Map<Integer, Integer> owned = ledger.owned();
@@ -1025,7 +1029,7 @@ public class LoadoutLabPlugin extends Plugin {
 			}
 		}
 		origins.put("cargo hold", cargo);
-		origins.put("potion storage", potionStorage);
+		origins.put("potion storage or scroll book", potionStorage);
 		if (config.useDwmsData()) {
 			for (var family : dwmsLink.families().entrySet()) {
 				origins.put(dwmsFamilyLabel(family.getKey()), family.getValue());
@@ -1424,6 +1428,7 @@ public class LoadoutLabPlugin extends Plugin {
 			profile = simmed ? known.withLevels(real) : known;
 			pushPanelCastState(live);
 			potionStorage = PotionStorage.owned(client::getVarbitValue);
+			supplyUnlocks = TripSupplies.unlocked(client::getVarbitValue);
 			mergedOwned = ownedItems();
 			owned = new OwnedItems(mergedOwned, ledger.bankKnown());
 			fingerprint = owned.presenceFingerprint();

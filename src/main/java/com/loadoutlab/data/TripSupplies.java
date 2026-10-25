@@ -2,7 +2,7 @@ package com.loadoutlab.data;
 
 import com.google.gson.*;
 import java.util.*;
-import java.util.function.IntPredicate;
+import java.util.function.*;
 
 import static com.loadoutlab.data.JsonResources.*;
 
@@ -28,7 +28,9 @@ public final class TripSupplies {
 	/** Getting there (ISS-01M5JJ0Z4M988DR0M0ZGJHD139, Andrew 2026-10-22): the teleport capes,
 	 * best first, the Crafting cape an explicit choice. */
 	public static final String TELEPORT_CAPE = "teleportCape";
-	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, TELEPORT_CAPE, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT, CANNON};
+	/** A boss's own teleport, carried in the inventory (ISS-01M5RMNK62507Q42KKCJ9A7AEE). */
+	public static final String BOSS_TELEPORT = "bossTeleport";
+	public static final String[] CATEGORY_KEYS = {FOOD, FAST_FOOD, PRAYER_RESTORE, SURGE, SPELLBOOK_CAPE, TELEPORT_CAPE, BOSS_TELEPORT, ANTIVENOM, ANTIPOISON, SHIP_REPAIR_KIT, CANNON};
 
 	/** One supply choice: ids best-first, ids[0] the display/cell id and the
 	 * full list the bank-filter membership (every dose matches). */
@@ -52,6 +54,10 @@ public final class TripSupplies {
 		/** A kit cell's ids - the display id first, then its variants (the
 		 * ornamented cannon parts, granite cannonballs); null = ids[i] alone. */
 		public final int[][] cells;
+		/** The bosses (exact lower-case names) a boss-specific option serves; empty = any trip. */
+		public final String[] monsters;
+		/** A varbit that must be set before the option works (the ring of shadows' tablets); 0 = none. */
+		public final int unlock;
 	}
 
 	private static final Map<String, List<Option>> CATEGORIES = new LinkedHashMap<>();
@@ -69,8 +75,6 @@ public final class TripSupplies {
 				if (arr != null) {
 					for (JsonElement e : arr) {
 						JsonObject o = e.getAsJsonObject();
-						List<String> names = new ArrayList<>();
-						strings(o, "names", names);
 						options.add(new Option(
 							string(o, "key"),
 							string(o, "name"),
@@ -78,7 +82,7 @@ public final class TripSupplies {
 							bool(o, "detect", true),
 							"utility".equals(string(o, "placement")),
 							bool(o, "wildyOnly", false),
-							names.toArray(new String[0]), cells(o)));
+							words(o, "names"), cells(o), words(o, "monsters"), integer(o, "unlock", 0)));
 					}
 				}
 				CATEGORIES.put(category, Collections.unmodifiableList(options));
@@ -88,6 +92,12 @@ public final class TripSupplies {
 			strings(root, "poisonMonsters", POISONOUS);
 			strings(root, "noCannonMonsters", NO_CANNON);
 		}
+	}
+
+	private static String[] words(JsonObject o, String key) {
+		List<String> out = new ArrayList<>();
+		strings(o, key, out);
+		return out.toArray(new String[0]);
 	}
 
 	private static int[][] cells(JsonObject o) {
@@ -117,9 +127,9 @@ public final class TripSupplies {
 	/** Detect best for a trip: in the wilderness a banked blighted variant
 	 * wins outright (cheap to lose, wilderness-only); on land no
 	 * wilderness-only option is ever picked (Andrew 2026-09-01). */
-	public static Option detectBest(String category, IntPredicate owns, boolean inWilderness) {
+	public static Option detectBest(List<Option> options, IntPredicate owns, boolean inWilderness) {
 		Option pick = null;
-		for (Option o : options(category)) {
+		for (Option o : options) {
 			if (!o.detect || (o.wildyOnly && !inWilderness)) { continue; }
 			for (int id : o.ids) {
 				if (owns.test(id)) {
@@ -134,7 +144,25 @@ public final class TripSupplies {
 
 	/** Detect best on land: the first detectable option the player owns
 	 * any dose of, or null when they own none. */
-	public static Option detectBest(String category, IntPredicate owns) { return detectBest(category, owns, false); }
+	public static Option detectBest(String category, IntPredicate owns) { return detectBest(options(category), owns, false); }
+
+	/** The options that fit a trip: any general one; a boss-specific one when a
+	 * trip mob is one of its bosses and its unlock (if any) is set. */
+	public static List<Option> fitting(String category, List<MonsterStats> mobs, IntPredicate unlocked) {
+		List<Option> out = new ArrayList<>();
+		for (Option o : options(category)) {
+			if ((o.monsters.length == 0 || mobs.stream().anyMatch(m -> Arrays.asList(o.monsters).contains(Names.lower(m.getName()))))
+				&& (o.unlock == 0 || unlocked.test(o.unlock))) { out.add(o); }
+		}
+		return out;
+	}
+
+	/** The options' unlock varbits that are set. */
+	public static Set<Integer> unlocked(IntUnaryOperator varbit) {
+		Set<Integer> out = new HashSet<>();
+		CATEGORIES.values().forEach(list -> list.forEach(o -> { if (o.unlock > 0 && varbit.applyAsInt(o.unlock) > 0) { out.add(o.unlock); } }));
+		return out;
+	}
 
 	/** True when the monster can inflict venom (wiki Venom page inflictor
 	 * list, matched by name so araxyte/snakeling variants count). */
