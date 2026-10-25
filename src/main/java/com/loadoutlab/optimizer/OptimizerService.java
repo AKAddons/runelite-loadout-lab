@@ -443,10 +443,19 @@ public class OptimizerService {
 			? Collections.singleton(id) : null;
 	}
 
-	/** The style's pins for ONE mob (its own profile's). */
+	/** The style's pins for ONE mob (its own profile's). A weapon pin binds
+	 * only the styles its weapon fights with (ISS-01M5TH7V74GYQKRN231XRCM6BE,
+	 * Andrew 2026-10-25: a trident pinned on the Enraged Warden left "only
+	 * ... a magic set" though the bowfa was "a more applicaable range set"). */
 	private static Map<GearSlot, Integer> pinsFor(ComputeContext ctx, CombatStyle style, MonsterStats mob) {
 		Map<CombatStyle, Map<GearSlot, Integer>> byStyle = ctx.pinsByMob.get(mob.profileId());
-		return byStyle == null ? Map.of() : byStyle.getOrDefault(style, Map.of());
+		Map<GearSlot, Integer> pins = byStyle == null ? Map.of() : byStyle.getOrDefault(style, Map.of());
+		Integer weapon = pins.get(GearSlot.WEAPON);
+		GearItem item = weapon == null ? null : ctx.dataset.getGear(weapon);
+		if (item == null || item.isWeaponFor(style)) { return pins; }
+		Map<GearSlot, Integer> out = new EnumMap<>(pins);
+		out.remove(GearSlot.WEAPON);
+		return out;
 	}
 
 	private static SpellStats spellFor(ComputeContext ctx, MonsterStats mob) {
