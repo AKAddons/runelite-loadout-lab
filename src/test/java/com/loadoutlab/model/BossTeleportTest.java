@@ -28,6 +28,8 @@ class BossTeleportTest {
 	private static final int ZUL_ANDRA = 12938;
 	private static final int GIANTSOUL = 30638;
 	private static final int RING_OF_SHADOWS = 28327;
+	private static final int ARDEAGLAIS = 34033;
+	private static final int PASSAGE_5 = 21146;
 	private static LoadoutData data;
 
 	@BeforeAll
@@ -127,6 +129,16 @@ class BossTeleportTest {
 	}
 
 	@Test
+	@DisplayName("the Mad Angel packs the Ardeaglais teleport, else the necklace of passage; its menu lists both, scroll first")
+	void madAngelTeleports() {
+		assertEquals(ARDEAGLAIS, itemId(teleports("mad angel", id -> id == ARDEAGLAIS || id == PASSAGE_5).get(0)));
+		assertEquals(PASSAGE_5, itemId(teleports("mad angel", id -> id == PASSAGE_5).get(0)));
+		List<?> options = (List<?>) teleports("mad angel", id -> id == PASSAGE_5).get(0).get("options");
+		assertEquals(List.of("ARDEAGLAIS_TELEPORT", "NECKLACE_OF_PASSAGE"),
+			options.stream().map(o -> ((Map<?, ?>) o).get("key")).collect(Collectors.toList()));
+	}
+
+	@Test
 	@DisplayName("a stored giantsoul choice falls back to the best Zulrah teleport you own")
 	void choiceForAnotherBossFallsBack() {
 		List<Map<?, ?>> nodes = teleports("zulrah", false, id -> id == ZUL_ANDRA || id == GIANTSOUL,
@@ -145,10 +157,10 @@ class BossTeleportTest {
 	}
 
 	@Test
-	@DisplayName("scrolls stored in the master scroll book read as owned - Zul-andra and Key master; the ring's set unlocks read back")
+	@DisplayName("scrolls stored in the master scroll book read as owned - Zul-andra, Key master and Ardeaglais; the ring's set unlocks read back")
 	void scrollBookCountsAsOwned() {
-		assertEquals(Set.of(ZUL_ANDRA, 13249),
-			com.loadoutlab.collection.PotionStorage.owned(v -> v == 5683 ? 3 : v == 5684 ? 1 : 0).keySet());
+		assertEquals(Set.of(ZUL_ANDRA, 13249, ARDEAGLAIS), com.loadoutlab.collection.PotionStorage.owned(
+			v -> v == 5683 ? 3 : v == 5684 ? 1 : v == 15749 ? 2 : 0).keySet());
 		assertTrue(com.loadoutlab.collection.PotionStorage.tracks(5683), "a scroll stored or used re-reads ownership");
 		assertEquals(Map.of(), com.loadoutlab.collection.PotionStorage.owned(v -> 0));
 		assertEquals(Set.of(15142), TripSupplies.unlocked(v -> v == 15142 ? 1 : 0));
