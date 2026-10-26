@@ -314,6 +314,20 @@ public final class DpsCalculator {
 				expected += expectedHitWithFlatArmour(accuracy, 0, rawMax / 4, flatArmour);
 			}
 		}
+		// Keris partisan of the sun (official calc): inside the Tombs it rolls
+		// accuracy x5/4 below a quarter of the target's hitpoints - the last
+		// quarter of the kill goes at the boosted rate (ISS-01M5WV8S2V5HEVEZN4716KV5YD).
+		if (expected > 0 && inToa(request) && wearing(loadout, "keris partisan of the sun")) {
+			counted("keris partisan of the sun", "+25% accuracy below 25% hitpoints");
+			double boosted = expectedHitWithFlatArmour(normalAccuracy(attackRoll * 5 / 4, defenceRoll),
+				minHit, rawMax, flatArmour);
+			expected = 1 / (0.75 / expected + 0.25 / boosted);
+		}
+		// Every keris (official calc): one hit in 51 deals triple damage to a kalphite.
+		if (wearing(loadout, "keris") && request.getMonster().hasAttribute("kalphite")) {
+			counted("keris vs kalphites", "1/51 triple hit");
+			expected = expected * 53 / 51;
+		}
 		// Verac's set (wiki): 25% of attacks are a guaranteed hit with +1
 		// damage - a quarter of the expectation swaps its accuracy for 1.0.
 		// The prayer-immune override in calculate() replaces this wholesale
