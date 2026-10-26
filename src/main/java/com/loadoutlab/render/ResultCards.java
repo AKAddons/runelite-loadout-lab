@@ -667,8 +667,7 @@ public class ResultCards {
 		List<Map<String, Object>> bench = list(shown, "bench");
 		List<Map<String, Object>> runes = list(shown, "runes");
 		List<Map<String, Object>> utilityRunes = list(mob, "utilityRunes");
-		boolean pouchRides = id(mob, "castingPouch") > 0
-			&& (!runes.isEmpty() || !utilityRunes.isEmpty());
+		boolean pouchRides = id(mob, "castingPouch") > 0 && (!runes.isEmpty() || anyRune(utilityRunes));
 		if (!bench.isEmpty() || pouchRides) {
 			// 24px icons on a WRAPPING row - eight carried items fit
 			// (field report: only 4 of 8 visible at full item size).
@@ -682,7 +681,7 @@ public class ResultCards {
 				invRow.add(smallItemCell(id(carried, "id"),
 					str(carried, "name") + (gods != null
 						? " (GWD protection: " + gods + " - wear it through the dungeon)"
-						: " (carried swap)")));
+						: " (" + RequiredGear.swapNote(id(carried, "id")) + ")")));
 			}
 			int pouchId = id(mob, "castingPouch");
 			if (pouchId > 0 && (!runes.isEmpty() || !utilityRunes.isEmpty())) {
@@ -787,6 +786,17 @@ public class ResultCards {
 			}));
 		}
 		card.add(centre(bankRow));
+		// Its own row - too wide beside the bank buttons (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T, Andrew
+		// 2026-10-26: "should be on its own line").
+		if (flag(pageParams, "setupsAvailable")) {
+			var save = new JButton("Save setup");
+			save.setMargin(new Insets(1, 6, 1, 6));
+			save.setToolTipText(text("setup.save.tip"));
+			save.addActionListener(e -> commands.send("save-setup", setupArgs(mob, shown, tab, runes, utilityRunes, supplies,
+				assume)));
+			card.add(Box.createVerticalStrut(3));
+			card.add(centre(save));
+		}
 		String noteText = str(mob, "note");
 		boolean hasNote = noteText != null && !noteText.trim().isEmpty();
 		var note = new JTextField(noteText, 18);
@@ -1041,6 +1051,45 @@ public class ResultCards {
 	 * (ISS-01M5TS5CBHSDS00XQSQYJ19XW8). */
 	static JPanel styleStrip() { return darker(new WrapLayout(FlowLayout.CENTER, 2, 2)); }
 
+	/** The card for Inventory Setups (ISS-01M5V8P2430MQ61C5QKHHRQR6Z): worn ids by slot, then the
+	 * trip in carry order - spec weapon, swaps, runes at their per-cast count,
+	 * the assumed boost, one of each supply; utility items (the spellbook and
+	 * teleport capes) apart, as additional filtered items; the runes inside the
+	 * rune pouch when the trip carries one (ISS-01M5VC3V5DCEEDGVNMC37VHJ2K). Named "Mob - Style". */
+	@SuppressWarnings("unchecked")
+	private static Map<String, Object> setupArgs(Map<String, Object> mob, Map<String, Object> shown, String tab,
+		List<Map<String, Object>> runes, List<Map<String, Object>> utilityRunes, List<Map<String, Object>> supplies,
+		Map<String, Object> assume) {
+		var worn = new HashMap<String, Integer>();
+		var gear = map(shown, "gear");
+		if (gear != null) gear.forEach((slot, item) -> worn.put(slot, id((Map<String, Object>) item, "id")));
+		var stacks = new ArrayList<int[]>();
+		stacks.add(new int[]{id(map(map(shown, "spec"), "weapon"), "id"), 1});
+		for (Map<String, Object> item : list(shown, "bench")) stacks.add(new int[]{id(item, "id"), 1});
+		var extra = new ArrayList<Integer>();
+		var pouch = new LinkedHashMap<Integer, Integer>();
+		boolean pouched = id(mob, "castingPouch") > 0 && (!runes.isEmpty() || anyRune(utilityRunes));
+		if (pouched) stacks.add(new int[]{id(mob, "castingPouch"), 1});
+		for (var row : List.of(runes, utilityRunes, supplies)) {
+			for (Map<String, Object> r : row) {
+				int id = id(r, r.containsKey("itemId") ? "itemId" : "id"), n = Math.max(1, id(r, "qty"));
+				if (flag(r, "utility")) extra.add(id);
+				else if (pouched && row != supplies && SpellRunes.isRune(id)) pouch.putIfAbsent(id, n);
+				else stacks.add(new int[]{id, n});
+			}
+		}
+		if (!flag(assume, "boostSupplied")) stacks.add(new int[]{id(assume, "boostItem"), 1});
+		return JsonResources.map("setup", str(mob, "name") + " - " + Names.cap(Names.lower(tab)), "worn", worn, "stacks", stacks,
+			"extra", extra, "pouch", pouch);
+	}
+
+	/** Whether the utility rows hold a rune - a seed box or a slayer item alone
+	 * brings no rune pouch (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T, Andrew 2026-10-26: "the seed box is
+	 * showing as rune in a rune pouch"). */
+	private static boolean anyRune(List<Map<String, Object>> rows) {
+		return rows.stream().anyMatch(r -> SpellRunes.isRune(id(r, "id")));
+	}
+
 	private final Map<Integer, ImageIcon> spriteIconCache =
 		new HashMap<>();
 
@@ -1077,9 +1126,10 @@ public class ResultCards {
 			required = viaSwap ? "lunar" : "arceuus";
 			reason = viaSwap ? text("book.swap") : text("book.arceuus");
 		}
-		if (required == null && flag(mob, "demonicOffering")) {
+		if (required == null && (flag(mob, "wardOfArceuus") || flag(mob, "sinisterOffering") || flag(mob, "demonicOffering"))) {
 			required = "arceuus";
-			reason = text("book.offering");
+			reason = flag(mob, "wardOfArceuus") ? text("book.ward")
+				: flag(mob, "sinisterOffering") ? text("book.sinister") : text("book.offering");
 		}
 		// The book the fight/set asks for, before any swap rewrite - the
 		// picker offers it as the "camp it directly" choice.

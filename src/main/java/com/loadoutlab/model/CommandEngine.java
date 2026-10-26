@@ -507,6 +507,12 @@ public class CommandEngine {
 				nerOpen.accept(itemId);
 				return true;
 			}
+			case "save-setup": {
+				// A link out to Inventory Setups - never recorded in history.
+				if (!setupsAvailable.getAsBoolean()) return false;
+				setupSave.accept(args);
+				return true;
+			}
 			case "path-to": {
 				// A link out, like ner-open - never recorded in history.
 				MonsterStats mob = shownMob();
@@ -1572,6 +1578,18 @@ public class CommandEngine {
 	private BooleanSupplier pathAvailable = () -> false;
 	private Consumer<String> pathOpen = name -> { };
 
+	/** Inventory Setups' add-setup, for the card's Save setup button (ISS-01M5V8P2430MQ61C5QKHHRQR6Z):
+	 * whether it is ready (enabled, API version 2+), and how to save. Re-set
+	 * when plugins change. */
+	private BooleanSupplier setupsAvailable = () -> false;
+	private Consumer<Map<String, Object>> setupSave = a -> { };
+
+	public void setSetupLink(BooleanSupplier available, Consumer<Map<String, Object>> save) {
+		this.setupsAvailable = available;
+		this.setupSave = save;
+		state.setParam("setupsAvailable", available.getAsBoolean());
+	}
+
 	public void setPathLink(BooleanSupplier available, Consumer<String> open) {
 		this.pathAvailable = available;
 		this.pathOpen = open;
@@ -1581,6 +1599,33 @@ public class CommandEngine {
 	 * the plugin (ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
 	@Setter
 	private volatile BooleanSupplier offeringReady = () -> false;
+
+	/** A scroll owned only inside the master scroll book (potion storage
+	 * varbits or DWMS), never loose - from the plugin (ISS-01M5VDZXT4W4D5DP468R5R7NSW). */
+	@Setter
+	private volatile IntPredicate inScrollBook = id -> false;
+	private static final int SCROLL_BOOK = 21389;
+
+	/** Sinister Offering castable - members, 92 Magic, A Kingdom Divided (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ). */
+	@Setter
+	private volatile BooleanSupplier sinisterReady = () -> false;
+
+	/** The wrench choice for a drop the mob leaves (ashes, bones): Detect
+	 * best keeps the item; a castable offering replaces it with the spell's
+	 * runes (not castable, the item stays); None drops it. */
+	private void offering(List<Map<String, Object>> out, MonsterStats stats, String holds, String item,
+		String spellKey, BooleanSupplier ready, String spell) {
+		Supplier<Map<String, String>> d = supplyDefaults;
+		String mode = d == null ? null : d.get().get(holds);
+		if (mode == null || mode.startsWith("DETECT") || stats == null || !LootContainers.drops(stats, holds)) return;
+		boolean cast = spellKey.equals(mode) && ready.getAsBoolean() && !arceuusBlocked(stats);
+		if (cast || "NONE".equals(mode)) out.removeIf(r -> item.equals(r.get("name")));
+		if (cast) addUtilityRunes(out, spell, spell + " (per cast) - in place of the " + Names.lower(item));
+	}
+
+	/** Ward of Arceuus castable - members, 73 Magic, A Kingdom Divided (ISS-01M5VCXYGF51P5NJCDNC1QJZD1). */
+	@Setter
+	private volatile BooleanSupplier wardReady = () -> false;
 
 	private boolean pathable(MonsterStats mob) {
 		return mob != null && pathAvailable.getAsBoolean() && MobLocations.of(mob.getName()) != null;
@@ -1669,7 +1714,7 @@ public class CommandEngine {
 				groupPick != null && groupPick.getInventory() > 0
 					? groupPick.getInventory()
 					: !gwdGods.isEmpty() ? 2 + gwdGods.size()
-					: selected.size() > 1 ? 4 : 1);
+					: selected.size() > 1 ? 4 : 1 + RequiredGear.swaps(selected.get(0)).size());
 			Supplier<Map<String, Object>> seeder = assumptionSeeder;
 			if (seeder != null) {
 				for (var seed : seeder.get().entrySet()) state.setParam(seed.getKey(), seed.getValue());
@@ -1728,6 +1773,12 @@ public class CommandEngine {
 		// 2026-08-22), defaulting to detection - a config toggle and a
 		// panel control for one behaviour is the source-of-truth trap
 		// this release already paid for once.
+		// The Arceuus offerings in place of the sanctifier and the bonecrusher
+		// (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ, Andrew 2026-10-26); Detect best keeps the item.
+		out.add(catalogNode("ashes", "Demonic ashes", defaults, List.of(
+			Map.of("key", "DEMONIC_OFFERING", "name", "Demonic Offering (Arceuus 84) instead of the ash sanctifier"))));
+		out.add(catalogNode("bones", "Bones", defaults, List.of(
+			Map.of("key", "SINISTER_OFFERING", "name", "Sinister Offering (Arceuus 92) instead of the bonecrusher"))));
 		out.add(catalogNode("comboRunes", "Combination runes", defaults,
 			List.of(Map.of("key", "ALWAYS", "name", "Always combine"))));
 		return out;
@@ -1973,9 +2024,15 @@ public class CommandEngine {
 			boolean kit = pick.names.length == pick.ids.length && pick.names.length > 1;
 			for (int i = 0; i < (kit ? pick.ids.length : 1); i++) {
 				int[] doses = kit ? pick.cells != null ? pick.cells[i] : new int[]{pick.ids[i]} : pick.ids;
-				nodes.add(map("category", category, "name", kit ? pick.names[i] : pick.name,
-					"itemId", pick.ids.length > 0 ? pick.ids[i] : 0,
-					"ids", Arrays.stream(doses).boxed().collect(Collectors.toList()), "options", options));
+				int id = pick.ids.length > 0 ? pick.ids[i] : 0;
+				// A scroll held only in the master scroll book shows as the book
+				// (ISS-01M5VDZXT4W4D5DP468R5R7NSW, Andrew 2026-10-25: "when we know this it should be the
+				// master scroll book that is shown as the item").
+				boolean book = TripSupplies.BOSS_TELEPORT.equals(category) && inScrollBook.test(id);
+				if (book) doses = new int[]{SCROLL_BOOK};
+				nodes.add(map("category", category, "name", book ? "Master scroll book (" + pick.name + ")" : kit ? pick.names[i] : pick.name,
+					"itemId", book ? SCROLL_BOOK : id,
+					"ids", Arrays.stream(doses).boxed().collect(Collectors.toList()), "options", options, "utility", pick.utility));
 			}
 		}
 		return nodes;
@@ -2001,6 +2058,11 @@ public class CommandEngine {
 		// The loot containers you own that this monster's drops warrant
 		// (Andrew 2026-10-22: "killerwatts have a predominant herb drop table").
 		out.addAll(LootContainers.picks(stats, owns, flag("inWilderness")));
+		// The Arceuus offerings in place of the sanctifier and the bonecrusher
+		// (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ, Andrew 2026-10-26: "being able to replace ash sanctifier with
+		// demonic offering and bonecrusher with sinister offering").
+		offering(out, stats, "ashes", "Ash sanctifier", "DEMONIC_OFFERING", offeringReady, "Demonic Offering");
+		offering(out, stats, "bones", "Bonecrusher", "SINISTER_OFFERING", sinisterReady, "Sinister Offering");
 		boolean seaMob = stats != null
 			&& isNaval(stats.getName());
 		boolean lunarCamp = arceuusBlocked(stats);
@@ -2017,8 +2079,11 @@ public class CommandEngine {
 		}
 		int dCharge = intParam("deathCharge");
 		boolean f2pLocked = flag("f2pOnly");
-		if (!f2pLocked && !lunarCamp && dCharge > 0) {
-			addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
+		if (!f2pLocked && !lunarCamp && dCharge > 0) addUtilityRunes(out, "Death Charge", "Death Charge (per cast)");
+		// Ward of Arceuus where the drain is demonic (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, Andrew 2026-10-25:
+		// "ward of arceuss and the spectral spirit shield ... by default").
+		if (!seaMob && !lunarCamp && wardReady.getAsBoolean() && RequiredGear.ward(stats)) {
+			addUtilityRunes(out, "Ward of Arceuus", "Ward of Arceuus (per cast) - a third less prayer drain");
 		}
 		if (flag("spellbookSwap")) {
 			// Supplies only (field ask 2026-08-22): the trip carries the
@@ -2074,6 +2139,10 @@ public class CommandEngine {
 					// the ability to break down the ashes into prayer").
 					mob.put("demonicOffering", lensed != null && offeringReady.getAsBoolean()
 						&& LootContainers.drops(lensed, "ashes"));
+					mob.put("wardOfArceuus", wardReady.getAsBoolean() && RequiredGear.ward(lensed));
+					Supplier<Map<String, String>> sd = supplyDefaults;
+					mob.put("sinisterOffering", sd != null && "SINISTER_OFFERING".equals(sd.get().get("bones"))
+						&& sinisterReady.getAsBoolean() && lensed != null && LootContainers.drops(lensed, "bones"));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					mob.put("cureMe", cureMe(lensed));
 					mob.put("arceuusBlocked", arceuusBlocked(lensed));
@@ -2089,11 +2158,15 @@ public class CommandEngine {
 					// trouver-locked variants are ever recommended there -
 					// locked divine, locked regular, or no pouch at all.
 					IntPredicate owns = ownedCheck;
+					// The pouch is named whenever ownership is known, so an
+					// autocast-only trip carries it too (ISS-01M5VC3V5DCEEDGVNMC37VHJ2K: Save
+					// setup puts the runes in it); the card offers it only
+					// when the trip casts.
+					boolean wildyTrip = owns != null && pvpDeathTrip();
+					int pouch = owns == null ? -1 : wildyTrip ? firstOwned(owns, -1, 27509, 24416)
+						: firstOwned(owns, 12791, 27281, 27509, 12791, 24416);
+					if (pouch > 0) mob.put("castingPouch", pouch);
 					if (!utility.isEmpty() && owns != null) {
-						boolean wildyTrip = pvpDeathTrip();
-						int pouch = wildyTrip ? firstOwned(owns, -1, 27509, 24416)
-							: firstOwned(owns, 12791, 27281, 27509, 12791, 24416);
-						if (pouch > 0) mob.put("castingPouch", pouch);
 						// Carried-kit fates (Andrew 2026-08-31): the inventory
 						// joins the lost/kept lists - see wildyCarriedFates.
 						if (wildyTrip) {

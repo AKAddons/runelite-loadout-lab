@@ -18,6 +18,8 @@ public class LoadoutLabPluginTest {
 	private static final String[] COMPANION_PLUGINS = {
 		"dev.thource.runelite.dudewheresmystuff.DudeWheresMyStuffPlugin",
 		"com.loadoutlabui.LoadoutLabUiPlugin",
+		// Inventory Setups with add-setup (fork branch plugin-message-add-setup, ISS-01M5V8P2430MQ61C5QKHHRQR6Z).
+		"inventorysetups.InventorySetupsPlugin",
 	};
 
 	public static void main(String[] args) throws Exception {

@@ -655,8 +655,12 @@ public class OptimizerService {
 			List<GearItem> protection = protect(ctx, ownedRequest, ownedBest, gods, monster,
 				ctx.mode != MAX_DPS);
 			List<GearItem> gameProtection = protect(ctx, gameRequest, gameBest, gods, monster, false);
-			int specSlots = ctx.maxSwaps - protection.size();
-			int gameSpecSlots = ctx.maxSwaps - gameProtection.size();
+			// The fight's swaps (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield for the
+			// summoned souls - carried before the spec weapon takes a slot.
+			List<GearItem> swaps = tool != null ? new ArrayList<>() : fightSwaps(ctx, monster, ownedBest, true);
+			List<GearItem> gameSwaps = tool != null ? new ArrayList<>() : fightSwaps(ctx, monster, gameBest, false);
+			int specSlots = ctx.maxSwaps - protection.size() - swaps.size();
+			int gameSpecSlots = ctx.maxSwaps - gameProtection.size() - gameSwaps.size();
 			// Bench 0 = strictly one worn set: no spec swap is carried.
 			Set<Integer> specPin = restrictSpec(ctx, style, monster);
 			SpecPick spec = ownedSide && specSlots >= 1 && ctx.p.specWeapon
@@ -673,10 +677,12 @@ public class OptimizerService {
 				gameBest.isEmpty() ? null : gameBest.get(0).getLoadout(), ctx);
 			List<GearItem> bench = specBenchOf(spec, ownedBest);
 			bench.addAll(protection);
+			bench.addAll(swaps);
 			// The BiS side's inventory mirrors it (field fix 2026-07-18:
 			// a single mob's BiS view showed no carried spec).
 			List<GearItem> gameBench = specBenchOf(gameSpec, gameBest);
 			gameBench.addAll(gameProtection);
+			gameBench.addAll(gameSwaps);
 			StyleResult result = verified(new StyleResult(
 				ownedBest, gameBest.isEmpty() ? null : gameBest.get(0), spec, gameSpec,
 				boostLabel, gameBoostLabel, incoming, gameIncoming, bench, gameBench, true, true),
@@ -1241,6 +1247,19 @@ public class OptimizerService {
 		Loadout worn, ComputeContext ctx) {
 		return worn == null ? null
 			: IncomingDpsCalculator.calculate(mob, worn, ctx.real.getDefence(), ctx.real.getMagic());
+	}
+
+	/** The fight's swap gear beside the set: on Yours the first one you own or sim,
+	 * on the ceiling the first; never one the set already wears. */
+	private static List<GearItem> fightSwaps(ComputeContext ctx, MonsterStats mob, List<DpsResult> best, boolean owned) {
+		List<GearItem> out = new ArrayList<>();
+		if (best.isEmpty()) return out;
+		for (int id : RequiredGear.swapIds(mob)) {
+			GearItem item = ctx.dataset.getGear(id);
+			GearItem worn = item == null ? null : best.get(0).getLoadout().get(item.getSlot());
+			if (item != null && out.isEmpty() && (!owned || ctx.effectiveOwned.owns(id) || dreamsFor(ctx, mob).contains(id)) && (worn == null || worn.getId() != id)) out.add(item);
+		}
+		return out;
 	}
 
 	/** One side's bench for the single-mob path: the spec weapon when the

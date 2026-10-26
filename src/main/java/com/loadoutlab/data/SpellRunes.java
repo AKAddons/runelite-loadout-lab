@@ -130,6 +130,12 @@ public final class SpellRunes {
 
 	/** The combination-rune item ids - the ownership detection behind
 	 * the panel's "Detect" preference reads these. */
+	/** A rune the pouch holds - a basic, combination or sunfire rune; never a
+	 * seed box or a slayer item riding the utility list (ISS-01M5VH8H5MBRK0BFA6B8E68Z7T). */
+	public static boolean isRune(int id) {
+		return RUNE_ITEMS.containsValue(id) || id == SUNFIRE_RUNE || Arrays.stream(comboRuneIds()).anyMatch(c -> c == id);
+	}
+
 	public static int[] comboRuneIds() {
 		return Arrays.stream(COMBOS).mapToInt(combo -> Integer.parseInt(combo[3])).toArray();
 	}

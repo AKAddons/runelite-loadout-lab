@@ -78,6 +78,8 @@ public final class RequiredGear {
 	}
 
 	private static final Map<String, List<Carried>> CARRIED_BY_NAME = new HashMap<>();
+	private static final Map<String, List<Carried>> SWAPS_BY_NAME = new HashMap<>();
+	private static final Set<String> WARD = new HashSet<>();
 
 	static {
 		// Fail LOUD (the name_rules pattern): a silently empty table would
@@ -98,8 +100,10 @@ public final class RequiredGear {
 			}
 		}
 		if (BY_NAME.isEmpty()) throw new IllegalStateException("required_gear.json loaded empty");
-		if (root.has("carried")) {
-			for (JsonElement e : root.getAsJsonArray("carried")) {
+		if (root.has("ward")) strings(root, "ward", WARD);
+		for (String key : new String[]{"carried", "swaps"}) {
+			if (!root.has(key)) continue;
+			for (JsonElement e : root.getAsJsonArray(key)) {
 				JsonObject row = e.getAsJsonObject();
 				List<String> names = new ArrayList<>();
 				List<int[]> ids = new ArrayList<>();
@@ -110,7 +114,7 @@ public final class RequiredGear {
 				}
 				var carried = new Carried(string(row, "note"), names, ids);
 				for (JsonElement m : row.getAsJsonArray("monsters")) {
-					CARRIED_BY_NAME.computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
+					(key.equals("swaps") ? SWAPS_BY_NAME : CARRIED_BY_NAME).computeIfAbsent(m.getAsString(), k -> new ArrayList<>()).add(carried);
 				}
 			}
 		}
@@ -118,6 +122,37 @@ public final class RequiredGear {
 
 	private RequiredGear() {
 	}
+
+	/** The fight's swap rules (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): Cerberus' spectral spirit shield. */
+	public static List<Carried> swaps(MonsterStats monster) {
+		return monster == null ? List.of() : SWAPS_BY_NAME.getOrDefault(monster.getNameLower(), List.of());
+	}
+
+	/** Every swap id for the monster, each rule's best first. */
+	public static List<Integer> swapIds(MonsterStats monster) {
+		List<Integer> out = new ArrayList<>();
+		for (Carried rule : swaps(monster)) {
+			for (int[] ids : rule.ids) {
+				for (int id : ids) out.add(id);
+			}
+		}
+		return out;
+	}
+
+	/** What a carried swap is for, or "carried swap" for any other bench item. */
+	public static String swapNote(int id) {
+		for (List<Carried> rules : SWAPS_BY_NAME.values()) {
+			for (Carried rule : rules) {
+				for (int[] ids : rule.ids) {
+					for (int i : ids) if (i == id) return rule.note;
+				}
+			}
+		}
+		return "carried swap";
+	}
+
+	/** A fight whose prayer drain is demonic: Ward of Arceuus rides the trip (ISS-01M5VCXYGF51P5NJCDNC1QJZD1). */
+	public static boolean ward(MonsterStats monster) { return monster != null && WARD.contains(monster.getNameLower()); }
 
 	/** The requirement for this monster, or null. Name-keyed like the
 	 * notes, so RequiredGearTest pins every key against loaded rows. */

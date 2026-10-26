@@ -10,6 +10,7 @@ supply.cape	Magic cape - swap spellbooks up to 5x daily (owned)
 trio.filter.add	Add a supply to this mob's bank filter
 bank.show.tip	Highlight this set (and its inventory) in your open bank
 bank.filter.tip	Filter your open bank to this set - equipment cross, inventory beside it
+setup.save.tip	Save this set and its trip as a new Inventory Setups setup, in the Loadout Lab section
 supply.boost	- the boost this card assumes; change it on the boost picker
 note.tip	Your note for this mob - saved on Enter
 ledger.head	<html><table cellpadding='1' cellspacing='0'>
@@ -18,6 +19,8 @@ ledger.manning	Manning cannon 1: armour bonuses count, attacks do not
 ledger.parts	Set + spec = the row; + cannons = the tab
 book.swap	Lunar home, Spellbook Swap into Arceuus for the summons
 book.arceuus	thralls / Death Charge live on Arceuus
+book.ward	Ward of Arceuus: a third less prayer drain from the summoned souls
+book.sinister	Sinister Offering: sacrifice the bones it drops for Prayer xp
 book.offering	Demonic Offering: sacrifice the ashes it drops for Prayer xp
 book.none	No specific spellbook required - a powered staff casts on any book
 book.wants	This set wants the %s book (%s) - you are %son it

@@ -265,6 +265,17 @@
 			"note": "Boots of stone, brimstone or granite boots are REQUIRED in the Karuulm Slayer Dungeon - the floor burns - until the elite Kourend & Kebos diary's rewards are claimed (wiki, 2026-10-22)."
 		}
 	],
+	"_swaps_comment": "Gear carried to swap in mid-fight (ISS-01M5VCXYGF51P5NJCDNC1QJZD1, Andrew 2026-10-25: \"the ability to combat the ghost ability by using ward of arceuss and the spectral spirit shield are things we should be considering by default\"): Yours carries the first one you own that the set does not wear, the ceiling the first; each takes an Inventory slot before the spec weapon, and a single mob's swap default grows by one per rule. ward = the fights whose drain is demonic, where Ward of Arceuus (73 Magic, A Kingdom Divided, Arceuus) rides the trip. Wiki 2026-10-25: a summoned soul's drain is 30 prayer points when prayed against, 15 with the spectral spirit shield, 20 with Ward, 10 with both.",
+	"swaps": [
+		{
+			"monsters": ["cerberus"],
+			"items": [
+				{"name": "Spectral spirit shield", "ids": [12821]}
+			],
+			"note": "equip it for the summoned souls - it halves their prayer drain"
+		}
+	],
+	"ward": ["cerberus"],
 	"_carried_comment": "Carried slayer items the KILL needs (Andrew 2026-10-22): the finishing blow, best first - one rides as a trip supply even when unowned. The slayer unlocks (Gargoyle smasher, Shroom sprayer, Slug salter, Reptile freezer) automate the blow but still need the item carried. Ids from runelite-api 1.13.3 gameval ItemID.",
 	"carried": [
 		{

@@ -1,5 +1,6 @@
 {
 	"_comment": "Bank potion storage: POTIONSTORE_VILE_SIZE_* varbit (gameval VarbitID, the doses stored) -> the 4-dose item id the plugin detects (2026-10-19, Andrew: super antifires in potion storage were invisible to Detect best). Only potions a feature reads: antifire, prayer restore, anti-venom, antipoison, boosts, surge. Plus the master scroll book's boss teleport scrolls (ISS-01M5RMNK62507Q42KKCJ9A7AEE, Andrew 2026-10-24: 'zulrah has the specific zulrah teleport (or master scroll book)'): BOOKOFSCROLLS_ZULANDRA 5683 -> Zul-andra teleport 12938, BOOKOFSCROLLS_CERBERUS 5684 -> Key master teleport 13249, BOOKOFSCROLLS_ARDEAGLAIS 15749 -> Ardeaglais teleport 34033 (2026-10-25, the Mad Angel) - the varbit holds the scroll count; the doses rule turns it into an owned flag, which is all Detect best reads.",
+	"_scrolls": [12938, 13249, 34033],
 	"5683": 12938,
 	"5684": 13249,
 	"15749": 34033,

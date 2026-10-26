@@ -18,6 +18,19 @@
   "astral": 9075
  },
  "bySpell": {
+  "Demonic Offering": {
+   "soul": 1,
+   "wrath": 1
+  },
+  "Sinister Offering": {
+   "blood": 1,
+   "wrath": 1
+  },
+  "Ward of Arceuus": {
+   "cosmic": 1,
+   "nature": 2,
+   "soul": 4
+  },
   "Bind": {
    "earth": 3,
    "nature": 2,

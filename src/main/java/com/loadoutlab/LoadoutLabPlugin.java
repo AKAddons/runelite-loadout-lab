@@ -346,7 +346,20 @@ public class LoadoutLabPlugin extends Plugin {
 				// The slot ladder's "how to get it" opens Not Enough Runes.
 				commandEngine.setNerLink(this::nerPresent, this::openNer);
 				commandEngine.setPathLink(this::pathPresent, this::openPath);
+				detectSetups();
+				commandEngine.setSetupLink(() -> setupsReady, this::saveSetup);
 				// Demonic Offering (ISS-01M5TQ977R0MXBMSQ3VBHS29GB): members, 84 Magic, A Kingdom Divided.
+				// The master scroll book (ISS-01M5VDZXT4W4D5DP468R5R7NSW): a scroll owned, but not loose.
+				commandEngine.setInScrollBook(id -> PotionStorage.isScroll(id) && ledger != null
+					&& ledger.owned().getOrDefault(id, 0) == 0 && ownedItems().getOrDefault(id, 0) > 0);
+				// Ward of Arceuus (ISS-01M5VCXYGF51P5NJCDNC1QJZD1): members, 73 Magic, A Kingdom Divided.
+				commandEngine.setWardReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
+					&& realLevels.getMagic() >= 73 && requirementProfile != null
+					&& requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
+				// Sinister Offering (ISS-01M5VJAHRWNHFRPPNK3J6B63SZ): members, 92 Magic, A Kingdom Divided.
+				commandEngine.setSinisterReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
+					&& realLevels.getMagic() >= 92 && requirementProfile != null
+					&& requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
 				commandEngine.setOfferingReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
 					&& realLevels.getMagic() >= 84 && requirementProfile != null
 					&& requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
@@ -694,7 +707,7 @@ public class LoadoutLabPlugin extends Plugin {
 	private Map<String, String> buildSupplyDefaults() {
 		Map<String, String> defaults = new LinkedHashMap<>();
 		List<String> categories = new ArrayList<>(List.of(TripSupplies.CATEGORY_KEYS));
-		categories.add("arceuusAccess");
+		categories.addAll(List.of("arceuusAccess", "ashes", "bones"));
 		for (String category : categories) {
 			defaults.put(category, supplyDefaults == null
 				? SupplyDefaultsStore.DETECT_BEST
@@ -1250,6 +1263,29 @@ public class LoadoutLabPlugin extends Plugin {
 
 	private boolean pathPresent() { return pluginEnabled("Shortest Path"); }
 
+	/** Inventory Setups with add-setup (ISS-01M5V8P2430MQ61C5QKHHRQR6Z): its get-setups reply
+	 * reports API version 2+. Asked once per plugin change. */
+	private volatile boolean setupsReady;
+
+	private void detectSetups() {
+		Map<String, Object> data = JsonResources.map("setups", new ArrayList<String>());
+		if (pluginEnabled("Inventory Setups")) eventBus.post(new PluginMessage("inventory-setups", "get-setups", data));
+		setupsReady = data.get("version") instanceof Integer && (Integer) data.get("version") >= 2;
+	}
+
+	/** The shown card as a new setup in the "Loadout Lab" section, on the client
+	 * thread (stackability; the saved name, " (2)" when taken, comes back in data). */
+	@SuppressWarnings("unchecked")
+	private void saveSetup(Map<String, Object> a) {
+		clientThread.invokeLater(() -> {
+			var data = SetupExport.payload((String) a.get("setup"), (Map<String, Integer>) a.get("worn"),
+				(List<int[]>) a.get("stacks"), (List<Integer>) a.get("extra"), (Map<Integer, Integer>) a.get("pouch"),
+				id -> itemManager.getItemComposition(id).isStackable());
+			eventBus.post(new PluginMessage("inventory-setups", "add-setup", data));
+			client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Loadout Lab saved " + data.get("setup") + " to Inventory Setups.", null);
+		});
+	}
+
 	/** Walk to a mob with Shortest Path (Skretzo/shortest-path: "path" {target:
 	 * a Collection of its packed points, the nearest walked to; no start =
 	 * you}), posted on the client thread, where it reads your location. The
@@ -1270,6 +1306,8 @@ public class LoadoutLabPlugin extends Plugin {
 			invokeLater(() -> {
 				engine.setNerLink(this::nerPresent, this::openNer);
 				engine.setPathLink(this::pathPresent, this::openPath);
+				detectSetups();
+				engine.setSetupLink(() -> setupsReady, this::saveSetup);
 			});
 		}
 	}
