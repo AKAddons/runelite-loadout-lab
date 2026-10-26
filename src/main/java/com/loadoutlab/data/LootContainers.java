@@ -21,6 +21,9 @@ public final class LootContainers {
 		final String name;
 		final int[] ids;
 		final String holds;
+		/** What it does with them - "holds them" for a bag; the bonecrusher,
+		 * ash sanctifier and soul bearer (ISS-01M5TNBSP28AAHJTYWAWJHHZKB) say their own. */
+		final String does;
 		final Map<String, Double> perKill;
 	}
 
@@ -35,10 +38,10 @@ public final class LootContainers {
 			row.getAsJsonObject("monsters").entrySet()
 				.forEach(m -> perKill.put(m.getKey(), m.getValue().getAsDouble()));
 			CONTAINERS.add(new Container(string(row, "name"), ints(row.getAsJsonArray("ids")),
-				string(row, "holds"), perKill));
+				string(row, "holds"), row.has("does") ? string(row, "does") : "holds them", perKill));
 		}
 		JsonObject bag = root.getAsJsonObject("lootingBag");
-		lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", Map.of());
+		lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", "", Map.of());
 		if (CONTAINERS.isEmpty()) { throw new IllegalStateException("loot_containers.json loaded empty"); }
 	}
 
@@ -57,7 +60,7 @@ public final class LootContainers {
 			int id = rate == null ? -1 : ownedId(container, owns);
 			if (id > 0) {
 				out.add(row(id, container.name, Names.cap(container.holds) + " drop here (" + often(rate) + ") - the "
-					+ Names.lower(container.name) + " holds them"));
+					+ Names.lower(container.name) + " " + container.does));
 			}
 		}
 		if (wilderness || monster.isWildernessMonster()) {
@@ -71,10 +74,12 @@ public final class LootContainers {
 		return Arrays.stream(container.ids).filter(owns).findFirst().orElse(-1);
 	}
 
-	/** "about 1 per 4 kills", or "about 2 per kill" for the generous. */
+	/** "about 1 per 4 kills", "about 1 per kill" (bones, ashes), or "about
+	 * 2 per kill" for the generous. */
 	private static String often(double perKill) {
+		long every = Math.round(1 / perKill);
 		return perKill >= 1 ? String.format("about %.0f per kill", perKill)
-			: "about 1 per " + Math.max(1, Math.round(1 / perKill)) + " kills";
+			: every <= 1 ? "about 1 per kill" : "about 1 per " + every + " kills";
 	}
 
 	private static Map<String, Object> row(int id, String name, String why) {
