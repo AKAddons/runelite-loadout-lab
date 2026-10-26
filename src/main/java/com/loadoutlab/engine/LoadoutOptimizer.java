@@ -673,7 +673,7 @@ public final class LoadoutOptimizer {
 		Prepared incoming = request.getDefenseWeight() > 0
 			? new IncomingDpsCalculator.Prepared(request.getMonster(),
 				BossIncomingOverrides.overridesFor(request.getMonster()),
-				request.getLevels().getDefence(), request.getLevels().getMagic())
+				request.getLevels().getDefence(), request.getLevels().getMagic(), request.getAntifireTier())
 			: null;
 		RiskGuard risk = RiskGuard.of(data, request);
 		GearItem efaritay = data.getGear(VampyreRules.EFARITAY);

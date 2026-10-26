@@ -305,13 +305,14 @@
     "style": "magic"
    },
    {
+    "layers": {"none": [80, 30], "shield": [20, 20], "antifire": [70, 20], "super": [60, 10], "shield+antifire": [10, 10], "shield+super": [0, 0]},
     "maxHit": 80,
-    "prayable": false,
+    "name": "dragonfire",
     "share": 0.25,
-    "style": "typeless"
+    "style": "dragonfire"
    }
   ],
-  "note": "Wiki (post-quest): ranged 32 / magic 30 / dragonfire up to 80 unprotected; 2 of every 8 attacks are the avoidable specials (spawn, acid) - left unallocated; melee only adjacent - omitted; shield/antifire mitigation unmodeled."
+  "note": "Wiki (post-quest): ranged 32 / magic 30 / dragonfire up to 80 unprotected; 2 of every 8 attacks are the avoidable specials (spawn, acid) - left unallocated; melee only adjacent - omitted; dragonfire by the wiki's protection table (failed roll; [without, with Protect from Magic]) from the set's shield and the antifire assumed (ISS-01M5WVMVD4MZMWC7GRQDV3AFSY)."
  },
  "zulrah": {
   "attacks": [

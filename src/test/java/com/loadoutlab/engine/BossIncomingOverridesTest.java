@@ -229,8 +229,10 @@ public class BossIncomingOverridesTest {
 			Assert.assertFalse(name + ": no attacks", override.getAttacks().isEmpty());
 			double shares = 0;
 			for (BossIncomingOverrides.Attack attack : override.getAttacks()) {
+				// Dragonfire is a style only with its protection layers (Vorkath).
 				Assert.assertTrue(name + ": unknown style " + attack.getStyle(),
-					STYLES.contains(attack.getStyle()));
+					STYLES.contains(attack.getStyle())
+						|| "dragonfire".equals(attack.getStyle()) && attack.getLayers() != null);
 				Assert.assertTrue(name, attack.getMaxHit() > 0);
 				// An avoidable rider (tentacles after every volley) may carry no
 				// share of its own; every counted attack must.

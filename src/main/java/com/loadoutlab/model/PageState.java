@@ -324,6 +324,7 @@ public class PageState {
 		p.maxTradeables = flag("riskCapped") && kept >= 0 ? kept : -1;
 		p.riskBudgetGp = num("riskBudgetGp");
 		p.antifirePotion = num("antifireMode") == 2;
+		p.antifireTier = num("antifireMode");
 		p.sunfireRunes = flag("sunfireRunes");
 		p.multiView = flag("multiView");
 		p.multiStack = num("multiStack");

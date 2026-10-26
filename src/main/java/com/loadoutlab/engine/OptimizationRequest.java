@@ -79,6 +79,10 @@ public final class OptimizationRequest implements Cloneable {
 	 * forced); false = protection must come from a shield. */
 	@Getter @With
 	private boolean antifirePotion;
+	/** The page's antifireMode (0 none, 1 antifire, 2 super antifire): the
+	 * curated dragonfire layers read it (Vorkath, ISS-01M5WVMVD4MZMWC7GRQDV3AFSY). */
+	@Getter @With
+	private int antifireTier;
 	/** Sunfire runes in place of fire runes: a standard fire spell lands
 	 * no lower than a tenth of its max hit (wiki Sunfire rune). */
 	@Getter @With

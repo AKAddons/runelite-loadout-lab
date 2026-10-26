@@ -17,6 +17,8 @@ public final class ComputeParams implements Cloneable {
 	public int maxTradeables = -1;
 	public int riskBudgetGp = OptimizationRequest.DEFAULT_RISK_BUDGET_GP;
 	public boolean antifirePotion;
+	/** antifireMode as is: 0 none, 1 antifire, 2 super antifire. */
+	public int antifireTier;
 	public boolean sunfireRunes;
 	public int deathCharge;
 	public boolean specWeapon = true;

@@ -497,7 +497,7 @@ public class OptimizerService {
 	private static String ctxKey(ComputeContext ctx) {
 		return ctx.collectionFingerprint + "|" + ctx.p.f2pOnly + "|" + ctx.p.onSlayerTask
 			+ "|" + ctx.lock + "|" + ctx.unlocks.key() + "|" + ctx.p.maxTradeables
-			+ "|" + ctx.riskBudget + "|" + ctx.p.antifirePotion + "|" + ctx.p.sunfireRunes + "|" + ctx.p.multiView + "|" + ctx.p.multiStack + "|" + ctx.p.deathCharge
+			+ "|" + ctx.riskBudget + "|" + ctx.p.antifirePotion + "|" + ctx.p.antifireTier + "|" + ctx.p.sunfireRunes + "|" + ctx.p.multiView + "|" + ctx.p.multiStack + "|" + ctx.p.deathCharge
 			+ "|" + ctx.p.specWeapon + "|" + ctx.p.inWilderness + "|" + ctx.boostPicks + "|" + ctx.prayerPicks
 			+ "|" + ctx.p.upgradeBudgetGp + "|" + ctx.protectOnly.hashCode()
 			// Levels participate in the key so a boost/level-up invalidates.
@@ -1246,7 +1246,7 @@ public class OptimizerService {
 	private static Result incomingFor(MonsterStats mob,
 		Loadout worn, ComputeContext ctx) {
 		return worn == null ? null
-			: IncomingDpsCalculator.calculate(mob, worn, ctx.real.getDefence(), ctx.real.getMagic());
+			: IncomingDpsCalculator.calculate(mob, worn, ctx.real.getDefence(), ctx.real.getMagic(), ctx.p.antifireTier);
 	}
 
 	/** The fight's swap gear beside the set: on Yours the first one you own or sim,
@@ -3498,7 +3498,7 @@ public class OptimizerService {
 			.withExcludedItems(excludedFor(ctx, style, mob))
 			.withSpellbookLock(ctx.lock)
 			.withMaxTradeables(ctx.p.maxTradeables).withRiskBudgetGp(ctx.riskBudget)
-			.withAntifirePotion(ctx.p.antifirePotion)
+			.withAntifirePotion(ctx.p.antifirePotion).withAntifireTier(ctx.p.antifireTier)
 			.withSunfireRunes(ctx.p.sunfireRunes)
 			.withDeathCharge(ctx.p.deathCharge)
 			.withInWilderness(ctx.p.inWilderness)

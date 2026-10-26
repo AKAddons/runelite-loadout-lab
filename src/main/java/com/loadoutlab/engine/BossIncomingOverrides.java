@@ -54,6 +54,10 @@ public final class BossIncomingOverrides {
 		/** The fraction of a flicked attack that still lands under standard
 		 * play - a mixed volley's odd projectile, a late swap. */
 		private final double leak;
+		/** Dragonfire by protection layers (Vorkath): key "none" / "shield" /
+		 * "antifire" / "super" / "shield+antifire" / "shield+super" ->
+		 * {max without, max with Protect from Magic}; null for other attacks. */
+		private final Map<String, int[]> layers;
 	}
 
 	/** The full curated picture for one boss. */
@@ -116,9 +120,19 @@ public final class BossIncomingOverrides {
 				a.has("name") ? a.get("name").getAsString() : "",
 				a.has("hits") ? Math.max(1, a.get("hits").getAsInt()) : 1,
 				a.has("flicked") && a.get("flicked").getAsBoolean(),
-				a.has("leak") ? a.get("leak").getAsDouble() : 0.0));
+				a.has("leak") ? a.get("leak").getAsDouble() : 0.0,
+				a.has("layers") ? layers(a.getAsJsonObject("layers")) : null));
 		}
 		return new BossOverride(attacks, json.has("note") ? json.get("note").getAsString() : "");
+	}
+
+	private static Map<String, int[]> layers(JsonObject json) {
+		Map<String, int[]> map = new HashMap<>();
+		for (var e : json.entrySet()) {
+			JsonArray pair = e.getValue().getAsJsonArray();
+			map.put(e.getKey(), new int[]{pair.get(0).getAsInt(), pair.get(1).getAsInt()});
+		}
+		return map;
 	}
 
 	private BossIncomingOverrides() {

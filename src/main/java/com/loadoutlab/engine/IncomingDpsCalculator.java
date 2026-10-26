@@ -149,10 +149,22 @@ public final class IncomingDpsCalculator {
 		 * the beam's defense scoring must see that, or Tanky/Balanced can
 		 * never choose the bracelet (field report: not recommended). */
 		private final boolean revenant;
+		/** The curated dragonfire attack's index (-1 when none), its layers,
+		 * and the antifire assumed (0 none, 1 antifire, 2 super). */
+		private final int dragonfire;
+		private final Map<String, int[]> layers;
+		private final int antifireTier;
+
+		Prepared(MonsterStats monster, BossOverride override, int defenceLevel, int magicLevel) {
+			this(monster, override, defenceLevel, magicLevel, 0);
+		}
 
 		Prepared(MonsterStats monster, BossOverride override,
-			int defenceLevel, int magicLevel) {
+			int defenceLevel, int magicLevel, int antifireTier) {
 			this.revenant = monster.isRevenantMonster();
+			this.antifireTier = antifireTier;
+			int fire = -1;
+			Map<String, int[]> fireLayers = null;
 			this.defenceLevel = defenceLevel;
 			this.magicEffective = magicEffectiveLevel(defenceLevel, magicLevel);
 			MonsterOffence off = monster.getOffence();
@@ -214,7 +226,14 @@ public final class IncomingDpsCalculator {
 				for (int i = 0; i < n; i++) {
 					Attack attack = attacks.get(i);
 					String style = attack.getStyle();
-					int kind = "typeless".equals(style) ? KIND_TYPELESS : kindOf(style);
+					// Curated dragonfire always lands (as the typeless rows); Protect
+					// from Magic is its prayer, priced per set by the layers.
+					boolean layered = attack.getLayers() != null;
+					if (layered) {
+						fire = i;
+						fireLayers = attack.getLayers();
+					}
+					int kind = "typeless".equals(style) || layered ? KIND_TYPELESS : kindOf(style);
 					kinds[i] = kind;
 					attackRolls[i] = kind == KIND_TYPELESS ? 0 : attackRollFor(kind, off);
 					maxHits[i] = attack.getMaxHit();
@@ -230,7 +249,7 @@ public final class IncomingDpsCalculator {
 					flicked[i] = attack.isFlicked();
 					leaks[i] = attack.getLeak();
 					labels[i] = attack.getName().isEmpty() ? displayStyle(style) : attack.getName();
-					String prayer = protectPrayerFor(style);
+					String prayer = layered ? "Protect from Magic" : protectPrayerFor(style);
 					prayerOf[i] = prayer;
 					int index = prayers.indexOf(prayer);
 					if (index < 0) {
@@ -241,18 +260,39 @@ public final class IncomingDpsCalculator {
 				}
 				this.prayerNames = prayers.toArray(new String[0]);
 			}
+			this.dragonfire = fire;
+			this.layers = fireLayers;
+		}
+
+		/** The dragonfire's {max without, max with Protect from Magic} for this
+		 * set (a protective shield worn) and the antifire assumed, or null. */
+		private int[] dragonfireRow(Loadout loadout) {
+			if (dragonfire < 0) return null;
+			boolean shield = DragonfireRules.isProtectiveShield(loadout.get(GearSlot.SHIELD));
+			String potion = antifireTier == 2 ? "super" : antifireTier == 1 ? "antifire" : "";
+			return layers.get(shield ? (potion.isEmpty() ? "shield" : "shield+" + potion)
+				: potion.isEmpty() ? "none" : potion);
+		}
+
+		private int maxHit(int i, int[] row) { return i == dragonfire && row != null ? row[0] : maxHits[i]; }
+
+		/** Attack i's prayer factor; the dragonfire's is Protect from Magic's
+		 * share of its damage for this set. */
+		private double factor(int i, int[] row) {
+			if (i != dragonfire || row == null) return prayerFactors[i];
+			return row[0] == 0 ? 1 : (double) row[1] / row[0];
 		}
 
 		/** Each `which` attack's dps if it attacked every cycle - the ONE
 		 * rate path, for the beam's totals and the card's rows alike.
 		 * Typeless attacks have no defence roll: they always hit. */
-		private void fillDps(Loadout loadout, double[] dps, boolean[] which) {
+		private void fillDps(Loadout loadout, double[] dps, boolean[] which, int[] row) {
 			StatBlock def = loadout.getDefensive();
 			for (int i = 0; i < kinds.length; i++) {
 				if (!which[i]) continue;
 				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
 					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
-				dps[i] = accuracy * (maxHits[i] / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
+				dps[i] = accuracy * (maxHit(i, row) / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
 			}
 		}
 
@@ -279,14 +319,14 @@ public final class IncomingDpsCalculator {
 		 * curated maxHit. Ties go to the prayer whose first positive saving
 		 * came first in the curated attack order (deterministic).
 		 */
-		private int bestPrayer(double[] dps) {
+		private int bestPrayer(double[] dps, int[] row) {
 			double[] saved = new double[prayerNames.length];
 			int[] order = new int[saved.length];
 			int count = 0;
 			for (int i = 0; i < kinds.length; i++) {
 				// An avoidable attack is dodged by the standard play - no saving;
 				// a flicked one is prayed on cue whatever is camped - no vote.
-				double saving = live[i] && !flicked[i] ? dps[i] * shares[i] * (1 - prayerFactors[i]) : 0;
+				double saving = live[i] && !flicked[i] ? dps[i] * shares[i] * (1 - factor(i, row)) : 0;
 				if (saving > 0) {
 					int p = prayerIndex[i];
 					if (saved[p] == 0) order[count++] = p;
@@ -307,9 +347,10 @@ public final class IncomingDpsCalculator {
 		/** The fraction of attack i that gets through the picked prayer. A
 		 * flicked attack is prayed on cue whatever is camped: its leak lands
 		 * in full, the rest at the pierce factor. */
-		private double through(int i, int prayer) {
-			if (flicked[i]) return leaks[i] + (1 - leaks[i]) * prayerFactors[i];
-			return prayer >= 0 && prayerIndex[i] == prayer && prayerFactors[i] < 1 ? prayerFactors[i] : 1;
+		private double through(int i, int prayer, int[] row) {
+			double f = factor(i, row);
+			if (flicked[i]) return leaks[i] + (1 - leaks[i]) * f;
+			return prayer >= 0 && prayerIndex[i] == prayer && f < 1 ? f : 1;
 		}
 
 		/** "Protect from Missiles / Protect from Magic on cue": the prayers
@@ -329,7 +370,8 @@ public final class IncomingDpsCalculator {
 		public double totalDps(Loadout loadout) {
 			if (revenant && wearsChargedEthereum(loadout)) return 0;
 			double[] dps = new double[kinds.length];
-			fillDps(loadout, dps, live);
+			int[] row = dragonfireRow(loadout);
+			fillDps(loadout, dps, live, row);
 			double total = 0;
 			if (!overridden) {
 				int blocked = bestBlockable(dps);
@@ -338,9 +380,9 @@ public final class IncomingDpsCalculator {
 				}
 				return total;
 			}
-			int prayer = bestPrayer(dps);
+			int prayer = bestPrayer(dps, row);
 			for (int i = 0; i < kinds.length; i++) {
-				if (live[i]) total += dps[i] * shares[i] * through(i, prayer);
+				if (live[i]) total += dps[i] * shares[i] * through(i, prayer, row);
 			}
 			return total;
 		}
@@ -351,7 +393,8 @@ public final class IncomingDpsCalculator {
 		private Result result(Loadout loadout) {
 			if (!overridden && kinds.length == 0) return new Result(0, 0, null, List.of(), null, NONE, List.of());
 			double[] dps = new double[kinds.length];
-			fillDps(loadout, dps, priced);
+			int[] row = dragonfireRow(loadout);
+			fillDps(loadout, dps, priced, row);
 			List<StyleThreat> threats = new ArrayList<>();
 			List<String> unmodeled = new ArrayList<>();
 			String prayer = null;
@@ -383,7 +426,7 @@ public final class IncomingDpsCalculator {
 			}
 			// D-2 path: the curated attack list replaces the uniform model;
 			// the protection prayer blocks the class that saves the most.
-			int best = bestPrayer(dps);
+			int best = bestPrayer(dps, row);
 			prayer = best < 0 ? onCue() : prayerNames[best];
 			for (int i = 0; i < kinds.length; i++) {
 				if (avoidable[i]) {
@@ -391,20 +434,20 @@ public final class IncomingDpsCalculator {
 					// out of both totals - the standard play dodges it, so an
 					// unknown cadence costs it nothing either.
 					threats.add(new StyleThreat(labels[i] + " (avoidable - assumed dodged)",
-						dps[i], maxHits[i], priced[i], false, shares[i], 1));
+						dps[i], maxHit(i, row), priced[i], false, shares[i], 1));
 					continue;
 				}
 				if (!priced[i]) {
 					unmodeled.add(labels[i]);
-					threats.add(new StyleThreat(labels[i], 0, maxHits[i], false, false, 0, 1));
+					threats.add(new StyleThreat(labels[i], 0, maxHit(i, row), false, false, 0, 1));
 					continue;
 				}
-				double through = through(i, best);
+				double through = through(i, best, row);
 				unprayed += dps[i] * shares[i];
 				total += dps[i] * shares[i] * through;
 				String label = !flicked[i] ? labels[i] : labels[i] + " (prayed on cue"
 					+ (leaks[i] > 0 ? String.format(", ~%.0f%% lands", leaks[i] * 100) : "") + ")";
-				threats.add(new StyleThreat(label, dps[i], maxHits[i], true, through < 1, shares[i], through));
+				threats.add(new StyleThreat(label, dps[i], maxHit(i, row), true, through < 1, shares[i], through));
 			}
 			return new Result(total, unprayed, prayer, threats, note,
 				unmodeled.isEmpty() ? CURATED : PARTIAL, unmodeled);
@@ -557,6 +600,13 @@ public final class IncomingDpsCalculator {
 
 	public static Result calculate(MonsterStats monster, Loadout loadout,
 		int defenceLevel, int magicLevel) {
+		return calculate(monster, loadout, defenceLevel, magicLevel, 0);
+	}
+
+	/** antifireTier: the page's antifireMode - 0 no potion, 1 antifire, 2 super
+	 * antifire - for curated dragonfire layers (Vorkath, ISS-01M5WVMVD4MZMWC7GRQDV3AFSY). */
+	public static Result calculate(MonsterStats monster, Loadout loadout,
+		int defenceLevel, int magicLevel, int antifireTier) {
 		// Bracelet of ethereum (charged): revenants deal NO damage while it
 		// is worn - an absolute rule that outranks every other model.
 		if (monster.isRevenantMonster() && wearsChargedEthereum(loadout)) {
@@ -566,7 +616,7 @@ public final class IncomingDpsCalculator {
 		// The wiki cannot price it yet: say why instead of a bare "?".
 		String unpriced = BossIncomingOverrides.unpricedReason(monster);
 		if (unpriced != null) return new Result(0, 0, null, List.of(), unpriced, NONE, List.of());
-		return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel)
+		return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel, antifireTier)
 			.result(loadout);
 	}
 
