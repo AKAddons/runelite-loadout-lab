@@ -76,7 +76,7 @@ final class Ui {
 	static JLabel small(String text, Color fg) {
 		var label = new JLabel(text);
 		label.setFont(FontManager.getRunescapeSmallFont());
-		if (fg != null) { label.setForeground(fg); }
+		if (fg != null) label.setForeground(fg);
 		return label;
 	}
 
@@ -101,7 +101,7 @@ final class Ui {
 		component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		component.addMouseListener(new java.awt.event.MouseAdapter() {
 			public void mouseClicked(java.awt.event.MouseEvent e) {
-				if (SwingUtilities.isLeftMouseButton(e)) { action.run(); }
+				if (SwingUtilities.isLeftMouseButton(e)) action.run();
 			}
 		});
 	}
@@ -115,7 +115,7 @@ final class Ui {
 		x.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		x.addMouseListener(new java.awt.event.MouseAdapter() {
 			public void mouseClicked(java.awt.event.MouseEvent e) {
-				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e)) { action.run(); }
+				if (!e.isPopupTrigger() && SwingUtilities.isLeftMouseButton(e)) action.run();
 			}
 
 			public void mouseEntered(java.awt.event.MouseEvent e) { x.setForeground(new Color(0xDC7878)); }
@@ -196,7 +196,7 @@ final class Ui {
 	 * each wrote their own wrapper; this is the one. */
 	static String tip(String... parts) {
 		var out = new StringBuilder("<html>");
-		for (String part : parts) { out.append(part); }
+		for (String part : parts) out.append(part);
 		return out.append("</html>").toString();
 	}
 
@@ -205,7 +205,7 @@ final class Ui {
 	 * is a list and numbers, never prose. */
 	static String list(String heading, Iterable<?> items) {
 		var out = new StringBuilder(heading);
-		for (Object item : items) { out.append("<br> ").append(item); }
+		for (Object item : items) out.append("<br> ").append(item);
 		return out.toString();
 	}
 
@@ -223,8 +223,8 @@ final class Ui {
 		var sum = new StringBuilder("<table cellpadding='1' cellspacing='0'>");
 		sum.append(String.format(row, "set", String.format("%.3f", set),
 			"<font color='#969696'>&nbsp;&nbsp;" + setNote + "</font>"));
-		if (showSpec) { sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), "")); }
-		if (thrallsDps > 0) { sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), "")); }
+		if (showSpec) sum.append(String.format(row, "+ spec", String.format("%.2f", specDps), ""));
+		if (thrallsDps > 0) sum.append(String.format(row, "+ thralls", String.format("%.2f", thrallsDps), ""));
 		return sum.append(String.format(row, "<b>= shown here</b>",
 			"<b>" + String.format("%.2f", set + specDps + thrallsDps) + "</b>", "")).append("</table>").toString();
 	}

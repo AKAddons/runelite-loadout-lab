@@ -249,7 +249,7 @@ public final class IncomingDpsCalculator {
 		private void fillDps(Loadout loadout, double[] dps, boolean[] which) {
 			StatBlock def = loadout.getDefensive();
 			for (int i = 0; i < kinds.length; i++) {
-				if (!which[i]) { continue; }
+				if (!which[i]) continue;
 				double accuracy = kinds[i] == KIND_TYPELESS ? 1.0
 					: accuracyOfKind(kinds[i], attackRolls[i], def, defenceLevel, magicEffective);
 				dps[i] = accuracy * (maxHits[i] / 2.0) * (hits == null ? 1 : hits[i]) / (speeds[i] * 0.6);
@@ -289,7 +289,7 @@ public final class IncomingDpsCalculator {
 				double saving = live[i] && !flicked[i] ? dps[i] * shares[i] * (1 - prayerFactors[i]) : 0;
 				if (saving > 0) {
 					int p = prayerIndex[i];
-					if (saved[p] == 0) { order[count++] = p; }
+					if (saved[p] == 0) order[count++] = p;
 					saved[p] += saving;
 				}
 			}
@@ -308,7 +308,7 @@ public final class IncomingDpsCalculator {
 		 * flicked attack is prayed on cue whatever is camped: its leak lands
 		 * in full, the rest at the pierce factor. */
 		private double through(int i, int prayer) {
-			if (flicked[i]) { return leaks[i] + (1 - leaks[i]) * prayerFactors[i]; }
+			if (flicked[i]) return leaks[i] + (1 - leaks[i]) * prayerFactors[i];
 			return prayer >= 0 && prayerIndex[i] == prayer && prayerFactors[i] < 1 ? prayerFactors[i] : 1;
 		}
 
@@ -317,7 +317,7 @@ public final class IncomingDpsCalculator {
 		private String onCue() {
 			List<String> prayers = new ArrayList<>();
 			for (int i = 0; i < kinds.length; i++) {
-				if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) { prayers.add(prayerOf[i]); }
+				if (live[i] && flicked[i] && !prayers.contains(prayerOf[i])) prayers.add(prayerOf[i]);
 			}
 			return prayers.isEmpty() ? null : String.join(" / ", prayers) + " on cue";
 		}
@@ -327,20 +327,20 @@ public final class IncomingDpsCalculator {
 		 * math, same order, none of the display allocations.
 		 */
 		public double totalDps(Loadout loadout) {
-			if (revenant && wearsChargedEthereum(loadout)) { return 0; }
+			if (revenant && wearsChargedEthereum(loadout)) return 0;
 			double[] dps = new double[kinds.length];
 			fillDps(loadout, dps, live);
 			double total = 0;
 			if (!overridden) {
 				int blocked = bestBlockable(dps);
 				for (int i = 0; i < kinds.length; i++) {
-					if (live[i] && i != blocked) { total += dps[i] * share; }
+					if (live[i] && i != blocked) total += dps[i] * share;
 				}
 				return total;
 			}
 			int prayer = bestPrayer(dps);
 			for (int i = 0; i < kinds.length; i++) {
-				if (live[i]) { total += dps[i] * shares[i] * through(i, prayer); }
+				if (live[i]) total += dps[i] * shares[i] * through(i, prayer);
 			}
 			return total;
 		}
@@ -349,7 +349,7 @@ public final class IncomingDpsCalculator {
 		 * lists it, the prayer, both totals, the coverage and the names the
 		 * number leaves out. The same rates totalDps() scores. */
 		private Result result(Loadout loadout) {
-			if (!overridden && kinds.length == 0) { return new Result(0, 0, null, List.of(), null, NONE, List.of()); }
+			if (!overridden && kinds.length == 0) return new Result(0, 0, null, List.of(), null, NONE, List.of());
 			double[] dps = new double[kinds.length];
 			fillDps(loadout, dps, priced);
 			List<StyleThreat> threats = new ArrayList<>();
@@ -364,7 +364,7 @@ public final class IncomingDpsCalculator {
 				prayer = blocked < 0 ? null : prayerOf[blocked];
 				int modeled = 0;
 				for (int i = 0; i < kinds.length; i++) {
-					if (kinds[i] == KIND_NONE) { continue; }
+					if (kinds[i] == KIND_NONE) continue;
 					if (!live[i]) {
 						unmodeled.add(labels[i]);
 						threats.add(new StyleThreat(labels[i], 0, 0, false, false, 0, 1));
@@ -375,7 +375,7 @@ public final class IncomingDpsCalculator {
 					threats.add(new StyleThreat(labels[i], dps[i], maxHits[i], true, isBlocked, share,
 						isBlocked ? 0 : 1));
 					unprayed += dps[i] * share;
-					if (!isBlocked) { total += dps[i] * share; }
+					if (!isBlocked) total += dps[i] * share;
 				}
 				// A monster whose styles are all "None" does not attack: modeled, 0.
 				String coverage = !unmodeled.isEmpty() ? (modeled == 0 ? NONE : PARTIAL) : FULL;
@@ -434,12 +434,12 @@ public final class IncomingDpsCalculator {
 	 */
 	private static int kindOf(String rawStyle) {
 		String style = clean(rawStyle).replace("(100% prayer penetration)", "").trim();
-		if (style.isEmpty() || style.equals("none") || style.equals("n/a")) { return KIND_NONE; }
-		if (style.startsWith("typeless ")) { style = style.substring("typeless ".length()); }
+		if (style.isEmpty() || style.equals("none") || style.equals("n/a")) return KIND_NONE;
+		if (style.startsWith("typeless ")) style = style.substring("typeless ".length());
 		style = style.startsWith("melee (")
 			? style.substring("melee (".length()).replace(")", "").replace("?", "").trim()
 			: style.replaceAll("\\s*\\(.*\\)$", "");
-		if (style.equals("single and multi-target ranged")) { style = "ranged"; }
+		if (style.equals("single and multi-target ranged")) style = "ranged";
 		switch (style) {
 			case "stab": return KIND_STAB;
 			case "slash": return KIND_SLASH;
@@ -484,9 +484,9 @@ public final class IncomingDpsCalculator {
 		boolean seen = false;
 		for (String style : styles) {
 			int kind = kindOf(style);
-			if (kind == KIND_NONE) { continue; }
+			if (kind == KIND_NONE) continue;
 			Family family = familyOf(kind);
-			if (family == null || seen && family != only) { return false; }
+			if (family == null || seen && family != only) return false;
 			only = family;
 			seen = true;
 		}
@@ -497,7 +497,7 @@ public final class IncomingDpsCalculator {
 	private static int modeledCount(List<String> styles, MonsterOffence off) {
 		int modeled = 0;
 		for (String style : styles) {
-			if (kindOf(style) >= 0 && off.getSpeedTicks() > 0) { modeled++; }
+			if (kindOf(style) >= 0 && off.getSpeedTicks() > 0) modeled++;
 		}
 		return modeled;
 	}
@@ -510,8 +510,8 @@ public final class IncomingDpsCalculator {
 		if (family != null) {
 			MaxHits listed = off.getListedMaxHits();
 			int max = listed.of(family);
-			if (max < 0 && singleFamily) { max = listed.of(GENERAL); }
-			if (max > 0) { return max; }
+			if (max < 0 && singleFamily) max = listed.of(GENERAL);
+			if (max > 0) return max;
 		}
 		return family == MELEE ? npcMaxHit(off.getStrengthLevel(), off.getStrengthBonus())
 			: family == RANGED ? npcMaxHit(off.getRangedLevel(), off.getRangedStrengthBonus())
@@ -565,7 +565,7 @@ public final class IncomingDpsCalculator {
 		}
 		// The wiki cannot price it yet: say why instead of a bare "?".
 		String unpriced = BossIncomingOverrides.unpricedReason(monster);
-		if (unpriced != null) { return new Result(0, 0, null, List.of(), unpriced, NONE, List.of()); }
+		if (unpriced != null) return new Result(0, 0, null, List.of(), unpriced, NONE, List.of());
 		return new Prepared(monster, BossIncomingOverrides.overridesFor(monster), defenceLevel, magicLevel)
 			.result(loadout);
 	}
@@ -593,10 +593,10 @@ public final class IncomingDpsCalculator {
 	 *   ranged melee        -> Melee (rolls vs ranged def, swings melee) */
 	private static String protectPrayerFor(String rawStyle) {
 		String style = clean(rawStyle);
-		if (style.contains("melee")) { return "Protect from Melee"; }
-		if (style.startsWith("magical ranged")) { return "Protect from Missiles"; }
-		if (style.equals("ranged magic") || style.startsWith("magic")) { return "Protect from Magic"; }
-		if (style.startsWith("ranged") || style.equals("range")) { return "Protect from Missiles"; }
+		if (style.contains("melee")) return "Protect from Melee";
+		if (style.startsWith("magical ranged")) return "Protect from Missiles";
+		if (style.equals("ranged magic") || style.startsWith("magic")) return "Protect from Magic";
+		if (style.startsWith("ranged") || style.equals("range")) return "Protect from Missiles";
 		return "Protect from Melee";
 	}
 
@@ -607,7 +607,7 @@ public final class IncomingDpsCalculator {
 	}
 
 	private static double accuracy(long attackRoll, long defenceRoll) {
-		if (attackRoll > defenceRoll) { return 1.0 - (defenceRoll + 2.0) / (2.0 * (attackRoll + 1.0)); }
+		if (attackRoll > defenceRoll) return 1.0 - (defenceRoll + 2.0) / (2.0 * (attackRoll + 1.0));
 		return attackRoll / (2.0 * (defenceRoll + 1.0));
 	}
 }

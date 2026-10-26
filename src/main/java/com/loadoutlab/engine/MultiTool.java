@@ -35,7 +35,7 @@ public enum MultiTool {
 
 	/** The multiplier on a per-target number at a stack of targets. */
 	public static double factor(String kind, int stack, int maxHit) {
-		if ("chain".equals(kind)) { return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1; }
+		if ("chain".equals(kind)) return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1;
 		// Hallowfell (wiki passive): up to two more unique targets, each its
 		// own accuracy roll at half the max hit, rounded down.
 		if ("cleave".equals(kind)) {

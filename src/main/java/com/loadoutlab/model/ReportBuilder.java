@@ -47,7 +47,7 @@ final class ReportBuilder {
 						.append(groupBookReason == null || groupBookReason.isEmpty() ? "" : " - " + groupBookReason)
 						.append('\n');
 				}
-				if (ship != null) { appendShip(sb, ship); }
+				if (ship != null) appendShip(sb, ship);
 				if (supplies != null) {
 					items(sb, "  Supplies:", supplies.stream().map(s -> s.get("name")).collect(Collectors.toList()), "\n");
 				}
@@ -56,7 +56,7 @@ final class ReportBuilder {
 			Object byMob = ship == null ? null : ship.get("byMob");
 			double cannonDps = byMob instanceof List && i < ((List<?>) byMob).size()
 				? num(((List<?>) byMob).get(i)) : 0;
-			if (cannonDps > 0) { sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps)); }
+			if (cannonDps > 0) sb.append(String.format("  Cannons vs this mob: +%.2f dps%n", cannonDps));
 			Map<CombatStyle, StyleResult> results = perMob.get(i);
 			// The kit contract (field report 2026-08-14, the Sire: "a
 			// multi-mob result needs to return 1 set of gear and the
@@ -69,11 +69,11 @@ final class ReportBuilder {
 			var others = new StringBuilder();
 			for (CombatStyle style : CombatStyle.concreteValues()) {
 				StyleResult result = results == null ? null : results.get(style);
-				if (result == null) { continue; }
+				if (result == null) continue;
 				if (result.ownedKitBacked || result.gameKitBacked) {
 					sb.append("-- ").append(style).append(" --\n");
-					if (result.ownedKitBacked) { appendSide(sb, "Yours", result, false, keptSlots); }
-					if (result.gameKitBacked) { appendSide(sb, "Best in game", result, true, keptSlots); }
+					if (result.ownedKitBacked) appendSide(sb, "Yours", result, false, keptSlots);
+					if (result.gameKitBacked) appendSide(sb, "Best in game", result, true, keptSlots);
 					appendStandDown(sb, mobNodes != null && i < mobNodes.size() ? mobNodes.get(i) : null,
 						String.valueOf(style).toLowerCase());
 				}
@@ -85,7 +85,7 @@ final class ReportBuilder {
 			}
 			Map<String, StyleResult> tools = null;
 			for (StyleResult r : results.values()) {
-				if (r != null && r.multiTools != null) { tools = r.multiTools; }
+				if (r != null && r.multiTools != null) tools = r.multiTools;
 			}
 			if (tools != null) {
 				sb.append("-- Multi (").append((int) num(state.paramsNode().get("multiStack")))
@@ -110,7 +110,7 @@ final class ReportBuilder {
 	private static void appendStandDown(StringBuilder sb, Map<String, Object> mob, String style) {
 		Object styles = mob == null ? null : mob.get("styles");
 		Object node = styles instanceof Map ? ((Map<?, ?>) styles).get(style) : null;
-		if (!(node instanceof Map)) { return; }
+		if (!(node instanceof Map)) return;
 		String last = null;
 		for (String side : new String[]{"yours", "bis"}) {
 			Object card = ((Map<?, ?>) node).get(side);
@@ -126,7 +126,7 @@ final class ReportBuilder {
 	 * (Lostmind, Discord 2026-09-17). */
 	@SuppressWarnings("unchecked")
 	private static void appendProfile(StringBuilder sb, Map<String, Object> mob) {
-		if (mob == null) { return; }
+		if (mob == null) return;
 		Object pins = mob.get("pins");
 		if (pins instanceof Map) {
 			((Map<String, Map<String, String>>) pins).forEach((scope, slots) -> {
@@ -141,14 +141,14 @@ final class ReportBuilder {
 		names(sb, "  Excluded here: ", mob.get("mobExclusions"), true);
 		names(sb, "  Simmed here: ", mob.get("mobSims"), false);
 		Object note = mob.get("note");
-		if (note instanceof String && !((String) note).isEmpty()) { sb.append("  Note: ").append(note).append('\n'); }
-		if (Boolean.TRUE.equals(mob.get("skipDegradable"))) { sb.append("  Degradable gear skipped\n"); }
+		if (note instanceof String && !((String) note).isEmpty()) sb.append("  Note: ").append(note).append('\n');
+		if (Boolean.TRUE.equals(mob.get("skipDegradable"))) sb.append("  Degradable gear skipped\n");
 	}
 
 	/** "label: name (scope), name" from a [{name, scope?}] list; nothing when empty. */
 	@SuppressWarnings("unchecked")
 	private static void names(StringBuilder sb, String label, Object list, boolean scoped) {
-		if (!(list instanceof List) || ((List<?>) list).isEmpty()) { return; }
+		if (!(list instanceof List) || ((List<?>) list).isEmpty()) return;
 		sb.append(label);
 		for (Object o : (List<?>) list) {
 			Map<String, Object> item = (Map<String, Object>) o;
@@ -183,13 +183,13 @@ final class ReportBuilder {
 					? gp((long) num(params.get("riskBudgetGp"))) : "none")
 					+ "; Protect item: " + yesNo(params.get("protectItem")) : ""));
 		String stats = statsLine(params);
-		if (stats != null) { sb.append(stats); }
+		if (stats != null) sb.append(stats);
 		if (counts != null) {
 			sb.append("  Stores: ").append(counts.getOrDefault("excluded", 0)).append(" excluded, ")
 				.append(counts.getOrDefault("simmed", 0)).append(" simmed\n");
 			names(sb, "  Excluded: ", counts.get("excludedItems"), false);
 			Object names = counts.get("simmedNames");
-			if (names instanceof List) { items(sb, "  Simmed as owned:", (List<?>) names, "\n"); }
+			if (names instanceof List) items(sb, "  Simmed as owned:", (List<?>) names, "\n");
 		}
 	}
 
@@ -211,15 +211,15 @@ final class ReportBuilder {
 		sb.append(" ");
 		for (GearSlot slot : GearSlot.values()) {
 			GearItem item = shown.getLoadout().get(slot);
-			if (item != null) { sb.append(' ').append(item.label()).append(','); }
+			if (item != null) sb.append(' ').append(item.label()).append(',');
 		}
 		if (shown.getLoadout().getQuiverAmmo() != null) {
 			sb.append(" [quiver: ").append(shown.getLoadout().getQuiverAmmo().label()).append(']');
 		}
 		sb.append('\n');
 		String boost = bis ? result.gameBoostLabel : result.boostLabel;
-		if (boost != null) { sb.append("  Assumes: ").append(boost).append('\n'); }
-		if (shown.getSpellName() != null) { sb.append("  Spell: ").append(shown.getSpellName()).append('\n'); }
+		if (boost != null) sb.append("  Assumes: ").append(boost).append('\n');
+		if (shown.getSpellName() != null) sb.append("  Spell: ").append(shown.getSpellName()).append('\n');
 		if (specWeapon != null) {
 			sb.append(String.format("  Spec: %s (adds ~%.2f dps)%n", specWeapon.label(), specAdded));
 		}
@@ -295,7 +295,7 @@ final class ReportBuilder {
 			sb.append("  Cannons:");
 			int i = 1;
 			for (Object c : (List<?>) cannons) {
-				if (!(c instanceof Map)) { continue; }
+				if (!(c instanceof Map)) continue;
 				Map<?, ?> cannon = (Map<?, ?>) c;
 				sb.append(i > 1 ? "; " : " ").append("cannon ").append(i++).append(": ")
 					.append(cannon.get("tier")).append(", ")
@@ -312,8 +312,8 @@ final class ReportBuilder {
 	}
 
 	private static String gp(long value) {
-		if (value >= 1_000_000) { return String.format("%.1fm", value / 1_000_000.0); }
-		if (value >= 1_000) { return String.format("%.0fk", value / 1_000.0); }
+		if (value >= 1_000_000) return String.format("%.1fm", value / 1_000_000.0);
+		if (value >= 1_000) return String.format("%.0fk", value / 1_000.0);
 		return Long.toString(value);
 	}
 

@@ -26,7 +26,7 @@ final class StatIcons {
 			try (InputStream in = StatIcons.class.getResourceAsStream(n)) {
 				if (in != null) {
 					BufferedImage img = ImageIO.read(in);
-					if (img != null) { return img; }
+					if (img != null) return img;
 				}
 			} catch (IOException ignored) {
 				// fall through to the transparent placeholder

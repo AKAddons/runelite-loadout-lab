@@ -145,7 +145,7 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 				java.nio.charset.StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				if (line.startsWith("#")) { continue; }
+				if (line.startsWith("#")) continue;
 				boolean mood = line.startsWith("==");
 				// Frame separators are EXACTLY "--": sea art legitimately
 				// starts lines with dashes (waves), and a prefix match ate
@@ -166,14 +166,14 @@ final class AsciiLoader extends javax.swing.JEditorPane {
 					}
 					continue;
 				}
-				if (frame.length() > 0) { frame.append('\n'); }
+				if (frame.length() > 0) frame.append('\n');
 				frame.append(line);
 			}
 		} catch (Exception e) {
 			// fall through to the fail-soft default below
 		}
-		if (frame.length() > 0) { frames.add(frame.toString()); }
-		if (!frames.isEmpty()) { poolFor(land, pools, moodKey).add(frames); }
-		if (land.isEmpty()) { land.add(List.of("Computing...")); }
+		if (frame.length() > 0) frames.add(frame.toString());
+		if (!frames.isEmpty()) poolFor(land, pools, moodKey).add(frames);
+		if (land.isEmpty()) land.add(List.of("Computing..."));
 	}
 }

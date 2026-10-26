@@ -67,10 +67,10 @@ public class ResultCards {
 		int n = 0;
 		Map<String, Object> gear = map(card, "gear");
 		for (Object slot : gear == null ? List.of() : gear.values()) {
-			if (slot instanceof Map && flag((Map<String, Object>) slot, "degrades")) { n++; }
+			if (slot instanceof Map && flag((Map<String, Object>) slot, "degrades")) n++;
 		}
 		boolean skip = flag(mob, "skipDegradable");
-		if (!degradableChip.getAsBoolean() || (n == 0 && !skip)) { return null; }
+		if (!degradableChip.getAsBoolean() || (n == 0 && !skip)) return null;
 		JButton button = sigilButton("*" + n, skip, skip ? new Color(0xE6B45A) : new Color(0x968C78),
 			new Color(0xBE9646), skip ? text("degrade.skip")
 				: n + " degrade or burn charges - click to skip them here");
@@ -119,8 +119,8 @@ public class ResultCards {
 		for (Map<String, Object> entry : list(page, "entries")) {
 			for (Map<String, Object> mob : list(entry, "mobs")) {
 				Map<String, Object> styles = map(mob, "styles");
-				if (styles == null) { continue; }
-				if (selected != null && !selected.isEmpty() && styles.get(selected) != null) { return selected; }
+				if (styles == null) continue;
+				if (selected != null && !selected.isEmpty() && styles.get(selected) != null) return selected;
 				// No explicit pick: default to the RECOMMENDED style -
 				// highest owned dps, kit-backed styles first (field report
 				// 2026-08-14: Kraken opened on ranged with magic higher).
@@ -129,7 +129,7 @@ public class ResultCards {
 				boolean bestKitBacked = false;
 				for (String style : styles.keySet()) {
 					Map<String, Object> node = map(styles, style);
-					if (node == null) { continue; }
+					if (node == null) continue;
 					boolean kitBacked = flag(map(node, "yours"), "kitBacked");
 					double dps = num(node, "tabDps");
 					if (best == null || (kitBacked && !bestKitBacked)
@@ -139,7 +139,7 @@ public class ResultCards {
 						bestKitBacked = kitBacked;
 					}
 				}
-				if (best != null) { return best; }
+				if (best != null) return best;
 			}
 		}
 		return selected == null || selected.isEmpty() ? "melee" : selected;
@@ -148,7 +148,7 @@ public class ResultCards {
 	static Map<String, Object> firstParams(Map<String, Object> page) {
 		for (Map<String, Object> entry : list(page, "entries")) {
 			Map<String, Object> params = map(entry, "params");
-			if (params != null) { return params; }
+			if (params != null) return params;
 		}
 		return null;
 	}
@@ -161,7 +161,7 @@ public class ResultCards {
 		supplies = List.of();
 		for (Map<String, Object> entryNode : list(page, "entries")) {
 			List<Map<String, Object>> found = list(entryNode, "supplies");
-			if (!found.isEmpty()) { supplies = found; }
+			if (!found.isEmpty()) supplies = found;
 		}
 		assumeOptions = map(page, "assumeOptions");
 		pageWide = page;
@@ -178,18 +178,18 @@ public class ResultCards {
 		int lens = id(pageParams, "lensIndex");
 		for (Map<String, Object> entry : list(page, "entries")) {
 			List<Map<String, Object>> mobs = list(entry, "mobs");
-			if (mobs.isEmpty()) { continue; }
+			if (mobs.isEmpty()) continue;
 			double rosterThralls = num(map(entry, "thralls"), "dps");
 			JPanel box = column(DARKER_GRAY_COLOR);
 			int shownLens = min(max(lens, 0), mobs.size() - 1);
 			for (int i = 0; i < mobs.size(); i++) {
 				box.add(lensRow(mobs.get(i), tab, bis, i, mobs.size(), i == shownLens, rosterThralls));
-				if (i < mobs.size() - 1) { box.add(Box.createVerticalStrut(2)); }
+				if (i < mobs.size() - 1) box.add(Box.createVerticalStrut(2));
 			}
 			if (addMob != null) {
 				JPanel addRow = clear(new FlowLayout(FlowLayout.LEFT, 0, 2));
 				addRow.add(addMob);
-				if (reload != null) { addRow.add(reload); }
+				if (reload != null) addRow.add(reload);
 				box.add(Box.createVerticalStrut(2));
 				box.add(addRow);
 			}
@@ -208,11 +208,11 @@ public class ResultCards {
 		JPanel column = column(DARK_GRAY_COLOR);
 		int lens = id(pageParams, "lensIndex");
 		for (Map<String, Object> entry : list(page, "entries")) {
-			if (flag(entry, "pending")) { continue; }
+			if (flag(entry, "pending")) continue;
 			double thrallsDps = num(map(entry, "thralls"), "dps");
 			List<Map<String, Object>> mobs = list(entry, "mobs");
 			rosterView = mobs.size() > 1;
-			if (mobs.isEmpty()) { continue; }
+			if (mobs.isEmpty()) continue;
 			int shownLens = min(max(lens, 0), mobs.size() - 1);
 			Map<String, Object> shown = mobs.get(shownLens);
 			// Ship options follow the LENSED mob (REQ-SC-7): a land lens in
@@ -248,7 +248,7 @@ public class ResultCards {
 			for (String style : styles.keySet()) {
 				Map<String, Object> styleNode = map(styles, style);
 				Map<String, Object> side = map(styleNode, bis ? "bis" : "yours");
-				if (side == null || !flag(side, "kitBacked")) { continue; }
+				if (side == null || !flag(side, "kitBacked")) continue;
 				double value = num(styleNode, bis ? "bisTabDps" : "tabDps");
 				if (value > bestDps) {
 					bestDps = value;
@@ -327,7 +327,7 @@ public class ResultCards {
 			// style (field ask 2026-08-15) - the card below always
 			// opens on the row's own recommendation.
 			commands.set("lensIndex", index);
-			if (rowStyle != null && !rowStyle.equals(tab)) { commands.set("selectedTab", rowStyle); }
+			if (rowStyle != null && !rowStyle.equals(tab)) commands.set("selectedTab", rowStyle);
 		};
 		onClick(label, pick);
 		JLabel sailTag = null;
@@ -375,7 +375,7 @@ public class ResultCards {
 			public void mouseReleased(MouseEvent e) { maybeShow(e); }
 
 			private void maybeShow(MouseEvent e) {
-				if (!e.isPopupTrigger()) { return; }
+				if (!e.isPopupTrigger()) return;
 				var menu = new JPopupMenu();
 				if (index > 0) {
 					item(menu, "Move up", () -> commands.send("move-mob",
@@ -385,7 +385,7 @@ public class ResultCards {
 					item(menu, "Move down", () -> commands.send("move-mob",
 						Map.of("index", index, "delta", 1)));
 				}
-				if (menu.getComponentCount() > 0) { menu.show(e.getComponent(), e.getX(), e.getY()); }
+				if (menu.getComponentCount() > 0) menu.show(e.getComponent(), e.getX(), e.getY());
 			}
 		};
 		row.addMouseListener(reorder);
@@ -425,7 +425,7 @@ public class ResultCards {
 	/** Whether the mob's pins (slot + id) hold this item in this slot. */
 	private static boolean pinnedOn(List<Map<String, Object>> pins, String slot, int id) {
 		for (Map<String, Object> pin : pins) {
-			if (slot.equals(str(pin, "slot")) && id(pin, "id") == id) { return true; }
+			if (slot.equals(str(pin, "slot")) && id(pin, "id") == id) return true;
 		}
 		return false;
 	}
@@ -433,7 +433,7 @@ public class ResultCards {
 	/** Whether a list of numbers (the mob's required gear) names the id. */
 	private static boolean hasId(List<Object> ids, int id) {
 		for (Object o : ids) {
-			if (o instanceof Number && ((Number) o).intValue() == id) { return true; }
+			if (o instanceof Number && ((Number) o).intValue() == id) return true;
 		}
 		return false;
 	}
@@ -469,7 +469,7 @@ public class ResultCards {
 			title.setMinimumSize(new Dimension(20, 18));
 			titleRow.add(title, BorderLayout.CENTER);
 			JPanel hpSeat = clear(new FlowLayout(FlowLayout.LEFT, 4, 2));
-			if (navalTag != null) { hpSeat.add(navalTag); }
+			if (navalTag != null) hpSeat.add(navalTag);
 			if (mobHp > 0) {
 				// hp rides the header, muted (field ask 2026-08-21).
 				hpSeat.add(small(mobHp + "hp", DIM));
@@ -515,7 +515,7 @@ public class ResultCards {
 				onSprite(shownPrayerSprite, img -> prayerIcon.setIcon(noPrayer
 					? crossedOut(img, 18) : icon(img, 18)));
 			}
-			if (!bis) { onClick(prayerIcon, () -> show(prayerMenu(tab), prayerIcon)); }
+			if (!bis) onClick(prayerIcon, () -> show(prayerMenu(tab), prayerIcon));
 			headerRow.add(prayerIcon);
 			int boostItem = id(assume, "boostItem");
 			var boostIconCell = new JLabel();
@@ -533,20 +533,20 @@ public class ResultCards {
 				boostIconCell.setForeground(DIM);
 				boostIconCell.setHorizontalAlignment(SwingConstants.CENTER);
 			}
-			if (!bis) { onClick(boostIconCell, () -> show(boostMenu(tab), boostIconCell)); }
+			if (!bis) onClick(boostIconCell, () -> show(boostMenu(tab), boostIconCell));
 			headerRow.add(boostIconCell);
 			String antivenom = str(mob, "antivenom");
-			if (antivenom != null && !antivenom.isEmpty()) { headerRow.add(poisonPlate(mob, bis)); }
-			if (flag(mob, "breathesFire")) { headerRow.add(firePlate(bis)); }
+			if (antivenom != null && !antivenom.isEmpty()) headerRow.add(poisonPlate(mob, bis));
+			if (flag(mob, "breathesFire")) headerRow.add(firePlate(bis));
 			String cardSpell = str(shown, "spell");
-			if (cardSpell != null && cardSpell.startsWith("Fire ")) { headerRow.add(sunfirePlate(bis)); }
+			if (cardSpell != null && cardSpell.startsWith("Fire ")) headerRow.add(sunfirePlate(bis));
 		}
 		headerRow.add(bookPlate(shown, mob));
 		card.add(left(headerRow));
 		// The cannon strip rides between the assume row and the gear grid
 		// (Andrew's v2 vision): left cannon / shared ammo / right cannon,
 		// each the boost-rack picker, operators inside the rack.
-		if (naval && !bis && id(pageParams, "cannonCount") > 0) { card.add(left(cannonStrip(ship))); }
+		if (naval && !bis && id(pageParams, "cannonCount") > 0) card.add(left(cannonStrip(ship)));
 		if (shown == null) {
 			// NEVER show the other side in this slot (field bug 2026-08-12:
 			// a missing owned answer silently rendered the BiS set - "gear
@@ -569,7 +569,7 @@ public class ResultCards {
 			}
 			card.add(left(side(shown, bis, thrallsFor(shown, thrallsDps) + shipDps, mob, tab, ship)));
 		}
-		if (naval && ship != null && !list(ship, "cannons").isEmpty()) { card.add(left(shipBreakdown(ship, shown))); }
+		if (naval && ship != null && !list(ship, "cannons").isEmpty()) card.add(left(shipBreakdown(ship, shown)));
 		// The classic style strip sits BELOW the gear view: one tab per
 		// style carrying its icon and that style's shown dps.
 		JPanel tabStrip = styleStrip();
@@ -622,7 +622,7 @@ public class ResultCards {
 					@SuppressWarnings("unchecked")
 					String where = str((Map<String, Object>) slotItem, "source");
 					Color colour = sourceColor(where);
-					if (colour != null) { present.put(where, colour); }
+					if (colour != null) present.put(where, colour);
 				}
 			}
 		}
@@ -705,8 +705,8 @@ public class ResultCards {
 			// - the tooltip collects every reason it rides.
 			Map<Integer, StringBuilder> runeWhy = new LinkedHashMap<>();
 			Map<Integer, String> runeNames = new HashMap<>();
-			for (Map<String, Object> rune : runes) { noteRune(runeNames, runeWhy, rune, "the autocast spell"); }
-			for (Map<String, Object> rune : utilityRunes) { noteRune(runeNames, runeWhy, rune, str(rune, "why")); }
+			for (Map<String, Object> rune : runes) noteRune(runeNames, runeWhy, rune, "the autocast spell");
+			for (Map<String, Object> rune : utilityRunes) noteRune(runeNames, runeWhy, rune, str(rune, "why"));
 			for (var rune : runeWhy.entrySet()) {
 				supplyRow.add(smallItemCell(rune.getKey(),
 					runeNames.get(rune.getKey()) + " - " + rune.getValue()));
@@ -752,7 +752,7 @@ public class ResultCards {
 			"Pinned for this mob", "remove-mob-pin", "pin-for-mob",
 			"Pin an item for this mob"));
 		JButton degrades = degradesButton(mob, shown);
-		if (degrades != null) { trioRow2.add(degrades); }
+		if (degrades != null) trioRow2.add(degrades);
 		card.add(Box.createVerticalStrut(4));
 		// Centred, not left() - field ask 2026-08-20. Two rows (Andrew
 		// 2026-10-22: "so those 5 options aren't all on the same line"):
@@ -766,12 +766,12 @@ public class ResultCards {
 			Map<String, Object> gearMap = map(shown, "gear");
 			if (gearMap != null) {
 				for (Object slotItem : gearMap.values()) {
-					if (slotItem instanceof Map) { ids.add(id((Map<String, Object>) slotItem, "id")); }
+					if (slotItem instanceof Map) ids.add(id((Map<String, Object>) slotItem, "id"));
 				}
 			}
 			Map<String, Object> quiverItem = map(shown, "quiverAmmo");
-			if (quiverItem != null) { ids.add(id(quiverItem, "id")); }
-			for (Map<String, Object> carried : bench) { ids.add(id(carried, "id")); }
+			if (quiverItem != null) ids.add(id(quiverItem, "id"));
+			for (Map<String, Object> carried : bench) ids.add(id(carried, "id"));
 			return Map.of("ids", ids);
 		});
 		showBank.setMargin(new Insets(1, 6, 1, 6));
@@ -782,7 +782,7 @@ public class ResultCards {
 		if (bankPlan != null) {
 			bankRow.add(bankToggle("Filter bank", text("bank.filter.tip"), "bank-filter", () -> {
 				List<Integer> layoutList = new ArrayList<>();
-				for (int pos : (int[]) bankPlan.get("layout")) { layoutList.add(pos); }
+				for (int pos : (int[]) bankPlan.get("layout")) layoutList.add(pos);
 				return Map.of("ids", bankPlan.get("ids"), "layout", layoutList);
 			}));
 		}
@@ -828,7 +828,7 @@ public class ResultCards {
 		JPanel strip = darker(new FlowLayout(FlowLayout.CENTER, 6, 0));
 		strip.add(cannonButton(0, cannonNodes.isEmpty() ? null : cannonNodes.get(0)));
 		strip.add(ammoButton(ship));
-		if (count > 1) { strip.add(cannonButton(1, cannonNodes.size() > 1 ? cannonNodes.get(1) : null)); }
+		if (count > 1) strip.add(cannonButton(1, cannonNodes.size() > 1 ? cannonNodes.get(1) : null));
 		return strip;
 	}
 
@@ -848,7 +848,7 @@ public class ResultCards {
 			t.append(ledgerRow("gear", "manning", "cannon 1", "#bebebe"));
 		} else {
 			t.append(ledgerRow("set", two(set), "", "#bebebe"));
-			if (specDps > 0) { t.append(ledgerRow("+ spec", two(specDps), "", "#bebebe")); }
+			if (specDps > 0) t.append(ledgerRow("+ spec", two(specDps), "", "#bebebe"));
 			total = set + specDps;
 			t.append(ledgerRow("= gear", two(total), "", "#bebebe"));
 		}
@@ -861,7 +861,7 @@ public class ResultCards {
 			t.append(ledgerRow("+ cannon " + i++, blocked != null ? blocked : two(dps),
 				str(cannon, "tier") + ", " + who, blocked != null ? "#dc8c78" : "#96bedc"));
 		}
-		if (!full) { t.setLength(body); }
+		if (!full) t.setLength(body);
 		t.append(ledgerRow("<b>= total</b>", "<b>" + two(total) + "</b>", "", "#82c882"));
 		return t.append("</table></html>").toString();
 	}
@@ -920,7 +920,7 @@ public class ResultCards {
 			menu.add(check("You man this cannon", "you".equals(current),
 				() -> commands.set(opParam, "you")));
 			for (int p = 1; p <= 4; p++) {
-				final String pick = "crew" + p;
+				String pick = "crew" + p;
 				String label = "Crewmate - Privateering " + p
 					+ (p < cannon.privateering ? " (raises to " + cannon.privateering + ")" : "");
 				menu.add(check(label, pick.equals(current),
@@ -952,7 +952,7 @@ public class ResultCards {
 		button.addActionListener(e -> {
 			int count = id(pageParams, "cannonCount");
 			List<String> tiers = new ArrayList<>();
-			for (int i = 0; i < count; i++) { tiers.add(str(pageParams, "cannon" + (i + 1) + "Material")); }
+			for (int i = 0; i < count; i++) tiers.add(str(pageParams, "cannon" + (i + 1) + "Material"));
 			var menu = new JPopupMenu();
 			menu.add(check("Detect best in bank", detect,
 				() -> commands.set("cannonAmmo", "detect")));
@@ -961,8 +961,8 @@ public class ResultCards {
 			for (Ball option
 				: balls()) {
 				boolean everyone = true;
-				for (String t : tiers) { everyone &= canFire(t, option.tier); }
-				if (!everyone) { continue; }
+				for (String t : tiers) everyone &= canFire(t, option.tier);
+				if (!everyone) continue;
 				rack.add(pickCell(menu,
 					new ImageIcon(itemManager.getImage(option.itemId)),
 					cap(option.tier) + " cannonball",
@@ -994,8 +994,8 @@ public class ResultCards {
 					Map<String, Object> args = new HashMap<>();
 					args.put("itemId", id);
 					args.put("label", itemName);
-					if (str(item, "slot") != null) { args.put("slot", str(item, "slot")); }
-					if (scope != null) { args.put("scope", scope); }
+					if (str(item, "slot") != null) args.put("slot", str(item, "slot"));
+					if (scope != null) args.put("scope", scope);
 					commands.send(removeCommand, args);
 				});
 			}
@@ -1120,7 +1120,7 @@ public class ResultCards {
 		if (swapAvailable) {
 			bookTip = bookTip + text("book.choose");
 			plate.setToolTipText("<html>" + bookTip + "</html>");
-			if (swapOn) { plate.setBorder(new RoundedBorder(ACCENT, 2, 6)); }
+			if (swapOn) plate.setBorder(new RoundedBorder(ACCENT, 2, 6));
 			String home = directBook;
 			onClick(plate, () -> showBookMenu(plate, home, swapOn));
 		} else {
@@ -1287,7 +1287,7 @@ public class ResultCards {
 	 * before the load shows it on its next open). */
 	private Icon cachedSprite(int spriteId) {
 		ImageIcon icon = spriteIconCache.get(spriteId);
-		if (icon != null) { return icon; }
+		if (icon != null) return icon;
 		var fresh = new ImageIcon(
 			new BufferedImage(15, 15, BufferedImage.TYPE_INT_ARGB));
 		spriteIconCache.put(spriteId, fresh);
@@ -1319,7 +1319,7 @@ public class ResultCards {
 			return new String[]{String.format("~%.1f", dps), tip};
 		}
 		List<String> missing = new ArrayList<>();
-		for (Object style : list2(incoming, "unmodeled")) { missing.add(String.valueOf(style)); }
+		for (Object style : list2(incoming, "unmodeled")) missing.add(String.valueOf(style));
 		return new String[]{String.format("~%.1f*", dps),
 			tip + ". Not counted: " + String.join(", ", missing)};
 	}
@@ -1363,8 +1363,8 @@ public class ResultCards {
 			up = more.subList((page - 1) * PAGE, min(page * PAGE, more.size()));
 		}
 		double maxGain = 1e-9;
-		for (Map<String, Object> rung : down) { maxGain = max(maxGain, abs(num(rung, "gain"))); }
-		for (Map<String, Object> rung : up) { maxGain = max(maxGain, abs(num(rung, "gain"))); }
+		for (Map<String, Object> rung : down) maxGain = max(maxGain, abs(num(rung, "gain")));
+		for (Map<String, Object> rung : up) maxGain = max(maxGain, abs(num(rung, "gain")));
 		boolean group = flag(ladder, "group");
 		// No gaps between columns, so the bars' baselines join into one line.
 		JPanel row = clear(new FlowLayout(FlowLayout.CENTER, 0, 0));
@@ -1379,13 +1379,13 @@ public class ResultCards {
 			// (ISS-01M5PE4TZXTGJAQA1YXNRKPEDW, Andrew 2026-10-24: "id like to see
 			// what a trident or toxic trident compares to the purging staff").
 			List<Map<String, Object>> all = list(ladder, "all");
-			if (!all.isEmpty()) { wornColumn.setComponentPopupMenu(allWeaponsMenu(all, group)); }
+			if (!all.isEmpty()) wornColumn.setComponentPopupMenu(allWeaponsMenu(all, group));
 			row.add(wornColumn);
 		}
 		for (Map<String, Object> rung : up) {
 			row.add(ladderColumn(rung, slot, maxGain, LADDER_UP, nerAvailable, group));
 		}
-		if (page < pages) { row.add(pager("ladder-more", ">", "More steps up", page + 1)); }
+		if (page < pages) row.add(pager("ladder-more", ">", "More steps up", page + 1));
 
 		JPanel strip = new RoundPanel(LADDER_INSET, 8);
 		strip.setLayout(new BoxLayout(strip, BoxLayout.Y_AXIS));
@@ -1462,7 +1462,7 @@ public class ResultCards {
 			public Dimension minimumLayoutSize(Container parent) { return preferredLayoutSize(parent); }
 
 			public void layoutContainer(Container parent) {
-				if (parent.getComponentCount() == 0) { return; }
+				if (parent.getComponentCount() == 0) return;
 				Component child = parent.getComponent(0);
 				Dimension size = child.getPreferredSize();
 				Insets in = parent.getInsets();
@@ -1626,7 +1626,7 @@ public class ResultCards {
 			// exclusion, listed and undone from the - list like any other, so
 			// the optimizer leaves the item out too. A group strip hides
 			// everywhere only: "this mob" would be one member of many.
-			if (menu.getComponentCount() > 0) { menu.addSeparator(); }
+			if (menu.getComponentCount() > 0) menu.addSeparator();
 			if (!group) {
 				item(menu, "Hide for this mob",
 					String.format(text("ladder.hide.mob"), name),
@@ -1650,7 +1650,7 @@ public class ResultCards {
 
 		JPanel column = worn ? new RoundPanel(LADDER_WORN_BG, 8) : new JPanel();
 		column.setOpaque(false);
-		if (worn) { column.setName("worn-mark"); }
+		if (worn) column.setName("worn-mark");
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
 		column.setBorder(createEmptyBorder(0, 0, 2, 0));
 		for (JComponent part : label2 == null ? new JComponent[]{bars, cell, label}
@@ -1670,7 +1670,7 @@ public class ResultCards {
 
 	/** The strip's narrow label: the number only ("+0.21", "4.20"). */
 	private static String shortDelta(String delta) {
-		if (delta == null) { return ""; }
+		if (delta == null) return "";
 		java.util.regex.Matcher m = java.util.regex.Pattern.compile("[+-]?[0-9.]+%?").matcher(delta);
 		return m.find() ? m.group() : delta;
 	}
@@ -1687,10 +1687,10 @@ public class ResultCards {
 	/** The defensive mode's trade in words (the line's tooltip): the DPS
 	 * given up and the damage taken cut, or why it kept Max DPS. */
 	static String modeLine(Map<String, Object> trade) {
-		if (trade == null) { return null; }
+		if (trade == null) return null;
 		String mode = "TANKY".equals(str(trade, "mode")) ? "Tanky" : "Balanced";
 		String reason = str(trade, "reason");
-		if (reason != null) { return mode + ": kept Max DPS (" + reason + ")"; }
+		if (reason != null) return mode + ": kept Max DPS (" + reason + ")";
 		return mode + ": -" + id(trade, "dpsLossPct") + "% DPS, -"
 			+ id(trade, "dmgCutPct") + "% damage taken";
 	}
@@ -1739,7 +1739,7 @@ public class ResultCards {
 
 	/** Seats a game sprite on the label once it loads (size 0 = as drawn). */
 	private void seatSprite(JLabel target, int sprite, int size) {
-		if (sprite > 0) { onSprite(sprite, img -> target.setIcon(size > 0 ? icon(img, size) : new ImageIcon(img))); }
+		if (sprite > 0) onSprite(sprite, img -> target.setIcon(size > 0 ? icon(img, size) : new ImageIcon(img)));
 	}
 
 	/** The async-sprite contract: the paint runs on the EDT once the
@@ -1849,7 +1849,7 @@ public class ResultCards {
 	/** The first row of the given category, or null. */
 	private static Map<String, Object> byCategory(List<Map<String, Object>> rows, String category) {
 		for (Map<String, Object> row : rows) {
-			if (category.equals(str(row, "category"))) { return row; }
+			if (category.equals(str(row, "category"))) return row;
 		}
 		return null;
 	}
@@ -1905,7 +1905,7 @@ public class ResultCards {
 		var label = new JLabel(name);
 		label.setFont(label.getFont().deriveFont(Font.BOLD, label.getFont().getSize() - 1f));
 		String boost = str(node, "boostLabel");
-		if (boost != null) { label.setToolTipText("Assumes: " + boost); }
+		if (boost != null) label.setToolTipText("Assumes: " + boost);
 		return label;
 	}
 
@@ -2062,7 +2062,7 @@ public class ResultCards {
 				str(internalAmmo, "name"), text("dart.tip"), TEXT);
 			Set<Integer> excludedIds = new HashSet<>();
 			Map<String, Object> pageCounts = map(pageWide, "counts");
-			for (Map<String, Object> ex : list(pageCounts, "excludedItems")) { excludedIds.add(id(ex, "id")); }
+			for (Map<String, Object> ex : list(pageCounts, "excludedItems")) excludedIds.add(id(ex, "id"));
 			int loadedId = id(internalAmmo, "id");
 			var dartMenu = new JPopupMenu();
 			for (Map<String, Object> tier : list(pageWide, "dartTiers")) {
@@ -2121,7 +2121,7 @@ public class ResultCards {
 			// The line LOOKS like its clickable neighbours, so it answers a
 			// click with the same table the hover shows (field report
 			// 2026-08-31: "clicking the stats button doesn't do anything").
-			final String statsHtml = fullBonuses;
+			String statsHtml = fullBonuses;
 			onClick(statsLine, () -> {
 				var pop = new JPopupMenu();
 				var body = new JLabel(statsHtml);
@@ -2234,9 +2234,9 @@ public class ResultCards {
 	}
 
 	private static Color sourceColor(String source) {
-		if (source == null) { return null; }
+		if (source == null) return null;
 		for (var entry : SOURCE_COLORS.entrySet()) {
-			if (source.startsWith(entry.getKey())) { return entry.getValue(); }
+			if (source.startsWith(entry.getKey())) return entry.getValue();
 		}
 		return null;
 	}

@@ -79,7 +79,7 @@ public final class MonsterStats {
 		// lowercase once instead of per query.
 		var lower = new HashSet<String>();
 		for (String value : this.attributes) {
-			if (value != null) { lower.add(Names.lower(value)); }
+			if (value != null) lower.add(Names.lower(value));
 		}
 		this.attributesLower = lower;
 		this.vampyreTier = lower.contains("vampyre3") ? 3 : lower.contains("vampyre2") ? 2 : lower.contains("vampyre1") ? 1 : 0;
@@ -161,7 +161,7 @@ public final class MonsterStats {
 	 * level already matches. */
 	public MonsterStats withToaInvocation(int level) {
 		int clamped = Math.max(0, level);
-		if (clamped == toaInvocationLevel) { return this; }
+		if (clamped == toaInvocationLevel) return this;
 		MonsterStats copy = withVersion(version);
 		copy.toaInvocationLevel = clamped;
 		return copy;
@@ -225,7 +225,7 @@ public final class MonsterStats {
 	public static String normalizeQuery(String text) {
 		var sb = new StringBuilder(text.length());
 		for (char c : Names.lower(text).toCharArray()) {
-			if (Character.isLetterOrDigit(c) || c == ' ') { sb.append(c); }
+			if (Character.isLetterOrDigit(c) || c == ' ') sb.append(c);
 		}
 		return sb.toString();
 	}

@@ -45,7 +45,7 @@ public final class PlayerProfile {
 		// off-thread while the client keeps mutating the live snapshots.
 		var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
 		if (ownedBySource != null) {
-			for (var e : ownedBySource.entrySet()) { copy.put(e.getKey(), Map.copyOf(e.getValue())); }
+			for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
 		}
 		this.ownedBySource = Collections.unmodifiableMap(copy);
 	}
@@ -71,7 +71,7 @@ public final class PlayerProfile {
 		var reqs = new JsonObject();
 		reqs.add("skills", reqSkills);
 		com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
-		for (String quest : requirements.getCompletedQuests()) { quests.add(quest); }
+		for (String quest : requirements.getCompletedQuests()) quests.add(quest);
 		reqs.add("quests", quests);
 		root.add("requirements", reqs);
 		root.add("owned", items(owned));
@@ -93,7 +93,7 @@ public final class PlayerProfile {
 
 	private static Map<Integer, Integer> parseItems(JsonObject object) {
 		Map<Integer, Integer> out = new HashMap<>();
-		for (var entry : object.entrySet()) { out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt()); }
+		for (var entry : object.entrySet()) out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
 		return out;
 	}
 

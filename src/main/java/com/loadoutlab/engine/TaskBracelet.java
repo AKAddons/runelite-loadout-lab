@@ -35,7 +35,7 @@ public enum TaskBracelet {
 		for (CombatStyle style : CombatStyle.concreteValues()) {
 			var mine = new EnumMap<GearSlot, Integer>(GearSlot.class);
 			Map<GearSlot, Integer> had = pins.get(style);
-			if (had != null) { mine.putAll(had); }
+			if (had != null) mine.putAll(had);
 			mine.putIfAbsent(GearSlot.HANDS, choice.itemId);
 			out.put(style, mine);
 		}

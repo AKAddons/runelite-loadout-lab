@@ -36,7 +36,7 @@ public final class StoragesApi {
 	/** The validated requester name from a storages-request payload,
 	 * or null when the request carries no usable source. */
 	public static String requester(Map<String, Object> data) {
-		if (data == null) { return null; }
+		if (data == null) return null;
 		Object source = data.get("source");
 		return source instanceof String && !((String) source).isEmpty() ? (String) source : null;
 	}
@@ -51,10 +51,10 @@ public final class StoragesApi {
 		Map<Integer, Integer> items, IntUnaryOperator canonicalize) {
 		Map<Integer, Long> canonical = new LinkedHashMap<>();
 		for (var e : items.entrySet()) {
-			if (e.getKey() <= 0 || e.getValue() <= 0) { continue; }
+			if (e.getKey() <= 0 || e.getValue() <= 0) continue;
 			canonical.merge(canonicalize.applyAsInt(e.getKey()), (long) e.getValue(), Long::sum);
 		}
-		if (canonical.isEmpty()) { return null; }
+		if (canonical.isEmpty()) return null;
 		List<Map<String, Object>> itemList = new ArrayList<>(canonical.size());
 		for (var e : canonical.entrySet()) {
 			itemList.add(JsonResources.map("id", e.getKey(), "quantity", e.getValue()));

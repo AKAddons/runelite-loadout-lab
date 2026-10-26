@@ -11,15 +11,15 @@ public final class RollMath {
 	public static double normalAccuracy(long attackRoll, long defenceRoll) {
 		double atk = attackRoll;
 		double def = defenceRoll;
-		if (atk < 0) { atk = min(0, atk + 2); }
-		if (def < 0) { def = min(0, def + 2); }
+		if (atk < 0) atk = min(0, atk + 2);
+		if (def < 0) def = min(0, def + 2);
 		if (atk >= 0 && def >= 0) {
 			return atk > def
 				? 1.0 - ((def + 2.0) / (2.0 * (atk + 1.0)))
 				: atk / (2.0 * (def + 1.0));
 		}
-		if (atk >= 0) { return 1.0 - 1.0 / ((-def + 1.0) * (atk + 1.0)); }
-		if (def >= 0) { return 0.0; }
+		if (atk >= 0) return 1.0 - 1.0 / ((-def + 1.0) * (atk + 1.0));
+		if (def >= 0) return 0.0;
 		double swappedAtk = -def;
 		double swappedDef = -atk;
 		return swappedAtk > swappedDef
@@ -44,7 +44,7 @@ public final class RollMath {
 	}
 
 	public static double normalExpectedHit(double accuracy, int maxHit) {
-		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
+		if (maxHit <= 0 || accuracy <= 0.0) return 0.0;
 		return accuracy * (maxHit / 2.0 + 1.0 / (maxHit + 1.0));
 	}
 
@@ -53,7 +53,7 @@ public final class RollMath {
 	 * the whole arrow is worth 1 + 2 x E(floor(2m/3)) / E(m) single hits
 	 * (accuracy cancels). One target: 1. */
 	public static double venatorFactor(int maxHit) {
-		if (maxHit <= 0) { return 1.0; }
+		if (maxHit <= 0) return 1.0;
 		return 1.0 + 2.0 * normalExpectedHit(1.0, maxHit * 2 / 3) / normalExpectedHit(1.0, maxHit);
 	}
 
@@ -76,7 +76,7 @@ public final class RollMath {
 			// of the normal expectation keeps the bump AND the shift.
 			return expectedHit(accuracy, minHit, maxHit) + accuracy * -armour;
 		}
-		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
+		if (maxHit <= 0 || accuracy <= 0.0) return 0.0;
 		int lo = max(0, min(minHit, maxHit));
 		// sum(max(0, k - armour)) over k in [lo, maxHit], closed form: the
 		// rolls at or under the armour contribute nothing, the rest are a
@@ -92,7 +92,7 @@ public final class RollMath {
 	 * Lunge): P(best = v) weights each roll's damage under the same flat
 	 * armour rule as expectedHitWithFlatArmour; best of one is that hit. */
 	public static double bestOfExpected(double accuracy, int maxHit, int rolls, int armour) {
-		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
+		if (maxHit <= 0 || accuracy <= 0.0) return 0.0;
 		double total = 0;
 		double below = 0;
 		for (int v = 0; v <= maxHit; v++) {
@@ -107,8 +107,8 @@ public final class RollMath {
 	private static long triangle(long n) { return n <= 0 ? 0 : n * (n + 1) / 2; }
 
 	public static double expectedHit(double accuracy, int minHit, int maxHit) {
-		if (maxHit <= 0 || accuracy <= 0.0) { return 0.0; }
-		if (minHit <= 0) { return normalExpectedHit(accuracy, maxHit); }
+		if (maxHit <= 0 || accuracy <= 0.0) return 0.0;
+		if (minHit <= 0) return normalExpectedHit(accuracy, maxHit);
 		int minimum = min(minHit, maxHit);
 		return accuracy * ((minimum + maxHit) / 2.0);
 	}
@@ -127,15 +127,15 @@ public final class RollMath {
 	public static double fangAccuracy(long attackRoll, long defenceRoll) {
 		double atk = attackRoll;
 		double def = defenceRoll;
-		if (atk < 0) { atk = min(0, atk + 2); }
-		if (def < 0) { def = min(0, def + 2); }
+		if (atk < 0) atk = min(0, atk + 2);
+		if (def < 0) def = min(0, def + 2);
 		if (atk >= 0 && def >= 0) {
 			return atk > def
 				? 1.0 - (def + 2.0) * (2.0 * def + 3.0) / (atk + 1.0) / (atk + 1.0) / 6.0
 				: atk * (4.0 * atk + 5.0) / 6.0 / (atk + 1.0) / (def + 1.0);
 		}
-		if (atk >= 0) { return 1.0 - 1.0 / (-def + 1.0) / (atk + 1.0); }
-		if (def >= 0) { return 0.0; }
+		if (atk >= 0) return 1.0 - 1.0 / (-def + 1.0) / (atk + 1.0);
+		if (def >= 0) return 0.0;
 		double reversedAttack = -def;
 		double reversedDefence = -atk;
 		return reversedAttack < reversedDefence

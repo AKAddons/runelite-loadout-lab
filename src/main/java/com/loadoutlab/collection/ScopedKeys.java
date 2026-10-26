@@ -43,10 +43,10 @@ final class ScopedKeys {
 	 * scoped key without its prefix. */
 	static String adopt(ConfigManager configManager, String group, String key, String legacyKey) {
 		String json = configManager.getConfiguration(group, key);
-		if (json != null && !json.isEmpty()) { return json; }
-		if (key.equals(legacyKey)) { return null; }
+		if (json != null && !json.isEmpty()) return json;
+		if (key.equals(legacyKey)) return null;
 		String legacy = configManager.getConfiguration(group, legacyKey);
-		if (legacy == null || legacy.isEmpty()) { return null; }
+		if (legacy == null || legacy.isEmpty()) return null;
 		// A move, not a copy: the second character must find nothing here.
 		configManager.setConfiguration(group, key, legacy);
 		configManager.unsetConfiguration(group, legacyKey);

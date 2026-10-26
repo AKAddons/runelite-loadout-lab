@@ -22,7 +22,7 @@ public final class Degradable {
 	public static Set<Integer> ids(LoadoutData data) {
 		Set<Integer> ids = new HashSet<>();
 		data.getGearItems().forEach(item -> {
-			if (matches(item.getNameLower())) { ids.add(item.getId()); }
+			if (matches(item.getNameLower())) ids.add(item.getId());
 		});
 		return ids;
 	}

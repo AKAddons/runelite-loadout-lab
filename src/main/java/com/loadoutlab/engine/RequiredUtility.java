@@ -38,7 +38,7 @@ public final class RequiredUtility {
 
 	public static boolean hasRecoil(Loadout loadout) {
 		for (GearItem item : loadout.getGear().values()) {
-			if (item != null && RECOIL_ACCESS.containsKey(item.getId())) { return true; }
+			if (item != null && RECOIL_ACCESS.containsKey(item.getId())) return true;
 		}
 		return false;
 	}
@@ -56,7 +56,7 @@ public final class RequiredUtility {
 				|| request.getOwnedItems().owns(entry.getKey())
 				|| request.getOwnedItems().owns(entry.getValue())
 				|| request.isDream(entry.getKey());
-			if (accessible) { result.add(item); }
+			if (accessible) result.add(item);
 		}
 		return result;
 	}

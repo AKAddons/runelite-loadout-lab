@@ -82,7 +82,7 @@ public final class RenderModel {
 			try {
 				node.put("styles", styles(perMob.get(i), riskKeptSlots, owned, simmed));
 				Map<String, Object> multi = multi(perMob.get(i), riskKeptSlots, owned, simmed);
-				if (multi != null) { node.put("multi", multi); }
+				if (multi != null) node.put("multi", multi);
 			} finally {
 				MOB.remove();
 			}
@@ -112,7 +112,7 @@ public final class RenderModel {
 		Map<String, Object> styles = new LinkedHashMap<>();
 		for (CombatStyle style : CombatStyle.concreteValues()) {
 			StyleResult result = results == null ? null : results.get(style);
-			if (result == null) { continue; }
+			if (result == null) continue;
 			styles.put(style.name().toLowerCase(), styleNode(style, result, riskKeptSlots, owned, simmed));
 		}
 		return styles;
@@ -124,9 +124,9 @@ public final class RenderModel {
 		int riskKeptSlots, IntPredicate owned, Set<Integer> simmed) {
 		Map<String, StyleResult> tools = null;
 		for (StyleResult r : results == null ? List.<StyleResult>of() : results.values()) {
-			if (r != null && r.multiTools != null) { tools = r.multiTools; }
+			if (r != null && r.multiTools != null) tools = r.multiTools;
 		}
-		if (tools == null) { return null; }
+		if (tools == null) return null;
 		Map<String, Object> out = new LinkedHashMap<>();
 		for (MultiTool tool : MultiTool.values()) {
 			StyleResult r = tools.get(tool.key);
@@ -174,15 +174,15 @@ public final class RenderModel {
 		Map<String, Object> node = map("base", ladder.mode == OptimizeMode.TANKY
 			? String.format("%.2f taken/s", ladder.baseDtps)
 			: String.format("%.2f DPS", base));
-		if (own) { node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps)); }
+		if (own) node.put("groupBase", String.format("group %.2f DPS", ladder.baseDps));
 		// Balanced weighs both, so it shows both (Andrew 2026-10-22: "show
 		// in the ladder view both the dps gain and the dtps change").
-		if (ladder.mode == OptimizeMode.BALANCED) { node.put("base2", String.format("%.2f taken/s", ladder.baseDtps)); }
+		if (ladder.mode == OptimizeMode.BALANCED) node.put("base2", String.format("%.2f taken/s", ladder.baseDtps));
 		Integer at = own ? mob : null;
 		node.putAll(map("group", ladder.group, "up", rungs(ladder, ladder.up, at), "down", rungs(ladder, ladder.down, at)));
 		// The steps past the strip, for its "more" pages (ISS-01M5QD7PNMCMNRZD92RPRMHWRP).
-		if (!ladder.upMore.isEmpty()) { node.put("upMore", rungs(ladder, ladder.upMore, at)); }
-		if (!ladder.downMore.isEmpty()) { node.put("downMore", rungs(ladder, ladder.downMore, at)); }
+		if (!ladder.upMore.isEmpty()) node.put("upMore", rungs(ladder, ladder.upMore, at));
+		if (!ladder.downMore.isEmpty()) node.put("downMore", rungs(ladder, ladder.downMore, at));
 		if (ladder.all != null) {
 			// Every option the strip could show, best first (the "All weapons" list).
 			List<Object> all = new ArrayList<>();
@@ -197,8 +197,8 @@ public final class RenderModel {
 			// The magic weapon slot's two strips (ISS-01M5PKSQBAP823XNC13QBW8830):
 			// powered staves and autocast staves, each a ladder of its own.
 			Map<String, Object> kinds = new LinkedHashMap<>();
-			if (ladder.powered != null) { kinds.put("powered", ladderNode(ladder.powered, mob)); }
-			if (ladder.autocast != null) { kinds.put("autocast", ladderNode(ladder.autocast, mob)); }
+			if (ladder.powered != null) kinds.put("powered", ladderNode(ladder.powered, mob));
+			if (ladder.autocast != null) kinds.put("autocast", ladderNode(ladder.autocast, mob));
 			node.put("kinds", kinds);
 		}
 		return node;
@@ -228,7 +228,7 @@ public final class RenderModel {
 			Map<String, Object> node = map("id", rung.item.getId(), "name", rung.item.getName(),
 				"owned", rung.owned, "price", rung.item.getPriceOrZero(),
 				"delta", own ? String.format("%+.2f DPS", dps - base) : ladderDelta(ladder, rung));
-			if (own) { node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps)); }
+			if (own) node.put("groupDelta", String.format("group %+.2f DPS", rung.dps - ladder.baseDps));
 			if (ladder.mode == OptimizeMode.BALANCED) {
 				node.put("delta2", String.format("%+.2f taken/s", rung.dtps - ladder.baseDtps));
 			}
@@ -261,7 +261,7 @@ public final class RenderModel {
 	static Map<String, Object> card(StyleResult result, boolean bis, int riskKeptSlots,
 		IntPredicate owned, Set<Integer> simmed) {
 		DpsResult shown = shown(result, bis);
-		if (shown == null) { return null; }
+		if (shown == null) return null;
 		Map<String, Object> card = map("dps", shown.getDps(), "maxHit", shown.getMaxHit(),
 			"accuracy", shown.getAccuracy());
 		// The blowpipe's loaded dart rides the attackType STRING
@@ -304,10 +304,10 @@ public final class RenderModel {
 					// Only FETCH-TRIP storages carry a dot (the classic
 					// rule: at-hand gear stays unmarked).
 					String where = locationOf.apply(item.getId());
-					if (where != null && !where.isEmpty()) { node.put("source", where); }
+					if (where != null && !where.isEmpty()) node.put("source", where);
 				}
 				Ladder ladder = bis ? null : result.ladder.get(slot);
-				if (ladder != null) { node.put("ladder", ladderNode(ladder)); }
+				if (ladder != null) node.put("ladder", ladderNode(ladder));
 				gear.put(slot.name().toLowerCase(), node);
 			}
 		}
@@ -344,12 +344,12 @@ public final class RenderModel {
 			card.put("risk", map("riskGp", risk.riskGp, "kept", labels(risk.kept), "lost", labels(risk.lost)));
 			// Per-cell fate (the classic risk dots): kept / dropped.
 			for (Object slotNode : gear.values()) {
-				if (!(slotNode instanceof Map)) { continue; }
+				if (!(slotNode instanceof Map)) continue;
 				@SuppressWarnings("unchecked")
 				Map<String, Object> node = (Map<String, Object>) slotNode;
 				int id = ((Number) node.get("id")).intValue();
 				for (GearItem k : risk.kept) {
-					if (k.getId() == id) { node.put("fate", "kept"); }
+					if (k.getId() == id) node.put("fate", "kept");
 				}
 				for (GearItem l : risk.lost) {
 					if (l.getId() == id) {
@@ -365,7 +365,7 @@ public final class RenderModel {
 	/** The items' labels, for the risk node's kept/lost lists. */
 	private static List<Object> labels(List<GearItem> items) {
 		List<Object> out = new ArrayList<>();
-		for (GearItem item : items) { out.add(item.label()); }
+		for (GearItem item : items) out.add(item.label());
 		return out;
 	}
 
@@ -422,7 +422,7 @@ public final class RenderModel {
 
 	private static Map<String, Object> spec(StyleResult result, boolean bis) {
 		GearItem weapon = bis ? result.gameSpecWeapon : result.specWeapon;
-		if (weapon == null) { return null; }
+		if (weapon == null) return null;
 		Map<String, Object> weaponNode = item(weapon);
 		// The spec cell's swaps strip (ISS-01M5HCS725N7XVVBC7CMK6Y43A).
 		if (!bis && result.specLadder != null && weaponNode != null) {
@@ -433,7 +433,7 @@ public final class RenderModel {
 	}
 
 	private static Map<String, Object> incoming(Result incoming) {
-		if (incoming == null) { return null; }
+		if (incoming == null) return null;
 		List<Object> threats = new ArrayList<>();
 		for (StyleThreat threat : incoming.threats) {
 			threats.add(map("style", threat.style, "dps", threat.dps, "maxHit", threat.maxHit,
@@ -450,15 +450,15 @@ public final class RenderModel {
 	private static List<Object> items(List<GearItem> items) {
 		List<Object> nodes = new ArrayList<>();
 		if (items != null) {
-			for (GearItem item : items) { nodes.add(item(item)); }
+			for (GearItem item : items) nodes.add(item(item));
 		}
 		return nodes;
 	}
 
 	private static Map<String, Object> item(GearItem item) {
-		if (item == null) { return null; }
+		if (item == null) return null;
 		Map<String, Object> node = map("id", item.getId(), "name", item.label());
-		if (Degradable.matches(item.getNameLower())) { node.put("degrades", true); }
+		if (Degradable.matches(item.getNameLower())) node.put("degrades", true);
 		node.put("price", item.getPriceOrZero());
 		return node;
 	}

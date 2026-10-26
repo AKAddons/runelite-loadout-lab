@@ -111,7 +111,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 			// 2026-10-14 every write keyed the lensed card's raw id) fold
 			// into the real monster's profile; its own entry wins.
 			stored.forEach((id, profile) -> {
-				if (id < MonsterStats.SYNTHETIC_ID_BASE) { profiles.put(id, profile); }
+				if (id < MonsterStats.SYNTHETIC_ID_BASE) profiles.put(id, profile);
 			});
 			stored.forEach((id, profile) -> profiles.putIfAbsent(MonsterStats.profileIdOf(id), profile));
 		}
@@ -138,11 +138,11 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	/** A scoped field for the manage menus: scope -> the copied inner
 	 * collection, the empties dropped (the copy says null); Map.of() for none. */
 	private static <V, W> Map<String, W> byScope(Map<String, V> scoped, Function<V, W> copy) {
-		if (scoped == null || scoped.isEmpty()) { return Map.of(); }
+		if (scoped == null || scoped.isEmpty()) return Map.of();
 		Map<String, W> out = new LinkedHashMap<>();
 		scoped.forEach((scope, value) -> {
 			W copied = value == null ? null : copy.apply(value);
-			if (copied != null) { out.put(scope, copied); }
+			if (copied != null) out.put(scope, copied);
 		});
 		return Collections.unmodifiableMap(out);
 	}
@@ -157,7 +157,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	}
 
 	private static void copyPins(Map<String, Integer> from, EnumMap<GearSlot, Integer> into) {
-		if (from == null) { return; }
+		if (from == null) return;
 		for (var entry : from.entrySet()) {
 			try {
 				into.put(GearSlot.valueOf(entry.getKey()), entry.getValue());
@@ -178,7 +178,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void pin(int monsterId, String scope, GearSlot slot, int itemId) {
 		Stored profile = stored(monsterId);
-		if (profile.pins == null) { profile.pins = new LinkedHashMap<>(); }
+		if (profile.pins == null) profile.pins = new LinkedHashMap<>();
 		profile.pins.computeIfAbsent(scope, s -> new LinkedHashMap<>())
 			.put(slot.name(), itemId);
 		save();
@@ -230,12 +230,12 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 	 * scope. The caller unions in the global exclusion list. */
 	public synchronized Set<Integer> exclusionsFor(int monsterId, String style) {
 		Stored profile = get(monsterId);
-		if (profile == null) { return Set.of(); }
+		if (profile == null) return Set.of();
 		var merged = new LinkedHashSet<Integer>();
-		if (Boolean.TRUE.equals(profile.skipDegradable)) { merged.addAll(degradableIds); }
+		if (Boolean.TRUE.equals(profile.skipDegradable)) merged.addAll(degradableIds);
 		for (String scope : new String[]{ALL, style}) {
 			Set<Integer> ids = profile.exclusions == null ? null : profile.exclusions.get(scope);
-			if (ids != null) { merged.addAll(ids); }
+			if (ids != null) merged.addAll(ids);
 		}
 		return merged.isEmpty() ? Set.of() : Collections.unmodifiableSet(merged);
 	}
@@ -256,7 +256,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void addSim(int monsterId, int itemId, String name) {
 		Stored profile = stored(monsterId);
-		if (profile.sims == null) { profile.sims = new LinkedHashMap<>(); }
+		if (profile.sims == null) profile.sims = new LinkedHashMap<>();
 		profile.sims.put(itemId, name == null ? ("item " + itemId) : name);
 		save();
 	}
@@ -287,14 +287,14 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 			return;
 		}
 		Stored profile = stored(monsterId);
-		if (profile.supplies == null) { profile.supplies = new LinkedHashMap<>(); }
+		if (profile.supplies == null) profile.supplies = new LinkedHashMap<>();
 		profile.supplies.put(category, choice);
 		save();
 	}
 
 	public synchronized void exclude(int monsterId, String scope, int itemId) {
 		Stored profile = stored(monsterId);
-		if (profile.exclusions == null) { profile.exclusions = new LinkedHashMap<>(); }
+		if (profile.exclusions == null) profile.exclusions = new LinkedHashMap<>();
 		profile.exclusions.computeIfAbsent(scope, s -> new LinkedHashSet<>()).add(itemId);
 		save();
 	}
@@ -309,7 +309,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 
 	public synchronized void addFilterItem(int monsterId, String scope, int itemId, String name) {
 		Stored profile = stored(monsterId);
-		if (profile.filterItems == null) { profile.filterItems = new LinkedHashMap<>(); }
+		if (profile.filterItems == null) profile.filterItems = new LinkedHashMap<>();
 		profile.filterItems.computeIfAbsent(scope, s -> new LinkedHashMap<>())
 			.put(itemId, name == null ? ("item " + itemId) : name);
 		save();
@@ -329,7 +329,7 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 			Stored profile = entry.getValue();
 			prune(profile.pins);
 			prune(profile.filterItems);
-			if (profile.exclusions != null) { profile.exclusions.values().removeIf(s -> s == null || s.isEmpty()); }
+			if (profile.exclusions != null) profile.exclusions.values().removeIf(s -> s == null || s.isEmpty());
 			// EVERY field participates (field bug 2026-07-18: sims was
 			// missing here, so a sims-only profile was judged empty and the
 			// retainAll below erased the sim in the same call that added it
@@ -339,13 +339,13 @@ public class MonsterProfileStore implements com.loadoutlab.model.CommandEngine.M
 				&& (profile.note == null || profile.note.isEmpty())
 				&& (profile.spell == null || profile.spell.isEmpty())
 				&& profile.spec == null && profile.skipDegradable == null;
-			if (!empty) { out.put(entry.getKey(), profile); }
+			if (!empty) out.put(entry.getKey(), profile);
 		}
 		profiles.keySet().retainAll(out.keySet());
 		configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(out));
 	}
 
 	private static void prune(Map<String, ? extends Map<?, ?>> scoped) {
-		if (scoped != null) { scoped.values().removeIf(m -> m == null || m.isEmpty()); }
+		if (scoped != null) scoped.values().removeIf(m -> m == null || m.isEmpty());
 	}
 }

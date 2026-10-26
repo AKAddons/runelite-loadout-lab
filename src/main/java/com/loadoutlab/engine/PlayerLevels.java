@@ -37,7 +37,7 @@ public final class PlayerLevels {
 	}
 
 	public static PlayerLevels from(RequirementProfile profile) {
-		if (profile == null) { return MAXED; }
+		if (profile == null) return MAXED;
 		return new PlayerLevels(
 			profile.level(ATTACK),
 			profile.level(STRENGTH),
@@ -49,7 +49,7 @@ public final class PlayerLevels {
 	}
 
 	public static PlayerLevels from(Map<Skill, Integer> levels) {
-		if (levels == null || levels.isEmpty()) { return MAXED; }
+		if (levels == null || levels.isEmpty()) return MAXED;
 		return new PlayerLevels(
 			levels.getOrDefault(ATTACK, 1),
 			levels.getOrDefault(STRENGTH, 1),
@@ -75,17 +75,17 @@ public final class PlayerLevels {
 	 * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 =
 	 * yours): the stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY). */
 	public PlayerLevels overridden(int[] sims) {
-		if (sims == null || sims.length < 7) { return this; }
+		if (sims == null || sims.length < 7) return this;
 		int[] mine = {attack, strength, defence, ranged, magic, prayer, hitpoints};
 		for (int i = 0; i < mine.length; i++) {
-			if (sims[i] > 0) { mine[i] = sims[i]; }
+			if (sims[i] > 0) mine[i] = sims[i];
 		}
 		return new PlayerLevels(mine[0], mine[1], mine[2], mine[3], mine[4], mine[5], mine[6]);
 	}
 
 	/** Element-wise max - never assume a boost below what is already live. */
 	public PlayerLevels max(PlayerLevels other) {
-		if (other == null) { return this; }
+		if (other == null) return this;
 		return new PlayerLevels(
 			Math.max(attack, other.attack),
 			Math.max(strength, other.strength),

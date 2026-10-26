@@ -47,7 +47,7 @@ public final class WeaponStyles {
 	private static Map<String, List<MeleeStyle>> load() {
 		Map<String, List<MeleeStyle>> table = new HashMap<>();
 		JsonObject root = JsonResources.object(RESOURCE);
-		if (root == null) { return table; }
+		if (root == null) return table;
 		for (var entry : root.entrySet()) {
 			List<MeleeStyle> styles = new ArrayList<>();
 			for (JsonElement element : entry.getValue().getAsJsonArray()) {

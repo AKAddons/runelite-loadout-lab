@@ -43,10 +43,10 @@ public class CommandHistory {
 	 * @return whatever {@link Command#apply()} returned
 	 */
 	public boolean execute(Command cmd) {
-		if (!attempt(cmd, true, "apply")) { return false; }
+		if (!attempt(cmd, true, "apply")) return false;
 		undoStack.push(cmd);
 		redoStack.clear();
-		while (undoStack.size() > CAP) { undoStack.pollLast(); }
+		while (undoStack.size() > CAP) undoStack.pollLast();
 		return true;
 	}
 
@@ -68,9 +68,9 @@ public class CommandHistory {
 	/** Pop from one stack, run the command, push onto the other; a refusal
 	 * or a throw drops the entry (fail-open). */
 	private static boolean move(Deque<Command> from, Deque<Command> to, boolean apply, String verb) {
-		if (from.isEmpty()) { return false; }
+		if (from.isEmpty()) return false;
 		Command cmd = from.pop();
-		if (!attempt(cmd, apply, verb)) { return false; }
+		if (!attempt(cmd, apply, verb)) return false;
 		to.push(cmd);
 		return true;
 	}
@@ -78,7 +78,7 @@ public class CommandHistory {
 	/** Runs apply or revert; false - and a warning - when it refused or threw. */
 	private static boolean attempt(Command cmd, boolean apply, String verb) {
 		try {
-			if (apply ? cmd.apply() : cmd.revert()) { return true; }
+			if (apply ? cmd.apply() : cmd.revert()) return true;
 			log.warn("Command {} returned false, dropping: {}", verb, cmd.getDescription());
 		} catch (Exception ex) {
 			log.warn("Command {} threw, dropping: {}", verb, cmd.getDescription(), ex);

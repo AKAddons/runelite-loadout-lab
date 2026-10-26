@@ -30,12 +30,12 @@ public final class StashUnits {
 	public static StashUnits load() {
 		Map<String, int[]> units = new HashMap<>();
 		try (InputStream in = StashUnits.class.getResourceAsStream("stash-units.tsv")) {
-			if (in == null) { throw new IOException("stash-units.tsv missing from resources"); }
+			if (in == null) throw new IOException("stash-units.tsv missing from resources");
 			BufferedReader reader = new BufferedReader(
 				new InputStreamReader(in, StandardCharsets.UTF_8));
 			String line;
 			while ((line = reader.readLine()) != null) {
-				if (line.isEmpty() || line.startsWith("#")) { continue; }
+				if (line.isEmpty() || line.startsWith("#")) continue;
 				int tab = line.indexOf('\t');
 				units.put(line.substring(0, tab),
 					Arrays.stream(line.substring(tab + 1).split(",")).mapToInt(Integer::parseInt).toArray());
@@ -72,14 +72,14 @@ public final class StashUnits {
 				flush(filled, current, sprites);
 				current = rename(cell.text, masterTier);
 				sprites = 0;
-			} else if (cell.type == SPRITE_CELL && current != null) { sprites++; }
+			} else if (cell.type == SPRITE_CELL && current != null) sprites++;
 		}
 		flush(filled, current, sprites);
 		return filled;
 	}
 
 	private static void flush(List<String> filled, String name, int sprites) {
-		if (name != null && sprites >= 2) { filled.add(name); }
+		if (name != null && sprites >= 2) filled.add(name);
 	}
 
 	private static String rename(String text, boolean masterTier) {

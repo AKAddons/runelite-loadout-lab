@@ -24,11 +24,11 @@ public enum GearSlot {
 
 
 	public static GearSlot fromJson(String value) {
-		if (value == null) { return null; }
+		if (value == null) return null;
 
 		String normalized = Names.lower(value);
 		for (GearSlot slot : values()) {
-			if (slot.jsonName.equals(normalized)) { return slot; }
+			if (slot.jsonName.equals(normalized)) return slot;
 		}
 		return null;
 	}

@@ -14,7 +14,7 @@ public class CompanionHost extends PluginPanel {
 
 	public void mount(JComponent component) {
 		removeAll();
-		if (component != null) { add(component, BorderLayout.NORTH); }
+		if (component != null) add(component, BorderLayout.NORTH);
 		revalidate();
 		repaint();
 	}

@@ -60,9 +60,9 @@ public class DwmsLink {
 		Map<Integer, Integer> next = new HashMap<>();
 		Map<String, Map<Integer, Integer>> nextFamilies = new HashMap<>();
 		for (Object storage : (List<?>) data.get("storages")) {
-			if (!(storage instanceof Map)) { continue; }
+			if (!(storage instanceof Map)) continue;
 			Object storageItems = ((Map<?, ?>) storage).get("items");
-			if (!(storageItems instanceof List)) { continue; }
+			if (!(storageItems instanceof List)) continue;
 			Object category = ((Map<?, ?>) storage).get("category");
 			Map<Integer, Integer> family = nextFamilies.computeIfAbsent(
 				category instanceof String ? (String) category : "world",
@@ -81,13 +81,13 @@ public class DwmsLink {
 
 	/** One {"id", "quantity"} entry; anything malformed is dropped. */
 	private static void mergeItem(Object item, Map<Integer, Integer> into) {
-		if (!(item instanceof Map)) { return; }
+		if (!(item instanceof Map)) return;
 		Object id = ((Map<?, ?>) item).get("id");
 		Object quantity = ((Map<?, ?>) item).get("quantity");
-		if (!(id instanceof Number) || !(quantity instanceof Number)) { return; }
+		if (!(id instanceof Number) || !(quantity instanceof Number)) return;
 		int itemId = ((Number) id).intValue();
 		long amount = ((Number) quantity).longValue();
-		if (itemId <= 0 || amount <= 0) { return; }
+		if (itemId <= 0 || amount <= 0) return;
 		into.merge(itemId, (int) Math.min(amount, Integer.MAX_VALUE),
 			(a, b) -> (int) Math.min((long) a + b, Integer.MAX_VALUE));
 	}

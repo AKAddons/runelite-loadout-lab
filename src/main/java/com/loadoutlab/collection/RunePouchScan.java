@@ -20,7 +20,7 @@ public final class RunePouchScan {
 		for (int i = 0; i < types.length && i < quantities.length; i++) {
 			if (types[i] > 0 && quantities[i] > 0) {
 				int item = typeToItem.applyAsInt(types[i]);
-				if (item > 0) { out.merge(item, quantities[i], Integer::sum); }
+				if (item > 0) out.merge(item, quantities[i], Integer::sum);
 			}
 		}
 		return out;

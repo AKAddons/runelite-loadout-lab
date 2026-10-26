@@ -47,7 +47,7 @@ abstract class ScopedMapStore<K, V> implements ScopedStore {
 	private void load() {
 		items.clear();
 		Map<K, V> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, configKey), type);
-		if (stored != null) { items.putAll(stored); }
+		if (stored != null) items.putAll(stored);
 	}
 
 	void save() {

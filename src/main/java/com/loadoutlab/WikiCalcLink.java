@@ -89,9 +89,9 @@ public class WikiCalcLink {
 				prayers.add(prayerId);
 				continue;
 			}
-			for (int id : POTION_IDS.getOrDefault(token, new int[0])) { potions.add(id); }
+			for (int id : POTION_IDS.getOrDefault(token, new int[0])) potions.add(id);
 			for (BoostProfile profile : BoostProfile.values()) {
-				if (profile.toString().equals(token)) { boost = profile; }
+				if (profile.toString().equals(token)) boost = profile;
 			}
 		}
 
@@ -103,7 +103,7 @@ public class WikiCalcLink {
 			// must ride the AMMO slot or their side prices an empty
 			// crossbow (field report 2026-08-21). The displaced blessing
 			// only carries prayer bonus - nothing the dps math reads.
-			if (slot == GearSlot.AMMO && quiverAmmo != null) { worn = quiverAmmo; }
+			if (slot == GearSlot.AMMO && quiverAmmo != null) worn = quiverAmmo;
 			int id = worn != null ? worn.getId() : -1;
 			if (id > 0) {
 				// Plain maps/lists ONLY in this document (JsonResources.map
@@ -149,8 +149,8 @@ public class WikiCalcLink {
 			// spell name; a powered staff never does.
 			style.put("stance", "Accurate");
 		}
-		if (style != null) { loadout.put("style", style); }
-		if (spell != null && !spell.isEmpty()) { loadout.put("spell", map("name", spell)); }
+		if (style != null) loadout.put("style", style);
+		if (spell != null && !spell.isEmpty()) loadout.put("spell", map("name", spell));
 
 		Map<String, Object> inputs = map("defenceReductions", new LinkedHashMap<>());
 		if (mob.getToaInvocationLevel() > 0) {
@@ -197,7 +197,7 @@ public class WikiCalcLink {
 	 * Surge". The style NAME is omitted - the calculator's math reads only
 	 * type and stance. */
 	static Map<String, String> styleOf(String attackType) {
-		if (attackType == null || attackType.isEmpty()) { return null; }
+		if (attackType == null || attackType.isEmpty()) return null;
 		Map<String, String> style = new LinkedHashMap<>();
 		if (attackType.startsWith("magic")) {
 			style.put("type", "magic");

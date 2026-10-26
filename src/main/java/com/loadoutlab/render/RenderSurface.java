@@ -45,13 +45,13 @@ public class RenderSurface {
 
 	static String moodKey(Map<String, Object> page) {
 		Map<String, Object> mob = lensedMob(page);
-		if (flag(mob, "naval")) { return "sea"; }
+		if (flag(mob, "naval")) return "sea";
 		String raid = str(mob, "raid");
-		if (raid != null) { return raid; }
+		if (raid != null) return raid;
 		String name = str(mob, "name");
 		if (name != null) {
 			for (var route : MOOD_ROUTES.entrySet()) {
-				if (name.startsWith(route.getKey())) { return route.getValue(); }
+				if (name.startsWith(route.getKey())) return route.getValue();
 			}
 		}
 		return null;
@@ -62,7 +62,7 @@ public class RenderSurface {
 		int lens = id(firstParams(page), "lensIndex");
 		for (Map<String, Object> entry : list(page, "entries")) {
 			List<Map<String, Object>> entryMobs = list(entry, "mobs");
-			if (!entryMobs.isEmpty()) { return entryMobs.get(Math.min(Math.max(lens, 0), entryMobs.size() - 1)); }
+			if (!entryMobs.isEmpty()) return entryMobs.get(Math.min(Math.max(lens, 0), entryMobs.size() - 1));
 		}
 		return null;
 	}
@@ -96,7 +96,7 @@ public class RenderSurface {
 	public void setComputing(boolean computing) {
 		isComputing = computing;
 		SwingUtilities.invokeLater(() -> {
-			if (waitingSlot == null) { return; }
+			if (waitingSlot == null) return;
 			if (isComputing && cardArea != null) {
 				// The classic contract: a compute clears the RESULTS - the
 				// controls stay up (Core publishes the params immediately)
@@ -128,7 +128,7 @@ public class RenderSurface {
 	}
 
 	private void runSearch() {
-		if (search == null || matchesBox == null) { return; }
+		if (search == null || matchesBox == null) return;
 		String query = search.getText().trim();
 		if (query.length() < 2) {
 			showMatches(List.of());
@@ -140,7 +140,7 @@ public class RenderSurface {
 	/** The dropdown rebuilt from the matches - folded away when there are none. */
 	private void showMatches(List<Map<String, Object>> matches) {
 		matchesBox.removeAll();
-		for (Map<String, Object> match : matches) { matchesBox.add(matchRow(match)); }
+		for (Map<String, Object> match : matches) matchesBox.add(matchRow(match));
 		matchesBox.setVisible(!matches.isEmpty());
 		root.revalidate();
 		root.repaint();
@@ -151,7 +151,7 @@ public class RenderSurface {
 	private JComponent matchRow(Map<String, Object> match) {
 		var row = new JLabel(str(match, "label"));
 		boolean group = match.get("group") != null;
-		if (group) { row.setFont(row.getFont().deriveFont(java.awt.Font.BOLD)); }
+		if (group) row.setFont(row.getFont().deriveFont(java.awt.Font.BOLD));
 		// Ship-combat rows announce themselves before selection: sea-blue
 		// with the sailing skill icon after the name (REQ-SC-1/16; an image
 		// icon, so the ASCII glyph gate stays clean).
@@ -265,7 +265,7 @@ public class RenderSurface {
 		var button = new JButton(text);
 		button.setFocusable(false);
 		button.setMargin(new Insets(1, 6, 1, 6));
-		if (tooltip != null) { button.setToolTipText(tooltip); }
+		if (tooltip != null) button.setToolTipText(tooltip);
 		button.addActionListener(e -> onClick.run());
 		return button;
 	}
@@ -455,14 +455,14 @@ public class RenderSurface {
 		capeBox.addActionListener(e -> send.run());
 		JLabel max = small("Max", ACCENT);
 		onClick(max, () -> {
-			for (JTextField box : boxes) { box.setText("99"); }
+			for (JTextField box : boxes) box.setText("99");
 			capeBox.setSelected(true);
 			send.run();
 		});
 		JLabel mineLabel = small("Mine", ACCENT);
 		onClick(mineLabel, () -> {
 			Map<String, Object> args = new HashMap<>();
-			for (String arg : SIM_ARGS) { args.put(arg, 0); }
+			for (String arg : SIM_ARGS) args.put(arg, 0);
 			args.put("maxCape", false);
 			commands.send("sim-stats", args);
 		});
@@ -499,7 +499,7 @@ public class RenderSurface {
 	private static boolean anyMob(Map<String, Object> page, Predicate<Map<String, Object>> test) {
 		for (Map<String, Object> entry : list(page, "entries")) {
 			for (Map<String, Object> mob : list(entry, "mobs")) {
-				if (test.test(mob)) { return true; }
+				if (test.test(mob)) return true;
 			}
 		}
 		return false;
@@ -545,7 +545,7 @@ public class RenderSurface {
 				item(menu, removeVerb + itemName,
 					() -> commands.send(command, Map.of("itemId", id, "label", itemName)));
 			}
-			if (any) { menu.addSeparator(); }
+			if (any) menu.addSeparator();
 			item(menu, addPrompt, cards.searchItem(addPrompt, command));
 			show(menu, pill);
 		});
@@ -572,7 +572,7 @@ public class RenderSurface {
 		field.addActionListener(e -> onCommit.accept(field.getText().trim()));
 		field.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) { flip.show(holder, "pill"); }
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE) flip.show(holder, "pill");
 			}
 		});
 		flip.show(holder, "pill");
@@ -613,7 +613,7 @@ public class RenderSurface {
 					}
 				}
 				String query = search.getText().trim();
-				if (query.length() < 2) { return; }
+				if (query.length() < 2) return;
 				searcher.search(query, matches -> SwingUtilities.invokeLater(() -> {
 					if (matches.size() == 1) {
 						matchesBox.removeAll();
@@ -705,7 +705,7 @@ public class RenderSurface {
 		Map<String, Object> params = firstParams(page);
 		Map<String, Object> mob = lensedMob(page);
 		Map<String, Object> styles = map(mob, "styles");
-		if (params == null || styles == null) { return base; }
+		if (params == null || styles == null) return base;
 		boolean bis = flag(params, "viewingBis");
 		String tab = str(params, "selectedTab");
 		Map<String, Object> node = tab == null || tab.isEmpty() ? null : map(styles, tab);
@@ -722,7 +722,7 @@ public class RenderSurface {
 			}
 		}
 		Map<String, Object> card = map(node, bis ? "bis" : "yours");
-		if (card == null) { return base; }
+		if (card == null) return base;
 		double set = num(card, "dps");
 		double specDps = num(map(card, "spec"), "dpsAdded");
 		double thrallsDps = thrallsFor(card,
@@ -747,13 +747,13 @@ public class RenderSurface {
 	/** True when any entry of the page carries the flag. */
 	private static boolean anyEntry(Map<String, Object> page, String flag) {
 		for (Map<String, Object> entry : list(page, "entries")) {
-			if (flag(entry, flag)) { return true; }
+			if (flag(entry, flag)) return true;
 		}
 		return false;
 	}
 
 	private synchronized void repaint() {
-		if (cardArea == null) { return; }
+		if (cardArea == null) return;
 		Map<String, Object> page = this.page.get();
 		if (page != null && page.equals(lastRenderedPage)) {
 			skippedIdentical++;
@@ -792,7 +792,7 @@ public class RenderSurface {
 		// so without this it simply kept whatever it last drew.
 		invRow.setVisible(params != null);
 		statsRow.setVisible(false);
-		if (params == null) { invRow.removeAll(); }
+		if (params == null) invRow.removeAll();
 		if (params != null) {
 			// Members chips (task, thralls, D charge) disappear under the
 			// F2P lock - the computeArgs veto already keeps them out of the
@@ -842,7 +842,7 @@ public class RenderSurface {
 				// Thralls hide under the F2P lock AND for a sea lens (thrall
 				// resurrections cannot be cast on a boat - confirmed
 				// 2026-08-31; a chip that does nothing is noise).
-				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval || lensLunar)) { continue; }
+				if (("thralls".equals(entry[1])) && (f2pLocked || lensNaval || lensLunar)) continue;
 				if ("thralls".equals(entry[1]) && standDown != null) {
 					chipRow.add(disabledPill(entry[0], "Stands down: " + standDown + " - thralls are cast from Arceuus"));
 					continue;
@@ -853,7 +853,7 @@ public class RenderSurface {
 			// preview members gear (field report 2026-08-25 - the merge-back
 			// dropped this chip, leaving the filter stuck on). Gated on
 			// f2pWorld, NOT f2pOnly, or unticking it would hide the control.
-			if (flag(params, "f2pWorld")) { chipRow.add(paramChip("F2P", "f2pOnly", flag(params, "f2pOnly"))); }
+			if (flag(params, "f2pWorld")) chipRow.add(paramChip("F2P", "f2pOnly", flag(params, "f2pOnly")));
 			// The classic gates (field report 2026-08-14: Sire showed
 			// Wildy + Raid boost): Wildy only for LISTED wilderness mobs
 			// (exclusives pinned always-in), the raid chip only where the
@@ -1042,7 +1042,7 @@ public class RenderSurface {
 		if (rosterArea != null) {
 			rosterArea.removeAll();
 			JPanel roster = cards.renderRoster(page);
-			if (roster != null) { rosterArea.add(roster, BorderLayout.CENTER); }
+			if (roster != null) rosterArea.add(roster, BorderLayout.CENTER);
 			rosterArea.setVisible(roster != null);
 		}
 		cardArea.removeAll();

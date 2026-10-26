@@ -44,13 +44,13 @@ public final class QuiverAmmo {
 	 * only the stored arrows' stats and ran every quiver set low). */
 	private static boolean quiverBonusApplies(Loadout loadout) {
 		GearItem cape = loadout.get(GearSlot.CAPE);
-		if (cape == null) { return false; }
+		if (cape == null) return false;
 		String name = cape.getNameLower();
 		boolean charged = name.contains("blessed dizana's quiver")
 			|| name.contains("dizana's max cape")
 			|| (name.contains("dizana's quiver")
 				&& "charged".equals(cape.getVersionLower()));
-		if (!charged) { return false; }
+		if (!charged) return false;
 		GearItem weapon = loadout.getWeapon();
 		GearItem ammo = loadout.getQuiverAmmo() != null
 			? loadout.getQuiverAmmo() : loadout.get(GearSlot.AMMO);

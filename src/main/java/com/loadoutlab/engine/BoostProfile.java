@@ -53,10 +53,10 @@ public enum BoostProfile {
 
 	public PlayerLevels apply(PlayerLevels base, PlayerLevels current) {
 		PlayerLevels source = base == null ? PlayerLevels.MAXED : base;
-		if (this == LIVE_CURRENT) { return current == null ? source : current; }
+		if (this == LIVE_CURRENT) return current == null ? source : current;
 		// NONE boosts nothing and must hand back the SAME instance: the
 		// general path below always allocates a fresh PlayerLevels.
-		if (skills.isEmpty()) { return source; }
+		if (skills.isEmpty()) return source;
 		return source.withBoosts(
 			boostIf('a', source.getAttack()),
 			boostIf('s', source.getStrength()),

@@ -27,7 +27,7 @@ public final class GwdProtection {
 			JsonResources.strings(route.getValue().getAsJsonObject(), "gods", gods);
 			List<String> monsters = new ArrayList<>();
 			JsonResources.strings(route.getValue().getAsJsonObject(), "monsters", monsters);
-			for (String monster : monsters) { ROUTE_BY_MONSTER.put(monster, Collections.unmodifiableList(gods)); }
+			for (String monster : monsters) ROUTE_BY_MONSTER.put(monster, Collections.unmodifiableList(gods));
 		}
 		for (var god : root.getAsJsonObject("items").entrySet()) {
 			for (JsonElement name : god.getValue().getAsJsonArray()) {
@@ -48,8 +48,8 @@ public final class GwdProtection {
 	 * empty anywhere else. */
 	public static List<String> godsFor(MonsterStats monster, boolean ancient) {
 		List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(monster.getNameLower());
-		if (route == null) { return List.of(); }
-		if (!ancient) { return route; }
+		if (route == null) return List.of();
+		if (!ancient) return route;
 		List<String> gods = new ArrayList<>(route);
 		gods.add(ZAROS);
 		return gods;
@@ -63,7 +63,7 @@ public final class GwdProtection {
 	/** Every god the worn set already protects against. */
 	public static Set<String> coveredGods(Loadout loadout) {
 		Set<String> covered = new TreeSet<>();
-		for (GearItem item : loadout.getGear().values()) { covered.addAll(godsOf(item)); }
+		for (GearItem item : loadout.getGear().values()) covered.addAll(godsOf(item));
 		return covered;
 	}
 }

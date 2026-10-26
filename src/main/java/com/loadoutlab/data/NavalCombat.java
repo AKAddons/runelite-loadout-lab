@@ -67,7 +67,7 @@ public final class NavalCombat {
 				integer(b, "accuracy", 0), integer(b, "strength", 0)));
 		}
 		strings(root, "ballTierOrder", BALL_ORDER);
-		for (JsonElement e : root.getAsJsonArray("navalMonsters")) { NAVAL.add(Names.lower(e.getAsString())); }
+		for (JsonElement e : root.getAsJsonArray("navalMonsters")) NAVAL.add(Names.lower(e.getAsString()));
 		strings(root, "keels", KEELS);
 		strings(root, "legacyWoodKeels", LEGACY_WOOD_KEELS);
 		for (Map.Entry<String, JsonElement> row
@@ -99,11 +99,11 @@ public final class NavalCombat {
 	/** The best ball a set of cannons can SHARE (REQ-SC-2: one ammo tier for
 	 * all): the highest tier every cannon can fire, or null for no cannons. */
 	public static String bestSharedBall(List<String> cannonTiers) {
-		if (cannonTiers == null || cannonTiers.isEmpty()) { return null; }
+		if (cannonTiers == null || cannonTiers.isEmpty()) return null;
 		int min = Integer.MAX_VALUE;
 		for (String tier : cannonTiers) {
 			int i = BALL_ORDER.indexOf(tier);
-			if (i < 0) { return null; }
+			if (i < 0) return null;
 			min = Math.min(min, i);
 		}
 		return BALL_ORDER.get(min);

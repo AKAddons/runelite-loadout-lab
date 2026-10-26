@@ -146,7 +146,7 @@ public class PageState {
 	 * the mob or roster, and the params a select seeds (SNAPSHOT_KEYS). */
 	public synchronized Object[] selectionSnapshot() {
 		Map<String, Object> seeded = new LinkedHashMap<>();
-		for (String key : SNAPSHOT_KEYS) { seeded.put(key, params.get(key)); }
+		for (String key : SNAPSHOT_KEYS) seeded.put(key, params.get(key));
 		return new Object[]{mob, rosterMobs, rosterName, seeded};
 	}
 
@@ -164,7 +164,7 @@ public class PageState {
 	 * the engine can refuse loudly instead of silently dropping it. */
 	public synchronized boolean setParam(String param, Object value) {
 		Object current = param == null ? null : params.get(param);
-		if (current == null || DERIVED.contains(param)) { return false; }
+		if (current == null || DERIVED.contains(param)) return false;
 		switch (param) {
 			case "cannon1Material":
 			case "cannon2Material": {
@@ -243,7 +243,7 @@ public class PageState {
 	/** Crew operators rise to the minimum Privateering the material demands;
 	 * "you" and already-sufficient crew pass through untouched. */
 	private static String raiseCrewToGate(String operator, String material) {
-		if ("you".equals(operator)) { return operator; }
+		if ("you".equals(operator)) return operator;
 		Cannon cannon =
 			NavalCombat.cannon(material);
 		int gate = cannon == null ? 1 : cannon.privateering;
@@ -284,7 +284,7 @@ public class PageState {
 	/** A pick map keyed by the style's lower-case name, for the page. */
 	private static Map<String, Object> lowered(Map<CombatStyle, String> picks) {
 		Map<String, Object> out = new LinkedHashMap<>();
-		for (var pick : picks.entrySet()) { out.put(pick.getKey().name().toLowerCase(), pick.getValue()); }
+		for (var pick : picks.entrySet()) out.put(pick.getKey().name().toLowerCase(), pick.getValue());
 		return out;
 	}
 

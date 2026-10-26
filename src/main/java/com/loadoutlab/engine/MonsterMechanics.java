@@ -54,10 +54,10 @@ public final class MonsterMechanics {
 
 	/** Style-level immunity, independent of the weapon (panel messaging). */
 	public static boolean styleImmune(MonsterStats monster, CombatStyle style) {
-		if (monster == null) { return false; }
+		if (monster == null) return false;
 		// Data-driven immunity (synthetic group variants - the tormented
 		// demon shield phases): the attribute wins before the id lists.
-		if (monster.hasAttribute(IMMUNE_ATTR[style.ordinal()])) { return true; }
+		if (monster.hasAttribute(IMMUNE_ATTR[style.ordinal()])) return true;
 		switch (style) {
 			case MAGIC: return IMMUNE_MAGIC.contains(monster.getId());
 			case RANGED: return IMMUNE_RANGED.contains(monster.getId());
@@ -73,7 +73,7 @@ public final class MonsterMechanics {
 	 * pickaxe for Slagilith, the comp ogre bow and brutal arrows for zogres,
 	 * ice arrows for the Fire Warrior (ISS-01M5RVDTMR5XG16HM6G2JTF7FF). */
 	public static boolean keepInPool(MonsterStats monster, GearItem item) {
-		if (monster == null) { return false; }
+		if (monster == null) return false;
 		String name = monster.getNameLower();
 		String it = item.getNameLower();
 		return "slagilith".equals(name) && "Pickaxe".equals(item.getCategory())
@@ -82,7 +82,7 @@ public final class MonsterMechanics {
 	}
 
 	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
-		if (monster == null) { return false; }
+		if (monster == null) return false;
 		String name = monster.getNameLower();
 		String element = spell == null || spell.getElement() == null ? "" : spell.getElement();
 		GearItem ammo = loadout.get(GearSlot.AMMO);
@@ -94,7 +94,7 @@ public final class MonsterMechanics {
 			|| "fire warrior of lesarkus".equals(name) && (style != RANGED || !"ice arrows".equals(ammoName))) {
 			return true;
 		}
-		if (VampyreRules.immune(monster, style, loadout)) { return true; }
+		if (VampyreRules.immune(monster, style, loadout)) return true;
 		// Data-driven immunity (synthetic group variants) gates the
 		// calculator too - no loadout reaches a shielded style. One
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
@@ -105,7 +105,7 @@ public final class MonsterMechanics {
 				&& monster.hasAttribute("prayer_immunity")
 				&& loadout.getWeapon() != null
 				&& loadout.getWeapon().getNameLower().contains("verac");
-			if (!veracPierce) { return true; }
+			if (!veracPierce) return true;
 		}
 		// Boat combat (wiki, verified 2026-08-31): "only ranged and magic
 		// can be used; melee weapons cannot attack enemies, even if they
@@ -119,7 +119,7 @@ public final class MonsterMechanics {
 		int id = monster.getId();
 		GearItem weapon = loadout.getWeapon();
 		String category = weapon == null ? "" : weapon.getCategory();
-		if (style == MAGIC && IMMUNE_MAGIC.contains(id)) { return true; }
+		if (style == MAGIC && IMMUNE_MAGIC.contains(id)) return true;
 		// By the real id, so phase variants inherit it (Archive Guardian).
 		if (style == MAGIC && spell != null && "ancient".equals(spell.getSpellbook())
 			&& IMMUNE_ANCIENTS.contains(monster.profileId())) {
@@ -128,9 +128,9 @@ public final class MonsterMechanics {
 		// Salarin the twisted (wiki): "can only be damaged by Strike
 		// spells, ring of recoil damage, and dynamite(p)". Melee and
 		// ranged never land; magic lands only as a Strike cast.
-		if (SALARIN.contains(id)) { return style != MAGIC || !salarinDamagingSpell(spell); }
-		if (style == RANGED && IMMUNE_RANGED.contains(id)) { return true; }
-		if (style == MELEE && meleeBarred(id, category)) { return true; }
+		if (SALARIN.contains(id)) return style != MAGIC || !salarinDamagingSpell(spell);
+		if (style == RANGED && IMMUNE_RANGED.contains(id)) return true;
+		if (style == MELEE && meleeBarred(id, category)) return true;
 		return monster.hasAttribute("leafy") && !leafBladed(style, loadout, spell);
 	}
 
@@ -148,7 +148,7 @@ public final class MonsterMechanics {
 	private static boolean leafBladed(CombatStyle style, Loadout loadout, SpellStats spell) {
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
-		if (style == MELEE) { return weaponName.startsWith("leaf-bladed"); }
+		if (style == MELEE) return weaponName.startsWith("leaf-bladed");
 		if (style == RANGED) {
 			GearItem ammo = loadout.get(GearSlot.AMMO);
 			String ammoName = ammo == null ? "" : ammo.getNameLower();
@@ -168,7 +168,7 @@ public final class MonsterMechanics {
 	/** Weapon-level pre-filter for candidate selection (conservative: only
 	 * prunes when the weapon alone decides; ammo/spell-dependent cases pass). */
 	public static boolean weaponCanEverWork(MonsterStats monster, CombatStyle style, GearItem weapon) {
-		if (monster == null || style != MELEE) { return true; }
+		if (monster == null || style != MELEE) return true;
 		int id = monster.getId();
 		// Salarin: strike spells only - no melee weapon ever works.
 		return !(meleeBarred(id, weapon == null ? "" : weapon.getCategory())
@@ -300,7 +300,7 @@ public final class MonsterMechanics {
 	 */
 	public static double damageFactor(MonsterStats monster, CombatStyle style,
 		Loadout loadout, String attackType, SpellStats spell) {
-		if (monster == null) { return 1.0; }
+		if (monster == null) return 1.0;
 		String name = monster.getNameLower();
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
@@ -313,21 +313,21 @@ public final class MonsterMechanics {
 			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon)) {
 			return 0.0;
 		}
-		if ("corporeal beast".equals(name) && !corpbane(style, weaponName, attackType)) { return 0.5; }
+		if ("corporeal beast".equals(name) && !corpbane(style, weaponName, attackType)) return 0.5;
 		if (("kraken".equals(name) || "cave kraken".equals(name))
 			&& style == RANGED) {
 			return 1.0 / 7.0;
 		}
-		if (TEKTON.contains(monster.getId()) && style == MAGIC) { return 0.2; }
+		if (TEKTON.contains(monster.getId()) && style == MAGIC) return 0.2;
 		if (ICE_DEMON.contains(monster.getId())) {
 			boolean fire = spell != null && "fire".equals(spell.getElement());
-			if (!fire) { return 1.0 / 3.0; }
+			if (!fire) return 1.0 / 3.0;
 		}
 		if ("slagilith".equals(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
 			return 1.0 / 3.0;
 		}
 		if (ZOGRES.contains(name)) {
-			if (spell != null && "Crumble Undead".equals(spell.getName())) { return 0.5; }
+			if (spell != null && "Crumble Undead".equals(spell.getName())) return 0.5;
 			// Brutal arrows from a comp ogre bow land in full (reference; ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
 			GearItem ammo = loadout.get(GearSlot.AMMO);
 			boolean brutal = style == RANGED && weaponName.equals("comp ogre bow") && ammo != null
@@ -338,8 +338,8 @@ public final class MonsterMechanics {
 	}
 
 	private static boolean corpbane(CombatStyle style, String weaponName, String attackType) {
-		if (style == MAGIC) { return true; }
-		if (style != MELEE || attackType == null || !attackType.startsWith("stab")) { return false; }
+		if (style == MAGIC) return true;
+		if (style != MELEE || attackType == null || !attackType.startsWith("stab")) return false;
 		return weaponName.contains("osmumten's fang")
 			|| weaponName.endsWith("halberd")
 			|| (weaponName.contains("spear") && !weaponName.equals("blue moon spear"));

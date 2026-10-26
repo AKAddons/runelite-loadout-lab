@@ -19,7 +19,7 @@ public final class Names {
 	 * plain get first: computeIfAbsent can lock a bin under the four workers. */
 	public static String key(String s) {
 		String k = KEYS.get(s);
-		if (k == null) { KEYS.put(s, k = lower(s)); }
+		if (k == null) KEYS.put(s, k = lower(s));
 		return k;
 	}
 

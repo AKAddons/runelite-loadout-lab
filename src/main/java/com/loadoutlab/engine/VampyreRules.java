@@ -74,7 +74,7 @@ public final class VampyreRules {
 	/** The melee roll vs any vampyre, after the post rules (the calc's
 	 * order): the weapon's own bonus, then a silver weapon with the ring. */
 	static long accuracy(MonsterStats monster, Loadout loadout, long roll) {
-		if (tier(monster) == 0) { return roll; }
+		if (tier(monster) == 0) return roll;
 		roll = roll * N.getOrDefault("acc " + name(loadout.getWeapon()), 100) / 100;
 		return silver(MELEE, loadout) && ring(loadout) ? roll * N.get("efaritayAccuracy") / 100 : roll;
 	}
@@ -86,12 +86,12 @@ public final class VampyreRules {
 	 * counts as 1. */
 	static DpsResult apply(MonsterStats monster, CombatStyle style, Loadout loadout, DpsResult result) {
 		int tier = tier(monster), top = result.getMaxHit();
-		if (tier == 0) { return result; }
+		if (tier == 0) return result;
 		GearItem weapon = loadout.getWeapon();
 		boolean ring = ring(loadout), silver = silver(style, loadout);
 		int scale = N.getOrDefault("dmg " + name(weapon), silver && tier == 1 ? N.get("silverTier1") : 0);
 		boolean half = tier == 2 && ring && !bane(2, style, weapon), cap = tier == 2 && !half && silver;
-		if (tier == 0 || top <= 0 || scale == 0 && !half && !cap) { return result; }
+		if (tier == 0 || top <= 0 || scale == 0 && !half && !cap) return result;
 		int ringScale = ring ? N.get("efaritayDamage") : 100, v = 0;
 		double plain = 0, mapped = 0;
 		for (int d = 0; d <= top; d++) {

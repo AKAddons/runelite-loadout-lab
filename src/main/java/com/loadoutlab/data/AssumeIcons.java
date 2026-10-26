@@ -42,9 +42,9 @@ public final class AssumeIcons {
 	 * LEAD prayer's icon (field ask 2026-08-20: no letter fallbacks). */
 	public static int prayerSprite(String name) {
 		Integer exact = PRAYERS.get(name);
-		if (exact != null) { return exact; }
+		if (exact != null) return exact;
 		int plus = name == null ? -1 : name.indexOf(" + ");
-		if (plus > 0) { return PRAYERS.getOrDefault(name.substring(0, plus), -1); }
+		if (plus > 0) return PRAYERS.getOrDefault(name.substring(0, plus), -1);
 		return -1;
 	}
 

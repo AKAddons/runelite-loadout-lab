@@ -21,11 +21,11 @@ public final class MaxCapeSims {
 	public static Set<Integer> ids(LoadoutData data, IntPredicate owns) {
 		Set<Integer> out = new LinkedHashSet<>();
 		GearItem max = cape(data, "max cape");
-		if (max != null) { out.add(max.getId()); }
+		if (max != null) out.add(max.getId());
 		for (var combo : COMBOS.entrySet()) {
 			GearItem base = cape(data, combo.getKey());
 			GearItem made = cape(data, combo.getValue());
-			if (base != null && made != null && owns.test(base.getId())) { out.add(made.getId()); }
+			if (base != null && made != null && owns.test(base.getId())) out.add(made.getId());
 		}
 		return out;
 	}
@@ -43,9 +43,9 @@ public final class MaxCapeSims {
 	public static Set<Integer> bases(LoadoutData data) {
 		Set<Integer> out = new HashSet<>();
 		for (var combo : COMBOS.entrySet()) {
-			if (cape(data, combo.getValue()) == null) { continue; }
+			if (cape(data, combo.getValue()) == null) continue;
 			for (GearItem item : data.getGearItems(GearSlot.CAPE)) {
-				if (item.getNameLower().equals(combo.getKey())) { out.add(item.getId()); }
+				if (item.getNameLower().equals(combo.getKey())) out.add(item.getId());
 			}
 		}
 		return out;

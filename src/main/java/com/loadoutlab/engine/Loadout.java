@@ -53,7 +53,7 @@ public final class Loadout {
 		var names = new StringBuilder(160);
 		var activeNames = new StringBuilder(160);
 		for (GearItem item : this.gear.values()) {
-			if (item == null) { continue; }
+			if (item == null) continue;
 			add(off, item.getOffensive());
 			add(def, item.getDefensive());
 			add(bon, item.getBonuses());
@@ -121,7 +121,7 @@ public final class Loadout {
 	public List<GearItem> items() {
 		List<GearItem> items = new ArrayList<>(gear.size());
 		for (GearItem item : gear.values()) {
-			if (item != null) { items.add(item); }
+			if (item != null) items.add(item);
 		}
 		return items;
 	}
@@ -129,7 +129,7 @@ public final class Loadout {
 	/** The worn item ids. */
 	public Set<Integer> ids() {
 		Set<Integer> ids = new HashSet<>();
-		for (GearItem item : items()) { ids.add(item.getId()); }
+		for (GearItem item : items()) ids.add(item.getId());
 		return ids;
 	}
 

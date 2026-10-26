@@ -23,7 +23,7 @@ final class WrapLayout extends FlowLayout {
 			var dim = new Dimension(0, insets.top + getVgap());
 			for (int i = 0; i < target.getComponentCount(); i++) {
 				Component c = target.getComponent(i);
-				if (!c.isVisible()) { continue; }
+				if (!c.isVisible()) continue;
 				Dimension d = c.getPreferredSize();
 				if (x == 0 || x + getHgap() + d.width <= maxWidth) {
 					x += (x > 0 ? getHgap() : 0) + d.width;

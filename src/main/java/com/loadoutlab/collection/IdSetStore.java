@@ -35,7 +35,7 @@ public abstract class IdSetStore implements ScopedStore {
 		ids.clear();
 		Set<Integer> stored = ScopedKeys.parse(gson, ScopedKeys.read(configManager, CONFIG_GROUP, worldScope, legacyKey()),
 			new TypeToken<Set<Integer>>(){}.getType());
-		if (stored != null) { ids.addAll(stored); }
+		if (stored != null) ids.addAll(stored);
 	}
 
 	final void save() { configManager.setConfiguration(CONFIG_GROUP, key(), gson.toJson(ids)); }

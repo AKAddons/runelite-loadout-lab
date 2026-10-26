@@ -69,7 +69,7 @@ public final class LoadoutData {
 		Map<Integer, Integer> result = new HashMap<>(owned);
 		for (var entry : owned.entrySet()) {
 			Integer base = variantToBase.get(entry.getKey());
-			if (base != null) { result.merge(base, entry.getValue(), Integer::sum); }
+			if (base != null) result.merge(base, entry.getValue(), Integer::sum);
 		}
 		return result;
 	}
@@ -94,7 +94,7 @@ public final class LoadoutData {
 	public List<MonsterStats> searchMonsters(String query, int limit) {
 		String text = query == null ? "" : MonsterStats.normalizeQuery(query.trim());
 		text = SEARCH_ALIASES.getOrDefault(text, text);
-		if (text.isEmpty()) { return List.of(); }
+		if (text.isEmpty()) return List.of();
 
 		var exact = new ArrayList<MonsterStats>();
 		var prefix = new ArrayList<MonsterStats>();
@@ -105,7 +105,7 @@ public final class LoadoutData {
 				exact.add(monster);
 			} else if (name.startsWith(text)) {
 				prefix.add(monster);
-			} else if (monster.searchText().contains(text) || wordsMatch(text, monster)) { contains.add(monster); }
+			} else if (monster.searchText().contains(text) || wordsMatch(text, monster)) contains.add(monster);
 		}
 
 		// Among same-name versions, surface the fight a player MEANS by the
@@ -138,7 +138,7 @@ public final class LoadoutData {
 			+ "|" + MonsterStats.normalizeQuery(monster.getVersion()));
 		String[] words = (monster.searchText() + (terms == null ? "" : " " + terms)).split(" +");
 		for (String typed : text.split(" +")) {
-			if (typed.isEmpty()) { continue; }
+			if (typed.isEmpty()) continue;
 			boolean found = false;
 			for (String word : words) {
 				if (word.startsWith(typed)
@@ -147,14 +147,14 @@ public final class LoadoutData {
 					break;
 				}
 			}
-			if (!found) { return false; }
+			if (!found) return false;
 		}
 		return true;
 	}
 
 	/** Lower = a better default for a bare-name search. */
 	private static int versionTier(String version) {
-		if (version == null || version.isEmpty()) { return 1; }
+		if (version == null || version.isEmpty()) return 1;
 		String v = Names.lower(version);
 		if (v.contains("post-quest")) {
 			return 0;   // the everyday fight
@@ -175,7 +175,7 @@ public final class LoadoutData {
 
 	private static <T> void addLimited(List<T> target, List<T> source, int limit) {
 		for (T entry : source) {
-			if (target.size() >= limit) { return; }
+			if (target.size() >= limit) return;
 			target.add(entry);
 		}
 	}
@@ -189,7 +189,7 @@ public final class LoadoutData {
 		Integer base = variantToBase.getOrDefault(itemId, itemId);
 		Set<Integer> ids = new HashSet<>(List.of(itemId, base));
 		variantToBase.forEach((variant, b) -> {
-			if (b.equals(base)) { ids.add(variant); }
+			if (b.equals(base)) ids.add(variant);
 		});
 		return ids;
 	}

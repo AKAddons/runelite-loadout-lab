@@ -21,7 +21,7 @@ public final class RequirementProfile {
 	private RequirementProfile(Map<Skill, Integer> levels, Set<String> completedQuests, Set<Integer> waived) {
 		this.waived = Set.copyOf(waived);
 		var copy = new EnumMap<Skill, Integer>(Skill.class);
-		if (levels != null) { copy.putAll(levels); }
+		if (levels != null) copy.putAll(levels);
 		this.levels = Collections.unmodifiableMap(copy);
 		this.completedQuests = Collections.unmodifiableSet(new HashSet<>(completedQuests == null ? Set.of() : completedQuests));
 	}
@@ -56,13 +56,13 @@ public final class RequirementProfile {
 	public Set<String> getCompletedQuests() { return completedQuests; }
 
 	public boolean canEquip(GearRequirements requirements) {
-		if (requirements == null || requirements.isEmpty()) { return true; }
+		if (requirements == null || requirements.isEmpty()) return true;
 		for (var entry : requirements.getSkills().entrySet()) {
 			Skill skill = skill(entry.getKey());
-			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) { return false; }
+			if (skill != null && levels.getOrDefault(skill, 1) < entry.getValue()) return false;
 		}
 		for (String quest : requirements.getQuests()) {
-			if (!completedQuests.contains(quest)) { return false; }
+			if (!completedQuests.contains(quest)) return false;
 		}
 		return true;
 	}
@@ -70,9 +70,9 @@ public final class RequirementProfile {
 	int level(Skill skill) { return levels.getOrDefault(skill, 1); }
 
 	private static Skill skill(String name) {
-		if (name == null) { return null; }
+		if (name == null) return null;
 		String normalized = name.toUpperCase(Locale.ROOT);
-		if ("RUNECRAFTING".equals(normalized)) { normalized = "RUNECRAFT"; }
+		if ("RUNECRAFTING".equals(normalized)) normalized = "RUNECRAFT";
 		try {
 			return Skill.valueOf(normalized);
 		} catch (IllegalArgumentException ex) { return null; }
@@ -81,14 +81,14 @@ public final class RequirementProfile {
 	private static Map<Skill, Integer> maxedLevels() {
 		var result = new EnumMap<Skill, Integer>(Skill.class);
 		for (Skill skill : Skill.values()) {
-			if (skill != Skill.OVERALL) { result.put(skill, 99); }
+			if (skill != Skill.OVERALL) result.put(skill, 99);
 		}
 		return result;
 	}
 
 	private static Set<String> allQuests() {
 		Set<String> result = new HashSet<>();
-		for (Quest quest : Quest.values()) { result.add(quest.name()); }
+		for (Quest quest : Quest.values()) result.add(quest.name());
 		return result;
 	}
 }

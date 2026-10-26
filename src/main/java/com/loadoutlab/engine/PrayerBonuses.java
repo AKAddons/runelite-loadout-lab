@@ -104,7 +104,7 @@ public final class PrayerBonuses {
 	public static String[] optionsFor(CombatStyle style) {
 		Object[][] picks = picksFor(style);
 		String[] names = new String[picks.length];
-		for (int i = 0; i < picks.length; i++) { names[i] = (String) picks[i][0]; }
+		for (int i = 0; i < picks.length; i++) names[i] = (String) picks[i][0];
 		return names;
 	}
 
@@ -136,7 +136,7 @@ public final class PrayerBonuses {
 	 * irrelevant to a single-style request). Unknown names fall back. */
 	public static PrayerBonuses forPick(CombatStyle style, String pick, PrayerBonuses fallback) {
 		for (Object[] row : picksFor(style)) {
-			if (!row[0].equals(pick)) { continue; }
+			if (!row[0].equals(pick)) continue;
 			// The fallback's six factors with this style's pair replaced.
 			double[] f = {fallback.meleeAccuracy, fallback.meleeStrength, fallback.rangedAccuracy,
 				fallback.rangedStrength, fallback.magicAccuracy, fallback.magicDamagePercent};

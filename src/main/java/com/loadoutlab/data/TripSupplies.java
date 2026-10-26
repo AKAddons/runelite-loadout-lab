@@ -102,9 +102,9 @@ public final class TripSupplies {
 
 	private static int[][] cells(JsonObject o) {
 		JsonArray rows = o.getAsJsonArray("cells");
-		if (rows == null) { return null; }
+		if (rows == null) return null;
 		int[][] out = new int[rows.size()][];
-		for (int i = 0; i < out.length; i++) { out[i] = ints(rows.get(i).getAsJsonArray()); }
+		for (int i = 0; i < out.length; i++) out[i] = ints(rows.get(i).getAsJsonArray());
 		return out;
 	}
 
@@ -130,11 +130,11 @@ public final class TripSupplies {
 	public static Option detectBest(List<Option> options, IntPredicate owns, boolean inWilderness) {
 		Option pick = null;
 		for (Option o : options) {
-			if (!o.detect || (o.wildyOnly && !inWilderness)) { continue; }
+			if (!o.detect || (o.wildyOnly && !inWilderness)) continue;
 			for (int id : o.ids) {
 				if (owns.test(id)) {
-					if (o.wildyOnly) { return o; }
-					if (pick == null) { pick = o; }
+					if (o.wildyOnly) return o;
+					if (pick == null) pick = o;
 					break;
 				}
 			}
@@ -180,7 +180,7 @@ public final class TripSupplies {
 	}
 
 	private static boolean named(MonsterStats monster, Set<String> tokens) {
-		if (monster == null) { return false; }
+		if (monster == null) return false;
 		String name = monster.getNameLower();
 		return tokens.stream().anyMatch(name::contains);
 	}

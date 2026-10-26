@@ -138,11 +138,11 @@ public final class BossIncomingOverrides {
 	 * 2026-07-17: every Zulrah form said pray mage). The bare name stays as
 	 * the whole-fight fallback. */
 	private static <T> T lookup(Map<String, T> map, MonsterStats monster) {
-		if (monster == null) { return null; }
+		if (monster == null) return null;
 		String version = monster.getVersion();
 		if (version != null && !version.isEmpty()) {
 			T byForm = map.get((monster.getNameLower() + "|" + version).toLowerCase(Locale.ROOT));
-			if (byForm != null) { return byForm; }
+			if (byForm != null) return byForm;
 		}
 		return map.get(monster.getNameLower());
 	}

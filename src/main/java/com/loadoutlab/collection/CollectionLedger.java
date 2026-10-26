@@ -98,7 +98,7 @@ public class CollectionLedger implements ScopedStore {
 	public CollectionLedger(ConfigManager configManager, Gson gson) {
 		this.configManager = configManager;
 		this.gson = gson;
-		for (Source s : Source.values()) { snapshots.put(s, new HashMap<>()); }
+		for (Source s : Source.values()) snapshots.put(s, new HashMap<>());
 	}
 
 	/**
@@ -128,7 +128,7 @@ public class CollectionLedger implements ScopedStore {
 	 */
 	public boolean update(Source source, Map<Integer, Integer> items) {
 		Map<Integer, Integer> next = new HashMap<>(items);
-		if (next.equals(snapshots.get(source))) { return false; }
+		if (next.equals(snapshots.get(source))) return false;
 		snapshots.put(source, next);
 		configManager.setConfiguration(CONFIG_GROUP, key(source), gson.toJson(next, MAP_TYPE.getType()));
 		fingerprint = null;
@@ -153,7 +153,7 @@ public class CollectionLedger implements ScopedStore {
 	 * component. Changes iff ownership actually changed.
 	 */
 	public int fingerprint() {
-		if (fingerprint == null) { fingerprint = owned().hashCode(); }
+		if (fingerprint == null) fingerprint = owned().hashCode();
 		return fingerprint;
 	}
 

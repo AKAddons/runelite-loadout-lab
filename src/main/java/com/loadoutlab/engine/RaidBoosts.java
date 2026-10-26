@@ -40,8 +40,8 @@ public final class RaidBoosts {
 	/** The raid-supplied boost for a fight inside, or null outside. */
 	public static BoostProfile suppliedBoost(MonsterStats monster) {
 		String name = monster.getNameLower();
-		if (XERIC.contains(name)) { return BoostProfile.OVERLOAD_PLUS; }
-		if (AMASCUT.contains(name)) { return BoostProfile.SMELLING_SALTS; }
+		if (XERIC.contains(name)) return BoostProfile.OVERLOAD_PLUS;
+		if (AMASCUT.contains(name)) return BoostProfile.SMELLING_SALTS;
 		return null;
 	}
 }

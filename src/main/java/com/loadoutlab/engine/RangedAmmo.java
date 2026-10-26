@@ -31,7 +31,7 @@ public final class RangedAmmo {
 		if (root != null) {
 			for (var e : root.getAsJsonObject("pairs").entrySet()) {
 				Set<Integer> ammo = new HashSet<>();
-				for (JsonElement a : e.getValue().getAsJsonArray()) { ammo.add(a.getAsInt()); }
+				for (JsonElement a : e.getValue().getAsJsonArray()) ammo.add(a.getAsInt());
 				PAIRS.put(Integer.parseInt(e.getKey()), ammo);
 			}
 		}
@@ -44,13 +44,13 @@ public final class RangedAmmo {
 	 * that fires only its own bolts is no sim without them). */
 	public static Set<Integer> withPairedAmmo(Set<Integer> sims) {
 		Set<Integer> out = new HashSet<>(sims);
-		for (int id : sims) { out.addAll(PAIRS.getOrDefault(id, Set.of())); }
+		for (int id : sims) out.addAll(PAIRS.getOrDefault(id, Set.of()));
 		return out;
 	}
 
 	public static boolean compatible(GearItem ammo, GearItem weapon) {
-		if (ammo == null) { return !weaponUsesProjectileAmmo(weapon); }
-		if (projectileMatches(ammo, weapon)) { return true; }
+		if (ammo == null) return !weaponUsesProjectileAmmo(weapon);
+		if (projectileMatches(ammo, weapon)) return true;
 		return !weaponUsesProjectileAmmo(weapon) && passiveAmmoSlotItem(ammo);
 	}
 
@@ -77,7 +77,7 @@ public final class RangedAmmo {
 	}
 
 	private static boolean projectileMatches(GearItem ammo, GearItem weapon) {
-		if (ammo == null || weapon == null) { return false; }
+		if (ammo == null || weapon == null) return false;
 		int ammoId = ammo.getId();
 		int weaponId = weapon.getId();
 		if (weaponId == DORGESHUUN_CROSSBOW) {
@@ -85,8 +85,8 @@ public final class RangedAmmo {
 			return (tier > 0 && tier <= 16) || DORGESHUUN_EXTRA_BOLTS.contains(ammoId);
 		}
 		Set<Integer> pair = PAIRS.get(weaponId);
-		if (pair != null) { return pair.contains(ammoId); }
-		if (JAVELIN_WEAPONS.contains(weaponId)) { return JAVELIN_AMMO.contains(ammoId); }
+		if (pair != null) return pair.contains(ammoId);
+		if (JAVELIN_WEAPONS.contains(weaponId)) return JAVELIN_AMMO.contains(ammoId);
 		int arrowCap = ARROW_TIER_BY_WEAPON.getOrDefault(weaponId, 0);
 		if (arrowCap > 0) {
 			int tier = ARROW_TIER_BY_AMMO.getOrDefault(ammoId, 0);

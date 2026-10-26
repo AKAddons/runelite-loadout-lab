@@ -33,11 +33,11 @@ public final class OwnedItems {
 		int[] ids = new int[quantities.size()];
 		int count = 0;
 		for (var entry : quantities.entrySet()) {
-			if (entry.getValue() != null && entry.getValue() > 0) { ids[count++] = entry.getKey(); }
+			if (entry.getValue() != null && entry.getValue() > 0) ids[count++] = entry.getKey();
 		}
 		Arrays.sort(ids, 0, count);
 		int hash = count;
-		for (int i = 0; i < count; i++) { hash = 31 * hash + ids[i]; }
+		for (int i = 0; i < count; i++) hash = 31 * hash + ids[i];
 		return hash;
 	}
 }

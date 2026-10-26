@@ -53,7 +53,7 @@ public final class BoostSelector {
 	 * F2P mode: members consumables do not exist on a free world - the
 	 * only boosts are the attack/strength potion pair (audit A3.5). */
 	public static BoostProfile ceilingFor(CombatStyle style, boolean f2p) {
-		if (f2p) { return style == CombatStyle.MELEE ? F2P_COMBAT : NONE; }
+		if (f2p) return style == CombatStyle.MELEE ? F2P_COMBAT : NONE;
 		switch (style) {
 			// Divine variants hold the boost at ceiling for the whole fight
 			// - same numbers, better assumption (field ask 2026-07-21).
@@ -78,7 +78,7 @@ public final class BoostSelector {
 	 * sane risk cap, so the assumption falls back to the magic potion. */
 	public static BoostProfile bestFor(CombatStyle style, OwnedItems owned, boolean f2p,
 		boolean noHearts) {
-		if (f2p) { return style == CombatStyle.MELEE ? F2P_COMBAT : NONE; }
+		if (f2p) return style == CombatStyle.MELEE ? F2P_COMBAT : NONE;
 		// Each ladder walks best -> worst and ends at NONE: an unowned boost is
 		// never assumed, so a low-level account sees the numbers it can
 		// actually reach today.
@@ -96,7 +96,7 @@ public final class BoostSelector {
 	 * unknown levels (the old Death Charge seed did both). */
 	public static int reachableMagic(PlayerLevels real,
 		PlayerLevels live, OwnedItems owned) {
-		if (real == null) { return live == null ? 0 : live.getMagic(); }
+		if (real == null) return live == null ? 0 : live.getMagic();
 		int reachable = live == null ? real.getMagic() : live.getMagic();
 		if (owned != null) {
 			BoostProfile best = bestFor(CombatStyle.MAGIC,
@@ -108,7 +108,7 @@ public final class BoostSelector {
 
 	private static boolean ownsAny(OwnedItems owned, int[] ids) {
 		for (int id : ids) {
-			if (owned.owns(id)) { return true; }
+			if (owned.owns(id)) return true;
 		}
 		return false;
 	}

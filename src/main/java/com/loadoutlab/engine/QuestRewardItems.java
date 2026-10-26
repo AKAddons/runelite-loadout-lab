@@ -43,7 +43,7 @@ public final class QuestRewardItems {
 
 	/** The source quest's name, or null when the item is not a quest reward. */
 	public static String questFor(GearItem item) {
-		if (item == null) { return null; }
+		if (item == null) return null;
 		return QUEST_BY_NAME.get(item.getNameLower());
 	}
 }

@@ -19,7 +19,7 @@ public final class PotionStorage {
 	static {
 		JsonObject root = JsonResources.objectOrThrow("potion_storage.json");
 		for (String key : root.keySet()) {
-			if (!key.startsWith("_")) { BY_VARBIT.put(Integer.parseInt(key), root.get(key).getAsInt()); }
+			if (!key.startsWith("_")) BY_VARBIT.put(Integer.parseInt(key), root.get(key).getAsInt());
 		}
 	}
 
@@ -33,7 +33,7 @@ public final class PotionStorage {
 		Map<Integer, Integer> owned = new HashMap<>();
 		BY_VARBIT.forEach((varbit, item) -> {
 			int doses = dosesOf.applyAsInt(varbit);
-			if (doses > 0) { owned.merge(item, (doses + 3) / 4, Integer::sum); }
+			if (doses > 0) owned.merge(item, (doses + 3) / 4, Integer::sum);
 		});
 		return owned;
 	}

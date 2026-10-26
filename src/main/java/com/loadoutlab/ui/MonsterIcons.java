@@ -59,14 +59,14 @@ public final class MonsterIcons {
 		String lower = key(name, version);
 		String cacheKey = lower + "@" + height;
 		ImageIcon hit = cache.get(cacheKey);
-		if (hit != null) { return hit; }
-		if (failed.contains(lower)) { return null; }
+		if (hit != null) return hit;
+		if (failed.contains(lower)) return null;
 		synchronized (waiting) {
 			// A load already in flight takes the callback and that is all.
 			boolean loading = waiting.containsKey(cacheKey);
 			List<Runnable> waiters = waiting.computeIfAbsent(cacheKey, k -> new ArrayList<>());
-			if (onReady != null) { waiters.add(onReady); }
-			if (loading) { return null; }
+			if (onReady != null) waiters.add(onReady);
+			if (loading) return null;
 		}
 		worker.execute(() -> {
 			try {
@@ -95,7 +95,7 @@ public final class MonsterIcons {
 		var file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
 		if (file.isFile()) {
 			BufferedImage disk = ImageIO.read(file);
-			if (disk != null) { return disk; }
+			if (disk != null) return disk;
 		}
 		String wikiFile = wikiFile(name, version);
 		if (wikiFile == null || wikiFile.isEmpty()) {
@@ -103,7 +103,7 @@ public final class MonsterIcons {
 			return null;
 		}
 		BufferedImage img = fetch(wikiFile);
-		if (img == null) { return null; }
+		if (img == null) return null;
 		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 			ImageIO.write(img, "png", out);
 			//noinspection ResultOfMethodCallIgnored
@@ -127,14 +127,14 @@ public final class MonsterIcons {
 	/** Built once, on the worker thread, from the bundled corpus. */
 	private Map<String, String> index() {
 		Map<String, String> local = files;
-		if (local != null) { return local; }
+		if (local != null) return local;
 		local = new HashMap<>();
 		try {
 			for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray()) {
 				JsonObject row = element.getAsJsonObject();
 				String name = JsonResources.string(row, "name");
 				String image = JsonResources.string(row, "image");
-				if (name.isEmpty() || image.isEmpty()) { continue; }
+				if (name.isEmpty() || image.isEmpty()) continue;
 				local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
 				// The panel asks with an empty version whenever the corpus
 				// holds one form, and with a normalized label when it holds
@@ -171,7 +171,7 @@ public final class MonsterIcons {
 			.url(WIKI + encoded + "?width=96")
 			.build();
 		try (Response response = http.newCall(request).execute()) {
-			if (!response.isSuccessful() || response.body() == null) { return null; }
+			if (!response.isSuccessful() || response.body() == null) return null;
 			return ImageIO.read(new ByteArrayInputStream(response.body().bytes()));
 		}
 	}

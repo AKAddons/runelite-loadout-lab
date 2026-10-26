@@ -21,7 +21,7 @@ public final class DpsCalculator {
 	private final LinkedHashMap<String, LinkedHashSet<String>> counted =
 		new LinkedHashMap<>();
 	/** The beam turns collection off: only results that can reach the panel
-	 * (final rescore, fill, spec) need the bonus list, and the map churn +
+	 * (rescore, fill, spec) need the bonus list, and the map churn +
 	 * per-result copy is pure waste across beam trials. */
 	private boolean collectCounted = true;
 	/** The sunfire floor of the CURRENT magic calculation: a tenth of the
@@ -34,13 +34,13 @@ public final class DpsCalculator {
 
 	/** Record one exact bonus ("+16.7% accuracy") under its source. */
 	private void counted(String source, String part) {
-		if (collectCounted) { counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part); }
+		if (collectCounted) counted.computeIfAbsent(source, s -> new LinkedHashSet<>()).add(part);
 	}
 
 	/** The assurance lines: "source: +X% accuracy, +Y% damage" per source. */
 	private List<String> countedLines() {
 		List<String> lines = new ArrayList<>(counted.size());
-		for (var entry : counted.entrySet()) { lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue())); }
+		for (var entry : counted.entrySet()) lines.add(entry.getKey() + ": " + String.join(", ", entry.getValue()));
 		return lines;
 	}
 
@@ -72,7 +72,7 @@ public final class DpsCalculator {
 			default:
 				result = calculateMelee(request, loadout);
 		}
-		if (result == null) { return null; }
+		if (result == null) return null;
 		result = VampyreRules.apply(request.getMonster(), request.getStyle(), loadout, result); // ISS-01M5RM2A7FFR9XWKATPX877TDD
 		double factor = TormentedDemonRules.damageFactor(
 				request.getMonster(), request.getStyle(), loadout.getWeapon(), result.getSpellName())
@@ -83,7 +83,7 @@ public final class DpsCalculator {
 		if (result.getMaxHit() > 50 && "zulrah".equals(request.getMonster().getNameLower())) {
 			int max = result.getMaxHit();
 			double cappedMean = 0;
-			for (int d = 0; d <= max; d++) { cappedMean += d <= 50 ? d : 47.5; }
+			for (int d = 0; d <= max; d++) cappedMean += d <= 50 ? d : 47.5;
 			cappedMean /= (max + 1);
 			double capFactor = cappedMean / (max / 2.0);
 			result = result.withHitModel(result.getDps() * capFactor,
@@ -94,7 +94,7 @@ public final class DpsCalculator {
 		if (result.getMaxHit() > 22 && "fragment of seren".equals(request.getMonster().getNameLower())) {
 			int max = result.getMaxHit();
 			double capped = 0;
-			for (int d = 0; d <= max; d++) { capped += (min(d, 22) + min(d, 23) + min(d, 24)) / 3.0; }
+			for (int d = 0; d <= max; d++) capped += (min(d, 22) + min(d, 23) + min(d, 24)) / 3.0;
 			double f = capped / (max + 1) / (max / 2.0);
 			result = result.withHitModel(result.getDps() * f, result.getAccuracy(), result.getExpectedHit() * f, min(max, 24));
 		}
@@ -405,7 +405,7 @@ public final class DpsCalculator {
 		// roll (wiki Multi-hit weapons; official calc: two standard dists).
 		String bow = name(loadout.getWeapon());
 		boolean glaives = bow.startsWith("tonalztics");
-		if (glaives) { maxHit = maxHit * 3 / 4; }
+		if (glaives) maxHit = maxHit * 3 / 4;
 		int rawRangedMax = maxHit;
 		maxHit = applyFlatArmour(request, maxHit);
 
@@ -440,17 +440,17 @@ public final class DpsCalculator {
 			expected += accuracy * 2.0;
 		}
 		int speed = attackSpeed(loadout, RANGED);
-		if (rapid) { speed = max(2, speed - 1); }
+		if (rapid) speed = max(2, speed - 1);
 		String attackType = rapid ? "ranged rapid" : "ranged accurate";
 		String dartName = BlowpipeDarts.tierName(request, loadout.getWeapon());
-		if (dartName != null) { attackType += " - " + dartName; }
+		if (dartName != null) attackType += " - " + dartName;
 		return new DpsResult(loadout, expected / (speed * SECONDS_PER_TICK), accuracy, expected, maxHit, speed, attackType, attackRoll, defenceRoll);
 	}
 
 	/** Twinflame's double hit applies to elemental Bolt/Blast/Wave tiers
 	 * only (wiki excludes Strike and Surge explicitly). */
 	static boolean twinflameDoubles(SpellStats spell) {
-		if (spell.getElement() == null || spell.getElement().isEmpty()) { return false; }
+		if (spell.getElement() == null || spell.getElement().isEmpty()) return false;
 		String name = Names.lower(spell.getName());
 		return name.endsWith("bolt") || name.endsWith("blast") || name.endsWith("wave");
 	}
@@ -543,7 +543,7 @@ public final class DpsCalculator {
 			// +6.3% hot on a Fire giant Water Wave.
 			counted("twinflame staff", "second hit at 40% of the roll (Bolt/Blast/Wave)");
 			long truncSum = 0;
-			for (int k = sunfireMinHit; k <= maxHit; k++) { truncSum += k * 2L / 5; }
+			for (int k = sunfireMinHit; k <= maxHit; k++) truncSum += k * 2L / 5;
 			expected += accuracy * ((double) truncSum / (maxHit - sunfireMinHit + 1));
 		}
 		if (wearing(loadout, "sanguinesti")) {
@@ -578,14 +578,14 @@ public final class DpsCalculator {
 			}
 			return elementalSpellMax(spell, magicLevel) + flatSpellBonus(loadout, spell);
 		}
-		if (!poweredStaff) { return 0; }
-		if (weaponName.contains("warped sceptre")) { return max(1, (8 * magicLevel + 96) / 37); }
-		if (weaponName.contains("bone staff")) { return max(1, magicLevel / 3 - 5) + 10; }
+		if (!poweredStaff) return 0;
+		if (weaponName.contains("warped sceptre")) return max(1, (8 * magicLevel + 96) / 37);
+		if (weaponName.contains("bone staff")) return max(1, magicLevel / 3 - 5) + 10;
 		for (var e : STAFF_FIXED.entrySet()) {
-			if (weaponName.contains(e.getKey())) { return e.getValue(); }
+			if (weaponName.contains(e.getKey())) return e.getValue();
 		}
 		for (var e : STAFF_OFFSET.entrySet()) {
-			if (weaponName.contains(e.getKey())) { return max(1, magicLevel / 3 + e.getValue()); }
+			if (weaponName.contains(e.getKey())) return max(1, magicLevel / 3 + e.getValue());
 		}
 		return max(1, magicLevel / 3 + 1);
 	}
@@ -600,19 +600,19 @@ public final class DpsCalculator {
 	/** Package-private: the optimizer prunes dominated elementals with the
 	 * same effective-max computation the DPS chain uses. */
 	static int elementalSpellMax(SpellStats spell, int magicLevel) {
-		if (spell.getElement().isEmpty()) { return spell.getMaxHit(); }
+		if (spell.getElement().isEmpty()) return spell.getMaxHit();
 		// The two-word parse is precomputed on SpellStats - split() here
 		// allocated a String[] per spell per trial.
 		String tierWord = spell.getNameSecondWord();
-		if (tierWord == null || !isElementWord(spell.getNameFirstWord())) { return spell.getMaxHit(); }
+		if (tierWord == null || !isElementWord(spell.getNameFirstWord())) return spell.getMaxHit();
 		int row = TIER_WORDS.indexOf(tierWord);
-		if (row < 0) { return spell.getMaxHit(); }
+		if (row < 0) return spell.getMaxHit();
 		// Class max hits: wind/water/earth/fire per tier - the class's base,
 		// plus its step at each Magic level the tier table lists.
 		int[] tier = TIERS[row];
 		int max = tier[0];
 		for (int i = 2; i < tier.length; i++) {
-			if (magicLevel >= tier[i]) { max += tier[1]; }
+			if (magicLevel >= tier[i]) max += tier[1];
 		}
 		return max;
 	}
@@ -628,7 +628,7 @@ public final class DpsCalculator {
 	 * (official-verified 2026-09-08). */
 	private int flatSpellBonus(Loadout loadout, SpellStats spell) {
 		String element = spell.getElement();
-		if (element.isEmpty()) { return 0; }
+		if (element.isEmpty()) return 0;
 		int bonus = 0;
 		if ("Bolt".equals(spell.getNameSecondWord()) && wearing(loadout, "chaos gauntlets")) {
 			counted("chaos gauntlets", "+3 max hit on bolt spells");
@@ -687,8 +687,8 @@ public final class DpsCalculator {
 
 	private static String rangedDefenceType(GearItem weapon) {
 		String category = weapon == null ? "" : weapon.getCategoryLower();
-		if (category.contains("thrown")) { return "light"; }
-		if (category.contains("crossbow") || category.contains("chinchompa")) { return "heavy"; }
+		if (category.contains("thrown")) return "light";
+		if (category.contains("crossbow") || category.contains("chinchompa")) return "heavy";
 		return "standard";
 	}
 
@@ -703,7 +703,7 @@ public final class DpsCalculator {
 
 	private static int attackSpeed(Loadout loadout, CombatStyle style) {
 		GearItem weapon = loadout.getWeapon();
-		if (weapon == null || weapon.getSpeed() <= 0) { return style == MAGIC ? 5 : 4; }
+		if (weapon == null || weapon.getSpeed() <= 0) return style == MAGIC ? 5 : 4;
 		if (style == MAGIC && !isPoweredStaff(loadout)) {
 			// Casting a spell is 5 ticks regardless of the staff's melee
 			// speed (upstream billed autocasts at the wand's 4 ticks - a
@@ -723,11 +723,11 @@ public final class DpsCalculator {
 	private long applyMelee(OptimizationRequest request, Loadout loadout, long value, long base,
 		String attackType, boolean damage) {
 		String what = damage ? "damage" : "accuracy";
-		if (isWearingMeleeVoid(loadout)) { value = step(value, "void set", what, Factor.PLUS_10); }
+		if (isWearingMeleeVoid(loadout)) value = step(value, "void set", what, Factor.PLUS_10);
 		value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_PRE : MELEE_ACCURACY_PRE);
 		value = salveOrSlayer(request, loadout, value, what, MELEE, false);
 		value = applyRules(request, loadout, value, base, damage ? MELEE_DAMAGE_POST : MELEE_ACCURACY_POST);
-		if (!damage) { value = VampyreRules.accuracy(request.getMonster(), loadout, value); }
+		if (!damage) value = VampyreRules.accuracy(request.getMonster(), loadout, value);
 		return "crush".equals(attackType) ? applyInquisitorBonus(loadout, value) : value;
 	}
 
@@ -764,7 +764,7 @@ public final class DpsCalculator {
 		value = salveOrSlayer(request, loadout, value, what, RANGED,
 			damage && wearing(loadout, "eclipse atlatl"));
 		value = applyRules(request, loadout, value, 0, damage ? RANGED_DAMAGE_POST : RANGED_ACCURACY_POST);
-		if (wearing(loadout, "twisted bow")) { return floorDiv(value * tbowScaling(request, !damage, what), 100); }
+		if (wearing(loadout, "twisted bow")) return floorDiv(value * tbowScaling(request, !damage, what), 100);
 		return value;
 	}
 
@@ -793,7 +793,7 @@ public final class DpsCalculator {
 	 * button, its first catch). */
 	private long weakness(OptimizationRequest request, long value, long base, String label) {
 		SpellStats spell = request.getSpell();
-		if (spell == null || !spell.getElement().equals(request.getMonster().getWeaknessElement())) { return value; }
+		if (spell == null || !spell.getElement().equals(request.getMonster().getWeaknessElement())) return value;
 		int severity = request.getMonster().getWeaknessSeverity();
 		counted("elemental weakness", "+" + severity + label);
 		return value + multiply(base, severity, 100);
@@ -819,7 +819,7 @@ public final class DpsCalculator {
 		int baseMaxHit = maxHit;
 		sunfireMinHit = 0;
 		int magicDamage = loadout.getBonuses().getMagicDamage();
-		if (wearing(loadout, "tumeken")) { magicDamage = min(1000, magicDamage * (inToa(request) ? 4 : 3)); }
+		if (wearing(loadout, "tumeken")) magicDamage = min(1000, magicDamage * (inToa(request) ? 4 : 3));
 		if ((wearing(loadout, "twinflame") || wearing(loadout, "smoke battlestaff")
 			|| wearing(loadout, "mystic smoke staff"))
 			&& request.getSpell() != null
@@ -848,7 +848,7 @@ public final class DpsCalculator {
 			slayerHeadBonus = true;
 		}
 		maxHit = (int) floor(maxHit * (1.0 + (magicDamage + request.getPrayers().getMagicDamagePercent() * 10.0) / 1000.0));
-		if (slayerHeadBonus) { maxHit = (int) multiply(maxHit, 23, 20); }
+		if (slayerHeadBonus) maxHit = (int) multiply(maxHit, 23, 20);
 		maxHit = (int) applyRules(request, loadout, maxHit, baseMaxHit, MAGIC_DAMAGE_POST);
 		maxHit = (int) weakness(request, maxHit, baseMaxHit, "% base damage");
 		// Sunfire runes (wiki; Kendyy 2026-10-19): a landed fire spell deals
@@ -885,11 +885,11 @@ public final class DpsCalculator {
 	 * (audit A3.1); wilderness-exclusive monsters default the flag on.
 	 */
 	static boolean revWeaponBuff(OptimizationRequest request, Loadout loadout, String... weapons) {
-		if (!request.isInWilderness()) { return false; }
+		if (!request.isInWilderness()) return false;
 		GearItem weapon = loadout.get(WEAPON);
-		if (weapon == null || !"charged".equals(weapon.getVersionLower())) { return false; }
+		if (weapon == null || !"charged".equals(weapon.getVersionLower())) return false;
 		for (String name : weapons) {
-			if (weapon.getNameLower().equals(name)) { return true; }
+			if (weapon.getNameLower().equals(name)) return true;
 		}
 		return false;
 	}
@@ -925,7 +925,7 @@ public final class DpsCalculator {
 	/** Every piece worn (the list order is the check's short-circuit order). */
 	private static boolean wearsAll(Loadout loadout, List<String> pieces) {
 		for (String piece : pieces) {
-			if (!wearing(loadout, piece)) { return false; }
+			if (!wearing(loadout, piece)) return false;
 		}
 		return true;
 	}
@@ -933,7 +933,7 @@ public final class DpsCalculator {
 	/** Any of the alternatives worn; active = "Inactive" versions never count. */
 	private static boolean wearsAny(Loadout loadout, List<String> names, boolean active) {
 		for (String name : names) {
-			if (active ? wearingActive(loadout, name) : wearing(loadout, name)) { return true; }
+			if (active ? wearingActive(loadout, name) : wearing(loadout, name)) return true;
 		}
 		return false;
 	}
@@ -988,7 +988,7 @@ public final class DpsCalculator {
 
 	/** The string list at row[key], or null when the row has none. */
 	private static List<String> names(JsonObject row, String key) {
-		if (!row.has(key)) { return null; }
+		if (!row.has(key)) return null;
 		List<String> list = new ArrayList<>();
 		strings(row, key, list);
 		return list;
@@ -1152,7 +1152,7 @@ public final class DpsCalculator {
 			if (head != null) {
 				return step(value, head.getNameLower(), what, melee ? Factor.PLUS_16_7 : Factor.PLUS_15);
 			}
-			if (atlatl && wearing(loadout, "black mask")) { return step(value, "black mask", what, Factor.PLUS_16_7); }
+			if (atlatl && wearing(loadout, "black mask")) return step(value, "black mask", what, Factor.PLUS_16_7);
 		}
 		return value;
 	}
@@ -1163,7 +1163,7 @@ public final class DpsCalculator {
 	 * "slayer helmet"). */
 	private static GearItem slayerHead(Loadout loadout, boolean imbued) {
 		for (GearItem item : loadout.getGear().values()) {
-			if (item != null && (imbued ? item.isImbuedSlayerHead() : item.isSlayerHead())) { return item; }
+			if (item != null && (imbued ? item.isImbuedSlayerHead() : item.isSlayerHead())) return item;
 		}
 		return null;
 	}
@@ -1204,7 +1204,7 @@ public final class DpsCalculator {
 	 * do). */
 	private static boolean isFarTitan(OptimizationRequest request) {
 		MonsterStats monster = request.getMonster();
-		if (monster == null || !monster.hasAttribute("immune_melee")) { return false; }
+		if (monster == null || !monster.hasAttribute("immune_melee")) return false;
 		String name = monster.getName().toLowerCase();
 		return name.contains("branda") || name.contains("eldric");
 	}
@@ -1220,7 +1220,7 @@ public final class DpsCalculator {
 	private double frostweaverBonus(OptimizationRequest request, Loadout loadout) {
 		SpellStats spell = request.getSpell();
 		// Frostweaver: all three blue moon pieces + the spear.
-		if (spell == null || !wearsAll(loadout, BLUE_MOON)) { return 0; }
+		if (spell == null || !wearsAll(loadout, BLUE_MOON)) return 0;
 		String spellName = spell.getName();
 		String book = spell.getSpellbook() == null ? "" : Names.lower(spell.getSpellbook());
 		double chance;

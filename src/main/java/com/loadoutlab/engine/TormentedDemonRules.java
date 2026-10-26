@@ -30,20 +30,20 @@ public final class TormentedDemonRules {
 
 	/** The flat 20% reduction, bypassed by demonbane and abyssal weapons. */
 	public static double damageFactor(MonsterStats monster, CombatStyle style, GearItem weapon, String spellName) {
-		if (!applies(monster)) { return 1.0; }
+		if (!applies(monster)) return 1.0;
 		return bypassesReduction(style, weapon, spellName) ? 1.0 : 0.8;
 	}
 
 	private static boolean bypassesReduction(CombatStyle style, GearItem weapon, String spellName) {
-		if (style == CombatStyle.MAGIC) { return spellName != null && spellName.contains("Demonbane"); }
+		if (style == CombatStyle.MAGIC) return spellName != null && spellName.contains("Demonbane");
 		// The demonbane weapon vocabulary lives on GearItem (one list with
 		// MonsterMechanics and the optimizer's demon bump); a melee name
 		// can never be the weapon of a RANGED attack, so one flag serves
 		// both remaining styles.
-		if (weapon == null) { return false; }
-		if (weapon.isDemonbane()) { return true; }
+		if (weapon == null) return false;
+		if (weapon.isDemonbane()) return true;
 		for (String abyssal : ABYSSAL) {
-			if (weapon.getNameLower().startsWith(abyssal)) { return true; }
+			if (weapon.getNameLower().startsWith(abyssal)) return true;
 		}
 		return false;
 	}

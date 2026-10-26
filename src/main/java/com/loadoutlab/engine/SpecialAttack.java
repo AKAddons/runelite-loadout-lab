@@ -124,11 +124,11 @@ public final class SpecialAttack {
 	 * spec weapon is a candidate for ANY set (field request 2026-07-17 -
 	 * "sometimes you want to use magic + chally"). */
 	public static SpecialAttack match(GearItem item) {
-		if (item == null || item.getSlot() != GearSlot.WEAPON) { return null; }
+		if (item == null || item.getSlot() != GearSlot.WEAPON) return null;
 		String name = item.getNameLower();
 		for (SpecialAttack spec : REGISTRY) {
 			for (String prefix : spec.namePrefixes) {
-				if (name.startsWith(prefix)) { return spec; }
+				if (name.startsWith(prefix)) return spec;
 			}
 		}
 		return null;
@@ -251,7 +251,7 @@ public final class SpecialAttack {
 	 */
 	private static double multiRollTieredExpected(double p, int max) {
 		// Binomial coefficients C(4, k) for k = 0..4.
-		final int[] choose = {1, 4, 6, 4, 1};
+		int[] choose = {1, 4, 6, 4, 1};
 		double expected = 0;
 		for (int k = 1; k <= 4; k++) {
 			expected += choose[k] * pow(p, k) * pow(1 - p, 4 - k)
@@ -279,7 +279,7 @@ public final class SpecialAttack {
 		int boosted = (int) (max * (dragonArrows ? 1.5 : 1.3));
 		int min = dragonArrows ? 8 : 5;
 		double sum = 0;
-		for (int d = 0; d <= boosted; d++) { sum += min(DARK_BOW_CAP, max(min, d)); }
+		for (int d = 0; d <= boosted; d++) sum += min(DARK_BOW_CAP, max(min, d));
 		return 2 * p * (sum / (boosted + 1));
 	}
 
@@ -317,7 +317,7 @@ public final class SpecialAttack {
 
 	/** Chance this spec lands a damaging hit, from the base result's rolls. */
 	public double landChance(DpsResult base) {
-		if (kind == Kind.VOIDWAKER) { return 1.0; }
+		if (kind == Kind.VOIDWAKER) return 1.0;
 		return RollMath.normalAccuracy(
 			(long) (base.getAttackRoll() * accuracyMultiplier), base.getDefenceRoll());
 	}
@@ -327,8 +327,8 @@ public final class SpecialAttack {
 	 * the unchanged level for non-drain specs. BGS drains by damage dealt.
 	 */
 	public int drainedDefence(int currentDefence, double specExpectedDamage) {
-		if (drainsByDamage) { return max(0, currentDefence - (int) specExpectedDamage); }
-		if (defenceDrainFraction > 0) { return currentDefence - (int) (currentDefence * defenceDrainFraction); }
+		if (drainsByDamage) return max(0, currentDefence - (int) specExpectedDamage);
+		if (defenceDrainFraction > 0) return currentDefence - (int) (currentDefence * defenceDrainFraction);
 		return currentDefence;
 	}
 

@@ -38,9 +38,9 @@ public final class ItemLocations {
 	 */
 	public String primary(int itemId) {
 		List<String> where = where(itemId);
-		if (where.isEmpty()) { return ""; }
+		if (where.isEmpty()) return "";
 		String label = where.get(0);
-		if (!label.endsWith(VIA_DWMS)) { return label; }
+		if (!label.endsWith(VIA_DWMS)) return label;
 		String base = label.substring(0, label.length() - VIA_DWMS.length());
 		switch (base) {
 			case "POH costume room":

@@ -20,13 +20,13 @@ public final class RatBoneRules {
 
 	/** Flat max-hit bonus vs rats for the non-staff rat bone weapons. */
 	public static int flatMaxHitBonus(MonsterStats monster, GearItem weapon) {
-		if (weapon == null || !isRat(monster)) { return 0; }
+		if (weapon == null || !isRat(monster)) return 0;
 		String name = weapon.getNameLower();
 		return name.startsWith("bone mace") || name.startsWith("bone shortbow") ? 10 : 0;
 	}
 
 	private static boolean isRatBone(GearItem weapon) {
-		if (weapon == null) { return false; }
+		if (weapon == null) return false;
 		String name = weapon.getNameLower();
 		return name.startsWith("bone mace")
 			|| name.startsWith("bone shortbow")

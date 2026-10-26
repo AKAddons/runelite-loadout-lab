@@ -107,8 +107,8 @@ public final class DpsResult {
 	 * duplicated by DpsCalculator and LoadoutOptimizer.
 	 */
 	public static DpsResult better(DpsResult first, DpsResult second) {
-		if (second == null) { return first; }
-		if (first == null || second.getDps() > first.getDps()) { return second; }
+		if (second == null) return first;
+		if (first == null || second.getDps() > first.getDps()) return second;
 		return first;
 	}
 
