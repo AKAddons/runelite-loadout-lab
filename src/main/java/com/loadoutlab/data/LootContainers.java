@@ -54,7 +54,7 @@ public final class LootContainers {
 	public static List<Map<String, Object>> picks(MonsterStats monster, IntPredicate owns, boolean wilderness) {
 		List<Map<String, Object>> out = new ArrayList<>();
 		if (monster == null || owns == null) { return out; }
-		String key = Names.lower(monster.getName());
+		String key = monster.getNameLower();
 		for (Container container : CONTAINERS) {
 			Double rate = container.perKill.get(key);
 			int id = rate == null ? -1 : ownedId(container, owns);
@@ -73,7 +73,7 @@ public final class LootContainers {
 	/** Whether the monster drops enough of what a container holds, by its
 	 * holds word ("ashes": the Demonic Offering book, ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
 	public static boolean drops(MonsterStats monster, String holds) {
-		String key = Names.lower(monster.getName());
+		String key = monster.getNameLower();
 		return CONTAINERS.stream().anyMatch(c -> c.holds.equals(holds) && c.perKill.containsKey(key));
 	}
 

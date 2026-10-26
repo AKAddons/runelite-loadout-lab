@@ -19,6 +19,6 @@ public final class SlayerLockedMonsters {
 	}
 
 	public static boolean isTaskOnly(MonsterStats monster) {
-		return monster != null && NAMES.contains(Names.lower(monster.getName()));
+		return monster != null && NAMES.contains(monster.getNameLower());
 	}
 }

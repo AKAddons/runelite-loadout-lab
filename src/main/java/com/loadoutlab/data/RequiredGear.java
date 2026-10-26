@@ -124,7 +124,7 @@ public final class RequiredGear {
 	/** Every rule for the monster (a full armour set is one rule per slot). */
 	public static List<Rule> rulesFor(MonsterStats monster) {
 		return monster == null ? List.of()
-			: BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of());
+			: BY_NAME.getOrDefault(monster.getNameLower(), List.of());
 	}
 
 	/** The rules still standing once the player's waivers lift theirs. */
@@ -154,7 +154,7 @@ public final class RequiredGear {
 		java.util.function.IntPredicate owns) {
 		List<java.util.Map<String, Object>> out = new ArrayList<>();
 		if (monster == null) { return out; }
-		for (Carried rule : CARRIED_BY_NAME.getOrDefault(Names.lower(monster.getName()), List.of())) {
+		for (Carried rule : CARRIED_BY_NAME.getOrDefault(monster.getNameLower(), List.of())) {
 			int pick = -1;
 			for (int i = 0; i < rule.ids.size() && pick < 0; i++) {
 				for (int id : rule.ids.get(i)) {

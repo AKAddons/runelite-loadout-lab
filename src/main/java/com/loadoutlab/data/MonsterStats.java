@@ -27,6 +27,8 @@ public final class MonsterStats {
 	private final String nameLower;
 	private final boolean wilderness;
 	private final boolean revenant;
+	/** 0, or the vampyre tier (attribute vampyre1-3): read per trial set. */
+	private final int vampyreTier;
 
 	public MonsterStats(
 		int id,
@@ -80,6 +82,7 @@ public final class MonsterStats {
 			if (value != null) { lower.add(Names.lower(value)); }
 		}
 		this.attributesLower = lower;
+		this.vampyreTier = lower.contains("vampyre3") ? 3 : lower.contains("vampyre2") ? 2 : lower.contains("vampyre1") ? 1 : 0;
 		// The revenant/wilderness gates lowercase the name per DPS trial -
 		// that allocation was ~20% of optimizer samples. Once, here.
 		this.nameLower = Names.lower(this.name);
@@ -200,7 +203,7 @@ public final class MonsterStats {
 	 * scaling or the drain would be valued at invocation 0. */
 	public MonsterStats withDefence(int newDefence) { return copy(id, version, attributes, Math.max(0, newDefence)); }
 
-	public boolean hasAttribute(String attribute) { return attributesLower.contains(Names.lower(attribute)); }
+	public boolean hasAttribute(String attribute) { return attributesLower.contains(Names.key(attribute)); }
 
 	/** True when this variant's version label starts with the prefix - the
 	 * phase gate the mechanics rules share ("Phase 1..."). */

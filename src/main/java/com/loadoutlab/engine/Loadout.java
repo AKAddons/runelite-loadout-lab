@@ -59,7 +59,7 @@ public final class Loadout {
 			add(bon, item.getBonuses());
 			totalCost += item.getPriceOrZero();
 			names.append(item.getNameLower()).append('\n');
-			if (!"inactive".equalsIgnoreCase(item.getVersion())) {
+			if (!"inactive".equals(item.getVersionLower())) {
 				activeNames.append(item.getNameLower()).append('\n');
 			}
 		}

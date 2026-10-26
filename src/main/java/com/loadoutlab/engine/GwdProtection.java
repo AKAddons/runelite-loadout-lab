@@ -41,13 +41,13 @@ public final class GwdProtection {
 
 	/** True for the generals and their bodyguards. */
 	public static boolean isGwd(MonsterStats monster) {
-		return monster != null && ROUTE_BY_MONSTER.containsKey(Names.lower(monster.getName()));
+		return monster != null && ROUTE_BY_MONSTER.containsKey(monster.getNameLower());
 	}
 
 	/** The gods this monster's route needs (Zaros added for the Ancient chip);
 	 * empty anywhere else. */
 	public static List<String> godsFor(MonsterStats monster, boolean ancient) {
-		List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(Names.lower(monster.getName()));
+		List<String> route = monster == null ? null : ROUTE_BY_MONSTER.get(monster.getNameLower());
 		if (route == null) { return List.of(); }
 		if (!ancient) { return route; }
 		List<String> gods = new ArrayList<>(route);

@@ -35,7 +35,7 @@ public final class VampyreRules {
 
 	/** 1-3 for a vampyre's tier, 0 for anything else. */
 	static int tier(MonsterStats m) {
-		return m == null ? 0 : m.hasAttribute("vampyre3") ? 3 : m.hasAttribute("vampyre2") ? 2 : m.hasAttribute("vampyre1") ? 1 : 0;
+		return m == null ? 0 : m.getVampyreTier();
 	}
 
 	private static String name(GearItem item) { return item == null ? "" : item.getNameLower(); }
@@ -86,6 +86,7 @@ public final class VampyreRules {
 	 * counts as 1. */
 	static DpsResult apply(MonsterStats monster, CombatStyle style, Loadout loadout, DpsResult result) {
 		int tier = tier(monster), top = result.getMaxHit();
+		if (tier == 0) { return result; }
 		GearItem weapon = loadout.getWeapon();
 		boolean ring = ring(loadout), silver = silver(style, loadout);
 		int scale = N.getOrDefault("dmg " + name(weapon), silver && tier == 1 ? N.get("silverTier1") : 0);

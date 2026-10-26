@@ -51,7 +51,7 @@ public final class MonsterSpellbooks {
 
 	private static String[] lookup(MonsterStats monster) {
 		if (monster == null) { return null; }
-		String name = Names.lower(monster.getName());
+		String name = monster.getNameLower();
 		return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey()))
 			.map(Map.Entry::getValue).findFirst().orElse(null);
 	}

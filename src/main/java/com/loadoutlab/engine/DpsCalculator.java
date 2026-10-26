@@ -80,8 +80,7 @@ public final class DpsCalculator {
 				loadout, result.getAttackType(), request.getSpell());
 		// Zulrah rerolls any hit above 50 down to 45-50 (Jagex-confirmed);
 		// scale the expectation accordingly and cap the displayed max.
-		if ("Zulrah".equalsIgnoreCase(request.getMonster().getName())
-			&& result.getMaxHit() > 50) {
+		if (result.getMaxHit() > 50 && "zulrah".equals(request.getMonster().getNameLower())) {
 			int max = result.getMaxHit();
 			double cappedMean = 0;
 			for (int d = 0; d <= max; d++) { cappedMean += d <= 50 ? d : 47.5; }
@@ -92,7 +91,7 @@ public final class DpsCalculator {
 		}
 		// The Fragment of Seren: a hit lands as min(hit, 22..24) (reference
 		// linearMinTransformer(2, 22); ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
-		if ("Fragment of Seren".equalsIgnoreCase(request.getMonster().getName()) && result.getMaxHit() > 22) {
+		if (result.getMaxHit() > 22 && "fragment of seren".equals(request.getMonster().getNameLower())) {
 			int max = result.getMaxHit();
 			double capped = 0;
 			for (int d = 0; d <= max; d++) { capped += (min(d, 22) + min(d, 23) + min(d, 24)) / 3.0; }
@@ -869,7 +868,7 @@ public final class DpsCalculator {
 	}
 
 	private static boolean wearing(Loadout loadout, String marker) {
-		return loadout.namesLower().contains(Names.lower(marker));
+		return loadout.namesLower().contains(Names.key(marker));
 	}
 
 	/** Revenants: the avarice and wilderness-weapon conditionals key off

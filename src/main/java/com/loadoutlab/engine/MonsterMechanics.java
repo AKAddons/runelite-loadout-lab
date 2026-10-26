@@ -47,12 +47,17 @@ public final class MonsterMechanics {
 	private MonsterMechanics() {
 	}
 
+	/** "immune_melee" and its kin, built once - the per-set checks used to
+	 * concatenate and lower-case them every trial. */
+	private static final String[] IMMUNE_ATTR = Arrays.stream(CombatStyle.values())
+		.map(s -> "immune_" + Names.lower(s.name())).toArray(String[]::new);
+
 	/** Style-level immunity, independent of the weapon (panel messaging). */
 	public static boolean styleImmune(MonsterStats monster, CombatStyle style) {
 		if (monster == null) { return false; }
 		// Data-driven immunity (synthetic group variants - the tormented
 		// demon shield phases): the attribute wins before the id lists.
-		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) { return true; }
+		if (monster.hasAttribute(IMMUNE_ATTR[style.ordinal()])) { return true; }
 		switch (style) {
 			case MAGIC: return IMMUNE_MAGIC.contains(monster.getId());
 			case RANGED: return IMMUNE_RANGED.contains(monster.getId());
@@ -69,7 +74,7 @@ public final class MonsterMechanics {
 	 * ice arrows for the Fire Warrior (ISS-01M5RVDTMR5XG16HM6G2JTF7FF). */
 	public static boolean keepInPool(MonsterStats monster, GearItem item) {
 		if (monster == null) { return false; }
-		String name = Names.lower(monster.getName());
+		String name = monster.getNameLower();
 		String it = item.getNameLower();
 		return "slagilith".equals(name) && "Pickaxe".equals(item.getCategory())
 			|| ZOGRES.contains(name) && (it.equals("comp ogre bow") || it.contains("brutal"))
@@ -78,7 +83,7 @@ public final class MonsterMechanics {
 
 	public static boolean isImmune(MonsterStats monster, CombatStyle style, Loadout loadout, SpellStats spell) {
 		if (monster == null) { return false; }
-		String name = Names.lower(monster.getName());
+		String name = monster.getNameLower();
 		String element = spell == null || spell.getElement() == null ? "" : spell.getElement();
 		GearItem ammo = loadout.get(GearSlot.AMMO);
 		String ammoName = ammo == null ? "" : ammo.getNameLower();
@@ -95,7 +100,7 @@ public final class MonsterMechanics {
 		// exception: a PRAYER-based melee immunity (KQ's airborne form) is
 		// pierced by Verac's set - the flail gates entry here, and the
 		// calculator prices set-complete-or-zero.
-		if (monster.hasAttribute("immune_" + Names.lower(style.name()))) {
+		if (monster.hasAttribute(IMMUNE_ATTR[style.ordinal()])) {
 			boolean veracPierce = style == MELEE
 				&& monster.hasAttribute("prayer_immunity")
 				&& loadout.getWeapon() != null
@@ -296,7 +301,7 @@ public final class MonsterMechanics {
 	public static double damageFactor(MonsterStats monster, CombatStyle style,
 		Loadout loadout, String attackType, SpellStats spell) {
 		if (monster == null) { return 1.0; }
-		String name = monster.getName();
+		String name = monster.getNameLower();
 		GearItem weapon = loadout.getWeapon();
 		String weaponName = weapon == null ? "" : weapon.getNameLower();
 		// The Sire's vents: standard melee does NOTHING (wiki). The pool
@@ -308,8 +313,8 @@ public final class MonsterMechanics {
 			&& RESPIRATORY_SYSTEMS.contains(monster.getId()) && !ventMeleeLands(weapon)) {
 			return 0.0;
 		}
-		if ("Corporeal Beast".equalsIgnoreCase(name) && !corpbane(style, weaponName, attackType)) { return 0.5; }
-		if (("Kraken".equalsIgnoreCase(name) || "Cave kraken".equalsIgnoreCase(name))
+		if ("corporeal beast".equals(name) && !corpbane(style, weaponName, attackType)) { return 0.5; }
+		if (("kraken".equals(name) || "cave kraken".equals(name))
 			&& style == RANGED) {
 			return 1.0 / 7.0;
 		}
@@ -318,10 +323,10 @@ public final class MonsterMechanics {
 			boolean fire = spell != null && "fire".equals(spell.getElement());
 			if (!fire) { return 1.0 / 3.0; }
 		}
-		if ("Slagilith".equalsIgnoreCase(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
+		if ("slagilith".equals(name) && !"Pickaxe".equals(weapon == null ? "" : weapon.getCategory())) {
 			return 1.0 / 3.0;
 		}
-		if (ZOGRES.contains(Names.lower(name))) {
+		if (ZOGRES.contains(name)) {
 			if (spell != null && "Crumble Undead".equals(spell.getName())) { return 0.5; }
 			// Brutal arrows from a comp ogre bow land in full (reference; ISS-01M5RVDTMR5XG16HM6G2JTF7FF).
 			GearItem ammo = loadout.get(GearSlot.AMMO);

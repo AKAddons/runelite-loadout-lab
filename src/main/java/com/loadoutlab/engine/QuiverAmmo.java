@@ -49,7 +49,7 @@ public final class QuiverAmmo {
 		boolean charged = name.contains("blessed dizana's quiver")
 			|| name.contains("dizana's max cape")
 			|| (name.contains("dizana's quiver")
-				&& "charged".equalsIgnoreCase(cape.getVersion()));
+				&& "charged".equals(cape.getVersionLower()));
 		if (!charged) { return false; }
 		GearItem weapon = loadout.getWeapon();
 		GearItem ammo = loadout.getQuiverAmmo() != null

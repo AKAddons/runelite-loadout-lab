@@ -151,7 +151,7 @@ public final class TripSupplies {
 	public static List<Option> fitting(String category, List<MonsterStats> mobs, IntPredicate unlocked) {
 		List<Option> out = new ArrayList<>();
 		for (Option o : options(category)) {
-			if ((o.monsters.length == 0 || mobs.stream().anyMatch(m -> Arrays.asList(o.monsters).contains(Names.lower(m.getName()))))
+			if ((o.monsters.length == 0 || mobs.stream().anyMatch(m -> Arrays.asList(o.monsters).contains(m.getNameLower())))
 				&& (o.unlock == 0 || unlocked.test(o.unlock))) { out.add(o); }
 		}
 		return out;
@@ -176,12 +176,12 @@ public final class TripSupplies {
 
 	/** No cannon here: a prohibited arena or cannon-immune (exact names). */
 	public static boolean noCannon(MonsterStats monster) {
-		return monster != null && NO_CANNON.contains(Names.lower(monster.getName()));
+		return monster != null && NO_CANNON.contains(monster.getNameLower());
 	}
 
 	private static boolean named(MonsterStats monster, Set<String> tokens) {
 		if (monster == null) { return false; }
-		String name = Names.lower(monster.getName());
+		String name = monster.getNameLower();
 		return tokens.stream().anyMatch(name::contains);
 	}
 }
