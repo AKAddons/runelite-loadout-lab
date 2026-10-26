@@ -5,18 +5,15 @@ import lombok.Getter;
 
 @Getter
 public enum CombatStyle {
-	ANY("Any"),
-	MELEE("Melee"),
-	RANGED("Ranged"),
-	MAGIC("Magic");
+    ANY("Any"), MELEE("Melee"), RANGED("Ranged"), MAGIC("Magic");
 
-	private final String label;
+    private final String label;
 
-	CombatStyle(String label) { this.label = label; }
+    CombatStyle(String label) { this.label = label; }
 
-	public static CombatStyle[] concreteValues() {
-		return new CombatStyle[]{MELEE, RANGED, MAGIC};
-	}
+    public static CombatStyle[] concreteValues() {
+        return new CombatStyle[]{MELEE, RANGED, MAGIC};
+    }
 
-	public String toString() { return label; }
+    public String toString() { return label; }
 }

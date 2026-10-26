@@ -9,16 +9,16 @@ import java.util.*;
  * opposite of unassignable monsters where it is forced off.
  */
 public final class SlayerLockedMonsters {
-	private static final Set<String> NAMES = new HashSet<>();
+    private static final Set<String> NAMES = new HashSet<>();
 
-	static {
-		JsonResources.strings(JsonResources.objectOrThrow("slayer_locked_monsters.json"), "names", NAMES);
-	}
+    static {
+        JsonResources.strings(JsonResources.objectOrThrow("slayer_locked_monsters.json"), "names", NAMES);
+    }
 
-	private SlayerLockedMonsters() {
-	}
+    private SlayerLockedMonsters() {
+    }
 
-	public static boolean isTaskOnly(MonsterStats monster) {
-		return monster != null && NAMES.contains(monster.getNameLower());
-	}
+    public static boolean isTaskOnly(MonsterStats monster) {
+        return monster != null && NAMES.contains(monster.getNameLower());
+    }
 }

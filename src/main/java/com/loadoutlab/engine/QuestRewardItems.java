@@ -21,29 +21,28 @@ import java.util.*;
  * corpus item.
  */
 public final class QuestRewardItems {
-	private static final String RESOURCE = "quest_rewards.json";
+    private static final String RESOURCE = "quest_rewards.json";
 
-	static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
+    static final Map<String, String> QUEST_BY_NAME = new HashMap<>();
 
-	static {
-		// Fail-loud on purpose: a silently empty table would quietly drop
-		// every quest reward out of the obtainable-gear pool.
-		JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
-		for (var entry : root.entrySet()) {
-			QUEST_BY_NAME.put(Names.lower(entry.getKey()),
-				entry.getValue().getAsJsonObject().get("quest").getAsString());
-		}
-	}
+    static {
+        // Fail-loud on purpose: a silently empty table would quietly drop
+        // every quest reward out of the obtainable-gear pool.
+        JsonObject root = com.loadoutlab.data.JsonResources.objectOrThrow(RESOURCE);
+        for (var entry : root.entrySet()) {
+            QUEST_BY_NAME.put(Names.lower(entry.getKey()), entry.getValue().getAsJsonObject().get("quest").getAsString());
+        }
+    }
 
-	private QuestRewardItems() {
-	}
+    private QuestRewardItems() {
+    }
 
-	/** True when this item is earned through a quest rather than bought. */
-	public static boolean isQuestReward(GearItem item) { return questFor(item) != null; }
+    /** True when this item is earned through a quest rather than bought. */
+    public static boolean isQuestReward(GearItem item) { return questFor(item) != null; }
 
-	/** The source quest's name, or null when the item is not a quest reward. */
-	public static String questFor(GearItem item) {
-		if (item == null) return null;
-		return QUEST_BY_NAME.get(item.getNameLower());
-	}
+    /** The source quest's name, or null when the item is not a quest reward. */
+    public static String questFor(GearItem item) {
+        if (item == null) return null;
+        return QUEST_BY_NAME.get(item.getNameLower());
+    }
 }

@@ -11,37 +11,37 @@ import java.util.*;
  * Membership is name-keyed against the curated rosters.
  */
 public final class RaidBoosts {
-	/** Rosters live in raid_boosts.json (hub token cap). */
-	private static final Set<String> XERIC = new HashSet<>();
-	private static final Set<String> AMASCUT = new HashSet<>();
-	private static final Set<String> BLOOD = new HashSet<>();
-	private static final Set<String> ARCHIVE = new HashSet<>();
+    /** Rosters live in raid_boosts.json (hub token cap). */
+    private static final Set<String> XERIC = new HashSet<>();
+    private static final Set<String> AMASCUT = new HashSet<>();
+    private static final Set<String> BLOOD = new HashSet<>();
+    private static final Set<String> ARCHIVE = new HashSet<>();
 
-	static {
-		com.google.gson.JsonObject root = JsonResources.object("raid_boosts.json");
-		JsonResources.strings(root, "xeric", XERIC);
-		JsonResources.strings(root, "amascut", AMASCUT);
-		JsonResources.strings(root, "blood", BLOOD);
-		JsonResources.strings(root, "archive", ARCHIVE);
-	}
+    static {
+        com.google.gson.JsonObject root = JsonResources.object("raid_boosts.json");
+        JsonResources.strings(root, "xeric", XERIC);
+        JsonResources.strings(root, "amascut", AMASCUT);
+        JsonResources.strings(root, "blood", BLOOD);
+        JsonResources.strings(root, "archive", ARCHIVE);
+    }
 
-	private RaidBoosts() {
-	}
+    private RaidBoosts() {
+    }
 
-	/** Which raid this monster belongs to ("cox", "toa", "tob") or null:
-	 * raid monsters live nowhere else, so a single search keys the raid's
-	 * compute animation (Andrew 2026-09-02). */
-	public static String raidKey(MonsterStats monster) {
-		String name = monster.getNameLower();
-		return XERIC.contains(name) ? "cox" : AMASCUT.contains(name) ? "toa"
-			: BLOOD.contains(name) ? "tob" : ARCHIVE.contains(name) ? "tfa" : null;
-	}
+    /** Which raid this monster belongs to ("cox", "toa", "tob") or null:
+     * raid monsters live nowhere else, so a single search keys the raid's
+     * compute animation (Andrew 2026-09-02). */
+    public static String raidKey(MonsterStats monster) {
+        String name = monster.getNameLower();
+        return XERIC.contains(name) ? "cox" : AMASCUT.contains(name) ? "toa"
+            : BLOOD.contains(name) ? "tob" : ARCHIVE.contains(name) ? "tfa" : null;
+    }
 
-	/** The raid-supplied boost for a fight inside, or null outside. */
-	public static BoostProfile suppliedBoost(MonsterStats monster) {
-		String name = monster.getNameLower();
-		if (XERIC.contains(name)) return BoostProfile.OVERLOAD_PLUS;
-		if (AMASCUT.contains(name)) return BoostProfile.SMELLING_SALTS;
-		return null;
-	}
+    /** The raid-supplied boost for a fight inside, or null outside. */
+    public static BoostProfile suppliedBoost(MonsterStats monster) {
+        String name = monster.getNameLower();
+        if (XERIC.contains(name)) return BoostProfile.OVERLOAD_PLUS;
+        if (AMASCUT.contains(name)) return BoostProfile.SMELLING_SALTS;
+        return null;
+    }
 }

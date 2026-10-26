@@ -14,21 +14,21 @@ import net.runelite.client.config.ConfigManager;
  * 0.4.1 (a main and a test account had shared this list).
  */
 public class AlwaysFilterStore extends ScopedMapStore<Integer, String> {
-	static final String KEY = "alwaysFilterItems";
+    static final String KEY = "alwaysFilterItems";
 
-	public AlwaysFilterStore(ConfigManager configManager, Gson gson) {
-		super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
-	}
+    public AlwaysFilterStore(ConfigManager configManager, Gson gson) {
+        super(configManager, gson, KEY, new TypeToken<Map<Integer, String>>(){}.getType());
+    }
 
-	public synchronized Map<Integer, String> all() { return Collections.unmodifiableMap(new LinkedHashMap<>(items)); }
+    public synchronized Map<Integer, String> all() { return Collections.unmodifiableMap(new LinkedHashMap<>(items)); }
 
-	public synchronized void add(int itemId, String name) {
-		items.put(itemId, name == null ? ("item " + itemId) : name);
-		save();
-	}
+    public synchronized void add(int itemId, String name) {
+        items.put(itemId, name == null ? ("item " + itemId) : name);
+        save();
+    }
 
-	public synchronized void remove(int itemId) {
-		items.remove(itemId);
-		save();
-	}
+    public synchronized void remove(int itemId) {
+        items.remove(itemId);
+        save();
+    }
 }

@@ -26,12 +26,12 @@ package com.loadoutlab.command;
  * semantics in lockstep so the module stays shareable between the plugins.
  */
 public interface Command {
-	/** Run the action. Returns true if it actually changed state. */
-	boolean apply();
+    /** Run the action. Returns true if it actually changed state. */
+    boolean apply();
 
-	/** Reverse the action. Returns true if the revert succeeded. */
-	boolean revert();
+    /** Reverse the action. Returns true if the revert succeeded. */
+    boolean revert();
 
-	/** Short user-facing label, e.g. "Exclude Dragon dart". */
-	String getDescription();
+    /** Short user-facing label, e.g. "Exclude Dragon dart". */
+    String getDescription();
 }

@@ -29,88 +29,85 @@ import java.util.*;
  * Untradeables with no combat stats (graceful class) cost nothing.
  */
 public final class UntradeableDeathCosts {
-	private static final String RESOURCE = "untradeable_death.json";
+    private static final String RESOURCE = "untradeable_death.json";
 
-	/** Conservative fallback for combat untradeables we have not curated. */
-	public static final long UNKNOWN_COMBAT_UNTRADEABLE_GP = 500_000L;
+    /** Conservative fallback for combat untradeables we have not curated. */
+    public static final long UNKNOWN_COMBAT_UNTRADEABLE_GP = 500_000L;
 
-	private static final Map<String, Long> COST_BY_NAME = new HashMap<>();
-	private static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
-	/** Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
-	 * NOT gp - imbue points refund since April 2024). Counted into the
-	 * risk total and the risk cap so "free but a 25-minute errand" items
-	 * never read as safe (field request). */
-	private static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
+    private static final Map<String, Long> COST_BY_NAME = new HashMap<>();
+    private static final Map<String, Integer> CATEGORY_BY_NAME = new HashMap<>();
+    /** Curated rebuild-errand proxies (re-obtain/re-enchant/re-imbue time,
+     * NOT gp - imbue points refund since April 2024). Counted into the
+     * risk total and the risk cap so "free but a 25-minute errand" items
+     * never read as safe (field request). */
+    private static final Map<String, Long> FRICTION_BY_NAME = new HashMap<>();
 
-	static {
-		JsonObject root = com.loadoutlab.data.JsonResources.object(RESOURCE);
-		if (root == null) {
-			throw new IllegalStateException("Could not load " + RESOURCE);
-		} {
-			for (var entry : root.entrySet()) {
-				JsonObject row = entry.getValue().getAsJsonObject();
-				String name = Names.lower(entry.getKey());
-				COST_BY_NAME.put(name, row.get("costGp").getAsLong());
-				CATEGORY_BY_NAME.put(name, row.get("category").getAsInt());
-				if (row.has("frictionGp")) FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong());
-			}
-		}
-	}
+    static {
+        JsonObject root = com.loadoutlab.data.JsonResources.object(RESOURCE);
+        if (root == null) {
+            throw new IllegalStateException("Could not load " + RESOURCE);
+        } {
+            for (var entry : root.entrySet()) {
+                JsonObject row = entry.getValue().getAsJsonObject();
+                String name = Names.lower(entry.getKey());
+                COST_BY_NAME.put(name, row.get("costGp").getAsLong());
+                CATEGORY_BY_NAME.put(name, row.get("category").getAsInt());
+                if (row.has("frictionGp")) FRICTION_BY_NAME.put(name, row.get("frictionGp").getAsLong());
+            }
+        }
+    }
 
-	private UntradeableDeathCosts() {
-	}
+    private UntradeableDeathCosts() {
+    }
 
-	/**
-	 * Per-death gp cost of wearing this item into PvP above 20 Wilderness.
-	 * Tradeables cost 0 here - their loss is priced by the kept-slot
-	 * ranking in PvpRisk - EXCEPT category 5 (destroyed on any death,
-	 * protection does not help), which charges regardless of tradeability.
-	 */
-	public static long costFor(GearItem item) {
-		if (item == null) return 0L;
-		if (item.isTradeable()) {
-			Long destroyed = categoryFor(item) == 5
-				? COST_BY_NAME.get(item.getNameLower()) : null;
-			return destroyed == null ? 0L : destroyed;
-		}
-		Long listed = COST_BY_NAME.get(item.getNameLower());
-		if (listed != null) return listed;
-		return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
-	}
+    /**
+     * Per-death gp cost of wearing this item into PvP above 20 Wilderness.
+     * Tradeables cost 0 here - their loss is priced by the kept-slot
+     * ranking in PvpRisk - EXCEPT category 5 (destroyed on any death,
+     * protection does not help), which charges regardless of tradeability.
+     */
+    public static long costFor(GearItem item) {
+        if (item == null) return 0L;
+        if (item.isTradeable()) {
+            Long destroyed = categoryFor(item) == 5 ? COST_BY_NAME.get(item.getNameLower()) : null;
+            return destroyed == null ? 0L : destroyed;
+        }
+        Long listed = COST_BY_NAME.get(item.getNameLower());
+        if (listed != null) return listed;
+        return hasCombatStats(item) ? UNKNOWN_COMBAT_UNTRADEABLE_GP : 0L;
+    }
 
-	/** Rebuild-errand proxy for a death loss (0 when none curated). */
-	public static long frictionFor(GearItem item) {
-		if (item == null) return 0L;
-		Long friction = FRICTION_BY_NAME.get(item.getNameLower());
-		return friction == null ? 0L : friction;
-	}
+    /** Rebuild-errand proxy for a death loss (0 when none curated). */
+    public static long frictionFor(GearItem item) {
+        if (item == null) return 0L;
+        Long friction = FRICTION_BY_NAME.get(item.getNameLower());
+        return friction == null ? 0L : friction;
+    }
 
-	/** Category 5: destroyed on any death - never protectable. */
-	public static boolean isDestroyedOnDeath(GearItem item) { return categoryFor(item) == 5; }
+    /** Category 5: destroyed on any death - never protectable. */
+    public static boolean isDestroyedOnDeath(GearItem item) { return categoryFor(item) == 5; }
 
-	/**
-	 * Category 4: converts to a tradeable component dropped for the
-	 * killer (slayer helm -> black mask, crystal -> seed). These are
-	 * LOSABLE, so they compete for kept-on-death protection slots at
-	 * their component value - protecting one prevents the drop.
-	 */
-	public static boolean isConvertible(GearItem item) { return categoryFor(item) == 4; }
+    /**
+     * Category 4: converts to a tradeable component dropped for the
+     * killer (slayer helm -> black mask, crystal -> seed). These are
+     * LOSABLE, so they compete for kept-on-death protection slots at
+     * their component value - protecting one prevents the drop.
+     */
+    public static boolean isConvertible(GearItem item) { return categoryFor(item) == 4; }
 
-	/** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
-	public static int categoryFor(GearItem item) {
-		if (item == null) return 0;
-		Integer listed = CATEGORY_BY_NAME.get(item.getNameLower());
-		return listed == null ? 0 : listed;
-	}
+    /** Curated category (1, 2, 3 or 4-converts), or 0 when unlisted. */
+    public static int categoryFor(GearItem item) {
+        if (item == null) return 0;
+        Integer listed = CATEGORY_BY_NAME.get(item.getNameLower());
+        return listed == null ? 0 : listed;
+    }
 
-	private static boolean hasCombatStats(GearItem item) {
-		return nonZero(item.getOffensive()) || nonZero(item.getDefensive()) || nonZero(item.getBonuses());
-	}
+    private static boolean hasCombatStats(GearItem item) {
+        return nonZero(item.getOffensive()) || nonZero(item.getDefensive()) || nonZero(item.getBonuses());
+    }
 
-	private static boolean nonZero(StatBlock block) {
-		return block.getStab() != 0 || block.getSlash() != 0 || block.getCrush() != 0
-			|| block.getMagic() != 0 || block.getRanged() != 0
-			|| block.getStrength() != 0 || block.getRangedStrength() != 0
-			|| block.getMagicDamage() != 0 || block.getPrayer() != 0;
-	}
+    private static boolean nonZero(StatBlock block) {
+        return block.getStab() != 0 || block.getSlash() != 0 || block.getCrush() != 0 || block.getMagic() != 0 || block.getRanged() != 0
+            || block.getStrength() != 0 || block.getRangedStrength() != 0 || block.getMagicDamage() != 0 || block.getPrayer() != 0;
+    }
 }

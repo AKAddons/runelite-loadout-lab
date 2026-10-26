@@ -11,48 +11,45 @@ import java.util.*;
  * so phase and form suffixes ride along.
  */
 public final class MonsterSpellbooks {
-	/** name-fragment -> [book, reason] */
-	private static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
+    /** name-fragment -> [book, reason] */
+    private static final Map<String, String[]> BY_NAME = new LinkedHashMap<>();
 
-	static {
-		JsonObject root = JsonResources.object(
-			"monster_spellbooks.json");
-		if (root != null && root.has("byNameContains")) {
-			for (Map.Entry<String, JsonElement> e
-				: root.getAsJsonObject("byNameContains").entrySet()) {
-				JsonObject node = e.getValue().getAsJsonObject();
-				BY_NAME.put(Names.lower(e.getKey()), new String[]{
-					node.get("book").getAsString(), node.get("reason").getAsString(),
-					node.has("spell") ? node.get("spell").getAsString() : null});
-			}
-		}
-	}
+    static {
+        JsonObject root = JsonResources.object( "monster_spellbooks.json");
+        if (root != null && root.has("byNameContains")) {
+            for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("byNameContains").entrySet()) {
+                JsonObject node = e.getValue().getAsJsonObject();
+                BY_NAME.put(Names.lower(e.getKey()), new String[]{
+                    node.get("book").getAsString(), node.get("reason").getAsString(),
+                    node.has("spell") ? node.get("spell").getAsString() : null});
+            }
+        }
+    }
 
-	private MonsterSpellbooks() {
-	}
+    private MonsterSpellbooks() {
+    }
 
-	/** The fight's required book ("ancient"...) or null. */
-	public static String bookFor(MonsterStats monster) {
-		String[] entry = lookup(monster);
-		return entry == null ? null : entry[0];
-	}
+    /** The fight's required book ("ancient"...) or null. */
+    public static String bookFor(MonsterStats monster) {
+        String[] entry = lookup(monster);
+        return entry == null ? null : entry[0];
+    }
 
-	/** Why the fight wants it, or null. */
-	public static String reasonFor(MonsterStats monster) {
-		String[] entry = lookup(monster);
-		return entry == null ? null : entry[1];
-	}
+    /** Why the fight wants it, or null. */
+    public static String reasonFor(MonsterStats monster) {
+        String[] entry = lookup(monster);
+        return entry == null ? null : entry[1];
+    }
 
-	/** The utility cast the fight wants (its runes ride the trip). */
-	public static String spellFor(MonsterStats monster) {
-		String[] entry = lookup(monster);
-		return entry == null ? null : entry[2];
-	}
+    /** The utility cast the fight wants (its runes ride the trip). */
+    public static String spellFor(MonsterStats monster) {
+        String[] entry = lookup(monster);
+        return entry == null ? null : entry[2];
+    }
 
-	private static String[] lookup(MonsterStats monster) {
-		if (monster == null) return null;
-		String name = monster.getNameLower();
-		return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey()))
-			.map(Map.Entry::getValue).findFirst().orElse(null);
-	}
+    private static String[] lookup(MonsterStats monster) {
+        if (monster == null) return null;
+        String name = monster.getNameLower();
+        return BY_NAME.entrySet().stream().filter(e -> name.contains(e.getKey())) .map(Map.Entry::getValue).findFirst().orElse(null);
+    }
 }

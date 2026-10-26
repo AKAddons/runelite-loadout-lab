@@ -15,154 +15,139 @@ import net.runelite.api.Skill;
  * .runelite/loadout-lab/profile.json on every query.
  */
 public final class PlayerProfile {
-	public final PlayerLevels realLevels;
-	public final PlayerLevels boostedLevels;
-	public final PrayerUnlocks prayerUnlocks;
-	public final RequirementProfile requirements;
-	public final Map<Integer, Integer> owned;
-	public final boolean bankScanned;
-	/** Optional provenance: origin label ("bank", "STASH", ...) -> items.
-	 * The flat owned map stays the source of truth for the optimizer. */
-	public final Map<String, Map<Integer, Integer>> ownedBySource;
+    public final PlayerLevels realLevels;
+    public final PlayerLevels boostedLevels;
+    public final PrayerUnlocks prayerUnlocks;
+    public final RequirementProfile requirements;
+    public final Map<Integer, Integer> owned;
+    public final boolean bankScanned;
+    /** Optional provenance: origin label ("bank", "STASH", ...) -> items.
+     * The flat owned map stays the source of truth for the optimizer. */
+    public final Map<String, Map<Integer, Integer>> ownedBySource;
 
-	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
-		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
-		Map<Integer, Integer> owned, boolean bankScanned) {
-		this(realLevels, boostedLevels, prayerUnlocks, requirements, owned, bankScanned, null);
-	}
+    public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels, PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
+        Map<Integer, Integer> owned, boolean bankScanned) {
+        this(realLevels, boostedLevels, prayerUnlocks, requirements, owned, bankScanned, null);
+    }
 
-	public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
-		PrayerUnlocks prayerUnlocks, RequirementProfile requirements,
-		Map<Integer, Integer> owned, boolean bankScanned,
-		Map<String, Map<Integer, Integer>> ownedBySource) {
-		this.realLevels = realLevels;
-		this.boostedLevels = boostedLevels == null ? realLevels : boostedLevels;
-		this.prayerUnlocks = prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
-		this.requirements = requirements == null ? RequirementProfile.MAXED : requirements;
-		this.owned = owned == null ? Map.of() : Map.copyOf(owned);
-		this.bankScanned = bankScanned;
-		// Deep-copied on the constructing thread: the export writer runs
-		// off-thread while the client keeps mutating the live snapshots.
-		var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
-		if (ownedBySource != null) {
-			for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
-		}
-		this.ownedBySource = Collections.unmodifiableMap(copy);
-	}
+    public PlayerProfile(PlayerLevels realLevels, PlayerLevels boostedLevels,
+        PrayerUnlocks prayerUnlocks, RequirementProfile requirements, Map<Integer, Integer> owned, boolean bankScanned,
+        Map<String, Map<Integer, Integer>> ownedBySource) {
+        this.realLevels = realLevels;
+        this.boostedLevels = boostedLevels == null ? realLevels : boostedLevels;
+        this.prayerUnlocks = prayerUnlocks == null ? PrayerUnlocks.ALL : prayerUnlocks;
+        this.requirements = requirements == null ? RequirementProfile.MAXED : requirements;
+        this.owned = owned == null ? Map.of() : Map.copyOf(owned);
+        this.bankScanned = bankScanned;
+        // Deep-copied on the constructing thread: the export writer runs
+        // off-thread while the client keeps mutating the live snapshots.
+        var copy = new LinkedHashMap<String, Map<Integer, Integer>>();
+        if (ownedBySource != null) {
+            for (var e : ownedBySource.entrySet()) copy.put(e.getKey(), Map.copyOf(e.getValue()));
+        }
+        this.ownedBySource = Collections.unmodifiableMap(copy);
+    }
 
-	public OwnedItems ownedItems() { return new OwnedItems(owned, bankScanned); }
+    public OwnedItems ownedItems() { return new OwnedItems(owned, bankScanned); }
 
-	public String toJson() {
-		var root = new JsonObject();
-		root.add("realLevels", levels(realLevels));
-		root.add("boostedLevels", levels(boostedLevels));
-		var prayers = new JsonObject();
-		prayers.addProperty("kingsRansom", prayerUnlocks.piety());
-		prayers.addProperty("rigour", prayerUnlocks.rigour());
-		prayers.addProperty("augury", prayerUnlocks.augury());
-		prayers.addProperty("deadeye", prayerUnlocks.deadeye());
-		prayers.addProperty("mysticVigour", prayerUnlocks.mysticVigour());
-		prayers.addProperty("zeal", prayerUnlocks.zeal());
-		root.add("prayerUnlocks", prayers);
-		var reqSkills = new JsonObject();
-		for (var entry : requirements.getLevels().entrySet()) {
-			reqSkills.addProperty(entry.getKey().name(), entry.getValue());
-		}
-		var reqs = new JsonObject();
-		reqs.add("skills", reqSkills);
-		com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
-		for (String quest : requirements.getCompletedQuests()) quests.add(quest);
-		reqs.add("quests", quests);
-		root.add("requirements", reqs);
-		root.add("owned", items(owned));
-		if (!ownedBySource.isEmpty()) {
-			var bySource = new JsonObject();
-			ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
-			root.add("ownedBySource", bySource);
-		}
-		root.addProperty("bankScanned", bankScanned);
-		return root.toString();
-	}
+    public String toJson() {
+        var root = new JsonObject();
+        root.add("realLevels", levels(realLevels));
+        root.add("boostedLevels", levels(boostedLevels));
+        var prayers = new JsonObject();
+        prayers.addProperty("kingsRansom", prayerUnlocks.piety());
+        prayers.addProperty("rigour", prayerUnlocks.rigour());
+        prayers.addProperty("augury", prayerUnlocks.augury());
+        prayers.addProperty("deadeye", prayerUnlocks.deadeye());
+        prayers.addProperty("mysticVigour", prayerUnlocks.mysticVigour());
+        prayers.addProperty("zeal", prayerUnlocks.zeal());
+        root.add("prayerUnlocks", prayers);
+        var reqSkills = new JsonObject();
+        for (var entry : requirements.getLevels().entrySet()) {
+            reqSkills.addProperty(entry.getKey().name(), entry.getValue());
+        }
+        var reqs = new JsonObject();
+        reqs.add("skills", reqSkills);
+        com.google.gson.JsonArray quests = new com.google.gson.JsonArray();
+        for (String quest : requirements.getCompletedQuests()) quests.add(quest);
+        reqs.add("quests", quests);
+        root.add("requirements", reqs);
+        root.add("owned", items(owned));
+        if (!ownedBySource.isEmpty()) {
+            var bySource = new JsonObject();
+            ownedBySource.forEach((origin, held) -> bySource.add(origin, items(held)));
+            root.add("ownedBySource", bySource);
+        }
+        root.addProperty("bankScanned", bankScanned);
+        return root.toString();
+    }
 
-	/** {"itemId": quantity} for an owned map. */
-	private static JsonObject items(Map<Integer, Integer> items) {
-		var out = new JsonObject();
-		items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
-		return out;
-	}
+    /** {"itemId": quantity} for an owned map. */
+    private static JsonObject items(Map<Integer, Integer> items) {
+        var out = new JsonObject();
+        items.forEach((id, n) -> out.addProperty(String.valueOf(id), n));
+        return out;
+    }
 
-	private static Map<Integer, Integer> parseItems(JsonObject object) {
-		Map<Integer, Integer> out = new HashMap<>();
-		for (var entry : object.entrySet()) out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
-		return out;
-	}
+    private static Map<Integer, Integer> parseItems(JsonObject object) {
+        Map<Integer, Integer> out = new HashMap<>();
+        for (var entry : object.entrySet()) out.put(Integer.parseInt(entry.getKey()), entry.getValue().getAsInt());
+        return out;
+    }
 
-	public static PlayerProfile fromJson(String json) {
-		JsonObject root = new JsonParser().parse(json).getAsJsonObject();
-		JsonObject prayers = root.getAsJsonObject("prayerUnlocks");
-		var unlocks = new PrayerUnlocks(
-			prayers.get("kingsRansom").getAsBoolean(),
-			prayers.get("rigour").getAsBoolean(),
-			prayers.get("augury").getAsBoolean(),
-			prayers.get("deadeye").getAsBoolean(),
-			prayers.get("mysticVigour").getAsBoolean(),
-			prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
-		JsonObject reqs = root.getAsJsonObject("requirements");
-		Map<Skill, Integer> reqSkills = new HashMap<>();
-		for (var entry : reqs.getAsJsonObject("skills").entrySet()) {
-			reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
-		}
-		Set<String> quests = new HashSet<>();
-		JsonResources.strings(reqs, "quests", quests);
-		// Optional (older exports lack it) - absence means no provenance.
-		Map<String, Map<Integer, Integer>> bySource = null;
-		if (root.has("ownedBySource")) {
-			bySource = new LinkedHashMap<>();
-			for (var origin : root.getAsJsonObject("ownedBySource").entrySet()) {
-				bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
-			}
-		}
-		return new PlayerProfile(
-			parseLevels(root.getAsJsonObject("realLevels")),
-			parseLevels(root.getAsJsonObject("boostedLevels")),
-			unlocks,
-			new RequirementProfile(reqSkills, quests),
-			parseItems(root.getAsJsonObject("owned")),
-			root.get("bankScanned").getAsBoolean(),
-			bySource);
-	}
+    public static PlayerProfile fromJson(String json) {
+        JsonObject root = new JsonParser().parse(json).getAsJsonObject();
+        JsonObject prayers = root.getAsJsonObject("prayerUnlocks");
+        var unlocks = new PrayerUnlocks( prayers.get("kingsRansom").getAsBoolean(),
+            prayers.get("rigour").getAsBoolean(), prayers.get("augury").getAsBoolean(),
+            prayers.get("deadeye").getAsBoolean(), prayers.get("mysticVigour").getAsBoolean(),
+            prayers.has("zeal") && prayers.get("zeal").getAsBoolean());
+        JsonObject reqs = root.getAsJsonObject("requirements");
+        Map<Skill, Integer> reqSkills = new HashMap<>();
+        for (var entry : reqs.getAsJsonObject("skills").entrySet()) {
+            reqSkills.put(Skill.valueOf(entry.getKey()), entry.getValue().getAsInt());
+        }
+        Set<String> quests = new HashSet<>();
+        JsonResources.strings(reqs, "quests", quests);
+        // Optional (older exports lack it) - absence means no provenance.
+        Map<String, Map<Integer, Integer>> bySource = null;
+        if (root.has("ownedBySource")) {
+            bySource = new LinkedHashMap<>();
+            for (var origin : root.getAsJsonObject("ownedBySource").entrySet()) {
+                bySource.put(origin.getKey(), parseItems(origin.getValue().getAsJsonObject()));
+            }
+        }
+        return new PlayerProfile( parseLevels(root.getAsJsonObject("realLevels")),
+            parseLevels(root.getAsJsonObject("boostedLevels")), unlocks, new RequirementProfile(reqSkills, quests),
+            parseItems(root.getAsJsonObject("owned")), root.get("bankScanned").getAsBoolean(), bySource);
+    }
 
-	private static JsonObject levels(PlayerLevels levels) {
-		var object = new JsonObject();
-		object.addProperty("attack", levels.getAttack());
-		object.addProperty("strength", levels.getStrength());
-		object.addProperty("defence", levels.getDefence());
-		object.addProperty("ranged", levels.getRanged());
-		object.addProperty("magic", levels.getMagic());
-		object.addProperty("prayer", levels.getPrayer());
-		object.addProperty("hitpoints", levels.getHitpoints());
-		return object;
-	}
+    private static JsonObject levels(PlayerLevels levels) {
+        var object = new JsonObject();
+        object.addProperty("attack", levels.getAttack());
+        object.addProperty("strength", levels.getStrength());
+        object.addProperty("defence", levels.getDefence());
+        object.addProperty("ranged", levels.getRanged());
+        object.addProperty("magic", levels.getMagic());
+        object.addProperty("prayer", levels.getPrayer());
+        object.addProperty("hitpoints", levels.getHitpoints());
+        return object;
+    }
 
-	/** Whether the plugin's cached level/prayer/quest snapshot, taken while
-	 * {@code snapshotAccount} was logged in, may still serve now that the
-	 * client reports {@code currentAccount} (-1 = logged out). */
-	public static boolean snapshotSurvives(long snapshotAccount, long currentAccount) {
-		// Logout keeps the last character (field report 2026-09-01: Piety at
-		// 45 prayer once the snapshot was dropped and MAXED filled in); only
-		// a DIFFERENT account replaces it - including a hashless snapshot
-		// taken before the login hash arrived.
-		return currentAccount == -1 || currentAccount == snapshotAccount;
-	}
+    /** Whether the plugin's cached level/prayer/quest snapshot, taken while
+     * {@code snapshotAccount} was logged in, may still serve now that the
+     * client reports {@code currentAccount} (-1 = logged out). */
+    public static boolean snapshotSurvives(long snapshotAccount, long currentAccount) {
+        // Logout keeps the last character (field report 2026-09-01: Piety at
+        // 45 prayer once the snapshot was dropped and MAXED filled in); only
+        // a DIFFERENT account replaces it - including a hashless snapshot
+        // taken before the login hash arrived.
+        return currentAccount == -1 || currentAccount == snapshotAccount;
+    }
 
-	private static PlayerLevels parseLevels(JsonObject object) {
-		return new PlayerLevels(
-			object.get("attack").getAsInt(),
-			object.get("strength").getAsInt(),
-			object.get("defence").getAsInt(),
-			object.get("ranged").getAsInt(),
-			object.get("magic").getAsInt(),
-			object.get("prayer").getAsInt(),
-			object.get("hitpoints").getAsInt());
-	}
+    private static PlayerLevels parseLevels(JsonObject object) {
+        return new PlayerLevels( object.get("attack").getAsInt(), object.get("strength").getAsInt(),
+            object.get("defence").getAsInt(), object.get("ranged").getAsInt(), object.get("magic").getAsInt(),
+            object.get("prayer").getAsInt(), object.get("hitpoints").getAsInt());
+    }
 }

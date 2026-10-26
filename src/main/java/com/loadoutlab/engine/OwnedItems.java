@@ -5,39 +5,39 @@ import lombok.Getter;
 import java.util.*;
 
 public final class OwnedItems {
-	public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
+    public static final OwnedItems EMPTY = new OwnedItems(Map.of(), false);
 
-	@Getter
-	private final Map<Integer, Integer> quantities;
-	@Getter
-	private final boolean bankScanned;
+    @Getter
+    private final Map<Integer, Integer> quantities;
+    @Getter
+    private final boolean bankScanned;
 
-	public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned) {
-		this.quantities = Collections.unmodifiableMap(new HashMap<>(quantities));
-		this.bankScanned = bankScanned;
-	}
+    public OwnedItems(Map<Integer, Integer> quantities, boolean bankScanned) {
+        this.quantities = Collections.unmodifiableMap(new HashMap<>(quantities));
+        this.bankScanned = bankScanned;
+    }
 
-	public boolean owns(int itemId) { return quantities.getOrDefault(itemId, 0) > 0; }
+    public boolean owns(int itemId) { return quantities.getOrDefault(itemId, 0) > 0; }
 
-	public int size() { return quantities.size(); }
+    public int size() { return quantities.size(); }
 
-	/**
-	 * Fingerprint of what owns() answers - the ids with quantity > 0,
-	 * order-independent, quantity-BLIND. The optimizer's results depend
-	 * only on presence, so its cache keys on this: a quantity-sensitive
-	 * hash invalidated every cached answer each time the player shot an
-	 * arrow or picked up loot (field-observed: a 22s Balanced compute
-	 * re-paid on every revisit while grinding).
-	 */
-	public int presenceFingerprint() {
-		int[] ids = new int[quantities.size()];
-		int count = 0;
-		for (var entry : quantities.entrySet()) {
-			if (entry.getValue() != null && entry.getValue() > 0) ids[count++] = entry.getKey();
-		}
-		Arrays.sort(ids, 0, count);
-		int hash = count;
-		for (int i = 0; i < count; i++) hash = 31 * hash + ids[i];
-		return hash;
-	}
+    /**
+     * Fingerprint of what owns() answers - the ids with quantity > 0,
+     * order-independent, quantity-BLIND. The optimizer's results depend
+     * only on presence, so its cache keys on this: a quantity-sensitive
+     * hash invalidated every cached answer each time the player shot an
+     * arrow or picked up loot (field-observed: a 22s Balanced compute
+     * re-paid on every revisit while grinding).
+     */
+    public int presenceFingerprint() {
+        int[] ids = new int[quantities.size()];
+        int count = 0;
+        for (var entry : quantities.entrySet()) {
+            if (entry.getValue() != null && entry.getValue() > 0) ids[count++] = entry.getKey();
+        }
+        Arrays.sort(ids, 0, count);
+        int hash = count;
+        for (int i = 0; i < count; i++) hash = 31 * hash + ids[i];
+        return hash;
+    }
 }

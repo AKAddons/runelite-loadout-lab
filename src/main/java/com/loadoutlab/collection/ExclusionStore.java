@@ -4,14 +4,14 @@ import com.google.gson.Gson;
 import net.runelite.client.config.ConfigManager;
 
 public class ExclusionStore extends IdSetStore {
-	static final String KEY = "excludedItems";
+    static final String KEY = "excludedItems";
 
-	public ExclusionStore(ConfigManager configManager, Gson gson) {
-		super(configManager, gson);
-		load();
-	}
+    public ExclusionStore(ConfigManager configManager, Gson gson) {
+        super(configManager, gson);
+        load();
+    }
 
-	String legacyKey() { return KEY; }
+    String legacyKey() { return KEY; }
 
-	public boolean isExcluded(int itemId) { return contains(itemId); }
+    public boolean isExcluded(int itemId) { return contains(itemId); }
 }

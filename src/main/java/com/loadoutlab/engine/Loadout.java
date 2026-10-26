@@ -6,142 +6,141 @@ import com.loadoutlab.data.*;
 import java.util.*;
 
 public final class Loadout {
-	private final EnumMap<GearSlot, GearItem> gear;
-	@Getter
-	private final StatBlock offensive;
-	@Getter
-	private final StatBlock defensive;
-	@Getter
-	private final StatBlock bonuses;
-	@Getter
-	private final int cost;
-	/** All worn item names, lowercased and newline-joined - so the engine's
-	 * name-fragment checks ("salve amulet", "void knight top"...) are one
-	 * substring scan instead of an 11-slot map iteration per marker. Item
-	 * names never contain a newline, so a needle cannot straddle two names. */
-	private final String namesLower;
-	/** namesLower minus "Inactive"-version items (uncharged crystal). */
-	private final String activeNamesLower;
+    private final EnumMap<GearSlot, GearItem> gear;
+    @Getter
+    private final StatBlock offensive;
+    @Getter
+    private final StatBlock defensive;
+    @Getter
+    private final StatBlock bonuses;
+    @Getter
+    private final int cost;
+    /** All worn item names, lowercased and newline-joined - so the engine's
+     * name-fragment checks ("salve amulet", "void knight top"...) are one
+     * substring scan instead of an 11-slot map iteration per marker. Item
+     * names never contain a newline, so a needle cannot straddle two names. */
+    private final String namesLower;
+    /** namesLower minus "Inactive"-version items (uncharged crystal). */
+    private final String activeNamesLower;
 
-	public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
+    public Loadout(Map<GearSlot, GearItem> gear) { this(copyOf(gear), true); }
 
-	/**
-	 * Adopt the given map WITHOUT copying: the caller hands over ownership
-	 * and must never mutate it afterward. The optimizer builds a fresh
-	 * EnumMap per beam trial - the public constructor's defensive copy
-	 * doubled that work across hundreds of thousands of trials.
-	 */
-	public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) { return new Loadout(gear, true); }
+    /**
+     * Adopt the given map WITHOUT copying: the caller hands over ownership
+     * and must never mutate it afterward. The optimizer builds a fresh
+     * EnumMap per beam trial - the public constructor's defensive copy
+     * doubled that work across hundreds of thousands of trials.
+     */
+    public static Loadout adopting(EnumMap<GearSlot, GearItem> gear) { return new Loadout(gear, true); }
 
-	private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
-		var copy = new EnumMap<GearSlot, GearItem>(GearSlot.class);
-		copy.putAll(gear);
-		return copy;
-	}
+    private static EnumMap<GearSlot, GearItem> copyOf(Map<GearSlot, GearItem> gear) {
+        var copy = new EnumMap<GearSlot, GearItem>(GearSlot.class);
+        copy.putAll(gear);
+        return copy;
+    }
 
-	/** The marker keeps this overload from ever being chosen by a plain
-	 * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
-	private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
-		this.gear = gear;
+    /** The marker keeps this overload from ever being chosen by a plain
+     * {@code new Loadout(enumMap)} - adoption must be an explicit opt-in. */
+    private Loadout(EnumMap<GearSlot, GearItem> gear, boolean adoptMarker) {
+        this.gear = gear;
 
-		// Summed into an int array, not StatBlock.plus chains - the chain
-		// allocated ~3 blocks per worn item per trial (top allocation site).
-		int[] off = new int[9];
-		int[] def = new int[9];
-		int[] bon = new int[9];
-		int totalCost = 0;
-		var names = new StringBuilder(160);
-		var activeNames = new StringBuilder(160);
-		for (GearItem item : this.gear.values()) {
-			if (item == null) continue;
-			add(off, item.getOffensive());
-			add(def, item.getDefensive());
-			add(bon, item.getBonuses());
-			totalCost += item.getPriceOrZero();
-			names.append(item.getNameLower()).append('\n');
-			if (!"inactive".equals(item.getVersionLower())) {
-				activeNames.append(item.getNameLower()).append('\n');
-			}
-		}
-		this.offensive = block(off);
-		this.defensive = block(def);
-		this.bonuses = block(bon);
-		this.cost = totalCost;
-		this.namesLower = names.toString();
-		this.activeNamesLower = activeNames.toString();
-	}
+        // Summed into an int array, not StatBlock.plus chains - the chain
+        // allocated ~3 blocks per worn item per trial (top allocation site).
+        int[] off = new int[9];
+        int[] def = new int[9];
+        int[] bon = new int[9];
+        int totalCost = 0;
+        var names = new StringBuilder(160);
+        var activeNames = new StringBuilder(160);
+        for (GearItem item : this.gear.values()) {
+            if (item == null) continue;
+            add(off, item.getOffensive());
+            add(def, item.getDefensive());
+            add(bon, item.getBonuses());
+            totalCost += item.getPriceOrZero();
+            names.append(item.getNameLower()).append('\n');
+            if (!"inactive".equals(item.getVersionLower())) {
+                activeNames.append(item.getNameLower()).append('\n');
+            }
+        }
+        this.offensive = block(off);
+        this.defensive = block(def);
+        this.bonuses = block(bon);
+        this.cost = totalCost;
+        this.namesLower = names.toString();
+        this.activeNamesLower = activeNames.toString();
+    }
 
-	private static void add(int[] acc, StatBlock block) {
-		acc[0] += block.getStab();
-		acc[1] += block.getSlash();
-		acc[2] += block.getCrush();
-		acc[3] += block.getMagic();
-		acc[4] += block.getRanged();
-		acc[5] += block.getStrength();
-		acc[6] += block.getRangedStrength();
-		acc[7] += block.getMagicDamage();
-		acc[8] += block.getPrayer();
-	}
+    private static void add(int[] acc, StatBlock block) {
+        acc[0] += block.getStab();
+        acc[1] += block.getSlash();
+        acc[2] += block.getCrush();
+        acc[3] += block.getMagic();
+        acc[4] += block.getRanged();
+        acc[5] += block.getStrength();
+        acc[6] += block.getRangedStrength();
+        acc[7] += block.getMagicDamage();
+        acc[8] += block.getPrayer();
+    }
 
-	private static StatBlock block(int[] acc) {
-		return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4],
-			acc[5], acc[6], acc[7], acc[8]);
-	}
+    private static StatBlock block(int[] acc) {
+        return new StatBlock(acc[0], acc[1], acc[2], acc[3], acc[4], acc[5], acc[6], acc[7], acc[8]);
+    }
 
-	/** Ammunition carried IN a Dizana's quiver rather than the ammo slot
-	 * (see QuiverAmmo). Set once by the display post-pass on final
-	 * results - never inside the beam - so the field stays off the hot
-	 * path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
-	 * it in the max-hit chain, mirroring the blowpipe's loaded dart. */
-	@Getter
-	private GearItem quiverAmmo;
+    /** Ammunition carried IN a Dizana's quiver rather than the ammo slot
+     * (see QuiverAmmo). Set once by the display post-pass on final
+     * results - never inside the beam - so the field stays off the hot
+     * path. Deliberately OUTSIDE the stat sums: QuiverAmmo.strength adds
+     * it in the max-hit chain, mirroring the blowpipe's loaded dart. */
+    @Getter
+    private GearItem quiverAmmo;
 
-	/** A copy with ammunition moved into the quiver (see QuiverAmmo). */
-	public Loadout withQuiverAmmo(GearItem carried) {
-		var copy = new Loadout(copyOf(gear), true);
-		copy.quiverAmmo = carried;
-		return copy;
-	}
+    /** A copy with ammunition moved into the quiver (see QuiverAmmo). */
+    public Loadout withQuiverAmmo(GearItem carried) {
+        var copy = new Loadout(copyOf(gear), true);
+        copy.quiverAmmo = carried;
+        return copy;
+    }
 
-	/** A copy with one slot changed (null empties it); the quiver's
-	 * carried ammo rides along. */
-	public Loadout with(GearSlot slot, GearItem item) {
-		EnumMap<GearSlot, GearItem> copy = copyOf(gear);
-		if (item == null) {
-			copy.remove(slot);
-		} else {
-			copy.put(slot, item);
-		}
-		var out = new Loadout(copy, true);
-		out.quiverAmmo = quiverAmmo;
-		return out;
-	}
+    /** A copy with one slot changed (null empties it); the quiver's
+     * carried ammo rides along. */
+    public Loadout with(GearSlot slot, GearItem item) {
+        EnumMap<GearSlot, GearItem> copy = copyOf(gear);
+        if (item == null) {
+            copy.remove(slot);
+        } else {
+            copy.put(slot, item);
+        }
+        var out = new Loadout(copy, true);
+        out.quiverAmmo = quiverAmmo;
+        return out;
+    }
 
-	/** The worn items, empty slots skipped. */
-	public List<GearItem> items() {
-		List<GearItem> items = new ArrayList<>(gear.size());
-		for (GearItem item : gear.values()) {
-			if (item != null) items.add(item);
-		}
-		return items;
-	}
+    /** The worn items, empty slots skipped. */
+    public List<GearItem> items() {
+        List<GearItem> items = new ArrayList<>(gear.size());
+        for (GearItem item : gear.values()) {
+            if (item != null) items.add(item);
+        }
+        return items;
+    }
 
-	/** The worn item ids. */
-	public Set<Integer> ids() {
-		Set<Integer> ids = new HashSet<>();
-		for (GearItem item : items()) ids.add(item.getId());
-		return ids;
-	}
+    /** The worn item ids. */
+    public Set<Integer> ids() {
+        Set<Integer> ids = new HashSet<>();
+        for (GearItem item : items()) ids.add(item.getId());
+        return ids;
+    }
 
-	public GearItem get(GearSlot slot) { return gear.get(slot); }
+    public GearItem get(GearSlot slot) { return gear.get(slot); }
 
-	public GearItem getWeapon() { return gear.get(GearSlot.WEAPON); }
+    public GearItem getWeapon() { return gear.get(GearSlot.WEAPON); }
 
-	public Map<GearSlot, GearItem> getGear() { return Collections.unmodifiableMap(gear); }
+    public Map<GearSlot, GearItem> getGear() { return Collections.unmodifiableMap(gear); }
 
-	/** Lowercased worn item names, newline-joined (see field doc). */
-	String namesLower() { return namesLower; }
+    /** Lowercased worn item names, newline-joined (see field doc). */
+    String namesLower() { return namesLower; }
 
-	/** namesLower() without "Inactive"-version items. */
-	String activeNamesLower() { return activeNamesLower; }
+    /** namesLower() without "Inactive"-version items. */
+    String activeNamesLower() { return activeNamesLower; }
 }

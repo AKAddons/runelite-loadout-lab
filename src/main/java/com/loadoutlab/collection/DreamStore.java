@@ -4,14 +4,14 @@ import com.google.gson.Gson;
 import net.runelite.client.config.ConfigManager;
 
 public class DreamStore extends IdSetStore {
-	static final String KEY = "dreamItems";
+    static final String KEY = "dreamItems";
 
-	public DreamStore(ConfigManager configManager, Gson gson) {
-		super(configManager, gson);
-		load();
-	}
+    public DreamStore(ConfigManager configManager, Gson gson) {
+        super(configManager, gson);
+        load();
+    }
 
-	String legacyKey() { return KEY; }
+    String legacyKey() { return KEY; }
 
-	public boolean isDreamed(int itemId) { return contains(itemId); }
+    public boolean isDreamed(int itemId) { return contains(itemId); }
 }

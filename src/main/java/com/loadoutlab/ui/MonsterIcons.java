@@ -30,151 +30,145 @@ import okhttp3.*;
 @lombok.RequiredArgsConstructor
 @lombok.extern.slf4j.Slf4j
 public final class MonsterIcons {
-	private static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
-	private static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
-	private static final int MAX_WIDTH = 28;
+    private static final File DIR = new File(RuneLite.RUNELITE_DIR, "loadout-lab/npc-icons");
+    private static final String WIKI = "https://oldschool.runescape.wiki/w/Special:FilePath/";
+    private static final int MAX_WIDTH = 28;
 
-	private final OkHttpClient http;
-	private final Map<String, ImageIcon> cache = new ConcurrentHashMap<>();
-	private final Set<String> failed = ConcurrentHashMap.newKeySet();
-	/** Keys being loaded -> callbacks waiting on them (guarded by itself). */
-	private final Map<String, List<Runnable>> waiting = new HashMap<>();
-	/** "name|version" and bare "name|" -> the wiki file, built once on the
-	 * worker thread the first time an icon is asked for. */
-	private volatile Map<String, String> files;
-	private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
-		var t = new Thread(r, "loadout-lab-monster-icons");
-		t.setDaemon(true);
-		// A background fetch must never compete with the client thread.
-		t.setPriority(Thread.MIN_PRIORITY + 1);
-		return t;
-	});
+    private final OkHttpClient http;
+    private final Map<String, ImageIcon> cache = new ConcurrentHashMap<>();
+    private final Set<String> failed = ConcurrentHashMap.newKeySet();
+    /** Keys being loaded -> callbacks waiting on them (guarded by itself). */
+    private final Map<String, List<Runnable>> waiting = new HashMap<>();
+    /** "name|version" and bare "name|" -> the wiki file, built once on the
+     * worker thread the first time an icon is asked for. */
+    private volatile Map<String, String> files;
+    private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
+        var t = new Thread(r, "loadout-lab-monster-icons");
+        t.setDaemon(true);
+        // A background fetch must never compete with the client thread.
+        t.setPriority(Thread.MIN_PRIORITY + 1);
+        return t;
+    });
 
-	/**
-	 * The monster's icon at the given height, or null while it loads (or
-	 * after it failed). When null, onReady fires later on the EDT once the
-	 * icon is available - call get() again there for the cache hit.
-	 */
-	public ImageIcon get(String name, String version, int height, Runnable onReady) {
-		String lower = key(name, version);
-		String cacheKey = lower + "@" + height;
-		ImageIcon hit = cache.get(cacheKey);
-		if (hit != null) return hit;
-		if (failed.contains(lower)) return null;
-		synchronized (waiting) {
-			// A load already in flight takes the callback and that is all.
-			boolean loading = waiting.containsKey(cacheKey);
-			List<Runnable> waiters = waiting.computeIfAbsent(cacheKey, k -> new ArrayList<>());
-			if (onReady != null) waiters.add(onReady);
-			if (loading) return null;
-		}
-		worker.execute(() -> {
-			try {
-				BufferedImage img = load(name, version, lower);
-				if (img == null) {
-					failed.add(lower);
-				} else {
-					double scale = Math.min(height / (double) img.getHeight(),
-						MAX_WIDTH / (double) img.getWidth());
-					int w = Math.max(1, (int) Math.round(img.getWidth() * scale));
-					int h = Math.max(1, (int) Math.round(img.getHeight() * scale));
-					cache.put(cacheKey, new ImageIcon(
-						img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
-				}
-			} catch (Exception e) { failed.add(lower); }
-			List<Runnable> waiters;
-			synchronized (waiting) { waiters = waiting.remove(cacheKey); }
-			if (waiters != null && !waiters.isEmpty()) {
-				SwingUtilities.invokeLater(() -> waiters.forEach(Runnable::run));
-			}
-		});
-		return null;
-	}
+    /**
+     * The monster's icon at the given height, or null while it loads (or
+     * after it failed). When null, onReady fires later on the EDT once the
+     * icon is available - call get() again there for the cache hit.
+     */
+    public ImageIcon get(String name, String version, int height, Runnable onReady) {
+        String lower = key(name, version);
+        String cacheKey = lower + "@" + height;
+        ImageIcon hit = cache.get(cacheKey);
+        if (hit != null) return hit;
+        if (failed.contains(lower)) return null;
+        synchronized (waiting) {
+            // A load already in flight takes the callback and that is all.
+            boolean loading = waiting.containsKey(cacheKey);
+            List<Runnable> waiters = waiting.computeIfAbsent(cacheKey, k -> new ArrayList<>());
+            if (onReady != null) waiters.add(onReady);
+            if (loading) return null;
+        }
+        worker.execute(() -> {
+            try {
+                BufferedImage img = load(name, version, lower);
+                if (img == null) {
+                    failed.add(lower);
+                } else {
+                    double scale = Math.min(height / (double) img.getHeight(), MAX_WIDTH / (double) img.getWidth());
+                    int w = Math.max(1, (int) Math.round(img.getWidth() * scale));
+                    int h = Math.max(1, (int) Math.round(img.getHeight() * scale));
+                    cache.put(cacheKey, new ImageIcon( img.getScaledInstance(w, h, Image.SCALE_SMOOTH)));
+                }
+            } catch (Exception e) { failed.add(lower); }
+            List<Runnable> waiters;
+            synchronized (waiting) { waiters = waiting.remove(cacheKey); }
+            if (waiters != null && !waiters.isEmpty()) {
+                SwingUtilities.invokeLater(() -> waiters.forEach(Runnable::run));
+            }
+        });
+        return null;
+    }
 
-	private BufferedImage load(String name, String version, String lower) throws IOException {
-		var file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
-		if (file.isFile()) {
-			BufferedImage disk = ImageIO.read(file);
-			if (disk != null) return disk;
-		}
-		String wikiFile = wikiFile(name, version);
-		if (wikiFile == null || wikiFile.isEmpty()) {
-			log.debug("no corpus image for '{}' ({})", name, version);
-			return null;
-		}
-		BufferedImage img = fetch(wikiFile);
-		if (img == null) return null;
-		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-			ImageIO.write(img, "png", out);
-			//noinspection ResultOfMethodCallIgnored
-			DIR.mkdirs();
-			Files.write(file.toPath(), out.toByteArray());
-		}
-		return img;
-	}
+    private BufferedImage load(String name, String version, String lower) throws IOException {
+        var file = new File(DIR, lower.replaceAll("[^a-z0-9-]", "_") + ".png");
+        if (file.isFile()) {
+            BufferedImage disk = ImageIO.read(file);
+            if (disk != null) return disk;
+        }
+        String wikiFile = wikiFile(name, version);
+        if (wikiFile == null || wikiFile.isEmpty()) {
+            log.debug("no corpus image for '{}' ({})", name, version);
+            return null;
+        }
+        BufferedImage img = fetch(wikiFile);
+        if (img == null) return null;
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            ImageIO.write(img, "png", out);
+            //noinspection ResultOfMethodCallIgnored
+            DIR.mkdirs();
+            Files.write(file.toPath(), out.toByteArray());
+        }
+        return img;
+    }
 
-	/**
-	 * The corpus's wiki file for this mob: the per-form image when the row
-	 * carries a version ("Abyssal demon (Catacombs of Kourend).png"), else
-	 * the name's first image. Null when the corpus does not name one.
-	 */
-	String wikiFile(String name, String version) {
-		Map<String, String> index = index();
-		String exact = index.get(key(name, version));
-		return exact != null ? exact : index.get(key(name, ""));
-	}
+    /**
+     * The corpus's wiki file for this mob: the per-form image when the row
+     * carries a version ("Abyssal demon (Catacombs of Kourend).png"), else
+     * the name's first image. Null when the corpus does not name one.
+     */
+    String wikiFile(String name, String version) {
+        Map<String, String> index = index();
+        String exact = index.get(key(name, version));
+        return exact != null ? exact : index.get(key(name, ""));
+    }
 
-	/** Built once, on the worker thread, from the bundled corpus. */
-	private Map<String, String> index() {
-		Map<String, String> local = files;
-		if (local != null) return local;
-		local = new HashMap<>();
-		try {
-			for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray()) {
-				JsonObject row = element.getAsJsonObject();
-				String name = JsonResources.string(row, "name");
-				String image = JsonResources.string(row, "image");
-				if (name.isEmpty() || image.isEmpty()) continue;
-				local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
-				// The panel asks with an empty version whenever the corpus
-				// holds one form, and with a normalized label when it holds
-				// several - the bare name backs both. Prefer the plain
-				// "<Name>.png" when the mob has one: a versioned mob's first
-				// corpus row is often a side form (Abyssal demon's first row
-				// is the Catacombs one), and the plain file is the right
-				// picture for "just an abyssal demon".
-				String bare = key(name, "");
-				String plain = name + ".png";
-				String held = local.get(bare);
-				if (held == null
-					|| (image.equalsIgnoreCase(plain) && !held.equalsIgnoreCase(plain))) {
-					local.put(bare, image);
-				}
-			}
-		} catch (Exception e) {
-			// Fail soft, like every other bundled table: no index means no
-			// thumbnails, never a broken panel.
-			log.debug("monster image index unavailable", e);
-		}
-		files = local;
-		return local;
-	}
+    /** Built once, on the worker thread, from the bundled corpus. */
+    private Map<String, String> index() {
+        Map<String, String> local = files;
+        if (local != null) return local;
+        local = new HashMap<>();
+        try {
+            for (JsonElement element : JsonResources.gz("monsters.json.gz").getAsJsonArray()) {
+                JsonObject row = element.getAsJsonObject();
+                String name = JsonResources.string(row, "name");
+                String image = JsonResources.string(row, "image");
+                if (name.isEmpty() || image.isEmpty()) continue;
+                local.putIfAbsent(key(name, JsonResources.string(row, "version")), image);
+                // The panel asks with an empty version whenever the corpus
+                // holds one form, and with a normalized label when it holds
+                // several - the bare name backs both. Prefer the plain
+                // "<Name>.png" when the mob has one: a versioned mob's first
+                // corpus row is often a side form (Abyssal demon's first row
+                // is the Catacombs one), and the plain file is the right
+                // picture for "just an abyssal demon".
+                String bare = key(name, "");
+                String plain = name + ".png";
+                String held = local.get(bare);
+                if (held == null || (image.equalsIgnoreCase(plain) && !held.equalsIgnoreCase(plain))) {
+                    local.put(bare, image);
+                }
+            }
+        } catch (Exception e) {
+            // Fail soft, like every other bundled table: no index means no
+            // thumbnails, never a broken panel.
+            log.debug("monster image index unavailable", e);
+        }
+        files = local;
+        return local;
+    }
 
-	private static String key(String name, String version) {
-		return ((name == null ? "" : name) + "|" + (version == null ? "" : version))
-			.toLowerCase(Locale.ROOT);
-	}
+    private static String key(String name, String version) {
+        return ((name == null ? "" : name) + "|" + (version == null ? "" : version)) .toLowerCase(Locale.ROOT);
+    }
 
-	private BufferedImage fetch(String fileName) throws IOException {
-		String encoded = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
-		Request request = new Request.Builder()
-			.url(WIKI + encoded + "?width=96")
-			.build();
-		try (Response response = http.newCall(request).execute()) {
-			if (!response.isSuccessful() || response.body() == null) return null;
-			return ImageIO.read(new ByteArrayInputStream(response.body().bytes()));
-		}
-	}
+    private BufferedImage fetch(String fileName) throws IOException {
+        String encoded = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
+        Request request = new Request.Builder() .url(WIKI + encoded + "?width=96") .build();
+        try (Response response = http.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) return null;
+            return ImageIO.read(new ByteArrayInputStream(response.body().bytes()));
+        }
+    }
 
-	public void shutdown() { worker.shutdown(); }
+    public void shutdown() { worker.shutdown(); }
 }

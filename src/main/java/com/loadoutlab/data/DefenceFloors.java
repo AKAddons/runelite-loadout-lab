@@ -13,32 +13,30 @@ import java.util.*;
  * constants - the same weirdgloop ids our corpus carries.
  */
 public final class DefenceFloors {
-	/** Sentinel: the floor IS the boss's base defence (undrainable). */
-	private static final int BASE = -1;
+    /** Sentinel: the floor IS the boss's base defence (undrainable). */
+    private static final int BASE = -1;
 
-	private static final Map<Integer, Integer> BY_ID = new HashMap<>();
+    private static final Map<Integer, Integer> BY_ID = new HashMap<>();
 
-	static {
-		JsonObject root = JsonResources.objectOrThrow(
-			"defence_floors.json");
-		for (JsonElement e : root.getAsJsonArray("rules")) {
-			JsonObject row = e.getAsJsonObject();
-			int floor = "base".equals(row.get("floor").getAsString())
-				? BASE : row.get("floor").getAsInt();
-			for (JsonElement id : row.getAsJsonArray("ids")) BY_ID.put(id.getAsInt(), floor);
-		}
-		if (BY_ID.isEmpty()) throw new IllegalStateException("defence_floors.json loaded empty");
-	}
+    static {
+        JsonObject root = JsonResources.objectOrThrow( "defence_floors.json");
+        for (JsonElement e : root.getAsJsonArray("rules")) {
+            JsonObject row = e.getAsJsonObject();
+            int floor = "base".equals(row.get("floor").getAsString()) ? BASE : row.get("floor").getAsInt();
+            for (JsonElement id : row.getAsJsonArray("ids")) BY_ID.put(id.getAsInt(), floor);
+        }
+        if (BY_ID.isEmpty()) throw new IllegalStateException("defence_floors.json loaded empty");
+    }
 
-	private DefenceFloors() {
-	}
+    private DefenceFloors() {
+    }
 
-	/** The defence level a drain cannot pass for this monster - 0 when
-	 * unfloored. Synthetic group rows resolve through profileId(). */
-	public static int floorFor(MonsterStats monster) {
-		if (monster == null) return 0;
-		Integer floor = BY_ID.get(monster.profileId());
-		if (floor == null) return 0;
-		return floor == BASE ? monster.getDefence() : floor;
-	}
+    /** The defence level a drain cannot pass for this monster - 0 when
+     * unfloored. Synthetic group rows resolve through profileId(). */
+    public static int floorFor(MonsterStats monster) {
+        if (monster == null) return 0;
+        Integer floor = BY_ID.get(monster.profileId());
+        if (floor == null) return 0;
+        return floor == BASE ? monster.getDefence() : floor;
+    }
 }

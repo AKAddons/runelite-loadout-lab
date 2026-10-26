@@ -12,33 +12,30 @@ import java.util.*;
  * changes. Unpriced like any pin - the model cannot value a task bracelet.
  */
 public enum TaskBracelet {
-	NONE(0),
-	EXPEDITIOUS_BRACELET(21177),
-	BRACELET_OF_SLAUGHTER(21183);
+    NONE(0), EXPEDITIOUS_BRACELET(21177), BRACELET_OF_SLAUGHTER(21183);
 
-	public final int itemId;
+    public final int itemId;
 
-	TaskBracelet(int itemId) { this.itemId = itemId; }
+    TaskBracelet(int itemId) { this.itemId = itemId; }
 
-	/** The mob's pins with this bracelet in HANDS for every concrete style
-	 * that has no hands pin of its own; the input is never mutated. Only a
-	 * slayer monster on task counts - the task param can outlive the chip
-	 * (Andrew 2026-10-18: Orca wore the bracelet). */
-	public static Map<CombatStyle, Map<GearSlot, Integer>> overlay(
-		Map<CombatStyle, Map<GearSlot, Integer>> pins, MonsterStats monster, boolean onTask,
-		TaskBracelet choice) {
-		if (!onTask || monster == null || !monster.isSlayerMonster() || choice == null || choice == NONE) {
-			return pins;
-		}
-		var out = new EnumMap<CombatStyle, Map<GearSlot, Integer>>(CombatStyle.class);
-		out.putAll(pins);
-		for (CombatStyle style : CombatStyle.concreteValues()) {
-			var mine = new EnumMap<GearSlot, Integer>(GearSlot.class);
-			Map<GearSlot, Integer> had = pins.get(style);
-			if (had != null) mine.putAll(had);
-			mine.putIfAbsent(GearSlot.HANDS, choice.itemId);
-			out.put(style, mine);
-		}
-		return out;
-	}
+    /** The mob's pins with this bracelet in HANDS for every concrete style
+     * that has no hands pin of its own; the input is never mutated. Only a
+     * slayer monster on task counts - the task param can outlive the chip
+     * (Andrew 2026-10-18: Orca wore the bracelet). */
+    public static Map<CombatStyle, Map<GearSlot, Integer>> overlay(
+        Map<CombatStyle, Map<GearSlot, Integer>> pins, MonsterStats monster, boolean onTask, TaskBracelet choice) {
+        if (!onTask || monster == null || !monster.isSlayerMonster() || choice == null || choice == NONE) {
+            return pins;
+        }
+        var out = new EnumMap<CombatStyle, Map<GearSlot, Integer>>(CombatStyle.class);
+        out.putAll(pins);
+        for (CombatStyle style : CombatStyle.concreteValues()) {
+            var mine = new EnumMap<GearSlot, Integer>(GearSlot.class);
+            Map<GearSlot, Integer> had = pins.get(style);
+            if (had != null) mine.putAll(had);
+            mine.putIfAbsent(GearSlot.HANDS, choice.itemId);
+            out.put(style, mine);
+        }
+        return out;
+    }
 }

@@ -9,98 +9,96 @@ import static com.loadoutlab.data.JsonResources.*;
 /** Weapon/ammo compatibility. The id tables (arrow/bolt tiers, javelins,
  * fixed weapon-ammo pairs) live in ranged_ammo.json - hub token cap. */
 public final class RangedAmmo {
-	private static final int DORGESHUUN_CROSSBOW = 8880;
-	private static final Map<Integer, Integer> ARROW_TIER_BY_WEAPON = new HashMap<>();
-	private static final Map<Integer, Integer> BOLT_TIER_BY_WEAPON = new HashMap<>();
-	private static final Map<Integer, Integer> ARROW_TIER_BY_AMMO = new HashMap<>();
-	private static final Map<Integer, Integer> BOLT_TIER_BY_AMMO = new HashMap<>();
-	private static final Set<Integer> JAVELIN_AMMO = new HashSet<>();
-	private static final Set<Integer> JAVELIN_WEAPONS = new HashSet<>();
-	private static final Map<Integer, Set<Integer>> PAIRS = new HashMap<>();
-	private static final Set<Integer> DORGESHUUN_EXTRA_BOLTS = new HashSet<>();
+    private static final int DORGESHUUN_CROSSBOW = 8880;
+    private static final Map<Integer, Integer> ARROW_TIER_BY_WEAPON = new HashMap<>();
+    private static final Map<Integer, Integer> BOLT_TIER_BY_WEAPON = new HashMap<>();
+    private static final Map<Integer, Integer> ARROW_TIER_BY_AMMO = new HashMap<>();
+    private static final Map<Integer, Integer> BOLT_TIER_BY_AMMO = new HashMap<>();
+    private static final Set<Integer> JAVELIN_AMMO = new HashSet<>();
+    private static final Set<Integer> JAVELIN_WEAPONS = new HashSet<>();
+    private static final Map<Integer, Set<Integer>> PAIRS = new HashMap<>();
+    private static final Set<Integer> DORGESHUUN_EXTRA_BOLTS = new HashSet<>();
 
-	static {
-		JsonObject root = object("ranged_ammo.json");
-		intMap(root, "arrowTierByWeapon", ARROW_TIER_BY_WEAPON);
-		intMap(root, "boltTierByWeapon", BOLT_TIER_BY_WEAPON);
-		intMap(root, "arrowTierByAmmo", ARROW_TIER_BY_AMMO);
-		intMap(root, "boltTierByAmmo", BOLT_TIER_BY_AMMO);
-		ints(root, "javelinAmmo", JAVELIN_AMMO);
-		ints(root, "javelinWeapons", JAVELIN_WEAPONS);
-		ints(root, "dorgeshuunExtraBolts", DORGESHUUN_EXTRA_BOLTS);
-		if (root != null) {
-			for (var e : root.getAsJsonObject("pairs").entrySet()) {
-				Set<Integer> ammo = new HashSet<>();
-				for (JsonElement a : e.getValue().getAsJsonArray()) ammo.add(a.getAsInt());
-				PAIRS.put(Integer.parseInt(e.getKey()), ammo);
-			}
-		}
-	}
+    static {
+        JsonObject root = object("ranged_ammo.json");
+        intMap(root, "arrowTierByWeapon", ARROW_TIER_BY_WEAPON);
+        intMap(root, "boltTierByWeapon", BOLT_TIER_BY_WEAPON);
+        intMap(root, "arrowTierByAmmo", ARROW_TIER_BY_AMMO);
+        intMap(root, "boltTierByAmmo", BOLT_TIER_BY_AMMO);
+        ints(root, "javelinAmmo", JAVELIN_AMMO);
+        ints(root, "javelinWeapons", JAVELIN_WEAPONS);
+        ints(root, "dorgeshuunExtraBolts", DORGESHUUN_EXTRA_BOLTS);
+        if (root != null) {
+            for (var e : root.getAsJsonObject("pairs").entrySet()) {
+                Set<Integer> ammo = new HashSet<>();
+                for (JsonElement a : e.getValue().getAsJsonArray()) ammo.add(a.getAsInt());
+                PAIRS.put(Integer.parseInt(e.getKey()), ammo);
+            }
+        }
+    }
 
-	private RangedAmmo() {
-	}
+    private RangedAmmo() {
+    }
 
-	/** Sims plus the exclusive ammo of every simmed weapon (a crossbow
-	 * that fires only its own bolts is no sim without them). */
-	public static Set<Integer> withPairedAmmo(Set<Integer> sims) {
-		Set<Integer> out = new HashSet<>(sims);
-		for (int id : sims) out.addAll(PAIRS.getOrDefault(id, Set.of()));
-		return out;
-	}
+    /** Sims plus the exclusive ammo of every simmed weapon (a crossbow
+     * that fires only its own bolts is no sim without them). */
+    public static Set<Integer> withPairedAmmo(Set<Integer> sims) {
+        Set<Integer> out = new HashSet<>(sims);
+        for (int id : sims) out.addAll(PAIRS.getOrDefault(id, Set.of()));
+        return out;
+    }
 
-	public static boolean compatible(GearItem ammo, GearItem weapon) {
-		if (ammo == null) return !weaponUsesProjectileAmmo(weapon);
-		if (projectileMatches(ammo, weapon)) return true;
-		return !weaponUsesProjectileAmmo(weapon) && passiveAmmoSlotItem(ammo);
-	}
+    public static boolean compatible(GearItem ammo, GearItem weapon) {
+        if (ammo == null) return !weaponUsesProjectileAmmo(weapon);
+        if (projectileMatches(ammo, weapon)) return true;
+        return !weaponUsesProjectileAmmo(weapon) && passiveAmmoSlotItem(ammo);
+    }
 
-	static boolean strengthApplies(GearItem ammo, GearItem weapon) {
-		return ammo != null && projectileMatches(ammo, weapon);
-	}
+    static boolean strengthApplies(GearItem ammo, GearItem weapon) {
+        return ammo != null && projectileMatches(ammo, weapon);
+    }
 
-	/** Arrow or bolt weapons only - the classes Dizana's quiver can hold
-	 * (javelins, darts and chinchompas stay in their own slots). */
-	static boolean usesArrowsOrBolts(GearItem weapon) {
-		return weapon != null
-			&& (ARROW_TIER_BY_WEAPON.containsKey(weapon.getId())
-				|| BOLT_TIER_BY_WEAPON.containsKey(weapon.getId())
-				|| weapon.getId() == DORGESHUUN_CROSSBOW);
-	}
+    /** Arrow or bolt weapons only - the classes Dizana's quiver can hold
+     * (javelins, darts and chinchompas stay in their own slots). */
+    static boolean usesArrowsOrBolts(GearItem weapon) {
+        return weapon != null && (ARROW_TIER_BY_WEAPON.containsKey(weapon.getId())
+                || BOLT_TIER_BY_WEAPON.containsKey(weapon.getId()) || weapon.getId() == DORGESHUUN_CROSSBOW);
+    }
 
-	/** A blessing (or other passive ammo-slot item) may ride the freed
-	 * slot when the quiver carries the projectiles. */
-	static boolean passiveForQuiver(GearItem item) { return passiveAmmoSlotItem(item); }
+    /** A blessing (or other passive ammo-slot item) may ride the freed
+     * slot when the quiver carries the projectiles. */
+    static boolean passiveForQuiver(GearItem item) { return passiveAmmoSlotItem(item); }
 
-	private static boolean weaponUsesProjectileAmmo(GearItem weapon) {
-		return usesArrowsOrBolts(weapon)
-			|| weapon != null && (JAVELIN_WEAPONS.contains(weapon.getId()) || PAIRS.containsKey(weapon.getId()));
-	}
+    private static boolean weaponUsesProjectileAmmo(GearItem weapon) {
+        return usesArrowsOrBolts(weapon)
+            || weapon != null && (JAVELIN_WEAPONS.contains(weapon.getId()) || PAIRS.containsKey(weapon.getId()));
+    }
 
-	private static boolean projectileMatches(GearItem ammo, GearItem weapon) {
-		if (ammo == null || weapon == null) return false;
-		int ammoId = ammo.getId();
-		int weaponId = weapon.getId();
-		if (weaponId == DORGESHUUN_CROSSBOW) {
-			int tier = BOLT_TIER_BY_AMMO.getOrDefault(ammoId, 0);
-			return (tier > 0 && tier <= 16) || DORGESHUUN_EXTRA_BOLTS.contains(ammoId);
-		}
-		Set<Integer> pair = PAIRS.get(weaponId);
-		if (pair != null) return pair.contains(ammoId);
-		if (JAVELIN_WEAPONS.contains(weaponId)) return JAVELIN_AMMO.contains(ammoId);
-		int arrowCap = ARROW_TIER_BY_WEAPON.getOrDefault(weaponId, 0);
-		if (arrowCap > 0) {
-			int tier = ARROW_TIER_BY_AMMO.getOrDefault(ammoId, 0);
-			return tier > 0 && tier <= arrowCap;
-		}
-		int boltCap = BOLT_TIER_BY_WEAPON.getOrDefault(weaponId, 0);
-		if (boltCap > 0) {
-			int tier = BOLT_TIER_BY_AMMO.getOrDefault(ammoId, 0);
-			return tier > 0 && tier <= boltCap;
-		}
-		return false;
-	}
+    private static boolean projectileMatches(GearItem ammo, GearItem weapon) {
+        if (ammo == null || weapon == null) return false;
+        int ammoId = ammo.getId();
+        int weaponId = weapon.getId();
+        if (weaponId == DORGESHUUN_CROSSBOW) {
+            int tier = BOLT_TIER_BY_AMMO.getOrDefault(ammoId, 0);
+            return (tier > 0 && tier <= 16) || DORGESHUUN_EXTRA_BOLTS.contains(ammoId);
+        }
+        Set<Integer> pair = PAIRS.get(weaponId);
+        if (pair != null) return pair.contains(ammoId);
+        if (JAVELIN_WEAPONS.contains(weaponId)) return JAVELIN_AMMO.contains(ammoId);
+        int arrowCap = ARROW_TIER_BY_WEAPON.getOrDefault(weaponId, 0);
+        if (arrowCap > 0) {
+            int tier = ARROW_TIER_BY_AMMO.getOrDefault(ammoId, 0);
+            return tier > 0 && tier <= arrowCap;
+        }
+        int boltCap = BOLT_TIER_BY_WEAPON.getOrDefault(weaponId, 0);
+        if (boltCap > 0) {
+            int tier = BOLT_TIER_BY_AMMO.getOrDefault(ammoId, 0);
+            return tier > 0 && tier <= boltCap;
+        }
+        return false;
+    }
 
-	private static boolean passiveAmmoSlotItem(GearItem ammo) {
-		return ammo.getBonuses().getRangedStrength() <= 0 && ammo.getOffensive().getRanged() <= 0;
-	}
+    private static boolean passiveAmmoSlotItem(GearItem ammo) {
+        return ammo.getBonuses().getRangedStrength() <= 0 && ammo.getOffensive().getRanged() <= 0;
+    }
 }

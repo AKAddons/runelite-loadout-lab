@@ -16,80 +16,79 @@ import static com.loadoutlab.data.JsonResources.*;
  * when owned.
  */
 public final class LootContainers {
-	@lombok.AllArgsConstructor
-	private static final class Container {
-		final String name;
-		final int[] ids;
-		final String holds;
-		/** What it does with them - "holds them" for a bag; the bonecrusher,
-		 * ash sanctifier and soul bearer (ISS-01M5TNBSP28AAHJTYWAWJHHZKB) say their own. */
-		final String does;
-		final Map<String, Double> perKill;
-	}
+    @lombok.AllArgsConstructor
+    private static final class Container {
+        final String name;
+        final int[] ids;
+        final String holds;
+        /** What it does with them - "holds them" for a bag; the bonecrusher,
+         * ash sanctifier and soul bearer (ISS-01M5TNBSP28AAHJTYWAWJHHZKB) say their own. */
+        final String does;
+        final Map<String, Double> perKill;
+    }
 
-	private static final List<Container> CONTAINERS = new ArrayList<>();
-	private static Container lootingBag;
+    private static final List<Container> CONTAINERS = new ArrayList<>();
+    private static Container lootingBag;
 
-	static {
-		JsonObject root = objectOrThrow("loot_containers.json");
-		for (JsonElement e : root.getAsJsonArray("containers")) {
-			JsonObject row = e.getAsJsonObject();
-			Map<String, Double> perKill = new HashMap<>();
-			row.getAsJsonObject("monsters").entrySet()
-				.forEach(m -> perKill.put(m.getKey(), m.getValue().getAsDouble()));
-			CONTAINERS.add(new Container(string(row, "name"), ints(row.getAsJsonArray("ids")),
-				string(row, "holds"), row.has("does") ? string(row, "does") : "holds them", perKill));
-		}
-		JsonObject bag = root.getAsJsonObject("lootingBag");
-		lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", "", Map.of());
-		if (CONTAINERS.isEmpty()) throw new IllegalStateException("loot_containers.json loaded empty");
-	}
+    static {
+        JsonObject root = objectOrThrow("loot_containers.json");
+        for (JsonElement e : root.getAsJsonArray("containers")) {
+            JsonObject row = e.getAsJsonObject();
+            Map<String, Double> perKill = new HashMap<>();
+            row.getAsJsonObject("monsters").entrySet() .forEach(m -> perKill.put(m.getKey(), m.getValue().getAsDouble()));
+            CONTAINERS.add(new Container(string(row, "name"), ints(row.getAsJsonArray("ids")),
+                string(row, "holds"), row.has("does") ? string(row, "does") : "holds them", perKill));
+        }
+        JsonObject bag = root.getAsJsonObject("lootingBag");
+        lootingBag = new Container(string(bag, "name"), ints(bag.getAsJsonArray("ids")), "loot", "", Map.of());
+        if (CONTAINERS.isEmpty()) throw new IllegalStateException("loot_containers.json loaded empty");
+    }
 
-	private LootContainers() {
-	}
+    private LootContainers() {
+    }
 
-	/** The containers this monster's drops are worth that you own, each a
-	 * trip-kit row: id (the one you own), name, qty, why. The looting bag
-	 * rides on a wilderness trip. */
-	public static List<Map<String, Object>> picks(MonsterStats monster, IntPredicate owns, boolean wilderness) {
-		List<Map<String, Object>> out = new ArrayList<>();
-		if (monster == null || owns == null) return out;
-		String key = monster.getNameLower();
-		for (Container container : CONTAINERS) {
-			Double rate = container.perKill.get(key);
-			int id = rate == null ? -1 : ownedId(container, owns);
-			if (id > 0) {
-				out.add(row(id, container.name, Names.cap(container.holds) + " drop here (" + often(rate) + ") - the "
-					+ Names.lower(container.name) + " " + container.does));
-			}
-		}
-		if (wilderness || monster.isWildernessMonster()) {
-			int id = ownedId(lootingBag, owns);
-			if (id > 0) out.add(row(id, lootingBag.name, "Wilderness: the looting bag stores loot as you fight"));
-		}
-		return out;
-	}
+    /** The containers this monster's drops are worth that you own, each a
+     * trip-kit row: id (the one you own), name, qty, why. The looting bag
+     * rides on a wilderness trip. */
+    public static List<Map<String, Object>> picks(MonsterStats monster, IntPredicate owns, boolean wilderness) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (monster == null || owns == null) return out;
+        String key = monster.getNameLower();
+        for (Container container : CONTAINERS) {
+            Double rate = container.perKill.get(key);
+            int id = rate == null ? -1 : ownedId(container, owns);
+            if (id > 0) {
+                out.add(row(id, container.name, Names.cap(container.holds) + " drop here (" + often(rate) + ") - the "
+                    + Names.lower(container.name) + " " + container.does));
+            }
+        }
+        if (wilderness || monster.isWildernessMonster()) {
+            int id = ownedId(lootingBag, owns);
+            if (id > 0) out.add(row(id, lootingBag.name, "Wilderness: the looting bag stores loot as you fight"));
+        }
+        return out;
+    }
 
-	/** Whether the monster drops enough of what a container holds, by its
-	 * holds word ("ashes": the Demonic Offering book, ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
-	public static boolean drops(MonsterStats monster, String holds) {
-		String key = monster.getNameLower();
-		return CONTAINERS.stream().anyMatch(c -> c.holds.equals(holds) && c.perKill.containsKey(key));
-	}
+    /** Whether the monster drops enough of what a container holds, by its
+     * holds word ("ashes": the Demonic Offering book, ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
+    public static boolean drops(MonsterStats monster, String holds) {
+        String key = monster.getNameLower();
+        return CONTAINERS.stream().anyMatch(c -> c.holds.equals(holds) && c.perKill.containsKey(key));
+    }
 
-	private static int ownedId(Container container, IntPredicate owns) {
-		return Arrays.stream(container.ids).filter(owns).findFirst().orElse(-1);
-	}
+    private static int ownedId(Container container, IntPredicate owns) {
+        return Arrays.stream(container.ids).filter(owns).findFirst().orElse(-1);
+    }
 
-	/** "about 1 per 4 kills", "about 1 per kill" (bones, ashes), or "about
-	 * 2 per kill" for the generous. */
-	private static String often(double perKill) {
-		long every = Math.round(1 / perKill);
-		return perKill >= 1 ? String.format("about %.0f per kill", perKill)
-			: every <= 1 ? "about 1 per kill" : "about 1 per " + every + " kills";
-	}
+    /** "about 1 per 4 kills", "about 1 per kill" (bones, ashes), or "about
+     * 2 per kill" for the generous. */
+    private static String often(double perKill) {
+        long every = Math.round(1 / perKill);
+        return perKill >= 1 ? String.format("about %.0f per kill", perKill)
+            : every <= 1 ? "about 1 per kill" : "about 1 per " + every + " kills";
+    }
 
-	private static Map<String, Object> row(int id, String name, String why) {
-		return map("id", id, "name", name, "qty", 1, "why", why, "owned", true);
-	}
+    private static Map<String, Object> row(int id, String name, String why) {
+        return map("id", id, "name", name, "qty", 1, "why", why, "owned", true);
+    }
 }
