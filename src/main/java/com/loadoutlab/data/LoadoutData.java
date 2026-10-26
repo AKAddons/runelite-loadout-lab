@@ -65,6 +65,25 @@ public final class LoadoutData {
 	 * Owned quantities with every variant also credited to its base item,
 	 * so an owned "Abyssal whip (or)" satisfies an "Abyssal whip" pick.
 	 */
+	private static final java.util.regex.Pattern CHARGE = java.util.regex.Pattern.compile("\\(*i?\\d+\\)*");
+
+	/** The result cache's ownership key with charge counts folded
+	 * (ISS-01M5V7W28574DBWHTR5ATE37Q8, Andrew 2026-10-25: "when i teleport it
+	 * should stay the same and should be able to fully rely on the cache"):
+	 * a teleport turns a games necklace (8) into (7), a new id. Gear counts
+	 * as its name and its version with a bare charge number folded; any
+	 * other version (Charged, Uncharged) and every non-gear id stays itself. */
+	public int chargeFreeFingerprint(Map<Integer, Integer> owned) {
+		var keys = new TreeSet<String>();
+		for (var e : owned.entrySet()) {
+			if (e.getValue() == null || e.getValue() <= 0) continue;
+			GearItem g = getGear(e.getKey());
+			keys.add(g == null ? String.valueOf(e.getKey())
+				: g.getNameLower() + "|" + (CHARGE.matcher(g.getVersionLower()).matches() ? "#" : g.getVersionLower()));
+		}
+		return keys.hashCode();
+	}
+
 	public Map<Integer, Integer> canonicalizeOwned(Map<Integer, Integer> owned) {
 		Map<Integer, Integer> result = new HashMap<>(owned);
 		for (var entry : owned.entrySet()) {

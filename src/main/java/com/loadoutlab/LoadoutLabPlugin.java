@@ -1456,7 +1456,7 @@ public class LoadoutLabPlugin extends Plugin {
 			supplyUnlocks = TripSupplies.unlocked(client::getVarbitValue);
 			mergedOwned = ownedItems();
 			owned = new OwnedItems(mergedOwned, ledger.bankKnown());
-			fingerprint = owned.presenceFingerprint();
+			fingerprint = data.chargeFreeFingerprint(mergedOwned);
 			unlocks = prayerUnlocks != null ? prayerUnlocks : PrayerUnlocks.ALL;
 		}
 	}
