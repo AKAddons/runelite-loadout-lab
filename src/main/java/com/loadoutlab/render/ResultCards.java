@@ -572,7 +572,7 @@ public class ResultCards {
 		if (naval && ship != null && !list(ship, "cannons").isEmpty()) { card.add(left(shipBreakdown(ship, shown))); }
 		// The classic style strip sits BELOW the gear view: one tab per
 		// style carrying its icon and that style's shown dps.
-		JPanel tabStrip = darker(new FlowLayout(FlowLayout.CENTER, 2, 0));
+		JPanel tabStrip = styleStrip();
 		for (String style : styles.keySet()) {
 			Map<String, Object> styleNode = map(styles, style);
 			double tabDps = num(styleNode, bis ? "bisTabDps" : "tabDps");
@@ -1035,6 +1035,11 @@ public class ResultCards {
 		});
 		return side;
 	}
+
+	/** The style strip: it wraps, so the Multi card's fourth tool (Hallowfell)
+	 * takes a second row instead of running past the panel's edge
+	 * (ISS-01M5TS5CBHSDS00XQSQYJ19XW8). */
+	static JPanel styleStrip() { return darker(new WrapLayout(FlowLayout.CENTER, 2, 2)); }
 
 	private final Map<Integer, ImageIcon> spriteIconCache =
 		new HashMap<>();
