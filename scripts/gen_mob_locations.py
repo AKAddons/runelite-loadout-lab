@@ -65,7 +65,10 @@ GROUP_PLACES = {
 }
 MOB_PLACES = {'hespori': 'Farming Guild', 'zulrah': 'Zul-Andra', 'nex': 'God Wars Dungeon',
               'tztok-jad': 'TzHaar Fight Cave', 'tzkal-zuk': 'The Inferno',
-              'the nightmare': 'Slepe', "phosani's nightmare": 'Slepe'}
+              'the nightmare': 'Slepe', "phosani's nightmare": 'Slepe',
+              # The totem is used on the catacombs' central altar; Skotizo's
+              # own LocLine sits in its instance (Andrew 2026-10-25).
+              'skotizo': 'Altar (Catacombs of Kourend)'}
 # Groups reached through another mob's floor: the Grotesque Guardians sit on
 # the Slayer Tower roof, up from the gargoyles.
 GROUP_LIKE = {'Grotesque Guardians': 'gargoyle'}

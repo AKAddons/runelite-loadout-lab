@@ -291,6 +291,13 @@
 			"note": "Molanisks: ring a slayer bell within 3 tiles of the wall to lure one out (wiki, 2026-10-25)"
 		},
 		{
+			"monsters": ["skotizo"],
+			"items": [
+				{"name": "Dark totem", "ids": [19685]}
+			],
+			"note": "Skotizo: use a dark totem on the altar in the centre of the Catacombs of Kourend - it is used up each attempt (wiki, 2026-10-25)"
+		},
+		{
 			"monsters": ["rockslug", "giant rockslug"],
 			"items": [
 				{"name": "Bag of salt", "ids": [4161]}
