@@ -284,6 +284,13 @@
 			"note": "Zygomites: finish them with fungicide spray (refill it with fungicide)"
 		},
 		{
+			"monsters": ["molanisk"],
+			"items": [
+				{"name": "Slayer bell", "ids": [10952]}
+			],
+			"note": "Molanisks: ring a slayer bell within 3 tiles of the wall to lure one out (wiki, 2026-10-25)"
+		},
+		{
 			"monsters": ["rockslug", "giant rockslug"],
 			"items": [
 				{"name": "Bag of salt", "ids": [4161]}
