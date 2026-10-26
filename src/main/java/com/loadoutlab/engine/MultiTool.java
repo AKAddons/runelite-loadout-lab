@@ -11,12 +11,16 @@ package com.loadoutlab.engine;
 public enum MultiTool {
 	BARRAGE("barrage", CombatStyle.MAGIC, "area"),
 	CHINS("chins", CombatStyle.RANGED, "area"),
-	VENATOR("venator", CombatStyle.RANGED, "chain");
+	VENATOR("venator", CombatStyle.RANGED, "chain"),
+	/** The Mad Angel's two-hander (ISS-01M5TPEWE9AQM3B55ZH02PHGE4, Andrew 2026-10-25: "consider
+	 * hallowfell as a melee aoe option for multimob"). */
+	HALLOWFELL("hallowfell", CombatStyle.MELEE, "cleave");
 
 	/** Black, red, grey: the pin takes the best owned, the ceiling black. */
 	public static final int[] CHIN_IDS = {11959, 10034, 10033};
 	public static final int VENATOR_BOW = 27610;
 	public static final int VENATOR_BOW_UNCHARGED = 27612;
+	public static final int HALLOWFELL_SWORD = 34027;
 	public static final int AREA_CAP = 9;
 
 	public final String key;
@@ -32,6 +36,11 @@ public enum MultiTool {
 	/** The multiplier on a per-target number at a stack of targets. */
 	public static double factor(String kind, int stack, int maxHit) {
 		if ("chain".equals(kind)) { return stack >= 2 ? RollMath.venatorFactor(maxHit) : 1; }
+		// Hallowfell (wiki passive): up to two more unique targets, each its
+		// own accuracy roll at half the max hit, rounded down.
+		if ("cleave".equals(kind)) {
+			return maxHit <= 0 ? 1 : 1 + Math.min(Math.max(stack - 1, 0), 2) * (double) (maxHit / 2) / maxHit;
+		}
 		return Math.max(1, Math.min(stack, AREA_CAP));
 	}
 }

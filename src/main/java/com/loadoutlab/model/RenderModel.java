@@ -136,7 +136,8 @@ public final class RenderModel {
 				// The two ranged tools wear their own item icon on the strip
 				// (Andrew 2026-10-19); the barrage keeps the magic sprite.
 				node.put("styleItem", tool == MultiTool.CHINS ? MultiTool.CHIN_IDS[0]
-					: tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW : 0);
+					: tool == MultiTool.VENATOR ? MultiTool.VENATOR_BOW
+					: tool == MultiTool.HALLOWFELL ? MultiTool.HALLOWFELL_SWORD : 0);
 				out.put(tool.key, node);
 			}
 		}

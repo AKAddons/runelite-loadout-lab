@@ -56,7 +56,7 @@ chip.ancient.tip	Carry Zaros protection too - bank at Nex's respite area (Ashuel
 chip.pvp.tip	PvP world: keeps 3 items (4 with Protect Item), High Risk keeps none - cycles off / PvP / High Risk
 chip.cannons.tip	Ship cannons carried - cycles 0 / 1 / 2
 chip.dcharge.tip	Death Charge: off / on / upgraded - cycles
-chip.multi.tip	Multi-combat: barrage, chinchompas and the venator bow priced at a stack of targets - cycles single / x3 / x9
+chip.multi.tip	Multi-combat: barrage, chinchompas, the venator bow and Hallowfell priced at a stack of targets - cycles single / x3 / x9
 chip.invo.tip	ToA invocation level - cycles 0/150/300/540
 chip.budget.tip	Upgrade budget (k/m/b, 'max'); empty = owned gear only
 chip.risk.tip	Wilderness risk cap in gp (k/m/b); empty = uncapped. Caps tradeables carried to 3 (4 with Protect Item)

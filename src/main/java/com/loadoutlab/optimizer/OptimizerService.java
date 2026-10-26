@@ -580,7 +580,8 @@ public class OptimizerService {
 		} else {
 			// The owned scan canonicalises a charged bow onto its uncharged id,
 			// so either id proves the bow; the pin always wears the charged one.
-			int[] ids = tool == VENATOR ? new int[]{VENATOR_BOW, VENATOR_BOW_UNCHARGED} : CHIN_IDS;
+			int[] ids = tool == VENATOR ? new int[]{VENATOR_BOW, VENATOR_BOW_UNCHARGED}
+				: tool == HALLOWFELL ? new int[]{HALLOWFELL_SWORD} : CHIN_IDS;
 			int weapon = ids[0];
 			ownedSide = false;
 			for (int id : ids) {

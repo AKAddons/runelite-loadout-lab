@@ -104,11 +104,12 @@ class MultiToolsTest {
 	}
 
 	@Test
-	@DisplayName("Greater Nechryaels with the switch on rank barrage, chins and the venator bow, each a per-target set")
+	@DisplayName("Greater Nechryaels with the switch on rank barrage, chins, the venator bow and Hallowfell, each a per-target set")
 	void nechryaelsHaveThreeTools() throws Exception {
 		Map<String, OptimizerService.StyleResult> tools = tools(compute("greater nechryael", kit(true, true, true), true));
 		assertNotNull(tools, "the multi tools ride the results");
-		assertEquals(3, tools.size());
+		assertEquals(4, tools.size(), "barrage, chins, venator and Hallowfell (ISS-01M5TPEWE9AQM3B55ZH02PHGE4)");
+		assertEquals(MultiTool.HALLOWFELL_SWORD, tools.get(MultiTool.HALLOWFELL.key).overallBest.getLoadout().get(GearSlot.WEAPON).getId(), "the ceiling wields Hallowfell");
 		OptimizerService.StyleResult barrage = tools.get(MultiTool.BARRAGE.key);
 		assertEquals("Ice Barrage", barrage.owned.get(0).getSpellName(), "a maxed mage barrages");
 		assertEquals(BLACK_CHIN, tools.get(MultiTool.CHINS.key).owned.get(0).getLoadout().get(GearSlot.WEAPON).getId());
