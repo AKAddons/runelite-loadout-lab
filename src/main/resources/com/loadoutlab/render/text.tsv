@@ -18,6 +18,7 @@ ledger.manning	Manning cannon 1: armour bonuses count, attacks do not
 ledger.parts	Set + spec = the row; + cannons = the tab
 book.swap	Lunar home, Spellbook Swap into Arceuus for the summons
 book.arceuus	thralls / Death Charge live on Arceuus
+book.offering	Demonic Offering: sacrifice the ashes it drops for Prayer xp
 book.none	No specific spellbook required - a powered staff casts on any book
 book.wants	This set wants the %s book (%s) - you are %son it
 book.swaphome	Lunar home - Spellbook Swap into %s for the fight

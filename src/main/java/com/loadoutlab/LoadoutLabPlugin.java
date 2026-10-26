@@ -346,6 +346,10 @@ public class LoadoutLabPlugin extends Plugin {
 				// The slot ladder's "how to get it" opens Not Enough Runes.
 				commandEngine.setNerLink(this::nerPresent, this::openNer);
 				commandEngine.setPathLink(this::pathPresent, this::openPath);
+				// Demonic Offering (ISS-01M5TQ977R0MXBMSQ3VBHS29GB): members, 84 Magic, A Kingdom Divided.
+				commandEngine.setOfferingReady(() -> !Boolean.TRUE.equals(lastF2pWorld) && realLevels != null
+					&& realLevels.getMagic() >= 84 && requirementProfile != null
+					&& requirementProfile.getCompletedQuests().contains(Quest.A_KINGDOM_DIVIDED.name()));
 				// Source dots: the storage an item must be fetched from
 				// (at-hand gear returns "" and stays unmarked).
 				commandEngine.setItemLocation(this::primaryLocationOf);

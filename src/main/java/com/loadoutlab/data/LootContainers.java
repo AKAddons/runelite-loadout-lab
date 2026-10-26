@@ -70,6 +70,13 @@ public final class LootContainers {
 		return out;
 	}
 
+	/** Whether the monster drops enough of what a container holds, by its
+	 * holds word ("ashes": the Demonic Offering book, ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
+	public static boolean drops(MonsterStats monster, String holds) {
+		String key = Names.lower(monster.getName());
+		return CONTAINERS.stream().anyMatch(c -> c.holds.equals(holds) && c.perKill.containsKey(key));
+	}
+
 	private static int ownedId(Container container, IntPredicate owns) {
 		return Arrays.stream(container.ids).filter(owns).findFirst().orElse(-1);
 	}

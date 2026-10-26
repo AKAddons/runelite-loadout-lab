@@ -1072,6 +1072,10 @@ public class ResultCards {
 			required = viaSwap ? "lunar" : "arceuus";
 			reason = viaSwap ? text("book.swap") : text("book.arceuus");
 		}
+		if (required == null && flag(mob, "demonicOffering")) {
+			required = "arceuus";
+			reason = text("book.offering");
+		}
 		// The book the fight/set asks for, before any swap rewrite - the
 		// picker offers it as the "camp it directly" choice.
 		String directBook = required;

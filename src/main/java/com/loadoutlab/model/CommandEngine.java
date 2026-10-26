@@ -1577,6 +1577,11 @@ public class CommandEngine {
 		this.pathOpen = open;
 	}
 
+	/** Demonic Offering castable - members, 84 Magic, A Kingdom Divided - from
+	 * the plugin (ISS-01M5TQ977R0MXBMSQ3VBHS29GB). */
+	@Setter
+	private volatile BooleanSupplier offeringReady = () -> false;
+
 	private boolean pathable(MonsterStats mob) {
 		return mob != null && pathAvailable.getAsBoolean() && MobLocations.of(mob.getName()) != null;
 	}
@@ -2064,6 +2069,11 @@ public class CommandEngine {
 					mob.put("pinnedSpell", ops.mobs().pinnedSpell(monsterId));
 					mob.put("pinnedSpec", ops.mobs().pinnedSpec(monsterId));
 					mob.put("note", ops.mobs().note(monsterId));
+					// An ash dropper with no book of its own suggests Arceuus
+					// (ISS-01M5TQ977R0MXBMSQ3VBHS29GB, Andrew 2026-10-25: "default to arceuss for
+					// the ability to break down the ashes into prayer").
+					mob.put("demonicOffering", lensed != null && offeringReady.getAsBoolean()
+						&& LootContainers.drops(lensed, "ashes"));
 					mob.put("skipDegradable", ops.skipDegradable(monsterId));
 					mob.put("cureMe", cureMe(lensed));
 					mob.put("arceuusBlocked", arceuusBlocked(lensed));
