@@ -40,6 +40,9 @@ public final class ComputeParams implements Cloneable {
 	/** Thralls are on (members, not F2P): with Death Charge, the reason a
 	 * group defaults to Arceuus (ISS-01M5PB4R0MP149NXWNFSEEHVP8). */
 	public boolean thralls;
+	/** A raid selection: its group runs Arceuus whenever thralls or Death
+	 * Charge are on (ISS-01M5TMC6SK50VPV8713B33SPPM). */
+	public boolean raid;
 	/** The stat sim (ISS-01M5QY13K6YHTYDW1CCYD30CSY): seven levels in
 	 * attack/strength/defence/ranged/magic/prayer/hitpoints order, 0 = your
 	 * own; null when nothing is simmed. simMaxCape sims the max cape. */

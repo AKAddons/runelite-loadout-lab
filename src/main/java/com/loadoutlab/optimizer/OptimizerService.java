@@ -1360,6 +1360,14 @@ public class OptimizerService {
 			return new GroupBook("arceuus", "Arceuus for the group - thralls and Death Charge stay up,"
 				+ " magic sets cast from powered staves", autocast);
 		}
+		// Raids run Arceuus whenever they can (ISS-01M5TMC6SK50VPV8713B33SPPM,
+		// Andrew 2026-10-25: "all raids should try to use arceuss+thralls until
+		// its not possible"): thralls on every card outweigh one card's
+		// autocast; only a spell you pinned moves the book.
+		if (ctx.p.raid && (ctx.p.thralls || ctx.p.deathCharge > 0) && !pinnedDemand) {
+			return new GroupBook("arceuus", "Arceuus for the raid - thralls and Death Charge stay up on every card,"
+				+ " magic sets cast from Arceuus", autocast);
+		}
 		String best = null;
 		double bestTotal = -1;
 		for (String book : who.keySet()) {

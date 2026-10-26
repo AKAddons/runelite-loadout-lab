@@ -1012,6 +1012,7 @@ public class CommandEngine {
 		}
 		ComputeParams p = state.computeParams();
 		p.thralls = membersFlag("thralls");
+		p.raid = flag("raidSelection");
 		List<MonsterStats> computed = roster != null ? roster : List.of(mob);
 		p.antifirePotion &= computed.stream().anyMatch(DragonfireRules::breathesFire);
 		MonsterStats lensed = shownMob();
