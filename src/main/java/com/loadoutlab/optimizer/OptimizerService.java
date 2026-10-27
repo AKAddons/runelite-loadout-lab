@@ -820,6 +820,11 @@ public class OptimizerService {
     private Map<GearSlot, Ladder> adoptOwnedSteps(ComputeContext ctx, OptimizationRequest request,
         List<DpsResult> ob, MonsterStats monster) {
         Map<GearSlot, Ladder> ladders = ladderFor(ctx, request, ob.get(0), monster);
+        // An adopted step obeys the search's own limits: the Wilderness risk
+        // cap and a task's set rules (field report 2026-10-26: a 75k cap
+        // showed a 14.3m set).
+        RiskGuard risk = RiskGuard.of(ctx.dataset, request);
+        SetRules rules = request.getSetRules();
         for (int round = 0; round < 3; round++) {
             Rung best = null;
             for (var entry : ladders.entrySet()) {
@@ -831,6 +836,8 @@ public class OptimizerService {
                 var worn = new Rung(null, ladder.baseDps, ladder.baseDtps, true, null);
                 for (Rung rung : ladder.up) {
                     if (rung.owned && rung.set != null && compareRungs(ctx.mode, rung, worn) > 0
+                        && (risk == null || !risk.vetoes(rung.set.getLoadout(), null))
+                        && (rules == null || rules.holds(rung.set.getLoadout()))
                         && (best == null || compareRungs(ctx.mode, rung, best) > 0)) {
                         best = rung;
                     }
