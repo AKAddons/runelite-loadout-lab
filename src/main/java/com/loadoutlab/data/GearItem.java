@@ -56,6 +56,8 @@ public final class GearItem {
     private final boolean poweredStaff;
     private final boolean meleeDemonbane;
     private final boolean demonbane;
+    /** Kilograms, from the corpus (negative for weight-reducing gear); set once at load. */
+    private double weight;
 
     public GearItem( int id, String name, String version, GearSlot slot, String category, int speed, boolean twoHanded,
         boolean standardGear, boolean tradeable, boolean members, Integer estimatedPrice, StatBlock offensive,
@@ -94,9 +96,13 @@ public final class GearItem {
 
     /** This item as a tradeable at a price: a charged weapon priced as the
      * uncharged twin you buy and charge (ISS-01M5QQV2TGQ5X730T0JJ75S1RD). */
+    void setWeight(double weight) { this.weight = weight; }
+
     public GearItem priced(int price) {
-        return new GearItem(id, name, version, slot, category, speed, twoHanded, standardGear, true, members, price,
+        GearItem copy = new GearItem(id, name, version, slot, category, speed, twoHanded, standardGear, true, members, price,
             offensive, defensive, bonuses, requirements);
+        copy.weight = weight;
+        return copy;
     }
 
     public boolean isWeaponFor(CombatStyle style) {

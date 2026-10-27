@@ -83,6 +83,10 @@ public final class OptimizationRequest implements Cloneable {
      * curated dragonfire layers read it (Vorkath, ISS-01M5WVMVD4MZMWC7GRQDV3AFSY). */
     @Getter @With
     private int antifireTier;
+    /** Rules the set must keep - a combat achievement's or the player's own
+     * (ISS-01M5XA7NVZYGVR3EVTM05XHXKP); null = none. */
+    @Getter @With
+    private SetRules setRules;
     /** Sunfire runes in place of fire runes: a standard fire spell lands
      * no lower than a tenth of its max hit (wiki Sunfire rune). */
     @Getter @With

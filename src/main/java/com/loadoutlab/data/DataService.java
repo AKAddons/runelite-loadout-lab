@@ -135,13 +135,15 @@ public final class DataService {
             if (isLeaguesReward(string(row, "name"), string(row, "examine"))) continue;
             if (isMinigameOnly(string(row, "name"))) continue;
 
-            result.add(new GearItem( integer(row, "id", 0), string(row, "name"), string(row, "version"), slot,
+            GearItem item = new GearItem( integer(row, "id", 0), string(row, "name"), string(row, "version"), slot,
                 string(row, "category"), integer(row, "speed", 0), bool(row, "isTwoHanded", false),
                 bool(row, "isStandardGear", true) || isWronglyFlaggedUsable(string(row, "name")),
                 bool(row, "tradeable", false), bool(row, "members", true), nullableInteger(row, "estimatedPrice"),
                 parseOffensive(row.getAsJsonObject("offensive")), parseDefensive(row.getAsJsonObject("defensive")),
                 parseBonuses(row.getAsJsonObject("bonuses")), requirementsFor( integer(row, "id", 0),
-                    string(row, "name"), string(row, "version"), sr)));
+                    string(row, "name"), string(row, "version"), sr));
+            if (row.has("weight") && !row.get("weight").isJsonNull()) item.setWeight(row.get("weight").getAsDouble());
+            result.add(item);
         }
         result.sort(Comparator.comparing(GearItem::getName).thenComparingInt(GearItem::getId));
         return result;

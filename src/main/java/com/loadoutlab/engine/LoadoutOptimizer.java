@@ -119,6 +119,7 @@ public final class LoadoutOptimizer {
                     continue; // would uncover another route god
                 }
                 if (pass.risk != null && pass.risk.exceedsCap(trial, null)) continue;
+                if (request.getSetRules() != null && !request.getSetRules().holds(trial)) continue;
                 DpsResult candidate = bestSpellResult(request, trial, pass.spells);
                 if (candidate == null || candidate.getDps() < current.getDps() - 1e-9) {
                     continue; // protection is worn only when it costs nothing
@@ -247,7 +248,8 @@ public final class LoadoutOptimizer {
      * excluded, and equippable at the request's levels and quests. */
     public static boolean eligible(LoadoutData data, OptimizationRequest request, GearItem item) {
         return item.isStandardGear() && !data.isVariant(item.getId()) && !request.isExcluded(item.getId())
-            && request.getRequirementProfile().canWear(item);
+            && request.getRequirementProfile().canWear(item)
+            && (request.getSetRules() == null || request.getSetRules().allows(item));
     }
 
     /** The dps-neutral fill for ONE slot: swap in the highest-utility item
@@ -311,6 +313,7 @@ public final class LoadoutOptimizer {
             // budget rejects, and the free tier (god books, diary
             // boots) sits below them - it starved behind the cap.
             if (pass.risk != null && pass.risk.vetoes(trial, null)) continue;
+            if (request.getSetRules() != null && !request.getSetRules().holds(trial)) continue;
             if (++tried > 12) break;
             DpsResult candidate = bestSpellResult(request, trial, pass.spells);
             if (candidate == null || candidate.getDps() < Math.min(floor, current.getDps()) - 1e-9) continue;
@@ -647,10 +650,17 @@ public final class LoadoutOptimizer {
                 states.add(new SearchState(ringed, budgetCost(request, weapon) + budgetCost(request, e2)));
             }
 
+            // Set rules (ISS-01M5XA7NVZYGVR3EVTM05XHXKP): each slot still to fill
+            // bounds what it can add, so a partial set dies only when no choice
+            // left could meet a rule; the last slot's bound is 0 - exact.
+            RuleBounds bounds = request.getSetRules() == null || request.getSetRules().getRules().isEmpty() ? null
+                : new RuleBounds(request.getSetRules(), pools, ammoCandidates, weapon);
             // Beam trials never reach the panel - skip the counted-bonus
             // bookkeeping until the final rescore below.
             calculator.setCollectCounted(false);
+            int slotIndex = -1;
             for (GearSlot slot : NON_WEAPON_SLOTS) {
+                slotIndex++;
                 List<SearchState> next = new ArrayList<>();
                 List<GearItem> candidates = candidatesForSlotWithWeapon(
                     slot == AMMO ? ammoCandidates : pools.slotCandidates.get(slot), weapon, slot);
@@ -676,6 +686,7 @@ public final class LoadoutOptimizer {
                         var gear = new EnumMap<GearSlot, GearItem>(state.gear);
                         if (item != null) gear.put(slot, item);
                         Loadout loadout = Loadout.adopting(gear);
+                        if (bounds != null && !bounds.reachable(loadout, slotIndex + 1)) continue;
                         // Wilderness risk budget: the kept 3-4 are immune;
                         // everything else may drop, and its TOTAL value must
                         // stay within budget. Monotone (adding items never
@@ -713,6 +724,7 @@ public final class LoadoutOptimizer {
             calculator.setCollectCounted(true);
             for (SearchState state : states) {
                 Loadout loadout = Loadout.adopting(state.gear);
+                if (request.getSetRules() != null && !request.getSetRules().holds(loadout)) continue;
                 String signature = signature(loadout);
                 if (!seen.add(signature)) continue;
                 DpsResult scored = bestSpellResult(request, loadout, sc);
@@ -1189,6 +1201,43 @@ public final class LoadoutOptimizer {
 
     private static Set<Integer> pinnedIds(OptimizationRequest request) {
         return request.getPinnedItems().isEmpty() ? Set.of() : new HashSet<>(request.getPinnedItems().values());
+    }
+
+    /** Per rule, the least and most the slots from index k on can still add
+     * (each slot's pool, the empty slot counting 0) - suffix sums. */
+    private final class RuleBounds {
+        final List<SetRules.Rule> rules;
+        final double[][] lo, hi;
+
+        RuleBounds(SetRules setRules, CandidatePools pools, List<GearItem> ammo, GearItem weapon) {
+            rules = setRules.getRules();
+            int n = NON_WEAPON_SLOTS.length;
+            lo = new double[rules.size()][n + 1];
+            hi = new double[rules.size()][n + 1];
+            for (int k = n - 1; k >= 0; k--) {
+                GearSlot slot = NON_WEAPON_SLOTS[k];
+                List<GearItem> pool = candidatesForSlotWithWeapon(slot == AMMO ? ammo : pools.slotCandidates.get(slot), weapon, slot);
+                for (int r = 0; r < rules.size(); r++) {
+                    double min = 0, max = 0;
+                    for (GearItem item : pool) {
+                        double v = SetRules.of(item, rules.get(r).getStat());
+                        min = Math.min(min, v);
+                        max = Math.max(max, v);
+                    }
+                    lo[r][k] = lo[r][k + 1] + min;
+                    hi[r][k] = hi[r][k + 1] + max;
+                }
+            }
+        }
+
+        /** Could the slots from index k on still bring every rule home? */
+        boolean reachable(Loadout loadout, int k) {
+            for (int r = 0; r < rules.size(); r++) {
+                double total = SetRules.total(loadout, rules.get(r).getStat());
+                if (!rules.get(r).reachable(total + lo[r][k], total + hi[r][k])) return false;
+            }
+            return true;
+        }
     }
 
     /**
