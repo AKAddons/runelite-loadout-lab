@@ -114,7 +114,7 @@
       "anchor": "simulated-items",
       "media": "docs/img/dream-items.png",
       "code": [
-        "collection/DreamStore.java",
+        "collection/IdSetStore.java",
         "engine/OptimizationRequest.java",
         "engine/LoadoutOptimizer.java",
         "model/RenderModel.java"
@@ -290,7 +290,7 @@
       "anchor": "exclude-items-from-suggestions",
       "media": "docs/img/exclusions.png",
       "code": [
-        "collection/ExclusionStore.java",
+        "collection/IdSetStore.java",
         "engine/LoadoutOptimizer.java",
         "model/RenderModel.java"
       ],

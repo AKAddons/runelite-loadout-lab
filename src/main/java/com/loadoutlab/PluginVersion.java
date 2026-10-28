@@ -11,7 +11,7 @@ import java.io.InputStream;
 public class PluginVersion {
     /** Bumped with every release (VersionStampTest pins it to build.gradle):
      * hub builds ship the resource unexpanded, so this is what players see. */
-    public static final String FALLBACK = "0.7.0";
+    public static final String FALLBACK = "0.7.1";
     public static final String VERSION = load();
 
     public static String stamp(String properties) {
